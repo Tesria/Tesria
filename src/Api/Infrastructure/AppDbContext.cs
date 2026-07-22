@@ -1,4 +1,5 @@
 using ConfluenceClone.Api.Domain;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConfluenceClone.Api.Infrastructure;
@@ -6,9 +7,11 @@ namespace ConfluenceClone.Api.Infrastructure;
 /// <summary>
 /// EF Core database context for the whole application. Entity shape follows
 /// PLAN §4; relationships and Postgres-specific column types (jsonb) are
-/// configured in <see cref="OnModelCreating"/>.
+/// configured in <see cref="OnModelCreating"/>. Also stores ASP.NET Data
+/// Protection keys so auth cookies survive redeploys.
 /// </summary>
-public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+public class AppDbContext(DbContextOptions<AppDbContext> options)
+    : DbContext(options), IDataProtectionKeyContext
 {
     public DbSet<User> Users => Set<User>();
     public DbSet<Space> Spaces => Set<Space>();
@@ -16,6 +19,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<PageVersion> PageVersions => Set<PageVersion>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
     public DbSet<Comment> Comments => Set<Comment>();
+    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
