@@ -21,8 +21,11 @@ Browser ──HTTPS──► Caddy (auto-TLS) ──► app (ASP.NET Core .NET 1
 - ASP.NET Core minimal APIs, **.NET 10 (LTS)**.
 - Vertical-slice layout: each feature owns its endpoints under
   `Features/<Feature>/`. `Program.cs` stays thin and just wires features in.
-- `Domain/` holds entities/value objects; `Infrastructure/` holds EF Core,
-  storage, and auth wiring (populated in Phase 2).
+- `Domain/` holds entities; `Infrastructure/` holds EF Core (`AppDbContext` +
+  migrations), attachment storage, and auth wiring (Argon2id hashing, the
+  current-user accessor).
+- **Features:** `Auth` (register/login/logout/me, cookie sessions), `Spaces`,
+  `Pages` (tree, versioning, rollback, move), `Attachments`, `Comments`.
 - The API also serves the compiled SPA from `wwwroot` and falls back to
   `index.html` for client-side routes, so the whole product is one origin in
   production (no CORS needed). CORS is enabled only in Development for the Vite
@@ -30,23 +33,35 @@ Browser ──HTTPS──► Caddy (auto-TLS) ──► app (ASP.NET Core .NET 1
 
 ### Health
 
-`GET /api/health` returns `{ status, service, version, utc }`. Used by the
-container `HEALTHCHECK` and the SPA's status card. Phase 2 adds a database
-readiness probe.
+`GET /api/health` returns `{ status, service, version, utc }` and includes a
+database readiness probe (EF Core `DbContext` check). Used by the container
+`HEALTHCHECK`.
+
+### Auth
+
+Local accounts with cookie-based sessions. Passwords are hashed with Argon2id.
+Unauthenticated API calls receive `401` (no login redirect), since the client is
+a SPA. OIDC/SSO is architected for but deferred to Phase 5.
 
 ## Frontend (`src/web`)
 
 - React 19 + TypeScript, built with Vite.
 - In development, Vite serves the SPA on `:5173` and proxies `/api` to the API
-  on `:5099`, so the frontend always uses same-origin relative URLs — identical
+  on `:5291`, so the frontend always uses same-origin relative URLs — identical
   to production.
 - In production, `npm run build` output is copied into the API's `wwwroot`
   during the Docker build.
+- **Editor:** TipTap v3 (ProseMirror) provides the block WYSIWYG. Documents are
+  ProseMirror JSON; the same `Editor` component renders read-only page views and
+  version previews. Routing is React Router 7; a typed `api/client.ts` wraps all
+  REST calls and an `AuthContext` holds the session.
 
 ## Data & persistence
 
-- **PostgreSQL 18** is the system of record (schema/EF Core migrations land in
-  Phase 2). Content (page bodies) will be stored as ProseMirror JSON in `jsonb`.
+- **PostgreSQL 18** is the system of record, via EF Core migrations applied
+  automatically on startup. Page bodies are stored as ProseMirror JSON in
+  `jsonb` columns. Every page save creates a new immutable `PageVersion`
+  (history + rollback); comments carry an optional `jsonb` inline anchor.
 - Docker named volumes hold all state: `pgdata` (database), `uploads`
   (attachments), `backups` (local backup copies), plus Caddy's cert store.
   Nothing durable lives in a container layer.
