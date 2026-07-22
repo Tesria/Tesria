@@ -28,6 +28,14 @@ Added:
   orphaning child pages (soft-delete/trash arrives in Phase 3).
 - Integration tests for spaces and pages (create/version/restore/tree/move/
   delete flows).
+- Attachments: multipart upload, per-page listing, metadata, download, and
+  delete. Bytes stored on the uploads volume behind a pluggable storage
+  interface (local disk now, S3-compatible later); 25 MB per-file limit.
+- Comments: footer and inline (anchored) comments with threaded replies. Edit
+  and soft-delete restricted to the author; soft-delete keeps the row so reply
+  threads survive.
+- Integration tests for attachments (upload/download/delete) and comments
+  (threads, validation, soft-delete, author-only edits).
 
 ### Phase 1 — Foundation (2026-07-22)
 
