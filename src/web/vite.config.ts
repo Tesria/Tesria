@@ -11,7 +11,7 @@ export default defineConfig({
     // same-origin relative URLs (which also work in production).
     proxy: {
       '/api': {
-        target: 'http://localhost:5099',
+        target: 'http://localhost:5291',
         changeOrigin: true,
       },
     },

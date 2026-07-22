@@ -36,6 +36,14 @@ Added:
   threads survive.
 - Integration tests for attachments (upload/download/delete) and comments
   (threads, validation, soft-delete, author-only edits).
+- React 19 + TypeScript SPA (React Router 7): sign in / register, a spaces list
+  with create, and a space view with a hierarchical page-tree sidebar.
+- TipTap v3 block editor with a formatting toolbar for creating and editing
+  pages; content round-trips as ProseMirror JSON. Read-only rendering reuses the
+  same editor.
+- Page view with tabbed footer: threaded comments (post/reply/edit/delete own),
+  attachments (upload/download/delete), and version history (preview any version
+  and restore it). Fixed the dev proxy port to match the API (5291).
 
 ### Phase 1 — Foundation (2026-07-22)
 
