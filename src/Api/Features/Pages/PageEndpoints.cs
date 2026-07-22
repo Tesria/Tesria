@@ -1,0 +1,309 @@
+using System.Text.Json;
+using ConfluenceClone.Api.Domain;
+using ConfluenceClone.Api.Infrastructure;
+using ConfluenceClone.Api.Infrastructure.Auth;
+using Microsoft.EntityFrameworkCore;
+
+namespace ConfluenceClone.Api.Features.Pages;
+
+public static class PageEndpoints
+{
+    // An empty ProseMirror document; used when a page is created without content.
+    private const string EmptyDoc = """{"type":"doc","content":[]}""";
+
+    public record CreatePageRequest(Guid SpaceId, Guid? ParentPageId, string Title, string? ContentJson);
+    public record UpdatePageRequest(string? Title, string ContentJson, string? ChangeComment);
+    public record MovePageRequest(Guid? ParentPageId, int Position);
+
+    public record PageDetailResponse(
+        Guid Id, Guid SpaceId, Guid? ParentPageId, string Title, int Position, PageStatus Status,
+        int CurrentVersionNumber, string ContentJson, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
+    public record PageVersionResponse(
+        Guid Id, int VersionNumber, string? ChangeComment, Guid AuthorId, DateTimeOffset CreatedAt);
+    public record PageVersionContentResponse(
+        Guid Id, int VersionNumber, string ContentJson, string? ChangeComment,
+        Guid AuthorId, DateTimeOffset CreatedAt);
+    public record PageTreeNode(Guid Id, string Title, int Position, List<PageTreeNode> Children);
+
+    public static IEndpointRouteBuilder MapPageEndpoints(this IEndpointRouteBuilder routes)
+    {
+        var group = routes.MapGroup("/pages").WithTags("Pages").RequireAuthorization();
+
+        group.MapGet("/tree", Tree);
+        group.MapPost("/", Create);
+        group.MapGet("/{id:guid}", Get);
+        group.MapPut("/{id:guid}", Update);
+        group.MapPut("/{id:guid}/move", Move);
+        group.MapDelete("/{id:guid}", Delete);
+        group.MapGet("/{id:guid}/versions", ListVersions);
+        group.MapGet("/{id:guid}/versions/{number:int}", GetVersion);
+        group.MapPost("/{id:guid}/versions/{number:int}/restore", RestoreVersion);
+
+        return routes;
+    }
+
+    private static async Task<IResult> Create(
+        CreatePageRequest req, AppDbContext db, CurrentUser current)
+    {
+        var title = (req.Title ?? "").Trim();
+        if (title.Length == 0)
+            return Results.ValidationProblem(Error("title", "Title is required."));
+        if (!TryNormalizeContent(req.ContentJson, out var content))
+            return Results.ValidationProblem(Error("contentJson", "Content must be valid JSON."));
+
+        if (!await db.Spaces.AnyAsync(s => s.Id == req.SpaceId))
+            return Results.ValidationProblem(Error("spaceId", "Space not found."));
+
+        if (req.ParentPageId is { } parentId)
+        {
+            var parent = await db.Pages.AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == parentId);
+            if (parent is null)
+                return Results.ValidationProblem(Error("parentPageId", "Parent page not found."));
+            if (parent.SpaceId != req.SpaceId)
+                return Results.ValidationProblem(Error("parentPageId", "Parent page is in a different space."));
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var userId = current.RequireId();
+        var page = new Page
+        {
+            Id = Guid.NewGuid(),
+            SpaceId = req.SpaceId,
+            ParentPageId = req.ParentPageId,
+            Title = title,
+            Status = PageStatus.Current,
+            Position = await NextPositionAsync(db, req.SpaceId, req.ParentPageId),
+            CreatedById = userId,
+            CreatedAt = now,
+            UpdatedAt = now,
+        };
+        var version = NewVersion(page, versionNumber: 1, content, userId, changeComment: null, now);
+        db.Pages.Add(page);
+        db.PageVersions.Add(version);
+
+        // Page.CurrentVersionId and PageVersion.PageId reference each other, so
+        // insert both first (leaving the pointer null), then set the pointer —
+        // otherwise EF cannot order the two inserts.
+        await db.SaveChangesAsync();
+        page.CurrentVersionId = version.Id;
+        await db.SaveChangesAsync();
+
+        return Results.Created($"/api/pages/{page.Id}", ToDetail(page, version));
+    }
+
+    private static async Task<IResult> Get(Guid id, AppDbContext db)
+    {
+        var page = await db.Pages.AsNoTracking()
+            .Include(p => p.CurrentVersion)
+            .FirstOrDefaultAsync(p => p.Id == id);
+        return page?.CurrentVersion is null
+            ? Results.NotFound()
+            : Results.Ok(ToDetail(page, page.CurrentVersion));
+    }
+
+    private static async Task<IResult> Update(
+        Guid id, UpdatePageRequest req, AppDbContext db, CurrentUser current)
+    {
+        if (!TryNormalizeContent(req.ContentJson, out var content))
+            return Results.ValidationProblem(Error("contentJson", "Content must be valid JSON."));
+
+        var page = await db.Pages.Include(p => p.CurrentVersion)
+            .FirstOrDefaultAsync(p => p.Id == id);
+        if (page is null) return Results.NotFound();
+
+        if (req.Title is not null)
+        {
+            var title = req.Title.Trim();
+            if (title.Length == 0)
+                return Results.ValidationProblem(Error("title", "Title cannot be empty."));
+            page.Title = title;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var nextNumber = (page.CurrentVersion?.VersionNumber ?? 0) + 1;
+        var version = NewVersion(page, nextNumber, content, current.RequireId(),
+            string.IsNullOrWhiteSpace(req.ChangeComment) ? null : req.ChangeComment.Trim(), now);
+        db.PageVersions.Add(version);
+        page.CurrentVersionId = version.Id;
+        page.UpdatedAt = now;
+
+        await db.SaveChangesAsync();
+        return Results.Ok(ToDetail(page, version));
+    }
+
+    private static async Task<IResult> Move(Guid id, MovePageRequest req, AppDbContext db)
+    {
+        var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == id);
+        if (page is null) return Results.NotFound();
+
+        if (req.ParentPageId is { } newParentId)
+        {
+            if (newParentId == id)
+                return Results.ValidationProblem(Error("parentPageId", "A page cannot be its own parent."));
+            var newParent = await db.Pages.AsNoTracking().FirstOrDefaultAsync(p => p.Id == newParentId);
+            if (newParent is null)
+                return Results.ValidationProblem(Error("parentPageId", "Parent page not found."));
+            if (newParent.SpaceId != page.SpaceId)
+                return Results.ValidationProblem(Error("parentPageId", "Parent page is in a different space."));
+            if (await WouldCreateCycleAsync(db, movingPageId: id, newParentId))
+                return Results.ValidationProblem(Error("parentPageId", "Cannot move a page beneath one of its own descendants."));
+        }
+
+        page.ParentPageId = req.ParentPageId;
+        page.Position = req.Position;
+        page.UpdatedAt = DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync();
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> Delete(Guid id, AppDbContext db)
+    {
+        var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == id);
+        if (page is null) return Results.NotFound();
+
+        // Guard against silent subtree loss. Phase 3 replaces this with a
+        // soft-delete/trash flow (PLAN §7); until then, children must be moved
+        // or deleted first.
+        if (await db.Pages.AnyAsync(p => p.ParentPageId == id))
+            return Results.Conflict(new { message = "Move or delete this page's child pages first." });
+
+        // Break the page → current-version pointer before deleting so the
+        // cascade to versions is not blocked by the restrict FK.
+        page.CurrentVersionId = null;
+        await db.SaveChangesAsync();
+        db.Pages.Remove(page);
+        await db.SaveChangesAsync();
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> ListVersions(Guid id, AppDbContext db)
+    {
+        if (!await db.Pages.AnyAsync(p => p.Id == id)) return Results.NotFound();
+        var versions = await db.PageVersions.AsNoTracking()
+            .Where(v => v.PageId == id)
+            .OrderByDescending(v => v.VersionNumber)
+            .Select(v => new PageVersionResponse(v.Id, v.VersionNumber, v.ChangeComment, v.AuthorId, v.CreatedAt))
+            .ToListAsync();
+        return Results.Ok(versions);
+    }
+
+    private static async Task<IResult> GetVersion(Guid id, int number, AppDbContext db)
+    {
+        var v = await db.PageVersions.AsNoTracking()
+            .FirstOrDefaultAsync(v => v.PageId == id && v.VersionNumber == number);
+        return v is null
+            ? Results.NotFound()
+            : Results.Ok(new PageVersionContentResponse(
+                v.Id, v.VersionNumber, v.ContentJson, v.ChangeComment, v.AuthorId, v.CreatedAt));
+    }
+
+    private static async Task<IResult> RestoreVersion(
+        Guid id, int number, AppDbContext db, CurrentUser current)
+    {
+        var page = await db.Pages.Include(p => p.CurrentVersion)
+            .FirstOrDefaultAsync(p => p.Id == id);
+        if (page is null) return Results.NotFound();
+
+        var source = await db.PageVersions.AsNoTracking()
+            .FirstOrDefaultAsync(v => v.PageId == id && v.VersionNumber == number);
+        if (source is null) return Results.NotFound();
+
+        // Rollback preserves history: it appends a new version copying the old
+        // content rather than deleting anything.
+        var now = DateTimeOffset.UtcNow;
+        var nextNumber = (page.CurrentVersion?.VersionNumber ?? 0) + 1;
+        var version = NewVersion(page, nextNumber, source.ContentJson, current.RequireId(),
+            $"Restored from version {number}", now);
+        db.PageVersions.Add(version);
+        page.CurrentVersionId = version.Id;
+        page.UpdatedAt = now;
+
+        await db.SaveChangesAsync();
+        return Results.Ok(ToDetail(page, version));
+    }
+
+    private static async Task<IResult> Tree(Guid spaceId, AppDbContext db)
+    {
+        if (!await db.Spaces.AnyAsync(s => s.Id == spaceId)) return Results.NotFound();
+
+        var pages = await db.Pages.AsNoTracking()
+            .Where(p => p.SpaceId == spaceId)
+            .OrderBy(p => p.Position).ThenBy(p => p.Title)
+            .Select(p => new { p.Id, p.Title, p.Position, p.ParentPageId })
+            .ToListAsync();
+
+        var byParent = pages.ToLookup(p => p.ParentPageId);
+        List<PageTreeNode> Build(Guid? parentId) =>
+            byParent[parentId]
+                .Select(p => new PageTreeNode(p.Id, p.Title, p.Position, Build(p.Id)))
+                .ToList();
+
+        return Results.Ok(Build(null));
+    }
+
+    // -- helpers --------------------------------------------------------------
+
+    private static async Task<int> NextPositionAsync(AppDbContext db, Guid spaceId, Guid? parentId)
+    {
+        var max = await db.Pages
+            .Where(p => p.SpaceId == spaceId && p.ParentPageId == parentId)
+            .Select(p => (int?)p.Position)
+            .MaxAsync();
+        return (max ?? -1) + 1;
+    }
+
+    private static async Task<bool> WouldCreateCycleAsync(AppDbContext db, Guid movingPageId, Guid newParentId)
+    {
+        // Walk up from the proposed parent; a cycle exists if we reach the page
+        // being moved. Guarded by a hop limit as defence against a corrupt tree.
+        Guid? cursor = newParentId;
+        for (var hops = 0; cursor is { } id && hops < 10_000; hops++)
+        {
+            if (id == movingPageId) return true;
+            cursor = await db.Pages.Where(p => p.Id == id)
+                .Select(p => p.ParentPageId).FirstOrDefaultAsync();
+        }
+        return false;
+    }
+
+    private static PageVersion NewVersion(
+        Page page, int versionNumber, string content, Guid authorId,
+        string? changeComment, DateTimeOffset createdAt) => new()
+    {
+        Id = Guid.NewGuid(),
+        PageId = page.Id,
+        VersionNumber = versionNumber,
+        ContentJson = content,
+        AuthorId = authorId,
+        ChangeComment = changeComment,
+        CreatedAt = createdAt,
+    };
+
+    private static bool TryNormalizeContent(string? input, out string normalized)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            normalized = EmptyDoc;
+            return true;
+        }
+        try
+        {
+            using var _ = JsonDocument.Parse(input);
+            normalized = input;
+            return true;
+        }
+        catch (JsonException)
+        {
+            normalized = EmptyDoc;
+            return false;
+        }
+    }
+
+    private static PageDetailResponse ToDetail(Page page, PageVersion version) => new(
+        page.Id, page.SpaceId, page.ParentPageId, page.Title, page.Position, page.Status,
+        version.VersionNumber, version.ContentJson, page.CreatedAt, page.UpdatedAt);
+
+    private static Dictionary<string, string[]> Error(string field, string message) =>
+        new() { [field] = [message] };
+}

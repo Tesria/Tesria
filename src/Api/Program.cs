@@ -1,5 +1,7 @@
 using ConfluenceClone.Api.Features.Auth;
 using ConfluenceClone.Api.Features.Health;
+using ConfluenceClone.Api.Features.Pages;
+using ConfluenceClone.Api.Features.Spaces;
 using ConfluenceClone.Api.Infrastructure;
 using ConfluenceClone.Api.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -101,6 +103,8 @@ app.UseAuthorization();
 var api = app.MapGroup("/api");
 api.MapHealthEndpoints();
 api.MapAuthEndpoints();
+api.MapSpaceEndpoints();
+api.MapPageEndpoints();
 
 // SPA fallback: any non-API, non-file route returns index.html so client-side
 // routing works. Guarded so it never swallows /api/* requests.
