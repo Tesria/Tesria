@@ -19,6 +19,15 @@ Added:
 - Test project (`tests/Api.Tests`) running the API in-process against SQLite
   in-memory (no Docker needed); covers the password hasher and the full auth
   flow.
+- Spaces: create / list / get / update, archive / unarchive, with unique,
+  validated space keys.
+- Pages: create / read / update with a hierarchical page tree, plus the full
+  version model — every save appends a `PageVersion`, with version-history
+  listing, single-version fetch, and restore (rollback appends a new version so
+  nothing is lost). Move/reparent with cycle detection; delete guarded against
+  orphaning child pages (soft-delete/trash arrives in Phase 3).
+- Integration tests for spaces and pages (create/version/restore/tree/move/
+  delete flows).
 
 ### Phase 1 — Foundation (2026-07-22)
 
