@@ -1,9 +1,12 @@
+using ConfluenceClone.Api.Features.Attachments;
 using ConfluenceClone.Api.Features.Auth;
+using ConfluenceClone.Api.Features.Comments;
 using ConfluenceClone.Api.Features.Health;
 using ConfluenceClone.Api.Features.Pages;
 using ConfluenceClone.Api.Features.Spaces;
 using ConfluenceClone.Api.Infrastructure;
 using ConfluenceClone.Api.Infrastructure.Auth;
+using ConfluenceClone.Api.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +26,9 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connect
 builder.Services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CurrentUser>();
+
+// Attachment file storage (local uploads volume; PLAN §3).
+builder.Services.AddSingleton<IAttachmentStorage, LocalAttachmentStorage>();
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -105,6 +111,8 @@ api.MapHealthEndpoints();
 api.MapAuthEndpoints();
 api.MapSpaceEndpoints();
 api.MapPageEndpoints();
+api.MapAttachmentEndpoints();
+api.MapCommentEndpoints();
 
 // SPA fallback: any non-API, non-file route returns index.html so client-side
 // routing works. Guarded so it never swallows /api/* requests.

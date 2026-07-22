@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -20,10 +21,19 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
     // lifetime of the factory (it is dropped when the last connection closes).
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
 
+    // Attachment uploads go to a throwaway directory unique to this factory.
+    private readonly string _uploadsPath =
+        Path.Combine(Path.GetTempPath(), "cc-tests", Guid.NewGuid().ToString("N"));
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         _connection.Open();
         builder.UseEnvironment("Testing");
+        builder.ConfigureAppConfiguration((_, config) =>
+            config.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Storage:UploadsPath"] = _uploadsPath,
+            }));
         builder.ConfigureServices(services =>
         {
             // Drop the production Npgsql registration entirely — both the built
@@ -46,6 +56,11 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        if (disposing) _connection.Dispose();
+        if (disposing)
+        {
+            _connection.Dispose();
+            try { if (Directory.Exists(_uploadsPath)) Directory.Delete(_uploadsPath, recursive: true); }
+            catch (IOException) { /* best-effort cleanup */ }
+        }
     }
 }
