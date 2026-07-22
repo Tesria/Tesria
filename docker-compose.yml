@@ -20,7 +20,10 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      # postgres:18+ stores data in a version-specific subdirectory and expects
+      # the volume mounted at /var/lib/postgresql (mounting the legacy
+      # /var/lib/postgresql/data path makes the image refuse to start).
+      - pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
