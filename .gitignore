@@ -1,0 +1,28 @@
+# --- Secrets / local config ---
+.env
+*.local
+
+# --- .NET ---
+bin/
+obj/
+*.user
+[Dd]ebug/
+[Rr]elease/
+
+# --- Node / web ---
+node_modules/
+src/web/dist/
+
+# --- Built SPA (generated into the API's wwwroot at Docker build time) ---
+src/Api/wwwroot/*
+!src/Api/wwwroot/.gitkeep
+
+# --- Backups produced locally ---
+backups/
+*.dump
+
+# --- OS / editor ---
+.DS_Store
+.vs/
+.idea/
+*.swp
