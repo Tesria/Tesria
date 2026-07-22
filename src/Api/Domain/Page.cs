@@ -36,6 +36,10 @@ public class Page
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 
+    /// <summary>Set when the page is trashed (soft-deleted); null while live.</summary>
+    public DateTimeOffset? DeletedAt { get; set; }
+    public Guid? DeletedById { get; set; }
+
     public ICollection<PageVersion> Versions { get; set; } = new List<PageVersion>();
 }
 

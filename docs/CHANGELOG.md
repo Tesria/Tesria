@@ -5,7 +5,19 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
-### Phase 2 — Core content (in progress, 2026-07-22)
+### Phase 3 — Search + backup system (in progress, 2026-07-22)
+
+Added:
+- Data Protection keys are now persisted in the database (via `AppDbContext`)
+  instead of the container filesystem, so signed auth cookies survive redeploys
+  and work across replicas. Bumped .NET 10 packages to 10.0.10 to clear a
+  critical Data Protection advisory (GHSA-9mv3-2cwr-p262).
+- Soft-delete / trash for pages: deleting a page trashes it and its whole
+  subtree (a global query filter hides trashed pages everywhere). New endpoints
+  to list a space's trash, restore a trashed subtree, and permanently purge it,
+  plus a Trash view in the SPA with restore / delete-permanently.
+
+### Phase 2 — Core content (2026-07-22)
 
 Added:
 - EF Core 10 + Npgsql data layer. Domain entities (`User`, `Space`, `Page`,

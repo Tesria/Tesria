@@ -12,6 +12,7 @@ import { SpacePage } from './routes/SpacePage'
 import { SpaceHome } from './routes/SpaceHome'
 import { PageView } from './routes/PageView'
 import { PageEditor } from './routes/PageEditor'
+import { TrashPage } from './routes/TrashPage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -27,6 +28,7 @@ createRoot(document.getElementById('root')!).render(
               <Route path="spaces/:key" element={<SpacePage />}>
                 <Route index element={<SpaceHome />} />
                 <Route path="new" element={<PageEditor />} />
+                <Route path="trash" element={<TrashPage />} />
                 <Route path="pages/:pageId" element={<PageView />} />
                 <Route path="pages/:pageId/edit" element={<PageEditor />} />
               </Route>
