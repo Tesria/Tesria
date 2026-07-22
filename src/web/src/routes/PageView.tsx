@@ -32,7 +32,7 @@ export function PageView() {
 
   async function onDelete() {
     if (!page) return
-    if (!confirm(`Delete "${page.title}"? This cannot be undone.`)) return
+    if (!confirm(`Move "${page.title}" and any sub-pages to the trash?`)) return
     try {
       await api.pages.remove(page.id)
       reloadTree()

@@ -64,6 +64,12 @@ export function SpacePage() {
             <TreeItem key={node.id} node={node} spaceKey={space.key} depth={0} />
           ))}
         </nav>
+        <NavLink
+          to={`/spaces/${space.key}/trash`}
+          className={({ isActive }) => (isActive ? 'sidebar__trash is-active' : 'sidebar__trash')}
+        >
+          🗑 Trash
+        </NavLink>
       </aside>
       <section className="space-content">
         <Outlet context={context} />

@@ -33,6 +33,13 @@ export type PageTreeNode = {
   children: PageTreeNode[]
 }
 
+export type TrashedPage = {
+  id: string
+  title: string
+  deletedAt: string
+  deletedById: string | null
+}
+
 export type VersionMeta = {
   id: string
   versionNumber: number
@@ -169,6 +176,9 @@ export const api = {
     move: (id: string, input: { parentPageId?: string | null; position: number }) =>
       request<void>('PUT', `/api/pages/${id}/move`, input),
     remove: (id: string) => request<void>('DELETE', `/api/pages/${id}`),
+    trash: (spaceId: string) => request<TrashedPage[]>('GET', `/api/pages/trash?spaceId=${spaceId}`),
+    untrash: (id: string) => request<void>('POST', `/api/pages/${id}/restore`),
+    purge: (id: string) => request<void>('DELETE', `/api/pages/${id}/purge`),
     versions: (id: string) => request<VersionMeta[]>('GET', `/api/pages/${id}/versions`),
     version: (id: string, n: number) =>
       request<VersionContent>('GET', `/api/pages/${id}/versions/${n}`),

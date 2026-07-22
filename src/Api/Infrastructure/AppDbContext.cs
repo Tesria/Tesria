@@ -56,6 +56,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         {
             e.Property(p => p.Title).HasMaxLength(500);
 
+            // Trashed pages are hidden from all normal queries; trash/restore
+            // operations opt back in with IgnoreQueryFilters().
+            e.HasQueryFilter(p => p.DeletedAt == null);
+
             e.HasOne(p => p.Space)
                 .WithMany(s => s.Pages)
                 .HasForeignKey(p => p.SpaceId)

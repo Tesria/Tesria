@@ -104,6 +104,9 @@ label input, label textarea { margin-top: 0.25rem; }
 .tree__link:hover { background: #e9ebef; text-decoration: none; }
 .tree__link.is-active { background: #e0ecff; color: var(--primary-dark); font-weight: 600; }
 .space-content { min-width: 0; }
+.sidebar__trash { display: block; margin-top: 1rem; padding: 0.3rem 0.5rem; border-radius: 4px; color: var(--muted); font-size: 0.9rem; }
+.sidebar__trash:hover { background: #e9ebef; text-decoration: none; }
+.sidebar__trash.is-active { background: #e0ecff; color: var(--primary-dark); font-weight: 600; }
 
 /* ---- editor -------------------------------------------------------------- */
 .title-input { font-size: 1.5rem; font-weight: 700; border: none; padding: 0.3rem 0; margin-bottom: 0.5rem; }

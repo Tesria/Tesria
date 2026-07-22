@@ -24,17 +24,21 @@ public static class PageEndpoints
         Guid Id, int VersionNumber, string ContentJson, string? ChangeComment,
         Guid AuthorId, DateTimeOffset CreatedAt);
     public record PageTreeNode(Guid Id, string Title, int Position, List<PageTreeNode> Children);
+    public record TrashedPageResponse(Guid Id, string Title, DateTimeOffset DeletedAt, Guid? DeletedById);
 
     public static IEndpointRouteBuilder MapPageEndpoints(this IEndpointRouteBuilder routes)
     {
         var group = routes.MapGroup("/pages").WithTags("Pages").RequireAuthorization();
 
         group.MapGet("/tree", Tree);
+        group.MapGet("/trash", Trash);
         group.MapPost("/", Create);
         group.MapGet("/{id:guid}", Get);
         group.MapPut("/{id:guid}", Update);
         group.MapPut("/{id:guid}/move", Move);
         group.MapDelete("/{id:guid}", Delete);
+        group.MapPost("/{id:guid}/restore", Restore);
+        group.MapDelete("/{id:guid}/purge", Purge);
         group.MapGet("/{id:guid}/versions", ListVersions);
         group.MapGet("/{id:guid}/versions/{number:int}", GetVersion);
         group.MapPost("/{id:guid}/versions/{number:int}/restore", RestoreVersion);
@@ -157,24 +161,78 @@ public static class PageEndpoints
         return Results.NoContent();
     }
 
-    private static async Task<IResult> Delete(Guid id, AppDbContext db)
+    private static async Task<IResult> Delete(Guid id, AppDbContext db, CurrentUser current)
     {
         var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == id);
         if (page is null) return Results.NotFound();
 
-        // Guard against silent subtree loss. Phase 3 replaces this with a
-        // soft-delete/trash flow (PLAN §7); until then, children must be moved
-        // or deleted first.
-        if (await db.Pages.AnyAsync(p => p.ParentPageId == id))
-            return Results.Conflict(new { message = "Move or delete this page's child pages first." });
-
-        // Break the page → current-version pointer before deleting so the
-        // cascade to versions is not blocked by the restrict FK.
-        page.CurrentVersionId = null;
-        await db.SaveChangesAsync();
-        db.Pages.Remove(page);
+        // Soft-delete (trash) the page and its whole subtree, so the tree stays
+        // consistent and the deletion can be restored (PLAN §5 in-app safety net).
+        var now = DateTimeOffset.UtcNow;
+        var userId = current.RequireId();
+        foreach (var p in await CollectLiveSubtreeAsync(db, page.SpaceId, id))
+        {
+            p.DeletedAt = now;
+            p.DeletedById = userId;
+        }
         await db.SaveChangesAsync();
         return Results.NoContent();
+    }
+
+    private static async Task<IResult> Restore(Guid id, AppDbContext db)
+    {
+        var page = await db.Pages.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt != null);
+        if (page is null) return Results.NotFound();
+
+        // If the original parent no longer exists (still trashed or purged),
+        // restore to the space root so the page is not orphaned.
+        if (page.ParentPageId is { } pid && !await db.Pages.AnyAsync(p => p.Id == pid))
+            page.ParentPageId = null;
+
+        foreach (var p in await CollectTrashedSubtreeAsync(db, page.SpaceId, id))
+        {
+            p.DeletedAt = null;
+            p.DeletedById = null;
+        }
+        await db.SaveChangesAsync();
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> Purge(Guid id, AppDbContext db)
+    {
+        var page = await db.Pages.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt != null);
+        if (page is null) return Results.NotFound();
+
+        var subtree = await CollectTrashedSubtreeAsync(db, page.SpaceId, id);
+        // Clear current-version pointers so the cascade to versions is not blocked
+        // by the restrict FK, then hard-delete the subtree (versions, attachments,
+        // and comments cascade).
+        foreach (var p in subtree) p.CurrentVersionId = null;
+        await db.SaveChangesAsync();
+        db.Pages.RemoveRange(subtree);
+        await db.SaveChangesAsync();
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> Trash(Guid spaceId, AppDbContext db)
+    {
+        if (!await db.Spaces.AnyAsync(s => s.Id == spaceId)) return Results.NotFound();
+
+        var trashed = await db.Pages.IgnoreQueryFilters()
+            .Where(p => p.SpaceId == spaceId && p.DeletedAt != null)
+            .ToListAsync();
+        var trashedIds = trashed.Select(p => p.Id).ToHashSet();
+
+        // List only "trash roots" — the pages actually deleted (whose parent is
+        // not itself trashed); each stands for one restorable subtree.
+        var roots = trashed
+            .Where(p => p.ParentPageId is null || !trashedIds.Contains(p.ParentPageId.Value))
+            .OrderByDescending(p => p.DeletedAt)
+            .Select(p => new TrashedPageResponse(p.Id, p.Title, p.DeletedAt!.Value, p.DeletedById))
+            .ToList();
+        return Results.Ok(roots);
     }
 
     private static async Task<IResult> ListVersions(Guid id, AppDbContext db)
@@ -243,6 +301,34 @@ public static class PageEndpoints
     }
 
     // -- helpers --------------------------------------------------------------
+
+    /// <summary>The live page <paramref name="rootId"/> and all its live descendants (tracked).</summary>
+    private static Task<List<Page>> CollectLiveSubtreeAsync(AppDbContext db, Guid spaceId, Guid rootId) =>
+        CollectSubtreeAsync(db.Pages.Where(p => p.SpaceId == spaceId), rootId);
+
+    /// <summary>The trashed page <paramref name="rootId"/> and all its trashed descendants (tracked).</summary>
+    private static Task<List<Page>> CollectTrashedSubtreeAsync(AppDbContext db, Guid spaceId, Guid rootId) =>
+        CollectSubtreeAsync(
+            db.Pages.IgnoreQueryFilters().Where(p => p.SpaceId == spaceId && p.DeletedAt != null),
+            rootId);
+
+    private static async Task<List<Page>> CollectSubtreeAsync(IQueryable<Page> scope, Guid rootId)
+    {
+        var pages = await scope.ToListAsync();
+        var byParent = pages.ToLookup(p => p.ParentPageId);
+        var result = new List<Page>();
+        var stack = new Stack<Guid>();
+        stack.Push(rootId);
+        while (stack.Count > 0)
+        {
+            var current = stack.Pop();
+            var node = pages.FirstOrDefault(p => p.Id == current);
+            if (node is null) continue;
+            result.Add(node);
+            foreach (var child in byParent[current]) stack.Push(child.Id);
+        }
+        return result;
+    }
 
     private static async Task<int> NextPositionAsync(AppDbContext db, Guid spaceId, Guid? parentId)
     {
