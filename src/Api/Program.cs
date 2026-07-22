@@ -8,6 +8,7 @@ using ConfluenceClone.Api.Infrastructure;
 using ConfluenceClone.Api.Infrastructure.Auth;
 using ConfluenceClone.Api.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,6 +30,12 @@ builder.Services.AddScoped<CurrentUser>();
 
 // Attachment file storage (local uploads volume; PLAN §3).
 builder.Services.AddSingleton<IAttachmentStorage, LocalAttachmentStorage>();
+
+// Persist Data Protection keys in the database (not the container filesystem),
+// so signed auth cookies stay valid across redeploys and multiple app replicas.
+builder.Services.AddDataProtection()
+    .PersistKeysToDbContext<AppDbContext>()
+    .SetApplicationName("ConfluenceClone");
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
