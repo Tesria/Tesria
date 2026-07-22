@@ -1,0 +1,25 @@
+# Caddy reverse proxy for ConfluenceClone.
+#
+# {$DOMAIN} and {$ACME_EMAIL} come from the environment (see .env).
+#
+#  - Set DOMAIN to your real hostname (e.g. wiki.example.com) and Caddy will
+#    obtain and auto-renew a Let's Encrypt certificate over HTTPS.
+#  - Set DOMAIN to `localhost` for local testing; Caddy serves HTTPS using its
+#    own internal CA (your browser will warn about the self-signed cert).
+
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode gzip zstd
+
+	# Everything is proxied to the app container, which serves both the API
+	# (/api/*) and the React SPA (everything else).
+	reverse_proxy app:8080
+
+	# Allow large-ish attachment uploads (tune as needed).
+	request_body {
+		max_size 100MB
+	}
+}

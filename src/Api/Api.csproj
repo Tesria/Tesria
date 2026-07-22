@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ConfluenceClone.Api</RootNamespace>
+    <AssemblyName>ConfluenceClone.Api</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <Version>0.1.0</Version>
+    <InformationalVersion>0.1.0</InformationalVersion>
+    <!-- The built React SPA is copied into wwwroot at Docker build time and
+         served as static files. Phase 1 needs nothing from NuGet. -->
+  </PropertyGroup>
+
+</Project>

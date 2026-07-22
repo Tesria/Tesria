@@ -1,0 +1,93 @@
+# ConfluenceClone — full self-hosted stack.
+#
+#   cp .env.example .env      # then edit secrets
+#   docker compose up -d
+#
+# Services:
+#   db      PostgreSQL 18 (persistent data on the `pgdata` volume)
+#   app     ASP.NET Core API + React SPA (built from deploy/Dockerfile)
+#   caddy   reverse proxy with automatic HTTPS
+#   backup  scheduled logical backups (pg_dump). Phase 3 adds pgBackRest PITR.
+
+name: confluenceclone
+
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Not published to the host: only the app and backup services reach it.
+    expose:
+      - "5432"
+
+  app:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+    volumes:
+      - uploads:/app/uploads
+    expose:
+      - "8080"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  backup:
+    image: postgres:18
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS}
+      RETENTION_DAYS: ${BACKUP_RETENTION_DAYS}
+      # Offsite (S3-compatible) is supported but OFF by default. Enable by
+      # setting BACKUP_S3_ENABLED=true and the S3_* values in .env (Phase 3).
+      BACKUP_S3_ENABLED: ${BACKUP_S3_ENABLED}
+    entrypoint: ["/bin/bash", "/scripts/run.sh"]
+    volumes:
+      - ./deploy/backup:/scripts:ro
+      - backups:/backups
+      - uploads:/data/uploads:ro
+
+volumes:
+  pgdata:
+  uploads:
+  backups:
+  caddy_data:
+  caddy_config:
