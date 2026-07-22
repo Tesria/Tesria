@@ -5,6 +5,21 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Phase 2 — Core content (in progress, 2026-07-22)
+
+Added:
+- EF Core 10 + Npgsql data layer. Domain entities (`User`, `Space`, `Page`,
+  `PageVersion`, `Attachment`, `Comment`) per PLAN §4, with page content stored
+  as ProseMirror JSON in `jsonb` columns and every save creating a new version.
+  Initial migration `InitialCreate`; migrations run automatically on startup.
+- Local authentication: register / login / logout / me endpoints, cookie-based
+  sessions, and Argon2id password hashing. Unauthenticated API calls get 401
+  instead of a login redirect.
+- Database health check wired into `GET /api/health`.
+- Test project (`tests/Api.Tests`) running the API in-process against SQLite
+  in-memory (no Docker needed); covers the password hasher and the full auth
+  flow.
+
 ### Phase 1 — Foundation (2026-07-22)
 
 Added:
