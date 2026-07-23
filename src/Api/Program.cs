@@ -1,6 +1,7 @@
 using ConfluenceClone.Api.Features.Attachments;
 using ConfluenceClone.Api.Features.Auth;
 using ConfluenceClone.Api.Features.Comments;
+using ConfluenceClone.Api.Features.Export;
 using ConfluenceClone.Api.Features.Health;
 using ConfluenceClone.Api.Features.Labels;
 using ConfluenceClone.Api.Features.Pages;
@@ -124,6 +125,7 @@ api.MapAttachmentEndpoints();
 api.MapCommentEndpoints();
 api.MapSearchEndpoints();
 api.MapLabelEndpoints();
+api.MapExportEndpoints();
 
 // SPA fallback: any non-API, non-file route returns index.html so client-side
 // routing works. Guarded so it never swallows /api/* requests.

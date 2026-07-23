@@ -12,6 +12,11 @@ Added:
   pages, with add/remove per page, browse-by-label, and usage counts. Trashed
   pages drop out of label listings. SPA shows label chips on a page and a
   browse-by-label view.
+- Page export (`GET /api/pages/{id}/export?format=…`) to Markdown or standalone,
+  print-ready HTML, via a ProseMirror renderer that covers the editor's node and
+  mark types and HTML-escapes all content. PDF is produced by printing the HTML
+  export from the browser, avoiding a headless-browser dependency in the image.
+  Download links added to the page view.
 
 ### Phase 3 — Search + backup system (2026-07-23)
 
