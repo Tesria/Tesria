@@ -78,10 +78,16 @@ a SPA. OIDC/SSO is architected for but deferred to Phase 5.
 
 ## Backups
 
-See [`backup-recovery.md`](./backup-recovery.md). Layered by design: logical
-`pg_dump` now (Phase 1); pgBackRest continuous archiving + point-in-time
-recovery and offsite S3 replication in Phase 3; plus in-app safety nets
-(version history, trash) as features arrive.
+See [`backup-recovery.md`](./backup-recovery.md). Layered by design:
+
+- **pgBackRest** (Layer 1): the `db` image bundles pgBackRest with continuous
+  WAL archiving to an encrypted repository (a `pgbackrest` sidecar runs
+  scheduled full/incr backups), enabling point-in-time recovery.
+- **Logical `pg_dump`** (Layer 2) and **`uploads` file archives** (Layer 3) on a
+  schedule with retention, via the `backup` sidecar.
+- **In-app safety nets**: page version history + rollback, and soft-delete/trash
+  with restore.
+- **Offsite S3** is supported but off by default (`BACKUP_S3_ENABLED`).
 
 ## Decisions
 

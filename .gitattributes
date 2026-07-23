@@ -1,0 +1,11 @@
+# Normalize line endings. Files that run inside Linux containers MUST stay LF —
+# CRLF would break shebangs (`/usr/bin/env bash\r`) and config parsing.
+* text=auto
+
+*.sh            text eol=lf
+Dockerfile      text eol=lf
+*.conf          text eol=lf
+Caddyfile       text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+.env.example    text eol=lf

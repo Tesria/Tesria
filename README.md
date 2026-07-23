@@ -6,11 +6,12 @@ block-based editor, and one-command deployment.
 
 See [`PLAN.md`](./PLAN.md) for the full design and roadmap.
 
-**Status:** Phase 2 (Core content) — a working wiki: local accounts, spaces,
-pages in a hierarchical tree, a TipTap block editor with full version history
-and rollback, page attachments, and threaded footer/inline comments. Runs on the
-full Docker stack (app + PostgreSQL 18 + Caddy auto-HTTPS + scheduled backups).
-Full-text search and pgBackRest point-in-time recovery arrive in Phase 3.
+**Status:** Phase 3 in progress. A working wiki — local accounts, spaces, pages
+in a hierarchical tree, a TipTap block editor with version history and rollback,
+attachments, threaded footer/inline comments, full-text search, and
+soft-delete/trash — on the full Docker stack (app + PostgreSQL 18 + Caddy
+auto-HTTPS). Data safety is covered by pgBackRest point-in-time recovery plus
+logical and file backups. Remaining Phase 4+ items: labels, permissions, export.
 
 ## Tech stack
 
@@ -19,8 +20,8 @@ Full-text search and pgBackRest point-in-time recovery arrive in Phase 3.
 - **Frontend:** React 19 + TypeScript + Vite; TipTap v3 block editor
 - **Auth:** local accounts, cookie sessions, Argon2id password hashing
 - **Deploy:** Docker Compose — Caddy reverse proxy with automatic HTTPS
-- **Backups:** scheduled `pg_dump` with retention now; pgBackRest point-in-time
-  recovery in Phase 3
+- **Backups:** pgBackRest continuous WAL archiving + point-in-time recovery,
+  scheduled `pg_dump` + `uploads` archives, and in-app version history / trash
 
 ## Quick start (Docker)
 

@@ -16,13 +16,17 @@ mkdir -p "$BACKUP_DIR"
 log "sidecar started: interval=${INTERVAL_HOURS}h retention=${RETENTION_DAYS}d target=${PGDATABASE}@${PGHOST}"
 
 while true; do
-  if /scripts/backup.sh; then
-    log "pruning dumps older than ${RETENTION_DAYS} days"
+  if /scripts/backup.sh && /scripts/backup-files.sh; then
+    log "pruning dumps and file archives older than ${RETENTION_DAYS} days"
     find "$BACKUP_DIR" -maxdepth 1 -name 'db-*.dump' -type f -mtime "+${RETENTION_DAYS}" -print -delete || true
+    find "$BACKUP_DIR" -maxdepth 1 -name 'uploads-*.tar.gz' -type f -mtime "+${RETENTION_DAYS}" -print -delete || true
 
     if [ "${BACKUP_S3_ENABLED:-false}" = "true" ]; then
-      log "offsite upload is enabled but not yet implemented (Phase 3). Skipping."
-      # Phase 3: sync "$BACKUP_DIR" to the configured S3-compatible bucket.
+      # Offsite replication of these logical dumps + file archives is configured
+      # separately (see docs/backup-recovery.md — "Offsite backups"). The
+      # strongest offsite path is a pgBackRest S3 repository for the physical
+      # backups; the S3_* values in .env drive it.
+      log "BACKUP_S3_ENABLED=true — see docs/backup-recovery.md to configure offsite replication."
     fi
   else
     log "ERROR: backup failed; will retry next cycle"
