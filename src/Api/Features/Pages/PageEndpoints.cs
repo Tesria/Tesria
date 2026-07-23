@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ConfluenceClone.Api.Domain;
 using ConfluenceClone.Api.Infrastructure;
+using ConfluenceClone.Api.Infrastructure.Audit;
 using ConfluenceClone.Api.Infrastructure.Auth;
 using Microsoft.EntityFrameworkCore;
 
@@ -47,7 +48,7 @@ public static class PageEndpoints
     }
 
     private static async Task<IResult> Create(
-        CreatePageRequest req, AppDbContext db, CurrentUser current)
+        CreatePageRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit)
     {
         var title = (req.Title ?? "").Trim();
         if (title.Length == 0)
@@ -92,6 +93,7 @@ public static class PageEndpoints
         // otherwise EF cannot order the two inserts.
         await db.SaveChangesAsync();
         page.CurrentVersionId = version.Id;
+        audit.Record("page.created", "page", page.Id, new { page.Title, page.SpaceId });
         await db.SaveChangesAsync();
 
         return Results.Created($"/api/pages/{page.Id}", ToDetail(page, version));
@@ -108,7 +110,7 @@ public static class PageEndpoints
     }
 
     private static async Task<IResult> Update(
-        Guid id, UpdatePageRequest req, AppDbContext db, CurrentUser current)
+        Guid id, UpdatePageRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit)
     {
         if (!TryNormalizeContent(req.ContentJson, out var content))
             return Results.ValidationProblem(Error("contentJson", "Content must be valid JSON."));
@@ -133,6 +135,7 @@ public static class PageEndpoints
         page.CurrentVersionId = version.Id;
         page.SearchText = BuildSearchText(page.Title, content);
         page.UpdatedAt = now;
+        audit.Record("page.updated", "page", page.Id, new { page.Title, Version = nextNumber });
 
         await db.SaveChangesAsync();
         return Results.Ok(ToDetail(page, version));
@@ -163,7 +166,8 @@ public static class PageEndpoints
         return Results.NoContent();
     }
 
-    private static async Task<IResult> Delete(Guid id, AppDbContext db, CurrentUser current)
+    private static async Task<IResult> Delete(
+        Guid id, AppDbContext db, CurrentUser current, IAuditLogger audit)
     {
         var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == id);
         if (page is null) return Results.NotFound();
@@ -172,16 +176,18 @@ public static class PageEndpoints
         // consistent and the deletion can be restored (PLAN §5 in-app safety net).
         var now = DateTimeOffset.UtcNow;
         var userId = current.RequireId();
-        foreach (var p in await CollectLiveSubtreeAsync(db, page.SpaceId, id))
+        var subtree = await CollectLiveSubtreeAsync(db, page.SpaceId, id);
+        foreach (var p in subtree)
         {
             p.DeletedAt = now;
             p.DeletedById = userId;
         }
+        audit.Record("page.trashed", "page", page.Id, new { page.Title, SubtreeCount = subtree.Count });
         await db.SaveChangesAsync();
         return Results.NoContent();
     }
 
-    private static async Task<IResult> Restore(Guid id, AppDbContext db)
+    private static async Task<IResult> Restore(Guid id, AppDbContext db, IAuditLogger audit)
     {
         var page = await db.Pages.IgnoreQueryFilters()
             .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt != null);
@@ -197,11 +203,12 @@ public static class PageEndpoints
             p.DeletedAt = null;
             p.DeletedById = null;
         }
+        audit.Record("page.restored", "page", page.Id, new { page.Title });
         await db.SaveChangesAsync();
         return Results.NoContent();
     }
 
-    private static async Task<IResult> Purge(Guid id, AppDbContext db)
+    private static async Task<IResult> Purge(Guid id, AppDbContext db, IAuditLogger audit)
     {
         var page = await db.Pages.IgnoreQueryFilters()
             .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt != null);
@@ -214,6 +221,8 @@ public static class PageEndpoints
         foreach (var p in subtree) p.CurrentVersionId = null;
         await db.SaveChangesAsync();
         db.Pages.RemoveRange(subtree);
+        // Recorded before SaveChanges so the entry commits with the deletion.
+        audit.Record("page.purged", "page", page.Id, new { page.Title, SubtreeCount = subtree.Count });
         await db.SaveChangesAsync();
         return Results.NoContent();
     }

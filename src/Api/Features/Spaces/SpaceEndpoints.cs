@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using ConfluenceClone.Api.Domain;
 using ConfluenceClone.Api.Infrastructure;
+using ConfluenceClone.Api.Infrastructure.Audit;
 using ConfluenceClone.Api.Infrastructure.Auth;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,9 +28,9 @@ public static partial class SpaceEndpoints
         group.MapGet("/{key}", GetByKey);
         group.MapPut("/{key}", Update);
         group.MapPost("/{key}/archive",
-            (string key, AppDbContext db) => ArchiveEndpoint(key, true, db));
+            (string key, AppDbContext db, IAuditLogger audit) => ArchiveEndpoint(key, true, db, audit));
         group.MapPost("/{key}/unarchive",
-            (string key, AppDbContext db) => ArchiveEndpoint(key, false, db));
+            (string key, AppDbContext db, IAuditLogger audit) => ArchiveEndpoint(key, false, db, audit));
 
         return routes;
     }
@@ -43,7 +44,7 @@ public static partial class SpaceEndpoints
     }
 
     private static async Task<IResult> Create(
-        CreateSpaceRequest req, AppDbContext db, CurrentUser current)
+        CreateSpaceRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit)
     {
         var key = (req.Key ?? "").Trim().ToUpperInvariant();
         var name = (req.Name ?? "").Trim();
@@ -67,6 +68,7 @@ public static partial class SpaceEndpoints
             CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Spaces.Add(space);
+        audit.Record("space.created", "space", space.Id, new { space.Key, space.Name });
         await db.SaveChangesAsync();
 
         return Results.Created($"/api/spaces/{space.Key}", ToResponse(space));
@@ -95,11 +97,13 @@ public static partial class SpaceEndpoints
         return Results.Ok(ToResponse(space));
     }
 
-    private static async Task<IResult> ArchiveEndpoint(string key, bool archived, AppDbContext db)
+    private static async Task<IResult> ArchiveEndpoint(
+        string key, bool archived, AppDbContext db, IAuditLogger audit)
     {
         var space = await db.Spaces.FirstOrDefaultAsync(s => s.Key == key.ToUpperInvariant());
         if (space is null) return Results.NotFound();
         space.Archived = archived;
+        audit.Record(archived ? "space.archived" : "space.unarchived", "space", space.Id, new { space.Key });
         await db.SaveChangesAsync();
         return Results.Ok(ToResponse(space));
     }

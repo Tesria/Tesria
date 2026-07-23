@@ -15,6 +15,7 @@ import { PageEditor } from './routes/PageEditor'
 import { TrashPage } from './routes/TrashPage'
 import { SearchPage } from './routes/SearchPage'
 import { LabelPage } from './routes/LabelPage'
+import { AuditPage } from './routes/AuditPage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -28,6 +29,7 @@ createRoot(document.getElementById('root')!).render(
               <Route index element={<Navigate to="/spaces" replace />} />
               <Route path="search" element={<SearchPage />} />
               <Route path="labels/:name" element={<LabelPage />} />
+              <Route path="audit" element={<AuditPage />} />
               <Route path="spaces" element={<SpacesPage />} />
               <Route path="spaces/:key" element={<SpacePage />}>
                 <Route index element={<SpaceHome />} />
