@@ -4,26 +4,46 @@
 #   docker compose up -d
 #
 # Services:
-#   db      PostgreSQL 18 (persistent data on the `pgdata` volume)
-#   app     ASP.NET Core API + React SPA (built from deploy/Dockerfile)
-#   caddy   reverse proxy with automatic HTTPS
-#   backup  scheduled logical backups (pg_dump). Phase 3 adds pgBackRest PITR.
+#   db          PostgreSQL 18 + pgBackRest (data on the `pgdata` volume)
+#   app         ASP.NET Core API + React SPA (built from deploy/Dockerfile)
+#   caddy       reverse proxy with automatic HTTPS
+#   backup      scheduled logical backups (pg_dump) + uploads archives
+#   pgbackrest  continuous physical backups + point-in-time recovery
 
 name: confluenceclone
 
 services:
   db:
-    image: postgres:18
+    # PostgreSQL 18 plus pgBackRest (for WAL archiving / PITR).
+    build:
+      context: .
+      dockerfile: deploy/db/Dockerfile
     restart: unless-stopped
+    # Enable continuous WAL archiving via pgBackRest. archive_command runs as the
+    # postgres user and reads /etc/pgbackrest/pgbackrest.conf + PGBACKREST_* env.
+    command:
+      - postgres
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_command=pgbackrest --stanza=main archive-push %p
+      - -c
+      - archive_timeout=60
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+      PGBACKREST_REPO1_CIPHER_TYPE: aes-256-cbc
+      PGBACKREST_REPO1_CIPHER_PASS: ${BACKUP_ENCRYPTION_KEY}
     volumes:
       # postgres:18+ stores data in a version-specific subdirectory and expects
       # the volume mounted at /var/lib/postgresql (mounting the legacy
       # /var/lib/postgresql/data path makes the image refuse to start).
       - pgdata:/var/lib/postgresql
+      - ./deploy/pgbackrest:/scripts:ro
+      - ./deploy/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
+      - pgbackrest:/var/lib/pgbackrest
+      - pgsocket:/var/run/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
@@ -88,9 +108,39 @@ services:
       - backups:/backups
       - uploads:/data/uploads:ro
 
+  pgbackrest:
+    # Physical backups + PITR (PLAN §5, Layer 1). Same image as db so it has the
+    # pgBackRest binary; shares the repo, the data dir (read-only), and the
+    # Postgres socket so it can run backups as the postgres user.
+    build:
+      context: .
+      dockerfile: deploy/db/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Non-PGBACKREST_ prefix so pgBackRest's option parser ignores it.
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS}
+      # Connect as the instance superuser over the socket (there is no "postgres"
+      # role — the superuser is POSTGRES_USER). PGPASSWORD covers scram auth.
+      PGBACKREST_PG1_USER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGBACKREST_REPO1_CIPHER_TYPE: aes-256-cbc
+      PGBACKREST_REPO1_CIPHER_PASS: ${BACKUP_ENCRYPTION_KEY}
+    entrypoint: ["/bin/bash", "/scripts/run.sh"]
+    volumes:
+      - ./deploy/pgbackrest:/scripts:ro
+      - ./deploy/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
+      - pgbackrest:/var/lib/pgbackrest
+      - pgsocket:/var/run/postgresql
+      - pgdata:/var/lib/postgresql:ro
+
 volumes:
   pgdata:
   uploads:
   backups:
+  pgbackrest:
+  pgsocket:
   caddy_data:
   caddy_config:

@@ -132,8 +132,10 @@ public class PageTests
         Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
     }
 
+    private record TrashedPage(Guid Id, string Title, DateTimeOffset DeletedAt, Guid? DeletedById);
+
     [Fact]
-    public async Task Delete_is_blocked_while_children_exist()
+    public async Task Delete_trashes_page_and_its_subtree()
     {
         var (factory, client, spaceId) = await NewClientWithSpace();
         using var _ = factory;
@@ -144,10 +146,53 @@ public class PageTests
             new { SpaceId = spaceId, ParentPageId = root!.Id, Title = "Child", ContentJson = Doc }))
             .Content.ReadFromJsonAsync<PageDetail>();
 
-        Assert.Equal(HttpStatusCode.Conflict, (await client.DeleteAsync($"/api/pages/{root.Id}")).StatusCode);
-
-        // Deleting the leaf first, then the root, works.
-        Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/api/pages/{child!.Id}")).StatusCode);
+        // Deleting the root trashes the whole subtree in one step.
         Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/api/pages/{root.Id}")).StatusCode);
+
+        // Both drop out of the tree and can no longer be fetched.
+        Assert.Empty((await client.GetFromJsonAsync<List<TreeNode>>($"/api/pages/tree?spaceId={spaceId}"))!);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/pages/{root.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/pages/{child!.Id}")).StatusCode);
+
+        // The trash lists only the deleted root, not each descendant.
+        var trash = await client.GetFromJsonAsync<List<TrashedPage>>($"/api/pages/trash?spaceId={spaceId}");
+        Assert.Single(trash!);
+        Assert.Equal(root.Id, trash![0].Id);
+    }
+
+    [Fact]
+    public async Task Restore_brings_back_the_trashed_subtree()
+    {
+        var (factory, client, spaceId) = await NewClientWithSpace();
+        using var _ = factory;
+        var root = await (await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = "Root", ContentJson = Doc }))
+            .Content.ReadFromJsonAsync<PageDetail>();
+        await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = root!.Id, Title = "Child", ContentJson = Doc });
+        await client.DeleteAsync($"/api/pages/{root.Id}");
+
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsync($"/api/pages/{root.Id}/restore", null)).StatusCode);
+
+        var tree = await client.GetFromJsonAsync<List<TreeNode>>($"/api/pages/tree?spaceId={spaceId}");
+        Assert.Single(tree!);
+        Assert.Single(tree![0].Children); // child came back too
+        Assert.Empty((await client.GetFromJsonAsync<List<TrashedPage>>($"/api/pages/trash?spaceId={spaceId}"))!);
+    }
+
+    [Fact]
+    public async Task Purge_permanently_removes_the_trashed_page()
+    {
+        var (factory, client, spaceId) = await NewClientWithSpace();
+        using var _ = factory;
+        var page = await (await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = "Doomed", ContentJson = Doc }))
+            .Content.ReadFromJsonAsync<PageDetail>();
+        await client.DeleteAsync($"/api/pages/{page!.Id}");
+
+        Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/api/pages/{page.Id}/purge")).StatusCode);
+        // Gone for good: no longer in trash and cannot be restored.
+        Assert.Empty((await client.GetFromJsonAsync<List<TrashedPage>>($"/api/pages/trash?spaceId={spaceId}"))!);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.PostAsync($"/api/pages/{page.Id}/restore", null)).StatusCode);
     }
 }

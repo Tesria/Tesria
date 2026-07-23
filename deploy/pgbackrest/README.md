@@ -1,20 +1,30 @@
-# pgBackRest (Phase 3)
+# pgBackRest — physical backups + point-in-time recovery
 
-This directory will hold the pgBackRest configuration that adds the strongest
-backup layer: **continuous WAL archiving + point-in-time recovery (PITR)** —
-the ability to restore the database to any moment (e.g. "just before the
-accidental delete at 14:32").
+This is backup **Layer 1** (PLAN §5): continuous WAL archiving and the ability
+to restore the database to any moment (e.g. "just before the accidental delete
+at 14:32").
 
-Planned in Phase 3:
+## How it fits together
 
-- `pgbackrest.conf` — repository, retention, and encryption settings.
-- Postgres configured with `archive_mode = on` and `archive_command` pointing
-  at pgBackRest.
-- A `pgbackrest` service (or extension of the `backup` service) running
-  scheduled `full` and `incr` backups.
-- Optional S3-compatible offsite repository (see `BACKUP_S3_ENABLED` in `.env`).
-- Restore runbook covering full disaster recovery and PITR in
-  `docs/backup-recovery.md`.
+- The `db` image (`deploy/db/Dockerfile`) is PostgreSQL 18 with pgBackRest
+  installed. `docker-compose.yml` enables archiving via
+  `archive_command = pgbackrest --stanza=main archive-push %p`.
+- `pgbackrest.conf` is mounted into both the `db` container (which archives WAL)
+  and the `pgbackrest` sidecar (which creates the stanza and runs backups). The
+  repository lives on the `pgbackrest` volume; the sidecar reaches Postgres over
+  the shared `pgsocket` volume and reads PGDATA via the shared `pgdata` volume.
+- The repository is encrypted (AES-256-CBC) using `BACKUP_ENCRYPTION_KEY`; the
+  connection user comes from `POSTGRES_USER`. Both are passed as `PGBACKREST_*`
+  environment variables so no secrets live in this file.
 
-Until then, the Phase 1 logical backup layer (`deploy/backup/`, nightly
-`pg_dump` with retention and a verify script) protects your data.
+## Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `run.sh` | Sidecar entrypoint: stanza-create + check, then scheduled full/incr backups. |
+| `verify.sh` | Restore the latest backup to a throwaway dir and sanity-check it. |
+| `pitr-selftest.sh` | Prove PITR end-to-end: recover to a target time and check the result. |
+| `restore.sh` | Disaster-recovery / PITR restore into the live data dir (Postgres stopped). |
+
+See [`docs/backup-recovery.md`](../../docs/backup-recovery.md) for the full
+runbook, including point-in-time recovery and offsite (S3) configuration.

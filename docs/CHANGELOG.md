@@ -21,6 +21,17 @@ Added:
   save; on PostgreSQL this feeds a generated `tsvector` column with a GIN index
   and relevance ranking, with a portable `LIKE` fallback for the test provider.
   Trashed pages are excluded. SPA gains a top-bar search box and results page.
+- pgBackRest physical backups + point-in-time recovery (backup Layer 1). The
+  `db` image now bundles pgBackRest with continuous WAL archiving to an
+  encrypted repository; a `pgbackrest` sidecar creates the stanza and runs
+  scheduled full/incremental backups. Scripts for verification, an end-to-end
+  PITR self-test, and disaster-recovery/PITR restore. Verified in Docker: a real
+  recovery to an exact target time excluded post-target changes.
+- Attachment (`uploads`) file backups added to the logical-backup sidecar
+  (Layer 3), on the same schedule and retention as the `pg_dump` layer.
+- `docs/backup-recovery.md` rewritten as a full runbook: in-app restore, PITR,
+  disaster recovery, verification, and enabling S3 offsite. New
+  `BACKUP_ENCRYPTION_KEY` in `.env`.
 
 ### Phase 2 — Core content (2026-07-22)
 
