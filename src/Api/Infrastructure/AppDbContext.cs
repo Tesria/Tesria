@@ -60,6 +60,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             // operations opt back in with IgnoreQueryFilters().
             e.HasQueryFilter(p => p.DeletedAt == null);
 
+            // Full-text search. On PostgreSQL, SearchVector is a generated
+            // tsvector column over SearchText with a GIN index. Other providers
+            // (SQLite, used by tests) don't support tsvector, so it's ignored
+            // there and search falls back to LIKE over SearchText.
+            if (Database.IsNpgsql())
+            {
+                e.HasGeneratedTsVectorColumn(p => p.SearchVector!, "english", p => p.SearchText)
+                    .HasIndex(p => p.SearchVector!)
+                    .HasMethod("GIN");
+            }
+            else
+            {
+                e.Ignore(p => p.SearchVector);
+            }
+
             e.HasOne(p => p.Space)
                 .WithMany(s => s.Pages)
                 .HasForeignKey(p => p.SpaceId)

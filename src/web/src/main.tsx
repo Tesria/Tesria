@@ -13,6 +13,7 @@ import { SpaceHome } from './routes/SpaceHome'
 import { PageView } from './routes/PageView'
 import { PageEditor } from './routes/PageEditor'
 import { TrashPage } from './routes/TrashPage'
+import { SearchPage } from './routes/SearchPage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -24,6 +25,7 @@ createRoot(document.getElementById('root')!).render(
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               <Route index element={<Navigate to="/spaces" replace />} />
+              <Route path="search" element={<SearchPage />} />
               <Route path="spaces" element={<SpacesPage />} />
               <Route path="spaces/:key" element={<SpacePage />}>
                 <Route index element={<SpaceHome />} />

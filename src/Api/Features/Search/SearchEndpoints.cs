@@ -1,0 +1,59 @@
+using ConfluenceClone.Api.Domain;
+using ConfluenceClone.Api.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+
+namespace ConfluenceClone.Api.Features.Search;
+
+public static class SearchEndpoints
+{
+    private const int MaxResults = 50;
+    private const int SnippetLength = 200;
+
+    public record SearchResult(Guid PageId, Guid SpaceId, string SpaceKey, string Title, string Snippet);
+
+    public static IEndpointRouteBuilder MapSearchEndpoints(this IEndpointRouteBuilder routes)
+    {
+        routes.MapGet("/search", SearchAsync).WithTags("Search").RequireAuthorization();
+        return routes;
+    }
+
+    private static async Task<IResult> SearchAsync(string? q, Guid? spaceId, AppDbContext db)
+    {
+        var term = (q ?? "").Trim();
+        if (term.Length == 0) return Results.Ok(Array.Empty<SearchResult>());
+
+        // The soft-delete query filter already excludes trashed pages.
+        IQueryable<Page> query = db.Pages.AsNoTracking();
+        if (spaceId is { } sid) query = query.Where(p => p.SpaceId == sid);
+
+        if (db.Database.IsNpgsql())
+        {
+            // Real full-text search: match the GIN-indexed tsvector, rank by
+            // relevance. WebSearchToTsQuery accepts user-friendly query syntax.
+            var tsQuery = EF.Functions.WebSearchToTsQuery("english", term);
+            query = query
+                .Where(p => p.SearchVector!.Matches(tsQuery))
+                .OrderByDescending(p => p.SearchVector!.Rank(tsQuery));
+        }
+        else
+        {
+            // Portable fallback (SQLite tests): case-insensitive substring match.
+            var like = $"%{term}%";
+            query = query
+                .Where(p => EF.Functions.Like(p.SearchText, like))
+                .OrderBy(p => p.Title);
+        }
+
+        var rows = await query
+            .Take(MaxResults)
+            .Select(p => new { p.Id, p.SpaceId, SpaceKey = p.Space!.Key, p.Title, p.SearchText })
+            .ToListAsync();
+
+        var results = rows.Select(r => new SearchResult(
+            r.Id, r.SpaceId, r.SpaceKey, r.Title, Snippet(r.SearchText)));
+        return Results.Ok(results);
+    }
+
+    private static string Snippet(string text) =>
+        text.Length <= SnippetLength ? text : text[..SnippetLength].TrimEnd() + "…";
+}

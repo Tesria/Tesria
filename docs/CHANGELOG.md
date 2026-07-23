@@ -16,6 +16,11 @@ Added:
   subtree (a global query filter hides trashed pages everywhere). New endpoints
   to list a space's trash, restore a trashed subtree, and permanently purge it,
   plus a Trash view in the SPA with restore / delete-permanently.
+- Full-text search over page titles and content (`GET /api/search`). Pages keep
+  a plain-text `SearchText` (title + extracted content) maintained on every
+  save; on PostgreSQL this feeds a generated `tsvector` column with a GIN index
+  and relevance ranking, with a portable `LIKE` fallback for the test provider.
+  Trashed pages are excluded. SPA gains a top-bar search box and results page.
 
 ### Phase 2 — Core content (2026-07-22)
 
