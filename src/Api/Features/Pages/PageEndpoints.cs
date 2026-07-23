@@ -76,6 +76,7 @@ public static class PageEndpoints
             SpaceId = req.SpaceId,
             ParentPageId = req.ParentPageId,
             Title = title,
+            SearchText = BuildSearchText(title, content),
             Status = PageStatus.Current,
             Position = await NextPositionAsync(db, req.SpaceId, req.ParentPageId),
             CreatedById = userId,
@@ -130,6 +131,7 @@ public static class PageEndpoints
             string.IsNullOrWhiteSpace(req.ChangeComment) ? null : req.ChangeComment.Trim(), now);
         db.PageVersions.Add(version);
         page.CurrentVersionId = version.Id;
+        page.SearchText = BuildSearchText(page.Title, content);
         page.UpdatedAt = now;
 
         await db.SaveChangesAsync();
@@ -275,6 +277,7 @@ public static class PageEndpoints
             $"Restored from version {number}", now);
         db.PageVersions.Add(version);
         page.CurrentVersionId = version.Id;
+        page.SearchText = BuildSearchText(page.Title, source.ContentJson);
         page.UpdatedAt = now;
 
         await db.SaveChangesAsync();
@@ -365,6 +368,46 @@ public static class PageEndpoints
         ChangeComment = changeComment,
         CreatedAt = createdAt,
     };
+
+    /// <summary>Search text for a page: its title plus the plain text of its content.</summary>
+    private static string BuildSearchText(string title, string contentJson) =>
+        $"{title} {ExtractPlainText(contentJson)}".Trim();
+
+    /// <summary>Concatenates the text nodes of a ProseMirror document, ignoring structure.</summary>
+    private static string ExtractPlainText(string contentJson)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(contentJson);
+            var sb = new System.Text.StringBuilder();
+            Walk(doc.RootElement, sb);
+            return sb.ToString().Trim();
+        }
+        catch (JsonException)
+        {
+            return string.Empty;
+        }
+
+        static void Walk(JsonElement el, System.Text.StringBuilder sb)
+        {
+            switch (el.ValueKind)
+            {
+                case JsonValueKind.Object:
+                    if (el.TryGetProperty("text", out var text) && text.ValueKind == JsonValueKind.String)
+                    {
+                        sb.Append(text.GetString());
+                        sb.Append(' ');
+                    }
+                    if (el.TryGetProperty("content", out var content))
+                        Walk(content, sb);
+                    break;
+                case JsonValueKind.Array:
+                    foreach (var item in el.EnumerateArray())
+                        Walk(item, sb);
+                    break;
+            }
+        }
+    }
 
     private static bool TryNormalizeContent(string? input, out string normalized)
     {

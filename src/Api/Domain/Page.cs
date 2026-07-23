@@ -1,3 +1,5 @@
+using NpgsqlTypes;
+
 namespace ConfluenceClone.Api.Domain;
 
 /// <summary>
@@ -39,6 +41,19 @@ public class Page
     /// <summary>Set when the page is trashed (soft-deleted); null while live.</summary>
     public DateTimeOffset? DeletedAt { get; set; }
     public Guid? DeletedById { get; set; }
+
+    /// <summary>
+    /// Plain text (title + current content) maintained on every save; the source
+    /// for full-text search. See <see cref="SearchVector"/>.
+    /// </summary>
+    public string SearchText { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Postgres full-text index over <see cref="SearchText"/> (a generated
+    /// <c>tsvector</c> column, GIN-indexed). Only mapped on PostgreSQL; ignored
+    /// under the SQLite test provider, which uses a LIKE fallback instead.
+    /// </summary>
+    public NpgsqlTsVector? SearchVector { get; set; }
 
     public ICollection<PageVersion> Versions { get; set; } = new List<PageVersion>();
 }

@@ -60,6 +60,14 @@ export type Attachment = {
   createdAt: string
 }
 
+export type SearchResult = {
+  pageId: string
+  spaceId: string
+  spaceKey: string
+  title: string
+  snippet: string
+}
+
 export type Comment = {
   id: string
   pageId: string
@@ -201,6 +209,11 @@ export const api = {
     remove: (id: string) => request<void>('DELETE', `/api/attachments/${id}`),
     downloadUrl: (id: string) => `/api/attachments/${id}/download`,
   },
+  search: (q: string, spaceId?: string) =>
+    request<SearchResult[]>(
+      'GET',
+      `/api/search?q=${encodeURIComponent(q)}${spaceId ? `&spaceId=${spaceId}` : ''}`,
+    ),
   comments: {
     listForPage: (pageId: string) => request<Comment[]>('GET', `/api/pages/${pageId}/comments`),
     create: (pageId: string, input: { body: string; parentCommentId?: string | null; anchorJson?: string | null }) =>
