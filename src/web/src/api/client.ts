@@ -60,6 +60,17 @@ export type Attachment = {
   createdAt: string
 }
 
+export type AuditEntry = {
+  id: string
+  action: string
+  targetType: string
+  targetId: string | null
+  actorId: string | null
+  actorName: string | null
+  metadataJson: string | null
+  createdAt: string
+}
+
 export type Label = { id: string; name: string }
 export type LabelUsage = { id: string; name: string; pageCount: number }
 export type LabelledPage = { pageId: string; spaceId: string; spaceKey: string; title: string }
@@ -212,6 +223,14 @@ export const api = {
     },
     remove: (id: string) => request<void>('DELETE', `/api/attachments/${id}`),
     downloadUrl: (id: string) => `/api/attachments/${id}/download`,
+  },
+  audit: (params?: { targetType?: string; targetId?: string; take?: number }) => {
+    const q = new URLSearchParams()
+    if (params?.targetType) q.set('targetType', params.targetType)
+    if (params?.targetId) q.set('targetId', params.targetId)
+    if (params?.take) q.set('take', String(params.take))
+    const suffix = q.toString()
+    return request<AuditEntry[]>('GET', `/api/audit${suffix ? `?${suffix}` : ''}`)
   },
   labels: {
     all: () => request<LabelUsage[]>('GET', '/api/labels'),

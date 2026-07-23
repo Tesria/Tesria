@@ -21,6 +21,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<Label> Labels => Set<Label>();
     public DbSet<PageLabel> PageLabels => Set<PageLabel>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
 
     protected override void OnModelCreating(ModelBuilder b)
@@ -134,6 +135,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                 .OnDelete(DeleteBehavior.Restrict);
 
             e.HasIndex(a => a.PageId);
+        });
+
+        b.Entity<AuditLog>(e =>
+        {
+            e.Property(a => a.Action).HasMaxLength(100);
+            e.Property(a => a.TargetType).HasMaxLength(50);
+            e.Property(a => a.MetadataJson).HasColumnType("jsonb");
+
+            e.HasOne(a => a.Actor)
+                .WithMany()
+                .HasForeignKey(a => a.ActorId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            e.HasIndex(a => a.CreatedAt);
+            e.HasIndex(a => new { a.TargetType, a.TargetId });
         });
 
         b.Entity<Label>(e =>
