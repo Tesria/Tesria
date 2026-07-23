@@ -5,7 +5,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
-### Phase 3 — Search + backup system (in progress, 2026-07-22)
+### Phase 3 — Search + backup system (2026-07-23)
 
 Added:
 - Data Protection keys are now persisted in the database (via `AppDbContext`)
