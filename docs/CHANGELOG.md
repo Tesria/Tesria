@@ -17,6 +17,12 @@ Added:
   mark types and HTML-escapes all content. PDF is produced by printing the HTML
   export from the browser, avoiding a headless-browser dependency in the image.
   Download links added to the page view.
+- Audit log: append-only record of who did what and when, written in the same
+  transaction as the change it describes. Covers the page lifecycle
+  (created / updated / trashed / restored / purged) and space create/archive,
+  with `GET /api/audit` (filter by target, newest first) and an audit view.
+
+Still to come in Phase 4: space permissions and page restrictions.
 
 ### Phase 3 — Search + backup system (2026-07-23)
 
