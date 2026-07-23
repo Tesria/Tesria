@@ -4,6 +4,7 @@ import { api, ApiError, type PageDetail } from '../api/client'
 import { Editor } from '../editor/Editor'
 import { useSpaceContext } from './SpacePage'
 import { CommentsPanel } from './panels/CommentsPanel'
+import { PageLabels } from './panels/PageLabels'
 import { AttachmentsPanel } from './panels/AttachmentsPanel'
 import { HistoryPanel } from './panels/HistoryPanel'
 
@@ -64,6 +65,7 @@ export function PageView() {
       <p className="muted small">
         Version {page.currentVersionNumber} · updated {new Date(page.updatedAt).toLocaleString()}
       </p>
+      <PageLabels pageId={page.id} />
 
       <div className="page-body">
         <Editor value={page.contentJson} editable={false} />
