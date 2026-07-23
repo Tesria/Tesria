@@ -5,6 +5,14 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Phase 4 — Fast-follow (in progress, 2026-07-23)
+
+Added:
+- Labels/tags: instance-wide labels (names normalised to lower case) applied to
+  pages, with add/remove per page, browse-by-label, and usage counts. Trashed
+  pages drop out of label listings. SPA shows label chips on a page and a
+  browse-by-label view.
+
 ### Phase 3 — Search + backup system (2026-07-23)
 
 Added:

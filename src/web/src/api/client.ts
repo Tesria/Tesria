@@ -60,6 +60,10 @@ export type Attachment = {
   createdAt: string
 }
 
+export type Label = { id: string; name: string }
+export type LabelUsage = { id: string; name: string; pageCount: number }
+export type LabelledPage = { pageId: string; spaceId: string; spaceKey: string; title: string }
+
 export type SearchResult = {
   pageId: string
   spaceId: string
@@ -208,6 +212,16 @@ export const api = {
     },
     remove: (id: string) => request<void>('DELETE', `/api/attachments/${id}`),
     downloadUrl: (id: string) => `/api/attachments/${id}/download`,
+  },
+  labels: {
+    all: () => request<LabelUsage[]>('GET', '/api/labels'),
+    forPage: (pageId: string) => request<Label[]>('GET', `/api/pages/${pageId}/labels`),
+    add: (pageId: string, name: string) =>
+      request<Label>('POST', `/api/pages/${pageId}/labels`, { name }),
+    remove: (pageId: string, name: string) =>
+      request<void>('DELETE', `/api/pages/${pageId}/labels/${encodeURIComponent(name)}`),
+    pages: (name: string) =>
+      request<LabelledPage[]>('GET', `/api/labels/${encodeURIComponent(name)}/pages`),
   },
   search: (q: string, spaceId?: string) =>
     request<SearchResult[]>(

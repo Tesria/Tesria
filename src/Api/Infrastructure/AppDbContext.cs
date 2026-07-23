@@ -19,6 +19,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<PageVersion> PageVersions => Set<PageVersion>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
     public DbSet<Comment> Comments => Set<Comment>();
+    public DbSet<Label> Labels => Set<Label>();
+    public DbSet<PageLabel> PageLabels => Set<PageLabel>();
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
 
     protected override void OnModelCreating(ModelBuilder b)
@@ -132,6 +134,30 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                 .OnDelete(DeleteBehavior.Restrict);
 
             e.HasIndex(a => a.PageId);
+        });
+
+        b.Entity<Label>(e =>
+        {
+            e.Property(l => l.Name).HasMaxLength(50);
+            // Names are stored lower-cased by the app; unique across the instance.
+            e.HasIndex(l => l.Name).IsUnique();
+        });
+
+        b.Entity<PageLabel>(e =>
+        {
+            e.HasKey(pl => new { pl.PageId, pl.LabelId });
+
+            e.HasOne(pl => pl.Page)
+                .WithMany()
+                .HasForeignKey(pl => pl.PageId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(pl => pl.Label)
+                .WithMany(l => l.PageLabels)
+                .HasForeignKey(pl => pl.LabelId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasIndex(pl => pl.LabelId);
         });
 
         b.Entity<Comment>(e =>
