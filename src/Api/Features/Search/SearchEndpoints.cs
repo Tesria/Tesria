@@ -30,10 +30,11 @@ public static class SearchEndpoints
         {
             // Real full-text search: match the GIN-indexed tsvector, rank by
             // relevance. WebSearchToTsQuery accepts user-friendly query syntax.
-            var tsQuery = EF.Functions.WebSearchToTsQuery("english", term);
+            // The EF.Functions call must be inlined in each lambda so it is
+            // translated to SQL rather than evaluated on the client.
             query = query
-                .Where(p => p.SearchVector!.Matches(tsQuery))
-                .OrderByDescending(p => p.SearchVector!.Rank(tsQuery));
+                .Where(p => p.SearchVector!.Matches(EF.Functions.WebSearchToTsQuery("english", term)))
+                .OrderByDescending(p => p.SearchVector!.Rank(EF.Functions.WebSearchToTsQuery("english", term)));
         }
         else
         {
