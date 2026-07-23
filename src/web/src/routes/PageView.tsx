@@ -57,6 +57,14 @@ export function PageView() {
           <Link className="btn btn--ghost" to={`/spaces/${key}/new?parent=${page.id}`}>
             + Subpage
           </Link>
+          {/* Plain links so the browser downloads the file (auth cookie is sent).
+              HTML export is print-ready — use the browser's Print → Save as PDF. */}
+          <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=markdown`}>
+            ↓ .md
+          </a>
+          <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=html`}>
+            ↓ .html
+          </a>
           <button type="button" className="btn btn--danger" onClick={onDelete}>
             Delete
           </button>
