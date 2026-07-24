@@ -5,7 +5,26 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
-### Phase 4 — Fast-follow (in progress, 2026-07-23)
+### Phase 5 — Advanced (in progress, 2026-07-24)
+
+Added:
+- **Real-time collaborative editing.** A Node + Hocuspocus/Yjs sidecar
+  (`collab/`) lets several people edit a page simultaneously, with live remote
+  carets showing who is where. The editor engine is JS-only, so this is isolated
+  in a small sidecar rather than reshaping the .NET stack (PLAN §1).
+  - **Authorisation:** the sidecar cannot evaluate our permission model, so the
+    API is the gatekeeper — it issues a short-lived HMAC-signed token only to
+    users who may *edit* that page, and binds the token to that page id. The
+    sidecar verifies signature, expiry, and document match.
+  - **Persistence:** Yjs document state is stored in the main PostgreSQL
+    database, so in-flight edits survive a restart and are covered by the
+    existing backups. Saving still creates a normal `PageVersion`, preserving
+    history and rollback.
+  - **Optional:** with no `COLLAB_SHARED_SECRET` set, the API reports
+    collaboration as disabled and the editor falls back to single-user mode.
+  - Caddy proxies `/collab` websockets to the sidecar; Vite mirrors this in dev.
+
+### Phase 4 — Fast-follow (2026-07-23)
 
 Added:
 - Labels/tags: instance-wide labels (names normalised to lower case) applied to

@@ -56,6 +56,27 @@ a SPA. OIDC/SSO is architected for but deferred to Phase 5.
   version previews. Routing is React Router 7; a typed `api/client.ts` wraps all
   REST calls and an `AuthContext` holds the session.
 
+## Real-time collaboration (`collab/`)
+
+A small **Node + Hocuspocus/Yjs** sidecar provides simultaneous editing. The
+editor engine is JS-only, so this is the one piece deliberately kept outside the
+.NET app (PLAN §1) rather than reshaping the main stack.
+
+- **Authorisation.** The sidecar cannot evaluate the permission model, so the API
+  is the gatekeeper: `GET /api/pages/{id}/collab-token` checks the caller may
+  *edit* the page and returns a short-lived HMAC-signed token bound to that page
+  id. The sidecar only verifies signature, expiry, and that the document being
+  opened matches — so a forged token, or a valid token replayed against another
+  page, is rejected.
+- **Persistence.** Yjs state is written to the `CollabDocuments` table in the
+  main database, so live edits survive a sidecar restart and fall under the
+  existing backups. Saving a page still creates a regular `PageVersion`, so
+  version history and rollback are unchanged.
+- **Optional.** Without `COLLAB_SHARED_SECRET`, the API reports collaboration as
+  disabled and the SPA silently uses the single-user editor.
+- Caddy proxies `/collab` websocket traffic to the sidecar; the Vite dev server
+  mirrors that route so development matches production.
+
 ## Data & persistence
 
 - **PostgreSQL 18** is the system of record, via EF Core migrations applied

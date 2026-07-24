@@ -6,12 +6,14 @@ block-based editor, and one-command deployment.
 
 See [`PLAN.md`](./PLAN.md) for the full design and roadmap.
 
-**Status:** Phase 3 in progress. A working wiki — local accounts, spaces, pages
+**Status:** Phase 5 in progress. A working wiki — local accounts, spaces, pages
 in a hierarchical tree, a TipTap block editor with version history and rollback,
 attachments, threaded footer/inline comments, full-text search, and
 soft-delete/trash — on the full Docker stack (app + PostgreSQL 18 + Caddy
 auto-HTTPS). Data safety is covered by pgBackRest point-in-time recovery plus
-logical and file backups. Remaining Phase 4+ items: labels, permissions, export.
+logical and file backups. Phase 4 added labels, page export, an audit log, and
+groups with space permissions / page restrictions. Phase 5 is in progress:
+real-time collaborative editing is live.
 
 ## Tech stack
 
@@ -19,6 +21,7 @@ logical and file backups. Remaining Phase 4+ items: labels, permissions, export.
 - **Database:** PostgreSQL 18 (Npgsql); page content stored as ProseMirror JSON
 - **Frontend:** React 19 + TypeScript + Vite; TipTap v3 block editor
 - **Auth:** local accounts, cookie sessions, Argon2id password hashing
+- **Collaboration:** Node + Hocuspocus/Yjs sidecar for simultaneous editing
 - **Deploy:** Docker Compose — Caddy reverse proxy with automatic HTTPS
 - **Backups:** pgBackRest continuous WAL archiving + point-in-time recovery,
   scheduled `pg_dump` + `uploads` archives, and in-app version history / trash
@@ -88,6 +91,7 @@ Full details and disaster-recovery runbook: [`docs/backup-recovery.md`](./docs/b
 ```
 src/Api/        ASP.NET Core API (Domain / Infrastructure / Features slices)
 src/web/        React + Vite + TypeScript SPA (TipTap editor)
+collab/         Real-time collaboration sidecar (Node + Hocuspocus/Yjs)
 tests/          API integration tests (in-process, SQLite in-memory)
 deploy/         Dockerfile, Caddyfile, backup scripts, pgBackRest (Phase 3)
 docs/           architecture, backup-recovery runbook, CHANGELOG

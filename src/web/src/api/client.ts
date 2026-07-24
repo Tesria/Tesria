@@ -50,6 +50,8 @@ export type VersionMeta = {
 
 export type VersionContent = VersionMeta & { contentJson: string }
 
+export type CollabToken = { token: string; documentName: string; enabled: boolean }
+
 export type Attachment = {
   id: string
   pageId: string
@@ -230,6 +232,8 @@ export const api = {
     trash: (spaceId: string) => request<TrashedPage[]>('GET', `/api/pages/trash?spaceId=${spaceId}`),
     untrash: (id: string) => request<void>('POST', `/api/pages/${id}/restore`),
     purge: (id: string) => request<void>('DELETE', `/api/pages/${id}/purge`),
+    /** Short-lived token authorising this user to join the page's live session. */
+    collabToken: (id: string) => request<CollabToken>('GET', `/api/pages/${id}/collab-token`),
     versions: (id: string) => request<VersionMeta[]>('GET', `/api/pages/${id}/versions`),
     version: (id: string, n: number) =>
       request<VersionContent>('GET', `/api/pages/${id}/versions/${n}`),

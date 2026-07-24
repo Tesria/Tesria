@@ -14,6 +14,13 @@ export default defineConfig({
         target: 'http://localhost:5291',
         changeOrigin: true,
       },
+      // Real-time collaboration websockets go to the Node sidecar. In
+      // production Caddy does this; here Vite mirrors it so dev matches prod.
+      '/collab': {
+        target: 'http://localhost:8090',
+        ws: true,
+        changeOrigin: true,
+      },
     },
   },
   build: {
