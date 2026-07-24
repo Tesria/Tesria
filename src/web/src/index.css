@@ -169,7 +169,8 @@ label input, label textarea { margin-top: 0.25rem; }
 
 /* ---- page view ----------------------------------------------------------- */
 .page-head { margin-bottom: 0.25rem; }
-.page-actions { display: flex; gap: 0.5rem; }
+.page-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.template-form { flex: 1 1 100%; margin-top: 0.5rem; }
 .page-body { margin: 1rem 0 2rem; }
 
 .tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--border); }

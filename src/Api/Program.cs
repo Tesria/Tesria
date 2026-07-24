@@ -11,6 +11,7 @@ using ConfluenceClone.Api.Features.Pages;
 using ConfluenceClone.Api.Features.Permissions;
 using ConfluenceClone.Api.Features.Search;
 using ConfluenceClone.Api.Features.Spaces;
+using ConfluenceClone.Api.Features.Templates;
 using ConfluenceClone.Api.Infrastructure;
 using ConfluenceClone.Api.Infrastructure.Audit;
 using ConfluenceClone.Api.Infrastructure.Auth;
@@ -140,6 +141,7 @@ api.MapAuditEndpoints();
 api.MapGroupEndpoints();
 api.MapPermissionEndpoints();
 api.MapCollabEndpoints();
+api.MapTemplateEndpoints();
 
 // SPA fallback: any non-API, non-file route returns index.html so client-side
 // routing works. Guarded so it never swallows /api/* requests.

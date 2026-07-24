@@ -8,6 +8,7 @@ import { PageLabels } from './panels/PageLabels'
 import { RestrictionsPanel } from './panels/RestrictionsPanel'
 import { AttachmentsPanel } from './panels/AttachmentsPanel'
 import { HistoryPanel } from './panels/HistoryPanel'
+import { SaveAsTemplateButton } from '../components/SaveAsTemplateButton'
 
 type Tab = 'comments' | 'attachments' | 'history' | 'restrictions'
 
@@ -66,6 +67,7 @@ export function PageView() {
           <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=html`}>
             ↓ .html
           </a>
+          <SaveAsTemplateButton spaceId={space.id} contentJson={page.contentJson} defaultName={page.title} />
           <button type="button" className="btn btn--danger" onClick={onDelete}>
             Delete
           </button>
