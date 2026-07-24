@@ -100,6 +100,20 @@ export type PageRestriction = {
   operation: number
 }
 
+export type WatchStatus = { watching: boolean }
+
+export type AppNotification = {
+  id: string
+  action: string
+  targetType: 'page' | 'space'
+  targetId: string
+  actorId: string | null
+  actorName: string | null
+  metadataJson: string | null
+  createdAt: string
+  readAt: string | null
+}
+
 export type AuditEntry = {
   id: string
   action: string
@@ -268,6 +282,23 @@ export const api = {
   },
   users: {
     list: () => request<Directory[]>('GET', '/api/users'),
+  },
+  pageWatch: {
+    status: (pageId: string) => request<WatchStatus>('GET', `/api/pages/${pageId}/watch`),
+    watch: (pageId: string) => request<void>('POST', `/api/pages/${pageId}/watch`),
+    unwatch: (pageId: string) => request<void>('DELETE', `/api/pages/${pageId}/watch`),
+  },
+  spaceWatch: {
+    status: (key: string) => request<WatchStatus>('GET', `/api/spaces/${encodeURIComponent(key)}/watch`),
+    watch: (key: string) => request<void>('POST', `/api/spaces/${encodeURIComponent(key)}/watch`),
+    unwatch: (key: string) => request<void>('DELETE', `/api/spaces/${encodeURIComponent(key)}/watch`),
+  },
+  notifications: {
+    list: (unreadOnly?: boolean) =>
+      request<AppNotification[]>('GET', `/api/notifications${unreadOnly ? '?unreadOnly=true' : ''}`),
+    unreadCount: () => request<{ count: number }>('GET', '/api/notifications/unread-count'),
+    markRead: (id: string) => request<void>('POST', `/api/notifications/${id}/read`),
+    markAllRead: () => request<void>('POST', '/api/notifications/read-all'),
   },
   templates: {
     list: (spaceId?: string) =>

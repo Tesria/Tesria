@@ -9,6 +9,7 @@ import { RestrictionsPanel } from './panels/RestrictionsPanel'
 import { AttachmentsPanel } from './panels/AttachmentsPanel'
 import { HistoryPanel } from './panels/HistoryPanel'
 import { SaveAsTemplateButton } from '../components/SaveAsTemplateButton'
+import { WatchToggle } from '../components/WatchToggle'
 
 type Tab = 'comments' | 'attachments' | 'history' | 'restrictions'
 
@@ -67,6 +68,12 @@ export function PageView() {
           <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=html`}>
             ↓ .html
           </a>
+          <WatchToggle
+            watchKey={page.id}
+            fetchStatus={() => api.pageWatch.status(page.id)}
+            watch={() => api.pageWatch.watch(page.id)}
+            unwatch={() => api.pageWatch.unwatch(page.id)}
+          />
           <SaveAsTemplateButton spaceId={space.id} contentJson={page.contentJson} defaultName={page.title} />
           <button type="button" className="btn btn--danger" onClick={onDelete}>
             Delete

@@ -3,6 +3,7 @@ using ConfluenceClone.Api.Domain;
 using ConfluenceClone.Api.Infrastructure;
 using ConfluenceClone.Api.Infrastructure.Audit;
 using ConfluenceClone.Api.Infrastructure.Auth;
+using ConfluenceClone.Api.Infrastructure.Notifications;
 using ConfluenceClone.Api.Infrastructure.Permissions;
 using Microsoft.EntityFrameworkCore;
 
@@ -50,7 +51,7 @@ public static class PageEndpoints
 
     private static async Task<IResult> Create(
         CreatePageRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit,
-        IPermissionService perms)
+        IPermissionService perms, INotificationService notifications)
     {
         // Creating a page needs edit rights on the space (and on the parent, if any).
         if (!await perms.CanViewSpaceAsync(req.SpaceId)) return Results.NotFound();
@@ -102,6 +103,10 @@ public static class PageEndpoints
         await db.SaveChangesAsync();
         page.CurrentVersionId = version.Id;
         audit.Record("page.created", "page", page.Id, new { page.Title, page.SpaceId });
+        // Space watchers hear about new pages; the page itself has no watchers
+        // yet since nobody could watch it before it existed. The notification
+        // points at the new page so its recipient can go straight to it.
+        await notifications.NotifyOfNewPageAsync(page.Id, page.SpaceId, userId, new { page.Title });
         await db.SaveChangesAsync();
 
         return Results.Created($"/api/pages/{page.Id}", ToDetail(page, version));
@@ -120,7 +125,7 @@ public static class PageEndpoints
 
     private static async Task<IResult> Update(
         Guid id, UpdatePageRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit,
-        IPermissionService perms)
+        IPermissionService perms, INotificationService notifications)
     {
         if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
         if (!await perms.CanEditPageAsync(id)) return Results.Forbid();
@@ -148,7 +153,10 @@ public static class PageEndpoints
         page.CurrentVersionId = version.Id;
         page.SearchText = BuildSearchText(page.Title, content);
         page.UpdatedAt = now;
+        var userId = current.RequireId();
         audit.Record("page.updated", "page", page.Id, new { page.Title, Version = nextNumber });
+        await notifications.NotifyPageWatchersAsync(
+            page.Id, page.SpaceId, "page.updated", userId, new { page.Title });
 
         await db.SaveChangesAsync();
         return Results.Ok(ToDetail(page, version));
