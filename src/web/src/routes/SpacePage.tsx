@@ -65,6 +65,12 @@ export function SpacePage() {
           ))}
         </nav>
         <NavLink
+          to={`/spaces/${space.key}/permissions`}
+          className={({ isActive }) => (isActive ? 'sidebar__trash is-active' : 'sidebar__trash')}
+        >
+          🔒 Permissions
+        </NavLink>
+        <NavLink
           to={`/spaces/${space.key}/trash`}
           className={({ isActive }) => (isActive ? 'sidebar__trash is-active' : 'sidebar__trash')}
         >

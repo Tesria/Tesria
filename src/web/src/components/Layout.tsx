@@ -1,6 +1,9 @@
 import { type FormEvent, useState } from 'react'
-import { Link, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+
+const navClass = ({ isActive }: { isActive: boolean }) =>
+  isActive ? 'topbar__link is-active' : 'topbar__link'
 
 /** Authenticated app chrome: top bar + routed content. */
 export function Layout() {
@@ -24,6 +27,11 @@ export function Layout() {
         <Link to="/spaces" className="brand">
           ConfluenceClone
         </Link>
+        <nav className="topbar__nav">
+          <NavLink to="/spaces" className={navClass}>Spaces</NavLink>
+          <NavLink to="/groups" className={navClass}>Groups</NavLink>
+          <NavLink to="/audit" className={navClass}>Audit</NavLink>
+        </nav>
         <form className="topbar__search" onSubmit={onSearch}>
           <input
             type="search"

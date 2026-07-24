@@ -5,10 +5,11 @@ import { Editor } from '../editor/Editor'
 import { useSpaceContext } from './SpacePage'
 import { CommentsPanel } from './panels/CommentsPanel'
 import { PageLabels } from './panels/PageLabels'
+import { RestrictionsPanel } from './panels/RestrictionsPanel'
 import { AttachmentsPanel } from './panels/AttachmentsPanel'
 import { HistoryPanel } from './panels/HistoryPanel'
 
-type Tab = 'comments' | 'attachments' | 'history'
+type Tab = 'comments' | 'attachments' | 'history' | 'restrictions'
 
 export function PageView() {
   const { key = '', pageId = '' } = useParams()
@@ -83,10 +84,12 @@ export function PageView() {
         <TabButton current={tab} value="comments" onClick={setTab}>Comments</TabButton>
         <TabButton current={tab} value="attachments" onClick={setTab}>Attachments</TabButton>
         <TabButton current={tab} value="history" onClick={setTab}>History</TabButton>
+        <TabButton current={tab} value="restrictions" onClick={setTab}>Restrictions</TabButton>
       </div>
       <div className="tab-panel">
         {tab === 'comments' && <CommentsPanel pageId={page.id} />}
         {tab === 'attachments' && <AttachmentsPanel pageId={page.id} />}
+        {tab === 'restrictions' && <RestrictionsPanel pageId={page.id} />}
         {tab === 'history' && (
           <HistoryPanel
             pageId={page.id}
