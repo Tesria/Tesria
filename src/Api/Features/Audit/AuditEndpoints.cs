@@ -1,5 +1,6 @@
 using ConfluenceClone.Api.Domain;
 using ConfluenceClone.Api.Infrastructure;
+using ConfluenceClone.Api.Infrastructure.Permissions;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConfluenceClone.Api.Features.Audit;
@@ -21,7 +22,7 @@ public static class AuditEndpoints
 
     /// <summary>Most recent audit entries, optionally filtered to one target.</summary>
     private static async Task<IResult> List(
-        AppDbContext db, string? targetType, Guid? targetId, int? take)
+        AppDbContext db, IPermissionService perms, string? targetType, Guid? targetId, int? take)
     {
         var limit = Math.Clamp(take ?? DefaultTake, 1, MaxTake);
 
@@ -43,6 +44,22 @@ public static class AuditEndpoints
             var all = await query.ToListAsync();
             rows = all.OrderByDescending(a => a.CreatedAt).Take(limit).ToList();
         }
+
+        // Entry metadata embeds page titles and space keys, so drop anything
+        // whose target the caller cannot see. A page target that no longer
+        // exists (purged) can't be authorised, so it is hidden too.
+        var visible = new List<AuditLog>();
+        foreach (var a in rows)
+        {
+            var allowed = a.TargetType switch
+            {
+                "space" => a.TargetId is { } sid && await perms.CanViewSpaceAsync(sid),
+                "page" => a.TargetId is { } pid && await perms.CanViewPageAsync(pid),
+                _ => true, // groups and other non-content targets aren't sensitive
+            };
+            if (allowed) visible.Add(a);
+        }
+        rows = visible;
 
         // Resolve actor names in one round trip.
         var actorIds = rows.Where(r => r.ActorId is not null).Select(r => r.ActorId!.Value).Distinct().ToList();
