@@ -216,5 +216,35 @@ public class PermissionTests
         Assert.Equal(HttpStatusCode.Conflict, res.StatusCode);
     }
 
+    [Fact]
+    public async Task Audit_entries_do_not_leak_titles_from_inaccessible_spaces()
+    {
+        using var factory = new TestAppFactory();
+        var alice = factory.CreateClient();
+        var aliceId = await alice.RegisterAndSignInAsync();
+        var space = await NewSpace(alice, "AUDSEC");
+        await NewPage(alice, space.Id, "TopSecretTitle");
+
+        var bob = factory.CreateClient();
+        await bob.RegisterAndSignInAsync();
+        // While default-open, Bob legitimately sees the entry.
+        var before = await bob.GetFromJsonAsync<List<AuditRow>>("/api/audit");
+        Assert.Contains(before!, e => e.MetadataJson != null && e.MetadataJson.Contains("TopSecretTitle"));
+
+        // Once the space is private, its audit trail must disappear for Bob.
+        await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
+            new { PrincipalType = User, PrincipalId = aliceId, Operation = Admin });
+
+        var after = await bob.GetFromJsonAsync<List<AuditRow>>("/api/audit");
+        Assert.DoesNotContain(after!, e => e.MetadataJson != null && e.MetadataJson.Contains("TopSecretTitle"));
+        // Alice still sees her own space's history.
+        var aliceView = await alice.GetFromJsonAsync<List<AuditRow>>("/api/audit");
+        Assert.Contains(aliceView!, e => e.MetadataJson != null && e.MetadataJson.Contains("TopSecretTitle"));
+    }
+
+    private record AuditRow(
+        Guid Id, string Action, string TargetType, Guid? TargetId,
+        Guid? ActorId, string? ActorName, string? MetadataJson, DateTimeOffset CreatedAt);
+
     private record PermissionRow(Guid Id, int PrincipalType, Guid PrincipalId, string? PrincipalName, int Operation);
 }
