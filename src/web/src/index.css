@@ -150,6 +150,16 @@ label input, label textarea { margin-top: 0.25rem; }
 .toolbar__btn:hover { background: #e4e6eb; }
 .toolbar__btn.is-active { background: #e0ecff; color: var(--primary-dark); border-color: #bcd4ff; }
 .toolbar__sep { width: 1px; background: var(--border); margin: 0 0.25rem; }
+/* live collaboration */
+.collab-status { display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); background: #fbfbfc; }
+.collab-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.collab-dot--connected { background: #22a06b; }
+.collab-dot--connecting { background: #d9a000; }
+.collab-dot--disconnected { background: var(--danger); }
+/* remote collaborators' carets and name labels */
+.collaboration-carets__caret { border-left: 1px solid; border-right: 1px solid; margin-left: -1px; margin-right: -1px; pointer-events: none; position: relative; word-break: normal; }
+.collaboration-carets__label { border-radius: 3px 3px 3px 0; color: #fff; font-size: 0.7rem; font-weight: 600; left: -1px; line-height: 1; padding: 0.1rem 0.3rem; position: absolute; top: -1.4em; user-select: none; white-space: nowrap; }
+
 .editor-form { display: flex; flex-direction: column; }
 .editor-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
 .change-comment { margin-top: 0.75rem; }

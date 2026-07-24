@@ -2,6 +2,7 @@ using ConfluenceClone.Api.Features.Attachments;
 using ConfluenceClone.Api.Features.Auth;
 using ConfluenceClone.Api.Features.Comments;
 using ConfluenceClone.Api.Features.Audit;
+using ConfluenceClone.Api.Features.Collab;
 using ConfluenceClone.Api.Features.Export;
 using ConfluenceClone.Api.Features.Groups;
 using ConfluenceClone.Api.Features.Health;
@@ -13,6 +14,7 @@ using ConfluenceClone.Api.Features.Spaces;
 using ConfluenceClone.Api.Infrastructure;
 using ConfluenceClone.Api.Infrastructure.Audit;
 using ConfluenceClone.Api.Infrastructure.Auth;
+using ConfluenceClone.Api.Infrastructure.Collab;
 using ConfluenceClone.Api.Infrastructure.Permissions;
 using ConfluenceClone.Api.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -37,6 +39,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CurrentUser>();
 builder.Services.AddScoped<IAuditLogger, AuditLogger>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddSingleton<ICollabTokenService, CollabTokenService>();
 
 // Attachment file storage (local uploads volume; PLAN §3).
 builder.Services.AddSingleton<IAttachmentStorage, LocalAttachmentStorage>();
@@ -136,6 +139,7 @@ api.MapExportEndpoints();
 api.MapAuditEndpoints();
 api.MapGroupEndpoints();
 api.MapPermissionEndpoints();
+api.MapCollabEndpoints();
 
 // SPA fallback: any non-API, non-file route returns index.html so client-side
 // routing works. Guarded so it never swallows /api/* requests.

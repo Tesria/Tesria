@@ -10,12 +10,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hocuspocus/provider": "^4.4.0",
+    "@tiptap/extension-collaboration": "^3.28.0",
+    "@tiptap/extension-collaboration-caret": "^3.28.0",
     "@tiptap/pm": "^3.28.0",
     "@tiptap/react": "^3.28.0",
     "@tiptap/starter-kit": "^3.28.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-router-dom": "^7.18.1"
+    "react-router-dom": "^7.18.1",
+    "yjs": "^13.6.31"
   },
   "devDependencies": {
     "@types/node": "^24.13.2",

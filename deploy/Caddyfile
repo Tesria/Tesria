@@ -14,9 +14,17 @@
 {$DOMAIN} {
 	encode gzip zstd
 
-	# Everything is proxied to the app container, which serves both the API
-	# (/api/*) and the React SPA (everything else).
-	reverse_proxy app:8080
+	# Real-time collaboration websockets go to the Node sidecar. Caddy proxies
+	# websocket upgrades transparently, so no extra configuration is needed.
+	handle /collab* {
+		reverse_proxy collab:8090
+	}
+
+	# Everything else is proxied to the app container, which serves both the API
+	# (/api/*) and the React SPA.
+	handle {
+		reverse_proxy app:8080
+	}
 
 	# Allow large-ish attachment uploads (tune as needed).
 	request_body {

@@ -24,6 +24,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<Group> Groups => Set<Group>();
     public DbSet<UserGroup> UserGroups => Set<UserGroup>();
+    public DbSet<CollabDocument> CollabDocuments => Set<CollabDocument>();
     public DbSet<SpacePermission> SpacePermissions => Set<SpacePermission>();
     public DbSet<PageRestriction> PageRestrictions => Set<PageRestriction>();
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
@@ -139,6 +140,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                 .OnDelete(DeleteBehavior.Restrict);
 
             e.HasIndex(a => a.PageId);
+        });
+
+        b.Entity<CollabDocument>(e =>
+        {
+            // Written and read by the collaboration sidecar, keyed by page id.
+            e.HasKey(d => d.DocumentName);
+            e.Property(d => d.DocumentName).HasMaxLength(200);
         });
 
         b.Entity<SpacePermission>(e =>
