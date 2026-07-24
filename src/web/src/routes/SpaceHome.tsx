@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom'
+import { api } from '../api/client'
+import { WatchToggle } from '../components/WatchToggle'
 import { useSpaceContext } from './SpacePage'
 
 /** Shown when a space is open but no page is selected. */
@@ -6,7 +8,16 @@ export function SpaceHome() {
   const { space, tree } = useSpaceContext()
   return (
     <div className="page-wrap">
-      <h1>{space.name}</h1>
+      <div className="row-between">
+        <h1>{space.name}</h1>
+        <WatchToggle
+          watchKey={space.id}
+          label="space"
+          fetchStatus={() => api.spaceWatch.status(space.key)}
+          watch={() => api.spaceWatch.watch(space.key)}
+          unwatch={() => api.spaceWatch.unwatch(space.key)}
+        />
+      </div>
       {space.description && <p className="muted">{space.description}</p>}
       {tree.length === 0 ? (
         <p>

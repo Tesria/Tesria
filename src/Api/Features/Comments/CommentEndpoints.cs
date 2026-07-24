@@ -2,6 +2,7 @@ using System.Text.Json;
 using ConfluenceClone.Api.Domain;
 using ConfluenceClone.Api.Infrastructure;
 using ConfluenceClone.Api.Infrastructure.Auth;
+using ConfluenceClone.Api.Infrastructure.Notifications;
 using ConfluenceClone.Api.Infrastructure.Permissions;
 using Microsoft.EntityFrameworkCore;
 
@@ -46,7 +47,7 @@ public static class CommentEndpoints
 
     private static async Task<IResult> Create(
         Guid pageId, CreateCommentRequest req, AppDbContext db, CurrentUser current,
-        IPermissionService perms)
+        IPermissionService perms, INotificationService notifications)
     {
         // Commenting requires being able to see the page.
         if (!await perms.CanViewPageAsync(pageId)) return Results.NotFound();
@@ -57,7 +58,8 @@ public static class CommentEndpoints
         if (req.AnchorJson is not null && !IsValidJson(req.AnchorJson))
             return Results.ValidationProblem(Error("anchorJson", "Anchor must be valid JSON."));
 
-        if (!await db.Pages.AnyAsync(p => p.Id == pageId)) return Results.NotFound();
+        var spaceId = await db.Pages.Where(p => p.Id == pageId).Select(p => (Guid?)p.SpaceId).FirstOrDefaultAsync();
+        if (spaceId is null) return Results.NotFound();
 
         if (req.ParentCommentId is { } parentId)
         {
@@ -67,6 +69,7 @@ public static class CommentEndpoints
         }
 
         var now = DateTimeOffset.UtcNow;
+        var authorId = current.RequireId();
         var comment = new Comment
         {
             Id = Guid.NewGuid(),
@@ -74,11 +77,13 @@ public static class CommentEndpoints
             ParentCommentId = req.ParentCommentId,
             Body = body,
             AnchorJson = req.AnchorJson,
-            AuthorId = current.RequireId(),
+            AuthorId = authorId,
             CreatedAt = now,
             UpdatedAt = now,
         };
         db.Comments.Add(comment);
+        await notifications.NotifyPageWatchersAsync(
+            pageId, spaceId.Value, "comment.created", authorId, new { Body = Truncate(body) });
         await db.SaveChangesAsync();
         return Results.Created($"/api/comments/{comment.Id}", ToResponse(comment));
     }
@@ -130,6 +135,9 @@ public static class CommentEndpoints
         try { using var _ = JsonDocument.Parse(input); return true; }
         catch (JsonException) { return false; }
     }
+
+    private static string Truncate(string value) =>
+        value.Length <= 140 ? value : value[..140].TrimEnd() + "…";
 
     private static Dictionary<string, string[]> Error(string field, string message) =>
         new() { [field] = [message] };

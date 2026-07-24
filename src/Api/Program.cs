@@ -11,11 +11,14 @@ using ConfluenceClone.Api.Features.Pages;
 using ConfluenceClone.Api.Features.Permissions;
 using ConfluenceClone.Api.Features.Search;
 using ConfluenceClone.Api.Features.Spaces;
+using ConfluenceClone.Api.Features.Notifications;
 using ConfluenceClone.Api.Features.Templates;
+using ConfluenceClone.Api.Features.Watches;
 using ConfluenceClone.Api.Infrastructure;
 using ConfluenceClone.Api.Infrastructure.Audit;
 using ConfluenceClone.Api.Infrastructure.Auth;
 using ConfluenceClone.Api.Infrastructure.Collab;
+using ConfluenceClone.Api.Infrastructure.Notifications;
 using ConfluenceClone.Api.Infrastructure.Permissions;
 using ConfluenceClone.Api.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -41,6 +44,7 @@ builder.Services.AddScoped<CurrentUser>();
 builder.Services.AddScoped<IAuditLogger, AuditLogger>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddSingleton<ICollabTokenService, CollabTokenService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // Attachment file storage (local uploads volume; PLAN §3).
 builder.Services.AddSingleton<IAttachmentStorage, LocalAttachmentStorage>();
@@ -142,6 +146,8 @@ api.MapGroupEndpoints();
 api.MapPermissionEndpoints();
 api.MapCollabEndpoints();
 api.MapTemplateEndpoints();
+api.MapWatchEndpoints();
+api.MapNotificationEndpoints();
 
 // SPA fallback: any non-API, non-file route returns index.html so client-side
 // routing works. Guarded so it never swallows /api/* requests.

@@ -26,6 +26,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<UserGroup> UserGroups => Set<UserGroup>();
     public DbSet<CollabDocument> CollabDocuments => Set<CollabDocument>();
     public DbSet<PageTemplate> PageTemplates => Set<PageTemplate>();
+    public DbSet<Watch> Watches => Set<Watch>();
+    public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<SpacePermission> SpacePermissions => Set<SpacePermission>();
     public DbSet<PageRestriction> PageRestrictions => Set<PageRestriction>();
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
@@ -141,6 +143,38 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                 .OnDelete(DeleteBehavior.Restrict);
 
             e.HasIndex(a => a.PageId);
+        });
+
+        b.Entity<Watch>(e =>
+        {
+            e.HasKey(w => new { w.UserId, w.TargetType, w.TargetId });
+            e.Property(w => w.TargetType).HasMaxLength(50);
+
+            e.HasOne(w => w.User)
+                .WithMany()
+                .HasForeignKey(w => w.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasIndex(w => new { w.TargetType, w.TargetId });
+        });
+
+        b.Entity<Notification>(e =>
+        {
+            e.Property(n => n.Action).HasMaxLength(100);
+            e.Property(n => n.TargetType).HasMaxLength(50);
+            e.Property(n => n.MetadataJson).HasColumnType("jsonb");
+
+            e.HasOne(n => n.User)
+                .WithMany()
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(n => n.Actor)
+                .WithMany()
+                .HasForeignKey(n => n.ActorId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            e.HasIndex(n => new { n.UserId, n.CreatedAt });
         });
 
         b.Entity<PageTemplate>(e =>

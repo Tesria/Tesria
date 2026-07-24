@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { NotificationBell } from './NotificationBell'
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
   isActive ? 'topbar__link is-active' : 'topbar__link'
@@ -42,6 +43,7 @@ export function Layout() {
           />
         </form>
         <div className="topbar__right">
+          <NotificationBell />
           {user && <span className="muted">{user.displayName}</span>}
           <button type="button" className="btn btn--ghost" onClick={onLogout}>
             Sign out

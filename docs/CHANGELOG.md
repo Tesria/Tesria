@@ -29,6 +29,15 @@ Added:
   instance-wide templates can be deleted only by their author, matching the
   existing comment-ownership pattern. The new-page screen offers a "start from
   a template" picker, and any page can be saved as a template from its actions.
+- **Notifications and watches.** Watch a page or a space to get notified about
+  page edits, new comments, and (for spaces) new pages created in it. Shaped
+  like the audit log (same Action/TargetType/MetadataJson convention) plus a
+  recipient and read state, and queued on the same unit of work as the change
+  that triggers it, so notifications commit atomically with it. Notifications
+  never go to the person who made the change, and — reusing the same fix
+  already applied to the audit log — are hidden if the recipient's access to
+  the target is later revoked. SPA: a watch toggle on pages and spaces, and a
+  bell in the top bar with unread count, a dropdown, and mark-as-read.
 
 ### Phase 4 — Fast-follow (2026-07-23)
 

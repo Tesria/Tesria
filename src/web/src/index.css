@@ -93,6 +93,18 @@ label input, label textarea { margin-top: 0.25rem; }
 .topbar__search input { height: 34px; border-radius: 999px; padding: 0 0.9rem; background: var(--bg-alt); }
 .topbar__right { display: flex; align-items: center; gap: 0.9rem; }
 
+/* notifications */
+.notif { position: relative; }
+.notif__bell { position: relative; background: none; border: none; cursor: pointer; font-size: 1.15rem; padding: 0.2rem 0.3rem; line-height: 1; }
+.notif__badge { position: absolute; top: -2px; right: -4px; background: var(--danger); color: #fff; font-size: 0.65rem; font-weight: 700; border-radius: 999px; padding: 0.05rem 0.35rem; min-width: 16px; text-align: center; }
+.notif__dropdown { position: absolute; right: 0; top: calc(100% + 8px); width: 340px; max-height: 420px; overflow-y: auto; background: #fff; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 20; }
+.notif__header { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 0.9rem; }
+.notif__list { list-style: none; margin: 0; padding: 0; }
+.notif__item { display: flex; flex-direction: column; gap: 0.15rem; width: 100%; text-align: left; background: none; border: none; border-bottom: 1px solid var(--border); padding: 0.6rem 0.75rem; cursor: pointer; font-size: 0.85rem; color: var(--text); }
+.notif__item:hover { background: var(--bg-alt); }
+.notif__item--unread { background: #eef4ff; }
+.notif__item--unread:hover { background: #e0ecff; }
+
 /* ---- labels --------------------------------------------------------------- */
 .labels { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 0.5rem 0 0; }
 .label-chip { display: inline-flex; align-items: center; gap: 0.25rem; background: var(--bg-alt); border: 1px solid var(--border); border-radius: 999px; padding: 0.1rem 0.5rem; font-size: 0.8rem; }
