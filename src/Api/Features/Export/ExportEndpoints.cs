@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using ConfluenceClone.Api.Infrastructure;
+using ConfluenceClone.Api.Infrastructure.Permissions;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConfluenceClone.Api.Features.Export;
@@ -19,12 +20,14 @@ public static class ExportEndpoints
     /// print-ready, so "Print → Save as PDF" in the browser produces a PDF
     /// without shipping a headless-browser dependency in the image.
     /// </summary>
-    private static async Task<IResult> ExportPage(Guid id, string? format, AppDbContext db)
+    private static async Task<IResult> ExportPage(
+        Guid id, string? format, AppDbContext db, IPermissionService perms)
     {
         var page = await db.Pages.AsNoTracking()
             .Include(p => p.CurrentVersion)
             .FirstOrDefaultAsync(p => p.Id == id);
         if (page?.CurrentVersion is null) return Results.NotFound();
+        if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
 
         var content = page.CurrentVersion.ContentJson;
         var safeName = SafeFileName(page.Title);

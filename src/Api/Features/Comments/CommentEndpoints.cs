@@ -2,6 +2,7 @@ using System.Text.Json;
 using ConfluenceClone.Api.Domain;
 using ConfluenceClone.Api.Infrastructure;
 using ConfluenceClone.Api.Infrastructure.Auth;
+using ConfluenceClone.Api.Infrastructure.Permissions;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConfluenceClone.Api.Features.Comments;
@@ -30,9 +31,11 @@ public static class CommentEndpoints
         return routes;
     }
 
-    private static async Task<IResult> ListForPage(Guid pageId, AppDbContext db)
+    private static async Task<IResult> ListForPage(
+        Guid pageId, AppDbContext db, IPermissionService perms)
     {
         if (!await db.Pages.AnyAsync(p => p.Id == pageId)) return Results.NotFound();
+        if (!await perms.CanViewPageAsync(pageId)) return Results.NotFound();
         var comments = await db.Comments.AsNoTracking()
             .Where(c => c.PageId == pageId)
             .ToListAsync();
@@ -42,8 +45,12 @@ public static class CommentEndpoints
     }
 
     private static async Task<IResult> Create(
-        Guid pageId, CreateCommentRequest req, AppDbContext db, CurrentUser current)
+        Guid pageId, CreateCommentRequest req, AppDbContext db, CurrentUser current,
+        IPermissionService perms)
     {
+        // Commenting requires being able to see the page.
+        if (!await perms.CanViewPageAsync(pageId)) return Results.NotFound();
+
         var body = (req.Body ?? "").Trim();
         if (body.Length == 0)
             return Results.ValidationProblem(Error("body", "Comment body is required."));

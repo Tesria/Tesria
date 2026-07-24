@@ -3,6 +3,7 @@ using System;
 using ConfluenceClone.Api.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using NpgsqlTypes;
@@ -12,9 +13,11 @@ using NpgsqlTypes;
 namespace ConfluenceClone.Api.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260723232931_Groups")]
+    partial class Groups
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -288,35 +291,6 @@ namespace ConfluenceClone.Api.Infrastructure.Migrations
                     b.ToTable("PageLabels");
                 });
 
-            modelBuilder.Entity("ConfluenceClone.Api.Domain.PageRestriction", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Operation")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("PageId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("PrincipalId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("PrincipalType")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PageId", "PrincipalType", "PrincipalId", "Operation")
-                        .IsUnique();
-
-                    b.ToTable("PageRestrictions");
-                });
-
             modelBuilder.Entity("ConfluenceClone.Api.Domain.PageVersion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -397,35 +371,6 @@ namespace ConfluenceClone.Api.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Spaces");
-                });
-
-            modelBuilder.Entity("ConfluenceClone.Api.Domain.SpacePermission", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Operation")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("PrincipalId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("PrincipalType")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("SpaceId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SpaceId", "PrincipalType", "PrincipalId", "Operation")
-                        .IsUnique();
-
-                    b.ToTable("SpacePermissions");
                 });
 
             modelBuilder.Entity("ConfluenceClone.Api.Domain.User", b =>
@@ -609,17 +554,6 @@ namespace ConfluenceClone.Api.Infrastructure.Migrations
                     b.Navigation("Page");
                 });
 
-            modelBuilder.Entity("ConfluenceClone.Api.Domain.PageRestriction", b =>
-                {
-                    b.HasOne("ConfluenceClone.Api.Domain.Page", "Page")
-                        .WithMany()
-                        .HasForeignKey("PageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Page");
-                });
-
             modelBuilder.Entity("ConfluenceClone.Api.Domain.PageVersion", b =>
                 {
                     b.HasOne("ConfluenceClone.Api.Domain.User", "Author")
@@ -655,17 +589,6 @@ namespace ConfluenceClone.Api.Infrastructure.Migrations
                     b.Navigation("CreatedBy");
 
                     b.Navigation("Homepage");
-                });
-
-            modelBuilder.Entity("ConfluenceClone.Api.Domain.SpacePermission", b =>
-                {
-                    b.HasOne("ConfluenceClone.Api.Domain.Space", "Space")
-                        .WithMany()
-                        .HasForeignKey("SpaceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Space");
                 });
 
             modelBuilder.Entity("ConfluenceClone.Api.Domain.UserGroup", b =>

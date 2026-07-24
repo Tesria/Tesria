@@ -22,7 +22,24 @@ Added:
   (created / updated / trashed / restored / purged) and space create/archive,
   with `GET /api/audit` (filter by target, newest first) and an audit view.
 
-Still to come in Phase 4: space permissions and page restrictions.
+- Groups: named sets of users (case-insensitive unique names) with membership
+  management, plus a user directory endpoint for picking principals.
+- Space permissions and page restrictions. Grants are made to a user *or* a
+  group, for View / Edit / Admin on a space (higher implies lower) and
+  View / Edit on a page.
+  - **Default-open:** a space with no permission rows stays open to every
+    authenticated user, so existing content keeps working; the first grant is
+    what makes a space private.
+  - **Page restrictions are inherited** by descendant pages, and only holders of
+    an *explicit* space-admin grant bypass them.
+  - **Anti-lockout:** whoever first restricts a space or page is guaranteed
+    continued access, and the last space admin cannot be removed.
+  - Enforced across spaces, pages, versions, tree, trash, comments,
+    attachments, labels, export, and search — restricted content is hidden
+    (404) rather than merely refused, so it is not discoverable.
+
+Note: permissions and groups are API-only for now; management UI is not built
+yet.
 
 ### Phase 3 — Search + backup system (2026-07-23)
 

@@ -22,6 +22,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Label> Labels => Set<Label>();
     public DbSet<PageLabel> PageLabels => Set<PageLabel>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<Group> Groups => Set<Group>();
+    public DbSet<UserGroup> UserGroups => Set<UserGroup>();
+    public DbSet<SpacePermission> SpacePermissions => Set<SpacePermission>();
+    public DbSet<PageRestriction> PageRestrictions => Set<PageRestriction>();
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
 
     protected override void OnModelCreating(ModelBuilder b)
@@ -135,6 +139,52 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                 .OnDelete(DeleteBehavior.Restrict);
 
             e.HasIndex(a => a.PageId);
+        });
+
+        b.Entity<SpacePermission>(e =>
+        {
+            e.HasOne(p => p.Space)
+                .WithMany()
+                .HasForeignKey(p => p.SpaceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // One row per (space, principal, operation).
+            e.HasIndex(p => new { p.SpaceId, p.PrincipalType, p.PrincipalId, p.Operation }).IsUnique();
+        });
+
+        b.Entity<PageRestriction>(e =>
+        {
+            e.HasOne(r => r.Page)
+                .WithMany()
+                .HasForeignKey(r => r.PageId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasIndex(r => new { r.PageId, r.PrincipalType, r.PrincipalId, r.Operation }).IsUnique();
+        });
+
+        b.Entity<Group>(e =>
+        {
+            e.Property(g => g.Name).HasMaxLength(200);
+            e.Property(g => g.NormalizedName).HasMaxLength(200);
+            e.Property(g => g.Description).HasMaxLength(500);
+            e.HasIndex(g => g.NormalizedName).IsUnique();
+        });
+
+        b.Entity<UserGroup>(e =>
+        {
+            e.HasKey(ug => new { ug.UserId, ug.GroupId });
+
+            e.HasOne(ug => ug.User)
+                .WithMany()
+                .HasForeignKey(ug => ug.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(ug => ug.Group)
+                .WithMany(g => g.Members)
+                .HasForeignKey(ug => ug.GroupId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasIndex(ug => ug.GroupId);
         });
 
         b.Entity<AuditLog>(e =>

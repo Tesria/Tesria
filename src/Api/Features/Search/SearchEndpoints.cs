@@ -1,5 +1,6 @@
 using ConfluenceClone.Api.Domain;
 using ConfluenceClone.Api.Infrastructure;
+using ConfluenceClone.Api.Infrastructure.Permissions;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConfluenceClone.Api.Features.Search;
@@ -17,7 +18,8 @@ public static class SearchEndpoints
         return routes;
     }
 
-    private static async Task<IResult> SearchAsync(string? q, Guid? spaceId, AppDbContext db)
+    private static async Task<IResult> SearchAsync(
+        string? q, Guid? spaceId, AppDbContext db, IPermissionService perms)
     {
         var term = (q ?? "").Trim();
         if (term.Length == 0) return Results.Ok(Array.Empty<SearchResult>());
@@ -25,6 +27,10 @@ public static class SearchEndpoints
         // The soft-delete query filter already excludes trashed pages.
         IQueryable<Page> query = db.Pages.AsNoTracking();
         if (spaceId is { } sid) query = query.Where(p => p.SpaceId == sid);
+
+        // Never return hits from spaces the caller cannot view.
+        var viewableSpaces = await perms.ViewableSpaceIdsAsync();
+        query = query.Where(p => viewableSpaces.Contains(p.SpaceId));
 
         if (db.Database.IsNpgsql())
         {
@@ -50,8 +56,13 @@ public static class SearchEndpoints
             .Select(p => new { p.Id, p.SpaceId, SpaceKey = p.Space!.Key, p.Title, p.SearchText })
             .ToListAsync();
 
-        var results = rows.Select(r => new SearchResult(
-            r.Id, r.SpaceId, r.SpaceKey, r.Title, Snippet(r.SearchText)));
+        // Space access is not enough — drop pages hidden by page restrictions.
+        var results = new List<SearchResult>();
+        foreach (var r in rows)
+        {
+            if (!await perms.CanViewPageAsync(r.Id)) continue;
+            results.Add(new SearchResult(r.Id, r.SpaceId, r.SpaceKey, r.Title, Snippet(r.SearchText)));
+        }
         return Results.Ok(results);
     }
 
