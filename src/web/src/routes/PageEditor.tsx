@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { api, ApiError, type CollabToken } from '../api/client'
+import { api, ApiError, type CollabToken, type PageTemplate } from '../api/client'
 import { Editor } from '../editor/Editor'
 import { CollaborativeEditor } from '../editor/CollaborativeEditor'
 import { useAuth } from '../auth/AuthContext'
@@ -25,6 +25,23 @@ export function PageEditor() {
   const [loading, setLoading] = useState(isEdit)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Template picker (new pages only). Selecting a template reseeds the editor
+  // by changing its `key`, since an already-mounted editable editor doesn't
+  // otherwise react to external content changes.
+  const [templates, setTemplates] = useState<PageTemplate[]>([])
+  const [templateId, setTemplateId] = useState('')
+
+  useEffect(() => {
+    if (isEdit) return
+    api.templates.list(space.id).then(setTemplates).catch(() => {})
+  }, [isEdit, space.id])
+
+  function onPickTemplate(id: string) {
+    setTemplateId(id)
+    const template = templates.find((t) => t.id === id)
+    setContent(template ? template.contentJson : EMPTY_DOC)
+  }
 
   useEffect(() => {
     if (!pageId) return
@@ -88,6 +105,19 @@ export function PageEditor() {
         required
         autoFocus={!isEdit}
       />
+      {!isEdit && templates.length > 0 && (
+        <label className="change-comment">
+          Start from a template (optional)
+          <select value={templateId} onChange={(e) => onPickTemplate(e.target.value)}>
+            <option value="">Blank page</option>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}{t.spaceId ? '' : ' (instance-wide)'}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       {collab && pageId ? (
         <CollaborativeEditor
           key={pageId}
@@ -98,7 +128,7 @@ export function PageEditor() {
           onChange={setContent}
         />
       ) : (
-        <Editor key={pageId ?? 'new'} value={content} editable onChange={setContent} />
+        <Editor key={pageId ?? `new-${templateId || 'blank'}`} value={content} editable onChange={setContent} />
       )}
       {isEdit && (
         <label className="change-comment">

@@ -25,6 +25,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Group> Groups => Set<Group>();
     public DbSet<UserGroup> UserGroups => Set<UserGroup>();
     public DbSet<CollabDocument> CollabDocuments => Set<CollabDocument>();
+    public DbSet<PageTemplate> PageTemplates => Set<PageTemplate>();
     public DbSet<SpacePermission> SpacePermissions => Set<SpacePermission>();
     public DbSet<PageRestriction> PageRestrictions => Set<PageRestriction>();
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
@@ -140,6 +141,25 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                 .OnDelete(DeleteBehavior.Restrict);
 
             e.HasIndex(a => a.PageId);
+        });
+
+        b.Entity<PageTemplate>(e =>
+        {
+            e.Property(t => t.Name).HasMaxLength(200);
+            e.Property(t => t.Description).HasMaxLength(500);
+            e.Property(t => t.ContentJson).HasColumnType("jsonb");
+
+            e.HasOne(t => t.Space)
+                .WithMany()
+                .HasForeignKey(t => t.SpaceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(t => t.CreatedBy)
+                .WithMany()
+                .HasForeignKey(t => t.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasIndex(t => t.SpaceId);
         });
 
         b.Entity<CollabDocument>(e =>

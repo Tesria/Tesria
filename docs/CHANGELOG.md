@@ -23,6 +23,12 @@ Added:
   - **Optional:** with no `COLLAB_SHARED_SECRET` set, the API reports
     collaboration as disabled and the editor falls back to single-user mode.
   - Caddy proxies `/collab` websockets to the sidecar; Vite mirrors this in dev.
+- **Page templates (blueprints).** Reusable starting points for new pages,
+  either instance-wide or scoped to one space. Space-scoped templates require
+  edit rights on the space (they affect everyone creating pages there);
+  instance-wide templates can be deleted only by their author, matching the
+  existing comment-ownership pattern. The new-page screen offers a "start from
+  a template" picker, and any page can be saved as a template from its actions.
 
 ### Phase 4 — Fast-follow (2026-07-23)
 

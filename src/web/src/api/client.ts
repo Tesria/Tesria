@@ -52,6 +52,16 @@ export type VersionContent = VersionMeta & { contentJson: string }
 
 export type CollabToken = { token: string; documentName: string; enabled: boolean }
 
+export type PageTemplate = {
+  id: string
+  spaceId: string | null
+  name: string
+  description: string | null
+  contentJson: string
+  createdById: string
+  createdAt: string
+}
+
 export type Attachment = {
   id: string
   pageId: string
@@ -258,6 +268,13 @@ export const api = {
   },
   users: {
     list: () => request<Directory[]>('GET', '/api/users'),
+  },
+  templates: {
+    list: (spaceId?: string) =>
+      request<PageTemplate[]>('GET', `/api/templates${spaceId ? `?spaceId=${spaceId}` : ''}`),
+    create: (input: { spaceId?: string | null; name: string; description?: string | null; contentJson: string }) =>
+      request<PageTemplate>('POST', '/api/templates', input),
+    remove: (id: string) => request<void>('DELETE', `/api/templates/${id}`),
   },
   groups: {
     list: () => request<Group[]>('GET', '/api/groups'),
