@@ -80,6 +80,15 @@ label input, label textarea { margin-top: 0.25rem; }
 }
 .brand { font-weight: 700; color: var(--text); }
 .brand:hover { text-decoration: none; }
+.topbar__nav { display: flex; gap: 0.25rem; margin-left: 1.25rem; }
+.topbar__link { padding: 0.3rem 0.6rem; border-radius: 4px; color: var(--muted); font-size: 0.9rem; }
+.topbar__link:hover { background: var(--bg-alt); text-decoration: none; }
+.topbar__link.is-active { color: var(--primary-dark); background: #e0ecff; font-weight: 600; }
+
+.principal-picker { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.principal-picker select { width: auto; min-width: 130px; height: 34px; padding: 0 0.5rem; }
+.restrictions .principal-picker { margin: 0.75rem 0; }
+
 .topbar__search { flex: 1; max-width: 420px; margin: 0 1.5rem; }
 .topbar__search input { height: 34px; border-radius: 999px; padding: 0 0.9rem; background: var(--bg-alt); }
 .topbar__right { display: flex; align-items: center; gap: 0.9rem; }

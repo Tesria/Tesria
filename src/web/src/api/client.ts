@@ -60,6 +60,34 @@ export type Attachment = {
   createdAt: string
 }
 
+/** Matches the API enums: PrincipalType, SpaceOperation, PageOperation. */
+export const PrincipalType = { User: 0, Group: 1 } as const
+export const SpaceOperation = { View: 0, Edit: 1, Admin: 2 } as const
+export const PageOperation = { View: 0, Edit: 1 } as const
+
+export const spaceOperationName = ['View', 'Edit', 'Admin']
+export const pageOperationName = ['View', 'Edit']
+
+export type Group = { id: string; name: string; description: string | null; memberCount: number }
+export type GroupMember = { userId: string; email: string; displayName: string }
+export type Directory = { id: string; email: string; displayName: string }
+
+export type SpacePermission = {
+  id: string
+  principalType: number
+  principalId: string
+  principalName: string | null
+  operation: number
+}
+
+export type PageRestriction = {
+  id: string
+  principalType: number
+  principalId: string
+  principalName: string | null
+  operation: number
+}
+
 export type AuditEntry = {
   id: string
   action: string
@@ -223,6 +251,37 @@ export const api = {
     },
     remove: (id: string) => request<void>('DELETE', `/api/attachments/${id}`),
     downloadUrl: (id: string) => `/api/attachments/${id}/download`,
+  },
+  users: {
+    list: () => request<Directory[]>('GET', '/api/users'),
+  },
+  groups: {
+    list: () => request<Group[]>('GET', '/api/groups'),
+    create: (input: { name: string; description?: string | null }) =>
+      request<Group>('POST', '/api/groups', input),
+    update: (id: string, input: { name: string; description?: string | null }) =>
+      request<Group>('PUT', `/api/groups/${id}`, input),
+    remove: (id: string) => request<void>('DELETE', `/api/groups/${id}`),
+    members: (id: string) => request<GroupMember[]>('GET', `/api/groups/${id}/members`),
+    addMember: (id: string, userId: string) =>
+      request<void>('POST', `/api/groups/${id}/members`, { userId }),
+    removeMember: (id: string, userId: string) =>
+      request<void>('DELETE', `/api/groups/${id}/members/${userId}`),
+  },
+  spacePermissions: {
+    list: (key: string) =>
+      request<SpacePermission[]>('GET', `/api/spaces/${encodeURIComponent(key)}/permissions`),
+    grant: (key: string, input: { principalType: number; principalId: string; operation: number }) =>
+      request<void>('POST', `/api/spaces/${encodeURIComponent(key)}/permissions`, input),
+    revoke: (key: string, id: string) =>
+      request<void>('DELETE', `/api/spaces/${encodeURIComponent(key)}/permissions/${id}`),
+  },
+  pageRestrictions: {
+    list: (pageId: string) => request<PageRestriction[]>('GET', `/api/pages/${pageId}/restrictions`),
+    add: (pageId: string, input: { principalType: number; principalId: string; operation: number }) =>
+      request<void>('POST', `/api/pages/${pageId}/restrictions`, input),
+    remove: (pageId: string, id: string) =>
+      request<void>('DELETE', `/api/pages/${pageId}/restrictions/${id}`),
   },
   audit: (params?: { targetType?: string; targetId?: string; take?: number }) => {
     const q = new URLSearchParams()

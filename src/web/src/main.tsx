@@ -16,6 +16,8 @@ import { TrashPage } from './routes/TrashPage'
 import { SearchPage } from './routes/SearchPage'
 import { LabelPage } from './routes/LabelPage'
 import { AuditPage } from './routes/AuditPage'
+import { GroupsPage } from './routes/GroupsPage'
+import { SpacePermissionsPage } from './routes/SpacePermissionsPage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -30,11 +32,13 @@ createRoot(document.getElementById('root')!).render(
               <Route path="search" element={<SearchPage />} />
               <Route path="labels/:name" element={<LabelPage />} />
               <Route path="audit" element={<AuditPage />} />
+              <Route path="groups" element={<GroupsPage />} />
               <Route path="spaces" element={<SpacesPage />} />
               <Route path="spaces/:key" element={<SpacePage />}>
                 <Route index element={<SpaceHome />} />
                 <Route path="new" element={<PageEditor />} />
                 <Route path="trash" element={<TrashPage />} />
+                <Route path="permissions" element={<SpacePermissionsPage />} />
                 <Route path="pages/:pageId" element={<PageView />} />
                 <Route path="pages/:pageId/edit" element={<PageEditor />} />
               </Route>
