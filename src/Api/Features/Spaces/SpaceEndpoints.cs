@@ -3,6 +3,7 @@ using ConfluenceClone.Api.Domain;
 using ConfluenceClone.Api.Infrastructure;
 using ConfluenceClone.Api.Infrastructure.Audit;
 using ConfluenceClone.Api.Infrastructure.Auth;
+using ConfluenceClone.Api.Infrastructure.Permissions;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConfluenceClone.Api.Features.Spaces;
@@ -28,19 +29,25 @@ public static partial class SpaceEndpoints
         group.MapGet("/{key}", GetByKey);
         group.MapPut("/{key}", Update);
         group.MapPost("/{key}/archive",
-            (string key, AppDbContext db, IAuditLogger audit) => ArchiveEndpoint(key, true, db, audit));
+            (string key, AppDbContext db, IAuditLogger audit, IPermissionService perms)
+                => ArchiveEndpoint(key, true, db, audit, perms));
         group.MapPost("/{key}/unarchive",
-            (string key, AppDbContext db, IAuditLogger audit) => ArchiveEndpoint(key, false, db, audit));
+            (string key, AppDbContext db, IAuditLogger audit, IPermissionService perms)
+                => ArchiveEndpoint(key, false, db, audit, perms));
 
         return routes;
     }
 
-    private static async Task<IResult> List(AppDbContext db, bool includeArchived = false)
+    private static async Task<IResult> List(
+        AppDbContext db, IPermissionService perms, bool includeArchived = false)
     {
         var query = db.Spaces.AsNoTracking();
         if (!includeArchived) query = query.Where(s => !s.Archived);
         var spaces = await query.OrderBy(s => s.Name).ToListAsync();
-        return Results.Ok(spaces.Select(ToResponse));
+
+        // Only surface spaces the caller may view.
+        var viewable = await perms.ViewableSpaceIdsAsync();
+        return Results.Ok(spaces.Where(s => viewable.Contains(s.Id)).Select(ToResponse));
     }
 
     private static async Task<IResult> Create(
@@ -74,18 +81,24 @@ public static partial class SpaceEndpoints
         return Results.Created($"/api/spaces/{space.Key}", ToResponse(space));
     }
 
-    private static async Task<IResult> GetByKey(string key, AppDbContext db)
+    private static async Task<IResult> GetByKey(string key, AppDbContext db, IPermissionService perms)
     {
         var normalizedKey = key.ToUpperInvariant();
         var space = await db.Spaces.AsNoTracking()
             .FirstOrDefaultAsync(s => s.Key == normalizedKey);
-        return space is null ? Results.NotFound() : Results.Ok(ToResponse(space));
+        if (space is null) return Results.NotFound();
+        // 404 rather than 403 so a hidden space's existence isn't disclosed.
+        if (!await perms.CanViewSpaceAsync(space.Id)) return Results.NotFound();
+        return Results.Ok(ToResponse(space));
     }
 
-    private static async Task<IResult> Update(string key, UpdateSpaceRequest req, AppDbContext db)
+    private static async Task<IResult> Update(
+        string key, UpdateSpaceRequest req, AppDbContext db, IPermissionService perms)
     {
         var space = await db.Spaces.FirstOrDefaultAsync(s => s.Key == key.ToUpperInvariant());
         if (space is null) return Results.NotFound();
+        if (!await perms.CanViewSpaceAsync(space.Id)) return Results.NotFound();
+        if (!await perms.CanAdminSpaceAsync(space.Id)) return Results.Forbid();
 
         var name = (req.Name ?? "").Trim();
         if (name.Length == 0)
@@ -98,10 +111,12 @@ public static partial class SpaceEndpoints
     }
 
     private static async Task<IResult> ArchiveEndpoint(
-        string key, bool archived, AppDbContext db, IAuditLogger audit)
+        string key, bool archived, AppDbContext db, IAuditLogger audit, IPermissionService perms)
     {
         var space = await db.Spaces.FirstOrDefaultAsync(s => s.Key == key.ToUpperInvariant());
         if (space is null) return Results.NotFound();
+        if (!await perms.CanViewSpaceAsync(space.Id)) return Results.NotFound();
+        if (!await perms.CanAdminSpaceAsync(space.Id)) return Results.Forbid();
         space.Archived = archived;
         audit.Record(archived ? "space.archived" : "space.unarchived", "space", space.Id, new { space.Key });
         await db.SaveChangesAsync();

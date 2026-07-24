@@ -3,6 +3,7 @@ using ConfluenceClone.Api.Domain;
 using ConfluenceClone.Api.Infrastructure;
 using ConfluenceClone.Api.Infrastructure.Audit;
 using ConfluenceClone.Api.Infrastructure.Auth;
+using ConfluenceClone.Api.Infrastructure.Permissions;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConfluenceClone.Api.Features.Pages;
@@ -48,8 +49,15 @@ public static class PageEndpoints
     }
 
     private static async Task<IResult> Create(
-        CreatePageRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit)
+        CreatePageRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit,
+        IPermissionService perms)
     {
+        // Creating a page needs edit rights on the space (and on the parent, if any).
+        if (!await perms.CanViewSpaceAsync(req.SpaceId)) return Results.NotFound();
+        if (!await perms.CanEditSpaceAsync(req.SpaceId)) return Results.Forbid();
+        if (req.ParentPageId is { } parentForPerms && !await perms.CanEditPageAsync(parentForPerms))
+            return Results.Forbid();
+
         var title = (req.Title ?? "").Trim();
         if (title.Length == 0)
             return Results.ValidationProblem(Error("title", "Title is required."));
@@ -99,19 +107,24 @@ public static class PageEndpoints
         return Results.Created($"/api/pages/{page.Id}", ToDetail(page, version));
     }
 
-    private static async Task<IResult> Get(Guid id, AppDbContext db)
+    private static async Task<IResult> Get(Guid id, AppDbContext db, IPermissionService perms)
     {
         var page = await db.Pages.AsNoTracking()
             .Include(p => p.CurrentVersion)
             .FirstOrDefaultAsync(p => p.Id == id);
-        return page?.CurrentVersion is null
-            ? Results.NotFound()
-            : Results.Ok(ToDetail(page, page.CurrentVersion));
+        if (page?.CurrentVersion is null) return Results.NotFound();
+        // 404 rather than 403 so restricted pages aren't discoverable.
+        if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
+        return Results.Ok(ToDetail(page, page.CurrentVersion));
     }
 
     private static async Task<IResult> Update(
-        Guid id, UpdatePageRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit)
+        Guid id, UpdatePageRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit,
+        IPermissionService perms)
     {
+        if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
+        if (!await perms.CanEditPageAsync(id)) return Results.Forbid();
+
         if (!TryNormalizeContent(req.ContentJson, out var content))
             return Results.ValidationProblem(Error("contentJson", "Content must be valid JSON."));
 
@@ -141,10 +154,16 @@ public static class PageEndpoints
         return Results.Ok(ToDetail(page, version));
     }
 
-    private static async Task<IResult> Move(Guid id, MovePageRequest req, AppDbContext db)
+    private static async Task<IResult> Move(
+        Guid id, MovePageRequest req, AppDbContext db, IPermissionService perms)
     {
         var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == id);
         if (page is null) return Results.NotFound();
+        if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
+        if (!await perms.CanEditPageAsync(id)) return Results.Forbid();
+        // Re-parenting also needs edit rights on the destination.
+        if (req.ParentPageId is { } destination && !await perms.CanEditPageAsync(destination))
+            return Results.Forbid();
 
         if (req.ParentPageId is { } newParentId)
         {
@@ -167,10 +186,12 @@ public static class PageEndpoints
     }
 
     private static async Task<IResult> Delete(
-        Guid id, AppDbContext db, CurrentUser current, IAuditLogger audit)
+        Guid id, AppDbContext db, CurrentUser current, IAuditLogger audit, IPermissionService perms)
     {
         var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == id);
         if (page is null) return Results.NotFound();
+        if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
+        if (!await perms.CanEditPageAsync(id)) return Results.Forbid();
 
         // Soft-delete (trash) the page and its whole subtree, so the tree stays
         // consistent and the deletion can be restored (PLAN §5 in-app safety net).
@@ -187,11 +208,13 @@ public static class PageEndpoints
         return Results.NoContent();
     }
 
-    private static async Task<IResult> Restore(Guid id, AppDbContext db, IAuditLogger audit)
+    private static async Task<IResult> Restore(
+        Guid id, AppDbContext db, IAuditLogger audit, IPermissionService perms)
     {
         var page = await db.Pages.IgnoreQueryFilters()
             .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt != null);
         if (page is null) return Results.NotFound();
+        if (!await perms.CanEditPageAsync(id)) return Results.Forbid();
 
         // If the original parent no longer exists (still trashed or purged),
         // restore to the space root so the page is not orphaned.
@@ -208,11 +231,14 @@ public static class PageEndpoints
         return Results.NoContent();
     }
 
-    private static async Task<IResult> Purge(Guid id, AppDbContext db, IAuditLogger audit)
+    private static async Task<IResult> Purge(
+        Guid id, AppDbContext db, IAuditLogger audit, IPermissionService perms)
     {
         var page = await db.Pages.IgnoreQueryFilters()
             .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt != null);
         if (page is null) return Results.NotFound();
+        // Permanent deletion is an admin-level act on the space.
+        if (!await perms.CanAdminSpaceAsync(page.SpaceId)) return Results.Forbid();
 
         var subtree = await CollectTrashedSubtreeAsync(db, page.SpaceId, id);
         // Clear current-version pointers so the cascade to versions is not blocked
@@ -227,9 +253,10 @@ public static class PageEndpoints
         return Results.NoContent();
     }
 
-    private static async Task<IResult> Trash(Guid spaceId, AppDbContext db)
+    private static async Task<IResult> Trash(Guid spaceId, AppDbContext db, IPermissionService perms)
     {
         if (!await db.Spaces.AnyAsync(s => s.Id == spaceId)) return Results.NotFound();
+        if (!await perms.CanViewSpaceAsync(spaceId)) return Results.NotFound();
 
         var trashed = await db.Pages.IgnoreQueryFilters()
             .Where(p => p.SpaceId == spaceId && p.DeletedAt != null)
@@ -246,9 +273,10 @@ public static class PageEndpoints
         return Results.Ok(roots);
     }
 
-    private static async Task<IResult> ListVersions(Guid id, AppDbContext db)
+    private static async Task<IResult> ListVersions(Guid id, AppDbContext db, IPermissionService perms)
     {
         if (!await db.Pages.AnyAsync(p => p.Id == id)) return Results.NotFound();
+        if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
         var versions = await db.PageVersions.AsNoTracking()
             .Where(v => v.PageId == id)
             .OrderByDescending(v => v.VersionNumber)
@@ -257,8 +285,13 @@ public static class PageEndpoints
         return Results.Ok(versions);
     }
 
-    private static async Task<IResult> GetVersion(Guid id, int number, AppDbContext db)
+    private static async Task<IResult> GetVersion(
+        Guid id, int number, AppDbContext db, IPermissionService perms)
     {
+        // Guard here too: page versions are queried by page id, so they would
+        // otherwise bypass the page's view restrictions.
+        if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
+
         var v = await db.PageVersions.AsNoTracking()
             .FirstOrDefaultAsync(v => v.PageId == id && v.VersionNumber == number);
         return v is null
@@ -268,11 +301,13 @@ public static class PageEndpoints
     }
 
     private static async Task<IResult> RestoreVersion(
-        Guid id, int number, AppDbContext db, CurrentUser current)
+        Guid id, int number, AppDbContext db, CurrentUser current, IPermissionService perms)
     {
         var page = await db.Pages.Include(p => p.CurrentVersion)
             .FirstOrDefaultAsync(p => p.Id == id);
         if (page is null) return Results.NotFound();
+        if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
+        if (!await perms.CanEditPageAsync(id)) return Results.Forbid();
 
         var source = await db.PageVersions.AsNoTracking()
             .FirstOrDefaultAsync(v => v.PageId == id && v.VersionNumber == number);
@@ -293,15 +328,23 @@ public static class PageEndpoints
         return Results.Ok(ToDetail(page, version));
     }
 
-    private static async Task<IResult> Tree(Guid spaceId, AppDbContext db)
+    private static async Task<IResult> Tree(Guid spaceId, AppDbContext db, IPermissionService perms)
     {
         if (!await db.Spaces.AnyAsync(s => s.Id == spaceId)) return Results.NotFound();
+        if (!await perms.CanViewSpaceAsync(spaceId)) return Results.NotFound();
 
         var pages = await db.Pages.AsNoTracking()
             .Where(p => p.SpaceId == spaceId)
             .OrderBy(p => p.Position).ThenBy(p => p.Title)
             .Select(p => new { p.Id, p.Title, p.Position, p.ParentPageId })
             .ToListAsync();
+
+        // Drop pages the caller may not view (restrictions are inherited, so a
+        // hidden parent's children are hidden with it).
+        var visible = new List<Guid>();
+        foreach (var p in pages)
+            if (await perms.CanViewPageAsync(p.Id)) visible.Add(p.Id);
+        pages = pages.Where(p => visible.Contains(p.Id)).ToList();
 
         var byParent = pages.ToLookup(p => p.ParentPageId);
         List<PageTreeNode> Build(Guid? parentId) =>
