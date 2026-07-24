@@ -38,8 +38,11 @@ Added:
     attachments, labels, export, and search — restricted content is hidden
     (404) rather than merely refused, so it is not discoverable.
 
-Note: permissions and groups are API-only for now; management UI is not built
-yet.
+- Management UI for the above: a Groups page (create/delete groups, manage
+  membership from the user directory), a per-space Permissions page reached from
+  the space sidebar, and a Restrictions tab on each page. Both grant flows share
+  one principal picker, and each explains its current state — an open space says
+  so, and warns that the first grant makes it private.
 
 ### Phase 3 — Search + backup system (2026-07-23)
 
