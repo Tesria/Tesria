@@ -5,6 +5,7 @@ using ConfluenceClone.Api.Infrastructure.Audit;
 using ConfluenceClone.Api.Infrastructure.Auth;
 using ConfluenceClone.Api.Infrastructure.Notifications;
 using ConfluenceClone.Api.Infrastructure.Permissions;
+using ConfluenceClone.Api.Infrastructure.Webhooks;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConfluenceClone.Api.Features.Pages;
@@ -51,7 +52,7 @@ public static class PageEndpoints
 
     private static async Task<IResult> Create(
         CreatePageRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit,
-        IPermissionService perms, INotificationService notifications)
+        IPermissionService perms, INotificationService notifications, IWebhookDispatcher webhooks)
     {
         // Creating a page needs edit rights on the space (and on the parent, if any).
         if (!await perms.CanViewSpaceAsync(req.SpaceId)) return Results.NotFound();
@@ -108,6 +109,9 @@ public static class PageEndpoints
         // points at the new page so its recipient can go straight to it.
         await notifications.NotifyOfNewPageAsync(page.Id, page.SpaceId, userId, new { page.Title });
         await db.SaveChangesAsync();
+        // Dispatched only after the create is durably committed — webhooks are
+        // fire-and-forget outbound calls, not part of the unit of work.
+        await webhooks.DispatchAsync(page.SpaceId, "page.created", "page", page.Id, new { page.Title });
 
         return Results.Created($"/api/pages/{page.Id}", ToDetail(page, version));
     }
@@ -125,7 +129,7 @@ public static class PageEndpoints
 
     private static async Task<IResult> Update(
         Guid id, UpdatePageRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit,
-        IPermissionService perms, INotificationService notifications)
+        IPermissionService perms, INotificationService notifications, IWebhookDispatcher webhooks)
     {
         if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
         if (!await perms.CanEditPageAsync(id)) return Results.Forbid();
@@ -159,6 +163,7 @@ public static class PageEndpoints
             page.Id, page.SpaceId, "page.updated", userId, new { page.Title });
 
         await db.SaveChangesAsync();
+        await webhooks.DispatchAsync(page.SpaceId, "page.updated", "page", page.Id, new { page.Title });
         return Results.Ok(ToDetail(page, version));
     }
 

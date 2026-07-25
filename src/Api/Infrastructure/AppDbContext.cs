@@ -28,6 +28,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<PageTemplate> PageTemplates => Set<PageTemplate>();
     public DbSet<Watch> Watches => Set<Watch>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<ApiToken> ApiTokens => Set<ApiToken>();
+    public DbSet<Webhook> Webhooks => Set<Webhook>();
     public DbSet<SpacePermission> SpacePermissions => Set<SpacePermission>();
     public DbSet<PageRestriction> PageRestrictions => Set<PageRestriction>();
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
@@ -143,6 +145,39 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                 .OnDelete(DeleteBehavior.Restrict);
 
             e.HasIndex(a => a.PageId);
+        });
+
+        b.Entity<ApiToken>(e =>
+        {
+            e.Property(t => t.Name).HasMaxLength(200);
+            e.Property(t => t.TokenHash).HasMaxLength(200);
+            e.Property(t => t.Prefix).HasMaxLength(20);
+
+            e.HasOne(t => t.User)
+                .WithMany()
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasIndex(t => t.TokenHash).IsUnique();
+        });
+
+        b.Entity<Webhook>(e =>
+        {
+            e.Property(w => w.Url).HasMaxLength(2000);
+            e.Property(w => w.Secret).HasMaxLength(200);
+            e.Property(w => w.Events).HasMaxLength(500);
+
+            e.HasOne(w => w.Space)
+                .WithMany()
+                .HasForeignKey(w => w.SpaceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(w => w.CreatedBy)
+                .WithMany()
+                .HasForeignKey(w => w.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasIndex(w => w.SpaceId);
         });
 
         b.Entity<Watch>(e =>

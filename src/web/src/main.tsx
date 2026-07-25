@@ -18,6 +18,8 @@ import { LabelPage } from './routes/LabelPage'
 import { AuditPage } from './routes/AuditPage'
 import { GroupsPage } from './routes/GroupsPage'
 import { SpacePermissionsPage } from './routes/SpacePermissionsPage'
+import { SpaceWebhooksPage } from './routes/SpaceWebhooksPage'
+import { ApiTokensPage } from './routes/ApiTokensPage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -33,12 +35,14 @@ createRoot(document.getElementById('root')!).render(
               <Route path="labels/:name" element={<LabelPage />} />
               <Route path="audit" element={<AuditPage />} />
               <Route path="groups" element={<GroupsPage />} />
+              <Route path="api-tokens" element={<ApiTokensPage />} />
               <Route path="spaces" element={<SpacesPage />} />
               <Route path="spaces/:key" element={<SpacePage />}>
                 <Route index element={<SpaceHome />} />
                 <Route path="new" element={<PageEditor />} />
                 <Route path="trash" element={<TrashPage />} />
                 <Route path="permissions" element={<SpacePermissionsPage />} />
+                <Route path="webhooks" element={<SpaceWebhooksPage />} />
                 <Route path="pages/:pageId" element={<PageView />} />
                 <Route path="pages/:pageId/edit" element={<PageEditor />} />
               </Route>

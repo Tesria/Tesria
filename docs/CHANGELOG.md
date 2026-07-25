@@ -38,6 +38,20 @@ Added:
   already applied to the audit log — are hidden if the recipient's access to
   the target is later revoked. SPA: a watch toggle on pages and spaces, and a
   bell in the top bar with unread count, a dropdown, and mark-as-read.
+- **API tokens and webhooks — the public REST API.** Personal access tokens
+  (`Authorization: Bearer <token>`) let scripts and integrations call the same
+  REST API the SPA uses, without a browser session. A policy auth scheme picks
+  cookie vs. bearer per request and populates the same claims either way, so
+  every existing endpoint's permission checks work unchanged for token callers.
+  Tokens are shown once at creation; only their SHA-256 hash is stored.
+  Space-scoped, admin-managed webhooks POST an HMAC-SHA256-signed JSON payload
+  (`X-Webhook-Signature`) to a URL for one or more events (`page.created`,
+  `page.updated`, `comment.created`, or `*`). Delivery is queued onto an
+  in-process channel and sent by a background service with retry/backoff, so a
+  slow or unreachable receiver never blocks the request that triggered it.
+  Verified with a real listener: signature checked valid, and an
+  unsubscribed event correctly produced no delivery. SPA: an API Tokens page
+  and a per-space Webhooks page.
 
 ### Phase 4 — Fast-follow (2026-07-23)
 

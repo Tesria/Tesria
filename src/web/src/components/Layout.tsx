@@ -32,6 +32,7 @@ export function Layout() {
           <NavLink to="/spaces" className={navClass}>Spaces</NavLink>
           <NavLink to="/groups" className={navClass}>Groups</NavLink>
           <NavLink to="/audit" className={navClass}>Audit</NavLink>
+          <NavLink to="/api-tokens" className={navClass}>API Tokens</NavLink>
         </nav>
         <form className="topbar__search" onSubmit={onSearch}>
           <input
