@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent } from 'react'
 import type { Editor as TiptapEditor } from '@tiptap/react'
 import { uploadAndInsertImage } from './imageUpload'
+import { ToolbarButton } from './ToolbarButton'
 
 type Props = {
   editor: TiptapEditor
@@ -36,15 +37,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
   }
 
   const btn = (label: string, isActive: boolean, onClick: () => void, title: string) => (
-    <button
-      type="button"
-      className={isActive ? 'toolbar__btn is-active' : 'toolbar__btn'}
-      onMouseDown={(e) => e.preventDefault()} // keep the editor selection
-      onClick={onClick}
-      title={title}
-    >
-      {label}
-    </button>
+    <ToolbarButton label={label} isActive={isActive} onClick={onClick} title={title} />
   )
   return (
     <div className="toolbar">

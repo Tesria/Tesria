@@ -195,6 +195,12 @@ label input, label textarea { margin-top: 0.25rem; }
 .link-menu__form { display: flex; gap: 0.4rem; align-items: center; }
 .link-menu__form input, .toolbar__link-popover input { width: 220px; padding: 0.3rem 0.5rem; }
 
+/* selection bubble menu — a compact, floating variant of .toolbar */
+.toolbar--bubble {
+  position: static; margin: 0; border-bottom: none; border-radius: var(--radius);
+  box-shadow: 0 4px 14px rgba(23, 43, 77, 0.2);
+}
+
 .toolbar__link { position: relative; display: inline-flex; }
 .toolbar__link-popover {
   position: absolute; top: 100%; left: 0; margin-top: 0.3rem; z-index: 6;
