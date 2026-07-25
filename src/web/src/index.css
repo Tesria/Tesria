@@ -202,6 +202,21 @@ label input, label textarea { margin-top: 0.25rem; }
 }
 
 .toolbar__link { position: relative; display: inline-flex; }
+
+/* "/" slash-command menu */
+.slash-menu {
+  display: flex; flex-direction: column; gap: 0.1rem; min-width: 220px; max-height: 320px; overflow-y: auto;
+  background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(23, 43, 77, 0.18); padding: 0.3rem;
+}
+.slash-menu--empty { padding: 0.6rem 0.8rem; color: var(--muted); font-size: 0.85rem; }
+.slash-menu__item {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0.05rem; width: 100%; text-align: left;
+  background: none; border: none; border-radius: 4px; padding: 0.4rem 0.6rem; cursor: pointer;
+}
+.slash-menu__item:hover, .slash-menu__item.is-selected { background: var(--bg-alt); }
+.slash-menu__title { font-size: 0.88rem; font-weight: 500; color: var(--text); }
+.slash-menu__desc { font-size: 0.76rem; color: var(--muted); }
 .toolbar__link-popover {
   position: absolute; top: 100%; left: 0; margin-top: 0.3rem; z-index: 6;
   display: flex; gap: 0.4rem; align-items: center; background: #fff; border: 1px solid var(--border);

@@ -10,6 +10,7 @@ import { LinkMenu } from './LinkMenu'
 import { SelectionBubbleMenu } from './SelectionBubbleMenu'
 import { getSharedExtensions } from './extensions'
 import { handleImageDrop, handleImagePaste } from './imageUpload'
+import { setSlashCommandStorage } from './slash/items'
 
 type Props = {
   pageId: string
@@ -91,6 +92,14 @@ export function CollaborativeEditor({
   useEffect(() => {
     editorRef.current = editor
   }, [editor])
+
+  // The slash-command menu's Image item needs the current upload callbacks,
+  // but SlashCommand is configured once in the shared extension list — so
+  // instead they're handed to it via editor.storage, kept in sync here.
+  useEffect(() => {
+    if (!editor) return
+    setSlashCommandStorage(editor, { getUploadPageId, onUploadError })
+  }, [editor, getUploadPageId, onUploadError])
 
   // Seed the shared document from stored content the first time anyone opens
   // it. Guarded on emptiness so we never clobber other people's live edits.
