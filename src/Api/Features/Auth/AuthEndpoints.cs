@@ -13,6 +13,7 @@ public static class AuthEndpoints
     public record RegisterRequest(string Email, string DisplayName, string Password);
     public record LoginRequest(string Email, string Password);
     public record UserResponse(Guid Id, string Email, string DisplayName);
+    public record OidcStatusResponse(bool Enabled, string DisplayName);
 
     public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -27,7 +28,35 @@ public static class AuthEndpoints
             [CookieAuthenticationDefaults.AuthenticationScheme])).RequireAuthorization();
         group.MapGet("/me", Me);
 
+        group.MapGet("/oidc/status", OidcStatus);
+        // A full-page browser redirect, not a fetch call — the IdP needs to
+        // navigate the user's own browser through its login page.
+        group.MapGet("/oidc/login", OidcLogin);
+
         return routes;
+    }
+
+    private static IResult OidcStatus(IConfiguration config)
+    {
+        var enabled = !string.IsNullOrWhiteSpace(config["Oidc:Authority"]);
+        var displayName = config["Oidc:DisplayName"];
+        return Results.Ok(new OidcStatusResponse(
+            enabled, string.IsNullOrWhiteSpace(displayName) ? "Single sign-on" : displayName));
+    }
+
+    private static IResult OidcLogin(string? returnUrl, IConfiguration config)
+    {
+        if (string.IsNullOrWhiteSpace(config["Oidc:Authority"]))
+            return Results.NotFound(new { message = "Single sign-on is not configured on this instance." });
+
+        // Only ever redirect back into this same app, never to an
+        // attacker-supplied external URL (an open-redirect otherwise).
+        var target = returnUrl is { Length: > 0 } && returnUrl.StartsWith('/') && !returnUrl.StartsWith("//")
+            ? returnUrl
+            : "/";
+        return Results.Challenge(
+            new AuthenticationProperties { RedirectUri = target },
+            [OidcAuthenticationDefaults.Scheme]);
     }
 
     private static async Task<IResult> Register(

@@ -29,6 +29,9 @@
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.10" />
     <!-- Argon2id password hashing (PLAN §4: password hash = Argon2id). -->
     <PackageReference Include="Isopoh.Cryptography.Argon2" Version="2.0.0" />
+    <!-- OIDC/SSO (PLAN §1: "architected for OIDC/SSO later", pluggable for
+         Keycloak/Authentik/Google, etc.). Optional at runtime — see Oidc:Authority. -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.10" />
   </ItemGroup>
 
 </Project>

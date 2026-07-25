@@ -6,21 +6,23 @@ block-based editor, and one-command deployment.
 
 See [`PLAN.md`](./PLAN.md) for the full design and roadmap.
 
-**Status:** Phase 5 in progress. A working wiki — local accounts, spaces, pages
-in a hierarchical tree, a TipTap block editor with version history and rollback,
-attachments, threaded footer/inline comments, full-text search, and
-soft-delete/trash — on the full Docker stack (app + PostgreSQL 18 + Caddy
-auto-HTTPS). Data safety is covered by pgBackRest point-in-time recovery plus
-logical and file backups. Phase 4 added labels, page export, an audit log, and
-groups with space permissions / page restrictions. Phase 5 is in progress:
-real-time collaborative editing is live.
+**Status:** Phases 1–5 complete (the full original roadmap). A working wiki —
+local accounts, spaces, pages in a hierarchical tree, a TipTap block editor with
+version history and rollback, attachments, threaded footer/inline comments,
+full-text search, and soft-delete/trash — on the full Docker stack (app +
+PostgreSQL 18 + Caddy auto-HTTPS). Data safety is covered by pgBackRest
+point-in-time recovery plus logical and file backups. Phase 4 added labels,
+page export, an audit log, and groups with space permissions / page
+restrictions. Phase 5 added real-time collaborative editing, page templates,
+notifications/watches, a public REST API (tokens + webhooks), and OIDC/SSO.
 
 ## Tech stack
 
 - **Backend:** ASP.NET Core (C#), .NET 10 (LTS); EF Core 10
 - **Database:** PostgreSQL 18 (Npgsql); page content stored as ProseMirror JSON
 - **Frontend:** React 19 + TypeScript + Vite; TipTap v3 block editor
-- **Auth:** local accounts, cookie sessions, Argon2id password hashing
+- **Auth:** local accounts (Argon2id), API tokens, and optional OIDC/SSO —
+  cookie sessions, all converging on the same permission model
 - **Collaboration:** Node + Hocuspocus/Yjs sidecar for simultaneous editing
 - **Deploy:** Docker Compose — Caddy reverse proxy with automatic HTTPS
 - **Backups:** pgBackRest continuous WAL archiving + point-in-time recovery,

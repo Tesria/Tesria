@@ -68,6 +68,13 @@ services:
       # Shared with the collab sidecar; signs the tokens that authorise a user
       # to join a page's live editing session. Empty disables co-editing.
       Collab__Secret: ${COLLAB_SHARED_SECRET}
+      # OIDC/SSO — empty OIDC_AUTHORITY disables it entirely (local accounts
+      # only). See .env.example for the full set of variables.
+      Oidc__Authority: ${OIDC_AUTHORITY}
+      Oidc__ClientId: ${OIDC_CLIENT_ID}
+      Oidc__ClientSecret: ${OIDC_CLIENT_SECRET}
+      Oidc__DisplayName: ${OIDC_DISPLAY_NAME}
+      Oidc__RequireHttpsMetadata: ${OIDC_REQUIRE_HTTPS_METADATA:-true}
     volumes:
       - uploads:/app/uploads
     expose:

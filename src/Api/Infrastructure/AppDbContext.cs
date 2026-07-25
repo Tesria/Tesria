@@ -45,6 +45,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(u => u.OidcSubject).HasMaxLength(400);
             // Emails are stored lower-cased by the app; unique across the instance.
             e.HasIndex(u => u.Email).IsUnique();
+            // Unique only among non-null values — many local accounts share the
+            // "no external identity" null value, so a plain unique index would
+            // reject the second local account outright.
+            e.HasIndex(u => u.OidcSubject).IsUnique().HasFilter("\"OidcSubject\" IS NOT NULL");
         });
 
         b.Entity<Space>(e =>

@@ -1,15 +1,25 @@
-import { type FormEvent, useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { type FormEvent, useEffect, useState } from 'react'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import { ApiError } from '../api/client'
+import { api, ApiError } from '../api/client'
 
 export function LoginPage() {
   const { user, login } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(searchParams.get('ssoError'))
   const [busy, setBusy] = useState(false)
+  const [oidc, setOidc] = useState<{ enabled: boolean; displayName: string } | null>(null)
+
+  // Hooks must run unconditionally, so this is fetched before the `user`
+  // early-return below rather than after it.
+  useEffect(() => {
+    api.auth.oidcStatus()
+      .then(setOidc)
+      .catch(() => setOidc({ enabled: false, displayName: '' }))
+  }, [])
 
   if (user) return <Navigate to="/spaces" replace />
 
@@ -28,6 +38,12 @@ export function LoginPage() {
     }
   }
 
+  function ssoLogin() {
+    // A full-page navigation, not a fetch — the identity provider needs to
+    // take over the browser's own address bar for its login page.
+    window.location.href = `/api/auth/oidc/login?returnUrl=${encodeURIComponent('/spaces')}`
+  }
+
   return (
     <div className="center">
       <form className="authcard" onSubmit={onSubmit}>
@@ -44,6 +60,14 @@ export function LoginPage() {
         <button type="submit" className="btn btn--primary" disabled={busy}>
           {busy ? 'Signing in…' : 'Sign in'}
         </button>
+        {oidc?.enabled && (
+          <>
+            <p className="muted small" style={{ textAlign: 'center', margin: '0.75rem 0 0' }}>or</p>
+            <button type="button" className="btn btn--ghost" onClick={ssoLogin}>
+              Sign in with {oidc.displayName}
+            </button>
+          </>
+        )}
         <p className="muted">
           No account? <Link to="/register">Create one</Link>
         </p>

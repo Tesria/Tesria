@@ -39,9 +39,25 @@ database readiness probe (EF Core `DbContext` check). Used by the container
 
 ### Auth
 
-Local accounts with cookie-based sessions. Passwords are hashed with Argon2id.
-Unauthenticated API calls receive `401` (no login redirect), since the client is
-a SPA. OIDC/SSO is architected for but deferred to Phase 5.
+Three ways to authenticate, all resolving to the same claim shape so
+`CurrentUser` and every permission check work identically regardless of which
+was used:
+
+- **Local accounts** — cookie-based sessions; passwords hashed with Argon2id.
+- **API tokens** (`Authorization: Bearer <token>`) — for scripts/integrations
+  (Features/ApiTokens). Only a SHA-256 hash is stored; the raw token is shown
+  once, at creation.
+- **OIDC/SSO** — optional, pluggable for any standards-compliant provider
+  (Keycloak, Authentik, Google, ...) via `Oidc:Authority`/`ClientId`/
+  `ClientSecret`. A first login provisions a passwordless local account; a
+  verified-email match links to an existing local account; an unverified-email
+  match is refused (would otherwise allow account takeover). With no Authority
+  configured the app behaves exactly as local-accounts-only.
+
+A `Smart` policy scheme picks Cookie vs. API-token per request based on the
+`Authorization` header. Unauthenticated API calls receive `401` (no login
+redirect), since the client is a SPA — except the OIDC login endpoint, which is
+a real full-page redirect to the identity provider.
 
 ## Frontend (`src/web`)
 
