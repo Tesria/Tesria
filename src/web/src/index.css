@@ -145,10 +145,18 @@ label input, label textarea { margin-top: 0.25rem; }
 .sidebar__trash:hover { background: #e9ebef; text-decoration: none; }
 .sidebar__trash.is-active { background: #e0ecff; color: var(--primary-dark); font-weight: 600; }
 
+/* ---- paper: the "sheet of paper" surface shared by editing and viewing --- */
+.paper {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 3px rgba(23, 43, 77, 0.08);
+  padding: 1.5rem;
+}
+
 /* ---- editor -------------------------------------------------------------- */
-.title-input { font-size: 1.5rem; font-weight: 700; border: none; padding: 0.3rem 0; margin-bottom: 0.5rem; }
+.title-input { font-size: 1.5rem; font-weight: 700; border: none; background: transparent; padding: 0.3rem 0; margin-bottom: 0.5rem; }
 .title-input:focus { outline: none; border-bottom: 2px solid var(--primary); }
-.editor { border: 1px solid var(--border); border-radius: var(--radius); background: #fff; }
 .editor--editable { min-height: 260px; }
 .editor__content { padding: 0.75rem 1rem; }
 .editor__content:focus-within { outline: none; }
@@ -157,7 +165,14 @@ label input, label textarea { margin-top: 0.25rem; }
 .editor__content pre { background: #0b1324; color: #e2e8f0; padding: 0.75rem; border-radius: var(--radius); overflow-x: auto; }
 .editor__content code { background: var(--bg-alt); padding: 0.1em 0.3em; border-radius: 4px; }
 .editor__content blockquote { border-left: 3px solid var(--border); margin: 0.5em 0; padding-left: 0.8em; color: var(--muted); }
-.toolbar { display: flex; flex-wrap: wrap; gap: 0.2rem; padding: 0.4rem; border-bottom: 1px solid var(--border); background: var(--bg-alt); }
+.toolbar {
+  display: flex; flex-wrap: wrap; gap: 0.2rem; padding: 0.4rem 1.5rem; border-bottom: 1px solid var(--border);
+  background: var(--bg-alt);
+  /* Docks directly under the fixed .topbar (52px tall) as the paper scrolls
+     past it; bleeds edge-to-edge via a negative margin equal to .paper's own
+     padding, since the toolbar always lives inside a .paper card. */
+  position: sticky; top: 52px; z-index: 5; margin: 0 -1.5rem;
+}
 .toolbar__btn { border: 1px solid transparent; background: transparent; border-radius: 4px; padding: 0.2rem 0.5rem; cursor: pointer; font-size: 0.82rem; }
 .toolbar__btn:hover { background: #e4e6eb; }
 .toolbar__btn.is-active { background: #e0ecff; color: var(--primary-dark); border-color: #bcd4ff; }
@@ -175,12 +190,12 @@ label input, label textarea { margin-top: 0.25rem; }
 .editor-form { display: flex; flex-direction: column; }
 .editor-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
 .change-comment { margin-top: 0.75rem; }
-/* read-only rendered page */
-.page-body .editor { border: none; }
+/* read-only rendered page: no padding of its own, .paper already provides it */
 .page-body .editor__content { padding: 0; }
 
 /* ---- page view ----------------------------------------------------------- */
 .page-head { margin-bottom: 0.25rem; }
+.page-head h1 { margin: 0; }
 .page-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .template-form { flex: 1 1 100%; margin-top: 0.5rem; }
 .page-body { margin: 1rem 0 2rem; }
@@ -212,4 +227,4 @@ label input, label textarea { margin-top: 0.25rem; }
 .version__num { font-weight: 700; }
 .version__comment { color: var(--muted); font-style: italic; }
 .version__actions { margin-left: auto; display: flex; gap: 0.75rem; }
-.version-preview { margin-top: 1.25rem; border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
+.version-preview { margin-top: 1.25rem; }

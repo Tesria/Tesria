@@ -143,14 +143,6 @@ export function PageEditor() {
   return (
     <form className="page-wrap editor-form" onSubmit={onSubmit}>
       {error && <p className="alert alert--error">{error}</p>}
-      <input
-        className="title-input"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Page title"
-        required
-        autoFocus={!isEdit}
-      />
       {!isEdit && templates.length > 0 && (
         <label className="change-comment">
           Start from a template (optional)
@@ -164,18 +156,28 @@ export function PageEditor() {
           </select>
         </label>
       )}
-      {collab && pageId ? (
-        <CollaborativeEditor
-          key={pageId}
-          pageId={pageId}
-          token={collab.token}
-          initialContent={content}
-          displayName={user?.displayName ?? 'Anonymous'}
-          onChange={setContent}
+      <div className="paper">
+        <input
+          className="title-input"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Page title"
+          required
+          autoFocus={!isEdit}
         />
-      ) : (
-        <Editor key={pageId ?? `new-${templateId || 'blank'}`} value={content} editable onChange={setContent} />
-      )}
+        {collab && pageId ? (
+          <CollaborativeEditor
+            key={pageId}
+            pageId={pageId}
+            token={collab.token}
+            initialContent={content}
+            displayName={user?.displayName ?? 'Anonymous'}
+            onChange={setContent}
+          />
+        ) : (
+          <Editor key={pageId ?? `new-${templateId || 'blank'}`} value={content} editable onChange={setContent} />
+        )}
+      </div>
       {isEdit && (
         <label className="change-comment">
           What changed? (optional)
