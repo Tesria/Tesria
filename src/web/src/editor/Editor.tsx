@@ -1,6 +1,7 @@
 import { useEditor, EditorContent } from '@tiptap/react'
 import { useEffect } from 'react'
 import { Toolbar } from './Toolbar'
+import { TableControls } from './TableControls'
 import { getSharedExtensions } from './extensions'
 
 type Props = {
@@ -46,6 +47,7 @@ export function Editor({ value, editable = true, onChange }: Props) {
   return (
     <div className={editable ? 'editor editor--editable' : 'editor'}>
       {editable && editor && <Toolbar editor={editor} />}
+      {editable && editor && <TableControls editor={editor} />}
       <EditorContent editor={editor} className="editor__content" />
     </div>
   )
