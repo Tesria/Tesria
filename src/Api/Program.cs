@@ -16,6 +16,7 @@ using ConfluenceClone.Api.Features.Notifications;
 using ConfluenceClone.Api.Features.Templates;
 using ConfluenceClone.Api.Features.Watches;
 using ConfluenceClone.Api.Features.Webhooks;
+using ConfluenceClone.Api.Domain;
 using ConfluenceClone.Api.Infrastructure;
 using ConfluenceClone.Api.Infrastructure.Audit;
 using ConfluenceClone.Api.Infrastructure.Auth;
@@ -24,8 +25,10 @@ using ConfluenceClone.Api.Infrastructure.Notifications;
 using ConfluenceClone.Api.Infrastructure.Permissions;
 using ConfluenceClone.Api.Infrastructure.Storage;
 using ConfluenceClone.Api.Infrastructure.Webhooks;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 
@@ -50,6 +53,7 @@ builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddSingleton<ICollabTokenService, CollabTokenService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IApiTokenService, ApiTokenService>();
+builder.Services.AddScoped<IOidcUserProvisioner, OidcUserProvisioner>();
 
 // Webhooks: matching (which webhooks, for which event) is scoped/DB-backed;
 // delivery is a channel-backed background service so a slow or unreachable
@@ -74,7 +78,7 @@ builder.Services.AddDataProtection()
 // picks between them per-request so every existing endpoint's
 // RequireAuthorization() works unchanged for either caller.
 const string SmartScheme = "Smart";
-builder.Services
+var authBuilder = builder.Services
     .AddAuthentication(options =>
     {
         options.DefaultScheme = SmartScheme;
@@ -109,6 +113,104 @@ builder.Services
     })
     .AddScheme<AuthenticationSchemeOptions, ApiTokenAuthenticationHandler>(
         ApiTokenAuthenticationDefaults.AuthenticationScheme, _ => { });
+
+// OIDC/SSO (PLAN §1: "architected for OIDC/SSO later", pluggable for
+// Keycloak/Authentik/Google, etc.) — entirely optional. With no Authority
+// configured, this scheme is never registered and the app behaves exactly as
+// it did with local accounts only.
+var oidcAuthority = builder.Configuration["Oidc:Authority"];
+if (!string.IsNullOrWhiteSpace(oidcAuthority))
+{
+    authBuilder.AddOpenIdConnect(OidcAuthenticationDefaults.Scheme, options =>
+    {
+        options.Authority = oidcAuthority;
+        options.ClientId = builder.Configuration["Oidc:ClientId"];
+        options.ClientSecret = builder.Configuration["Oidc:ClientSecret"];
+        // Defaults to true; only disable for a same-network/dev IdP served over
+        // plain http (never appropriate across a real network boundary).
+        options.RequireHttpsMetadata = builder.Configuration.GetValue("Oidc:RequireHttpsMetadata", true);
+
+        options.ResponseType = "code";
+        options.UsePkce = true;
+        options.Scope.Clear();
+        options.Scope.Add("openid");
+        options.Scope.Add("profile");
+        options.Scope.Add("email");
+        // Some providers omit email/email_verified from the id_token itself.
+        options.GetClaimsFromUserInfoEndpoint = true;
+        // We only need the resolved local identity, not the provider's tokens.
+        options.SaveTokens = false;
+
+        // Complete sign-in on our normal cookie scheme using OUR internal user
+        // id — not the provider's own claim shape — so every other endpoint
+        // (CurrentUser, permissions, audit, ...) keeps working unchanged
+        // regardless of which auth method the caller used.
+        options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+
+        // Match the main auth cookie's policy: Caddy terminates TLS and proxies
+        // to Kestrel over plain HTTP internally, so "always secure" would be
+        // wrong here too — see the identical setting on the cookie scheme above.
+        options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.NonceCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+
+        options.Events = new OpenIdConnectEvents
+        {
+            OnTicketReceived = async ctx =>
+            {
+                var principal = ctx.Principal!;
+                var subject = principal.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? principal.FindFirstValue("sub");
+                var email = principal.FindFirstValue(ClaimTypes.Email)
+                    ?? principal.FindFirstValue("email");
+                var emailVerifiedClaim = principal.FindFirstValue("email_verified");
+                var emailVerified = string.Equals(emailVerifiedClaim, "true", StringComparison.OrdinalIgnoreCase)
+                    || emailVerifiedClaim == "1";
+                var displayName = principal.FindFirstValue(ClaimTypes.Name)
+                    ?? principal.FindFirstValue("name")
+                    ?? principal.FindFirstValue("preferred_username");
+
+                var provisioner = ctx.HttpContext.RequestServices.GetRequiredService<IOidcUserProvisioner>();
+                User user;
+                try
+                {
+                    user = await provisioner.ResolveOrProvisionAsync(subject!, email, emailVerified, displayName);
+                }
+                catch (Exception ex)
+                {
+                    // ctx.Fail() alone does not reliably stop TicketReceived from
+                    // completing sign-in with the provider's own (unmapped)
+                    // principal — write the rejection ourselves and mark the
+                    // response handled, the same explicit pattern OnRemoteFailure
+                    // uses below, so no session is ever established on failure.
+                    ctx.HttpContext.Response.Redirect("/login?ssoError=" + Uri.EscapeDataString(ex.Message));
+                    ctx.HandleResponse();
+                    return;
+                }
+
+                // Replace the provider's claims with our own internal shape —
+                // the same one local login produces — before the handler signs
+                // into the cookie scheme.
+                var claims = new List<Claim>
+                {
+                    new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                    new(ClaimTypes.Email, user.Email),
+                    new(ClaimTypes.Name, user.DisplayName),
+                };
+                ctx.Principal = new ClaimsPrincipal(
+                    new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
+            },
+            // Land back on the login page with a readable error instead of an
+            // unhandled-exception page if the provider or provisioning fails.
+            OnRemoteFailure = ctx =>
+            {
+                ctx.Response.Redirect("/login?ssoError=" + Uri.EscapeDataString(ctx.Failure?.Message ?? "Sign-in failed."));
+                ctx.HandleResponse();
+                return Task.CompletedTask;
+            },
+        };
+    });
+}
+
 builder.Services.AddAuthorization();
 
 // Health checks, incl. a database probe now that EF Core is wired in.

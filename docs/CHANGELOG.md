@@ -5,7 +5,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
-### Phase 5 — Advanced (in progress, 2026-07-24)
+### Phase 5 — Advanced (2026-07-24)
 
 Added:
 - **Real-time collaborative editing.** A Node + Hocuspocus/Yjs sidecar
@@ -52,6 +52,33 @@ Added:
   Verified with a real listener: signature checked valid, and an
   unsubscribed event correctly produced no delivery. SPA: an API Tokens page
   and a per-space Webhooks page.
+- **OIDC / SSO — the last Phase 5 item.** Sign in via any standards-compliant
+  OpenID Connect provider (Keycloak, Authentik, Google, ...) alongside local
+  accounts, configured generically via `Oidc:Authority`/`ClientId`/
+  `ClientSecret` (PLAN §1: "architected for OIDC/SSO later", pluggable). The
+  `Smart` policy scheme now spans three auth methods (cookie / API token /
+  OIDC-issued cookie), all converging on the same internal claim shape so every
+  existing endpoint keeps working unchanged.
+  - **Account resolution** (`IOidcUserProvisioner`, independently unit-tested):
+    a returning subject signs in; a verified-email match links to an existing
+    local account; an **unverified-email match is refused** — auto-linking it
+    would let anyone claiming that address at the IdP take over an existing
+    account; no match provisions a new passwordless account.
+  - Optional: no `Oidc:Authority` means the app behaves exactly as
+    local-accounts-only, unchanged.
+  - SPA: a "Sign in with …" option on the login page, shown only when enabled;
+    a full-page redirect (not a fetch), since the identity provider needs the
+    browser's own address bar.
+  - **Verified against a real Keycloak instance**, not mocks: the full
+    authorization-code + PKCE redirect dance end-to-end (challenge → Keycloak
+    login → callback → authenticated session), a second login resolving to the
+    same account (idempotent), and — critically — an attacker registering at
+    the IdP with a victim's email but *unverified* was cleanly refused with no
+    session established. That run caught a real bug: `ctx.Fail()` inside
+    `OnTicketReceived` didn't reliably stop sign-in from completing with the
+    provider's raw, unmapped claims; fixed by writing the rejection response
+    and calling `HandleResponse()` explicitly, the same pattern already used
+    for provider-side failures. Migration: OidcSubjectIndex.
 
 ### Phase 4 — Fast-follow (2026-07-23)
 

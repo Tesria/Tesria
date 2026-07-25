@@ -237,6 +237,7 @@ export const api = {
     register: (email: string, displayName: string, password: string) =>
       request<User>('POST', '/api/auth/register', { email, displayName, password }),
     logout: () => request<void>('POST', '/api/auth/logout'),
+    oidcStatus: () => request<{ enabled: boolean; displayName: string }>('GET', '/api/auth/oidc/status'),
   },
   spaces: {
     list: (includeArchived = false) =>
