@@ -66,6 +66,64 @@ public class ProseMirrorRendererTests
         Assert.Equal(string.Empty, ProseMirrorRenderer.ToHtml("{not json"));
         Assert.Equal(string.Empty, ProseMirrorRenderer.ToHtml(""));
     }
+
+    private const string TableDoc = """
+    {"type":"doc","content":[
+      {"type":"table","content":[
+        {"type":"tableRow","content":[
+          {"type":"tableHeader","content":[{"type":"paragraph","content":[{"type":"text","text":"Name"}]}]},
+          {"type":"tableHeader","content":[{"type":"paragraph","content":[{"type":"text","text":"Qty"}]}]}]},
+        {"type":"tableRow","content":[
+          {"type":"tableCell","content":[{"type":"paragraph","content":[{"type":"text","text":"Widget | Pro"}]}]},
+          {"type":"tableCell","content":[{"type":"paragraph","content":[{"type":"text","text":"3"}]}]}]}
+      ]}
+    ]}
+    """;
+
+    [Fact]
+    public void Renders_table_as_html()
+    {
+        var html = ProseMirrorRenderer.ToHtml(TableDoc);
+        Assert.Contains("<table>", html);
+        Assert.Contains("<th><p>Name</p>\n</th>", html);
+        Assert.Contains("<td><p>Widget | Pro</p>\n</td>", html);
+    }
+
+    [Fact]
+    public void Renders_table_as_a_pipe_escaped_markdown_table()
+    {
+        var md = ProseMirrorRenderer.ToMarkdown(TableDoc);
+        Assert.Contains("| Name | Qty |", md);
+        Assert.Contains("| --- | --- |", md);
+        Assert.Contains("Widget \\| Pro", md); // literal pipe in cell content is escaped
+    }
+
+    private const string TaskListDoc = """
+    {"type":"doc","content":[
+      {"type":"taskList","content":[
+        {"type":"taskItem","attrs":{"checked":true},"content":[{"type":"paragraph","content":[{"type":"text","text":"Done thing"}]}]},
+        {"type":"taskItem","attrs":{"checked":false},"content":[{"type":"paragraph","content":[{"type":"text","text":"Todo thing"}]}]}
+      ]}
+    ]}
+    """;
+
+    [Fact]
+    public void Renders_task_list_as_html_with_disabled_checkboxes()
+    {
+        var html = ProseMirrorRenderer.ToHtml(TaskListDoc);
+        Assert.Contains("data-type=\"taskList\"", html);
+        Assert.Contains("<input type=\"checkbox\" disabled checked />", html);
+        Assert.Contains("<input type=\"checkbox\" disabled />", html);
+        Assert.Contains("Done thing", html);
+    }
+
+    [Fact]
+    public void Renders_task_list_as_gfm_markdown_checkboxes()
+    {
+        var md = ProseMirrorRenderer.ToMarkdown(TaskListDoc);
+        Assert.Contains("- [x] Done thing", md);
+        Assert.Contains("- [ ] Todo thing", md);
+    }
 }
 
 public class ExportEndpointTests

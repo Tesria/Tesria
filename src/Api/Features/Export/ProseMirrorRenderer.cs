@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -61,6 +62,12 @@ public static class ProseMirrorRenderer
             ? v.ToString()
             : null;
 
+    private static bool BoolAttr(JsonElement node, string name) =>
+        node.TryGetProperty("attrs", out var attrs)
+        && attrs.ValueKind == JsonValueKind.Object
+        && attrs.TryGetProperty(name, out var v)
+        && v.ValueKind == JsonValueKind.True;
+
     // -- HTML -----------------------------------------------------------------
 
     private static void RenderHtmlChildren(JsonElement node, StringBuilder sb)
@@ -105,6 +112,28 @@ public static class ProseMirrorRenderer
                 break;
             case "hardBreak":
                 sb.Append("<br />");
+                break;
+            case "table":
+                sb.Append("<table>\n"); RenderHtmlChildren(node, sb); sb.Append("</table>\n");
+                break;
+            case "tableRow":
+                sb.Append("<tr>\n"); RenderHtmlChildren(node, sb); sb.Append("</tr>\n");
+                break;
+            case "tableHeader":
+                sb.Append("<th>"); RenderHtmlChildren(node, sb); sb.Append("</th>\n");
+                break;
+            case "tableCell":
+                sb.Append("<td>"); RenderHtmlChildren(node, sb); sb.Append("</td>\n");
+                break;
+            case "taskList":
+                sb.Append("<ul data-type=\"taskList\">\n"); RenderHtmlChildren(node, sb); sb.Append("</ul>\n");
+                break;
+            case "taskItem":
+                sb.Append("<li><label><input type=\"checkbox\" disabled");
+                if (BoolAttr(node, "checked")) sb.Append(" checked");
+                sb.Append(" /></label><div>");
+                RenderHtmlChildren(node, sb);
+                sb.Append("</div></li>\n");
                 break;
             default:
                 RenderHtmlChildren(node, sb);
@@ -178,10 +207,64 @@ public static class ProseMirrorRenderer
             case "hardBreak":
                 sb.Append("  \n");
                 break;
+            case "table":
+                RenderMarkdownTable(node, sb);
+                break;
+            case "taskList":
+                RenderMarkdownTaskList(node, sb, listDepth);
+                break;
             default:
                 RenderMarkdownChildren(node, sb, listDepth);
                 break;
         }
+    }
+
+    /// <summary>A minimal, non-aligned GFM pipe table.</summary>
+    private static void RenderMarkdownTable(JsonElement tableNode, StringBuilder sb)
+    {
+        var rows = Children(tableNode)
+            .Select(row => Children(row)
+                .Select(cell => EscapeTablePipes(PlainText(cell).Trim().Replace('\n', ' ')))
+                .ToList())
+            .ToList();
+        if (rows.Count == 0) return;
+
+        var columnCount = rows.Max(r => r.Count);
+        void WriteRow(List<string> cells)
+        {
+            sb.Append('|');
+            for (var i = 0; i < columnCount; i++)
+                sb.Append(' ').Append(i < cells.Count ? cells[i] : "").Append(" |");
+            sb.Append('\n');
+        }
+
+        WriteRow(rows[0]);
+        sb.Append('|');
+        for (var i = 0; i < columnCount; i++) sb.Append(" --- |");
+        sb.Append('\n');
+        for (var i = 1; i < rows.Count; i++) WriteRow(rows[i]);
+        sb.Append('\n');
+    }
+
+    private static string EscapeTablePipes(string text) => text.Replace("|", "\\|");
+
+    private static void RenderMarkdownTaskList(JsonElement listNode, StringBuilder sb, int depth)
+    {
+        var indent = new string(' ', depth * 2);
+        foreach (var item in Children(listNode))
+        {
+            var marker = BoolAttr(item, "checked") ? "- [x] " : "- [ ] ";
+            var itemText = new StringBuilder();
+            RenderMarkdownChildren(item, itemText, depth + 1);
+
+            var lines = itemText.ToString().TrimEnd().Split('\n');
+            for (var i = 0; i < lines.Length; i++)
+            {
+                if (i == 0) sb.Append(indent).Append(marker).Append(lines[i]).Append('\n');
+                else if (lines[i].Length > 0) sb.Append(indent).Append("  ").Append(lines[i]).Append('\n');
+            }
+        }
+        if (depth == 0) sb.Append('\n');
     }
 
     private static void RenderMarkdownList(JsonElement listNode, StringBuilder sb, int depth, bool ordered)

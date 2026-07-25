@@ -1,6 +1,9 @@
 import StarterKit from '@tiptap/starter-kit'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { TableKit } from '@tiptap/extension-table'
+import TaskList from '@tiptap/extension-task-list'
+import TaskItem from '@tiptap/extension-task-item'
 import type { AnyExtension } from '@tiptap/core'
 import { lowlight } from './lowlight'
 import { CodeBlockView } from './CodeBlockView'
@@ -30,5 +33,8 @@ export function getSharedExtensions({ collaborative = false }: SharedExtensionOp
     // attr, so stored content and the export renderer are unaffected.
     StarterKit.configure({ codeBlock: false, ...(collaborative ? { undoRedo: false } : {}) }),
     CodeBlock,
+    TableKit.configure({ table: { resizable: true } }),
+    TaskList,
+    TaskItem.configure({ nested: true }),
   ]
 }

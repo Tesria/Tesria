@@ -5,6 +5,7 @@ import CollaborationCaret from '@tiptap/extension-collaboration-caret'
 import { HocuspocusProvider } from '@hocuspocus/provider'
 import * as Y from 'yjs'
 import { Toolbar } from './Toolbar'
+import { TableControls } from './TableControls'
 import { getSharedExtensions } from './extensions'
 
 type Props = {
@@ -107,6 +108,7 @@ export function CollaborativeEditor({
             : 'Offline — your changes are local until reconnected'}
       </div>
       {editor && <Toolbar editor={editor} />}
+      {editor && <TableControls editor={editor} />}
       <EditorContent editor={editor} className="editor__content" />
     </div>
   )

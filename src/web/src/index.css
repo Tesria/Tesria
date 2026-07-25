@@ -183,6 +183,26 @@ label input, label textarea { margin-top: 0.25rem; }
 .code-block pre { margin: 0; background: #0b1324; color: #e2e8f0; padding: 0.75rem; overflow-x: auto; border-radius: 0; }
 .code-block code { background: none; padding: 0; border-radius: 0; }
 .editor__content blockquote { border-left: 3px solid var(--border); margin: 0.5em 0; padding-left: 0.8em; color: var(--muted); }
+
+/* tables */
+.editor__content .tableWrapper { overflow-x: auto; margin: 0.75rem 0; }
+.editor__content table { border-collapse: collapse; table-layout: fixed; width: 100%; margin: 0; }
+.editor__content table td, .editor__content table th {
+  border: 1px solid var(--border); padding: 0.4rem 0.6rem; vertical-align: top; position: relative;
+}
+.editor__content table th { background: var(--bg-alt); font-weight: 600; text-align: left; }
+.editor__content table .selectedCell { background: rgba(12, 102, 228, 0.1); }
+.editor__content table .column-resize-handle {
+  background-color: var(--primary); bottom: -2px; position: absolute; right: -2px; top: 0; width: 4px; pointer-events: none;
+}
+.table-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem; padding: 0.3rem 1.5rem; border-bottom: 1px solid var(--border); background: #fbfbfc; }
+
+/* task lists */
+.editor__content ul[data-type="taskList"] { list-style: none; padding-left: 0; margin: 0.5em 0; }
+.editor__content ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 0.4rem; }
+.editor__content ul[data-type="taskList"] li > label { flex: 0 0 auto; margin-top: 0.3em; user-select: none; }
+.editor__content ul[data-type="taskList"] li > div { flex: 1 1 auto; }
+.editor__content ul[data-type="taskList"] li[data-checked="true"] > div { color: var(--muted); text-decoration: line-through; }
 .toolbar {
   display: flex; flex-wrap: wrap; gap: 0.2rem; padding: 0.4rem 1.5rem; border-bottom: 1px solid var(--border);
   background: var(--bg-alt);
