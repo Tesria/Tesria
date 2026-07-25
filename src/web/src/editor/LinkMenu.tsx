@@ -46,7 +46,13 @@ export function LinkMenu({ editor }: { editor: TiptapEditor }) {
           <form
             className="link-menu__form"
             onSubmit={(e) => {
+              // This form is a React descendant of the page's own save <form>
+              // (BubbleMenu portals the DOM elsewhere, but React's synthetic
+              // events still bubble through the component tree) — without
+              // stopPropagation, submitting this popover would also submit
+              // the outer form and navigate away.
               e.preventDefault()
+              e.stopPropagation()
               save()
             }}
           >

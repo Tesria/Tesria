@@ -4,13 +4,14 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { TableKit } from '@tiptap/extension-table'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
-import Image from '@tiptap/extension-image'
 import Highlight from '@tiptap/extension-highlight'
 import TextAlign from '@tiptap/extension-text-align'
 import type { AnyExtension } from '@tiptap/core'
 import { lowlight } from './lowlight'
 import { CodeBlockView } from './CodeBlockView'
 import { SlashCommand } from './slash/SlashCommand'
+import { Image } from './imageExtension'
+import { CommentMark } from './commentMark'
 
 type SharedExtensionOptions = {
   /** Collaborative editors let Yjs own undo/redo history instead of StarterKit's. */
@@ -67,6 +68,7 @@ export function getSharedExtensions({ collaborative = false, editable = true }: 
     Image,
     Highlight,
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
+    CommentMark,
     // Read-only rendering never needs "/" commands — skip mounting the
     // suggestion plugin entirely rather than just hiding its output.
     ...(editable ? [SlashCommand] : []),
