@@ -6,15 +6,21 @@ block-based editor, and one-command deployment.
 
 See [`PLAN.md`](./PLAN.md) for the full design and roadmap.
 
-**Status:** Phases 1–5 complete (the full original roadmap). A working wiki —
-local accounts, spaces, pages in a hierarchical tree, a TipTap block editor with
-version history and rollback, attachments, threaded footer/inline comments,
+**Status:** Phases 1–5 complete (the full original roadmap), plus a
+ground-up editor UX overhaul beyond it. A working wiki — local accounts,
+spaces, pages in a hierarchical tree, a TipTap block editor with version
+history and rollback, attachments, threaded footer/inline comments,
 full-text search, and soft-delete/trash — on the full Docker stack (app +
 PostgreSQL 18 + Caddy auto-HTTPS). Data safety is covered by pgBackRest
 point-in-time recovery plus logical and file backups. Phase 4 added labels,
 page export, an audit log, and groups with space permissions / page
 restrictions. Phase 5 added real-time collaborative editing, page templates,
 notifications/watches, a public REST API (tokens + webhooks), and OIDC/SSO.
+The editor overhaul added syntax-highlighted code blocks, tables/task lists
+with hover-triggered controls, images (with a draft/publish page lifecycle
+so uploads work on unsaved pages), inline/anchored comments, a slash-command
+menu, and a per-page full-width layout toggle — see
+[`docs/CHANGELOG.md`](./docs/CHANGELOG.md) for the full list.
 
 ## Tech stack
 

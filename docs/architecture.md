@@ -67,10 +67,59 @@ a real full-page redirect to the identity provider.
   to production.
 - In production, `npm run build` output is copied into the API's `wwwroot`
   during the Docker build.
-- **Editor:** TipTap v3 (ProseMirror) provides the block WYSIWYG. Documents are
-  ProseMirror JSON; the same `Editor` component renders read-only page views and
-  version previews. Routing is React Router 7; a typed `api/client.ts` wraps all
-  REST calls and an `AuthContext` holds the session.
+- Routing is React Router 7; a typed `api/client.ts` wraps all REST calls and
+  an `AuthContext` holds the session.
+
+### Editor (`src/web/src/editor`)
+
+TipTap v3 (ProseMirror) provides the block WYSIWYG. Documents are stored as
+ProseMirror JSON in `PageVersion.ContentJson`.
+
+- **`extensions.ts` is the single source of truth for the schema** (node/mark
+  types) — both `Editor.tsx` (single-user, and read-only rendering via
+  `editable={false}`) and `CollaborativeEditor.tsx` (Yjs-backed) import from
+  it rather than declaring their own extension list. This matters because Yjs
+  requires every collaborator to share one exact ProseMirror schema — any new
+  node/mark type is added here, once, never inline in either editor component.
+- **Custom node views** (`CodeBlockView.tsx`) render a React component in
+  place of a node — used for the syntax-highlighted code block's language
+  picker/copy button/line-number gutter.
+- **Floating menus** (`@tiptap/react/menus`'s `BubbleMenu`) — `LinkMenu.tsx`
+  (editing an existing link), `SelectionBubbleMenu.tsx` (formatting a text
+  selection, including the "Comment" action), `ImageHoverMenu.tsx` (border/
+  shadow/comment on a selected image). Each needs a distinct `pluginKey` prop.
+  **Gotcha:** these render inside the page's own save `<form>` in edit mode;
+  any popover `<form>` inside one of them must call `e.stopPropagation()` in
+  its submit handler, or the submit event bubbles through React's synthetic
+  event system (which follows the component tree, not BubbleMenu's DOM
+  portal) and also submits the outer page-save form.
+- **Table hover controls** (`TableControls.tsx`) — a fixed-position overlay
+  that tracks mouse proximity to each `<table>` in the document (not DOM
+  ancestry, since the +/× buttons render outside the table's own DOM) and
+  uses `TableMap.positionAt()` (from `@tiptap/pm/tables`) to translate a
+  clicked row/column index into the right ProseMirror cell position before
+  running the standard add/delete row/column commands.
+- **The slash command menu** (`slash/`) is a custom `Suggestion`-based
+  extension (the same primitive `@tiptap/extension-mention` is built on) —
+  there's no pre-built importable slash extension. Positioning, scroll/resize
+  tracking, and outside-click dismissal are handled by `@tiptap/suggestion`'s
+  own managed `mount()` API (Floating UI-based), which meant no separate
+  positioning library (e.g. tippy.js) was needed.
+- **Inline comments**: a `comment` mark (`commentMark.ts`) highlights a text
+  range and links it to a real `Comment` row via a `commentId` attr; images
+  can't carry marks, so an image comment has no in-document highlight.
+- **Draft/publish**: a new page gets a real (invisible) `Page` row —
+  `Status = PageStatus.Draft`, reusing an enum value that existed unused
+  since Phase 2 — the moment the editor mounts, via `POST /pages/draft`. This
+  gives image uploads (which need a real page id) somewhere to attach to
+  before the user has saved anything. `POST /pages/{id}/publish` makes it
+  real (fires the normal "page created" audit/notification/webhook side
+  effects, exactly once — a retried publish is a safe no-op) and mutates the
+  existing version 1 in place rather than creating a confusing empty-v1/
+  real-v2 pair. The global EF Core query filter on `Page` excludes drafts
+  (`Status != PageStatus.Draft`), matching the existing soft-delete filter
+  pattern; permission checks already used `IgnoreQueryFilters()` for
+  trash/restore, so they resolve drafts correctly with no extra code.
 
 ## Real-time collaboration (`collab/`)
 

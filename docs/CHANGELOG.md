@@ -5,6 +5,65 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Editor UX overhaul (2026-07-25)
+
+A ground-up pass on the block editor, going beyond the original PLAN.md
+roadmap (which this repeats, this is not one of the numbered phases above).
+Full details and file-level references are in the session's saved plan;
+summarized here for the changelog record.
+
+Added:
+- **Draft/publish page lifecycle.** A brand-new page is now backed by a real
+  (but invisible) `Page` row from the moment the editor opens — reusing the
+  `PageStatus.Draft` enum value that existed unused since Phase 2, so no
+  migration was needed. This lets image uploads work on an unsaved page
+  (the attachment API needs a real page id); the draft becomes visible and
+  fires its "page created" side effects (audit/notification/webhook) only
+  when the user clicks "Create page" (`POST /pages/draft`,
+  `POST /pages/{id}/publish`, `DELETE /pages/{id}/draft`).
+- **Syntax-highlighted code blocks** (`@tiptap/extension-code-block-lowlight`)
+  with a language picker, copy button, and optional per-block line numbers.
+- **Tables** (resizable) and **task lists**, with hover-triggered
+  Confluence-style row/column insert (+) and delete (×) controls on the
+  table itself (researched against real Confluence's UX) rather than a
+  persistent toolbar strip.
+- **Images**: paste/drag-drop/toolbar upload (using the draft page id when
+  the page is new), plus a dedicated hover menu (border, drop-shadow,
+  comment) — not the text-formatting bubble, which made no sense for images.
+- **Underline, real link editing UI, highlight, text-align.**
+- **Inline/anchored commenting**: a `comment` mark highlights the selected
+  text and links it to a real `Comment` row (the backend's
+  `AnchorJson`/`isInline` support existed since the comments feature landed,
+  but the frontend never created anchored comments until now). Images get a
+  comment without an in-document highlight (they can't carry text marks).
+- **A floating selection bubble menu** and a Notion-style **"/" slash-command
+  menu** for inserting blocks, built on `@tiptap/suggestion`.
+- **A "paper" redesign**: title flows into the body inside one card instead
+  of a boxed title above a bordered editor. The formatting toolbar and the
+  page's primary actions (Edit/+Subpage, plus a new "⋮" overflow menu for
+  exports/watch/save-as-template/delete) now live in one shared, full-width,
+  sticky action bar below the app's topbar — consistent between view and
+  edit mode, instead of a toolbar wedged between the title and the document.
+- **Per-page full-width toggle** (`Page.FullWidth`, `PUT /pages/{id}/layout`),
+  matching real Confluence's normal/full-width reading-width preference
+  (researched: it's a per-page setting, not a session/URL setting).
+- Every new node/mark type got export-renderer parity in the same phase it
+  was added (`ProseMirrorRenderer.cs`), so exports never silently degrade.
+
+Fixed:
+- The code block's syntax highlighting was rendering as flat, uncolored
+  text — lowlight was already producing `hljs-*` token spans, there was
+  just no CSS coloring them.
+- The table column-resize cursor never appeared — prosemirror-tables
+  applies a `resize-cursor` class to the editor root while a column border
+  is draggable, but nothing consumed it in CSS.
+- A real bug affecting every popover rendered inside the editor (the link
+  popovers, the link-edit form, the new comment popovers): submitting one
+  also submitted the page's own outer save `<form>` and silently navigated
+  away, because React bubbles synthetic events through the component tree
+  regardless of BubbleMenu's DOM portal. Fixed with `stopPropagation()` on
+  every affected popover's submit handler.
+
 ### Phase 5 — Advanced (2026-07-24)
 
 Added:
