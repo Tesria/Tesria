@@ -269,7 +269,18 @@ label input, label textarea { margin-top: 0.25rem; }
 /* prosemirror-tables applies this class to the ProseMirror root itself (not
    the handle) while a column border is close enough to drag. */
 .editor__content .ProseMirror.resize-cursor { cursor: col-resize; }
-.table-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem; padding: 0.3rem 1.5rem; border-bottom: 1px solid var(--border); background: #fbfbfc; }
+/* table hover controls (TableControls.tsx) — only rendered at all while the
+   mouse is near the table (tracked in JS), so no extra CSS-hover reveal is
+   needed; these are fixed-position, so the wrapper itself needs no styling. */
+.table-hover__add, .table-hover__grip {
+  position: fixed; z-index: 6; border: 1px solid var(--border); background: #fff; color: var(--muted);
+  cursor: pointer; padding: 0; line-height: 1; display: flex; align-items: center; justify-content: center;
+}
+.table-hover__add:hover, .table-hover__grip:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+.table-hover__add { width: 16px; height: 16px; border-radius: 999px; font-size: 0.75rem; }
+.table-hover__grip { font-size: 0.7rem; border-radius: 3px; }
+.table-hover__grip--col { height: 14px; }
+.table-hover__grip--row { width: 14px; }
 
 /* task lists */
 .editor__content ul[data-type="taskList"] { list-style: none; padding-left: 0; margin: 0.5em 0; }
