@@ -25,6 +25,19 @@ type SharedExtensionOptions = {
 }
 
 const CodeBlock = CodeBlockLowlight.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      // Per-block visual toggle (CodeBlockView's "#" button) — not read by the
+      // export renderer, purely an editor display preference.
+      lineNumbers: {
+        default: false,
+        parseHTML: (element: HTMLElement) => element.hasAttribute('data-line-numbers'),
+        renderHTML: (attributes: { lineNumbers?: boolean }) =>
+          attributes.lineNumbers ? { 'data-line-numbers': 'true' } : {},
+      },
+    }
+  },
   addNodeView() {
     return ReactNodeViewRenderer(CodeBlockView)
   },

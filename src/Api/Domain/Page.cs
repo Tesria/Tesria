@@ -32,6 +32,13 @@ public class Page
 
     public PageStatus Status { get; set; } = PageStatus.Current;
 
+    /// <summary>
+    /// Layout preference for this page: when true, the reading/editing surface
+    /// spans the full content column instead of the constrained reading width.
+    /// Saved per-page (like real Confluence), not a per-user or per-session setting.
+    /// </summary>
+    public bool FullWidth { get; set; }
+
     public Guid CreatedById { get; set; }
     public User? CreatedBy { get; set; }
 

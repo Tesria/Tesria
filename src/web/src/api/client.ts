@@ -22,6 +22,7 @@ export type PageDetail = {
   status: number
   currentVersionNumber: number
   contentJson: string
+  fullWidth: boolean
   createdAt: string
   updatedAt: string
 }
@@ -265,6 +266,8 @@ export const api = {
       request<PageDetail>('PUT', `/api/pages/${id}`, input),
     move: (id: string, input: { parentPageId?: string | null; position: number }) =>
       request<void>('PUT', `/api/pages/${id}/move`, input),
+    setLayout: (id: string, input: { fullWidth: boolean }) =>
+      request<void>('PUT', `/api/pages/${id}/layout`, input),
     remove: (id: string) => request<void>('DELETE', `/api/pages/${id}`),
     createDraft: (input: { spaceId: string; parentPageId?: string | null }) =>
       request<{ id: string }>('POST', '/api/pages/draft', input),

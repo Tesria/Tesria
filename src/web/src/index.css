@@ -24,6 +24,7 @@ h1 { font-size: 1.7rem; }
 .row-between { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .row-gap { display: flex; gap: 0.5rem; }
 .page-wrap { max-width: 860px; margin: 0 auto; padding: 1.5rem; }
+.page-wrap--full { max-width: none; }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem;
@@ -180,8 +181,39 @@ label input, label textarea { margin-top: 0.25rem; }
   font-size: 0.75rem; padding: 0.15rem 0.5rem; cursor: pointer;
 }
 .code-block__copy:hover { background: #1f2a44; }
-.code-block pre { margin: 0; background: #0b1324; color: #e2e8f0; padding: 0.75rem; overflow-x: auto; border-radius: 0; }
+.code-block__header-actions { display: flex; gap: 0.4rem; }
+.code-block__linenum-toggle {
+  background: transparent; border: 1px solid #334066; color: #cbd5e1; border-radius: 4px;
+  font-size: 0.75rem; padding: 0.15rem 0.5rem; cursor: pointer; font-family: monospace;
+}
+.code-block__linenum-toggle:hover { background: #1f2a44; }
+.code-block__linenum-toggle.is-active { background: #29365c; color: #fff; border-color: #4b5f8f; }
+.code-block__body { display: flex; }
+.code-block__body pre { flex: 1 1 auto; min-width: 0; }
+.code-block__gutter {
+  flex: 0 0 auto; user-select: none; text-align: right; padding: 0.75rem 0.5rem 0.75rem 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85rem; line-height: 1.5;
+  color: #4b5f8f; background: #0b1324; border-right: 1px solid #1f2a44;
+}
+.code-block__gutter span { display: block; }
+.code-block pre {
+  margin: 0; background: #0b1324; color: #e2e8f0; padding: 0.75rem; overflow-x: auto; border-radius: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85rem; line-height: 1.5;
+}
 .code-block code { background: none; padding: 0; border-radius: 0; }
+
+/* highlight.js token colors (atom-one-dark-derived palette) */
+.code-block .hljs-comment, .code-block .hljs-quote { color: #7c88a3; font-style: italic; }
+.code-block .hljs-keyword, .code-block .hljs-selector-tag, .code-block .hljs-doctag, .code-block .hljs-formula { color: #c678dd; }
+.code-block .hljs-section, .code-block .hljs-name, .code-block .hljs-deletion, .code-block .hljs-subst { color: #e06c75; }
+.code-block .hljs-literal { color: #56b6c2; }
+.code-block .hljs-string, .code-block .hljs-regexp, .code-block .hljs-addition, .code-block .hljs-attribute, .code-block .hljs-meta-string { color: #98c379; }
+.code-block .hljs-attr, .code-block .hljs-variable, .code-block .hljs-template-variable, .code-block .hljs-type,
+.code-block .hljs-selector-class, .code-block .hljs-selector-attr, .code-block .hljs-selector-pseudo, .code-block .hljs-number { color: #d19a66; }
+.code-block .hljs-symbol, .code-block .hljs-bullet, .code-block .hljs-link, .code-block .hljs-meta, .code-block .hljs-selector-id, .code-block .hljs-title { color: #61aeee; }
+.code-block .hljs-built_in, .code-block .hljs-builtin-name, .code-block .hljs-class .hljs-title { color: #e6c07b; }
+.code-block .hljs-emphasis { font-style: italic; }
+.code-block .hljs-strong { font-weight: 700; }
 .editor__content blockquote { border-left: 3px solid var(--border); margin: 0.5em 0; padding-left: 0.8em; color: var(--muted); }
 .editor__content img { max-width: 100%; border-radius: 4px; }
 .editor__content mark { background: #fff3a3; padding: 0.05em 0.1em; border-radius: 2px; }
@@ -234,6 +266,9 @@ label input, label textarea { margin-top: 0.25rem; }
 .editor__content table .column-resize-handle {
   background-color: var(--primary); bottom: -2px; position: absolute; right: -2px; top: 0; width: 4px; pointer-events: none;
 }
+/* prosemirror-tables applies this class to the ProseMirror root itself (not
+   the handle) while a column border is close enough to drag. */
+.editor__content .ProseMirror.resize-cursor { cursor: col-resize; }
 .table-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem; padding: 0.3rem 1.5rem; border-bottom: 1px solid var(--border); background: #fbfbfc; }
 
 /* task lists */
@@ -242,18 +277,20 @@ label input, label textarea { margin-top: 0.25rem; }
 .editor__content ul[data-type="taskList"] li > label { flex: 0 0 auto; margin-top: 0.3em; user-select: none; }
 .editor__content ul[data-type="taskList"] li > div { flex: 1 1 auto; }
 .editor__content ul[data-type="taskList"] li[data-checked="true"] > div { color: var(--muted); text-decoration: line-through; }
-.toolbar {
-  display: flex; flex-wrap: wrap; gap: 0.2rem; padding: 0.4rem 1.5rem; border-bottom: 1px solid var(--border);
-  background: var(--bg-alt);
-  /* Docks directly under the fixed .topbar (52px tall) as the paper scrolls
-     past it; bleeds edge-to-edge via a negative margin equal to .paper's own
-     padding, since the toolbar always lives inside a .paper card. */
-  position: sticky; top: 52px; z-index: 5; margin: 0 -1.5rem;
-}
+/* The formatting button group — rendered inside .page-actionbar (edit mode)
+   or floating inside a .toolbar--bubble menu; either way it's no longer
+   nested inside .paper, so it needs no sticky/bleed positioning of its own. */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem; padding: 0.3rem 0.6rem; background: var(--bg-alt); border-radius: var(--radius); }
 .toolbar__btn { border: 1px solid transparent; background: transparent; border-radius: 4px; padding: 0.2rem 0.5rem; cursor: pointer; font-size: 0.82rem; }
 .toolbar__btn:hover { background: #e4e6eb; }
 .toolbar__btn.is-active { background: #e0ecff; color: var(--primary-dark); border-color: #bcd4ff; }
 .toolbar__sep { width: 1px; background: var(--border); margin: 0 0.25rem; }
+.tb-glyph { display: inline-block; }
+.tb-bold { font-weight: 700; }
+.tb-italic { font-style: italic; }
+.tb-underline { text-decoration: underline; }
+.tb-strike { text-decoration: line-through; }
+.tb-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; }
 /* live collaboration */
 .collab-status { display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); background: #fbfbfc; }
 .collab-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
@@ -273,8 +310,36 @@ label input, label textarea { margin-top: 0.25rem; }
 /* ---- page view ----------------------------------------------------------- */
 .page-head { margin-bottom: 0.25rem; }
 .page-head h1 { margin: 0; }
-.page-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .template-form { flex: 1 1 100%; margin-top: 0.5rem; }
+
+/* full-width action bar: replaces the old in-header button row (view mode)
+   and the editor's in-paper toolbar (edit mode), so both look the same and
+   sit in the same place — sticky, spanning the full content column. */
+.page-actionbar {
+  position: sticky; top: 52px; z-index: 8;
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;
+  padding: 0.5rem 1.5rem; background: #fff; border-bottom: 1px solid var(--border);
+}
+.page-actionbar__primary, .page-actionbar__secondary { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+
+.overflow-menu { position: relative; display: inline-flex; }
+.overflow-menu__trigger {
+  background: transparent; border: 1px solid var(--border); border-radius: var(--radius);
+  width: 34px; height: 34px; font-size: 1.1rem; line-height: 1; cursor: pointer; color: var(--text);
+}
+.overflow-menu__trigger:hover { background: var(--bg-alt); }
+.overflow-menu__dropdown {
+  position: absolute; right: 0; top: calc(100% + 6px); min-width: 220px; z-index: 20;
+  background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(23, 43, 77, 0.15); padding: 0.4rem; display: flex; flex-direction: column; gap: 0.15rem;
+}
+.overflow-menu__dropdown .btn, .overflow-menu__dropdown > a {
+  width: 100%; justify-content: flex-start; background: none; border: none; border-radius: 4px;
+  padding: 0.45rem 0.6rem; text-align: left; color: var(--text); text-decoration: none; font-size: 0.9rem;
+}
+.overflow-menu__dropdown .btn:hover, .overflow-menu__dropdown > a:hover { background: var(--bg-alt); text-decoration: none; }
+.overflow-menu__dropdown .btn--danger { color: var(--danger); }
+.overflow-menu__dropdown .template-form { flex: none; margin-top: 0.4rem; }
 .page-body { margin: 1rem 0 2rem; }
 
 .tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--border); }

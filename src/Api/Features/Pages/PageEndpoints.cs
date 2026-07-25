@@ -21,10 +21,11 @@ public static class PageEndpoints
     public record CreateDraftRequest(Guid SpaceId, Guid? ParentPageId);
     public record PublishPageRequest(string Title, string ContentJson);
     public record DraftResponse(Guid Id);
+    public record SetLayoutRequest(bool FullWidth);
 
     public record PageDetailResponse(
         Guid Id, Guid SpaceId, Guid? ParentPageId, string Title, int Position, PageStatus Status,
-        int CurrentVersionNumber, string ContentJson, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
+        int CurrentVersionNumber, string ContentJson, bool FullWidth, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
     public record PageVersionResponse(
         Guid Id, int VersionNumber, string? ChangeComment, Guid AuthorId, DateTimeOffset CreatedAt);
     public record PageVersionContentResponse(
@@ -46,6 +47,7 @@ public static class PageEndpoints
         group.MapGet("/{id:guid}", Get);
         group.MapPut("/{id:guid}", Update);
         group.MapPut("/{id:guid}/move", Move);
+        group.MapPut("/{id:guid}/layout", SetLayout);
         group.MapDelete("/{id:guid}", Delete);
         group.MapPost("/{id:guid}/restore", Restore);
         group.MapDelete("/{id:guid}/purge", Purge);
@@ -311,6 +313,23 @@ public static class PageEndpoints
         page.ParentPageId = req.ParentPageId;
         page.Position = req.Position;
         page.UpdatedAt = DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync();
+        return Results.NoContent();
+    }
+
+    /// <summary>
+    /// Sets the page's reading-width preference (normal vs. full-width). Pure
+    /// display metadata, like Move — no new version, audit entry, or webhook.
+    /// </summary>
+    private static async Task<IResult> SetLayout(
+        Guid id, SetLayoutRequest req, AppDbContext db, IPermissionService perms)
+    {
+        var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == id);
+        if (page is null) return Results.NotFound();
+        if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
+        if (!await perms.CanEditPageAsync(id)) return Results.Forbid();
+
+        page.FullWidth = req.FullWidth;
         await db.SaveChangesAsync();
         return Results.NoContent();
     }
@@ -626,7 +645,7 @@ public static class PageEndpoints
 
     private static PageDetailResponse ToDetail(Page page, PageVersion version) => new(
         page.Id, page.SpaceId, page.ParentPageId, page.Title, page.Position, page.Status,
-        version.VersionNumber, version.ContentJson, page.CreatedAt, page.UpdatedAt);
+        version.VersionNumber, version.ContentJson, page.FullWidth, page.CreatedAt, page.UpdatedAt);
 
     private static Dictionary<string, string[]> Error(string field, string message) =>
         new() { [field] = [message] };

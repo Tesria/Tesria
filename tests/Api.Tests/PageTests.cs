@@ -8,7 +8,7 @@ public class PageTests
 {
     private record PageDetail(
         Guid Id, Guid SpaceId, Guid? ParentPageId, string Title, int Position, int Status,
-        int CurrentVersionNumber, string ContentJson, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
+        int CurrentVersionNumber, string ContentJson, bool FullWidth, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
     private record VersionMeta(Guid Id, int VersionNumber, string? ChangeComment, Guid AuthorId, DateTimeOffset CreatedAt);
     private record VersionContent(Guid Id, int VersionNumber, string ContentJson, string? ChangeComment, Guid AuthorId, DateTimeOffset CreatedAt);
     private record TreeNode(Guid Id, string Title, int Position, List<TreeNode> Children);
@@ -130,6 +130,24 @@ public class PageTests
         var res = await client.PutAsJsonAsync($"/api/pages/{root.Id}/move",
             new { ParentPageId = child!.Id, Position = 0 });
         Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task SetLayout_toggles_full_width_without_creating_a_new_version()
+    {
+        var (factory, client, spaceId) = await NewClientWithSpace();
+        using var _ = factory;
+        var page = await (await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = "Wide", ContentJson = Doc }))
+            .Content.ReadFromJsonAsync<PageDetail>();
+        Assert.False(page!.FullWidth);
+
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await client.PutAsJsonAsync($"/api/pages/{page.Id}/layout", new { FullWidth = true })).StatusCode);
+
+        var fetched = await client.GetFromJsonAsync<PageDetail>($"/api/pages/{page.Id}");
+        Assert.True(fetched!.FullWidth);
+        Assert.Equal(1, fetched.CurrentVersionNumber); // display metadata only — no new version
     }
 
     private record TrashedPage(Guid Id, string Title, DateTimeOffset DeletedAt, Guid? DeletedById);

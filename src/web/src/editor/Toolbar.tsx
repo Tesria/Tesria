@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from 'react'
+import { useState, type ChangeEvent, type ReactNode } from 'react'
 import type { Editor as TiptapEditor } from '@tiptap/react'
 import { uploadAndInsertImage } from './imageUpload'
 import { ToolbarButton } from './ToolbarButton'
@@ -36,17 +36,17 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
     setLinkPopoverOpen(false)
   }
 
-  const btn = (label: string, isActive: boolean, onClick: () => void, title: string) => (
+  const btn = (label: ReactNode, isActive: boolean, onClick: () => void, title: string) => (
     <ToolbarButton label={label} isActive={isActive} onClick={onClick} title={title} />
   )
   return (
     <div className="toolbar">
-      {btn('B', editor.isActive('bold'), () => editor.chain().focus().toggleBold().run(), 'Bold')}
-      {btn('I', editor.isActive('italic'), () => editor.chain().focus().toggleItalic().run(), 'Italic')}
-      {btn('U', editor.isActive('underline'), () => editor.chain().focus().toggleUnderline().run(), 'Underline')}
-      {btn('S', editor.isActive('strike'), () => editor.chain().focus().toggleStrike().run(), 'Strikethrough')}
-      {btn('Code', editor.isActive('code'), () => editor.chain().focus().toggleCode().run(), 'Inline code')}
-      {btn('Mark', editor.isActive('highlight'), () => editor.chain().focus().toggleHighlight().run(), 'Highlight')}
+      {btn(<span className="tb-glyph tb-bold">B</span>, editor.isActive('bold'), () => editor.chain().focus().toggleBold().run(), 'Bold')}
+      {btn(<span className="tb-glyph tb-italic">I</span>, editor.isActive('italic'), () => editor.chain().focus().toggleItalic().run(), 'Italic')}
+      {btn(<span className="tb-glyph tb-underline">U</span>, editor.isActive('underline'), () => editor.chain().focus().toggleUnderline().run(), 'Underline')}
+      {btn(<span className="tb-glyph tb-strike">S</span>, editor.isActive('strike'), () => editor.chain().focus().toggleStrike().run(), 'Strikethrough')}
+      {btn(<span className="tb-glyph tb-mono">{'</>'}</span>, editor.isActive('code'), () => editor.chain().focus().toggleCode().run(), 'Inline code')}
+      {btn('Highlight', editor.isActive('highlight'), () => editor.chain().focus().toggleHighlight().run(), 'Highlight selected text')}
       <span className="toolbar__sep" />
       {btn('H1', editor.isActive('heading', { level: 1 }), () => editor.chain().focus().toggleHeading({ level: 1 }).run(), 'Heading 1')}
       {btn('H2', editor.isActive('heading', { level: 2 }), () => editor.chain().focus().toggleHeading({ level: 2 }).run(), 'Heading 2')}
@@ -56,7 +56,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
       {btn('1. List', editor.isActive('orderedList'), () => editor.chain().focus().toggleOrderedList().run(), 'Ordered list')}
       {btn('☑ List', editor.isActive('taskList'), () => editor.chain().focus().toggleTaskList().run(), 'Task list')}
       {btn('❝', editor.isActive('blockquote'), () => editor.chain().focus().toggleBlockquote().run(), 'Blockquote')}
-      {btn('{ }', editor.isActive('codeBlock'), () => editor.chain().focus().toggleCodeBlock().run(), 'Code block')}
+      {btn(<span className="tb-glyph tb-mono">{'{ }'}</span>, editor.isActive('codeBlock'), () => editor.chain().focus().toggleCodeBlock().run(), 'Code block')}
       {btn('Table', editor.isActive('table'), () =>
         editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(), 'Insert table')}
       {getUploadPageId && (

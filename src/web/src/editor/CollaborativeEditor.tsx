@@ -4,7 +4,6 @@ import Collaboration from '@tiptap/extension-collaboration'
 import CollaborationCaret from '@tiptap/extension-collaboration-caret'
 import { HocuspocusProvider } from '@hocuspocus/provider'
 import * as Y from 'yjs'
-import { Toolbar } from './Toolbar'
 import { TableControls } from './TableControls'
 import { LinkMenu } from './LinkMenu'
 import { SelectionBubbleMenu } from './SelectionBubbleMenu'
@@ -23,6 +22,8 @@ type Props = {
   getUploadPageId?: () => Promise<string>
   /** Reports an image upload failure (paste/drop/toolbar), e.g. into a form's error banner. */
   onUploadError?: (message: string) => void
+  /** Called with the live TipTap instance once it exists (and with null on unmount) — see Editor.tsx. */
+  onEditorReady?: (editor: TiptapEditor | null) => void
 }
 
 function parseDoc(value: string): object | undefined {
@@ -47,7 +48,7 @@ function colourFor(name: string): string {
  * StarterKit's own history is disabled to avoid the two fighting.
  */
 export function CollaborativeEditor({
-  pageId, token, initialContent, displayName, onChange, getUploadPageId, onUploadError,
+  pageId, token, initialContent, displayName, onChange, getUploadPageId, onUploadError, onEditorReady,
 }: Props) {
   const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting')
   const editorRef = useRef<TiptapEditor | null>(null)
@@ -93,6 +94,12 @@ export function CollaborativeEditor({
     editorRef.current = editor
   }, [editor])
 
+  useEffect(() => {
+    onEditorReady?.(editor ?? null)
+    return () => onEditorReady?.(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor])
+
   // The slash-command menu's Image item needs the current upload callbacks,
   // but SlashCommand is configured once in the shared extension list — so
   // instead they're handed to it via editor.storage, kept in sync here.
@@ -131,7 +138,6 @@ export function CollaborativeEditor({
             ? 'Connecting to collaboration…'
             : 'Offline — your changes are local until reconnected'}
       </div>
-      {editor && <Toolbar editor={editor} getUploadPageId={getUploadPageId} onUploadError={onUploadError} />}
       {editor && <TableControls editor={editor} />}
       {editor && <LinkMenu editor={editor} />}
       {editor && <SelectionBubbleMenu editor={editor} />}
