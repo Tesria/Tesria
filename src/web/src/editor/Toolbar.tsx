@@ -1,4 +1,4 @@
-import type { ChangeEvent } from 'react'
+import { useState, type ChangeEvent } from 'react'
 import type { Editor as TiptapEditor } from '@tiptap/react'
 import { uploadAndInsertImage } from './imageUpload'
 
@@ -11,6 +11,9 @@ type Props = {
 
 /** Formatting controls, shared by the single-user and collaborative editors. */
 export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
+  const [linkPopoverOpen, setLinkPopoverOpen] = useState(false)
+  const [linkUrl, setLinkUrl] = useState('')
+
   async function onPickImage(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     e.target.value = ''
@@ -20,6 +23,16 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
     } catch (err) {
       onUploadError?.(err instanceof Error ? err.message : 'Image upload failed.')
     }
+  }
+
+  function openLinkPopover() {
+    setLinkUrl((editor.getAttributes('link').href as string | undefined) ?? '')
+    setLinkPopoverOpen(true)
+  }
+
+  function applyLink() {
+    if (linkUrl.trim()) editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl.trim() }).run()
+    setLinkPopoverOpen(false)
   }
 
   const btn = (label: string, isActive: boolean, onClick: () => void, title: string) => (
@@ -37,8 +50,10 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
     <div className="toolbar">
       {btn('B', editor.isActive('bold'), () => editor.chain().focus().toggleBold().run(), 'Bold')}
       {btn('I', editor.isActive('italic'), () => editor.chain().focus().toggleItalic().run(), 'Italic')}
+      {btn('U', editor.isActive('underline'), () => editor.chain().focus().toggleUnderline().run(), 'Underline')}
       {btn('S', editor.isActive('strike'), () => editor.chain().focus().toggleStrike().run(), 'Strikethrough')}
       {btn('Code', editor.isActive('code'), () => editor.chain().focus().toggleCode().run(), 'Inline code')}
+      {btn('Mark', editor.isActive('highlight'), () => editor.chain().focus().toggleHighlight().run(), 'Highlight')}
       <span className="toolbar__sep" />
       {btn('H1', editor.isActive('heading', { level: 1 }), () => editor.chain().focus().toggleHeading({ level: 1 }).run(), 'Heading 1')}
       {btn('H2', editor.isActive('heading', { level: 2 }), () => editor.chain().focus().toggleHeading({ level: 2 }).run(), 'Heading 2')}
@@ -57,6 +72,34 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
           <input type="file" accept="image/*" hidden onChange={onPickImage} />
         </label>
       )}
+      <span className="toolbar__sep" />
+      {btn('←', editor.isActive({ textAlign: 'left' }), () => editor.chain().focus().setTextAlign('left').run(), 'Align left')}
+      {btn('↔', editor.isActive({ textAlign: 'center' }), () => editor.chain().focus().setTextAlign('center').run(), 'Align center')}
+      {btn('→', editor.isActive({ textAlign: 'right' }), () => editor.chain().focus().setTextAlign('right').run(), 'Align right')}
+      <span className="toolbar__sep" />
+      <div className="toolbar__link">
+        {btn('Link', editor.isActive('link'), openLinkPopover, 'Insert link')}
+        {linkPopoverOpen && (
+          <form
+            className="toolbar__link-popover"
+            onSubmit={(e) => {
+              e.preventDefault()
+              applyLink()
+            }}
+          >
+            <input
+              autoFocus
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              placeholder="https://…"
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setLinkPopoverOpen(false)
+              }}
+            />
+            <button type="submit" className="link-btn">Apply</button>
+          </form>
+        )}
+      </div>
     </div>
   )
 }

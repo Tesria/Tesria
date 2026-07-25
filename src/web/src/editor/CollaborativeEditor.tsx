@@ -6,6 +6,7 @@ import { HocuspocusProvider } from '@hocuspocus/provider'
 import * as Y from 'yjs'
 import { Toolbar } from './Toolbar'
 import { TableControls } from './TableControls'
+import { LinkMenu } from './LinkMenu'
 import { getSharedExtensions } from './extensions'
 import { handleImageDrop, handleImagePaste } from './imageUpload'
 
@@ -122,6 +123,7 @@ export function CollaborativeEditor({
       </div>
       {editor && <Toolbar editor={editor} getUploadPageId={getUploadPageId} onUploadError={onUploadError} />}
       {editor && <TableControls editor={editor} />}
+      {editor && <LinkMenu editor={editor} />}
       <EditorContent editor={editor} className="editor__content" />
     </div>
   )

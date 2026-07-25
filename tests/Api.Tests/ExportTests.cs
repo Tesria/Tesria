@@ -153,6 +153,33 @@ public class ProseMirrorRendererTests
         var html = ProseMirrorRenderer.ToHtml(ImageDoc);
         Assert.NotEmpty(html);
     }
+
+    private const string FormattingDoc = """
+    {"type":"doc","content":[
+      {"type":"paragraph","attrs":{"textAlign":"center"},"content":[
+        {"type":"text","marks":[{"type":"underline"}],"text":"underlined"},
+        {"type":"text","text":" and "},
+        {"type":"text","marks":[{"type":"highlight"}],"text":"highlighted"}
+      ]}
+    ]}
+    """;
+
+    [Fact]
+    public void Renders_underline_and_highlight_and_text_align_as_html()
+    {
+        var html = ProseMirrorRenderer.ToHtml(FormattingDoc);
+        Assert.Contains("<p style=\"text-align: center\">", html);
+        Assert.Contains("<u>underlined</u>", html);
+        Assert.Contains("<mark>highlighted</mark>", html);
+    }
+
+    [Fact]
+    public void Renders_highlight_as_raw_mark_in_markdown_and_drops_text_align()
+    {
+        var md = ProseMirrorRenderer.ToMarkdown(FormattingDoc);
+        Assert.Contains("<mark>highlighted</mark>", md);
+        Assert.DoesNotContain("text-align", md); // no Markdown alignment concept — intentionally dropped
+    }
 }
 
 public class ExportEndpointTests

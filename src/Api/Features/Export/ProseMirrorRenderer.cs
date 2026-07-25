@@ -83,11 +83,15 @@ public static class ProseMirrorRenderer
                 sb.Append(ApplyHtmlMarks(node));
                 break;
             case "paragraph":
-                sb.Append("<p>"); RenderHtmlChildren(node, sb); sb.Append("</p>\n");
+                var pAlign = Attr(node, "textAlign");
+                sb.Append(pAlign is null ? "<p>" : $"<p style=\"text-align: {Escape(pAlign)}\">");
+                RenderHtmlChildren(node, sb); sb.Append("</p>\n");
                 break;
             case "heading":
                 var level = Attr(node, "level") ?? "1";
-                sb.Append($"<h{level}>"); RenderHtmlChildren(node, sb); sb.Append($"</h{level}>\n");
+                var hAlign = Attr(node, "textAlign");
+                sb.Append(hAlign is null ? $"<h{level}>" : $"<h{level} style=\"text-align: {Escape(hAlign)}\">");
+                RenderHtmlChildren(node, sb); sb.Append($"</h{level}>\n");
                 break;
             case "bulletList":
                 sb.Append("<ul>\n"); RenderHtmlChildren(node, sb); sb.Append("</ul>\n");
@@ -162,8 +166,10 @@ public static class ProseMirrorRenderer
             {
                 "bold" => $"<strong>{text}</strong>",
                 "italic" => $"<em>{text}</em>",
+                "underline" => $"<u>{text}</u>",
                 "strike" => $"<s>{text}</s>",
                 "code" => $"<code>{text}</code>",
+                "highlight" => $"<mark>{text}</mark>",
                 "link" => $"<a href=\"{Escape(Attr(mark, "href") ?? "#")}\" rel=\"noreferrer\">{text}</a>",
                 _ => text,
             };
@@ -316,6 +322,9 @@ public static class ProseMirrorRenderer
                 "italic" => $"*{text}*",
                 "strike" => $"~~{text}~~",
                 "code" => $"`{text}`",
+                // GFM has no native highlight syntax; most renderers pass inline
+                // raw HTML through untouched, so this degrades gracefully.
+                "highlight" => $"<mark>{text}</mark>",
                 "link" => $"[{text}]({Attr(mark, "href") ?? "#"})",
                 _ => text,
             };
