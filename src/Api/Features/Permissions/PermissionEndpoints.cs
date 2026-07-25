@@ -126,7 +126,6 @@ public static class PermissionEndpoints
     private static async Task<IResult> ListPageRestrictions(
         Guid pageId, AppDbContext db, IPermissionService perms)
     {
-        if (!await db.Pages.AnyAsync(p => p.Id == pageId)) return Results.NotFound();
         if (!await perms.CanViewPageAsync(pageId)) return Results.NotFound();
 
         var rows = await db.PageRestrictions.AsNoTracking()
@@ -143,7 +142,6 @@ public static class PermissionEndpoints
         Guid pageId, RestrictPageRequest req, AppDbContext db,
         IPermissionService perms, CurrentUser current, IAuditLogger audit)
     {
-        if (!await db.Pages.AnyAsync(p => p.Id == pageId)) return Results.NotFound();
         if (!await perms.CanViewPageAsync(pageId)) return Results.NotFound();
         if (!await perms.CanEditPageAsync(pageId)) return Results.Forbid();
         if (!await PrincipalExistsAsync(db, req.PrincipalType, req.PrincipalId))

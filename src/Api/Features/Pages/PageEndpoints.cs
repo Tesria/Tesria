@@ -18,6 +18,9 @@ public static class PageEndpoints
     public record CreatePageRequest(Guid SpaceId, Guid? ParentPageId, string Title, string? ContentJson);
     public record UpdatePageRequest(string? Title, string ContentJson, string? ChangeComment);
     public record MovePageRequest(Guid? ParentPageId, int Position);
+    public record CreateDraftRequest(Guid SpaceId, Guid? ParentPageId);
+    public record PublishPageRequest(string Title, string ContentJson);
+    public record DraftResponse(Guid Id);
 
     public record PageDetailResponse(
         Guid Id, Guid SpaceId, Guid? ParentPageId, string Title, int Position, PageStatus Status,
@@ -37,6 +40,9 @@ public static class PageEndpoints
         group.MapGet("/tree", Tree);
         group.MapGet("/trash", Trash);
         group.MapPost("/", Create);
+        group.MapPost("/draft", CreateDraft);
+        group.MapPost("/{id:guid}/publish", Publish);
+        group.MapDelete("/{id:guid}/draft", DeleteDraft);
         group.MapGet("/{id:guid}", Get);
         group.MapPut("/{id:guid}", Update);
         group.MapPut("/{id:guid}/move", Move);
@@ -103,17 +109,128 @@ public static class PageEndpoints
         // otherwise EF cannot order the two inserts.
         await db.SaveChangesAsync();
         page.CurrentVersionId = version.Id;
-        audit.Record("page.created", "page", page.Id, new { page.Title, page.SpaceId });
-        // Space watchers hear about new pages; the page itself has no watchers
-        // yet since nobody could watch it before it existed. The notification
-        // points at the new page so its recipient can go straight to it.
-        await notifications.NotifyOfNewPageAsync(page.Id, page.SpaceId, userId, new { page.Title });
+        await RecordPageCreatedAsync(page, userId, audit, notifications);
         await db.SaveChangesAsync();
         // Dispatched only after the create is durably committed — webhooks are
         // fire-and-forget outbound calls, not part of the unit of work.
-        await webhooks.DispatchAsync(page.SpaceId, "page.created", "page", page.Id, new { page.Title });
+        await DispatchPageCreatedWebhookAsync(page, webhooks);
 
         return Results.Created($"/api/pages/{page.Id}", ToDetail(page, version));
+    }
+
+    private static async Task<IResult> CreateDraft(
+        CreateDraftRequest req, AppDbContext db, CurrentUser current, IPermissionService perms)
+    {
+        // Same space/parent permission checks as Create — a draft still needs
+        // edit rights on the space it will live in.
+        if (!await perms.CanViewSpaceAsync(req.SpaceId)) return Results.NotFound();
+        if (!await perms.CanEditSpaceAsync(req.SpaceId)) return Results.Forbid();
+        if (req.ParentPageId is { } parentForPerms && !await perms.CanEditPageAsync(parentForPerms))
+            return Results.Forbid();
+
+        if (!await db.Spaces.AnyAsync(s => s.Id == req.SpaceId))
+            return Results.ValidationProblem(Error("spaceId", "Space not found."));
+
+        if (req.ParentPageId is { } parentId)
+        {
+            var parent = await db.Pages.AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == parentId);
+            if (parent is null)
+                return Results.ValidationProblem(Error("parentPageId", "Parent page not found."));
+            if (parent.SpaceId != req.SpaceId)
+                return Results.ValidationProblem(Error("parentPageId", "Parent page is in a different space."));
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var userId = current.RequireId();
+        var page = new Page
+        {
+            Id = Guid.NewGuid(),
+            SpaceId = req.SpaceId,
+            ParentPageId = req.ParentPageId,
+            Title = "Untitled",
+            SearchText = string.Empty,
+            Status = PageStatus.Draft,
+            Position = await NextPositionAsync(db, req.SpaceId, req.ParentPageId),
+            CreatedById = userId,
+            CreatedAt = now,
+            UpdatedAt = now,
+        };
+        var version = NewVersion(page, versionNumber: 1, EmptyDoc, userId, changeComment: null, now);
+        db.Pages.Add(page);
+        db.PageVersions.Add(version);
+
+        await db.SaveChangesAsync();
+        page.CurrentVersionId = version.Id;
+        // A draft is invisible: no audit entry, notification, or webhook — it
+        // isn't a real event until Publish.
+        await db.SaveChangesAsync();
+
+        return Results.Ok(new DraftResponse(page.Id));
+    }
+
+    private static async Task<IResult> Publish(
+        Guid id, PublishPageRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit,
+        IPermissionService perms, INotificationService notifications, IWebhookDispatcher webhooks)
+    {
+        var page = await db.Pages.IgnoreQueryFilters()
+            .Include(p => p.CurrentVersion)
+            .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt == null);
+        if (page is null || page.CurrentVersion is null) return Results.NotFound();
+
+        // Tolerate a retried/double-clicked publish as a safe no-op rather than
+        // erroring, instead of treating "already published" as not-found.
+        if (page.Status != PageStatus.Draft)
+            return Results.Ok(ToDetail(page, page.CurrentVersion));
+
+        var userId = current.RequireId();
+        // Ownership guard: the draft's own creator, or anyone with edit rights
+        // on its space. Page ids are unguessable in practice, but check anyway.
+        if (page.CreatedById != userId && !await perms.CanEditSpaceAsync(page.SpaceId))
+            return Results.Forbid();
+
+        var title = (req.Title ?? "").Trim();
+        if (title.Length == 0)
+            return Results.ValidationProblem(Error("title", "Title is required."));
+        if (!TryNormalizeContent(req.ContentJson, out var content))
+            return Results.ValidationProblem(Error("contentJson", "Content must be valid JSON."));
+
+        // Nothing was ever "really" saved yet, so the published page starts
+        // clean at v1 with the real content — mutate it in place rather than
+        // appending a v2 that would leave a confusing empty-v1/real-v2 pair.
+        var version = page.CurrentVersion;
+        version.ContentJson = content;
+        page.Title = title;
+        page.SearchText = BuildSearchText(title, content);
+        page.Status = PageStatus.Current;
+        page.UpdatedAt = DateTimeOffset.UtcNow;
+
+        await RecordPageCreatedAsync(page, userId, audit, notifications);
+        await db.SaveChangesAsync();
+        await DispatchPageCreatedWebhookAsync(page, webhooks);
+
+        return Results.Ok(ToDetail(page, version));
+    }
+
+    private static async Task<IResult> DeleteDraft(
+        Guid id, AppDbContext db, CurrentUser current, IPermissionService perms)
+    {
+        var page = await db.Pages.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(p => p.Id == id && p.Status == PageStatus.Draft && p.DeletedAt == null);
+        if (page is null) return Results.NotFound();
+
+        var userId = current.RequireId();
+        if (page.CreatedById != userId && !await perms.CanEditSpaceAsync(page.SpaceId))
+            return Results.Forbid();
+
+        // Nothing was ever really saved, so this is a hard delete, not a trash
+        // — clear the current-version pointer first (the restrict FK would
+        // otherwise block it), then remove the page; versions cascade.
+        page.CurrentVersionId = null;
+        await db.SaveChangesAsync();
+        db.Pages.Remove(page);
+        await db.SaveChangesAsync();
+        return Results.NoContent();
     }
 
     private static async Task<IResult> Get(Guid id, AppDbContext db, IPermissionService perms)
@@ -288,7 +405,6 @@ public static class PageEndpoints
 
     private static async Task<IResult> ListVersions(Guid id, AppDbContext db, IPermissionService perms)
     {
-        if (!await db.Pages.AnyAsync(p => p.Id == id)) return Results.NotFound();
         if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
         var versions = await db.PageVersions.AsNoTracking()
             .Where(v => v.PageId == id)
@@ -420,6 +536,20 @@ public static class PageEndpoints
         }
         return false;
     }
+
+    /// <summary>The shared "a new page exists" side effects fired by both Create and Publish.</summary>
+    private static async Task RecordPageCreatedAsync(
+        Page page, Guid userId, IAuditLogger audit, INotificationService notifications)
+    {
+        audit.Record("page.created", "page", page.Id, new { page.Title, page.SpaceId });
+        // Space watchers hear about new pages; the page itself has no watchers
+        // yet since nobody could watch it before it existed. The notification
+        // points at the new page so its recipient can go straight to it.
+        await notifications.NotifyOfNewPageAsync(page.Id, page.SpaceId, userId, new { page.Title });
+    }
+
+    private static Task DispatchPageCreatedWebhookAsync(Page page, IWebhookDispatcher webhooks) =>
+        webhooks.DispatchAsync(page.SpaceId, "page.created", "page", page.Id, new { page.Title });
 
     private static PageVersion NewVersion(
         Page page, int versionNumber, string content, Guid authorId,

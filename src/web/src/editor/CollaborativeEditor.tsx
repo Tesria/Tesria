@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { EditorContent, useEditor } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
 import Collaboration from '@tiptap/extension-collaboration'
 import CollaborationCaret from '@tiptap/extension-collaboration-caret'
 import { HocuspocusProvider } from '@hocuspocus/provider'
 import * as Y from 'yjs'
 import { Toolbar } from './Toolbar'
+import { getSharedExtensions } from './extensions'
 
 type Props = {
   pageId: string
@@ -66,8 +66,7 @@ export function CollaborativeEditor({
 
   const editor = useEditor({
     extensions: [
-      // Yjs provides undo/redo for collaborative documents.
-      StarterKit.configure({ undoRedo: false }),
+      ...getSharedExtensions({ collaborative: true }),
       Collaboration.configure({ document: ydoc }),
       CollaborationCaret.configure({
         provider,

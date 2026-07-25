@@ -266,6 +266,11 @@ export const api = {
     move: (id: string, input: { parentPageId?: string | null; position: number }) =>
       request<void>('PUT', `/api/pages/${id}/move`, input),
     remove: (id: string) => request<void>('DELETE', `/api/pages/${id}`),
+    createDraft: (input: { spaceId: string; parentPageId?: string | null }) =>
+      request<{ id: string }>('POST', '/api/pages/draft', input),
+    publish: (id: string, input: { title: string; contentJson: string }) =>
+      request<PageDetail>('POST', `/api/pages/${id}/publish`, input),
+    deleteDraft: (id: string) => request<void>('DELETE', `/api/pages/${id}/draft`),
     trash: (spaceId: string) => request<TrashedPage[]>('GET', `/api/pages/trash?spaceId=${spaceId}`),
     untrash: (id: string) => request<void>('POST', `/api/pages/${id}/restore`),
     purge: (id: string) => request<void>('DELETE', `/api/pages/${id}/purge`),

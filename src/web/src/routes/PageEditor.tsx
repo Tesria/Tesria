@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api, ApiError, type CollabToken, type PageTemplate } from '../api/client'
 import { Editor } from '../editor/Editor'
@@ -26,6 +26,16 @@ export function PageEditor() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // A brand-new page has no id until the user clicks "Create page" — but
+  // attachments (and, later, other id-keyed features) need a real one right
+  // away. So a hidden draft page is created the moment the editor mounts;
+  // it's invisible everywhere until this form's submit "publishes" it.
+  // draftIdRef always holds the in-flight/resolved promise so a very early
+  // image insert can await it rather than fail; draftId mirrors it in state
+  // purely so the JSX can read it without unwrapping a promise.
+  const draftIdRef = useRef<Promise<string> | null>(null)
+  const [draftId, setDraftId] = useState<string | null>(null)
+
   // Template picker (new pages only). Selecting a template reseeds the editor
   // by changing its `key`, since an already-mounted editable editor doesn't
   // otherwise react to external content changes.
@@ -36,6 +46,25 @@ export function PageEditor() {
     if (isEdit) return
     api.templates.list(space.id).then(setTemplates).catch(() => {})
   }, [isEdit, space.id])
+
+  // Create the invisible draft once, on first mount of a new-page form. Not
+  // re-run if space.id/parentPageId happen to change identity, since this
+  // must fire exactly once per visit to the "new page" form.
+  useEffect(() => {
+    if (isEdit) return
+    let cancelled = false
+    const promise = api.pages
+      .createDraft({ spaceId: space.id, parentPageId })
+      .then((d) => {
+        if (!cancelled) setDraftId(d.id)
+        return d.id
+      })
+    draftIdRef.current = promise
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit])
 
   function onPickTemplate(id: string) {
     setTemplateId(id)
@@ -80,9 +109,14 @@ export function PageEditor() {
     setBusy(true)
     setError(null)
     try {
-      const saved = pageId
-        ? await api.pages.update(pageId, { title, contentJson: content, changeComment: changeComment || null })
-        : await api.pages.create({ spaceId: space.id, parentPageId, title, contentJson: content })
+      let saved
+      if (pageId) {
+        saved = await api.pages.update(pageId, { title, contentJson: content, changeComment: changeComment || null })
+      } else {
+        const id = draftId ?? (await draftIdRef.current)
+        if (!id) throw new Error('Still preparing this page — try again in a moment.')
+        saved = await api.pages.publish(id, { title, contentJson: content })
+      }
       reloadTree()
       navigate(`/spaces/${key}/pages/${saved.id}`)
     } catch (err) {
@@ -90,6 +124,18 @@ export function PageEditor() {
     } finally {
       setBusy(false)
     }
+  }
+
+  async function onCancel() {
+    if (pageId) {
+      navigate(`/spaces/${key}/pages/${pageId}`)
+      return
+    }
+    // Best-effort: an abandoned draft is cleaned up immediately, but a failed
+    // delete must never block navigating away.
+    const id = draftId ?? (await draftIdRef.current?.catch(() => null))
+    if (id) api.pages.deleteDraft(id).catch(() => {})
+    navigate(`/spaces/${key}`)
   }
 
   if (loading) return <p className="muted page-wrap">Loading…</p>
@@ -140,11 +186,7 @@ export function PageEditor() {
         <button type="submit" className="btn btn--primary" disabled={busy}>
           {busy ? 'Saving…' : isEdit ? 'Save changes' : 'Create page'}
         </button>
-        <button
-          type="button"
-          className="btn btn--ghost"
-          onClick={() => navigate(pageId ? `/spaces/${key}/pages/${pageId}` : `/spaces/${key}`)}
-        >
+        <button type="button" className="btn btn--ghost" onClick={onCancel}>
           Cancel
         </button>
       </div>

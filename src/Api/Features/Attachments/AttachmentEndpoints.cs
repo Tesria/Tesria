@@ -45,8 +45,6 @@ public static class AttachmentEndpoints
             return Results.ValidationProblem(Error("file", "A non-empty file is required."));
         if (file.Length > MaxBytes)
             return Results.ValidationProblem(Error("file", $"File exceeds the {MaxBytes / (1024 * 1024)} MB limit."));
-        if (!await db.Pages.AnyAsync(p => p.Id == pageId))
-            return Results.NotFound();
 
         var attachment = new Attachment
         {
@@ -73,7 +71,6 @@ public static class AttachmentEndpoints
     private static async Task<IResult> ListForPage(
         Guid pageId, AppDbContext db, IPermissionService perms)
     {
-        if (!await db.Pages.AnyAsync(p => p.Id == pageId)) return Results.NotFound();
         if (!await perms.CanViewPageAsync(pageId)) return Results.NotFound();
         var items = await db.Attachments.AsNoTracking()
             .Where(a => a.PageId == pageId)
