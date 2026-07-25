@@ -10,6 +10,7 @@ import TextAlign from '@tiptap/extension-text-align'
 import type { AnyExtension } from '@tiptap/core'
 import { lowlight } from './lowlight'
 import { CodeBlockView } from './CodeBlockView'
+import { SlashCommand } from './slash/SlashCommand'
 
 type SharedExtensionOptions = {
   /** Collaborative editors let Yjs own undo/redo history instead of StarterKit's. */
@@ -53,5 +54,8 @@ export function getSharedExtensions({ collaborative = false, editable = true }: 
     Image,
     Highlight,
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
+    // Read-only rendering never needs "/" commands — skip mounting the
+    // suggestion plugin entirely rather than just hiding its output.
+    ...(editable ? [SlashCommand] : []),
   ]
 }
