@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 /** A single formatting toggle button, shared by the static toolbar and the selection bubble menu. */
 export function ToolbarButton({
   label,
@@ -5,7 +7,7 @@ export function ToolbarButton({
   onClick,
   title,
 }: {
-  label: string
+  label: ReactNode
   isActive: boolean
   onClick: () => void
   title: string

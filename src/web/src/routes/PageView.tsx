@@ -10,6 +10,7 @@ import { AttachmentsPanel } from './panels/AttachmentsPanel'
 import { HistoryPanel } from './panels/HistoryPanel'
 import { SaveAsTemplateButton } from '../components/SaveAsTemplateButton'
 import { WatchToggle } from '../components/WatchToggle'
+import { OverflowMenu } from '../components/OverflowMenu'
 
 type Tab = 'comments' | 'attachments' | 'history' | 'restrictions'
 
@@ -46,28 +47,48 @@ export function PageView() {
     }
   }
 
+  async function toggleFullWidth() {
+    if (!page) return
+    const fullWidth = !page.fullWidth
+    setPage({ ...page, fullWidth }) // optimistic — this is display metadata, not content
+    try {
+      await api.pages.setLayout(page.id, { fullWidth })
+    } catch {
+      setPage((p) => (p ? { ...p, fullWidth: !fullWidth } : p))
+    }
+  }
+
   if (error) return <p className="alert alert--error page-wrap">{error}</p>
   if (!page) return <p className="muted page-wrap">Loading…</p>
 
   return (
-    <article className="page-wrap">
-      <div className="paper">
-        <div className="row-between page-head">
-          <h1>{page.title}</h1>
-          <div className="page-actions">
-            <Link className="btn btn--ghost" to={`/spaces/${key}/pages/${page.id}/edit`}>
-              Edit
-            </Link>
-            <Link className="btn btn--ghost" to={`/spaces/${key}/new?parent=${page.id}`}>
-              + Subpage
-            </Link>
+    <>
+      <div className="page-actionbar">
+        <div className="page-actionbar__primary">
+          <Link className="btn btn--ghost" to={`/spaces/${key}/pages/${page.id}/edit`}>
+            Edit
+          </Link>
+          <Link className="btn btn--ghost" to={`/spaces/${key}/new?parent=${page.id}`}>
+            + Subpage
+          </Link>
+        </div>
+        <div className="page-actionbar__secondary">
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={toggleFullWidth}
+            title={page.fullWidth ? 'Switch to normal width' : 'Switch to full width'}
+          >
+            {page.fullWidth ? '⤡ Normal width' : '⤢ Full width'}
+          </button>
+          <OverflowMenu>
             {/* Plain links so the browser downloads the file (auth cookie is sent).
                 HTML export is print-ready — use the browser's Print → Save as PDF. */}
-            <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=markdown`}>
-              ↓ .md
+            <a className="btn" href={`/api/pages/${page.id}/export?format=markdown`}>
+              ↓ Export as Markdown
             </a>
-            <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=html`}>
-              ↓ .html
+            <a className="btn" href={`/api/pages/${page.id}/export?format=html`}>
+              ↓ Export as HTML
             </a>
             <WatchToggle
               watchKey={page.id}
@@ -79,42 +100,49 @@ export function PageView() {
             <button type="button" className="btn btn--danger" onClick={onDelete}>
               Delete
             </button>
+          </OverflowMenu>
+        </div>
+      </div>
+      <article className={page.fullWidth ? 'page-wrap page-wrap--full' : 'page-wrap'}>
+        <div className="paper">
+          <div className="page-head">
+            <h1>{page.title}</h1>
+          </div>
+          <p className="muted small">
+            Version {page.currentVersionNumber} · updated {new Date(page.updatedAt).toLocaleString()}
+          </p>
+          <PageLabels pageId={page.id} />
+
+          <div className="page-body">
+            <Editor value={page.contentJson} editable={false} />
           </div>
         </div>
-        <p className="muted small">
-          Version {page.currentVersionNumber} · updated {new Date(page.updatedAt).toLocaleString()}
-        </p>
-        <PageLabels pageId={page.id} />
 
-        <div className="page-body">
-          <Editor value={page.contentJson} editable={false} />
+        <div className="tabs">
+          <TabButton current={tab} value="comments" onClick={setTab}>Comments</TabButton>
+          <TabButton current={tab} value="attachments" onClick={setTab}>Attachments</TabButton>
+          <TabButton current={tab} value="history" onClick={setTab}>History</TabButton>
+          <TabButton current={tab} value="restrictions" onClick={setTab}>Restrictions</TabButton>
         </div>
-      </div>
-
-      <div className="tabs">
-        <TabButton current={tab} value="comments" onClick={setTab}>Comments</TabButton>
-        <TabButton current={tab} value="attachments" onClick={setTab}>Attachments</TabButton>
-        <TabButton current={tab} value="history" onClick={setTab}>History</TabButton>
-        <TabButton current={tab} value="restrictions" onClick={setTab}>Restrictions</TabButton>
-      </div>
-      <div className="tab-panel">
-        {tab === 'comments' && <CommentsPanel pageId={page.id} />}
-        {tab === 'attachments' && <AttachmentsPanel pageId={page.id} />}
-        {tab === 'restrictions' && <RestrictionsPanel pageId={page.id} />}
-        {tab === 'history' && (
-          <HistoryPanel
-            pageId={page.id}
-            currentVersion={page.currentVersionNumber}
-            onRestored={() => {
-              reloadTree()
-              load()
-              setTab('comments')
-            }}
-          />
-        )}
-      </div>
-      <p className="muted small">Space: {space.name}</p>
-    </article>
+        <div className="tab-panel">
+          {tab === 'comments' && <CommentsPanel pageId={page.id} />}
+          {tab === 'attachments' && <AttachmentsPanel pageId={page.id} />}
+          {tab === 'restrictions' && <RestrictionsPanel pageId={page.id} />}
+          {tab === 'history' && (
+            <HistoryPanel
+              pageId={page.id}
+              currentVersion={page.currentVersionNumber}
+              onRestored={() => {
+                reloadTree()
+                load()
+                setTab('comments')
+              }}
+            />
+          )}
+        </div>
+        <p className="muted small">Space: {space.name}</p>
+      </article>
+    </>
   )
 }
 

@@ -1,8 +1,10 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import type { Editor as TiptapEditor } from '@tiptap/react'
 import { api, ApiError, type CollabToken, type PageTemplate } from '../api/client'
 import { Editor } from '../editor/Editor'
 import { CollaborativeEditor } from '../editor/CollaborativeEditor'
+import { Toolbar } from '../editor/Toolbar'
 import { useAuth } from '../auth/AuthContext'
 import { useSpaceContext } from './SpacePage'
 
@@ -25,6 +27,12 @@ export function PageEditor() {
   const [loading, setLoading] = useState(isEdit)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [fullWidth, setFullWidth] = useState(false)
+
+  // The formatting toolbar renders in the page-level top action bar (not
+  // inside the paper card), same as view mode — the Editor/CollaborativeEditor
+  // hand their live TipTap instance up via this callback once created.
+  const [editorInstance, setEditorInstance] = useState<TiptapEditor | null>(null)
 
   // A brand-new page has no id until the user clicks "Create page" — but
   // attachments (and, later, other id-keyed features) need a real one right
@@ -82,6 +90,7 @@ export function PageEditor() {
         if (cancelled) return
         setTitle(p.title)
         setContent(p.contentJson)
+        setFullWidth(p.fullWidth)
       })
       .catch((err: unknown) => !cancelled && setError(err instanceof Error ? err.message : 'Failed to load page.'))
       .finally(() => !cancelled && setLoading(false))
@@ -134,6 +143,17 @@ export function PageEditor() {
     return id
   }
 
+  async function toggleFullWidth() {
+    const next = !fullWidth
+    setFullWidth(next) // optimistic — display metadata, not document content
+    try {
+      const id = await resolveUploadPageId()
+      await api.pages.setLayout(id, { fullWidth: next })
+    } catch {
+      setFullWidth(!next)
+    }
+  }
+
   async function onCancel() {
     if (pageId) {
       navigate(`/spaces/${key}/pages/${pageId}`)
@@ -149,7 +169,25 @@ export function PageEditor() {
   if (loading) return <p className="muted page-wrap">Loading…</p>
 
   return (
-    <form className="page-wrap editor-form" onSubmit={onSubmit}>
+    <>
+      <div className="page-actionbar">
+        <div className="page-actionbar__primary">
+          {editorInstance && (
+            <Toolbar editor={editorInstance} getUploadPageId={resolveUploadPageId} onUploadError={setError} />
+          )}
+        </div>
+        <div className="page-actionbar__secondary">
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={toggleFullWidth}
+            title={fullWidth ? 'Switch to normal width' : 'Switch to full width'}
+          >
+            {fullWidth ? '⤡ Normal width' : '⤢ Full width'}
+          </button>
+        </div>
+      </div>
+      <form className={fullWidth ? 'page-wrap page-wrap--full editor-form' : 'page-wrap editor-form'} onSubmit={onSubmit}>
       {error && <p className="alert alert--error">{error}</p>}
       {!isEdit && templates.length > 0 && (
         <label className="change-comment">
@@ -183,6 +221,7 @@ export function PageEditor() {
             onChange={setContent}
             getUploadPageId={resolveUploadPageId}
             onUploadError={setError}
+            onEditorReady={setEditorInstance}
           />
         ) : (
           <Editor
@@ -192,6 +231,7 @@ export function PageEditor() {
             onChange={setContent}
             getUploadPageId={resolveUploadPageId}
             onUploadError={setError}
+            onEditorReady={setEditorInstance}
           />
         )}
       </div>
@@ -209,6 +249,7 @@ export function PageEditor() {
           Cancel
         </button>
       </div>
-    </form>
+      </form>
+    </>
   )
 }

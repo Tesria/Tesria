@@ -1,6 +1,5 @@
 import { useEditor, EditorContent, type Editor as TiptapEditor } from '@tiptap/react'
 import { useEffect, useRef } from 'react'
-import { Toolbar } from './Toolbar'
 import { TableControls } from './TableControls'
 import { LinkMenu } from './LinkMenu'
 import { SelectionBubbleMenu } from './SelectionBubbleMenu'
@@ -18,6 +17,13 @@ type Props = {
   getUploadPageId?: () => Promise<string>
   /** Reports an image upload failure (paste/drop/toolbar), e.g. into a form's error banner. */
   onUploadError?: (message: string) => void
+  /**
+   * Called with the live TipTap instance once it exists (and with null on
+   * unmount), so the host page can render the formatting Toolbar in its own
+   * top action bar instead of inside the editor — keeping view and edit mode
+   * visually consistent.
+   */
+  onEditorReady?: (editor: TiptapEditor | null) => void
 }
 
 function parseDoc(value: string): object | undefined {
@@ -33,7 +39,7 @@ function parseDoc(value: string): object | undefined {
  * Block WYSIWYG editor (TipTap/ProseMirror). Used both for editing pages and,
  * with `editable={false}`, for rendering stored content read-only.
  */
-export function Editor({ value, editable = true, onChange, getUploadPageId, onUploadError }: Props) {
+export function Editor({ value, editable = true, onChange, getUploadPageId, onUploadError, onEditorReady }: Props) {
   // editorProps' handlers close over this ref rather than `editor` directly,
   // since they're set at useEditor's initial options and `editor` doesn't
   // exist yet at that point.
@@ -51,6 +57,14 @@ export function Editor({ value, editable = true, onChange, getUploadPageId, onUp
   useEffect(() => {
     editorRef.current = editor
   }, [editor])
+
+  useEffect(() => {
+    if (editable) onEditorReady?.(editor ?? null)
+    return () => {
+      if (editable) onEditorReady?.(null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, editable])
 
   // The slash-command menu's Image item needs the current upload callbacks,
   // but SlashCommand is configured once in the shared extension list — so
@@ -73,7 +87,6 @@ export function Editor({ value, editable = true, onChange, getUploadPageId, onUp
 
   return (
     <div className={editable ? 'editor editor--editable' : 'editor'}>
-      {editable && editor && <Toolbar editor={editor} getUploadPageId={getUploadPageId} onUploadError={onUploadError} />}
       {editable && editor && <TableControls editor={editor} />}
       {editable && editor && <LinkMenu editor={editor} />}
       {editable && editor && <SelectionBubbleMenu editor={editor} />}

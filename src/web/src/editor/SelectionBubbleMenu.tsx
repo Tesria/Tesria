@@ -27,12 +27,12 @@ export function SelectionBubbleMenu({ editor }: { editor: TiptapEditor }) {
       }
     >
       <div className="toolbar toolbar--bubble">
-        <ToolbarButton label="B" isActive={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()} title="Bold" />
-        <ToolbarButton label="I" isActive={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()} title="Italic" />
-        <ToolbarButton label="U" isActive={editor.isActive('underline')} onClick={() => editor.chain().focus().toggleUnderline().run()} title="Underline" />
-        <ToolbarButton label="S" isActive={editor.isActive('strike')} onClick={() => editor.chain().focus().toggleStrike().run()} title="Strikethrough" />
-        <ToolbarButton label="Code" isActive={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()} title="Inline code" />
-        <ToolbarButton label="Mark" isActive={editor.isActive('highlight')} onClick={() => editor.chain().focus().toggleHighlight().run()} title="Highlight" />
+        <ToolbarButton label={<span className="tb-glyph tb-bold">B</span>} isActive={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()} title="Bold" />
+        <ToolbarButton label={<span className="tb-glyph tb-italic">I</span>} isActive={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()} title="Italic" />
+        <ToolbarButton label={<span className="tb-glyph tb-underline">U</span>} isActive={editor.isActive('underline')} onClick={() => editor.chain().focus().toggleUnderline().run()} title="Underline" />
+        <ToolbarButton label={<span className="tb-glyph tb-strike">S</span>} isActive={editor.isActive('strike')} onClick={() => editor.chain().focus().toggleStrike().run()} title="Strikethrough" />
+        <ToolbarButton label={<span className="tb-glyph tb-mono">{'</>'}</span>} isActive={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()} title="Inline code" />
+        <ToolbarButton label="Highlight" isActive={editor.isActive('highlight')} onClick={() => editor.chain().focus().toggleHighlight().run()} title="Highlight selected text" />
         <div className="toolbar__link">
           <ToolbarButton label="Link" isActive={false} onClick={() => setLinkPopoverOpen(true)} title="Add link" />
           {linkPopoverOpen && (
