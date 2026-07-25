@@ -62,7 +62,6 @@ public static partial class LabelEndpoints
     private static async Task<IResult> ListForPage(
         Guid pageId, AppDbContext db, IPermissionService perms)
     {
-        if (!await db.Pages.AnyAsync(p => p.Id == pageId)) return Results.NotFound();
         if (!await perms.CanViewPageAsync(pageId)) return Results.NotFound();
         var labels = await db.PageLabels
             .Where(pl => pl.PageId == pageId)
@@ -82,8 +81,6 @@ public static partial class LabelEndpoints
         if (!NamePattern().IsMatch(name))
             return Results.ValidationProblem(Error("name",
                 "Labels are 1–50 characters: lower-case letters, digits, dot, dash or underscore, starting with a letter or digit."));
-
-        if (!await db.Pages.AnyAsync(p => p.Id == pageId)) return Results.NotFound();
 
         // Create the label on first use, then attach it to the page.
         var label = await db.Labels.FirstOrDefaultAsync(l => l.Name == name);

@@ -73,9 +73,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         {
             e.Property(p => p.Title).HasMaxLength(500);
 
-            // Trashed pages are hidden from all normal queries; trash/restore
-            // operations opt back in with IgnoreQueryFilters().
-            e.HasQueryFilter(p => p.DeletedAt == null);
+            // Trashed pages, and pages still in the invisible Draft state (created
+            // but never published — see PageEndpoints.CreateDraft), are hidden from
+            // all normal queries. Trash/restore and draft/publish operations opt
+            // back in with IgnoreQueryFilters().
+            e.HasQueryFilter(p => p.DeletedAt == null && p.Status != PageStatus.Draft);
 
             // Full-text search. On PostgreSQL, SearchVector is a generated
             // tsvector column over SearchText with a GIN index. Other providers

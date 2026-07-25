@@ -26,7 +26,6 @@ public static class CollabEndpoints
         Guid id, AppDbContext db, IPermissionService perms, CurrentUser current,
         ICollabTokenService tokens)
     {
-        if (!await db.Pages.AnyAsync(p => p.Id == id)) return Results.NotFound();
         if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
         if (!await perms.CanEditPageAsync(id)) return Results.Forbid();
 

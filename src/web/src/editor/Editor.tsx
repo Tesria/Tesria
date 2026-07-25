@@ -1,7 +1,7 @@
 import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
 import { useEffect } from 'react'
 import { Toolbar } from './Toolbar'
+import { getSharedExtensions } from './extensions'
 
 type Props = {
   /** ProseMirror document as a JSON string. */
@@ -26,7 +26,7 @@ function parseDoc(value: string): object | undefined {
  */
 export function Editor({ value, editable = true, onChange }: Props) {
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: getSharedExtensions(),
     content: parseDoc(value),
     editable,
     onUpdate: ({ editor }) => onChange?.(JSON.stringify(editor.getJSON())),

@@ -36,7 +36,6 @@ public static class CommentEndpoints
     private static async Task<IResult> ListForPage(
         Guid pageId, AppDbContext db, IPermissionService perms)
     {
-        if (!await db.Pages.AnyAsync(p => p.Id == pageId)) return Results.NotFound();
         if (!await perms.CanViewPageAsync(pageId)) return Results.NotFound();
         var comments = await db.Comments.AsNoTracking()
             .Where(c => c.PageId == pageId)
@@ -59,7 +58,11 @@ public static class CommentEndpoints
         if (req.AnchorJson is not null && !IsValidJson(req.AnchorJson))
             return Results.ValidationProblem(Error("anchorJson", "Anchor must be valid JSON."));
 
-        var spaceId = await db.Pages.Where(p => p.Id == pageId).Select(p => (Guid?)p.SpaceId).FirstOrDefaultAsync();
+        // perms.CanViewPageAsync (above) already resolved the page including
+        // drafts; re-resolve SpaceId the same way so a not-yet-published
+        // draft's own page can still receive comments.
+        var spaceId = await db.Pages.IgnoreQueryFilters()
+            .Where(p => p.Id == pageId).Select(p => (Guid?)p.SpaceId).FirstOrDefaultAsync();
         if (spaceId is null) return Results.NotFound();
 
         if (req.ParentCommentId is { } parentId)
