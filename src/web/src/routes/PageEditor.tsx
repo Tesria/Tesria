@@ -126,6 +126,14 @@ export function PageEditor() {
     }
   }
 
+  /** The page id image attachments should be uploaded against, in either mode. */
+  async function resolveUploadPageId(): Promise<string> {
+    if (pageId) return pageId
+    const id = draftId ?? (await draftIdRef.current)
+    if (!id) throw new Error('Still preparing this page — try again in a moment.')
+    return id
+  }
+
   async function onCancel() {
     if (pageId) {
       navigate(`/spaces/${key}/pages/${pageId}`)
@@ -173,9 +181,18 @@ export function PageEditor() {
             initialContent={content}
             displayName={user?.displayName ?? 'Anonymous'}
             onChange={setContent}
+            getUploadPageId={resolveUploadPageId}
+            onUploadError={setError}
           />
         ) : (
-          <Editor key={pageId ?? `new-${templateId || 'blank'}`} value={content} editable onChange={setContent} />
+          <Editor
+            key={pageId ?? `new-${templateId || 'blank'}`}
+            value={content}
+            editable
+            onChange={setContent}
+            getUploadPageId={resolveUploadPageId}
+            onUploadError={setError}
+          />
         )}
       </div>
       {isEdit && (

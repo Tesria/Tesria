@@ -1,7 +1,27 @@
+import type { ChangeEvent } from 'react'
 import type { Editor as TiptapEditor } from '@tiptap/react'
+import { uploadAndInsertImage } from './imageUpload'
+
+type Props = {
+  editor: TiptapEditor
+  /** Resolves the page id image attachments should be uploaded against. Omit to hide the image button. */
+  getUploadPageId?: () => Promise<string>
+  onUploadError?: (message: string) => void
+}
 
 /** Formatting controls, shared by the single-user and collaborative editors. */
-export function Toolbar({ editor }: { editor: TiptapEditor }) {
+export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
+  async function onPickImage(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !getUploadPageId) return
+    try {
+      await uploadAndInsertImage(editor, file, getUploadPageId)
+    } catch (err) {
+      onUploadError?.(err instanceof Error ? err.message : 'Image upload failed.')
+    }
+  }
+
   const btn = (label: string, isActive: boolean, onClick: () => void, title: string) => (
     <button
       type="button"
@@ -31,6 +51,12 @@ export function Toolbar({ editor }: { editor: TiptapEditor }) {
       {btn('{ }', editor.isActive('codeBlock'), () => editor.chain().focus().toggleCodeBlock().run(), 'Code block')}
       {btn('Table', editor.isActive('table'), () =>
         editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(), 'Insert table')}
+      {getUploadPageId && (
+        <label className="toolbar__btn upload-btn" title="Insert image">
+          Image
+          <input type="file" accept="image/*" hidden onChange={onPickImage} />
+        </label>
+      )}
     </div>
   )
 }
