@@ -184,6 +184,23 @@ label input, label textarea { margin-top: 0.25rem; }
 .code-block code { background: none; padding: 0; border-radius: 0; }
 .editor__content blockquote { border-left: 3px solid var(--border); margin: 0.5em 0; padding-left: 0.8em; color: var(--muted); }
 .editor__content img { max-width: 100%; border-radius: 4px; }
+.editor__content mark { background: #fff3a3; padding: 0.05em 0.1em; border-radius: 2px; }
+
+/* link editing */
+.link-menu {
+  display: flex; align-items: center; gap: 0.5rem; background: #fff; border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: 0 4px 14px rgba(23, 43, 77, 0.15); padding: 0.4rem 0.6rem; font-size: 0.85rem;
+}
+.link-menu__url { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.link-menu__form { display: flex; gap: 0.4rem; align-items: center; }
+.link-menu__form input, .toolbar__link-popover input { width: 220px; padding: 0.3rem 0.5rem; }
+
+.toolbar__link { position: relative; display: inline-flex; }
+.toolbar__link-popover {
+  position: absolute; top: 100%; left: 0; margin-top: 0.3rem; z-index: 6;
+  display: flex; gap: 0.4rem; align-items: center; background: #fff; border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: 0 4px 14px rgba(23, 43, 77, 0.15); padding: 0.4rem 0.6rem;
+}
 
 /* tables */
 .editor__content .tableWrapper { overflow-x: auto; margin: 0.75rem 0; }

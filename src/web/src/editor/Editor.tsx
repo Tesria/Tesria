@@ -2,6 +2,7 @@ import { useEditor, EditorContent, type Editor as TiptapEditor } from '@tiptap/r
 import { useEffect, useRef } from 'react'
 import { Toolbar } from './Toolbar'
 import { TableControls } from './TableControls'
+import { LinkMenu } from './LinkMenu'
 import { getSharedExtensions } from './extensions'
 import { handleImageDrop, handleImagePaste } from './imageUpload'
 
@@ -36,7 +37,7 @@ export function Editor({ value, editable = true, onChange, getUploadPageId, onUp
   // exist yet at that point.
   const editorRef = useRef<TiptapEditor | null>(null)
   const editor = useEditor({
-    extensions: getSharedExtensions(),
+    extensions: getSharedExtensions({ editable }),
     content: parseDoc(value),
     editable,
     onUpdate: ({ editor }) => onChange?.(JSON.stringify(editor.getJSON())),
@@ -64,6 +65,7 @@ export function Editor({ value, editable = true, onChange, getUploadPageId, onUp
     <div className={editable ? 'editor editor--editable' : 'editor'}>
       {editable && editor && <Toolbar editor={editor} getUploadPageId={getUploadPageId} onUploadError={onUploadError} />}
       {editable && editor && <TableControls editor={editor} />}
+      {editable && editor && <LinkMenu editor={editor} />}
       <EditorContent editor={editor} className="editor__content" />
     </div>
   )

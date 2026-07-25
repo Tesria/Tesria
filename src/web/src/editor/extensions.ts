@@ -5,6 +5,8 @@ import { TableKit } from '@tiptap/extension-table'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import Image from '@tiptap/extension-image'
+import Highlight from '@tiptap/extension-highlight'
+import TextAlign from '@tiptap/extension-text-align'
 import type { AnyExtension } from '@tiptap/core'
 import { lowlight } from './lowlight'
 import { CodeBlockView } from './CodeBlockView'
@@ -12,6 +14,13 @@ import { CodeBlockView } from './CodeBlockView'
 type SharedExtensionOptions = {
   /** Collaborative editors let Yjs own undo/redo history instead of StarterKit's. */
   collaborative?: boolean
+  /**
+   * False only for read-only rendering (PageView, HistoryPanel previews).
+   * Controls whether links navigate on click: in editable mode a click
+   * should place the cursor, not hijack navigation; the read-only view keeps
+   * the default click-to-open behaviour so viewers can click through.
+   */
+  editable?: boolean
 }
 
 const CodeBlock = CodeBlockLowlight.extend({
@@ -27,16 +36,22 @@ const CodeBlock = CodeBlockLowlight.extend({
  * agree on one exact schema, so this list must never diverge between editors
  * — new node/mark extensions get added here, not inline in either component.
  */
-export function getSharedExtensions({ collaborative = false }: SharedExtensionOptions = {}): AnyExtension[] {
+export function getSharedExtensions({ collaborative = false, editable = true }: SharedExtensionOptions = {}): AnyExtension[] {
   return [
     // The plain CodeBlock is disabled in favour of the syntax-highlighted one
     // below — both use the same "codeBlock" node type name and `language`
     // attr, so stored content and the export renderer are unaffected.
-    StarterKit.configure({ codeBlock: false, ...(collaborative ? { undoRedo: false } : {}) }),
+    StarterKit.configure({
+      codeBlock: false,
+      link: { openOnClick: !editable },
+      ...(collaborative ? { undoRedo: false } : {}),
+    }),
     CodeBlock,
     TableKit.configure({ table: { resizable: true } }),
     TaskList,
     TaskItem.configure({ nested: true }),
     Image,
+    Highlight,
+    TextAlign.configure({ types: ['heading', 'paragraph'] }),
   ]
 }
