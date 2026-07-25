@@ -162,8 +162,26 @@ label input, label textarea { margin-top: 0.25rem; }
 .editor__content:focus-within { outline: none; }
 .editor__content .ProseMirror { outline: none; min-height: 200px; }
 .editor__content .ProseMirror p { margin: 0.5em 0; }
-.editor__content pre { background: #0b1324; color: #e2e8f0; padding: 0.75rem; border-radius: var(--radius); overflow-x: auto; }
 .editor__content code { background: var(--bg-alt); padding: 0.1em 0.3em; border-radius: 4px; }
+
+/* syntax-highlighted code blocks (CodeBlockView.tsx) */
+.code-block { margin: 0.75rem 0; border-radius: var(--radius); overflow: hidden; border: 1px solid #1f2a44; }
+.code-block__header {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  padding: 0.3rem 0.5rem; background: #17203a; border-bottom: 1px solid #1f2a44;
+}
+.code-block__lang {
+  width: auto; background: transparent; color: #cbd5e1; border: none; font-size: 0.78rem;
+  padding: 0.1rem 0.3rem;
+}
+.code-block__lang:focus { outline: none; }
+.code-block__copy {
+  background: transparent; border: 1px solid #334066; color: #cbd5e1; border-radius: 4px;
+  font-size: 0.75rem; padding: 0.15rem 0.5rem; cursor: pointer;
+}
+.code-block__copy:hover { background: #1f2a44; }
+.code-block pre { margin: 0; background: #0b1324; color: #e2e8f0; padding: 0.75rem; overflow-x: auto; border-radius: 0; }
+.code-block code { background: none; padding: 0; border-radius: 0; }
 .editor__content blockquote { border-left: 3px solid var(--border); margin: 0.5em 0; padding-left: 0.8em; color: var(--muted); }
 .toolbar {
   display: flex; flex-wrap: wrap; gap: 0.2rem; padding: 0.4rem 1.5rem; border-bottom: 1px solid var(--border);
