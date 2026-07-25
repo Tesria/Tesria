@@ -216,7 +216,10 @@ label input, label textarea { margin-top: 0.25rem; }
 .code-block .hljs-strong { font-weight: 700; }
 .editor__content blockquote { border-left: 3px solid var(--border); margin: 0.5em 0; padding-left: 0.8em; color: var(--muted); }
 .editor__content img { max-width: 100%; border-radius: 4px; }
+.editor__content img.img-border { border: 1px solid var(--border); padding: 2px; }
+.editor__content img.img-shadow { box-shadow: 0 4px 14px rgba(23, 43, 77, 0.25); }
 .editor__content mark { background: #fff3a3; padding: 0.05em 0.1em; border-radius: 2px; }
+.editor__content .comment-highlight { background: #fdf0c2; border-bottom: 2px solid #d9a000; cursor: default; }
 
 /* link editing */
 .link-menu {
@@ -254,6 +257,8 @@ label input, label textarea { margin-top: 0.25rem; }
   display: flex; gap: 0.4rem; align-items: center; background: #fff; border: 1px solid var(--border);
   border-radius: var(--radius); box-shadow: 0 4px 14px rgba(23, 43, 77, 0.15); padding: 0.4rem 0.6rem;
 }
+.toolbar__comment-popover { align-items: flex-end; }
+.toolbar__comment-popover textarea { width: 220px; padding: 0.3rem 0.5rem; resize: vertical; }
 
 /* tables */
 .editor__content .tableWrapper { overflow-x: auto; margin: 0.75rem 0; }

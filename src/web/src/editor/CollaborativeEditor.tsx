@@ -7,6 +7,7 @@ import * as Y from 'yjs'
 import { TableControls } from './TableControls'
 import { LinkMenu } from './LinkMenu'
 import { SelectionBubbleMenu } from './SelectionBubbleMenu'
+import { ImageHoverMenu } from './ImageHoverMenu'
 import { getSharedExtensions } from './extensions'
 import { handleImageDrop, handleImagePaste } from './imageUpload'
 import { setSlashCommandStorage } from './slash/items'
@@ -140,7 +141,8 @@ export function CollaborativeEditor({
       </div>
       {editor && <TableControls editor={editor} />}
       {editor && <LinkMenu editor={editor} />}
-      {editor && <SelectionBubbleMenu editor={editor} />}
+      {editor && <SelectionBubbleMenu editor={editor} getPageId={getUploadPageId} onCommentError={onUploadError} />}
+      {editor && <ImageHoverMenu editor={editor} getPageId={getUploadPageId} onCommentError={onUploadError} />}
       <EditorContent editor={editor} className="editor__content" />
     </div>
   )

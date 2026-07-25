@@ -121,9 +121,11 @@ public static class ProseMirrorRenderer
                 var src = Attr(node, "src") ?? "";
                 var alt = Attr(node, "alt");
                 var imgTitle = Attr(node, "title");
+                var imgStyle = ImageStyle(node);
                 sb.Append($"<img src=\"{Escape(src)}\"");
                 if (alt is not null) sb.Append($" alt=\"{Escape(alt)}\"");
                 if (imgTitle is not null) sb.Append($" title=\"{Escape(imgTitle)}\"");
+                if (imgStyle is not null) sb.Append($" style=\"{imgStyle}\"");
                 sb.Append(" />\n");
                 break;
             case "table":
@@ -268,6 +270,15 @@ public static class ProseMirrorRenderer
     }
 
     private static string EscapeTablePipes(string text) => text.Replace("|", "\\|");
+
+    /// <summary>The border/drop-shadow display attrs (editor-only affordances) as an inline style, or null.</summary>
+    private static string? ImageStyle(JsonElement node)
+    {
+        var parts = new List<string>();
+        if (BoolAttr(node, "border")) parts.Add("border: 1px solid #e4e6eb; padding: 2px");
+        if (BoolAttr(node, "shadow")) parts.Add("box-shadow: 0 4px 14px rgba(23, 43, 77, 0.25)");
+        return parts.Count == 0 ? null : string.Join("; ", parts);
+    }
 
     private static void RenderMarkdownTaskList(JsonElement listNode, StringBuilder sb, int depth)
     {

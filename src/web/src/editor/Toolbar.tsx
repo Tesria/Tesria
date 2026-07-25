@@ -77,6 +77,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
             className="toolbar__link-popover"
             onSubmit={(e) => {
               e.preventDefault()
+              e.stopPropagation()
               applyLink()
             }}
           >
