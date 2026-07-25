@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react'
 import { Toolbar } from './Toolbar'
 import { TableControls } from './TableControls'
 import { LinkMenu } from './LinkMenu'
+import { SelectionBubbleMenu } from './SelectionBubbleMenu'
 import { getSharedExtensions } from './extensions'
 import { handleImageDrop, handleImagePaste } from './imageUpload'
 
@@ -66,6 +67,7 @@ export function Editor({ value, editable = true, onChange, getUploadPageId, onUp
       {editable && editor && <Toolbar editor={editor} getUploadPageId={getUploadPageId} onUploadError={onUploadError} />}
       {editable && editor && <TableControls editor={editor} />}
       {editable && editor && <LinkMenu editor={editor} />}
+      {editable && editor && <SelectionBubbleMenu editor={editor} />}
       <EditorContent editor={editor} className="editor__content" />
     </div>
   )
