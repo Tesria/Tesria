@@ -124,6 +124,35 @@ public class ProseMirrorRendererTests
         Assert.Contains("- [x] Done thing", md);
         Assert.Contains("- [ ] Todo thing", md);
     }
+
+    private const string ImageDoc = """
+    {"type":"doc","content":[
+      {"type":"image","attrs":{"src":"/api/attachments/abc/download","alt":"a diagram","title":null}}
+    ]}
+    """;
+
+    [Fact]
+    public void Renders_image_as_html_img_tag()
+    {
+        var html = ProseMirrorRenderer.ToHtml(ImageDoc);
+        Assert.Contains("<img src=\"/api/attachments/abc/download\" alt=\"a diagram\" />", html);
+    }
+
+    [Fact]
+    public void Renders_image_as_markdown()
+    {
+        var md = ProseMirrorRenderer.ToMarkdown(ImageDoc);
+        Assert.Contains("![a diagram](/api/attachments/abc/download)", md);
+    }
+
+    [Fact]
+    public void An_image_node_does_not_silently_vanish_without_the_image_case()
+    {
+        // Regression guard for the exact bug class Phase 4 exists to close: a
+        // leaf node with no children previously rendered nothing at all.
+        var html = ProseMirrorRenderer.ToHtml(ImageDoc);
+        Assert.NotEmpty(html);
+    }
 }
 
 public class ExportEndpointTests

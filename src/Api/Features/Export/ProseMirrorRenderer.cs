@@ -113,6 +113,15 @@ public static class ProseMirrorRenderer
             case "hardBreak":
                 sb.Append("<br />");
                 break;
+            case "image":
+                var src = Attr(node, "src") ?? "";
+                var alt = Attr(node, "alt");
+                var imgTitle = Attr(node, "title");
+                sb.Append($"<img src=\"{Escape(src)}\"");
+                if (alt is not null) sb.Append($" alt=\"{Escape(alt)}\"");
+                if (imgTitle is not null) sb.Append($" title=\"{Escape(imgTitle)}\"");
+                sb.Append(" />\n");
+                break;
             case "table":
                 sb.Append("<table>\n"); RenderHtmlChildren(node, sb); sb.Append("</table>\n");
                 break;
@@ -206,6 +215,12 @@ public static class ProseMirrorRenderer
                 break;
             case "hardBreak":
                 sb.Append("  \n");
+                break;
+            case "image":
+                // Exported Markdown references the app's own (authenticated) attachment
+                // URL, so it won't render standalone outside the app — acceptable for
+                // internal dev docs.
+                sb.Append($"![{Attr(node, "alt") ?? ""}]({Attr(node, "src") ?? ""})\n\n");
                 break;
             case "table":
                 RenderMarkdownTable(node, sb);

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { EditorContent, useEditor } from '@tiptap/react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { EditorContent, useEditor, type Editor as TiptapEditor } from '@tiptap/react'
 import Collaboration from '@tiptap/extension-collaboration'
 import CollaborationCaret from '@tiptap/extension-collaboration-caret'
 import { HocuspocusProvider } from '@hocuspocus/provider'
@@ -7,6 +7,7 @@ import * as Y from 'yjs'
 import { Toolbar } from './Toolbar'
 import { TableControls } from './TableControls'
 import { getSharedExtensions } from './extensions'
+import { handleImageDrop, handleImagePaste } from './imageUpload'
 
 type Props = {
   pageId: string
@@ -15,6 +16,10 @@ type Props = {
   initialContent: string
   displayName: string
   onChange: (json: string) => void
+  /** Resolves the page id image attachments should be uploaded against. */
+  getUploadPageId?: () => Promise<string>
+  /** Reports an image upload failure (paste/drop/toolbar), e.g. into a form's error banner. */
+  onUploadError?: (message: string) => void
 }
 
 function parseDoc(value: string): object | undefined {
@@ -39,9 +44,10 @@ function colourFor(name: string): string {
  * StarterKit's own history is disabled to avoid the two fighting.
  */
 export function CollaborativeEditor({
-  pageId, token, initialContent, displayName, onChange,
+  pageId, token, initialContent, displayName, onChange, getUploadPageId, onUploadError,
 }: Props) {
   const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting')
+  const editorRef = useRef<TiptapEditor | null>(null)
 
   // One document + provider per page, torn down when the page changes.
   // pageId is deliberately a dependency even though the factory doesn't read
@@ -75,7 +81,14 @@ export function CollaborativeEditor({
       }),
     ],
     onUpdate: ({ editor }) => onChange(JSON.stringify(editor.getJSON())),
+    editorProps: {
+      handlePaste: (_view, event) => handleImagePaste(editorRef.current, event, getUploadPageId, onUploadError),
+      handleDrop: (_view, event) => handleImageDrop(editorRef.current, event, getUploadPageId, onUploadError),
+    },
   }, [provider, ydoc])
+  useEffect(() => {
+    editorRef.current = editor
+  }, [editor])
 
   // Seed the shared document from stored content the first time anyone opens
   // it. Guarded on emptiness so we never clobber other people's live edits.
@@ -107,7 +120,7 @@ export function CollaborativeEditor({
             ? 'Connecting to collaboration…'
             : 'Offline — your changes are local until reconnected'}
       </div>
-      {editor && <Toolbar editor={editor} />}
+      {editor && <Toolbar editor={editor} getUploadPageId={getUploadPageId} onUploadError={onUploadError} />}
       {editor && <TableControls editor={editor} />}
       <EditorContent editor={editor} className="editor__content" />
     </div>
