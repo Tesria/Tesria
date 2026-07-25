@@ -1,10 +1,20 @@
 import StarterKit from '@tiptap/starter-kit'
+import { ReactNodeViewRenderer } from '@tiptap/react'
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import type { AnyExtension } from '@tiptap/core'
+import { lowlight } from './lowlight'
+import { CodeBlockView } from './CodeBlockView'
 
 type SharedExtensionOptions = {
   /** Collaborative editors let Yjs own undo/redo history instead of StarterKit's. */
   collaborative?: boolean
 }
+
+const CodeBlock = CodeBlockLowlight.extend({
+  addNodeView() {
+    return ReactNodeViewRenderer(CodeBlockView)
+  },
+}).configure({ lowlight })
 
 /**
  * Single source of truth for the TipTap/ProseMirror schema (node/mark types),
@@ -15,6 +25,10 @@ type SharedExtensionOptions = {
  */
 export function getSharedExtensions({ collaborative = false }: SharedExtensionOptions = {}): AnyExtension[] {
   return [
-    StarterKit.configure(collaborative ? { undoRedo: false } : {}),
+    // The plain CodeBlock is disabled in favour of the syntax-highlighted one
+    // below — both use the same "codeBlock" node type name and `language`
+    // attr, so stored content and the export renderer are unaffected.
+    StarterKit.configure({ codeBlock: false, ...(collaborative ? { undoRedo: false } : {}) }),
+    CodeBlock,
   ]
 }
