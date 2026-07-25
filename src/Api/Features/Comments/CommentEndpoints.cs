@@ -4,6 +4,7 @@ using ConfluenceClone.Api.Infrastructure;
 using ConfluenceClone.Api.Infrastructure.Auth;
 using ConfluenceClone.Api.Infrastructure.Notifications;
 using ConfluenceClone.Api.Infrastructure.Permissions;
+using ConfluenceClone.Api.Infrastructure.Webhooks;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConfluenceClone.Api.Features.Comments;
@@ -47,7 +48,7 @@ public static class CommentEndpoints
 
     private static async Task<IResult> Create(
         Guid pageId, CreateCommentRequest req, AppDbContext db, CurrentUser current,
-        IPermissionService perms, INotificationService notifications)
+        IPermissionService perms, INotificationService notifications, IWebhookDispatcher webhooks)
     {
         // Commenting requires being able to see the page.
         if (!await perms.CanViewPageAsync(pageId)) return Results.NotFound();
@@ -85,6 +86,8 @@ public static class CommentEndpoints
         await notifications.NotifyPageWatchersAsync(
             pageId, spaceId.Value, "comment.created", authorId, new { Body = Truncate(body) });
         await db.SaveChangesAsync();
+        await webhooks.DispatchAsync(
+            spaceId.Value, "comment.created", "page", pageId, new { Body = Truncate(body) });
         return Results.Created($"/api/comments/{comment.Id}", ToResponse(comment));
     }
 

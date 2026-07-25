@@ -100,6 +100,18 @@ export type PageRestriction = {
   operation: number
 }
 
+export type ApiTokenSummary = {
+  id: string
+  name: string
+  prefix: string
+  createdAt: string
+  lastUsedAt: string | null
+}
+export type CreatedApiToken = ApiTokenSummary & { token: string }
+
+export type Webhook = { id: string; url: string; events: string; enabled: boolean; createdAt: string }
+export type CreatedWebhook = Webhook & { secret: string }
+
 export type WatchStatus = { watching: boolean }
 
 export type AppNotification = {
@@ -282,6 +294,18 @@ export const api = {
   },
   users: {
     list: () => request<Directory[]>('GET', '/api/users'),
+  },
+  apiTokens: {
+    list: () => request<ApiTokenSummary[]>('GET', '/api/api-tokens'),
+    create: (name: string) => request<CreatedApiToken>('POST', '/api/api-tokens', { name }),
+    revoke: (id: string) => request<void>('DELETE', `/api/api-tokens/${id}`),
+  },
+  webhooks: {
+    list: (key: string) => request<Webhook[]>('GET', `/api/spaces/${encodeURIComponent(key)}/webhooks`),
+    create: (key: string, input: { url: string; events: string }) =>
+      request<CreatedWebhook>('POST', `/api/spaces/${encodeURIComponent(key)}/webhooks`, input),
+    remove: (key: string, id: string) =>
+      request<void>('DELETE', `/api/spaces/${encodeURIComponent(key)}/webhooks/${id}`),
   },
   pageWatch: {
     status: (pageId: string) => request<WatchStatus>('GET', `/api/pages/${pageId}/watch`),

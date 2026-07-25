@@ -71,6 +71,12 @@ export function SpacePage() {
           🔒 Permissions
         </NavLink>
         <NavLink
+          to={`/spaces/${space.key}/webhooks`}
+          className={({ isActive }) => (isActive ? 'sidebar__trash is-active' : 'sidebar__trash')}
+        >
+          🪝 Webhooks
+        </NavLink>
+        <NavLink
           to={`/spaces/${space.key}/trash`}
           className={({ isActive }) => (isActive ? 'sidebar__trash is-active' : 'sidebar__trash')}
         >

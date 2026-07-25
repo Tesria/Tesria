@@ -1,4 +1,5 @@
 using ConfluenceClone.Api.Infrastructure;
+using ConfluenceClone.Api.Infrastructure.Webhooks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
@@ -50,6 +51,13 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
             foreach (var d in toRemove) services.Remove(d);
 
             services.AddDbContext<AppDbContext>(o => o.UseSqlite(_connection));
+
+            // Replace the real channel-backed sender with a recording fake, so
+            // tests can assert on dispatched webhooks without any network I/O
+            // or a running background delivery service.
+            services.RemoveAll<IWebhookSender>();
+            services.AddSingleton<RecordingWebhookSender>();
+            services.AddSingleton<IWebhookSender>(sp => sp.GetRequiredService<RecordingWebhookSender>());
         });
     }
 

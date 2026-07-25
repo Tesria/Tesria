@@ -1,3 +1,4 @@
+using ConfluenceClone.Api.Features.ApiTokens;
 using ConfluenceClone.Api.Features.Attachments;
 using ConfluenceClone.Api.Features.Auth;
 using ConfluenceClone.Api.Features.Comments;
@@ -14,6 +15,7 @@ using ConfluenceClone.Api.Features.Spaces;
 using ConfluenceClone.Api.Features.Notifications;
 using ConfluenceClone.Api.Features.Templates;
 using ConfluenceClone.Api.Features.Watches;
+using ConfluenceClone.Api.Features.Webhooks;
 using ConfluenceClone.Api.Infrastructure;
 using ConfluenceClone.Api.Infrastructure.Audit;
 using ConfluenceClone.Api.Infrastructure.Auth;
@@ -21,6 +23,8 @@ using ConfluenceClone.Api.Infrastructure.Collab;
 using ConfluenceClone.Api.Infrastructure.Notifications;
 using ConfluenceClone.Api.Infrastructure.Permissions;
 using ConfluenceClone.Api.Infrastructure.Storage;
+using ConfluenceClone.Api.Infrastructure.Webhooks;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
@@ -45,6 +49,16 @@ builder.Services.AddScoped<IAuditLogger, AuditLogger>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddSingleton<ICollabTokenService, CollabTokenService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IApiTokenService, ApiTokenService>();
+
+// Webhooks: matching (which webhooks, for which event) is scoped/DB-backed;
+// delivery is a channel-backed background service so a slow or unreachable
+// receiving endpoint never blocks the request that triggered the webhook.
+builder.Services.AddScoped<IWebhookDispatcher, WebhookDispatcher>();
+builder.Services.AddSingleton<ChannelWebhookSender>();
+builder.Services.AddSingleton<IWebhookSender>(sp => sp.GetRequiredService<ChannelWebhookSender>());
+builder.Services.AddHostedService<WebhookDeliveryBackgroundService>();
+builder.Services.AddHttpClient(nameof(WebhookDeliveryBackgroundService), c => c.Timeout = TimeSpan.FromSeconds(10));
 
 // Attachment file storage (local uploads volume; PLAN §3).
 builder.Services.AddSingleton<IAttachmentStorage, LocalAttachmentStorage>();
@@ -55,9 +69,24 @@ builder.Services.AddDataProtection()
     .PersistKeysToDbContext<AppDbContext>()
     .SetApplicationName("ConfluenceClone");
 
+// Two ways in: the browser SPA uses the auth cookie; external scripts/
+// integrations use a Bearer API token (Features/ApiTokens). A policy scheme
+// picks between them per-request so every existing endpoint's
+// RequireAuthorization() works unchanged for either caller.
+const string SmartScheme = "Smart";
 builder.Services
-    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
+    .AddAuthentication(options =>
+    {
+        options.DefaultScheme = SmartScheme;
+        options.DefaultChallengeScheme = SmartScheme;
+    })
+    .AddPolicyScheme(SmartScheme, "Cookie or API token", options =>
+    {
+        options.ForwardDefaultSelector = ctx => ctx.Request.Headers.ContainsKey("Authorization")
+            ? ApiTokenAuthenticationDefaults.AuthenticationScheme
+            : CookieAuthenticationDefaults.AuthenticationScheme;
+    })
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
     {
         options.Cookie.Name = "confluenceclone.auth";
         options.Cookie.HttpOnly = true;
@@ -77,7 +106,9 @@ builder.Services
             ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
             return Task.CompletedTask;
         };
-    });
+    })
+    .AddScheme<AuthenticationSchemeOptions, ApiTokenAuthenticationHandler>(
+        ApiTokenAuthenticationDefaults.AuthenticationScheme, _ => { });
 builder.Services.AddAuthorization();
 
 // Health checks, incl. a database probe now that EF Core is wired in.
@@ -148,6 +179,8 @@ api.MapCollabEndpoints();
 api.MapTemplateEndpoints();
 api.MapWatchEndpoints();
 api.MapNotificationEndpoints();
+api.MapApiTokenEndpoints();
+api.MapWebhookEndpoints();
 
 // SPA fallback: any non-API, non-file route returns index.html so client-side
 // routing works. Guarded so it never swallows /api/* requests.

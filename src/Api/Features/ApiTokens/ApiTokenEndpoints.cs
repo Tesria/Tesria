@@ -1,0 +1,58 @@
+using ConfluenceClone.Api.Infrastructure;
+using ConfluenceClone.Api.Infrastructure.Auth;
+using Microsoft.EntityFrameworkCore;
+
+namespace ConfluenceClone.Api.Features.ApiTokens;
+
+public static class ApiTokenEndpoints
+{
+    public record CreateTokenRequest(string Name);
+    public record CreatedTokenResponse(Guid Id, string Name, string Prefix, DateTimeOffset CreatedAt, string Token);
+    public record TokenResponse(
+        Guid Id, string Name, string Prefix, DateTimeOffset CreatedAt, DateTimeOffset? LastUsedAt);
+
+    public static IEndpointRouteBuilder MapApiTokenEndpoints(this IEndpointRouteBuilder routes)
+    {
+        var group = routes.MapGroup("/api-tokens").WithTags("ApiTokens").RequireAuthorization();
+        group.MapGet("/", List);
+        group.MapPost("/", Create);
+        group.MapDelete("/{id:guid}", Revoke);
+        return routes;
+    }
+
+    private static async Task<IResult> List(AppDbContext db, CurrentUser current)
+    {
+        var userId = current.RequireId();
+        var tokens = await db.ApiTokens.AsNoTracking().Where(t => t.UserId == userId).ToListAsync();
+        // Sorted in memory: the set per user is small, and the SQLite test
+        // provider cannot ORDER BY DateTimeOffset.
+        return Results.Ok(tokens
+            .OrderByDescending(t => t.CreatedAt)
+            .Select(t => new TokenResponse(t.Id, t.Name, t.Prefix, t.CreatedAt, t.LastUsedAt)));
+    }
+
+    private static async Task<IResult> Create(
+        CreateTokenRequest req, IApiTokenService tokens, CurrentUser current)
+    {
+        var name = (req.Name ?? "").Trim();
+        if (name.Length == 0)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["name"] = ["A name is required so you can tell your tokens apart."],
+            });
+
+        var (raw, entity) = await tokens.IssueAsync(current.RequireId(), name);
+        // The raw token is returned exactly once — it is not retrievable again.
+        return Results.Created($"/api/api-tokens/{entity.Id}",
+            new CreatedTokenResponse(entity.Id, entity.Name, entity.Prefix, entity.CreatedAt, raw));
+    }
+
+    private static async Task<IResult> Revoke(Guid id, AppDbContext db, CurrentUser current)
+    {
+        var token = await db.ApiTokens.FirstOrDefaultAsync(t => t.Id == id && t.UserId == current.RequireId());
+        if (token is null) return Results.NotFound();
+        db.ApiTokens.Remove(token);
+        await db.SaveChangesAsync();
+        return Results.NoContent();
+    }
+}
