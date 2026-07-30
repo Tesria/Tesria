@@ -255,9 +255,25 @@ if (app.Environment.IsDevelopment())
     app.UseCors(DevCorsPolicy);
 }
 
-// Serve the built React SPA from wwwroot in production.
+// Serve the built React SPA from wwwroot in production. No Cache-Control was
+// set here before, so browsers applied heuristic caching to index.html itself
+// (not just the content-hashed /assets/* bundles it references) — a client
+// could keep rendering a stale index.html referencing assets from a prior
+// deploy for an unpredictable, browser-chosen length of time. index.html must
+// always be revalidated; the hashed bundles it points at are safe to cache
+// forever since a content change gives them a new filename.
+var spaStaticFileOptions = new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        var headers = ctx.Context.Response.Headers;
+        headers.CacheControl = ctx.File.Name.Equals("index.html", StringComparison.OrdinalIgnoreCase)
+            ? "no-cache"
+            : "public, max-age=31536000, immutable";
+    },
+};
 app.UseDefaultFiles();
-app.UseStaticFiles();
+app.UseStaticFiles(spaStaticFileOptions);
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -285,8 +301,10 @@ api.MapApiTokenEndpoints();
 api.MapWebhookEndpoints();
 
 // SPA fallback: any non-API, non-file route returns index.html so client-side
-// routing works. Guarded so it never swallows /api/* requests.
-app.MapFallbackToFile("index.html");
+// routing works. Guarded so it never swallows /api/* requests. Reuses the same
+// options so this path also gets the no-cache header above, not just direct
+// hits on "/" or "/index.html".
+app.MapFallbackToFile("index.html", spaStaticFileOptions);
 
 app.Run();
 

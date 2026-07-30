@@ -98,6 +98,47 @@ public class ProseMirrorRendererTests
         Assert.Contains("Widget \\| Pro", md); // literal pipe in cell content is escaped
     }
 
+    private const string TableWithWidthDoc = """
+    {"type":"doc","content":[
+      {"type":"table","attrs":{"width":420},"content":[
+        {"type":"tableRow","content":[
+          {"type":"tableHeader","content":[{"type":"paragraph","content":[{"type":"text","text":"Name"}]}]}]}
+      ]}
+    ]}
+    """;
+
+    private const string TableFullWidthDoc = """
+    {"type":"doc","content":[
+      {"type":"table","attrs":{"layout":"full-width"},"content":[
+        {"type":"tableRow","content":[
+          {"type":"tableHeader","content":[{"type":"paragraph","content":[{"type":"text","text":"Name"}]}]}]}
+      ]}
+    ]}
+    """;
+
+    [Fact]
+    public void Renders_manually_sized_table_width_as_an_inline_style_capped_to_the_viewport()
+    {
+        var html = ProseMirrorRenderer.ToHtml(TableWithWidthDoc);
+        Assert.Contains("<table style=\"width: min(420px, 100%)\">", html);
+    }
+
+    [Fact]
+    public void Renders_full_width_table_layout_as_an_inline_style()
+    {
+        var html = ProseMirrorRenderer.ToHtml(TableFullWidthDoc);
+        Assert.Contains("<table style=\"width: 100%\">", html);
+    }
+
+    [Fact]
+    public void Table_width_and_layout_do_not_affect_markdown_export()
+    {
+        // GFM pipe tables have no width concept — degrades silently, same as
+        // any other display-only attribute (e.g. image border/shadow).
+        var md = ProseMirrorRenderer.ToMarkdown(TableWithWidthDoc);
+        Assert.Contains("| Name |", md);
+    }
+
     private const string TaskListDoc = """
     {"type":"doc","content":[
       {"type":"taskList","content":[

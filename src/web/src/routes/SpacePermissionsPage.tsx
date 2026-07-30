@@ -50,7 +50,7 @@ export function SpacePermissionsPage() {
 
   return (
     <div className="page-wrap">
-      <h1>Permissions — {space.name}</h1>
+      <h1>Permissions</h1>
       {error && <p className="alert alert--error">{error}</p>}
 
       {isOpen ? (

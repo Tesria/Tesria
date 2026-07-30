@@ -70,6 +70,23 @@ a real full-page redirect to the identity provider.
 - Routing is React Router 7; a typed `api/client.ts` wraps all REST calls and
   an `AuthContext` holds the session.
 
+### Responsive layout
+
+Two breakpoints, documented as CSS custom properties in `index.css`'s
+`:root` (`--bp-mobile: 640px`, `--bp-tablet: 1024px`) — CSS can't read a
+custom property inside an `@media` condition, so each `@media` rule repeats
+the raw number with a `/* keep in sync with --bp-mobile */` comment pointing
+back to the documented source of truth. Below `--bp-mobile`: the topbar nav
+collapses behind a hamburger, the space page-tree sidebar becomes an
+off-canvas drawer, and the page's full-width toggle hides (a distinction
+without a difference once the reading column already fills the viewport).
+`useDismissable.ts` (outside-click/Escape dismissal) is shared by both the
+sidebar drawer and `OverflowMenu`. `--page-pad` is the one custom property
+worth being careful with: it's read both by `.paper`'s own padding and by
+the full-width table breakout math (see the Editor section below) — change
+it in one place, not both, or they drift apart and a full-width table
+overflows the viewport by the difference.
+
 ### Editor (`src/web/src/editor`)
 
 TipTap v3 (ProseMirror) provides the block WYSIWYG. Documents are stored as
@@ -93,12 +110,35 @@ ProseMirror JSON in `PageVersion.ContentJson`.
   its submit handler, or the submit event bubbles through React's synthetic
   event system (which follows the component tree, not BubbleMenu's DOM
   portal) and also submits the outer page-save form.
-- **Table hover controls** (`TableControls.tsx`) — a fixed-position overlay
-  that tracks mouse proximity to each `<table>` in the document (not DOM
-  ancestry, since the +/× buttons render outside the table's own DOM) and
-  uses `TableMap.positionAt()` (from `@tiptap/pm/tables`) to translate a
-  clicked row/column index into the right ProseMirror cell position before
-  running the standard add/delete row/column commands.
+- **Table hover controls** (`TableControls.tsx` for row/column insert-delete,
+  `TableWidthControls.tsx` for the width edge-drag handle + full-width
+  toggle) — fixed-position overlays that track proximity to each `<table>`
+  in the document (not DOM ancestry, since the buttons render outside the
+  table's own DOM), sharing one hover/selection-tracking hook,
+  `useHoveredTable.ts`. `TableControls` uses `TableMap.positionAt()` (from
+  `@tiptap/pm/tables`) to translate a clicked row/column index into the
+  right ProseMirror cell position before running the standard add/delete
+  row/column commands. Table width itself lives on the `table` node as
+  `width` (px) and `layout: 'default' | 'full-width'` attrs (`extensions.ts`,
+  same `.extend()`-and-disable-the-stock-one pattern as `CodeBlock`) —
+  independent of column-border dragging (stock `prosemirror-tables`,
+  unaffected) and of the page's own full-width setting (`Page.FullWidth`).
+  **Gotcha:** prosemirror-tables' `TableView` (active whenever a table is
+  `resizable`, which is always, in both edit and read-only rendering) only
+  applies a node's rendered `style`/`data-*` attributes once, in its
+  constructor — its own `update()` (used for every subsequent attribute
+  change on an already-mounted table) recalculates the colgroup but never
+  re-touches them. Schema `renderHTML` alone is only correct on a fresh
+  mount (a page load, an export); anything that changes a table's attrs live
+  (`TableWidthControls`) must also apply the same DOM effect directly right
+  after the transaction commits, or the change is invisible until the next
+  reload.
+  On touch/no-hover input (`matchMedia('(hover: none) and (pointer:
+  coarse)')`, not viewport width — a touchscreen laptop at desktop width has
+  the same problem a phone does), `useHoveredTable` switches its reveal
+  trigger from mouse proximity to "does the current selection sit inside a
+  table," since hover doesn't exist there — tapping to place the cursor is
+  the natural touch equivalent.
 - **The slash command menu** (`slash/`) is a custom `Suggestion`-based
   extension (the same primitive `@tiptap/extension-mention` is built on) —
   there's no pre-built importable slash extension. Positioning, scroll/resize

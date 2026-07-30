@@ -1,6 +1,7 @@
 import { useEditor, EditorContent, type Editor as TiptapEditor } from '@tiptap/react'
 import { useEffect, useRef } from 'react'
 import { TableControls } from './TableControls'
+import { TableWidthControls } from './TableWidthControls'
 import { LinkMenu } from './LinkMenu'
 import { SelectionBubbleMenu } from './SelectionBubbleMenu'
 import { ImageHoverMenu } from './ImageHoverMenu'
@@ -89,6 +90,7 @@ export function Editor({ value, editable = true, onChange, getUploadPageId, onUp
   return (
     <div className={editable ? 'editor editor--editable' : 'editor'}>
       {editable && editor && <TableControls editor={editor} />}
+      {editable && editor && <TableWidthControls editor={editor} />}
       {editable && editor && <LinkMenu editor={editor} />}
       {editable && editor && (
         <SelectionBubbleMenu editor={editor} getPageId={getUploadPageId} onCommentError={onUploadError} />

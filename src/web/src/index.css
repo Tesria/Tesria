@@ -9,22 +9,58 @@
   --primary-dark: #0055cc;
   --danger: #c9372c;
   --radius: 6px;
+  /* Breakpoints are documented here but can't be read into @media conditions
+     directly (a CSS limitation) — each @media rule repeats the raw number
+     with a "keep in sync" comment pointing back to these. */
+  --bp-mobile: 640px;
+  --bp-tablet: 1024px;
+  --page-pad: 1.5rem;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  /* iOS Safari auto-boosts font size in narrow flex/table columns it deems
+     "readable text" — invisible on desktop browsers (nothing to trigger it),
+     but on a real phone it silently widens exactly the rigid, non-shrinking
+     rows below (.topbar, .row-between) past their measured budget. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--text); }
 a { color: var(--primary); text-decoration: none; }
 a:hover { text-decoration: underline; }
 h1 { font-size: 1.7rem; }
+/* Browsers apply their own (often OS-accent-colored — "iOS blue" on Safari)
+   text color to a bare <button> if nothing overrides it. Almost every
+   button in this app sets its own color explicitly and is unaffected, but
+   a couple of plain icon-style buttons (the toolbar, the notification
+   bell) were relying on this and inheriting that system tint instead of
+   looking like a neutral icon by default — found via a design review of
+   the editor toolbar. Fixing it at the element level here means any future
+   unstyled button is neutral by default too, not just these two. */
+button { font: inherit; color: inherit; }
 
 /* ---- primitives ---------------------------------------------------------- */
 .muted { color: var(--muted); }
 .small { font-size: 0.85rem; }
-.center { min-height: 100vh; display: grid; place-items: center; padding: 1rem; }
+/* flex, not grid: a CSS Grid item's percentage sizing (.authcard's
+   max-width: 100%) resolves against its own auto-sized grid track, which
+   sizes itself to the item's intrinsic width — a circular reference that
+   makes max-width: 100% a no-op and lets a fixed-width child overflow a
+   narrow viewport. Flex containers resolve child percentages against the
+   actual content box, so this constrains correctly. Found via testing at
+   320px width — the "safe" behavior worked by coincidence at 375px+ only. */
+.center { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
 .row-between { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .row-gap { display: flex; gap: 0.5rem; }
-.page-wrap { max-width: 860px; margin: 0 auto; padding: 1.5rem; }
+.page-wrap { max-width: 900px; margin: 0 auto; padding: var(--page-pad); }
 .page-wrap--full { max-width: none; }
+
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  /* A title + action button (space/page header, history preview header)
+     neither wraps nor shrinks by default, so at mobile widths the button
+     forces the row — and everything under it via .page-wrap — wider than
+     the viewport. Stack instead of squeezing them onto one row. */
+  .row-between { flex-wrap: wrap; }
+}
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem;
@@ -79,7 +115,16 @@ label input, label textarea { margin-top: 0.25rem; }
   padding: 0 1rem; height: 52px; border-bottom: 1px solid var(--border); background: #fff;
   position: sticky; top: 0; z-index: 10;
 }
-.brand { font-weight: 700; color: var(--text); }
+/* A flex item's default min-width is `auto`, not 0 — it refuses to shrink
+   below its own text's intrinsic width no matter how much flex-shrink says
+   to. .topbar has no wrap fallback, so on a narrow phone this was the thing
+   quietly pushing the whole bar (and, since nothing clips it, the whole
+   document) wider than the viewport — worse on real iOS Safari, whose
+   -apple-system rendering of 700-weight text runs measurably wider per
+   character than the sans-serif fallback this got tested against on
+   desktop. Letting it shrink and ellipsis instead keeps the bar's total
+   width fixed at exactly what .topbar__hamburger/.topbar__right need. */
+.brand { font-weight: 700; color: var(--text); min-width: 0; flex-shrink: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .brand:hover { text-decoration: none; }
 .topbar__nav { display: flex; gap: 0.25rem; margin-left: 1.25rem; }
 .topbar__link { padding: 0.3rem 0.6rem; border-radius: 4px; color: var(--muted); font-size: 0.9rem; }
@@ -92,13 +137,49 @@ label input, label textarea { margin-top: 0.25rem; }
 
 .topbar__search { flex: 1; max-width: 420px; margin: 0 1.5rem; }
 .topbar__search input { height: 34px; border-radius: 999px; padding: 0 0.9rem; background: var(--bg-alt); }
-.topbar__right { display: flex; align-items: center; gap: 0.9rem; }
+/* position:relative lives here, not on .notif — .notif__dropdown's
+   `right: 0` needs to resolve against this whole right-hand cluster (bell +
+   username + sign-out), not just the ~28px-wide bell wrapper. Anchoring to
+   .notif itself put the dropdown's right edge wherever the bell happened to
+   sit in the flex row, which is well left of the topbar's actual right
+   edge once the username/sign-out button follow it — found on mobile,
+   where that pushed the dropdown mostly off the left of the viewport. */
+/* flex-shrink: 0 — the bell and Sign out are the controls a user actually
+   needs; .brand gives up its width first (see .brand comment above). */
+.topbar__right { position: relative; display: flex; align-items: center; gap: 0.9rem; flex-shrink: 0; }
+
+.topbar__hamburger {
+  display: none; background: none; border: none; font-size: 1.3rem; line-height: 1;
+  cursor: pointer; padding: 0.2rem 0.5rem; margin-right: 0.5rem; color: var(--text);
+  flex-shrink: 0;
+}
+/* On wider viewports this wrapper must not affect the topbar's own flex
+   layout — display: contents makes its children (.topbar__nav,
+   .topbar__search) lay out as if they were direct topbar children, exactly
+   as before this element existed. */
+.topbar__collapsible { display: contents; }
+
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .topbar__hamburger { display: inline-flex; align-items: center; }
+  .topbar__collapsible {
+    display: none; position: absolute; top: 52px; left: 0; right: 0; z-index: 12;
+    flex-direction: column; gap: 0.6rem; background: #fff; border-bottom: 1px solid var(--border);
+    padding: 0.75rem 1rem; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  }
+  .topbar__collapsible.is-open { display: flex; }
+  .topbar__nav { flex-direction: column; gap: 0.15rem; margin-left: 0; }
+  .topbar__search { max-width: none; margin: 0; }
+  .topbar__username { display: none; }
+}
 
 /* notifications */
-.notif { position: relative; }
-.notif__bell { position: relative; background: none; border: none; cursor: pointer; font-size: 1.15rem; padding: 0.2rem 0.3rem; line-height: 1; }
+/* color: var(--muted), darkening on hover — same neutral-by-default,
+   darker-on-interaction treatment as .toolbar__btn, so this flat stroke
+   icon reads as part of the same icon language, not a one-off. */
+.notif__bell { position: relative; display: inline-flex; background: none; border: none; cursor: pointer; padding: 0.2rem 0.3rem; line-height: 1; color: var(--muted); }
+.notif__bell:hover { color: var(--text); }
 .notif__badge { position: absolute; top: -2px; right: -4px; background: var(--danger); color: #fff; font-size: 0.65rem; font-weight: 700; border-radius: 999px; padding: 0.05rem 0.35rem; min-width: 16px; text-align: center; }
-.notif__dropdown { position: absolute; right: 0; top: calc(100% + 8px); width: 340px; max-height: 420px; overflow-y: auto; background: #fff; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 20; }
+.notif__dropdown { position: absolute; right: 0; top: calc(100% + 8px); width: min(340px, calc(100vw - 2rem)); max-height: 420px; overflow-y: auto; background: #fff; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 20; }
 .notif__header { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 0.9rem; }
 .notif__list { list-style: none; margin: 0; padding: 0; }
 .notif__item { display: flex; flex-direction: column; gap: 0.15rem; width: 100%; text-align: left; background: none; border: none; border-bottom: 1px solid var(--border); padding: 0.6rem 0.75rem; cursor: pointer; font-size: 0.85rem; color: var(--text); }
@@ -130,6 +211,12 @@ label input, label textarea { margin-top: 0.25rem; }
 .space-card__desc { font-size: 0.85rem; color: var(--muted); }
 .form-inline { display: grid; grid-template-columns: 120px 1fr 1fr auto; gap: 0.75rem; align-items: end; }
 .form-inline .btn { height: 38px; }
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  /* The 4-column grid (used for Groups/API Tokens/Webhooks/Spaces creation
+     forms) has no room to breathe at mobile widths — found via testing, a
+     real overflow/clipping issue, not just visually tight. Stack instead. */
+  .form-inline { grid-template-columns: 1fr; }
+}
 
 /* ---- space layout (sidebar + content) ------------------------------------ */
 .space-layout { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 52px); }
@@ -137,14 +224,60 @@ label input, label textarea { margin-top: 0.25rem; }
 .sidebar__head { margin-bottom: 0.5rem; }
 .sidebar__key { font-size: 0.72rem; font-weight: 700; color: var(--primary); }
 .sidebar__name { font-weight: 600; }
-.tree { margin-top: 0.75rem; display: flex; flex-direction: column; }
+.tree-section { margin-top: 0.75rem; }
+.tree-section__heading {
+  display: flex; align-items: center; gap: 0.35rem;
+  font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+  color: var(--muted); margin-bottom: 0.4rem;
+}
+.tree { display: flex; flex-direction: column; }
 .tree__link { display: block; padding: 0.3rem 0.5rem; border-radius: 4px; color: var(--text); font-size: 0.9rem; }
 .tree__link:hover { background: #e9ebef; text-decoration: none; }
 .tree__link.is-active { background: #e0ecff; color: var(--primary-dark); font-weight: 600; }
 .space-content { min-width: 0; }
+/* Hidden by default (desktop already shows the tree permanently in
+   .sidebar) — shown only under --bp-mobile, see SpaceHome.tsx. */
+.space-home-tree { display: none; }
+/* Here (mobile), links are the only way to reach a page — blue signals
+   "tap to go", same as any other link. In .sidebar (desktop) the tree
+   stays visible after navigating, so black-with-blue-when-active instead
+   means "here's where you are", not "here's what you can tap". */
+.space-home-tree .tree__link { color: var(--primary); }
+.space-home-tree .tree__link.is-active { color: var(--primary-dark); }
 .sidebar__trash { display: block; margin-top: 1rem; padding: 0.3rem 0.5rem; border-radius: 4px; color: var(--muted); font-size: 0.9rem; }
 .sidebar__trash:hover { background: #e9ebef; text-decoration: none; }
 .sidebar__trash.is-active { background: #e0ecff; color: var(--primary-dark); font-weight: 600; }
+
+/* Mobile-only bar, replacing a previous off-canvas drawer that held the
+   page tree *and* + New/Permissions/Webhooks/Trash behind one hamburger —
+   indistinguishable from a nav menu, and every space action besides Watch
+   lived a tap deeper than it needed to. The tree itself moved to an inline
+   list on the space landing page (see .space-home-tree in SpaceHome).
+   Hidden (.space-actionbar--hidden-on-page below) once you're viewing or
+   editing an actual page — PageView.tsx has its own breadcrumb/Edit/+New/⋮
+   row by then, and stacking this above it would just be a second header. */
+.space-actionbar {
+  display: none; position: sticky; top: 52px; z-index: 8;
+  align-items: center; justify-content: space-between; gap: 0.5rem;
+  padding: 0.5rem 0.75rem; background: #fff; border-bottom: 1px solid var(--border);
+}
+.space-actionbar__pages {
+  padding: 0.3rem 0; font-size: 0.95rem; font-weight: 600; color: var(--text);
+  min-width: 0; flex: 1 1 auto; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+a.space-actionbar__pages:hover { text-decoration: underline; }
+.space-actionbar__actions { display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; }
+
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .space-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .space-actionbar { display: flex; }
+  .space-actionbar.space-actionbar--hidden-on-page { display: none; }
+  .space-home-tree { display: block; margin-top: 1rem; }
+  /* .sidebar's two jobs — browsing the tree, reaching + New page/
+     Permissions/Webhooks/Trash — are covered by .space-home-tree and
+     .space-actionbar instead at this width. */
+  .sidebar { display: none; }
+}
 
 /* ---- paper: the "sheet of paper" surface shared by editing and viewing --- */
 .paper {
@@ -152,7 +285,11 @@ label input, label textarea { margin-top: 0.25rem; }
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: 0 1px 3px rgba(23, 43, 77, 0.08);
-  padding: 1.5rem;
+  /* Must stay --page-pad, not a hardcoded value: the full-width table
+     breakout rule cancels exactly this padding via negative margins — if
+     they ever drift apart, full-width tables overflow the viewport by the
+     difference (found via testing at --bp-mobile before this comment). */
+  padding: var(--page-pad);
 }
 
 /* ---- editor -------------------------------------------------------------- */
@@ -226,14 +363,21 @@ label input, label textarea { margin-top: 0.25rem; }
   display: flex; align-items: center; gap: 0.5rem; background: #fff; border: 1px solid var(--border);
   border-radius: var(--radius); box-shadow: 0 4px 14px rgba(23, 43, 77, 0.15); padding: 0.4rem 0.6rem; font-size: 0.85rem;
 }
-.link-menu__url { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.link-menu__url { max-width: min(220px, 40vw); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .link-menu__form { display: flex; gap: 0.4rem; align-items: center; }
-.link-menu__form input, .toolbar__link-popover input { width: 220px; padding: 0.3rem 0.5rem; }
+.link-menu__form input, .toolbar__link-popover input { width: min(220px, calc(100vw - 6rem)); padding: 0.3rem 0.5rem; }
 
 /* selection bubble menu — a compact, floating variant of .toolbar */
 .toolbar--bubble {
   position: static; margin: 0; border-bottom: none; border-radius: var(--radius);
   box-shadow: 0 4px 14px rgba(23, 43, 77, 0.2);
+  /* floating-ui sizes its own (invisible, unstyled) positioning wrapper to
+     this menu's natural unwrapped width and never shrinks it, which defeats
+     .toolbar's inherited flex-wrap: the flex container is never actually
+     narrower than its content, so wrapping never triggers. Capping this
+     element's own max-width (not the wrapper's) lets it shrink independently
+     of that wrapper and wrap for real on narrow screens. */
+  max-width: calc(100vw - 2rem);
 }
 
 .toolbar__link { position: relative; display: inline-flex; }
@@ -256,13 +400,38 @@ label input, label textarea { margin-top: 0.25rem; }
   position: absolute; top: 100%; left: 0; margin-top: 0.3rem; z-index: 6;
   display: flex; gap: 0.4rem; align-items: center; background: #fff; border: 1px solid var(--border);
   border-radius: var(--radius); box-shadow: 0 4px 14px rgba(23, 43, 77, 0.15); padding: 0.4rem 0.6rem;
+  max-width: calc(100vw - 2rem);
 }
+/* The inline `left` offset applied via useEdgeAlign (Toolbar.tsx/
+   SelectionBubbleMenu.tsx) overrides the `left: 0` above when the anchor
+   button sits somewhere a flush-left popover would spill past either
+   viewport edge — the anchor lives inside a flex-wrap toolbar, so its
+   position isn't fixed like a normal trailing "overflow menu" would be. */
 .toolbar__comment-popover { align-items: flex-end; }
 .toolbar__comment-popover textarea { width: 220px; padding: 0.3rem 0.5rem; resize: vertical; }
 
 /* tables */
 .editor__content .tableWrapper { overflow-x: auto; margin: 0.75rem 0; }
 .editor__content table { border-collapse: collapse; table-layout: fixed; width: 100%; margin: 0; }
+/* Custom table width/full-width: !important is required here, not optional
+   styling preference — prosemirror-tables' TableView recalculates and
+   overwrites table.style.width itself after render (see extensions.ts), so
+   a plain (non-important) rule here would lose to that later inline set. */
+.editor__content table[style*="--table-target-width"] {
+  width: var(--table-target-width) !important;
+}
+/* layout: 'full-width' additionally bleeds out of .paper's own padding —
+   100% alone only fills the already-constrained content box, not the
+   viewport/card width. This has to target .tableWrapper (the div TableView
+   wraps every table in, for its own overflow-x scrolling), not the <table>
+   itself — negative margins on the table just overflow the wrapper's own
+   box instead of escaping .paper, triggering the wrapper's scrollbar rather
+   than an actual breakout. */
+.editor__content .tableWrapper:has(table[data-layout="full-width"]) {
+  margin-left: calc(-1 * var(--page-pad));
+  margin-right: calc(-1 * var(--page-pad));
+  width: calc(100% + 2 * var(--page-pad));
+}
 .editor__content table td, .editor__content table th {
   border: 1px solid var(--border); padding: 0.4rem 0.6rem; vertical-align: top; position: relative;
 }
@@ -286,6 +455,15 @@ label input, label textarea { margin-top: 0.25rem; }
 .table-hover__grip { font-size: 0.7rem; border-radius: 3px; }
 .table-hover__grip--col { height: 14px; }
 .table-hover__grip--row { width: 14px; }
+.table-hover__fullwidth {
+  position: fixed; z-index: 6; width: 24px; height: 24px; border-radius: 4px;
+  border: 1px solid var(--border); background: #fff; color: var(--muted);
+  cursor: pointer; padding: 0; line-height: 1; font-size: 0.85rem; display: flex; align-items: center; justify-content: center;
+}
+.table-hover__fullwidth:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+.table-hover__fullwidth.is-active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.table-hover__edge { position: fixed; z-index: 6; width: 6px; cursor: col-resize; }
+.table-hover__edge:hover { background: rgba(12, 102, 228, 0.3); }
 
 /* task lists */
 .editor__content ul[data-type="taskList"] { list-style: none; padding-left: 0; margin: 0.5em 0; }
@@ -295,18 +473,57 @@ label input, label textarea { margin-top: 0.25rem; }
 .editor__content ul[data-type="taskList"] li[data-checked="true"] > div { color: var(--muted); text-decoration: line-through; }
 /* The formatting button group — rendered inside .page-actionbar (edit mode)
    or floating inside a .toolbar--bubble menu; either way it's no longer
-   nested inside .paper, so it needs no sticky/bleed positioning of its own. */
-.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem; padding: 0.3rem 0.6rem; background: var(--bg-alt); border-radius: var(--radius); }
-.toolbar__btn { border: 1px solid transparent; background: transparent; border-radius: 4px; padding: 0.2rem 0.5rem; cursor: pointer; font-size: 0.82rem; }
-.toolbar__btn:hover { background: #e4e6eb; }
+   nested inside .paper, so it needs no sticky/bleed positioning of its own.
+   Buttons sized to a real touch target (36px — the toolbar packs in ~20 of
+   them, so the full 44px HIG minimum would force excessive wrapping/
+   scrolling on mobile; 36px is the same tradeoff Google Docs' mobile
+   toolbar makes) with real gaps between them, found via a touch-usability
+   review to be too small/too tightly packed before (was effectively a
+   ~22px target with ~3px gaps). Icon color is neutral by default — the
+   `color: inherit` on `button` above stops these from showing the browser's
+   own system-accent tint — and only switches to --primary-dark once a
+   format is actually active, so "what's currently applied" stays the only
+   thing rendered in color. */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; padding: 0.4rem; background: var(--bg-alt); border-radius: var(--radius); }
+.toolbar__btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 36px; min-height: 36px; border: 1px solid transparent; background: transparent;
+  border-radius: 6px; padding: 0.3rem; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+  color: var(--muted);
+}
+.toolbar__btn:hover { background: #e4e6eb; color: var(--text); }
 .toolbar__btn.is-active { background: #e0ecff; color: var(--primary-dark); border-color: #bcd4ff; }
-.toolbar__sep { width: 1px; background: var(--border); margin: 0 0.25rem; }
+.toolbar__sep { width: 1px; align-self: stretch; background: var(--border); margin: 0.25rem 0.15rem; }
 .tb-glyph { display: inline-block; }
+/* Heading/list/alignment groups: .toolbar__flat (the desktop flat button
+   row) and .toolbar-dropdown (its mobile collapsed-menu equivalent) are both
+   always mounted; only one is ever visible at a time. display:contents on
+   the flat wrapper keeps its buttons as direct flex children of .toolbar on
+   desktop (same trick Layout.tsx's hamburger nav uses), so nothing about the
+   desktop layout changes. Swapped for the dropdown at --bp-mobile below. */
+.toolbar__flat { display: contents; }
+.toolbar-dropdown { display: none; position: relative; }
+.toolbar-dropdown__trigger { gap: 0.15rem; }
+.toolbar-dropdown__menu {
+  position: absolute; left: 0; top: calc(100% + 6px); min-width: 160px; max-width: calc(100vw - 2rem); z-index: 20;
+  background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(23, 43, 77, 0.15); padding: 0.3rem; display: flex; flex-direction: column; gap: 0.1rem;
+}
+/* Flipped by ToolbarDropdown.tsx when left-anchoring would overflow the
+   viewport (the Heading/Alignment triggers sit near the toolbar's right
+   edge on mobile). */
+.toolbar-dropdown__menu--right { left: auto; right: 0; }
+.toolbar-dropdown__item {
+  display: flex; align-items: center; gap: 0.5rem; width: 100%; text-align: left;
+  border: none; background: none; border-radius: 4px; padding: 0.45rem 0.6rem;
+  font-size: 0.85rem; font-weight: 600; color: var(--muted); cursor: pointer;
+}
+.toolbar-dropdown__item:hover { background: var(--bg-alt); color: var(--text); }
+.toolbar-dropdown__item.is-active { background: #e0ecff; color: var(--primary-dark); }
 .tb-bold { font-weight: 700; }
 .tb-italic { font-style: italic; }
 .tb-underline { text-decoration: underline; }
 .tb-strike { text-decoration: line-through; }
-.tb-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; }
 /* live collaboration */
 .collab-status { display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); background: #fbfbfc; }
 .collab-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
@@ -323,6 +540,18 @@ label input, label textarea { margin-top: 0.25rem; }
 /* read-only rendered page: no padding of its own, .paper already provides it */
 .page-body .editor__content { padding: 0; }
 
+/* ---- breadcrumb ------------------------------------------------------------
+   Not sticky — the first thing in the normal scrolling content, right below
+   .space-actionbar (or the app topbar on desktop, where .space-actionbar is
+   hidden). See SpaceBreadcrumb.tsx. */
+.breadcrumb { padding: 0.6rem 1.5rem 0; font-size: 0.85rem; color: var(--muted); }
+.breadcrumb__segment { display: inline; }
+.breadcrumb__sep { margin: 0 0.4rem; }
+.breadcrumb__current { color: var(--text); font-weight: 600; }
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .breadcrumb { padding: 0.6rem 0.75rem 0; }
+}
+
 /* ---- page view ----------------------------------------------------------- */
 .page-head { margin-bottom: 0.25rem; }
 .page-head h1 { margin: 0; }
@@ -337,6 +566,41 @@ label input, label textarea { margin-top: 0.25rem; }
   padding: 0.5rem 1.5rem; background: #fff; border-bottom: 1px solid var(--border);
 }
 .page-actionbar__primary, .page-actionbar__secondary { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+/* margin-left: auto (not just relying on .page-actionbar's space-between)
+   so __secondary still anchors right even with no __primary sibling at all
+   — PageView.tsx has nothing left of it since Edit moved in here. With a
+   sibling present (PageEditor.tsx's Toolbar), this is a no-op: space-between
+   already put the same gap there. */
+.page-actionbar__secondary { margin-left: auto; }
+/* Mobile-only substitute for the desktop sidebar's persistent "+ New page"
+   (hidden along with the rest of .sidebar under --bp-mobile) — see
+   PageView.tsx. Desktop already has that, so this stays hidden there. */
+.page-actionbar__new-subpage { display: none; }
+
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  /* Redefining the variable (not separate hardcoded paddings on .page-wrap/
+     .paper) keeps the full-width table breakout math in sync automatically
+     — it reads this same custom property. */
+  :root { --page-pad: 0.75rem; }
+  /* Sticky at the same top:52px as .space-actionbar (also sticky, mobile
+     only) meant the two fought over the same slot while scrolling — one
+     visibly sliding over the other rather than stacking. Simplest fix:
+     only one sticky bar below the app topbar at this width; this one
+     becomes a normal, non-sticky row (scrolls away with the content, right
+     below the breadcrumb) instead of trying to stack a second sticky
+     offset under a bar whose height isn't a fixed, reliable number. */
+  .page-actionbar { position: static; padding: 0.5rem 0.75rem; }
+  /* Full width vs. normal is a distinction without a difference at this
+     width (the reading column already fills the viewport either way) — see
+     docs for the fuller reasoning. CSS-only: no JS/viewport-detection. */
+  .page-actionbar__fullwidth-toggle { display: none; }
+  .page-actionbar__new-subpage { display: inline-flex; }
+  /* Collapse heading/list/alignment into dropdowns — at this width the
+     toolbar was wrapping to 3 rows; grouping these three runs of buttons
+     brings it down to ~2. See .toolbar__flat/.toolbar-dropdown above. */
+  .toolbar__flat { display: none; }
+  .toolbar-dropdown { display: inline-flex; }
+}
 
 .overflow-menu { position: relative; display: inline-flex; }
 .overflow-menu__trigger {
@@ -345,7 +609,7 @@ label input, label textarea { margin-top: 0.25rem; }
 }
 .overflow-menu__trigger:hover { background: var(--bg-alt); }
 .overflow-menu__dropdown {
-  position: absolute; right: 0; top: calc(100% + 6px); min-width: 220px; z-index: 20;
+  position: absolute; right: 0; top: calc(100% + 6px); min-width: 220px; max-width: calc(100vw - 2rem); z-index: 20;
   background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
   box-shadow: 0 8px 24px rgba(23, 43, 77, 0.15); padding: 0.4rem; display: flex; flex-direction: column; gap: 0.15rem;
 }
@@ -358,8 +622,12 @@ label input, label textarea { margin-top: 0.25rem; }
 .overflow-menu__dropdown .template-form { flex: none; margin-top: 0.4rem; }
 .page-body { margin: 1rem 0 2rem; }
 
-.tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--border); }
-.tab { background: none; border: none; border-bottom: 2px solid transparent; padding: 0.5rem 0.9rem; cursor: pointer; color: var(--muted); font-size: 0.9rem; }
+/* overflow-x: auto here (not wrapping) matches the tableWrapper pattern —
+   scrolls within its own row on narrow viewports rather than pushing the
+   whole page wider; found via testing (a real ~40px page-level overflow on
+   every page with this tab row, at --bp-mobile). */
+.tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--border); overflow-x: auto; }
+.tab { background: none; border: none; border-bottom: 2px solid transparent; padding: 0.5rem 0.9rem; cursor: pointer; color: var(--muted); font-size: 0.9rem; flex-shrink: 0; }
 .tab.is-active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
 .tab-panel { padding: 1rem 0; }
 
@@ -376,13 +644,22 @@ label input, label textarea { margin-top: 0.25rem; }
 /* ---- attachments --------------------------------------------------------- */
 .upload-btn { position: relative; overflow: hidden; }
 .attachment-list { list-style: none; padding: 0; margin: 1rem 0 0; display: flex; flex-direction: column; gap: 0.5rem; }
-.attachment { display: flex; align-items: center; gap: 0.75rem; }
-.attachment a { font-weight: 500; }
+/* flex-wrap + overflow-wrap: a long filename/email (this class is shared by
+   AttachmentsPanel and GroupsPage's member list) had no wrap and no way to
+   break its own text, so it could force this row — and the whole page —
+   wider than the viewport on narrow screens. */
+.attachment { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.attachment a { font-weight: 500; overflow-wrap: anywhere; }
 
 /* ---- history ------------------------------------------------------------- */
 .version-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.4rem; }
 .version { display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
-.version__num { font-weight: 700; }
-.version__comment { color: var(--muted); font-style: italic; }
+/* overflow-wrap: anywhere — these hold arbitrary user-authored content
+   (group/page/token names, audit metadata) that .version's own flex-wrap
+   can't help with: flex-wrap only breaks between items, not within one
+   item's unbroken text, so a single long word here would still push past
+   the viewport on its own line (same reasoning as .attachment a below). */
+.version__num { font-weight: 700; overflow-wrap: anywhere; }
+.version__comment { color: var(--muted); font-style: italic; overflow-wrap: anywhere; }
 .version__actions { margin-left: auto; display: flex; gap: 0.75rem; }
 .version-preview { margin-top: 1.25rem; }

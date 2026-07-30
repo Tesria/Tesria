@@ -179,7 +179,7 @@ export function PageEditor() {
         <div className="page-actionbar__secondary">
           <button
             type="button"
-            className="btn btn--ghost"
+            className="btn btn--ghost page-actionbar__fullwidth-toggle"
             onClick={toggleFullWidth}
             title={fullWidth ? 'Switch to normal width' : 'Switch to full width'}
           >
