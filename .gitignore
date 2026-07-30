@@ -26,3 +26,6 @@ backups/
 .vs/
 .idea/
 *.swp
+
+# --- Local Claude Code tool config (machine-specific permissions) ---
+.claude/

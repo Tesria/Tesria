@@ -5,6 +5,7 @@ import CollaborationCaret from '@tiptap/extension-collaboration-caret'
 import { HocuspocusProvider } from '@hocuspocus/provider'
 import * as Y from 'yjs'
 import { TableControls } from './TableControls'
+import { TableWidthControls } from './TableWidthControls'
 import { LinkMenu } from './LinkMenu'
 import { SelectionBubbleMenu } from './SelectionBubbleMenu'
 import { ImageHoverMenu } from './ImageHoverMenu'
@@ -140,6 +141,7 @@ export function CollaborativeEditor({
             : 'Offline — your changes are local until reconnected'}
       </div>
       {editor && <TableControls editor={editor} />}
+      {editor && <TableWidthControls editor={editor} />}
       {editor && <LinkMenu editor={editor} />}
       {editor && <SelectionBubbleMenu editor={editor} getPageId={getUploadPageId} onCommentError={onUploadError} />}
       {editor && <ImageHoverMenu editor={editor} getPageId={getUploadPageId} onCommentError={onUploadError} />}

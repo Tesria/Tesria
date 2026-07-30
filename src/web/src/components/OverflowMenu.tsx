@@ -1,25 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { useDismissable } from '../hooks/useDismissable'
 
 /** A "⋮" button that reveals a dropdown of secondary actions on click. */
 export function OverflowMenu({ children, label = 'More actions' }: { children: ReactNode; label?: string }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    function onDocMouseDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('mousedown', onDocMouseDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('mousedown', onDocMouseDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open])
+  const ref = useDismissable<HTMLDivElement>(open, () => setOpen(false))
 
   return (
     <div className="overflow-menu" ref={ref}>

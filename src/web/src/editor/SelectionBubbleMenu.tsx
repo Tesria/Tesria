@@ -3,6 +3,8 @@ import { BubbleMenu } from '@tiptap/react/menus'
 import type { Editor as TiptapEditor } from '@tiptap/react'
 import { ToolbarButton } from './ToolbarButton'
 import { addInlineTextComment } from './commentAction'
+import { InlineCodeIcon, HighlightIcon, LinkIcon, CommentIcon } from './icons'
+import { useEdgeAlign } from '../hooks/useEdgeAlign'
 
 type Props = {
   editor: TiptapEditor
@@ -18,6 +20,8 @@ export function SelectionBubbleMenu({ editor, getPageId, onCommentError }: Props
   const [commentPopoverOpen, setCommentPopoverOpen] = useState(false)
   const [commentBody, setCommentBody] = useState('')
   const [commentRange, setCommentRange] = useState<{ from: number; to: number } | null>(null)
+  const linkAlign = useEdgeAlign<HTMLFormElement>(linkPopoverOpen)
+  const commentAlign = useEdgeAlign<HTMLFormElement>(commentPopoverOpen)
 
   function applyLink() {
     if (linkUrl.trim()) editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl.trim() }).run()
@@ -49,10 +53,16 @@ export function SelectionBubbleMenu({ editor, getPageId, onCommentError }: Props
       pluginKey="selectionMenu"
       options={{ placement: 'top' }}
       shouldShow={({ editor, from, to }) =>
+        // editor.isFocused guards a real bug on a brand-new, untouched page:
+        // shouldShow is only re-evaluated on selectionUpdate/focus/blur, and
+        // an empty document that's never been focused never fires any of
+        // those, so the menu's floating-ui "open" state was stuck at its
+        // default (visible) instead of ever being told to hide. A pre-loaded
+        // page always fires a selectionUpdate on mount and never hit this.
         // Only for a real text selection, and never while inside a code
         // block (code selections don't want inline-formatting buttons), a
         // link (LinkMenu owns that case), or an image (ImageHoverMenu does).
-        from !== to && !editor.isActive('codeBlock') && !editor.isActive('link') && !editor.isActive('image')
+        editor.isFocused && from !== to && !editor.isActive('codeBlock') && !editor.isActive('link') && !editor.isActive('image')
       }
     >
       <div className="toolbar toolbar--bubble">
@@ -60,13 +70,15 @@ export function SelectionBubbleMenu({ editor, getPageId, onCommentError }: Props
         <ToolbarButton label={<span className="tb-glyph tb-italic">I</span>} isActive={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()} title="Italic" />
         <ToolbarButton label={<span className="tb-glyph tb-underline">U</span>} isActive={editor.isActive('underline')} onClick={() => editor.chain().focus().toggleUnderline().run()} title="Underline" />
         <ToolbarButton label={<span className="tb-glyph tb-strike">S</span>} isActive={editor.isActive('strike')} onClick={() => editor.chain().focus().toggleStrike().run()} title="Strikethrough" />
-        <ToolbarButton label={<span className="tb-glyph tb-mono">{'</>'}</span>} isActive={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()} title="Inline code" />
-        <ToolbarButton label="Highlight" isActive={editor.isActive('highlight')} onClick={() => editor.chain().focus().toggleHighlight().run()} title="Highlight selected text" />
+        <ToolbarButton label={<InlineCodeIcon />} isActive={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()} title="Inline code" />
+        <ToolbarButton label={<HighlightIcon />} isActive={editor.isActive('highlight')} onClick={() => editor.chain().focus().toggleHighlight().run()} title="Highlight selected text" />
         <div className="toolbar__link">
-          <ToolbarButton label="Link" isActive={false} onClick={() => setLinkPopoverOpen(true)} title="Add link" />
+          <ToolbarButton label={<LinkIcon />} isActive={false} onClick={() => setLinkPopoverOpen(true)} title="Add link" />
           {linkPopoverOpen && (
             <form
+              ref={linkAlign.ref}
               className="toolbar__link-popover"
+              style={{ left: linkAlign.offsetLeft }}
               onSubmit={(e) => {
                 // Stop this from also submitting the page's own save <form>
                 // it's nested in (React events bubble the component tree
@@ -91,10 +103,12 @@ export function SelectionBubbleMenu({ editor, getPageId, onCommentError }: Props
         </div>
         {getPageId && (
           <div className="toolbar__link">
-            <ToolbarButton label="Comment" isActive={false} onClick={openCommentPopover} title="Comment on this selection" />
+            <ToolbarButton label={<CommentIcon />} isActive={false} onClick={openCommentPopover} title="Comment on this selection" />
             {commentPopoverOpen && (
               <form
+                ref={commentAlign.ref}
                 className="toolbar__link-popover toolbar__comment-popover"
+                style={{ left: commentAlign.offsetLeft }}
                 onSubmit={(e) => {
                   e.preventDefault()
                   e.stopPropagation()

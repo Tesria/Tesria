@@ -58,7 +58,7 @@ export function SpaceWebhooksPage() {
 
   return (
     <div className="page-wrap">
-      <h1>Webhooks — {space.name}</h1>
+      <h1>Webhooks</h1>
       <p className="muted small">
         POST a signed payload to a URL when something happens in this space — e.g.{' '}
         <code>page.created</code>, <code>page.updated</code>, <code>comment.created</code>, or{' '}

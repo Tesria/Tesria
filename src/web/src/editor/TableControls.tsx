@@ -1,11 +1,5 @@
-import { useEffect, useState } from 'react'
 import type { Editor as TiptapEditor } from '@tiptap/react'
-import { findTable, TableMap } from '@tiptap/pm/tables'
-
-// How far outside the table's own box the hover zone (and the add/grip
-// strips) extend — has to cover both strips plus a little slack so moving
-// the mouse from the table onto a button doesn't "leave" the hover zone.
-const MARGIN = 34
+import { useHoveredTable } from './useHoveredTable'
 
 /**
  * Hover-triggered row/column insert (+) and delete (×) controls rendered
@@ -15,41 +9,9 @@ const MARGIN = 34
  * by this component.
  */
 export function TableControls({ editor }: { editor: TiptapEditor }) {
-  const [table, setTable] = useState<HTMLTableElement | null>(null)
-  const [, tick] = useState(0)
-
-  useEffect(() => {
-    function withinHoverZone(e: MouseEvent, rect: DOMRect) {
-      // Symmetric-ish slack: the add/grip strips sit above and to the left of
-      // the table (up to MARGIN out), but the trailing "add" button for the
-      // last row/column also pokes out past the right/bottom edge — give
-      // that a little room too rather than a tight 6px that clips its hitbox.
-      return (
-        e.clientX >= rect.left - MARGIN && e.clientX <= rect.right + 14 &&
-        e.clientY >= rect.top - MARGIN && e.clientY <= rect.bottom + 14
-      )
-    }
-    function onMove(e: MouseEvent) {
-      const tables = Array.from(editor.view.dom.querySelectorAll('table')) as HTMLTableElement[]
-      const hit = tables.find((t) => withinHoverZone(e, t.getBoundingClientRect()))
-      setTable((current) => (hit ?? null) === current ? current : (hit ?? null))
-    }
-    const rerender = () => tick((n) => n + 1)
-    document.addEventListener('mousemove', onMove)
-    window.addEventListener('scroll', rerender, true)
-    window.addEventListener('resize', rerender)
-    return () => {
-      document.removeEventListener('mousemove', onMove)
-      window.removeEventListener('scroll', rerender, true)
-      window.removeEventListener('resize', rerender)
-    }
-  }, [editor])
-
-  if (!table || !table.isConnected) return null
-  const found = findTable(editor.state.doc.resolve(editor.view.posAtDOM(table, 0)))
-  if (!found) return null
-  const map = TableMap.get(found.node)
-  const tableRect = table.getBoundingClientRect()
+  const hovered = useHoveredTable(editor)
+  if (!hovered) return null
+  const { table, found, map, tableRect } = hovered
 
   function cellSelectionChain(row: number, col: number) {
     const cellStart = found!.pos + 1 + map.positionAt(row, col, found!.node)

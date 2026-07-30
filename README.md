@@ -45,6 +45,12 @@ docker compose up -d --build
   cert automatically. Visit `https://wiki.example.com`.
 - Local test: keep `DOMAIN=localhost` and visit `https://localhost` (Caddy uses
   a self-signed cert, so the browser will warn once).
+- The app is also reachable from other devices on your LAN (including phones)
+  by IP or hostname, no extra config needed. To make that access — and the
+  `localhost` warning above — go away for good on a given device, run
+  `deploy/scripts/trust-ca.sh` (macOS/Linux) or `trust-ca.ps1` (Windows) once;
+  see [`docs/tls-and-lan-access.md`](./docs/tls-and-lan-access.md) for details
+  and the real-domain-without-public-exposure option.
 
 Check health directly: `curl -k https://localhost/api/health`.
 

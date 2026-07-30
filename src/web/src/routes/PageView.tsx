@@ -64,18 +64,19 @@ export function PageView() {
   return (
     <>
       <div className="page-actionbar">
-        <div className="page-actionbar__primary">
-          <Link className="btn btn--ghost" to={`/spaces/${key}/pages/${page.id}/edit`}>
+        <div className="page-actionbar__secondary">
+          <Link className="btn btn--primary" to={`/spaces/${key}/pages/${page.id}/edit`}>
             Edit
           </Link>
-          <Link className="btn btn--ghost" to={`/spaces/${key}/new?parent=${page.id}`}>
-            + Subpage
+          {/* Mobile only — desktop already has this in the always-visible
+              sidebar (.sidebar's "+ New page"); showing it here too would
+              just duplicate it right next to Edit for no reason. */}
+          <Link className="btn btn--primary page-actionbar__new-subpage" to={`/spaces/${key}/new?parent=${page.id}`}>
+            + New
           </Link>
-        </div>
-        <div className="page-actionbar__secondary">
           <button
             type="button"
-            className="btn btn--ghost"
+            className="btn btn--ghost page-actionbar__fullwidth-toggle"
             onClick={toggleFullWidth}
             title={page.fullWidth ? 'Switch to normal width' : 'Switch to full width'}
           >
@@ -140,7 +141,6 @@ export function PageView() {
             />
           )}
         </div>
-        <p className="muted small">Space: {space.name}</p>
       </article>
     </>
   )

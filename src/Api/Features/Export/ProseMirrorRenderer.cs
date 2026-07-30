@@ -129,7 +129,9 @@ public static class ProseMirrorRenderer
                 sb.Append(" />\n");
                 break;
             case "table":
-                sb.Append("<table>\n"); RenderHtmlChildren(node, sb); sb.Append("</table>\n");
+                var tableStyle = TableStyle(node);
+                sb.Append(tableStyle is null ? "<table>\n" : $"<table style=\"{tableStyle}\">\n");
+                RenderHtmlChildren(node, sb); sb.Append("</table>\n");
                 break;
             case "tableRow":
                 sb.Append("<tr>\n"); RenderHtmlChildren(node, sb); sb.Append("</tr>\n");
@@ -278,6 +280,15 @@ public static class ProseMirrorRenderer
         if (BoolAttr(node, "border")) parts.Add("border: 1px solid #e4e6eb; padding: 2px");
         if (BoolAttr(node, "shadow")) parts.Add("box-shadow: 0 4px 14px rgba(23, 43, 77, 0.25)");
         return parts.Count == 0 ? null : string.Join("; ", parts);
+    }
+
+    /// <summary>The table's manually-dragged width or full-width toggle (see extensions.ts's Table
+    /// extension) as an inline style, or null for the unset/default case.</summary>
+    private static string? TableStyle(JsonElement node)
+    {
+        if (Attr(node, "layout") == "full-width") return "width: 100%";
+        var width = Attr(node, "width");
+        return width is not null && int.TryParse(width, out var px) ? $"width: min({px}px, 100%)" : null;
     }
 
     private static void RenderMarkdownTaskList(JsonElement listNode, StringBuilder sb, int depth)

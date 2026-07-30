@@ -2,6 +2,19 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, type AppNotification } from '../api/client'
 
+/** Same stroke-icon language as the editor toolbar (editor/icons.tsx) — flat,
+ *  currentColor, 1.8px stroke — instead of the platform's own emoji bell,
+ *  which rendered in full color (yellow, browser/OS-drawn) and stood out
+ *  against the rest of the app's otherwise flat, monochrome icon set. */
+function BellIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 10a6 6 0 1 1 12 0c0 4 1.5 5.5 2 6.5H4c.5-1 2-2.5 2-6.5Z" />
+      <path d="M10 19.5a2 2 0 0 0 4 0" />
+    </svg>
+  )
+}
+
 const ACTION_LABEL: Record<string, string> = {
   'page.created': 'created a page',
   'page.updated': 'updated a page',
@@ -87,7 +100,7 @@ export function NotificationBell() {
   return (
     <div className="notif" ref={rootRef}>
       <button type="button" className="notif__bell" onClick={toggle} aria-label="Notifications">
-        🔔
+        <BellIcon />
         {count > 0 && <span className="notif__badge">{count > 99 ? '99+' : count}</span>}
       </button>
       {open && (

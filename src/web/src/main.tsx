@@ -5,6 +5,7 @@ import './index.css'
 import { AuthProvider } from './auth/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Layout } from './components/Layout'
+import { ScrollToTop } from './components/ScrollToTop'
 import { LoginPage } from './routes/LoginPage'
 import { RegisterPage } from './routes/RegisterPage'
 import { SpacesPage } from './routes/SpacesPage'
@@ -25,6 +26,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
