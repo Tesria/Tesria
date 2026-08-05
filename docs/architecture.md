@@ -1,6 +1,6 @@
 # Architecture
 
-This document records how ConfluenceClone is put together and why. It is kept
+This document records how Tesria is put together and why. It is kept
 current as features land (per the project's documentation rule).
 
 ## Overview
@@ -77,11 +77,12 @@ Two breakpoints, documented as CSS custom properties in `index.css`'s
 custom property inside an `@media` condition, so each `@media` rule repeats
 the raw number with a `/* keep in sync with --bp-mobile */` comment pointing
 back to the documented source of truth. Below `--bp-mobile`: the topbar nav
-collapses behind a hamburger, the space page-tree sidebar becomes an
-off-canvas drawer, and the page's full-width toggle hides (a distinction
+collapses behind a hamburger, the desktop sidebar (permanently visible) is
+replaced by an inline page tree on the space landing page (`SpaceHome`,
+`.space-home-tree`), and the page's full-width toggle hides (a distinction
 without a difference once the reading column already fills the viewport).
-`useDismissable.ts` (outside-click/Escape dismissal) is shared by both the
-sidebar drawer and `OverflowMenu`. `--page-pad` is the one custom property
+`useDismissable.ts` (outside-click/Escape dismissal) is shared by the
+hamburger nav drawer and `OverflowMenu`. `--page-pad` is the one custom property
 worth being careful with: it's read both by `.paper`'s own padding and by
 the full-width table breakout math (see the Editor section below) — change
 it in one place, not both, or they drift apart and a full-width table
@@ -160,6 +161,60 @@ ProseMirror JSON in `PageVersion.ContentJson`.
   (`Status != PageStatus.Draft`), matching the existing soft-delete filter
   pattern; permission checks already used `IgnoreQueryFilters()` for
   trash/restore, so they resolve drafts correctly with no extra code.
+
+### Page tree drag-and-drop (`components/PageTree.tsx`)
+
+The page tree — rendered identically in the desktop sidebar and the mobile
+`SpaceHome` inline copy (same component, same data, see Responsive layout
+above) — is the only way to reorder or reparent pages once created; there is
+no separate "move" dialog. Dragging only happens in **Reorder mode**,
+toggled per-tree-instance by a compact icon button next to the "📑 Pages"
+heading (`PageTree.tsx`'s `editMode` state) — a flat pencil (`PencilIcon`,
+same stroke-icon language as the editor toolbar and the topbar bell) when
+off, "✓ Done" text once on; no "Reorder" label on the pencil state, kept
+deliberately icon-only for compactness. Outside it, rows are plain
+`StaticRow` links with no dnd-kit hooks and no `touch-action` override at
+all — not just visually inert, structurally
+incapable of starting a drag. This exists because the first version made
+every row a drag source all the time: on mobile, `touch-action: none`
+(needed so a touch-drag isn't raced by the browser's own scroll gesture)
+meant any swipe that happened to start on a page title reordered it instead
+of scrolling the list, which was exactly backwards. In Reorder mode, a page
+row is itself the drag source (no separate handle icon — dnd-kit's
+`distance: 4` activation constraint tells a click from a drag, so the row
+stays a normal, clickable link even while draggable). Dragging it up or
+down reorders it among siblings; dragging it horizontally while over
+another row changes its nesting depth, reparenting it. Rather than
+live-shuffling the rest of the list, a line shows where the row would land
+— a 2px line with an 8px circular terminal bleeding 4px past its own left
+edge, matching Atlassian's own drop-indicator spec
+([atlassian.design/components/pragmatic-drag-and-drop/design-guidelines](https://atlassian.design/components/pragmatic-drag-and-drop/design-guidelines)) —
+with the line's left offset (`marginLeft`) doubling as the nesting-depth
+indicator. An earlier version used an always-visible grip-icon handle with
+live-reordering; both the extra element and the nested flex row it required
+turned out to be the source of a mobile layout-overflow regression, so the
+row-is-the-handle + static-list-plus-line design fixed both the UX
+complaint and the bug at once.
+
+Built on `@dnd-kit/core` + `@dnd-kit/sortable` (chosen over
+`react-beautiful-dnd`/`react-dnd` for native touch support via Pointer
+Events, so the same code drives both the mouse-driven desktop tree and the
+touch-driven mobile one — no separate touch handling). The tree is
+flattened to `{id, parentId, depth}` for the drag session; `project()`
+derives the dragged row's new depth from horizontal drag distance, clamped
+between the row above's depth+1 (can't skip a nesting level) and the row
+below's depth (can't leave a gap) — the standard "sortable tree" projection
+technique. The dragged row's own descendants are excluded from that working
+list for the duration of the drag, so a subtree can never be dropped inside
+itself; the backend's cycle check (`WouldCreateCycleAsync`) is the backstop,
+not the only guard.
+
+`PUT /api/pages/{id}/move` takes `{ parentPageId, index }`, where `index` is
+a slot among the destination's *current* siblings (0 = first) — not a raw
+`Position` value the frontend has to compute or guess at. The endpoint
+resolves that group, inserts the moving page at `index`, and renumbers the
+whole group's `Position` densely (0..n-1) in one pass, so a drag can never
+collide with or leave a gap relative to its new neighbors.
 
 ## Real-time collaboration (`collab/`)
 

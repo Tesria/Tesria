@@ -1,4 +1,4 @@
-# ConfluenceClone — project notes for Claude
+# Tesria — project notes for Claude
 
 A self-hosted Confluence-style wiki. ASP.NET Core (.NET 10) API + React 19/
 TypeScript SPA (TipTap v3 editor) + PostgreSQL 18, deployed via Docker Compose
@@ -19,6 +19,9 @@ Read first, in this order:
 - `PLAN.md` — the original founding design doc (phases 1–5). The editor
   overhaul that followed it is tracked in the CHANGELOG instead, not as a
   numbered PLAN.md phase.
+- [`docs/roadmap.md`](./docs/roadmap.md) — forward-looking feature ideas not
+  yet scheduled or designed (MCP support, expanded API, Mermaid diagrams,
+  portable space/site export). Add new ideas here as they come up.
 
 ## Working conventions established in this repo
 
@@ -49,6 +52,31 @@ Read first, in this order:
   deliberately keeping it local pending a code audit before pushing anywhere.
   Don't suggest adding one unprompted.
 
+## Session handoff — 2026-08-03
+
+Everything through this date is committed (this repo had ~2 weeks of
+uncommitted work sitting in the working tree; it's now split into four
+commits: the ConfluenceClone→Tesria rename, the drag-and-drop page tree
+feature + a search bug fix, the password-visibility toggle, and this doc
+update). `dotnet test` (111 tests) and `npm run build && npm run lint` were
+both green as of the last commit; the Docker `app` image was rebuilt and
+the features were verified live in-browser (desktop + mobile viewports)
+before committing — see `docs/CHANGELOG.md`'s dated entries for what
+"verified" covered for each one.
+
+Two pieces of throwaway test data are sitting in the live app, left
+alone deliberately (permanent deletion isn't something this assistant
+does unprompted) — safe to remove or ignore:
+- A **"DnD Tester"** test account with a **"Drag and Drop Test" (`DND`)**
+  space, created to verify the drag-and-drop tree feature without touching
+  real content.
+- A **"Trash Test Page"** sitting in the real **"App Design"** space's
+  Trash, from an earlier trash/restore verification pass.
+
+If a new session picks up UI work in the "App Design" space (the
+dogfooding space documenting Tesria's own architecture), note it's real,
+intentional content — not test data to clean up.
+
 ## Environment note — Windows → Mac migration (completed 2026-07-25)
 
 Migrated from a Windows desktop to an Apple Silicon (M2 Max) Mac. All Docker
@@ -56,7 +84,7 @@ base images in this stack (`postgres:18`, `node:22-slim`,
 `mcr.microsoft.com/dotnet/*`, `caddy:2`, plus `pgbackrest` via apt) are
 multi-arch and built/ran natively on arm64 with no emulation, as expected.
 Data was restored from the logical dump + uploads tarball in
-`../confluenceclone-migration-package/` (21 tables, 6 attachments — verified
+`../tesria-migration-package/` (21 tables, 6 attachments — verified
 against the migration package's own record) and a fresh Mac-native backup +
 restore-test was taken immediately after. Two real issues turned up, both
 now fixed:

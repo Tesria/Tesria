@@ -1,9 +1,125 @@
 # Changelog
 
-All notable changes to ConfluenceClone are recorded here.
+All notable changes to Tesria are recorded here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
+
+### Feature: show/hide toggle on every password field (2026-08-03)
+
+Added a `PasswordInput` component (`components/PasswordInput.tsx`) — a
+password `<input>` with a flat eye/eye-off toggle button overlaid on the
+right, same stroke-icon language as the rest of the app. Audited the whole
+frontend for `type="password"` fields: there were exactly two, sign-in and
+create-account, both now using it. No shared input component existed
+before this, so `PasswordInput` is also where any future password field
+(e.g. a change-password form) should start, rather than a bare
+`<input type="password">`.
+
+### Design: page tree Reorder toggle made icon-only (2026-08-03)
+
+The "✏️ Reorder" button (see the previous entry) still read as heavier than
+it needed to. Dropped the "Reorder" label — the pencil now stands alone —
+and swapped the platform's own full-color pencil emoji for a flat
+`currentColor` stroke icon (`PencilIcon` in `PageTree.tsx`), matching the
+same icon language already used by the editor toolbar and the topbar bell
+(`docs/CHANGELOG.md`'s notification-bell entry). The "✓ Done" label stays
+as text once toggled on — a lone checkmark reads as ambiguous where "Done"
+doesn't — so the button is icon-only at rest and label-plus-icon while
+active, rather than jumping between two different visual languages.
+
+### Fix: page tree dragging gated behind a "Reorder" mode (2026-08-03)
+
+Reported after the drop-indicator redesign: on mobile it was too easy to
+reorder a page by accident. Root cause was that every row was a drag
+source all the time, and `touch-action: none` on the row (needed so a
+touch-drag isn't raced by the browser's own scroll gesture) meant an
+ordinary swipe-to-scroll starting on a page title got captured as a drag
+instead — the exact ambiguity that makes "ends up moved when you didn't
+mean to" so easy.
+
+Added a compact `✏️ Reorder` / `✓ Done` toggle next to the tree's "📑 Pages"
+heading (desktop sidebar and mobile alike, kept deliberately small per
+request). Outside Reorder mode, rows are plain links with no dnd-kit hooks
+and no `touch-action` override — scrolling through the tree behaves like
+scrolling anything else, and there is no way to start a drag by accident
+because nothing is listening for one. Reorder mode renders the draggable
+version from the previous entry unchanged. The two tree instances (desktop
+sidebar, mobile `SpaceHome` inline copy) hold this state independently,
+which needs no special handling — they're never both visible at once.
+
+### Design: page tree drag handle removed, real drop-indicator line added (2026-08-03)
+
+Feedback on the initial drag-and-drop tree: the always-visible grip-icon
+handle was "ugly" and ate row space, and Confluence's own tree shows a
+horizontal line (with an indent preview) for where a drag would land,
+instead of live-shuffling the rest of the list. Checked Atlassian's own
+drag-and-drop design guidelines and a real Confluence sidebar recording
+before redesigning
+([atlassian.design/components/pragmatic-drag-and-drop/design-guidelines](https://atlassian.design/components/pragmatic-drag-and-drop/design-guidelines)).
+
+Removed the separate handle entirely — the row (title) is now the drag
+source itself, same as Confluence's own "implied draggable" sidebar rows;
+dnd-kit's `distance: 4` activation constraint is what tells a tap-to-navigate
+from a drag, so plain clicks still work. Replaced the live-reordering
+sortable-list behavior with a static list plus a drop-indicator line (2px,
+8px circular terminal bleeding 4px past its own left edge) rendered in the
+gap where the row would land, whose horizontal offset also conveys the
+target nesting depth — matching Atlassian's own drop-indicator spec.
+
+This also fixed a real regression reported separately: mobile had gone back
+to horizontal-scrolling on an iPhone. Root cause was the handle itself — a
+fixed-width button nested in a new inner flex row per tree item, which was
+enough to break the mobile-safe flex-shrink behavior this app had already
+been bitten by once before (see the topbar/`.brand` fix earlier in this
+changelog). Removing the wrapper and the handle brought the DOM back down
+to one link per row — closer to the pre-drag-and-drop structure — which
+resolved it; verified at both 375px and 320px viewports with long,
+deeply-nested titles, with no horizontal overflow.
+
+### Feature: drag-and-drop page tree reordering and reparenting (2026-08-03)
+
+The page tree — desktop sidebar and the mobile `SpaceHome` inline copy alike
+— now supports Confluence-style drag-and-drop: drag a row by its handle to
+reorder it among siblings, or drag it horizontally over another row to
+reparent it at a new nesting depth. This is now the only way to change a
+page's place in the hierarchy; there's no separate move dialog.
+
+Backend: `PUT /api/pages/{id}/move` changed from a raw `Position` int (which
+the caller had to compute exactly, with no protection against colliding
+with or leaving a gap relative to other siblings) to an `Index` — a slot
+among the destination's current siblings — with the endpoint itself
+resolving that sibling group and renumbering it densely. Added tests for
+sibling reordering, reparenting, cross-space rejection, and the edit-rights
+check (`Move_reorders_siblings_by_index`,
+`Move_reparents_a_page_and_appends_to_the_new_siblings_by_default`,
+`Move_rejects_a_different_space`,
+`Move_requires_edit_rights_on_both_the_page_and_the_destination_parent`),
+alongside the existing cycle-rejection test.
+
+Frontend: added `@dnd-kit/core` + `@dnd-kit/sortable` (native touch support
+via Pointer Events, so the same `PageTree`/`TreeItem` code drives both the
+mouse-driven desktop tree and the touch-driven mobile one). A dragged row's
+own descendants are excluded from the working list during the drag, so a
+subtree can't be dropped inside itself client-side; the backend's existing
+cycle check remains the authoritative guard. See
+`docs/architecture.md`'s new "Page tree drag-and-drop" section for the
+depth-projection algorithm.
+
+### Fix: search couldn't find slash-joined words like "Hocuspocus/Yjs" or "OIDC/SSO" (2026-07-31)
+
+Found while dogfooding the App Design space: searching "Hocuspocus" or "OIDC"
+returned nothing even though both words were right there in page content
+("Hocuspocus/Yjs sidecar", "OIDC/SSO — optional"). Root cause: Postgres's
+`to_tsvector('english', ...)` parses `word/word` as a single compound
+lexeme (`'hocuspocus/yjs'`) instead of splitting it, so only the exact
+compound — never either half alone — was searchable. Fixed by normalizing
+slashes to spaces in `SearchText` before it's indexed
+(`PageEndpoints.BuildSearchText`), so `to_tsvector` tokenizes both halves
+normally; backfilled the 8 existing pages whose indexed text contained a
+slash. Added a regression test (`SearchTests.Slash_joined_words_are_indexed_as_separate_terms`)
+that asserts directly on the stored `SearchText`, since the SQLite test
+provider's plain-`LIKE` fallback can't reproduce a tsvector-specific bug.
 
 ### Design: replace the notification bell emoji with a flat stroke icon (2026-07-30)
 
@@ -155,7 +271,7 @@ fit at mobile widths: Sign out was clipped and the page scrolled
 horizontally. Not reproducible in-browser at the same viewport width, which
 pointed at a font-metrics difference rather than a layout bug per page.
 
-- **Root cause**: `.topbar`'s `.brand` ("ConfluenceClone") is a flex item
+- **Root cause**: `.topbar`'s `.brand` ("Tesria") is a flex item
   with no `min-width` override. Flex items default to `min-width: auto` —
   they refuse to shrink below their own text's intrinsic width no matter
   what `flex-shrink` says, a common flexbox trap. With no wrap fallback on
