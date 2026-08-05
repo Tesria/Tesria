@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { PasswordInput } from '../components/PasswordInput'
 
 export function RegisterPage() {
   const { user, register } = useAuth()
@@ -42,7 +43,7 @@ export function RegisterPage() {
         </label>
         <label>
           Password
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
+          <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required minLength={8} />
         </label>
         <button type="submit" className="btn btn--primary" disabled={busy}>
           {busy ? 'Creating…' : 'Create account'}
