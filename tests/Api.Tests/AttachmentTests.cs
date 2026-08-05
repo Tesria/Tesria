@@ -4,7 +4,7 @@ using System.Net.Http.Json;
 using System.Text;
 using Xunit;
 
-namespace ConfluenceClone.Api.Tests;
+namespace Tesria.Api.Tests;
 
 public class AttachmentTests
 {

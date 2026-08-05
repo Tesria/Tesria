@@ -1,10 +1,10 @@
 using System.Security.Cryptography;
 using System.Text;
-using ConfluenceClone.Api.Domain;
-using ConfluenceClone.Api.Infrastructure;
+using Tesria.Api.Domain;
+using Tesria.Api.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
-namespace ConfluenceClone.Api.Infrastructure.Auth;
+namespace Tesria.Api.Infrastructure.Auth;
 
 /// <summary>
 /// Issues and validates personal access tokens. A raw token is
@@ -20,7 +20,7 @@ public interface IApiTokenService
 
 public sealed class ApiTokenService(AppDbContext db) : IApiTokenService
 {
-    private const string Prefix = "cct_"; // "ConfluenceClone token"
+    private const string Prefix = "cct_"; // "Tesria token"
 
     public async Task<(string RawToken, ApiToken Entity)> IssueAsync(Guid userId, string name)
     {

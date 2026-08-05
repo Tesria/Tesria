@@ -1,6 +1,6 @@
 # HTTPS, the certificate warning, and LAN/mobile access
 
-ConfluenceClone is always served over HTTPS (Caddy handles this automatically),
+Tesria is always served over HTTPS (Caddy handles this automatically),
 but *how* that HTTPS is trusted depends on whether you have a real domain
 pointed at the server. This doc covers both paths, and how to make the app
 reachable — without browser warnings — from every device on your network,

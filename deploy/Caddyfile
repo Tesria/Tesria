@@ -1,4 +1,4 @@
-# Caddy reverse proxy for ConfluenceClone.
+# Caddy reverse proxy for Tesria.
 #
 # {$DOMAIN} and {$ACME_EMAIL} come from the environment (see .env).
 #

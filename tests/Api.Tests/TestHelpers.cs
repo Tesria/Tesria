@@ -1,6 +1,6 @@
 using System.Net.Http.Json;
 
-namespace ConfluenceClone.Api.Tests;
+namespace Tesria.Api.Tests;
 
 internal static class TestHelpers
 {

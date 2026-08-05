@@ -1,9 +1,9 @@
-using ConfluenceClone.Api.Domain;
-using ConfluenceClone.Api.Infrastructure;
-using ConfluenceClone.Api.Infrastructure.Audit;
+using Tesria.Api.Domain;
+using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Audit;
 using Microsoft.EntityFrameworkCore;
 
-namespace ConfluenceClone.Api.Features.Groups;
+namespace Tesria.Api.Features.Groups;
 
 public static class GroupEndpoints
 {

@@ -1,13 +1,13 @@
 <#
 .SYNOPSIS
-    Trust ConfluenceClone's local certificate authority (Windows).
+    Trust Tesria's local certificate authority (Windows).
 
 .DESCRIPTION
-    Every ConfluenceClone deployment that isn't using a real domain + Let's
+    Every Tesria deployment that isn't using a real domain + Let's
     Encrypt serves HTTPS using a self-signed certificate authority that Caddy
     generates for itself. That's why your browser warns you the first time
     you visit. This script downloads that CA's root certificate from a
-    running ConfluenceClone server and installs it into the Windows machine
+    running Tesria server and installs it into the Windows machine
     trust store, so every browser and HTTP client on this machine trusts it
     from then on -- no more warnings, on this device, for this server (or
     any other hostname/IP it answers on).
@@ -27,7 +27,7 @@
     trust doesn't carry over.
 
 .PARAMETER HostName
-    Where to reach your ConfluenceClone server: a hostname, NOT a raw IP --
+    Where to reach your Tesria server: a hostname, NOT a raw IP --
     see docs/tls-and-lan-access.md for why. Defaults to "localhost".
 
 .EXAMPLE
@@ -61,14 +61,14 @@ if (-not (Test-Admin)) {
 }
 
 $certUrl = "http://$HostName/ca.crt"
-$tmpCert = Join-Path $env:TEMP "confluenceclone-ca-$([guid]::NewGuid()).crt"
+$tmpCert = Join-Path $env:TEMP "tesria-ca-$([guid]::NewGuid()).crt"
 
 Write-Host "==> Fetching CA certificate from $certUrl ..."
 try {
     Invoke-WebRequest -Uri $certUrl -OutFile $tmpCert -UseBasicParsing -TimeoutSec 10 | Out-Null
 }
 catch {
-    Write-Error "Couldn't download the CA certificate from $certUrl. Make sure ConfluenceClone is running and reachable at that address, and that nothing is blocking port 80 (this fetch deliberately uses plain HTTP, since nothing is trusted yet)."
+    Write-Error "Couldn't download the CA certificate from $certUrl. Make sure Tesria is running and reachable at that address, and that nothing is blocking port 80 (this fetch deliberately uses plain HTTP, since nothing is trusted yet)."
     Read-Host "Press Enter to close"
     exit 1
 }

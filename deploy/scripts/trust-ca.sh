@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Trust ConfluenceClone's local certificate authority (macOS and Linux).
+# Trust Tesria's local certificate authority (macOS and Linux).
 #
-# Every ConfluenceClone deployment that isn't using a real domain + Let's
+# Every Tesria deployment that isn't using a real domain + Let's
 # Encrypt serves HTTPS using a self-signed certificate authority that Caddy
 # generates for itself. That's why your browser warns you the first time you
 # visit. This script downloads that CA's root certificate from a running
-# ConfluenceClone server and installs it into your system's trust store, so
+# Tesria server and installs it into your system's trust store, so
 # every browser and HTTP client on this machine trusts it from then on — no
 # more warnings, on this device, for this server (or any other hostname/IP it
 # answers on).
@@ -18,7 +18,7 @@
 # Usage:
 #   ./trust-ca.sh [host]
 #
-#   host   Where to reach your ConfluenceClone server: a hostname (NOT a raw
+#   host   Where to reach your Tesria server: a hostname (NOT a raw
 #          IP -- see docs/tls-and-lan-access.md for why). Defaults to
 #          "localhost". Examples:
 #            ./trust-ca.sh
@@ -36,14 +36,14 @@
 set -euo pipefail
 
 HOST="${1:-localhost}"
-CERT_NAME="ConfluenceClone Local CA (${HOST})"
-TMP_CERT="$(mktemp -t confluenceclone-ca.XXXXXX).crt"
+CERT_NAME="Tesria Local CA (${HOST})"
+TMP_CERT="$(mktemp -t tesria-ca.XXXXXX).crt"
 trap 'rm -f "$TMP_CERT"' EXIT
 
 echo "==> Fetching CA certificate from http://${HOST}/ca.crt ..."
 if ! curl -fsS --max-time 10 "http://${HOST}/ca.crt" -o "$TMP_CERT"; then
 	echo "ERROR: couldn't download the CA certificate from http://${HOST}/ca.crt" >&2
-	echo "       Make sure ConfluenceClone is running and reachable at that address," >&2
+	echo "       Make sure Tesria is running and reachable at that address," >&2
 	echo "       and that nothing is blocking port 80 (this fetch deliberately uses" >&2
 	echo "       plain HTTP, since nothing is trusted yet)." >&2
 	exit 1
@@ -74,14 +74,14 @@ Darwin)
 Linux)
 	if command -v update-ca-certificates >/dev/null 2>&1; then
 		# Debian/Ubuntu and derivatives.
-		SAFE_NAME="confluenceclone-local-ca-$(echo "$HOST" | tr -c 'a-zA-Z0-9._-' '-')"
+		SAFE_NAME="tesria-local-ca-$(echo "$HOST" | tr -c 'a-zA-Z0-9._-' '-')"
 		DEST="/usr/local/share/ca-certificates/${SAFE_NAME}.crt"
 		echo "==> Installing to ${DEST} (you'll be asked for your password)..."
 		sudo cp "$TMP_CERT" "$DEST"
 		sudo update-ca-certificates
 	elif command -v update-ca-trust >/dev/null 2>&1; then
 		# Fedora/RHEL/CentOS and derivatives.
-		SAFE_NAME="confluenceclone-local-ca-$(echo "$HOST" | tr -c 'a-zA-Z0-9._-' '-')"
+		SAFE_NAME="tesria-local-ca-$(echo "$HOST" | tr -c 'a-zA-Z0-9._-' '-')"
 		DEST="/etc/pki/ca-trust/source/anchors/${SAFE_NAME}.pem"
 		echo "==> Installing to ${DEST} (you'll be asked for your password)..."
 		sudo cp "$TMP_CERT" "$DEST"

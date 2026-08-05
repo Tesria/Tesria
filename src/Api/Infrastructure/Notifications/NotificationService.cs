@@ -1,8 +1,8 @@
 using System.Text.Json;
-using ConfluenceClone.Api.Domain;
+using Tesria.Api.Domain;
 using Microsoft.EntityFrameworkCore;
 
-namespace ConfluenceClone.Api.Infrastructure.Notifications;
+namespace Tesria.Api.Infrastructure.Notifications;
 
 /// <summary>Fans a page or space event out to its watchers as notifications.</summary>
 public interface INotificationService

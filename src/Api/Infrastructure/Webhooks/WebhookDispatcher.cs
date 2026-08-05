@@ -1,8 +1,8 @@
 using System.Text.Json;
-using ConfluenceClone.Api.Infrastructure;
+using Tesria.Api.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
-namespace ConfluenceClone.Api.Infrastructure.Webhooks;
+namespace Tesria.Api.Infrastructure.Webhooks;
 
 /// <summary>
 /// Decides which webhooks should hear about an event and hands each one to

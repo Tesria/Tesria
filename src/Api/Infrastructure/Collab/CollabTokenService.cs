@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
-namespace ConfluenceClone.Api.Infrastructure.Collab;
+namespace Tesria.Api.Infrastructure.Collab;
 
 /// <summary>
 /// Issues short-lived, HMAC-signed tokens that authorise a user to join the

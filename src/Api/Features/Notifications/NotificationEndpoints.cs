@@ -1,10 +1,10 @@
-using ConfluenceClone.Api.Domain;
-using ConfluenceClone.Api.Infrastructure;
-using ConfluenceClone.Api.Infrastructure.Auth;
-using ConfluenceClone.Api.Infrastructure.Permissions;
+using Tesria.Api.Domain;
+using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure.Permissions;
 using Microsoft.EntityFrameworkCore;
 
-namespace ConfluenceClone.Api.Features.Notifications;
+namespace Tesria.Api.Features.Notifications;
 
 public static class NotificationEndpoints
 {

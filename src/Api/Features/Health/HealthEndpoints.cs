@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace ConfluenceClone.Api.Features.Health;
+namespace Tesria.Api.Features.Health;
 
 /// <summary>
 /// Liveness/readiness endpoints. Kept intentionally simple for Phase 1;
@@ -20,7 +20,7 @@ public static class HealthEndpoints
             return Results.Ok(new
             {
                 status = "ok",
-                service = "confluence-clone-api",
+                service = "tesria-api",
                 version,
                 utc = DateTimeOffset.UtcNow
             });

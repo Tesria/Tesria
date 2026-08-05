@@ -1,8 +1,8 @@
-using ConfluenceClone.Api.Domain;
+using Tesria.Api.Domain;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace ConfluenceClone.Api.Infrastructure;
+namespace Tesria.Api.Infrastructure;
 
 /// <summary>
 /// EF Core database context for the whole application. Entity shape follows

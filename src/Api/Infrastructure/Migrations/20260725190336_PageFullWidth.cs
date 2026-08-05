@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace ConfluenceClone.Api.Infrastructure.Migrations
+namespace Tesria.Api.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class PageFullWidth : Migration

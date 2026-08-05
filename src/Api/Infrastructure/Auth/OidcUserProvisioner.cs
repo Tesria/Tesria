@@ -1,8 +1,8 @@
-using ConfluenceClone.Api.Domain;
-using ConfluenceClone.Api.Infrastructure;
+using Tesria.Api.Domain;
+using Tesria.Api.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
-namespace ConfluenceClone.Api.Infrastructure.Auth;
+namespace Tesria.Api.Infrastructure.Auth;
 
 /// <summary>
 /// Refused to link an OIDC identity to an existing local account because the

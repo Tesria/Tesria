@@ -1,12 +1,12 @@
 using System.Security.Claims;
-using ConfluenceClone.Api.Domain;
-using ConfluenceClone.Api.Infrastructure;
-using ConfluenceClone.Api.Infrastructure.Auth;
+using Tesria.Api.Domain;
+using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
-namespace ConfluenceClone.Api.Features.Auth;
+namespace Tesria.Api.Features.Auth;
 
 public static class AuthEndpoints
 {

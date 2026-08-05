@@ -3,7 +3,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 
-namespace ConfluenceClone.Api.Features.Export;
+namespace Tesria.Api.Features.Export;
 
 /// <summary>
 /// Renders a stored ProseMirror/TipTap document (the JSON we persist per page

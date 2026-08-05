@@ -1,9 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
-using ConfluenceClone.Api.Features.Export;
+using Tesria.Api.Features.Export;
 using Xunit;
 
-namespace ConfluenceClone.Api.Tests;
+namespace Tesria.Api.Tests;
 
 public class ProseMirrorRendererTests
 {

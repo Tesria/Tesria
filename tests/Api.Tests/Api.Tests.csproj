@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
-    <RootNamespace>ConfluenceClone.Api.Tests</RootNamespace>
+    <RootNamespace>Tesria.Api.Tests</RootNamespace>
     <!-- NU1903: known advisory in SQLitePCLRaw's bundled native lib. This is a
          test-only dependency (SQLite stands in for Postgres) and is never
          shipped in the app image, so the advisory does not affect production. -->

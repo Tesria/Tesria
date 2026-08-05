@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace ConfluenceClone.Api.Infrastructure.Webhooks;
+namespace Tesria.Api.Infrastructure.Webhooks;
 
 /// <summary>
 /// Drains queued webhook deliveries and POSTs each one, signing the body with

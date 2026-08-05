@@ -1,6 +1,6 @@
 using NpgsqlTypes;
 
-namespace ConfluenceClone.Api.Domain;
+namespace Tesria.Api.Domain;
 
 /// <summary>
 /// A wiki page. Pages form a hierarchical tree within a space via

@@ -1,10 +1,10 @@
-using ConfluenceClone.Api.Infrastructure;
-using ConfluenceClone.Api.Infrastructure.Auth;
-using ConfluenceClone.Api.Infrastructure.Collab;
-using ConfluenceClone.Api.Infrastructure.Permissions;
+using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure.Collab;
+using Tesria.Api.Infrastructure.Permissions;
 using Microsoft.EntityFrameworkCore;
 
-namespace ConfluenceClone.Api.Features.Collab;
+namespace Tesria.Api.Features.Collab;
 
 public static class CollabEndpoints
 {

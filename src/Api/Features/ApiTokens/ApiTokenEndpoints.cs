@@ -1,8 +1,8 @@
-using ConfluenceClone.Api.Infrastructure;
-using ConfluenceClone.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Auth;
 using Microsoft.EntityFrameworkCore;
 
-namespace ConfluenceClone.Api.Features.ApiTokens;
+namespace Tesria.Api.Features.ApiTokens;
 
 public static class ApiTokenEndpoints
 {

@@ -1,30 +1,30 @@
-using ConfluenceClone.Api.Features.ApiTokens;
-using ConfluenceClone.Api.Features.Attachments;
-using ConfluenceClone.Api.Features.Auth;
-using ConfluenceClone.Api.Features.Comments;
-using ConfluenceClone.Api.Features.Audit;
-using ConfluenceClone.Api.Features.Collab;
-using ConfluenceClone.Api.Features.Export;
-using ConfluenceClone.Api.Features.Groups;
-using ConfluenceClone.Api.Features.Health;
-using ConfluenceClone.Api.Features.Labels;
-using ConfluenceClone.Api.Features.Pages;
-using ConfluenceClone.Api.Features.Permissions;
-using ConfluenceClone.Api.Features.Search;
-using ConfluenceClone.Api.Features.Spaces;
-using ConfluenceClone.Api.Features.Notifications;
-using ConfluenceClone.Api.Features.Templates;
-using ConfluenceClone.Api.Features.Watches;
-using ConfluenceClone.Api.Features.Webhooks;
-using ConfluenceClone.Api.Domain;
-using ConfluenceClone.Api.Infrastructure;
-using ConfluenceClone.Api.Infrastructure.Audit;
-using ConfluenceClone.Api.Infrastructure.Auth;
-using ConfluenceClone.Api.Infrastructure.Collab;
-using ConfluenceClone.Api.Infrastructure.Notifications;
-using ConfluenceClone.Api.Infrastructure.Permissions;
-using ConfluenceClone.Api.Infrastructure.Storage;
-using ConfluenceClone.Api.Infrastructure.Webhooks;
+using Tesria.Api.Features.ApiTokens;
+using Tesria.Api.Features.Attachments;
+using Tesria.Api.Features.Auth;
+using Tesria.Api.Features.Comments;
+using Tesria.Api.Features.Audit;
+using Tesria.Api.Features.Collab;
+using Tesria.Api.Features.Export;
+using Tesria.Api.Features.Groups;
+using Tesria.Api.Features.Health;
+using Tesria.Api.Features.Labels;
+using Tesria.Api.Features.Pages;
+using Tesria.Api.Features.Permissions;
+using Tesria.Api.Features.Search;
+using Tesria.Api.Features.Spaces;
+using Tesria.Api.Features.Notifications;
+using Tesria.Api.Features.Templates;
+using Tesria.Api.Features.Watches;
+using Tesria.Api.Features.Webhooks;
+using Tesria.Api.Domain;
+using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Audit;
+using Tesria.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure.Collab;
+using Tesria.Api.Infrastructure.Notifications;
+using Tesria.Api.Infrastructure.Permissions;
+using Tesria.Api.Infrastructure.Storage;
+using Tesria.Api.Infrastructure.Webhooks;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -71,7 +71,7 @@ builder.Services.AddSingleton<IAttachmentStorage, LocalAttachmentStorage>();
 // so signed auth cookies stay valid across redeploys and multiple app replicas.
 builder.Services.AddDataProtection()
     .PersistKeysToDbContext<AppDbContext>()
-    .SetApplicationName("ConfluenceClone");
+    .SetApplicationName("Tesria");
 
 // Two ways in: the browser SPA uses the auth cookie; external scripts/
 // integrations use a Bearer API token (Features/ApiTokens). A policy scheme
@@ -92,7 +92,7 @@ var authBuilder = builder.Services
     })
     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
     {
-        options.Cookie.Name = "confluenceclone.auth";
+        options.Cookie.Name = "tesria.auth";
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;

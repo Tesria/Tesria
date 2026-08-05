@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
-using ConfluenceClone.Api.Infrastructure.Webhooks;
+using Tesria.Api.Infrastructure.Webhooks;
 
-namespace ConfluenceClone.Api.Tests;
+namespace Tesria.Api.Tests;
 
 /// <summary>
 /// Test double for <see cref="IWebhookSender"/>: records deliveries instead of

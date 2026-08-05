@@ -1,6 +1,6 @@
 using System.Threading.Channels;
 
-namespace ConfluenceClone.Api.Infrastructure.Webhooks;
+namespace Tesria.Api.Infrastructure.Webhooks;
 
 /// <summary>
 /// Queues deliveries onto an in-process channel for <see cref="WebhookDeliveryBackgroundService"/>

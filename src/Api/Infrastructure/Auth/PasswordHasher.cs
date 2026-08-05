@@ -1,6 +1,6 @@
 using Isopoh.Cryptography.Argon2;
 
-namespace ConfluenceClone.Api.Infrastructure.Auth;
+namespace Tesria.Api.Infrastructure.Auth;
 
 /// <summary>Hashes and verifies user passwords.</summary>
 public interface IPasswordHasher

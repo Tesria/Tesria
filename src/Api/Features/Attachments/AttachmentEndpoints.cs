@@ -1,11 +1,11 @@
-using ConfluenceClone.Api.Domain;
-using ConfluenceClone.Api.Infrastructure;
-using ConfluenceClone.Api.Infrastructure.Auth;
-using ConfluenceClone.Api.Infrastructure.Permissions;
-using ConfluenceClone.Api.Infrastructure.Storage;
+using Tesria.Api.Domain;
+using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure.Permissions;
+using Tesria.Api.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 
-namespace ConfluenceClone.Api.Features.Attachments;
+namespace Tesria.Api.Features.Attachments;
 
 public static class AttachmentEndpoints
 {
