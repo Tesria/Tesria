@@ -1,4 +1,4 @@
-# ConfluenceClone
+# Tesria
 
 A self-hosted, Docker-deployable knowledge base / wiki modeled on Atlassian
 Confluence. Priorities: **data safety** (strong backup & recovery), a faithful

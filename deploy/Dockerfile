@@ -1,13 +1,13 @@
 # syntax=docker/dockerfile:1
 
 # ---------------------------------------------------------------------------
-# ConfluenceClone production image (multi-stage)
+# Tesria production image (multi-stage)
 #   1) build the React SPA
 #   2) publish the ASP.NET Core API, embedding the SPA in wwwroot
 #   3) slim runtime image serving both API and SPA on port 8080
 #
 # Build context is the repository ROOT:
-#   docker build -f deploy/Dockerfile -t confluenceclone .
+#   docker build -f deploy/Dockerfile -t tesria .
 # (docker-compose.yml sets this up automatically.)
 # ---------------------------------------------------------------------------
 
@@ -50,4 +50,4 @@ USER app
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD curl -fsS http://localhost:8080/api/health || exit 1
 
-ENTRYPOINT ["dotnet", "ConfluenceClone.Api.dll"]
+ENTRYPOINT ["dotnet", "Tesria.Api.dll"]

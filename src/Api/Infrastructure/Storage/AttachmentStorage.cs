@@ -1,4 +1,4 @@
-namespace ConfluenceClone.Api.Infrastructure.Storage;
+namespace Tesria.Api.Infrastructure.Storage;
 
 /// <summary>
 /// Stores and retrieves attachment file bytes. Local disk today (the uploads

@@ -1,13 +1,13 @@
 using System.Text.Json;
-using ConfluenceClone.Api.Domain;
-using ConfluenceClone.Api.Infrastructure;
-using ConfluenceClone.Api.Infrastructure.Auth;
-using ConfluenceClone.Api.Infrastructure.Notifications;
-using ConfluenceClone.Api.Infrastructure.Permissions;
-using ConfluenceClone.Api.Infrastructure.Webhooks;
+using Tesria.Api.Domain;
+using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure.Notifications;
+using Tesria.Api.Infrastructure.Permissions;
+using Tesria.Api.Infrastructure.Webhooks;
 using Microsoft.EntityFrameworkCore;
 
-namespace ConfluenceClone.Api.Features.Comments;
+namespace Tesria.Api.Features.Comments;
 
 public static class CommentEndpoints
 {

@@ -91,7 +91,7 @@ export function SpaceWebhooksPage() {
             type="url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://example.com/hooks/confluenceclone"
+            placeholder="https://example.com/hooks/tesria"
             required
           />
         </label>

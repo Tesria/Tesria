@@ -1,5 +1,5 @@
-using ConfluenceClone.Api.Infrastructure;
-using ConfluenceClone.Api.Infrastructure.Webhooks;
+using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Webhooks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
@@ -8,7 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace ConfluenceClone.Api.Tests;
+namespace Tesria.Api.Tests;
 
 /// <summary>
 /// Boots the real API in-process but swaps PostgreSQL for a private SQLite

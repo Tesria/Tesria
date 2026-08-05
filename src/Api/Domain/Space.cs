@@ -1,4 +1,4 @@
-namespace ConfluenceClone.Api.Domain;
+namespace Tesria.Api.Domain;
 
 /// <summary>
 /// Top-level container for pages (e.g. per team or project), mirroring

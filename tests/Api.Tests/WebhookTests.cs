@@ -1,10 +1,10 @@
 using System.Net;
 using System.Net.Http.Json;
-using ConfluenceClone.Api.Infrastructure.Webhooks;
+using Tesria.Api.Infrastructure.Webhooks;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace ConfluenceClone.Api.Tests;
+namespace Tesria.Api.Tests;
 
 public class WebhookTests
 {

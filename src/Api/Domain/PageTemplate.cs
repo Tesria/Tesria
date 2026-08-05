@@ -1,4 +1,4 @@
-namespace ConfluenceClone.Api.Domain;
+namespace Tesria.Api.Domain;
 
 /// <summary>
 /// A reusable starting point for new pages (a "blueprint"). A template with

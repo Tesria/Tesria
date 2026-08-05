@@ -1,4 +1,4 @@
-namespace ConfluenceClone.Api.Domain;
+namespace Tesria.Api.Domain;
 
 /// <summary>
 /// A user's subscription to updates on a page or space. Watching a space also

@@ -1,9 +1,9 @@
 {
-  "name": "confluenceclone-collab",
+  "name": "tesria-collab",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Real-time collaborative editing sidecar (Hocuspocus/Yjs) for ConfluenceClone",
+  "description": "Real-time collaborative editing sidecar (Hocuspocus/Yjs) for Tesria",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

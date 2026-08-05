@@ -1,6 +1,6 @@
 using System.Security.Claims;
 
-namespace ConfluenceClone.Api.Infrastructure.Auth;
+namespace Tesria.Api.Infrastructure.Auth;
 
 /// <summary>
 /// Reads the signed-in user's identity from the current request. Registered as

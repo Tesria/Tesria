@@ -1,4 +1,4 @@
-namespace ConfluenceClone.Api.Infrastructure.Auth;
+namespace Tesria.Api.Infrastructure.Auth;
 
 public static class OidcAuthenticationDefaults
 {

@@ -44,7 +44,7 @@ export function Layout() {
           ☰
         </button>
         <Link to="/spaces" className="brand">
-          ConfluenceClone
+          Tesria
         </Link>
         <div ref={navRef} className={navOpen ? 'topbar__collapsible is-open' : 'topbar__collapsible'}>
           <nav className="topbar__nav">

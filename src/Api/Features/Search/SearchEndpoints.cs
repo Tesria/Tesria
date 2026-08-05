@@ -1,9 +1,9 @@
-using ConfluenceClone.Api.Domain;
-using ConfluenceClone.Api.Infrastructure;
-using ConfluenceClone.Api.Infrastructure.Permissions;
+using Tesria.Api.Domain;
+using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Permissions;
 using Microsoft.EntityFrameworkCore;
 
-namespace ConfluenceClone.Api.Features.Search;
+namespace Tesria.Api.Features.Search;
 
 public static class SearchEndpoints
 {

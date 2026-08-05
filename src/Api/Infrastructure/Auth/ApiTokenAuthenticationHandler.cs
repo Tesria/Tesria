@@ -1,11 +1,11 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
-using ConfluenceClone.Api.Infrastructure;
+using Tesria.Api.Infrastructure;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
-namespace ConfluenceClone.Api.Infrastructure.Auth;
+namespace Tesria.Api.Infrastructure.Auth;
 
 public static class ApiTokenAuthenticationDefaults
 {

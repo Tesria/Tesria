@@ -1,4 +1,4 @@
-# ConfluenceClone — Project Plan
+# Tesria — Project Plan
 
 **Status:** Draft for approval
 **Date:** 2026-07-22
@@ -70,7 +70,7 @@ Sources reviewed: Atlassian Confluence Data Center docs (spaces, permissions & r
 **Repository layout (monorepo):**
 
 ```
-ConfluenceClone/
+Tesria/
 ├─ src/
 │  ├─ Api/                 # ASP.NET Core project (.NET 10)
 │  │  ├─ Domain/           # entities, value objects

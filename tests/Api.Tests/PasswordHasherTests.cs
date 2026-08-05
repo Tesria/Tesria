@@ -1,7 +1,7 @@
-using ConfluenceClone.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure.Auth;
 using Xunit;
 
-namespace ConfluenceClone.Api.Tests;
+namespace Tesria.Api.Tests;
 
 public class PasswordHasherTests
 {

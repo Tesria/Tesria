@@ -1,12 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
-using ConfluenceClone.Api.Infrastructure;
-using ConfluenceClone.Api.Infrastructure.Webhooks;
+using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Webhooks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace ConfluenceClone.Api.Tests;
+namespace Tesria.Api.Tests;
 
 /// <summary>
 /// The draft/publish page lifecycle: a page created via POST /pages/draft is

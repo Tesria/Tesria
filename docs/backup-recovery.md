@@ -61,8 +61,8 @@ Copy the whole `backups` volume off the box periodically (or enable offsite,
 below):
 
 ```bash
-docker run --rm -v confluenceclone_backups:/b -v "$PWD":/out alpine \
-  tar czf /out/confluenceclone-backups.tgz -C /b .
+docker run --rm -v tesria_backups:/b -v "$PWD":/out alpine \
+  tar czf /out/tesria-backups.tgz -C /b .
 ```
 
 ---
@@ -124,7 +124,7 @@ If you only have the logical dumps, restore the newest instead:
 docker compose up -d db backup
 docker compose exec backup /scripts/restore.sh          # newest dump (destructive)
 # then restore attachments:
-docker run --rm -v confluenceclone_uploads:/u -v confluenceclone_backups:/b alpine \
+docker run --rm -v tesria_uploads:/u -v tesria_backups:/b alpine \
   sh -c 'cd /u && tar xzf /b/uploads-<timestamp>.tar.gz'
 ```
 

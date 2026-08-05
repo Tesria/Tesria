@@ -1,4 +1,4 @@
-namespace ConfluenceClone.Api.Domain;
+namespace Tesria.Api.Domain;
 
 /// <summary>
 /// An append-only record of a significant action (PLAN §4). Rows are written in

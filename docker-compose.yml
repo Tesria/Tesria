@@ -1,4 +1,4 @@
-# ConfluenceClone — full self-hosted stack.
+# Tesria — full self-hosted stack.
 #
 #   cp .env.example .env      # then edit secrets
 #   docker compose up -d
@@ -10,7 +10,7 @@
 #   backup      scheduled logical backups (pg_dump) + uploads archives
 #   pgbackrest  continuous physical backups + point-in-time recovery
 
-name: confluenceclone
+name: tesria
 
 services:
   db:

@@ -1,4 +1,4 @@
-namespace ConfluenceClone.Api.Domain;
+namespace Tesria.Api.Domain;
 
 /// <summary>
 /// A personal access token, letting external scripts and integrations call the

@@ -1,10 +1,10 @@
 using System.Net;
 using System.Text;
-using ConfluenceClone.Api.Infrastructure;
-using ConfluenceClone.Api.Infrastructure.Permissions;
+using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Permissions;
 using Microsoft.EntityFrameworkCore;
 
-namespace ConfluenceClone.Api.Features.Export;
+namespace Tesria.Api.Features.Export;
 
 public static class ExportEndpoints
 {

@@ -1,8 +1,8 @@
 using System.Text.Json;
-using ConfluenceClone.Api.Domain;
-using ConfluenceClone.Api.Infrastructure.Auth;
+using Tesria.Api.Domain;
+using Tesria.Api.Infrastructure.Auth;
 
-namespace ConfluenceClone.Api.Infrastructure.Audit;
+namespace Tesria.Api.Infrastructure.Audit;
 
 /// <summary>Records audit entries for significant actions.</summary>
 public interface IAuditLogger

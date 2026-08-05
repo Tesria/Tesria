@@ -1,8 +1,8 @@
-using ConfluenceClone.Api.Domain;
-using ConfluenceClone.Api.Infrastructure.Auth;
+using Tesria.Api.Domain;
+using Tesria.Api.Infrastructure.Auth;
 using Microsoft.EntityFrameworkCore;
 
-namespace ConfluenceClone.Api.Infrastructure.Permissions;
+namespace Tesria.Api.Infrastructure.Permissions;
 
 /// <summary>
 /// Resolves what the current user may do (PLAN §4). Two independent layers:
