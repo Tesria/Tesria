@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Xunit;
 
-namespace ConfluenceClone.Api.Tests;
+namespace Tesria.Api.Tests;
 
 public class PageTests
 {
@@ -12,6 +12,7 @@ public class PageTests
     private record VersionMeta(Guid Id, int VersionNumber, string? ChangeComment, Guid AuthorId, DateTimeOffset CreatedAt);
     private record VersionContent(Guid Id, int VersionNumber, string ContentJson, string? ChangeComment, Guid AuthorId, DateTimeOffset CreatedAt);
     private record TreeNode(Guid Id, string Title, int Position, List<TreeNode> Children);
+    private record SpaceDto(Guid Id, string Key, string Name);
 
     private const string Doc = """{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"hi"}]}]}""";
 
@@ -128,8 +129,108 @@ public class PageTests
 
         // Moving Root beneath its own Child would create a cycle.
         var res = await client.PutAsJsonAsync($"/api/pages/{root.Id}/move",
-            new { ParentPageId = child!.Id, Position = 0 });
+            new { ParentPageId = child!.Id, Index = 0 });
         Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task Move_reorders_siblings_by_index()
+    {
+        var (factory, client, spaceId) = await NewClientWithSpace();
+        using var _ = factory;
+        async Task<PageDetail> MakePage(string title) =>
+            (await (await client.PostAsJsonAsync("/api/pages",
+                new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = title, ContentJson = Doc }))
+                .Content.ReadFromJsonAsync<PageDetail>())!;
+        var a = await MakePage("A");
+        var b = await MakePage("B");
+        var c = await MakePage("C");
+
+        // Drag "C" to the front of its siblings.
+        var res = await client.PutAsJsonAsync($"/api/pages/{c.Id}/move",
+            new { ParentPageId = (Guid?)null, Index = 0 });
+        Assert.Equal(HttpStatusCode.NoContent, res.StatusCode);
+
+        var tree = (await client.GetFromJsonAsync<List<TreeNode>>($"/api/pages/tree?spaceId={spaceId}"))!;
+        Assert.Equal(["C", "A", "B"], tree.Select(n => n.Title));
+        // Positions are renumbered densely, not just the moved page.
+        Assert.Equal([0, 1, 2], tree.Select(n => n.Position));
+    }
+
+    [Fact]
+    public async Task Move_reparents_a_page_and_appends_to_the_new_siblings_by_default()
+    {
+        var (factory, client, spaceId) = await NewClientWithSpace();
+        using var _ = factory;
+        var parentA = await (await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = "Parent A", ContentJson = Doc }))
+            .Content.ReadFromJsonAsync<PageDetail>();
+        var parentB = await (await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = "Parent B", ContentJson = Doc }))
+            .Content.ReadFromJsonAsync<PageDetail>();
+        var existingChild = await (await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = parentB!.Id, Title = "Existing Child", ContentJson = Doc }))
+            .Content.ReadFromJsonAsync<PageDetail>();
+        var mover = await (await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = parentA!.Id, Title = "Mover", ContentJson = Doc }))
+            .Content.ReadFromJsonAsync<PageDetail>();
+
+        var res = await client.PutAsJsonAsync($"/api/pages/{mover!.Id}/move",
+            new { ParentPageId = parentB.Id, Index = 1 });
+        Assert.Equal(HttpStatusCode.NoContent, res.StatusCode);
+
+        var tree = (await client.GetFromJsonAsync<List<TreeNode>>($"/api/pages/tree?spaceId={spaceId}"))!;
+        var newParentB = tree.Single(n => n.Id == parentB.Id);
+        Assert.Equal(["Existing Child", "Mover"], newParentB.Children.Select(n => n.Title));
+        Assert.Empty(tree.Single(n => n.Id == parentA.Id).Children);
+        Assert.Equal(existingChild!.Id, newParentB.Children[0].Id); // sanity: existing child untouched
+    }
+
+    [Fact]
+    public async Task Move_rejects_a_different_space()
+    {
+        var (factory, client, spaceId) = await NewClientWithSpace();
+        using var _ = factory;
+        var otherSpaceId = await client.CreateSpaceAsync();
+        var page = await (await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = "Mine", ContentJson = Doc }))
+            .Content.ReadFromJsonAsync<PageDetail>();
+        var otherSpacePage = await (await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = otherSpaceId, ParentPageId = (Guid?)null, Title = "Theirs", ContentJson = Doc }))
+            .Content.ReadFromJsonAsync<PageDetail>();
+
+        var res = await client.PutAsJsonAsync($"/api/pages/{page!.Id}/move",
+            new { ParentPageId = otherSpacePage!.Id, Index = 0 });
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task Move_requires_edit_rights_on_both_the_page_and_the_destination_parent()
+    {
+        using var factory = new TestAppFactory();
+        var alice = factory.CreateClient();
+        var aliceId = await alice.RegisterAndSignInAsync();
+        var spaceId = await alice.CreateSpaceAsync();
+        var space = (await alice.GetFromJsonAsync<List<SpaceDto>>("/api/spaces"))!.Single(s => s.Id == spaceId);
+        var pageA = await (await alice.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = "A", ContentJson = Doc }))
+            .Content.ReadFromJsonAsync<PageDetail>();
+        var pageB = await (await alice.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = "B", ContentJson = Doc }))
+            .Content.ReadFromJsonAsync<PageDetail>();
+
+        var bob = factory.CreateClient();
+        var bobId = await bob.RegisterAndSignInAsync();
+        // Locking the space to explicit grants also drops Alice to View unless
+        // re-granted — restore her Admin access alongside Bob's View-only.
+        await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
+            new { PrincipalType = 0, PrincipalId = aliceId, Operation = 2 });
+        await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
+            new { PrincipalType = 0, PrincipalId = bobId, Operation = 0 });
+
+        var res = await bob.PutAsJsonAsync($"/api/pages/{pageA!.Id}/move",
+            new { ParentPageId = pageB!.Id, Index = 0 });
+        Assert.Equal(HttpStatusCode.Forbidden, res.StatusCode);
     }
 
     [Fact]

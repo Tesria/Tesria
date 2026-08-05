@@ -226,14 +226,45 @@ label input, label textarea { margin-top: 0.25rem; }
 .sidebar__name { font-weight: 600; }
 .tree-section { margin-top: 0.75rem; }
 .tree-section__heading {
-  display: flex; align-items: center; gap: 0.35rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 0.35rem;
   font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
   color: var(--muted); margin-bottom: 0.4rem;
 }
-.tree { display: flex; flex-direction: column; }
-.tree__link { display: block; padding: 0.3rem 0.5rem; border-radius: 4px; color: var(--text); font-size: 0.9rem; }
+/* Undo the heading's label styling for the toggle button sharing its row. */
+/* Icon-only in its default state (a bare pencil), text once toggled on
+   ("✓ Done" reads better than a lone checkmark for "tap to stop reordering") —
+   the asymmetric padding keeps both states roughly the same touch-target size. */
+.tree-section__reorder {
+  text-transform: none; letter-spacing: normal; font-weight: 500;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0.3rem; min-width: 1.75rem; min-height: 1.75rem;
+}
+.tree { display: flex; flex-direction: column; min-width: 0; }
+/* Depth indentation (padding-left) is set inline per-row in PageTree.tsx. */
+.tree__link { display: block; padding: 0.3rem 0.5rem; border-radius: 4px; color: var(--text); font-size: 0.9rem; min-width: 0; overflow-wrap: break-word; }
 .tree__link:hover { background: #e9ebef; text-decoration: none; }
 .tree__link.is-active { background: #e0ecff; color: var(--primary-dark); font-weight: 600; }
+/* Reorder mode only: the link itself is the drag surface, no separate
+   handle. touch-action:none stops touch browsers from treating the row's
+   own pointerdown as the start of a page-scroll gesture, racing dnd-kit's
+   PointerSensor for it — fine here (dragging is the point of this class),
+   which is exactly why it's scoped to Reorder mode instead of living on
+   .tree__link unconditionally: outside Reorder mode a tree full of
+   touch-action:none rows is a tree you can't scroll through by swiping. */
+.tree__link--draggable { cursor: grab; touch-action: none; }
+.tree__link--draggable:active { cursor: grabbing; }
+/* The drop indicator: a thin line with a small circular "terminal" bleeding
+   past its left edge, shown in the gap where a dragged row would land —
+   position (and, via margin-left, nesting depth) both come from PageTree.tsx.
+   Matches Atlassian's own drag-and-drop drop-indicator spec. */
+.tree__drop-line { position: relative; height: 8px; pointer-events: none; }
+.tree__drop-line::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 3px; height: 2px; background: var(--primary);
+}
+.tree__drop-line::after {
+  content: ''; position: absolute; left: -4px; top: 0; width: 8px; height: 8px;
+  border-radius: 50%; background: var(--primary);
+}
 .space-content { min-width: 0; }
 /* Hidden by default (desktop already shows the tree permanently in
    .sidebar) — shown only under --bp-mobile, see SpaceHome.tsx. */

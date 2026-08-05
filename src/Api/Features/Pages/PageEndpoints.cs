@@ -1,14 +1,14 @@
 using System.Text.Json;
-using ConfluenceClone.Api.Domain;
-using ConfluenceClone.Api.Infrastructure;
-using ConfluenceClone.Api.Infrastructure.Audit;
-using ConfluenceClone.Api.Infrastructure.Auth;
-using ConfluenceClone.Api.Infrastructure.Notifications;
-using ConfluenceClone.Api.Infrastructure.Permissions;
-using ConfluenceClone.Api.Infrastructure.Webhooks;
+using Tesria.Api.Domain;
+using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Audit;
+using Tesria.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure.Notifications;
+using Tesria.Api.Infrastructure.Permissions;
+using Tesria.Api.Infrastructure.Webhooks;
 using Microsoft.EntityFrameworkCore;
 
-namespace ConfluenceClone.Api.Features.Pages;
+namespace Tesria.Api.Features.Pages;
 
 public static class PageEndpoints
 {
@@ -17,7 +17,7 @@ public static class PageEndpoints
 
     public record CreatePageRequest(Guid SpaceId, Guid? ParentPageId, string Title, string? ContentJson);
     public record UpdatePageRequest(string? Title, string ContentJson, string? ChangeComment);
-    public record MovePageRequest(Guid? ParentPageId, int Position);
+    public record MovePageRequest(Guid? ParentPageId, int Index);
     public record CreateDraftRequest(Guid SpaceId, Guid? ParentPageId);
     public record PublishPageRequest(string Title, string ContentJson);
     public record DraftResponse(Guid Id);
@@ -310,8 +310,22 @@ public static class PageEndpoints
                 return Results.ValidationProblem(Error("parentPageId", "Cannot move a page beneath one of its own descendants."));
         }
 
+        // Index is a slot among the destination's current siblings (0 = first),
+        // not a raw Position value — the caller shouldn't have to know or
+        // guess at other pages' Position ints. We insert the moving page at
+        // that slot and renumber the whole sibling group, so a drag-and-drop
+        // UI can just say "this landed at index 2" and never risk colliding
+        // with — or leaving a gap relative to — its new neighbors.
+        var siblings = await db.Pages
+            .Where(p => p.SpaceId == page.SpaceId && p.ParentPageId == req.ParentPageId && p.Id != id)
+            .OrderBy(p => p.Position).ThenBy(p => p.Title)
+            .ToListAsync();
+        var index = Math.Clamp(req.Index, 0, siblings.Count);
+        siblings.Insert(index, page);
+
         page.ParentPageId = req.ParentPageId;
-        page.Position = req.Position;
+        for (var i = 0; i < siblings.Count; i++)
+            siblings[i].Position = i;
         page.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync();
         return Results.NoContent();
@@ -585,7 +599,15 @@ public static class PageEndpoints
 
     /// <summary>Search text for a page: its title plus the plain text of its content.</summary>
     private static string BuildSearchText(string title, string contentJson) =>
-        $"{title} {ExtractPlainText(contentJson)}".Trim();
+        NormalizeForSearch($"{title} {ExtractPlainText(contentJson)}".Trim());
+
+    /// <summary>
+    /// Postgres's tsvector parser treats "word/word" (e.g. "Hocuspocus/Yjs",
+    /// "OIDC/SSO") as a single compound lexeme instead of splitting it, which
+    /// makes each half unsearchable on its own. Replacing slashes with spaces
+    /// before indexing lets to_tsvector tokenize both halves normally.
+    /// </summary>
+    private static string NormalizeForSearch(string text) => text.Replace('/', ' ');
 
     /// <summary>Concatenates the text nodes of a ProseMirror document, ignoring structure.</summary>
     private static string ExtractPlainText(string contentJson)

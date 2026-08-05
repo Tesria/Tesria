@@ -6,7 +6,7 @@ import { useSpaceContext } from './SpacePage'
 
 /** Shown when a space is open but no page is selected. */
 export function SpaceHome() {
-  const { space, tree } = useSpaceContext()
+  const { space, tree, reloadTree } = useSpaceContext()
   return (
     <div className="page-wrap">
       <div className="row-between">
@@ -32,7 +32,7 @@ export function SpaceHome() {
               copy exists only so mobile (where that sidebar is hidden) has
               somewhere to browse pages that isn't hidden behind a toggle. */}
           <div className="space-home-tree">
-            <PageTree tree={tree} spaceKey={space.key} />
+            <PageTree tree={tree} spaceKey={space.key} onMoved={reloadTree} />
           </div>
         </>
       )}

@@ -93,7 +93,7 @@ export function SpacePage() {
         <NavLink to={newPageHref} className="btn btn--primary btn--block">
           + New page
         </NavLink>
-        <PageTree tree={tree} spaceKey={space.key} />
+        <PageTree tree={tree} spaceKey={space.key} onMoved={reloadTree} />
         <NavLink
           to={`/spaces/${space.key}/permissions`}
           className={({ isActive }) => (isActive ? 'sidebar__trash is-active' : 'sidebar__trash')}

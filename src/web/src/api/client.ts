@@ -1,4 +1,4 @@
-// Typed client for the ConfluenceClone REST API. All calls are same-origin and
+// Typed client for the Tesria REST API. All calls are same-origin and
 // send the auth cookie automatically (credentials: 'include' for dev CORS).
 
 export type User = { id: string; email: string; displayName: string }
@@ -264,7 +264,7 @@ export const api = {
     }) => request<PageDetail>('POST', '/api/pages', input),
     update: (id: string, input: { title?: string | null; contentJson: string; changeComment?: string | null }) =>
       request<PageDetail>('PUT', `/api/pages/${id}`, input),
-    move: (id: string, input: { parentPageId?: string | null; position: number }) =>
+    move: (id: string, input: { parentPageId?: string | null; index: number }) =>
       request<void>('PUT', `/api/pages/${id}/move`, input),
     setLayout: (id: string, input: { fullWidth: boolean }) =>
       request<void>('PUT', `/api/pages/${id}/layout`, input),

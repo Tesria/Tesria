@@ -1,5 +1,16 @@
+import { Fragment, useMemo, useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import type { PageTreeNode } from '../api/client'
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragMoveEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core'
+import { SortableContext, arrayMove, useSortable } from '@dnd-kit/sortable'
+import { api, type PageTreeNode } from '../api/client'
 
 /** The chain of nodes from a root page down to (and including) `pageId`, or
  *  null if it isn't in this tree — e.g. a trashed page, or the tree hasn't
@@ -15,57 +26,289 @@ export function findTreePath(tree: PageTreeNode[], pageId: string): PageTreeNode
   return null
 }
 
+type FlatNode = { id: string; title: string; parentId: string | null; depth: number }
+
+function flatten(nodes: PageTreeNode[], parentId: string | null = null, depth = 0): FlatNode[] {
+  return nodes.flatMap((node) => [
+    { id: node.id, title: node.title, parentId, depth },
+    ...flatten(node.children, node.id, depth + 1),
+  ])
+}
+
+function descendantIdsOf(nodes: PageTreeNode[], id: string): Set<string> {
+  const collect = (list: PageTreeNode[]): string[] => list.flatMap((n) => [n.id, ...collect(n.children)])
+  const find = (list: PageTreeNode[]): string[] | null => {
+    for (const n of list) {
+      if (n.id === id) return collect(n.children)
+      const found = find(n.children)
+      if (found) return found
+    }
+    return null
+  }
+  return new Set(find(nodes) ?? [])
+}
+
+// Horizontal drag distance (px) that shifts the projected depth by one level —
+// matches the per-depth indent below so dragging "feels" like it maps 1:1.
+const INDENT = 14
+
+/** Where a dragged row would land: the id of the row it would sit right
+ *  after (null = new first item), the depth that implies, and the parent
+ *  that depth implies. Depth is projected from horizontal drag distance,
+ *  then clamped between the previous row's depth+1 (can't skip a level) and
+ *  the next row's depth (can't leave a gap) — the standard "sortable tree"
+ *  projection technique. `items` must already have the dragged row (and its
+ *  own former subtree) excluded — see caller. */
+function project(items: FlatNode[], activeId: string, overId: string, dragOffsetX: number) {
+  const activeIndex = items.findIndex((i) => i.id === activeId)
+  const overIndex = items.findIndex((i) => i.id === overId)
+  if (activeIndex === -1 || overIndex === -1) return null
+  const reordered = arrayMove(items, activeIndex, overIndex)
+  const newIndex = reordered.findIndex((i) => i.id === activeId)
+  const previous = reordered[newIndex - 1]
+  const next = reordered[newIndex + 1]
+
+  const desiredDepth = items[activeIndex].depth + Math.round(dragOffsetX / INDENT)
+  const maxDepth = previous ? previous.depth + 1 : 0
+  const minDepth = next ? next.depth : 0
+  const depth = Math.min(Math.max(desiredDepth, minDepth), maxDepth)
+
+  let parentId: string | null = null
+  if (depth > 0 && previous) {
+    parentId =
+      depth === previous.depth
+        ? previous.parentId
+        : depth > previous.depth
+          ? previous.id
+          : (reordered
+              .slice(0, newIndex)
+              .reverse()
+              .find((i) => i.depth === depth - 1)?.id ?? null)
+  }
+  return { reordered, parentId, depth, previousId: previous?.id ?? null }
+}
+
 /** The recursive page list for a space — shared by the desktop sidebar and
- *  the mobile inline tree on the space landing page (SpaceHome). */
+ *  the mobile inline tree on the space landing page (SpaceHome). Reordering
+ *  and reparenting only happen in "Reorder" mode (toggled via the button in
+ *  the heading): outside it, rows are plain links with no drag listeners at
+ *  all, so a scroll swipe that starts on a title can never be mistaken for a
+ *  drag — this matters most on mobile, where that ambiguity is exactly what
+ *  made moving pages by accident so easy. In edit mode, a row is itself the
+ *  drag source (no separate handle): drag it up/down to reorder among
+ *  siblings, or drag it horizontally over another row to reparent it — the
+ *  only way to change the hierarchy once a page exists. A line shows where
+ *  it would land, Confluence-style, rather than live-shuffling the list. */
 export function PageTree({
   tree,
   spaceKey,
   onNavigate,
+  onMoved,
 }: {
   tree: PageTreeNode[]
   spaceKey: string
   onNavigate?: () => void
+  onMoved?: () => void
 }) {
-  return (
-    <div className="tree-section">
-      <div className="tree-section__heading">📑 Pages</div>
-      {tree.length === 0 ? (
+  const [editMode, setEditMode] = useState(false)
+  const flat = useMemo(() => flatten(tree), [tree])
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [overId, setOverId] = useState<string | null>(null)
+  const [dragOffsetX, setDragOffsetX] = useState(0)
+
+  // A row can't be dropped under itself or one of its own descendants — the
+  // backend rejects that as a cycle regardless, but excluding the dragged
+  // subtree from the working list up front means it's never even offered as
+  // a drop target, and the projection math above never has to think about it.
+  const hidden = activeId ? descendantIdsOf(tree, activeId) : null
+  const visible = useMemo(() => (hidden ? flat.filter((i) => !hidden.has(i.id)) : flat), [flat, hidden])
+
+  const projection = activeId && overId && activeId !== overId ? project(visible, activeId, overId, dragOffsetX) : null
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
+
+  function reset() {
+    setActiveId(null)
+    setOverId(null)
+    setDragOffsetX(0)
+  }
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveId(String(event.active.id))
+  }
+
+  function handleDragMove(event: DragMoveEvent) {
+    setOverId(event.over ? String(event.over.id) : null)
+    setDragOffsetX(event.delta.x)
+  }
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const draggedId = String(event.active.id)
+    // Computed straight from the event, not from `overId`/`dragOffsetX`
+    // state: dnd-kit can fire drag-move and drag-end back to back in the
+    // same tick, before React has re-rendered — reading state here would
+    // risk resolving against a stale projection from an earlier move.
+    const overIdNow = event.over ? String(event.over.id) : null
+    const result = overIdNow && overIdNow !== draggedId ? project(visible, draggedId, overIdNow, event.delta.x) : null
+    reset()
+    if (!result) return
+
+    const newParentId = result.parentId
+    const siblings = result.reordered.filter(
+      (i) => (i.id === draggedId ? newParentId : i.parentId) === newParentId,
+    )
+    const index = siblings.findIndex((i) => i.id === draggedId)
+    const before = flat.find((i) => i.id === draggedId)
+    if (before && before.parentId === newParentId) {
+      const currentSiblings = flat.filter((i) => i.parentId === newParentId)
+      if (currentSiblings.findIndex((i) => i.id === draggedId) === index) return // dropped back in place
+    }
+
+    try {
+      await api.pages.move(draggedId, { parentPageId: newParentId, index })
+    } finally {
+      onMoved?.()
+    }
+  }
+
+  const heading = (
+    <div className="tree-section__heading">
+      <span>📑 Pages</span>
+      {tree.length > 0 && (
+        <button
+          type="button"
+          className="btn btn--ghost btn--sm tree-section__reorder"
+          aria-label={editMode ? 'Done reordering pages' : 'Reorder pages'}
+          aria-pressed={editMode}
+          title={editMode ? 'Done reordering' : 'Reorder pages'}
+          onClick={() => setEditMode((v) => !v)}
+        >
+          {editMode ? '✓ Done' : <PencilIcon />}
+        </button>
+      )}
+    </div>
+  )
+
+  if (tree.length === 0) {
+    return (
+      <div className="tree-section">
+        {heading}
         <p className="muted small">No pages yet.</p>
-      ) : (
+      </div>
+    )
+  }
+
+  if (!editMode) {
+    return (
+      <div className="tree-section">
+        {heading}
         <nav className="tree">
-          {tree.map((node) => (
-            <TreeItem key={node.id} node={node} spaceKey={spaceKey} depth={0} onNavigate={onNavigate} />
+          {flat.map((node) => (
+            <StaticRow key={node.id} node={node} spaceKey={spaceKey} onNavigate={onNavigate} />
           ))}
         </nav>
-      )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="tree-section">
+      {heading}
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragMove={handleDragMove}
+        onDragEnd={handleDragEnd}
+        onDragCancel={reset}
+      >
+        <SortableContext items={visible.map((i) => i.id)}>
+          <nav className="tree">
+            {projection?.previousId === null && <DropLine depth={projection.depth} />}
+            {visible.map((node) => (
+              <Fragment key={node.id}>
+                <DraggableRow
+                  node={node}
+                  spaceKey={spaceKey}
+                  onNavigate={onNavigate}
+                  isDimmed={node.id === activeId}
+                />
+                {projection?.previousId === node.id && <DropLine depth={projection.depth} />}
+              </Fragment>
+            ))}
+          </nav>
+        </SortableContext>
+      </DndContext>
     </div>
   )
 }
 
-function TreeItem({
+function DropLine({ depth }: { depth: number }) {
+  return <div className="tree__drop-line" style={{ marginLeft: 8 + depth * INDENT }} />
+}
+
+/** A plain navigation row — outside Reorder mode, this is all a tree row is:
+ *  no drag listeners, no `touch-action` override, so scrolling through the
+ *  tree behaves exactly like scrolling anything else. */
+function StaticRow({
   node,
   spaceKey,
-  depth,
   onNavigate,
 }: {
-  node: PageTreeNode
+  node: FlatNode
   spaceKey: string
-  depth: number
   onNavigate?: () => void
 }) {
   return (
-    <div className="tree__item">
-      <NavLink
-        to={`/spaces/${spaceKey}/pages/${node.id}`}
-        className={({ isActive }) => (isActive ? 'tree__link is-active' : 'tree__link')}
-        style={{ paddingLeft: 8 + depth * 14 }}
-        onClick={onNavigate}
-      >
-        {node.title}
-      </NavLink>
-      {node.children.map((child) => (
-        <TreeItem key={child.id} node={child} spaceKey={spaceKey} depth={depth + 1} onNavigate={onNavigate} />
-      ))}
-    </div>
+    <NavLink
+      to={`/spaces/${spaceKey}/pages/${node.id}`}
+      className={({ isActive }) => (isActive ? 'tree__link is-active' : 'tree__link')}
+      style={{ paddingLeft: 8 + node.depth * INDENT }}
+      onClick={onNavigate}
+    >
+      {node.title}
+    </NavLink>
+  )
+}
+
+function DraggableRow({
+  node,
+  spaceKey,
+  onNavigate,
+  isDimmed,
+}: {
+  node: FlatNode
+  spaceKey: string
+  onNavigate?: () => void
+  isDimmed: boolean
+}) {
+  // Only `listeners` (the pointer handlers) go on the link — not `attributes`
+  // (mostly keyboard/ARIA metadata for dnd-kit's own sortable semantics),
+  // so the row stays a real, correctly-announced link rather than being
+  // relabelled as a generic draggable widget for assistive tech.
+  const { listeners, setNodeRef, isDragging } = useSortable({ id: node.id })
+
+  return (
+    <NavLink
+      ref={setNodeRef}
+      to={`/spaces/${spaceKey}/pages/${node.id}`}
+      className={({ isActive }) => (isActive ? 'tree__link tree__link--draggable is-active' : 'tree__link tree__link--draggable')}
+      style={{ paddingLeft: 8 + node.depth * INDENT, opacity: isDragging || isDimmed ? 0.4 : 1 }}
+      onClick={onNavigate}
+      {...listeners}
+    >
+      {node.title}
+    </NavLink>
+  )
+}
+
+/** Same stroke-icon language as the editor toolbar (editor/icons.tsx) and
+ *  the topbar bell (NotificationBell.tsx) — flat, currentColor, 1.8px
+ *  stroke — instead of the platform's own emoji pencil, which rendered in
+ *  full color and stood out against the rest of the app's flat icon set. */
+function PencilIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
   )
 }
