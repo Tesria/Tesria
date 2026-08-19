@@ -244,15 +244,13 @@ label .password-input { margin-top: 0.25rem; }
   font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
   color: var(--muted); margin-bottom: 0.4rem;
 }
-/* Undo the heading's label styling for the toggle button sharing its row. */
-/* Icon-only in its default state (a bare pencil), text once toggled on
-   ("✓ Done" reads better than a lone checkmark for "tap to stop reordering") —
-   the asymmetric padding keeps both states roughly the same touch-target size. */
+/* Undo the heading's label styling for the button(s) sharing its row. */
 .tree-section__reorder {
   text-transform: none; letter-spacing: normal; font-weight: 500;
   display: flex; align-items: center; justify-content: center;
   padding: 0.3rem; min-width: 1.75rem; min-height: 1.75rem;
 }
+.tree-section__actions { display: flex; gap: 0.35rem; text-transform: none; letter-spacing: normal; }
 .tree { display: flex; flex-direction: column; min-width: 0; }
 /* Depth indentation (padding-left) is set inline per-row in PageTree.tsx. */
 .tree__link { display: block; padding: 0.3rem 0.5rem; border-radius: 4px; color: var(--text); font-size: 0.9rem; min-width: 0; overflow-wrap: break-word; }
