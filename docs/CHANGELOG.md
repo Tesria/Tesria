@@ -5,6 +5,35 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Design: page tree Reorder mode is now a batch edit (2026-08-19)
+
+Feedback on Reorder mode: it committed each drag immediately and left
+edit mode, which was fine for moving one page but tedious for reorganizing
+several — reparenting a page is very often the first of several related
+moves, and re-entering Reorder mode before each one added it up fast.
+
+Discussed batch-editing (stay in Reorder mode, pile up changes, Save or
+Cancel) against the existing immediate-commit-per-drag model before
+building anything — batch editing means real complexity (a draft that
+diverges from the server, conflict risk if the tree changes elsewhere
+mid-session, partial-failure handling on save) that immediate-commit
+doesn't have. Went with batch editing anyway, since it's what was asked
+for.
+
+Drags now apply to a local draft tree — `applyMove()` removes the dragged
+page (with its subtree intact) and reinserts it under its new parent,
+letting the existing `flatten()` recompute depths for the whole moved
+subtree for free — and each drag also appends to an ordered
+`pendingMoves` queue instead of calling the API. **Save** replays that
+queue as sequential `PUT /api/pages/{id}/move` calls in the order the
+moves were made; **Cancel** discards the draft without ever contacting
+the server. Rows are no longer links while editing (a stray click could
+otherwise navigate away and abandon an unsaved reorganization) — dragging
+is the only thing a row does in Reorder mode now. See
+docs/architecture.md's "Page tree drag-and-drop" section for why replaying
+moves in original order is safe without diffing the draft against the
+original tree.
+
 ### Feature: show/hide toggle on every password field (2026-08-03)
 
 Added a `PasswordInput` component (`components/PasswordInput.tsx`) — a

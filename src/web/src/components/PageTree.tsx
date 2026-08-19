@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
   DndContext,
@@ -27,6 +27,7 @@ export function findTreePath(tree: PageTreeNode[], pageId: string): PageTreeNode
 }
 
 type FlatNode = { id: string; title: string; parentId: string | null; depth: number }
+type PendingMove = { pageId: string; parentPageId: string | null; index: number }
 
 function flatten(nodes: PageTreeNode[], parentId: string | null = null, depth = 0): FlatNode[] {
   return nodes.flatMap((node) => [
@@ -46,6 +47,40 @@ function descendantIdsOf(nodes: PageTreeNode[], id: string): Set<string> {
     return null
   }
   return new Set(find(nodes) ?? [])
+}
+
+/** Removes `id` (and its whole subtree, intact) from wherever it sits in
+ *  the tree, then reinserts it under `parentId` at `index`. The pure,
+ *  client-side counterpart of the backend's Move endpoint — used to keep a
+ *  local draft tree correct across several drags in one Reorder session,
+ *  without a round trip per drag. */
+function applyMove(tree: PageTreeNode[], id: string, parentId: string | null, index: number): PageTreeNode[] {
+  let removed: PageTreeNode | null = null
+  function remove(list: PageTreeNode[]): PageTreeNode[] {
+    const withoutMatch = list.filter((n) => {
+      if (n.id === id) {
+        removed = n
+        return false
+      }
+      return true
+    })
+    if (removed) return withoutMatch
+    return withoutMatch.map((n) => ({ ...n, children: remove(n.children) }))
+  }
+  function insert(list: PageTreeNode[], node: PageTreeNode): PageTreeNode[] {
+    if (parentId === null) {
+      const copy = [...list]
+      copy.splice(index, 0, node)
+      return copy
+    }
+    return list.map((n) =>
+      n.id === parentId
+        ? { ...n, children: [...n.children.slice(0, index), node, ...n.children.slice(index)] }
+        : { ...n, children: insert(n.children, node) },
+    )
+  }
+  const withoutNode = remove(tree)
+  return removed ? insert(withoutNode, removed) : tree
 }
 
 // Horizontal drag distance (px) that shifts the projected depth by one level —
@@ -93,12 +128,13 @@ function project(items: FlatNode[], activeId: string, overId: string, dragOffset
  *  and reparenting only happen in "Reorder" mode (toggled via the button in
  *  the heading): outside it, rows are plain links with no drag listeners at
  *  all, so a scroll swipe that starts on a title can never be mistaken for a
- *  drag — this matters most on mobile, where that ambiguity is exactly what
- *  made moving pages by accident so easy. In edit mode, a row is itself the
- *  drag source (no separate handle): drag it up/down to reorder among
- *  siblings, or drag it horizontally over another row to reparent it — the
- *  only way to change the hierarchy once a page exists. A line shows where
- *  it would land, Confluence-style, rather than live-shuffling the list. */
+ *  drag. Reorder mode is a batch edit, not one-drag-one-save: drags apply to
+ *  a local draft tree (so you can reparent something and then immediately
+ *  make the follow-up adjustments that reparent usually calls for, without
+ *  re-entering the mode each time) and nothing reaches the server until
+ *  Save. Cancel discards the draft — no request is ever sent for it. Rows
+ *  aren't navigable while editing, since a stray click could otherwise
+ *  discard an unsaved reorganization by navigating away from it. */
 export function PageTree({
   tree,
   spaceKey,
@@ -111,23 +147,37 @@ export function PageTree({
   onMoved?: () => void
 }) {
   const [editMode, setEditMode] = useState(false)
-  const flat = useMemo(() => flatten(tree), [tree])
+  const [draftTree, setDraftTree] = useState(tree)
+  const [pendingMoves, setPendingMoves] = useState<PendingMove[]>([])
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // The draft only tracks the server's tree while not editing — once a
+  // Reorder session starts, further prop updates (another tab, a page
+  // created elsewhere) are ignored until Save or Cancel resolves the
+  // session, rather than silently rebasing a half-finished reorganization.
+  useEffect(() => {
+    if (!editMode) setDraftTree(tree)
+  }, [tree, editMode])
+
   const [activeId, setActiveId] = useState<string | null>(null)
   const [overId, setOverId] = useState<string | null>(null)
   const [dragOffsetX, setDragOffsetX] = useState(0)
+
+  const flat = useMemo(() => flatten(editMode ? draftTree : tree), [editMode, draftTree, tree])
 
   // A row can't be dropped under itself or one of its own descendants — the
   // backend rejects that as a cycle regardless, but excluding the dragged
   // subtree from the working list up front means it's never even offered as
   // a drop target, and the projection math above never has to think about it.
-  const hidden = activeId ? descendantIdsOf(tree, activeId) : null
+  const hidden = activeId ? descendantIdsOf(draftTree, activeId) : null
   const visible = useMemo(() => (hidden ? flat.filter((i) => !hidden.has(i.id)) : flat), [flat, hidden])
 
   const projection = activeId && overId && activeId !== overId ? project(visible, activeId, overId, dragOffsetX) : null
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
 
-  function reset() {
+  function resetDrag() {
     setActiveId(null)
     setOverId(null)
     setDragOffsetX(0)
@@ -142,7 +192,7 @@ export function PageTree({
     setDragOffsetX(event.delta.x)
   }
 
-  async function handleDragEnd(event: DragEndEvent) {
+  function handleDragEnd(event: DragEndEvent) {
     const draggedId = String(event.active.id)
     // Computed straight from the event, not from `overId`/`dragOffsetX`
     // state: dnd-kit can fire drag-move and drag-end back to back in the
@@ -150,7 +200,7 @@ export function PageTree({
     // risk resolving against a stale projection from an earlier move.
     const overIdNow = event.over ? String(event.over.id) : null
     const result = overIdNow && overIdNow !== draggedId ? project(visible, draggedId, overIdNow, event.delta.x) : null
-    reset()
+    resetDrag()
     if (!result) return
 
     const newParentId = result.parentId
@@ -164,9 +214,43 @@ export function PageTree({
       if (currentSiblings.findIndex((i) => i.id === draggedId) === index) return // dropped back in place
     }
 
+    setDraftTree((prev) => applyMove(prev, draggedId, newParentId, index))
+    setPendingMoves((prev) => [...prev, { pageId: draggedId, parentPageId: newParentId, index }])
+  }
+
+  function startEditing() {
+    setPendingMoves([])
+    setError(null)
+    setEditMode(true)
+  }
+
+  function cancelEditing() {
+    setDraftTree(tree)
+    setPendingMoves([])
+    setError(null)
+    setEditMode(false)
+  }
+
+  async function save() {
+    setSaving(true)
+    setError(null)
     try {
-      await api.pages.move(draggedId, { parentPageId: newParentId, index })
+      // Replayed in the order they were made, each against whatever the
+      // server now holds — every intermediate state this produces is one
+      // the draft itself already passed through (and validated a parent
+      // choice against) while the user was dragging, so this converges to
+      // the same tree without needing to diff draft-vs-original itself.
+      for (const move of pendingMoves) {
+        await api.pages.move(move.pageId, { parentPageId: move.parentPageId, index: move.index })
+      }
+      setEditMode(false)
+      setPendingMoves([])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Some changes could not be saved.')
+      setEditMode(false)
+      setPendingMoves([])
     } finally {
+      setSaving(false)
       onMoved?.()
     }
   }
@@ -175,16 +259,20 @@ export function PageTree({
     <div className="tree-section__heading">
       <span>📑 Pages</span>
       {tree.length > 0 && (
-        <button
-          type="button"
-          className="btn btn--ghost btn--sm tree-section__reorder"
-          aria-label={editMode ? 'Done reordering pages' : 'Reorder pages'}
-          aria-pressed={editMode}
-          title={editMode ? 'Done reordering' : 'Reorder pages'}
-          onClick={() => setEditMode((v) => !v)}
-        >
-          {editMode ? '✓ Done' : <PencilIcon />}
-        </button>
+        editMode ? (
+          <span className="tree-section__actions">
+            <button type="button" className="btn btn--ghost btn--sm" onClick={cancelEditing} disabled={saving}>
+              Cancel
+            </button>
+            <button type="button" className="btn btn--primary btn--sm" onClick={save} disabled={saving || pendingMoves.length === 0}>
+              {saving ? 'Saving…' : `Save${pendingMoves.length ? ` (${pendingMoves.length})` : ''}`}
+            </button>
+          </span>
+        ) : (
+          <button type="button" className="btn btn--ghost btn--sm tree-section__reorder" aria-label="Reorder pages" title="Reorder pages" onClick={startEditing}>
+            <PencilIcon />
+          </button>
+        )
       )}
     </div>
   )
@@ -202,6 +290,7 @@ export function PageTree({
     return (
       <div className="tree-section">
         {heading}
+        {error && <p className="alert alert--error">{error}</p>}
         <nav className="tree">
           {flat.map((node) => (
             <StaticRow key={node.id} node={node} spaceKey={spaceKey} onNavigate={onNavigate} />
@@ -219,19 +308,14 @@ export function PageTree({
         onDragStart={handleDragStart}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
-        onDragCancel={reset}
+        onDragCancel={resetDrag}
       >
         <SortableContext items={visible.map((i) => i.id)}>
           <nav className="tree">
             {projection?.previousId === null && <DropLine depth={projection.depth} />}
             {visible.map((node) => (
               <Fragment key={node.id}>
-                <DraggableRow
-                  node={node}
-                  spaceKey={spaceKey}
-                  onNavigate={onNavigate}
-                  isDimmed={node.id === activeId}
-                />
+                <DraggableRow node={node} isDimmed={node.id === activeId} />
                 {projection?.previousId === node.id && <DropLine depth={projection.depth} />}
               </Fragment>
             ))}
@@ -270,34 +354,26 @@ function StaticRow({
   )
 }
 
-function DraggableRow({
-  node,
-  spaceKey,
-  onNavigate,
-  isDimmed,
-}: {
-  node: FlatNode
-  spaceKey: string
-  onNavigate?: () => void
-  isDimmed: boolean
-}) {
-  // Only `listeners` (the pointer handlers) go on the link — not `attributes`
+/** A draggable row while Reorder mode is active. Not a link — mid-batch,
+ *  navigating away would abandon whatever hasn't been saved yet, so rows
+ *  are inert to click and only respond to drag. */
+function DraggableRow({ node, isDimmed }: { node: FlatNode; isDimmed: boolean }) {
+  // Only `listeners` (the pointer handlers) go on the row — not `attributes`
   // (mostly keyboard/ARIA metadata for dnd-kit's own sortable semantics),
-  // so the row stays a real, correctly-announced link rather than being
-  // relabelled as a generic draggable widget for assistive tech.
+  // which matters less here than when this was a real link, but there's
+  // still no reason to relabel it as a generic draggable widget.
   const { listeners, setNodeRef, isDragging } = useSortable({ id: node.id })
 
   return (
-    <NavLink
+    <div
       ref={setNodeRef}
-      to={`/spaces/${spaceKey}/pages/${node.id}`}
-      className={({ isActive }) => (isActive ? 'tree__link tree__link--draggable is-active' : 'tree__link tree__link--draggable')}
+      className="tree__link tree__link--draggable"
       style={{ paddingLeft: 8 + node.depth * INDENT, opacity: isDragging || isDimmed ? 0.4 : 1 }}
-      onClick={onNavigate}
+      title="Drag to reorder or move — Save or Cancel to browse again"
       {...listeners}
     >
       {node.title}
-    </NavLink>
+    </div>
   )
 }
 

@@ -171,25 +171,51 @@ no separate "move" dialog. Dragging only happens in **Reorder mode**,
 toggled per-tree-instance by a compact icon button next to the "📑 Pages"
 heading (`PageTree.tsx`'s `editMode` state) — a flat pencil (`PencilIcon`,
 same stroke-icon language as the editor toolbar and the topbar bell) when
-off, "✓ Done" text once on; no "Reorder" label on the pencil state, kept
-deliberately icon-only for compactness. Outside it, rows are plain
-`StaticRow` links with no dnd-kit hooks and no `touch-action` override at
-all — not just visually inert, structurally
+off. Outside it, rows are plain `StaticRow` links with no dnd-kit hooks and
+no `touch-action` override at all — not just visually inert, structurally
 incapable of starting a drag. This exists because the first version made
 every row a drag source all the time: on mobile, `touch-action: none`
 (needed so a touch-drag isn't raced by the browser's own scroll gesture)
 meant any swipe that happened to start on a page title reordered it instead
-of scrolling the list, which was exactly backwards. In Reorder mode, a page
-row is itself the drag source (no separate handle icon — dnd-kit's
-`distance: 4` activation constraint tells a click from a drag, so the row
-stays a normal, clickable link even while draggable). Dragging it up or
-down reorders it among siblings; dragging it horizontally while over
-another row changes its nesting depth, reparenting it. Rather than
-live-shuffling the rest of the list, a line shows where the row would land
-— a 2px line with an 8px circular terminal bleeding 4px past its own left
-edge, matching Atlassian's own drop-indicator spec
-([atlassian.design/components/pragmatic-drag-and-drop/design-guidelines](https://atlassian.design/components/pragmatic-drag-and-drop/design-guidelines)) —
-with the line's left offset (`marginLeft`) doubling as the nesting-depth
+of scrolling the list, which was exactly backwards.
+
+Reorder mode is a **batch edit**, not one-drag-one-save: drags apply to a
+local draft tree (`draftTree` state, seeded from the `tree` prop and frozen
+against further prop updates until the session ends — see the `useEffect`
+guarded on `!editMode`) and nothing reaches the server until an explicit
+**Save**; **Cancel** discards the draft and never sends a request at all.
+This replaced an earlier single-toggle "Done" button that committed each
+drag immediately — reparenting a page is very often the first of several
+related moves, and re-entering Reorder mode before each one made that
+workflow tedious. Each completed drag both updates `draftTree` (via
+`applyMove`, a pure function that removes the dragged node — with its
+subtree intact — and reinserts it under the new parent at the new index,
+letting the existing `flatten()` recompute correct depths for the whole
+moved subtree for free) and appends `{pageId, parentPageId, index}` to a
+`pendingMoves` queue. **Save** replays that queue as sequential
+`PUT /api/pages/{id}/move` calls, in the order the moves were made, each
+against whatever the server now holds. That ordering guarantee is what
+makes replay safe without needing to diff the draft against the original
+tree: every intermediate state Save produces is one the draft itself
+already passed through — and validated a parent choice against — while the
+user was dragging, so replaying in the same order converges to the same
+tree. A failure mid-replay aborts the remaining queued moves, surfaces an
+error, and refetches the tree so the UI reflects however far Save actually
+got — never a state the user hasn't seen. Rows aren't links while
+editing (`DraggableRow` renders a `<div>`, not a `NavLink`): mid-batch, a
+stray click on a row would otherwise navigate away and abandon whatever
+hasn't been saved yet.
+
+Within a single Reorder session, a page row is itself the drag source (no
+separate handle icon — dnd-kit's `distance: 4` activation constraint tells
+a click from a drag). Dragging it up or down reorders it among siblings;
+dragging it horizontally while over another row changes its nesting depth,
+reparenting it. Rather than live-shuffling the rest of the list, a line
+shows where the row would land — a 2px line with an 8px circular terminal
+bleeding 4px past its own left edge, matching Atlassian's own drop-indicator
+spec
+([atlassian.design/components/pragmatic-drag-and-drop/design-guidelines](https://atlassian.design/components/pragmatic-drag-and-drop/design-guidelines))
+— with the line's left offset (`marginLeft`) doubling as the nesting-depth
 indicator. An earlier version used an always-visible grip-icon handle with
 live-reordering; both the extra element and the nested flex row it required
 turned out to be the source of a mobile layout-overflow regression, so the
@@ -205,9 +231,10 @@ derives the dragged row's new depth from horizontal drag distance, clamped
 between the row above's depth+1 (can't skip a nesting level) and the row
 below's depth (can't leave a gap) — the standard "sortable tree" projection
 technique. The dragged row's own descendants are excluded from that working
-list for the duration of the drag, so a subtree can never be dropped inside
-itself; the backend's cycle check (`WouldCreateCycleAsync`) is the backstop,
-not the only guard.
+list for the duration of the drag (computed against `draftTree`, so this
+still holds correctly across several drags in one session, not just the
+first), so a subtree can never be dropped inside itself; the backend's
+cycle check (`WouldCreateCycleAsync`) is the backstop, not the only guard.
 
 `PUT /api/pages/{id}/move` takes `{ parentPageId, index }`, where `index` is
 a slot among the destination's *current* siblings (0 = first) — not a raw
