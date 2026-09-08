@@ -5,7 +5,11 @@ TypeScript SPA (TipTap v3 editor) + PostgreSQL 18, deployed via Docker Compose
 (Caddy auto-HTTPS, a Node/Hocuspocus collab sidecar, layered backups).
 
 Read first, in this order:
-- [`README.md`](./README.md) — stack, quick start, repo layout.
+- [`README.md`](./README.md) — stack, quick start, repo layout. Its Quick
+  start is the whole procedure for standing this up on a fresh clone /
+  new machine (which `.env` values must be set, and the one-liner that
+  brings the stack up correctly) — start there rather than reconstructing
+  it from `docker-compose.yml`.
 - [`docs/architecture.md`](./docs/architecture.md) — how it's put together and
   why, including a detailed editor-subsystem section (extensions.ts as the
   schema source of truth, node views, floating menus, the draft/publish page
