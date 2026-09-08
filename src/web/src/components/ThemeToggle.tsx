@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useDismissable } from '../hooks/useDismissable'
 import {
-  ACCENTS, applyAccent, applyPreference, readAccent, readPreference, saveAccent,
+  ACCENTS, applyAccent, applyFavicon, applyPreference, readAccent, readPreference, saveAccent,
   savePreference, systemTheme, THEME_LABELS, THEME_ORDER,
   type AccentName, type ThemePreference,
 } from '../theme'
@@ -86,7 +86,10 @@ export function ThemeToggle() {
   // index.html already applied both before first paint; these keep the DOM in
   // step after a change, and re-assert after a hot reload.
   useEffect(() => { applyPreference(preference) }, [preference])
-  useEffect(() => { applyAccent(accent) }, [accent])
+  useEffect(() => {
+    applyAccent(accent)
+    applyFavicon(accent)
+  }, [accent])
 
   useEffect(() => {
     const query = window.matchMedia('(prefers-color-scheme: dark)')

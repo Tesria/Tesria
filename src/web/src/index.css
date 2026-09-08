@@ -163,7 +163,12 @@ label .password-input { margin-top: 0.25rem; }
 /* ---- app chrome ---------------------------------------------------------- */
 .app { min-height: 100vh; display: flex; flex-direction: column; }
 .topbar {
-  display: flex; align-items: center; justify-content: space-between;
+  /* flex-start, not space-between: space-between splits leftover width
+     evenly into every gap, which floated the nav somewhere between the brand
+     and the search box. Packing left and giving .topbar__right a
+     margin-left: auto puts all the leftover in one place — before the
+     right-hand cluster — so the nav anchors to the brand at every tier. */
+  display: flex; align-items: center; justify-content: flex-start;
   padding: 0 1rem; height: 52px; border-bottom: 1px solid var(--border); background: var(--surface);
   position: sticky; top: 0; z-index: 10;
 }
@@ -176,10 +181,37 @@ label .password-input { margin-top: 0.25rem; }
    character than the sans-serif fallback this got tested against on
    desktop. Letting it shrink and ellipsis instead keeps the bar's total
    width fixed at exactly what .topbar__hamburger/.topbar__right need. */
-.brand { font-weight: 700; color: var(--text); min-width: 0; flex-shrink: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.brand { display: inline-flex; align-items: center; gap: 0.45rem; font-weight: 700; color: var(--text); min-width: 0; flex-shrink: 1; }
 .brand:hover { text-decoration: none; }
-.topbar__nav { display: flex; gap: 0.25rem; margin-left: 1.25rem; }
-.topbar__link { padding: 0.3rem 0.6rem; border-radius: 4px; color: var(--muted); font-size: 0.9rem; }
+/* The mark carries --primary, so it follows both the theme and the chosen
+   accent; the wordmark stays --text. Same split the brand page uses: coloured
+   mark, neutral wordmark. flex-shrink: 0 - the shrink-and-ellipsis behaviour
+   described above belongs to the word now, never to the logo. */
+.brand__mark { display: inline-flex; flex-shrink: 0; color: var(--primary); }
+.brand__word { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.topbar__nav { display: flex; align-items: center; gap: 0.25rem; margin-left: 1.25rem; }
+/* inline-flex + nowrap: a squeezed "API Tokens" used to wrap to two lines,
+   which made the nav row taller and left its single-line neighbours sitting
+   at the top of it — the "top-aligned links" look. Links now never wrap
+   (the More menu below is what absorbs the pressure instead), and centre
+   within whatever height the row has. */
+.topbar__link {
+  display: inline-flex; align-items: center; gap: 0.25rem; white-space: nowrap;
+  padding: 0.3rem 0.6rem; border-radius: 4px; color: var(--muted); font-size: 0.9rem;
+  background: none; border: none; cursor: pointer;
+}
+/* The middle tier's overflow (Layout.tsx's MoreMenu). Hidden at desktop
+   width, where all four links fit, and below --bp-mobile, where the column
+   nav lists them in full; visible only between. */
+.topbar__more { display: none; position: relative; }
+.topbar__more-trigger svg { opacity: 0.7; }
+.topbar__more-menu {
+  position: absolute; left: 0; top: calc(100% + 6px); min-width: 160px; z-index: 20;
+  display: flex; flex-direction: column; gap: 0.1rem; padding: 0.3rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+.topbar__more-menu .topbar__link { display: flex; }
 .topbar__link:hover { background: var(--bg-alt); text-decoration: none; }
 .topbar__link.is-active { color: var(--primary-dark); background: var(--primary-soft); font-weight: 600; }
 
@@ -187,7 +219,11 @@ label .password-input { margin-top: 0.25rem; }
 .principal-picker select { width: auto; min-width: 130px; height: 34px; padding: 0 0.5rem; }
 .restrictions .principal-picker { margin: 0.75rem 0; }
 
-.topbar__search { flex: 1; max-width: 420px; margin: 0 1.5rem; }
+/* No max-width: flex: 1 lets the box take every pixel between the nav and
+   the right-hand cluster, so it grows with the viewport instead of stalling
+   at a fixed width and leaving a dead gap. The intrinsic <input> width
+   (~170px) stays as the floor here; the middle tier sets its own below. */
+.topbar__search { flex: 1; margin: 0 1.5rem; }
 .topbar__search input { height: 34px; border-radius: 999px; padding: 0 0.9rem; background: var(--bg-alt); }
 /* position:relative lives here, not on .notif — .notif__dropdown's
    `right: 0` needs to resolve against this whole right-hand cluster (bell +
@@ -198,7 +234,7 @@ label .password-input { margin-top: 0.25rem; }
    where that pushed the dropdown mostly off the left of the viewport. */
 /* flex-shrink: 0 — the bell and Sign out are the controls a user actually
    needs; .brand gives up its width first (see .brand comment above). */
-.topbar__right { position: relative; display: flex; align-items: center; gap: 0.9rem; flex-shrink: 0; }
+.topbar__right { position: relative; display: flex; align-items: center; gap: 0.9rem; flex-shrink: 0; margin-left: auto; }
 
 .topbar__hamburger {
   display: none; background: none; border: none; font-size: 1.3rem; line-height: 1;
@@ -211,6 +247,18 @@ label .password-input { margin-top: 0.25rem; }
    as before this element existed. */
 .topbar__collapsible { display: contents; }
 
+/* Middle tier: the full desktop bar never fit here (brand, four links, a
+   420px search and the right-hand cluster, with no wrap fallback) — it only
+   appeared to because .brand would ellipsis. The secondary links go behind
+   More, search keeps a floor it can't collapse below (unpinned it shrank to
+   ~2px), and the username — the least load-bearing thing in the bar — goes. */
+@media (max-width: 1024px) { /* keep in sync with --bp-tablet */
+  .topbar__link--secondary { display: none; }
+  .topbar__more { display: inline-flex; }
+  .topbar__search { min-width: 150px; margin: 0 0.75rem; }
+  .topbar__username { display: none; }
+}
+
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   .topbar__hamburger { display: inline-flex; align-items: center; }
   .topbar__collapsible {
@@ -219,8 +267,10 @@ label .password-input { margin-top: 0.25rem; }
     padding: 0.75rem 1rem; box-shadow: var(--shadow-lg);
   }
   .topbar__collapsible.is-open { display: flex; }
-  .topbar__nav { flex-direction: column; gap: 0.15rem; margin-left: 0; }
-  .topbar__search { max-width: none; margin: 0; }
+  .topbar__nav { flex-direction: column; align-items: stretch; gap: 0.15rem; margin-left: 0; }
+  .topbar__link--secondary { display: inline-flex; }
+  .topbar__more { display: none; }
+  .topbar__search { max-width: none; min-width: 0; margin: 0; }
   .topbar__username { display: none; }
 }
 
