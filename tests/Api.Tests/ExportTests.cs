@@ -139,6 +139,114 @@ public class ProseMirrorRendererTests
         Assert.Contains("| Name |", md);
     }
 
+    private const string PanelDoc = """
+    {"type":"doc","content":[
+      {"type":"panel","attrs":{"panelType":"warning"},"content":[
+        {"type":"paragraph","content":[{"type":"text","text":"Mind the gap"}]}]}
+    ]}
+    """;
+
+    private const string CellBackgroundDoc = """
+    {"type":"doc","content":[
+      {"type":"table","content":[
+        {"type":"tableRow","content":[
+          {"type":"tableHeader","attrs":{"backgroundColor":"#deebff"},"content":[
+            {"type":"paragraph","content":[{"type":"text","text":"Name"}]}]},
+          {"type":"tableCell","attrs":{"backgroundColor":"#ffbdad"},"content":[
+            {"type":"paragraph","content":[{"type":"text","text":"Value"}]}]}]}
+      ]}
+    ]}
+    """;
+
+    private const string HostileColorDoc = """
+    {"type":"doc","content":[
+      {"type":"table","content":[
+        {"type":"tableRow","content":[
+          {"type":"tableCell","attrs":{"backgroundColor":"red;} body { display: none } td {"},"content":[
+            {"type":"paragraph","content":[{"type":"text","text":"x"}]}]}]}
+      ]}
+    ]}
+    """;
+
+    [Fact]
+    public void Renders_a_panel_with_its_type_label_and_inlined_colours()
+    {
+        var html = ProseMirrorRenderer.ToHtml(PanelDoc);
+        Assert.Contains("data-panel-type=\"warning\"", html);
+        Assert.Contains("<strong>Warning</strong>", html);
+        // Colours are inlined, not left to a stylesheet — an exported file is
+        // opened standalone, with none of the app's CSS.
+        Assert.Contains("background: #fff7d6", html);
+        Assert.Contains("Mind the gap", html);
+    }
+
+    [Fact]
+    public void Renders_a_panel_as_a_labelled_blockquote_in_markdown()
+    {
+        var md = ProseMirrorRenderer.ToMarkdown(PanelDoc);
+        Assert.Contains("> **Warning**", md);
+        Assert.Contains("> Mind the gap", md);
+    }
+
+    private const string UnknownPanelDoc = """
+    {"type":"doc","content":[
+      {"type":"panel","attrs":{"panelType":"nonsense"},"content":[
+        {"type":"paragraph","content":[{"type":"text","text":"hi"}]}]}
+    ]}
+    """;
+
+    [Fact]
+    public void Renders_an_unknown_panel_type_as_info_rather_than_failing()
+    {
+        var html = ProseMirrorRenderer.ToHtml(UnknownPanelDoc);
+        Assert.Contains("data-panel-type=\"info\"", html);
+        Assert.Contains("hi", html);
+    }
+
+    [Fact]
+    public void Renders_table_cell_background_colours_on_both_cell_kinds()
+    {
+        var html = ProseMirrorRenderer.ToHtml(CellBackgroundDoc);
+        Assert.Contains("<th style=\"background-color: #deebff\">", html);
+        Assert.Contains("<td style=\"background-color: #ffbdad\">", html);
+    }
+
+    private const string ColoredHighlightDoc = """
+    {"type":"doc","content":[
+      {"type":"paragraph","content":[
+        {"type":"text","marks":[{"type":"highlight","attrs":{"color":"#fff0b3"}}],"text":"lit"}]}
+    ]}
+    """;
+
+    private const string LegacyHighlightDoc = """
+    {"type":"doc","content":[
+      {"type":"paragraph","content":[
+        {"type":"text","marks":[{"type":"highlight"}],"text":"lit"}]}
+    ]}
+    """;
+
+    [Fact]
+    public void Renders_a_highlight_colour_when_the_mark_carries_one()
+    {
+        Assert.Contains(
+            "<mark style=\"background-color: #fff0b3\">lit</mark>",
+            ProseMirrorRenderer.ToHtml(ColoredHighlightDoc));
+
+        // Highlights stored before the palette existed have no colour attr and
+        // must still render as a plain <mark>, not a broken style.
+        Assert.Contains("<mark>lit</mark>", ProseMirrorRenderer.ToHtml(LegacyHighlightDoc));
+    }
+
+    [Fact]
+    public void Drops_a_colour_attribute_that_is_not_a_plain_hex_value()
+    {
+        // Document JSON is stored as-is, so a colour reaching a `style`
+        // attribute unvalidated would be CSS injection into exported HTML.
+        var html = ProseMirrorRenderer.ToHtml(HostileColorDoc);
+        Assert.DoesNotContain("display: none", html);
+        Assert.Contains("<td>", html);
+    }
+
     private const string TaskListDoc = """
     {"type":"doc","content":[
       {"type":"taskList","content":[

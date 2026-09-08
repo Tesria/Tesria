@@ -1,5 +1,6 @@
 import type { Editor } from '@tiptap/react'
 import { uploadAndInsertImage } from '../imageUpload'
+import { PANEL_TYPES, PANEL_LABELS } from '../panelExtension'
 
 export type SlashItem = {
   title: string
@@ -40,6 +41,14 @@ function imageCommand(editor: Editor, range: { from: number; to: number }): void
     })
   }
   input.click()
+}
+
+const PANEL_DESCRIPTIONS: Record<(typeof PANEL_TYPES)[number], string> = {
+  info: 'Blue callout for background detail',
+  note: 'Purple callout for an aside',
+  success: 'Green callout for a tip',
+  warning: 'Yellow callout for a caution',
+  error: 'Red callout for a problem',
 }
 
 const ITEMS: SlashItem[] = [
@@ -100,6 +109,15 @@ const ITEMS: SlashItem[] = [
     keywords: ['picture', 'photo', 'upload'],
     command: imageCommand,
   },
+  // One entry per panel type, generated so the slash menu can't drift from
+  // the toolbar's list (both read PANEL_TYPES/PANEL_LABELS).
+  ...PANEL_TYPES.map((type) => ({
+    title: `${PANEL_LABELS[type]} panel`,
+    description: PANEL_DESCRIPTIONS[type],
+    keywords: ['panel', 'callout', 'admonition', type],
+    command: (editor: Editor, range: { from: number; to: number }) =>
+      editor.chain().focus().deleteRange(range).setPanel(type).run(),
+  })),
   {
     title: 'Divider',
     description: 'Horizontal rule',

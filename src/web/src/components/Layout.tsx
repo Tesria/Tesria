@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { NotificationBell } from './NotificationBell'
+import { ThemeToggle } from './ThemeToggle'
 import { useDismissable } from '../hooks/useDismissable'
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
@@ -64,6 +65,7 @@ export function Layout() {
           </form>
         </div>
         <div className="topbar__right">
+          <ThemeToggle />
           <NotificationBell />
           {user && <span className="muted topbar__username">{user.displayName}</span>}
           <button type="button" className="btn btn--ghost" onClick={onLogout}>

@@ -1,13 +1,51 @@
+/* ---- theming --------------------------------------------------------------
+   Every colour in this file resolves through a token below. Three states, the
+   standard pattern: :root carries the light palette; a `prefers-color-scheme:
+   dark` block applies the dark palette unless the user has explicitly chosen
+   light; and a [data-theme="dark"] block lets an explicit choice win in both
+   directions. `theme.ts` owns the attribute, and index.html applies it before
+   first paint so there is no flash of the wrong theme.
+
+   The code block is deliberately NOT themed — it stays dark in both, the way
+   most editors and docs sites treat code. Its palette lives further down. */
 :root {
   color-scheme: light;
   --bg: #ffffff;
   --bg-alt: #f4f5f7;
+  /* Raised surfaces: cards, the paper sheet, popovers, the topbar, inputs.
+     Identical to --bg in light mode, deliberately lighter than it in dark —
+     which is the whole reason it is a separate token. */
+  --surface: #ffffff;
+  --surface-sunken: var(--surface-sunken);
   --border: #e4e6eb;
+  --hover: #e9ebef;
   --text: #172b4d;
   --muted: #6b778c;
   --primary: #0c66e4;
   --primary-dark: #0055cc;
+  --primary-soft: var(--primary-soft);
+  --primary-softer: var(--primary-softer);
+  --primary-soft-border: var(--primary-soft-border);
+  --on-primary: #ffffff;
   --danger: #c9372c;
+  --danger-soft: var(--danger-soft);
+  --success: var(--success);
+  --warning: #d9a000;
+  --mark-bg: var(--mark-bg);
+  --comment-bg: var(--comment-bg);
+  --comment-border: #d9a000;
+  --selected-cell: var(--selected-cell);
+  --resize-hover: var(--resize-hover);
+  --swatch-border: var(--swatch-border);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --img-shadow: var(--img-shadow);
+  --panel-info-bg: #deebff;   --panel-info-border: #579dff;   --panel-info-icon: #0c66e4;
+  --panel-note-bg: #eae6ff;   --panel-note-border: #9f8fef;   --panel-note-icon: #5e4db2;
+  --panel-success-bg: #e3fcef; --panel-success-border: #4bce97; --panel-success-icon: #216e4e;
+  --panel-warning-bg: #fff7d6; --panel-warning-border: #e2b203; --panel-warning-icon: #a54800;
+  --panel-error-bg: #ffedeb;  --panel-error-border: #f87168;  --panel-error-icon: #ae2e24;
   --radius: 6px;
   /* Breakpoints are documented here but can't be read into @media conditions
      directly (a CSS limitation) — each @media rule repeats the raw number
@@ -70,11 +108,11 @@ button { font: inherit; color: inherit; }
 }
 .btn:hover { text-decoration: none; filter: brightness(0.97); }
 .btn:disabled { opacity: 0.6; cursor: default; }
-.btn--primary { background: var(--primary); color: #fff; }
+.btn--primary { background: var(--primary); color: var(--on-primary); }
 .btn--primary:hover { background: var(--primary-dark); }
 .btn--ghost { background: transparent; border-color: var(--border); }
 .btn--danger { background: transparent; border-color: var(--border); color: var(--danger); }
-.btn--danger:hover { background: #fff0ef; }
+.btn--danger:hover { background: var(--danger-soft); }
 .btn--sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
 .btn--block { display: flex; width: 100%; margin: 0.5rem 0; }
 
@@ -86,7 +124,7 @@ button { font: inherit; color: inherit; }
 .link-btn--danger { color: var(--danger); }
 
 .alert { border-radius: var(--radius); padding: 0.6rem 0.8rem; font-size: 0.9rem; margin: 0.5rem 0; }
-.alert--error { background: #ffeceb; color: var(--danger); }
+.alert--error { background: var(--danger-soft); color: var(--danger); }
 
 .badge {
   display: inline-block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
@@ -95,7 +133,7 @@ button { font: inherit; color: inherit; }
 
 input, textarea {
   width: 100%; font: inherit; padding: 0.5rem 0.6rem;
-  border: 1px solid var(--border); border-radius: var(--radius); background: #fff; color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text);
 }
 input:focus, textarea:focus { outline: 2px solid var(--primary); outline-offset: -1px; }
 label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.6rem; }
@@ -113,7 +151,7 @@ label .password-input { margin-top: 0.25rem; }
   width: 1.75rem; height: 1.75rem; padding: 0; border: none; background: none;
   color: var(--muted); cursor: pointer; border-radius: 4px;
 }
-.password-input__toggle:hover { background: #e9ebef; color: var(--text); }
+.password-input__toggle:hover { background: var(--hover); color: var(--text); }
 
 .panel { background: var(--bg-alt); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; margin: 1rem 0; }
 
@@ -126,7 +164,7 @@ label .password-input { margin-top: 0.25rem; }
 .app { min-height: 100vh; display: flex; flex-direction: column; }
 .topbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 1rem; height: 52px; border-bottom: 1px solid var(--border); background: #fff;
+  padding: 0 1rem; height: 52px; border-bottom: 1px solid var(--border); background: var(--surface);
   position: sticky; top: 0; z-index: 10;
 }
 /* A flex item's default min-width is `auto`, not 0 — it refuses to shrink
@@ -143,7 +181,7 @@ label .password-input { margin-top: 0.25rem; }
 .topbar__nav { display: flex; gap: 0.25rem; margin-left: 1.25rem; }
 .topbar__link { padding: 0.3rem 0.6rem; border-radius: 4px; color: var(--muted); font-size: 0.9rem; }
 .topbar__link:hover { background: var(--bg-alt); text-decoration: none; }
-.topbar__link.is-active { color: var(--primary-dark); background: #e0ecff; font-weight: 600; }
+.topbar__link.is-active { color: var(--primary-dark); background: var(--primary-soft); font-weight: 600; }
 
 .principal-picker { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
 .principal-picker select { width: auto; min-width: 130px; height: 34px; padding: 0 0.5rem; }
@@ -177,13 +215,61 @@ label .password-input { margin-top: 0.25rem; }
   .topbar__hamburger { display: inline-flex; align-items: center; }
   .topbar__collapsible {
     display: none; position: absolute; top: 52px; left: 0; right: 0; z-index: 12;
-    flex-direction: column; gap: 0.6rem; background: #fff; border-bottom: 1px solid var(--border);
-    padding: 0.75rem 1rem; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+    flex-direction: column; gap: 0.6rem; background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0.75rem 1rem; box-shadow: var(--shadow-lg);
   }
   .topbar__collapsible.is-open { display: flex; }
   .topbar__nav { flex-direction: column; gap: 0.15rem; margin-left: 0; }
   .topbar__search { max-width: none; margin: 0; }
   .topbar__username { display: none; }
+}
+
+/* Theme toggle — same neutral-by-default, darker-on-hover treatment as
+   .notif__bell and .toolbar__btn, so the topbar's two icon buttons read as
+   one family. */
+.theme-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  padding: 0.2rem 0.3rem; line-height: 1; border-radius: 4px; color: var(--muted);
+}
+.theme-toggle:hover, .theme-toggle.is-open { color: var(--text); background: var(--hover); }
+.theme-menu { position: relative; display: inline-flex; }
+.theme-menu__panel {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 20;
+  width: min(260px, calc(100vw - 2rem));
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-lg); padding: 0.6rem;
+}
+.theme-menu__heading {
+  margin: 0 0 0.4rem; font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.03em; color: var(--muted);
+}
+.theme-menu__modes { display: flex; flex-direction: column; gap: 0.1rem; margin-bottom: 0.85rem; }
+.theme-menu__mode {
+  display: flex; align-items: center; gap: 0.6rem; width: 100%; text-align: left;
+  background: none; border: none; border-radius: 4px; padding: 0.4rem 0.5rem;
+  cursor: pointer; color: var(--muted);
+}
+.theme-menu__mode:hover { background: var(--bg-alt); color: var(--text); }
+.theme-menu__mode.is-active { background: var(--primary-soft); color: var(--primary-dark); }
+.theme-menu__mode-text { display: flex; flex-direction: column; gap: 0.05rem; min-width: 0; flex: 1; }
+.theme-menu__mode-name { font-size: 0.88rem; font-weight: 600; }
+/* The hint is secondary even on the active row, where the row's own colour
+   would otherwise make it compete with the name. */
+.theme-menu__mode-hint { font-size: 0.72rem; color: var(--muted); }
+.theme-menu__check { display: inline-flex; color: var(--primary); }
+.theme-menu__accents { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.theme-menu__accent {
+  width: 26px; height: 26px; border-radius: 50%; cursor: pointer; padding: 0;
+  /* Same reasoning as .swatch: a visible ring keeps a swatch that happens to
+     sit close to the surface colour from disappearing into it. */
+  border: 1px solid var(--swatch-border);
+}
+.theme-menu__accent:hover { transform: scale(1.1); }
+/* Ring drawn in the surface colour then the accent, so it reads as a halo on
+   both themes rather than a heavier border. */
+.theme-menu__accent.is-active {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary);
 }
 
 /* notifications */
@@ -192,14 +278,14 @@ label .password-input { margin-top: 0.25rem; }
    icon reads as part of the same icon language, not a one-off. */
 .notif__bell { position: relative; display: inline-flex; background: none; border: none; cursor: pointer; padding: 0.2rem 0.3rem; line-height: 1; color: var(--muted); }
 .notif__bell:hover { color: var(--text); }
-.notif__badge { position: absolute; top: -2px; right: -4px; background: var(--danger); color: #fff; font-size: 0.65rem; font-weight: 700; border-radius: 999px; padding: 0.05rem 0.35rem; min-width: 16px; text-align: center; }
-.notif__dropdown { position: absolute; right: 0; top: calc(100% + 8px); width: min(340px, calc(100vw - 2rem)); max-height: 420px; overflow-y: auto; background: #fff; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 20; }
+.notif__badge { position: absolute; top: -2px; right: -4px; background: var(--danger); color: var(--on-primary); font-size: 0.65rem; font-weight: 700; border-radius: 999px; padding: 0.05rem 0.35rem; min-width: 16px; text-align: center; }
+.notif__dropdown { position: absolute; right: 0; top: calc(100% + 8px); width: min(340px, calc(100vw - 2rem)); max-height: 420px; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); z-index: 20; }
 .notif__header { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 0.9rem; }
 .notif__list { list-style: none; margin: 0; padding: 0; }
 .notif__item { display: flex; flex-direction: column; gap: 0.15rem; width: 100%; text-align: left; background: none; border: none; border-bottom: 1px solid var(--border); padding: 0.6rem 0.75rem; cursor: pointer; font-size: 0.85rem; color: var(--text); }
 .notif__item:hover { background: var(--bg-alt); }
-.notif__item--unread { background: #eef4ff; }
-.notif__item--unread:hover { background: #e0ecff; }
+.notif__item--unread { background: var(--primary-softer); }
+.notif__item--unread:hover { background: var(--primary-soft); }
 
 /* ---- labels --------------------------------------------------------------- */
 .labels { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 0.5rem 0 0; }
@@ -218,7 +304,7 @@ label .password-input { margin-top: 0.25rem; }
 
 /* ---- spaces list --------------------------------------------------------- */
 .space-grid { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: 0.8rem; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
-.space-card a { display: flex; flex-direction: column; gap: 0.3rem; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); background: #fff; }
+.space-card a { display: flex; flex-direction: column; gap: 0.3rem; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); background: var(--surface); }
 .space-card a:hover { text-decoration: none; border-color: var(--primary); }
 .space-card__key { font-size: 0.75rem; font-weight: 700; color: var(--primary); }
 .space-card__name { font-weight: 600; }
@@ -254,8 +340,8 @@ label .password-input { margin-top: 0.25rem; }
 .tree { display: flex; flex-direction: column; min-width: 0; }
 /* Depth indentation (padding-left) is set inline per-row in PageTree.tsx. */
 .tree__link { display: block; padding: 0.3rem 0.5rem; border-radius: 4px; color: var(--text); font-size: 0.9rem; min-width: 0; overflow-wrap: break-word; }
-.tree__link:hover { background: #e9ebef; text-decoration: none; }
-.tree__link.is-active { background: #e0ecff; color: var(--primary-dark); font-weight: 600; }
+.tree__link:hover { background: var(--hover); text-decoration: none; }
+.tree__link.is-active { background: var(--primary-soft); color: var(--primary-dark); font-weight: 600; }
 /* Reorder mode only: the link itself is the drag surface, no separate
    handle. touch-action:none stops touch browsers from treating the row's
    own pointerdown as the start of a page-scroll gesture, racing dnd-kit's
@@ -288,8 +374,8 @@ label .password-input { margin-top: 0.25rem; }
 .space-home-tree .tree__link { color: var(--primary); }
 .space-home-tree .tree__link.is-active { color: var(--primary-dark); }
 .sidebar__trash { display: block; margin-top: 1rem; padding: 0.3rem 0.5rem; border-radius: 4px; color: var(--muted); font-size: 0.9rem; }
-.sidebar__trash:hover { background: #e9ebef; text-decoration: none; }
-.sidebar__trash.is-active { background: #e0ecff; color: var(--primary-dark); font-weight: 600; }
+.sidebar__trash:hover { background: var(--hover); text-decoration: none; }
+.sidebar__trash.is-active { background: var(--primary-soft); color: var(--primary-dark); font-weight: 600; }
 
 /* Mobile-only bar, replacing a previous off-canvas drawer that held the
    page tree *and* + New/Permissions/Webhooks/Trash behind one hamburger —
@@ -302,7 +388,7 @@ label .password-input { margin-top: 0.25rem; }
 .space-actionbar {
   display: none; position: sticky; top: 52px; z-index: 8;
   align-items: center; justify-content: space-between; gap: 0.5rem;
-  padding: 0.5rem 0.75rem; background: #fff; border-bottom: 1px solid var(--border);
+  padding: 0.5rem 0.75rem; background: var(--surface); border-bottom: 1px solid var(--border);
 }
 .space-actionbar__pages {
   padding: 0.3rem 0; font-size: 0.95rem; font-weight: 600; color: var(--text);
@@ -324,10 +410,10 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 
 /* ---- paper: the "sheet of paper" surface shared by editing and viewing --- */
 .paper {
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: 0 1px 3px rgba(23, 43, 77, 0.08);
+  box-shadow: var(--shadow-sm);
   /* Must stay --page-pad, not a hardcoded value: the full-width table
      breakout rule cancels exactly this padding via negative margins — if
      they ever drift apart, full-width tables overflow the viewport by the
@@ -367,7 +453,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   font-size: 0.75rem; padding: 0.15rem 0.5rem; cursor: pointer; font-family: monospace;
 }
 .code-block__linenum-toggle:hover { background: #1f2a44; }
-.code-block__linenum-toggle.is-active { background: #29365c; color: #fff; border-color: #4b5f8f; }
+.code-block__linenum-toggle.is-active { background: #29365c; color: var(--on-primary); border-color: #4b5f8f; }
 .code-block__body { display: flex; }
 .code-block__body pre { flex: 1 1 auto; min-width: 0; }
 .code-block__gutter {
@@ -397,14 +483,14 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .editor__content blockquote { border-left: 3px solid var(--border); margin: 0.5em 0; padding-left: 0.8em; color: var(--muted); }
 .editor__content img { max-width: 100%; border-radius: 4px; }
 .editor__content img.img-border { border: 1px solid var(--border); padding: 2px; }
-.editor__content img.img-shadow { box-shadow: 0 4px 14px rgba(23, 43, 77, 0.25); }
-.editor__content mark { background: #fff3a3; padding: 0.05em 0.1em; border-radius: 2px; }
-.editor__content .comment-highlight { background: #fdf0c2; border-bottom: 2px solid #d9a000; cursor: default; }
+.editor__content img.img-shadow { box-shadow: var(--img-shadow); }
+.editor__content mark { background: var(--mark-bg); padding: 0.05em 0.1em; border-radius: 2px; }
+.editor__content .comment-highlight { background: var(--comment-bg); border-bottom: 2px solid var(--comment-border); cursor: default; }
 
 /* link editing */
 .link-menu {
-  display: flex; align-items: center; gap: 0.5rem; background: #fff; border: 1px solid var(--border);
-  border-radius: var(--radius); box-shadow: 0 4px 14px rgba(23, 43, 77, 0.15); padding: 0.4rem 0.6rem; font-size: 0.85rem;
+  display: flex; align-items: center; gap: 0.5rem; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-md); padding: 0.4rem 0.6rem; font-size: 0.85rem;
 }
 .link-menu__url { max-width: min(220px, 40vw); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .link-menu__form { display: flex; gap: 0.4rem; align-items: center; }
@@ -413,7 +499,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 /* selection bubble menu — a compact, floating variant of .toolbar */
 .toolbar--bubble {
   position: static; margin: 0; border-bottom: none; border-radius: var(--radius);
-  box-shadow: 0 4px 14px rgba(23, 43, 77, 0.2);
+  box-shadow: var(--shadow-md);
   /* floating-ui sizes its own (invisible, unstyled) positioning wrapper to
      this menu's natural unwrapped width and never shrinks it, which defeats
      .toolbar's inherited flex-wrap: the flex container is never actually
@@ -428,8 +514,8 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 /* "/" slash-command menu */
 .slash-menu {
   display: flex; flex-direction: column; gap: 0.1rem; min-width: 220px; max-height: 320px; overflow-y: auto;
-  background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
-  box-shadow: 0 8px 24px rgba(23, 43, 77, 0.18); padding: 0.3rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-lg); padding: 0.3rem;
 }
 .slash-menu--empty { padding: 0.6rem 0.8rem; color: var(--muted); font-size: 0.85rem; }
 .slash-menu__item {
@@ -441,8 +527,8 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .slash-menu__desc { font-size: 0.76rem; color: var(--muted); }
 .toolbar__link-popover {
   position: absolute; top: 100%; left: 0; margin-top: 0.3rem; z-index: 6;
-  display: flex; gap: 0.4rem; align-items: center; background: #fff; border: 1px solid var(--border);
-  border-radius: var(--radius); box-shadow: 0 4px 14px rgba(23, 43, 77, 0.15); padding: 0.4rem 0.6rem;
+  display: flex; gap: 0.4rem; align-items: center; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-md); padding: 0.4rem 0.6rem;
   max-width: calc(100vw - 2rem);
 }
 /* The inline `left` offset applied via useEdgeAlign (Toolbar.tsx/
@@ -479,7 +565,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   border: 1px solid var(--border); padding: 0.4rem 0.6rem; vertical-align: top; position: relative;
 }
 .editor__content table th { background: var(--bg-alt); font-weight: 600; text-align: left; }
-.editor__content table .selectedCell { background: rgba(12, 102, 228, 0.1); }
+.editor__content table .selectedCell { background: var(--selected-cell); }
 .editor__content table .column-resize-handle {
   background-color: var(--primary); bottom: -2px; position: absolute; right: -2px; top: 0; width: 4px; pointer-events: none;
 }
@@ -490,23 +576,23 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
    mouse is near the table (tracked in JS), so no extra CSS-hover reveal is
    needed; these are fixed-position, so the wrapper itself needs no styling. */
 .table-hover__add, .table-hover__grip {
-  position: fixed; z-index: 6; border: 1px solid var(--border); background: #fff; color: var(--muted);
+  position: fixed; z-index: 6; border: 1px solid var(--border); background: var(--surface); color: var(--muted);
   cursor: pointer; padding: 0; line-height: 1; display: flex; align-items: center; justify-content: center;
 }
-.table-hover__add:hover, .table-hover__grip:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+.table-hover__add:hover, .table-hover__grip:hover { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
 .table-hover__add { width: 16px; height: 16px; border-radius: 999px; font-size: 0.75rem; }
 .table-hover__grip { font-size: 0.7rem; border-radius: 3px; }
 .table-hover__grip--col { height: 14px; }
 .table-hover__grip--row { width: 14px; }
 .table-hover__fullwidth {
   position: fixed; z-index: 6; width: 24px; height: 24px; border-radius: 4px;
-  border: 1px solid var(--border); background: #fff; color: var(--muted);
+  border: 1px solid var(--border); background: var(--surface); color: var(--muted);
   cursor: pointer; padding: 0; line-height: 1; font-size: 0.85rem; display: flex; align-items: center; justify-content: center;
 }
-.table-hover__fullwidth:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
-.table-hover__fullwidth.is-active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.table-hover__fullwidth:hover { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+.table-hover__fullwidth.is-active { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
 .table-hover__edge { position: fixed; z-index: 6; width: 6px; cursor: col-resize; }
-.table-hover__edge:hover { background: rgba(12, 102, 228, 0.3); }
+.table-hover__edge:hover { background: var(--resize-hover); }
 
 /* task lists */
 .editor__content ul[data-type="taskList"] { list-style: none; padding-left: 0; margin: 0.5em 0; }
@@ -533,9 +619,18 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   min-width: 36px; min-height: 36px; border: 1px solid transparent; background: transparent;
   border-radius: 6px; padding: 0.3rem; cursor: pointer; font-size: 0.85rem; font-weight: 600;
   color: var(--muted);
+  /* Not redundant: the image button is a <label> (it wraps a hidden file
+     input), so the global `label { margin-bottom: 0.6rem }` above applied to
+     it and nothing else in this row. .toolbar centers its children with
+     align-items, which centers each item's *margin* box — so that 9.6px of
+     phantom margin below the label pushed its border box up by half of it,
+     leaving the image icon sitting 4.8px above every sibling button. Zeroing
+     it here fixes it for any element type used as a toolbar button, not just
+     that one label. */
+  margin: 0;
 }
-.toolbar__btn:hover { background: #e4e6eb; color: var(--text); }
-.toolbar__btn.is-active { background: #e0ecff; color: var(--primary-dark); border-color: #bcd4ff; }
+.toolbar__btn:hover { background: var(--hover); color: var(--text); }
+.toolbar__btn.is-active { background: var(--primary-soft); color: var(--primary-dark); border-color: var(--primary-soft-border); }
 .toolbar__sep { width: 1px; align-self: stretch; background: var(--border); margin: 0.25rem 0.15rem; }
 .tb-glyph { display: inline-block; }
 /* Heading/list/alignment groups: .toolbar__flat (the desktop flat button
@@ -549,8 +644,8 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .toolbar-dropdown__trigger { gap: 0.15rem; }
 .toolbar-dropdown__menu {
   position: absolute; left: 0; top: calc(100% + 6px); min-width: 160px; max-width: calc(100vw - 2rem); z-index: 20;
-  background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
-  box-shadow: 0 8px 24px rgba(23, 43, 77, 0.15); padding: 0.3rem; display: flex; flex-direction: column; gap: 0.1rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-lg); padding: 0.3rem; display: flex; flex-direction: column; gap: 0.1rem;
 }
 /* Flipped by ToolbarDropdown.tsx when left-anchoring would overflow the
    viewport (the Heading/Alignment triggers sit near the toolbar's right
@@ -562,20 +657,20 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   font-size: 0.85rem; font-weight: 600; color: var(--muted); cursor: pointer;
 }
 .toolbar-dropdown__item:hover { background: var(--bg-alt); color: var(--text); }
-.toolbar-dropdown__item.is-active { background: #e0ecff; color: var(--primary-dark); }
+.toolbar-dropdown__item.is-active { background: var(--primary-soft); color: var(--primary-dark); }
 .tb-bold { font-weight: 700; }
 .tb-italic { font-style: italic; }
 .tb-underline { text-decoration: underline; }
 .tb-strike { text-decoration: line-through; }
 /* live collaboration */
-.collab-status { display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); background: #fbfbfc; }
+.collab-status { display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); background: var(--surface-sunken); }
 .collab-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
-.collab-dot--connected { background: #22a06b; }
-.collab-dot--connecting { background: #d9a000; }
+.collab-dot--connected { background: var(--success); }
+.collab-dot--connecting { background: var(--warning); }
 .collab-dot--disconnected { background: var(--danger); }
 /* remote collaborators' carets and name labels */
 .collaboration-carets__caret { border-left: 1px solid; border-right: 1px solid; margin-left: -1px; margin-right: -1px; pointer-events: none; position: relative; word-break: normal; }
-.collaboration-carets__label { border-radius: 3px 3px 3px 0; color: #fff; font-size: 0.7rem; font-weight: 600; left: -1px; line-height: 1; padding: 0.1rem 0.3rem; position: absolute; top: -1.4em; user-select: none; white-space: nowrap; }
+.collaboration-carets__label { border-radius: 3px 3px 3px 0; color: var(--on-primary); font-size: 0.7rem; font-weight: 600; left: -1px; line-height: 1; padding: 0.1rem 0.3rem; position: absolute; top: -1.4em; user-select: none; white-space: nowrap; }
 
 .editor-form { display: flex; flex-direction: column; }
 .editor-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
@@ -606,7 +701,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .page-actionbar {
   position: sticky; top: 52px; z-index: 8;
   display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;
-  padding: 0.5rem 1.5rem; background: #fff; border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.5rem; background: var(--surface); border-bottom: 1px solid var(--border);
 }
 .page-actionbar__primary, .page-actionbar__secondary { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 /* margin-left: auto (not just relying on .page-actionbar's space-between)
@@ -653,8 +748,8 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .overflow-menu__trigger:hover { background: var(--bg-alt); }
 .overflow-menu__dropdown {
   position: absolute; right: 0; top: calc(100% + 6px); min-width: 220px; max-width: calc(100vw - 2rem); z-index: 20;
-  background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
-  box-shadow: 0 8px 24px rgba(23, 43, 77, 0.15); padding: 0.4rem; display: flex; flex-direction: column; gap: 0.15rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-lg); padding: 0.4rem; display: flex; flex-direction: column; gap: 0.15rem;
 }
 .overflow-menu__dropdown .btn, .overflow-menu__dropdown > a {
   width: 100%; justify-content: flex-start; background: none; border: none; border-radius: 4px;
@@ -706,3 +801,429 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .version__comment { color: var(--muted); font-style: italic; overflow-wrap: anywhere; }
 .version__actions { margin-left: auto; display: flex; gap: 0.75rem; }
 .version-preview { margin-top: 1.25rem; }
+
+
+/* ---- panels (Confluence-style callouts) ---------------------------------
+   One block per panelExtension.ts's PANEL_TYPES. The type-specific colour and
+   icon are keyed off the `data-panel-type` attribute the node emits, which
+   keeps the icon a ::before pseudo-element instead of a real child node
+   (ProseMirror owns this node's children and would fight an injected
+   element), and gets read-only rendering the icon for free with no node view
+   to mount.
+
+   The icon is a MASK, not a background-image: the SVG supplies only the
+   shape and `--panel-icon` supplies the colour, so a theme change re-tints
+   all five icons by redefining one token each. Baking the colour into the
+   data URI instead would mean carrying a second full set of URIs for dark
+   mode. Rules are doubled (`.editor__content .panel--x` and a bare
+   `.panel--x`) because .editor__content's own descendant rules would
+   otherwise out-specify a bare class for content rendered outside an editor. */
+.panel {
+  position: relative;
+  margin: 1rem 0;
+  padding: 0.85rem 1rem 0.85rem 2.75rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+}
+.panel::before {
+  content: '';
+  position: absolute;
+  left: 0.9rem;
+  top: 0.95rem;
+  width: 20px;
+  height: 20px;
+  background-color: var(--panel-icon);
+  -webkit-mask: var(--panel-icon-url) center / 20px 20px no-repeat;
+  mask: var(--panel-icon-url) center / 20px 20px no-repeat;
+}
+/* A panel's first/last child would otherwise add its own block margin on top
+   of the panel's padding, making the box look lopsided. */
+.panel > :first-child { margin-top: 0; }
+.panel > :last-child { margin-bottom: 0; }
+.editor__content .panel--info, .panel--info {
+  background: var(--panel-info-bg); border-color: var(--panel-info-border);
+  --panel-icon: var(--panel-info-icon);
+  --panel-icon-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%229%22%2F%3E%3Cpath%20d%3D%22M12%2011v5%22%2F%3E%3Cpath%20d%3D%22M12%207.75v.5%22%20stroke-width%3D%222.4%22%2F%3E%3C%2Fsvg%3E");
+}
+.panel-option--info svg { color: var(--panel-info-icon); }
+.editor__content .panel--note, .panel--note {
+  background: var(--panel-note-bg); border-color: var(--panel-note-border);
+  --panel-icon: var(--panel-note-icon);
+  --panel-icon-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M5%203.5h14v13l-4.5%204.5H5Z%22%2F%3E%3Cpath%20d%3D%22M19%2016.5h-4.5V21%22%2F%3E%3Cpath%20d%3D%22M8.5%208h7M8.5%2012h4%22%2F%3E%3C%2Fsvg%3E");
+}
+.panel-option--note svg { color: var(--panel-note-icon); }
+.editor__content .panel--success, .panel--success {
+  background: var(--panel-success-bg); border-color: var(--panel-success-border);
+  --panel-icon: var(--panel-success-icon);
+  --panel-icon-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%229%22%2F%3E%3Cpath%20d%3D%22m8%2012.25%202.75%202.75L16%209.75%22%2F%3E%3C%2Fsvg%3E");
+}
+.panel-option--success svg { color: var(--panel-success-icon); }
+.editor__content .panel--warning, .panel--warning {
+  background: var(--panel-warning-bg); border-color: var(--panel-warning-border);
+  --panel-icon: var(--panel-warning-icon);
+  --panel-icon-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%203.75%2021.5%2020.25H2.5Z%22%2F%3E%3Cpath%20d%3D%22M12%2010v4.25%22%2F%3E%3Cpath%20d%3D%22M12%2017.25v.5%22%20stroke-width%3D%222.4%22%2F%3E%3C%2Fsvg%3E");
+}
+.panel-option--warning svg { color: var(--panel-warning-icon); }
+.editor__content .panel--error, .panel--error {
+  background: var(--panel-error-bg); border-color: var(--panel-error-border);
+  --panel-icon: var(--panel-error-icon);
+  --panel-icon-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%229%22%2F%3E%3Cpath%20d%3D%22m9%209%206%206M15%209l-6%206%22%2F%3E%3C%2Fsvg%3E");
+}
+.panel-option--error svg { color: var(--panel-error-icon); }
+
+/* Panel picker rows: the icon carries the type's colour, the label stays
+   neutral, matching how .toolbar__btn keeps colour for "what's applied". */
+.panel-option { gap: 0.55rem; }
+
+/* ---- colour palettes (highlight + table cell background) ---------------- */
+.toolbar__popover-anchor { position: relative; display: inline-flex; }
+.toolbar__popover {
+  position: absolute; top: 100%; left: 0; margin-top: 0.3rem; z-index: 6;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-md); padding: 0.5rem;
+  max-width: calc(100vw - 2rem);
+}
+.toolbar__popover-list { display: flex; flex-direction: column; min-width: 160px; }
+.swatches { display: flex; flex-direction: column; gap: 0.3rem; }
+.swatches__row { display: flex; gap: 0.3rem; }
+.swatch {
+  width: 22px; height: 22px; border-radius: 4px; cursor: pointer; padding: 0;
+  /* A visible border matters for the palest swatches (white, light grey),
+     which would otherwise be invisible against the popover's own background. */
+  border: 1px solid var(--swatch-border);
+}
+.swatch:hover { transform: scale(1.12); }
+.swatch.is-active { box-shadow: 0 0 0 2px var(--primary); }
+.swatches__clear {
+  margin-top: 0.15rem; padding: 0.3rem 0.4rem; background: none; border: none;
+  border-radius: 4px; cursor: pointer; text-align: left; font-size: 0.8rem; color: var(--muted);
+}
+.swatches__clear:hover { background: var(--bg-alt); color: var(--text); }
+
+/* ---- table cell options menu -------------------------------------------
+   position: fixed, like .table-hover — these track a cell's viewport rect
+   directly rather than being positioned by DOM ancestry, since the menu
+   renders outside the table's own subtree. */
+.cell-menu__trigger, .cell-menu__panel { position: fixed; z-index: 7; }
+.cell-menu__trigger {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 17px; height: 17px; padding: 0; cursor: pointer;
+  border: 1px solid var(--border); border-radius: 3px;
+  background: var(--surface); color: var(--muted);
+}
+.cell-menu__trigger:hover { background: var(--bg-alt); color: var(--text); }
+.cell-menu__trigger svg { width: 13px; height: 13px; }
+.cell-menu__panel {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-md); padding: 0.6rem;
+}
+.cell-menu__heading { margin: 0 0 0.45rem; font-size: 0.78rem; font-weight: 600; color: var(--muted); }
+.cell-menu__scopes { display: flex; gap: 0.25rem; margin-bottom: 0.5rem; }
+.cell-menu__scope {
+  padding: 0.2rem 0.5rem; font-size: 0.76rem; cursor: pointer;
+  border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--muted);
+}
+.cell-menu__scope:hover { background: var(--bg-alt); color: var(--text); }
+.cell-menu__scope.is-active { background: var(--primary-soft); border-color: var(--primary-soft-border); color: var(--primary-dark); }
+
+/* Dark palette. Applied when the OS asks for dark AND the user has not
+   explicitly chosen light. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+  color-scheme: dark;
+  --bg: #161a1d;
+  --bg-alt: #1d2125;
+  --surface: #22272b;
+  --surface-sunken: #1d2125;
+  --border: #38414a;
+  --hover: #2c333a;
+  --text: #c7d1db;
+  --muted: #9fadbc;
+  --primary: #579dff;
+  --primary-dark: #85b8ff;
+  --primary-soft: #1c2b41;
+  --primary-softer: #172334;
+  --primary-soft-border: #2b4a75;
+  /* Dark ink, not white: --primary is a *lighter* blue in this theme, so
+  white-on-primary fails contrast where dark-on-primary passes. */
+  --on-primary: #1d2125;
+  --danger: #f87168;
+  --danger-soft: #42221f;
+  --success: #4bce97;
+  --warning: #e2b203;
+  --mark-bg: #7f6a1a;
+  --comment-bg: #4a3f14;
+  --comment-border: #e2b203;
+  --selected-cell: rgba(87, 157, 255, 0.18);
+  --resize-hover: rgba(87, 157, 255, 0.4);
+  --swatch-border: rgba(255, 255, 255, 0.24);
+  /* Shadows read as depth on light ground and as noise on dark; near-black
+  at higher alpha is what actually separates a popover from the page. */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --img-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  --panel-info-bg: #0e253f;    --panel-info-border: #2b4a75;    --panel-info-icon: #85b8ff;
+  --panel-note-bg: #262045;    --panel-note-border: #48407a;    --panel-note-icon: #b8acf6;
+  --panel-success-bg: #10322a; --panel-success-border: #28553f; --panel-success-icon: #7ee2b8;
+  --panel-warning-bg: #3a2c06; --panel-warning-border: #6b5504; --panel-warning-icon: #f5cd47;
+  --panel-error-bg: #3d201d;   --panel-error-border: #6e3630;   --panel-error-icon: #fd9891;
+  }
+
+  /* Author-chosen colours are stored in the document itself (a table cell's
+     `backgroundColor` attr, a highlight mark's `color`) and are always light
+     tints from palette.ts — a theme cannot restyle them without discarding the
+     author's choice. Left alone in dark mode they would be a light patch
+     carrying light --text: invisible. Pin the ink dark instead, so a
+     highlighted or coloured cell reads the same in both themes. */
+  :root:not([data-theme="light"]) .editor__content [data-background-color],
+  :root:not([data-theme="light"]) .editor__content mark[style*="background-color"] {
+    color: #172b4d;
+  }
+  :root:not([data-theme="light"]) .editor__content [data-background-color] a,
+  :root:not([data-theme="light"]) .editor__content mark[style*="background-color"] a {
+    color: #0055cc;
+  }
+  :root:not([data-theme="light"]) .editor__content [data-background-color] code {
+    background: rgba(23, 43, 77, 0.1);
+  }
+}
+
+/* An explicit choice wins in both directions — including "dark" while the OS
+   is light, which the media query above can never cover. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #161a1d;
+  --bg-alt: #1d2125;
+  --surface: #22272b;
+  --surface-sunken: #1d2125;
+  --border: #38414a;
+  --hover: #2c333a;
+  --text: #c7d1db;
+  --muted: #9fadbc;
+  --primary: #579dff;
+  --primary-dark: #85b8ff;
+  --primary-soft: #1c2b41;
+  --primary-softer: #172334;
+  --primary-soft-border: #2b4a75;
+  /* Dark ink, not white: --primary is a *lighter* blue in this theme, so
+     white-on-primary fails contrast where dark-on-primary passes. */
+  --on-primary: #1d2125;
+  --danger: #f87168;
+  --danger-soft: #42221f;
+  --success: #4bce97;
+  --warning: #e2b203;
+  --mark-bg: #7f6a1a;
+  --comment-bg: #4a3f14;
+  --comment-border: #e2b203;
+  --selected-cell: rgba(87, 157, 255, 0.18);
+  --resize-hover: rgba(87, 157, 255, 0.4);
+  --swatch-border: rgba(255, 255, 255, 0.24);
+  /* Shadows read as depth on light ground and as noise on dark; near-black
+     at higher alpha is what actually separates a popover from the page. */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --img-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  --panel-info-bg: #0e253f;    --panel-info-border: #2b4a75;    --panel-info-icon: #85b8ff;
+  --panel-note-bg: #262045;    --panel-note-border: #48407a;    --panel-note-icon: #b8acf6;
+  --panel-success-bg: #10322a; --panel-success-border: #28553f; --panel-success-icon: #7ee2b8;
+  --panel-warning-bg: #3a2c06; --panel-warning-border: #6b5504; --panel-warning-icon: #f5cd47;
+  --panel-error-bg: #3d201d;   --panel-error-border: #6e3630;   --panel-error-icon: #fd9891;
+}
+:root[data-theme="dark"] .editor__content [data-background-color],
+:root[data-theme="dark"] .editor__content mark[style*="background-color"] {
+  color: #172b4d;
+}
+:root[data-theme="dark"] .editor__content [data-background-color] a,
+:root[data-theme="dark"] .editor__content mark[style*="background-color"] a { color: #0055cc; }
+:root[data-theme="dark"] .editor__content [data-background-color] code { background: rgba(23, 43, 77, 0.1); }
+
+
+/* ---- accent colours -------------------------------------------------------
+   The accent drives every --primary* token. Each colour is defined twice, for
+   light and dark, rather than derived from one value: a hue dark enough to
+   pass 4.5:1 as link text on white is far too dark to read on a dark ground,
+   and vice versa. Both sets were checked against WCAG AA — the light values
+   against #ffffff, the dark ones against --bg (#161a1d) — and --on-primary
+   (text on a filled accent button) is white in light mode and dark ink in
+   dark, again by measured contrast, not by eye.
+
+   Blocks are emitted for every accent including the default blue, and that
+   matters: `:root[data-accent="blue"]` and the dark base
+   `:root:not([data-theme="light"])` have identical specificity, so without a
+   dark blue block sitting later with a higher-specificity selector, choosing
+   an accent explicitly would drag the light palette into dark mode. With no
+   data-accent attribute at all, none of these apply and the base tokens
+   stand. --accent-dot-* are the picker's own swatches, themed so each dot
+   shows the colour it will actually produce right now. */
+:root {
+  --accent-dot-blue: #0c66e4;
+  --accent-dot-teal: #0b6b82;
+  --accent-dot-green: #1a6c45;
+  --accent-dot-purple: #5b47ba;
+  --accent-dot-orange: #9a4d00;
+  --accent-dot-magenta: #a53a7f;
+}
+:root[data-accent="blue"] {
+  --primary: #0c66e4;
+  --primary-dark: #0a54bb;
+  --primary-soft: #dfebfb;
+  --primary-softer: #eef4fd;
+  --primary-soft-border: #afcdf6;
+  --on-primary: #ffffff;
+}
+:root[data-accent="teal"] {
+  --primary: #0b6b82;
+  --primary-dark: #09586b;
+  --primary-soft: #dfecef;
+  --primary-softer: #eef5f6;
+  --primary-soft-border: #aeced6;
+  --on-primary: #ffffff;
+}
+:root[data-accent="green"] {
+  --primary: #1a6c45;
+  --primary-dark: #155939;
+  --primary-soft: #e1ece7;
+  --primary-softer: #eff5f2;
+  --primary-soft-border: #b3cec2;
+  --on-primary: #ffffff;
+}
+:root[data-accent="purple"] {
+  --primary: #5b47ba;
+  --primary-dark: #4b3a99;
+  --primary-soft: #eae7f6;
+  --primary-softer: #f4f2fa;
+  --primary-soft-border: #c9c2e8;
+  --on-primary: #ffffff;
+}
+:root[data-accent="orange"] {
+  --primary: #9a4d00;
+  --primary-dark: #7e3f00;
+  --primary-soft: #f2e8de;
+  --primary-softer: #f8f3ed;
+  --primary-soft-border: #dec4ab;
+  --on-primary: #ffffff;
+}
+:root[data-accent="magenta"] {
+  --primary: #a53a7f;
+  --primary-dark: #873068;
+  --primary-soft: #f3e5ee;
+  --primary-softer: #f9f1f6;
+  --primary-soft-border: #e1bed5;
+  --on-primary: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent-dot-blue: #579dff;
+    --accent-dot-teal: #6cc3e0;
+    --accent-dot-green: #4bce97;
+    --accent-dot-purple: #b8acf6;
+    --accent-dot-orange: #fea362;
+    --accent-dot-magenta: #f797d2;
+}
+  :root:not([data-theme="light"])[data-accent="blue"] {
+    --primary: #579dff;
+    --primary-dark: #86b8ff;
+    --primary-soft: #23344a;
+    --primary-softer: #1e2a38;
+    --primary-soft-border: #2f4c73;
+    --on-primary: #1d2125;
+}
+  :root:not([data-theme="light"])[data-accent="teal"] {
+    --primary: #6cc3e0;
+    --primary-dark: #95d4e9;
+    --primary-soft: #273c44;
+    --primary-softer: #202e34;
+    --primary-soft-border: #375a67;
+    --on-primary: #1d2125;
+}
+  :root:not([data-theme="light"])[data-accent="green"] {
+    --primary: #4bce97;
+    --primary-dark: #7ddcb4;
+    --primary-soft: #213e35;
+    --primary-softer: #1c302c;
+    --primary-soft-border: #2a5e4b;
+    --on-primary: #1d2125;
+}
+  :root:not([data-theme="light"])[data-accent="purple"] {
+    --primary: #b8acf6;
+    --primary-dark: #ccc3f9;
+    --primary-soft: #363748;
+    --primary-softer: #292c37;
+    --primary-soft-border: #54516f;
+    --on-primary: #1d2125;
+}
+  :root:not([data-theme="light"])[data-accent="orange"] {
+    --primary: #fea362;
+    --primary-dark: #febd8e;
+    --primary-soft: #44352b;
+    --primary-softer: #322a25;
+    --primary-soft-border: #6e4e37;
+    --on-primary: #1d2125;
+}
+  :root:not([data-theme="light"])[data-accent="magenta"] {
+    --primary: #f797d2;
+    --primary-dark: #f9b4df;
+    --primary-soft: #433341;
+    --primary-softer: #312933;
+    --primary-soft-border: #6c4a62;
+    --on-primary: #1d2125;
+}
+}
+:root[data-theme="dark"] {
+  --accent-dot-blue: #579dff;
+  --accent-dot-teal: #6cc3e0;
+  --accent-dot-green: #4bce97;
+  --accent-dot-purple: #b8acf6;
+  --accent-dot-orange: #fea362;
+  --accent-dot-magenta: #f797d2;
+}
+:root[data-theme="dark"][data-accent="blue"] {
+  --primary: #579dff;
+  --primary-dark: #86b8ff;
+  --primary-soft: #23344a;
+  --primary-softer: #1e2a38;
+  --primary-soft-border: #2f4c73;
+  --on-primary: #1d2125;
+}
+:root[data-theme="dark"][data-accent="teal"] {
+  --primary: #6cc3e0;
+  --primary-dark: #95d4e9;
+  --primary-soft: #273c44;
+  --primary-softer: #202e34;
+  --primary-soft-border: #375a67;
+  --on-primary: #1d2125;
+}
+:root[data-theme="dark"][data-accent="green"] {
+  --primary: #4bce97;
+  --primary-dark: #7ddcb4;
+  --primary-soft: #213e35;
+  --primary-softer: #1c302c;
+  --primary-soft-border: #2a5e4b;
+  --on-primary: #1d2125;
+}
+:root[data-theme="dark"][data-accent="purple"] {
+  --primary: #b8acf6;
+  --primary-dark: #ccc3f9;
+  --primary-soft: #363748;
+  --primary-softer: #292c37;
+  --primary-soft-border: #54516f;
+  --on-primary: #1d2125;
+}
+:root[data-theme="dark"][data-accent="orange"] {
+  --primary: #fea362;
+  --primary-dark: #febd8e;
+  --primary-soft: #44352b;
+  --primary-softer: #322a25;
+  --primary-soft-border: #6e4e37;
+  --on-primary: #1d2125;
+}
+:root[data-theme="dark"][data-accent="magenta"] {
+  --primary: #f797d2;
+  --primary-dark: #f9b4df;
+  --primary-soft: #433341;
+  --primary-softer: #312933;
+  --primary-soft-border: #6c4a62;
+  --on-primary: #1d2125;
+}

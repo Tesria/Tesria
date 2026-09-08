@@ -88,6 +88,41 @@ the full-width table breakout math (see the Editor section below) — change
 it in one place, not both, or they drift apart and a full-width table
 overflows the viewport by the difference.
 
+### Theming (`theme.ts`, `components/ThemeToggle.tsx`)
+
+Light/dark/system, expressed to CSS as a `data-theme` attribute on `<html>`:
+absent means "system" (the `prefers-color-scheme` media query decides),
+`light`/`dark` are explicit overrides. index.css defines the light palette on
+`:root`, the dark palette twice — once inside `@media (prefers-color-scheme:
+dark)` guarded by `:root:not([data-theme="light"])`, once under
+`:root[data-theme="dark"]` — which is what lets an explicit choice win in
+both directions.
+
+The accent colour is a second, independent axis on the same mechanism — a
+`data-accent` attribute driving every `--primary*` token. Each accent is
+defined twice (light and dark), never derived: the contrast requirement pulls
+the two in opposite directions. Note that `:root[data-accent="x"]` ties on
+specificity with the dark base `:root:not([data-theme="light"])`, which is why
+per-accent blocks exist for *every* accent including the default — a
+higher-specificity dark block has to exist for each, or an explicit accent
+choice would pull the light palette into dark mode.
+
+`index.html` carries a small inline, synchronous script that re-applies the
+stored preference before first paint; a deferred or module script runs too
+late and the page visibly flips. **The storage key and attribute logic are
+duplicated between that script and `theme.ts` — change them together.**
+
+Every colour resolves through a custom property. `--surface` (raised: cards,
+`.paper`, popovers, the topbar, inputs) is separate from `--bg` specifically
+because they are identical in light mode and must differ in dark. Two
+deliberate exceptions: the code block keeps its own dark palette in both
+themes, and content colours the *author* chose — a `tableCell`'s
+`backgroundColor` attr, a `highlight` mark's `color` — are stored in the
+document and cannot be re-themed without discarding that choice, so dark mode
+pins dark ink on those elements rather than restyling them. Panel icons are
+`mask-image`, not `background-image`, so one `--panel-icon` token per type
+re-tints them instead of needing a second set of data URIs.
+
 ### Editor (`src/web/src/editor`)
 
 TipTap v3 (ProseMirror) provides the block WYSIWYG. Documents are stored as
@@ -140,6 +175,46 @@ ProseMirror JSON in `PageVersion.ContentJson`.
   trigger from mouse proximity to "does the current selection sit inside a
   table," since hover doesn't exist there — tapping to place the cursor is
   the natural touch equivalent.
+- **Table cell backgrounds** (`TableCellMenu.tsx`) — Confluence's per-cell
+  chevron, in the top-right of whichever cell holds the cursor, opening a
+  "Background colour" palette. Cursor-driven rather than hover-driven, so
+  deliberately *not* sharing `useHoveredTable` with the two controls above:
+  the menu belongs to the cell being edited, not whichever one the mouse
+  passed over. The colour is a `backgroundColor` attr on both `tableCell` and
+  `tableHeader` (`extensions.ts`, via a shared mixin, same
+  `.extend()`-and-disable-the-stock-one pattern as `Table`), and unlike the
+  `table` node's `width` a plain inline `style` is safe here — `TableView`
+  rewrites only the table's own width and colgroup, never cell styles, so
+  there's nothing to clobber it. The Cell/Row/Column scope buttons widen the
+  written rect via `TableMap.cellsInRect()` and apply every cell in one
+  transaction, rather than moving the user's selection to a `CellSelection`
+  and calling `setCellAttribute` — the cursor stays where it was.
+- **Panels** (`panelExtension.ts`) — Confluence-style callouts. `panelType`
+  is exactly ADF's own set (`info`/`note`/`warning`/`success`/`error`);
+  Confluence's legacy Info/Tip/Note/Warning macros map onto it, with the old
+  Tip macro being today's `success`, so no sixth type is needed. The
+  type-specific colour and icon live in `index.css` (`.panel--*`) keyed off
+  the rendered `data-panel-type`, which keeps the icon a `::before`
+  pseudo-element — ProseMirror owns this node's children and would fight an
+  injected element — and means read-only rendering gets the icon with no node
+  view to mount. `PANEL_TYPES`/`PANEL_LABELS` are exported so the toolbar
+  popover and the slash menu can't drift apart.
+- **Colour palettes** (`palette.ts`, `ColorPalette.tsx`) — the swatch grid is
+  shared by the highlight dropdown and the cell-background menu; only the
+  tiers differ (highlight drops the bold tier, which doesn't hold `--text`
+  legibly). Values are Atlassian's own light/medium/bold palette, matching
+  the fixed palette Confluence offers instead of a hex input. They're stored
+  *in the document* (a cell attr, or the `highlight` mark's `color` — hence
+  `Highlight.configure({ multicolor: true })`), not as CSS classes, so they
+  survive export and read-only rendering with no stylesheet. The export
+  renderer whitelists them to plain hex before they reach a `style`
+  attribute (`ProseMirrorRenderer.IsSafeCssColor`), since document JSON is
+  stored as given and an unvalidated colour would be CSS injection into
+  exported HTML.
+- **`ToolbarPopover.tsx`** is the always-visible popover trigger (highlight
+  palette, panel picker). Not to be confused with `ToolbarDropdown.tsx`,
+  which looks similar but exists *only* as the mobile collapsed form of a run
+  of buttons and is `display: none` above `--bp-mobile`.
 - **The slash command menu** (`slash/`) is a custom `Suggestion`-based
   extension (the same primitive `@tiptap/extension-mention` is built on) —
   there's no pre-built importable slash extension. Positioning, scroll/resize

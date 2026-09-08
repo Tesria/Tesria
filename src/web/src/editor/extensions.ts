@@ -1,7 +1,9 @@
 import StarterKit from '@tiptap/starter-kit'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
-import { TableKit, Table as BaseTable } from '@tiptap/extension-table'
+import {
+  TableKit, Table as BaseTable, TableCell as BaseTableCell, TableHeader as BaseTableHeader,
+} from '@tiptap/extension-table'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import Highlight from '@tiptap/extension-highlight'
@@ -12,6 +14,7 @@ import { CodeBlockView } from './CodeBlockView'
 import { SlashCommand } from './slash/SlashCommand'
 import { Image } from './imageExtension'
 import { CommentMark } from './commentMark'
+import { Panel } from './panelExtension'
 
 type SharedExtensionOptions = {
   /** Collaborative editors let Yjs own undo/redo history instead of StarterKit's. */
@@ -96,6 +99,47 @@ const Table = BaseTable.extend({
 }).configure({ resizable: true })
 
 /**
+ * Cell background colour (TableCellMenu's "Background colour" palette), stored
+ * as a hex string; null = today's unchanged default background.
+ *
+ * Applied to both `tableCell` and `tableHeader` via this shared mixin, and —
+ * unlike the Table node's `width` above — a plain inline `style` is safe here.
+ * prosemirror-tables' TableView only rewrites the *table*'s own width and its
+ * colgroup, and never touches cell style attributes, so there's nothing to
+ * clobber it and no need for the custom-property indirection `width` needs.
+ */
+const cellBackgroundAttribute = {
+  backgroundColor: {
+    default: null as string | null,
+    parseHTML: (element: HTMLElement) =>
+      element.getAttribute('data-background-color') || element.style.backgroundColor || null,
+    renderHTML: (attributes: { backgroundColor?: string | null }) =>
+      attributes.backgroundColor
+        ? {
+            'data-background-color': attributes.backgroundColor,
+            style: `background-color: ${attributes.backgroundColor}`,
+          }
+        : {},
+  },
+}
+
+// Same idiom as the extended Table above: TableKit can't take a customised
+// node in place of its built-in one, so its `tableCell`/`tableHeader` are
+// disabled and these extended equivalents registered alongside. Identical node
+// names, so stored documents and the export renderer are unaffected.
+const TableCell = BaseTableCell.extend({
+  addAttributes() {
+    return { ...this.parent?.(), ...cellBackgroundAttribute }
+  },
+})
+
+const TableHeader = BaseTableHeader.extend({
+  addAttributes() {
+    return { ...this.parent?.(), ...cellBackgroundAttribute }
+  },
+})
+
+/**
  * Single source of truth for the TipTap/ProseMirror schema (node/mark types),
  * shared by the plain Editor, the Yjs-backed CollaborativeEditor, and anything
  * that renders stored content read-only. Yjs requires every collaborator to
@@ -113,14 +157,20 @@ export function getSharedExtensions({ collaborative = false, editable = true }: 
       ...(collaborative ? { undoRedo: false } : {}),
     }),
     CodeBlock,
-    TableKit.configure({ table: false }),
+    TableKit.configure({ table: false, tableCell: false, tableHeader: false }),
     Table,
+    TableCell,
+    TableHeader,
     TaskList,
     TaskItem.configure({ nested: true }),
     Image,
-    Highlight,
+    // multicolor: the highlight button is a colour palette (Toolbar.tsx), so
+    // the mark carries a `color` attr. Highlights stored before this stay
+    // valid — no color attr renders as the plain default <mark>.
+    Highlight.configure({ multicolor: true }),
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
     CommentMark,
+    Panel,
     // Read-only rendering never needs "/" commands — skip mounting the
     // suggestion plugin entirely rather than just hiding its output.
     ...(editable ? [SlashCommand] : []),

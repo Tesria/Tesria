@@ -178,3 +178,66 @@ export function ChevronDownIcon() {
     </Icon>
   )
 }
+
+/* ---- panel (callout) icons ----------------------------------------------
+   One per PANEL_TYPES entry in panelExtension.ts, plus a generic block glyph
+   for the toolbar trigger. Same 24x24 / 1.8px stroke language as everything
+   above, so a panel type reads as "one of these" in the dropdown and keeps
+   currentColor tinting from .toolbar__btn. */
+
+export function PanelIcon() {
+  return (
+    <Icon>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M7 5v14" strokeWidth="2.6" />
+    </Icon>
+  )
+}
+
+export function InfoPanelIcon() {
+  return (
+    <Icon>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5" />
+      <path d="M12 7.75v.5" strokeWidth="2.4" />
+    </Icon>
+  )
+}
+
+export function NotePanelIcon() {
+  return (
+    <Icon>
+      <path d="M5 3.5h14v13l-4.5 4.5H5Z" />
+      <path d="M19 16.5h-4.5V21" />
+      <path d="M8.5 8h7M8.5 12h4" />
+    </Icon>
+  )
+}
+
+export function SuccessPanelIcon() {
+  return (
+    <Icon>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m8 12.25 2.75 2.75L16 9.75" />
+    </Icon>
+  )
+}
+
+export function WarningPanelIcon() {
+  return (
+    <Icon>
+      <path d="M12 3.75 21.5 20.25H2.5Z" />
+      <path d="M12 10v4.25" />
+      <path d="M12 17.25v.5" strokeWidth="2.4" />
+    </Icon>
+  )
+}
+
+export function ErrorPanelIcon() {
+  return (
+    <Icon>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m9 9 6 6M15 9l-6 6" />
+    </Icon>
+  )
+}

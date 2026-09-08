@@ -5,6 +5,34 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tesria</title>
+    <!--
+      Applies the saved theme before first paint. Without this the document
+      renders light for one frame and then flips — the classic dark-mode
+      flash — because the stylesheet cannot read localStorage and React has
+      not mounted yet. Deliberately inline and synchronous: a deferred or
+      module script runs too late to help.
+
+      The storage keys and attribute logic are duplicated from src/theme.ts;
+      change them together. ('blue' is the default and stores nothing, so it
+      is deliberately absent from the accent pattern above.)
+    -->
+    <script>
+      (function () {
+        try {
+          var root = document.documentElement;
+          var pref = localStorage.getItem('tesria-theme');
+          if (pref === 'light' || pref === 'dark') {
+            root.setAttribute('data-theme', pref);
+          }
+          var accent = localStorage.getItem('tesria-accent');
+          if (/^(teal|green|purple|orange|magenta)$/.test(accent || '')) {
+            root.setAttribute('data-accent', accent);
+          }
+        } catch (e) {
+          /* Storage blocked — fall through to the prefers-color-scheme default. */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
