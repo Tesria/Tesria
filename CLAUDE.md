@@ -50,7 +50,10 @@ Read first, in this order:
   `MSYS_NO_PATHCONV=1` when running those.
 - **Remote**: `origin` → [`Tesria/Tesria`](https://github.com/Tesria/Tesria),
   **private**, pushed 2026-09-08 (before that the repo was deliberately local
-  only, pending a code audit). Default branch is `master`, not `main`. Keep it
+  only, pending a code audit). Default branch is `main` (renamed from
+  `master` on 2026-09-08; the old branch is gone from both ends, so a clone
+  predating that rename needs `git branch -m master main` plus a re-point at
+  the new upstream). Keep it
   private — it isn't the open-source release, and that audit still hasn't
   happened. The history was scanned for secrets before the first push (`.env`
   is gitignored and was never committed; `.env.example` is placeholders only).
