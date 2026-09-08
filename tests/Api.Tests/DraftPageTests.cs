@@ -18,7 +18,7 @@ public class DraftPageTests
     private record DraftResponse(Guid Id);
     private record PageDetail(
         Guid Id, Guid SpaceId, Guid? ParentPageId, string Title, int Position, int Status,
-        int CurrentVersionNumber, string ContentJson, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
+        int CurrentVersionNumber, string ContentJson, bool FullWidth, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
     private record TreeNode(Guid Id, string Title, int Position, List<TreeNode> Children);
     private record TrashedPage(Guid Id, string Title, DateTimeOffset DeletedAt, Guid? DeletedById);
     private record AttachmentResponse(Guid Id, Guid PageId, string Filename);
@@ -172,5 +172,28 @@ public class DraftPageTests
             new { Title = "  ", ContentJson = Doc })).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync($"/api/pages/{draft.Id}/publish",
             new { Title = "OK", ContentJson = "{ not json" })).StatusCode);
+    }
+
+    [Fact]
+    public async Task Full_width_can_be_toggled_on_a_draft_and_survives_publish()
+    {
+        var (factory, client, spaceId) = await NewClientWithSpace();
+        using var _ = factory;
+        var draft = await (await client.PostAsJsonAsync("/api/pages/draft",
+            new { SpaceId = spaceId, ParentPageId = (Guid?)null }))
+            .Content.ReadFromJsonAsync<DraftResponse>();
+
+        // The full-width toggle is available while composing a brand-new page,
+        // before it has ever been published — so layout must reach a draft.
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await client.PutAsJsonAsync($"/api/pages/{draft!.Id}/layout", new { FullWidth = true })).StatusCode);
+
+        var published = await (await client.PostAsJsonAsync($"/api/pages/{draft.Id}/publish",
+            new { Title = "Wide From Birth", ContentJson = Doc }))
+            .Content.ReadFromJsonAsync<PageDetail>();
+        Assert.True(published!.FullWidth); // publish must not reset display metadata
+
+        var fetched = await client.GetFromJsonAsync<PageDetail>($"/api/pages/{draft.Id}");
+        Assert.True(fetched!.FullWidth);
     }
 }
