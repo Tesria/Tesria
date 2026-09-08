@@ -48,9 +48,12 @@ Read first, in this order:
   `docker compose exec`/`cp` args (e.g. `/scripts/verify.sh` becomes a bogus
   `C:/Program Files/Git/scripts/verify.sh`). Prefix the command with
   `MSYS_NO_PATHCONV=1` when running those.
-- This repo has **no git remote configured** (as of 2026-07-25) — the user is
-  deliberately keeping it local pending a code audit before pushing anywhere.
-  Don't suggest adding one unprompted.
+- **Remote**: `origin` → [`Tesria/Tesria`](https://github.com/Tesria/Tesria),
+  **private**, pushed 2026-09-08 (before that the repo was deliberately local
+  only, pending a code audit). Default branch is `master`, not `main`. Keep it
+  private — it isn't the open-source release, and that audit still hasn't
+  happened. The history was scanned for secrets before the first push (`.env`
+  is gitignored and was never committed; `.env.example` is placeholders only).
 
 ## Session handoff — 2026-08-03
 
