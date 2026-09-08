@@ -6,6 +6,12 @@ now historical/complete) and [`CHANGELOG.md`](./CHANGELOG.md) (what's
 actually shipped). Add to this list as new ideas come up; move an entry to
 the CHANGELOG once it's actually built.
 
+> **Scheduled:** as of 2026-09-08 all four entries below are sequenced in
+> [`dev-plan.md`](./dev-plan.md) — MCP (8.4), API (8.3, as OpenAPI first),
+> Mermaid (7.F), wiki packs (8.5, deliberately last). They stay here as the
+> idea record; the plan owns the order. Public read mode (plan Phase 5) is
+> the natural partner to wiki packs — build a wiki, export it, host it.
+
 ## MCP support
 
 Expose the knowledge base as an [MCP](https://modelcontextprotocol.io) server

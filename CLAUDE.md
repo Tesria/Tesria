@@ -23,9 +23,30 @@ Read first, in this order:
 - `PLAN.md` — the original founding design doc (phases 1–5). The editor
   overhaul that followed it is tracked in the CHANGELOG instead, not as a
   numbered PLAN.md phase.
+- [`docs/dev-plan.md`](./docs/dev-plan.md) — the **current sequenced plan**
+  (written 2026-09-08): roles/admin, profiles and avatars, password
+  recovery, space icons, the Confluence editor-parity audit, and the
+  brand-page roadmap items, ordered by dependency. Start here for "what
+  next"; it says which `roadmap.md` items it has scheduled.
 - [`docs/roadmap.md`](./docs/roadmap.md) — forward-looking feature ideas not
   yet scheduled or designed (MCP support, expanded API, Mermaid diagrams,
   portable space/site export). Add new ideas here as they come up.
+
+## Model gate — check before starting any dev-plan item
+
+[`docs/dev-plan.md`](./docs/dev-plan.md) tags every item with the model
+that should execute it: **Opus** (well-specified implementation), **Fable**
+(design or security-model decisions that are expensive to reverse), or
+**Fable → Opus** (Fable writes the spec, Opus implements it).
+
+**Before starting an item, compare its tag to the model you are running as**
+— the system prompt states it ("You are powered by the model named …").
+If they differ, **stop before any tool call that does work.** Say which model
+the plan asks for and, in one line, why; then offer exactly two options:
+switch models, or override for this item. Wait for the answer. If the user
+overrides, note it in the item's CHANGELOG entry. The point is to avoid
+burning a large model's tokens on routine implementation, or a smaller
+one's on a decision it shouldn't be making — either way, silently.
 
 ## Working conventions established in this repo
 
