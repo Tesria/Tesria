@@ -117,11 +117,13 @@ undetectable without a login history.
 - **The first registered account becomes Admin** (`Users.CountAsync() == 0`
   inside the registration transaction). Document it in the README.
 - `RequireAdmin` authorization policy; `CurrentUser.IsAdmin`.
-- **Fable decides:** do admins bypass page restrictions and space
-  permissions? Confluence says yes (site admins can always recover access).
-  Recommend yes, with an audit entry every time the bypass is exercised, so
-  it is a safety valve, not a backdoor. Write the decision into
-  `architecture.md` before Opus implements.
+- **Fable decided (2026-09-08): no silent bypass.** Admins see what their
+  grants allow, plus an audited `recover-access` action that writes them an
+  explicit space-admin grant — reusing the existing "explicit space admins
+  bypass page restrictions" rule rather than adding a second code path.
+  Full spec, including the first-user race handling, the migration
+  backfill and the required tests: `architecture.md` → "Roles and
+  administrators". **Fable half complete; Opus implements against it.**
 - Tests: first-user-is-admin; non-admin gets 403 on an admin route; the
   existing tests keep passing (several register two users — check that
   "first user is admin" doesn't change their expectations).
