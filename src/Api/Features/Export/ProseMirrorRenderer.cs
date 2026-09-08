@@ -137,10 +137,21 @@ public static class ProseMirrorRenderer
                 sb.Append("<tr>\n"); RenderHtmlChildren(node, sb); sb.Append("</tr>\n");
                 break;
             case "tableHeader":
-                sb.Append("<th>"); RenderHtmlChildren(node, sb); sb.Append("</th>\n");
-                break;
             case "tableCell":
-                sb.Append("<td>"); RenderHtmlChildren(node, sb); sb.Append("</td>\n");
+                var cellTag = TypeOf(node) == "tableHeader" ? "th" : "td";
+                var cellBg = CellBackgroundStyle(node);
+                sb.Append(cellBg is null ? $"<{cellTag}>" : $"<{cellTag} style=\"{cellBg}\">");
+                RenderHtmlChildren(node, sb);
+                sb.Append($"</{cellTag}>\n");
+                break;
+            case "panel":
+                var panelType = PanelTypeOf(node);
+                // Colours inlined rather than left to a stylesheet: an exported
+                // HTML file is opened on its own, with none of the app's CSS.
+                sb.Append($"<div data-panel-type=\"{panelType}\" style=\"{PanelStyle(panelType)}\">\n");
+                sb.Append($"<strong>{PanelLabels[panelType]}</strong>\n");
+                RenderHtmlChildren(node, sb);
+                sb.Append("</div>\n");
                 break;
             case "taskList":
                 sb.Append("<ul data-type=\"taskList\">\n"); RenderHtmlChildren(node, sb); sb.Append("</ul>\n");
@@ -173,7 +184,7 @@ public static class ProseMirrorRenderer
                 "underline" => $"<u>{text}</u>",
                 "strike" => $"<s>{text}</s>",
                 "code" => $"<code>{text}</code>",
-                "highlight" => $"<mark>{text}</mark>",
+                "highlight" => HighlightHtml(mark, text),
                 "link" => $"<a href=\"{Escape(Attr(mark, "href") ?? "#")}\" rel=\"noreferrer\">{text}</a>",
                 _ => text,
             };
@@ -235,6 +246,17 @@ public static class ProseMirrorRenderer
             case "table":
                 RenderMarkdownTable(node, sb);
                 break;
+            case "panel":
+                // GFM has no callout syntax that renders consistently (GitHub's
+                // own "> [!NOTE]" alerts are GitHub-only), so a blockquote with
+                // a bold type label degrades sensibly in every renderer.
+                var panelInner = new StringBuilder();
+                RenderMarkdownChildren(node, panelInner, listDepth);
+                sb.Append("> **").Append(PanelLabels[PanelTypeOf(node)]).Append("**\n>\n");
+                foreach (var line in panelInner.ToString().TrimEnd().Split('\n'))
+                    sb.Append("> ").Append(line).Append('\n');
+                sb.Append('\n');
+                break;
             case "taskList":
                 RenderMarkdownTaskList(node, sb, listDepth);
                 break;
@@ -280,6 +302,72 @@ public static class ProseMirrorRenderer
         if (BoolAttr(node, "border")) parts.Add("border: 1px solid #e4e6eb; padding: 2px");
         if (BoolAttr(node, "shadow")) parts.Add("box-shadow: 0 4px 14px rgba(23, 43, 77, 0.25)");
         return parts.Count == 0 ? null : string.Join("; ", parts);
+    }
+
+    /// <summary>A table cell's background colour (TableCellMenu's palette) as an inline style, or null.</summary>
+    private static string? CellBackgroundStyle(JsonElement node)
+    {
+        var color = Attr(node, "backgroundColor");
+        return IsSafeCssColor(color) ? $"background-color: {color}" : null;
+    }
+
+    /// <summary>
+    /// A highlight mark, carrying its colour when the editor set one
+    /// (extensions.ts configures Highlight with multicolor). Marks stored
+    /// before that predate the attribute and render as a plain &lt;mark&gt;.
+    /// </summary>
+    private static string HighlightHtml(JsonElement mark, string text)
+    {
+        var color = Attr(mark, "color");
+        return IsSafeCssColor(color)
+            ? $"<mark style=\"background-color: {color}\">{text}</mark>"
+            : $"<mark>{text}</mark>";
+    }
+
+    /// <summary>
+    /// Whitelists the colour shapes the editor's palettes actually produce (a
+    /// #rgb/#rrggbb hex) before it reaches a `style` attribute. Attribute
+    /// values come from stored document JSON, which the API accepts as
+    /// arbitrary JSON — so an unvalidated colour would be a way to inject
+    /// arbitrary CSS into exported HTML.
+    /// </summary>
+    private static bool IsSafeCssColor(string? color) =>
+        color is not null
+        && (color.Length == 4 || color.Length == 7)
+        && color[0] == '#'
+        && color.Skip(1).All(Uri.IsHexDigit);
+
+    private static readonly Dictionary<string, string> PanelLabels = new()
+    {
+        ["info"] = "Info",
+        ["note"] = "Note",
+        ["success"] = "Tip",
+        ["warning"] = "Warning",
+        ["error"] = "Error",
+    };
+
+    // Background/border/text per panel type, matching index.css's .panel--*.
+    private static readonly Dictionary<string, (string Bg, string Border, string Text)> PanelColors = new()
+    {
+        ["info"] = ("#deebff", "#579dff", "#0c66e4"),
+        ["note"] = ("#eae6ff", "#9f8fef", "#5e4db2"),
+        ["success"] = ("#e3fcef", "#4bce97", "#216e4e"),
+        ["warning"] = ("#fff7d6", "#e2b203", "#a54800"),
+        ["error"] = ("#ffedeb", "#f87168", "#ae2e24"),
+    };
+
+    /// <summary>The node's panelType, defaulted to "info" if absent or unrecognised.</summary>
+    private static string PanelTypeOf(JsonElement node)
+    {
+        var type = Attr(node, "panelType");
+        return type is not null && PanelColors.ContainsKey(type) ? type : "info";
+    }
+
+    private static string PanelStyle(string panelType)
+    {
+        var (bg, border, text) = PanelColors[panelType];
+        return $"background: {bg}; border: 1px solid {border}; color: {text}; "
+             + "border-radius: 6px; padding: 12px 16px; margin: 16px 0";
     }
 
     /// <summary>The table's manually-dragged width or full-width toggle (see extensions.ts's Table
@@ -346,7 +434,7 @@ public static class ProseMirrorRenderer
                 "code" => $"`{text}`",
                 // GFM has no native highlight syntax; most renderers pass inline
                 // raw HTML through untouched, so this degrades gracefully.
-                "highlight" => $"<mark>{text}</mark>",
+                "highlight" => HighlightHtml(mark, text),
                 "link" => $"[{text}]({Attr(mark, "href") ?? "#"})",
                 _ => text,
             };

@@ -4,10 +4,23 @@ import { uploadAndInsertImage } from './imageUpload'
 import { ToolbarButton } from './ToolbarButton'
 import { ToolbarDropdown } from './ToolbarDropdown'
 import { useEdgeAlign } from '../hooks/useEdgeAlign'
+import { ToolbarPopover } from './ToolbarPopover'
+import { ColorPalette } from './ColorPalette'
+import { HIGHLIGHT_TIERS } from './palette'
+import { PANEL_TYPES, PANEL_LABELS, type PanelType } from './panelExtension'
 import {
   InlineCodeIcon, HighlightIcon, BulletListIcon, OrderedListIcon, TaskListIcon, BlockquoteIcon,
   CodeBlockIcon, TableIcon, ImageIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, LinkIcon,
+  PanelIcon, InfoPanelIcon, NotePanelIcon, SuccessPanelIcon, WarningPanelIcon, ErrorPanelIcon,
 } from './icons'
+
+const PANEL_ICONS: Record<PanelType, ReactNode> = {
+  info: <InfoPanelIcon />,
+  note: <NotePanelIcon />,
+  success: <SuccessPanelIcon />,
+  warning: <WarningPanelIcon />,
+  error: <ErrorPanelIcon />,
+}
 
 type Props = {
   editor: TiptapEditor
@@ -53,7 +66,23 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
       {btn(<span className="tb-glyph tb-underline">U</span>, editor.isActive('underline'), () => editor.chain().focus().toggleUnderline().run(), 'Underline')}
       {btn(<span className="tb-glyph tb-strike">S</span>, editor.isActive('strike'), () => editor.chain().focus().toggleStrike().run(), 'Strikethrough')}
       {btn(<InlineCodeIcon />, editor.isActive('code'), () => editor.chain().focus().toggleCode().run(), 'Inline code')}
-      {btn(<HighlightIcon />, editor.isActive('highlight'), () => editor.chain().focus().toggleHighlight().run(), 'Highlight selected text')}
+      <ToolbarPopover icon={<HighlightIcon />} title="Highlight colour" isActive={editor.isActive('highlight')}>
+        {(close) => (
+          <ColorPalette
+            tiers={HIGHLIGHT_TIERS}
+            current={editor.getAttributes('highlight').color as string | undefined}
+            onPick={(color) => {
+              editor.chain().focus().setHighlight({ color }).run()
+              close()
+            }}
+            onClear={() => {
+              editor.chain().focus().unsetHighlight().run()
+              close()
+            }}
+            clearLabel="No highlight"
+          />
+        )}
+      </ToolbarPopover>
       <span className="toolbar__sep" />
       {/* Heading, list-type, and alignment groups each render twice: a flat
           row (desktop) and a collapsed dropdown (mobile, --bp-mobile). CSS
@@ -87,6 +116,31 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
         ]}
       />
       {btn(<BlockquoteIcon />, editor.isActive('blockquote'), () => editor.chain().focus().toggleBlockquote().run(), 'Blockquote')}
+      <ToolbarPopover icon={<PanelIcon />} title="Panel" isActive={editor.isActive('panel')}>
+        {(close) => (
+          <div className="toolbar__popover-list">
+            {PANEL_TYPES.map((type) => (
+              <button
+                key={type}
+                type="button"
+                className={
+                  editor.isActive('panel', { panelType: type })
+                    ? `toolbar-dropdown__item panel-option panel-option--${type} is-active`
+                    : `toolbar-dropdown__item panel-option panel-option--${type}`
+                }
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  editor.chain().focus().togglePanel(type).run()
+                  close()
+                }}
+              >
+                {PANEL_ICONS[type]}
+                <span>{PANEL_LABELS[type]}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </ToolbarPopover>
       {btn(<CodeBlockIcon />, editor.isActive('codeBlock'), () => editor.chain().focus().toggleCodeBlock().run(), 'Code block')}
       {btn(<TableIcon />, editor.isActive('table'), () =>
         editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(), 'Insert table')}

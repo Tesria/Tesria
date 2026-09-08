@@ -5,6 +5,135 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Feature: appearance menu — theme popup + accent colours (2026-09-08)
+
+The theme control is a popup now rather than a cycling button, with two
+sections: **Theme** (System / Light / Dark, each with a one-line hint, System
+showing what it currently resolves to) and **Accent colour** (blue, teal,
+green, purple, orange, magenta).
+
+System remains the default for new users — nothing is written to storage until
+an explicit choice is made, and re-picking System clears the key rather than
+pinning today's resolved value. Same for the accent: blue stores nothing.
+
+**Each accent is defined twice, for light and dark, rather than derived from
+one value.** A hue dark enough to pass 4.5:1 as link text on white is far too
+dark to read on a dark ground, and the reverse. Both sets were measured against
+WCAG AA — light values against `#ffffff`, dark values against `--bg` — and
+`--on-primary` (text on a filled accent button) is chosen by computed contrast:
+white in light mode, dark ink in dark. Green is the clearest illustration:
+`#1a6c45` in light, `#4bce97` in dark.
+
+A subtlety worth knowing if you add a seventh accent: `:root[data-accent="x"]`
+and the dark base `:root:not([data-theme="light"])` have *identical*
+specificity. Blocks are therefore emitted for every accent including the
+default blue, so a higher-specificity dark block always exists to win — without
+it, choosing an accent explicitly would drag the light palette into dark mode.
+
+The picker's own swatches read themed `--accent-dot-*` tokens, so each dot
+previews the colour that accent will actually produce right now, and the whole
+row changes when the theme does.
+
+The accent deliberately drives only the chrome. Panel colours are semantic
+(a warning is yellow regardless), and table cell / highlight colours belong to
+the document's author — neither follows the accent.
+
+Known limitation: in light mode, orange is necessarily a deep rust (`#9a4d00`).
+A brighter orange cannot reach 4.5:1 as link text on white, and `--primary` is
+used for body-sized link text, so the accessible value is the one that ships.
+
+### Feature: light/dark theme toggle (2026-09-08)
+
+Three preferences, not two: **system** (the default, following the OS),
+**light** and **dark**. A plain on/off switch loses "just follow my machine"
+permanently the first time it is pressed, so the topbar control cycles
+system → light → dark and shows the OS's current resolution while on system.
+
+Mechanically it is the standard three-state pattern. `:root` carries the light
+palette; `@media (prefers-color-scheme: dark)` applies the dark one *unless*
+`[data-theme="light"]` is set; and a `:root[data-theme="dark"]` block lets an
+explicit choice win in both directions — including dark-while-the-OS-is-light,
+which the media query alone cannot express. `theme.ts` owns the attribute and
+localStorage; `index.html` re-applies the stored value in an inline,
+synchronous script before first paint, without which the page renders light
+for one frame and then flips.
+
+Getting there meant tokenising the stylesheet: every colour now resolves
+through a custom property. `--surface` is new and carries the weight — it is
+identical to `--bg` in light mode and deliberately lighter in dark, which is
+what separates a card, the paper sheet or a popover from the page behind it.
+
+Two things that needed more than a token swap:
+
+- **Panel icons** were `background-image` data URIs with the stroke colour
+  baked in, which would have meant carrying a second full set for dark mode.
+  They are `mask-image` now: the SVG supplies the shape, `--panel-icon`
+  supplies the colour, so one token per type re-tints all five.
+- **Author-chosen colours** (a table cell's `backgroundColor`, a highlight
+  mark's `color`) are stored *in the document* and are always light tints from
+  `palette.ts`. A theme cannot restyle them without discarding the author's
+  choice — but left alone in dark mode they are a light patch carrying light
+  `--text`, i.e. invisible. Dark mode pins the ink dark on exactly those
+  elements instead, so a coloured cell reads identically in both themes.
+  Verified against the API space's status-code table, where tinted and
+  untinted cells sit side by side in one row.
+
+The code block is deliberately **not** themed — it stays dark in both, the way
+most editors and docs sites treat code.
+
+Known gap: the toggle lives in the authenticated topbar, so it is not reachable
+from the sign-in and registration pages. The *theme* still applies there (the
+pre-paint script is route-independent); only the control is missing.
+
+### Feature: panels, colour palettes, and a toolbar alignment fix (2026-09-08)
+
+Four editor gaps against Confluence, closed together.
+
+**Panels** (`panelExtension.ts`) — coloured callouts, with `panelType` taken
+from ADF's own set: info, note, warning, success, error. Confluence's legacy
+Info/Tip/Note/Warning macros all map onto that set (the old Tip macro is
+today's `success` panel), so all four names the request asked for have a home
+without inventing a sixth type. Available from a toolbar picker and from the
+slash menu, both generated from one exported `PANEL_TYPES`/`PANEL_LABELS` so
+they can't drift. Colour and icon live in `index.css` keyed off the rendered
+`data-panel-type`, which keeps the icon a `::before` pseudo-element rather
+than a child node ProseMirror would fight over — and gets read-only rendering
+the icon for free.
+
+**Table cell / row / column backgrounds** (`TableCellMenu.tsx`) — Confluence's
+per-cell chevron in the top-right of the cell holding the cursor, opening a
+"Background colour" palette. Cursor-driven, so deliberately not sharing
+`useHoveredTable` with the hover-driven row/column and width controls. The
+Cell/Row/Column scope buttons widen the written rect via
+`TableMap.cellsInRect()` and apply the whole scope in one transaction, rather
+than replacing the user's selection with a `CellSelection` — the cursor stays
+put after colouring a row.
+
+**Highlight colours** — `Highlight` is now `multicolor`, and the toolbar
+button is a palette instead of an on/off toggle. Highlights stored before
+this have no `color` attr and still render as a plain `<mark>`.
+
+Both palettes are Atlassian's own light/medium/bold values, matching the
+fixed palette Confluence offers rather than a hex input, and are stored *in
+the document* so they survive export. The export renderer now whitelists a
+colour to plain hex before it reaches a `style` attribute — document JSON is
+stored as given, so an unvalidated colour was a CSS-injection route into
+exported HTML.
+
+**Fix: the insert-image icon sat 4.8px above every other toolbar button.**
+That button is a `<label>` (it wraps a hidden file input), so the global
+`label { margin-bottom: 0.6rem }` applied to it and to nothing else in the
+row. `.toolbar` centres its children with `align-items`, which centres each
+item's *margin* box — so 9.6px of phantom margin below the label lifted its
+border box by exactly half. Measured before and after against the real
+stylesheet: 4.80px of spread, now 0.00px. Fixed with `margin: 0` on
+`.toolbar__btn` rather than on the one label, so any element type used as a
+toolbar button is immune.
+
+Export coverage for all of it (panels in HTML and Markdown, cell backgrounds
+on both cell kinds, highlight colour plus the legacy no-colour case, and the
+hostile-colour rejection) is in `ProseMirrorRendererTests`.
+
 ### Fix: the full-width toggle did nothing on a brand-new page (2026-09-08)
 
 `PUT /api/pages/{id}/layout` looked the page up through the default query
@@ -25,7 +154,6 @@ still isn't. Publish never touched `FullWidth`, so the choice made while
 composing now carries through to the published page unchanged. Covered by
 `DraftPageTests.Full_width_can_be_toggled_on_a_draft_and_survives_publish`,
 which asserts both halves (the 204 and the survival through publish).
-
 
 ### Design: page tree Reorder mode is now a batch edit (2026-08-19)
 
