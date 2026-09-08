@@ -59,6 +59,70 @@ A `Smart` policy scheme picks Cookie vs. API-token per request based on the
 redirect), since the client is a SPA — except the OIDC login endpoint, which is
 a real full-page redirect to the identity provider.
 
+### Roles and administrators (spec — dev-plan 0.1, designed 2026-09-08)
+
+Two roles, one enum: `User.Role` is `Member = 0 | Admin = 1`. An enum, not
+a bool, so a future `Viewer` or `Moderator` is a new value rather than a
+migration of a bool.
+
+**Who becomes admin.** The first account on an empty instance — whether it
+arrives via `/register` or via OIDC provisioning — is created as `Admin`.
+Registration runs the "is the table empty" check and the insert inside one
+serializable transaction so two racing first registrations cannot both win
+(SQLite, used by tests, serialises writes anyway). The migration that adds
+the column also **promotes the earliest-created user** on existing installs,
+so no instance is left with content and nobody able to administer it. On
+this dev instance that is the owner's account, not the docs bot.
+
+**How the role is checked.** `CurrentUser.IsAdminAsync()` reads the row
+(one indexed primary-key lookup, cached for the request) rather than
+trusting a claim. A role claim would be stale until the next sign-in;
+reading the row means a demotion takes effect on the demoted user's very
+next request. When `SecurityStamp` lands (dev-plan 1.1) the check can move
+to a claim validated against the stamp — until then, the lookup is the
+correct and cheap answer. `RequireAdmin` is an authorization policy over
+that check; `/api/auth/me` returns `role` so the SPA can show admin
+navigation.
+
+**Admins do not silently bypass permissions.** This is the decision the
+plan left open, and the answer is Confluence's own: a site admin sees
+exactly what their grants allow, like anyone else. What they have that
+others don't is a **recover-access** action —
+`POST /api/admin/spaces/{key}/recover-access` — which writes them an
+explicit `SpaceOperation.Admin` grant on that space. From then on the
+existing rules apply unchanged: an explicit space admin can view and edit
+the space and is not blocked by page restrictions (that rule already
+exists in `PermissionService`). Recovery is audited as
+`space.access_recovered` and, once dev-plan 3.3 exists, raises a security
+event visible to every other admin. The reasons:
+
+- A silent bypass lets any admin read any team's private space and leaves
+  no trace. Explicit recovery gives the same safety valve with a record.
+- It reuses the permission logic that already exists instead of adding a
+  second "unless admin" branch to every check — fewer places to get wrong.
+- Revoking the grant afterwards returns the admin to normal, which a
+  silent bypass could never offer.
+
+**What admins can see without recovering access:** metadata, not content.
+The admin Spaces page (dev-plan 2.4) lists every space — key, name, owner,
+counts, archived, public — through admin-only endpoints that never return
+page content. Search, the page tree and page bodies stay permission-checked
+for admins exactly as for members.
+
+**Instance-level operations** (`/api/admin/*` — settings, users, spaces
+listing, recover-access, later the security page) are gated by
+`RequireAdmin` alone; they are about the instance, not about any space's
+content.
+
+**Tests the implementation must include:** first registered user is Admin
+and the second is Member; first OIDC-provisioned user on an empty instance
+is Admin; a Member gets 403 on an admin route; an Admin gets 404 (not 403,
+per the masking rule) on a private space they hold no grant for; after
+recover-access they can read it, a `space.access_recovered` audit row
+exists, and revoking the grant restores the 404; the existing suite still
+passes — several tests register two users in sequence, so assert nothing
+about them changed except the first one's role.
+
 ## Frontend (`src/web`)
 
 - React 19 + TypeScript, built with Vite.
