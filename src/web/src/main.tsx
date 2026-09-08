@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import './index.css'
+import { startFaviconSync } from './theme'
 import { AuthProvider } from './auth/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Layout } from './components/Layout'
@@ -21,6 +22,10 @@ import { GroupsPage } from './routes/GroupsPage'
 import { SpacePermissionsPage } from './routes/SpacePermissionsPage'
 import { SpaceWebhooksPage } from './routes/SpaceWebhooksPage'
 import { ApiTokensPage } from './routes/ApiTokensPage'
+
+// Paints the tab icon in the chosen accent before React renders, and keeps
+// it in step when the OS flips light/dark.
+startFaviconSync()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

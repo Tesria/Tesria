@@ -5,6 +5,100 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fix: the topbar is three tiers now, not two (2026-09-08)
+
+Between --bp-mobile and --bp-tablet the bar showed its full desktop layout —
+brand, four nav links, a 420px-max search box and the right-hand cluster —
+with no wrap fallback. It never actually fit there; it only appeared to
+because `.brand` would quietly ellipsis. Adding the logo (a fixed 20px that
+cannot ellipsis) and the appearance button used up that slack, and the band
+tipped into real horizontal overflow, with "API Tokens" wrapping onto two
+lines.
+
+That wrap is also what made the links look top-aligned: a two-line link makes
+the nav row taller, and its single-line neighbours then sit at the top of
+it. `.topbar__link` is `inline-flex`, centred, and `white-space: nowrap` now,
+so it cannot recur — but the real fix is giving the pressure somewhere to go.
+
+**641–1024px is a proper middle tier.** Spaces stays visible; Groups, Audit
+and API Tokens move behind a **More ▾** menu whose trigger reads as active
+when the current route is one of them; search keeps a
+150px floor (unpinned it collapsed to ~2px); and the username — the least
+load-bearing thing in the bar — hides. Below 640 the existing hamburger is
+unchanged, and its column lists all four links itself, so More hides there.
+
+The secondary links are rendered twice on purpose — flat, and inside More —
+with CSS choosing which set shows. That is the same convention the editor
+toolbar already uses for its heading/list/alignment groups
+(`.toolbar__flat` vs `.toolbar-dropdown`), not an accident.
+
+Measured rather than eyeballed, at 1280 / 1025 / 1024 / 800 / 641 / 480: no
+horizontal overflow at any width, every visible link sharing one top edge and
+one 27px height, and search at 175px in the worst case (641px). The bar also packs left now (`justify-content: flex-start`, with
+`margin-left: auto` on the right-hand cluster) instead of `space-between`.
+Space-between split leftover width evenly into every gap, which floated the
+nav somewhere between the brand and the search box on desktop and, with the
+collapsible out of flow on mobile, parked the brand dead centre. One rule
+fixes both: the nav anchors to the brand, the brand to the hamburger, and all
+the leftover sits in a single gap before the right-hand cluster — and the
+search box, which had a 420px cap (260px in the middle tier), now has none,
+so it is what fills that gap and grows with the viewport.
+
+Those numbers
+also showed the wordmark-hiding rule added with the logo was now dead weight
+— with More absorbing the pressure there is more slack at 641px than the
+word needs — so it is gone, and the brand reads "Tesria" at every width.
+
+### Design: Tesria's brand mark in the favicon and topbar (2026-09-08)
+
+Took the layers mark from the brand page at brianintheloop.com/tesria. It
+needed no adaptation — the mark is already drawn in the same language as this
+app's icon set (24x24 viewBox, 1.8 stroke, round caps and joins,
+`currentColor`), so it dropped straight in.
+
+The favicon replaces the scaffold's purple bolt. Because it is an SVG it can
+carry its own `prefers-color-scheme` media query, so the mark is brand blue
+(`#2496ed`) on a light browser chrome and brightens to `#6cb6f7` on a dark
+one; where that isn't supported the plain `stroke` still applies, so the
+fallback is the brand blue rather than nothing. Stroke is widened from 1.8 to
+2 for the favicon only — at 16px, 1.8 on a 24 viewBox thins to about one
+pixel and the middle layer lines start to drop out.
+
+In the topbar the mark sits left of the wordmark and takes `--primary`, so it
+follows both the light/dark theme *and* the chosen accent, while the wordmark
+stays `--text`. That is the same split the brand page uses: coloured mark,
+neutral wordmark.
+
+One detail worth keeping: `.brand`'s shrink-and-ellipsis behaviour (added for
+narrow phones, where the topbar has no wrap fallback) moved from the link to
+the new `.brand__word` span, and the mark is `flex-shrink: 0`. Otherwise the
+logo would have been the first thing squeezed out on a small screen.
+
+Also added light/dark `theme-color` meta tags matching the two `--bg` values,
+so mobile browser chrome tracks the app.
+
+**The favicon tracks the accent too.** A favicon is a separate document that
+can never read the page's custom properties, so a single themeable SVG is not
+possible — the colour has to be baked in per variant. Rather than shipping six
+files that would drift from the palette the first time an accent is retuned,
+`applyFavicon()` renders the mark to a data URI from `ACCENT_HEX` in theme.ts
+and swaps the `<link rel="icon">` href. `public/favicon.svg` stays as the
+pre-JS default. Which half of each pair is used follows the *operating system*
+rather than the app's theme setting: the icon lives in the browser's tab strip,
+so it should match that chrome, not the page — someone running the app in
+forced light on a dark desktop still wants the light-on-dark mark in their tabs.
+`startFaviconSync()` runs at startup so this applies on every route, including
+the sign-in pages where the appearance menu isn't mounted.
+
+One layout consequence, found by measuring rather than by eye: between
+--bp-mobile and --bp-tablet the topbar shows the full desktop layout with no
+wrap fallback, and already relied on `.brand`'s ellipsis to fit. The mark is a
+fixed 20px and cannot ellipsis, so adding it tipped that band into real
+horizontal overflow. The wordmark is therefore hidden below --bp-tablet,
+leaving the mark alone — which gives back more than the mark costs, and reads
+as a deliberate logo-only brand rather than the half-word truncation that
+appeared first.
+
 ### Feature: appearance menu — theme popup + accent colours (2026-09-08)
 
 The theme control is a popup now rather than a cycling button, with two
