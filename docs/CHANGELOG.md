@@ -5,6 +5,28 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fix: the full-width toggle did nothing on a brand-new page (2026-09-08)
+
+`PUT /api/pages/{id}/layout` looked the page up through the default query
+filter (`DeletedAt == null && Status != Draft`), so on an unpublished draft
+it found nothing and returned 404. Every other draft-aware endpoint —
+Publish, DeleteDraft, attachment upload — already opts out with
+`IgnoreQueryFilters()`; SetLayout was the one that didn't.
+
+The user-visible symptom was a toggle that flipped and immediately snapped
+back: `PageEditor.toggleFullWidth` updates optimistically and rolls back on
+error, and since layout is display metadata the rollback is silent. Full
+width worked fine on any already-published page, which is why this survived
+this long.
+
+SetLayout now reads through `IgnoreQueryFilters()` with the soft-delete half
+of the filter reapplied by hand, so a draft is reachable but a trashed page
+still isn't. Publish never touched `FullWidth`, so the choice made while
+composing now carries through to the published page unchanged. Covered by
+`DraftPageTests.Full_width_can_be_toggled_on_a_draft_and_survives_publish`,
+which asserts both halves (the 204 and the survival through publish).
+
+
 ### Design: page tree Reorder mode is now a batch edit (2026-08-19)
 
 Feedback on Reorder mode: it committed each drag immediately and left

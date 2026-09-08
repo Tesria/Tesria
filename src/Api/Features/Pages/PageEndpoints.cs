@@ -334,11 +334,17 @@ public static class PageEndpoints
     /// <summary>
     /// Sets the page's reading-width preference (normal vs. full-width). Pure
     /// display metadata, like Move — no new version, audit entry, or webhook.
+    /// Unlike Move, this must also reach an unpublished draft: the editor shows
+    /// the full-width toggle while composing a brand-new page, and the draft is
+    /// the only id that exists until Publish. Hence IgnoreQueryFilters() with
+    /// the soft-delete half of the filter reapplied by hand — a trashed page
+    /// still has no business changing its layout.
     /// </summary>
     private static async Task<IResult> SetLayout(
         Guid id, SetLayoutRequest req, AppDbContext db, IPermissionService perms)
     {
-        var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == id);
+        var page = await db.Pages.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt == null);
         if (page is null) return Results.NotFound();
         if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
         if (!await perms.CanEditPageAsync(id)) return Results.Forbid();
