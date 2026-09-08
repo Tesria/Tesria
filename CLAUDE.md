@@ -82,6 +82,12 @@ does unprompted) — safe to remove or ignore:
   real content.
 - A **"Trash Test Page"** sitting in the real **"App Design"** space's
   Trash, from an earlier trash/restore verification pass.
+- An **"API Docs Bot"** account (`api-docs-bot@tesria.local`) and the
+  **"API"** space it authored, created 2026-09-08 to document the REST API
+  end-to-end and exercise the editor's full feature set against real content
+  (23 pages, 8 labels, panels, coloured tables, a saved template). The space
+  is real documentation worth keeping; the bot account is a fixture and can
+  be deleted once its pages are reassigned or the space is re-owned.
 
 If a new session picks up UI work in the "App Design" space (the
 dogfooding space documenting Tesria's own architecture), note it's real,
