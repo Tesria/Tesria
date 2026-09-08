@@ -37,9 +37,30 @@ menu, and a per-page full-width layout toggle — see
 ## Quick start (Docker)
 
 ```bash
-cp .env.example .env        # then edit POSTGRES_PASSWORD, DOMAIN, ACME_EMAIL
+cp .env.example .env        # then edit the values below
 docker compose up -d --build
 ```
+
+Set these in `.env` before the first start — `.env.example` ships
+placeholders, not blanks, so nothing fails loudly if you skip one:
+
+| Variable | |
+|---|---|
+| `POSTGRES_PASSWORD` | Any long random string. |
+| `BACKUP_ENCRYPTION_KEY` | **Required.** Encrypts the pgBackRest repository (`openssl rand -hex 32`). Backups made with it are unrecoverable without it, so keep it somewhere safe — and *don't* reuse a key from another install unless you intend to restore that install's backups. |
+| `DOMAIN`, `ACME_EMAIL` | `localhost` is fine for a laptop. |
+| `COLLAB_SHARED_SECRET` | Optional (`openssl rand -hex 32`). Empty disables real-time co-editing; the editor falls back to single-user. |
+
+Everything else — schema included — sets itself up: the API runs EF Core
+migrations on startup, and the pgBackRest sidecar creates its stanza on
+first boot. Register the first account at `https://<domain>/register`; a
+fresh database has no users.
+
+> **Bring the whole stack up together** (`docker compose up -d`), not
+> `docker compose up -d db` on its own. On a fresh volume the database
+> crash-loops every ~10s if started alone, because WAL archiving fails
+> until the `pgbackrest` sidecar has created the stanza. If you do need the
+> database by itself, start `db pgbackrest` together.
 
 - Real domain: set `DOMAIN=wiki.example.com` and Caddy fetches a Let's Encrypt
   cert automatically. Visit `https://wiki.example.com`.
