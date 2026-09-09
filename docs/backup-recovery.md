@@ -67,6 +67,24 @@ docker run --rm -v tesria_backups:/b -v "$PWD":/out alpine \
 
 ---
 
+## The runtime database role and restores
+
+Since dev-plan 3.1 the app runs as `tesria_app`, a least-privilege role it
+creates itself at startup from the owner connection. Nothing in this
+runbook changes: backups and restores keep using the owner (`POSTGRES_USER`),
+`pg_restore` already runs `--no-privileges`, and the role is re-provisioned
+the next time the app starts — including on a brand-new host where it did
+not exist. Two things worth knowing:
+
+* Start `app` before `collab` after a restore (compose does: collab depends
+  on app being healthy), because collab signs in as the role the app creates.
+* After any restore, run `scripts/verify-audit-chain.sh` (or Admin →
+  Security → Verify). A point-in-time restore legitimately shortens the
+  audit chain to the target time; the chain will verify, and the in-process
+  monitor's "shorter than last time" warning on the next daily run is
+  expected once. A restore should never produce a *broken* chain — if it
+  does, the backup itself was taken from an already-tampered database.
+
 ## Recovery scenarios
 
 ### A. A user deleted or broke a page (the common case)

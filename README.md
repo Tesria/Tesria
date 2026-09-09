@@ -47,6 +47,7 @@ placeholders, not blanks, so nothing fails loudly if you skip one:
 | Variable | |
 |---|---|
 | `POSTGRES_PASSWORD` | Any long random string. |
+| `APP_DB_PASSWORD` | Any long random string, different from the above (`openssl rand -hex 24`). The app creates a least-privilege `tesria_app` role with it at startup and runs as that role; it cannot alter or delete audit rows. Empty runs the app as the database owner — acceptable on a LAN, not on the internet. |
 | `BACKUP_ENCRYPTION_KEY` | **Required.** Encrypts the pgBackRest repository (`openssl rand -hex 32`). Backups made with it are unrecoverable without it, so keep it somewhere safe — and *don't* reuse a key from another install unless you intend to restore that install's backups. |
 | `DOMAIN`, `ACME_EMAIL` | `localhost` is fine for a laptop. |
 | `COLLAB_SHARED_SECRET` | Optional (`openssl rand -hex 32`). Empty disables real-time co-editing; the editor falls back to single-user. |

@@ -103,6 +103,70 @@ switches the header to report-only for troubleshooting.
 out of clicking past the internal CA's certificate warning. See
 `tls-and-lan-access.md`, Path 3.
 
+### Database roles and the audit hash chain (`Infrastructure/Security/DatabaseRoles.cs`, `Infrastructure/Audit/AuditChain.cs`, dev-plan 3.1)
+
+Three layers, meant to be read together: the role split makes tampering
+with the audit log **hard**, the hash chain makes it **detectable**, and
+point-in-time recovery (already shipped) makes it **recoverable**.
+
+**Two connections.** `ConnectionStrings:Default` is the owner (the
+`POSTGRES_USER` superuser). It is used once, at startup, unpooled: apply
+migrations, backfill the chain, provision the runtime role. Then it is
+gone. `ConnectionStrings:App` is `tesria_app` (`APP_DB_PASSWORD`), which
+the running app and the collab sidecar use for everything else. It has
+`SELECT/INSERT/UPDATE/DELETE` on every table and sequence **except**
+`UPDATE/DELETE/TRUNCATE` on the append-only tables
+(`DatabaseRoles.AppendOnlyTables`: `AuditLogs`, `PageViews`; 3.3 adds
+`SecurityEvents`). Verified live: `UPDATE "AuditLogs"` as `tesria_app` →
+`permission denied`.
+
+The app provisions the role itself, on every start, rather than a database
+init script: init scripts run only on a fresh volume, which would have left
+every existing install on the superuser, and re-running the grants after
+`Migrate()` means tables added by later migrations are covered without
+anyone remembering to. Rotation is "change `APP_DB_PASSWORD`, restart app
+and collab". An empty `APP_DB_PASSWORD` falls back to the owner connection
+with a startup warning — a half-configured split must not brick an install
+that worked yesterday. Postgres referential actions (cascades, `SET NULL`)
+run as the table owner, so the role's lack of `DELETE` on `PageViews` does
+not stop a page purge.
+
+**The chain.** Every `AuditLog` row carries `Sequence` (contiguous from 1),
+`PrevHash` and `Hash = SHA-256(PrevHash ‖ canonical row)`. Linking happens
+in `AppDbContext.SaveChanges[Async]` — the one place every write passes
+through, so no code path can add an unchained row — under a
+transaction-scoped Postgres advisory lock so concurrent appenders serialise
+on the tail. A unique index on `Sequence` makes any race that got past the
+lock fail rather than fork.
+
+Two round-trip hazards shaped the canonical form. `MetadataJson` is `jsonb`,
+and Postgres re-orders keys, strips whitespace and normalises numbers on
+the way in — so the hash is over a canonical form (keys sorted, compact,
+numbers via `decimal`) computed identically at write and at verify.
+`CreatedAt` is truncated to milliseconds before hashing because Postgres
+keeps microseconds and .NET keeps 100 ns ticks. Both were confirmed by
+recomputing every stored hash independently in Python from a `psql` dump.
+
+Rows written before the chain existed are linked at startup by
+`AuditChain.BackfillAsync`, in `CreatedAt, Id` order, on the owner
+connection (the only one allowed the `UPDATE`).
+
+**Verification** (`AuditChainVerifier`) walks the chain in sequence order
+and reports the first link that fails: a gap (row deleted), a `PrevHash`
+mismatch, or a hash mismatch (row altered). It runs on demand from
+`POST /api/admin/audit/verify` (audited), from
+`scripts/verify-audit-chain.sh` for cron, and daily in-process
+(`AuditChainMonitor`), which also remembers the last verified length so a
+chain that got *shorter* — the one thing a chain cannot detect on its own —
+is reported too. What verification cannot do is outlive a compromise of the
+app binary: an attacker who controls the app can make the endpoint lie.
+
+That is why every chained row is **also written to stdout** as it commits,
+as one JSON line under the `Tesria.Audit` log category. `docker compose
+logs app`, and anything forwarding it, holds a copy that never touched the
+database and that the database password cannot reach. "An attacker can't
+scrub logs" is really "logs exist in more than one place".
+
 ### Roles and administrators (spec — dev-plan 0.1, designed 2026-09-08)
 
 Two roles, one enum: `User.Role` is `Member = 0 | Admin = 1`. An enum, not

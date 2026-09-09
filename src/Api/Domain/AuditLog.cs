@@ -25,4 +25,22 @@ public class AuditLog
     public string? MetadataJson { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
+
+    /// <summary>
+    /// Position in the hash chain (dev-plan 3.1): 1 for the first chained row,
+    /// then contiguous. Assigned inside <c>SaveChanges</c> under a lock, so two
+    /// concurrent writers cannot both take the same number. Null only on rows
+    /// written before the chain existed and not yet backfilled.
+    /// </summary>
+    public long? Sequence { get; set; }
+
+    /// <summary>The previous row's <see cref="Hash"/>; the genesis value for row 1.</summary>
+    public string? PrevHash { get; set; }
+
+    /// <summary>
+    /// SHA-256 over <see cref="PrevHash"/> and this row's canonical form. Any
+    /// edit or deletion changes what the next row's <see cref="PrevHash"/>
+    /// should have been, which is what verification detects.
+    /// </summary>
+    public string? Hash { get; set; }
 }

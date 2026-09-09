@@ -5,6 +5,40 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Security: least-privilege database role and audit hash chain (dev-plan 3.1) (2026-09-09)
+
+The app no longer runs as the Postgres superuser. At startup it uses the
+owner connection once — unpooled — to migrate, then creates `tesria_app`
+(`APP_DB_PASSWORD`) with read/write on everything except `UPDATE`/`DELETE`
+on `AuditLogs` and `PageViews`, and runs as that role from then on; so
+does the collab sidecar. Provisioned by the app rather than an init script
+so existing installs get it too, and re-granted every start so tables from
+future migrations are covered. Empty `APP_DB_PASSWORD` falls back to the
+owner with a warning rather than refusing to start.
+
+Every audit row is now a link in a SHA-256 hash chain (`Sequence`,
+`PrevHash`, `Hash`), linked inside `SaveChanges` under a Postgres advisory
+lock so no code path can write an unchained row and no two writers can take
+the same position. The 36 rows written before this existed were linked at
+first start. `POST /api/admin/audit/verify`, `scripts/verify-audit-chain.sh`
+and a daily in-process monitor walk the chain and name the first broken
+link — an altered row, a missing row, or (monitor only) a chain shorter
+than last time. Every row is also written to stdout as JSON under the
+`Tesria.Audit` log category as it commits: a copy the database password
+cannot reach.
+
+Two round-trip hazards found by verifying against the real database: jsonb
+re-orders keys and normalises numbers, and `timestamptz` keeps microseconds
+where .NET keeps ticks. Hashing is over a canonical form that survives
+both, and all 36 stored hashes were recomputed independently in Python
+from a `psql` dump to prove it. Live: `UPDATE "AuditLogs"` as `tesria_app`
+→ `permission denied`.
+
+Tests (six): contiguous sequences and a passing verify; an altered row is
+named; a deleted row is named as a gap at its successor; legacy rows are
+backfilled; canonical JSON is order/whitespace/number-spelling insensitive;
+members cannot verify.
+
 ### Security: proxy trust, secure cookies, security headers (dev-plan 3.0) (2026-09-09)
 
 *Plan tag: Opus. Run as Fable at the user's request — Phase 3 is security
