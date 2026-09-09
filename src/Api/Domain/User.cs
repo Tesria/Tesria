@@ -79,6 +79,20 @@ public class User
     /// nothing without the signed cookie it lives in.
     /// </summary>
     public string SecurityStamp { get; set; } = Guid.NewGuid().ToString("N");
+
+    /// <summary>
+    /// Consecutive failed sign-ins since the last success (dev-plan 3.2).
+    /// Persisted, not in memory, so a restart does not hand an attacker a
+    /// fresh budget and so administrators can see it.
+    /// </summary>
+    public int FailedLoginCount { get; set; }
+
+    /// <summary>
+    /// Until when sign-in is refused regardless of the password. Always
+    /// temporary; the response is the same generic 401 as a wrong password so
+    /// the lock itself reveals nothing.
+    /// </summary>
+    public DateTimeOffset? LockedUntil { get; set; }
 }
 
 public enum UserStatus

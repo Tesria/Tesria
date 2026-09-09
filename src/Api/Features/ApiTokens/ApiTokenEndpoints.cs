@@ -15,7 +15,7 @@ public static class ApiTokenEndpoints
     {
         var group = routes.MapGroup("/api-tokens").WithTags("ApiTokens").RequireAuthorization();
         group.MapGet("/", List);
-        group.MapPost("/", Create);
+        group.MapPost("/", Create).RequireRateLimiting(Infrastructure.Security.RateLimits.TokenMintPolicy);
         group.MapDelete("/{id:guid}", Revoke);
         return routes;
     }

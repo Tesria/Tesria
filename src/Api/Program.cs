@@ -283,6 +283,12 @@ if (!string.IsNullOrWhiteSpace(oidcAuthority))
     });
 }
 
+// Rate limits (dev-plan 3.2). Policies are attached to endpoints by name;
+// the global limiter covers anonymous callers. See RateLimits.
+builder.Services.AddRateLimiter(o => { });
+builder.Services.AddOptions<Microsoft.AspNetCore.RateLimiting.RateLimiterOptions>()
+    .Configure<SiteSettingsCache>((o, cache) => RateLimits.Configure(o, cache));
+
 // Believe X-Forwarded-For / X-Forwarded-Proto from the reverse proxy, and
 // nothing else — see ProxyTrust for what "the proxy" means here.
 builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(o =>
@@ -346,6 +352,11 @@ using (var scope = app.Services.CreateScope())
         db.Database.EnsureCreated();
         await AuditChain.BackfillAsync(db);
     }
+
+    // Load settings once so the rate limiter, which cannot await, has real
+    // values from the first request rather than defaults until someone
+    // happens to sign in.
+    await scope.ServiceProvider.GetRequiredService<ISiteSettingsService>().GetAsync();
 }
 
 // ---------------------------------------------------------------------------
@@ -383,6 +394,9 @@ app.UseDefaultFiles();
 app.UseStaticFiles(spaStaticFileOptions);
 
 app.UseAuthentication();
+// After authentication so the global limiter can tell a session from a
+// stranger; before authorization so a rejected request does no more work.
+app.UseRateLimiter();
 app.UseAuthorization();
 // After authorization so it only ever stamps callers who got through it.
 app.UseMiddleware<LastSeenMiddleware>();

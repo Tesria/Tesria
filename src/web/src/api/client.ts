@@ -129,6 +129,13 @@ export type SiteSettings = {
   smtpFromAddress: string | null
   smtpTls: number
   requireTotpForAdmins: boolean
+  /** Brute-force protection (dev-plan 3.2). Every limiter is tunable. */
+  loginRateLimitPerMinute: number
+  anonymousRateLimitPerMinute: number
+  tokenMintLimitPerHour: number
+  lockoutThreshold: number
+  lockoutBaseSeconds: number
+  lockoutMaxSeconds: number
   updatedAt: string
 }
 
@@ -150,6 +157,36 @@ export type AdminUser = {
   recoveryCodesRemaining: number
   lastSeenAt: string | null
   createdAt: string
+  failedLoginCount: number
+  /** Set while a temporary lockout is in force (dev-plan 3.2). */
+  lockedUntil: string | null
+}
+
+export type LockoutRow = {
+  userId: string
+  email: string
+  displayName: string
+  failedLoginCount: number
+  lockedUntil: string
+}
+
+export type SecurityLimits = {
+  loginRateLimitPerMinute: number
+  anonymousRateLimitPerMinute: number
+  tokenMintLimitPerHour: number
+  lockoutThreshold: number
+  lockoutBaseSeconds: number
+  lockoutMaxSeconds: number
+  activeLockouts: LockoutRow[]
+}
+
+export type AuditChainReport = {
+  ok: boolean
+  checked: number
+  unchained: number
+  brokenAtSequence: number | null
+  problem: string | null
+  verifiedAt: string
 }
 
 export type AdminSpace = {
@@ -472,6 +509,7 @@ export const api = {
         request<void>('POST', `/api/admin/users/${id}/revoke-sessions`),
       revokeTokens: (id: string) =>
         request<void>('POST', `/api/admin/users/${id}/revoke-tokens`),
+      unlock: (id: string) => request<void>('POST', `/api/admin/users/${id}/unlock`),
       issueReset: (id: string) =>
         request<{ token: string; path: string; expiresAt: string }>(
           'POST', `/api/admin/users/${id}/reset-password`),
@@ -488,6 +526,10 @@ export const api = {
     },
     dashboard: (rangeDays: number) =>
       request<Dashboard>('GET', `/api/admin/dashboard?rangeDays=${rangeDays}`),
+    security: {
+      limits: () => request<SecurityLimits>('GET', '/api/admin/security/limits'),
+      verifyAuditChain: () => request<AuditChainReport>('POST', '/api/admin/audit/verify'),
+    },
   },
   avatar: {
     /** multipart upload; the server re-encodes to a 256px WebP square.

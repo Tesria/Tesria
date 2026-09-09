@@ -3,6 +3,7 @@ using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Audit;
 using Tesria.Api.Infrastructure.Auth;
 using Tesria.Api.Infrastructure.Settings;
+using Tesria.Api.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace Tesria.Api.Features.Admin;
@@ -38,7 +39,14 @@ public static class AdminEndpoints
     public record AdminUserResponse(
         Guid Id, string Email, string DisplayName, UserRole Role, UserStatus Status,
         string? AvatarHash, int? AvatarVariant, bool HasPassword, bool IsSso,
-        int RecoveryCodesRemaining, DateTimeOffset? LastSeenAt, DateTimeOffset CreatedAt);
+        int RecoveryCodesRemaining, DateTimeOffset? LastSeenAt, DateTimeOffset CreatedAt,
+        int FailedLoginCount, DateTimeOffset? LockedUntil);
+
+    public record LockoutRow(Guid UserId, string Email, string DisplayName, int FailedLoginCount, DateTimeOffset LockedUntil);
+    public record SecurityLimitsResponse(
+        int LoginRateLimitPerMinute, int AnonymousRateLimitPerMinute, int TokenMintLimitPerHour,
+        int LockoutThreshold, int LockoutBaseSeconds, int LockoutMaxSeconds,
+        IReadOnlyList<LockoutRow> ActiveLockouts);
 
     public record SetRoleRequest(UserRole Role);
     public record SetStatusRequest(UserStatus Status);
@@ -65,6 +73,12 @@ public static class AdminEndpoints
         string? SmtpFromAddress,
         SmtpTlsMode SmtpTls,
         bool RequireTotpForAdmins,
+        int LoginRateLimitPerMinute,
+        int AnonymousRateLimitPerMinute,
+        int TokenMintLimitPerHour,
+        int LockoutThreshold,
+        int LockoutBaseSeconds,
+        int LockoutMaxSeconds,
         DateTimeOffset UpdatedAt);
 
     /// <summary>
@@ -86,7 +100,13 @@ public static class AdminEndpoints
         string? SmtpPassword,
         string? SmtpFromAddress,
         SmtpTlsMode? SmtpTls,
-        bool? RequireTotpForAdmins);
+        bool? RequireTotpForAdmins,
+        int? LoginRateLimitPerMinute,
+        int? AnonymousRateLimitPerMinute,
+        int? TokenMintLimitPerHour,
+        int? LockoutThreshold,
+        int? LockoutBaseSeconds,
+        int? LockoutMaxSeconds);
 
     public static IEndpointRouteBuilder MapAdminEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -107,6 +127,8 @@ public static class AdminEndpoints
         group.MapPost("/invites", CreateInvite);
         group.MapDelete("/invites/{id:guid}", RevokeInvite);
         group.MapPost("/audit/verify", VerifyAuditChain);
+        group.MapPost("/users/{userId:guid}/unlock", Unlock);
+        group.MapGet("/security/limits", GetLimits);
 
         return routes;
     }
@@ -193,6 +215,25 @@ public static class AdminEndpoints
         if (req.SmtpTls is not null) changed.Add(nameof(req.SmtpTls));
         if (req.RequireTotpForAdmins is not null) changed.Add(nameof(req.RequireTotpForAdmins));
 
+        foreach (var (field, value, min, max) in new[]
+        {
+            (nameof(req.LoginRateLimitPerMinute), req.LoginRateLimitPerMinute, 1, 10_000),
+            (nameof(req.AnonymousRateLimitPerMinute), req.AnonymousRateLimitPerMinute, 1, 100_000),
+            (nameof(req.TokenMintLimitPerHour), req.TokenMintLimitPerHour, 1, 10_000),
+            (nameof(req.LockoutThreshold), req.LockoutThreshold, 1, 1_000),
+            (nameof(req.LockoutBaseSeconds), req.LockoutBaseSeconds, 1, 86_400),
+            (nameof(req.LockoutMaxSeconds), req.LockoutMaxSeconds, 1, 86_400),
+        })
+        {
+            if (value is null) continue;
+            if (value < min || value > max)
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    [char.ToLowerInvariant(field[0]) + field[1..]] = [$"Must be between {min} and {max}."],
+                });
+            changed.Add(field);
+        }
+
         var actorId = current.Id;
         var updated = await settings.UpdateAsync(s =>
         {
@@ -206,6 +247,12 @@ public static class AdminEndpoints
             if (req.SmtpFromAddress is not null) s.SmtpFromAddress = Blank(req.SmtpFromAddress);
             if (req.SmtpTls is { } tls) s.SmtpTls = tls;
             if (req.RequireTotpForAdmins is { } totp) s.RequireTotpForAdmins = totp;
+            if (req.LoginRateLimitPerMinute is { } l1) s.LoginRateLimitPerMinute = l1;
+            if (req.AnonymousRateLimitPerMinute is { } l2) s.AnonymousRateLimitPerMinute = l2;
+            if (req.TokenMintLimitPerHour is { } l3) s.TokenMintLimitPerHour = l3;
+            if (req.LockoutThreshold is { } l4) s.LockoutThreshold = l4;
+            if (req.LockoutBaseSeconds is { } l5) s.LockoutBaseSeconds = l5;
+            if (req.LockoutMaxSeconds is { } l6) s.LockoutMaxSeconds = Math.Max(l6, s.LockoutBaseSeconds);
             if (req.SmtpPassword is not null)
                 s.SmtpPasswordProtected = req.SmtpPassword.Length == 0
                     ? null
@@ -236,6 +283,12 @@ public static class AdminEndpoints
         s.SmtpFromAddress,
         s.SmtpTls,
         s.RequireTotpForAdmins,
+        s.LoginRateLimitPerMinute,
+        s.AnonymousRateLimitPerMinute,
+        s.TokenMintLimitPerHour,
+        s.LockoutThreshold,
+        s.LockoutBaseSeconds,
+        s.LockoutMaxSeconds,
         s.UpdatedAt);
 
     /// <summary>
@@ -335,7 +388,7 @@ public static class AdminEndpoints
                 u.AvatarKey == null ? null : u.AvatarHash, u.AvatarVariant,
                 u.PasswordHash != null, u.OidcSubject != null,
                 db.RecoveryCodes.Count(c => c.UserId == u.Id && c.UsedAt == null),
-                u.LastSeenAt, u.CreatedAt))
+                u.LastSeenAt, u.CreatedAt, u.FailedLoginCount, u.LockedUntil))
             .ToListAsync();
 
         // Ordered in memory: SQLite cannot ORDER BY a DateTimeOffset, and this
@@ -451,7 +504,7 @@ public static class AdminEndpoints
                 u.AvatarKey == null ? null : u.AvatarHash, u.AvatarVariant,
                 u.PasswordHash != null, u.OidcSubject != null,
                 db.RecoveryCodes.Count(c => c.UserId == u.Id && c.UsedAt == null),
-                u.LastSeenAt, u.CreatedAt))
+                u.LastSeenAt, u.CreatedAt, u.FailedLoginCount, u.LockedUntil))
             .FirstOrDefaultAsync();
 
     // ---- spaces -------------------------------------------------------------
@@ -492,5 +545,38 @@ public static class AdminEndpoints
             new { report.Ok, report.Checked, report.BrokenAtSequence });
         await db.SaveChangesAsync();
         return Results.Ok(report);
+    }
+
+    /// <summary>Clears a lockout early. Audited: unlocking is an act, not a state.</summary>
+    private static async Task<IResult> Unlock(Guid userId, AppDbContext db, IAuditLogger audit)
+    {
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Results.NotFound();
+
+        AuthLockout.Reset(user);
+        audit.Record("user.unlocked", "user", user.Id);
+        await db.SaveChangesAsync();
+        return Results.NoContent();
+    }
+
+    /// <summary>The current limits and who is locked out right now — the Security page's counters.</summary>
+    private static async Task<IResult> GetLimits(ISiteSettingsService settings, AppDbContext db)
+    {
+        var s = await settings.GetAsync();
+        var now = DateTimeOffset.UtcNow;
+        // Compared in memory: the SQLite test provider cannot translate a
+        // DateTimeOffset comparison, and lockouts are few.
+        var locked = (await db.Users.AsNoTracking()
+                .Where(u => u.LockedUntil != null)
+                .Select(u => new { u.Id, u.Email, u.DisplayName, u.FailedLoginCount, u.LockedUntil })
+                .ToListAsync())
+            .Where(u => u.LockedUntil > now)
+            .OrderByDescending(u => u.LockedUntil)
+            .Select(u => new LockoutRow(u.Id, u.Email, u.DisplayName, u.FailedLoginCount, u.LockedUntil!.Value))
+            .ToList();
+
+        return Results.Ok(new SecurityLimitsResponse(
+            s.LoginRateLimitPerMinute, s.AnonymousRateLimitPerMinute, s.TokenMintLimitPerHour,
+            s.LockoutThreshold, s.LockoutBaseSeconds, s.LockoutMaxSeconds, locked));
     }
 }

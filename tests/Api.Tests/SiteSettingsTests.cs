@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -174,12 +175,11 @@ public class SiteSettingsTests
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.SiteSettings.Add(new SiteSettings
-            {
-                AllowPublicRegistration = false,
-                UpdatedAt = DateTimeOffset.UtcNow,
-            });
+            // Startup creates the row (the rate limiter reads it), so edit it.
+            var settings = await db.SiteSettings.FirstAsync();
+            settings.AllowPublicRegistration = false;
             await db.SaveChangesAsync();
+            scope.ServiceProvider.GetRequiredService<SiteSettingsCache>().Invalidate();
         }
 
         var first = await factory.CreateClient().PostAsJsonAsync("/api/auth/register",

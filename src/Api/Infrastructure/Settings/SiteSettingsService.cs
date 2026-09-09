@@ -62,6 +62,16 @@ public sealed class SiteSettingsCache
     {
         lock (_gate) { _value = null; }
     }
+
+    /// <summary>
+    /// The last value loaded, however old. For synchronous callers that cannot
+    /// await a reload — the rate limiter's partitioner — where a slightly stale
+    /// limit is better than none, and null only before the first load.
+    /// </summary>
+    public SiteSettings? Peek()
+    {
+        lock (_gate) { return _value; }
+    }
 }
 
 public sealed class SiteSettingsService(
@@ -98,7 +108,9 @@ public sealed class SiteSettingsService(
         settings.UpdatedById = actorId;
         await db.SaveChangesAsync(ct);
 
-        cache.Invalidate();
+        // Set, not invalidated: the limiter reads through Peek() and should
+        // see a change the moment it is saved rather than at the next load.
+        cache.Set(settings);
         return settings;
     }
 
