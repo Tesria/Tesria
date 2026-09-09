@@ -517,12 +517,16 @@ security because 4.2 needs 3.2's limiter and 4.3 needs 3.3's alerts.
   (neither existed), and a `BaseUrl` setting (default `https://$DOMAIN`)
   so emailed links know the instance's address.
 
-### 4.2 Password recovery — email — `M` — Model: Opus
+### 4.2 Password recovery — email — `M` — Model: Opus — ✅ **shipped 2026-09-09** (run as Fable by user override)
 - `POST /api/auth/recover/email` → always 202, same body either way.
   Token: 32 random bytes, stored hashed, 1-hour expiry, single-use,
   invalidated by a newer request. `/reset?token=…` → new password → rotate
   stamp. The login page's "Forgot password?" now offers both paths; the
   email option only appears when `EmailEnabled`.
+- **Shipped as specified.** The token is 1.3's admin reset token with a
+  nullable issuer, so both links share one redemption path; the email
+  path is throttled per address by 1.3's limiter and per client address
+  by 3.2's.
 
 ### 4.3 Email delivery for alerts and notifications — `M` — Model: Opus
 - Security alerts (3.3) go to admins by email as well as in-app — this is
