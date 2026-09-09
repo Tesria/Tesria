@@ -32,7 +32,8 @@ public static class ApiTokenEndpoints
     }
 
     private static async Task<IResult> Create(
-        CreateTokenRequest req, IApiTokenService tokens, CurrentUser current)
+        CreateTokenRequest req, IApiTokenService tokens, CurrentUser current,
+        Infrastructure.Security.ISecurityDetector detector, AppDbContext db)
     {
         var name = (req.Name ?? "").Trim();
         if (name.Length == 0)
@@ -42,6 +43,8 @@ public static class ApiTokenEndpoints
             });
 
         var (raw, entity) = await tokens.IssueAsync(current.RequireId(), name);
+        await detector.TokenMintedAsync(current.RequireId());
+        await db.SaveChangesAsync();
         // The raw token is returned exactly once — it is not retrievable again.
         return Results.Created($"/api/api-tokens/{entity.Id}",
             new CreatedTokenResponse(entity.Id, entity.Name, entity.Prefix, entity.CreatedAt, raw));

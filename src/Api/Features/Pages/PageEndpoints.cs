@@ -5,6 +5,7 @@ using Tesria.Api.Infrastructure.Audit;
 using Tesria.Api.Infrastructure.Auth;
 using Tesria.Api.Infrastructure.Notifications;
 using Tesria.Api.Infrastructure.Permissions;
+using Tesria.Api.Infrastructure.Security;
 using Tesria.Api.Infrastructure.Webhooks;
 using Microsoft.EntityFrameworkCore;
 
@@ -396,7 +397,8 @@ public static class PageEndpoints
     }
 
     private static async Task<IResult> Delete(
-        Guid id, AppDbContext db, CurrentUser current, IAuditLogger audit, IPermissionService perms)
+        Guid id, AppDbContext db, CurrentUser current, IAuditLogger audit, IPermissionService perms,
+        ISecurityDetector detector)
     {
         var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == id);
         if (page is null) return Results.NotFound();
@@ -414,6 +416,7 @@ public static class PageEndpoints
             p.DeletedById = userId;
         }
         audit.Record("page.trashed", "page", page.Id, new { page.Title, SubtreeCount = subtree.Count });
+        await detector.PagesRemovedAsync(userId, subtree.Count, "page.trashed", page.Id);
         await db.SaveChangesAsync();
         return Results.NoContent();
     }
@@ -442,7 +445,8 @@ public static class PageEndpoints
     }
 
     private static async Task<IResult> Purge(
-        Guid id, AppDbContext db, IAuditLogger audit, IPermissionService perms)
+        Guid id, AppDbContext db, IAuditLogger audit, IPermissionService perms,
+        CurrentUser current, ISecurityDetector detector)
     {
         var page = await db.Pages.IgnoreQueryFilters()
             .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt != null);
@@ -459,6 +463,7 @@ public static class PageEndpoints
         db.Pages.RemoveRange(subtree);
         // Recorded before SaveChanges so the entry commits with the deletion.
         audit.Record("page.purged", "page", page.Id, new { page.Title, SubtreeCount = subtree.Count });
+        await detector.PagesRemovedAsync(current.RequireId(), subtree.Count, "page.purged", page.Id);
         await db.SaveChangesAsync();
         return Results.NoContent();
     }

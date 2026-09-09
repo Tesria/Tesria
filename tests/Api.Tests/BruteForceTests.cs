@@ -91,7 +91,7 @@ public class BruteForceTests
         // one, so the lock cannot be used to confirm a guess.
         var right = await LoginAsync(From(factory, "203.0.113.9"), "victim@example.com", "supersecret");
         Assert.Equal(HttpStatusCode.Unauthorized, right.StatusCode);
-        Assert.Equal(0, (await right.Content.ReadAsByteArrayAsync()).Length);
+        Assert.Empty(await right.Content.ReadAsByteArrayAsync());
     }
 
     [Fact]

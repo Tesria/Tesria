@@ -27,6 +27,13 @@ public interface INotificationService
     /// recipient click straight through to it.
     /// </summary>
     Task NotifyOfNewPageAsync(Guid pageId, Guid spaceId, Guid actorId, object? metadata = null);
+
+    /// <summary>
+    /// Queues one notification per active administrator (dev-plan 3.3). No
+    /// actor: security alerts come from the system, and an admin whose own
+    /// action tripped a detector should still hear about it.
+    /// </summary>
+    Task NotifyAdminsAsync(string action, Guid targetId, object? metadata = null);
 }
 
 public sealed class NotificationService(AppDbContext db) : INotificationService
@@ -57,6 +64,29 @@ public sealed class NotificationService(AppDbContext db) : INotificationService
     {
         var recipients = await SpaceWatcherIdsAsync(spaceId);
         Enqueue(recipients, "page", pageId, "page.created", actorId, metadata);
+    }
+
+    public async Task NotifyAdminsAsync(string action, Guid targetId, object? metadata = null)
+    {
+        var admins = await db.Users.AsNoTracking()
+            .Where(u => u.Role == UserRole.Admin && u.Status == UserStatus.Active)
+            .Select(u => u.Id)
+            .ToListAsync();
+
+        var metadataJson = metadata is null ? null : JsonSerializer.Serialize(metadata);
+        var now = DateTimeOffset.UtcNow;
+        foreach (var userId in admins)
+            db.Notifications.Add(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Action = action,
+                TargetType = "security",
+                TargetId = targetId,
+                ActorId = null,
+                MetadataJson = metadataJson,
+                CreatedAt = now,
+            });
     }
 
     private Task<List<Guid>> SpaceWatcherIdsAsync(Guid spaceId) =>

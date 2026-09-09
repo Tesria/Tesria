@@ -399,7 +399,7 @@ email in 4.3; do not block this phase on email.
   button; 3.3 adds events, alerts and mitigations to it. Recovery and admin
   unlock also clear a lockout.
 
-### 3.3 Threat detection and admin alerting — `L` — Model: Fable → Opus
+### 3.3 Threat detection and admin alerting — `L` — Model: Fable → Opus — ✅ **shipped 2026-09-09** (both halves as Fable by user override)
 - **Fable designs** the signal set, thresholds, and the alert lifecycle;
   **Opus implements.** The design goes into `architecture.md` first.
 - `SecurityEvent` table (kind, severity, actor?, IP, targetId?, metadata,
@@ -425,6 +425,12 @@ email in 4.3; do not block this phase on email.
   require TOTP for admins now. Acknowledge/resolve with a note.
 - Tests: each detector fires on a synthetic burst and not below threshold;
   cooldown suppresses duplicates; a blocked IP gets 403 before auth runs.
+- **Shipped with two deviations.** Events and alerts are separate tables:
+  events are append-only (the runtime role cannot touch them) and alerts
+  carry the mutable acknowledge/resolve state, so acting on an alert never
+  needs an UPDATE on the append-only table. And thresholds are constants in
+  `SecurityThresholds`, not settings — see the design in architecture.md
+  for why. Rate-limit counters were already on the Security page from 3.2.
 
 ### 3.4 Egress and input hardening — `M` — Model: Opus
 - **SSRF guard**, one implementation shared by webhooks (today) and link

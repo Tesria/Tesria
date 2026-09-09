@@ -202,6 +202,95 @@ password does not reset the counter while locked, or an attacker who found
 it would clear their own lock. A successful sign-in, a completed recovery,
 or an admin unlock resets it.
 
+### Threat detection and admin alerting (spec — dev-plan 3.3, designed 2026-09-09)
+
+**What it is for.** The limiters in 3.2 stop an attack from succeeding
+cheaply; this tells an administrator that one is happening and gives them
+something to do about it in one click. The requirement, verbatim: "if an
+attack is suspected an email / notification goes to the admin group and it
+gives them mitigation options." Email arrives in 4.3; notifications are
+in-app now, through the existing bell.
+
+**Three tables, one of them append-only.**
+
+* `SecurityEvents` — what a detector saw. *Append-only*: the runtime
+  role cannot update or delete it (added to `DatabaseRoles.AppendOnlyTables`),
+  so the record of an attack cannot be tidied away by the app. Columns:
+  `Kind` (dotted, e.g. `login.credential_stuffing`), `Severity`
+  (Info/Warning/Critical), `Key` (what the detector counted on — an address,
+  an actor id), `Ip`, `ActorId`, `TargetType`/`TargetId`, `MetadataJson`,
+  `CreatedAt`.
+* `SecurityAlerts` — the workflow object an administrator acts on, one per
+  event that crossed a threshold. Mutable: `Status` (Open → Acknowledged →
+  Resolved), `Note`, who and when. Split from the event precisely so that
+  acknowledging does not require an UPDATE on the append-only table.
+* `BlockedNetworks` — the address blocklist: `Cidr`, `Reason`, `ExpiresAt?`,
+  who added it.
+
+**Detectors.** Two shapes. *Discrete* signals write an event (and usually
+an alert) every time: an admin promoted, `AllowPublicSpaces` toggled, a
+webhook pointed at a private address, the audit chain found broken, an
+admin signing in from an address never seen for that account, an account
+locked. *Burst* signals count in a sliding window and write **one** event
+when the threshold is crossed, with the count in the metadata — the audit
+log already has every individual failure, and a thousand rows saying
+"still happening" would bury the one that matters. Windows and thresholds
+live in `SecurityThresholds` and are deliberately constants, not settings:
+tuning them is a decision for someone reading the code, not a field to
+mis-set under pressure.
+
+| Kind | Counted on | Fires at | Severity |
+|---|---|---|---|
+| `login.failed_burst_ip` | address | 20 failures / 10 min | Warning |
+| `login.credential_stuffing` | address | failures against 5 distinct accounts / 10 min | Critical |
+| `account.locked` | account | every lockout (event only) | Info |
+| `account.repeated_lockouts` | account | 3 lockouts / 1 h | Warning |
+| `login.admin_new_address` | account | admin sign-in from an address absent from that account's login history | Warning |
+| `http.denied_spike` | address | 100 × 401/403 / 5 min | Warning |
+| `content.mass_removal` | actor | 10 pages trashed or purged / 10 min | Warning |
+| `token.minting_burst` | actor | 5 tokens / 10 min | Warning |
+| `registration.burst` | instance | 10 registrations / 10 min | Warning |
+| `admin.promoted` | — | always | Warning |
+| `settings.public_spaces_toggled` | — | always | Critical |
+| `webhook.private_target` | actor | always (3.4 also blocks it) | Warning |
+| `audit.chain_broken` | — | always | Critical |
+
+Counters are in-process (`SecurityCounters`, a singleton of timestamp
+queues per `(kind, key)`, pruned on use and capped in size). A restart
+forgets them, which is acceptable: the events already written are not
+lost, and an attack that survives a restart will cross the threshold
+again. The same class holds the **cooldown**: after an alert for a
+`(kind, key)`, further crossings within one hour are suppressed, so an
+ongoing attack produces one alert an hour, not one a second.
+
+**The alert lifecycle.** A crossing writes the event, the alert (Open),
+and one `Notification` per administrator (`targetType = "security"`,
+pointing at the alert; the bell links it to Admin → Security). An
+administrator *acknowledges* ("seen, looking") or *resolves* ("done"),
+optionally with a note; both are audited. Nothing auto-resolves — a
+detector cannot know the attacker gave up.
+
+**Mitigations** — each one click on the Security page, each already
+audited by the endpoint it calls: block the address or a CIDR (with an
+optional expiry), suspend the user, sign the user out everywhere (rotate
+stamp), revoke the user's tokens, **disable all public spaces** (the 0.2
+kill switch), close registration, require TOTP for administrators (enforced
+in 3.5). An alert row offers the ones relevant to its key.
+
+**The blocklist middleware** runs immediately after forwarded headers and
+before authentication: a blocked address gets 403 and no further work,
+cookie or not. The list is cached in-process (`BlocklistCache`), reloaded
+when it changes and every minute regardless; expired entries are ignored
+on match and purged on reload. Blocked hits are counted, not written as
+events — a blocked scanner retrying is exactly the flood events exist to
+avoid.
+
+**What this does not do.** It does not detect a slow attacker who stays
+under every threshold; the limiters make that attacker slow enough that
+the audit log is the right tool. It does not correlate across kinds. It
+does not phone home. And it cannot notify anyone if the app itself is
+down — that is a monitoring concern, outside the app.
+
 ### Roles and administrators (spec — dev-plan 0.1, designed 2026-09-08)
 
 Two roles, one enum: `User.Role` is `Member = 0 | Admin = 1`. An enum, not
