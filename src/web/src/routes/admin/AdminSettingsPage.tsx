@@ -125,9 +125,11 @@ export function AdminSettingsPage() {
             <strong>Allow public spaces</strong>
             <br />
             <span className="muted small">
-              Instance-wide switch for anonymous read access. Per-space publishing
-              is not built yet (dev-plan Phase 5); until the security hardening in
-              Phase 3 ships, leave this off on anything reachable from the internet.
+              Instance-wide switch for anonymous read access. With it on, publish
+              individual spaces from Admin → Spaces. Before turning it on for an
+              instance reachable from the internet, work through the readiness
+              checklist in <code>docs/security.md</code>. Turning it off hides every
+              public space at once and keeps their settings.
             </span>
           </span>
         </label>

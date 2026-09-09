@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { api, ApiError, type Label } from '../../api/client'
 
 /** Label chips for a page, with inline add/remove. */
-export function PageLabels({ pageId }: { pageId: string }) {
+export function PageLabels({ pageId, readOnly = false }: { pageId: string; readOnly?: boolean }) {
   const [labels, setLabels] = useState<Label[]>([])
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -48,13 +48,15 @@ export function PageLabels({ pageId }: { pageId: string }) {
     <div className="labels">
       {labels.map((l) => (
         <span key={l.id} className="label-chip">
-          <Link to={`/labels/${encodeURIComponent(l.name)}`}>{l.name}</Link>
-          <button type="button" onClick={() => remove(l.name)} aria-label={`Remove label ${l.name}`}>
-            ×
-          </button>
+          {readOnly ? <span>{l.name}</span> : <Link to={`/labels/${encodeURIComponent(l.name)}`}>{l.name}</Link>}
+          {!readOnly && (
+            <button type="button" onClick={() => remove(l.name)} aria-label={`Remove label ${l.name}`}>
+              ×
+            </button>
+          )}
         </span>
       ))}
-      {adding ? (
+      {readOnly ? null : adding ? (
         <form className="label-add" onSubmit={add}>
           <input
             value={name}

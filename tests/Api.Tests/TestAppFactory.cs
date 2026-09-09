@@ -55,6 +55,15 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
     {
         _connection.Open();
         builder.UseEnvironment("Testing");
+
+        // A minimal SPA shell, so the public-meta middleware (dev-plan 5.2) has
+        // something to inject into. The real one is built into the image.
+        Directory.CreateDirectory(_uploadsPath);
+        var webRoot = Path.Combine(_uploadsPath, "wwwroot");
+        Directory.CreateDirectory(webRoot);
+        File.WriteAllText(Path.Combine(webRoot, "index.html"),
+            "<!doctype html><html><head><meta charset=\"utf-8\"><title>Tesria</title></head><body><div id=\"root\"></div></body></html>");
+        builder.UseWebRoot(webRoot);
         builder.ConfigureAppConfiguration((_, config) =>
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {

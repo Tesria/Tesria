@@ -26,7 +26,7 @@ public static partial class LabelEndpoints
 
         var pageScoped = routes.MapGroup("/pages/{pageId:guid}/labels")
             .WithTags("Labels").RequireAuthorization();
-        pageScoped.MapGet("/", ListForPage);
+        pageScoped.MapGet("/", ListForPage).AllowAnonymous(); // dev-plan 5.2
         pageScoped.MapPost("/", AddToPage);
         pageScoped.MapDelete("/{name}", RemoveFromPage);
 

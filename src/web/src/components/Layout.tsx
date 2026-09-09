@@ -82,6 +82,7 @@ function MoreMenu({ onNavigate, items }: { onNavigate: () => void; items: typeof
 export function Layout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [query, setQuery] = useState('')
   // Below --bp-mobile, .topbar__nav + .topbar__search collapse behind this —
   // display: contents on wider viewports keeps them laid out as direct
@@ -146,16 +147,24 @@ export function Layout() {
         </div>
         <div className="topbar__right">
           <ThemeToggle />
-          <NotificationBell />
-          {user && (
-            <Link to="/profile" className="topbar__me" title="Your profile">
-              <Avatar subject={user} size={24} />
-              <span className="muted topbar__username">{user.displayName}</span>
+          {user ? (
+            <>
+              <NotificationBell />
+              <Link to="/profile" className="topbar__me" title="Your profile">
+                <Avatar subject={user} size={24} />
+                <span className="muted topbar__username">{user.displayName}</span>
+              </Link>
+              <button type="button" className="btn btn--ghost" onClick={onLogout}>
+                Sign out
+              </button>
+            </>
+          ) : (
+            // Anonymous reader (dev-plan 5.3): the theme menu works without
+            // a session; everything personal is replaced by a way in.
+            <Link to="/login" state={{ from: location.pathname }} className="btn btn--primary">
+              Sign in
             </Link>
           )}
-          <button type="button" className="btn btn--ghost" onClick={onLogout}>
-            Sign out
-          </button>
         </div>
       </header>
       <main className="content">

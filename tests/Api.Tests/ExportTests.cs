@@ -391,13 +391,15 @@ public class ExportEndpointTests
     }
 
     [Fact]
-    public async Task Export_requires_authentication()
+    public async Task Export_of_a_page_anonymous_cannot_see_is_masked()
     {
         var (factory, client, page) = await NewClientWithPage();
         using var _ = factory;
         var anon = factory.CreateClient();
 
+        // Export is open to anonymous readers of public pages (dev-plan 5.2);
+        // for anything else it is 404, never 401 — the masking rule.
         var res = await anon.GetAsync($"/api/pages/{page.Id}/export?format=markdown");
-        Assert.Equal(HttpStatusCode.Unauthorized, res.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, res.StatusCode);
     }
 }

@@ -556,7 +556,7 @@ The use case is exactly the one asked for: someone builds a game wiki and
 hosts it for everyone. It pairs with wiki packs (8.5) — build it, export
 it, and others can host their own copy publicly too.
 
-### 5.1 Permission model for anonymous readers — `M` — Model: Fable
+### 5.1 Permission model for anonymous readers — `M` — Model: Fable — ✅ **shipped 2026-09-09**
 - `Space.IsPublic`, `Space.PublicSince`, `Space.PublicComments` (default
   off). Toggling is a **site-admin** action (exposing content to the
   internet is an instance-level risk, not a space-owner one), audited as
@@ -577,8 +577,12 @@ it, and others can host their own copy publicly too.
   history of a public page can leak withdrawn content — recommend closed);
   comments hidden unless `PublicComments`; collab tokens, watches, drafts,
   the user directory, groups, and labels-across-spaces stay authenticated.
+- **Shipped with one tightening:** anonymous readers are hidden from by
+  *any* restriction in a page's ancestry (View or Edit), not only View —
+  "not for everyone" now includes the internet. The matrix is
+  `PublicReadTests` (nine tests over the full grid) and was written first.
 
-### 5.2 Server: opening the read endpoints — `M` — Model: Opus
+### 5.2 Server: opening the read endpoints — `M` — Model: Opus — ✅ **shipped 2026-09-09** (run as Fable by user override)
 - Replace `RequireAuthorization()` on read routes with a policy that admits
   anonymous callers and lets the permission service decide (5.1). Write
   routes stay `RequireAuthorization()`; anonymous gets 401 there.
@@ -596,8 +600,11 @@ it, and others can host their own copy publicly too.
   at request time — the API already serves the SPA shell, so this is a
   small middleware, not SSR. Full SSR is out of scope; note it as a later
   option if search indexing matters.
+- **Shipped as specified.** The meta middleware decides through the
+  anonymous check whoever is asking, so a private title never reaches a
+  link preview even for a signed-in admin's request.
 
-### 5.3 SPA: a read-only public experience — `M` — Model: Opus
+### 5.3 SPA: a read-only public experience — `M` — Model: Opus — ✅ **shipped 2026-09-09** (run as Fable by user override)
 - Route split: public space routes render outside `ProtectedRoute`;
   `AuthContext` already models `user === null`, so components branch on it
   rather than assuming a session.
@@ -609,7 +616,7 @@ it, and others can host their own copy publicly too.
 - A visible "Public" badge on public spaces for signed-in users, so nobody
   edits a public page thinking it's internal.
 
-### 5.4 Operator controls — `S` — Model: Opus
+### 5.4 Operator controls — `S` — Model: Opus — ✅ **shipped 2026-09-09** (run as Fable by user override)
 - The 2.4 Spaces admin page: public column; toggle with a confirmation
   that names what becomes visible (page count, attachment count).
 - The 2.3 kill switch and the 3.3 "disable all public spaces" mitigation

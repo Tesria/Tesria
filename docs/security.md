@@ -118,8 +118,11 @@ before DNS points at the box.
 - [ ] Registration is closed (**Allow public registration** off) unless
       you mean to run an open community; if open, watch the registration
       alerts.
-- [ ] **Allow public spaces** stays off until Phase 5 ships and you have
-      read what it exposes.
+- [ ] **Allow public spaces** stays off until you have read
+      `docs/architecture.md` → "Public read mode" and understand that a
+      published space is readable — and its pages exportable — by anyone,
+      with restricted pages, drafts, trash and history excluded. Publish
+      spaces one at a time from Admin → Spaces; every publish is an alert.
 - [ ] The fixture accounts from development are gone or demoted.
 
 **Operations**

@@ -23,7 +23,7 @@ public static class CommentEndpoints
     {
         var pageScoped = routes.MapGroup("/pages/{pageId:guid}/comments")
             .WithTags("Comments").RequireAuthorization();
-        pageScoped.MapGet("/", ListForPage);
+        pageScoped.MapGet("/", ListForPage).AllowAnonymous(); // dev-plan 5.2: only with PublicComments
         pageScoped.MapPost("/", Create);
 
         var byId = routes.MapGroup("/comments/{id:guid}")
@@ -35,9 +35,17 @@ public static class CommentEndpoints
     }
 
     private static async Task<IResult> ListForPage(
-        Guid pageId, AppDbContext db, IPermissionService perms)
+        Guid pageId, AppDbContext db, IPermissionService perms, CurrentUser current)
     {
         if (!await perms.CanViewPageAsync(pageId)) return Results.NotFound();
+        // Anonymous readers see comments only where the space allows it; the
+        // page itself was already established as public, so 401 here reveals
+        // nothing the page did not.
+        if (current.Id is null)
+        {
+            var open = await db.Pages.AsNoTracking().Where(p => p.Id == pageId).Select(p => p.Space!.PublicComments).FirstOrDefaultAsync();
+            if (!open) return Results.Unauthorized();
+        }
         // Include the author rather than letting the client resolve ids: a
         // per-comment lookup is N round trips, and a client-side directory
         // fetch would hand the whole user list to anyone who can read a page.

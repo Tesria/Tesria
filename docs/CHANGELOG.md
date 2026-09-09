@@ -5,6 +5,53 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Feature: public read mode — anonymous access per space (dev-plan 5.1–5.4) (2026-09-09)
+
+*5.1 is a Fable item; 5.2–5.4 are tagged Opus and ran as Fable by user
+override. The design (the anonymous principal, masking, what opens and
+what stays closed, caching, discovery) is in architecture.md and was
+written before the code; the leak matrix was written before the routes
+were opened.*
+
+A space can now be **published**: anyone can read it, no account needed —
+the game-wiki case. Two switches must both be on: the instance-wide
+**Allow public spaces** (Settings; also the 3.3 kill switch) and the
+space's own flag, set by a site administrator from Admin → Spaces
+(sudo mode, audited, always a security alert in both directions, refused
+while the instance switch is off). Withdrawing keeps the flag so
+re-enabling the instance restores the previous state.
+
+An anonymous request has exactly one capability: reading a public space's
+*current, unrestricted* pages. Any restriction anywhere in a page's
+ancestry hides it — "not for everyone" now includes the internet. Drafts,
+trash, private spaces and archived spaces are 404, never 403. Opened to
+anonymous readers, each still permission-checked: space, spaces list
+(public only), page tree, page, labels on a page, attachments (list and
+download), search (scoped to public spaces), export, and comments only
+where the space allows them (read-only). Closed: version history, drafts,
+trash, the user directory, groups, labels across spaces, watches, collab,
+avatars, notifications, everything that writes.
+
+Anonymous page reads carry `Cache-Control: public, max-age=60` and an
+ETag (304 on match), so unpublishing takes effect within a minute; signed-
+in reads are `no-store`. Views are counted with no user. `robots.txt`
+allows public space paths and disallows `/api`; `sitemap.xml` lists
+public pages; a public page URL gets its title, description and Open
+Graph tags injected into the SPA shell for link previews — decided as
+the anonymous principal whoever asks.
+
+The SPA renders for anonymous readers: brand, search, theme menu and a
+**Sign in** button (which returns them to the page they were on); no
+edit, new, watch, reorder or comment controls; the page bar collapses to
+Export. The spaces index lists public spaces only; a **public** badge is
+shown to everyone so nobody edits a public page thinking it is internal.
+Admin → Spaces gains a Public column with Publish/Withdraw (the
+confirmation names the page and attachment counts that become visible)
+and a per-space comments checkbox.
+
+Tests: the nine-test leak matrix (`PublicReadTests`), plus three existing
+tests re-pointed at routes that stay closed.
+
 ### Feature: security alerts and notifications by email (dev-plan 4.3) (2026-09-09)
 
 *Plan tag: Opus. Run as Fable by user override.*

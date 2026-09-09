@@ -23,7 +23,7 @@ function buildThreads(comments: Comment[]): Node[] {
   return roots
 }
 
-export function CommentsPanel({ pageId }: { pageId: string }) {
+export function CommentsPanel({ pageId, readOnly = false }: { pageId: string; readOnly?: boolean }) {
   const [comments, setComments] = useState<Comment[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -45,18 +45,18 @@ export function CommentsPanel({ pageId }: { pageId: string }) {
   return (
     <div className="comments">
       {error && <p className="alert alert--error">{error}</p>}
-      <CommentForm pageId={pageId} onAdded={reload} placeholder="Add a comment…" />
+      {!readOnly && <CommentForm pageId={pageId} onAdded={reload} placeholder="Add a comment…" />}
       {comments && comments.length === 0 && <p className="muted small">No comments yet.</p>}
       <ul className="comment-list">
         {threads.map((node) => (
-          <CommentItem key={node.id} node={node} pageId={pageId} onChanged={reload} />
+          <CommentItem key={node.id} node={node} pageId={pageId} onChanged={reload} readOnly={readOnly} />
         ))}
       </ul>
     </div>
   )
 }
 
-function CommentItem({ node, pageId, onChanged }: { node: Node; pageId: string; onChanged: () => void }) {
+function CommentItem({ node, pageId, onChanged, readOnly = false }: { node: Node; pageId: string; onChanged: () => void; readOnly?: boolean }) {
   const { user } = useAuth()
   const [replying, setReplying] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -105,7 +105,7 @@ function CommentItem({ node, pageId, onChanged }: { node: Node; pageId: string; 
           {node.isDeleted ? '[deleted]' : node.body}
         </p>
       )}
-      {!node.isDeleted && (
+      {!node.isDeleted && !readOnly && (
         <div className="comment__actions">
           <button type="button" className="link-btn" onClick={() => setReplying((v) => !v)}>Reply</button>
           {isOwn && (
@@ -127,7 +127,7 @@ function CommentItem({ node, pageId, onChanged }: { node: Node; pageId: string; 
       {node.replies.length > 0 && (
         <ul className="comment-list comment-list--nested">
           {node.replies.map((child) => (
-            <CommentItem key={child.id} node={child} pageId={pageId} onChanged={onChanged} />
+            <CommentItem key={child.id} node={child} pageId={pageId} onChanged={onChanged} readOnly={readOnly} />
           ))}
         </ul>
       )}
