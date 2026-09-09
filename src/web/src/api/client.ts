@@ -405,11 +405,16 @@ export class ApiError extends Error {
 
 type Body = object | undefined
 
+/** Marks a request as coming from this page. The server refuses cookie-
+ *  authenticated state changes without it: a cross-site page cannot add a
+ *  custom header without a CORS preflight it will never pass. */
+const CSRF_HEADER = { 'X-Requested-With': 'Tesria' }
+
 async function request<T>(method: string, path: string, body?: Body): Promise<T> {
   const res = await fetch(path, {
     method,
     credentials: 'include',
-    headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+    headers: body !== undefined ? { ...CSRF_HEADER, 'Content-Type': 'application/json' } : CSRF_HEADER,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
   return handle<T>(res)
@@ -542,6 +547,7 @@ export const api = {
       const res = await fetch(`/api/pages/${pageId}/attachments`, {
         method: 'POST',
         credentials: 'include',
+        headers: CSRF_HEADER,
         body: form,
       })
       return handle<Attachment>(res)
@@ -616,6 +622,7 @@ export const api = {
       const res = await fetch('/api/media/avatars/me', {
         method: 'PUT',
         credentials: 'include',
+        headers: CSRF_HEADER,
         body,
       })
       return handle<{ avatarHash: string }>(res)

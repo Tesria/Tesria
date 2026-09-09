@@ -5,6 +5,38 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Security: SSRF guard, attachment types, CSRF header (dev-plan 3.4) (2026-09-09)
+
+*Plan tag: Opus. Run as Fable by user override.*
+
+Webhooks could target any URL the server could reach — the cloud metadata
+address, the database, the collab sidecar. `EgressGuard` now refuses
+private, link-local, loopback and reserved addresses, local host names,
+credentials in URLs and non-http schemes, at two moments: when the webhook
+is saved (checking every address the name resolves to) and again inside
+the socket connect at delivery, so a name that changed its mind since
+(DNS rebinding) is refused on the wire. Redirects are followed by hand,
+three at most, each hop checked. `Egress:AllowedNetworks` opens a private
+range deliberately. A refused attempt is still a security event.
+
+Uploaded files are served as what their bytes say (PNG, JPEG, GIF, WebP,
+PDF signatures win over the label); anything a browser might execute —
+HTML, SVG, XML, scripts, or bytes that look like markup — is stored and
+served as `application/octet-stream`. Downloads keep `Content-Disposition:
+attachment` and `nosniff`.
+
+Every state-changing `/api` request authenticated by the session cookie
+must carry `X-Requested-With: Tesria`; the SPA sends it everywhere,
+including the two multipart uploads. Bearer-token callers and sign-in are
+exempt. Kestrel's body limit is set to 100 MB to match Caddy.
+
+Tests (twenty-five, including theories): twelve refused targets, the
+allow-list, the connect-time refusal, webhook creation refused and
+recorded, six content-type decisions, an uploaded HTML file downloading
+opaque with `nosniff`, and the CSRF header required / exempt / not needed
+at sign-in. Verified live: cookie POST without the header → 403 with an
+explanatory body; with it → 200; the SPA still performs state changes.
+
 ### Security: threat detection, admin alerts, blocklist (dev-plan 3.3) (2026-09-09)
 
 *Plan tag: Fable → Opus. Both halves run as Fable by user override. The
