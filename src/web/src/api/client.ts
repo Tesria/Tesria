@@ -1,7 +1,12 @@
 // Typed client for the Tesria REST API. All calls are same-origin and
 // send the auth cookie automatically (credentials: 'include' for dev CORS).
 
-export type User = { id: string; email: string; displayName: string }
+/** Matches Api.Domain.UserRole. A const object rather than a TS `enum`:
+ *  this project builds with `erasableSyntaxOnly`, which rejects enums. */
+export const UserRole = { Member: 0, Admin: 1 } as const
+export type UserRole = (typeof UserRole)[keyof typeof UserRole]
+
+export type User = { id: string; email: string; displayName: string; role: UserRole }
 
 export type Space = {
   id: string

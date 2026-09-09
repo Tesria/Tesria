@@ -111,7 +111,7 @@ dashboard ships with weeks of real numbers instead of an empty chart. The
 security phase (3.3) also needs it: "admin logged in from a new IP" is
 undetectable without a login history.
 
-### 0.1 Roles — `M` — Model: Fable → Opus
+### 0.1 Roles — `M` — Model: Fable → Opus — ✅ **shipped 2026-09-08**
 - Add `Role` to `User` (`Member = 0, Admin = 1`) — an enum, not a bool, so
   a future `Viewer`/`Moderator` is a value, not a migration of a bool.
 - **The first registered account becomes Admin** (`Users.CountAsync() == 0`

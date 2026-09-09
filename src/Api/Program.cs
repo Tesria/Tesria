@@ -1,5 +1,6 @@
 using Tesria.Api.Features.ApiTokens;
 using Tesria.Api.Features.Attachments;
+using Tesria.Api.Features.Admin;
 using Tesria.Api.Features.Auth;
 using Tesria.Api.Features.Comments;
 using Tesria.Api.Features.Audit;
@@ -28,6 +29,7 @@ using Tesria.Api.Infrastructure.Webhooks;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
@@ -211,7 +213,13 @@ if (!string.IsNullOrWhiteSpace(oidcAuthority))
     });
 }
 
-builder.Services.AddAuthorization();
+builder.Services.AddScoped<IAuthorizationHandler, AdminRequirementHandler>();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AuthPolicies.RequireAdmin, policy => policy
+        .RequireAuthenticatedUser()
+        .AddRequirements(new AdminRequirement()));
+});
 
 // Health checks, incl. a database probe now that EF Core is wired in.
 builder.Services.AddHealthChecks()
@@ -283,6 +291,7 @@ app.UseAuthorization();
 var api = app.MapGroup("/api");
 api.MapHealthEndpoints();
 api.MapAuthEndpoints();
+api.MapAdminEndpoints();
 api.MapSpaceEndpoints();
 api.MapPageEndpoints();
 api.MapAttachmentEndpoints();
