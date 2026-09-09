@@ -202,10 +202,30 @@ undetectable without a login history.
   and later mentions (7.C). One `<Avatar>` component, sizes 20/28/40.
   **Shipped in the topbar and profile only.** Comments and version history
   return just an `AuthorId` and render no author identity at all today, so
-  avatars there need names added first — a separate change, not part of this
-  item. The people picker is a `<select>`, whose options cannot hold markup;
+  avatars there need names added first — **scheduled as 1.5 below.** The people picker is a `<select>`, whose options cannot hold markup;
   `GET /api/users` already carries `avatarHash`/`avatarVariant` for 2.2's
   admin users list.
+
+### 1.5 Author identity on comments and version history — `S` — Model: Opus
+- **Not a nice-to-have.** Comments today use `authorId` only to decide whether
+  to show *your* edit/delete controls — no name is rendered anywhere, so a
+  threaded discussion gives no way to tell who said what. Version history
+  shows the version number, the "current" badge and the change comment, but
+  not who made it, even though `PageVersion.AuthorId` has been stored since
+  Phase 1. Both are visible gaps in shipped features, not new functionality.
+- Root cause is the API: `CommentResponse` and `PageVersionResponse` return a
+  bare `AuthorId`, so the client has nothing to render.
+- Add `AuthorName`, `AuthorAvatarHash` and `AuthorAvatarVariant` to both
+  responses, projected from the joined `User` — not a second round trip per
+  comment, and not a client-side directory lookup, which would leak the whole
+  user list to anyone who can read one page.
+- A deleted author (2.2 anonymises rather than removes the row) must render as
+  "Deleted user" and the generated avatar, never blank.
+- Then render name + `<Avatar size={28}>` in `CommentsPanel` and
+  `HistoryPanel`, which completes the render list 1.2 could not finish.
+- Slotted here rather than folded into 1.2 because it needs an API change on
+  two endpoints in a different feature slice, and because "show author names"
+  is a user-visible behaviour change worth its own CHANGELOG entry.
 
 ### 1.3 Password recovery — offline (recovery codes) — `M` — Model: Opus
 - **Generated at registration**, as asked: 8 single-use codes
@@ -724,7 +744,7 @@ onto `roadmap.md` and are sequenced here.
 ## Order of execution, flattened
 
 1. **0.1** Roles (Fable→Opus) → **0.2** Settings → **0.3** Telemetry → **0.4** Media storage
-2. **1.1** Profile → **1.2** Avatars → **1.3** Recovery codes + admin reset → **1.4** Registration control
+2. **1.1** Profile → **1.2** Avatars → **1.3** Recovery codes + admin reset → **1.4** Registration control → **1.5** Author identity
 3. **2.1** Admin shell → **2.2** Users → **2.3** Settings UI → **2.4** Spaces → **2.5** Dashboard
 4. **3.0** Proxy trust & headers → **3.1** DB role + audit chain (Fable) → **3.2** Rate limiting → **3.3** Detection & alerts (Fable→Opus) → **3.4** Egress/input → **3.5** Sessions & 2FA → **3.6** Dependencies → **3.7** Review & gate (Fable)
 5. **4.1** SMTP → **4.2** Email recovery → **4.3** Alert & notification email
