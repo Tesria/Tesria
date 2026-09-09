@@ -414,6 +414,19 @@ email is a few sentences and a link. Failures are logged and audited as
 `BaseUrl` setting if set, else `Site:BaseUrl` from the deploy
 (`https://$DOMAIN`). Tests swap in `RecordingEmailSender`.
 
+**Notifications by email (4.3)** are an outbox. `Notification.EmailedAt`
+is null while a row waits; `NotificationEmailService` polls every minute
+(`Notifications:EmailPollSeconds`), groups the pending rows by recipient,
+and applies three rules in order: security alerts to an administrator go
+immediately whatever their preference; `Immediate` recipients get the
+pass's rows in one message; `DailyDigest` recipients get one message per
+24 h (`User.LastDigestAt`). `Off` retires the email copy and keeps the
+in-app one. `EmailedAt` is set on the *attempt*, so a dead server yields
+one audited failure per row rather than one a minute; rows older than 24 h
+are retired unsent so turning email on never replays history. With
+`EmailEnabled` off the pass does nothing and marks nothing. Links are
+built from `SiteUrl.Resolve` and the page's space key.
+
 ### Roles and administrators (spec — dev-plan 0.1, designed 2026-09-08)
 
 > **Update 2026-09-09:** group management (create/edit/delete/membership)

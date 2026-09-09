@@ -29,7 +29,12 @@ export type User = {
   totpEnabled: boolean
   /** An administrator who must enrol before administering. */
   totpRequired: boolean
+  /** 0 off, 1 immediate, 2 daily digest (dev-plan 4.3). */
+  emailNotifications: EmailNotificationMode
 }
+
+export const EmailNotificationMode = { Off: 0, Immediate: 1, DailyDigest: 2 } as const
+export type EmailNotificationMode = (typeof EmailNotificationMode)[keyof typeof EmailNotificationMode]
 
 /** The password was right; the sign-in is not finished until a code is given. */
 export type TotpChallenge = { requiresTotp: true; challenge: string }
@@ -511,6 +516,8 @@ export const api = {
     /** Confirms the password (or a code) for sudo mode. */
     reauth: (input: { password?: string; code?: string }) =>
       request<void>('POST', '/api/auth/reauth', input),
+    setNotificationPreference: (emailNotifications: EmailNotificationMode) =>
+      request<User>('PUT', '/api/auth/me/notifications', { emailNotifications }),
     sessions: {
       list: () => request<Session[]>('GET', '/api/auth/me/sessions'),
       revoke: (id: string) => request<void>('DELETE', `/api/auth/me/sessions/${id}`),

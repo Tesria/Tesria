@@ -30,4 +30,11 @@ public class Notification
     public DateTimeOffset CreatedAt { get; set; }
 
     public DateTimeOffset? ReadAt { get; set; }
+
+    /// <summary>
+    /// When this was sent (or attempted) by email, or null while it waits in
+    /// the outbox (dev-plan 4.3). Set on the attempt, not on success: a dead
+    /// mail server should produce one audited failure, not one a minute.
+    /// </summary>
+    public DateTimeOffset? EmailedAt { get; set; }
 }

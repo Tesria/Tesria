@@ -75,7 +75,8 @@ public static class AuthEndpoints
     public record UserResponse(
         Guid Id, string Email, string DisplayName, UserRole Role,
         string? AvatarHash, int? AvatarVariant, bool HasPassword,
-        int RecoveryCodesRemaining, bool TotpEnabled, bool TotpRequired);
+        int RecoveryCodesRemaining, bool TotpEnabled, bool TotpRequired, EmailNotificationMode EmailNotifications);
+    public record NotificationPreferenceRequest(EmailNotificationMode EmailNotifications);
 
     /// <summary>The password was right; a one-time code is still needed.</summary>
     public record TotpChallengeResponse(bool RequiresTotp, string Challenge);
@@ -122,6 +123,7 @@ public static class AuthEndpoints
         group.MapPost("/login", Login).RequireRateLimiting(RateLimits.AuthPolicy);
         group.MapPost("/login/totp", LoginWithTotp).RequireRateLimiting(RateLimits.AuthPolicy);
         group.MapPost("/reauth", Reauthenticate).RequireAuthorization().RequireRateLimiting(RateLimits.AuthPolicy);
+        group.MapPut("/me/notifications", SetNotificationPreference).RequireAuthorization();
         group.MapGet("/me/sessions", ListSessions).RequireAuthorization();
         group.MapDelete("/me/sessions/others", RevokeOtherSessions).RequireAuthorization();
         group.MapDelete("/me/sessions/{id:guid}", RevokeSession).RequireAuthorization();
@@ -403,6 +405,16 @@ public static class AuthEndpoints
         return Results.SignOut(new AuthenticationProperties(), [CookieAuthenticationDefaults.AuthenticationScheme]);
     }
 
+    private static async Task<IResult> SetNotificationPreference(
+        NotificationPreferenceRequest req, AppDbContext db, CurrentUser current,
+        IAccountRecoveryService recovery, ISiteSettingsService siteSettings)
+    {
+        var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
+        user.EmailNotifications = req.EmailNotifications;
+        await db.SaveChangesAsync();
+        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user));
+    }
+
     private static async Task<IResult> ListSessions(AppDbContext db, CurrentUser current, HttpContext http)
     {
         var mine = SessionIdOf(http.User);
@@ -587,7 +599,7 @@ public static class AuthEndpoints
         var enabled = user.TotpEnabledAt is not null;
         var required = user.Role == UserRole.Admin && !enabled && (await siteSettings.GetAsync()).RequireTotpForAdmins;
         return new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.AvatarVariant,
-            user.PasswordHash != null, remaining, enabled, required);
+            user.PasswordHash != null, remaining, enabled, required, user.EmailNotifications);
     }
 
     private static async Task<IResult> UpdateProfile(
