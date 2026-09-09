@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure.Settings;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
@@ -61,7 +62,8 @@ public static class AuthEndpoints
     }
 
     private static async Task<IResult> Register(
-        RegisterRequest req, AppDbContext db, IPasswordHasher hasher, HttpContext http)
+        RegisterRequest req, AppDbContext db, IPasswordHasher hasher, HttpContext http,
+        ISiteSettingsService settings)
     {
         var email = (req.Email ?? "").Trim().ToLowerInvariant();
         var displayName = (req.DisplayName ?? "").Trim();
@@ -85,6 +87,15 @@ public static class AuthEndpoints
         // The first account on an empty instance administers it — otherwise a
         // fresh install has content and nobody able to manage it.
         var isFirstAccount = !await db.Users.AnyAsync();
+
+        // Closed registration is deliberately ignored for that very first
+        // account: otherwise an operator who turns it off before anyone has
+        // signed up can never set the instance up at all. Every later account
+        // needs it on (dev-plan 1.4 adds invite links as the other way in).
+        if (!isFirstAccount && !(await settings.GetAsync()).AllowPublicRegistration)
+            return Results.Problem(
+                "Registration is by invitation on this instance.",
+                statusCode: StatusCodes.Status403Forbidden);
 
         var user = new User
         {

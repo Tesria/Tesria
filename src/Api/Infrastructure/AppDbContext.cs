@@ -14,6 +14,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     : DbContext(options), IDataProtectionKeyContext
 {
     public DbSet<User> Users => Set<User>();
+    public DbSet<SiteSettings> SiteSettings => Set<SiteSettings>();
     public DbSet<Space> Spaces => Set<Space>();
     public DbSet<Page> Pages => Set<Page>();
     public DbSet<PageVersion> PageVersions => Set<PageVersion>();
@@ -37,6 +38,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     protected override void OnModelCreating(ModelBuilder b)
     {
         base.OnModelCreating(b);
+
+        b.Entity<SiteSettings>(e =>
+        {
+            e.Property(x => x.InstanceName).HasMaxLength(200);
+            e.Property(x => x.SmtpHost).HasMaxLength(400);
+            e.Property(x => x.SmtpUsername).HasMaxLength(400);
+            e.Property(x => x.SmtpFromAddress).HasMaxLength(320);
+            // Data Protection payloads are base64 and grow with the key; no cap.
+            e.Property(x => x.SmtpPasswordProtected);
+        });
 
         b.Entity<User>(e =>
         {

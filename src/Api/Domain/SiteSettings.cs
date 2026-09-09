@@ -1,0 +1,72 @@
+namespace Tesria.Api.Domain;
+
+/// <summary>
+/// Instance-wide configuration an administrator can change at runtime, as
+/// opposed to the deploy-time configuration in environment variables and
+/// appsettings (connection strings, OIDC, the collab secret) which stays
+/// where it is — those are secrets and topology, set before the app starts.
+///
+/// Exactly one row, keyed by <see cref="SingletonId"/>. Typed columns rather
+/// than a key/value table: EF validates them, a migration records every shape
+/// change, and the admin UI can bind to them without parsing strings.
+/// </summary>
+public class SiteSettings
+{
+    /// <summary>
+    /// The fixed primary key of the single row. A constant rather than a
+    /// generated id so "get the settings" is a primary-key lookup and a second
+    /// row cannot be created by accident.
+    /// </summary>
+    public static readonly Guid SingletonId = new("5171e5e7-0000-4000-8000-000000000001");
+
+    public Guid Id { get; set; } = SingletonId;
+
+    /// <summary>Shown in the UI and used as the sender name for outbound email.</summary>
+    public string InstanceName { get; set; } = "Tesria";
+
+    /// <summary>
+    /// Whether anyone who can reach <c>/register</c> may create an account.
+    /// Defaults to true, which is the behaviour before this setting existed.
+    /// Registration on a completely empty instance ignores this — see
+    /// AuthEndpoints.Register — so an operator cannot lock themselves out of a
+    /// fresh install by turning it off before the first account exists.
+    /// </summary>
+    public bool AllowPublicRegistration { get; set; } = true;
+
+    /// <summary>
+    /// Instance-wide kill switch for anonymous read access (dev-plan Phase 5).
+    /// Off by default: exposing content to the internet must be a deliberate
+    /// act, and the per-space toggle is only offered when this is on.
+    /// </summary>
+    public bool AllowPublicSpaces { get; set; }
+
+    /// <summary>Whether outbound email is configured and should be attempted.</summary>
+    public bool EmailEnabled { get; set; }
+
+    public string? SmtpHost { get; set; }
+    public int SmtpPort { get; set; } = 587;
+    public string? SmtpUsername { get; set; }
+
+    /// <summary>
+    /// The SMTP password, encrypted with ASP.NET Data Protection (whose keys
+    /// already live in this database, so a restore stays self-consistent).
+    /// Never leaves the server: the API reports only whether one is set.
+    /// </summary>
+    public string? SmtpPasswordProtected { get; set; }
+
+    public string? SmtpFromAddress { get; set; }
+    public SmtpTlsMode SmtpTls { get; set; } = SmtpTlsMode.StartTls;
+
+    /// <summary>Reserved for dev-plan 3.5; stored here so the admin UI has one home.</summary>
+    public bool RequireTotpForAdmins { get; set; }
+
+    public DateTimeOffset UpdatedAt { get; set; }
+    public Guid? UpdatedById { get; set; }
+}
+
+public enum SmtpTlsMode
+{
+    None = 0,
+    StartTls = 1,
+    SslOnConnect = 2,
+}

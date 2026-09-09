@@ -128,7 +128,7 @@ undetectable without a login history.
   existing tests keep passing (several register two users — check that
   "first user is admin" doesn't change their expectations).
 
-### 0.2 Site settings — `S` — Model: Opus
+### 0.2 Site settings — `S` — Model: Opus — ✅ **shipped 2026-09-09**
 - `SiteSettings` table, single row, typed columns (not key/value — typed
   columns are validated by EF and readable in the admin UI without a
   parser). Start with: `InstanceName`, `AllowPublicRegistration`,
