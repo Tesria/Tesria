@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { api, type Comment } from '../../api/client'
+import { Avatar } from '../../components/Avatar'
 import { useAuth } from '../../auth/AuthContext'
 
 type Node = Comment & { replies: Node[] }
@@ -78,6 +79,16 @@ function CommentItem({ node, pageId, onChanged }: { node: Node; pageId: string; 
   return (
     <li className="comment">
       <div className="comment__head">
+        <Avatar
+          subject={{
+            id: node.authorId,
+            displayName: node.authorName,
+            avatarHash: node.authorAvatarHash,
+            avatarVariant: node.authorAvatarVariant,
+          }}
+          size={24}
+        />
+        <span className="comment__author">{node.authorName}</span>
         {node.isInline && <span className="badge">inline</span>}
         <span className="muted small">{new Date(node.createdAt).toLocaleString()}</span>
       </div>

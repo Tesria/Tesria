@@ -70,6 +70,9 @@ export type VersionMeta = {
   versionNumber: number
   changeComment: string | null
   authorId: string
+  authorName: string
+  authorAvatarHash: string | null
+  authorAvatarVariant: number | null
   createdAt: string
 }
 
@@ -187,6 +190,9 @@ export type Comment = {
   body: string | null
   anchorJson: string | null
   authorId: string
+  authorName: string
+  authorAvatarHash: string | null
+  authorAvatarVariant: number | null
   isInline: boolean
   isDeleted: boolean
   createdAt: string

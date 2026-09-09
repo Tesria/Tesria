@@ -206,7 +206,7 @@ undetectable without a login history.
   `GET /api/users` already carries `avatarHash`/`avatarVariant` for 2.2's
   admin users list.
 
-### 1.5 Author identity on comments and version history — `S` — Model: Opus
+### 1.5 Author identity on comments and version history — `S` — Model: Opus — ✅ **shipped 2026-09-09**
 - **Not a nice-to-have.** Comments today use `authorId` only to decide whether
   to show *your* edit/delete controls — no name is rendered anywhere, so a
   threaded discussion gives no way to tell who said what. Version history

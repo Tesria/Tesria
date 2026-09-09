@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, ApiError, type VersionContent, type VersionMeta } from '../../api/client'
+import { Avatar } from '../../components/Avatar'
 import { Editor } from '../../editor/Editor'
 
 export function HistoryPanel({
@@ -50,6 +51,16 @@ export function HistoryPanel({
           <li key={v.id} className="version">
             <span className="version__num">v{v.versionNumber}</span>
             {v.versionNumber === currentVersion && <span className="badge">current</span>}
+            <Avatar
+              subject={{
+                id: v.authorId,
+                displayName: v.authorName,
+                avatarHash: v.authorAvatarHash,
+                avatarVariant: v.authorAvatarVariant,
+              }}
+              size={20}
+            />
+            <span className="version__author">{v.authorName}</span>
             <span className="muted small">{new Date(v.createdAt).toLocaleString()}</span>
             {v.changeComment && <span className="version__comment">“{v.changeComment}”</span>}
             <span className="version__actions">
