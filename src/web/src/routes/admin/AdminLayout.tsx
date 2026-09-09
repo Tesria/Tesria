@@ -25,6 +25,7 @@ export function AdminLayout() {
         <NavLink to="/admin/users" className={tab}>Users</NavLink>
         <NavLink to="/admin/spaces" className={tab}>Spaces</NavLink>
         <NavLink to="/admin/invites" className={tab}>Invites</NavLink>
+        <NavLink to="/admin/security" className={tab}>Security</NavLink>
         <NavLink to="/admin/settings" className={tab}>Settings</NavLink>
       </nav>
       <div className="tab-panel">

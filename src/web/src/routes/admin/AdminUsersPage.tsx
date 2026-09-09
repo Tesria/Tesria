@@ -108,6 +108,11 @@ export function AdminUsersPage() {
                   {u.status === UserStatus.Suspended
                     ? <span className="badge badge--danger">suspended</span>
                     : 'Active'}
+                  {u.lockedUntil && new Date(u.lockedUntil) > new Date() && (
+                    <span className="badge badge--danger" title={`${u.failedLoginCount} failed sign-ins`}>
+                      locked
+                    </span>
+                  )}
                 </td>
                 <td>
                   {/* Accounts predating recovery codes have none, and would
@@ -163,6 +168,16 @@ export function AdminUsersPage() {
                   {u.hasPassword && (
                     <button type="button" className="link-btn" disabled={busy} onClick={() => issueReset(u)}>
                       Reset password
+                    </button>
+                  )}
+                  {u.lockedUntil && new Date(u.lockedUntil) > new Date() && (
+                    <button
+                      type="button"
+                      className="link-btn"
+                      disabled={busy}
+                      onClick={() => act(u.id, () => api.admin.users.unlock(u.id), 'Could not unlock.')}
+                    >
+                      Unlock
                     </button>
                   )}
                 </td>

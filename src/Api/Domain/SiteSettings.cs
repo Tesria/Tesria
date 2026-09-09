@@ -60,6 +60,32 @@ public class SiteSettings
     /// <summary>Reserved for dev-plan 3.5; stored here so the admin UI has one home.</summary>
     public bool RequireTotpForAdmins { get; set; }
 
+    // --- Brute-force protection (dev-plan 3.2). Every limiter is tunable
+    // here so an operator under attack can tighten without a redeploy, and
+    // one whose users are behind a shared NAT can loosen the per-address
+    // limits without turning protection off.
+
+    /// <summary>Sign-in, registration and recovery attempts allowed per address per minute.</summary>
+    public int LoginRateLimitPerMinute { get; set; } = 10;
+
+    /// <summary>Requests per address per minute for callers with no session (Phase 5 relies on this).</summary>
+    public int AnonymousRateLimitPerMinute { get; set; } = 300;
+
+    /// <summary>API tokens one account may mint per hour.</summary>
+    public int TokenMintLimitPerHour { get; set; } = 20;
+
+    /// <summary>Consecutive failed sign-ins before an account is locked.</summary>
+    public int LockoutThreshold { get; set; } = 5;
+
+    /// <summary>
+    /// First lockout length; each further failure doubles it up to
+    /// <see cref="LockoutMaxSeconds"/>. Never permanent: a permanent lockout
+    /// would let anyone lock anyone out by guessing at their address.
+    /// </summary>
+    public int LockoutBaseSeconds { get; set; } = 60;
+
+    public int LockoutMaxSeconds { get; set; } = 900;
+
     public DateTimeOffset UpdatedAt { get; set; }
     public Guid? UpdatedById { get; set; }
 }

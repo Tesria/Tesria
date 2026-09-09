@@ -4,6 +4,7 @@ using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Audit;
 using Tesria.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure.Security;
 using Tesria.Api.Infrastructure.Settings;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -87,8 +88,9 @@ public static class AuthEndpoints
     {
         var group = routes.MapGroup("/auth").WithTags("Auth");
 
-        group.MapPost("/register", Register);
-        group.MapPost("/login", Login);
+        // The endpoints that take a credential share one per-address budget.
+        group.MapPost("/register", Register).RequireRateLimiting(RateLimits.AuthPolicy);
+        group.MapPost("/login", Login).RequireRateLimiting(RateLimits.AuthPolicy);
         // SignOut result clears the auth cookie; declared without an HttpContext
         // parameter so it binds as a route handler (avoids ASP0016).
         group.MapPost("/logout", () => Results.SignOut(
@@ -100,8 +102,8 @@ public static class AuthEndpoints
         group.MapPut("/me/password", ChangePassword).RequireAuthorization();
         group.MapGet("/me/recovery-codes", RecoveryStatus).RequireAuthorization();
         group.MapPost("/me/recovery-codes", RegenerateCodes).RequireAuthorization();
-        group.MapPost("/recover/code", RecoverWithCode);
-        group.MapPost("/recover/token", ResetWithToken);
+        group.MapPost("/recover/code", RecoverWithCode).RequireRateLimiting(RateLimits.AuthPolicy);
+        group.MapPost("/recover/token", ResetWithToken).RequireRateLimiting(RateLimits.AuthPolicy);
 
         group.MapGet("/oidc/status", OidcStatus);
         // A full-page browser redirect, not a fetch call — the IdP needs to
@@ -211,28 +213,39 @@ public static class AuthEndpoints
 
     private static async Task<IResult> Login(
         LoginRequest req, AppDbContext db, IPasswordHasher hasher, HttpContext http,
-        IAuditLogger audit, IAccountRecoveryService recovery)
+        IAuditLogger audit, IAccountRecoveryService recovery, ISiteSettingsService siteSettings)
     {
         var email = (req.Email ?? "").Trim().ToLowerInvariant();
         var user = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
+        var now = DateTimeOffset.UtcNow;
 
         // Verify even when the user is missing to keep timing uniform, and return
         // the same generic error for "no such user" and "wrong password".
         var ok = user?.PasswordHash is not null
             && hasher.Verify(req.Password ?? "", user.PasswordHash);
-        if (!ok || user!.Status != UserStatus.Active)
+
+        // A locked account fails even with the right password, with the same
+        // response — the lock must not become a way to confirm the password.
+        // The right password does not reset the counter while locked, or the
+        // attacker who just found it clears their own lock.
+        var locked = user is not null && AuthLockout.IsLocked(user, now);
+
+        if (!ok || locked || user!.Status != UserStatus.Active)
         {
             // Deliberately records no email and no user id: an audit log readable
             // by every admin should not become a list of addresses somebody tried,
             // and a failure cannot be attributed to an account without confirming
-            // that the account exists. The per-account counter that brute-force
-            // protection needs is dev-plan 3.2's job, not this log's.
+            // that the account exists. The per-account counter lives on the
+            // user row, where only administrators see it.
             audit.RecordAs(null, "user.login_failed", "instance", null,
                 new { Ip = ClientIp(http) });
+            if (user is not null && !locked)
+                AuthLockout.RecordFailure(user, await siteSettings.GetAsync(), now);
             await db.SaveChangesAsync();
             return Results.Unauthorized();
         }
 
+        AuthLockout.Reset(user);
         audit.RecordAs(user.Id, "user.login", "user", user.Id, new { Ip = ClientIp(http) });
         await db.SaveChangesAsync();
 
@@ -481,6 +494,9 @@ public static class AuthEndpoints
     {
         user.PasswordHash = hasher.Hash(newPassword);
         user.SecurityStamp = Guid.NewGuid().ToString("N");
+        // Proving ownership through recovery ends any lockout: the person the
+        // lock was protecting is the one standing here.
+        AuthLockout.Reset(user);
         audit.RecordAs(user.Id, "user.password_recovered", "user", user.Id, new { Method = method });
         await db.SaveChangesAsync();
     }

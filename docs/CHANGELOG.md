@@ -5,6 +5,33 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Security: rate limiting and account lockout (dev-plan 3.2) (2026-09-09)
+
+*Plan tag: Opus. Run as Fable by user override.*
+
+Online brute force against `/api/auth/login` was unlimited. Now: a sliding
+window per client address on sign-in, registration and recovery (default
+10/min); a per-account lockout after 5 consecutive failures, doubling from
+60 s up to 15 min and never permanent; a per-account limit on API-token
+minting (20/h); and a global per-address limit for callers with no session
+(300/min) — the one Phase 5's public-read mode will lean on. Signed-in
+users are not globally limited. 429s carry `Retry-After`.
+
+A locked account gets the same empty 401 as a wrong password, even with the
+right one, and the right password does not reset the counter while locked.
+Success, recovery, or an admin unlock does. Failure counts persist on the
+user row, so a restart is not a fresh budget.
+
+All six limits are site settings, editable on the new **Admin → Security**
+page, which also lists active lockouts with one-click unlock and hosts
+3.1's "Verify now" for the audit chain. Users shows a `locked` badge.
+
+Tests (ten) drive every limiter through spoofed proxy addresses — including
+the one that proves two addresses no longer share a bucket, which is what
+3.0 was for. Verified live: ten wrong sign-ins from one host → 401 ×10 then
+429 with `Retry-After: 60`; Security page renders limits and a passing
+chain verification.
+
 ### Security: least-privilege database role and audit hash chain (dev-plan 3.1) (2026-09-09)
 
 The app no longer runs as the Postgres superuser. At startup it uses the

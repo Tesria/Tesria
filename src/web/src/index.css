@@ -1436,3 +1436,9 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 }
 .recovery-prompt__card h2 { margin: 0 0 0.5rem; font-size: 1.1rem; }
 .recovery-prompt__card .row-gap { margin-top: 1rem; }
+
+/* Admin → Security: the limits form (dev-plan 3.2). */
+.limits-form { display: grid; gap: 0.75rem; max-width: 34rem; }
+.limits-form label { display: grid; gap: 0.25rem; }
+.limits-form input { max-width: 10rem; }
+.limits-form .btn { justify-self: start; margin-top: 0.25rem; }

@@ -380,7 +380,7 @@ email in 4.3; do not block this phase on email.
   chain cannot detect on its own; and every stored hash was recomputed
   independently in Python from a `psql` dump to prove the jsonb round trip.
 
-### 3.2 Brute-force protection and rate limiting — `M` — Model: Opus
+### 3.2 Brute-force protection and rate limiting — `M` — Model: Opus — ✅ **shipped 2026-09-09** (run as Fable by user override)
 - Depends on 3.0.
 - `Microsoft.AspNetCore.RateLimiting` (built-in, no package): sliding
   window per IP on `/auth/login`, `/auth/register`, `/auth/recover/*`,
@@ -394,6 +394,10 @@ email in 4.3; do not block this phase on email.
   shows the current counters.
 - Tests: N failures → 429/backoff; success resets; two IPs don't share a
   bucket (proves 3.0 is working).
+- **Shipped as specified**, plus: the Security page (planned for 3.3)
+  exists now with the limits form, active lockouts and the 3.1 verify
+  button; 3.3 adds events, alerts and mitigations to it. Recovery and admin
+  unlock also clear a lockout.
 
 ### 3.3 Threat detection and admin alerting — `L` — Model: Fable → Opus
 - **Fable designs** the signal set, thresholds, and the alert lifecycle;

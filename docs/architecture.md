@@ -167,6 +167,41 @@ logs app`, and anything forwarding it, holds a copy that never touched the
 database and that the database password cannot reach. "An attacker can't
 scrub logs" is really "logs exist in more than one place".
 
+### Brute-force protection (`Infrastructure/Security/RateLimits.cs`, dev-plan 3.2)
+
+Two mechanisms with different targets. The **address limiters** bound one
+attacker; the **account lockout** bounds one target, so a guess spread
+across many addresses against a single account still runs out of road.
+
+Limiters use the framework's `RateLimiter` middleware, placed after
+authentication (so it can tell a session from a stranger) and before
+authorization. Three policies, each keyed on the client address 3.0 made
+real: `auth` (sliding window per address; sign-in, registration and both
+recovery endpoints share it), `token-mint` (per account, hourly), and a
+global limiter for **anonymous** callers only — signed-in users are not
+globally limited because their identity is the accountability, and this
+global limiter is what Phase 5's public-read mode relies on. Rejections
+are 429 with `Retry-After` and a small JSON body.
+
+Every limit is a `SiteSettings` field, editable from Admin → Security. The
+partitioner cannot await, so it reads the last-loaded settings through
+`SiteSettingsCache.Peek()`; `UpdateAsync` now *sets* the cache instead of
+invalidating it, and startup warms it, so a change applies to the next
+request. The limit value is part of the partition key, so a change starts
+fresh windows immediately rather than waiting for old ones to idle out.
+
+The lockout lives on the user row (`FailedLoginCount`, `LockedUntil`) —
+persisted so a restart does not hand an attacker a fresh budget, and so
+administrators can see it. After `LockoutThreshold` consecutive failures
+the account is locked for `LockoutBaseSeconds`, doubling per further
+failure up to `LockoutMaxSeconds`. **Never permanent**: a permanent lock
+would let anyone lock anyone out by trying their address. A locked account
+is refused even with the right password, with the same empty 401 as a
+wrong one, so the lock cannot be used to confirm a guess; and the right
+password does not reset the counter while locked, or an attacker who found
+it would clear their own lock. A successful sign-in, a completed recovery,
+or an admin unlock resets it.
+
 ### Roles and administrators (spec — dev-plan 0.1, designed 2026-09-08)
 
 Two roles, one enum: `User.Role` is `Member = 0 | Admin = 1`. An enum, not
