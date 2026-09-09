@@ -106,6 +106,7 @@ public static class AdminEndpoints
         group.MapGet("/invites", ListInvites);
         group.MapPost("/invites", CreateInvite);
         group.MapDelete("/invites/{id:guid}", RevokeInvite);
+        group.MapPost("/audit/verify", VerifyAuditChain);
 
         return routes;
     }
@@ -475,5 +476,21 @@ public static class AdminEndpoints
             .ToListAsync();
 
         return Results.Ok(spaces.OrderBy(s => s.Key).ToList());
+    }
+
+    /// <summary>
+    /// Walks the audit log's hash chain (dev-plan 3.1) and reports the first
+    /// link that does not hold. Audited itself, so the act of checking is on
+    /// the record; the check reads only, and the runtime role could not alter
+    /// the chain even if the code tried.
+    /// </summary>
+    private static async Task<IResult> VerifyAuditChain(
+        IAuditChainVerifier verifier, IAuditLogger audit, AppDbContext db)
+    {
+        var report = await verifier.VerifyAsync();
+        audit.Record("audit.chain_verified", "instance", null,
+            new { report.Ok, report.Checked, report.BrokenAtSequence });
+        await db.SaveChangesAsync();
+        return Results.Ok(report);
     }
 }

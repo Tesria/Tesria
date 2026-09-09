@@ -64,7 +64,12 @@ services:
     environment:
       ASPNETCORE_URLS: http://+:8080
       ASPNETCORE_ENVIRONMENT: Production
+      # Owner connection: migrations and role provisioning at startup only.
       ConnectionStrings__Default: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      # Runtime connection: a least-privilege role the app creates on start
+      # (dev-plan 3.1). It cannot alter or delete audit rows. An empty
+      # APP_DB_PASSWORD falls back to the owner with a warning.
+      ConnectionStrings__App: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${APP_DB_USER:-tesria_app};Password=${APP_DB_PASSWORD:-}"
       # Shared with the collab sidecar; signs the tokens that authorise a user
       # to join a page's live editing session. Empty disables co-editing.
       Collab__Secret: ${COLLAB_SHARED_SECRET}
@@ -136,10 +141,17 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      # The app provisions the runtime role this sidecar signs in with.
+      app:
+        condition: service_healthy
     environment:
       COLLAB_PORT: 8090
       COLLAB_SHARED_SECRET: ${COLLAB_SHARED_SECRET}
-      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}"
+      # Same least-privilege role as the app; falls back to the owner when
+      # APP_DB_PASSWORD is empty (see server.js).
+      DATABASE_URL: "postgres://${APP_DB_USER:-tesria_app}:${APP_DB_PASSWORD:-}@db:5432/${POSTGRES_DB}"
+      DATABASE_URL_FALLBACK: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}"
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-}
     expose:
       - "8090"
 

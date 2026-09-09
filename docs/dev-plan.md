@@ -353,7 +353,7 @@ email in 4.3; do not block this phase on email.
   rather than "the compose network" — Docker's subnet is not fixed either;
   the safety argument is that port 8080 is never published.
 
-### 3.1 Least-privilege DB role and tamper-evident audit log — `M` — Model: Fable
+### 3.1 Least-privilege DB role and tamper-evident audit log — `M` — Model: Fable — ✅ **shipped 2026-09-09**
 - Two roles: a migrations/owner role (used only at startup to apply
   migrations) and a runtime `app` role with DML on every table **except**
   `UPDATE`/`DELETE` on `AuditLogs`, `SecurityEvents` and `PageViews`. Two
@@ -372,6 +372,13 @@ email in 4.3; do not block this phase on email.
   harness (SQLite has no roles — the split must be a no-op there), and
   backup/restore (`backup-recovery.md` restores as the superuser; make sure
   it still works). Getting this wrong bricks startup.
+- **Shipped with one deviation:** the role is provisioned by the app at
+  every startup, not by a `deploy/db` init script — init scripts only run
+  on fresh volumes, so every existing install would have stayed on the
+  superuser, and re-granting after `Migrate()` covers future tables. Also
+  added: the daily monitor reports a chain that got *shorter*, which a
+  chain cannot detect on its own; and every stored hash was recomputed
+  independently in Python from a `psql` dump to prove the jsonb round trip.
 
 ### 3.2 Brute-force protection and rate limiting — `M` — Model: Opus
 - Depends on 3.0.

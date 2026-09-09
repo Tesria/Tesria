@@ -44,17 +44,27 @@ var builder = WebApplication.CreateBuilder(args);
 // Services
 // ---------------------------------------------------------------------------
 
-// Data layer: EF Core over PostgreSQL. Connection string comes from
-// ConnectionStrings:Default (set by docker-compose in production).
-var connectionString = builder.Configuration.GetConnectionString("Default")
+// Data layer: EF Core over PostgreSQL. Two connections (dev-plan 3.1):
+// ConnectionStrings:Default is the owner, used at startup for migrations and
+// to provision the least-privilege role; ConnectionStrings:App is that role,
+// used by the running app. With no app role configured the owner is used for
+// both, with a warning — see DatabaseRoles.
+var ownerConnectionString = builder.Configuration.GetConnectionString("Default")
     ?? "Host=localhost;Port=5432;Database=confluence;Username=confluence;Password=confluence";
-builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+var appConnectionString = builder.Configuration.GetConnectionString("App");
+var runtimeConnectionString = DatabaseRoles.ChooseRuntimeConnection(
+    ownerConnectionString, appConnectionString,
+    LoggerFactory.Create(l => l.AddConsole()).CreateLogger("Startup"));
+builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(runtimeConnectionString));
 
 // Auth: cookie-based sessions for the same-origin SPA. Argon2id hashing.
 builder.Services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CurrentUser>();
 builder.Services.AddScoped<IAuditLogger, AuditLogger>();
+builder.Services.AddScoped<IAuditChainVerifier, AuditChainVerifier>();
+builder.Services.AddSingleton<AuditChainMonitor>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<AuditChainMonitor>());
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddSingleton<SiteSettingsCache>();
 builder.Services.AddSingleton<LastSeenTracker>();
@@ -310,13 +320,32 @@ var app = builder.Build();
 // ---------------------------------------------------------------------------
 using (var scope = app.Services.CreateScope())
 {
+    var startupLog = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    // Production runs on PostgreSQL and applies versioned migrations. Tests swap
-    // in a non-Npgsql provider (SQLite) and build the schema from the model.
     if (db.Database.IsNpgsql())
-        db.Database.Migrate();
+    {
+        // Production: everything that needs ownership happens here, on the
+        // owner connection, before the app serves a request — migrations,
+        // chaining any pre-chain audit rows (an UPDATE the runtime role is
+        // not allowed), and provisioning that runtime role.
+        // Unpooled: once startup is over, no owner connection should remain
+        // open in this process for the rest of its life.
+        var ownerUnpooled = new Npgsql.NpgsqlConnectionStringBuilder(ownerConnectionString) { Pooling = false }.ConnectionString;
+        var ownerOptions = new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(ownerUnpooled).Options;
+        await using var owner = new AppDbContext(ownerOptions);
+        owner.Database.Migrate();
+        var chained = await AuditChain.BackfillAsync(owner);
+        if (chained > 0) startupLog.LogInformation("Audit chain: linked {Count} pre-existing rows", chained);
+        if (appConnectionString is not null)
+            await DatabaseRoles.EnsureAppRoleAsync(owner, appConnectionString, startupLog);
+    }
     else
+    {
+        // Tests swap in SQLite and build the schema from the model. SQLite has
+        // no roles, so the split is a no-op; the chain still applies.
         db.Database.EnsureCreated();
+        await AuditChain.BackfillAsync(db);
+    }
 }
 
 // ---------------------------------------------------------------------------

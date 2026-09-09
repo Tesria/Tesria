@@ -13,6 +13,80 @@ namespace Tesria.Api.Infrastructure;
 public class AppDbContext(DbContextOptions<AppDbContext> options)
     : DbContext(options), IDataProtectionKeyContext
 {
+    /// <summary>
+    /// Every save that adds audit rows links them into the hash chain first —
+    /// see <see cref="Infrastructure.Audit.AuditChain"/>. Done here, in the
+    /// one place all writes pass through, so no code path can add an audit
+    /// row that is not chained.
+    /// </summary>
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var pending = Infrastructure.Audit.AuditChain.PendingRows(this);
+        if (pending.Count == 0) return await base.SaveChangesAsync(cancellationToken);
+
+        // The chain needs a total order, which means one writer at a time
+        // reads the tail and appends. The transaction is the scope of the lock;
+        // if the caller already opened one (registration does), join it.
+        var ownTransaction = Database.CurrentTransaction is null;
+        var transaction = ownTransaction ? await Database.BeginTransactionAsync(cancellationToken) : null;
+        try
+        {
+            if (Database.IsNpgsql())
+                await Database.ExecuteSqlRawAsync(Infrastructure.Audit.AuditChain.LockSql, cancellationToken);
+
+            var tail = await AuditLogs.AsNoTracking()
+                .Where(a => a.Sequence != null)
+                .OrderByDescending(a => a.Sequence)
+                .Select(a => new { a.Sequence, a.Hash })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            Infrastructure.Audit.AuditChain.Link(pending, tail?.Sequence, tail?.Hash);
+            var written = await base.SaveChangesAsync(cancellationToken);
+
+            if (transaction is not null) await transaction.CommitAsync(cancellationToken);
+            Infrastructure.Audit.AuditChain.EmitToLog(this, pending);
+            return written;
+        }
+        finally
+        {
+            if (transaction is not null) await transaction.DisposeAsync();
+        }
+    }
+
+    /// <summary>
+    /// Synchronous saves exist for the Data Protection key repository, which
+    /// never writes audit rows. Chaining is still applied if anything does.
+    /// </summary>
+    public override int SaveChanges()
+    {
+        var pending = Infrastructure.Audit.AuditChain.PendingRows(this);
+        if (pending.Count == 0) return base.SaveChanges();
+
+        var ownTransaction = Database.CurrentTransaction is null;
+        var transaction = ownTransaction ? Database.BeginTransaction() : null;
+        try
+        {
+            if (Database.IsNpgsql()) Database.ExecuteSqlRaw(Infrastructure.Audit.AuditChain.LockSql);
+
+            var tail = AuditLogs.AsNoTracking()
+                .Where(a => a.Sequence != null)
+                .OrderByDescending(a => a.Sequence)
+                .Select(a => new { a.Sequence, a.Hash })
+                .FirstOrDefault();
+
+            Infrastructure.Audit.AuditChain.Link(pending, tail?.Sequence, tail?.Hash);
+            var written = base.SaveChanges();
+
+            transaction?.Commit();
+            Infrastructure.Audit.AuditChain.EmitToLog(this, pending);
+            return written;
+        }
+        finally
+        {
+            transaction?.Dispose();
+        }
+    }
+
     public DbSet<User> Users => Set<User>();
     public DbSet<SiteSettings> SiteSettings => Set<SiteSettings>();
     public DbSet<PageView> PageViews => Set<PageView>();
@@ -362,6 +436,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 
             e.HasIndex(a => a.CreatedAt);
             e.HasIndex(a => new { a.TargetType, a.TargetId });
+
+            // The chain (dev-plan 3.1). Unique so a race that somehow got past
+            // the advisory lock fails loudly rather than forking the chain.
+            e.Property(a => a.PrevHash).HasMaxLength(64);
+            e.Property(a => a.Hash).HasMaxLength(64);
+            e.HasIndex(a => a.Sequence).IsUnique();
         });
 
         b.Entity<Label>(e =>
