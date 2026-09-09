@@ -5,6 +5,42 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Feature: recovery codes for existing accounts (dev-plan 1.3) (2026-09-09)
+
+Recovery codes were only ever issued at registration, so every account that
+predates them — both accounts on this instance — had none and no way back in
+if its password were lost. They are now offered at sign-in: an account with
+zero codes gets a dialog, and one click generates a set.
+
+**No password is asked for right after signing in.** The sign-in is the
+re-authentication; asking for the same password seconds after it was typed
+proves nothing and mostly trains people to type passwords into prompts. The
+window is 15 minutes (`Auth:FreshLoginMinutes`, overridable), carried in an
+`auth_time` cookie claim. Editing your profile re-issues the cookie with the
+*original* `auth_time`, so ordinary activity cannot extend the window.
+
+Three rules the tests pin down:
+
+* **A supplied password is always verified**, fresh session or not. Accepting a
+  wrong one because the session happens to be recent would tell someone their
+  password was right when it was not.
+* **Outside the window the password is required**, so a tab left open on a
+  shared machine cannot mint codes that work as a permanent password reset.
+* **Omitting it is the supported path only while fresh.**
+
+Two bugs found by running it rather than by building it:
+
+* The dismissal was stored per tab, not per user, so one person clicking
+  "Not now" silenced the prompt for whoever signed in next in the same tab.
+* Refreshing the profile after generating took the remaining count off zero,
+  which closed the dialog — destroying the only copy of the codes that had
+  just been generated. The dialog now stays open whenever codes are on screen.
+
+A stale session used to hit a dead end telling it to go to the profile page; it
+now asks for the password in the dialog. Verified live end to end: prompt after
+sign-in, one-click generation, codes displayed with download/copy, and the
+prompt gone afterwards.
+
 ### Feature: admin panel (dev-plan 2.1–2.5) (2026-09-09)
 
 `/admin`, visible only to administrators, with Dashboard, Users, Spaces,

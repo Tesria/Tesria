@@ -246,6 +246,13 @@ undetectable without a login history.
   backup codes in 3.5 — don't build a second set.
 - Existing users have no codes — one-time banner on `/profile`, and admins
   can see who hasn't generated them (2.2).
+- **Extended 2026-09-09:** a banner on a settings page nobody opens is not a
+  recovery path, so accounts with zero codes are now prompted at sign-in and
+  can generate a set in one click. The sign-in *is* the re-authentication, so
+  no password is asked for within 15 minutes of it
+  (`Auth:FreshLoginMinutes`); outside that window the prompt asks for the
+  password in place rather than sending the person elsewhere. A supplied
+  password is always verified, fresh session or not.
 - **Admin-initiated reset** (`POST /api/admin/users/{id}/reset`) minting a
   one-time, 1-hour link an admin hands over out of band. For a self-hosted
   team this is the recovery path that will actually get used, and it needs

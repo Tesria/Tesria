@@ -19,6 +19,33 @@ public static class AuthEndpoints
     /// </summary>
     public const string SecurityStampClaim = "tesria:security_stamp";
 
+    /// <summary>
+    /// When this session last actually proved who it is — a sign-in, or a
+    /// password change. NOT refreshed by re-issuing the cookie for an unrelated
+    /// reason (a display-name edit), or renaming yourself would silently extend
+    /// the window below.
+    /// </summary>
+    public const string AuthTimeClaim = "tesria:auth_time";
+
+    /// <summary>
+    /// How long after authenticating a session may perform a sensitive account
+    /// action without re-entering its password.
+    ///
+    /// The fresh login *is* the re-authentication: asking for the same password
+    /// again seconds after typing it proves nothing and mostly teaches people to
+    /// type passwords into prompts. Short enough that a session left open on a
+    /// shared machine is not still privileged an hour later.
+    /// </summary>
+    /// <remarks>
+    /// Overridable through <c>Auth:FreshLoginMinutes</c>. That exists so the
+    /// tests can shrink the window to nothing and exercise the stale-session
+    /// path, which is the half that actually protects anything.
+    /// </remarks>
+    public const int DefaultFreshLoginMinutes = 15;
+
+    private static TimeSpan FreshAuthWindow(IConfiguration config) =>
+        TimeSpan.FromMinutes(config.GetValue("Auth:FreshLoginMinutes", DefaultFreshLoginMinutes));
+
     /// <summary>Shared by registration and password change, so the two cannot drift apart.</summary>
     public const int MinPasswordLength = 8;
 
@@ -31,14 +58,15 @@ public static class AuthEndpoints
     /// </summary>
     public record UserResponse(
         Guid Id, string Email, string DisplayName, UserRole Role,
-        string? AvatarHash, int? AvatarVariant, bool HasPassword);
+        string? AvatarHash, int? AvatarVariant, bool HasPassword,
+        int RecoveryCodesRemaining);
     public record OidcStatusResponse(bool Enabled, string DisplayName);
     public record UpdateProfileRequest(string DisplayName);
     public record ChangeEmailRequest(string CurrentPassword, string Email);
     public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
     public record RecoverWithCodeRequest(string Email, string Code, string NewPassword);
     public record ResetWithTokenRequest(string Token, string NewPassword);
-    public record RegenerateCodesRequest(string CurrentPassword);
+    public record RegenerateCodesRequest(string? CurrentPassword);
     /// <summary>The plaintext codes. Returned once, at the only moment they exist.</summary>
     public record RecoveryCodesResponse(IReadOnlyList<string> Codes);
     public record RecoveryStatusResponse(int Remaining);
@@ -183,7 +211,7 @@ public static class AuthEndpoints
 
     private static async Task<IResult> Login(
         LoginRequest req, AppDbContext db, IPasswordHasher hasher, HttpContext http,
-        IAuditLogger audit)
+        IAuditLogger audit, IAccountRecoveryService recovery)
     {
         var email = (req.Email ?? "").Trim().ToLowerInvariant();
         var user = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
@@ -209,7 +237,10 @@ public static class AuthEndpoints
         await db.SaveChangesAsync();
 
         await SignIn(http, user);
-        return Results.Ok(new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.AvatarVariant, user.PasswordHash != null));
+        var remaining = await recovery.RemainingCodesAsync(user.Id);
+        return Results.Ok(new UserResponse(
+            user.Id, user.Email, user.DisplayName, user.Role,
+            user.AvatarHash, user.AvatarVariant, user.PasswordHash != null, remaining));
     }
 
     private static async Task<IResult> Me(AppDbContext db, CurrentUser current)
@@ -217,13 +248,17 @@ public static class AuthEndpoints
         if (current.Id is not { } id) return Results.Unauthorized();
         var user = await db.Users
             .Where(u => u.Id == id)
-            .Select(u => new UserResponse(u.Id, u.Email, u.DisplayName, u.Role, u.AvatarHash, u.AvatarVariant, u.PasswordHash != null))
+            .Select(u => new UserResponse(
+                u.Id, u.Email, u.DisplayName, u.Role, u.AvatarHash, u.AvatarVariant,
+                u.PasswordHash != null,
+                db.RecoveryCodes.Count(c => c.UserId == u.Id && c.UsedAt == null)))
             .FirstOrDefaultAsync();
         return user is null ? Results.Unauthorized() : Results.Ok(user);
     }
 
-    private static Task SignIn(HttpContext http, User user)
+    private static Task SignIn(HttpContext http, User user, DateTimeOffset? authTime = null)
     {
+        var authenticatedAt = authTime ?? DateTimeOffset.UtcNow;
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -232,6 +267,7 @@ public static class AuthEndpoints
             // Compared against the stored stamp on every request, so rotating
             // it revokes every existing cookie for this account immediately.
             new(SecurityStampClaim, user.SecurityStamp),
+            new(AuthTimeClaim, authenticatedAt.ToUnixTimeSeconds().ToString()),
         };
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         return http.SignInAsync(
@@ -241,7 +277,8 @@ public static class AuthEndpoints
     }
 
     private static async Task<IResult> UpdateProfile(
-        UpdateProfileRequest req, AppDbContext db, CurrentUser current, HttpContext http)
+        UpdateProfileRequest req, AppDbContext db, CurrentUser current, HttpContext http,
+        IAccountRecoveryService recovery)
     {
         var displayName = (req.DisplayName ?? "").Trim();
         if (displayName.Length == 0)
@@ -255,13 +292,13 @@ public static class AuthEndpoints
 
         // The name is carried in the cookie's claims, so re-issue it — otherwise
         // the topbar would keep showing the old name until the next sign-in.
-        await SignIn(http, user);
-        return Results.Ok(ToResponse(user));
+        await SignIn(http, user, AuthTimeOf(http));
+        return Results.Ok(ToResponse(user, await recovery.RemainingCodesAsync(user.Id)));
     }
 
     private static async Task<IResult> ChangeEmail(
         ChangeEmailRequest req, AppDbContext db, IPasswordHasher hasher, CurrentUser current,
-        IAuditLogger audit, HttpContext http)
+        IAuditLogger audit, HttpContext http, IAccountRecoveryService recovery)
     {
         var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
         if (user.PasswordHash is null)
@@ -286,13 +323,13 @@ public static class AuthEndpoints
         audit.Record("user.email_changed", "user", user.Id, new { From = previous, To = email });
         await db.SaveChangesAsync();
 
-        await SignIn(http, user);
-        return Results.Ok(ToResponse(user));
+        await SignIn(http, user, AuthTimeOf(http));
+        return Results.Ok(ToResponse(user, await recovery.RemainingCodesAsync(user.Id)));
     }
 
     private static async Task<IResult> ChangePassword(
         ChangePasswordRequest req, AppDbContext db, IPasswordHasher hasher, CurrentUser current,
-        IAuditLogger audit, HttpContext http)
+        IAuditLogger audit, HttpContext http, IAccountRecoveryService recovery)
     {
         var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
         if (user.PasswordHash is null)
@@ -318,7 +355,7 @@ public static class AuthEndpoints
         // Re-issue this session with the new stamp, so the person who just
         // changed their password is not signed out along with everyone else.
         await SignIn(http, user);
-        return Results.Ok(ToResponse(user));
+        return Results.Ok(ToResponse(user, await recovery.RemainingCodesAsync(user.Id)));
     }
 
     private static async Task<IResult> RecoveryStatus(
@@ -330,15 +367,35 @@ public static class AuthEndpoints
 
     private static async Task<IResult> RegenerateCodes(
         RegenerateCodesRequest req, AppDbContext db, IPasswordHasher hasher,
-        CurrentUser current, IAuditLogger audit, IAccountRecoveryService recovery)
+        CurrentUser current, IAuditLogger audit, IAccountRecoveryService recovery, HttpContext http,
+        IConfiguration config)
     {
         var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
         if (user.PasswordHash is null)
             return Results.ValidationProblem(Error("currentPassword",
                 "This account signs in through your identity provider and does not use recovery codes."));
 
-        if (!hasher.Verify(req.CurrentPassword ?? "", user.PasswordHash))
-            return Results.ValidationProblem(Error("currentPassword", "Current password is incorrect."));
+        // Two ways to prove this is really you, and the order matters.
+        //
+        // If a password was supplied it must be correct — even in a fresh
+        // session. Accepting a wrong one because the session happens to be
+        // recent would tell someone their password was right when it was not.
+        //
+        // If none was supplied, a recent sign-in stands in for it: the sign-in
+        // *is* the re-authentication, and demanding the same password seconds
+        // after it was typed proves nothing while training people to retype
+        // passwords into prompts. Outside that window it is required again, so
+        // a session left open on a shared machine cannot mint codes.
+        if (!string.IsNullOrEmpty(req.CurrentPassword))
+        {
+            if (!hasher.Verify(req.CurrentPassword, user.PasswordHash))
+                return Results.ValidationProblem(Error("currentPassword", "Current password is incorrect."));
+        }
+        else if (!IsFreshlyAuthenticated(http, FreshAuthWindow(config)))
+        {
+            return Results.ValidationProblem(Error("currentPassword",
+                "Enter your password to generate new recovery codes."));
+        }
 
         var codes = recovery.IssueCodes(user.Id);
         audit.Record("user.recovery_codes_regenerated", "user", user.Id);
@@ -428,9 +485,9 @@ public static class AuthEndpoints
         await db.SaveChangesAsync();
     }
 
-    private static UserResponse ToResponse(User user) =>
+    private static UserResponse ToResponse(User user, int recoveryCodesRemaining) =>
         new(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.AvatarVariant,
-            user.PasswordHash != null);
+            user.PasswordHash != null, recoveryCodesRemaining);
 
     /// <summary>
     /// The caller's address as the server currently sees it.
@@ -442,6 +499,19 @@ public static class AuthEndpoints
     /// </summary>
     private static string? ClientIp(HttpContext http) =>
         http.Connection.RemoteIpAddress?.ToString();
+
+    /// <summary>The moment this session authenticated, or null if it cannot be read.</summary>
+    private static DateTimeOffset? AuthTimeOf(HttpContext http)
+    {
+        var raw = http.User.FindFirstValue(AuthTimeClaim);
+        return long.TryParse(raw, out var seconds)
+            ? DateTimeOffset.FromUnixTimeSeconds(seconds)
+            : null;
+    }
+
+    /// <summary>Whether this session authenticated recently enough to skip a password prompt.</summary>
+    private static bool IsFreshlyAuthenticated(HttpContext http, TimeSpan window) =>
+        AuthTimeOf(http) is { } at && DateTimeOffset.UtcNow - at <= window;
 
     private static bool IsValidEmail(string email) =>
         !string.IsNullOrWhiteSpace(email)

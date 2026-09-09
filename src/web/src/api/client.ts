@@ -20,6 +20,9 @@ export type User = {
   /** Chosen generated avatar, or null to derive one from the id. Ignored when
    *  `avatarHash` is set — an uploaded image always wins. */
   avatarVariant: number | null
+  /** Unused recovery codes. Zero means this account has no way back in if the
+   *  password is lost, which is what the post-login prompt exists to fix. */
+  recoveryCodesRemaining: number
 }
 
 /** The URL for a user's uploaded avatar. The hash makes each version its own
@@ -381,7 +384,8 @@ export const api = {
       request<User>('PUT', '/api/auth/me/password', input),
     recoveryStatus: () =>
       request<{ remaining: number }>('GET', '/api/auth/me/recovery-codes'),
-    regenerateRecoveryCodes: (input: { currentPassword: string }) =>
+    /** `currentPassword` may be omitted within the fresh-login window. */
+    regenerateRecoveryCodes: (input: { currentPassword?: string }) =>
       request<{ codes: string[] }>('POST', '/api/auth/me/recovery-codes', input),
     recoverWithCode: (input: { email: string; code: string; newPassword: string }) =>
       request<void>('POST', '/api/auth/recover/code', input),

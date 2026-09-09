@@ -1418,3 +1418,21 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
   /* Row actions already wrap; the table itself still needs an escape hatch. */
   .admin-table { display: block; overflow-x: auto; }
 }
+
+/* ---- recovery prompt ----------------------------------------------------- */
+/* A modal, not a banner: an account with no recovery codes has no way back in,
+   and a dismissible strip at the top of a page is the thing everyone scrolls
+   past. It is still dismissible — "Not now" is a real option — but it has to
+   be answered rather than ignored. */
+.recovery-prompt {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+  background: rgba(9, 12, 16, 0.55);
+}
+.recovery-prompt__card {
+  width: min(440px, 100%); max-height: calc(100vh - 2rem); overflow-y: auto;
+  padding: 1.5rem; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg);
+}
+.recovery-prompt__card h2 { margin: 0 0 0.5rem; font-size: 1.1rem; }
+.recovery-prompt__card .row-gap { margin-top: 1rem; }

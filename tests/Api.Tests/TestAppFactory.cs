@@ -26,6 +26,16 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
     private readonly string _uploadsPath =
         Path.Combine(Path.GetTempPath(), "cc-tests", Guid.NewGuid().ToString("N"));
 
+    private readonly int? _freshLoginMinutes;
+
+    public TestAppFactory() { }
+
+    /// <param name="freshLoginMinutes">
+    /// Shrinks the window in which a recent sign-in stands in for a password.
+    /// Pass 0 to make every session count as stale.
+    /// </param>
+    public TestAppFactory(int freshLoginMinutes) => _freshLoginMinutes = freshLoginMinutes;
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         _connection.Open();
@@ -34,6 +44,7 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Storage:UploadsPath"] = _uploadsPath,
+                ["Auth:FreshLoginMinutes"] = _freshLoginMinutes?.ToString(),
             }));
         builder.ConfigureServices(services =>
         {

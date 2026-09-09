@@ -6,6 +6,7 @@ import { NotificationBell } from './NotificationBell'
 import { ThemeToggle } from './ThemeToggle'
 import { BrandMark } from './BrandMark'
 import { Avatar } from './Avatar'
+import { RecoveryCodesPrompt } from './RecoveryCodesPrompt'
 import { useDismissable } from '../hooks/useDismissable'
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
@@ -159,6 +160,9 @@ export function Layout() {
       <main className="content">
         <Outlet />
       </main>
+      {/* Inside the authenticated shell so it follows the user to whichever
+          page they land on after signing in, rather than only the one route. */}
+      <RecoveryCodesPrompt />
     </div>
   )
 }
