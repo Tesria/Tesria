@@ -23,7 +23,7 @@ namespace Tesria.Api.Infrastructure.Security;
 public static partial class DatabaseRoles
 {
     /// <summary>Tables the runtime role may append to but never change.</summary>
-    public static readonly string[] AppendOnlyTables = ["AuditLogs", "PageViews"];
+    public static readonly string[] AppendOnlyTables = ["AuditLogs", "PageViews", "SecurityEvents"];
 
     /// <summary>
     /// Which connection the running app should use. The app connection wins

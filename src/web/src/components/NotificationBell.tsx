@@ -22,6 +22,15 @@ const ACTION_LABEL: Record<string, string> = {
 }
 
 function describe(n: AppNotification): string {
+  // Security alerts (dev-plan 3.3) come from the system, not a person.
+  if (n.action === 'security.alert') {
+    try {
+      const meta = JSON.parse(n.metadataJson ?? '{}') as { Kind?: string; Severity?: string }
+      return `Security ${meta.Severity?.toLowerCase() ?? 'alert'}: ${meta.Kind ?? 'see Security page'}`
+    } catch {
+      return 'Security alert'
+    }
+  }
   const who = n.actorName ?? 'Someone'
   const what = ACTION_LABEL[n.action] ?? n.action
   let title = ''
@@ -81,6 +90,10 @@ export function NotificationBell() {
     if (!n.readAt) {
       api.notifications.markRead(n.id).catch(() => {})
       setCount((c) => Math.max(0, c - 1))
+    }
+    if (n.targetType === 'security') {
+      navigate('/admin/security')
+      return
     }
     try {
       const spaces = await api.spaces.list()

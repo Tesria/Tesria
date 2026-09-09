@@ -37,7 +37,8 @@ public static class WebhookEndpoints
     }
 
     private static async Task<IResult> Create(
-        string key, CreateWebhookRequest req, AppDbContext db, IPermissionService perms, CurrentUser current)
+        string key, CreateWebhookRequest req, AppDbContext db, IPermissionService perms, CurrentUser current,
+        Infrastructure.Security.ISecurityDetector detector)
     {
         var space = await FindSpaceAsync(db, key);
         if (space is null) return Results.NotFound();
@@ -67,6 +68,12 @@ public static class WebhookEndpoints
             CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Webhooks.Add(webhook);
+        // Dev-plan 3.4 refuses these outright; until then, and even after, a
+        // webhook aimed inside the network is worth an administrator's eye.
+        if (System.Net.IPAddress.TryParse(uri.Host, out var literal)
+                ? Infrastructure.Security.PrivateNetworks.IsPrivateOrLocal(literal)
+                : uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+            await detector.WebhookPrivateTargetAsync(current.RequireId(), req.Url, space.Id);
         await db.SaveChangesAsync();
 
         return Results.Created($"/api/spaces/{key}/webhooks/{webhook.Id}",

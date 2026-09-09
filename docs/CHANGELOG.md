@@ -5,6 +5,52 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Security: threat detection, admin alerts, blocklist (dev-plan 3.3) (2026-09-09)
+
+*Plan tag: Fable → Opus. Both halves run as Fable by user override. The
+design (signals, thresholds, alert lifecycle, what it deliberately does
+not do) is in architecture.md and was written before the code.*
+
+Thirteen detectors now watch the instance: failed-sign-in bursts and
+credential stuffing per address, repeated lockouts per account, an
+administrator signing in from an address never seen for that account, a
+spike of 401/403s, mass page removal, API-token minting bursts,
+registration bursts, every admin promotion, every flip of the
+public-spaces switch, a webhook aimed at a private address, and a broken
+audit chain. Bursts write one event at the threshold with the count, not
+one per hit; discrete signals write every time. An alert-worthy event
+creates a `SecurityAlert` (Open → Acknowledged → Resolved, with a note)
+and one notification per administrator, with a one-hour cooldown per
+(kind, key) so an ongoing attack is one alert an hour, not one a second.
+
+`SecurityEvents` is append-only at the database layer — added to the
+runtime role's revoke list — so the record of an attack cannot be tidied
+away by the app. Alerts live in their own table precisely so acknowledging
+one never needs an UPDATE on the append-only one.
+
+**Admin → Security** now has an overview strip, the open alerts with
+one-click mitigations relevant to each (block the address for 24 h, sign
+the account out everywhere, revoke its tokens, suspend it), kill switches
+(public spaces, registration, TOTP-for-admins), a blocklist (address or
+CIDR, optional expiry, refuses to block your own address), and a recent
+events timeline. The blocklist is enforced by middleware that runs right
+after forwarded headers and before authentication: a blocked address gets
+403 with or without a valid session. The bell links security alerts to
+the page.
+
+Tests (fourteen): each burst detector fires at its threshold and not one
+below; the cooldown suppresses repeats; admins are notified; the
+first-ever admin sign-in does not alert but a later new address does;
+promotion and the public toggle always alert; a private webhook target
+alerts; a tampered chain becomes a Critical alert through the daily
+monitor; acknowledge/resolve; the blocklist refuses before auth and lifts
+on removal; you cannot block yourself; members get 403 on all of it.
+Verified live: five failures against distinct accounts from one host
+produced a Critical credential-stuffing alert with the real client
+address, a bell notification, an alert card with "Block <address>", and a
+working Acknowledge; `DELETE FROM "SecurityEvents"` as `tesria_app` →
+`permission denied`.
+
 ### Security: rate limiting and account lockout (dev-plan 3.2) (2026-09-09)
 
 *Plan tag: Opus. Run as Fable by user override.*

@@ -64,6 +64,9 @@ builder.Services.AddScoped<CurrentUser>();
 builder.Services.AddScoped<IAuditLogger, AuditLogger>();
 builder.Services.AddScoped<IAuditChainVerifier, AuditChainVerifier>();
 builder.Services.AddSingleton<AuditChainMonitor>();
+builder.Services.AddSingleton<SecurityCounters>();
+builder.Services.AddSingleton<BlocklistCache>();
+builder.Services.AddScoped<ISecurityDetector, SecurityDetector>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<AuditChainMonitor>());
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddSingleton<SiteSettingsCache>();
@@ -359,6 +362,13 @@ using (var scope = app.Services.CreateScope())
     await scope.ServiceProvider.GetRequiredService<ISiteSettingsService>().GetAsync();
 }
 
+// A broken audit chain is a security alert, not just a log line.
+app.Services.GetRequiredService<AuditChainMonitor>().OnBroken = async (services, report) =>
+{
+    await services.GetRequiredService<ISecurityDetector>().AuditChainBrokenAsync(report);
+    await services.GetRequiredService<AppDbContext>().SaveChangesAsync();
+};
+
 // ---------------------------------------------------------------------------
 // Pipeline
 // ---------------------------------------------------------------------------
@@ -366,7 +376,10 @@ using (var scope = app.Services.CreateScope())
 // First, so that everything after it — rate limiting, audit metadata, the
 // cookie's secure flag — sees the client's address and scheme, not Caddy's.
 app.UseForwardedHeaders();
+// A blocked address is turned away here, before anything else runs.
+app.UseMiddleware<BlocklistMiddleware>();
 app.UseMiddleware<SecurityHeadersMiddleware>();
+app.UseMiddleware<DeniedResponseMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
@@ -407,6 +420,7 @@ var api = app.MapGroup("/api");
 api.MapHealthEndpoints();
 api.MapAuthEndpoints();
 api.MapAdminEndpoints();
+api.MapSecurityEndpoints();
 api.MapDashboardEndpoints();
 api.MapMediaEndpoints();
 api.MapSpaceEndpoints();

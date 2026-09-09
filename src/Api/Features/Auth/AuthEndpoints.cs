@@ -138,7 +138,8 @@ public static class AuthEndpoints
 
     private static async Task<IResult> Register(
         RegisterRequest req, AppDbContext db, IPasswordHasher hasher, HttpContext http,
-        ISiteSettingsService settings, IAccountRecoveryService recovery, IInviteService invites)
+        ISiteSettingsService settings, IAccountRecoveryService recovery, IInviteService invites,
+        ISecurityDetector detector)
     {
         var email = (req.Email ?? "").Trim().ToLowerInvariant();
         var displayName = (req.DisplayName ?? "").Trim();
@@ -202,6 +203,7 @@ public static class AuthEndpoints
             invite.UsedByUserId = user.Id;
         }
 
+        await detector.RegistrationAsync(ClientIp(http));
         await db.SaveChangesAsync();
         await tx.CommitAsync();
 
@@ -213,7 +215,8 @@ public static class AuthEndpoints
 
     private static async Task<IResult> Login(
         LoginRequest req, AppDbContext db, IPasswordHasher hasher, HttpContext http,
-        IAuditLogger audit, IAccountRecoveryService recovery, ISiteSettingsService siteSettings)
+        IAuditLogger audit, IAccountRecoveryService recovery, ISiteSettingsService siteSettings,
+        ISecurityDetector detector)
     {
         var email = (req.Email ?? "").Trim().ToLowerInvariant();
         var user = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
@@ -239,13 +242,20 @@ public static class AuthEndpoints
             // user row, where only administrators see it.
             audit.RecordAs(null, "user.login_failed", "instance", null,
                 new { Ip = ClientIp(http) });
+            await detector.FailedLoginAsync(ClientIp(http), email);
             if (user is not null && !locked)
+            {
                 AuthLockout.RecordFailure(user, await siteSettings.GetAsync(), now);
+                if (AuthLockout.IsLocked(user, now)) await detector.AccountLockedAsync(user, ClientIp(http));
+            }
             await db.SaveChangesAsync();
             return Results.Unauthorized();
         }
 
         AuthLockout.Reset(user);
+        // Before the login row is written, so the history it consults is the
+        // history *before* this sign-in.
+        await detector.SucceededLoginAsync(user, ClientIp(http));
         audit.RecordAs(user.Id, "user.login", "user", user.Id, new { Ip = ClientIp(http) });
         await db.SaveChangesAsync();
 

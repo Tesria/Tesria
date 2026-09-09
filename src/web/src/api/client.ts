@@ -180,6 +180,65 @@ export type SecurityLimits = {
   activeLockouts: LockoutRow[]
 }
 
+/** Matches Api.Domain.SecuritySeverity / SecurityAlertStatus. */
+export const SecuritySeverity = { Info: 0, Warning: 1, Critical: 2 } as const
+export type SecuritySeverity = (typeof SecuritySeverity)[keyof typeof SecuritySeverity]
+export const AlertStatus = { Open: 0, Acknowledged: 1, Resolved: 2 } as const
+export type AlertStatus = (typeof AlertStatus)[keyof typeof AlertStatus]
+
+export type SecurityOverview = {
+  openAlerts: number
+  criticalOpen: number
+  eventsLast24h: number
+  blockedNetworks: number
+  blockedHits: number
+  allowPublicSpaces: boolean
+  allowPublicRegistration: boolean
+  requireTotpForAdmins: boolean
+}
+
+export type SecurityEvent = {
+  id: string
+  kind: string
+  severity: SecuritySeverity
+  key: string
+  ip: string | null
+  actorId: string | null
+  actorName: string | null
+  targetType: string | null
+  targetId: string | null
+  metadataJson: string | null
+  createdAt: string
+}
+
+export type SecurityAlert = {
+  id: string
+  eventId: string
+  kind: string
+  severity: SecuritySeverity
+  key: string
+  ip: string | null
+  actorId: string | null
+  actorName: string | null
+  status: AlertStatus
+  createdAt: string
+  acknowledgedAt: string | null
+  acknowledgedByName: string | null
+  resolvedAt: string | null
+  resolvedByName: string | null
+  note: string | null
+  metadataJson: string | null
+}
+
+export type BlockedNetwork = {
+  id: string
+  cidr: string
+  reason: string | null
+  createdByName: string | null
+  createdAt: string
+  expiresAt: string | null
+}
+
 export type AuditChainReport = {
   ok: boolean
   checked: number
@@ -283,7 +342,7 @@ export type WatchStatus = { watching: boolean }
 export type AppNotification = {
   id: string
   action: string
-  targetType: 'page' | 'space'
+  targetType: 'page' | 'space' | 'security'
   targetId: string
   actorId: string | null
   actorName: string | null
@@ -529,6 +588,20 @@ export const api = {
     security: {
       limits: () => request<SecurityLimits>('GET', '/api/admin/security/limits'),
       verifyAuditChain: () => request<AuditChainReport>('POST', '/api/admin/audit/verify'),
+      overview: () => request<SecurityOverview>('GET', '/api/admin/security/overview'),
+      events: (take = 100) => request<SecurityEvent[]>('GET', `/api/admin/security/events?take=${take}`),
+      alerts: (status: 'open' | 'all' = 'open') =>
+        request<SecurityAlert[]>('GET', `/api/admin/security/alerts?status=${status}`),
+      acknowledge: (id: string, note?: string) =>
+        request<SecurityAlert>('POST', `/api/admin/security/alerts/${id}/acknowledge`, { note }),
+      resolve: (id: string, note?: string) =>
+        request<SecurityAlert>('POST', `/api/admin/security/alerts/${id}/resolve`, { note }),
+      blocks: {
+        list: () => request<BlockedNetwork[]>('GET', '/api/admin/security/blocks'),
+        add: (input: { cidr: string; reason?: string; expiresInHours?: number }) =>
+          request<BlockedNetwork>('POST', '/api/admin/security/blocks', input),
+        remove: (id: string) => request<void>('DELETE', `/api/admin/security/blocks/${id}`),
+      },
     },
   },
   avatar: {

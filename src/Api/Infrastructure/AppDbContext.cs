@@ -112,6 +112,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<SpacePermission> SpacePermissions => Set<SpacePermission>();
     public DbSet<PageRestriction> PageRestrictions => Set<PageRestriction>();
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
+    public DbSet<SecurityEvent> SecurityEvents => Set<SecurityEvent>();
+    public DbSet<SecurityAlert> SecurityAlerts => Set<SecurityAlert>();
+    public DbSet<BlockedNetwork> BlockedNetworks => Set<BlockedNetwork>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -442,6 +445,35 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(a => a.PrevHash).HasMaxLength(64);
             e.Property(a => a.Hash).HasMaxLength(64);
             e.HasIndex(a => a.Sequence).IsUnique();
+        });
+
+        // Threat detection (dev-plan 3.3). Events are append-only at the
+        // database layer (DatabaseRoles.AppendOnlyTables); alerts are the
+        // mutable workflow rows and are kept when a user goes.
+        b.Entity<SecurityEvent>(e =>
+        {
+            e.Property(x => x.Kind).HasMaxLength(100);
+            e.Property(x => x.Key).HasMaxLength(200);
+            e.Property(x => x.Ip).HasMaxLength(64);
+            e.Property(x => x.TargetType).HasMaxLength(50);
+            e.Property(x => x.MetadataJson).HasColumnType("jsonb");
+            e.HasIndex(x => x.CreatedAt);
+            e.HasIndex(x => new { x.Kind, x.CreatedAt });
+        });
+        b.Entity<SecurityAlert>(e =>
+        {
+            e.Property(x => x.Kind).HasMaxLength(100);
+            e.Property(x => x.Key).HasMaxLength(200);
+            e.Property(x => x.Ip).HasMaxLength(64);
+            e.Property(x => x.Note).HasMaxLength(2000);
+            e.HasOne(x => x.Event).WithMany().HasForeignKey(x => x.EventId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.Status, x.CreatedAt });
+        });
+        b.Entity<BlockedNetwork>(e =>
+        {
+            e.Property(x => x.Cidr).HasMaxLength(64);
+            e.Property(x => x.Reason).HasMaxLength(500);
+            e.HasIndex(x => x.Cidr).IsUnique();
         });
 
         b.Entity<Label>(e =>

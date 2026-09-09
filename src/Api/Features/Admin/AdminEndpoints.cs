@@ -184,7 +184,7 @@ public static class AdminEndpoints
 
     private static async Task<IResult> UpdateSettings(
         UpdateSettingsRequest req, ISiteSettingsService settings,
-        CurrentUser current, IAuditLogger audit, AppDbContext db)
+        CurrentUser current, IAuditLogger audit, AppDbContext db, ISecurityDetector detector)
     {
         if (req.SmtpPort is { } port && (port < 1 || port > 65535))
             return Results.ValidationProblem(new Dictionary<string, string[]>
@@ -262,6 +262,10 @@ public static class AdminEndpoints
         // Audited on its own unit of work: ISiteSettingsService.UpdateAsync has
         // already saved, so the audit entry needs its own SaveChanges.
         audit.Record("settings.updated", "instance", null, new { Changed = changed });
+        // Any flip of the public-read kill switch is an alert, on or off:
+        // turning it on exposes content, turning it off might be the
+        // attacker covering the mitigation an admin just applied.
+        if (req.AllowPublicSpaces is { } toggled) await detector.PublicSpacesToggledAsync(actorId, toggled);
         await db.SaveChangesAsync();
 
         return Results.Ok(ToResponse(updated));
@@ -404,7 +408,8 @@ public static class AdminEndpoints
     /// and the only remedy would be editing the database by hand.
     /// </summary>
     private static async Task<IResult> SetRole(
-        Guid userId, SetRoleRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit)
+        Guid userId, SetRoleRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit,
+        ISecurityDetector detector)
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Results.NotFound();
@@ -423,6 +428,9 @@ public static class AdminEndpoints
 
         user.Role = req.Role;
         audit.Record("user.role_changed", "user", user.Id, new { user.Email, Role = req.Role.ToString() });
+        // A new administrator is the single most valuable thing an attacker
+        // with one admin session can create; every one is an alert.
+        if (req.Role == UserRole.Admin) await detector.AdminPromotedAsync(current.RequireId(), user);
         await db.SaveChangesAsync();
         return Results.Ok(await OneUserAsync(db, userId));
     }
