@@ -62,6 +62,9 @@ export type Space = {
   archived: boolean
   homepageId: string | null
   createdAt: string
+  /** Readable without an account while the instance allows public spaces (dev-plan 5.1). */
+  isPublic: boolean
+  publicComments: boolean
 }
 
 export type PageDetail = {
@@ -277,6 +280,10 @@ export type AuditChainReport = {
 }
 
 export type AdminSpace = {
+  isPublic: boolean
+  publicComments: boolean
+  publicSince: string | null
+  attachmentCount: number
   id: string
   key: string
   name: string
@@ -650,6 +657,8 @@ export const api = {
     },
     spaces: {
       list: () => request<AdminSpace[]>('GET', '/api/admin/spaces'),
+      setPublic: (key: string, input: { isPublic: boolean; publicComments?: boolean }) =>
+        request<AdminSpace>('PUT', `/api/admin/spaces/${key}/public`, input),
     },
     invites: {
       list: () => request<Invite[]>('GET', '/api/admin/invites'),

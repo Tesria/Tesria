@@ -117,7 +117,7 @@ public class TransportSecurityTests
     public async Task An_unauthenticated_request_also_gets_the_headers()
     {
         using var factory = new TestAppFactory();
-        var res = await factory.CreateClient().GetAsync("/api/spaces");
+        var res = await factory.CreateClient().GetAsync("/api/notifications");
         Assert.Equal(HttpStatusCode.Unauthorized, res.StatusCode);
         Assert.True(res.Headers.Contains("Content-Security-Policy"));
     }

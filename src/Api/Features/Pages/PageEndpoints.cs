@@ -42,13 +42,14 @@ public static class PageEndpoints
     {
         var group = routes.MapGroup("/pages").WithTags("Pages").RequireAuthorization();
 
-        group.MapGet("/tree", Tree);
+        // Open to anonymous readers (dev-plan 5.2); the permission service masks what they may not see.
+        group.MapGet("/tree", Tree).AllowAnonymous();
         group.MapGet("/trash", Trash);
         group.MapPost("/", Create);
         group.MapPost("/draft", CreateDraft);
         group.MapPost("/{id:guid}/publish", Publish);
         group.MapDelete("/{id:guid}/draft", DeleteDraft);
-        group.MapGet("/{id:guid}", Get);
+        group.MapGet("/{id:guid}", Get).AllowAnonymous();
         group.MapPut("/{id:guid}", Update);
         group.MapPut("/{id:guid}/move", Move);
         group.MapPut("/{id:guid}/layout", SetLayout);
@@ -248,6 +249,22 @@ public static class PageEndpoints
         if (page?.CurrentVersion is null) return Results.NotFound();
         // 404 rather than 403 so restricted pages aren't discoverable.
         if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
+
+        // Anonymous readers (dev-plan 5.2) may cache for a minute, and revalidate
+        // by ETag; unpublishing therefore takes effect within that minute.
+        // Signed-in responses are never shared-cacheable.
+        if (current.Id is null)
+        {
+            var etag = $"\"{page.CurrentVersion.Id:N}-{(page.FullWidth ? 1 : 0)}\"";
+            http.Response.Headers.ETag = etag;
+            http.Response.Headers.CacheControl = "public, max-age=60";
+            if (http.Request.Headers.IfNoneMatch.Any(v => string.Equals(v, etag, StringComparison.Ordinal)))
+                return Results.StatusCode(StatusCodes.Status304NotModified);
+        }
+        else
+        {
+            http.Response.Headers.CacheControl = "private, no-store";
+        }
 
         await RecordViewAsync(id, db, current, http);
         return Results.Ok(ToDetail(page, page.CurrentVersion));

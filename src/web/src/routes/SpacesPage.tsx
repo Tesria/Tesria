@@ -1,8 +1,10 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../auth/AuthContext'
 import { api, ApiError, type Space } from '../api/client'
 
 export function SpacesPage() {
+  const { user } = useAuth()
   const [spaces, setSpaces] = useState<Space[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
@@ -18,9 +20,11 @@ export function SpacesPage() {
     <div className="page-wrap">
       <div className="row-between">
         <h1>Spaces</h1>
-        <button type="button" className="btn btn--primary" onClick={() => setCreating((v) => !v)}>
-          {creating ? 'Cancel' : 'New space'}
-        </button>
+        {user && (
+          <button type="button" className="btn btn--primary" onClick={() => setCreating((v) => !v)}>
+            {creating ? 'Cancel' : 'New space'}
+          </button>
+        )}
       </div>
 
       {creating && (
@@ -34,13 +38,19 @@ export function SpacesPage() {
 
       {error && <p className="alert alert--error">{error}</p>}
       {!spaces && !error && <p className="muted">Loading…</p>}
-      {spaces && spaces.length === 0 && <p className="muted">No spaces yet. Create your first one.</p>}
+      {spaces && spaces.length === 0 && (
+        <p className="muted">
+          {user ? 'No spaces yet. Create your first one.' : 'Nothing is published for public reading. Sign in to see more.'}
+        </p>
+      )}
 
       <ul className="space-grid">
         {spaces?.map((s) => (
           <li key={s.id} className="space-card">
             <Link to={`/spaces/${s.key}`}>
-              <span className="space-card__key">{s.key}</span>
+              <span className="space-card__key">
+                {s.key}{s.isPublic && <span className="badge badge--public">public</span>}
+              </span>
               <span className="space-card__name">{s.name}</span>
               {s.description && <span className="space-card__desc">{s.description}</span>}
             </Link>

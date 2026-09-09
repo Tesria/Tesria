@@ -5,6 +5,7 @@ import './index.css'
 import { startFaviconSync } from './theme'
 import { AuthProvider } from './auth/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { SessionGate } from './components/SessionGate'
 import { Layout } from './components/Layout'
 import { ScrollToTop } from './components/ScrollToTop'
 import { LoginPage } from './routes/LoginPage'
@@ -45,35 +46,42 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/recover" element={<RecoverPage />} />
           <Route path="/reset" element={<RecoverPage />} />
-          <Route element={<ProtectedRoute />}>
+          {/* The shell renders for anonymous readers too (dev-plan 5.3);
+              the server decides what they can see. Routes that need an
+              account sit under a nested ProtectedRoute. */}
+          <Route element={<SessionGate />}>
             <Route element={<Layout />}>
               <Route index element={<Navigate to="/spaces" replace />} />
               <Route path="search" element={<SearchPage />} />
-              <Route path="labels/:name" element={<LabelPage />} />
-              {/* Old locations, kept for bookmarks. */}
-              <Route path="audit" element={<Navigate to="/admin/audit" replace />} />
-              <Route path="groups" element={<Navigate to="/admin/groups" replace />} />
-              <Route path="api-tokens" element={<Navigate to="/profile#api-tokens" replace />} />
-              <Route path="profile" element={<ProfilePage />} />
-              <Route path="admin" element={<AdminLayout />}>
-                <Route index element={<AdminDashboardPage />} />
-                <Route path="users" element={<AdminUsersPage />} />
-                <Route path="spaces" element={<AdminSpacesPage />} />
-                <Route path="invites" element={<AdminInvitesPage />} />
-                <Route path="security" element={<AdminSecurityPage />} />
-                <Route path="groups" element={<GroupsPage />} />
-                <Route path="audit" element={<AuditPage />} />
-                <Route path="settings" element={<AdminSettingsPage />} />
-              </Route>
               <Route path="spaces" element={<SpacesPage />} />
               <Route path="spaces/:key" element={<SpacePage />}>
                 <Route index element={<SpaceHome />} />
-                <Route path="new" element={<PageEditor />} />
-                <Route path="trash" element={<TrashPage />} />
-                <Route path="permissions" element={<SpacePermissionsPage />} />
-                <Route path="webhooks" element={<SpaceWebhooksPage />} />
                 <Route path="pages/:pageId" element={<PageView />} />
-                <Route path="pages/:pageId/edit" element={<PageEditor />} />
+                <Route element={<ProtectedRoute />}>
+                  <Route path="new" element={<PageEditor />} />
+                  <Route path="trash" element={<TrashPage />} />
+                  <Route path="permissions" element={<SpacePermissionsPage />} />
+                  <Route path="webhooks" element={<SpaceWebhooksPage />} />
+                  <Route path="pages/:pageId/edit" element={<PageEditor />} />
+                </Route>
+              </Route>
+              <Route element={<ProtectedRoute />}>
+                <Route path="labels/:name" element={<LabelPage />} />
+                {/* Old locations, kept for bookmarks. */}
+                <Route path="audit" element={<Navigate to="/admin/audit" replace />} />
+                <Route path="groups" element={<Navigate to="/admin/groups" replace />} />
+                <Route path="api-tokens" element={<Navigate to="/profile#api-tokens" replace />} />
+                <Route path="profile" element={<ProfilePage />} />
+                <Route path="admin" element={<AdminLayout />}>
+                  <Route index element={<AdminDashboardPage />} />
+                  <Route path="users" element={<AdminUsersPage />} />
+                  <Route path="spaces" element={<AdminSpacesPage />} />
+                  <Route path="invites" element={<AdminInvitesPage />} />
+                  <Route path="security" element={<AdminSecurityPage />} />
+                  <Route path="groups" element={<GroupsPage />} />
+                  <Route path="audit" element={<AuditPage />} />
+                  <Route path="settings" element={<AdminSettingsPage />} />
+                </Route>
               </Route>
             </Route>
           </Route>

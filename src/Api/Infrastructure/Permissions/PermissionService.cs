@@ -1,5 +1,6 @@
 using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 
 namespace Tesria.Api.Infrastructure.Permissions;
@@ -24,10 +25,54 @@ public interface IPermissionService
     Task<bool> CanEditPageAsync(Guid pageId);
     /// <summary>Ids of spaces the current user may view — for filtering listings.</summary>
     Task<HashSet<Guid>> ViewableSpaceIdsAsync();
+
+    /// <summary>
+    /// Whether a page is readable with no account at all — evaluated as the
+    /// anonymous principal regardless of who is asking (dev-plan 5.1). Used
+    /// where the answer must not depend on the caller: link previews, the
+    /// sitemap.
+    /// </summary>
+    Task<bool> IsPubliclyViewablePageAsync(Guid pageId);
+    Task<bool> IsPubliclyViewableSpaceAsync(Guid spaceId);
 }
 
-public sealed class PermissionService(AppDbContext db, CurrentUser current) : IPermissionService
+public sealed class PermissionService(AppDbContext db, CurrentUser current, ISiteSettingsService settings)
+    : IPermissionService
 {
+    // -- the anonymous principal (dev-plan 5.1) --------------------------------
+    //
+    // No session, no token: exactly one capability, reading a public space's
+    // unrestricted, current pages — and only while the instance switch is on.
+    // See architecture.md, "Public read mode".
+
+    private bool? _publicSpacesAllowed;
+
+    private async Task<bool> PublicSpacesAllowedAsync() =>
+        _publicSpacesAllowed ??= (await settings.GetAsync()).AllowPublicSpaces;
+
+    public async Task<bool> IsPubliclyViewableSpaceAsync(Guid spaceId)
+    {
+        if (!await PublicSpacesAllowedAsync()) return false;
+        return await db.Spaces.AsNoTracking().AnyAsync(s => s.Id == spaceId && s.IsPublic && !s.Archived);
+    }
+
+    public async Task<bool> IsPubliclyViewablePageAsync(Guid pageId)
+    {
+        // The soft-delete filter stays on: a trashed page is never public.
+        var page = await db.Pages.AsNoTracking()
+            .Where(p => p.Id == pageId)
+            .Select(p => new { p.SpaceId, p.Status })
+            .FirstOrDefaultAsync();
+        if (page is null || page.Status != PageStatus.Current) return false;
+        if (!await IsPubliclyViewableSpaceAsync(page.SpaceId)) return false;
+
+        // Any restriction, of any kind, anywhere in the ancestry hides the
+        // page from the world. A signed-in user is only hidden from by View
+        // restrictions; "everyone" now includes the internet.
+        var ancestry = await AncestryAsync(pageId, page.SpaceId);
+        return !await db.PageRestrictions.AsNoTracking().AnyAsync(r => ancestry.Contains(r.PageId));
+    }
+
     // The user's own id plus every group they belong to; permissions may be
     // granted to any of these. Cached for the lifetime of the request.
     private HashSet<Guid>? _principals;
@@ -55,7 +100,8 @@ public sealed class PermissionService(AppDbContext db, CurrentUser current) : IP
 
     private async Task<bool> HasSpaceAsync(Guid spaceId, SpaceOperation required)
     {
-        if (current.Id is null) return false;
+        if (current.Id is null)
+            return required == SpaceOperation.View && await IsPubliclyViewableSpaceAsync(spaceId);
 
         var grants = await db.SpacePermissions.AsNoTracking()
             .Where(p => p.SpaceId == spaceId)
@@ -88,7 +134,11 @@ public sealed class PermissionService(AppDbContext db, CurrentUser current) : IP
     public async Task<HashSet<Guid>> ViewableSpaceIdsAsync()
     {
         var allIds = await db.Spaces.AsNoTracking().Select(s => s.Id).ToListAsync();
-        if (current.Id is null) return [];
+        if (current.Id is null)
+        {
+            if (!await PublicSpacesAllowedAsync()) return [];
+            return (await db.Spaces.AsNoTracking().Where(s => s.IsPublic && !s.Archived).Select(s => s.Id).ToListAsync()).ToHashSet();
+        }
 
         var grants = await db.SpacePermissions.AsNoTracking()
             .Select(p => new { p.SpaceId, p.PrincipalId, p.Operation })
@@ -112,7 +162,8 @@ public sealed class PermissionService(AppDbContext db, CurrentUser current) : IP
 
     private async Task<bool> HasPageAsync(Guid pageId, PageOperation required)
     {
-        if (current.Id is null) return false;
+        if (current.Id is null)
+            return required == PageOperation.View && await IsPubliclyViewablePageAsync(pageId);
 
         // Ignore the soft-delete filter so trash/restore checks still resolve.
         var page = await db.Pages.AsNoTracking().IgnoreQueryFilters()

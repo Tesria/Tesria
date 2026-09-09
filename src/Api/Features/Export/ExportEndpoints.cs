@@ -11,7 +11,7 @@ public static class ExportEndpoints
     public static IEndpointRouteBuilder MapExportEndpoints(this IEndpointRouteBuilder routes)
     {
         routes.MapGet("/pages/{id:guid}/export", ExportPage)
-            .WithTags("Export").RequireAuthorization();
+            .WithTags("Export").AllowAnonymous(); // dev-plan 5.2: readers may take their docs with them
         return routes;
     }
 

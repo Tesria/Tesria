@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { api, ApiError } from '../api/client'
 import { PasswordInput } from '../components/PasswordInput'
@@ -7,6 +7,9 @@ import { PasswordInput } from '../components/PasswordInput'
 export function LoginPage() {
   const { user, login, completeTotp } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  // Back to the public page the reader was on, if that is where they came from.
+  const destination = (location.state as { from?: string } | null)?.from ?? '/spaces'
   const [searchParams] = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -24,7 +27,7 @@ export function LoginPage() {
       .catch(() => setOidc({ enabled: false, displayName: '' }))
   }, [])
 
-  if (user) return <Navigate to="/spaces" replace />
+  if (user) return <Navigate to={destination} replace />
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
@@ -36,7 +39,7 @@ export function LoginPage() {
         setChallenge(pending.challenge)
         return
       }
-      navigate('/spaces')
+      navigate(destination)
     } catch (err) {
       setError(err instanceof ApiError && err.status === 401 ? 'Incorrect email or password.'
         : err instanceof Error ? err.message : 'Sign in failed.')
@@ -51,7 +54,7 @@ export function LoginPage() {
     setError(null)
     try {
       await completeTotp(challenge!, code)
-      navigate('/spaces')
+      navigate(destination)
     } catch (err) {
       setError(err instanceof ApiError && err.status === 401
         ? 'That code is not right. Codes change every 30 seconds; a recovery code also works.'

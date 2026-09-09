@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api, ApiError, type PageDetail } from '../api/client'
 import { Editor } from '../editor/Editor'
+import { useAuth } from '../auth/AuthContext'
 import { useSpaceContext } from './SpacePage'
 import { CommentsPanel } from './panels/CommentsPanel'
 import { PageLabels } from './panels/PageLabels'
@@ -18,6 +19,7 @@ export function PageView() {
   const { key = '', pageId = '' } = useParams()
   const navigate = useNavigate()
   const { space, reloadTree } = useSpaceContext()
+  const { user } = useAuth()
   const [page, setPage] = useState<PageDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('comments')
@@ -58,8 +60,51 @@ export function PageView() {
     }
   }
 
-  if (error) return <p className="alert alert--error page-wrap">{error}</p>
+  if (error) {
+    return (
+      <div className="page-wrap">
+        <p className="alert alert--error">{error}</p>
+        {!user && (
+          <p className="muted">
+            This page may exist but not be public.{' '}
+            <Link to="/login" state={{ from: `/spaces/${key}/pages/${pageId}` }}>Sign in</Link> to see it.
+          </p>
+        )}
+      </div>
+    )
+  }
   if (!page) return <p className="muted page-wrap">Loading…</p>
+
+  // Anonymous readers (dev-plan 5.3): the action bar collapses to Export;
+  // comments only where the space allows them, read-only.
+  if (!user) {
+    return (
+      <>
+        <div className="page-actionbar">
+          <div className="page-actionbar__secondary">
+            <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=markdown`}>↓ Markdown</a>
+            <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=html`}>↓ HTML</a>
+          </div>
+        </div>
+        <article className={page.fullWidth ? 'page-wrap page-wrap--full' : 'page-wrap'}>
+          <div className="paper">
+            <div className="page-head"><h1>{page.title}</h1></div>
+            <p className="muted small">Updated {new Date(page.updatedAt).toLocaleDateString()}</p>
+            <PageLabels pageId={page.id} readOnly />
+            <div className="page-body">
+              <Editor value={page.contentJson} editable={false} />
+            </div>
+          </div>
+          {space.publicComments && (
+            <>
+              <div className="tabs"><span className="tab is-active">Comments</span></div>
+              <div className="tab-panel"><CommentsPanel pageId={page.id} readOnly /></div>
+            </>
+          )}
+        </article>
+      </>
+    )
+  }
 
   return (
     <>

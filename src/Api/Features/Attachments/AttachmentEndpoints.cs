@@ -25,12 +25,12 @@ public static class AttachmentEndpoints
         // not the one in use. Cross-site protection for this endpoint is the
         // CsrfHeaderMiddleware (dev-plan 3.4), the same as for the JSON ones.
         pageScoped.MapPost("/", Upload).DisableAntiforgery();
-        pageScoped.MapGet("/", ListForPage);
+        pageScoped.MapGet("/", ListForPage).AllowAnonymous(); // dev-plan 5.2: checked through the page
 
         var byId = routes.MapGroup("/attachments/{id:guid}")
             .WithTags("Attachments").RequireAuthorization();
-        byId.MapGet("/", GetMetadata);
-        byId.MapGet("/download", Download);
+        byId.MapGet("/", GetMetadata).AllowAnonymous();
+        byId.MapGet("/download", Download).AllowAnonymous();
         byId.MapDelete("/", Delete);
 
         return routes;

@@ -427,6 +427,77 @@ are retired unsent so turning email on never replays history. With
 `EmailEnabled` off the pass does nothing and marks nothing. Links are
 built from `SiteUrl.Resolve` and the page's space key.
 
+### Public read mode — the anonymous principal (spec — dev-plan 5.1, designed 2026-09-09)
+
+**What it is for.** A space can be published so that anyone — no account,
+no sign-in — can *read* it: the game-wiki case. It is gated twice: the
+instance-wide `AllowPublicSpaces` switch (0.2, the 3.3 kill switch) and
+the space's own `IsPublic`. Both must be on; the per-space flag is kept
+when the switch is off, so re-enabling restores the previous state.
+
+**Who may publish.** A site administrator, not a space owner: exposing
+content to the internet is an instance-level risk. `PUT
+/api/admin/spaces/{key}/public` needs the admin role, sudo mode (3.5),
+and the instance switch on to publish (unpublishing is always allowed).
+It is audited (`space.published` / `space.unpublished`) and always raises
+a 3.3 security event and alert, in both directions — publishing exposes
+content; unpublishing might be an attacker undoing a mitigation.
+
+**The anonymous principal.** A request with no session and no token has
+`CurrentUser.Id == null`. `PermissionService` treats that as a principal
+with exactly one capability:
+
+* `CanViewSpace(space)` ⇔ `AllowPublicSpaces` ∧ `space.IsPublic` ∧
+  ¬`space.Archived`.
+* `CanViewPage(page)` ⇔ `CanViewSpace(page.Space)` ∧ `page.Status == Current`
+  ∧ ¬deleted ∧ **no restriction of any kind on the page or any
+  ancestor**. A signed-in user is only hidden from by *View* restrictions;
+  an anonymous reader is hidden from by *any* restriction, because a
+  restricted page in a public space is the author saying "not for
+  everyone", and "everyone" now includes the internet.
+* `ViewableSpaceIds` = the public spaces, or nothing when the switch is off.
+* Every edit/admin capability is false.
+
+**Masking.** Anything anonymous may not see is **404, never 403** — the
+rule that already protects restricted pages from signed-in users. That
+includes private spaces by key. The SPA therefore says "sign in to view
+this, or it may not exist", not "this exists but is private".
+
+**What opens (5.2) and what stays closed.** Opened to anonymous readers,
+each still permission-checked through the service: space by key, the
+public spaces list, the page tree (filtered), a page, its labels, its
+attachments (list and download, checked through the page), search
+(scoped to public spaces), export (Markdown/HTML — "take your docs with
+you" holds for readers), and comments *only* when the space's
+`PublicComments` is on (read-only; writing stays authenticated). Closed:
+**version history** (the edit history of a public page can carry
+withdrawn content), drafts, trash, the user directory, groups, labels
+across spaces, watches, collab tokens, avatars, notifications, everything
+that writes. Anonymous callers hitting a closed route get 401.
+
+**The leak matrix** is `PublicReadTests`: every opened endpoint × {public
+space, private space, restricted page in a public space, draft, trashed
+page, attachment of a restricted page, search hit, label listing, export,
+version history, tree, comments with `PublicComments` off/on, kill switch
+off, archived public space, every write}. The matrix was written before
+the routes were opened; the routes are opened only as far as it is green.
+
+**Caching and telemetry.** Anonymous page GETs carry
+`Cache-Control: public, max-age=60` and an ETag (version id + layout);
+`If-None-Match` gets 304. Unpublishing therefore takes effect within a
+minute for cached readers — acceptable, and documented. Signed-in
+responses stay uncached. The 3.2 anonymous limiter applies. Page views
+are recorded with `UserId = null`, so the dashboard counts them.
+
+**Discovery.** `robots.txt` allows `/spaces/{key}` for each public key
+and disallows `/api`; `sitemap.xml` lists every publicly viewable page
+with its `lastmod`. For a public page URL, a small middleware injects the
+page's `<title>`, a description and Open Graph tags into the SPA shell it
+already serves — decided per request through the same anonymous check,
+so a private page's title never leaks into a shared link preview. Full
+server-side rendering is out of scope; if search indexing beyond titles
+matters later, that is the option.
+
 ### Roles and administrators (spec — dev-plan 0.1, designed 2026-09-08)
 
 > **Update 2026-09-09:** group management (create/edit/delete/membership)

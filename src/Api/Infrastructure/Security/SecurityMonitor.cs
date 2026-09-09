@@ -144,6 +144,8 @@ public interface ISecurityDetector
     Task TokenMintedAsync(Guid actorId);
     Task AdminPromotedAsync(Guid actorId, User promoted);
     Task PublicSpacesToggledAsync(Guid? actorId, bool enabled);
+    /// <summary>A space was published to, or withdrawn from, the world (dev-plan 5.1). Always an alert.</summary>
+    Task SpaceVisibilityChangedAsync(Guid actorId, Space space, bool isPublic);
     Task WebhookPrivateTargetAsync(Guid actorId, string url, Guid spaceId);
     Task AuditChainBrokenAsync(Audit.AuditChainReport report);
     /// <summary>Called by the denied-response middleware once its own counter crosses.</summary>
@@ -249,6 +251,11 @@ public sealed class SecurityDetector(AppDbContext db, SecurityCounters counters,
     public Task PublicSpacesToggledAsync(Guid? actorId, bool enabled) =>
         RaiseAsync("settings.public_spaces_toggled", SecuritySeverity.Critical, key: "instance",
             actorId: actorId, alert: true, cooldown: false, metadata: new { Enabled = enabled });
+
+    public Task SpaceVisibilityChangedAsync(Guid actorId, Space space, bool isPublic) =>
+        RaiseAsync(isPublic ? "space.published" : "space.unpublished", SecuritySeverity.Warning, key: space.Id.ToString(),
+            actorId: actorId, targetType: "space", targetId: space.Id, alert: true, cooldown: false,
+            metadata: new { space.Key, space.Name });
 
     public Task WebhookPrivateTargetAsync(Guid actorId, string url, Guid spaceId) =>
         RaiseAsync("webhook.private_target", SecuritySeverity.Warning, key: actorId.ToString(),

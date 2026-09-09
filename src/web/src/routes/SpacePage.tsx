@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { NavLink, Outlet, useMatch, useOutletContext, useParams } from 'react-router-dom'
+import { NavLink, Outlet, useMatch, useOutletContext, useParams, useLocation, Link } from 'react-router-dom'
+import { useAuth } from '../auth/AuthContext'
 import { api, type PageTreeNode, type Space } from '../api/client'
 import { OverflowMenu } from '../components/OverflowMenu'
 import { PageTree } from '../components/PageTree'
@@ -17,6 +18,8 @@ export function useSpaceContext() {
 }
 
 export function SpacePage() {
+  const { user } = useAuth()
+  const location = useLocation()
   const { key = '' } = useParams()
   const [space, setSpace] = useState<Space | null>(null)
   const [tree, setTree] = useState<PageTreeNode[]>([])
@@ -59,7 +62,21 @@ export function SpacePage() {
     }
   }, [key])
 
-  if (error) return <p className="alert alert--error">{error}</p>
+  if (error) {
+    // Anonymous readers get 404 for anything not public (dev-plan 5.1's
+    // masking rule), so "not found" and "sign in" are the same message.
+    return (
+      <div className="page-wrap">
+        <p className="alert alert--error">{error}</p>
+        {!user && (
+          <p className="muted">
+            This space may exist but not be public.{' '}
+            <Link to="/login" state={{ from: location.pathname }}>Sign in</Link> to see it.
+          </p>
+        )}
+      </div>
+    )
+  }
   if (!space) return <p className="muted page-wrap">Loading…</p>
 
   const context: SpaceOutletContext = { space, tree, reloadTree }
@@ -72,28 +89,37 @@ export function SpacePage() {
           breadcrumb now, not here, so this is just a label. */}
       <div className={isPageRoute ? 'space-actionbar space-actionbar--hidden-on-page' : 'space-actionbar'}>
         <span className="space-actionbar__pages">{space.name}</span>
-        <div className="space-actionbar__actions">
-          <NavLink to={newPageHref} className="btn btn--primary btn--sm">
-            + New
-          </NavLink>
-          <OverflowMenu label="Space actions">
-            <NavLink to={`/spaces/${space.key}/permissions`} className="btn">🔒 Permissions</NavLink>
-            <NavLink to={`/spaces/${space.key}/webhooks`} className="btn">🪝 Webhooks</NavLink>
-            <NavLink to={`/spaces/${space.key}/trash`} className="btn">🗑 Trash</NavLink>
-          </OverflowMenu>
-        </div>
+        {user && (
+          <div className="space-actionbar__actions">
+            <NavLink to={newPageHref} className="btn btn--primary btn--sm">
+              + New
+            </NavLink>
+            <OverflowMenu label="Space actions">
+              <NavLink to={`/spaces/${space.key}/permissions`} className="btn">🔒 Permissions</NavLink>
+              <NavLink to={`/spaces/${space.key}/webhooks`} className="btn">🪝 Webhooks</NavLink>
+              <NavLink to={`/spaces/${space.key}/trash`} className="btn">🗑 Trash</NavLink>
+            </OverflowMenu>
+          </div>
+        )}
       </div>
       <aside className="sidebar">
         <div className="sidebar__head">
           <div>
-            <div className="sidebar__key">{space.key}</div>
+            <div className="sidebar__key">
+              {space.key}
+              {/* Visible to everyone, so nobody edits a public page thinking it is internal. */}
+              {space.isPublic && <span className="badge badge--public" title="Readable by anyone on the internet">public</span>}
+            </div>
             <div className="sidebar__name">{space.name}</div>
           </div>
         </div>
-        <NavLink to={newPageHref} className="btn btn--primary btn--block">
-          + New page
-        </NavLink>
-        <PageTree tree={tree} spaceKey={space.key} onMoved={reloadTree} />
+        {user && (
+          <NavLink to={newPageHref} className="btn btn--primary btn--block">
+            + New page
+          </NavLink>
+        )}
+        <PageTree tree={tree} spaceKey={space.key} onMoved={reloadTree} readOnly={!user} />
+        {user && (<>
         <NavLink
           to={`/spaces/${space.key}/permissions`}
           className={({ isActive }) => (isActive ? 'sidebar__trash is-active' : 'sidebar__trash')}
@@ -112,6 +138,7 @@ export function SpacePage() {
         >
           🗑 Trash
         </NavLink>
+        </>)}
       </aside>
       <section className="space-content">
         <SpaceBreadcrumb space={space} tree={tree} />

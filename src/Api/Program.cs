@@ -18,6 +18,7 @@ using Tesria.Api.Features.Notifications;
 using Tesria.Api.Features.Templates;
 using Tesria.Api.Features.Watches;
 using Tesria.Api.Features.Webhooks;
+using Tesria.Api.Features.Public;
 using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Audit;
@@ -440,6 +441,10 @@ var spaStaticFileOptions = new StaticFileOptions
             : "public, max-age=31536000, immutable";
     },
 };
+// Public page URLs get their title and Open Graph tags injected into the
+// shell (dev-plan 5.2). Before static files, which would otherwise serve
+// the generic index.html.
+app.UseMiddleware<Tesria.Api.Features.Public.PublicMetaMiddleware>();
 app.UseDefaultFiles();
 app.UseStaticFiles(spaStaticFileOptions);
 
@@ -478,6 +483,9 @@ api.MapWatchEndpoints();
 api.MapNotificationEndpoints();
 api.MapApiTokenEndpoints();
 api.MapWebhookEndpoints();
+
+// Not under /api: robots.txt and sitemap.xml live at the root (dev-plan 5.2).
+app.MapPublicEndpoints();
 
 // SPA fallback: any non-API, non-file route returns index.html so client-side
 // routing works. Guarded so it never swallows /api/* requests. Reuses the same

@@ -14,7 +14,8 @@ public static partial class SpaceEndpoints
     public record UpdateSpaceRequest(string Name, string? Description);
     public record SpaceResponse(
         Guid Id, string Key, string Name, string? Description,
-        bool Archived, Guid? HomepageId, DateTimeOffset CreatedAt);
+        bool Archived, Guid? HomepageId, DateTimeOffset CreatedAt,
+        bool IsPublic, bool PublicComments);
 
     // 2–50 chars, starts with a letter, letters/digits only. Stored upper-cased.
     [GeneratedRegex("^[A-Z][A-Z0-9]{1,49}$")]
@@ -24,9 +25,10 @@ public static partial class SpaceEndpoints
     {
         var group = routes.MapGroup("/spaces").WithTags("Spaces").RequireAuthorization();
 
-        group.MapGet("/", List);
+        // Readable without a session (dev-plan 5.2); the permission service decides what an anonymous caller sees.
+        group.MapGet("/", List).AllowAnonymous();
         group.MapPost("/", Create);
-        group.MapGet("/{key}", GetByKey);
+        group.MapGet("/{key}", GetByKey).AllowAnonymous();
         group.MapPut("/{key}", Update);
         group.MapPost("/{key}/archive",
             (string key, AppDbContext db, IAuditLogger audit, IPermissionService perms)
@@ -124,7 +126,7 @@ public static partial class SpaceEndpoints
     }
 
     private static SpaceResponse ToResponse(Space s) =>
-        new(s.Id, s.Key, s.Name, s.Description, s.Archived, s.HomepageId, s.CreatedAt);
+        new(s.Id, s.Key, s.Name, s.Description, s.Archived, s.HomepageId, s.CreatedAt, s.IsPublic, s.PublicComments);
 
     private static Dictionary<string, string[]> Error(string field, string message) =>
         new() { [field] = [message] };

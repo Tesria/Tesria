@@ -146,13 +146,15 @@ public class AdminPanelTests
 
         // A token authenticates through a different scheme, so revoking
         // sessions deliberately leaves it working — "lock this account out"
-        // needs both actions, which is why they are separate.
+        // needs both actions, which is why they are separate. Probed on a
+        // route that stays closed to anonymous callers (dev-plan 5.2 opened
+        // the spaces list to them).
         Assert.Equal(HttpStatusCode.Unauthorized, (await member.GetAsync("/api/auth/me")).StatusCode);
-        (await script.GetAsync("/api/spaces")).EnsureSuccessStatusCode();
+        (await script.GetAsync("/api/notifications")).EnsureSuccessStatusCode();
 
         (await admin.PostAsync($"/api/admin/users/{registered.Id}/revoke-tokens", null))
             .EnsureSuccessStatusCode();
-        Assert.Equal(HttpStatusCode.Unauthorized, (await script.GetAsync("/api/spaces")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await script.GetAsync("/api/notifications")).StatusCode);
     }
 
     [Fact]

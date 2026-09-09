@@ -140,11 +140,14 @@ export function PageTree({
   spaceKey,
   onNavigate,
   onMoved,
+  readOnly = false,
 }: {
   tree: PageTreeNode[]
   spaceKey: string
   onNavigate?: () => void
   onMoved?: () => void
+  /** Anonymous readers (dev-plan 5.3): browse only, no reorder control. */
+  readOnly?: boolean
 }) {
   const [editMode, setEditMode] = useState(false)
   const [draftTree, setDraftTree] = useState(tree)
@@ -268,7 +271,7 @@ export function PageTree({
               {saving ? 'Saving…' : `Save${pendingMoves.length ? ` (${pendingMoves.length})` : ''}`}
             </button>
           </span>
-        ) : (
+        ) : readOnly ? null : (
           <button type="button" className="btn btn--ghost btn--sm tree-section__reorder" aria-label="Reorder pages" title="Reorder pages" onClick={startEditing}>
             <PencilIcon />
           </button>

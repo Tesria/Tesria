@@ -1480,3 +1480,6 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .profile__section--wide { max-width: none; }
 .profile__section { overflow-x: auto; }
 .admin-table .nowrap { white-space: nowrap; }
+
+/* Public spaces (dev-plan 5.3): the badge everyone sees. */
+.badge--public { background: color-mix(in srgb, var(--primary) 18%, transparent); color: var(--primary); margin-left: 0.4rem; }

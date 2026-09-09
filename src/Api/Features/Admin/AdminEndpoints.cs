@@ -54,7 +54,8 @@ public static class AdminEndpoints
     public record AdminSpaceResponse(
         Guid Id, string Key, string Name, string? Description, bool Archived,
         Guid CreatedById, string CreatedByName, int PageCount, long StorageBytes,
-        DateTimeOffset CreatedAt);
+        DateTimeOffset CreatedAt, bool IsPublic, bool PublicComments, DateTimeOffset? PublicSince, int AttachmentCount);
+    public record SetPublicRequest(bool IsPublic, bool? PublicComments);
 
     /// <summary>
     /// Note the absence of the SMTP password: it is write-only over the API.
@@ -127,6 +128,7 @@ public static class AdminEndpoints
         group.MapPost("/users/{userId:guid}/revoke-sessions", RevokeSessions);
         group.MapPost("/users/{userId:guid}/revoke-tokens", RevokeTokens);
         group.MapGet("/spaces", ListSpaces);
+        group.MapPut("/spaces/{key}/public", SetSpacePublic);
         group.MapGet("/invites", ListInvites);
         group.MapPost("/invites", CreateInvite);
         group.MapDelete("/invites/{id:guid}", RevokeInvite);
@@ -572,9 +574,14 @@ public static class AdminEndpoints
     /// not bypass space permissions (see the roles spec), so this deliberately
     /// returns counts and ownership rather than anything readable.
     /// </summary>
-    private static async Task<IResult> ListSpaces(AppDbContext db)
+    private static async Task<IResult> ListSpaces(AppDbContext db) =>
+        Results.Ok((await SpaceRowsAsync(db, null)).OrderBy(s => s.Key).ToList());
+
+    private static async Task<List<AdminSpaceResponse>> SpaceRowsAsync(AppDbContext db, Guid? onlyId)
     {
-        var spaces = await db.Spaces.AsNoTracking()
+        var query = db.Spaces.AsNoTracking();
+        if (onlyId is { } id) query = query.Where(s => s.Id == id);
+        return await query
             .Select(s => new AdminSpaceResponse(
                 s.Id, s.Key, s.Name, s.Description, s.Archived,
                 s.CreatedById,
@@ -583,10 +590,9 @@ public static class AdminEndpoints
                 db.Attachments
                     .Where(a => db.Pages.Any(p => p.Id == a.PageId && p.SpaceId == s.Id))
                     .Sum(a => (long?)a.Size) ?? 0L,
-                s.CreatedAt))
+                s.CreatedAt, s.IsPublic, s.PublicComments, s.PublicSince,
+                db.Attachments.Count(a => db.Pages.Any(p => p.Id == a.PageId && p.SpaceId == s.Id))))
             .ToListAsync();
-
-        return Results.Ok(spaces.OrderBy(s => s.Key).ToList());
     }
 
     /// <summary>
@@ -637,4 +643,45 @@ public static class AdminEndpoints
             s.LoginRateLimitPerMinute, s.AnonymousRateLimitPerMinute, s.TokenMintLimitPerHour,
             s.LockoutThreshold, s.LockoutBaseSeconds, s.LockoutMaxSeconds, locked));
     }
+
+    /// <summary>
+    /// Publishes a space to the world, or withdraws it (dev-plan 5.1). A site
+    /// administrator's act, in sudo mode: exposing content is an instance-level
+    /// risk. Publishing needs the instance switch on; withdrawing never does.
+    /// Audited, and always a security alert in both directions.
+    /// </summary>
+    private static async Task<IResult> SetSpacePublic(
+        string key, SetPublicRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit,
+        ISiteSettingsService settings, ISecurityDetector detector, HttpContext http, IConfiguration config)
+    {
+        var space = await db.Spaces.FirstOrDefaultAsync(s => s.Key == key.ToUpperInvariant());
+        if (space is null) return Results.NotFound();
+        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
+
+        if (req.IsPublic && !(await settings.GetAsync()).AllowPublicSpaces)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["isPublic"] = ["Turn on \"Allow public spaces\" in Settings first — and read the internet-readiness checklist it points to."],
+            });
+
+        var changed = space.IsPublic != req.IsPublic;
+        space.IsPublic = req.IsPublic;
+        space.PublicSince = req.IsPublic ? (space.PublicSince ?? DateTimeOffset.UtcNow) : null;
+        if (req.PublicComments is { } pc) space.PublicComments = pc;
+
+        if (changed)
+        {
+            audit.Record(req.IsPublic ? "space.published" : "space.unpublished", "space", space.Id, new { space.Key, space.Name });
+            await detector.SpaceVisibilityChangedAsync(current.RequireId(), space, req.IsPublic);
+        }
+        else
+        {
+            audit.Record("space.public_settings_changed", "space", space.Id, new { space.Key, space.PublicComments });
+        }
+        await db.SaveChangesAsync();
+        return Results.Ok(await OneSpaceAsync(db, space.Id));
+    }
+
+    private static async Task<AdminSpaceResponse> OneSpaceAsync(AppDbContext db, Guid spaceId) =>
+        (await SpaceRowsAsync(db, spaceId)).Single();
 }
