@@ -67,7 +67,7 @@ export function SpaceWebhooksPage() {
       {error && <p className="alert alert--error">{error}</p>}
 
       {justCreated && (
-        <div className="panel">
+        <div className="card">
           <p style={{ marginTop: 0 }}>
             <strong>Copy this signing secret now — it won't be shown again:</strong>
           </p>
@@ -84,7 +84,7 @@ export function SpaceWebhooksPage() {
         </div>
       )}
 
-      <form className="panel form-inline" onSubmit={create}>
+      <form className="card form-inline" onSubmit={create}>
         <label>
           URL
           <input

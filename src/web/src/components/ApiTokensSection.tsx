@@ -43,7 +43,7 @@ export function ApiTokensSection() {
       {error && <p className="alert alert--error">{error}</p>}
 
       {justCreated && (
-        <div className="panel">
+        <div className="card">
           <p style={{ marginTop: 0 }}>
             <strong>Copy this token now — it won't be shown again:</strong>
           </p>
@@ -56,7 +56,7 @@ export function ApiTokensSection() {
         </div>
       )}
 
-      <form className="panel form-inline" onSubmit={create}>
+      <form className="card form-inline form-inline--pair" onSubmit={create}>
         <label>
           Name
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="CI pipeline" required />

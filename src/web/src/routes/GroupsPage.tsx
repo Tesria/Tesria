@@ -47,7 +47,7 @@ export function GroupsPage() {
       </p>
       {error && <p className="alert alert--error">{error}</p>}
 
-      <form className="panel form-inline" onSubmit={create}>
+      <form className="card form-inline" onSubmit={create}>
         <label>
           Name
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Engineering" required />
@@ -123,7 +123,7 @@ function MemberEditor({ group, onChanged }: { group: Group; onChanged: () => voi
   const candidates = users.filter((u) => !members.some((m) => m.userId === u.id))
 
   return (
-    <div className="panel">
+    <div className="card">
       <h2 style={{ fontSize: '1.05rem', marginTop: 0 }}>Members of {group.name}</h2>
       {error && <p className="alert alert--error">{error}</p>}
       <form className="principal-picker" onSubmit={add}>

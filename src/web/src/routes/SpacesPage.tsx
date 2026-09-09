@@ -73,7 +73,7 @@ function CreateSpaceForm({ onCreated }: { onCreated: (space: Space) => void }) {
   }
 
   return (
-    <form className="panel form-inline" onSubmit={onSubmit}>
+    <form className="card form-inline" onSubmit={onSubmit}>
       {error && <p className="alert alert--error">{error}</p>}
       <label>
         Key

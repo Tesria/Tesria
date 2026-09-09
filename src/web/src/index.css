@@ -153,7 +153,11 @@ label .password-input { margin-top: 0.25rem; }
 }
 .password-input__toggle:hover { background: var(--hover); color: var(--text); }
 
-.panel { background: var(--bg-alt); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; margin: 1rem 0; }
+/* A plain boxed region for forms and notices. Named .card, not .panel: the
+   editor's Confluence-style panel node renders as `.panel.panel--info` etc.
+   (stored in page content, so its name cannot change), and sharing the
+   name gave every creation form that node's icon gutter. */
+.card { background: var(--bg-alt); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; margin: 1rem 0; }
 
 /* ---- auth ---------------------------------------------------------------- */
 .authcard { width: 340px; max-width: 100%; display: flex; flex-direction: column; gap: 0.25rem; }
@@ -361,6 +365,11 @@ label .password-input { margin-top: 0.25rem; }
 .space-card__desc { font-size: 0.85rem; color: var(--muted); }
 .form-inline { display: grid; grid-template-columns: 120px 1fr 1fr auto; gap: 0.75rem; align-items: end; }
 .form-inline .btn { height: 38px; }
+/* A two-child form (one field, one button) in a narrow card: the field
+   takes the room, the button takes its own width, and the button sits on
+   the input's baseline rather than a step below it. */
+.form-inline--pair { grid-template-columns: 1fr auto; }
+.profile__section .form-inline .btn { margin-top: 0; }
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   /* The 4-column grid (used for Groups/API Tokens/Webhooks/Spaces creation
      forms) has no room to breathe at mobile widths — found via testing, a
