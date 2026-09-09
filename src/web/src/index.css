@@ -369,7 +369,12 @@ label .password-input { margin-top: 0.25rem; }
    takes the room, the button takes its own width, and the button sits on
    the input's baseline rather than a step below it. */
 .form-inline--pair { grid-template-columns: 1fr auto; }
-.profile__section .form-inline .btn { margin-top: 0; }
+/* Inside a profile card, labels carry a bottom margin for stacked forms;
+   in a grid row that margin is what pushes the row's end below the input,
+   and the button — aligned to that end — with it. Zero it here, and size
+   the button to the input (34px) rather than the generic 38px. */
+.profile__section .form-inline label { margin-bottom: 0; }
+.profile__section .form-inline .btn { margin-top: 0; height: 34px; padding-top: 0; padding-bottom: 0; }
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   /* The 4-column grid (used for Groups/API Tokens/Webhooks/Spaces creation
      forms) has no room to breathe at mobile widths — found via testing, a
