@@ -340,6 +340,66 @@ the one in use.
 Caddy, so the limit does not silently depend on which proxy is in front.
 Attachments are capped at 25 MB by the endpoint.
 
+### Sessions, two-factor sign-in and sudo mode (`Infrastructure/Auth/TotpService.cs`, `PasswordHasher.cs`, dev-plan 3.5)
+
+**Sessions.** Each sign-in creates a `UserSession` row and the cookie
+carries its id (`tesria:session`). `OnValidatePrincipal` now checks three
+things on every request: the security stamp (revokes *all* of an account's
+cookies), the session row (revokes *one*), and the `auth_time` claim
+against `Auth:SessionAbsoluteDays` (90) — however active, a session ends
+then; sliding expiry alone (`ExpireTimeSpan`, now 14 days idle) would let a
+cookie live forever. Sign-out revokes the row, so a copy of the cookie
+taken earlier dies with it. Profile → Sessions lists every browser with
+address and last activity, with per-session and "all others" revoke; an
+admin's revoke-sessions marks the rows too. Cookies that predate sessions
+carry no claim and are rejected, which signed everyone in once — the safe
+direction, as with the stamp.
+
+**Two-factor (TOTP).** RFC 6238 with the parameters every authenticator
+supports: 20-byte secret, SHA-1, 30-second steps, six digits. Secrets rest
+under Data Protection (keys in the database, so a backup restores them
+and a dump alone does not read them). Enrolment is scan → type a code →
+on; the pending secret is not live until a code proves the device has it.
+Enabling rotates the security stamp so every *other* session must pass
+the new factor; the enrolling one is re-issued in place. Disabling needs
+the password or a code — never just a live session.
+
+Sign-in becomes two requests: `/login` verifies the password and, for an
+enrolled account, returns `{ requiresTotp, challenge }` instead of a
+cookie — the challenge is a Data-Protection-signed token (5 minutes,
+bound to the client address). `/login/totp` takes it with a code, or a
+**recovery code** in the code's place (1.3's set, spent on use: one set
+of backup codes, not two). Wrong codes count toward the 3.2 lockout,
+because six digits is a small space. A code's time step is stored on
+acceptance and anything at or before it is refused, so a code seen over a
+shoulder is worthless once typed.
+
+`RequireTotpForAdmins` is enforced in `AdminRequirementHandler`: an
+un-enrolled administrator gets 403 on every admin route at once, `me`
+reports `totpRequired`, the admin shell says why and links to the
+profile; the enrolment endpoints live under `/auth/me`, outside the
+policy, so the way out is always open. Such an admin cannot turn TOTP
+back off while the rule stands.
+
+**Sudo mode.** Destructive administration — changing who is an admin,
+flipping the public-spaces switch, purging a page, removing a block —
+calls `AuthEndpoints.RequireSudo`, which passes only if the session
+authenticated within `Auth:SudoMinutes` (5; shorter than the fresh-login
+window on purpose). Otherwise the endpoint returns 403 with
+`code: reauth_required`. The SPA's `request()` recognises that code, opens
+the re-authentication dialog (password, or a code for enrolled accounts),
+calls `/auth/reauth` — which re-issues the cookie with a fresh `auth_time`
+on the *same* session — and retries the original request once. Several
+requests failing together share one prompt. A wrong answer counts as a
+failed sign-in.
+
+**Argon2id, pinned.** 64 MiB, 3 passes, 4 lanes, 32-byte output, written
+down in `Argon2PasswordHasher` rather than left to library defaults that
+have changed between versions. `NeedsRehash` reads the parameters out of
+the encoded hash; a successful sign-in — the one moment the plaintext is
+in hand — upgrades a weaker hash in place, so raising the parameters
+later upgrades every account over time without a forced reset.
+
 ### Roles and administrators (spec — dev-plan 0.1, designed 2026-09-08)
 
 Two roles, one enum: `User.Role` is `Member = 0 | Admin = 1`. An enum, not

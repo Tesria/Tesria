@@ -112,6 +112,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<SpacePermission> SpacePermissions => Set<SpacePermission>();
     public DbSet<PageRestriction> PageRestrictions => Set<PageRestriction>();
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
+    public DbSet<UserSession> UserSessions => Set<UserSession>();
     public DbSet<SecurityEvent> SecurityEvents => Set<SecurityEvent>();
     public DbSet<SecurityAlert> SecurityAlerts => Set<SecurityAlert>();
     public DbSet<BlockedNetwork> BlockedNetworks => Set<BlockedNetwork>();
@@ -445,6 +446,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(a => a.PrevHash).HasMaxLength(64);
             e.Property(a => a.Hash).HasMaxLength(64);
             e.HasIndex(a => a.Sequence).IsUnique();
+        });
+
+        b.Entity<UserSession>(e =>
+        {
+            e.Property(x => x.Ip).HasMaxLength(64);
+            e.Property(x => x.UserAgent).HasMaxLength(300);
+            e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.UserId);
         });
 
         // Threat detection (dev-plan 3.3). Events are append-only at the

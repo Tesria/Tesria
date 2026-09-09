@@ -93,6 +93,19 @@ public class User
     /// the lock itself reveals nothing.
     /// </summary>
     public DateTimeOffset? LockedUntil { get; set; }
+
+    // --- Two-factor (dev-plan 3.5). Secrets are Data Protection payloads;
+    // the plaintext exists only inside TotpService.
+
+    public string? TotpSecretProtected { get; set; }
+
+    /// <summary>A secret shown to the user but not yet confirmed with a code.</summary>
+    public string? TotpPendingSecretProtected { get; set; }
+
+    public DateTimeOffset? TotpEnabledAt { get; set; }
+
+    /// <summary>The last time step a code was accepted for, so no code is accepted twice.</summary>
+    public long? TotpLastStep { get; set; }
 }
 
 public enum UserStatus

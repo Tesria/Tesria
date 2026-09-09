@@ -73,6 +73,7 @@ builder.Services.AddSingleton<SiteSettingsCache>();
 builder.Services.AddSingleton<LastSeenTracker>();
 builder.Services.AddSingleton<RecoveryAttemptLimiter>();
 builder.Services.AddScoped<IAccountRecoveryService, AccountRecoveryService>();
+builder.Services.AddScoped<ITotpService, TotpService>();
 builder.Services.AddScoped<IInviteService, InviteService>();
 builder.Services.AddScoped<ISiteSettingsService, SiteSettingsService>();
 builder.Services.AddSingleton<ICollabTokenService, CollabTokenService>();
@@ -141,7 +142,9 @@ var authBuilder = builder.Services
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.SecurePolicy = cookieSecurePolicy;
-        options.ExpireTimeSpan = TimeSpan.FromDays(30);
+        // Idle timeout: a cookie unused for two weeks expires. The absolute
+        // lifetime is enforced below from the auth_time claim (dev-plan 3.5).
+        options.ExpireTimeSpan = TimeSpan.FromDays(14);
         options.SlidingExpiration = true;
         // This is an API, not a server-rendered app: respond with status codes
         // instead of redirecting to a login/access-denied page.
@@ -187,9 +190,32 @@ var authBuilder = builder.Services
 
             // A deleted or suspended account's cookie stops working here too,
             // which is what dev-plan 2.2's suspend action will rely on.
-            if (current is null
+            var reject = current is null
                 || current.Status != UserStatus.Active
-                || !string.Equals(current.SecurityStamp, presented, StringComparison.Ordinal))
+                || !string.Equals(current.SecurityStamp, presented, StringComparison.Ordinal);
+
+            // Absolute lifetime (dev-plan 3.5): however active, a session ends
+            // some weeks after it began. Sliding expiry alone would let a
+            // cookie live forever.
+            var absoluteDays = ctx.HttpContext.RequestServices.GetRequiredService<IConfiguration>()
+                .GetValue("Auth:SessionAbsoluteDays", AuthEndpoints.DefaultSessionAbsoluteDays);
+            if (!reject && AuthEndpoints.AuthTimeOf(ctx.Principal) is { } authTime
+                && DateTimeOffset.UtcNow - authTime > TimeSpan.FromDays(absoluteDays))
+                reject = true;
+
+            // Per-session revocation (dev-plan 3.5): a cookie whose session row
+            // is revoked — by its owner from the sessions list, by sign-out,
+            // or by an admin — is dead even though the stamp still matches.
+            // A cookie with no session claim predates sessions and is rejected,
+            // which signs everyone in once; the safe direction, as above.
+            if (!reject)
+            {
+                var sessionId = AuthEndpoints.SessionIdOf(ctx.Principal);
+                reject = sessionId is null || await db.UserSessions.AsNoTracking()
+                    .AnyAsync(s => s.Id == sessionId && s.RevokedAt == null) == false;
+            }
+
+            if (reject)
             {
                 ctx.RejectPrincipal();
                 await ctx.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);

@@ -7,6 +7,7 @@ import { ThemeToggle } from './ThemeToggle'
 import { BrandMark } from './BrandMark'
 import { Avatar } from './Avatar'
 import { RecoveryCodesPrompt } from './RecoveryCodesPrompt'
+import { ReauthDialog } from './ReauthDialog'
 import { useDismissable } from '../hooks/useDismissable'
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
@@ -163,6 +164,7 @@ export function Layout() {
       {/* Inside the authenticated shell so it follows the user to whichever
           page they land on after signing in, rather than only the one route. */}
       <RecoveryCodesPrompt />
+      <ReauthDialog />
     </div>
   )
 }
