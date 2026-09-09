@@ -402,6 +402,11 @@ later upgrades every account over time without a forced reset.
 
 ### Roles and administrators (spec — dev-plan 0.1, designed 2026-09-08)
 
+> **Update 2026-09-09:** group management (create/edit/delete/membership)
+> and reading the audit log are administrator operations; group listing
+> stays open to any signed-in user for the permission picker. In the SPA,
+> Groups and Audit are Admin tabs and API tokens live on the profile.
+
 Two roles, one enum: `User.Role` is `Member = 0 | Admin = 1`. An enum, not
 a bool, so a future `Viewer` or `Moderator` is a new value rather than a
 migration of a bool.

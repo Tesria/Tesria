@@ -228,8 +228,14 @@ public class AdminPanelTests
         var member = factory.CreateClient();
         var registered = await RegisterAsync(member, "member@example.com");
 
-        foreach (var path in new[] { "/api/admin/users", "/api/admin/spaces", "/api/admin/dashboard" })
+        foreach (var path in new[] { "/api/admin/users", "/api/admin/spaces", "/api/admin/dashboard", "/api/audit" })
             Assert.Equal(HttpStatusCode.Forbidden, (await member.GetAsync(path)).StatusCode);
+
+        // Groups: readable by anyone signed in (the permission picker needs
+        // the list), shaped only by administrators.
+        (await member.GetAsync("/api/groups")).EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.Forbidden,
+            (await member.PostAsJsonAsync("/api/groups", new { Name = "Rogue" })).StatusCode);
 
         Assert.Equal(HttpStatusCode.Forbidden, (await member.PutAsJsonAsync(
             $"/api/admin/users/{registered.Id}/role", new { Role = Admin })).StatusCode);

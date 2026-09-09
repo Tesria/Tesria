@@ -16,7 +16,10 @@ public static class AuditEndpoints
 
     public static IEndpointRouteBuilder MapAuditEndpoints(this IEndpointRouteBuilder routes)
     {
-        routes.MapGet("/audit", List).WithTags("Audit").RequireAuthorization();
+        // Administrators only. They still do not bypass space permissions, so
+        // the visibility filter below applies to them as to anyone.
+        routes.MapGet("/audit", List).WithTags("Audit")
+            .RequireAuthorization(Infrastructure.Auth.AuthPolicies.RequireAdmin);
         return routes;
     }
 

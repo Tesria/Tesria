@@ -38,9 +38,10 @@ export function GroupsPage() {
     load()
   }
 
+  // Rendered inside the admin shell (Admin → Groups), which supplies the
+  // heading and tabs.
   return (
-    <div className="page-wrap">
-      <h1>Groups</h1>
+    <div>
       <p className="muted small">
         Groups let you grant space and page access to a whole team at once.
       </p>

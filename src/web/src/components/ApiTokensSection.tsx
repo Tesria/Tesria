@@ -1,7 +1,8 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { api, ApiError, type ApiTokenSummary, type CreatedApiToken } from '../api/client'
 
-export function ApiTokensPage() {
+/** Profile → API tokens: personal credentials, so they live with the profile. */
+export function ApiTokensSection() {
   const [tokens, setTokens] = useState<ApiTokenSummary[] | null>(null)
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -34,8 +35,7 @@ export function ApiTokensPage() {
   }
 
   return (
-    <div className="page-wrap">
-      <h1>API tokens</h1>
+    <>
       <p className="muted small">
         Use a token to call the REST API from scripts or integrations, without a browser session:{' '}
         <code>Authorization: Bearer &lt;token&gt;</code>. A token can do anything you can do.
@@ -81,6 +81,6 @@ export function ApiTokensPage() {
           </li>
         ))}
       </ul>
-    </div>
+    </>
   )
 }

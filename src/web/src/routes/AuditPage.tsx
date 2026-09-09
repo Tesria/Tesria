@@ -17,10 +17,13 @@ export function AuditPage() {
     }
   }, [])
 
+  // Rendered inside the admin shell (Admin → Audit).
   return (
-    <div className="page-wrap">
-      <h1>Audit log</h1>
-      <p className="muted small">Recent changes across all spaces.</p>
+    <div>
+      <p className="muted small">
+        Recent changes across all spaces you can see. Every entry is hash-chained;
+        the Security tab verifies the chain.
+      </p>
       {error && <p className="alert alert--error">{error}</p>}
       {!entries && !error && <p className="muted">Loading…</p>}
       {entries && entries.length === 0 && <p className="muted">Nothing recorded yet.</p>}
