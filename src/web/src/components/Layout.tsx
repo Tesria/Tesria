@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { UserRole } from '../api/client'
 import { NotificationBell } from './NotificationBell'
 import { ThemeToggle } from './ThemeToggle'
 import { BrandMark } from './BrandMark'
@@ -15,10 +16,12 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
    (--bp-mobile..--bp-tablet) — with CSS choosing which is visible. That is
    the same trick the editor toolbar uses for its heading/list/alignment
    groups (.toolbar__flat vs .toolbar-dropdown), not an accident. */
-const SECONDARY_NAV: { to: string; label: string }[] = [
+const SECONDARY_NAV: { to: string; label: string; adminOnly?: boolean }[] = [
   { to: '/groups', label: 'Groups' },
   { to: '/audit', label: 'Audit' },
   { to: '/api-tokens', label: 'API Tokens' },
+  // Server-enforced too; hiding it just spares members a page of 403s.
+  { to: '/admin', label: 'Admin', adminOnly: true },
 ]
 
 function ChevronIcon() {
@@ -36,11 +39,11 @@ function ChevronIcon() {
  * secondary links live here. The trigger reads as active when the current
  * route is one of them, so "where am I" survives the collapse.
  */
-function MoreMenu({ onNavigate }: { onNavigate: () => void }) {
+function MoreMenu({ onNavigate, items }: { onNavigate: () => void; items: typeof SECONDARY_NAV }) {
   const [open, setOpen] = useState(false)
   const ref = useDismissable<HTMLDivElement>(open, () => setOpen(false))
   const { pathname } = useLocation()
-  const active = SECONDARY_NAV.some((item) => pathname.startsWith(item.to))
+  const active = items.some((item) => pathname.startsWith(item.to))
   return (
     <div className="topbar__more" ref={ref}>
       <button
@@ -54,7 +57,7 @@ function MoreMenu({ onNavigate }: { onNavigate: () => void }) {
       </button>
       {open && (
         <div className="topbar__more-menu">
-          {SECONDARY_NAV.map((item) => (
+          {items.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -83,6 +86,7 @@ export function Layout() {
   // topbar flex children, so nothing changes above the breakpoint.
   const [navOpen, setNavOpen] = useState(false)
   const navRef = useDismissable<HTMLDivElement>(navOpen, () => setNavOpen(false))
+  const secondaryNav = SECONDARY_NAV.filter((i) => !i.adminOnly || user?.role === UserRole.Admin)
 
   async function onLogout() {
     await logout()
@@ -116,7 +120,7 @@ export function Layout() {
         <div ref={navRef} className={navOpen ? 'topbar__collapsible is-open' : 'topbar__collapsible'}>
           <nav className="topbar__nav">
             <NavLink to="/spaces" className={navClass} onClick={() => setNavOpen(false)}>Spaces</NavLink>
-            {SECONDARY_NAV.map((item) => (
+            {secondaryNav.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -126,7 +130,7 @@ export function Layout() {
                 {item.label}
               </NavLink>
             ))}
-            <MoreMenu onNavigate={() => setNavOpen(false)} />
+            <MoreMenu onNavigate={() => setNavOpen(false)} items={secondaryNav} />
           </nav>
           <form className="topbar__search" onSubmit={onSearch}>
             <input

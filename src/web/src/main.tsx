@@ -24,6 +24,12 @@ import { SpaceWebhooksPage } from './routes/SpaceWebhooksPage'
 import { ApiTokensPage } from './routes/ApiTokensPage'
 import { ProfilePage } from './routes/ProfilePage'
 import { RecoverPage } from './routes/RecoverPage'
+import { AdminLayout } from './routes/admin/AdminLayout'
+import { AdminDashboardPage } from './routes/admin/AdminDashboardPage'
+import { AdminUsersPage } from './routes/admin/AdminUsersPage'
+import { AdminSpacesPage } from './routes/admin/AdminSpacesPage'
+import { AdminInvitesPage } from './routes/admin/AdminInvitesPage'
+import { AdminSettingsPage } from './routes/admin/AdminSettingsPage'
 
 // Paints the tab icon in the chosen accent before React renders, and keeps
 // it in step when the OS flips light/dark.
@@ -48,6 +54,13 @@ createRoot(document.getElementById('root')!).render(
               <Route path="groups" element={<GroupsPage />} />
               <Route path="api-tokens" element={<ApiTokensPage />} />
               <Route path="profile" element={<ProfilePage />} />
+              <Route path="admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboardPage />} />
+                <Route path="users" element={<AdminUsersPage />} />
+                <Route path="spaces" element={<AdminSpacesPage />} />
+                <Route path="invites" element={<AdminInvitesPage />} />
+                <Route path="settings" element={<AdminSettingsPage />} />
+              </Route>
               <Route path="spaces" element={<SpacesPage />} />
               <Route path="spaces/:key" element={<SpacePage />}>
                 <Route index element={<SpaceHome />} />

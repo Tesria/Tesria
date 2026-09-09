@@ -35,6 +35,19 @@ public static class AdminEndpoints
     public record InviteResponse(
         Guid Id, string? Email, DateTimeOffset ExpiresAt, DateTimeOffset? UsedAt, DateTimeOffset CreatedAt);
 
+    public record AdminUserResponse(
+        Guid Id, string Email, string DisplayName, UserRole Role, UserStatus Status,
+        string? AvatarHash, int? AvatarVariant, bool HasPassword, bool IsSso,
+        int RecoveryCodesRemaining, DateTimeOffset? LastSeenAt, DateTimeOffset CreatedAt);
+
+    public record SetRoleRequest(UserRole Role);
+    public record SetStatusRequest(UserStatus Status);
+
+    public record AdminSpaceResponse(
+        Guid Id, string Key, string Name, string? Description, bool Archived,
+        Guid CreatedById, string CreatedByName, int PageCount, long StorageBytes,
+        DateTimeOffset CreatedAt);
+
     /// <summary>
     /// Note the absence of the SMTP password: it is write-only over the API.
     /// <paramref name="SmtpPasswordSet"/> tells the UI whether one exists so it
@@ -84,6 +97,12 @@ public static class AdminEndpoints
         group.MapPut("/settings", UpdateSettings);
         group.MapPost("/spaces/{key}/recover-access", RecoverSpaceAccess);
         group.MapPost("/users/{userId:guid}/reset-password", IssuePasswordReset);
+        group.MapGet("/users", ListUsers);
+        group.MapPut("/users/{userId:guid}/role", SetRole);
+        group.MapPut("/users/{userId:guid}/status", SetStatus);
+        group.MapPost("/users/{userId:guid}/revoke-sessions", RevokeSessions);
+        group.MapPost("/users/{userId:guid}/revoke-tokens", RevokeTokens);
+        group.MapGet("/spaces", ListSpaces);
         group.MapGet("/invites", ListInvites);
         group.MapPost("/invites", CreateInvite);
         group.MapDelete("/invites/{id:guid}", RevokeInvite);
@@ -303,5 +322,158 @@ public static class AdminEndpoints
         audit.Record("invite.revoked", "instance", null, new { invite.Email });
         await db.SaveChangesAsync();
         return Results.NoContent();
+    }
+
+    // ---- users --------------------------------------------------------------
+
+    private static async Task<IResult> ListUsers(AppDbContext db)
+    {
+        var users = await db.Users.AsNoTracking()
+            .Select(u => new AdminUserResponse(
+                u.Id, u.Email, u.DisplayName, u.Role, u.Status,
+                u.AvatarKey == null ? null : u.AvatarHash, u.AvatarVariant,
+                u.PasswordHash != null, u.OidcSubject != null,
+                db.RecoveryCodes.Count(c => c.UserId == u.Id && c.UsedAt == null),
+                u.LastSeenAt, u.CreatedAt))
+            .ToListAsync();
+
+        // Ordered in memory: SQLite cannot ORDER BY a DateTimeOffset, and this
+        // list is bounded by the instance's user count.
+        return Results.Ok(users.OrderBy(u => u.DisplayName).ToList());
+    }
+
+    /// <summary>
+    /// Promotes or demotes an administrator.
+    ///
+    /// Refuses to remove the last one. An instance with no administrator has no
+    /// way back — nobody can change settings, issue invites or restore access —
+    /// and the only remedy would be editing the database by hand.
+    /// </summary>
+    private static async Task<IResult> SetRole(
+        Guid userId, SetRoleRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit)
+    {
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Results.NotFound();
+        if (user.Role == req.Role) return Results.Ok(await OneUserAsync(db, userId));
+
+        if (req.Role != UserRole.Admin && user.Role == UserRole.Admin)
+        {
+            var otherAdmins = await db.Users.CountAsync(u =>
+                u.Role == UserRole.Admin && u.Id != userId && u.Status == UserStatus.Active);
+            if (otherAdmins == 0)
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    ["role"] = ["This is the only administrator. Promote someone else first."],
+                });
+        }
+
+        user.Role = req.Role;
+        audit.Record("user.role_changed", "user", user.Id, new { user.Email, Role = req.Role.ToString() });
+        await db.SaveChangesAsync();
+        return Results.Ok(await OneUserAsync(db, userId));
+    }
+
+    /// <summary>
+    /// Suspends or reactivates an account. Suspension rotates the security
+    /// stamp, so existing sessions stop working on their next request rather
+    /// than lingering until the cookie expires — the thing that makes a
+    /// suspension actually mean something.
+    /// </summary>
+    private static async Task<IResult> SetStatus(
+        Guid userId, SetStatusRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit)
+    {
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Results.NotFound();
+
+        // Suspending yourself locks you out with no way back in.
+        if (userId == current.RequireId() && req.Status != UserStatus.Active)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["status"] = ["You cannot suspend your own account."],
+            });
+
+        if (req.Status != UserStatus.Active && user.Role == UserRole.Admin)
+        {
+            var otherAdmins = await db.Users.CountAsync(u =>
+                u.Role == UserRole.Admin && u.Id != userId && u.Status == UserStatus.Active);
+            if (otherAdmins == 0)
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    ["status"] = ["This is the only active administrator."],
+                });
+        }
+
+        user.Status = req.Status;
+        if (req.Status != UserStatus.Active) user.SecurityStamp = Guid.NewGuid().ToString("N");
+        audit.Record("user.status_changed", "user", user.Id,
+            new { user.Email, Status = req.Status.ToString() });
+        await db.SaveChangesAsync();
+        return Results.Ok(await OneUserAsync(db, userId));
+    }
+
+    /// <summary>Signs every device out of an account without changing its password.</summary>
+    private static async Task<IResult> RevokeSessions(
+        Guid userId, AppDbContext db, IAuditLogger audit)
+    {
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Results.NotFound();
+
+        user.SecurityStamp = Guid.NewGuid().ToString("N");
+        audit.Record("user.sessions_revoked", "user", user.Id, new { user.Email });
+        await db.SaveChangesAsync();
+        return Results.NoContent();
+    }
+
+    /// <summary>
+    /// Revokes every API token an account holds. Separate from sessions on
+    /// purpose: tokens authenticate through a different scheme and a session
+    /// revocation does not touch them, so "lock this account out" needs both.
+    /// </summary>
+    private static async Task<IResult> RevokeTokens(
+        Guid userId, AppDbContext db, IAuditLogger audit)
+    {
+        var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Results.NotFound();
+
+        var tokens = await db.ApiTokens.Where(t => t.UserId == userId).ToListAsync();
+        db.ApiTokens.RemoveRange(tokens);
+        audit.Record("user.tokens_revoked", "user", userId, new { user.Email, Count = tokens.Count });
+        await db.SaveChangesAsync();
+        return Results.NoContent();
+    }
+
+    private static async Task<AdminUserResponse?> OneUserAsync(AppDbContext db, Guid userId) =>
+        await db.Users.AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => new AdminUserResponse(
+                u.Id, u.Email, u.DisplayName, u.Role, u.Status,
+                u.AvatarKey == null ? null : u.AvatarHash, u.AvatarVariant,
+                u.PasswordHash != null, u.OidcSubject != null,
+                db.RecoveryCodes.Count(c => c.UserId == u.Id && c.UsedAt == null),
+                u.LastSeenAt, u.CreatedAt))
+            .FirstOrDefaultAsync();
+
+    // ---- spaces -------------------------------------------------------------
+
+    /// <summary>
+    /// Every space on the instance — metadata only, never content. Admins do
+    /// not bypass space permissions (see the roles spec), so this deliberately
+    /// returns counts and ownership rather than anything readable.
+    /// </summary>
+    private static async Task<IResult> ListSpaces(AppDbContext db)
+    {
+        var spaces = await db.Spaces.AsNoTracking()
+            .Select(s => new AdminSpaceResponse(
+                s.Id, s.Key, s.Name, s.Description, s.Archived,
+                s.CreatedById,
+                s.CreatedBy == null ? "Deleted user" : s.CreatedBy.DisplayName,
+                db.Pages.Count(p => p.SpaceId == s.Id),
+                db.Attachments
+                    .Where(a => db.Pages.Any(p => p.Id == a.PageId && p.SpaceId == s.Id))
+                    .Sum(a => (long?)a.Size) ?? 0L,
+                s.CreatedAt))
+            .ToListAsync();
+
+        return Results.Ok(spaces.OrderBy(s => s.Key).ToList());
     }
 }

@@ -1358,3 +1358,63 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .version__author { font-size: 0.85rem; }
 /* The version row is a flex line already; the avatar must not be squeezed. */
 .version .avatar, .comment__head .avatar { flex-shrink: 0; }
+
+/* ---- admin panel --------------------------------------------------------- */
+.admin-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; }
+.admin-table th, .admin-table td {
+  text-align: left; padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.admin-table th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
+.admin-table__user { display: inline-flex; align-items: center; gap: 0.6rem; }
+/* Row actions wrap rather than widening the table past the viewport — the
+   same overflow lesson as .tabs. */
+.admin-table__actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.badge--danger { background: var(--danger-soft); color: var(--danger); }
+
+.admin__notice {
+  margin: 1rem 0; padding: 0.85rem 1rem;
+  background: var(--primary-softer); border: 1px solid var(--primary-soft-border);
+  border-radius: var(--radius);
+}
+.admin__notice p { margin: 0 0 0.5rem; font-size: 0.9rem; }
+/* A one-time link must be selectable and must not be truncated into
+   uselessness — the whole value has to be copyable. */
+.admin__link {
+  display: block; margin-bottom: 0.6rem; padding: 0.5rem 0.6rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+  font-size: 0.82rem; overflow-wrap: anywhere; user-select: all;
+}
+.admin__toggle { display: flex; align-items: flex-start; gap: 0.6rem; margin-bottom: 1rem; }
+.admin__toggle input { width: auto; margin-top: 0.2rem; }
+
+/* ---- dashboard ----------------------------------------------------------- */
+.dash__filters { display: flex; gap: 0.35rem; margin-bottom: 1.25rem; }
+.dash__heading { font-size: 0.95rem; margin: 1.5rem 0 0.6rem; }
+.dash__grid {
+  display: grid; gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+.stat {
+  padding: 0.85rem 1rem; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+}
+/* A sparkline needs width to be readable; a hero number does not. */
+.stat--wide { grid-column: span 2; }
+/* Text wears text tokens — never the series colour. */
+.stat__label {
+  margin: 0 0 0.3rem; font-size: 0.75rem; text-transform: uppercase;
+  letter-spacing: 0.03em; color: var(--muted);
+}
+.stat__value { margin: 0; font-size: 1.6rem; font-weight: 700; line-height: 1.1; color: var(--text); }
+.spark__svg { width: 100%; height: 40px; display: block; cursor: crosshair; }
+.spark__hint { margin: 0.3rem 0 0; }
+.dash__tables { display: grid; gap: 1.5rem; grid-template-columns: 1fr 1fr; margin-top: 1rem; }
+
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .dash__grid { grid-template-columns: 1fr; }
+  .stat--wide { grid-column: span 1; }
+  .dash__tables { grid-template-columns: 1fr; }
+  /* Row actions already wrap; the table itself still needs an escape hatch. */
+  .admin-table { display: block; overflow-x: auto; }
+}
