@@ -7,6 +7,9 @@ type AuthState = {
   login: (email: string, password: string) => Promise<void>
   register: (email: string, displayName: string, password: string) => Promise<void>
   logout: () => Promise<void>
+  /** Re-reads the session — after editing your own profile, so the topbar and
+   *  anything else reading `user` pick the change up without a reload. */
+  refresh: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthState | null>(null)
@@ -38,14 +41,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(await api.auth.register(email, displayName, password))
   }, [])
 
+  const refresh = useCallback(async () => {
+    try {
+      setUser(await api.auth.me())
+    } catch {
+      // A failed refresh should not blank an otherwise working session; the
+      // next real 401 will route to /login on its own.
+    }
+  }, [])
+
   const logout = useCallback(async () => {
     await api.auth.logout()
     setUser(null)
   }, [])
 
   const value = useMemo<AuthState>(
-    () => ({ user, login, register, logout }),
-    [user, login, register, logout],
+    () => ({ user, login, register, logout, refresh }),
+    [user, login, register, logout, refresh],
   )
   return <AuthContext value={value}>{children}</AuthContext>
 }

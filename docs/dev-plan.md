@@ -174,7 +174,7 @@ undetectable without a login history.
 
 ## Phase 1 — Accounts and identity (user-facing)
 
-### 1.1 Edit profile — `M` — Model: Opus
+### 1.1 Edit profile — `M` — Model: Opus — ✅ **shipped 2026-09-09**
 - `PUT /api/auth/me` (display name); `PUT /api/auth/me/email` (requires
   current password; lower-cased, uniqueness check, 409 on collision);
   `PUT /api/auth/me/password` (current + new; **invalidates other

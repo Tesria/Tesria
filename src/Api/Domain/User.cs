@@ -54,6 +54,21 @@ public class User
     /// the user.
     /// </summary>
     public string? AvatarHash { get; set; }
+
+    /// <summary>
+    /// Rotated whenever every existing session for this account must stop
+    /// working: a password change, and later suspension (dev-plan 2.2), an
+    /// admin force-logout (3.3) and 2FA enrolment (3.5).
+    ///
+    /// The value is carried as a claim in the auth cookie and compared against
+    /// this column on each request, so a rotation takes effect immediately
+    /// rather than at the cookie's next expiry. That is the whole reason a
+    /// stateless cookie scheme can still revoke a session.
+    ///
+    /// Not a secret — it is an opaque version marker, and knowing it grants
+    /// nothing without the signed cookie it lives in.
+    /// </summary>
+    public string SecurityStamp { get; set; } = Guid.NewGuid().ToString("N");
 }
 
 public enum UserStatus

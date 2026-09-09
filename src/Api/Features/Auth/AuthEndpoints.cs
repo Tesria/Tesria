@@ -13,10 +13,28 @@ namespace Tesria.Api.Features.Auth;
 
 public static class AuthEndpoints
 {
+    /// <summary>
+    /// Claim carrying <see cref="User.SecurityStamp"/>. Shared with
+    /// Program.cs's cookie validation, which is where it is checked.
+    /// </summary>
+    public const string SecurityStampClaim = "tesria:security_stamp";
+
+    /// <summary>Shared by registration and password change, so the two cannot drift apart.</summary>
+    public const int MinPasswordLength = 8;
+
     public record RegisterRequest(string Email, string DisplayName, string Password);
     public record LoginRequest(string Email, string Password);
-    public record UserResponse(Guid Id, string Email, string DisplayName, UserRole Role, string? AvatarHash);
+    /// <summary>
+    /// <paramref name="HasPassword"/> is false for accounts provisioned through
+    /// OIDC, whose identity provider owns their email and password. The SPA
+    /// renders those fields read-only rather than letting a submit fail.
+    /// </summary>
+    public record UserResponse(
+        Guid Id, string Email, string DisplayName, UserRole Role, string? AvatarHash, bool HasPassword);
     public record OidcStatusResponse(bool Enabled, string DisplayName);
+    public record UpdateProfileRequest(string DisplayName);
+    public record ChangeEmailRequest(string CurrentPassword, string Email);
+    public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 
     public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -30,6 +48,9 @@ public static class AuthEndpoints
             new AuthenticationProperties(),
             [CookieAuthenticationDefaults.AuthenticationScheme])).RequireAuthorization();
         group.MapGet("/me", Me);
+        group.MapPut("/me", UpdateProfile).RequireAuthorization();
+        group.MapPut("/me/email", ChangeEmail).RequireAuthorization();
+        group.MapPut("/me/password", ChangePassword).RequireAuthorization();
 
         group.MapGet("/oidc/status", OidcStatus);
         // A full-page browser redirect, not a fetch call — the IdP needs to
@@ -73,8 +94,9 @@ public static class AuthEndpoints
             return Results.ValidationProblem(Error("email", "A valid email address is required."));
         if (displayName.Length == 0)
             return Results.ValidationProblem(Error("displayName", "Display name is required."));
-        if ((req.Password ?? "").Length < 8)
-            return Results.ValidationProblem(Error("password", "Password must be at least 8 characters."));
+        if ((req.Password ?? "").Length < MinPasswordLength)
+            return Results.ValidationProblem(Error("password",
+                $"Password must be at least {MinPasswordLength} characters."));
 
         // Both the duplicate-email check and "is this the first account?" read the
         // table before writing to it, so they run in one serializable transaction:
@@ -113,7 +135,7 @@ public static class AuthEndpoints
         await tx.CommitAsync();
 
         await SignIn(http, user);
-        return Results.Ok(new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash));
+        return Results.Ok(new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.PasswordHash != null));
     }
 
     private static async Task<IResult> Login(
@@ -144,7 +166,7 @@ public static class AuthEndpoints
         await db.SaveChangesAsync();
 
         await SignIn(http, user);
-        return Results.Ok(new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash));
+        return Results.Ok(new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.PasswordHash != null));
     }
 
     private static async Task<IResult> Me(AppDbContext db, CurrentUser current)
@@ -152,7 +174,7 @@ public static class AuthEndpoints
         if (current.Id is not { } id) return Results.Unauthorized();
         var user = await db.Users
             .Where(u => u.Id == id)
-            .Select(u => new UserResponse(u.Id, u.Email, u.DisplayName, u.Role, u.AvatarHash))
+            .Select(u => new UserResponse(u.Id, u.Email, u.DisplayName, u.Role, u.AvatarHash, u.PasswordHash != null))
             .FirstOrDefaultAsync();
         return user is null ? Results.Unauthorized() : Results.Ok(user);
     }
@@ -164,6 +186,9 @@ public static class AuthEndpoints
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, user.Email),
             new(ClaimTypes.Name, user.DisplayName),
+            // Compared against the stored stamp on every request, so rotating
+            // it revokes every existing cookie for this account immediately.
+            new(SecurityStampClaim, user.SecurityStamp),
         };
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         return http.SignInAsync(
@@ -171,6 +196,90 @@ public static class AuthEndpoints
             new ClaimsPrincipal(identity),
             new AuthenticationProperties { IsPersistent = true });
     }
+
+    private static async Task<IResult> UpdateProfile(
+        UpdateProfileRequest req, AppDbContext db, CurrentUser current, HttpContext http)
+    {
+        var displayName = (req.DisplayName ?? "").Trim();
+        if (displayName.Length == 0)
+            return Results.ValidationProblem(Error("displayName", "Display name is required."));
+        if (displayName.Length > 200)
+            return Results.ValidationProblem(Error("displayName", "Display name is too long."));
+
+        var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
+        user.DisplayName = displayName;
+        await db.SaveChangesAsync();
+
+        // The name is carried in the cookie's claims, so re-issue it — otherwise
+        // the topbar would keep showing the old name until the next sign-in.
+        await SignIn(http, user);
+        return Results.Ok(ToResponse(user));
+    }
+
+    private static async Task<IResult> ChangeEmail(
+        ChangeEmailRequest req, AppDbContext db, IPasswordHasher hasher, CurrentUser current,
+        IAuditLogger audit, HttpContext http)
+    {
+        var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
+        if (user.PasswordHash is null)
+            return Results.ValidationProblem(Error("email",
+                "This account signs in through your identity provider, which owns its email address."));
+
+        if (!hasher.Verify(req.CurrentPassword ?? "", user.PasswordHash))
+            return Results.ValidationProblem(Error("currentPassword", "Current password is incorrect."));
+
+        var email = (req.Email ?? "").Trim().ToLowerInvariant();
+        if (!IsValidEmail(email))
+            return Results.ValidationProblem(Error("email", "A valid email address is required."));
+
+        if (email != user.Email && await db.Users.AnyAsync(u => u.Email == email))
+            return Results.Conflict(new { message = "An account with this email already exists." });
+
+        var previous = user.Email;
+        user.Email = email;
+        // The address is an identity, so the change is worth a record — the old
+        // value included, since "who used to be this address" is the question
+        // an operator will actually be asking.
+        audit.Record("user.email_changed", "user", user.Id, new { From = previous, To = email });
+        await db.SaveChangesAsync();
+
+        await SignIn(http, user);
+        return Results.Ok(ToResponse(user));
+    }
+
+    private static async Task<IResult> ChangePassword(
+        ChangePasswordRequest req, AppDbContext db, IPasswordHasher hasher, CurrentUser current,
+        IAuditLogger audit, HttpContext http)
+    {
+        var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
+        if (user.PasswordHash is null)
+            return Results.ValidationProblem(Error("newPassword",
+                "This account signs in through your identity provider, which owns its password."));
+
+        if (!hasher.Verify(req.CurrentPassword ?? "", user.PasswordHash))
+            return Results.ValidationProblem(Error("currentPassword", "Current password is incorrect."));
+
+        // Same rule as registration, in one place rather than two.
+        if ((req.NewPassword ?? "").Length < MinPasswordLength)
+            return Results.ValidationProblem(Error("newPassword",
+                $"Password must be at least {MinPasswordLength} characters."));
+
+        user.PasswordHash = hasher.Hash(req.NewPassword!);
+        // Rotating the stamp is what actually signs the other sessions out: a
+        // stolen cookie stops working on its next request, which is the point of
+        // changing a password you think someone else has.
+        user.SecurityStamp = Guid.NewGuid().ToString("N");
+        audit.Record("user.password_changed", "user", user.Id);
+        await db.SaveChangesAsync();
+
+        // Re-issue this session with the new stamp, so the person who just
+        // changed their password is not signed out along with everyone else.
+        await SignIn(http, user);
+        return Results.Ok(ToResponse(user));
+    }
+
+    private static UserResponse ToResponse(User user) =>
+        new(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.PasswordHash != null);
 
     /// <summary>
     /// The caller's address as the server currently sees it.

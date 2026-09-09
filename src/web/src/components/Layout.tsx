@@ -140,7 +140,11 @@ export function Layout() {
         <div className="topbar__right">
           <ThemeToggle />
           <NotificationBell />
-          {user && <span className="muted topbar__username">{user.displayName}</span>}
+          {user && (
+            <Link to="/profile" className="muted topbar__username" title="Your profile">
+              {user.displayName}
+            </Link>
+          )}
           <button type="button" className="btn btn--ghost" onClick={onLogout}>
             Sign out
           </button>
