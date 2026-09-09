@@ -27,6 +27,7 @@ using Tesria.Api.Infrastructure.Telemetry;
 using Tesria.Api.Infrastructure.Collab;
 using Tesria.Api.Infrastructure.Notifications;
 using Tesria.Api.Infrastructure.Permissions;
+using Tesria.Api.Infrastructure.Security;
 using Tesria.Api.Infrastructure.Storage;
 using Tesria.Api.Infrastructure.Webhooks;
 using System.Security.Claims;
@@ -90,6 +91,17 @@ builder.Services.AddDataProtection()
 // picks between them per-request so every existing endpoint's
 // RequireAuthorization() works unchanged for either caller.
 const string SmartScheme = "Smart";
+
+// The session cookie is only ever sent over HTTPS in production. Caddy
+// terminates TLS, so as the app sees it the request is plain HTTP — which is
+// why "secure if the request was" used to mean "never". Forwarded headers
+// (below) fix the scheme, but the cookie should not depend on the proxy
+// being configured correctly. Security:AllowInsecureCookies is the escape
+// hatch for a deliberately HTTP-only install; it is documented as unsafe.
+var cookieSecurePolicy = builder.Environment.IsProduction()
+    && !builder.Configuration.GetValue("Security:AllowInsecureCookies", false)
+        ? CookieSecurePolicy.Always
+        : CookieSecurePolicy.SameAsRequest;
 var authBuilder = builder.Services
     .AddAuthentication(options =>
     {
@@ -107,7 +119,7 @@ var authBuilder = builder.Services
         options.Cookie.Name = "tesria.auth";
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.Cookie.SecurePolicy = cookieSecurePolicy;
         options.ExpireTimeSpan = TimeSpan.FromDays(30);
         options.SlidingExpiration = true;
         // This is an API, not a server-rendered app: respond with status codes
@@ -199,11 +211,9 @@ if (!string.IsNullOrWhiteSpace(oidcAuthority))
         // regardless of which auth method the caller used.
         options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 
-        // Match the main auth cookie's policy: Caddy terminates TLS and proxies
-        // to Kestrel over plain HTTP internally, so "always secure" would be
-        // wrong here too — see the identical setting on the cookie scheme above.
-        options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-        options.NonceCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        // Same policy as the session cookie, for the same reasons.
+        options.CorrelationCookie.SecurePolicy = cookieSecurePolicy;
+        options.NonceCookie.SecurePolicy = cookieSecurePolicy;
 
         options.Events = new OpenIdConnectEvents
         {
@@ -263,6 +273,11 @@ if (!string.IsNullOrWhiteSpace(oidcAuthority))
     });
 }
 
+// Believe X-Forwarded-For / X-Forwarded-Proto from the reverse proxy, and
+// nothing else — see ProxyTrust for what "the proxy" means here.
+builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(o =>
+    ProxyTrust.Configure(o, builder.Configuration));
+
 builder.Services.AddScoped<IAuthorizationHandler, AdminRequirementHandler>();
 builder.Services.AddAuthorization(options =>
 {
@@ -307,6 +322,11 @@ using (var scope = app.Services.CreateScope())
 // ---------------------------------------------------------------------------
 // Pipeline
 // ---------------------------------------------------------------------------
+
+// First, so that everything after it — rate limiting, audit metadata, the
+// cookie's secure flag — sees the client's address and scheme, not Caddy's.
+app.UseForwardedHeaders();
+app.UseMiddleware<SecurityHeadersMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

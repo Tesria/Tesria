@@ -329,7 +329,7 @@ limiter would rate-limit Caddy — i.e. everyone — and 3.3's detectors would
 see one IP for the whole world. Alerts are delivered in-app here and gain
 email in 4.3; do not block this phase on email.
 
-### 3.0 Proxy trust and transport — `S` — Model: Opus
+### 3.0 Proxy trust and transport — `S` — Model: Opus — ✅ **shipped 2026-09-09** (run as Fable by user override)
 - `UseForwardedHeaders` with `KnownNetworks` set to the compose network (not
   `KnownProxies` by IP — Caddy's container IP is not stable). Verify with a
   test that `RemoteIpAddress` and `Request.Scheme` reflect the client.
@@ -346,6 +346,12 @@ email in 4.3; do not block this phase on email.
 - Caddyfile: a second, documented variant for public hosting with
   `on_demand` **off** — the catch-all is a LAN convenience, not an internet
   feature. `tls-and-lan-access.md` gets a "hosting on the internet" section.
+- **Shipped with two deviations.** Headers are set in app middleware, not
+  Caddy: the CSP hash has to come from the `index.html` the app serves, and
+  in-app headers hold behind any proxy and are testable. HSTS alone stays in
+  Caddy (`Caddyfile.public` only). And trust is by private-range networks
+  rather than "the compose network" — Docker's subnet is not fixed either;
+  the safety argument is that port 8080 is never published.
 
 ### 3.1 Least-privilege DB role and tamper-evident audit log — `M` — Model: Fable
 - Two roles: a migrations/owner role (used only at startup to apply

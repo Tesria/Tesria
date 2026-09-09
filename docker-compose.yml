@@ -75,6 +75,11 @@ services:
       Oidc__ClientSecret: ${OIDC_CLIENT_SECRET}
       Oidc__DisplayName: ${OIDC_DISPLAY_NAME}
       Oidc__RequireHttpsMetadata: ${OIDC_REQUIRE_HTTPS_METADATA:-true}
+      # Which addresses may set X-Forwarded-For / X-Forwarded-Proto. The
+      # default covers the private ranges Docker allocates the compose
+      # network from, which is safe only while port 8080 stays unpublished.
+      # Fronting the app with a proxy elsewhere? Name that proxy here.
+      Proxy__TrustedNetworks: ${PROXY_TRUSTED_NETWORKS:-}
     volumes:
       - uploads:/app/uploads
     expose:
@@ -92,7 +97,10 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # deploy/Caddyfile is the LAN/dev configuration (internal CA, catch-all
+      # for LAN IPs). Set CADDYFILE=deploy/Caddyfile.public in .env when the
+      # server is reachable from the internet — see docs/security.md.
+      - ./${CADDYFILE:-deploy/Caddyfile}:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
 

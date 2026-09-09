@@ -59,6 +59,50 @@ A `Smart` policy scheme picks Cookie vs. API-token per request based on the
 redirect), since the client is a SPA — except the OIDC login endpoint, which is
 a real full-page redirect to the identity provider.
 
+### Proxy trust and transport security (`Infrastructure/Security`, dev-plan 3.0)
+
+The app never sees the client: Caddy terminates TLS and proxies to Kestrel
+over plain HTTP on the compose network. Two consequences the rest of Phase 3
+depends on being fixed:
+
+* **Client address.** `UseForwardedHeaders` runs first in the pipeline and
+  believes `X-Forwarded-For` / `X-Forwarded-Proto` only from
+  `Proxy:TrustedNetworks` (`ProxyTrust.cs`; default loopback + RFC 1918 +
+  ULA). Trust is by *network*, not by Caddy's container IP, because that IP
+  changes on every `compose up`. `ForwardLimit = 1`: only the nearest hop's
+  entry — the one Caddy appended — is used, so a client cannot choose its
+  own address by sending the header itself. Everything downstream
+  (`RemoteIpAddress`, the audit log's `Ip`, 3.2's rate limiter) sees the
+  real client. The tests set the connection address with a startup filter
+  (`TestRemoteIpStartupFilter`) so they can act as the proxy or as a stranger.
+* **Cookie `Secure`.** In Production the session cookie is `Secure` always,
+  not "same as request" (which, as the app saw it, was never HTTPS).
+  `Security:AllowInsecureCookies=true` is the documented escape hatch for a
+  deliberately HTTP-only install.
+
+**Security headers** are set by `SecurityHeadersMiddleware` on every
+response — in the app, not Caddy, so they hold whichever proxy is in front
+and the tests can assert them: `nosniff`, `X-Frame-Options: DENY`,
+`Referrer-Policy`, `Permissions-Policy`, COOP/CORP `same-origin`, and a CSP
+with `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`.
+
+The CSP's `script-src` is `'self'` plus a **hash** of the inline theme
+script in `index.html`, computed at startup from the `wwwroot/index.html`
+this process serves — so a rebuild that changes the script changes the hash
+with it, and `'unsafe-inline'` is never needed for scripts. `style-src`
+does allow `'unsafe-inline'`: the editor writes inline `style` attributes
+(cell colours, alignment) and React sets them directly; blocking inline
+styles would break content, and style injection is a far smaller hazard
+than script injection. `connect-src` names the collaboration websocket
+origin explicitly per request (`wss://<host>`) rather than relying on every
+browser reading `'self'` as covering `wss:`. `Security:CspReportOnly=true`
+switches the header to report-only for troubleshooting.
+
+**HSTS** is the one header deliberately left to Caddy, and only in
+`deploy/Caddyfile.public`: it is a one-way door that would lock a LAN user
+out of clicking past the internal CA's certificate warning. See
+`tls-and-lan-access.md`, Path 3.
+
 ### Roles and administrators (spec — dev-plan 0.1, designed 2026-09-08)
 
 Two roles, one enum: `User.Role` is `Member = 0 | Admin = 1`. An enum, not
