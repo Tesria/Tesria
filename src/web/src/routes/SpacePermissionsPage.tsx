@@ -64,7 +64,7 @@ export function SpacePermissionsPage() {
         </p>
       )}
 
-      <div className="panel">
+      <div className="card">
         <PrincipalPicker
           operationNames={spaceOperationName}
           addLabel="Grant"

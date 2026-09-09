@@ -5,6 +5,21 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fix: creation forms inherited the editor panel's icon gutter; admin refusal is now a message (2026-09-09)
+
+The layout's boxed-form class was `.panel` — the same class the editor's
+Confluence-style panel node renders as (`.panel.panel--info`, stored in
+page content). Every creation form (API tokens, groups, webhooks, spaces,
+save-as-template) was getting that node's 2.75rem icon gutter, which is
+why the token button looked misaligned. The layout class is now `.card`;
+the editor's name cannot change without a content migration. The
+one-field-one-button forms also get a two-column grid so the button sits
+on the input's baseline instead of wrapping.
+
+A member who reaches any `/admin` URL now sees a page saying the area is
+for administrators and to ask one for the change or the role, instead of
+being bounced to the spaces list. The server was already refusing.
+
 ### Navigation: Groups and Audit under Admin, API tokens under Profile (2026-09-09)
 
 Groups and the audit log are instance administration and now live as

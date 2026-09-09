@@ -44,7 +44,7 @@ export function SaveAsTemplateButton({ spaceId, contentJson, defaultName }: Prop
         {open ? 'Cancel' : 'Save as template'}
       </button>
       {open && (
-        <form className="panel principal-picker template-form" onSubmit={submit}>
+        <form className="card principal-picker template-form" onSubmit={submit}>
           {error && <p className="alert alert--error">{error}</p>}
           <input
             value={name}
