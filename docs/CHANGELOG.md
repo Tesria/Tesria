@@ -5,6 +5,27 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Security: threat model, review, internet-readiness checklist (dev-plan 3.7) (2026-09-09)
+
+`docs/security.md` is the page an operator reads before exposing an
+instance: who attacks a self-hosted wiki and why; a table of what each
+Phase 3 layer defends and — as importantly — what it does not; the known
+gaps and accepted trade-offs, numbered so nobody rediscovers them as
+surprises; and the internet-readiness checklist (`.env` values, ports,
+accounts, operations) that Phase 5's public-spaces switch will link to.
+`SECURITY.md` at the root is the disclosure path.
+
+The review pass (manual; no review skill is available here) walked every
+registered route: all `/api` routes require authorization except health,
+register, both sign-in steps, recovery and OIDC status/login, each of
+which is rate-limited where it takes a credential; the OIDC `returnUrl`
+accepts only same-origin paths; invite and reset tokens are returned once
+and never listed; the SMTP password is never returned. Nine findings
+survived as documented gaps (version in `/api/health`, `img-src https:`,
+unaudited registration, in-process counters, mutable alerts, reusable
+TOTP challenge, trust-by-private-range, no email yet, dual-role recovery
+codes).
+
 ### Security: dependency hygiene (dev-plan 3.6) (2026-09-09)
 
 *Plan tag: Opus. Run as Fable by user override.*

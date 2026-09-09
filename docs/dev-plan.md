@@ -484,7 +484,7 @@ email in 4.3; do not block this phase on email.
   versions, so they have to move together — `npm audit fix` alone cannot
   do it). Editor verified live after the upgrade.
 
-### 3.7 Security review and internet-readiness gate — `M` — Model: Fable
+### 3.7 Security review and internet-readiness gate — `M` — Model: Fable — ✅ **shipped 2026-09-09**
 - Write `docs/security.md`: threat model (who attacks a public wiki and
   why), what each item above defends, what it does not, and the operator's
   **internet-readiness checklist** — the thing Phase 5's toggle links to.
@@ -492,6 +492,11 @@ email in 4.3; do not block this phase on email.
   it finds before merging.
 - Decide and document the disclosure/contact path (a `SECURITY.md`) if the
   repo goes public.
+- **Shipped with one deviation:** no `security-review` skill exists in
+  this environment, so the review was a manual pass — every registered
+  route inventoried for authorization, the credential endpoints for rate
+  limiting, the OIDC return URL, token listing, and settings responses.
+  Its surviving findings are `security.md`'s "Known gaps" list.
 
 ---
 
