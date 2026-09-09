@@ -137,6 +137,10 @@ export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus]
 
 export type SiteSettings = {
   instanceName: string
+  /** Override for links in email; null means the deploy-time value. */
+  baseUrl: string | null
+  /** What links will actually use: the override or the deploy-time value. */
+  effectiveBaseUrl: string
   allowPublicRegistration: boolean
   allowPublicSpaces: boolean
   emailEnabled: boolean
@@ -159,7 +163,7 @@ export type SiteSettings = {
 }
 
 /** Every field optional: an omitted field keeps its stored value. */
-export type SiteSettingsUpdate = Omit<SiteSettings, 'smtpPasswordSet' | 'updatedAt'> & {
+export type SiteSettingsUpdate = Omit<SiteSettings, 'smtpPasswordSet' | 'updatedAt' | 'effectiveBaseUrl'> & {
   smtpPassword: string
 }
 
@@ -616,6 +620,8 @@ export const api = {
       get: () => request<SiteSettings>('GET', '/api/admin/settings'),
       update: (input: Partial<SiteSettingsUpdate>) =>
         request<SiteSettings>('PUT', '/api/admin/settings', input),
+      sendTestEmail: () =>
+        request<{ sent: boolean; error: string | null }>('POST', '/api/admin/settings/email/test'),
     },
     users: {
       list: () => request<AdminUser[]>('GET', '/api/admin/users'),

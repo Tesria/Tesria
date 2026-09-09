@@ -63,6 +63,8 @@ public static class AdminEndpoints
     /// </summary>
     public record SettingsResponse(
         string InstanceName,
+        string? BaseUrl,
+        string EffectiveBaseUrl,
         bool AllowPublicRegistration,
         bool AllowPublicSpaces,
         bool EmailEnabled,
@@ -91,6 +93,7 @@ public static class AdminEndpoints
     /// </summary>
     public record UpdateSettingsRequest(
         string? InstanceName,
+        string? BaseUrl,
         bool? AllowPublicRegistration,
         bool? AllowPublicSpaces,
         bool? EmailEnabled,
@@ -115,6 +118,7 @@ public static class AdminEndpoints
 
         group.MapGet("/settings", GetSettings);
         group.MapPut("/settings", UpdateSettings);
+        group.MapPost("/settings/email/test", SendTestEmail);
         group.MapPost("/spaces/{key}/recover-access", RecoverSpaceAccess);
         group.MapPost("/users/{userId:guid}/reset-password", IssuePasswordReset);
         group.MapGet("/users", ListUsers);
@@ -179,8 +183,27 @@ public static class AdminEndpoints
         return Results.Ok(new RecoverAccessResponse(space.Id, space.Key, space.Name, false));
     }
 
-    private static async Task<IResult> GetSettings(ISiteSettingsService settings) =>
-        Results.Ok(ToResponse(await settings.GetAsync()));
+    private static async Task<IResult> GetSettings(ISiteSettingsService settings, IConfiguration config) =>
+        Results.Ok(ToResponse(await settings.GetAsync(), config));
+
+    /// <summary>
+    /// Sends a short message to the calling administrator's own address, so
+    /// the SMTP settings can be proven before anything depends on them. The
+    /// result — including the server's error text — comes back in the body.
+    /// </summary>
+    private static async Task<IResult> SendTestEmail(
+        Infrastructure.Email.IEmailSender email, ISiteSettingsService settings, CurrentUser current,
+        AppDbContext db, IConfiguration config)
+    {
+        var me = await db.Users.AsNoTracking().FirstAsync(u => u.Id == current.RequireId());
+        var s = await settings.GetAsync();
+        var result = await email.SendAsync(new Infrastructure.Email.EmailMessage(
+            me.Email,
+            $"[{s.InstanceName}] Test email",
+            $"This is a test message from {s.InstanceName} at {Infrastructure.Email.SiteUrl.Resolve(s, config)}.\n\n" +
+            "If you are reading it, outbound email is working."));
+        return Results.Ok(result);
+    }
 
     private static async Task<IResult> UpdateSettings(
         UpdateSettingsRequest req, ISiteSettingsService settings,
@@ -210,6 +233,17 @@ public static class AdminEndpoints
         // password itself, only that it was touched.
         var changed = new List<string>();
         if (name is not null) changed.Add(nameof(req.InstanceName));
+        if (req.BaseUrl is not null)
+        {
+            var trimmed = req.BaseUrl.Trim();
+            if (trimmed.Length > 0 && !(Uri.TryCreate(trimmed, UriKind.Absolute, out var u)
+                    && (u.Scheme == Uri.UriSchemeHttps || u.Scheme == Uri.UriSchemeHttp) && string.IsNullOrEmpty(u.Query)))
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    ["baseUrl"] = ["Enter the full address, e.g. https://wiki.example.com, or leave it blank."],
+                });
+            changed.Add(nameof(req.BaseUrl));
+        }
         if (req.AllowPublicRegistration is not null) changed.Add(nameof(req.AllowPublicRegistration));
         if (req.AllowPublicSpaces is not null) changed.Add(nameof(req.AllowPublicSpaces));
         if (req.EmailEnabled is not null) changed.Add(nameof(req.EmailEnabled));
@@ -244,6 +278,7 @@ public static class AdminEndpoints
         var updated = await settings.UpdateAsync(s =>
         {
             if (name is not null) s.InstanceName = name;
+            if (req.BaseUrl is not null) s.BaseUrl = Blank(req.BaseUrl)?.TrimEnd('/');
             if (req.AllowPublicRegistration is { } reg) s.AllowPublicRegistration = reg;
             if (req.AllowPublicSpaces is { } pub) s.AllowPublicSpaces = pub;
             if (req.EmailEnabled is { } mail) s.EmailEnabled = mail;
@@ -274,15 +309,17 @@ public static class AdminEndpoints
         if (req.AllowPublicSpaces is { } toggled) await detector.PublicSpacesToggledAsync(actorId, toggled);
         await db.SaveChangesAsync();
 
-        return Results.Ok(ToResponse(updated));
+        return Results.Ok(ToResponse(updated, config));
     }
 
     /// <summary>Trims, and turns an all-whitespace value into null rather than storing blanks.</summary>
     private static string? Blank(string value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    private static SettingsResponse ToResponse(SiteSettings s) => new(
+    private static SettingsResponse ToResponse(SiteSettings s, IConfiguration config) => new(
         s.InstanceName,
+        s.BaseUrl,
+        Infrastructure.Email.SiteUrl.Resolve(s, config),
         s.AllowPublicRegistration,
         s.AllowPublicSpaces,
         s.EmailEnabled,

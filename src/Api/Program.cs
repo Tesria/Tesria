@@ -74,6 +74,7 @@ builder.Services.AddSingleton<LastSeenTracker>();
 builder.Services.AddSingleton<RecoveryAttemptLimiter>();
 builder.Services.AddScoped<IAccountRecoveryService, AccountRecoveryService>();
 builder.Services.AddScoped<ITotpService, TotpService>();
+builder.Services.AddScoped<Tesria.Api.Infrastructure.Email.IEmailSender, Tesria.Api.Infrastructure.Email.SmtpEmailSender>();
 builder.Services.AddScoped<IInviteService, InviteService>();
 builder.Services.AddScoped<ISiteSettingsService, SiteSettingsService>();
 builder.Services.AddSingleton<ICollabTokenService, CollabTokenService>();

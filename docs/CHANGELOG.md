@@ -5,6 +5,23 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Feature: outbound email (dev-plan 4.1) (2026-09-09)
+
+*Plan tag: Opus. Run as Fable by user override.*
+
+`SmtpEmailSender` (MailKit) sends from the SMTP settings an administrator
+fills in — no environment variables, no restart. Plain text is the
+message; a minimal HTML twin adds line breaks and clickable links, nothing
+else. With **Send email** off, or the settings incomplete, nothing is
+attempted and the result says why; a delivery failure is an `email.failed`
+audit entry (recipient and subject, never the body). Settings gained the
+**Send email** toggle, **Send test email to me**, and a **Public address**
+override for the links email will carry (default `https://$DOMAIN`).
+
+Tests use a recording sender; five cover the test-email path, a refused
+send, the real sender declining when off, the HTML twin, and the URL
+resolution.
+
 ### Fix: creation forms inherited the editor panel's icon gutter; admin refusal is now a message (2026-09-09)
 
 The layout's boxed-form class was `.panel` — the same class the editor's

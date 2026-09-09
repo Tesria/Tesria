@@ -6,6 +6,8 @@ import { PasswordInput } from '../../components/PasswordInput'
 export function AdminSettingsPage() {
   const [settings, setSettings] = useState<SiteSettings | null>(null)
   const [instanceName, setInstanceName] = useState('')
+  const [baseUrl, setBaseUrl] = useState('')
+  const [testResult, setTestResult] = useState<string | null>(null)
   const [smtpPassword, setSmtpPassword] = useState('')
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -17,6 +19,7 @@ export function AdminSettingsPage() {
       .then((s) => {
         setSettings(s)
         setInstanceName(s.instanceName)
+        setBaseUrl(s.baseUrl ?? '')
       })
       .catch(() => setError('Could not load settings.'))
   }, [])
@@ -69,11 +72,18 @@ export function AdminSettingsPage() {
           Name
           <input value={instanceName} onChange={(e) => setInstanceName(e.target.value)} />
         </label>
+        <label>
+          Public address
+          <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder={settings.effectiveBaseUrl} />
+          <span className="muted small">
+            Where links in email point. Blank uses the deploy-time value ({settings.effectiveBaseUrl}).
+          </span>
+        </label>
         <button
           type="button"
           className="btn btn--primary"
           disabled={busy}
-          onClick={() => patch({ instanceName }, 'Instance name saved.')}
+          onClick={() => patch({ instanceName, baseUrl }, 'Instance settings saved.')}
         >
           Save
         </button>
@@ -125,10 +135,25 @@ export function AdminSettingsPage() {
 
       <section className="profile__section">
         <h2>Email</h2>
-        <p className="muted small">
-          Outbound mail is not wired up yet (dev-plan Phase 4). These settings
-          are stored now so they are ready when it is.
-        </p>
+        <label className="admin__toggle">
+          <input
+            type="checkbox"
+            checked={settings.emailEnabled}
+            disabled={busy}
+            onChange={(e) => patch(
+              { emailEnabled: e.target.checked },
+              e.target.checked ? 'Outbound email is on.' : 'Outbound email is off.',
+            )}
+          />
+          <span>
+            <strong>Send email</strong>
+            <br />
+            <span className="muted small">
+              Password-reset links, security alerts to administrators, and
+              notifications for people who opt in. Off means none are attempted.
+            </span>
+          </span>
+        </label>
         <form onSubmit={saveSmtp}>
           <label>
             SMTP host
@@ -167,9 +192,28 @@ export function AdminSettingsPage() {
               <option value={2}>SSL on connect</option>
             </select>
           </label>
-          <button type="submit" className="btn btn--primary" disabled={busy}>
-            Save mail settings
-          </button>
+          <div className="row-gap">
+            <button type="submit" className="btn btn--primary" disabled={busy}>
+              Save mail settings
+            </button>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              disabled={busy || !settings.emailEnabled}
+              onClick={async () => {
+                setTestResult(null)
+                try {
+                  const r = await api.admin.settings.sendTestEmail()
+                  setTestResult(r.sent ? 'Sent — check your inbox.' : `Not sent: ${r.error ?? 'unknown error'}`)
+                } catch (err) {
+                  setTestResult(err instanceof ApiError ? err.message : 'Could not send.')
+                }
+              }}
+            >
+              Send test email to me
+            </button>
+          </div>
+          {testResult && <p className={testResult.startsWith('Sent') ? 'profile__ok' : 'alert alert--error'}>{testResult}</p>}
         </form>
       </section>
     </>
