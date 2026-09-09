@@ -1350,3 +1350,11 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   .recovery__codes { grid-template-columns: 1fr; }
 }
+
+/* ---- author identity ----------------------------------------------------- */
+/* Comments and version rows now lead with who did it, which is the thing a
+   reader is usually scanning for. */
+.comment__author { font-weight: 600; font-size: 0.88rem; }
+.version__author { font-size: 0.85rem; }
+/* The version row is a flex line already; the avatar must not be squeezed. */
+.version .avatar, .comment__head .avatar { flex-shrink: 0; }

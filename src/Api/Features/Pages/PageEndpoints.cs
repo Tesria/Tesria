@@ -27,10 +27,13 @@ public static class PageEndpoints
         Guid Id, Guid SpaceId, Guid? ParentPageId, string Title, int Position, PageStatus Status,
         int CurrentVersionNumber, string ContentJson, bool FullWidth, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
     public record PageVersionResponse(
-        Guid Id, int VersionNumber, string? ChangeComment, Guid AuthorId, DateTimeOffset CreatedAt);
+        Guid Id, int VersionNumber, string? ChangeComment, Guid AuthorId,
+        string AuthorName, string? AuthorAvatarHash, int? AuthorAvatarVariant,
+        DateTimeOffset CreatedAt);
     public record PageVersionContentResponse(
         Guid Id, int VersionNumber, string ContentJson, string? ChangeComment,
-        Guid AuthorId, DateTimeOffset CreatedAt);
+        Guid AuthorId, string AuthorName, string? AuthorAvatarHash, int? AuthorAvatarVariant,
+        DateTimeOffset CreatedAt);
     public record PageTreeNode(Guid Id, string Title, int Position, List<PageTreeNode> Children);
     public record TrashedPageResponse(Guid Id, string Title, DateTimeOffset DeletedAt, Guid? DeletedById);
 
@@ -486,7 +489,12 @@ public static class PageEndpoints
         var versions = await db.PageVersions.AsNoTracking()
             .Where(v => v.PageId == id)
             .OrderByDescending(v => v.VersionNumber)
-            .Select(v => new PageVersionResponse(v.Id, v.VersionNumber, v.ChangeComment, v.AuthorId, v.CreatedAt))
+            .Select(v => new PageVersionResponse(
+                v.Id, v.VersionNumber, v.ChangeComment, v.AuthorId,
+                v.Author == null ? "Deleted user" : v.Author.DisplayName,
+                v.Author == null || v.Author.AvatarKey == null ? null : v.Author.AvatarHash,
+                v.Author == null ? null : v.Author.AvatarVariant,
+                v.CreatedAt))
             .ToListAsync();
         return Results.Ok(versions);
     }
@@ -499,11 +507,16 @@ public static class PageEndpoints
         if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
 
         var v = await db.PageVersions.AsNoTracking()
+            .Include(v => v.Author)
             .FirstOrDefaultAsync(v => v.PageId == id && v.VersionNumber == number);
         return v is null
             ? Results.NotFound()
             : Results.Ok(new PageVersionContentResponse(
-                v.Id, v.VersionNumber, v.ContentJson, v.ChangeComment, v.AuthorId, v.CreatedAt));
+                v.Id, v.VersionNumber, v.ContentJson, v.ChangeComment, v.AuthorId,
+                v.Author?.DisplayName ?? "Deleted user",
+                v.Author?.AvatarKey is null ? null : v.Author.AvatarHash,
+                v.Author?.AvatarVariant,
+                v.CreatedAt));
     }
 
     private static async Task<IResult> RestoreVersion(

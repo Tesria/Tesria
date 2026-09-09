@@ -5,6 +5,35 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Feature: author identity on comments and version history (dev-plan 1.5) (2026-09-09)
+
+Comments and version history both returned a bare `AuthorId` and rendered no
+author at all — a threaded discussion where you could not tell who said what,
+and a history that could not answer "who changed this?" despite storing the
+answer since Phase 1. Both now carry `AuthorName`, `AuthorAvatarHash` and
+`AuthorAvatarVariant`, projected from the joined `User`.
+
+Projected server-side rather than resolved by the client: a per-comment lookup
+is N round trips, and a client-side directory fetch would hand the whole user
+list to anyone who can read one page.
+
+This completes the render list 1.2 could not finish — avatars now appear in
+comments and version history as well as the topbar and profile.
+
+Three tests (178 total). One of them changed shape during writing: the
+"deleted author" case cannot be reached by orphaning a comment, because the
+foreign key forbids it. The `?? "Deleted user"` in the projection is therefore
+defensive only, and the test now covers what 2.2 will actually do — anonymise
+the row, keeping the id so history stays attributable while the name no longer
+identifies anyone.
+
+**One bug worth recording.** The first version set `comment.Author` to a
+detached `User` so the create response would carry the name. EF treats a
+detached entity on a navigation as new and tried to INSERT it, tripping the
+unique-email constraint and breaking six existing comment tests. Re-reading the
+comment with the author joined is one extra query on create and is obviously
+correct; the update path needed the same include.
+
 ### Feature: closed registration and invites (dev-plan 1.4) (2026-09-09)
 
 `AllowPublicRegistration` was already enforced in 0.2; this adds the other way
