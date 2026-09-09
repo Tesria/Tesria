@@ -38,7 +38,7 @@ public static class WebhookEndpoints
 
     private static async Task<IResult> Create(
         string key, CreateWebhookRequest req, AppDbContext db, IPermissionService perms, CurrentUser current,
-        Infrastructure.Security.ISecurityDetector detector)
+        Infrastructure.Security.ISecurityDetector detector, Infrastructure.Security.EgressGuard egress)
     {
         var space = await FindSpaceAsync(db, key);
         if (space is null) return Results.NotFound();
@@ -67,13 +67,17 @@ public static class WebhookEndpoints
             CreatedById = current.RequireId(),
             CreatedAt = DateTimeOffset.UtcNow,
         };
-        db.Webhooks.Add(webhook);
-        // Dev-plan 3.4 refuses these outright; until then, and even after, a
-        // webhook aimed inside the network is worth an administrator's eye.
-        if (System.Net.IPAddress.TryParse(uri.Host, out var literal)
-                ? Infrastructure.Security.PrivateNetworks.IsPrivateOrLocal(literal)
-                : uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+        // A webhook aimed inside the network is refused (dev-plan 3.4) and
+        // still worth an administrator's eye (3.3): the refusal is recorded
+        // even though nothing was saved.
+        if (await egress.ValidateAsync(req.Url) is { } reason)
+        {
             await detector.WebhookPrivateTargetAsync(current.RequireId(), req.Url, space.Id);
+            await db.SaveChangesAsync();
+            return Results.ValidationProblem(Error("url", reason));
+        }
+
+        db.Webhooks.Add(webhook);
         await db.SaveChangesAsync();
 
         return Results.Created($"/api/spaces/{key}/webhooks/{webhook.Id}",

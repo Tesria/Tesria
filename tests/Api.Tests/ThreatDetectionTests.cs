@@ -188,8 +188,10 @@ public class ThreatDetectionTests
         var admin = await AdminAsync(factory);
         await admin.CreateSpaceAsync("HOOK");
 
-        (await admin.PostAsJsonAsync("/api/spaces/HOOK/webhooks",
-            new { Url = "http://169.254.169.254/latest/meta-data/", Events = "*" })).EnsureSuccessStatusCode();
+        // Refused by 3.4's egress guard — and still reported, because the
+        // attempt is the interesting part.
+        Assert.Equal(HttpStatusCode.BadRequest, (await admin.PostAsJsonAsync("/api/spaces/HOOK/webhooks",
+            new { Url = "http://169.254.169.254/latest/meta-data/", Events = "*" })).StatusCode);
         Assert.Single(await AlertsAsync(admin, "webhook.private_target"));
     }
 

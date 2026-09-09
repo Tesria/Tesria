@@ -432,7 +432,7 @@ email in 4.3; do not block this phase on email.
   `SecurityThresholds`, not settings — see the design in architecture.md
   for why. Rate-limit counters were already on the Security page from 3.2.
 
-### 3.4 Egress and input hardening — `M` — Model: Opus
+### 3.4 Egress and input hardening — `M` — Model: Opus — ✅ **shipped 2026-09-09** (run as Fable by user override)
 - **SSRF guard**, one implementation shared by webhooks (today) and link
   previews (7.E): deny loopback, private, link-local and the cloud metadata
   address; resolve DNS *then* connect to the resolved IP (no rebinding);
@@ -447,6 +447,12 @@ email in 4.3; do not block this phase on email.
   exempt (no cookie, no CSRF). The upload endpoint's `DisableAntiforgery()`
   goes away.
 - Request size limits confirmed at both Caddy (100 MB) and Kestrel.
+- **Shipped with one deviation:** CSRF is a required custom header
+  (`X-Requested-With: Tesria`) on cookie-authenticated state changes, not
+  a double-submit token — equivalent protection, no token plumbing, and
+  it covers the multipart uploads. The framework's `DisableAntiforgery()`
+  stays on the two `IFormFile` endpoints because the framework attaches
+  its own form-token requirement to them by default.
 
 ### 3.5 Sessions, 2FA and admin safety — `M` — Model: Opus
 - Idle timeout (e.g. 14 days) and an absolute lifetime (e.g. 90 days) on

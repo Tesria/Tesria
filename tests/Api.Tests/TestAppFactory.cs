@@ -26,7 +26,7 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
     private readonly string _uploadsPath =
         Path.Combine(Path.GetTempPath(), "cc-tests", Guid.NewGuid().ToString("N"));
 
-    private readonly int? _freshLoginMinutes;
+    private readonly Dictionary<string, string?> _settings = new();
 
     public TestAppFactory() { }
 
@@ -34,7 +34,22 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
     /// Shrinks the window in which a recent sign-in stands in for a password.
     /// Pass 0 to make every session count as stale.
     /// </param>
-    public TestAppFactory(int freshLoginMinutes) => _freshLoginMinutes = freshLoginMinutes;
+    public TestAppFactory(int freshLoginMinutes) =>
+        _settings["Auth:FreshLoginMinutes"] = freshLoginMinutes.ToString();
+
+    /// <summary>Arbitrary configuration overrides, e.g. <c>Egress:AllowedNetworks</c>.</summary>
+    public TestAppFactory(Dictionary<string, string?> settings) => _settings = settings;
+
+    /// <summary>
+    /// Every client sends the CSRF marker the app requires on cookie-
+    /// authenticated state changes (dev-plan 3.4), the way the SPA does. The
+    /// one test that checks the requirement removes it again.
+    /// </summary>
+    protected override void ConfigureClient(HttpClient client)
+    {
+        base.ConfigureClient(client);
+        client.DefaultRequestHeaders.Add("X-Requested-With", "Tesria");
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -44,8 +59,8 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Storage:UploadsPath"] = _uploadsPath,
-                ["Auth:FreshLoginMinutes"] = _freshLoginMinutes?.ToString(),
-            }));
+            })
+            .AddInMemoryCollection(_settings));
         builder.ConfigureServices(services =>
         {
             // Drop the production Npgsql registration entirely — both the built

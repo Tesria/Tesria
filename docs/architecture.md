@@ -291,6 +291,55 @@ the audit log is the right tool. It does not correlate across kinds. It
 does not phone home. And it cannot notify anyone if the app itself is
 down — that is a monitoring concern, outside the app.
 
+### Egress and input hardening (`Infrastructure/Security/EgressGuard.cs`, `CsrfHeaderMiddleware.cs`, `Infrastructure/Storage/ContentTypes.cs`, dev-plan 3.4)
+
+**Outbound requests (SSRF).** Every HTTP request the server makes on a
+user's behalf — webhooks now, link previews later — goes through
+`EgressGuard`. The attack is an editor pointing a webhook at
+`http://169.254.169.254/` or `http://db:5432/`, which the server can reach
+and the editor cannot. The defence holds at two moments, because a
+hostname can resolve publicly when saved and privately when delivered
+(DNS rebinding): `ValidateAsync` checks the URL (http/https only, no
+credentials, no `localhost`/`.local`/`.internal`) and *every* address it
+currently resolves to; `CreateHandler` builds a `SocketsHttpHandler` whose
+`ConnectCallback` resolves again and checks the exact address about to be
+dialled. Automatic redirects are off; `SendAsync` follows at most three by
+hand, validating each hop. Five-second timeout. `Egress:AllowedNetworks`
+lets an operator open a private range deliberately (a LAN automation
+server); the 3.3 detector still records the attempt. A refused delivery is
+logged and not retried — it is not transient.
+
+**Attachments.** The declared content type is a suggestion. `ContentTypes.
+Resolve` lets the bytes win where a signature is recognised (PNG, JPEG,
+GIF, WebP, PDF), otherwise keeps the declared type unless it is something
+a browser might *execute* — HTML, XHTML, SVG, XML, scripts — or the bytes
+look like markup, in which case the file is stored and served as
+`application/octet-stream`. Downloads already carried
+`Content-Disposition: attachment` and, since 3.0, `nosniff`; this closes
+the remaining gap, where a same-origin HTML or SVG attachment opened
+directly would run with the site's cookies. Avatars were already safe:
+they are re-encoded through SkiaSharp.
+
+**CSRF.** Three layers, each sufficient on its own for the JSON endpoints:
+the API only accepts JSON bodies (a cross-site form cannot send one); the
+session cookie is `SameSite=Lax` (a cross-site POST does not carry it);
+and `CsrfHeaderMiddleware` requires `X-Requested-With: Tesria` on every
+state-changing `/api` request authenticated by the cookie. The header is
+the layer that also covers the two multipart upload endpoints, which a form
+could otherwise target if SameSite were ever weakened. A browser will not
+add a custom header cross-origin without a CORS preflight, and no
+cross-origin caller passes ours, so the header can only have come from our
+own page. Bearer-token callers have no cookie and are exempt; sign-in has
+no session yet and is exempt. The SPA's `request()` and its two raw
+`fetch` calls send it. Chosen over a double-submit token because it needs
+no token plumbing. The framework's own anti-forgery metadata stays
+disabled on the `IFormFile` endpoints — that scheme (form tokens) is not
+the one in use.
+
+**Body size.** Kestrel's `MaxRequestBodySize` is set to 100 MB to match
+Caddy, so the limit does not silently depend on which proxy is in front.
+Attachments are capped at 25 MB by the endpoint.
+
 ### Roles and administrators (spec — dev-plan 0.1, designed 2026-09-08)
 
 Two roles, one enum: `User.Role` is `Member = 0 | Admin = 1`. An enum, not

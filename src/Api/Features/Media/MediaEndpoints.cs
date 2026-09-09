@@ -20,6 +20,7 @@ public static class MediaEndpoints
         var group = routes.MapGroup("/media").WithTags("Media").RequireAuthorization();
 
         group.MapGet("/avatars/{userId:guid}", GetAvatar);
+        // Framework form-token check off; the CsrfHeaderMiddleware covers this (dev-plan 3.4).
         group.MapPut("/avatars/me", UploadOwnAvatar).DisableAntiforgery();
         group.MapDelete("/avatars/me", DeleteOwnAvatar);
         group.MapPut("/avatars/me/variant", SetOwnAvatarVariant);

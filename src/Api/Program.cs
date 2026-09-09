@@ -87,7 +87,15 @@ builder.Services.AddScoped<IWebhookDispatcher, WebhookDispatcher>();
 builder.Services.AddSingleton<ChannelWebhookSender>();
 builder.Services.AddSingleton<IWebhookSender>(sp => sp.GetRequiredService<ChannelWebhookSender>());
 builder.Services.AddHostedService<WebhookDeliveryBackgroundService>();
-builder.Services.AddHttpClient(nameof(WebhookDeliveryBackgroundService), c => c.Timeout = TimeSpan.FromSeconds(10));
+// Outbound requests go through the egress guard (dev-plan 3.4): the address
+// is checked again inside the connect, and redirects are followed by hand.
+builder.Services.AddSingleton<EgressGuard>();
+builder.Services.AddHttpClient(nameof(WebhookDeliveryBackgroundService), c => c.Timeout = EgressGuard.Timeout)
+    .ConfigurePrimaryHttpMessageHandler(sp => sp.GetRequiredService<EgressGuard>().CreateHandler());
+
+// Request bodies: Caddy caps at 100 MB; Kestrel says the same so the limit
+// does not silently depend on which proxy is in front.
+builder.WebHost.ConfigureKestrel(k => k.Limits.MaxRequestBodySize = 100L * 1024 * 1024);
 
 // Attachment file storage (local uploads volume; PLAN §3).
 builder.Services.AddSingleton<IAttachmentStorage, LocalAttachmentStorage>();
@@ -407,6 +415,8 @@ app.UseDefaultFiles();
 app.UseStaticFiles(spaStaticFileOptions);
 
 app.UseAuthentication();
+// Knows who authenticated and how; must therefore follow authentication.
+app.UseMiddleware<CsrfHeaderMiddleware>();
 // After authentication so the global limiter can tell a session from a
 // stranger; before authorization so a rejected request does no more work.
 app.UseRateLimiter();

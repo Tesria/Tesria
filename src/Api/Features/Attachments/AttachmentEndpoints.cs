@@ -20,8 +20,10 @@ public static class AttachmentEndpoints
     {
         var pageScoped = routes.MapGroup("/pages/{pageId:guid}/attachments")
             .WithTags("Attachments").RequireAuthorization();
-        // SameSite=Lax cookies guard against cross-site posts; antiforgery tokens
-        // are not used for this same-origin SPA upload.
+        // The framework attaches its own anti-forgery requirement to IFormFile
+        // endpoints; it is switched off because that scheme (form tokens) is
+        // not the one in use. Cross-site protection for this endpoint is the
+        // CsrfHeaderMiddleware (dev-plan 3.4), the same as for the JSON ones.
         pageScoped.MapPost("/", Upload).DisableAntiforgery();
         pageScoped.MapGet("/", ListForPage);
 
@@ -46,13 +48,19 @@ public static class AttachmentEndpoints
         if (file.Length > MaxBytes)
             return Results.ValidationProblem(Error("file", $"File exceeds the {MaxBytes / (1024 * 1024)} MB limit."));
 
+        // The type the file will be served as is decided from its bytes and
+        // its declared type together — see ContentTypes.
+        var head = new byte[16];
+        int headLength;
+        await using (var peek = file.OpenReadStream())
+            headLength = await peek.ReadAtLeastAsync(head, head.Length, throwOnEndOfStream: false);
+
         var attachment = new Attachment
         {
             Id = Guid.NewGuid(),
             PageId = pageId,
             Filename = Path.GetFileName(file.FileName),
-            ContentType = string.IsNullOrWhiteSpace(file.ContentType)
-                ? "application/octet-stream" : file.ContentType,
+            ContentType = ContentTypes.Resolve(head.AsSpan(0, headLength), file.ContentType),
             Size = file.Length,
             StorageKey = Guid.NewGuid().ToString("N"),
             UploadedById = current.RequireId(),
