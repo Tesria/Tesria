@@ -25,6 +25,14 @@ public class SiteSettings
     public string InstanceName { get; set; } = "Tesria";
 
     /// <summary>
+    /// The address links in email point at, e.g. <c>https://wiki.example.com</c>.
+    /// Null means use the deploy-time <c>Site:BaseUrl</c> (derived from
+    /// <c>DOMAIN</c>); set here when the instance is reached at a different
+    /// name than the one Caddy was configured with.
+    /// </summary>
+    public string? BaseUrl { get; set; }
+
+    /// <summary>
     /// Whether anyone who can reach <c>/register</c> may create an account.
     /// Defaults to true, which is the behaviour before this setting existed.
     /// Registration on a completely empty instance ignores this — see

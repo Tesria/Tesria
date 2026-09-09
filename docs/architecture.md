@@ -400,6 +400,20 @@ the encoded hash; a successful sign-in — the one moment the plaintext is
 in hand — upgrades a weaker hash in place, so raising the parameters
 later upgrades every account over time without a forced reset.
 
+### Email (`Infrastructure/Email`, dev-plan 4.1–4.3)
+
+One sender, `SmtpEmailSender` over MailKit, configured from `SiteSettings`
+at send time (host, port, TLS mode, credentials — the password decrypted
+through Data Protection). With `EmailEnabled` off or settings incomplete
+it declines with a reason rather than throwing; callers decide what that
+means (a test send reports it; a password-reset request stays silent, as
+it must). Messages are plain text; `EmailTemplates.Html` makes the HTML
+twin (escaped, line breaks, bare URLs linked) — no template engine, every
+email is a few sentences and a link. Failures are logged and audited as
+`email.failed` without the body. Links use `SiteUrl.Resolve`: the
+`BaseUrl` setting if set, else `Site:BaseUrl` from the deploy
+(`https://$DOMAIN`). Tests swap in `RecordingEmailSender`.
+
 ### Roles and administrators (spec — dev-plan 0.1, designed 2026-09-08)
 
 > **Update 2026-09-09:** group management (create/edit/delete/membership)

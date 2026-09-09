@@ -85,6 +85,8 @@ services:
       # network from, which is safe only while port 8080 stays unpublished.
       # Fronting the app with a proxy elsewhere? Name that proxy here.
       Proxy__TrustedNetworks: ${PROXY_TRUSTED_NETWORKS:-}
+      # Where links in email point. Overridable at runtime in Admin → Settings.
+      Site__BaseUrl: "https://${DOMAIN}"
     volumes:
       - uploads:/app/uploads
     expose:

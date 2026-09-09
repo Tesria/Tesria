@@ -85,6 +85,11 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
             // Replace the real channel-backed sender with a recording fake, so
             // tests can assert on dispatched webhooks without any network I/O
             // or a running background delivery service.
+            // Email is recorded, never sent (dev-plan 4.1).
+            services.RemoveAll<Tesria.Api.Infrastructure.Email.IEmailSender>();
+            services.AddSingleton<RecordingEmailSender>();
+            services.AddSingleton<Tesria.Api.Infrastructure.Email.IEmailSender>(sp => sp.GetRequiredService<RecordingEmailSender>());
+
             services.RemoveAll<IWebhookSender>();
             services.AddSingleton<RecordingWebhookSender>();
             services.AddSingleton<IWebhookSender>(sp => sp.GetRequiredService<RecordingWebhookSender>());

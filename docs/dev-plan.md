@@ -505,11 +505,17 @@ email in 4.3; do not block this phase on email.
 After the admin panel because SMTP configuration lives in 2.3; after
 security because 4.2 needs 3.2's limiter and 4.3 needs 3.3's alerts.
 
-### 4.1 Sender + SMTP — `S` — Model: Opus
+### 4.1 Sender + SMTP — `S` — Model: Opus — ✅ **shipped 2026-09-09** (run as Fable by user override)
 - `IEmailSender`; `SmtpEmailSender` via MailKit; `NullEmailSender` when
   `EmailEnabled` is false. Plain text plus a minimal HTML wrapper; no
   template engine. "Send test email" in 2.3 goes live. Delivery failures
   → `email.failed` audit entry (no body in metadata).
+- **Shipped with one deviation:** one sender class, not two — with
+  `EmailEnabled` off (or settings incomplete) `SmtpEmailSender` declines
+  and says why, so there is a single code path. Also added: an
+  `EmailEnabled` toggle and "Send test email to me" on the Settings page
+  (neither existed), and a `BaseUrl` setting (default `https://$DOMAIN`)
+  so emailed links know the instance's address.
 
 ### 4.2 Password recovery — email — `M` — Model: Opus
 - `POST /api/auth/recover/email` → always 202, same body either way.

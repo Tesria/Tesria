@@ -16,6 +16,7 @@
   <ItemGroup>
     <!-- Data layer: EF Core 10 + PostgreSQL (Npgsql). Design package enables
          `dotnet ef` migrations at build/dev time. -->
+    <PackageReference Include="MailKit" Version="4.17.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
