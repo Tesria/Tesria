@@ -59,6 +59,11 @@ one's on a decision it shouldn't be making — either way, silently.
   `dotnet test` (SQLite in-memory, no Docker needed) covers backend logic;
   `npm run build && npm run lint` covers the frontend. Both should stay green,
   but neither substitutes for looking at the running app for UI changes.
+- **Dependency audit is a release gate.** `scripts/audit.sh` runs
+  `npm audit` (web + collab) and `dotnet list package --vulnerable
+  --include-transitive`; it must exit 0 before a release or after touching
+  any package manifest. Note `npm audit fix --omit=dev` prunes
+  devDependencies — follow it with a plain `npm install`.
 - **EF Core migrations**: `dotnet-ef` is installed as a global tool. Add one
   with `dotnet ef migrations add <Name> --output-dir Infrastructure/Migrations`
   from `src/Api/`. Migrations run automatically on API startup.

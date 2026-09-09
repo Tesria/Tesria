@@ -5,6 +5,30 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Security: dependency hygiene (dev-plan 3.6) (2026-09-09)
+
+*Plan tag: Opus. Run as Fable by user override.*
+
+`npm audit` on the SPA went from 38 findings (3 high) to zero:
+`react-router-dom` 7.18.1 → 7.18.3 (the RSC CSRF advisory; patch-level, no
+API change) and every `@tiptap/*` package 3.28.0 → 3.31.3 (a prototype-
+pollution and a ReDoS advisory in `@tiptap/core`). The TipTap packages
+peer-depend on each other at exact versions, so `npm audit fix` cannot
+move them on its own — all thirteen ranges were raised together. Editor
+verified live afterwards: toolbar, live collaboration, lowlight code
+blocks, no console errors. One thing to know: `npm audit fix --omit=dev`
+prunes devDependencies from `node_modules`; run a plain `npm install`
+after it.
+
+The collab sidecar now has a `package-lock.json` (zero findings) and its
+image builds with `npm ci`, so it is reproducible and auditable. `.NET`
+was already clean.
+
+`scripts/audit.sh` runs all three audits (web, collab, .NET with
+transitives) and exits non-zero on any finding — the release gate.
+`.github/dependabot.yml` groups weekly updates per ecosystem; security
+updates arrive ungrouped.
+
 ### Security: sessions, two-factor sign-in, sudo mode, pinned Argon2 (dev-plan 3.5) (2026-09-09)
 
 *Plan tag: Opus. Run as Fable by user override.*

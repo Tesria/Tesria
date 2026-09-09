@@ -1,0 +1,25 @@
+# Dependency update PRs (dev-plan 3.6). Grouped so a routine week is three
+# PRs, not thirty; security updates are never grouped and arrive as they do.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /src/web
+    schedule: { interval: weekly }
+    groups:
+      web-dependencies: { patterns: ["*"] }
+  - package-ecosystem: npm
+    directory: /collab
+    schedule: { interval: weekly }
+    groups:
+      collab-dependencies: { patterns: ["*"] }
+  - package-ecosystem: nuget
+    directory: /src/Api
+    schedule: { interval: weekly }
+    groups:
+      dotnet-dependencies: { patterns: ["*"] }
+  - package-ecosystem: docker
+    directory: /deploy
+    schedule: { interval: weekly }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
