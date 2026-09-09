@@ -5,6 +5,52 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Feature: offline password recovery (dev-plan 1.3) (2026-09-09)
+
+Eight single-use recovery codes minted at registration and shown exactly once,
+plus an administrator-issued reset link. Neither needs email, which on a
+self-hosted instance is usually not configured at all.
+
+**Codes are SHA-256, not Argon2id — a deliberate departure from the plan.**
+Argon2's cost exists to make guessing a *low-entropy* secret expensive; these
+are 60 bits of cryptographic randomness, where a fast hash is already
+unguessable. Argon2 would instead mean up to eight deliberately-slow
+verifications per attempt: bad for the user and a free denial-of-service lever.
+This matches how `ApiToken` already stores its secret, including the
+fixed-time comparison.
+
+**The rate limiter is keyed on email, not IP — also a departure.** Per-IP is
+the obvious choice and is wrong today: every request arrives with Caddy's
+container address, so an IP limiter would throttle the whole world as one
+caller. Keying on the supplied email bounds guesses against any one account,
+which is the actual threat, and is immune to the proxy problem. Dev-plan 3.2
+adds real per-IP limiting once 3.0 makes client addresses real.
+
+Codes normalise on redemption — dashes and case are stripped — because they get
+written on paper and typed back months later. The alphabet omits O/0, I/1/L and
+U for the same reason. Every failure returns an identical response whether the
+account exists, the code is wrong, or the account is SSO-only, so this cannot
+be used to discover which addresses have accounts.
+
+Both recovery paths rotate the security stamp, signing out every existing
+session. Recovery exists for when somebody else has your account; leaving their
+session alive would defeat it.
+
+`POST /api/admin/users/{id}/reset-password` issues a one-time, one-hour link an
+admin hands over out of band. It deliberately does not set a password: an
+administrator should be able to restore access without ever knowing the
+resulting credential. Issuing a second link invalidates the first.
+
+Frontend: codes are shown after registration behind an explicit "I have saved
+these" gate with copy and download — the registration redirect had to be held
+back, since it otherwise fired the moment the account existed and skipped past
+them. A "Forgot your password?" link on sign-in reaches `/recover`; `/reset?
+token=…` is the admin link. The profile page shows how many codes remain and
+warns when there are none — which is every account created before this shipped,
+verified live on this instance.
+
+Twelve tests in `AccountRecoveryTests` (168 total).
+
 ### Feature: avatars (dev-plan 1.2) (2026-09-09)
 
 Every user has an avatar from the moment they register, with nothing stored:

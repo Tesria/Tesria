@@ -227,16 +227,20 @@ undetectable without a login history.
   two endpoints in a different feature slice, and because "show author names"
   is a user-visible behaviour change worth its own CHANGELOG entry.
 
-### 1.3 Password recovery — offline (recovery codes) — `M` — Model: Opus
+### 1.3 Password recovery — offline (recovery codes) — `M` — Model: Opus — ✅ **shipped 2026-09-09**
 - **Generated at registration**, as asked: 8 single-use codes
   (`xxxx-xxxx-xxxx`, crypto RNG), shown **once** on a post-registration
-  screen with "download as text" and an "I've saved these" gate. Stored as
-  Argon2id hashes; the plaintext is never persisted.
+  screen with "download as text" and an "I've saved these" gate.
+  **Shipped as SHA-256, not Argon2id:** Argon2's cost is for low-entropy
+  secrets, and these are 60 bits of randomness — Argon2 would mean up to
+  eight slow verifications per attempt, a free DoS lever. Same construction
+  as `ApiToken`, fixed-time comparison included.
 - `POST /api/auth/recover/code` → `{ email, code, newPassword }`. Constant
   response whether or not the email exists; mark the used code; rotate
   `SecurityStamp`; audit `user.password_recovered` (no code in metadata).
-- Rate-limited (3.2 owns the limiter; until it lands, a fixed-window
-  in-memory limiter on this endpoint only).
+- Rate-limited. **Shipped keyed on email, not IP:** behind Caddy every
+  request shares one address, so an IP limiter would throttle everyone at
+  once. 3.2 adds real per-IP limiting once 3.0 lands.
 - Regenerate from `/profile` (requires current password; invalidates all
   previous codes; shows the new set once). These same codes serve as 2FA
   backup codes in 3.5 — don't build a second set.

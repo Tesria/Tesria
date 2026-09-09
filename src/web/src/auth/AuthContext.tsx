@@ -5,7 +5,8 @@ type AuthState = {
   /** undefined while the initial session check is in flight. */
   user: User | null | undefined
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, displayName: string, password: string) => Promise<void>
+  /** Resolves with the new account's recovery codes, shown once. */
+  register: (email: string, displayName: string, password: string) => Promise<string[]>
   logout: () => Promise<void>
   /** Re-reads the session — after editing your own profile, so the topbar and
    *  anything else reading `user` pick the change up without a reload. */
@@ -38,7 +39,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const register = useCallback(async (email: string, displayName: string, password: string) => {
-    setUser(await api.auth.register(email, displayName, password))
+    const registered = await api.auth.register(email, displayName, password)
+    setUser(registered)
+    return registered.recoveryCodes
   }, [])
 
   const refresh = useCallback(async () => {

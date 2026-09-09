@@ -3,6 +3,7 @@ import { api, ApiError } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { PasswordInput } from '../components/PasswordInput'
 import { AvatarPicker } from '../components/AvatarPicker'
+import { RecoveryCodesSection } from '../components/RecoveryCodesSection'
 
 type Status = { kind: 'ok' | 'error'; message: string } | null
 
@@ -161,6 +162,13 @@ export function ProfilePage() {
           </form>
         )}
       </section>
+
+      {!ssoOnly && (
+        <section className="profile__section">
+          <h2>Recovery codes</h2>
+          <RecoveryCodesSection />
+        </section>
+      )}
 
       <section className="profile__section">
         <h2>Password</h2>

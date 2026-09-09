@@ -36,6 +36,24 @@ public static class AuthEndpoints
     public record UpdateProfileRequest(string DisplayName);
     public record ChangeEmailRequest(string CurrentPassword, string Email);
     public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
+    public record RecoverWithCodeRequest(string Email, string Code, string NewPassword);
+    public record ResetWithTokenRequest(string Token, string NewPassword);
+    public record RegenerateCodesRequest(string CurrentPassword);
+    /// <summary>The plaintext codes. Returned once, at the only moment they exist.</summary>
+    public record RecoveryCodesResponse(IReadOnlyList<string> Codes);
+    public record RecoveryStatusResponse(int Remaining);
+    /// <summary>
+    /// Registration's response: the user, plus the recovery codes at the only
+    /// moment they exist in plaintext.
+    ///
+    /// Flattened rather than nesting a <see cref="UserResponse"/>, so this
+    /// stays a superset of what registration returned before — every existing
+    /// caller reads the same field names and keeps working.
+    /// </summary>
+    public record RegisteredResponse(
+        Guid Id, string Email, string DisplayName, UserRole Role,
+        string? AvatarHash, int? AvatarVariant, bool HasPassword,
+        IReadOnlyList<string> RecoveryCodes);
 
     public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -52,6 +70,10 @@ public static class AuthEndpoints
         group.MapPut("/me", UpdateProfile).RequireAuthorization();
         group.MapPut("/me/email", ChangeEmail).RequireAuthorization();
         group.MapPut("/me/password", ChangePassword).RequireAuthorization();
+        group.MapGet("/me/recovery-codes", RecoveryStatus).RequireAuthorization();
+        group.MapPost("/me/recovery-codes", RegenerateCodes).RequireAuthorization();
+        group.MapPost("/recover/code", RecoverWithCode);
+        group.MapPost("/recover/token", ResetWithToken);
 
         group.MapGet("/oidc/status", OidcStatus);
         // A full-page browser redirect, not a fetch call — the IdP needs to
@@ -86,7 +108,7 @@ public static class AuthEndpoints
 
     private static async Task<IResult> Register(
         RegisterRequest req, AppDbContext db, IPasswordHasher hasher, HttpContext http,
-        ISiteSettingsService settings)
+        ISiteSettingsService settings, IAccountRecoveryService recovery)
     {
         var email = (req.Email ?? "").Trim().ToLowerInvariant();
         var displayName = (req.DisplayName ?? "").Trim();
@@ -132,11 +154,19 @@ public static class AuthEndpoints
             CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Users.Add(user);
+
+        // Issued here rather than on demand: codes are only useful if they
+        // exist before they are needed, and a prompt later is a prompt most
+        // people dismiss.
+        var codes = recovery.IssueCodes(user.Id);
+
         await db.SaveChangesAsync();
         await tx.CommitAsync();
 
         await SignIn(http, user);
-        return Results.Ok(new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.AvatarVariant, user.PasswordHash != null));
+        return Results.Ok(new RegisteredResponse(
+            user.Id, user.Email, user.DisplayName, user.Role,
+            user.AvatarHash, user.AvatarVariant, user.PasswordHash != null, codes));
     }
 
     private static async Task<IResult> Login(
@@ -277,6 +307,113 @@ public static class AuthEndpoints
         // changed their password is not signed out along with everyone else.
         await SignIn(http, user);
         return Results.Ok(ToResponse(user));
+    }
+
+    private static async Task<IResult> RecoveryStatus(
+        AppDbContext db, CurrentUser current, IAccountRecoveryService recovery)
+    {
+        var remaining = await recovery.RemainingCodesAsync(current.RequireId());
+        return Results.Ok(new RecoveryStatusResponse(remaining));
+    }
+
+    private static async Task<IResult> RegenerateCodes(
+        RegenerateCodesRequest req, AppDbContext db, IPasswordHasher hasher,
+        CurrentUser current, IAuditLogger audit, IAccountRecoveryService recovery)
+    {
+        var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
+        if (user.PasswordHash is null)
+            return Results.ValidationProblem(Error("currentPassword",
+                "This account signs in through your identity provider and does not use recovery codes."));
+
+        if (!hasher.Verify(req.CurrentPassword ?? "", user.PasswordHash))
+            return Results.ValidationProblem(Error("currentPassword", "Current password is incorrect."));
+
+        var codes = recovery.IssueCodes(user.Id);
+        audit.Record("user.recovery_codes_regenerated", "user", user.Id);
+        await db.SaveChangesAsync();
+
+        return Results.Ok(new RecoveryCodesResponse(codes));
+    }
+
+    /// <summary>
+    /// Spends a recovery code to set a new password.
+    ///
+    /// Anonymous by necessity — the whole point is that the caller cannot sign
+    /// in. Every failure returns the same 400 whatever went wrong, so this
+    /// cannot be used to discover which addresses have accounts.
+    /// </summary>
+    private static async Task<IResult> RecoverWithCode(
+        RecoverWithCodeRequest req, AppDbContext db, IPasswordHasher hasher,
+        IAuditLogger audit, IAccountRecoveryService recovery, RecoveryAttemptLimiter limiter,
+        HttpContext http)
+    {
+        var email = (req.Email ?? "").Trim().ToLowerInvariant();
+
+        if (!limiter.TryAttempt(email))
+            return Results.Problem(
+                "Too many attempts. Try again later.", statusCode: StatusCodes.Status429TooManyRequests);
+
+        if ((req.NewPassword ?? "").Length < MinPasswordLength)
+            return Results.ValidationProblem(Error("newPassword",
+                $"Password must be at least {MinPasswordLength} characters."));
+
+        var user = await recovery.RedeemCodeAsync(email, req.Code ?? "");
+        if (user is null)
+        {
+            // Deliberately identical to "wrong code": distinguishing them would
+            // turn this endpoint into an account-existence oracle.
+            audit.RecordAs(null, "user.recovery_failed", "instance", null, new { Ip = ClientIp(http) });
+            await db.SaveChangesAsync();
+            return Results.ValidationProblem(Error("code", "That code is not valid."));
+        }
+
+        await ApplyRecoveredPasswordAsync(db, hasher, audit, user, req.NewPassword!, "code");
+        limiter.Reset(email);
+        return Results.NoContent();
+    }
+
+    /// <summary>Spends an administrator-issued reset link. Same reasoning as above.</summary>
+    private static async Task<IResult> ResetWithToken(
+        ResetWithTokenRequest req, AppDbContext db, IPasswordHasher hasher,
+        IAuditLogger audit, IAccountRecoveryService recovery, RecoveryAttemptLimiter limiter,
+        HttpContext http)
+    {
+        var token = (req.Token ?? "").Trim();
+
+        if (!limiter.TryAttempt($"token:{token}"))
+            return Results.Problem(
+                "Too many attempts. Try again later.", statusCode: StatusCodes.Status429TooManyRequests);
+
+        if ((req.NewPassword ?? "").Length < MinPasswordLength)
+            return Results.ValidationProblem(Error("newPassword",
+                $"Password must be at least {MinPasswordLength} characters."));
+
+        var user = await recovery.RedeemResetTokenAsync(token);
+        if (user is null)
+        {
+            audit.RecordAs(null, "user.recovery_failed", "instance", null, new { Ip = ClientIp(http) });
+            await db.SaveChangesAsync();
+            return Results.ValidationProblem(Error("token", "That reset link is not valid or has expired."));
+        }
+
+        await ApplyRecoveredPasswordAsync(db, hasher, audit, user, req.NewPassword!, "token");
+        return Results.NoContent();
+    }
+
+    /// <summary>
+    /// The half both recovery paths share: set the password and rotate the
+    /// security stamp, which signs out every session the person who locked
+    /// them out might still be holding. That is the point of a recovery, so it
+    /// must not be forgotten in either path.
+    /// </summary>
+    private static async Task ApplyRecoveredPasswordAsync(
+        AppDbContext db, IPasswordHasher hasher, IAuditLogger audit,
+        User user, string newPassword, string method)
+    {
+        user.PasswordHash = hasher.Hash(newPassword);
+        user.SecurityStamp = Guid.NewGuid().ToString("N");
+        audit.RecordAs(user.Id, "user.password_recovered", "user", user.Id, new { Method = method });
+        await db.SaveChangesAsync();
     }
 
     private static UserResponse ToResponse(User user) =>

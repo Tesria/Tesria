@@ -1327,3 +1327,26 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
   box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary);
 }
 .avatar-picker__variants:disabled { opacity: 0.6; }
+
+/* ---- recovery codes ------------------------------------------------------ */
+/* Wider than a normal auth card: eight codes in two columns read as a block to
+   copy, where one long column reads as a list to scroll past. */
+.authcard--wide { width: 420px; }
+.recovery__lead { font-size: 0.9rem; color: var(--muted); margin: 0 0 0.75rem; }
+.recovery__codes {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem 1rem;
+  margin: 0 0 0.9rem; padding: 0.85rem; list-style: none;
+  background: var(--bg-alt); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.recovery__codes code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9rem; letter-spacing: 0.04em;
+}
+.recovery__confirm {
+  display: flex; align-items: center; gap: 0.5rem; margin: 0.9rem 0 0.5rem;
+  font-size: 0.85rem; color: var(--text);
+}
+.recovery__confirm input { width: auto; }
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .recovery__codes { grid-template-columns: 1fr; }
+}
