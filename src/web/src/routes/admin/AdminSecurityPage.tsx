@@ -203,7 +203,7 @@ export function AdminSecurityPage() {
         </div>
       </div>
 
-      <section className="profile__section">
+      <section className="profile__section profile__section--wide">
         <h2>Alerts</h2>
         <label className="admin__toggle admin__toggle--inline">
           <input type="checkbox" checked={showResolved} onChange={(e) => setShowResolved(e.target.checked)} />
@@ -258,7 +258,7 @@ export function AdminSecurityPage() {
         )}
       </section>
 
-      <section className="profile__section">
+      <section className="profile__section profile__section--wide">
         <h2>Kill switches</h2>
         <p className="muted small">Instance-wide, immediate, audited. Each is also on the Settings page.</p>
         <label className="admin__toggle">
@@ -284,7 +284,7 @@ export function AdminSecurityPage() {
         </label>
       </section>
 
-      <section className="profile__section">
+      <section className="profile__section profile__section--wide">
         <h2>Blocked networks</h2>
         <form onSubmit={addBlock} className="block-form">
           <input name="cidr" placeholder="203.0.113.7 or 203.0.113.0/24" required />
@@ -317,7 +317,7 @@ export function AdminSecurityPage() {
         )}
       </section>
 
-      <section className="profile__section">
+      <section className="profile__section profile__section--wide">
         <h2>Recent events</h2>
         {events.length === 0 ? (
           <p className="muted small">No security events recorded.</p>
@@ -327,10 +327,10 @@ export function AdminSecurityPage() {
             <tbody>
               {events.map((e) => (
                 <tr key={e.id}>
-                  <td className="muted small">{new Date(e.createdAt).toLocaleString()}</td>
+                  <td className="muted small nowrap">{new Date(e.createdAt).toLocaleString()}</td>
                   <td><Severity level={e.severity} /></td>
                   <td>{KIND_LABEL[e.kind] ?? e.kind}</td>
-                  <td>{e.ip ? <code>{e.ip}</code> : <span className="muted">—</span>}</td>
+                  <td className="nowrap">{e.ip ? <code>{e.ip}</code> : <span className="muted">—</span>}</td>
                   <td>{e.actorName ?? <span className="muted">—</span>}</td>
                 </tr>
               ))}
@@ -339,7 +339,7 @@ export function AdminSecurityPage() {
         )}
       </section>
 
-      <section className="profile__section">
+      <section className="profile__section profile__section--wide">
         <h2>Brute-force protection</h2>
         <form onSubmit={saveLimits} className="limits-form">
           {LIMIT_FIELDS.map((f) => (
@@ -353,7 +353,7 @@ export function AdminSecurityPage() {
         </form>
       </section>
 
-      <section className="profile__section">
+      <section className="profile__section profile__section--wide">
         <h2>Active lockouts</h2>
         {limits.activeLockouts.length === 0 ? (
           <p className="muted small">No accounts are locked out.</p>
@@ -380,7 +380,7 @@ export function AdminSecurityPage() {
         )}
       </section>
 
-      <section className="profile__section">
+      <section className="profile__section profile__section--wide">
         <h2>Audit log integrity</h2>
         <p className="muted small">
           Every audit entry is linked to the one before it by a hash. Verifying walks

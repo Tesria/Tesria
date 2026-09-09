@@ -21,7 +21,6 @@ import { AuditPage } from './routes/AuditPage'
 import { GroupsPage } from './routes/GroupsPage'
 import { SpacePermissionsPage } from './routes/SpacePermissionsPage'
 import { SpaceWebhooksPage } from './routes/SpaceWebhooksPage'
-import { ApiTokensPage } from './routes/ApiTokensPage'
 import { ProfilePage } from './routes/ProfilePage'
 import { RecoverPage } from './routes/RecoverPage'
 import { AdminLayout } from './routes/admin/AdminLayout'
@@ -51,9 +50,10 @@ createRoot(document.getElementById('root')!).render(
               <Route index element={<Navigate to="/spaces" replace />} />
               <Route path="search" element={<SearchPage />} />
               <Route path="labels/:name" element={<LabelPage />} />
-              <Route path="audit" element={<AuditPage />} />
-              <Route path="groups" element={<GroupsPage />} />
-              <Route path="api-tokens" element={<ApiTokensPage />} />
+              {/* Old locations, kept for bookmarks. */}
+              <Route path="audit" element={<Navigate to="/admin/audit" replace />} />
+              <Route path="groups" element={<Navigate to="/admin/groups" replace />} />
+              <Route path="api-tokens" element={<Navigate to="/profile#api-tokens" replace />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboardPage />} />
@@ -61,6 +61,8 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="spaces" element={<AdminSpacesPage />} />
                 <Route path="invites" element={<AdminInvitesPage />} />
                 <Route path="security" element={<AdminSecurityPage />} />
+                <Route path="groups" element={<GroupsPage />} />
+                <Route path="audit" element={<AuditPage />} />
                 <Route path="settings" element={<AdminSettingsPage />} />
               </Route>
               <Route path="spaces" element={<SpacesPage />} />

@@ -40,6 +40,8 @@ export function AdminLayout() {
         <NavLink to="/admin/spaces" className={tab}>Spaces</NavLink>
         <NavLink to="/admin/invites" className={tab}>Invites</NavLink>
         <NavLink to="/admin/security" className={tab}>Security</NavLink>
+        <NavLink to="/admin/groups" className={tab}>Groups</NavLink>
+        <NavLink to="/admin/audit" className={tab}>Audit</NavLink>
         <NavLink to="/admin/settings" className={tab}>Settings</NavLink>
       </nav>
       <div className="tab-panel">

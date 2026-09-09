@@ -19,9 +19,7 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
    the same trick the editor toolbar uses for its heading/list/alignment
    groups (.toolbar__flat vs .toolbar-dropdown), not an accident. */
 const SECONDARY_NAV: { to: string; label: string; adminOnly?: boolean }[] = [
-  { to: '/groups', label: 'Groups' },
-  { to: '/audit', label: 'Audit' },
-  { to: '/api-tokens', label: 'API Tokens' },
+  // Groups and the audit log live under Admin; API tokens under the profile.
   // Server-enforced too; hiding it just spares members a page of 403s.
   { to: '/admin', label: 'Admin', adminOnly: true },
 ]
@@ -46,6 +44,8 @@ function MoreMenu({ onNavigate, items }: { onNavigate: () => void; items: typeof
   const ref = useDismissable<HTMLDivElement>(open, () => setOpen(false))
   const { pathname } = useLocation()
   const active = items.some((item) => pathname.startsWith(item.to))
+  // A member has nothing secondary to reach; no trigger for an empty menu.
+  if (items.length === 0) return null
   return (
     <div className="topbar__more" ref={ref}>
       <button

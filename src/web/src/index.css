@@ -1458,3 +1458,11 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 /* Profile → Two-factor (dev-plan 3.5). */
 .totp-enrol img { display: block; border-radius: 6px; background: #fff; padding: 0.25rem; margin-bottom: 0.5rem; }
 .totp-secret { user-select: all; letter-spacing: 0.08em; }
+
+/* Cards on data-dense admin pages (Security) take the panel's full width;
+   the 480px profile width is for forms. Whatever still does not fit
+   scrolls within the card rather than spilling past its edge, and time and
+   address cells keep to one line so the table stays readable. */
+.profile__section--wide { max-width: none; }
+.profile__section { overflow-x: auto; }
+.admin-table .nowrap { white-space: nowrap; }

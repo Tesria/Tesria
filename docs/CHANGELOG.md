@@ -5,6 +5,26 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Navigation: Groups and Audit under Admin, API tokens under Profile (2026-09-09)
+
+Groups and the audit log are instance administration and now live as
+tabs under Admin (`/admin/groups`, `/admin/audit`); API tokens are personal
+credentials and now sit on the profile page next to sessions and
+two-factor. The old URLs redirect. The top bar for a member is just
+Spaces; the More menu no longer renders when it would be empty.
+
+The move came with the server rule it implied. Any signed-in user could
+create or delete groups and change memberships, and could read the whole
+audit log. Group *listing* stays open — the permission picker needs it —
+but creating, editing, deleting and membership changes are administrator
+operations, as is reading the audit log (administrators still do not
+bypass space permissions, so the log is filtered for them too). Tests
+updated accordingly; the "audit entries do not leak titles from
+inaccessible spaces" test now proves it for a second administrator.
+
+Also: tables inside profile/admin cards scroll within the card instead of
+spilling past its edge, and time/address cells no longer wrap.
+
 ### Security: threat model, review, internet-readiness checklist (dev-plan 3.7) (2026-09-09)
 
 `docs/security.md` is the page an operator reads before exposing an

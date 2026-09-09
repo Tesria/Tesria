@@ -17,13 +17,16 @@ public static class GroupEndpoints
     public static IEndpointRouteBuilder MapGroupEndpoints(this IEndpointRouteBuilder routes)
     {
         var groups = routes.MapGroup("/groups").WithTags("Groups").RequireAuthorization();
+        // Anyone signed in may see groups — the permission picker needs the
+        // list. Shaping them is instance administration.
         groups.MapGet("/", List);
-        groups.MapPost("/", Create);
-        groups.MapPut("/{id:guid}", Update);
-        groups.MapDelete("/{id:guid}", Delete);
         groups.MapGet("/{id:guid}/members", Members);
-        groups.MapPost("/{id:guid}/members", AddMember);
-        groups.MapDelete("/{id:guid}/members/{userId:guid}", RemoveMember);
+        var manage = groups.MapGroup("").RequireAuthorization(Infrastructure.Auth.AuthPolicies.RequireAdmin);
+        manage.MapPost("/", Create);
+        manage.MapPut("/{id:guid}", Update);
+        manage.MapDelete("/{id:guid}", Delete);
+        manage.MapPost("/{id:guid}/members", AddMember);
+        manage.MapDelete("/{id:guid}/members/{userId:guid}", RemoveMember);
 
         // Directory of accounts, used when picking permission principals.
         routes.MapGet("/users", ListUsers).WithTags("Groups").RequireAuthorization();

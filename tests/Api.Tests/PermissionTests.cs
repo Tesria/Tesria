@@ -226,7 +226,10 @@ public class PermissionTests
         await NewPage(alice, space.Id, "TopSecretTitle");
 
         var bob = factory.CreateClient();
-        await bob.RegisterAndSignInAsync();
+        var bobId = await bob.RegisterAndSignInAsync();
+        // The audit log is an administrator's view — and administrators do
+        // not bypass space permissions, which is what this test is about.
+        (await alice.PutAsJsonAsync($"/api/admin/users/{bobId}/role", new { Role = 1 })).EnsureSuccessStatusCode();
         // While default-open, Bob legitimately sees the entry.
         var before = await bob.GetFromJsonAsync<List<AuditRow>>("/api/audit");
         Assert.Contains(before!, e => e.MetadataJson != null && e.MetadataJson.Contains("TopSecretTitle"));
