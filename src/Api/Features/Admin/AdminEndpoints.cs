@@ -184,8 +184,14 @@ public static class AdminEndpoints
 
     private static async Task<IResult> UpdateSettings(
         UpdateSettingsRequest req, ISiteSettingsService settings,
-        CurrentUser current, IAuditLogger audit, AppDbContext db, ISecurityDetector detector)
+        CurrentUser current, IAuditLogger audit, AppDbContext db, ISecurityDetector detector,
+        HttpContext http, IConfiguration config)
     {
+        // The public-read switch in either direction is sudo territory
+        // (dev-plan 3.5): exposing content, or undoing a mitigation.
+        if (req.AllowPublicSpaces is not null && Auth.AuthEndpoints.RequireSudo(http, config) is { } denied)
+            return denied;
+
         if (req.SmtpPort is { } port && (port < 1 || port > 65535))
             return Results.ValidationProblem(new Dictionary<string, string[]>
             {
@@ -409,11 +415,13 @@ public static class AdminEndpoints
     /// </summary>
     private static async Task<IResult> SetRole(
         Guid userId, SetRoleRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit,
-        ISecurityDetector detector)
+        ISecurityDetector detector, HttpContext http, IConfiguration config)
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Results.NotFound();
         if (user.Role == req.Role) return Results.Ok(await OneUserAsync(db, userId));
+        // Changing who administers the instance is sudo territory (dev-plan 3.5).
+        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
 
         if (req.Role != UserRole.Admin && user.Role == UserRole.Admin)
         {
@@ -481,6 +489,11 @@ public static class AdminEndpoints
         if (user is null) return Results.NotFound();
 
         user.SecurityStamp = Guid.NewGuid().ToString("N");
+        // The stamp rotation is what kills the cookies; the rows are marked
+        // so the sessions list tells the truth about what happened.
+        var now = DateTimeOffset.UtcNow;
+        foreach (var s in await db.UserSessions.Where(s => s.UserId == userId && s.RevokedAt == null).ToListAsync())
+            s.RevokedAt = now;
         audit.Record("user.sessions_revoked", "user", user.Id, new { user.Email });
         await db.SaveChangesAsync();
         return Results.NoContent();

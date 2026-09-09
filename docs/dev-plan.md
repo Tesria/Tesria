@@ -454,7 +454,7 @@ email in 4.3; do not block this phase on email.
   stays on the two `IFormFile` endpoints because the framework attaches
   its own form-token requirement to them by default.
 
-### 3.5 Sessions, 2FA and admin safety — `M` — Model: Opus
+### 3.5 Sessions, 2FA and admin safety — `M` — Model: Opus — ✅ **shipped 2026-09-09** (run as Fable by user override)
 - Idle timeout (e.g. 14 days) and an absolute lifetime (e.g. 90 days) on
   top of `SecurityStamp`; a "sessions" list on `/profile` with revoke.
 - **TOTP 2FA** (`Otp.NET`): opt-in per user, enforceable for admins via
@@ -465,6 +465,10 @@ email in 4.3; do not block this phase on email.
   within a 5-minute window.
 - Pin Argon2id parameters explicitly (time, memory, lanes) and document
   them; add a rehash-on-login path so parameters can be raised later.
+- **Shipped as specified.** Sudo covers admin role changes (both
+  directions), the public-spaces switch, page purge and blocklist removal;
+  "DB role rotation" is not an endpoint (it is `.env` + restart). A wrong
+  TOTP code or re-auth answer counts toward the 3.2 lockout.
 
 ### 3.6 Dependency hygiene — `S` — Model: Opus
 - Fix the 38 npm findings (`react-router` upgrade first — check the 7.x

@@ -1,10 +1,12 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { api, ApiError, type User } from '../api/client'
+import { api, ApiError, type TotpChallenge, type User } from '../api/client'
 
 type AuthState = {
   /** undefined while the initial session check is in flight. */
   user: User | null | undefined
-  login: (email: string, password: string) => Promise<void>
+  /** Resolves with a challenge when a one-time code is still needed. */
+  login: (email: string, password: string) => Promise<TotpChallenge | null>
+  completeTotp: (challenge: string, code: string) => Promise<void>
   /** Resolves with the new account's recovery codes, shown once. */
   register: (
     email: string,
@@ -40,7 +42,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = useCallback(async (email: string, password: string) => {
-    setUser(await api.auth.login(email, password))
+    const result = await api.auth.login(email, password)
+    if ('requiresTotp' in result) return result
+    setUser(result)
+    return null
+  }, [])
+
+  const completeTotp = useCallback(async (challenge: string, code: string) => {
+    setUser(await api.auth.loginTotp(challenge, code))
   }, [])
 
   const register = useCallback(async (
@@ -66,8 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<AuthState>(
-    () => ({ user, login, register, logout, refresh }),
-    [user, login, register, logout, refresh],
+    () => ({ user, login, completeTotp, register, logout, refresh }),
+    [user, login, completeTotp, register, logout, refresh],
   )
   return <AuthContext value={value}>{children}</AuthContext>
 }

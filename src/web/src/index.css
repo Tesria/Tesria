@@ -1454,3 +1454,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .admin__toggle--inline { margin-bottom: 0.75rem; }
 .block-form { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
 .block-form input { flex: 1 1 12rem; }
+
+/* Profile → Two-factor (dev-plan 3.5). */
+.totp-enrol img { display: block; border-radius: 6px; background: #fff; padding: 0.25rem; margin-bottom: 0.5rem; }
+.totp-secret { user-select: all; letter-spacing: 0.08em; }

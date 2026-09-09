@@ -4,6 +4,8 @@ import { useAuth } from '../auth/AuthContext'
 import { PasswordInput } from '../components/PasswordInput'
 import { AvatarPicker } from '../components/AvatarPicker'
 import { RecoveryCodesSection } from '../components/RecoveryCodesSection'
+import { SessionsSection } from '../components/SessionsSection'
+import { TotpSection } from '../components/TotpSection'
 
 type Status = { kind: 'ok' | 'error'; message: string } | null
 
@@ -163,12 +165,22 @@ export function ProfilePage() {
         )}
       </section>
 
+      <section className="profile__section" id="two-factor">
+        <h2>Two-factor sign-in</h2>
+        <TotpSection />
+      </section>
+
       {!ssoOnly && (
         <section className="profile__section">
           <h2>Recovery codes</h2>
           <RecoveryCodesSection />
         </section>
       )}
+
+      <section className="profile__section">
+        <h2>Sessions</h2>
+        <SessionsSection />
+      </section>
 
       <section className="profile__section">
         <h2>Password</h2>

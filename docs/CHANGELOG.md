@@ -5,6 +5,41 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Security: sessions, two-factor sign-in, sudo mode, pinned Argon2 (dev-plan 3.5) (2026-09-09)
+
+*Plan tag: Opus. Run as Fable by user override.*
+
+Every sign-in is now a `UserSession` row the cookie points at, so one
+browser can be signed out without signing out all of them. Profile →
+Sessions lists them (address, browser, last activity) with revoke;
+sign-out revokes the row so a copied cookie dies; sessions expire after
+14 days idle and 90 days regardless. Cookies from before this change are
+rejected once — the same safe direction as the security stamp.
+
+**Two-factor sign-in** with any authenticator app: scan a QR (or type the
+key), confirm with a code, done — the recovery codes from registration are
+the backup, so there is nothing new to save. Sign-in becomes two steps
+for enrolled accounts; a recovery code works in the code's place and is
+spent. A code cannot be used twice. Enabling signs every other device
+out. Wrong codes count toward the lockout. The admin **Require two-factor
+for administrators** switch is now enforced: an un-enrolled admin gets 403
+on every admin route, is told why, and cannot turn TOTP off while the
+rule stands.
+
+**Sudo mode**: changing who is an admin, flipping the public-spaces
+switch, purging a page or removing a block re-asks for the password (or a
+code) unless the session signed in within the last five minutes. The SPA
+handles it transparently — a dialog appears, the action retries.
+
+Argon2id parameters are pinned (64 MiB, 3 passes, 4 lanes) and an older,
+weaker hash is upgraded in place at the next successful sign-in.
+
+Tests (eleven): per-session revoke, sign-out kills the cookie, absolute
+lifetime, two-step sign-in with reuse refused, recovery code in place of
+the authenticator, enabling signs others out, disabling needs a
+credential, admins forced to enrol, sudo refusal and re-auth, re-auth
+extends the window, hash upgrade on sign-in. Full suite: 262 passing.
+
 ### Security: SSRF guard, attachment types, CSRF header (dev-plan 3.4) (2026-09-09)
 
 *Plan tag: Opus. Run as Fable by user override.*

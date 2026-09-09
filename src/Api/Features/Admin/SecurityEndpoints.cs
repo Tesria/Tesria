@@ -176,10 +176,13 @@ public static class SecurityEndpoints
             new BlockRow(block.Id, block.Cidr, block.Reason, null, block.CreatedAt, block.ExpiresAt));
     }
 
-    private static async Task<IResult> RemoveBlock(Guid id, AppDbContext db, IAuditLogger audit, BlocklistCache blocklist)
+    private static async Task<IResult> RemoveBlock(
+        Guid id, AppDbContext db, IAuditLogger audit, BlocklistCache blocklist, HttpContext http, IConfiguration config)
     {
         var block = await db.BlockedNetworks.FirstOrDefaultAsync(b => b.Id == id);
         if (block is null) return Results.NotFound();
+        // Undoing a mitigation is sudo territory (dev-plan 3.5).
+        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
         db.BlockedNetworks.Remove(block);
         audit.Record("security.network_unblocked", "security", block.Id, new { block.Cidr });
         await db.SaveChangesAsync();

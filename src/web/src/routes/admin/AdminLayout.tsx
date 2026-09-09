@@ -1,4 +1,4 @@
-import { NavLink, Navigate, Outlet } from 'react-router-dom'
+import { Link, NavLink, Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { UserRole } from '../../api/client'
 
@@ -14,6 +14,20 @@ export function AdminLayout() {
 
   if (user === undefined) return <p className="muted page-wrap">Loading…</p>
   if (!user || user.role !== UserRole.Admin) return <Navigate to="/spaces" replace />
+
+  // The server refuses every admin route until enrolment (dev-plan 3.5);
+  // say so instead of rendering a page of failed requests.
+  if (user.totpRequired) {
+    return (
+      <div className="page-wrap">
+        <h1>Administration</h1>
+        <p className="alert alert--error">
+          This instance requires two-factor sign-in for administrators.{' '}
+          <Link to="/profile#two-factor">Set it up on your profile</Link> to continue.
+        </p>
+      </div>
+    )
+  }
 
   const tab = ({ isActive }: { isActive: boolean }) => (isActive ? 'tab is-active' : 'tab')
 

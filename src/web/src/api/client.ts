@@ -1,3 +1,5 @@
+import { requestReauth } from '../auth/reauth'
+
 // Typed client for the Tesria REST API. All calls are same-origin and
 // send the auth cookie automatically (credentials: 'include' for dev CORS).
 
@@ -23,6 +25,23 @@ export type User = {
   /** Unused recovery codes. Zero means this account has no way back in if the
    *  password is lost, which is what the post-login prompt exists to fix. */
   recoveryCodesRemaining: number
+  /** Two-factor sign-in (dev-plan 3.5). */
+  totpEnabled: boolean
+  /** An administrator who must enrol before administering. */
+  totpRequired: boolean
+}
+
+/** The password was right; the sign-in is not finished until a code is given. */
+export type TotpChallenge = { requiresTotp: true; challenge: string }
+export type TotpSetup = { secret: string; otpauthUri: string }
+export type Session = {
+  id: string
+  createdAt: string
+  lastSeenAt: string
+  ip: string | null
+  userAgent: string | null
+  current: boolean
+  revokedAt: string | null
 }
 
 /** The URL for a user's uploaded avatar. The hash makes each version its own
@@ -394,12 +413,15 @@ export type Comment = {
 export class ApiError extends Error {
   readonly status: number
   readonly fieldErrors: Record<string, string[]>
+  /** A machine-readable reason, e.g. `reauth_required`. */
+  readonly code: string | null
 
-  constructor(status: number, message: string, fieldErrors: Record<string, string[]> = {}) {
+  constructor(status: number, message: string, fieldErrors: Record<string, string[]> = {}, code: string | null = null) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.fieldErrors = fieldErrors
+    this.code = code
   }
 }
 
@@ -411,13 +433,23 @@ type Body = object | undefined
 const CSRF_HEADER = { 'X-Requested-With': 'Tesria' }
 
 async function request<T>(method: string, path: string, body?: Body): Promise<T> {
-  const res = await fetch(path, {
+  const send = () => fetch(path, {
     method,
     credentials: 'include',
     headers: body !== undefined ? { ...CSRF_HEADER, 'Content-Type': 'application/json' } : CSRF_HEADER,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
-  return handle<T>(res)
+  try {
+    return await handle<T>(await send())
+  } catch (err) {
+    // Sudo mode (dev-plan 3.5): the server wants the password confirmed
+    // before this action. Ask, then retry once; a cancel rejects as usual.
+    if (err instanceof ApiError && err.code === 'reauth_required') {
+      await requestReauth()
+      return handle<T>(await send())
+    }
+    throw err
+  }
 }
 
 async function handle<T>(res: Response): Promise<T> {
@@ -436,7 +468,10 @@ async function handle<T>(res: Response): Promise<T> {
         : undefined) ??
       firstFieldError(fieldErrors) ??
       defaultMessage(res.status)
-    throw new ApiError(res.status, message, fieldErrors)
+    const code = data && typeof data === 'object' && 'code' in data
+      ? String((data as { code: unknown }).code)
+      : null
+    throw new ApiError(res.status, message, fieldErrors, code)
   }
   return data as T
 }
@@ -466,7 +501,25 @@ export const api = {
   auth: {
     me: () => request<User>('GET', '/api/auth/me'),
     login: (email: string, password: string) =>
-      request<User>('POST', '/api/auth/login', { email, password }),
+      request<User | TotpChallenge>('POST', '/api/auth/login', { email, password }),
+    loginTotp: (challenge: string, code: string) =>
+      request<User>('POST', '/api/auth/login/totp', { challenge, code }),
+    /** Confirms the password (or a code) for sudo mode. */
+    reauth: (input: { password?: string; code?: string }) =>
+      request<void>('POST', '/api/auth/reauth', input),
+    sessions: {
+      list: () => request<Session[]>('GET', '/api/auth/me/sessions'),
+      revoke: (id: string) => request<void>('DELETE', `/api/auth/me/sessions/${id}`),
+      revokeOthers: () => request<void>('DELETE', '/api/auth/me/sessions/others'),
+    },
+    totp: {
+      /** `currentPassword` may be omitted within the fresh-login window. */
+      setup: (input: { currentPassword?: string }) =>
+        request<TotpSetup>('POST', '/api/auth/me/totp/setup', input),
+      enable: (code: string) => request<User>('POST', '/api/auth/me/totp/enable', { code }),
+      disable: (input: { currentPassword?: string; code?: string }) =>
+        request<User>('POST', '/api/auth/me/totp/disable', input),
+    },
     /** Returns the user plus the recovery codes — the one moment they exist. */
     register: (email: string, displayName: string, password: string, inviteToken?: string) =>
       request<User & { recoveryCodes: string[] }>('POST', '/api/auth/register', {

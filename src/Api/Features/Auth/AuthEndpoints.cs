@@ -50,6 +50,21 @@ public static class AuthEndpoints
     /// <summary>Shared by registration and password change, so the two cannot drift apart.</summary>
     public const int MinPasswordLength = 8;
 
+    /// <summary>Which session row this cookie belongs to (dev-plan 3.5).</summary>
+    public const string SessionClaim = "tesria:session";
+
+    /// <summary>However active, a session ends this long after it began. <c>Auth:SessionAbsoluteDays</c> overrides.</summary>
+    public const int DefaultSessionAbsoluteDays = 90;
+
+    /// <summary>
+    /// Destructive administration re-asks for the password unless the session
+    /// authenticated within this window (dev-plan 3.5, "sudo mode").
+    /// Shorter than the fresh-login window on purpose: minting recovery codes
+    /// for yourself is not in the same class as demoting an administrator.
+    /// <c>Auth:SudoMinutes</c> overrides.
+    /// </summary>
+    public const int DefaultSudoMinutes = 5;
+
     public record RegisterRequest(string Email, string DisplayName, string Password, string? InviteToken);
     public record LoginRequest(string Email, string Password);
     /// <summary>
@@ -60,7 +75,19 @@ public static class AuthEndpoints
     public record UserResponse(
         Guid Id, string Email, string DisplayName, UserRole Role,
         string? AvatarHash, int? AvatarVariant, bool HasPassword,
-        int RecoveryCodesRemaining);
+        int RecoveryCodesRemaining, bool TotpEnabled, bool TotpRequired);
+
+    /// <summary>The password was right; a one-time code is still needed.</summary>
+    public record TotpChallengeResponse(bool RequiresTotp, string Challenge);
+    public record TotpLoginRequest(string Challenge, string Code);
+    public record TotpSetupRequest(string? CurrentPassword);
+    public record TotpSetupResponse(string Secret, string OtpauthUri);
+    public record TotpCodeRequest(string Code);
+    public record TotpDisableRequest(string? CurrentPassword, string? Code);
+    public record ReauthRequest(string? Password, string? Code);
+    public record SessionResponse(
+        Guid Id, DateTimeOffset CreatedAt, DateTimeOffset LastSeenAt, string? Ip, string? UserAgent,
+        bool Current, DateTimeOffset? RevokedAt);
     public record OidcStatusResponse(bool Enabled, string DisplayName);
     public record UpdateProfileRequest(string DisplayName);
     public record ChangeEmailRequest(string CurrentPassword, string Email);
@@ -91,11 +118,17 @@ public static class AuthEndpoints
         // The endpoints that take a credential share one per-address budget.
         group.MapPost("/register", Register).RequireRateLimiting(RateLimits.AuthPolicy);
         group.MapPost("/login", Login).RequireRateLimiting(RateLimits.AuthPolicy);
+        group.MapPost("/login/totp", LoginWithTotp).RequireRateLimiting(RateLimits.AuthPolicy);
+        group.MapPost("/reauth", Reauthenticate).RequireAuthorization().RequireRateLimiting(RateLimits.AuthPolicy);
+        group.MapGet("/me/sessions", ListSessions).RequireAuthorization();
+        group.MapDelete("/me/sessions/others", RevokeOtherSessions).RequireAuthorization();
+        group.MapDelete("/me/sessions/{id:guid}", RevokeSession).RequireAuthorization();
+        group.MapPost("/me/totp/setup", TotpSetup).RequireAuthorization();
+        group.MapPost("/me/totp/enable", TotpEnable).RequireAuthorization();
+        group.MapPost("/me/totp/disable", TotpDisable).RequireAuthorization();
         // SignOut result clears the auth cookie; declared without an HttpContext
         // parameter so it binds as a route handler (avoids ASP0016).
-        group.MapPost("/logout", () => Results.SignOut(
-            new AuthenticationProperties(),
-            [CookieAuthenticationDefaults.AuthenticationScheme])).RequireAuthorization();
+        group.MapPost("/logout", Logout).RequireAuthorization();
         group.MapGet("/me", Me);
         group.MapPut("/me", UpdateProfile).RequireAuthorization();
         group.MapPut("/me/email", ChangeEmail).RequireAuthorization();
@@ -207,7 +240,7 @@ public static class AuthEndpoints
         await db.SaveChangesAsync();
         await tx.CommitAsync();
 
-        await SignIn(http, user);
+        await SignIn(http, db, user);
         return Results.Ok(new RegisteredResponse(
             user.Id, user.Email, user.DisplayName, user.Role,
             user.AvatarHash, user.AvatarVariant, user.PasswordHash != null, codes));
@@ -216,7 +249,7 @@ public static class AuthEndpoints
     private static async Task<IResult> Login(
         LoginRequest req, AppDbContext db, IPasswordHasher hasher, HttpContext http,
         IAuditLogger audit, IAccountRecoveryService recovery, ISiteSettingsService siteSettings,
-        ISecurityDetector detector)
+        ISecurityDetector detector, ITotpService totp)
     {
         var email = (req.Email ?? "").Trim().ToLowerInvariant();
         var user = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
@@ -252,36 +285,255 @@ public static class AuthEndpoints
             return Results.Unauthorized();
         }
 
+        // The one moment the plaintext is in hand: bring an old hash up to the
+        // current parameters (dev-plan 3.5).
+        if (hasher.NeedsRehash(user.PasswordHash!)) user.PasswordHash = hasher.Hash(req.Password!);
+
+        if (user.TotpEnabledAt is not null)
+        {
+            // Password accepted; not signed in. The challenge proves that step
+            // to the code endpoint. The failure counter is not reset yet — a
+            // wrong code counts as a failure too.
+            await db.SaveChangesAsync();
+            return Results.Ok(new TotpChallengeResponse(true, totp.IssueChallenge(user.Id, ClientIp(http))));
+        }
+
+        return await CompleteSignInAsync(db, http, audit, recovery, siteSettings, detector, user, totp: false);
+    }
+
+    /// <summary>The second step of a two-factor sign-in: a one-time code, or a recovery code in its place.</summary>
+    private static async Task<IResult> LoginWithTotp(
+        TotpLoginRequest req, AppDbContext db, HttpContext http, IAuditLogger audit,
+        IAccountRecoveryService recovery, ISiteSettingsService siteSettings, ISecurityDetector detector,
+        ITotpService totp)
+    {
+        var userId = totp.RedeemChallenge(req.Challenge, ClientIp(http));
+        var user = userId is null ? null : await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        var now = DateTimeOffset.UtcNow;
+
+        if (user is null || user.TotpEnabledAt is null || user.Status != UserStatus.Active || AuthLockout.IsLocked(user, now))
+        {
+            audit.RecordAs(null, "user.login_failed", "instance", null, new { Ip = ClientIp(http), Step = "totp" });
+            await db.SaveChangesAsync();
+            return Results.Unauthorized();
+        }
+
+        // A recovery code stands in for the authenticator (dev-plan 1.3/3.5:
+        // one set of codes, not two). Spent on use.
+        var ok = totp.Verify(user, req.Code)
+            || (await recovery.RedeemCodeAsync(user.Email, req.Code ?? "")) is not null;
+        if (!ok)
+        {
+            // Six digits is a small space; wrong codes count toward the lockout.
+            audit.RecordAs(null, "user.login_failed", "instance", null, new { Ip = ClientIp(http), Step = "totp" });
+            await detector.FailedLoginAsync(ClientIp(http), user.Email);
+            AuthLockout.RecordFailure(user, await siteSettings.GetAsync(), now);
+            if (AuthLockout.IsLocked(user, now)) await detector.AccountLockedAsync(user, ClientIp(http));
+            await db.SaveChangesAsync();
+            return Results.Unauthorized();
+        }
+
+        return await CompleteSignInAsync(db, http, audit, recovery, siteSettings, detector, user, totp: true);
+    }
+
+    /// <summary>What both sign-in paths share once identity is proven.</summary>
+    private static async Task<IResult> CompleteSignInAsync(
+        AppDbContext db, HttpContext http, IAuditLogger audit, IAccountRecoveryService recovery,
+        ISiteSettingsService siteSettings, ISecurityDetector detector, User user, bool totp)
+    {
         AuthLockout.Reset(user);
         // Before the login row is written, so the history it consults is the
         // history *before* this sign-in.
         await detector.SucceededLoginAsync(user, ClientIp(http));
-        audit.RecordAs(user.Id, "user.login", "user", user.Id, new { Ip = ClientIp(http) });
+        audit.RecordAs(user.Id, "user.login", "user", user.Id, new { Ip = ClientIp(http), Totp = totp });
         await db.SaveChangesAsync();
 
-        await SignIn(http, user);
-        var remaining = await recovery.RemainingCodesAsync(user.Id);
-        return Results.Ok(new UserResponse(
-            user.Id, user.Email, user.DisplayName, user.Role,
-            user.AvatarHash, user.AvatarVariant, user.PasswordHash != null, remaining));
+        await SignIn(http, db, user);
+        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user));
     }
 
-    private static async Task<IResult> Me(AppDbContext db, CurrentUser current)
+    /// <summary>
+    /// Confirms the password (or a one-time code) for a session that is past
+    /// the sudo window, re-issuing the cookie with a fresh auth time.
+    /// </summary>
+    private static async Task<IResult> Reauthenticate(
+        ReauthRequest req, AppDbContext db, IPasswordHasher hasher, CurrentUser current, HttpContext http,
+        IAuditLogger audit, ITotpService totp, ISiteSettingsService siteSettings, ISecurityDetector detector)
+    {
+        var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
+        var now = DateTimeOffset.UtcNow;
+        if (AuthLockout.IsLocked(user, now)) return Results.Unauthorized();
+
+        var ok = (!string.IsNullOrEmpty(req.Password) && user.PasswordHash is not null && hasher.Verify(req.Password, user.PasswordHash))
+            || (!string.IsNullOrEmpty(req.Code) && totp.Verify(user, req.Code));
+        if (!ok)
+        {
+            // A guess here is a guess at the password; it counts like one.
+            AuthLockout.RecordFailure(user, await siteSettings.GetAsync(), now);
+            if (AuthLockout.IsLocked(user, now)) await detector.AccountLockedAsync(user, ClientIp(http));
+            await db.SaveChangesAsync();
+            return Results.Unauthorized();
+        }
+
+        audit.Record("user.reauthenticated", "user", user.Id);
+        await db.SaveChangesAsync();
+        await SignIn(http, db, user, authTime: now, sessionId: SessionIdOf(http.User));
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> Me(
+        AppDbContext db, CurrentUser current, IAccountRecoveryService recovery, ISiteSettingsService siteSettings)
     {
         if (current.Id is not { } id) return Results.Unauthorized();
-        var user = await db.Users
-            .Where(u => u.Id == id)
-            .Select(u => new UserResponse(
-                u.Id, u.Email, u.DisplayName, u.Role, u.AvatarHash, u.AvatarVariant,
-                u.PasswordHash != null,
-                db.RecoveryCodes.Count(c => c.UserId == u.Id && c.UsedAt == null)))
-            .FirstOrDefaultAsync();
-        return user is null ? Results.Unauthorized() : Results.Ok(user);
+        var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
+        return user is null ? Results.Unauthorized() : Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user));
     }
 
-    private static Task SignIn(HttpContext http, User user, DateTimeOffset? authTime = null)
+    private static async Task<IResult> Logout(AppDbContext db, HttpContext http)
+    {
+        // Revoke the row, not just the cookie: a copy of the cookie taken
+        // earlier must not outlive the sign-out.
+        if (SessionIdOf(http.User) is { } sessionId)
+            await db.UserSessions.Where(s => s.Id == sessionId && s.RevokedAt == null)
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.RevokedAt, DateTimeOffset.UtcNow));
+        return Results.SignOut(new AuthenticationProperties(), [CookieAuthenticationDefaults.AuthenticationScheme]);
+    }
+
+    private static async Task<IResult> ListSessions(AppDbContext db, CurrentUser current, HttpContext http)
+    {
+        var mine = SessionIdOf(http.User);
+        var rows = await db.UserSessions.AsNoTracking()
+            .Where(s => s.UserId == current.RequireId())
+            .ToListAsync();
+        // Live sessions first, newest first; a few recently revoked ones for
+        // context. Ordered in memory (SQLite cannot order DateTimeOffset).
+        var cutoff = DateTimeOffset.UtcNow.AddDays(-7);
+        return Results.Ok(rows
+            .Where(s => s.RevokedAt == null || s.RevokedAt > cutoff)
+            .OrderBy(s => s.RevokedAt != null)
+            .ThenByDescending(s => s.LastSeenAt)
+            .Select(s => new SessionResponse(s.Id, s.CreatedAt, s.LastSeenAt, s.Ip, s.UserAgent, s.Id == mine, s.RevokedAt)));
+    }
+
+    private static async Task<IResult> RevokeSession(Guid id, AppDbContext db, CurrentUser current, IAuditLogger audit)
+    {
+        var session = await db.UserSessions.FirstOrDefaultAsync(s => s.Id == id && s.UserId == current.RequireId());
+        if (session is null) return Results.NotFound();
+        session.RevokedAt ??= DateTimeOffset.UtcNow;
+        audit.Record("user.session_revoked", "user", current.RequireId(), new { SessionId = id });
+        await db.SaveChangesAsync();
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> RevokeOtherSessions(AppDbContext db, CurrentUser current, HttpContext http, IAuditLogger audit)
+    {
+        var mine = SessionIdOf(http.User);
+        var others = await db.UserSessions
+            .Where(s => s.UserId == current.RequireId() && s.RevokedAt == null && s.Id != mine)
+            .ToListAsync();
+        foreach (var s in others) s.RevokedAt = DateTimeOffset.UtcNow;
+        audit.Record("user.other_sessions_revoked", "user", current.RequireId(), new { Count = others.Count });
+        await db.SaveChangesAsync();
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> TotpSetup(
+        TotpSetupRequest req, AppDbContext db, IPasswordHasher hasher, CurrentUser current, HttpContext http,
+        ITotpService totp, ISiteSettingsService siteSettings, IConfiguration config)
+    {
+        var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
+        if (user.PasswordHash is null)
+            return Results.ValidationProblem(Error("currentPassword",
+                "This account signs in through your identity provider, which handles two-factor."));
+
+        // The same rule as recovery codes: a supplied password must be right;
+        // omitting it is allowed only inside the fresh-login window.
+        if (!string.IsNullOrEmpty(req.CurrentPassword))
+        {
+            if (!hasher.Verify(req.CurrentPassword, user.PasswordHash))
+                return Results.ValidationProblem(Error("currentPassword", "Current password is incorrect."));
+        }
+        else if (!IsFreshlyAuthenticated(http, FreshAuthWindow(config)))
+        {
+            return Results.ValidationProblem(Error("currentPassword", "Enter your password to set up two-factor sign-in."));
+        }
+
+        var (secret, uri) = totp.BeginEnrolment(user, (await siteSettings.GetAsync()).InstanceName);
+        await db.SaveChangesAsync();
+        return Results.Ok(new TotpSetupResponse(secret, uri));
+    }
+
+    private static async Task<IResult> TotpEnable(
+        TotpCodeRequest req, AppDbContext db, CurrentUser current, HttpContext http, IAuditLogger audit,
+        ITotpService totp, IAccountRecoveryService recovery, ISiteSettingsService siteSettings)
+    {
+        var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
+        if (user.TotpPendingSecretProtected is null)
+            return Results.ValidationProblem(Error("code", "Start by scanning a new secret."));
+        if (!totp.Verify(user, req.Code, pending: true))
+            return Results.ValidationProblem(Error("code", "That code is not right. Check the time on your device and try the next one."));
+
+        totp.Enable(user);
+        // Every other session is signed out: whoever else holds a cookie for
+        // this account should have to pass the new second factor.
+        user.SecurityStamp = Guid.NewGuid().ToString("N");
+        audit.Record("user.totp_enabled", "user", user.Id);
+        await db.SaveChangesAsync();
+        await SignIn(http, db, user, AuthTimeOf(http), SessionIdOf(http.User));
+        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user));
+    }
+
+    private static async Task<IResult> TotpDisable(
+        TotpDisableRequest req, AppDbContext db, IPasswordHasher hasher, CurrentUser current, HttpContext http,
+        IAuditLogger audit, ITotpService totp, IAccountRecoveryService recovery, ISiteSettingsService siteSettings)
+    {
+        var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
+        if (user.TotpEnabledAt is null) return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user));
+
+        // Turning the second factor off needs the second factor or the
+        // password — never just a live session.
+        var ok = (!string.IsNullOrEmpty(req.Code) && totp.Verify(user, req.Code))
+            || (!string.IsNullOrEmpty(req.CurrentPassword) && user.PasswordHash is not null && hasher.Verify(req.CurrentPassword, user.PasswordHash));
+        if (!ok) return Results.ValidationProblem(Error("code", "Enter your current password or a code from your authenticator."));
+
+        if ((await siteSettings.GetAsync()).RequireTotpForAdmins && user.Role == UserRole.Admin)
+            return Results.ValidationProblem(Error("code", "Administrators on this instance must keep two-factor on."));
+
+        totp.Disable(user);
+        user.SecurityStamp = Guid.NewGuid().ToString("N");
+        audit.Record("user.totp_disabled", "user", user.Id);
+        await db.SaveChangesAsync();
+        await SignIn(http, db, user, AuthTimeOf(http), SessionIdOf(http.User));
+        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user));
+    }
+
+    /// <summary>
+    /// Issues the cookie. A new session row is created unless
+    /// <paramref name="sessionId"/> names an existing one — re-issues after a
+    /// profile edit or a stamp rotation keep the session they started with.
+    /// </summary>
+    private static async Task SignIn(
+        HttpContext http, AppDbContext db, User user, DateTimeOffset? authTime = null, Guid? sessionId = null)
     {
         var authenticatedAt = authTime ?? DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow;
+
+        if (sessionId is null || !await db.UserSessions.AnyAsync(s => s.Id == sessionId && s.RevokedAt == null))
+        {
+            var session = new UserSession
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                CreatedAt = now,
+                LastSeenAt = now,
+                Ip = ClientIp(http),
+                UserAgent = Truncate(http.Request.Headers.UserAgent.ToString(), 300),
+            };
+            db.UserSessions.Add(session);
+            await db.SaveChangesAsync();
+            sessionId = session.Id;
+        }
+
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -291,17 +543,52 @@ public static class AuthEndpoints
             // it revokes every existing cookie for this account immediately.
             new(SecurityStampClaim, user.SecurityStamp),
             new(AuthTimeClaim, authenticatedAt.ToUnixTimeSeconds().ToString()),
+            new(SessionClaim, sessionId.Value.ToString()),
         };
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        return http.SignInAsync(
+        await http.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(identity),
             new AuthenticationProperties { IsPersistent = true });
     }
 
+    private static string? Truncate(string value, int max) =>
+        string.IsNullOrEmpty(value) ? null : value.Length <= max ? value : value[..max];
+
+    public static Guid? SessionIdOf(ClaimsPrincipal principal) =>
+        Guid.TryParse(principal.FindFirstValue(SessionClaim), out var id) ? id : null;
+
+    /// <summary>
+    /// Refuses a destructive administrative action from a session past the
+    /// sudo window (dev-plan 3.5). The 403 carries <c>code: reauth_required</c>
+    /// so the SPA can ask for the password and retry, rather than fail.
+    /// </summary>
+    public static IResult? RequireSudo(HttpContext http, IConfiguration config)
+    {
+        var window = TimeSpan.FromMinutes(config.GetValue("Auth:SudoMinutes", DefaultSudoMinutes));
+        if (IsFreshlyAuthenticated(http, window)) return null;
+        return Results.Json(new
+        {
+            title = "Re-authentication required",
+            status = 403,
+            code = "reauth_required",
+            detail = "Confirm your password to continue.",
+        }, statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    private static async Task<UserResponse> ResponseForAsync(
+        AppDbContext db, IAccountRecoveryService recovery, ISiteSettingsService siteSettings, User user)
+    {
+        var remaining = await recovery.RemainingCodesAsync(user.Id);
+        var enabled = user.TotpEnabledAt is not null;
+        var required = user.Role == UserRole.Admin && !enabled && (await siteSettings.GetAsync()).RequireTotpForAdmins;
+        return new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.AvatarVariant,
+            user.PasswordHash != null, remaining, enabled, required);
+    }
+
     private static async Task<IResult> UpdateProfile(
         UpdateProfileRequest req, AppDbContext db, CurrentUser current, HttpContext http,
-        IAccountRecoveryService recovery)
+        IAccountRecoveryService recovery, ISiteSettingsService siteSettings)
     {
         var displayName = (req.DisplayName ?? "").Trim();
         if (displayName.Length == 0)
@@ -315,13 +602,13 @@ public static class AuthEndpoints
 
         // The name is carried in the cookie's claims, so re-issue it — otherwise
         // the topbar would keep showing the old name until the next sign-in.
-        await SignIn(http, user, AuthTimeOf(http));
-        return Results.Ok(ToResponse(user, await recovery.RemainingCodesAsync(user.Id)));
+        await SignIn(http, db, user, AuthTimeOf(http), SessionIdOf(http.User));
+        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user));
     }
 
     private static async Task<IResult> ChangeEmail(
         ChangeEmailRequest req, AppDbContext db, IPasswordHasher hasher, CurrentUser current,
-        IAuditLogger audit, HttpContext http, IAccountRecoveryService recovery)
+        IAuditLogger audit, HttpContext http, IAccountRecoveryService recovery, ISiteSettingsService siteSettings)
     {
         var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
         if (user.PasswordHash is null)
@@ -346,13 +633,13 @@ public static class AuthEndpoints
         audit.Record("user.email_changed", "user", user.Id, new { From = previous, To = email });
         await db.SaveChangesAsync();
 
-        await SignIn(http, user, AuthTimeOf(http));
-        return Results.Ok(ToResponse(user, await recovery.RemainingCodesAsync(user.Id)));
+        await SignIn(http, db, user, AuthTimeOf(http), SessionIdOf(http.User));
+        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user));
     }
 
     private static async Task<IResult> ChangePassword(
         ChangePasswordRequest req, AppDbContext db, IPasswordHasher hasher, CurrentUser current,
-        IAuditLogger audit, HttpContext http, IAccountRecoveryService recovery)
+        IAuditLogger audit, HttpContext http, IAccountRecoveryService recovery, ISiteSettingsService siteSettings)
     {
         var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
         if (user.PasswordHash is null)
@@ -377,8 +664,8 @@ public static class AuthEndpoints
 
         // Re-issue this session with the new stamp, so the person who just
         // changed their password is not signed out along with everyone else.
-        await SignIn(http, user);
-        return Results.Ok(ToResponse(user, await recovery.RemainingCodesAsync(user.Id)));
+        await SignIn(http, db, user, sessionId: SessionIdOf(http.User));
+        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user));
     }
 
     private static async Task<IResult> RecoveryStatus(
@@ -511,10 +798,6 @@ public static class AuthEndpoints
         await db.SaveChangesAsync();
     }
 
-    private static UserResponse ToResponse(User user, int recoveryCodesRemaining) =>
-        new(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.AvatarVariant,
-            user.PasswordHash != null, recoveryCodesRemaining);
-
     /// <summary>
     /// The caller's address as the server currently sees it.
     ///
@@ -527,9 +810,11 @@ public static class AuthEndpoints
         http.Connection.RemoteIpAddress?.ToString();
 
     /// <summary>The moment this session authenticated, or null if it cannot be read.</summary>
-    private static DateTimeOffset? AuthTimeOf(HttpContext http)
+    private static DateTimeOffset? AuthTimeOf(HttpContext http) => AuthTimeOf(http.User);
+
+    public static DateTimeOffset? AuthTimeOf(ClaimsPrincipal principal)
     {
-        var raw = http.User.FindFirstValue(AuthTimeClaim);
+        var raw = principal.FindFirstValue(AuthTimeClaim);
         return long.TryParse(raw, out var seconds)
             ? DateTimeOffset.FromUnixTimeSeconds(seconds)
             : null;

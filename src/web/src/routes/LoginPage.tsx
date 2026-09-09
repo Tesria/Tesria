@@ -5,11 +5,13 @@ import { api, ApiError } from '../api/client'
 import { PasswordInput } from '../components/PasswordInput'
 
 export function LoginPage() {
-  const { user, login } = useAuth()
+  const { user, login, completeTotp } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [challenge, setChallenge] = useState<string | null>(null)
+  const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(searchParams.get('ssoError'))
   const [busy, setBusy] = useState(false)
   const [oidc, setOidc] = useState<{ enabled: boolean; displayName: string } | null>(null)
@@ -29,10 +31,30 @@ export function LoginPage() {
     setBusy(true)
     setError(null)
     try {
-      await login(email, password)
+      const pending = await login(email, password)
+      if (pending) {
+        setChallenge(pending.challenge)
+        return
+      }
       navigate('/spaces')
     } catch (err) {
       setError(err instanceof ApiError && err.status === 401 ? 'Incorrect email or password.'
+        : err instanceof Error ? err.message : 'Sign in failed.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function onSubmitCode(e: FormEvent) {
+    e.preventDefault()
+    setBusy(true)
+    setError(null)
+    try {
+      await completeTotp(challenge!, code)
+      navigate('/spaces')
+    } catch (err) {
+      setError(err instanceof ApiError && err.status === 401
+        ? 'That code is not right. Codes change every 30 seconds; a recovery code also works.'
         : err instanceof Error ? err.message : 'Sign in failed.')
     } finally {
       setBusy(false)
@@ -43,6 +65,28 @@ export function LoginPage() {
     // A full-page navigation, not a fetch — the identity provider needs to
     // take over the browser's own address bar for its login page.
     window.location.href = `/api/auth/oidc/login?returnUrl=${encodeURIComponent('/spaces')}`
+  }
+
+  if (challenge) {
+    return (
+      <div className="center">
+        <form className="authcard" onSubmit={onSubmitCode}>
+          <h1>One more step</h1>
+          <p className="muted small">Enter the six-digit code from your authenticator app, or one of your recovery codes.</p>
+          {error && <p className="alert alert--error">{error}</p>}
+          <label>
+            Code
+            <input value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" required autoFocus />
+          </label>
+          <button type="submit" className="btn btn--primary" disabled={busy}>
+            {busy ? 'Checking…' : 'Sign in'}
+          </button>
+          <p className="muted small">
+            <button type="button" className="link-btn" onClick={() => { setChallenge(null); setCode(''); setError(null) }}>Start over</button>
+          </p>
+        </form>
+      </div>
+    )
   }
 
   return (

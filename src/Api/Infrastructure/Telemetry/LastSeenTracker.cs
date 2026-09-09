@@ -70,13 +70,26 @@ public sealed class LastSeenMiddleware(RequestDelegate next, LastSeenTracker tra
     {
         await next(context);
 
-        if (current.Id is not { } userId || !tracker.ShouldWrite(userId)) return;
+        if (current.Id is not { } userId) return;
 
         try
         {
-            await db.Users
-                .Where(u => u.Id == userId)
-                .ExecuteUpdateAsync(u => u.SetProperty(x => x.LastSeenAt, DateTimeOffset.UtcNow));
+            if (tracker.ShouldWrite(userId))
+                await db.Users
+                    .Where(u => u.Id == userId)
+                    .ExecuteUpdateAsync(u => u.SetProperty(x => x.LastSeenAt, DateTimeOffset.UtcNow));
+
+            // The session row too (dev-plan 3.5), on the same throttle, keyed
+            // by the session id — a different id space from user ids.
+            if (Features.Auth.AuthEndpoints.SessionIdOf(context.User) is { } sessionId && tracker.ShouldWrite(sessionId))
+            {
+                var ip = context.Connection.RemoteIpAddress?.ToString();
+                await db.UserSessions
+                    .Where(s => s.Id == sessionId)
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(x => x.LastSeenAt, DateTimeOffset.UtcNow)
+                        .SetProperty(x => x.Ip, ip));
+            }
         }
         catch (Exception)
         {

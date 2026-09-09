@@ -446,13 +446,15 @@ public static class PageEndpoints
 
     private static async Task<IResult> Purge(
         Guid id, AppDbContext db, IAuditLogger audit, IPermissionService perms,
-        CurrentUser current, ISecurityDetector detector)
+        CurrentUser current, ISecurityDetector detector, HttpContext http, IConfiguration config)
     {
         var page = await db.Pages.IgnoreQueryFilters()
             .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt != null);
         if (page is null) return Results.NotFound();
         // Permanent deletion is an admin-level act on the space.
         if (!await perms.CanAdminSpaceAsync(page.SpaceId)) return Results.Forbid();
+        // ...and irreversible, so it is sudo territory (dev-plan 3.5).
+        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
 
         var subtree = await CollectTrashedSubtreeAsync(db, page.SpaceId, id);
         // Clear current-version pointers so the cascade to versions is not blocked
