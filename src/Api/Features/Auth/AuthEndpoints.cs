@@ -2,6 +2,7 @@ using System.Data;
 using System.Security.Claims;
 using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Audit;
 using Tesria.Api.Infrastructure.Auth;
 using Tesria.Api.Infrastructure.Settings;
 using Microsoft.AspNetCore.Authentication;
@@ -116,7 +117,8 @@ public static class AuthEndpoints
     }
 
     private static async Task<IResult> Login(
-        LoginRequest req, AppDbContext db, IPasswordHasher hasher, HttpContext http)
+        LoginRequest req, AppDbContext db, IPasswordHasher hasher, HttpContext http,
+        IAuditLogger audit)
     {
         var email = (req.Email ?? "").Trim().ToLowerInvariant();
         var user = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
@@ -126,7 +128,20 @@ public static class AuthEndpoints
         var ok = user?.PasswordHash is not null
             && hasher.Verify(req.Password ?? "", user.PasswordHash);
         if (!ok || user!.Status != UserStatus.Active)
+        {
+            // Deliberately records no email and no user id: an audit log readable
+            // by every admin should not become a list of addresses somebody tried,
+            // and a failure cannot be attributed to an account without confirming
+            // that the account exists. The per-account counter that brute-force
+            // protection needs is dev-plan 3.2's job, not this log's.
+            audit.RecordAs(null, "user.login_failed", "instance", null,
+                new { Ip = ClientIp(http) });
+            await db.SaveChangesAsync();
             return Results.Unauthorized();
+        }
+
+        audit.RecordAs(user.Id, "user.login", "user", user.Id, new { Ip = ClientIp(http) });
+        await db.SaveChangesAsync();
 
         await SignIn(http, user);
         return Results.Ok(new UserResponse(user.Id, user.Email, user.DisplayName, user.Role));
@@ -156,6 +171,17 @@ public static class AuthEndpoints
             new ClaimsPrincipal(identity),
             new AuthenticationProperties { IsPersistent = true });
     }
+
+    /// <summary>
+    /// The caller's address as the server currently sees it.
+    ///
+    /// Behind Caddy this is the proxy's own address, not the client's, until
+    /// forwarded-header handling lands (dev-plan 3.0) — recorded anyway so the
+    /// history exists, and so it becomes correct the moment that ships. Do not
+    /// build per-IP logic on this value before then.
+    /// </summary>
+    private static string? ClientIp(HttpContext http) =>
+        http.Connection.RemoteIpAddress?.ToString();
 
     private static bool IsValidEmail(string email) =>
         !string.IsNullOrWhiteSpace(email)

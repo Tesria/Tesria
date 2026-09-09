@@ -30,6 +30,15 @@ public class User
     public UserRole Role { get; set; } = UserRole.Member;
 
     public DateTimeOffset CreatedAt { get; set; }
+
+    /// <summary>
+    /// Roughly when this account last made an authenticated request. Written at
+    /// most once every few minutes (see LastSeenTracker), so it is accurate to
+    /// that interval, not to the second — enough for "active in the last 7
+    /// days" and deliberately not a per-request write. Null until the user's
+    /// first request after this column existed.
+    /// </summary>
+    public DateTimeOffset? LastSeenAt { get; set; }
 }
 
 public enum UserStatus

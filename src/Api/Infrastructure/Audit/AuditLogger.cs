@@ -13,15 +13,26 @@ public interface IAuditLogger
     /// commit together (or not at all).
     /// </summary>
     void Record(string action, string targetType, Guid? targetId, object? metadata = null);
+
+    /// <summary>
+    /// Records an entry attributed to <paramref name="actorId"/> rather than to
+    /// the current request's principal. Needed for sign-in events, which happen
+    /// before the principal exists — without this they would all be recorded
+    /// with a null actor.
+    /// </summary>
+    void RecordAs(Guid? actorId, string action, string targetType, Guid? targetId, object? metadata = null);
 }
 
 public sealed class AuditLogger(AppDbContext db, CurrentUser current) : IAuditLogger
 {
     public void Record(string action, string targetType, Guid? targetId, object? metadata = null) =>
+        RecordAs(current.Id, action, targetType, targetId, metadata);
+
+    public void RecordAs(Guid? actorId, string action, string targetType, Guid? targetId, object? metadata = null) =>
         db.AuditLogs.Add(new AuditLog
         {
             Id = Guid.NewGuid(),
-            ActorId = current.Id,
+            ActorId = actorId,
             Action = action,
             TargetType = targetType,
             TargetId = targetId,

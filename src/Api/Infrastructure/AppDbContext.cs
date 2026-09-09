@@ -15,6 +15,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 {
     public DbSet<User> Users => Set<User>();
     public DbSet<SiteSettings> SiteSettings => Set<SiteSettings>();
+    public DbSet<PageView> PageViews => Set<PageView>();
     public DbSet<Space> Spaces => Set<Space>();
     public DbSet<Page> Pages => Set<Page>();
     public DbSet<PageVersion> PageVersions => Set<PageVersion>();
@@ -38,6 +39,22 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     protected override void OnModelCreating(ModelBuilder b)
     {
         base.OnModelCreating(b);
+
+        b.Entity<PageView>(e =>
+        {
+            // The dashboard's queries are "views for this page over this range"
+            // and "views over this range", both served by this index.
+            e.HasIndex(v => new { v.PageId, v.ViewedAt });
+            e.HasIndex(v => v.ViewedAt);
+            // Views outlive the page they refer to only until it is purged;
+            // cascade keeps the table from accumulating orphans.
+            e.HasOne(v => v.Page).WithMany().HasForeignKey(v => v.PageId)
+                .OnDelete(DeleteBehavior.Cascade);
+            // A deleted user's views become anonymous rather than disappearing,
+            // so historical totals stay correct.
+            e.HasOne(v => v.User).WithMany().HasForeignKey(v => v.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
 
         b.Entity<SiteSettings>(e =>
         {

@@ -22,6 +22,7 @@ using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Audit;
 using Tesria.Api.Infrastructure.Auth;
 using Tesria.Api.Infrastructure.Settings;
+using Tesria.Api.Infrastructure.Telemetry;
 using Tesria.Api.Infrastructure.Collab;
 using Tesria.Api.Infrastructure.Notifications;
 using Tesria.Api.Infrastructure.Permissions;
@@ -54,6 +55,7 @@ builder.Services.AddScoped<CurrentUser>();
 builder.Services.AddScoped<IAuditLogger, AuditLogger>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddSingleton<SiteSettingsCache>();
+builder.Services.AddSingleton<LastSeenTracker>();
 builder.Services.AddScoped<ISiteSettingsService, SiteSettingsService>();
 builder.Services.AddSingleton<ICollabTokenService, CollabTokenService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
@@ -288,6 +290,8 @@ app.UseStaticFiles(spaStaticFileOptions);
 
 app.UseAuthentication();
 app.UseAuthorization();
+// After authorization so it only ever stamps callers who got through it.
+app.UseMiddleware<LastSeenMiddleware>();
 
 // API endpoints live under /api. Feature endpoints are registered via
 // extension methods to keep Program.cs thin (vertical-slice style).
