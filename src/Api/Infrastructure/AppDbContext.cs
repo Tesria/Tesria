@@ -18,6 +18,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<PageView> PageViews => Set<PageView>();
     public DbSet<RecoveryCode> RecoveryCodes => Set<RecoveryCode>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+    public DbSet<Invite> Invites => Set<Invite>();
     public DbSet<Space> Spaces => Set<Space>();
     public DbSet<Page> Pages => Set<Page>();
     public DbSet<PageVersion> PageVersions => Set<PageVersion>();
@@ -41,6 +42,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     protected override void OnModelCreating(ModelBuilder b)
     {
         base.OnModelCreating(b);
+
+        b.Entity<Invite>(e =>
+        {
+            e.Property(i => i.TokenHash).HasMaxLength(64);
+            e.Property(i => i.Email).HasMaxLength(320);
+            e.HasIndex(i => i.TokenHash);
+            e.HasOne(i => i.CreatedBy).WithMany().HasForeignKey(i => i.CreatedById)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
         b.Entity<RecoveryCode>(e =>
         {

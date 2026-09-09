@@ -30,6 +30,11 @@ public static class AdminEndpoints
     /// </summary>
     public record IssuedResetResponse(string Token, string Path, DateTimeOffset ExpiresAt);
 
+    public record CreateInviteRequest(string? Email, int? ExpiresInDays);
+    public record IssuedInviteResponse(string Token, string Path, string? Email, DateTimeOffset ExpiresAt);
+    public record InviteResponse(
+        Guid Id, string? Email, DateTimeOffset ExpiresAt, DateTimeOffset? UsedAt, DateTimeOffset CreatedAt);
+
     /// <summary>
     /// Note the absence of the SMTP password: it is write-only over the API.
     /// <paramref name="SmtpPasswordSet"/> tells the UI whether one exists so it
@@ -79,6 +84,9 @@ public static class AdminEndpoints
         group.MapPut("/settings", UpdateSettings);
         group.MapPost("/spaces/{key}/recover-access", RecoverSpaceAccess);
         group.MapPost("/users/{userId:guid}/reset-password", IssuePasswordReset);
+        group.MapGet("/invites", ListInvites);
+        group.MapPost("/invites", CreateInvite);
+        group.MapDelete("/invites/{id:guid}", RevokeInvite);
 
         return routes;
     }
@@ -240,5 +248,60 @@ public static class AdminEndpoints
         // its own public origin (it sits behind a proxy and sees plain HTTP),
         // so the client builds the link from the address the admin is already on.
         return Results.Ok(new IssuedResetResponse(token, $"/reset?token={token}", expiresAt));
+    }
+
+    private static async Task<IResult> ListInvites(AppDbContext db)
+    {
+        // Ordered in memory: SQLite (the test provider) cannot ORDER BY a
+        // DateTimeOffset — the same limitation AuditEndpoints works around.
+        // An invite list is inherently small, so there is nothing to page.
+        var invites = await db.Invites.AsNoTracking()
+            .Select(i => new InviteResponse(i.Id, i.Email, i.ExpiresAt, i.UsedAt, i.CreatedAt))
+            .ToListAsync();
+        return Results.Ok(invites.OrderByDescending(i => i.CreatedAt).ToList());
+    }
+
+    /// <summary>
+    /// Mints a single-use registration link — the only way to add someone to a
+    /// closed instance without an email server.
+    ///
+    /// An optional address binds the invite to one person, so a forwarded link
+    /// cannot be redeemed by somebody else. Leaving it blank is the "give this
+    /// to whoever needs it" case, which is why it is optional rather than
+    /// required.
+    /// </summary>
+    private static async Task<IResult> CreateInvite(
+        CreateInviteRequest req, AppDbContext db, CurrentUser current,
+        IAuditLogger audit, IInviteService invites)
+    {
+        var days = req.ExpiresInDays ?? (int)InviteService.DefaultLifetime.TotalDays;
+        if (days < 1 || days > 90)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["expiresInDays"] = ["Expiry must be between 1 and 90 days."],
+            });
+
+        var email = string.IsNullOrWhiteSpace(req.Email) ? null : req.Email.Trim().ToLowerInvariant();
+        if (email is not null && await db.Users.AnyAsync(u => u.Email == email))
+            return Results.Conflict(new { message = "An account with this email already exists." });
+
+        var token = invites.Issue(current.RequireId(), email, TimeSpan.FromDays(days));
+        audit.Record("invite.created", "instance", null, new { Email = email, Days = days });
+        await db.SaveChangesAsync();
+
+        var expiresAt = DateTimeOffset.UtcNow.AddDays(days);
+        return Results.Ok(new IssuedInviteResponse(token, $"/register?invite={token}", email, expiresAt));
+    }
+
+    private static async Task<IResult> RevokeInvite(
+        Guid id, AppDbContext db, IAuditLogger audit)
+    {
+        var invite = await db.Invites.FirstOrDefaultAsync(i => i.Id == id);
+        if (invite is null) return Results.NotFound();
+
+        db.Invites.Remove(invite);
+        audit.Record("invite.revoked", "instance", null, new { invite.Email });
+        await db.SaveChangesAsync();
+        return Results.NoContent();
     }
 }
