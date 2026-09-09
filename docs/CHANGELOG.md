@@ -5,6 +5,46 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Feature: edit your own profile (dev-plan 1.1) (2026-09-09)
+
+A `/profile` page, reachable from the username in the topbar, with three
+independently-submitting sections: display name, email address (requires the
+current password, refuses a collision with 409) and password (requires the
+current one, enforces the same minimum as registration from the same
+constant). One combined form would either demand a password to rename
+yourself or skip the check that protects the other two.
+
+**The load-bearing part is `User.SecurityStamp`.** A cookie scheme is
+stateless — the cookie *is* the proof — so nothing on the server can normally
+take it back before it expires. The stamp is issued into the cookie as a claim
+and compared against the stored column in `OnValidatePrincipal` on every
+request, so rotating it invalidates every outstanding cookie for that account
+on its next request. Changing a password rotates it, and the session that made
+the change is re-issued with the new value so that person is not signed out
+along with everyone else. Suspension (2.2), admin force-logout (3.3) and 2FA
+enrolment (3.5) all reuse this rather than adding their own mechanism — the
+same validation already rejects a cookie whose account has become suspended,
+with a test proving it.
+
+**Everyone is signed in once on deploy.** Cookies issued before the stamp
+existed carry no claim and are rejected. That is the safe direction: treating
+a missing claim as valid would mean a pre-existing cookie outliving the
+password change meant to kill it. Verified on the running stack — the live
+session was signed out on the first request after deploying.
+
+**API tokens are deliberately unaffected**: they authenticate through a
+different scheme and carry no cookie, so a password change does not revoke
+them. A script's credential should not die because its owner rotated a
+password, but it must be independently revocable, which it already is.
+
+OIDC-provisioned accounts (no local password) can change their display name
+but not their email or password — the identity provider owns those. The server
+refuses with a message the UI shows, and the UI renders those sections
+read-only rather than letting a submit fail.
+
+Nine tests in `ProfileTests`, including that a second live session dies on its
+next request while the one that changed the password keeps working.
+
 ### Feature: profile media storage (dev-plan 0.4) (2026-09-09)
 
 Avatars stored through the existing `IAttachmentStorage` under their own key

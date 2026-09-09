@@ -119,6 +119,46 @@ var authBuilder = builder.Services
             ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
             return Task.CompletedTask;
         };
+        // What makes a stateless cookie revocable. The stamp is issued into the
+        // cookie at sign-in and compared against the stored one here, on every
+        // request — so a password change, a suspension or an admin force-logout
+        // takes effect on the very next request rather than whenever the cookie
+        // happens to expire.
+        //
+        // Cookies issued before this existed carry no stamp claim and are
+        // rejected, which signs everyone in once. That is the safe direction:
+        // treating a missing claim as valid would mean a pre-existing cookie
+        // outlived the password change meant to kill it.
+        options.Events.OnValidatePrincipal = async ctx =>
+        {
+            if (ctx.Principal?.Identity?.IsAuthenticated != true) return;
+
+            var presented = ctx.Principal.FindFirstValue(AuthEndpoints.SecurityStampClaim);
+            var userId = ctx.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (presented is null || !Guid.TryParse(userId, out var id))
+            {
+                ctx.RejectPrincipal();
+                await ctx.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                return;
+            }
+
+            var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+            var current = await db.Users.AsNoTracking()
+                .Where(u => u.Id == id)
+                .Select(u => new { u.SecurityStamp, u.Status })
+                .FirstOrDefaultAsync();
+
+            // A deleted or suspended account's cookie stops working here too,
+            // which is what dev-plan 2.2's suspend action will rely on.
+            if (current is null
+                || current.Status != UserStatus.Active
+                || !string.Equals(current.SecurityStamp, presented, StringComparison.Ordinal))
+            {
+                ctx.RejectPrincipal();
+                await ctx.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            }
+        };
     })
     .AddScheme<AuthenticationSchemeOptions, ApiTokenAuthenticationHandler>(
         ApiTokenAuthenticationDefaults.AuthenticationScheme, _ => { });

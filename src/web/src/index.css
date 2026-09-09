@@ -1277,3 +1277,26 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   --primary-soft-border: #6c4a62;
   --on-primary: #1d2125;
 }
+
+/* ---- profile ------------------------------------------------------------- */
+/* Each section submits independently (see ProfilePage.tsx), so they need to
+   read as separate cards rather than one long form. */
+.profile__section {
+  margin: 1.5rem 0;
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  max-width: 480px;
+}
+.profile__section h2 { margin: 0 0 0.25rem; font-size: 1.05rem; }
+.profile__section form { margin-top: 0.75rem; }
+.profile__section .btn { margin-top: 0.25rem; }
+/* The success counterpart to .alert--error, which already exists. */
+.profile__ok {
+  border-radius: var(--radius); padding: 0.6rem 0.8rem; font-size: 0.9rem; margin: 0.5rem 0;
+  background: var(--panel-success-bg); color: var(--panel-success-icon);
+}
+/* The username in the topbar is a link now, but should not read as one until
+   hovered — it is a destination, not an action. */
+a.topbar__username:hover { color: var(--text); text-decoration: underline; }

@@ -22,6 +22,7 @@ import { GroupsPage } from './routes/GroupsPage'
 import { SpacePermissionsPage } from './routes/SpacePermissionsPage'
 import { SpaceWebhooksPage } from './routes/SpaceWebhooksPage'
 import { ApiTokensPage } from './routes/ApiTokensPage'
+import { ProfilePage } from './routes/ProfilePage'
 
 // Paints the tab icon in the chosen accent before React renders, and keeps
 // it in step when the OS flips light/dark.
@@ -43,6 +44,7 @@ createRoot(document.getElementById('root')!).render(
               <Route path="audit" element={<AuditPage />} />
               <Route path="groups" element={<GroupsPage />} />
               <Route path="api-tokens" element={<ApiTokensPage />} />
+              <Route path="profile" element={<ProfilePage />} />
               <Route path="spaces" element={<SpacesPage />} />
               <Route path="spaces/:key" element={<SpacePage />}>
                 <Route index element={<SpaceHome />} />

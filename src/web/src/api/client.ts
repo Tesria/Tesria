@@ -14,6 +14,9 @@ export type User = {
   /** Content hash of the uploaded avatar, or null for the generated default.
    *  Used as the cache-busting `?v=` on the avatar URL. */
   avatarHash: string | null
+  /** False for OIDC-provisioned accounts: their identity provider owns the
+   *  email address and password, so the profile page renders those read-only. */
+  hasPassword: boolean
 }
 
 /** The URL for a user's uploaded avatar. The hash makes each version its own
@@ -257,6 +260,12 @@ export const api = {
       request<User>('POST', '/api/auth/register', { email, displayName, password }),
     logout: () => request<void>('POST', '/api/auth/logout'),
     oidcStatus: () => request<{ enabled: boolean; displayName: string }>('GET', '/api/auth/oidc/status'),
+    updateProfile: (input: { displayName: string }) =>
+      request<User>('PUT', '/api/auth/me', input),
+    changeEmail: (input: { currentPassword: string; email: string }) =>
+      request<User>('PUT', '/api/auth/me/email', input),
+    changePassword: (input: { currentPassword: string; newPassword: string }) =>
+      request<User>('PUT', '/api/auth/me/password', input),
   },
   spaces: {
     list: (includeArchived = false) =>

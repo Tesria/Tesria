@@ -123,6 +123,42 @@ exists, and revoking the grant restores the 404; the existing suite still
 passes — several tests register two users in sequence, so assert nothing
 about them changed except the first one's role.
 
+### Session revocation — the security stamp (dev-plan 1.1)
+
+A cookie scheme is stateless by design: the cookie *is* the proof, so nothing
+on the server can normally take it back before it expires. `User.SecurityStamp`
+is what makes revocation possible. It is issued into the cookie as a claim at
+sign-in and compared against the stored column on every request, in the cookie
+handler's `OnValidatePrincipal`. Rotating the column therefore invalidates
+every outstanding cookie for that account on its **next request**, not at the
+cookie's next expiry.
+
+Changing a password rotates it — which is the point of changing a password you
+believe someone else has. The session that made the change is re-issued with
+the new stamp, so the person doing it is not signed out along with everyone
+else. Suspension (dev-plan 2.2), admin force-logout (3.3) and 2FA enrolment
+(3.5) all reuse this one mechanism rather than adding their own.
+
+The same validation also rejects a cookie whose account has become
+`Suspended` or been deleted, so those take effect immediately too.
+
+Two consequences worth knowing:
+
+* **Cookies issued before the stamp existed carry no claim and are rejected**,
+  which signs everyone in once on deploy. That is the safe direction: treating
+  a missing claim as valid would mean a pre-existing cookie outliving the
+  password change meant to kill it.
+* **API tokens are unaffected** — they authenticate through a different scheme
+  and carry no cookie, so a password change does not revoke them. Revoking a
+  token is its own action (`DELETE /api/api-tokens/{id}`), and dev-plan 2.2
+  adds a bulk revoke. This is a deliberate separation: a script's credential
+  should not die because its owner rotated a password, but it must be
+  independently revocable.
+
+It costs one primary-key lookup per authenticated request. That is the same
+row `CurrentUser.IsAdminAsync` reads, so the two can be collapsed into one
+read if this ever shows up in a profile.
+
 ### Instance settings (`Infrastructure/Settings`, dev-plan 0.2)
 
 Runtime configuration an administrator changes in the app, as distinct from

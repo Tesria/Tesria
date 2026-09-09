@@ -73,6 +73,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(u => u.OidcSubject).HasMaxLength(400);
             e.Property(u => u.AvatarKey).HasMaxLength(400);
             e.Property(u => u.AvatarHash).HasMaxLength(64);
+            e.Property(u => u.SecurityStamp).HasMaxLength(64);
             // Emails are stored lower-cased by the app; unique across the instance.
             e.HasIndex(u => u.Email).IsUnique();
             // Unique only among non-null values — many local accounts share the
