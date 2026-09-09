@@ -123,6 +123,41 @@ exists, and revoking the grant restores the 404; the existing suite still
 passes — several tests register two users in sequence, so assert nothing
 about them changed except the first one's role.
 
+### Instance settings (`Infrastructure/Settings`, dev-plan 0.2)
+
+Runtime configuration an administrator changes in the app, as distinct from
+deploy-time configuration (connection strings, OIDC, the collab secret) which
+stays in environment variables — those are secrets and topology, fixed before
+the process starts.
+
+One row, fixed primary key (`SiteSettings.SingletonId`), **typed columns
+rather than key/value**: EF validates them, every shape change is a migration,
+and the admin UI binds to them without parsing strings. The row is created
+lazily on first read; a race to create it is resolved by the fixed key, and
+the loser re-reads.
+
+`ISiteSettingsService` is scoped (it needs the request's `DbContext`) but the
+cache is a singleton (`SiteSettingsCache`), because a scoped cache would be
+useless across requests. Reads go through a 30-second TTL and every save
+invalidates. **Single-instance assumption:** invalidation is in-process, so a
+second replica would keep its copy until the TTL expired — the short TTL is
+the bound on that staleness.
+
+The SMTP password is encrypted with ASP.NET Data Protection, whose keys
+already live in this database (`DataProtectionKeys`), so a database restore
+stays self-consistent. It is **write-only over the API**: responses carry
+`smtpPasswordSet: bool` and never the value. `PUT /api/admin/settings` treats
+every field as optional — an omitted field keeps its stored value, so a caller
+can change one setting without clobbering the rest — with one addition for the
+password, where an empty string means "clear it", something `null` cannot
+express. Audit entries name which fields changed, never the secret.
+
+**Registration exemption.** `AllowPublicRegistration` is enforced in
+`AuthEndpoints.Register`, but the very first account on an empty instance
+ignores it. Otherwise an operator who closes registration before anyone has
+signed up could never set the instance up at all. Every later account needs
+the toggle on (dev-plan 1.4 adds invite links as the other way in).
+
 ## Frontend (`src/web`)
 
 - React 19 + TypeScript, built with Vite.

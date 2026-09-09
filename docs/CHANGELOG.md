@@ -5,6 +5,39 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Feature: instance settings (dev-plan 0.2) (2026-09-09)
+
+A single typed `SiteSettings` row an admin edits at runtime via
+`GET`/`PUT /api/admin/settings`: instance name, `AllowPublicRegistration`,
+`AllowPublicSpaces` (the Phase 5 kill switch, off by default), SMTP
+host/port/username/password/from-address/TLS mode, `EmailEnabled`, and
+`RequireTotpForAdmins`. Typed columns rather than key/value so EF validates
+them and every shape change is a migration.
+
+The **SMTP password is write-only over the API**: it is encrypted with the
+Data Protection keys already stored in this database, responses carry only
+`smtpPasswordSet`, and audit entries name which fields changed but never the
+value. Every field on the update is optional — an omitted field keeps its
+stored value, so changing one setting cannot clobber the rest — with one
+addition for the password, where an empty string means "clear it", which
+`null` cannot express.
+
+Registration now honours `AllowPublicRegistration`, **except for the very
+first account on an empty instance**. Otherwise an operator who closes
+registration before anyone has signed up could never set the instance up.
+There is a test for each half of that.
+
+The cache is a singleton with a 30-second TTL while the service is scoped, so
+a hot path like registration can read settings on every request. Invalidation
+is in-process, which is a single-instance assumption — the short TTL bounds
+how stale a second replica could get, and that is written down in
+`architecture.md` rather than left implicit.
+
+Eight tests in `SiteSettingsTests`, including that reopening registration
+takes effect immediately (proving invalidate-on-save, not TTL expiry) and
+that the password never appears in a response, in the stored column, or in
+the audit log.
+
 ### Feature: instance roles and administrators (dev-plan 0.1) (2026-09-08)
 
 `User.Role` (`Member = 0 | Admin = 1`) — an enum rather than a bool, so a
