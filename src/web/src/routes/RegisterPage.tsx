@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { PasswordInput } from '../components/PasswordInput'
+import { RecoveryCodes } from '../components/RecoveryCodes'
 
 export function RegisterPage() {
   const { user, register } = useAuth()
@@ -11,16 +12,34 @@ export function RegisterPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [codes, setCodes] = useState<string[] | null>(null)
 
-  if (user) return <Navigate to="/spaces" replace />
+  // Registration signs the user straight in, so this guard would fire the
+  // moment the account exists and redirect past the recovery codes — which are
+  // shown exactly once. Hold the redirect until they have been acknowledged.
+  if (user && !codes) return <Navigate to="/spaces" replace />
+
+  if (codes) {
+    return (
+      <div className="center">
+        <div className="authcard authcard--wide">
+          <h1>Save your recovery codes</h1>
+          <RecoveryCodes
+            codes={codes}
+            onDone={() => navigate('/spaces')}
+            doneLabel="Continue to Tesria"
+          />
+        </div>
+      </div>
+    )
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     setBusy(true)
     setError(null)
     try {
-      await register(email, displayName, password)
-      navigate('/spaces')
+      setCodes(await register(email, displayName, password))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed.')
     } finally {

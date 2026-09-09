@@ -24,6 +24,13 @@ public static class AdminEndpoints
         Guid SpaceId, string Key, string Name, bool AlreadyHadAccess);
 
     /// <summary>
+    /// The reset link, returned once. The administrator passes it to the user
+    /// out of band — in person, over chat, however they already verify identity
+    /// — which is what makes this work with no email server configured.
+    /// </summary>
+    public record IssuedResetResponse(string Token, string Path, DateTimeOffset ExpiresAt);
+
+    /// <summary>
     /// Note the absence of the SMTP password: it is write-only over the API.
     /// <paramref name="SmtpPasswordSet"/> tells the UI whether one exists so it
     /// can render "configured" without ever transmitting the secret.
@@ -71,6 +78,7 @@ public static class AdminEndpoints
         group.MapGet("/settings", GetSettings);
         group.MapPut("/settings", UpdateSettings);
         group.MapPost("/spaces/{key}/recover-access", RecoverSpaceAccess);
+        group.MapPost("/users/{userId:guid}/reset-password", IssuePasswordReset);
 
         return routes;
     }
@@ -201,4 +209,36 @@ public static class AdminEndpoints
         s.SmtpTls,
         s.RequireTotpForAdmins,
         s.UpdatedAt);
+
+    /// <summary>
+    /// Issues a one-time, short-lived password reset for another account.
+    ///
+    /// The last resort when someone has lost both their password and their
+    /// recovery codes, on an instance with no email. It deliberately does not
+    /// set a password: an administrator should be able to restore access
+    /// without ever knowing the credential that results.
+    /// </summary>
+    private static async Task<IResult> IssuePasswordReset(
+        Guid userId, AppDbContext db, CurrentUser current,
+        IAuditLogger audit, IAccountRecoveryService recovery)
+    {
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Results.NotFound();
+
+        if (user.PasswordHash is null)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["userId"] = ["This account signs in through an identity provider and has no local password."],
+            });
+
+        var token = recovery.IssueResetToken(user.Id, current.RequireId());
+        audit.Record("user.reset_issued", "user", user.Id, new { user.Email });
+        await db.SaveChangesAsync();
+
+        var expiresAt = DateTimeOffset.UtcNow.Add(AccountRecoveryService.ResetTokenLifetime);
+        // A path rather than an absolute URL: the server does not reliably know
+        // its own public origin (it sits behind a proxy and sees plain HTTP),
+        // so the client builds the link from the address the admin is already on.
+        return Results.Ok(new IssuedResetResponse(token, $"/reset?token={token}", expiresAt));
+    }
 }

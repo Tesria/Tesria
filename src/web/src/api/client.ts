@@ -265,8 +265,13 @@ export const api = {
     me: () => request<User>('GET', '/api/auth/me'),
     login: (email: string, password: string) =>
       request<User>('POST', '/api/auth/login', { email, password }),
+    /** Returns the user plus the recovery codes — the one moment they exist. */
     register: (email: string, displayName: string, password: string) =>
-      request<User>('POST', '/api/auth/register', { email, displayName, password }),
+      request<User & { recoveryCodes: string[] }>('POST', '/api/auth/register', {
+        email,
+        displayName,
+        password,
+      }),
     logout: () => request<void>('POST', '/api/auth/logout'),
     oidcStatus: () => request<{ enabled: boolean; displayName: string }>('GET', '/api/auth/oidc/status'),
     updateProfile: (input: { displayName: string }) =>
@@ -275,6 +280,14 @@ export const api = {
       request<User>('PUT', '/api/auth/me/email', input),
     changePassword: (input: { currentPassword: string; newPassword: string }) =>
       request<User>('PUT', '/api/auth/me/password', input),
+    recoveryStatus: () =>
+      request<{ remaining: number }>('GET', '/api/auth/me/recovery-codes'),
+    regenerateRecoveryCodes: (input: { currentPassword: string }) =>
+      request<{ codes: string[] }>('POST', '/api/auth/me/recovery-codes', input),
+    recoverWithCode: (input: { email: string; code: string; newPassword: string }) =>
+      request<void>('POST', '/api/auth/recover/code', input),
+    resetWithToken: (input: { token: string; newPassword: string }) =>
+      request<void>('POST', '/api/auth/recover/token', input),
   },
   spaces: {
     list: (includeArchived = false) =>

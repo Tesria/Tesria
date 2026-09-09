@@ -57,6 +57,8 @@ builder.Services.AddScoped<IAuditLogger, AuditLogger>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddSingleton<SiteSettingsCache>();
 builder.Services.AddSingleton<LastSeenTracker>();
+builder.Services.AddSingleton<RecoveryAttemptLimiter>();
+builder.Services.AddScoped<IAccountRecoveryService, AccountRecoveryService>();
 builder.Services.AddScoped<ISiteSettingsService, SiteSettingsService>();
 builder.Services.AddSingleton<ICollabTokenService, CollabTokenService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();

@@ -70,6 +70,9 @@ export function LoginPage() {
           </>
         )}
         <p className="muted">
+          <Link to="/recover">Forgot your password?</Link>
+        </p>
+        <p className="muted small">
           No account? <Link to="/register">Create one</Link>
         </p>
       </form>

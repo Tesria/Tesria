@@ -23,6 +23,7 @@ import { SpacePermissionsPage } from './routes/SpacePermissionsPage'
 import { SpaceWebhooksPage } from './routes/SpaceWebhooksPage'
 import { ApiTokensPage } from './routes/ApiTokensPage'
 import { ProfilePage } from './routes/ProfilePage'
+import { RecoverPage } from './routes/RecoverPage'
 
 // Paints the tab icon in the chosen accent before React renders, and keeps
 // it in step when the OS flips light/dark.
@@ -36,6 +37,8 @@ createRoot(document.getElementById('root')!).render(
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/recover" element={<RecoverPage />} />
+          <Route path="/reset" element={<RecoverPage />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               <Route index element={<Navigate to="/spaces" replace />} />
