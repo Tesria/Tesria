@@ -39,6 +39,21 @@ public class User
     /// first request after this column existed.
     /// </summary>
     public DateTimeOffset? LastSeenAt { get; set; }
+
+    /// <summary>
+    /// Storage key of the uploaded avatar, or null to use the generated default
+    /// (dev-plan 1.2). Deterministic per user, so a replacement overwrites
+    /// rather than leaving an orphan behind.
+    /// </summary>
+    public string? AvatarKey { get; set; }
+
+    /// <summary>
+    /// Content hash of the stored avatar, used as the cache-busting value on
+    /// its URL. Stored rather than computed on read so serving an avatar costs
+    /// no hashing, and so the URL can be built from data already loaded with
+    /// the user.
+    /// </summary>
+    public string? AvatarHash { get; set; }
 }
 
 public enum UserStatus

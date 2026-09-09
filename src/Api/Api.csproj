@@ -32,6 +32,8 @@
     <!-- OIDC/SSO (PLAN §1: "architected for OIDC/SSO later", pluggable for
          Keycloak/Authentik/Google, etc.). Optional at runtime — see Oidc:Authority. -->
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.10" />
+    <PackageReference Include="SkiaSharp" Version="4.152.0" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.152.0" />
   </ItemGroup>
 
 </Project>

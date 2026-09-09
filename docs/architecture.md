@@ -202,6 +202,52 @@ running stack, where three requests from two different clients all logged
 correct the moment 3.0 ships. **Do not build per-IP logic on it before then**:
 a rate limiter reading this would see the whole world as one address.
 
+### Profile media (`Infrastructure/Storage/ProfileMedia.cs`, dev-plan 0.4)
+
+Avatars and space icons go through the existing `IAttachmentStorage` under
+their own key namespaces (`avatars/…`, `space-icons/…`) rather than a second
+storage abstraction — so the S3 implementation that interface reserves a slot
+for will cover them too, for free. Keys are deterministic per owner
+(`avatars/{userId}.webp`), so replacing an image overwrites rather than
+accumulating orphans.
+
+**Every upload is re-encoded, and that is the security control, not a
+convenience.** The bytes written are always ones this process produced, which:
+strips EXIF (routinely carrying GPS coordinates on a photo someone uses as an
+avatar); defeats polyglot files, where one file is simultaneously a valid PNG
+and a valid HTML or ZIP document; and bounds decoded dimensions, so a
+decompression bomb cannot be stored and then re-served to every viewer.
+Dimensions are read from the codec header *before* any pixel buffer is
+allocated, so an oversized image is refused rather than decoded and then
+rejected. Output is a fixed 256px square WebP, so exactly one content type is
+ever served.
+
+**SVG is rejected outright**, by sniffing the leading bytes rather than
+trusting the declared content type — which is attacker-controlled, so an SVG
+labelled `image/png` must not get through. It is a script-bearing document
+format and there is no reason to accept one for a 256px square. The prebuilt
+avatars in dev-plan 1.2 are SVG, but this application generates those; it
+never accepts one.
+
+**Library choice: SkiaSharp (MIT).** ImageSharp 3.x and later moved to the Six
+Labors Split Licence, which would complicate the Apache 2.0 release dev-plan
+8.2 intends; SkiaSharp and its Linux native assets are both MIT. The runtime
+container is glibc (Ubuntu 24.04, glibc 2.39) and the package ships a matching
+`linux-arm64` build — verified in the container, not just on the build host,
+because the native-asset variant is the thing most likely to differ between
+them.
+
+**Cache busting** is a content hash on the URL (`?v=<hash>`), stored on the
+row as `User.AvatarHash` so serving costs no hashing and the URL can be built
+from data already loaded with the user. Each version is therefore its own URL,
+which is why the response can be cached indefinitely without ever going stale.
+
+An avatar is readable by any signed-in user: it renders next to every comment
+and page version, so gating it per viewer would gate nothing while costing a
+permission check on each render. Page attachments stay permission-checked,
+which is the case that matters. A user with no avatar and a user id that does
+not exist both return 404, so the endpoint cannot be used to probe for ids.
+
 ## Frontend (`src/web`)
 
 - React 19 + TypeScript, built with Vite.
