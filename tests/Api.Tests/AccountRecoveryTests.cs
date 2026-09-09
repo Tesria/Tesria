@@ -19,6 +19,8 @@ public class AccountRecoveryTests
         string? AvatarHash, int? AvatarVariant, bool HasPassword, List<string> RecoveryCodes);
     private record CodesDto(List<string> Codes);
     private record StatusDto(int Remaining);
+    private record SessionDto(Guid Id, string Email, string DisplayName, int Role,
+        string? AvatarHash, int? AvatarVariant, bool HasPassword, int RecoveryCodesRemaining);
     private record ResetDto(string Token, string Path, DateTimeOffset ExpiresAt);
 
     private static async Task<RegisteredDto> RegisterAsync(
@@ -154,6 +156,77 @@ public class AccountRecoveryTests
         var replay = await factory.CreateClient().PostAsJsonAsync("/api/auth/recover/code",
             new { Email = "a@example.com", Code = oldCode, NewPassword = "a-brand-new-secret" });
         Assert.Equal(HttpStatusCode.BadRequest, replay.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_fresh_login_can_generate_codes_without_retyping_the_password()
+    {
+        using var factory = new TestAppFactory();
+
+        // An account that predates recovery codes: registered, then stripped of
+        // them, which is exactly the state every existing account is in.
+        var setup = factory.CreateClient();
+        await RegisterAsync(setup, "a@example.com");
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.RecoveryCodes.RemoveRange(db.RecoveryCodes);
+            await db.SaveChangesAsync();
+        }
+
+        var client = factory.CreateClient();
+        var login = await client.PostAsJsonAsync("/api/auth/login",
+            new { Email = "a@example.com", Password = "supersecret" });
+        login.EnsureSuccessStatusCode();
+
+        // The session reports the gap, which is what triggers the prompt.
+        Assert.Equal(0, (await login.Content.ReadFromJsonAsync<SessionDto>())!.RecoveryCodesRemaining);
+
+        // The sign-in is the re-authentication: no password is sent, and
+        // asking for it seconds after it was typed proves nothing.
+        var generated = await client.PostAsJsonAsync("/api/auth/me/recovery-codes", new { });
+        generated.EnsureSuccessStatusCode();
+        Assert.Equal(AccountRecoveryService.CodeCount,
+            (await generated.Content.ReadFromJsonAsync<CodesDto>())!.Codes.Count);
+
+        Assert.Equal(AccountRecoveryService.CodeCount,
+            (await client.GetFromJsonAsync<SessionDto>("/api/auth/me"))!.RecoveryCodesRemaining);
+    }
+
+    [Fact]
+    public async Task A_wrong_password_is_rejected_even_in_a_fresh_session()
+    {
+        using var factory = new TestAppFactory();
+        var client = factory.CreateClient();
+        await RegisterAsync(client, "a@example.com"); // registration is a fresh sign-in
+
+        // Freshness substitutes for *omitting* the password, not for getting it
+        // wrong: accepting this would tell someone their password was right
+        // when it was not.
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync(
+            "/api/auth/me/recovery-codes", new { CurrentPassword = "definitely-wrong" })).StatusCode);
+
+        // Omitting it entirely is the supported path while fresh.
+        (await client.PostAsJsonAsync("/api/auth/me/recovery-codes", new { }))
+            .EnsureSuccessStatusCode();
+    }
+
+    [Fact]
+    public async Task A_session_that_is_no_longer_fresh_must_supply_the_password()
+    {
+        // Zero-minute window: the sign-in below is stale the instant it happens,
+        // which is the state of a browser tab left open since this morning.
+        using var factory = new TestAppFactory(freshLoginMinutes: 0);
+        var client = factory.CreateClient();
+        await RegisterAsync(client, "a@example.com");
+
+        // Without this, a borrowed unlocked laptop mints a set of codes that
+        // work as a permanent password reset for the real owner's account.
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await client.PostAsJsonAsync("/api/auth/me/recovery-codes", new { })).StatusCode);
+
+        (await client.PostAsJsonAsync("/api/auth/me/recovery-codes",
+            new { CurrentPassword = "supersecret" })).EnsureSuccessStatusCode();
     }
 
     [Fact]
