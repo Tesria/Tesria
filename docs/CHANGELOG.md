@@ -5,6 +5,35 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Feature: closed registration and invites (dev-plan 1.4) (2026-09-09)
+
+`AllowPublicRegistration` was already enforced in 0.2; this adds the other way
+in. `POST /api/admin/invites` mints a single-use registration link an
+administrator hands over however they already communicate — the only way to
+add a user to a closed instance with no email server.
+
+An invite may be bound to an address. A forwarded link should not become a
+registration for whoever received it, so a bound invite refuses any other
+address; leaving it blank is the deliberate "give this to whoever needs it"
+case. Invites expire (7 days by default, 1–90 configurable), are revocable,
+and are spent **inside the same transaction that creates the account**, so a
+failure part-way cannot burn an invite without producing a user.
+
+Registration accepts `?invite=` from the query string, so the person following
+a link never has to know a token exists. This closed a real gap: until now
+anyone who could reach `/register` could create an account, which sat awkwardly
+against the brand page's "control who sees what".
+
+Seven tests in `InviteTests` (175 total).
+
+**Two SQLite provider limitations hit while building 1.3 and 1.4**, both the
+same shape and both already known to the codebase: the test provider cannot
+translate a `DateTimeOffset` comparison or use one in `ORDER BY`. Reset-token
+expiry is now compared in memory, and the invite list is ordered in memory.
+`AuditEndpoints` had already worked around the ordering case by branching on
+provider; these sets are small enough that ordering client-side unconditionally
+is simpler than a branch.
+
 ### Feature: offline password recovery (dev-plan 1.3) (2026-09-09)
 
 Eight single-use recovery codes minted at registration and shown exactly once,

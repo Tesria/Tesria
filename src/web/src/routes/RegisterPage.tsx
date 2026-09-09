@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { PasswordInput } from '../components/PasswordInput'
 import { RecoveryCodes } from '../components/RecoveryCodes'
@@ -7,6 +7,10 @@ import { RecoveryCodes } from '../components/RecoveryCodes'
 export function RegisterPage() {
   const { user, register } = useAuth()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+  // An invite link carries its token in the query string, so the person
+  // following it never has to know it exists.
+  const inviteToken = params.get('invite') ?? undefined
   const [email, setEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [password, setPassword] = useState('')
@@ -39,7 +43,7 @@ export function RegisterPage() {
     setBusy(true)
     setError(null)
     try {
-      setCodes(await register(email, displayName, password))
+      setCodes(await register(email, displayName, password, inviteToken))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed.')
     } finally {
@@ -51,6 +55,9 @@ export function RegisterPage() {
     <div className="center">
       <form className="authcard" onSubmit={onSubmit}>
         <h1>Create account</h1>
+        {inviteToken && (
+          <p className="muted small">You were invited to this instance.</p>
+        )}
         {error && <p className="alert alert--error">{error}</p>}
         <label>
           Display name

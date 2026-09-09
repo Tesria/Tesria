@@ -253,7 +253,7 @@ undetectable without a login history.
 - Frontend: "Forgot password?" on the login page → "recovery code" (the
   "email" option appears only once 4.2 exists).
 
-### 1.4 Registration control — `S` — Model: Opus
+### 1.4 Registration control — `S` — Model: Opus — ✅ **shipped 2026-09-09**
 - Depends on 0.2. When `AllowPublicRegistration` is off, `/register`
   returns 403 and the page says registration is by invitation.
 - Invites: `POST /api/admin/invites` → single-use link with an expiry that

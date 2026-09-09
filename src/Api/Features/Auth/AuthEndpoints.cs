@@ -22,7 +22,7 @@ public static class AuthEndpoints
     /// <summary>Shared by registration and password change, so the two cannot drift apart.</summary>
     public const int MinPasswordLength = 8;
 
-    public record RegisterRequest(string Email, string DisplayName, string Password);
+    public record RegisterRequest(string Email, string DisplayName, string Password, string? InviteToken);
     public record LoginRequest(string Email, string Password);
     /// <summary>
     /// <paramref name="HasPassword"/> is false for accounts provisioned through
@@ -108,7 +108,7 @@ public static class AuthEndpoints
 
     private static async Task<IResult> Register(
         RegisterRequest req, AppDbContext db, IPasswordHasher hasher, HttpContext http,
-        ISiteSettingsService settings, IAccountRecoveryService recovery)
+        ISiteSettingsService settings, IAccountRecoveryService recovery, IInviteService invites)
     {
         var email = (req.Email ?? "").Trim().ToLowerInvariant();
         var displayName = (req.DisplayName ?? "").Trim();
@@ -136,12 +136,16 @@ public static class AuthEndpoints
 
         // Closed registration is deliberately ignored for that very first
         // account: otherwise an operator who turns it off before anyone has
-        // signed up can never set the instance up at all. Every later account
-        // needs it on (dev-plan 1.4 adds invite links as the other way in).
+        // signed up can never set the instance up at all.
+        Invite? invite = null;
         if (!isFirstAccount && !(await settings.GetAsync()).AllowPublicRegistration)
-            return Results.Problem(
-                "Registration is by invitation on this instance.",
-                statusCode: StatusCodes.Status403Forbidden);
+        {
+            invite = await invites.FindUsableAsync(req.InviteToken ?? "", email);
+            if (invite is null)
+                return Results.Problem(
+                    "Registration is by invitation on this instance.",
+                    statusCode: StatusCodes.Status403Forbidden);
+        }
 
         var user = new User
         {
@@ -159,6 +163,14 @@ public static class AuthEndpoints
         // exist before they are needed, and a prompt later is a prompt most
         // people dismiss.
         var codes = recovery.IssueCodes(user.Id);
+
+        // Spent inside the same transaction as the account it created, so a
+        // failure part-way cannot burn an invite without producing a user.
+        if (invite is not null)
+        {
+            invite.UsedAt = DateTimeOffset.UtcNow;
+            invite.UsedByUserId = user.Id;
+        }
 
         await db.SaveChangesAsync();
         await tx.CommitAsync();

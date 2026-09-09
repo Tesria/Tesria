@@ -266,11 +266,12 @@ export const api = {
     login: (email: string, password: string) =>
       request<User>('POST', '/api/auth/login', { email, password }),
     /** Returns the user plus the recovery codes — the one moment they exist. */
-    register: (email: string, displayName: string, password: string) =>
+    register: (email: string, displayName: string, password: string, inviteToken?: string) =>
       request<User & { recoveryCodes: string[] }>('POST', '/api/auth/register', {
         email,
         displayName,
         password,
+        inviteToken,
       }),
     logout: () => request<void>('POST', '/api/auth/logout'),
     oidcStatus: () => request<{ enabled: boolean; displayName: string }>('GET', '/api/auth/oidc/status'),
