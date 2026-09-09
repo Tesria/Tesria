@@ -470,7 +470,7 @@ email in 4.3; do not block this phase on email.
   "DB role rotation" is not an endpoint (it is `.env` + restart). A wrong
   TOTP code or re-auth answer counts toward the 3.2 lockout.
 
-### 3.6 Dependency hygiene — `S` — Model: Opus
+### 3.6 Dependency hygiene — `S` — Model: Opus — ✅ **shipped 2026-09-09** (run as Fable by user override)
 - Fix the 38 npm findings (`react-router` upgrade first — check the 7.x
   changelog for breaking changes to `NavLink`/`useLocation`, both used).
 - Add `collab/package-lock.json` and make the collab Dockerfile use
@@ -478,6 +478,11 @@ email in 4.3; do not block this phase on email.
 - A `scripts/audit.sh` running `npm audit --omit=dev` (web and collab) and
   `dotnet list package --vulnerable --include-transitive`; document it as
   a release gate. Renovate or Dependabot config if the repo goes public.
+- **Shipped as specified.** The 38 findings were react-router (7.18.1 →
+  7.18.3, patch-level, no API change) and every `@tiptap/*` package
+  (3.28.0 → 3.31.3; the packages peer-depend on each other at exact
+  versions, so they have to move together — `npm audit fix` alone cannot
+  do it). Editor verified live after the upgrade.
 
 ### 3.7 Security review and internet-readiness gate — `M` — Model: Fable
 - Write `docs/security.md`: threat model (who attacks a public wiki and

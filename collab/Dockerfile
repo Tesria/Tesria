@@ -5,9 +5,11 @@ FROM node:22-slim
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Install dependencies first for better layer caching.
-COPY collab/package.json collab/package-lock.json* ./
-RUN npm install --omit=dev
+# Install dependencies first for better layer caching. `npm ci` installs
+# exactly what the lockfile says and fails if it disagrees with package.json,
+# so the image is reproducible and auditable (dev-plan 3.6).
+COPY collab/package.json collab/package-lock.json ./
+RUN npm ci --omit=dev
 
 COPY collab/server.js ./
 
