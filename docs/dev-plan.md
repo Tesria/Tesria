@@ -157,7 +157,7 @@ undetectable without a login history.
   are scripts and would swamp the numbers). Index on `(PageId, ViewedAt)`.
 - Nothing user-facing yet. This exists so 2.5 and 3.3 have data.
 
-### 0.4 Profile media storage — `S` — Model: Opus
+### 0.4 Profile media storage — `S` — Model: Opus — ✅ **shipped 2026-09-09**
 - Reuse `IAttachmentStorage` with a distinct key namespace (`avatars/…`,
   `space-icons/…`) rather than a second storage abstraction.
 - `GET /api/media/avatars/{userId}` and `/space-icons/{spaceId}` — long
@@ -166,6 +166,9 @@ undetectable without a login history.
   (~1 MB), re-encode raster uploads to a fixed 256px square so the stored
   file is never the raw upload. **Reject SVG** for avatars outright — it can
   carry script, and there is no need for it here.
+- **Shipped with the avatar upload/delete endpoints as well**, since the
+  validation above has no other home. 1.2 is therefore the UI, the
+  client-side crop and the generated defaults — not the server half.
 
 ---
 
@@ -191,8 +194,8 @@ undetectable without a login history.
   id — initials on a background from the accent palette in `palette.ts`,
   ~12 background/shape variants to pick between. The deterministic one is
   the default, so every user has an avatar from day one with zero storage.
-- **Upload:** client-side square crop (a small canvas crop, no library),
-  server re-encodes (0.4).
+- **Upload:** client-side square crop (a small canvas crop, no library); the
+  server endpoint and re-encode already shipped in 0.4.
 - Render in: topbar, comments, version history, the user directory/picker,
   and later mentions (7.C). One `<Avatar>` component, sizes 20/28/40.
 

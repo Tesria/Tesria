@@ -1,6 +1,7 @@
 using Tesria.Api.Features.ApiTokens;
 using Tesria.Api.Features.Attachments;
 using Tesria.Api.Features.Admin;
+using Tesria.Api.Features.Media;
 using Tesria.Api.Features.Auth;
 using Tesria.Api.Features.Comments;
 using Tesria.Api.Features.Audit;
@@ -73,6 +74,7 @@ builder.Services.AddHttpClient(nameof(WebhookDeliveryBackgroundService), c => c.
 
 // Attachment file storage (local uploads volume; PLAN §3).
 builder.Services.AddSingleton<IAttachmentStorage, LocalAttachmentStorage>();
+builder.Services.AddSingleton<IProfileMediaService, ProfileMediaService>();
 
 // Persist Data Protection keys in the database (not the container filesystem),
 // so signed auth cookies stay valid across redeploys and multiple app replicas.
@@ -299,6 +301,7 @@ var api = app.MapGroup("/api");
 api.MapHealthEndpoints();
 api.MapAuthEndpoints();
 api.MapAdminEndpoints();
+api.MapMediaEndpoints();
 api.MapSpaceEndpoints();
 api.MapPageEndpoints();
 api.MapAttachmentEndpoints();

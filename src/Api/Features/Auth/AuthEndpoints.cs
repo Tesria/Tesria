@@ -15,7 +15,7 @@ public static class AuthEndpoints
 {
     public record RegisterRequest(string Email, string DisplayName, string Password);
     public record LoginRequest(string Email, string Password);
-    public record UserResponse(Guid Id, string Email, string DisplayName, UserRole Role);
+    public record UserResponse(Guid Id, string Email, string DisplayName, UserRole Role, string? AvatarHash);
     public record OidcStatusResponse(bool Enabled, string DisplayName);
 
     public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder routes)
@@ -113,7 +113,7 @@ public static class AuthEndpoints
         await tx.CommitAsync();
 
         await SignIn(http, user);
-        return Results.Ok(new UserResponse(user.Id, user.Email, user.DisplayName, user.Role));
+        return Results.Ok(new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash));
     }
 
     private static async Task<IResult> Login(
@@ -144,7 +144,7 @@ public static class AuthEndpoints
         await db.SaveChangesAsync();
 
         await SignIn(http, user);
-        return Results.Ok(new UserResponse(user.Id, user.Email, user.DisplayName, user.Role));
+        return Results.Ok(new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash));
     }
 
     private static async Task<IResult> Me(AppDbContext db, CurrentUser current)
@@ -152,7 +152,7 @@ public static class AuthEndpoints
         if (current.Id is not { } id) return Results.Unauthorized();
         var user = await db.Users
             .Where(u => u.Id == id)
-            .Select(u => new UserResponse(u.Id, u.Email, u.DisplayName, u.Role))
+            .Select(u => new UserResponse(u.Id, u.Email, u.DisplayName, u.Role, u.AvatarHash))
             .FirstOrDefaultAsync();
         return user is null ? Results.Unauthorized() : Results.Ok(user);
     }

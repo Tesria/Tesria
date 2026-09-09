@@ -6,7 +6,20 @@
 export const UserRole = { Member: 0, Admin: 1 } as const
 export type UserRole = (typeof UserRole)[keyof typeof UserRole]
 
-export type User = { id: string; email: string; displayName: string; role: UserRole }
+export type User = {
+  id: string
+  email: string
+  displayName: string
+  role: UserRole
+  /** Content hash of the uploaded avatar, or null for the generated default.
+   *  Used as the cache-busting `?v=` on the avatar URL. */
+  avatarHash: string | null
+}
+
+/** The URL for a user's uploaded avatar. The hash makes each version its own
+ *  URL, so the response can be cached indefinitely and never go stale. */
+export const avatarUrl = (userId: string, hash: string) =>
+  `/api/media/avatars/${userId}?v=${hash}`
 
 export type Space = {
   id: string

@@ -5,6 +5,45 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Feature: profile media storage (dev-plan 0.4) (2026-09-09)
+
+Avatars stored through the existing `IAttachmentStorage` under their own key
+namespace, so the S3 implementation that interface reserves a slot for will
+cover them too. Keys are deterministic per owner, so a replacement overwrites
+rather than accumulating orphans.
+
+**Every upload is re-encoded to a fixed 256px WebP square, and that is the
+security control rather than a convenience.** The stored bytes are always ones
+this process produced: EXIF (often GPS) is stripped, polyglot files stop being
+polyglot, and decoded dimensions are bounded — checked from the codec header
+before any pixel buffer is allocated, so a decompression bomb is refused
+rather than decoded first. **SVG is rejected by sniffing the bytes**, not by
+trusting the declared content type, so an SVG labelled `image/png` does not
+get through; there is a test for each of those framings.
+
+**SkiaSharp (MIT) rather than ImageSharp**, because ImageSharp 3.x moved to
+the Six Labors Split Licence and dev-plan 8.2 intends an Apache 2.0 release.
+Verified in the runtime container and not only on the build host, since the
+native-asset variant is exactly the thing that differs between them: the
+container is glibc 2.39 and the package ships a matching `linux-arm64` build.
+A real 101 KB 600×400 PNG uploaded to the running stack came back as a 1.2 KB
+256×256 WebP.
+
+Cache busting is a content hash on the URL, stored as `User.AvatarHash` so
+serving costs no hashing and the SPA can build the URL from the session it
+already has. Each version is its own URL, so the response can be cached
+indefinitely without going stale.
+
+**Scope note:** 0.4 also carries the avatar upload/delete endpoints, because
+the validation, size cap and re-encode it specifies have no other home — a
+storage pipeline with no way in cannot be tested end to end. Dev-plan 1.2 is
+therefore the profile UI, the client-side crop, and the generated default
+avatars, not the server half.
+
+Eight tests in `ProfileMediaTests`, including that a user with no avatar and
+an unknown user id are indistinguishable, so the endpoint cannot be used to
+probe which ids exist.
+
 ### Feature: usage telemetry (dev-plan 0.3) (2026-09-09)
 
 Three signals, recorded now so the admin dashboard (2.5) ships with real
