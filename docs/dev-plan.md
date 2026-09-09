@@ -188,16 +188,24 @@ undetectable without a login history.
   it here once.
 - Frontend: `/profile` route, reachable from the username in the topbar.
 
-### 1.2 Avatars — `M` — Model: Opus
+### 1.2 Avatars — `M` — Model: Opus — ✅ **shipped 2026-09-09**
 - Depends on 0.4.
 - **Prebuilt set:** generate SVG avatars deterministically from the user
-  id — initials on a background from the accent palette in `palette.ts`,
-  ~12 background/shape variants to pick between. The deterministic one is
+  id — initials on one of twelve backgrounds. (Shipped with its own palette
+  in `avatarIdentity.ts` rather than the editor's `palette.ts`: those are
+  light tints meant to sit *behind* dark body text, which is the opposite of
+  what a coloured avatar with white initials needs.) The deterministic one is
   the default, so every user has an avatar from day one with zero storage.
 - **Upload:** client-side square crop (a small canvas crop, no library); the
   server endpoint and re-encode already shipped in 0.4.
 - Render in: topbar, comments, version history, the user directory/picker,
   and later mentions (7.C). One `<Avatar>` component, sizes 20/28/40.
+  **Shipped in the topbar and profile only.** Comments and version history
+  return just an `AuthorId` and render no author identity at all today, so
+  avatars there need names added first — a separate change, not part of this
+  item. The people picker is a `<select>`, whose options cannot hold markup;
+  `GET /api/users` already carries `avatarHash`/`avatarVariant` for 2.2's
+  admin users list.
 
 ### 1.3 Password recovery — offline (recovery codes) — `M` — Model: Opus
 - **Generated at registration**, as asked: 8 single-use codes
