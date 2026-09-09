@@ -106,6 +106,19 @@ public class User
 
     /// <summary>The last time step a code was accepted for, so no code is accepted twice.</summary>
     public long? TotpLastStep { get; set; }
+
+    /// <summary>How this person wants their own notifications by email (dev-plan 4.3). Security alerts to administrators ignore this.</summary>
+    public EmailNotificationMode EmailNotifications { get; set; } = EmailNotificationMode.Off;
+
+    /// <summary>When the last daily digest went out, so the next is a day later.</summary>
+    public DateTimeOffset? LastDigestAt { get; set; }
+}
+
+public enum EmailNotificationMode
+{
+    Off = 0,
+    Immediate = 1,
+    DailyDigest = 2,
 }
 
 public enum UserStatus

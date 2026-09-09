@@ -6,6 +6,7 @@ import { AvatarPicker } from '../components/AvatarPicker'
 import { RecoveryCodesSection } from '../components/RecoveryCodesSection'
 import { SessionsSection } from '../components/SessionsSection'
 import { ApiTokensSection } from '../components/ApiTokensSection'
+import { NotificationPreferences } from '../components/NotificationPreferences'
 import { TotpSection } from '../components/TotpSection'
 
 type Status = { kind: 'ok' | 'error'; message: string } | null
@@ -181,6 +182,11 @@ export function ProfilePage() {
       <section className="profile__section">
         <h2>Sessions</h2>
         <SessionsSection />
+      </section>
+
+      <section className="profile__section" id="notifications">
+        <h2>Email notifications</h2>
+        <NotificationPreferences />
       </section>
 
       <section className="profile__section" id="api-tokens">

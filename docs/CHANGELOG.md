@@ -5,6 +5,26 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Feature: security alerts and notifications by email (dev-plan 4.3) (2026-09-09)
+
+*Plan tag: Opus. Run as Fable by user override.*
+
+Notifications are now an outbox: the request that causes one writes the
+row, and `NotificationEmailService` picks it up within a minute, so no
+request ever waits on a mail server. **Security alerts reach every
+administrator by email immediately, whatever their preference** — the
+"email the admin group" requirement from Phase 3, now met. For their own
+notifications, each person chooses on the profile page: Off (the
+default), Immediately (one email per pass, with links), or Daily digest
+(one email a day when something changed). A dead mail server produces one
+audited failure per notification, not one a minute; nothing older than a
+day is sent, so turning email on does not flood inboxes with history.
+
+Tests (five): alerts to admins regardless of preference and only once;
+immediate subscribers get links; digest subscribers get one message a
+day; Off keeps the in-app copy and sends nothing; with email off the
+outbox is left untouched.
+
 ### Feature: password recovery by email (dev-plan 4.2) (2026-09-09)
 
 *Plan tag: Opus. Run as Fable by user override.*

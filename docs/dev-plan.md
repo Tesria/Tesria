@@ -528,12 +528,19 @@ security because 4.2 needs 3.2's limiter and 4.3 needs 3.3's alerts.
   path is throttled per address by 1.3's limiter and per client address
   by 3.2's.
 
-### 4.3 Email delivery for alerts and notifications — `M` — Model: Opus
+### 4.3 Email delivery for alerts and notifications — `M` — Model: Opus — ✅ **shipped 2026-09-09** (run as Fable by user override)
 - Security alerts (3.3) go to admins by email as well as in-app — this is
   the "email the admin group" requirement, and it is deliberately the
   *first* email notification wired up.
 - Then user notifications for those who opt in (`/profile` → preferences).
   Immediate for mentions and alerts; daily digest for watches by default.
+- **Shipped as an outbox.** `Notification.EmailedAt` marks what has been
+  sent; `NotificationEmailService` polls every minute. Security alerts to
+  administrators always go immediately; each person chooses Off (default —
+  opt-in, as the plan says), Immediate, or Daily digest. Mentions do not
+  exist until Phase 7, so "immediate for mentions" waits for them. Nothing
+  older than a day is ever emailed, so turning email on does not flood
+  inboxes with history.
 
 ---
 
