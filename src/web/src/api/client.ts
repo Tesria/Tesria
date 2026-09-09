@@ -545,6 +545,9 @@ export const api = {
     /** `currentPassword` may be omitted within the fresh-login window. */
     regenerateRecoveryCodes: (input: { currentPassword?: string }) =>
       request<{ codes: string[] }>('POST', '/api/auth/me/recovery-codes', input),
+    recoveryOptions: () => request<{ emailEnabled: boolean }>('GET', '/api/auth/recovery-options'),
+    recoverByEmail: (email: string) =>
+      request<{ message: string }>('POST', '/api/auth/recover/email', { email }),
     recoverWithCode: (input: { email: string; code: string; newPassword: string }) =>
       request<void>('POST', '/api/auth/recover/code', input),
     resetWithToken: (input: { token: string; newPassword: string }) =>

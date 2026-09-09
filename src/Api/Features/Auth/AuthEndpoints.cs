@@ -89,6 +89,8 @@ public static class AuthEndpoints
         Guid Id, DateTimeOffset CreatedAt, DateTimeOffset LastSeenAt, string? Ip, string? UserAgent,
         bool Current, DateTimeOffset? RevokedAt);
     public record OidcStatusResponse(bool Enabled, string DisplayName);
+    public record RecoveryOptionsResponse(bool EmailEnabled);
+    public record RecoverByEmailRequest(string Email);
     public record UpdateProfileRequest(string DisplayName);
     public record ChangeEmailRequest(string CurrentPassword, string Email);
     public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
@@ -135,6 +137,8 @@ public static class AuthEndpoints
         group.MapPut("/me/password", ChangePassword).RequireAuthorization();
         group.MapGet("/me/recovery-codes", RecoveryStatus).RequireAuthorization();
         group.MapPost("/me/recovery-codes", RegenerateCodes).RequireAuthorization();
+        group.MapGet("/recovery-options", RecoveryOptions);
+        group.MapPost("/recover/email", RecoverByEmail).RequireRateLimiting(RateLimits.AuthPolicy);
         group.MapPost("/recover/code", RecoverWithCode).RequireRateLimiting(RateLimits.AuthPolicy);
         group.MapPost("/recover/token", ResetWithToken).RequireRateLimiting(RateLimits.AuthPolicy);
 
@@ -721,6 +725,51 @@ public static class AuthEndpoints
     /// in. Every failure returns the same 400 whatever went wrong, so this
     /// cannot be used to discover which addresses have accounts.
     /// </summary>
+    /// <summary>Which recovery paths the sign-in page should offer.</summary>
+    private static async Task<IResult> RecoveryOptions(ISiteSettingsService settings) =>
+        Results.Ok(new RecoveryOptionsResponse((await settings.GetAsync()).EmailEnabled));
+
+    /// <summary>
+    /// Emails a one-time reset link (dev-plan 4.2). Always 202 with the same
+    /// body: whether the address has an account, whether email is even on,
+    /// whether the send succeeded — none of it is told to the caller, who
+    /// may be probing. The account holder finds out by checking their inbox.
+    /// </summary>
+    private static async Task<IResult> RecoverByEmail(
+        RecoverByEmailRequest req, AppDbContext db, IAccountRecoveryService recovery,
+        RecoveryAttemptLimiter limiter, ISiteSettingsService settings, IConfiguration config,
+        Infrastructure.Email.IEmailSender email, IAuditLogger audit, HttpContext http)
+    {
+        var address = (req.Email ?? "").Trim().ToLowerInvariant();
+        if (!limiter.TryAttempt(address))
+            return Results.Problem("Too many attempts. Try again later.", statusCode: StatusCodes.Status429TooManyRequests);
+
+        var accepted = Results.Accepted(value: new
+        {
+            message = "If that address has an account, a reset link is on its way. It works once and expires in an hour.",
+        });
+
+        var s = await settings.GetAsync();
+        if (!s.EmailEnabled || !IsValidEmail(address)) return accepted;
+
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == address);
+        if (user is null || user.Status != UserStatus.Active || user.PasswordHash is null) return accepted;
+
+        var token = recovery.IssueResetToken(user.Id, issuedById: null);
+        audit.RecordAs(user.Id, "user.recovery_email_requested", "user", user.Id, new { Ip = ClientIp(http) });
+        await db.SaveChangesAsync();
+
+        var link = $"{Infrastructure.Email.SiteUrl.Resolve(s, config)}/reset?token={token}";
+        await email.SendAsync(new Infrastructure.Email.EmailMessage(
+            user.Email,
+            $"[{s.InstanceName}] Reset your password",
+            $"Someone — probably you — asked to reset the password for {user.Email} on {s.InstanceName}.\n\n" +
+            $"Choose a new password here (the link works once and expires in one hour):\n{link}\n\n" +
+            "If you did not ask for this, ignore this message; your password has not changed."));
+
+        return accepted;
+    }
+
     private static async Task<IResult> RecoverWithCode(
         RecoverWithCodeRequest req, AppDbContext db, IPasswordHasher hasher,
         IAuditLogger audit, IAccountRecoveryService recovery, RecoveryAttemptLimiter limiter,

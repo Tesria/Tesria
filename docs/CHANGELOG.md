@@ -5,6 +5,22 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Feature: password recovery by email (dev-plan 4.2) (2026-09-09)
+
+*Plan tag: Opus. Run as Fable by user override.*
+
+`POST /api/auth/recover/email` emails a one-time reset link — 32 random
+bytes, stored hashed, one hour, single-use, and a newer request kills the
+older link. It answers **202 with the same body every time**: whether the
+address has an account, whether email is on, whether the send worked —
+none of it is told to the caller, who may be probing. Throttled per
+address and per client. The reset page offers "Email me a link" only when
+the instance sends email, with the recovery-code form one click away.
+
+Tests (five): link arrives and resets once; unknown address gets an
+identical answer and no email; email off sends nothing and is not offered;
+a newer link invalidates the older; throttling.
+
 ### Feature: outbound email (dev-plan 4.1) (2026-09-09)
 
 *Plan tag: Opus. Run as Fable by user override.*

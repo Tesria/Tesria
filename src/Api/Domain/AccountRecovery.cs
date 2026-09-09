@@ -54,8 +54,11 @@ public class PasswordResetToken
 
     public DateTimeOffset? UsedAt { get; set; }
 
-    /// <summary>The administrator who issued it, for the audit trail.</summary>
-    public Guid IssuedById { get; set; }
+    /// <summary>
+    /// The administrator who issued it, or null when the account holder
+    /// requested it by email (dev-plan 4.2).
+    /// </summary>
+    public Guid? IssuedById { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
 }

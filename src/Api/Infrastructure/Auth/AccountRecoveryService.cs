@@ -25,7 +25,7 @@ public interface IAccountRecoveryService
     Task<int> RemainingCodesAsync(Guid userId, CancellationToken ct = default);
 
     /// <summary>Mints an admin reset token, returning the plaintext once. Caller saves.</summary>
-    string IssueResetToken(Guid userId, Guid issuedById);
+    string IssueResetToken(Guid userId, Guid? issuedById);
 
     /// <summary>Spends a reset token, or null if it is unknown, expired or used. Caller saves.</summary>
     Task<User?> RedeemResetTokenAsync(string token, CancellationToken ct = default);
@@ -102,7 +102,7 @@ public sealed class AccountRecoveryService(AppDbContext db) : IAccountRecoverySe
     public Task<int> RemainingCodesAsync(Guid userId, CancellationToken ct = default) =>
         db.RecoveryCodes.CountAsync(c => c.UserId == userId && c.UsedAt == null, ct);
 
-    public string IssueResetToken(Guid userId, Guid issuedById)
+    public string IssueResetToken(Guid userId, Guid? issuedById)
     {
         // Only one live ticket per user: issuing a second must not leave the
         // first usable, or a stale link handed out earlier still works.
