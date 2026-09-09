@@ -18,7 +18,7 @@ namespace Tesria.Api.Tests;
 public class ProfileMediaTests
 {
     private record AvatarDto(string AvatarHash);
-    private record UserDto(Guid Id, string Email, string DisplayName, int Role, string? AvatarHash);
+    private record UserDto(Guid Id, string Email, string DisplayName, int Role, string? AvatarHash, int? AvatarVariant);
 
     /// <summary>An <paramref name="width"/>×<paramref name="height"/> PNG.</summary>
     private static byte[] Png(int width, int height)
@@ -181,6 +181,67 @@ public class ProfileMediaTests
         Assert.Equal(HttpStatusCode.Unauthorized,
             (await factory.CreateClient().GetAsync($"/api/media/avatars/{ownerId}")).StatusCode);
     }
+
+    [Fact]
+    public async Task A_generated_avatar_variant_can_be_chosen_and_cleared()
+    {
+        using var factory = new TestAppFactory();
+        var client = factory.CreateClient();
+        await client.RegisterAndSignInAsync();
+
+        // Null by default — the client derives one from the user id, so every
+        // account has an avatar with no row written and no file stored.
+        Assert.Null((await client.GetFromJsonAsync<UserDto>("/api/auth/me"))!.AvatarVariant);
+
+        (await client.PutAsJsonAsync("/api/media/avatars/me/variant", new { Variant = 7 }))
+            .EnsureSuccessStatusCode();
+        Assert.Equal(7, (await client.GetFromJsonAsync<UserDto>("/api/auth/me"))!.AvatarVariant);
+
+        // Clearing returns to the derived one.
+        (await client.PutAsJsonAsync("/api/media/avatars/me/variant", new { Variant = (int?)null }))
+            .EnsureSuccessStatusCode();
+        Assert.Null((await client.GetFromJsonAsync<UserDto>("/api/auth/me"))!.AvatarVariant);
+
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await client.PutAsJsonAsync("/api/media/avatars/me/variant", new { Variant = -1 })).StatusCode);
+    }
+
+    [Fact]
+    public async Task An_uploaded_picture_wins_over_a_chosen_variant()
+    {
+        using var factory = new TestAppFactory();
+        var client = factory.CreateClient();
+        await client.RegisterAndSignInAsync();
+
+        await client.PutAsJsonAsync("/api/media/avatars/me/variant", new { Variant = 3 });
+        await client.PutAsync("/api/media/avatars/me", Upload(Png(300, 300), "a.png", "image/png"));
+
+        var me = await client.GetFromJsonAsync<UserDto>("/api/auth/me");
+        // Both are reported; the client prefers the hash, and the variant is
+        // kept so removing the picture returns to the colour they picked.
+        Assert.NotNull(me!.AvatarHash);
+        Assert.Equal(3, me.AvatarVariant);
+
+        (await client.DeleteAsync("/api/media/avatars/me")).EnsureSuccessStatusCode();
+        var after = await client.GetFromJsonAsync<UserDto>("/api/auth/me");
+        Assert.Null(after!.AvatarHash);
+        Assert.Equal(3, after.AvatarVariant);
+    }
+
+    [Fact]
+    public async Task The_user_directory_carries_avatars_so_pickers_can_show_them()
+    {
+        using var factory = new TestAppFactory();
+        var client = factory.CreateClient();
+        var userId = await client.RegisterAndSignInAsync();
+        await client.PutAsync("/api/media/avatars/me", Upload(Png(300, 300), "a.png", "image/png"));
+
+        var directory = await client.GetFromJsonAsync<List<DirectoryDto>>("/api/users");
+        var self = directory!.Single(u => u.Id == userId);
+        Assert.False(string.IsNullOrEmpty(self.AvatarHash));
+    }
+
+    private record DirectoryDto(Guid Id, string Email, string DisplayName, string? AvatarHash, int? AvatarVariant);
 
     [Fact]
     public async Task A_user_with_no_avatar_and_an_unknown_user_are_indistinguishable()

@@ -30,7 +30,8 @@ public static class AuthEndpoints
     /// renders those fields read-only rather than letting a submit fail.
     /// </summary>
     public record UserResponse(
-        Guid Id, string Email, string DisplayName, UserRole Role, string? AvatarHash, bool HasPassword);
+        Guid Id, string Email, string DisplayName, UserRole Role,
+        string? AvatarHash, int? AvatarVariant, bool HasPassword);
     public record OidcStatusResponse(bool Enabled, string DisplayName);
     public record UpdateProfileRequest(string DisplayName);
     public record ChangeEmailRequest(string CurrentPassword, string Email);
@@ -135,7 +136,7 @@ public static class AuthEndpoints
         await tx.CommitAsync();
 
         await SignIn(http, user);
-        return Results.Ok(new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.PasswordHash != null));
+        return Results.Ok(new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.AvatarVariant, user.PasswordHash != null));
     }
 
     private static async Task<IResult> Login(
@@ -166,7 +167,7 @@ public static class AuthEndpoints
         await db.SaveChangesAsync();
 
         await SignIn(http, user);
-        return Results.Ok(new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.PasswordHash != null));
+        return Results.Ok(new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.AvatarVariant, user.PasswordHash != null));
     }
 
     private static async Task<IResult> Me(AppDbContext db, CurrentUser current)
@@ -174,7 +175,7 @@ public static class AuthEndpoints
         if (current.Id is not { } id) return Results.Unauthorized();
         var user = await db.Users
             .Where(u => u.Id == id)
-            .Select(u => new UserResponse(u.Id, u.Email, u.DisplayName, u.Role, u.AvatarHash, u.PasswordHash != null))
+            .Select(u => new UserResponse(u.Id, u.Email, u.DisplayName, u.Role, u.AvatarHash, u.AvatarVariant, u.PasswordHash != null))
             .FirstOrDefaultAsync();
         return user is null ? Results.Unauthorized() : Results.Ok(user);
     }
@@ -279,7 +280,8 @@ public static class AuthEndpoints
     }
 
     private static UserResponse ToResponse(User user) =>
-        new(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.PasswordHash != null);
+        new(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.AvatarVariant,
+            user.PasswordHash != null);
 
     /// <summary>
     /// The caller's address as the server currently sees it.

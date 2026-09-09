@@ -1300,3 +1300,30 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 /* The username in the topbar is a link now, but should not read as one until
    hovered — it is a destination, not an action. */
 a.topbar__username:hover { color: var(--text); text-decoration: underline; }
+
+/* ---- avatars ------------------------------------------------------------- */
+/* Shared by the uploaded <img> and the generated <svg>, so the two are
+   interchangeable wherever an avatar appears. */
+.avatar { display: block; border-radius: 50%; flex-shrink: 0; object-fit: cover; }
+/* The topbar's name is a link to the profile; the avatar rides along with it. */
+.topbar__me { display: inline-flex; align-items: center; gap: 0.45rem; min-width: 0; }
+.topbar__me:hover { text-decoration: none; }
+.topbar__me:hover .topbar__username { color: var(--text); text-decoration: underline; }
+
+.avatar-picker__current { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 0.75rem; }
+.avatar-picker__current .row-gap { margin-top: 0.5rem; }
+.avatar-picker__variants {
+  display: flex; flex-wrap: wrap; gap: 0.4rem;
+  border: none; padding: 0; margin: 0.75rem 0 0;
+}
+.avatar-picker__variants legend { padding: 0; margin-bottom: 0.4rem; }
+.avatar-picker__swatch {
+  width: 28px; height: 28px; border-radius: 50%; cursor: pointer; padding: 0;
+  border: 1px solid var(--swatch-border);
+}
+.avatar-picker__swatch:hover { transform: scale(1.1); }
+/* Same halo the accent picker uses, so "selected" reads identically in both. */
+.avatar-picker__swatch.is-active {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary);
+}
+.avatar-picker__variants:disabled { opacity: 0.6; }

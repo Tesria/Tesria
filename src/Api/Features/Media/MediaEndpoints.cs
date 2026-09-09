@@ -13,6 +13,7 @@ namespace Tesria.Api.Features.Media;
 public static class MediaEndpoints
 {
     public record AvatarResponse(string AvatarHash);
+    public record AvatarVariantRequest(int? Variant);
 
     public static IEndpointRouteBuilder MapMediaEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -21,6 +22,7 @@ public static class MediaEndpoints
         group.MapGet("/avatars/{userId:guid}", GetAvatar);
         group.MapPut("/avatars/me", UploadOwnAvatar).DisableAntiforgery();
         group.MapDelete("/avatars/me", DeleteOwnAvatar);
+        group.MapPut("/avatars/me/variant", SetOwnAvatarVariant);
 
         return routes;
     }
@@ -99,6 +101,31 @@ public static class MediaEndpoints
         await db.Users.Where(u => u.Id == userId).ExecuteUpdateAsync(u => u
             .SetProperty(x => x.AvatarKey, (string?)null)
             .SetProperty(x => x.AvatarHash, (string?)null));
+
+        return Results.NoContent();
+    }
+
+    /// <summary>
+    /// Picks one of the generated avatars, or clears the choice (null) to fall
+    /// back to the one derived from the user's id.
+    ///
+    /// The upper bound lives in the client (AVATAR_COLORS) and is validated
+    /// here only as a sanity bound: the set can grow without a server change,
+    /// and an index past the end degrades to the derived avatar rather than
+    /// rendering nothing.
+    /// </summary>
+    private static async Task<IResult> SetOwnAvatarVariant(
+        AvatarVariantRequest req, AppDbContext db, CurrentUser current)
+    {
+        if (req.Variant is { } v && (v < 0 || v > 63))
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["variant"] = ["Not a valid avatar."],
+            });
+
+        var userId = current.RequireId();
+        await db.Users.Where(u => u.Id == userId)
+            .ExecuteUpdateAsync(u => u.SetProperty(x => x.AvatarVariant, req.Variant));
 
         return Results.NoContent();
     }

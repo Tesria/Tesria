@@ -56,6 +56,16 @@ public class User
     public string? AvatarHash { get; set; }
 
     /// <summary>
+    /// Which generated avatar this user picked, or null to derive one from
+    /// their id. Only consulted when <see cref="AvatarKey"/> is null — an
+    /// uploaded image always wins.
+    ///
+    /// Stored as an index rather than a colour so the generated set can be
+    /// restyled later without rewriting every row.
+    /// </summary>
+    public int? AvatarVariant { get; set; }
+
+    /// <summary>
     /// Rotated whenever every existing session for this account must stop
     /// working: a password change, and later suspension (dev-plan 2.2), an
     /// admin force-logout (3.3) and 2FA enrolment (3.5).

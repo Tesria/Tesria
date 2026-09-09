@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext'
 import { NotificationBell } from './NotificationBell'
 import { ThemeToggle } from './ThemeToggle'
 import { BrandMark } from './BrandMark'
+import { Avatar } from './Avatar'
 import { useDismissable } from '../hooks/useDismissable'
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
@@ -141,8 +142,9 @@ export function Layout() {
           <ThemeToggle />
           <NotificationBell />
           {user && (
-            <Link to="/profile" className="muted topbar__username" title="Your profile">
-              {user.displayName}
+            <Link to="/profile" className="topbar__me" title="Your profile">
+              <Avatar subject={user} size={24} />
+              <span className="muted topbar__username">{user.displayName}</span>
             </Link>
           )}
           <button type="button" className="btn btn--ghost" onClick={onLogout}>

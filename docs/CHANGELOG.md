@@ -5,6 +5,42 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Feature: avatars (dev-plan 1.2) (2026-09-09)
+
+Every user has an avatar from the moment they register, with nothing stored:
+an inline SVG of their initials on one of twelve backgrounds, picked by an
+FNV-1a hash of their id. Not a char-code sum — user ids are hex GUIDs, sharing
+an alphabet and a length, which is exactly where a weak hash clusters. All
+twelve carry white text at 4.5:1 or better (measured, not judged), and all are
+dark enough to read on both page grounds, so no per-theme treatment is needed.
+
+`User.AvatarVariant` records an explicit pick; null derives one from the id.
+Stored as an index rather than a colour so the set can be restyled without
+rewriting rows, and kept when a picture is uploaded — so removing the picture
+returns to the colour the user chose, not to the derived one.
+
+Uploads are cropped square in the browser before sending, via
+`createImageBitmap`, which decodes off the main thread and honours EXIF
+orientation — without it a portrait phone photo arrives sideways. The crop is
+not cosmetic: the server centre-crops too, so doing it here is what makes the
+stored result match what the user was shown. Downscaled to 512px first, so a
+12MP photo is not uploaded whole to produce a 256px thumbnail.
+
+Verified live: the generated avatar rendered "AB" on the emerald variant
+derived from the account id, picking swatch 3 persisted server-side and
+re-rendered both the profile and topbar avatars in `#5b47ba`, and clearing it
+returned to the derived one.
+
+**Where avatars appear:** topbar and profile. Comments and version history
+return only an `AuthorId` and render no author identity at all today, so
+avatars there wait until they show names — adding names was outside this item.
+`GET /api/users` does now carry `avatarHash`/`avatarVariant`, for the admin
+users list in 2.2; the existing people picker is a `<select>`, whose options
+cannot contain markup, so it cannot show them.
+
+Three tests added (158 total), including that an uploaded picture wins over a
+chosen variant while preserving it for when the picture is removed.
+
 ### Feature: edit your own profile (dev-plan 1.1) (2026-09-09)
 
 A `/profile` page, reachable from the username in the topbar, with three
