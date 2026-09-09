@@ -110,6 +110,98 @@ export const pageOperationName = ['View', 'Edit']
 
 export type Group = { id: string; name: string; description: string | null; memberCount: number }
 export type GroupMember = { userId: string; email: string; displayName: string }
+export const UserStatus = { Active: 0, Suspended: 1 } as const
+export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus]
+
+export type SiteSettings = {
+  instanceName: string
+  allowPublicRegistration: boolean
+  allowPublicSpaces: boolean
+  emailEnabled: boolean
+  smtpHost: string | null
+  smtpPort: number
+  smtpUsername: string | null
+  /** The password itself is never returned — only whether one is stored. */
+  smtpPasswordSet: boolean
+  smtpFromAddress: string | null
+  smtpTls: number
+  requireTotpForAdmins: boolean
+  updatedAt: string
+}
+
+/** Every field optional: an omitted field keeps its stored value. */
+export type SiteSettingsUpdate = Omit<SiteSettings, 'smtpPasswordSet' | 'updatedAt'> & {
+  smtpPassword: string
+}
+
+export type AdminUser = {
+  id: string
+  email: string
+  displayName: string
+  role: UserRole
+  status: UserStatus
+  avatarHash: string | null
+  avatarVariant: number | null
+  hasPassword: boolean
+  isSso: boolean
+  recoveryCodesRemaining: number
+  lastSeenAt: string | null
+  createdAt: string
+}
+
+export type AdminSpace = {
+  id: string
+  key: string
+  name: string
+  description: string | null
+  archived: boolean
+  createdById: string
+  createdByName: string
+  pageCount: number
+  storageBytes: number
+  createdAt: string
+}
+
+export type Invite = {
+  id: string
+  email: string | null
+  expiresAt: string
+  usedAt: string | null
+  createdAt: string
+}
+
+export type DailyPoint = { date: string; count: number }
+
+export type Dashboard = {
+  rangeDays: number
+  generatedAt: string
+  people: {
+    total: number
+    admins: number
+    suspended: number
+    activeLast7Days: number
+    activeLast30Days: number
+    newInRange: number
+    loginsPerDay: DailyPoint[]
+    failedLoginsPerDay: DailyPoint[]
+  }
+  content: {
+    spaces: number
+    pages: number
+    versions: number
+    comments: number
+    attachments: number
+    storageBytes: number
+    pagesCreatedPerDay: DailyPoint[]
+  }
+  usage: {
+    viewsInRange: number
+    viewsPerDay: DailyPoint[]
+    topPages: { pageId: string; title: string; spaceKey: string; views: number }[]
+    topEditors: { userId: string; displayName: string; versions: number }[]
+  }
+}
+
 export type Directory = {
   id: string
   email: string
@@ -359,6 +451,39 @@ export const api = {
   },
   users: {
     list: () => request<Directory[]>('GET', '/api/users'),
+  },
+  admin: {
+    settings: {
+      get: () => request<SiteSettings>('GET', '/api/admin/settings'),
+      update: (input: Partial<SiteSettingsUpdate>) =>
+        request<SiteSettings>('PUT', '/api/admin/settings', input),
+    },
+    users: {
+      list: () => request<AdminUser[]>('GET', '/api/admin/users'),
+      setRole: (id: string, role: UserRole) =>
+        request<AdminUser>('PUT', `/api/admin/users/${id}/role`, { role }),
+      setStatus: (id: string, status: UserStatus) =>
+        request<AdminUser>('PUT', `/api/admin/users/${id}/status`, { status }),
+      revokeSessions: (id: string) =>
+        request<void>('POST', `/api/admin/users/${id}/revoke-sessions`),
+      revokeTokens: (id: string) =>
+        request<void>('POST', `/api/admin/users/${id}/revoke-tokens`),
+      issueReset: (id: string) =>
+        request<{ token: string; path: string; expiresAt: string }>(
+          'POST', `/api/admin/users/${id}/reset-password`),
+    },
+    spaces: {
+      list: () => request<AdminSpace[]>('GET', '/api/admin/spaces'),
+    },
+    invites: {
+      list: () => request<Invite[]>('GET', '/api/admin/invites'),
+      create: (input: { email?: string; expiresInDays?: number }) =>
+        request<{ token: string; path: string; email: string | null; expiresAt: string }>(
+          'POST', '/api/admin/invites', input),
+      revoke: (id: string) => request<void>('DELETE', `/api/admin/invites/${id}`),
+    },
+    dashboard: (rangeDays: number) =>
+      request<Dashboard>('GET', `/api/admin/dashboard?rangeDays=${rangeDays}`),
   },
   avatar: {
     /** multipart upload; the server re-encodes to a 256px WebP square.

@@ -264,14 +264,14 @@ undetectable without a login history.
 
 ## Phase 2 — Admin panel
 
-### 2.1 Admin shell — `S` — Model: Opus
+### 2.1 Admin shell — `S` — Model: Opus — ✅ **shipped 2026-09-09**
 - `/admin` route tree behind the admin role; a nav entry visible only to
   admins (in the topbar's More menu in the middle tier).
 - Sections as sub-routes: Dashboard, Users, Spaces, Security (3.3),
   Settings. Groups stay at `/groups` but are linked from here.
 - Reuse the existing tab/panel patterns; this is not a new design system.
 
-### 2.2 Users — `M` — Model: Opus
+### 2.2 Users — `M` — Model: Opus — ✅ **shipped 2026-09-09**
 - List with search, role, status, `LastSeenAt`, created, last login IP,
   recovery-codes-generated, 2FA-enrolled (3.5).
 - Actions: suspend/reactivate (rotate `SecurityStamp` so the session dies
@@ -281,17 +281,17 @@ undetectable without a login history.
   "Deleted user", avatar removed) and keep the row — `PageVersion.AuthorId`,
   `Comment.AuthorId` and `AuditLog.ActorId` all reference it.
 
-### 2.3 Settings — `S` — Model: Opus
+### 2.3 Settings — `S` — Model: Opus — ✅ **shipped 2026-09-09**
 - The `SiteSettings` UI from 0.2: instance name, registration toggle,
   public-spaces kill switch, SMTP block with a **"Send test email"** button
   (live in 4.1; disabled with an explanation until then), TOTP-for-admins.
 
-### 2.4 Spaces — `S` — Model: Opus
+### 2.4 Spaces — `S` — Model: Opus — ✅ **shipped 2026-09-09**
 - All spaces including archived; owner; page count; storage used
   (`SUM(Attachment.Size)` per space); **public or not** (Phase 5);
   archive/unarchive; purge (confirm by typing the key, audit it).
 
-### 2.5 Dashboard — `L` — Model: Opus
+### 2.5 Dashboard — `L` — Model: Opus — ✅ **shipped 2026-09-09**
 - Depends on 0.3 having run for a while.
 - KPIs, each a stat tile with a sparkline where there's a time series:
   - **People:** total users, active 7d/30d (`LastSeenAt`), new this month,

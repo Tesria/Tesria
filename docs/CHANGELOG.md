@@ -5,6 +5,59 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Feature: admin panel (dev-plan 2.1–2.5) (2026-09-09)
+
+`/admin`, visible only to administrators, with Dashboard, Users, Spaces,
+Invites and Settings. The role check in the UI is convenience — every
+`/api/admin/*` route enforces it server-side, and there is a test asserting a
+member gets 403 on each.
+
+**Users** shows role, status, recovery-code count, last-seen and avatar, with
+promote/demote, suspend/reactivate, revoke-sessions, revoke-tokens and issue-
+reset. Three guards matter more than the listing:
+
+* **The last administrator cannot be demoted or suspended.** An instance with
+  no admin has no way back — nobody could change settings, issue invites or
+  restore access without editing the database by hand.
+* **You cannot suspend yourself**, checked before the last-admin rule so the
+  message is the accurate one.
+* **Suspension rotates the security stamp**, so existing sessions die on their
+  next request rather than lingering until the cookie expires. Verified live.
+
+**Sessions and tokens revoke separately, deliberately.** A token authenticates
+through a different scheme and a session revocation does not touch it, so
+"lock this account out" needs both — there is a test proving the token still
+works after sessions are revoked, and stops after tokens are.
+
+**Spaces** is metadata only — key, owner, page count, storage, archived state.
+Admins do not bypass space permissions, so this must not become a way around
+that; a test asserts no page content appears in the response.
+
+**Dashboard** is one aggregate endpoint rather than a page firing a dozen
+requests: the counts are cheap but the round trips are not, and a single
+response means the whole dashboard is consistent with itself rather than
+assembled from twelve different instants. Range is clamped to 1–365 days.
+
+Charts are hand-rolled SVG sparklines — no charting dependency added, since
+the bundle is already 1.1 MB. Written against the `dataviz` skill: one series
+means no legend and no categorical palette, colour is a single token
+(`--primary`, or `--danger` for failed sign-ins, which is a status signal
+rather than another series), text wears text tokens rather than the series
+colour, marks are 2px with a surface ring on the hover marker, and every
+sparkline has a hover crosshair reading out the exact day and value.
+
+**Empty days are included in every series.** A sparkline built only from days
+with activity silently compresses a quiet week into one point and reads as
+steady use when the truth is the opposite.
+
+**Failed sign-ins are on the front page on purpose:** a spike there is the
+first visible sign of a brute-force attempt. Dev-plan 3.3 turns it into an
+alert; until then somebody has to be able to see it.
+
+Nine tests in `AdminPanelTests` (187 total). Verified live against real data:
+23 pages, 15 recorded views, top page "Tesria REST API", 30 daily points per
+series.
+
 ### Feature: author identity on comments and version history (dev-plan 1.5) (2026-09-09)
 
 Comments and version history both returned a bare `AuthorId` and rendered no
