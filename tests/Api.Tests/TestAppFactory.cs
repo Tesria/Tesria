@@ -63,6 +63,10 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
 
             services.AddDbContext<AppDbContext>(o => o.UseSqlite(_connection));
 
+            // Runs before the app's pipeline, so forwarded headers behave as
+            // they do behind Caddy — see the filter for how tests use it.
+            services.AddTransient<IStartupFilter, TestRemoteIpStartupFilter>();
+
             // Replace the real channel-backed sender with a recording fake, so
             // tests can assert on dispatched webhooks without any network I/O
             // or a running background delivery service.

@@ -5,6 +5,39 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Security: proxy trust, secure cookies, security headers (dev-plan 3.0) (2026-09-09)
+
+*Plan tag: Opus. Run as Fable at the user's request — Phase 3 is security
+work and the user chose to spend the larger model on all of it.*
+
+The app now knows who the client is. `UseForwardedHeaders` runs first in
+the pipeline and believes `X-Forwarded-For` / `X-Forwarded-Proto` from the
+compose network's private ranges only (`Proxy:TrustedNetworks`), taking
+only the nearest hop so a client cannot pick its own address by sending the
+header. Before this, every request carried Caddy's container address — the
+finding that made 1.3's recovery limiter key on email instead of IP, and
+that would have made any per-IP limiter throttle everyone at once.
+
+The session cookie is `Secure` unconditionally in Production
+(`Security:AllowInsecureCookies` opts out, documented as unsafe). Every
+response carries `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`,
+`Permissions-Policy`, COOP/CORP and a Content-Security-Policy whose
+`script-src` is `'self'` plus a hash of the inline theme script, computed
+at startup from the `index.html` this process serves. `style-src` allows
+inline styles on purpose — the editor writes them — and that trade-off is
+recorded in the architecture doc.
+
+`deploy/Caddyfile.public` is the internet-facing configuration: HSTS on,
+the on-demand-TLS catch-all gone. Selected with `CADDYFILE=` in `.env`.
+
+Tests (six) act as the proxy and as a stranger through a startup filter
+that sets the connection address: forwarded address honoured from loopback,
+ignored from a public address, only the last hop believed, the cookie
+turns `Secure` when the proxy says HTTPS, and the headers are on every
+response. Verified live: headers present, collaboration websocket connects
+under the CSP, inline theme script runs under its hash, no CSP refusals on
+spaces, page view, editor or admin.
+
 ### Feature: recovery codes for existing accounts (dev-plan 1.3) (2026-09-09)
 
 Recovery codes were only ever issued at registration, so every account that

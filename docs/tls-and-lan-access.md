@@ -190,3 +190,40 @@ short:
   on your LAN, this is fine. If you ever expose port 443 directly to the
   public internet without a real `DOMAIN` configured, firewall it to your
   LAN/VPN range.
+
+## Path 3: hosting on the public internet
+
+The default `deploy/Caddyfile` is built for a LAN: its catch-all `:443`
+block mints an internal-CA certificate for *any* name a client connects
+with, so phones can reach the wiki by IP. On the internet that is a
+liability — a stranger can trigger certificate minting for arbitrary
+names — and the internal CA is meaningless anyway because nobody outside
+your network has trusted it.
+
+Use the public variant instead. In `.env`:
+
+```
+DOMAIN=wiki.example.com
+ACME_EMAIL=you@example.com
+CADDYFILE=deploy/Caddyfile.public
+```
+
+then `docker compose up -d caddy`. `deploy/Caddyfile.public` serves only
+`{$DOMAIN}` with a Let's Encrypt certificate, sends HSTS (two years,
+`includeSubDomains`, `preload`), and does not offer `/ca.crt`.
+
+**HSTS is a one-way door.** Once a browser has seen it, it will refuse plain
+HTTP to that host and will not let a user click past a certificate error —
+for `max-age` seconds, even after you turn it off. That is the point on a
+real domain and a disaster on `localhost` with an untrusted internal CA,
+which is why the default file never sends it.
+
+The app trusts `X-Forwarded-For` / `X-Forwarded-Proto` only from the
+compose network's private ranges (`Proxy:TrustedNetworks`), which is safe
+because the app's port 8080 is exposed only to that network. If you put your
+own proxy in front instead of Caddy, set `PROXY_TRUSTED_NETWORKS` to that
+proxy's address — and never publish port 8080 to the host, or any LAN
+client could set those headers itself.
+
+Before exposing anything, read the internet-readiness checklist in
+[`security.md`](./security.md).
