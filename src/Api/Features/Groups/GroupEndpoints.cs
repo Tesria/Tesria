@@ -11,7 +11,8 @@ public static class GroupEndpoints
     public record AddMemberRequest(Guid UserId);
     public record GroupResponse(Guid Id, string Name, string? Description, int MemberCount);
     public record MemberResponse(Guid UserId, string Email, string DisplayName);
-    public record UserResponse(Guid Id, string Email, string DisplayName);
+    public record UserResponse(
+        Guid Id, string Email, string DisplayName, string? AvatarHash, int? AvatarVariant);
 
     public static IEndpointRouteBuilder MapGroupEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -34,7 +35,7 @@ public static class GroupEndpoints
     {
         var users = await db.Users.AsNoTracking()
             .OrderBy(u => u.DisplayName)
-            .Select(u => new UserResponse(u.Id, u.Email, u.DisplayName))
+            .Select(u => new UserResponse(u.Id, u.Email, u.DisplayName, u.AvatarHash, u.AvatarVariant))
             .ToListAsync();
         return Results.Ok(users);
     }

@@ -17,6 +17,9 @@ export type User = {
   /** False for OIDC-provisioned accounts: their identity provider owns the
    *  email address and password, so the profile page renders those read-only. */
   hasPassword: boolean
+  /** Chosen generated avatar, or null to derive one from the id. Ignored when
+   *  `avatarHash` is set — an uploaded image always wins. */
+  avatarVariant: number | null
 }
 
 /** The URL for a user's uploaded avatar. The hash makes each version its own
@@ -104,7 +107,13 @@ export const pageOperationName = ['View', 'Edit']
 
 export type Group = { id: string; name: string; description: string | null; memberCount: number }
 export type GroupMember = { userId: string; email: string; displayName: string }
-export type Directory = { id: string; email: string; displayName: string }
+export type Directory = {
+  id: string
+  email: string
+  displayName: string
+  avatarHash: string | null
+  avatarVariant: number | null
+}
 
 export type SpacePermission = {
   id: string
@@ -330,6 +339,26 @@ export const api = {
   },
   users: {
     list: () => request<Directory[]>('GET', '/api/users'),
+  },
+  avatar: {
+    /** multipart upload; the server re-encodes to a 256px WebP square.
+     *  Not via `request`, which sets a JSON content type — FormData must set
+     *  its own multipart boundary. `handle` still parses the server's
+     *  ValidationProblem body, so rejection messages surface as they do
+     *  everywhere else. */
+    upload: async (blob: Blob): Promise<{ avatarHash: string }> => {
+      const body = new FormData()
+      body.append('file', blob, 'avatar.png')
+      const res = await fetch('/api/media/avatars/me', {
+        method: 'PUT',
+        credentials: 'include',
+        body,
+      })
+      return handle<{ avatarHash: string }>(res)
+    },
+    remove: () => request<void>('DELETE', '/api/media/avatars/me'),
+    setVariant: (variant: number | null) =>
+      request<void>('PUT', '/api/media/avatars/me/variant', { variant }),
   },
   apiTokens: {
     list: () => request<ApiTokenSummary[]>('GET', '/api/api-tokens'),

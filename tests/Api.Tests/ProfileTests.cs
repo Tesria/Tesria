@@ -16,7 +16,7 @@ namespace Tesria.Api.Tests;
 /// </summary>
 public class ProfileTests
 {
-    private record UserDto(Guid Id, string Email, string DisplayName, int Role, string? AvatarHash);
+    private record UserDto(Guid Id, string Email, string DisplayName, int Role, string? AvatarHash, int? AvatarVariant);
 
     private static async Task<UserDto> RegisterAsync(HttpClient client, string email, string password = "supersecret")
     {

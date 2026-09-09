@@ -123,6 +123,41 @@ exists, and revoking the grant restores the 404; the existing suite still
 passes — several tests register two users in sequence, so assert nothing
 about them changed except the first one's role.
 
+### Avatars (`components/Avatar.tsx`, dev-plan 1.2)
+
+Every user has an avatar from the moment they register, with nothing stored:
+`Avatar` renders an inline SVG of their initials on one of twelve backgrounds,
+chosen by an FNV-1a hash of their id. Not a sum of char codes — user ids are
+hex GUIDs, which share an alphabet and a length, exactly the case where a weak
+hash clusters. The twelve colours all carry white text at 4.5:1 or better
+(measured), and all are dark enough to read on both the light and dark page
+grounds, so a generated avatar needs no per-theme treatment.
+
+`User.AvatarVariant` records an explicit pick from the twelve; null means
+"derive it from the id". It is stored as an index rather than a colour so the
+set can be restyled later without rewriting rows, and it survives an upload —
+so removing a picture returns to the colour the user chose rather than to the
+derived one.
+
+An uploaded picture always wins over a variant. Uploads are cropped to a
+square in the browser before being sent, using `createImageBitmap`, which
+decodes off the main thread and honours EXIF orientation — without it a
+portrait phone photo arrives sideways. The crop is not cosmetic: the server
+centre-crops too (0.4), so cropping here is what makes the stored result match
+what the user was shown. It is also downscaled to 512px first, so a 12MP phone
+photo is not uploaded whole to produce a 256px thumbnail.
+
+`avatarIdentity.ts` holds the colours and helpers, separate from `Avatar.tsx`,
+which exports only the component — React Fast Refresh needs component-only
+modules, and the linter enforces it.
+
+**Where avatars appear today:** the topbar and the profile page. Comments and
+version history return only an `AuthorId` and do not render author identity at
+all yet, so avatars there wait until they show names. The user directory
+(`GET /api/users`) does carry `avatarHash`/`avatarVariant` already, for the
+admin users list in dev-plan 2.2 — the existing people picker is a `<select>`,
+whose options cannot contain markup, so it cannot show them.
+
 ### Session revocation — the security stamp (dev-plan 1.1)
 
 A cookie scheme is stateless by design: the cookie *is* the proof, so nothing

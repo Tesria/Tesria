@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react'
 import { api, ApiError } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { PasswordInput } from '../components/PasswordInput'
+import { AvatarPicker } from '../components/AvatarPicker'
 
 type Status = { kind: 'ok' | 'error'; message: string } | null
 
@@ -111,6 +112,11 @@ export function ProfilePage() {
   return (
     <div className="page-wrap">
       <h1>Your profile</h1>
+
+      <section className="profile__section">
+        <h2>Avatar</h2>
+        <AvatarPicker />
+      </section>
 
       <section className="profile__section">
         <h2>Display name</h2>
