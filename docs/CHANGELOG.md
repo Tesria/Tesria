@@ -5,6 +5,44 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Feature: instance roles and administrators (dev-plan 0.1) (2026-09-08)
+
+`User.Role` (`Member = 0 | Admin = 1`) — an enum rather than a bool, so a
+future Viewer/Moderator is a new value, not a migration. The first account
+created on an empty instance is Admin, whether it arrives through `/register`
+or OIDC provisioning; the migration backfills existing installs by promoting
+the earliest-created account, so no instance is left with content and nobody
+able to administer it. Verified on this instance's real data: the owner's
+account was promoted, the docs bot was not.
+
+**Admins are not a permission bypass.** This was the design question the plan
+left open, and the answer is Confluence's own: a site admin sees exactly what
+their grants allow. What the role confers is access to `/api/admin/*` and an
+audited `POST /api/admin/spaces/{key}/recover-access`, which writes the
+caller an explicit space-admin grant — after which the *existing* rules apply
+unchanged, including the one that already lets explicit space admins past
+page restrictions. A silent bypass would let any admin read any team's
+private space with no trace, would need an "unless admin" branch in every
+permission check, and could never be revoked afterwards. Recovery is
+idempotent, so a retry is neither a duplicate grant nor a second audit entry.
+
+Registration's "is this the first account?" check and its duplicate-email
+check both read the table before writing, so they now share one serializable
+transaction — without it two simultaneous first registrations could each see
+an empty table and both become admin.
+
+`CurrentUser.IsAdminAsync()` reads the row rather than trusting a claim: a
+role claim would be stale until the user's next sign-in, so a demotion
+wouldn't take effect until then. One primary-key lookup, cached per request.
+
+Six tests in `RoleTests`, including the two that pin the decision down: an
+admin gets **404** (not 403, per the existing masking rule) on a private
+space they hold no grant for, and revoking the recovered grant returns them
+to no access.
+
+Spec: `architecture.md` → "Roles and administrators". Written by Fable 5.1
+under the plan's model gate, implemented by Opus 5.
+
 ### Fix: the topbar is three tiers now, not two (2026-09-08)
 
 Between --bp-mobile and --bp-tablet the bar showed its full desktop layout —

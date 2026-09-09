@@ -22,6 +22,13 @@ public class User
 
     public UserStatus Status { get; set; } = UserStatus.Active;
 
+    /// <summary>
+    /// Instance-level role. The first account created on an empty instance is
+    /// <see cref="UserRole.Admin"/>; everyone after is a member. An enum rather
+    /// than a bool so a future Viewer/Moderator is a new value, not a migration.
+    /// </summary>
+    public UserRole Role { get; set; } = UserRole.Member;
+
     public DateTimeOffset CreatedAt { get; set; }
 }
 
@@ -29,4 +36,17 @@ public enum UserStatus
 {
     Active = 0,
     Suspended = 1,
+}
+
+/// <summary>
+/// Instance-level role. Deliberately NOT a permission bypass: an admin sees
+/// exactly what their space grants allow, like anyone else. What the role
+/// confers is access to instance operations (<c>/api/admin/*</c>) and the
+/// audited recover-access action, which writes an explicit space-admin grant.
+/// See docs/architecture.md, "Roles and administrators".
+/// </summary>
+public enum UserRole
+{
+    Member = 0,
+    Admin = 1,
 }

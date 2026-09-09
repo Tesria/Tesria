@@ -1,3 +1,4 @@
+using System.Data;
 using System.Security.Claims;
 using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure;
@@ -12,7 +13,7 @@ public static class AuthEndpoints
 {
     public record RegisterRequest(string Email, string DisplayName, string Password);
     public record LoginRequest(string Email, string Password);
-    public record UserResponse(Guid Id, string Email, string DisplayName);
+    public record UserResponse(Guid Id, string Email, string DisplayName, UserRole Role);
     public record OidcStatusResponse(bool Enabled, string DisplayName);
 
     public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder routes)
@@ -72,8 +73,18 @@ public static class AuthEndpoints
         if ((req.Password ?? "").Length < 8)
             return Results.ValidationProblem(Error("password", "Password must be at least 8 characters."));
 
+        // Both the duplicate-email check and "is this the first account?" read the
+        // table before writing to it, so they run in one serializable transaction:
+        // without it, two simultaneous first registrations could each observe an
+        // empty table and both be created as admin.
+        await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+
         if (await db.Users.AnyAsync(u => u.Email == email))
             return Results.Conflict(new { message = "An account with this email already exists." });
+
+        // The first account on an empty instance administers it — otherwise a
+        // fresh install has content and nobody able to manage it.
+        var isFirstAccount = !await db.Users.AnyAsync();
 
         var user = new User
         {
@@ -82,13 +93,15 @@ public static class AuthEndpoints
             DisplayName = displayName,
             PasswordHash = hasher.Hash(req.Password!),
             Status = UserStatus.Active,
+            Role = isFirstAccount ? UserRole.Admin : UserRole.Member,
             CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Users.Add(user);
         await db.SaveChangesAsync();
+        await tx.CommitAsync();
 
         await SignIn(http, user);
-        return Results.Ok(new UserResponse(user.Id, user.Email, user.DisplayName));
+        return Results.Ok(new UserResponse(user.Id, user.Email, user.DisplayName, user.Role));
     }
 
     private static async Task<IResult> Login(
@@ -105,7 +118,7 @@ public static class AuthEndpoints
             return Results.Unauthorized();
 
         await SignIn(http, user);
-        return Results.Ok(new UserResponse(user.Id, user.Email, user.DisplayName));
+        return Results.Ok(new UserResponse(user.Id, user.Email, user.DisplayName, user.Role));
     }
 
     private static async Task<IResult> Me(AppDbContext db, CurrentUser current)
@@ -113,7 +126,7 @@ public static class AuthEndpoints
         if (current.Id is not { } id) return Results.Unauthorized();
         var user = await db.Users
             .Where(u => u.Id == id)
-            .Select(u => new UserResponse(u.Id, u.Email, u.DisplayName))
+            .Select(u => new UserResponse(u.Id, u.Email, u.DisplayName, u.Role))
             .FirstOrDefaultAsync();
         return user is null ? Results.Unauthorized() : Results.Ok(user);
     }

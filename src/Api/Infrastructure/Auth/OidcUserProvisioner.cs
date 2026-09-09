@@ -54,6 +54,10 @@ public sealed class OidcUserProvisioner(AppDbContext db) : IOidcUserProvisioner
             return existingByEmail;
         }
 
+        // Same rule as local registration: the first account on an empty instance
+        // administers it, however it arrived.
+        var isFirstAccount = !await db.Users.AnyAsync();
+
         var user = new User
         {
             Id = Guid.NewGuid(),
@@ -62,6 +66,7 @@ public sealed class OidcUserProvisioner(AppDbContext db) : IOidcUserProvisioner
             PasswordHash = null, // OIDC-only account — no local password.
             OidcSubject = subject,
             Status = UserStatus.Active,
+            Role = isFirstAccount ? UserRole.Admin : UserRole.Member,
             CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Users.Add(user);
