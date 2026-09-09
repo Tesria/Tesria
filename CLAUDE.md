@@ -23,6 +23,10 @@ Read first, in this order:
 - `PLAN.md` — the original founding design doc (phases 1–5). The editor
   overhaul that followed it is tracked in the CHANGELOG instead, not as a
   numbered PLAN.md phase.
+- [`docs/security.md`](./docs/security.md) — the threat model, what each
+  hardening layer does and does not defend, the known gaps, and the
+  internet-readiness checklist. Read before exposing an instance or
+  touching auth, sessions, rate limits, the audit chain or egress.
 - [`docs/dev-plan.md`](./docs/dev-plan.md) — the **current sequenced plan**
   (written 2026-09-08): roles/admin, profiles and avatars, password
   recovery, space icons, the Confluence editor-parity audit, and the
