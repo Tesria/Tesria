@@ -235,7 +235,8 @@ public static class PageEndpoints
         return Results.NoContent();
     }
 
-    private static async Task<IResult> Get(Guid id, AppDbContext db, IPermissionService perms)
+    private static async Task<IResult> Get(
+        Guid id, AppDbContext db, IPermissionService perms, CurrentUser current, HttpContext http)
     {
         var page = await db.Pages.AsNoTracking()
             .Include(p => p.CurrentVersion)
@@ -243,7 +244,44 @@ public static class PageEndpoints
         if (page?.CurrentVersion is null) return Results.NotFound();
         // 404 rather than 403 so restricted pages aren't discoverable.
         if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
+
+        await RecordViewAsync(id, db, current, http);
         return Results.Ok(ToDetail(page, page.CurrentVersion));
+    }
+
+    /// <summary>
+    /// Records a read for the usage KPIs (dev-plan 0.3), after the permission
+    /// check so a refused read is never counted.
+    ///
+    /// Browser sessions only. An API token is a script — a nightly export would
+    /// otherwise dwarf every human in "most viewed pages" and make the number
+    /// meaningless. The test matches the one the Smart policy scheme uses to
+    /// pick its handler, so the two cannot disagree about what a token request is.
+    ///
+    /// <see cref="PageView.UserId"/> is left nullable for anonymous readers
+    /// (dev-plan Phase 5); today the caller is always signed in.
+    /// </summary>
+    private static async Task RecordViewAsync(
+        Guid pageId, AppDbContext db, CurrentUser current, HttpContext http)
+    {
+        if (http.Request.Headers.ContainsKey("Authorization")) return;
+
+        try
+        {
+            db.PageViews.Add(new PageView
+            {
+                Id = Guid.NewGuid(),
+                PageId = pageId,
+                UserId = current.Id,
+                ViewedAt = DateTimeOffset.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+        catch (Exception)
+        {
+            // A telemetry write must never fail the read it is measuring.
+            db.ChangeTracker.Clear();
+        }
     }
 
     private static async Task<IResult> Update(

@@ -142,12 +142,14 @@ undetectable without a login history.
 - Endpoint: `GET/PUT /api/admin/settings` (admin only).
 - Tests: registration respects `AllowPublicRegistration`; settings round-trip.
 
-### 0.3 Usage telemetry — `M` — Model: Opus
+### 0.3 Usage telemetry — `M` — Model: Opus — ✅ **shipped 2026-09-09**
 - `User.LastSeenAt` (bumped at most once per N minutes per request, via the
   `CurrentUser` accessor, to avoid a write per request).
 - `user.login` audit action with actor, timestamp **and client IP** (needs
   3.0 for the IP to be real — record it anyway; it becomes correct the
-  moment forwarded headers land). Failed logins: `user.login_failed` with
+  moment forwarded headers land). **Confirmed 2026-09-09 on the running
+  stack: three requests from two clients all logged `172.18.0.7`, Caddy's
+  container address. 3.0 is now a prerequisite in fact, not just on paper.** Failed logins: `user.login_failed` with
   IP and a count, never the attempted email in metadata.
 - Page views: a `PageView` table (`PageId, UserId?, ViewedAt`) — `UserId`
   nullable from day one, because Phase 5 will write anonymous views.

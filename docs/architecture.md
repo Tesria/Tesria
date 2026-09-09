@@ -158,6 +158,50 @@ ignores it. Otherwise an operator who closes registration before anyone has
 signed up could never set the instance up at all. Every later account needs
 the toggle on (dev-plan 1.4 adds invite links as the other way in).
 
+### Usage telemetry (`Infrastructure/Telemetry`, dev-plan 0.3)
+
+Three signals, recorded ahead of the admin dashboard (dev-plan 2.5) that
+consumes them, so that dashboard ships with real history rather than an empty
+chart.
+
+**`User.LastSeenAt`** — stamped by `LastSeenMiddleware` after authorization,
+throttled by the singleton `LastSeenTracker` to at most one write per user per
+five minutes. "Active in the last 7 days" needs coarse resolution only, so a
+write per request would be a lot of work to learn almost nothing. The update
+is by primary key with no prior read, and failures are swallowed: knowing when
+someone was last active is never worth failing their request over. The tracker
+is in-process, so a restart costs one extra write per user, and it prunes
+itself past 10,000 entries.
+
+**Login events** — `user.login` attributed to the account, and
+`user.login_failed` attributed to nobody. The failure case deliberately
+records neither the user id nor the attempted address: an audit log every
+admin can read should not become a list of addresses somebody guessed, and a
+failure must not confirm which addresses exist. The per-account counter that
+brute-force protection needs is dev-plan 3.2's job, not this log's. Recording
+these required `IAuditLogger.RecordAs(actorId, …)`, because sign-in happens
+before the request has a principal.
+
+**`PageView`** — one row per read, written after the permission check so a
+refused read is never counted. Browser sessions only: an API token is a
+script, and a nightly export would otherwise dwarf every human in "most viewed
+pages". The test for that is the same one the Smart policy scheme uses to pick
+its handler, so the two cannot disagree about what a token request is. `UserId`
+is nullable from the day the table was created, because public read mode
+(Phase 5) writes anonymous views into this same table and widening the column
+later would be a migration on a table that is large by then. Raw rows, not a
+rollup, with indexes on `(PageId, ViewedAt)` and `ViewedAt`; a rollup can
+follow if volume demands it, but starting with one would discard the detail
+before knowing which detail matters.
+
+**Recorded IPs are the proxy's, not the client's, until dev-plan 3.0.** The
+app sits behind Caddy and has no forwarded-header handling, so
+`RemoteIpAddress` is the container address of the proxy — verified on the
+running stack, where three requests from two different clients all logged
+`172.18.0.7`. The value is recorded anyway so the history exists and becomes
+correct the moment 3.0 ships. **Do not build per-IP logic on it before then**:
+a rate limiter reading this would see the whole world as one address.
+
 ## Frontend (`src/web`)
 
 - React 19 + TypeScript, built with Vite.

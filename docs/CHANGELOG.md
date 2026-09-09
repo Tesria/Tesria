@@ -5,6 +5,42 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Feature: usage telemetry (dev-plan 0.3) (2026-09-09)
+
+Three signals, recorded now so the admin dashboard (2.5) ships with real
+history instead of an empty chart.
+
+**`User.LastSeenAt`**, stamped by middleware after authorization and throttled
+to one write per user per five minutes — "active in the last 7 days" needs
+coarse resolution, so a write per request would be a lot of work for almost no
+information. Update by primary key, no prior read, failures swallowed.
+
+**Login events.** `user.login` is attributed to the account; `user.login_failed`
+is attributed to nobody and records neither the user id nor the attempted
+address. An audit log every admin can read should not become a list of
+addresses somebody guessed, nor confirm which ones exist. This needed
+`IAuditLogger.RecordAs(actorId, …)`, since sign-in happens before the request
+has a principal.
+
+**`PageView`**, one row per read, after the permission check so a refused read
+is never counted, and browser sessions only — an API token is a script, and a
+nightly export would otherwise dwarf every human in "most viewed pages". The
+token test is the same one the Smart policy scheme uses, so the two cannot
+disagree. `UserId` is nullable from day one because public read mode (Phase 5)
+writes anonymous views into this table, and widening the column later would be
+a migration on a table that is large by then.
+
+**It also made a Phase 3 finding concrete.** Exercising login on the running
+stack logged `172.18.0.7` for three requests from two different clients —
+Caddy's container address, not the callers'. That is the forwarded-headers gap
+in the security baseline, now demonstrated rather than inferred. The IP is
+recorded anyway so the history exists and becomes correct when 3.0 ships;
+`architecture.md` says plainly not to build per-IP logic on it before then.
+
+Six tests in `TelemetryTests`, including that a token read and a refused read
+are both uncounted, and that last-seen throttling is per user rather than
+global.
+
 ### Feature: instance settings (dev-plan 0.2) (2026-09-09)
 
 A single typed `SiteSettings` row an admin edits at runtime via
