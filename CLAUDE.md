@@ -63,6 +63,20 @@ one's on a decision it shouldn't be making — either way, silently.
   `dotnet test` (SQLite in-memory, no Docker needed) covers backend logic;
   `npm run build && npm run lint` covers the frontend. Both should stay green,
   but neither substitutes for looking at the running app for UI changes.
+- **There are no frontend tests, so routing and layout changes get a live
+  walk — every time, in every state.** A regression shipped on 2026-09-09
+  because a route restructure was verified only along the paths it was
+  *for* (anonymous reading); the nested `ProtectedRoute` had silently broken
+  page editing, trash, permissions and webhooks for every signed-in user.
+  After touching `main.tsx`, `Layout.tsx`, `ProtectedRoute`/`SessionGate`,
+  or any `useOutletContext` consumer, open in the browser: as a **member** —
+  `/spaces`, a space, a page, `/new` (create a page), `edit` (save it),
+  `trash` (purge it), `settings`, `permissions`, `webhooks`, `/search`,
+  `/labels/:name`, `/profile`, `/admin` (refusal); as an **admin** — every
+  `/admin/*` tab; **signed out** — `/spaces`, a private space and page
+  (masked), `/search`, `/profile` (redirect), `/login`, `/register`,
+  `/reset`. Check the console for `Uncaught` after each. "It rendered" is
+  not enough for the editor: create, save and purge a real page.
 - **Dependency audit is a release gate.** `scripts/audit.sh` runs
   `npm audit` (web + collab) and `dotnet list package --vulnerable
   --include-transitive`; it must exit 0 before a release or after touching
