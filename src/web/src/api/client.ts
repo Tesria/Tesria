@@ -1,4 +1,5 @@
 import { requestReauth } from '../auth/reauth'
+import type { SpaceIconKind } from '../components/spaceIconIdentity'
 
 // Typed client for the Tesria REST API. All calls are same-origin and
 // send the auth cookie automatically (credentials: 'include' for dev CORS).
@@ -65,6 +66,12 @@ export type Space = {
   /** Readable without an account while the instance allows public spaces (dev-plan 5.1). */
   isPublic: boolean
   publicComments: boolean
+  /** Icon (dev-plan 6): 0 generated, 1 emoji, 2 uploaded picture. */
+  iconKind: SpaceIconKind
+  /** The emoji, or an uploaded picture's content hash; null when generated. */
+  iconValue: string | null
+  /** Tile colour index, or null to derive one from the key. */
+  iconColor: number | null
 }
 
 export type PageDetail = {
@@ -573,8 +580,30 @@ export const api = {
     get: (key: string) => request<Space>('GET', `/api/spaces/${encodeURIComponent(key)}`),
     create: (input: { key: string; name: string; description?: string | null }) =>
       request<Space>('POST', '/api/spaces', input),
-    update: (key: string, input: { name: string; description?: string | null }) =>
-      request<Space>('PUT', `/api/spaces/${encodeURIComponent(key)}`, input),
+    update: (
+      key: string,
+      input: {
+        name: string
+        description?: string | null
+        iconKind?: SpaceIconKind
+        iconValue?: string | null
+        iconColor?: number | null
+      },
+    ) => request<Space>('PUT', `/api/spaces/${encodeURIComponent(key)}`, input),
+    /** The picture case, which needs the bytes rather than JSON. */
+    uploadIcon: async (key: string, blob: Blob): Promise<{ iconHash: string }> => {
+      const body = new FormData()
+      body.append('file', blob, 'icon.png')
+      const res = await fetch(`/api/media/space-icons/${encodeURIComponent(key)}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: CSRF_HEADER,
+        body,
+      })
+      return handle<{ iconHash: string }>(res)
+    },
+    removeIcon: (key: string) =>
+      request<void>('DELETE', `/api/media/space-icons/${encodeURIComponent(key)}`),
     archive: (key: string) =>
       request<Space>('POST', `/api/spaces/${encodeURIComponent(key)}/archive`, {}),
     unarchive: (key: string) =>

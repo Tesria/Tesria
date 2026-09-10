@@ -625,7 +625,7 @@ it, and others can host their own copy publicly too.
 
 ---
 
-## Phase 6 — Space icons — `S` — Model: Opus
+## Phase 6 — Space icons — `S` — Model: Opus — ✅ **shipped 2026-09-10**
 
 - Depends on 0.4 and reuses the 1.2 upload/crop pipeline unchanged.
 - `Space.IconKind` (`None | Emoji | Image`), `IconValue`, `IconColor`.
@@ -633,6 +633,16 @@ it, and others can host their own copy publicly too.
   as avatars, so every space has an icon from day one.
 - Render in space cards, sidebar head, breadcrumb, the public-space listing
   (5.3), and the wiki-pack manifest (8.5). Edit from the space's settings.
+- **Shipped with one addition:** there was no space settings page at all —
+  `PUT /api/spaces/{key}` had existed since Phase 2 with nothing in the UI
+  reaching it — so `/spaces/{key}/settings` now carries the icon picker and
+  the name/description form that endpoint was always waiting for.
+- The emoji rule is deliberately about *shape*, not a list: short, no
+  control characters, at least one non-ASCII character. A list of valid
+  emoji goes stale with every Unicode release; this admits future ones and
+  keycaps (which really do contain an ASCII digit) and refuses prose and
+  markup. Pictures cannot be set through the JSON update — only through the
+  upload route, which has the bytes and re-encodes them.
 
 ---
 

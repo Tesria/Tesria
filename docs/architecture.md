@@ -498,6 +498,47 @@ so a private page's title never leaks into a shared link preview. Full
 server-side rendering is out of scope; if search indexing beyond titles
 matters later, that is the option.
 
+### Space icons (`Features/Spaces/SpaceIcons.cs`, `components/SpaceIcon.tsx`, dev-plan 6)
+
+Three columns on `Space`: `IconKind` (`None | Emoji | Image`), `IconValue`
+and `IconColor`. `None` is not "no icon" — it is the generated default, the
+key's first letter on a tile coloured by a stable hash of the key, so every
+space has an icon from the moment it is created with no storage and no
+round trip. That is the same reasoning as generated avatars, and it reuses
+their twelve colours: identical job, and two palettes doing one job would
+drift apart.
+
+`IconValue` carries the emoji for `Emoji` and the stored picture's content
+hash for `Image` — not the storage key, which is derived from the space id
+(`ProfileMediaService.KeyFor`) and would only be a duplicate. `IconColor`
+is an index into the client's palette rather than a hex value, so the
+palette can be restyled without rewriting rows.
+
+**Icons are rounded squares; avatars are circles.** At tile size that shape
+is the only thing telling a reader whether they are looking at a person or
+a place, so it is a deliberate distinction, not styling.
+
+Pictures go through the Phase 0.4 pipeline unchanged — re-encoded to a
+256px WebP, EXIF stripped, SVG refused, decoded dimensions bounded — so
+everything said about avatar uploads holds here too. They are set only
+through `PUT /api/media/space-icons/{key}`, never through the JSON update,
+which would otherwise let a space be pointed at an arbitrary stored key.
+Switching to an emoji or back to the default deletes the stored bytes
+rather than orphaning them.
+
+Reading an icon follows the space's own visibility, unlike an avatar (which
+any signed-in user may fetch): a space nobody may see must not confirm its
+existence through its icon, so the route is `AllowAnonymous` plus
+`CanViewSpaceAsync`, and the answer is 404 either way. That also makes a
+public space's icon readable with no account, which is what the public
+listing (5.3) needs.
+
+The emoji rule is about shape rather than membership: short, no control
+characters, at least one non-ASCII character. "Is this an emoji" has no
+stable answer worth encoding — the set changes every Unicode release — and
+what actually matters is that the value is a glyph rather than prose or
+markup, because it renders inline wherever the space appears.
+
 ### Roles and administrators (spec — dev-plan 0.1, designed 2026-09-08)
 
 > **Update 2026-09-09:** group management (create/edit/delete/membership)

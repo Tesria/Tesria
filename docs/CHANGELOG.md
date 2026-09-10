@@ -5,6 +5,53 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fix: page editing, trash, permissions and webhooks were broken for signed-in users (2026-09-10)
+
+**A regression shipped with Phase 5 yesterday.** Nesting `ProtectedRoute`
+inside the space's route put a bare `<Outlet />` between `SpacePage` and its
+gated children, and a bare outlet starts a fresh context of `null` — so the
+editor, trash, permissions and webhooks pages all threw on
+`useSpaceContext()` and rendered a blank screen. `ProtectedRoute` now
+forwards the context it was given, which is what a gate should do.
+
+It went out unverified: Phase 5's live checks covered the anonymous reading
+paths and page *viewing*, and never opened the editor as a signed-in user
+after the route restructure. Found while opening the new space settings
+page, which failed the same way. All five pages verified live after the fix.
+
+### Feature: space icons (dev-plan 6) (2026-09-10)
+
+Every space now has an icon: an uploaded picture, an emoji, or — the
+default — its key's first letter on a tile coloured by a stable hash of the
+key, so nothing is ever iconless. Rounded squares, where avatars are
+circles: at tile size that shape is the only thing distinguishing a place
+from a person. Rendered in the spaces list (including the public listing),
+the sidebar head, the breadcrumb and the mobile action bar.
+
+Pictures reuse the avatar pipeline unchanged — re-encoded to a 256px WebP,
+EXIF stripped, SVG refused — and can only be set through the upload route,
+never the JSON update, which would otherwise let a space be pointed at an
+arbitrary stored key. Switching away from a picture deletes it rather than
+orphaning the bytes. Reading an icon follows the space's own visibility, so
+a private space's icon is 404 to anyone who cannot see the space, and a
+public space's icon is readable with no account.
+
+Emoji are validated by shape rather than against a list: short, no control
+characters, at least one non-ASCII character. A list would go stale every
+Unicode release; this admits future emoji and keycaps and refuses prose and
+markup.
+
+**`/spaces/{key}/settings` is new** — `PUT /api/spaces/{key}` had existed
+since Phase 2 with nothing in the UI reaching it, so the icon picker gave
+the name and description form a home at last.
+
+Tests (fifteen): the generated default, emoji round-tripping through the
+listing, four emoji shapes accepted and five kinds of prose refused, upload
+re-encoded and served as WebP, switching away clears the picture, SVG
+refused, pictures refused through the JSON update, only space
+administrators may change any of it, and a public space's icon readable by
+anyone while a private one is not. Full suite: 301 passing.
+
 ### Feature: public read mode — anonymous access per space (dev-plan 5.1–5.4) (2026-09-09)
 
 *5.1 is a Fable item; 5.2–5.4 are tagged Opus and ran as Fable by user

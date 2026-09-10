@@ -1,6 +1,7 @@
 import { Link, useMatch, useSearchParams } from 'react-router-dom'
 import type { PageTreeNode, Space } from '../api/client'
 import { findTreePath } from './PageTree'
+import { SpaceIcon } from './SpaceIcon'
 
 type Crumb = { label: string; to?: string }
 
@@ -12,6 +13,7 @@ export function SpaceBreadcrumb({ space, tree }: { space: Space; tree: PageTreeN
   const matchPageView = useMatch('/spaces/:key/pages/:pageId')
   const matchPageEdit = useMatch('/spaces/:key/pages/:pageId/edit')
   const matchNew = useMatch('/spaces/:key/new')
+  const matchSettings = useMatch('/spaces/:key/settings')
   const matchPermissions = useMatch('/spaces/:key/permissions')
   const matchWebhooks = useMatch('/spaces/:key/webhooks')
   const matchTrash = useMatch('/spaces/:key/trash')
@@ -32,6 +34,8 @@ export function SpaceBreadcrumb({ space, tree }: { space: Space; tree: PageTreeN
       crumbs.push({ label: node.title, to: `/spaces/${space.key}/pages/${node.id}` })
     })
     crumbs.push({ label: 'New page' })
+  } else if (matchSettings) {
+    crumbs.push({ label: 'Settings' })
   } else if (matchPermissions) {
     crumbs.push({ label: 'Permissions' })
   } else if (matchWebhooks) {
@@ -48,6 +52,10 @@ export function SpaceBreadcrumb({ space, tree }: { space: Space; tree: PageTreeN
       {crumbs.map((c, i) => (
         <span key={i} className="breadcrumb__segment">
           {i > 0 && <span className="breadcrumb__sep">/</span>}
+          {/* The space's own crumb carries its icon — the one place the icon
+              appears while reading a page, so a reader always knows where
+              they are without looking at the sidebar. */}
+          {i === 0 && <SpaceIcon space={space} size={16} />}
           {c.to ? <Link to={c.to}>{c.label}</Link> : <span className="breadcrumb__current">{c.label}</span>}
         </span>
       ))}

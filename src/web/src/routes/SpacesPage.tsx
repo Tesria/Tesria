@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { SpaceIcon } from '../components/SpaceIcon'
 import { api, ApiError, type Space } from '../api/client'
 
 export function SpacesPage() {
@@ -48,8 +49,11 @@ export function SpacesPage() {
         {spaces?.map((s) => (
           <li key={s.id} className="space-card">
             <Link to={`/spaces/${s.key}`}>
-              <span className="space-card__key">
-                {s.key}{s.isPublic && <span className="badge badge--public">public</span>}
+              <span className="space-card__head">
+                <SpaceIcon space={s} size={32} />
+                <span className="space-card__key">
+                  {s.key}{s.isPublic && <span className="badge badge--public">public</span>}
+                </span>
               </span>
               <span className="space-card__name">{s.name}</span>
               {s.description && <span className="space-card__desc">{s.description}</span>}
