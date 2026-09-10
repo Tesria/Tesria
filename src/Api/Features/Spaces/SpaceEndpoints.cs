@@ -4,6 +4,7 @@ using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Audit;
 using Tesria.Api.Infrastructure.Auth;
 using Tesria.Api.Infrastructure.Permissions;
+using Tesria.Api.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Tesria.Api.Features.Spaces;
@@ -11,11 +12,14 @@ namespace Tesria.Api.Features.Spaces;
 public static partial class SpaceEndpoints
 {
     public record CreateSpaceRequest(string Key, string Name, string? Description);
-    public record UpdateSpaceRequest(string Name, string? Description);
+    public record UpdateSpaceRequest(
+        string Name, string? Description,
+        SpaceIconKind? IconKind = null, string? IconValue = null, int? IconColor = null);
     public record SpaceResponse(
         Guid Id, string Key, string Name, string? Description,
         bool Archived, Guid? HomepageId, DateTimeOffset CreatedAt,
-        bool IsPublic, bool PublicComments);
+        bool IsPublic, bool PublicComments,
+        SpaceIconKind IconKind, string? IconValue, int? IconColor);
 
     // 2–50 chars, starts with a letter, letters/digits only. Stored upper-cased.
     [GeneratedRegex("^[A-Z][A-Z0-9]{1,49}$")]
@@ -95,7 +99,8 @@ public static partial class SpaceEndpoints
     }
 
     private static async Task<IResult> Update(
-        string key, UpdateSpaceRequest req, AppDbContext db, IPermissionService perms)
+        string key, UpdateSpaceRequest req, AppDbContext db, IPermissionService perms,
+        IProfileMediaService media)
     {
         var space = await db.Spaces.FirstOrDefaultAsync(s => s.Key == key.ToUpperInvariant());
         if (space is null) return Results.NotFound();
@@ -105,6 +110,32 @@ public static partial class SpaceEndpoints
         var name = (req.Name ?? "").Trim();
         if (name.Length == 0)
             return Results.ValidationProblem(Error("name", "Name is required."));
+
+        if (SpaceIcons.ValidateColor(req.IconColor) is { } colorError)
+            return Results.ValidationProblem(Error("iconColor", colorError));
+
+        // The icon (dev-plan 6). An omitted kind leaves it alone; the picture
+        // case is not settable here — it needs the upload endpoint, which has
+        // the bytes.
+        switch (req.IconKind)
+        {
+            case SpaceIconKind.None:
+                SpaceIcons.Clear(space, media);
+                break;
+
+            case SpaceIconKind.Emoji:
+                var (emoji, emojiError) = SpaceIcons.NormalizeEmoji(req.IconValue);
+                if (emojiError is not null) return Results.ValidationProblem(Error("iconValue", emojiError));
+                SpaceIcons.Clear(space, media);
+                space.IconKind = SpaceIconKind.Emoji;
+                space.IconValue = emoji;
+                break;
+
+            case SpaceIconKind.Image:
+                return Results.ValidationProblem(Error("iconKind", "Upload a picture through the icon endpoint."));
+        }
+
+        if (req.IconColor is { } color) space.IconColor = color;
 
         space.Name = name;
         space.Description = string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim();
@@ -126,7 +157,8 @@ public static partial class SpaceEndpoints
     }
 
     private static SpaceResponse ToResponse(Space s) =>
-        new(s.Id, s.Key, s.Name, s.Description, s.Archived, s.HomepageId, s.CreatedAt, s.IsPublic, s.PublicComments);
+        new(s.Id, s.Key, s.Name, s.Description, s.Archived, s.HomepageId, s.CreatedAt, s.IsPublic, s.PublicComments,
+            s.IconKind, s.IconValue, s.IconColor);
 
     private static Dictionary<string, string[]> Error(string field, string message) =>
         new() { [field] = [message] };

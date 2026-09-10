@@ -29,6 +29,13 @@ public interface IProfileMediaService
     Stream? OpenRead(string storageKey);
 
     void Delete(string storageKey);
+
+    /// <summary>
+    /// Where this owner's media is stored. Deterministic, so a caller that
+    /// records only the content hash (space icons, dev-plan 6) can still find
+    /// and delete the bytes.
+    /// </summary>
+    string KeyFor(ProfileMediaKind kind, Guid ownerId);
 }
 
 /// <summary>
@@ -97,6 +104,8 @@ public sealed class ProfileMediaService(IAttachmentStorage storage) : IProfileMe
     public Stream? OpenRead(string storageKey) => storage.OpenRead(storageKey);
 
     public void Delete(string storageKey) => storage.Delete(storageKey);
+
+    public string KeyFor(ProfileMediaKind kind, Guid ownerId) => Key(kind, ownerId);
 
     /// <summary>
     /// Deterministic per owner, so a replacement overwrites rather than

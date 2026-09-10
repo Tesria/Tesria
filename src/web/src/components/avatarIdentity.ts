@@ -29,26 +29,29 @@ export type AvatarSubject = {
 }
 
 /**
- * A stable number in [0, AVATAR_COLORS.length) for a user id.
+ * A stable number in [0, modulo) for a string.
  *
  * FNV-1a rather than summing char codes: two ids that are anagrams of each
  * other would collide under a sum, and user ids are hex GUIDs, which share
  * an alphabet and a length — exactly the case where a weak hash clusters.
+ *
+ * Exported because space icons (dev-plan 6) pick a tile colour the same way,
+ * from a space key rather than a user id.
  */
-function hashToIndex(value: string): number {
+export function stableIndex(value: string, modulo: number): number {
   let hash = 0x811c9dc5
   for (let i = 0; i < value.length; i++) {
     hash ^= value.charCodeAt(i)
     hash = Math.imul(hash, 0x01000193) >>> 0
   }
-  return hash % AVATAR_COLORS.length
+  return hash % modulo
 }
 
 /** Which of the twelve a user gets: their choice, or a stable one from their id. */
 export function avatarVariantFor(subject: AvatarSubject): number {
   const chosen = subject.avatarVariant
   if (chosen != null && chosen >= 0 && chosen < AVATAR_COLORS.length) return chosen
-  return hashToIndex(subject.id)
+  return stableIndex(subject.id, AVATAR_COLORS.length)
 }
 
 /**

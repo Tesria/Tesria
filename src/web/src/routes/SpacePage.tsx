@@ -5,11 +5,14 @@ import { api, type PageTreeNode, type Space } from '../api/client'
 import { OverflowMenu } from '../components/OverflowMenu'
 import { PageTree } from '../components/PageTree'
 import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
+import { SpaceIcon } from '../components/SpaceIcon'
 
 export type SpaceOutletContext = {
   space: Space
   tree: PageTreeNode[]
   reloadTree: () => void
+  /** Settings edits the space it is shown inside, so the shell has to hear about it. */
+  onSpaceChanged: (space: Space) => void
 }
 
 /** Hook for child routes to reach the current space and refresh its page tree. */
@@ -79,7 +82,7 @@ export function SpacePage() {
   }
   if (!space) return <p className="muted page-wrap">Loading…</p>
 
-  const context: SpaceOutletContext = { space, tree, reloadTree }
+  const context: SpaceOutletContext = { space, tree, reloadTree, onSpaceChanged: setSpace }
 
   return (
     <div className="space-layout">
@@ -88,14 +91,18 @@ export function SpacePage() {
           substitute for it. Back-to-space-home navigation lives in the
           breadcrumb now, not here, so this is just a label. */}
       <div className={isPageRoute ? 'space-actionbar space-actionbar--hidden-on-page' : 'space-actionbar'}>
-        <span className="space-actionbar__pages">{space.name}</span>
+        <span className="space-actionbar__pages">
+          <SpaceIcon space={space} size={20} />
+          {space.name}
+        </span>
         {user && (
           <div className="space-actionbar__actions">
             <NavLink to={newPageHref} className="btn btn--primary btn--sm">
               + New
             </NavLink>
             <OverflowMenu label="Space actions">
-              <NavLink to={`/spaces/${space.key}/permissions`} className="btn">🔒 Permissions</NavLink>
+              <NavLink to={`/spaces/${space.key}/settings`} className="btn">⚙ Settings</NavLink>
+            <NavLink to={`/spaces/${space.key}/permissions`} className="btn">🔒 Permissions</NavLink>
               <NavLink to={`/spaces/${space.key}/webhooks`} className="btn">🪝 Webhooks</NavLink>
               <NavLink to={`/spaces/${space.key}/trash`} className="btn">🗑 Trash</NavLink>
             </OverflowMenu>
@@ -104,6 +111,7 @@ export function SpacePage() {
       </div>
       <aside className="sidebar">
         <div className="sidebar__head">
+          <SpaceIcon space={space} size={32} />
           <div>
             <div className="sidebar__key">
               {space.key}
@@ -120,6 +128,12 @@ export function SpacePage() {
         )}
         <PageTree tree={tree} spaceKey={space.key} onMoved={reloadTree} readOnly={!user} />
         {user && (<>
+        <NavLink
+          to={`/spaces/${space.key}/settings`}
+          className={({ isActive }) => (isActive ? 'sidebar__trash is-active' : 'sidebar__trash')}
+        >
+          ⚙ Settings
+        </NavLink>
         <NavLink
           to={`/spaces/${space.key}/permissions`}
           className={({ isActive }) => (isActive ? 'sidebar__trash is-active' : 'sidebar__trash')}

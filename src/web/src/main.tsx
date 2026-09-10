@@ -12,6 +12,7 @@ import { LoginPage } from './routes/LoginPage'
 import { RegisterPage } from './routes/RegisterPage'
 import { SpacesPage } from './routes/SpacesPage'
 import { SpacePage } from './routes/SpacePage'
+import { SpaceSettingsPage } from './routes/SpaceSettingsPage'
 import { SpaceHome } from './routes/SpaceHome'
 import { PageView } from './routes/PageView'
 import { PageEditor } from './routes/PageEditor'
@@ -58,6 +59,7 @@ createRoot(document.getElementById('root')!).render(
                 <Route index element={<SpaceHome />} />
                 <Route path="pages/:pageId" element={<PageView />} />
                 <Route element={<ProtectedRoute />}>
+                  <Route path="settings" element={<SpaceSettingsPage />} />
                   <Route path="new" element={<PageEditor />} />
                   <Route path="trash" element={<TrashPage />} />
                   <Route path="permissions" element={<SpacePermissionsPage />} />
