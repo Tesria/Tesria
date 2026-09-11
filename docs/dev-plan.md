@@ -742,7 +742,7 @@ eight times the schema, renderer and export work.
   (`textIndent` attr, capped at ~4). Clear formatting. Shortcut audit
   against Confluence's list; verify StarterKit's `**`, `__`, `` ` `` rules.
 
-### Wave C — people — `M` — Model: Opus
+### Wave C — people — `M` — Model: Opus — ✅ **shipped 2026-09-10**
 - **Mention**: `@` suggestion on the same `@tiptap/suggestion` primitive
   the slash menu uses; `mention` inline node with `userId`; on save, diff
   mentions and notify new ones (`user.mentioned`). Renders with the avatar.

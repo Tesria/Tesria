@@ -329,6 +329,45 @@ public class ProseMirrorRendererTests
         Assert.Contains("<mark>highlighted</mark>", md);
         Assert.DoesNotContain("text-align", md); // no Markdown alignment concept — intentionally dropped
     }
+    // -- Phase 7 Wave C mentions ---------------------------------------------
+
+    private const string MentionDoc = """
+    {"type":"doc","content":[
+      {"type":"paragraph","content":[
+        {"type":"text","text":"ask "},
+        {"type":"mention","attrs":{"userId":"11111111-1111-1111-1111-111111111111","label":"Ana <b>"}},
+        {"type":"text","text":" and "},
+        {"type":"mention","attrs":{"userId":"22222222-2222-2222-2222-222222222222","label":"  "}}]},
+      {"type":"taskList","content":[
+        {"type":"taskItem","attrs":{"checked":false,"assigneeId":"11111111-1111-1111-1111-111111111111","assigneeName":"Ana"},
+         "content":[{"type":"paragraph","content":[
+           {"type":"mention","attrs":{"userId":"11111111-1111-1111-1111-111111111111","label":"Ana"}},
+           {"type":"text","text":" to review"}]}]}]}
+    ]}
+    """;
+
+    [Fact]
+    public void Renders_a_mention_by_its_stored_label_not_its_id()
+    {
+        var html = ProseMirrorRenderer.ToHtml(MentionDoc);
+        Assert.Contains("@Ana &lt;b&gt;", html);
+        Assert.DoesNotContain("<b>", html);
+        // A mention with no usable label still reads as something.
+        Assert.Contains("@Unknown user", html);
+        // The id is for the server's mention diff, not for display.
+        Assert.DoesNotContain("11111111-1111", html);
+    }
+
+    [Fact]
+    public void Renders_a_mention_as_plain_at_name_in_markdown_without_repeating_the_assignee()
+    {
+        var md = ProseMirrorRenderer.ToMarkdown(MentionDoc);
+        Assert.Contains("ask @Ana <b> and @Unknown user", md);
+        // The assignee attribute is a copy of the mention already in the item.
+        Assert.Contains("- [ ] @Ana to review", md);
+        Assert.DoesNotContain("@Ana @Ana", md);
+    }
+
     // -- Phase 7 Wave B formatting -------------------------------------------
 
     private const string InkAndIndentDoc = """

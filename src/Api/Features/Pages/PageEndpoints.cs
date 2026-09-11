@@ -3,6 +3,7 @@ using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Audit;
 using Tesria.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure.Mentions;
 using Tesria.Api.Infrastructure.Notifications;
 using Tesria.Api.Infrastructure.Permissions;
 using Tesria.Api.Infrastructure.Security;
@@ -213,6 +214,7 @@ public static class PageEndpoints
         page.UpdatedAt = DateTimeOffset.UtcNow;
 
         await RecordPageCreatedAsync(page, userId, audit, notifications);
+        await NotifyNewMentionsAsync(page, before: null, content, userId, perms, notifications);
         await db.SaveChangesAsync();
         await DispatchPageCreatedWebhookAsync(page, webhooks);
 
@@ -327,6 +329,12 @@ public static class PageEndpoints
             page.Title = title;
         }
 
+        // Captured before the new version is attached: setting
+        // page.CurrentVersionId lets EF's navigation fix-up repoint
+        // page.CurrentVersion at the *new* version, which would make the
+        // mention diff below compare the content against itself.
+        var previousContent = page.CurrentVersion?.ContentJson;
+
         var now = DateTimeOffset.UtcNow;
         var nextNumber = (page.CurrentVersion?.VersionNumber ?? 0) + 1;
         var version = NewVersion(page, nextNumber, content, current.RequireId(),
@@ -339,6 +347,7 @@ public static class PageEndpoints
         audit.Record("page.updated", "page", page.Id, new { page.Title, Version = nextNumber });
         await notifications.NotifyPageWatchersAsync(
             page.Id, page.SpaceId, "page.updated", userId, new { page.Title });
+        await NotifyNewMentionsAsync(page, previousContent, content, userId, perms, notifications);
 
         await db.SaveChangesAsync();
         await webhooks.DispatchAsync(page.SpaceId, "page.updated", "page", page.Id, new { page.Title });
@@ -558,6 +567,12 @@ public static class PageEndpoints
 
         // Rollback preserves history: it appends a new version copying the old
         // content rather than deleting anything.
+        // Captured before the new version is attached: setting
+        // page.CurrentVersionId lets EF's navigation fix-up repoint
+        // page.CurrentVersion at the *new* version, which would make the
+        // mention diff below compare the content against itself.
+        var previousContent = page.CurrentVersion?.ContentJson;
+
         var now = DateTimeOffset.UtcNow;
         var nextNumber = (page.CurrentVersion?.VersionNumber ?? 0) + 1;
         var version = NewVersion(page, nextNumber, source.ContentJson, current.RequireId(),
@@ -649,6 +664,30 @@ public static class PageEndpoints
                 .Select(p => p.ParentPageId).FirstOrDefaultAsync();
         }
         return false;
+    }
+
+    /// <summary>
+    /// Tells anyone newly mentioned in the page's content that they were
+    /// (dev-plan Phase 7 Wave C) — the people already mentioned in the
+    /// previous version are skipped, so fixing a typo does not re-ping
+    /// everyone the page names.
+    ///
+    /// Each recipient is checked with <see cref="IPermissionService.AsUser"/>
+    /// before anything is queued: the notification carries the page title,
+    /// and mentioning someone must not be a way to leak the title of a page
+    /// they cannot open. They are told nothing, rather than told and then
+    /// given a 404.
+    /// </summary>
+    private static async Task NotifyNewMentionsAsync(
+        Page page, string? before, string after, Guid authorId,
+        IPermissionService perms, INotificationService notifications)
+    {
+        foreach (var userId in Mentions.NewlyMentioned(before, after, authorId))
+        {
+            if (!await perms.AsUser(userId).CanViewPageAsync(page.Id)) continue;
+            await notifications.NotifyUserAsync(
+                userId, "user.mentioned", "page", page.Id, authorId, new { page.Title });
+        }
     }
 
     /// <summary>The shared "a new page exists" side effects fired by both Create and Publish.</summary>

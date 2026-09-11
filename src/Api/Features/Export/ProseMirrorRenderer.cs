@@ -235,6 +235,13 @@ public static class ProseMirrorRenderer
                 RenderHtmlChildren(node, sb, ctx);
                 sb.Append("</div></li>\n");
                 break;
+            case "mention":
+                // The label, not a lookup: an exported file has no directory,
+                // and neither does a page version from before a rename.
+                sb.Append($"<span data-type=\"mention\" style=\"background: #deebff; color: #0747a6; ")
+                  .Append("padding: 0 0.3em; border-radius: 3px\">@")
+                  .Append(Escape(MentionLabel(node))).Append("</span>");
+                break;
             default:
                 RenderHtmlChildren(node, sb, ctx);
                 break;
@@ -306,6 +313,9 @@ public static class ProseMirrorRenderer
             case "status":
                 // A code span is the nearest thing to a lozenge most renderers have.
                 sb.Append('`').Append(StatusText(node).Replace('`', '\'')).Append('`');
+                break;
+            case "mention":
+                sb.Append('@').Append(MentionLabel(node));
                 break;
             case "date":
                 var mdIso = IsoDate(node);
@@ -495,6 +505,9 @@ public static class ProseMirrorRenderer
             var marker = BoolAttr(item, "checked") ? "- [x] " : "- [ ] ";
             var itemText = new StringBuilder();
             RenderMarkdownChildren(item, itemText, depth + 1, ctx);
+            // The assignee is a denormalised copy of the mention already
+            // inside the item (taskAssignee.ts), so it is deliberately not
+            // repeated here — it would read as the name twice.
 
             var lines = itemText.ToString().TrimEnd().Split('\n');
             for (var i = 0; i < lines.Length; i++)
@@ -686,6 +699,18 @@ public static class ProseMirrorRenderer
     {
         var color = Attr(node, "color");
         return color is not null && StatusColors.ContainsKey(color) ? color : "grey";
+    }
+
+    /// <summary>
+    /// A mention's stored display-name snapshot. The node also carries the
+    /// user's id, but an export has no directory to resolve it against and a
+    /// deleted account would resolve to nothing — the snapshot is what keeps
+    /// an old document readable.
+    /// </summary>
+    private static string MentionLabel(JsonElement node)
+    {
+        var label = (Attr(node, "label") ?? "").Trim();
+        return label.Length == 0 ? "Unknown user" : label;
     }
 
     private static string StatusText(JsonElement node)

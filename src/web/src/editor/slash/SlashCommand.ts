@@ -1,5 +1,6 @@
 import { Extension, type Editor } from '@tiptap/core'
 import Suggestion from '@tiptap/suggestion'
+import { PluginKey } from '@tiptap/pm/state'
 import { ReactRenderer } from '@tiptap/react'
 import type { SuggestionProps } from '@tiptap/suggestion'
 import { SlashMenu, type SlashMenuRef } from './SlashMenu'
@@ -24,6 +25,10 @@ export const SlashCommand = Extension.create({
     return [
       Suggestion({
         editor: this.editor,
+        // Every Suggestion plugin needs its own key: the default is a single
+        // shared `suggestion$`, so a second one throws "Adding different
+        // instances of a keyed plugin" and takes the whole editor down.
+        pluginKey: new PluginKey('slashSuggestion'),
         char: '/',
         startOfLine: false,
         command: ({ editor, range, props }: { editor: Editor; range: { from: number; to: number }; props: SlashItem }) => {

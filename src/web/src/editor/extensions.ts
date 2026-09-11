@@ -28,6 +28,10 @@ import { LayoutColumn, LayoutSection } from './layoutExtension'
 import { TextColorMark } from './textColorMark'
 import { TextIndent } from './textFormatting'
 import { LinkShortcut } from './linkShortcut'
+import { Mention } from './mentionExtension'
+import { MentionSuggestion } from './suggest/MentionSuggestion'
+import { EmojiSuggestion } from './suggest/EmojiSuggestion'
+import { TaskAssignee } from './taskAssignee'
 
 type SharedExtensionOptions = {
   /** Collaborative editors let Yjs own undo/redo history instead of StarterKit's. */
@@ -121,6 +125,32 @@ const Table = BaseTable.extend({
  * colgroup, and never touches cell style attributes, so there's nothing to
  * clobber it and no need for the custom-property indirection `width` needs.
  */
+/**
+ * An action item can name who it is for (dev-plan Phase 7 Wave C). Stored as
+ * an id plus a snapshot of the name, for the same reason a mention is — an
+ * exported file and an old page version have no directory to look the name up
+ * in. Wave D's Task report queries the id.
+ */
+const TaskItemWithAssignee = TaskItem.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      assigneeId: {
+        default: null as string | null,
+        parseHTML: (element: HTMLElement) => element.getAttribute('data-assignee-id'),
+        renderHTML: (attributes: { assigneeId?: string | null }) =>
+          attributes.assigneeId ? { 'data-assignee-id': attributes.assigneeId } : {},
+      },
+      assigneeName: {
+        default: null as string | null,
+        parseHTML: (element: HTMLElement) => element.getAttribute('data-assignee-name'),
+        renderHTML: (attributes: { assigneeName?: string | null }) =>
+          attributes.assigneeName ? { 'data-assignee-name': attributes.assigneeName } : {},
+      },
+    }
+  },
+}).configure({ nested: true })
+
 const cellBackgroundAttribute = {
   backgroundColor: {
     default: null as string | null,
@@ -179,7 +209,7 @@ export function getSharedExtensions({ collaborative = false, editable = true }: 
     TableCell,
     TableHeader,
     TaskList,
-    TaskItem.configure({ nested: true }),
+    TaskItemWithAssignee,
     Image,
     // multicolor: the highlight button is a colour palette (Toolbar.tsx), so
     // the mark carries a `color` attr. Highlights stored before this stay
@@ -205,8 +235,12 @@ export function getSharedExtensions({ collaborative = false, editable = true }: 
     Superscript,
     TextColorMark,
     TextIndent,
+    // Wave C. The node is part of the schema (read-only rendering has to draw
+    // a mention too); the `@` and `:` suggestions are editor-only, below.
+    Mention,
+    TaskAssignee,
     // Read-only rendering never needs "/" commands or a link shortcut — skip
     // mounting the plugins entirely rather than just hiding their output.
-    ...(editable ? [SlashCommand, LinkShortcut] : []),
+    ...(editable ? [SlashCommand, LinkShortcut, MentionSuggestion, EmojiSuggestion] : []),
   ]
 }
