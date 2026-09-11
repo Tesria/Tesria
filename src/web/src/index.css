@@ -404,6 +404,9 @@ label .password-input { margin-top: 0.25rem; }
 .sidebar__key { font-size: 0.72rem; font-weight: 700; color: var(--primary); }
 .sidebar__name { font-weight: 600; }
 .tree-section { margin-top: 0.75rem; }
+/* The "Pages" heading is a flex row so the mark sits on the text baseline
+   rather than on the line box's. */
+.tree-section__heading > span:first-child { display: inline-flex; align-items: center; gap: 0.45rem; }
 .tree-section__heading {
   display: flex; align-items: center; justify-content: space-between; gap: 0.35rem;
   font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
@@ -452,9 +455,24 @@ label .password-input { margin-top: 0.25rem; }
    means "here's where you are", not "here's what you can tap". */
 .space-home-tree .tree__link { color: var(--primary); }
 .space-home-tree .tree__link.is-active { color: var(--primary-dark); }
-.sidebar__trash { display: block; margin-top: 1rem; padding: 0.3rem 0.5rem; border-radius: 4px; color: var(--muted); font-size: 0.9rem; }
+.sidebar__trash {
+  display: flex; align-items: center; gap: 0.5rem;
+  margin-top: 1rem; padding: 0.3rem 0.5rem; border-radius: 4px; color: var(--muted); font-size: 0.9rem;
+}
 .sidebar__trash:hover { background: var(--hover); text-decoration: none; }
 .sidebar__trash.is-active { background: var(--primary-soft); color: var(--primary-dark); font-weight: 600; }
+
+/* The navigation icons carry the accent while their labels stay quiet, the
+   same split .brand__mark uses in the topbar. Because they are drawn in
+   currentColor, pointing them at --primary makes them follow the theme and
+   the chosen accent (data-accent) with no per-accent rules. */
+.nav-icon { flex-shrink: 0; color: var(--primary); }
+/* Except when the row is already the accent colour — then the icon joins the
+   label rather than sitting a shade apart from it. */
+.sidebar__trash.is-active .nav-icon { color: inherit; }
+/* Inside a button (the mobile overflow menu) the icon needs the same gap the
+   sidebar rows get from flex. */
+.btn .nav-icon { margin-right: 0.1rem; }
 
 /* Mobile-only bar, replacing a previous off-canvas drawer that held the
    page tree *and* + New/Permissions/Webhooks/Trash behind one hamburger —
