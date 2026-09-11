@@ -12,6 +12,7 @@ import { LoginPage } from './routes/LoginPage'
 import { RegisterPage } from './routes/RegisterPage'
 import { SpacesPage } from './routes/SpacesPage'
 import { SpacePage } from './routes/SpacePage'
+import { SpaceSettingsLayout } from './routes/SpaceSettingsLayout'
 import { SpaceSettingsPage } from './routes/SpaceSettingsPage'
 import { SpaceHome } from './routes/SpaceHome'
 import { PageView } from './routes/PageView'
@@ -59,12 +60,23 @@ createRoot(document.getElementById('root')!).render(
                 <Route index element={<SpaceHome />} />
                 <Route path="pages/:pageId" element={<PageView />} />
                 <Route element={<ProtectedRoute />}>
-                  <Route path="settings" element={<SpaceSettingsPage />} />
+                  {/* A space's own administration, one section with four
+                      tabs. Permissions, webhooks and trash used to be
+                      siblings of settings because they were built before it
+                      existed; they are tabs of it now. */}
+                  <Route path="settings" element={<SpaceSettingsLayout />}>
+                    <Route index element={<SpaceSettingsPage />} />
+                    <Route path="permissions" element={<SpacePermissionsPage />} />
+                    <Route path="webhooks" element={<SpaceWebhooksPage />} />
+                    <Route path="trash" element={<TrashPage />} />
+                  </Route>
                   <Route path="new" element={<PageEditor />} />
-                  <Route path="trash" element={<TrashPage />} />
-                  <Route path="permissions" element={<SpacePermissionsPage />} />
-                  <Route path="webhooks" element={<SpaceWebhooksPage />} />
                   <Route path="pages/:pageId/edit" element={<PageEditor />} />
+                  {/* Old locations, kept for bookmarks and for links written
+                      into pages before the move. */}
+                  <Route path="trash" element={<Navigate to="../settings/trash" relative="path" replace />} />
+                  <Route path="permissions" element={<Navigate to="../settings/permissions" relative="path" replace />} />
+                  <Route path="webhooks" element={<Navigate to="../settings/webhooks" relative="path" replace />} />
                 </Route>
               </Route>
               <Route element={<ProtectedRoute />}>

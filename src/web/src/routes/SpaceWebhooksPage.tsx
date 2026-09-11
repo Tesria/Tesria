@@ -48,17 +48,11 @@ export function SpaceWebhooksPage() {
   }
 
   if (forbidden) {
-    return (
-      <div className="page-wrap">
-        <h1>Webhooks</h1>
-        <p className="alert alert--error">You need admin rights on this space to manage its webhooks.</p>
-      </div>
-    )
+    return <p className="alert alert--error">You need admin rights on this space to manage its webhooks.</p>
   }
 
   return (
-    <div className="page-wrap">
-      <h1>Webhooks</h1>
+    <>
       <p className="muted small">
         POST a signed payload to a URL when something happens in this space — e.g.{' '}
         <code>page.created</code>, <code>page.updated</code>, <code>comment.created</code>, or{' '}
@@ -116,6 +110,6 @@ export function SpaceWebhooksPage() {
           </li>
         ))}
       </ul>
-    </div>
+    </>
   )
 }

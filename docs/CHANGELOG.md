@@ -5,6 +5,35 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Space sidebar: three bands, and settings absorbs its three neighbours (2026-09-11)
+
+Two problems, one shape.
+
+**The sidebar scrolled with the document.** It was an ordinary grid item,
+so reading a long page carried the space's name, the + New page button,
+the PAGES heading and the settings links off the top of the screen — the
+navigation disappeared exactly when a reader was deepest into a page and
+most likely to want it. It is now its own scroll container: pinned under
+the 52px topbar, exactly as tall as the rest of the viewport, with a head
+and a foot that stay put and only the tree's rows scrolling between them.
+`align-self: start` is the part that is easy to miss — a grid item
+stretches to its row's height by default, and a sticky element as tall as
+its container has nothing to stick within.
+
+**Permissions, webhooks and trash were siblings of settings** because all
+three were built before a space had a settings page to put them in. That
+left the sidebar doing two unrelated jobs, and the administrative one
+crowding out page browsing as a tree grows. They are now the three tabs
+beside Details under **Space settings**, in the same tabbed shell the
+admin area uses, reached by one sidebar entry pinned to the bottom above
+a rule. The old URLs redirect, so bookmarks and links written into pages
+still land in the right place.
+
+Walked as a member, as an admin and signed out, at desktop and phone
+widths, with a real page created, edited, deleted and purged through the
+moved Trash tab. The purge stops at the sudo-mode password prompt, which
+is the intended behaviour for an irreversible action.
+
 ### A user manual, written in Tesria (2026-09-11)
 
 A new **Tesria User Manual** space (`MANUAL`): 47 pages covering getting

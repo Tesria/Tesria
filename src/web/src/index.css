@@ -403,7 +403,39 @@ label .password-input { margin-top: 0.25rem; }
 
 /* ---- space layout (sidebar + content) ------------------------------------ */
 .space-layout { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 52px); }
-.sidebar { border-right: 1px solid var(--border); background: var(--bg-alt); padding: 1rem; }
+
+/* The sidebar is its own scroll container, not part of the document's.
+   It is pinned below the 52px topbar and exactly as tall as what is left of
+   the viewport, so scrolling a long page moves the page and nothing else —
+   the space's name, + New page, the PAGES heading and Space settings all
+   stay where the reader left them.
+   `align-self: start` matters: a grid item stretches to the row's height by
+   default, which here is the height of the *content*, and a sticky element
+   as tall as its container has nothing to stick within. */
+.sidebar {
+  border-right: 1px solid var(--border); background: var(--bg-alt); padding: 1rem;
+  position: sticky; top: 52px; align-self: start; height: calc(100vh - 52px);
+  display: flex; flex-direction: column; min-height: 0;
+}
+/* Head and foot hold their natural height; the tree takes the rest. */
+.sidebar__top { flex: 0 0 auto; }
+.sidebar__foot {
+  flex: 0 0 auto; margin-top: auto; padding-top: 0.6rem;
+  /* A rule, and the full padding back, so the foot reads as a separate band
+     rather than as the last row of the tree. */
+  border-top: 1px solid var(--border); margin-left: -1rem; margin-right: -1rem;
+  padding-left: 1rem; padding-right: 1rem;
+}
+/* Inside the sidebar the tree is the band that scrolls: the section fills the
+   gap, its heading stays put, and only the rows move. min-height: 0 is what
+   lets a flex child actually shrink below its content and scroll. */
+.sidebar .tree-section { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.sidebar .tree-section__heading { flex: 0 0 auto; }
+.sidebar .tree {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  /* Room for the scrollbar so rows do not sit under it. */
+  padding-right: 0.15rem; margin-right: -0.15rem;
+}
 .sidebar__head { margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.55rem; }
 .sidebar__key { font-size: 0.72rem; font-weight: 700; color: var(--primary); }
 .sidebar__name { font-weight: 600; }
@@ -461,7 +493,7 @@ label .password-input { margin-top: 0.25rem; }
 .space-home-tree .tree__link.is-active { color: var(--primary-dark); }
 .sidebar__trash {
   display: flex; align-items: center; gap: 0.5rem;
-  margin-top: 1rem; padding: 0.3rem 0.5rem; border-radius: 4px; color: var(--muted); font-size: 0.9rem;
+  padding: 0.35rem 0.5rem; border-radius: 4px; color: var(--muted); font-size: 0.9rem;
 }
 .sidebar__trash:hover { background: var(--hover); text-decoration: none; }
 .sidebar__trash.is-active { background: var(--primary-soft); color: var(--primary-dark); font-weight: 600; }
@@ -503,9 +535,9 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   .space-actionbar { display: flex; }
   .space-actionbar.space-actionbar--hidden-on-page { display: none; }
   .space-home-tree { display: block; margin-top: 1rem; }
-  /* .sidebar's two jobs — browsing the tree, reaching + New page/
-     Permissions/Webhooks/Trash — are covered by .space-home-tree and
-     .space-actionbar instead at this width. */
+  /* .sidebar's two jobs — browsing the tree, and reaching + New page and
+     Space settings — are covered by .space-home-tree and .space-actionbar
+     instead at this width. */
   .sidebar { display: none; }
 }
 

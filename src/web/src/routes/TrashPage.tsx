@@ -42,8 +42,7 @@ export function TrashPage() {
   }
 
   return (
-    <div className="page-wrap">
-      <h1>Trash</h1>
+    <>
       <p className="muted small">Deleted pages in {space.name}. Restoring brings back the page and its sub-pages.</p>
       {error && <p className="alert alert--error">{error}</p>}
       {items && items.length === 0 && <p className="muted">Trash is empty.</p>}
@@ -61,6 +60,6 @@ export function TrashPage() {
           </li>
         ))}
       </ul>
-    </div>
+    </>
   )
 }

@@ -38,19 +38,13 @@ export function SpacePermissionsPage() {
   }
 
   if (forbidden) {
-    return (
-      <div className="page-wrap">
-        <h1>Permissions</h1>
-        <p className="alert alert--error">You need admin rights on this space to manage its permissions.</p>
-      </div>
-    )
+    return <p className="alert alert--error">You need admin rights on this space to manage its permissions.</p>
   }
 
   const isOpen = rows !== null && rows.length === 0
 
   return (
-    <div className="page-wrap">
-      <h1>Permissions</h1>
+    <>
       {error && <p className="alert alert--error">{error}</p>}
 
       {isOpen ? (
@@ -89,6 +83,6 @@ export function SpacePermissionsPage() {
           </li>
         ))}
       </ul>
-    </div>
+    </>
   )
 }
