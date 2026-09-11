@@ -53,12 +53,14 @@ unchanged. Charts are plain SVG and flexbox rather than a charting library.
 Exports stay sane outside the app: an embed and a smart link become plain
 links (never an iframe, and a `javascript:` URL becomes no link at all),
 maths exports as `$…$`, and a chart names the table it charts rather than
-duplicating it. **One exception, worth knowing about:** an exported HTML
-page *containing a Mermaid diagram* includes a `<script>` that loads Mermaid
-from a CDN, so the diagram draws when the file is opened. The source is
-always in the file as readable text, so offline, script-blocked and printed
-copies still show it, and nothing about the reader is sent — but it is the
-only thing in an export that reaches the network.
+duplicating it. A page with a Mermaid diagram carries **this instance's own
+Mermaid bundle, inlined** — no CDN, and no dependence on this instance
+still being reachable. An exported file is meant to be something you keep,
+and a document that only renders while a server answers is not that. The
+cost is ~3MB, only on pages that actually have a diagram; where the bundle
+is missing the export ships the diagram source alone, which is still
+readable. **Nothing in an exported file reaches the network**, and a test
+asserts it.
 
 **Found by upgrading a running instance, which no test could catch:** the
 new `EmbedAllowlist` column defaulted to empty on an instance that already

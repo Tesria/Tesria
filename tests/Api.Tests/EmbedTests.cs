@@ -249,6 +249,34 @@ public class TechnicalContentExportTests
     }
 
     [Fact]
+    public async Task An_exported_diagram_carries_its_renderer_rather_than_fetching_one()
+    {
+        using var factory = new TestAppFactory();
+        var client = factory.CreateClient();
+        await client.RegisterAndSignInAsync();
+        var spaceId = await client.CreateSpaceAsync();
+        var page = await (await client.PostAsJsonAsync("/api/pages", new
+        {
+            SpaceId = spaceId,
+            ParentPageId = (Guid?)null,
+            Title = "Diagram",
+            ContentJson = Doc,
+        })).Content.ReadFromJsonAsync<PageRef>();
+
+        var html = await (await client.GetAsync($"/api/pages/{page!.Id}/export?format=html")).Content.ReadAsStringAsync();
+
+        // Nothing in an exported file may reach the network.
+        Assert.DoesNotContain("cdn.jsdelivr.net", html);
+        Assert.DoesNotContain("https://cdn", html);
+        Assert.DoesNotContain("<script src=", html);
+        // The source is present either way — the test web root has no built
+        // bundle, so this export ships the diagram as readable text alone.
+        Assert.Contains("<pre class=\"mermaid\">flowchart LR", html);
+    }
+
+    private record PageRef(Guid Id);
+
+    [Fact]
     public void A_page_with_no_diagram_does_not_claim_to_need_a_renderer()
     {
         ProseMirrorRenderer.ToHtml("""{"type":"doc","content":[{"type":"paragraph"}]}""", null, null, out var used);
