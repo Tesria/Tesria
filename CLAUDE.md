@@ -152,10 +152,14 @@ does unprompted) — safe to remove or ignore:
   be deleted once its pages are reassigned or the space is re-owned.
 - A **"Manual Bot"** account (`manual-bot@tesria.local`) and the **"Tesria
   User Manual"** (`MANUAL`) space it authored, created 2026-09-11: 47 pages
-  and 27 screenshots documenting the product for end users. Same arrangement
+  and 86 screenshots documenting the product for end users. Same arrangement
   as the API bot — the space is real documentation, the account is a fixture.
   Its password is **not** in the repo; regenerate it (or reset from the admin
   area) if the screenshot harness needs to run again.
+  It was **promoted to instance administrator** on 2026-09-11, at the owner's
+  explicit request, so that the manual could document the admin area. That is
+  a standing admin account and therefore a standing risk: demote it from
+  Administration → Users once the documentation is settled.
 
 If a new session picks up UI work in the "App Design" space (the
 dogfooding space documenting Tesria's own architecture), note it's real,
