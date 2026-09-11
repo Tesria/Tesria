@@ -45,6 +45,10 @@ public sealed class ApiTokenAuthenticationHandler(
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, user.Email),
             new(ClaimTypes.Name, user.DisplayName),
+            // The scope rides on the principal so one middleware (REST) and
+            // one helper (MCP) can enforce it without a second lookup. A
+            // cookie session carries no such claim and is unrestricted.
+            new(TokenScope.ClaimType, token.ReadOnly ? TokenScope.Read : TokenScope.Write),
         };
         var identity = new ClaimsIdentity(claims, Scheme.Name);
         var ticket = new AuthenticationTicket(new ClaimsPrincipal(identity), Scheme.Name);

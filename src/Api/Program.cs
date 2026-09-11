@@ -96,6 +96,21 @@ builder.Services.AddHttpClient("pdf", c => c.Timeout = TimeSpan.FromSeconds(30))
 
 // Machine-readable API description (dev-plan 8.3).
 builder.Services.AddTesriaOpenApi();
+
+// MCP server (dev-plan 8.4): in-process, on the official SDK, stateless so
+// every request is authenticated by its own token and nothing is pinned to
+// a session. Tools resolve their services from the request scope, which is
+// what makes the permission service the same one every endpoint uses.
+builder.Services.AddMcpServer(o =>
+    {
+        o.ServerInfo = new() { Name = "tesria", Version = typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "0" };
+        o.ServerInstructions =
+            "Tesria is a self-hosted wiki. Pages live in spaces and form a tree; content is returned as Markdown. " +
+            "'Not found' can mean the page does not exist or that this token's owner may not see it. " +
+            "Write tools need a token minted with write access.";
+    })
+    .WithHttpTransport(o => o.Stateless = true)
+    .WithTools<Tesria.Api.Features.Mcp.TesriaTools>();
 builder.Services.AddScoped<Tesria.Api.Features.Blocks.IDynamicBlockKind, Tesria.Api.Features.Blocks.Kinds.ChildrenBlock>();
 builder.Services.AddScoped<Tesria.Api.Features.Blocks.IDynamicBlockKind, Tesria.Api.Features.Blocks.Kinds.RecentlyUpdatedBlock>();
 builder.Services.AddScoped<Tesria.Api.Features.Blocks.IDynamicBlockKind, Tesria.Api.Features.Blocks.Kinds.ContentByLabelBlock>();
@@ -483,6 +498,8 @@ app.UseRateLimiter();
 app.UseAuthorization();
 // After authorization so it only ever stamps callers who got through it.
 app.UseMiddleware<LastSeenMiddleware>();
+// Read-only API tokens may not change anything over REST (dev-plan 8.4).
+app.UseMiddleware<Tesria.Api.Infrastructure.Security.TokenScopeMiddleware>();
 
 // API endpoints live under /api. Feature endpoints are registered via
 // extension methods to keep Program.cs thin (vertical-slice style).
@@ -514,6 +531,13 @@ api.MapWebhookEndpoints();
 
 // The spec and its reader (dev-plan 8.3).
 app.MapTesriaApiDocs();
+
+// /mcp: API tokens only — a browser session is never accepted here, so a
+// page in someone's tab cannot drive the assistant surface (8.4, decision 2).
+app.MapMcp("/mcp").RequireAuthorization(new Microsoft.AspNetCore.Authorization.AuthorizeAttribute
+{
+    AuthenticationSchemes = ApiTokenAuthenticationDefaults.AuthenticationScheme,
+});
 
 // Not under /api: robots.txt and sitemap.xml live at the root (dev-plan 5.2).
 app.MapPublicEndpoints();

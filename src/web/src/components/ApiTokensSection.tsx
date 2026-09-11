@@ -5,6 +5,7 @@ import { api, ApiError, type ApiTokenSummary, type CreatedApiToken } from '../ap
 export function ApiTokensSection() {
   const [tokens, setTokens] = useState<ApiTokenSummary[] | null>(null)
   const [name, setName] = useState('')
+  const [readOnly, setReadOnly] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [justCreated, setJustCreated] = useState<CreatedApiToken | null>(null)
 
@@ -19,9 +20,10 @@ export function ApiTokensSection() {
     if (!name.trim()) return
     setError(null)
     try {
-      const created = await api.apiTokens.create(name)
+      const created = await api.apiTokens.create(name, readOnly)
       setJustCreated(created)
       setName('')
+      setReadOnly(false)
       load()
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not create the token.')
@@ -61,6 +63,17 @@ export function ApiTokensSection() {
           Name
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="CI pipeline" required />
         </label>
+        <label className="admin__toggle api-tokens__scope">
+          <input type="checkbox" checked={readOnly} onChange={(e) => setReadOnly(e.target.checked)} />
+          <span>
+            <strong>Read-only</strong>
+            <br />
+            <span className="muted small">
+              Can read pages and search, but change nothing — the right choice for
+              an assistant or a script that only looks things up.
+            </span>
+          </span>
+        </label>
         <button type="submit" className="btn btn--primary">Create token</button>
       </form>
 
@@ -68,7 +81,7 @@ export function ApiTokensSection() {
       <ul className="version-list">
         {tokens?.map((t) => (
           <li key={t.id} className="version">
-            <span className="version__num">{t.name}</span>
+            <span className="version__num">{t.name}{t.readOnly && <span className="badge" title="Cannot change anything"> read-only</span>}</span>
             <code className="muted small">{t.prefix}</code>
             <span className="muted small">
               {t.lastUsedAt ? `last used ${new Date(t.lastUsedAt).toLocaleString()}` : 'never used'}

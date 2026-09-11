@@ -14,7 +14,7 @@ namespace Tesria.Api.Infrastructure.Auth;
 /// </summary>
 public interface IApiTokenService
 {
-    Task<(string RawToken, ApiToken Entity)> IssueAsync(Guid userId, string name);
+    Task<(string RawToken, ApiToken Entity)> IssueAsync(Guid userId, string name, bool readOnly = false);
     Task<ApiToken?> ValidateAsync(string rawToken);
 }
 
@@ -22,7 +22,7 @@ public sealed class ApiTokenService(AppDbContext db) : IApiTokenService
 {
     private const string Prefix = "cct_"; // "Tesria token"
 
-    public async Task<(string RawToken, ApiToken Entity)> IssueAsync(Guid userId, string name)
+    public async Task<(string RawToken, ApiToken Entity)> IssueAsync(Guid userId, string name, bool readOnly = false)
     {
         var id = Guid.NewGuid();
         var secret = Base64Url(RandomNumberGenerator.GetBytes(32));
@@ -33,6 +33,7 @@ public sealed class ApiTokenService(AppDbContext db) : IApiTokenService
             Id = id,
             UserId = userId,
             Name = name,
+            ReadOnly = readOnly,
             TokenHash = Hash(rawToken),
             Prefix = rawToken[..(Prefix.Length + 8)] + "…",
             CreatedAt = DateTimeOffset.UtcNow,

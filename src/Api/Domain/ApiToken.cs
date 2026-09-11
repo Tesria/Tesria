@@ -22,6 +22,14 @@ public class ApiToken
     /// <summary>First few characters of the raw token, for identifying it in listings.</summary>
     public required string Prefix { get; set; }
 
+    /// <summary>
+    /// The token's one scope (dev-plan 8.4): a read-only token may call
+    /// anything that does not change state. Enforced for REST by
+    /// <c>TokenScopeMiddleware</c> and for MCP by each write tool. Existing
+    /// tokens are full-access — nothing narrows silently on upgrade.
+    /// </summary>
+    public bool ReadOnly { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
 
     public DateTimeOffset? LastUsedAt { get; set; }

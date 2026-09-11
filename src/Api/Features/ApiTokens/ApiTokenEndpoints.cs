@@ -6,10 +6,11 @@ namespace Tesria.Api.Features.ApiTokens;
 
 public static class ApiTokenEndpoints
 {
-    public record CreateTokenRequest(string Name);
-    public record CreatedTokenResponse(Guid Id, string Name, string Prefix, DateTimeOffset CreatedAt, string Token);
+    /// <param name="ReadOnly">Mint a read-only token (dev-plan 8.4). Omitted means full access, as every token was before scopes existed.</param>
+    public record CreateTokenRequest(string Name, bool? ReadOnly);
+    public record CreatedTokenResponse(Guid Id, string Name, string Prefix, bool ReadOnly, DateTimeOffset CreatedAt, string Token);
     public record TokenResponse(
-        Guid Id, string Name, string Prefix, DateTimeOffset CreatedAt, DateTimeOffset? LastUsedAt);
+        Guid Id, string Name, string Prefix, bool ReadOnly, DateTimeOffset CreatedAt, DateTimeOffset? LastUsedAt);
 
     public static IEndpointRouteBuilder MapApiTokenEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -28,7 +29,7 @@ public static class ApiTokenEndpoints
         // provider cannot ORDER BY DateTimeOffset.
         return Results.Ok(tokens
             .OrderByDescending(t => t.CreatedAt)
-            .Select(t => new TokenResponse(t.Id, t.Name, t.Prefix, t.CreatedAt, t.LastUsedAt)));
+            .Select(t => new TokenResponse(t.Id, t.Name, t.Prefix, t.ReadOnly, t.CreatedAt, t.LastUsedAt)));
     }
 
     private static async Task<IResult> Create(
@@ -42,12 +43,12 @@ public static class ApiTokenEndpoints
                 ["name"] = ["A name is required so you can tell your tokens apart."],
             });
 
-        var (raw, entity) = await tokens.IssueAsync(current.RequireId(), name);
+        var (raw, entity) = await tokens.IssueAsync(current.RequireId(), name, req.ReadOnly ?? false);
         await detector.TokenMintedAsync(current.RequireId());
         await db.SaveChangesAsync();
         // The raw token is returned exactly once — it is not retrievable again.
         return Results.Created($"/api/api-tokens/{entity.Id}",
-            new CreatedTokenResponse(entity.Id, entity.Name, entity.Prefix, entity.CreatedAt, raw));
+            new CreatedTokenResponse(entity.Id, entity.Name, entity.Prefix, entity.ReadOnly, entity.CreatedAt, raw));
     }
 
     private static async Task<IResult> Revoke(Guid id, AppDbContext db, CurrentUser current)
