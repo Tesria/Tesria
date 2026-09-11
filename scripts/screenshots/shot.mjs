@@ -125,12 +125,34 @@ function watch(p) {
     problems.push(`${current}: console ${t.slice(0, 160)}`)
   })
 }
-const ctx = await browser.newContext({
+// Documentation is shot in one appearance so the pictures agree with each
+// other: light theme, the default blue accent. Both are per-browser
+// preferences (theme.ts writes them to localStorage), so they are seeded
+// before the app's first paint rather than clicked afterwards — a click
+// would leave the first screenshot of every run in whatever the previous
+// one ended on. SHOT_THEME / SHOT_ACCENT override for a run that needs
+// something else.
+const THEME = process.env.SHOT_THEME || 'light'
+const ACCENT = process.env.SHOT_ACCENT || 'blue'
+const seedAppearance = `
+  try {
+    if (${JSON.stringify(THEME)} === 'system') localStorage.removeItem('tesria-theme')
+    else localStorage.setItem('tesria-theme', ${JSON.stringify(THEME)})
+    if (${JSON.stringify(ACCENT)} === 'blue') localStorage.removeItem('tesria-accent')
+    else localStorage.setItem('tesria-accent', ${JSON.stringify(ACCENT)})
+  } catch { /* a browser with storage blocked still renders, just at defaults */ }
+`
+const contextOptions = {
   viewport: { width: 1440, height: 900 },
   deviceScaleFactor: 2,
-  colorScheme: 'dark',
+  // Matches THEME so that anything reading prefers-color-scheme (the editor's
+  // embedded frames, a "system" preference) agrees with the seeded choice.
+  colorScheme: THEME === 'dark' ? 'dark' : 'light',
   ignoreHTTPSErrors: true,
-})
+}
+
+const ctx = await browser.newContext(contextOptions)
+await ctx.addInitScript(seedAppearance)
 const page = await ctx.newPage()
 watch(page)
 
@@ -150,10 +172,8 @@ let anonPage = null
 async function pageFor(s) {
   if (!s.anon) return page
   if (!anonPage) {
-    const anonCtx = await browser.newContext({
-      viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2, colorScheme: 'dark',
-      ignoreHTTPSErrors: true,
-    })
+    const anonCtx = await browser.newContext(contextOptions)
+    await anonCtx.addInitScript(seedAppearance)
     anonPage = await anonCtx.newPage()
     watch(anonPage)
   }
@@ -173,6 +193,8 @@ for (const s of spec.shots) {
       if (step.press) await pg.press(step.selector || 'body', step.press)
       if (step.keys) await pg.keyboard.type(step.keys, { delay: 12 })
       if (step.hover) await pg.hover(step.hover)
+      if (step.tripleClick) await pg.click(step.tripleClick, { clickCount: 3 })
+      if (step.scrollTo) await pg.locator(step.scrollTo).first().scrollIntoViewIfNeeded().catch(() => {})
       if (step.eval) await pg.evaluate(step.eval)
       if (step.wait) await pg.waitForTimeout(step.wait)
       if (step.waitFor) await pg.waitForSelector(step.waitFor, { timeout: 15000 })
@@ -195,10 +217,12 @@ for (const s of spec.shots) {
       }
       const x0 = Math.min(...boxes.map(b => b.x)), y0 = Math.min(...boxes.map(b => b.y))
       const x1 = Math.max(...boxes.map(b => b.x + b.width)), y1 = Math.max(...boxes.map(b => b.y + b.height))
-      const box = { x: x0, y: y0, width: x1 - x0, height: y1 - y0 }
+      const scroll = await pg.evaluate(() => ({ x: window.scrollX, y: window.scrollY }))
+      const box = { x: x0 + scroll.x, y: y0 + scroll.y, width: x1 - x0, height: y1 - y0 }
       const p = s.clipPad == null ? 0 : s.clipPad
       await pg.screenshot({
         path: file,
+        fullPage: true,
         clip: {
           x: Math.max(0, box.x - p), y: Math.max(0, box.y - p),
           width: box.width + p * 2, height: box.height + p * 2 - (s.clipTrim || 0),
@@ -208,6 +232,14 @@ for (const s of spec.shots) {
       await pg.screenshot({ path: file, clip: s.clip })
     } else {
       await pg.screenshot({ path: file, fullPage: !!s.fullPage })
+    }
+    // Typing into the editor reaches the collaborative document immediately,
+    // whether or not the page is ever saved — so a shot that types has to put
+    // the document back, or the next run photographs the last run's leftovers.
+    for (const step of s.after || []) {
+      if (step.press) await pg.press(step.selector || 'body', step.press)
+      if (step.repeat) for (let i = 0; i < step.repeat; i++) await pg.keyboard.press(step.key)
+      if (step.wait) await pg.waitForTimeout(step.wait)
     }
     console.log('shot', s.name)
   } catch (err) {
