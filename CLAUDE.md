@@ -82,8 +82,8 @@ one's on a decision it shouldn't be making — either way, silently.
   that matches nothing — no newline, no menu selection, nothing — and it
   looks exactly like a broken feature. This wasted a debugging pass on the
   slash and mention menus, both of which were fine.
-- **Screenshots of the running app** are taken by the Playwright harness in
-  the session scratchpad (`scratchpad/manual/shot.mjs` + `run.sh`), which runs
+- **Screenshots of the running app** are taken by the harness in
+  [`scripts/screenshots/`](./scripts/screenshots/README.md), which runs
   from the **PDF sidecar's image** — it already carries a Chromium matched to
   its Playwright, so there is nothing to install. Run it inside **Caddy's**
   network namespace (`--network container:tesria-caddy-1`, base

@@ -1,0 +1,472 @@
+{
+ "shots": [
+  {
+   "name": "login",
+   "anon": true,
+   "url": "/login",
+   "settle": 900,
+   "clipTo": ".page-wrap, .card, form",
+   "clipPad": 24
+  },
+  {
+   "name": "tour",
+   "url": "/spaces/MANUAL/pages/16638634-a805-4401-8703-f9fe659ee6ec",
+   "settle": 1600,
+   "annotate": [
+    {
+     "type": "box",
+     "target": ".topbar",
+     "pad": -3
+    },
+    {
+     "type": "note",
+     "target": ".topbar",
+     "label": "Top bar \u2014 always here",
+     "dx": 470,
+     "dy": 52
+    },
+    {
+     "type": "box",
+     "target": ".sidebar",
+     "pad": -3
+    },
+    {
+     "type": "note",
+     "target": ".sidebar",
+     "label": "This space",
+     "dx": 14,
+     "dy": 560
+    },
+    {
+     "type": "box",
+     "target": ".page-actionbar",
+     "pad": -2
+    },
+    {
+     "type": "note",
+     "target": ".page-actionbar",
+     "label": "Page actions",
+     "dx": 300,
+     "dy": 46
+    }
+   ]
+  },
+  {
+   "name": "appearance",
+   "url": "/spaces/MANUAL/pages/16638634-a805-4401-8703-f9fe659ee6ec",
+   "settle": 700,
+   "steps": [
+    {
+     "click": ".theme-toggle"
+    },
+    {
+     "wait": 500
+    }
+   ],
+   "clipTo": ".theme-menu__panel",
+   "clipPad": 16
+  },
+  {
+   "name": "new-space",
+   "url": "/spaces",
+   "settle": 700,
+   "steps": [
+    {
+     "click": "button.btn--primary"
+    },
+    {
+     "wait": 600
+    },
+    {
+     "type": "DOCS",
+     "selector": "form.form-inline input >> nth=0"
+    },
+    {
+     "type": "Product documentation",
+     "selector": "form.form-inline input >> nth=1"
+    }
+   ],
+   "clipTo": "form.form-inline",
+   "clipPad": 18
+  },
+  {
+   "name": "editor-first",
+   "url": "/spaces/MANUAL/new",
+   "settle": 1800,
+   "steps": [
+    {
+     "type": "Runbook: restoring from a backup",
+     "selector": ".title-input"
+    },
+    {
+     "click": ".ProseMirror"
+    },
+    {
+     "wait": 300
+    },
+    {
+     "press": "First, check that the nightly backup actually ran."
+    }
+   ],
+   "clipTo": [
+    ".page-actionbar",
+    ".paper"
+   ],
+   "clipPad": 10
+  },
+  {
+   "name": "editor-chrome",
+   "url": "/spaces/MANUAL/pages/a7f2e89c-8220-499a-a9b7-cfc65edfa8ed/edit",
+   "settle": 1800,
+   "clipTo": ".page-actionbar",
+   "clipPad": 8,
+   "annotate": [
+    {
+     "type": "arrow",
+     "target": ".toolbar-dropdown",
+     "from": "below",
+     "len": 40,
+     "label": "Block style"
+    },
+    {
+     "type": "circle",
+     "target": "[title='Insert an element']",
+     "pad": 5
+    }
+   ]
+  },
+  {
+   "name": "editor-actions",
+   "url": "/spaces/MANUAL/pages/a7f2e89c-8220-499a-a9b7-cfc65edfa8ed/edit",
+   "settle": 1800,
+   "clipTo": ".page-actionbar__secondary",
+   "clipPad": 22,
+   "annotate": [
+    {
+     "type": "arrow",
+     "target": "button[form='page-editor-form']",
+     "from": "below",
+     "len": 36,
+     "label": "Saves the page"
+    }
+   ]
+  },
+  {
+   "name": "insert-menu",
+   "url": "/spaces/MANUAL/pages/a7f2e89c-8220-499a-a9b7-cfc65edfa8ed/edit",
+   "settle": 1800,
+   "steps": [
+    {
+     "click": "[title='Insert an element']"
+    },
+    {
+     "wait": 700
+    }
+   ],
+   "clipTo": ".toolbar-dropdown__menu",
+   "clipPad": 14
+  },
+  {
+   "name": "slash-menu",
+   "url": "/spaces/MANUAL/pages/a7f2e89c-8220-499a-a9b7-cfc65edfa8ed/edit",
+   "settle": 1800,
+   "steps": [
+    {
+     "click": ".ProseMirror p:last-child"
+    },
+    {
+     "wait": 300
+    },
+    {
+     "press": "/"
+    },
+    {
+     "wait": 800
+    }
+   ],
+   "clipTo": ".slash-menu",
+   "clipPad": 14
+  },
+  {
+   "name": "mention-menu",
+   "url": "/spaces/MANUAL/pages/a7f2e89c-8220-499a-a9b7-cfc65edfa8ed/edit",
+   "settle": 1800,
+   "steps": [
+    {
+     "click": ".ProseMirror p:last-child"
+    },
+    {
+     "wait": 300
+    },
+    {
+     "press": "@"
+    },
+    {
+     "wait": 900
+    }
+   ],
+   "clipTo": ".suggest-menu",
+   "clipPad": 14
+  },
+  {
+   "name": "emoji-menu",
+   "url": "/spaces/MANUAL/pages/a7f2e89c-8220-499a-a9b7-cfc65edfa8ed/edit",
+   "settle": 1800,
+   "steps": [
+    {
+     "click": ".ProseMirror p:last-child"
+    },
+    {
+     "wait": 300
+    },
+    {
+     "press": ":"
+    },
+    {
+     "wait": 250
+    },
+    {
+     "press": "s"
+    },
+    {
+     "press": "m"
+    },
+    {
+     "wait": 900
+    }
+   ],
+   "clipTo": ".suggest-menu",
+   "clipPad": 14
+  },
+  {
+   "name": "table-controls",
+   "url": "/spaces/MANUAL/pages/a7f2e89c-8220-499a-a9b7-cfc65edfa8ed/edit",
+   "settle": 1800,
+   "steps": [
+    {
+     "hover": ".ProseMirror table td >> nth=0"
+    },
+    {
+     "wait": 800
+    }
+   ],
+   "clipTo": ".ProseMirror table",
+   "clipPad": 46
+  },
+  {
+   "name": "live-block-menu",
+   "url": "/spaces/MANUAL/pages/f749ee50-c860-4b84-9ccc-cb1af850f8cb/edit",
+   "settle": 2400,
+   "steps": [
+    {
+     "click": ".dynamic-block__head >> nth=0"
+    },
+    {
+     "wait": 900
+    }
+   ],
+   "clipTo": ".dynamic-block-menu, .dynamic-block",
+   "clipPad": 16
+  },
+  {
+   "name": "page-tree-reorder",
+   "url": "/spaces/MANUAL/pages/16638634-a805-4401-8703-f9fe659ee6ec",
+   "settle": 1400,
+   "steps": [
+    {
+     "click": ".tree-section__actions button"
+    },
+    {
+     "wait": 700
+    }
+   ],
+   "clipTo": ".sidebar",
+   "clipPad": 0,
+   "clip": {
+    "x": 0,
+    "y": 60,
+    "width": 300,
+    "height": 520
+   }
+  },
+  {
+   "name": "labels",
+   "url": "/spaces/MANUAL/pages/5f66ba8b-fb37-49fd-b0b7-1e17e0c8d9a2",
+   "settle": 1400,
+   "clipTo": [
+    ".page-head",
+    ".labels"
+   ],
+   "clipPad": 20,
+   "annotate": [
+    {
+     "type": "arrow",
+     "target": ".label-add",
+     "from": "right",
+     "len": 60,
+     "label": "Add one"
+    }
+   ]
+  },
+  {
+   "name": "save-template",
+   "url": "/spaces/MANUAL/pages/a7f2e89c-8220-499a-a9b7-cfc65edfa8ed",
+   "settle": 1400,
+   "steps": [
+    {
+     "click": ".overflow-menu__trigger"
+    },
+    {
+     "wait": 500
+    },
+    {
+     "click": "text=Save as template"
+    },
+    {
+     "wait": 600
+    }
+   ],
+   "clipTo": ".overflow-menu__dropdown",
+   "clipPad": 14
+  },
+  {
+   "name": "export-menu",
+   "url": "/spaces/MANUAL/pages/a7f2e89c-8220-499a-a9b7-cfc65edfa8ed",
+   "settle": 1400,
+   "steps": [
+    {
+     "click": ".overflow-menu__trigger"
+    },
+    {
+     "wait": 600
+    }
+   ],
+   "clipTo": ".overflow-menu__dropdown",
+   "clipPad": 14
+  },
+  {
+   "name": "watch",
+   "url": "/spaces/MANUAL/pages/a7f2e89c-8220-499a-a9b7-cfc65edfa8ed",
+   "settle": 1400,
+   "steps": [
+    {
+     "click": ".overflow-menu__trigger"
+    },
+    {
+     "wait": 600
+    }
+   ],
+   "clipTo": ".overflow-menu__dropdown",
+   "clipPad": 14,
+   "annotate": [
+    {
+     "type": "box",
+     "target": ".overflow-menu__dropdown button:has(.nav-icon)",
+     "pad": 4
+    }
+   ]
+  },
+  {
+   "name": "history",
+   "url": "/spaces/MANUAL/pages/5f66ba8b-fb37-49fd-b0b7-1e17e0c8d9a2",
+   "settle": 1400,
+   "steps": [
+    {
+     "click": "text=History"
+    },
+    {
+     "wait": 900
+    }
+   ],
+   "clipTo": [
+    ".tabs",
+    ".tab-panel"
+   ],
+   "clipPad": 16
+  },
+  {
+   "name": "trash",
+   "url": "/spaces/MANUAL/trash",
+   "settle": 1200,
+   "clipTo": ".page-wrap",
+   "clipPad": 16
+  },
+  {
+   "name": "search",
+   "url": "/search?q=live%20block",
+   "settle": 1600,
+   "clipTo": ".page-wrap",
+   "clipPad": 16
+  },
+  {
+   "name": "permissions",
+   "url": "/spaces/MANUAL/permissions",
+   "settle": 1200,
+   "clipTo": ".page-wrap",
+   "clipPad": 16
+  },
+  {
+   "name": "webhooks",
+   "url": "/spaces/MANUAL/webhooks",
+   "settle": 1200,
+   "clipTo": ".page-wrap",
+   "clipPad": 16
+  },
+  {
+   "name": "profile",
+   "url": "/profile",
+   "settle": 1400,
+   "clip": {
+    "x": 0,
+    "y": 48,
+    "width": 1440,
+    "height": 720
+   }
+  },
+  {
+   "name": "totp",
+   "url": "/profile",
+   "settle": 1400,
+   "steps": [
+    {
+     "eval": "[...document.querySelectorAll('h2')].find(h=>h.textContent.includes('Two-factor'))?.scrollIntoView({block:'center'})"
+    },
+    {
+     "wait": 500
+    }
+   ],
+   "clipTo": "section:has(> h2)",
+   "clipPad": 14
+  },
+  {
+   "name": "api-tokens",
+   "url": "/profile",
+   "settle": 1400,
+   "steps": [
+    {
+     "eval": "[...document.querySelectorAll('h2')].find(h=>h.textContent.includes('API tokens'))?.scrollIntoView({block:'center'})"
+    },
+    {
+     "wait": 500
+    }
+   ],
+   "clip": {
+    "x": 0,
+    "y": 200,
+    "width": 1000,
+    "height": 420
+   }
+  },
+  {
+   "name": "api-docs",
+   "url": "/api/docs",
+   "settle": 3500,
+   "clip": {
+    "x": 0,
+    "y": 0,
+    "width": 1440,
+    "height": 800
+   }
+  }
+ ]
+}
