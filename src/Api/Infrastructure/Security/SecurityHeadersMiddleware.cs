@@ -30,7 +30,7 @@ public sealed partial class SecurityHeadersMiddleware
             : "Content-Security-Policy";
     }
 
-    public Task InvokeAsync(HttpContext context)
+    public async Task InvokeAsync(HttpContext context, Settings.ISiteSettingsService settings)
     {
         var headers = context.Response.Headers;
         headers["X-Content-Type-Options"] = "nosniff";
@@ -45,9 +45,20 @@ public sealed partial class SecurityHeadersMiddleware
         // the socket origin is spelled out per request rather than relying
         // on that.
         var socketScheme = context.Request.IsHttps ? "wss" : "ws";
-        headers[_cspHeaderName] = _cspTemplate.Replace("{socket}", $"{socketScheme}://{context.Request.Host}");
 
-        return _next(context);
+        // frame-src is built from the embed allowlist (dev-plan Phase 7 Wave
+        // E), so the browser refuses an off-list frame even if a bug let one
+        // reach the DOM — the allowlist is enforced here *and* at the resolve
+        // endpoint, and a change to it takes effect on the next request.
+        // 'self' is for the PDF viewer, which frames an attachment.
+        var frames = Features.Embeds.EmbedAllowlist.CspSources(
+            Features.Embeds.EmbedAllowlist.Parse((await settings.GetAsync(context.RequestAborted)).EmbedAllowlist));
+
+        headers[_cspHeaderName] = _cspTemplate
+            .Replace("{socket}", $"{socketScheme}://{context.Request.Host}")
+            .Replace("{frames}", string.Join(' ', frames));
+
+        await _next(context);
     }
 
     private static string BuildPolicy(IEnumerable<string> scriptHashes)
@@ -73,6 +84,10 @@ public sealed partial class SecurityHeadersMiddleware
             "connect-src 'self' {socket}",
             "media-src 'self' blob:",
             "worker-src 'self' blob:",
+            // Filled per request from the embed allowlist; with an empty
+            // allowlist this is `frame-src 'self'`, which frames nothing
+            // third-party at all.
+            "frame-src 'self' {frames}",
             "object-src 'none'",
             "frame-ancestors 'none'",
             "base-uri 'self'",

@@ -76,6 +76,7 @@ public static class AdminEndpoints
         string? SmtpFromAddress,
         SmtpTlsMode SmtpTls,
         bool RequireTotpForAdmins,
+        string EmbedAllowlist,
         int LoginRateLimitPerMinute,
         int AnonymousRateLimitPerMinute,
         int TokenMintLimitPerHour,
@@ -105,6 +106,7 @@ public static class AdminEndpoints
         string? SmtpFromAddress,
         SmtpTlsMode? SmtpTls,
         bool? RequireTotpForAdmins,
+        string? EmbedAllowlist,
         int? LoginRateLimitPerMinute,
         int? AnonymousRateLimitPerMinute,
         int? TokenMintLimitPerHour,
@@ -256,6 +258,7 @@ public static class AdminEndpoints
         if (req.SmtpFromAddress is not null) changed.Add(nameof(req.SmtpFromAddress));
         if (req.SmtpTls is not null) changed.Add(nameof(req.SmtpTls));
         if (req.RequireTotpForAdmins is not null) changed.Add(nameof(req.RequireTotpForAdmins));
+        if (req.EmbedAllowlist is not null) changed.Add(nameof(req.EmbedAllowlist));
 
         foreach (var (field, value, min, max) in new[]
         {
@@ -290,6 +293,10 @@ public static class AdminEndpoints
             if (req.SmtpFromAddress is not null) s.SmtpFromAddress = Blank(req.SmtpFromAddress);
             if (req.SmtpTls is { } tls) s.SmtpTls = tls;
             if (req.RequireTotpForAdmins is { } totp) s.RequireTotpForAdmins = totp;
+            // Normalised on the way in, so the stored value is exactly what
+            // both the resolve endpoint and the CSP will read back.
+            if (req.EmbedAllowlist is not null)
+                s.EmbedAllowlist = string.Join('\n', Embeds.EmbedAllowlist.Parse(req.EmbedAllowlist));
             if (req.LoginRateLimitPerMinute is { } l1) s.LoginRateLimitPerMinute = l1;
             if (req.AnonymousRateLimitPerMinute is { } l2) s.AnonymousRateLimitPerMinute = l2;
             if (req.TokenMintLimitPerHour is { } l3) s.TokenMintLimitPerHour = l3;
@@ -332,6 +339,7 @@ public static class AdminEndpoints
         s.SmtpFromAddress,
         s.SmtpTls,
         s.RequireTotpForAdmins,
+        s.EmbedAllowlist,
         s.LoginRateLimitPerMinute,
         s.AnonymousRateLimitPerMinute,
         s.TokenMintLimitPerHour,

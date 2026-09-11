@@ -127,6 +127,28 @@ export type PageTemplate = {
   createdAt: string
 }
 
+/** The authenticated download URL for an attachment, for src/href attributes. */
+export function attachmentDownloadUrl(id: string): string {
+  return `/api/attachments/${id}/download`
+}
+
+export type EmbedResolution = {
+  allowed: boolean
+  url: string | null
+  provider: string | null
+  aspectRatio: string | null
+  reason: string | null
+}
+
+export type LinkPreview = {
+  url: string
+  title: string | null
+  description: string | null
+  siteName: string | null
+  imageUrl: string | null
+  error: string | null
+}
+
 export type Attachment = {
   id: string
   pageId: string
@@ -167,6 +189,8 @@ export type SiteSettings = {
   smtpFromAddress: string | null
   smtpTls: number
   requireTotpForAdmins: boolean
+  /** Hosts an embed block may frame, one per line (dev-plan Phase 7 Wave E). */
+  embedAllowlist: string
   /** Brute-force protection (dev-plan 3.2). Every limiter is tunable. */
   loginRateLimitPerMinute: number
   anonymousRateLimitPerMinute: number
@@ -675,6 +699,13 @@ export const api = {
   },
   users: {
     list: () => request<Directory[]>('GET', '/api/users'),
+  },
+  embeds: {
+    /** What, if anything, this address may become in a frame — the server decides. */
+    resolve: (url: string) =>
+      request<EmbedResolution>('GET', `/api/embeds/resolve?url=${encodeURIComponent(url)}`),
+    unfurl: (url: string) =>
+      request<LinkPreview>('GET', `/api/embeds/unfurl?url=${encodeURIComponent(url)}`),
   },
   blocks: {
     get: (hostPageId: string, kind: string, params: Record<string, string>) => {

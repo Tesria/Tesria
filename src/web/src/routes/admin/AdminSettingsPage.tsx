@@ -7,6 +7,7 @@ export function AdminSettingsPage() {
   const [settings, setSettings] = useState<SiteSettings | null>(null)
   const [instanceName, setInstanceName] = useState('')
   const [baseUrl, setBaseUrl] = useState('')
+  const [embedAllowlist, setEmbedAllowlist] = useState('')
   const [testResult, setTestResult] = useState<string | null>(null)
   const [smtpPassword, setSmtpPassword] = useState('')
   const [status, setStatus] = useState<string | null>(null)
@@ -20,6 +21,7 @@ export function AdminSettingsPage() {
         setSettings(s)
         setInstanceName(s.instanceName)
         setBaseUrl(s.baseUrl ?? '')
+        setEmbedAllowlist(s.embedAllowlist ?? '')
       })
       .catch(() => setError('Could not load settings.'))
   }, [])
@@ -84,6 +86,36 @@ export function AdminSettingsPage() {
           className="btn btn--primary"
           disabled={busy}
           onClick={() => patch({ instanceName, baseUrl }, 'Instance settings saved.')}
+        >
+          Save
+        </button>
+      </section>
+
+      <section className="profile__section">
+        <h2>Embeds</h2>
+        <p className="muted small">
+          Which sites a page may show in a frame. This is the whole of that
+          decision: an address on no line here is refused when the page is
+          written <em>and</em> blocked by the browser, so an embed can never
+          reach an unlisted site. One host per line; a leading dot
+          (<code>.youtube.com</code>) also matches its subdomains. Leave it
+          empty to turn embeds off entirely.
+        </p>
+        <label>
+          Allowed embed hosts
+          <textarea
+            rows={6}
+            value={embedAllowlist}
+            onChange={(e) => setEmbedAllowlist(e.target.value)}
+            spellCheck={false}
+            placeholder=".youtube.com"
+          />
+        </label>
+        <button
+          type="button"
+          className="btn btn--primary"
+          disabled={busy}
+          onClick={() => patch({ embedAllowlist }, 'Embed allowlist saved.')}
         >
           Save
         </button>

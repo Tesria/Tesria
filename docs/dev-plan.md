@@ -646,7 +646,7 @@ it, and others can host their own copy publicly too.
 
 ---
 
-## Phase 7 — Editor parity with Confluence (the audit)
+## Phase 7 — Editor parity with Confluence (the audit) — ✅ **complete 2026-09-10**
 
 > **Scope added 2026-09-10 (done first):** editor chrome to match
 > Confluence — a borderless, continuous page and title; a single-row,
@@ -767,7 +767,7 @@ eight times the schema, renderer and export work.
   `architecture.md`, "Dynamic blocks" — adding a thirteenth is one class,
   one DI line, one catalogue entry and three tests.
 
-### Wave E — media and embeds — `M` — Model: Opus
+### Wave E — media and embeds — `M` — Model: Opus — ✅ **shipped 2026-09-10**
 - Embed node with a **server-enforced allowlist** of hosts (editable in
   admin settings). Never render an arbitrary iframe.
 - Smart links: server-side Open Graph fetch through the 3.4 SSRF guard,
@@ -775,7 +775,7 @@ eight times the schema, renderer and export work.
 - Video and generic file blocks on existing attachments; PDF via the
   browser's viewer; gallery as a layout over image nodes.
 
-### Wave F — technical content — `M` — Model: Opus
+### Wave F — technical content — `M` — Model: Opus — ✅ **shipped 2026-09-10**
 - **Mermaid** (from `roadmap.md`): a `mermaid` code-block language rendered
   by a node view; HTML export ships the source plus a client-side render
   script; Markdown export is a fenced block.

@@ -5,6 +5,70 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Editor parity Waves E and F — media, embeds, diagrams, maths, charts (dev-plan 7) (2026-09-10)
+
+**Phase 7 is complete.**
+
+**Wave E — embeds and media.** An embed is a third-party iframe on everyone
+else's page, so the allowlist is enforced **twice**: `/api/embeds/resolve`
+refuses a host that is not on it, and the CSP's `frame-src` is built from
+the same list, so even a client-side bug cannot frame an off-list site. The
+client never decides what may be framed — it asks, and frames exactly what
+it is told to.
+
+Host matching is deliberately tiny and gets the hostile cases in tests: a
+plain `EndsWith` would admit `evil-youtube.com` and
+`youtube.com.attacker.net`, so matching is on a label boundary. A known
+provider is also *narrowed* — a YouTube watch page becomes the no-cookie
+embed player, a Google Doc becomes its preview — while an allowlisted host
+with no provider rule frames as pasted, which is what makes "allowlist our
+internal Grafana" work with no code.
+
+Smart links fetch Open Graph tags through the 3.4 SSRF guard and cache them
+(a week for a success, an hour for a failure) so a page of links is not a
+page of outbound requests. The response body is capped at 256KB, and an
+`og:image` is only used if it is absolute https. Unfurling requires an
+account; resolving does not, because an embed on a public page is part of
+that page.
+
+Attachment-backed media (video, audio, PDF, file card) picks its rendering
+from the file's own content type rather than an author's choice, so a .mp4
+is a video wherever it appears. PDFs use the browser's own viewer in a
+same-origin frame — no PDF.js in the bundle. A gallery is a *layout over
+image nodes*, so every existing image affordance keeps working and the
+export renders ordinary images.
+
+**Wave F — technical content.** Mermaid is a code-block *language*, not a
+node: the source stays an ordinary fenced block in every export and the
+diagram is a view of it. KaTeX maths is one node with a `display` flag.
+Charts read a table already on the page by its ordinal ("the second table"),
+never copying the data — editing the table redraws the chart. Deliberately
+not a Wave D dynamic block: the table is right here, so a round trip would
+be slower, would miss unsaved edits, and would need a fourth result shape.
+
+Both libraries load on demand — a page with no diagram never downloads
+Mermaid's 500KB, and Vite splits it per diagram type. The main bundle is
+unchanged. Charts are plain SVG and flexbox rather than a charting library.
+
+Exports stay sane outside the app: an embed and a smart link become plain
+links (never an iframe, and a `javascript:` URL becomes no link at all),
+maths exports as `$…$`, and a chart names the table it charts rather than
+duplicating it. **One exception, worth knowing about:** an exported HTML
+page *containing a Mermaid diagram* includes a `<script>` that loads Mermaid
+from a CDN, so the diagram draws when the file is opened. The source is
+always in the file as readable text, so offline, script-blocked and printed
+copies still show it, and nothing about the reader is sent — but it is the
+only thing in an export that reaches the network.
+
+**Found by upgrading a running instance, which no test could catch:** the
+new `EmbedAllowlist` column defaulted to empty on an instance that already
+had a settings row, silently turning embeds off on upgrade. The C# property
+initialiser only runs for a *new* settings object; the default now lives on
+the migration's column too. Every test creates a fresh database and so
+never took that path.
+
+38 tests for the two waves.
+
 ### Editor parity Wave D — the other eleven kinds (dev-plan 7, Wave D — Opus half) (2026-09-10)
 
 Against the contract Fable designed: **Recently updated, Content by label,

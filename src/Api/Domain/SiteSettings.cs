@@ -66,6 +66,28 @@ public class SiteSettings
     public SmtpTlsMode SmtpTls { get; set; } = SmtpTlsMode.StartTls;
 
     /// <summary>Reserved for dev-plan 3.5; stored here so the admin UI has one home.</summary>
+    /// <summary>
+    /// Hosts whose pages may be framed by an <c>embed</c> block, one per
+    /// line (dev-plan Phase 7 Wave E). A leading <c>.</c> matches subdomains.
+    ///
+    /// This is the *only* thing standing between an author and an arbitrary
+    /// iframe on everyone else's page, so it is enforced twice: the resolve
+    /// endpoint refuses a URL that is not on it, and the CSP's `frame-src` is
+    /// built from it, so even a client-side bug cannot frame an off-list host.
+    ///
+    /// The default is the small set of well-known media and design hosts an
+    /// embed block exists for. Emptying it turns embeds off entirely.
+    /// </summary>
+    public string EmbedAllowlist { get; set; } = string.Join('\n', DefaultEmbedAllowlist);
+
+    public static readonly string[] DefaultEmbedAllowlist =
+    [
+        ".youtube.com", "youtu.be", ".youtube-nocookie.com",
+        ".vimeo.com", ".loom.com",
+        ".figma.com", ".miro.com", ".codepen.io",
+        "docs.google.com", "drive.google.com",
+    ];
+
     public bool RequireTotpForAdmins { get; set; }
 
     // --- Brute-force protection (dev-plan 3.2). Every limiter is tunable

@@ -48,7 +48,7 @@ public static class ExportEndpoints
                 "text/markdown", $"{safeName}.md"),
 
             "html" => File(
-                HtmlDocument(page.Title, ProseMirrorRenderer.ToHtml(content, snapshot, baseUrl)),
+                HtmlDocument(page.Title, ProseMirrorRenderer.ToHtml(content, snapshot, baseUrl, out var usedMermaid), usedMermaid),
                 "text/html", $"{safeName}.html"),
 
             _ => Results.ValidationProblem(new Dictionary<string, string[]>
@@ -80,9 +80,29 @@ public static class ExportEndpoints
         Results.File(Encoding.UTF8.GetBytes(body), contentType, fileName);
 
     /// <summary>Wraps rendered content in a minimal, print-friendly HTML document.</summary>
-    private static string HtmlDocument(string title, string bodyHtml)
+
+    private const string MermaidScript =
+        "<script type=\"module\">\n"
+        + "import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';\n"
+        + "mermaid.initialize({ startOnLoad: true, securityLevel: 'strict' });\n"
+        + "</script>";
+
+    /// <param name="withMermaid">
+    /// Adds the one thing in an exported file that reaches the network: a
+    /// Mermaid renderer from a CDN, included only when the page actually has
+    /// a diagram (dev-plan Phase 7 Wave F).
+    ///
+    /// The trade is deliberate — the diagram *source* is already in the file
+    /// as a readable &lt;pre&gt;, so a reader who is offline, who blocks the
+    /// script, or who prints before it runs still sees the diagram's text.
+    /// Nothing about the reader or the document is sent; it is a script
+    /// fetch. Inlining Mermaid instead would add ~500KB to every exported
+    /// file containing a diagram.
+    /// </param>
+    private static string HtmlDocument(string title, string bodyHtml, bool withMermaid = false)
     {
         var escapedTitle = WebUtility.HtmlEncode(title);
+        var mermaidScript = withMermaid ? MermaidScript : "";
         // $$ raises the interpolation delimiter to {{ }} so the CSS braces below
         // are treated as literal text.
         return $$"""
@@ -105,6 +125,7 @@ public static class ExportEndpoints
         <body>
         <h1>{{escapedTitle}}</h1>
         {{bodyHtml}}
+        {{mermaidScript}}
         </body>
         </html>
         """;

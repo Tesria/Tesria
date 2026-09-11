@@ -42,4 +42,12 @@ export const codeLanguages: { value: string; label: string }[] = [
   { value: 'java', label: 'Java' },
   { value: 'dockerfile', label: 'Dockerfile' },
   { value: 'markdown', label: 'Markdown' },
+  // Not a highlighting language: choosing it turns the code block into a
+  // rendered diagram (CodeBlockView / MermaidView, dev-plan Phase 7 Wave F).
+  // Kept in this list because "what is in this code block" is one decision,
+  // and Confluence's diagram macro is likewise just a fenced block.
+  { value: 'mermaid', label: 'Mermaid diagram' },
 ]
+
+/** The one language that renders rather than highlights. */
+export const MERMAID_LANGUAGE = 'mermaid'

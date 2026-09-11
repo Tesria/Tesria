@@ -542,6 +542,11 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .code-block__linenum-toggle:hover { background: #1f2a44; }
 .code-block__linenum-toggle.is-active { background: #29365c; color: var(--on-primary); border-color: #4b5f8f; }
 .code-block__body { display: flex; }
+/* `display: flex` out-specifies the user agent's `[hidden] { display: none }`,
+   so hiding a Mermaid block's source needs saying explicitly. The source is
+   hidden rather than unmounted so ProseMirror's view of the node survives
+   (CodeBlockView). */
+.code-block__body[hidden] { display: none; }
 .code-block__body pre { flex: 1 1 auto; min-width: 0; }
 .code-block__gutter {
   flex: 0 0 auto; user-select: none; text-align: right; padding: 0.75rem 0.5rem 0.75rem 0.75rem;
@@ -1800,3 +1805,113 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .excerpt > :first-child, .page-properties > :first-child { margin-top: 0; }
 .excerpt > :last-child, .page-properties > :last-child { margin-bottom: 0; }
 .page-properties { margin: 0.75rem 0; }
+
+/* ---- Phase 7 Wave E: embeds, smart links, media ------------------------- */
+
+.embed, .attachment-block { margin: 0.75rem 0; }
+.editor--editable .embed, .editor--editable .attachment-block {
+  padding: 0.5rem; border: 1px dashed var(--border); border-radius: var(--radius);
+}
+.editor--editable .embed.is-selected, .editor--editable .attachment-block.is-selected,
+.editor--editable .smart-link.is-selected { border-style: solid; border-color: var(--primary); }
+.embed__form { display: flex; gap: 0.4rem; margin-bottom: 0.5rem; }
+.embed__form input { flex: 1; min-width: 0; padding: 0.3rem 0.5rem; }
+.embed__note { margin: 0; color: var(--muted); font-size: 0.9rem; }
+.embed__note--refused { color: var(--panel-warning-icon); }
+/* aspect-ratio comes from the provider, so a video is 16:9 and a board is 4:3
+   without the page jumping once the frame loads. */
+.embed__frame { position: relative; width: 100%; background: var(--surface-sunken); border-radius: var(--radius); overflow: hidden; }
+.embed__frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+.smart-link { margin: 0.75rem 0; }
+.smart-link__body {
+  display: flex; gap: 0.75rem; align-items: center; padding: 0.6rem 0.8rem; text-decoration: none;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text);
+}
+.smart-link__body:hover { background: var(--bg-alt); text-decoration: none; }
+.smart-link__image { width: 96px; height: 64px; object-fit: cover; border-radius: 4px; flex: none; }
+.smart-link__text { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.smart-link__title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.smart-link__desc {
+  color: var(--muted); font-size: 0.85rem;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.smart-link__site { color: var(--muted); font-size: 0.75rem; }
+/* Inline mode is a link, not a card: no box, no image, no description. */
+.smart-link--inline { display: inline; margin: 0; }
+.smart-link--inline .smart-link__body { display: inline; padding: 0; border: none; background: none; color: var(--primary); }
+
+.attachment-block__picker { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.5rem; font-size: 0.85rem; }
+.attachment-block__picker select { flex: 1; min-width: 0; padding: 0.25rem 0.4rem; }
+.attachment-block__note { margin: 0; color: var(--muted); font-size: 0.9rem; }
+.attachment-block__video, .attachment-block__audio { width: 100%; border-radius: var(--radius); background: #000; }
+.attachment-block__audio { background: none; }
+.attachment-block__pdf iframe {
+  width: 100%; height: min(70vh, 640px); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.attachment-block__download { display: inline-block; margin-top: 0.3rem; font-size: 0.85rem; }
+.attachment-block__file {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); color: var(--text); text-decoration: none;
+}
+.attachment-block__file:hover { background: var(--bg-alt); text-decoration: none; }
+.attachment-block__name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.attachment-block__meta { color: var(--muted); font-size: 0.85rem; flex: none; }
+
+/* The gallery is a layout over ordinary image nodes — the images keep every
+   affordance they already have. */
+.gallery { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.75rem 0; }
+.gallery > * { margin: 0; }
+.gallery p { flex: 1 1 200px; min-width: 0; }
+.gallery img { width: 100%; border-radius: var(--radius); }
+.editor--editable .gallery { padding: 0.4rem; border: 1px dashed var(--border); border-radius: var(--radius); }
+
+/* ---- Phase 7 Wave F: diagrams, maths, charts ---------------------------- */
+
+.mermaid { padding: 0.5rem; text-align: center; overflow-x: auto; }
+.mermaid__svg svg { max-width: 100%; height: auto; }
+.mermaid__note, .mermaid__error { margin: 0; color: var(--muted); font-size: 0.9rem; }
+.mermaid__error { color: var(--panel-error-icon); white-space: pre-wrap; text-align: left; font-family: var(--mono, monospace); font-size: 0.8rem; }
+
+/* KaTeX brings its own stylesheet; these only place the node in the line. */
+.math--inline { display: inline-block; }
+.math--display { display: block; margin: 0.75rem 0; text-align: center; }
+.math.is-selected { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 3px; }
+.math__input { font-family: var(--mono, monospace); font-size: 0.9em; padding: 0.15rem 0.35rem; min-width: 12rem; }
+.math__rendered { cursor: default; }
+.editor--editable .math__rendered { cursor: text; }
+.math__empty { color: var(--muted); font-style: italic; font-size: 0.9em; }
+.math__error { color: var(--panel-error-icon); font-size: 0.85em; }
+
+.chart { margin: 0.75rem 0; }
+.editor--editable .chart { padding: 0.5rem; border: 1px dashed var(--border); border-radius: var(--radius); }
+.editor--editable .chart.is-selected { border-style: solid; border-color: var(--primary); }
+.chart__controls { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; font-size: 0.85rem; }
+.chart__controls label { display: flex; align-items: center; gap: 0.35rem; margin: 0; }
+.chart__controls select, .chart__title-input { padding: 0.2rem 0.4rem; }
+.chart__title-input { flex: 1; min-width: 8rem; }
+.chart__title { margin: 0 0 0.4rem; font-weight: 600; text-align: center; }
+.chart__note { margin: 0; color: var(--muted); font-size: 0.9rem; }
+.chart__plot { display: flex; flex-direction: column; gap: 0.5rem; align-items: center; }
+.chart__plot svg { max-width: 320px; width: 100%; height: auto; }
+
+/* Bars are flex boxes rather than SVG: they reflow with the page, and the
+   labels are real text a screen reader and a find-in-page can both reach. */
+.chart__bars { display: flex; gap: 0.75rem; align-items: flex-end; width: 100%; height: 180px; }
+.chart__bars .chart__group { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; gap: 0.3rem; min-width: 0; }
+.chart__bars .chart__group-bars { display: flex; gap: 2px; align-items: flex-end; height: 100%; }
+.chart__bars .chart__bar { flex: 1; min-height: 2px; border-radius: 3px 3px 0 0; }
+.chart__bars .chart__group-label {
+  order: 1; font-size: 0.75rem; color: var(--muted); text-align: center;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chart__bars--h { flex-direction: column; align-items: stretch; height: auto; }
+.chart__bars--h .chart__group { flex-direction: row; align-items: center; gap: 0.5rem; height: auto; }
+.chart__bars--h .chart__group-label { order: 0; width: 6rem; flex: none; text-align: right; }
+.chart__bars--h .chart__group-bars { flex-direction: column; flex: 1; height: auto; align-items: stretch; }
+.chart__bars--h .chart__bar { min-width: 2px; height: 14px; border-radius: 0 3px 3px 0; }
+
+.chart__legend { display: flex; flex-wrap: wrap; gap: 0.75rem; list-style: none; margin: 0; padding: 0; font-size: 0.8rem; color: var(--muted); }
+.chart__legend li { display: flex; align-items: center; gap: 0.3rem; }
+.chart__swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; }
