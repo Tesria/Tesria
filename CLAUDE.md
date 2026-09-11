@@ -82,6 +82,19 @@ one's on a decision it shouldn't be making — either way, silently.
   that matches nothing — no newline, no menu selection, nothing — and it
   looks exactly like a broken feature. This wasted a debugging pass on the
   slash and mention menus, both of which were fine.
+- **Screenshots of the running app** are taken by the Playwright harness in
+  the session scratchpad (`scratchpad/manual/shot.mjs` + `run.sh`), which runs
+  from the **PDF sidecar's image** — it already carries a Chromium matched to
+  its Playwright, so there is nothing to install. Run it inside **Caddy's**
+  network namespace (`--network container:tesria-caddy-1`, base
+  `https://tesria.localhost`, `ignoreHTTPSErrors`). Pointing it at the app
+  container directly looks like it works and does not: the session cookie is
+  `Secure`, so plain HTTP drops it and every shot is signed-out, and `/collab`
+  is routed by Caddy, so the editor renders its toolbar over an empty
+  document. Chromium also force-upgrades a named host to HTTPS regardless of
+  `--disable-features=HttpsUpgrades`. Annotations (circles, arrows, labels)
+  are drawn as a DOM overlay before the capture, not painted onto the PNG.
+
 - **Dependency audit is a release gate.** `scripts/audit.sh` runs
   `npm audit` (web + collab) and `dotnet list package --vulnerable
   --include-transitive`; it must exit 0 before a release or after touching
@@ -137,6 +150,12 @@ does unprompted) — safe to remove or ignore:
   (23 pages, 8 labels, panels, coloured tables, a saved template). The space
   is real documentation worth keeping; the bot account is a fixture and can
   be deleted once its pages are reassigned or the space is re-owned.
+- A **"Manual Bot"** account (`manual-bot@tesria.local`) and the **"Tesria
+  User Manual"** (`MANUAL`) space it authored, created 2026-09-11: 47 pages
+  and 27 screenshots documenting the product for end users. Same arrangement
+  as the API bot — the space is real documentation, the account is a fixture.
+  Its password is **not** in the repo; regenerate it (or reset from the admin
+  area) if the screenshot harness needs to run again.
 
 If a new session picks up UI work in the "App Design" space (the
 dogfooding space documenting Tesria's own architecture), note it's real,

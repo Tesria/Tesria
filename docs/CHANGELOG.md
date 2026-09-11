@@ -5,6 +5,62 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### A user manual, written in Tesria (2026-09-11)
+
+A new **Tesria User Manual** space (`MANUAL`): 47 pages covering getting
+started, every block in the editor, organising a wiki, working together,
+sharing and exporting, accounts, administration, and the two integration
+doors (REST and MCP). Written as real pages rather than as Markdown in
+`docs/`, so it is searchable, labelled, exportable and editable in the
+product it documents — and so it dogfoods the features it describes: the
+section index pages use children displays, the labels page ends with a
+labels list, the live-blocks page demonstrates a content-by-label block.
+
+**27 screenshots**, cropped to what they are about and, where it helps,
+annotated with circles and arrows. They are taken by a Playwright harness
+(`scratchpad/manual/`) running from the **PDF sidecar's image**, which
+already carries a Chromium matched to its Playwright — no new dependency.
+Two things about that harness are worth recording, because both cost time:
+
+- **It runs inside Caddy's network namespace** (`--network
+  container:tesria-caddy-1`), so `https://tesria.localhost` is this
+  instance through the real proxy. Going straight to the app container
+  fails twice over: the session cookie is `Secure`, so plain HTTP silently
+  drops it and every shot comes out signed-out; and `/collab` is routed by
+  Caddy, so the collaborative editor never loads a page's content and
+  every editor screenshot is an empty document with a toolbar over it.
+  Chromium also upgrades a *named* host to HTTPS on its own and will not
+  be talked out of it by `--disable-features=HttpsUpgrades` — only an IP
+  literal or a real HTTPS endpoint gets past that.
+- **Annotations are drawn in the DOM before the capture**, as an SVG
+  overlay positioned from `getBoundingClientRect()`, not painted onto the
+  PNG afterwards. Circles and arrows come out as crisp as the UI under
+  them, and they are described per shot in the spec rather than by
+  pixel-pushing.
+
+Screenshots of the admin area are **not** in the manual: taking them would
+have meant granting the authoring account instance-admin, and that is not
+a privilege to hand out unasked. Those four pages are written without
+pictures; the harness is checked in and can fill them in later.
+
+Fixture: a **Manual Bot** account (`manual-bot@tesria.local`) authors the
+space, the same arrangement as the API space's bot.
+
+### Fix: search snippets showed their `**` markers in the browser (2026-09-11)
+
+Regression from the retrieval work earlier the same day. `SearchSnippets`
+marks the matched words with `**` because the same snippet is served to
+the MCP tools and to anything else reading the API, where HTML would be
+the wrong thing to send — but the search results page rendered it as text,
+so a reader got `**webhook**` on the screen.
+
+Un-marked at the edge, in `SearchPage.tsx`, into `<mark>` elements — by
+splitting the string, never by `dangerouslySetInnerHTML`, because a
+snippet is page content and page content is not markup this app trusts.
+Styled as a weight change rather than a highlighter block: a snippet can
+carry a dozen matches and a row of yellow bars is harder to read than the
+sentence was.
+
 ### The space sidebar's emoji are now drawn icons (2026-09-11)
 
 `📑 ⚙ 🔒 🪝 🗑` were the only pictures in the app the app did not draw
