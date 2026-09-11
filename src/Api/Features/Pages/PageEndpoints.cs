@@ -15,7 +15,7 @@ namespace Tesria.Api.Features.Pages;
 public static class PageEndpoints
 {
     // An empty ProseMirror document; used when a page is created without content.
-    private const string EmptyDoc = """{"type":"doc","content":[]}""";
+    private const string EmptyDoc = PageContent.EmptyDoc;
 
     public record CreatePageRequest(Guid SpaceId, Guid? ParentPageId, string Title, string? ContentJson);
     public record UpdatePageRequest(string? Title, string ContentJson, string? ChangeComment);
@@ -64,66 +64,22 @@ public static class PageEndpoints
         return routes;
     }
 
+    /// <summary>
+    /// Thin over <see cref="IPageWriter"/> — the one place a page is created
+    /// (dev-plan 8.4). This method's whole job is turning that result into an
+    /// HTTP one; the MCP tool turns the same result into a tool response.
+    /// </summary>
     private static async Task<IResult> Create(
-        CreatePageRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit,
-        IPermissionService perms, INotificationService notifications, IWebhookDispatcher webhooks)
+        CreatePageRequest req, IPageWriter writer, CancellationToken ct)
     {
-        // Creating a page needs edit rights on the space (and on the parent, if any).
-        if (!await perms.CanViewSpaceAsync(req.SpaceId)) return Results.NotFound();
-        if (!await perms.CanEditSpaceAsync(req.SpaceId)) return Results.Forbid();
-        if (req.ParentPageId is { } parentForPerms && !await perms.CanEditPageAsync(parentForPerms))
-            return Results.Forbid();
-
-        var title = (req.Title ?? "").Trim();
-        if (title.Length == 0)
-            return Results.ValidationProblem(Error("title", "Title is required."));
-        if (!TryNormalizeContent(req.ContentJson, out var content))
-            return Results.ValidationProblem(Error("contentJson", "Content must be valid JSON."));
-
-        if (!await db.Spaces.AnyAsync(s => s.Id == req.SpaceId))
-            return Results.ValidationProblem(Error("spaceId", "Space not found."));
-
-        if (req.ParentPageId is { } parentId)
+        var result = await writer.CreateAsync(req.SpaceId, req.ParentPageId, req.Title, req.ContentJson, ct);
+        return result.Status switch
         {
-            var parent = await db.Pages.AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Id == parentId);
-            if (parent is null)
-                return Results.ValidationProblem(Error("parentPageId", "Parent page not found."));
-            if (parent.SpaceId != req.SpaceId)
-                return Results.ValidationProblem(Error("parentPageId", "Parent page is in a different space."));
-        }
-
-        var now = DateTimeOffset.UtcNow;
-        var userId = current.RequireId();
-        var page = new Page
-        {
-            Id = Guid.NewGuid(),
-            SpaceId = req.SpaceId,
-            ParentPageId = req.ParentPageId,
-            Title = title,
-            SearchText = BuildSearchText(title, content),
-            Status = PageStatus.Current,
-            Position = await NextPositionAsync(db, req.SpaceId, req.ParentPageId),
-            CreatedById = userId,
-            CreatedAt = now,
-            UpdatedAt = now,
+            PageWriteStatus.NotFound => Results.NotFound(),
+            PageWriteStatus.Forbidden => Results.Forbid(),
+            PageWriteStatus.Invalid => Results.ValidationProblem(Error(result.Field!, result.Message!)),
+            _ => Results.Created($"/api/pages/{result.Page!.Id}", ToDetail(result.Page, result.Version!)),
         };
-        var version = NewVersion(page, versionNumber: 1, content, userId, changeComment: null, now);
-        db.Pages.Add(page);
-        db.PageVersions.Add(version);
-
-        // Page.CurrentVersionId and PageVersion.PageId reference each other, so
-        // insert both first (leaving the pointer null), then set the pointer —
-        // otherwise EF cannot order the two inserts.
-        await db.SaveChangesAsync();
-        page.CurrentVersionId = version.Id;
-        await RecordPageCreatedAsync(page, userId, audit, notifications);
-        await db.SaveChangesAsync();
-        // Dispatched only after the create is durably committed — webhooks are
-        // fire-and-forget outbound calls, not part of the unit of work.
-        await DispatchPageCreatedWebhookAsync(page, webhooks);
-
-        return Results.Created($"/api/pages/{page.Id}", ToDetail(page, version));
     }
 
     private static async Task<IResult> CreateDraft(
@@ -200,7 +156,7 @@ public static class PageEndpoints
         var title = (req.Title ?? "").Trim();
         if (title.Length == 0)
             return Results.ValidationProblem(Error("title", "Title is required."));
-        if (!TryNormalizeContent(req.ContentJson, out var content))
+        if (!PageContent.TryNormalize(req.ContentJson, out var content))
             return Results.ValidationProblem(Error("contentJson", "Content must be valid JSON."));
 
         // Nothing was ever "really" saved yet, so the published page starts
@@ -209,7 +165,7 @@ public static class PageEndpoints
         var version = page.CurrentVersion;
         version.ContentJson = content;
         page.Title = title;
-        page.SearchText = BuildSearchText(title, content);
+        page.SearchText = PageContent.BuildSearchText(title, content);
         page.Status = PageStatus.Current;
         page.UpdatedAt = DateTimeOffset.UtcNow;
 
@@ -308,50 +264,16 @@ public static class PageEndpoints
     }
 
     private static async Task<IResult> Update(
-        Guid id, UpdatePageRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit,
-        IPermissionService perms, INotificationService notifications, IWebhookDispatcher webhooks)
+        Guid id, UpdatePageRequest req, IPageWriter writer, CancellationToken ct)
     {
-        if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
-        if (!await perms.CanEditPageAsync(id)) return Results.Forbid();
-
-        if (!TryNormalizeContent(req.ContentJson, out var content))
-            return Results.ValidationProblem(Error("contentJson", "Content must be valid JSON."));
-
-        var page = await db.Pages.Include(p => p.CurrentVersion)
-            .FirstOrDefaultAsync(p => p.Id == id);
-        if (page is null) return Results.NotFound();
-
-        if (req.Title is not null)
+        var result = await writer.UpdateAsync(id, req.Title, req.ContentJson, req.ChangeComment, ct);
+        return result.Status switch
         {
-            var title = req.Title.Trim();
-            if (title.Length == 0)
-                return Results.ValidationProblem(Error("title", "Title cannot be empty."));
-            page.Title = title;
-        }
-
-        // Captured before the new version is attached: setting
-        // page.CurrentVersionId lets EF's navigation fix-up repoint
-        // page.CurrentVersion at the *new* version, which would make the
-        // mention diff below compare the content against itself.
-        var previousContent = page.CurrentVersion?.ContentJson;
-
-        var now = DateTimeOffset.UtcNow;
-        var nextNumber = (page.CurrentVersion?.VersionNumber ?? 0) + 1;
-        var version = NewVersion(page, nextNumber, content, current.RequireId(),
-            string.IsNullOrWhiteSpace(req.ChangeComment) ? null : req.ChangeComment.Trim(), now);
-        db.PageVersions.Add(version);
-        page.CurrentVersionId = version.Id;
-        page.SearchText = BuildSearchText(page.Title, content);
-        page.UpdatedAt = now;
-        var userId = current.RequireId();
-        audit.Record("page.updated", "page", page.Id, new { page.Title, Version = nextNumber });
-        await notifications.NotifyPageWatchersAsync(
-            page.Id, page.SpaceId, "page.updated", userId, new { page.Title });
-        await NotifyNewMentionsAsync(page, previousContent, content, userId, perms, notifications);
-
-        await db.SaveChangesAsync();
-        await webhooks.DispatchAsync(page.SpaceId, "page.updated", "page", page.Id, new { page.Title });
-        return Results.Ok(ToDetail(page, version));
+            PageWriteStatus.NotFound => Results.NotFound(),
+            PageWriteStatus.Forbidden => Results.Forbid(),
+            PageWriteStatus.Invalid => Results.ValidationProblem(Error(result.Field!, result.Message!)),
+            _ => Results.Ok(ToDetail(result.Page!, result.Version!)),
+        };
     }
 
     private static async Task<IResult> Move(
@@ -579,7 +501,7 @@ public static class PageEndpoints
             $"Restored from version {number}", now);
         db.PageVersions.Add(version);
         page.CurrentVersionId = version.Id;
-        page.SearchText = BuildSearchText(page.Title, source.ContentJson);
+        page.SearchText = PageContent.BuildSearchText(page.Title, source.ContentJson);
         page.UpdatedAt = now;
 
         await db.SaveChangesAsync();
@@ -717,74 +639,8 @@ public static class PageEndpoints
         CreatedAt = createdAt,
     };
 
-    /// <summary>Search text for a page: its title plus the plain text of its content.</summary>
-    private static string BuildSearchText(string title, string contentJson) =>
-        NormalizeForSearch($"{title} {ExtractPlainText(contentJson)}".Trim());
-
-    /// <summary>
-    /// Postgres's tsvector parser treats "word/word" (e.g. "Hocuspocus/Yjs",
-    /// "OIDC/SSO") as a single compound lexeme instead of splitting it, which
-    /// makes each half unsearchable on its own. Replacing slashes with spaces
-    /// before indexing lets to_tsvector tokenize both halves normally.
-    /// </summary>
-    private static string NormalizeForSearch(string text) => text.Replace('/', ' ');
 
     /// <summary>Concatenates the text nodes of a ProseMirror document, ignoring structure.</summary>
-    private static string ExtractPlainText(string contentJson)
-    {
-        try
-        {
-            using var doc = JsonDocument.Parse(contentJson);
-            var sb = new System.Text.StringBuilder();
-            Walk(doc.RootElement, sb);
-            return sb.ToString().Trim();
-        }
-        catch (JsonException)
-        {
-            return string.Empty;
-        }
-
-        static void Walk(JsonElement el, System.Text.StringBuilder sb)
-        {
-            switch (el.ValueKind)
-            {
-                case JsonValueKind.Object:
-                    if (el.TryGetProperty("text", out var text) && text.ValueKind == JsonValueKind.String)
-                    {
-                        sb.Append(text.GetString());
-                        sb.Append(' ');
-                    }
-                    if (el.TryGetProperty("content", out var content))
-                        Walk(content, sb);
-                    break;
-                case JsonValueKind.Array:
-                    foreach (var item in el.EnumerateArray())
-                        Walk(item, sb);
-                    break;
-            }
-        }
-    }
-
-    private static bool TryNormalizeContent(string? input, out string normalized)
-    {
-        if (string.IsNullOrWhiteSpace(input))
-        {
-            normalized = EmptyDoc;
-            return true;
-        }
-        try
-        {
-            using var _ = JsonDocument.Parse(input);
-            normalized = input;
-            return true;
-        }
-        catch (JsonException)
-        {
-            normalized = EmptyDoc;
-            return false;
-        }
-    }
-
     private static PageDetailResponse ToDetail(Page page, PageVersion version) => new(
         page.Id, page.SpaceId, page.ParentPageId, page.Title, page.Position, page.Status,
         version.VersionNumber, version.ContentJson, page.FullWidth, page.CreatedAt, page.UpdatedAt);

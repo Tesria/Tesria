@@ -5,6 +5,42 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### MCP server — the ten tools, one write path (dev-plan 8.4 — Opus half) (2026-09-11)
+
+The tool surface Fable specified, built against the contract:
+`list_spaces`, `get_space_tree`, `search_pages`, `get_page`,
+`find_pages_by_label`, `list_labels` (read) and `create_page`,
+`update_page`, `add_page_label`, `remove_page_label` (write).
+
+**`PageWriter` is now the only place a page is created or updated.**
+`PageEndpoints.Create`/`Update` became thin translations of its result into
+HTTP; the MCP tools translate the same result into a tool response. That is
+what makes "a page written by an assistant is indistinguishable from one
+written in the browser" true rather than aspirational — the audit entry,
+the watcher and mention notifications and the webhook all come from one
+code path. The existing endpoint tests were the safety net for the
+extraction and stayed green throughout.
+
+**Markdown converts over exactly the subset the export emits**, so a page
+survives read → edit → write. The round-trip test caught a real defect:
+Markdig models `[x] done` as a task-list inline followed by the literal
+`" done"`, so the separating space belongs to the marker — dropping the
+marker without it made every round trip indent the text one space further,
+compounding on each edit. Also learned the hard way: two `-` lists
+separated only by a blank line are *one* list in CommonMark.
+
+Errors keep the masking rule. Writing to a page you cannot see is "not
+found", never "forbidden" — the latter confirms it exists. A read-only
+token is refused by every write tool *before* anything runs, and a test
+asserts the page is unchanged afterwards.
+
+The API space gained a page covering connecting a client, the tools, the
+Markdown contract and what the server deliberately will not do (delete,
+permissions, admin, attachments).
+
+Sixteen tests for the tools and the converter, on top of the seven from the
+design half.
+
 ### MCP server — the contract, token scopes, and `/mcp` (dev-plan 8.4 — Fable half) (2026-09-11)
 
 *The plan says to load the `claude-api` skill before designing the tool
