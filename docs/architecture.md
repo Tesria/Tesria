@@ -607,13 +607,26 @@ The same trap applies to every future setting.
   result shape the contract does not have. The chart is plain SVG and
   flexbox rather than a charting library — four types over one table is a
   few dozen lines against another ~150KB in the bundle.
-- **Exports stay readable outside the app.** An embed and a smart link
-  become plain links (never an iframe; a `javascript:` URL becomes no link
-  at all — document JSON is stored as the client sent it). Maths exports as
-  `$…$`. A chart names the table it charts. The one exception is an HTML
-  export *containing a Mermaid diagram*, which ships a CDN `<script>` so the
-  diagram draws; the source is always present as readable text, so offline,
-  script-blocked and printed copies still show it.
+- **Exports stay readable outside the app, and reach nothing.** An embed
+  and a smart link become plain links (never an iframe; a `javascript:` URL
+  becomes no link at all — document JSON is stored as the client sent it).
+  Maths exports as `$…$`. A chart names the table it charts.
+  A page with a Mermaid diagram carries the renderer **inlined**: the web
+  build produces a single-file bundle (`npm run build:mermaid` →
+  `wwwroot/export/mermaid-standalone.js`, gitignored, ~3MB) and
+  `ExportEndpoints` reads it once and inlines it. No CDN, and no dependence
+  on this instance being reachable either — an exported file is meant to be
+  something you keep.
+  Three details that are easy to get wrong: the bundle is built with
+  `publicDir: false` (otherwise Vite copies the app's favicon and icon
+  sprite into its output too); its entry must not use Mermaid's
+  `startOnLoad`, which only listens for `DOMContentLoaded` and so never
+  fires for a script inlined at the end of the body — it calls
+  `mermaid.run()` directly when the document is already ready; and the
+  inlined text has `</script>` escaped, so a future Mermaid containing that
+  sequence cannot end the script tag early and break every exported file.
+  Where the bundle is missing (tests, a dev API with no built SPA) the
+  export ships the diagram source alone, which is still readable.
 
 ### Dynamic blocks (spec — dev-plan Phase 7 Wave D, designed 2026-09-10)
 

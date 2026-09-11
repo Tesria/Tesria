@@ -25,7 +25,8 @@ public static class ExportEndpoints
     /// </summary>
     private static async Task<IResult> ExportPage(
         Guid id, string? format, AppDbContext db, IPermissionService perms,
-        IDynamicBlockService blocks, ISiteSettingsService settings, IConfiguration config, CancellationToken ct)
+        IDynamicBlockService blocks, ISiteSettingsService settings, IConfiguration config,
+        IWebHostEnvironment env, CancellationToken ct)
     {
         var page = await db.Pages.AsNoTracking()
             .Include(p => p.CurrentVersion)
@@ -48,7 +49,7 @@ public static class ExportEndpoints
                 "text/markdown", $"{safeName}.md"),
 
             "html" => File(
-                HtmlDocument(page.Title, ProseMirrorRenderer.ToHtml(content, snapshot, baseUrl, out var usedMermaid), usedMermaid),
+                HtmlDocument(page.Title, ProseMirrorRenderer.ToHtml(content, snapshot, baseUrl, out var usedMermaid), env, usedMermaid),
                 "text/html", $"{safeName}.html"),
 
             _ => Results.ValidationProblem(new Dictionary<string, string[]>
@@ -81,28 +82,51 @@ public static class ExportEndpoints
 
     /// <summary>Wraps rendered content in a minimal, print-friendly HTML document.</summary>
 
-    private const string MermaidScript =
-        "<script type=\"module\">\n"
-        + "import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';\n"
-        + "mermaid.initialize({ startOnLoad: true, securityLevel: 'strict' });\n"
-        + "</script>";
+    /// <summary>
+    /// The single-file Mermaid bundle the web build produces
+    /// (`npm run build:mermaid` → `wwwroot/export/`). Read once and kept: it
+    /// is ~3MB, and an export that has a diagram would otherwise read it off
+    /// disk every time.
+    /// </summary>
+    private static string? _mermaidBundle;
+    private static bool _mermaidBundleChecked;
+
+    private static string? MermaidBundle(IWebHostEnvironment env)
+    {
+        if (_mermaidBundleChecked) return _mermaidBundle;
+        _mermaidBundleChecked = true;
+        var path = Path.Combine(env.WebRootPath ?? "", "export", "mermaid-standalone.js");
+        // Absent in tests and in a dev API with no built SPA. The export then
+        // ships the diagram source alone, which is still readable — never a
+        // fetch to somewhere else.
+        if (System.IO.File.Exists(path)) _mermaidBundle = System.IO.File.ReadAllText(path);
+        return _mermaidBundle;
+    }
 
     /// <param name="withMermaid">
-    /// Adds the one thing in an exported file that reaches the network: a
-    /// Mermaid renderer from a CDN, included only when the page actually has
-    /// a diagram (dev-plan Phase 7 Wave F).
+    /// Inlines this instance's own Mermaid bundle, so a page with a diagram
+    /// draws it with no network of any kind — no CDN, and no dependency on
+    /// this instance still being reachable. An exported file is meant to be
+    /// something you can keep, and a document that only renders while a
+    /// server answers is not that.
     ///
-    /// The trade is deliberate — the diagram *source* is already in the file
-    /// as a readable &lt;pre&gt;, so a reader who is offline, who blocks the
-    /// script, or who prints before it runs still sees the diagram's text.
-    /// Nothing about the reader or the document is sent; it is a script
-    /// fetch. Inlining Mermaid instead would add ~500KB to every exported
-    /// file containing a diagram.
+    /// The cost is ~3MB, and only on pages that actually have a diagram.
+    /// That is a download-time cost paid once (and gzipped to ~900KB in
+    /// transit); the alternative was a file that stops working. Where the
+    /// bundle is missing the export ships the diagram source alone, which is
+    /// still readable.
     /// </param>
-    private static string HtmlDocument(string title, string bodyHtml, bool withMermaid = false)
+    private static string HtmlDocument(string title, string bodyHtml, IWebHostEnvironment env, bool withMermaid = false)
     {
         var escapedTitle = WebUtility.HtmlEncode(title);
-        var mermaidScript = withMermaid ? MermaidScript : "";
+        var bundle = withMermaid ? MermaidBundle(env) : null;
+        // Inlined, not linked: a </script> inside the bundle would end this
+        // one early, so the sequence is broken up the standard way. (Mermaid
+        // has none today; a future version must not be able to break every
+        // exported file.)
+        var mermaidScript = bundle is null
+            ? ""
+            : "<script>" + bundle.Replace("</script>", "<\\/script>") + "</script>";
         // $$ raises the interpolation delimiter to {{ }} so the CSS braces below
         // are treated as literal text.
         return $$"""
