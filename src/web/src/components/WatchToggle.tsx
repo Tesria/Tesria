@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { WatchIcon } from './NavIcons'
 
 type Props = {
   /** Identifies the watched resource so the status re-fetches when it changes
@@ -44,7 +45,8 @@ export function WatchToggle({ watchKey, fetchStatus, watch, unwatch, label = 'pa
 
   return (
     <button type="button" className="btn btn--ghost" onClick={toggle} disabled={busy}>
-      {watching ? `👁 Watching` : `👁 Watch this ${label}`}
+      <WatchIcon />
+      {watching ? 'Watching' : `Watch this ${label}`}
     </button>
   )
 }
