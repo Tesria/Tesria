@@ -719,6 +719,22 @@ person to do them.
 and an `instructions` string telling the client what the wiki is, that
 content is Markdown, and that "not found" may mean "not permitted".
 
+**Retrieval quality** (2026-09-11). Three things make the tools usable as
+a context source rather than merely correct:
+
+- `SearchSnippets` returns the passage that *matched* (`ts_headline` on
+  Postgres, a window around the first matching word elsewhere), marked in
+  `**bold**`. Without it a snippet was the page's opening line and an
+  assistant had to fetch every result to find out why it matched.
+- `get_page` returns the heading `outline` and accepts a `section`,
+  reusing Wave A's anchors. Top-level headings only — slicing mid-panel
+  would produce something that is not a document.
+- Hits carry a `score`, omitted rather than faked where the database
+  cannot rank.
+
+Semantic search is deliberately *not* here; see `roadmap.md` for the
+evidence, the decisions it needs and the size at which it earns its keep.
+
 **Client setup** (documented in the API space): an MCP client is pointed at
 `https://<instance>/mcp` with header `Authorization: Bearer <token>`.
 

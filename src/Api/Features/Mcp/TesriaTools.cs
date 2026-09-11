@@ -10,6 +10,7 @@ using Tesria.Api.Infrastructure.Email;
 using Tesria.Api.Infrastructure.Settings;
 using ModelContextProtocol;
 using Tesria.Api.Features.Pages;
+using Tesria.Api.Features.Search;
 using Microsoft.EntityFrameworkCore;
 
 namespace Tesria.Api.Features.Mcp;
@@ -25,7 +26,8 @@ public sealed class TesriaTools
     public sealed record SpaceSummary(string Key, string Name, string? Description, bool IsPublic);
     public sealed record PageContent(
         Guid Id, string Title, string SpaceKey, Guid? ParentPageId, IReadOnlyList<string> Labels,
-        int Version, DateTimeOffset UpdatedAt, string Url, string Format, string Content);
+        int Version, DateTimeOffset UpdatedAt, string Url, string Format, string Content,
+        IReadOnlyList<PageSections.Heading> Outline, string? Section);
 
     [McpServerTool(Name = "list_spaces"), Description("The spaces this token's owner may view.")]
     public static async Task<IReadOnlyList<SpaceSummary>> ListSpaces(
@@ -43,13 +45,16 @@ public sealed class TesriaTools
     [McpServerTool(Name = "get_page"), Description(
         "A page by id. Returns its content as Markdown — the same Markdown the export produces, with live " +
         "blocks (children lists, recently-updated tables, task reports…) resolved as this token's owner would see " +
-        "them. Ask for format 'json' to get the editor's ProseMirror document instead, e.g. to copy a page exactly. " +
+        "them, plus an `outline` of its headings. Pass `section` with a heading id from that outline to get just " +
+        "that heading and everything under it, which is usually what you want on a long page. Ask for format " +
+        "'json' to get the editor's ProseMirror document instead, e.g. to copy a page exactly. " +
         "'Not found' can mean the page does not exist or that you may not see it; the two are deliberately indistinguishable.")]
     public static async Task<PageContent> GetPage(
         [Description("The page id (a GUID).")] Guid pageId,
         AppDbContext db, IPermissionService perms, IDynamicBlockService blocks,
         ISiteSettingsService settings, IConfiguration config, CancellationToken ct,
-        [Description("'markdown' (default) or 'json'.")] string format = "markdown")
+        [Description("'markdown' (default) or 'json'.")] string format = "markdown",
+        [Description("A heading id from this page's outline; returns only that section.")] string? section = null)
     {
         var page = await db.Pages.AsNoTracking()
             .Include(p => p.CurrentVersion).Include(p => p.Space)
@@ -65,8 +70,23 @@ public sealed class TesriaTools
             .ToListAsync(ct);
 
         var json = page.CurrentVersion.ContentJson;
+        var outline = PageSections.Outline(json);
         var baseUrl = SiteUrl.Resolve(await settings.GetAsync(ct), config);
         var wantJson = string.Equals(format, "json", StringComparison.OrdinalIgnoreCase);
+
+        var wanted = section?.Trim();
+        if (!string.IsNullOrEmpty(wanted))
+        {
+            var slice = PageSections.Extract(json, wanted);
+            if (slice is null)
+                throw new McpException(
+                    $"This page has no top-level section '{wanted}'. Its sections are: "
+                    + (outline.Count == 0 ? "(none)" : string.Join(", ", outline.Select(h => h.Id))) + ".");
+            json = slice;
+        }
+
+        // Blocks are resolved against the whole page either way: a children
+        // display inside a section is still that page's children.
         var content = wantJson
             ? json
             : ProseMirrorRenderer.ToMarkdown(json, await PageSnapshots.BlocksAsync(page.Id, json, blocks, ct), baseUrl);
@@ -75,11 +95,14 @@ public sealed class TesriaTools
             page.Id, page.Title, page.Space.Key, page.ParentPageId, labels,
             page.CurrentVersion.VersionNumber, page.UpdatedAt,
             $"{baseUrl}/spaces/{page.Space.Key}/pages/{page.Id}",
-            wantJson ? "json" : "markdown", content);
+            wantJson ? "json" : "markdown", content, outline,
+            string.IsNullOrEmpty(wanted) ? null : wanted);
     }
 
     public sealed record TreeNode(Guid Id, string Title, IReadOnlyList<TreeNode> Children);
-    public sealed record PageHit(Guid Id, string SpaceKey, string Title, string Snippet);
+    /// <param name="Snippet">The passage that matched, with the matching words in **bold**.</param>
+    /// <param name="Score">Relevance, higher is better. Null where the database cannot rank (tests).</param>
+    public sealed record PageHit(Guid Id, string SpaceKey, string Title, string Snippet, double? Score);
     public sealed record PageRef(Guid Id, string SpaceKey, string Title);
     public sealed record LabelUsage(string Name, int Pages);
     public sealed record WriteResult(Guid Id, string Title, string SpaceKey, int Version, string Url);
@@ -143,17 +166,26 @@ public sealed class TesriaTools
             : pages.Where(p => EF.Functions.Like(p.SearchText, "%" + term + "%")).OrderBy(p => p.Title);
 
         var rows = await pages.Take(200)
-            .Select(p => new { p.Id, SpaceKey = p.Space!.Key, p.Title, p.SearchText })
+            .Select(p => new { p.Id, SpaceKey = p.Space!.Key, p.Title })
             .ToListAsync(ct);
 
-        var hits = new List<PageHit>();
+        var visible = new List<(Guid Id, string SpaceKey, string Title)>();
         foreach (var row in rows)
         {
-            if (hits.Count >= limit) break;
+            if (visible.Count >= limit) break;
             if (!await perms.CanViewPageAsync(row.Id)) continue;
-            hits.Add(new PageHit(row.Id, row.SpaceKey, row.Title, Snippet(row.SearchText)));
+            visible.Add((row.Id, row.SpaceKey, row.Title));
         }
-        return hits;
+
+        // Snippets and scores for the survivors only — one query, after the
+        // permission filter, so nothing is computed for a page that will not
+        // be returned.
+        var matches = await SearchSnippets.ForAsync(db, visible.Select(v => v.Id).ToList(), term, ct);
+        return visible
+            .Select(v => matches.TryGetValue(v.Id, out var m)
+                ? new PageHit(v.Id, v.SpaceKey, v.Title, m.Snippet, m.Score)
+                : new PageHit(v.Id, v.SpaceKey, v.Title, "", null))
+            .ToList();
     }
 
     [McpServerTool(Name = "find_pages_by_label"), Description("Pages carrying a label, filtered to what this token's owner may read.")]
@@ -338,5 +370,4 @@ public sealed class TesriaTools
         return new LabelsResult(pageId, labels);
     }
 
-    private static string Snippet(string text) => text.Length <= 200 ? text : text[..200].TrimEnd() + "…";
 }

@@ -5,6 +5,44 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Retrieval: snippets that show the match, sections, and a score (2026-09-11)
+
+Groundwork for using the MCP server (8.4) as a context source, and a
+straight improvement to search in the browser too.
+
+- **A snippet is now the passage that matched.** It was the first 200
+  characters of the page, so searching "webhook" and being shown a page's
+  opening sentence told a reader — and an assistant — nothing about why it
+  came back; the only way to judge relevance was to open every result.
+  Postgres's `ts_headline` does this properly and has no EF binding, so
+  `SearchSnippets` is the one place this app writes SQL by hand. The
+  matched words come back marked in `**bold**` — plain text rather than
+  HTML, because these snippets go to an assistant as often as to a browser.
+  Shared by REST search and the MCP tool, computed *after* the permission
+  filter so nothing is prepared for a page that will not be returned.
+- **`get_page` returns a heading outline, and can return one section.**
+  `section: "deployment"` gives that heading and everything under it, up to
+  the next heading of the same or a higher level — reusing the anchors
+  Phase 7 Wave A already derives, so "the section this `#link` points at"
+  and "the section to fetch" are the same thing. Verified live: a 4,385-
+  character page down to 2,739 for one section. Top-level headings only;
+  slicing mid-panel would produce something that is not a document, so a
+  nested heading is listed in the outline but refused as a section.
+- **The relevance score is exposed** on MCP search hits, so a client can
+  decide what is worth reading. Null where the database cannot rank, and
+  omitted rather than sent as a fake `0` — "unranked" is not a score of
+  zero.
+
+Semantic search — the actual fix for synonym and paraphrase queries — is
+now a written-up entry in `roadmap.md` with the evidence, the two design
+decisions it cannot dodge, and the size at which it becomes worth doing.
+The wiki is 58 pages and 31 KB of text today, which is why it is not worth
+doing yet.
+
+Also added to `roadmap.md`: a **roadmap planner** timeline block modelled
+on Confluence's macro, with its data model and the four design questions
+it raises.
+
 ### MCP server — the ten tools, one write path (dev-plan 8.4 — Opus half) (2026-09-11)
 
 The tool surface Fable specified, built against the contract:
