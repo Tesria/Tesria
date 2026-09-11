@@ -944,6 +944,55 @@ ProseMirror JSON in `PageVersion.ContentJson`.
   injected element — and means read-only rendering gets the icon with no node
   view to mount. `PANEL_TYPES`/`PANEL_LABELS` are exported so the toolbar
   popover and the slash menu can't drift apart.
+- **Structural blocks** (dev-plan Phase 7 Wave A) — table of contents,
+  expand, status, date, decision and layouts, each one node type in
+  `extensions.ts` with a matching case in `ProseMirrorRenderer`.
+  - **Heading ids are derived, not stored.** `headingAnchors.ts` slugifies a
+    heading's text (lower-case, non-alphanumerics collapsed to hyphens,
+    duplicates suffixed `-2`) and applies the result as a ProseMirror *node
+    decoration*, so it is recomputed from the document on every change and
+    never serialised into the saved JSON. Storing ids instead would survive
+    a rewording but would also duplicate on paste, drift between Yjs
+    collaborators and need a migration for every existing page. The price of
+    deriving is that the rule exists twice — here and in
+    `Features/Export/HeadingAnchors.cs`, because an exported file has to
+    resolve the same `#slug` a saved link points at. `HeadingAnchorTests`
+    pins the two together; change one, change both.
+  - **`tableOfContents` stores nothing.** Its node view reads the headings
+    live and the exporter re-derives them at export time, so the document
+    never carries a stale copy of its own outline. Both sides build the same
+    tree: each heading nests under the nearest shallower one before it.
+  - **Layout sections stack but never nest.** `layoutSection` is deliberately
+    *not* in the `block` group, and the only thing that admits it is the
+    document itself — `getSharedExtensions` disables StarterKit's Document
+    and registers `Document.extend({ content: '(block | layoutSection)+' })`.
+    That single line is what stops a section appearing inside a panel, an
+    expand or another column, with no per-node guards anywhere. Column
+    widths are percentages applied as flex-grow weights (`--column-width`),
+    so the browser shares out the gap and the numbers need not total 100.
+    **Gotcha:** a section's own width (centred/wide/full) reuses the page's
+    `--page-pad` breakout, which is also what a full-width *table* uses — so
+    that table rule is scoped to direct children of the content root
+    (`.editor__content > .ProseMirror > …`), or a full-width table inside a
+    column would bleed out of the column instead of filling it.
+  - **Status and date never let document data reach a style attribute.** A
+    status stores a colour *name* out of a fixed set (the palette lives in
+    `index.css` and, inlined, in the renderer); a date stores an ISO
+    calendar date and is formatted per reader. Dates are parsed by hand
+    rather than with `new Date(iso)`, which reads a bare date as UTC
+    midnight and shows the day before to anyone west of Greenwich.
+  - **Bubble menus for inline atoms re-select their node.**
+    `selectedNode.ts` exists because `updateAttributes` rewrites the node's
+    markup and a `NodeSelection` does not survive that — it collapses to a
+    text cursor, which would close the very menu doing the editing on every
+    keystroke.
+- **`.toolbar--bubble` must paint its own surface.** Since the one-row
+  toolbar rebuild, `.toolbar` is a transparent, full-width row that lives
+  inside the page action bar (which supplies the background). Any floating
+  copy of it — the selection bubble, the image hover bar, the layout bar —
+  therefore needs its own background, border and padding, and has to undo
+  `.toolbar`'s `nowrap`/`width: 100%`. Shipping one without that makes a
+  menu you can see the page through.
 - **Colour palettes** (`palette.ts`, `ColorPalette.tsx`) — the swatch grid is
   shared by the highlight dropdown and the cell-background menu; only the
   tiers differ (highlight drops the bold tier, which doesn't hold `--text`

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { api, ApiError, type PageDetail } from '../api/client'
 import { Editor } from '../editor/Editor'
+import { scrollToAnchor } from '../editor/headingAnchors'
 import { useAuth } from '../auth/AuthContext'
 import { useSpaceContext } from './SpacePage'
 import { CommentsPanel } from './panels/CommentsPanel'
@@ -18,6 +19,7 @@ type Tab = 'comments' | 'attachments' | 'history' | 'restrictions'
 export function PageView() {
   const { key = '', pageId = '' } = useParams()
   const navigate = useNavigate()
+  const { hash } = useLocation()
   const { space, reloadTree } = useSpaceContext()
   const { user } = useAuth()
   const [page, setPage] = useState<PageDetail | null>(null)
@@ -36,6 +38,19 @@ export function PageView() {
     setPage(null)
     load()
   }, [load])
+
+  // `/pages/{id}#setup` lands on that heading once the content has rendered.
+  // Looked up inside the page body only — a heading called "Root" must not
+  // resolve to the app's own #root (headingAnchors.ts).
+  useEffect(() => {
+    if (!page || !hash) return
+    const id = decodeURIComponent(hash.slice(1))
+    const timer = setTimeout(() => {
+      const body = document.querySelector('.page-body')
+      if (body) scrollToAnchor(body, id)
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [page, hash])
 
   async function onDelete() {
     if (!page) return

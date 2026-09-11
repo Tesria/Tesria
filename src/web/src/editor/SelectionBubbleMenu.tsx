@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { BubbleMenu } from '@tiptap/react/menus'
+import { NodeSelection } from '@tiptap/pm/state'
 import type { Editor as TiptapEditor } from '@tiptap/react'
 import { ToolbarButton } from './ToolbarButton'
+import { HeadingLinkList } from './HeadingLinkList'
 import { addInlineTextComment } from './commentAction'
 import { InlineCodeIcon, HighlightIcon, LinkIcon, CommentIcon } from './icons'
 import { useEdgeAlign } from '../hooks/useEdgeAlign'
@@ -62,7 +64,10 @@ export function SelectionBubbleMenu({ editor, getPageId, onCommentError }: Props
         // Only for a real text selection, and never while inside a code
         // block (code selections don't want inline-formatting buttons), a
         // link (LinkMenu owns that case), or an image (ImageHoverMenu does).
-        editor.isFocused && from !== to && !editor.isActive('codeBlock') && !editor.isActive('link') && !editor.isActive('image')
+        // A selected block or atom (a table of contents, a status) is a
+        // non-empty NodeSelection with no text to format — its own menu applies.
+        editor.isFocused && from !== to && !(editor.state.selection instanceof NodeSelection)
+          && !editor.isActive('codeBlock') && !editor.isActive('link') && !editor.isActive('image')
       }
     >
       <div className="toolbar toolbar--bubble">
@@ -98,6 +103,7 @@ export function SelectionBubbleMenu({ editor, getPageId, onCommentError }: Props
                 }}
               />
               <button type="submit" className="link-btn">Apply</button>
+              <HeadingLinkList editor={editor} onPick={setLinkUrl} />
             </form>
           )}
         </div>

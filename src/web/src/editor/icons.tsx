@@ -266,3 +266,75 @@ export function PlusIcon() {
     </svg>
   )
 }
+
+export function TocIcon() {
+  return (
+    <Icon>
+      <path d="M4 6h4M4 12h4M4 18h4" />
+      <path d="M11 6h9M13 12h7M13 18h7" />
+    </Icon>
+  )
+}
+
+export function ExpandIcon() {
+  return (
+    <Icon>
+      <path d="m8 10 4 4 4-4" />
+      <rect x="3.5" y="4" width="17" height="16" rx="2" />
+    </Icon>
+  )
+}
+
+export function StatusIcon() {
+  return (
+    <Icon>
+      <rect x="3" y="8" width="18" height="8" rx="2" />
+      <path d="M7 12h4" />
+    </Icon>
+  )
+}
+
+export function DateIcon() {
+  return (
+    <Icon>
+      <rect x="3.5" y="5" width="17" height="15" rx="2" />
+      <path d="M3.5 10h17M8 3v4M16 3v4" />
+    </Icon>
+  )
+}
+
+export function DecisionIcon() {
+  return (
+    <Icon>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m8 12.5 2.5 2.5L16 9.5" />
+    </Icon>
+  )
+}
+
+export function LayoutIcon() {
+  return (
+    <Icon>
+      <rect x="3.5" y="4" width="7" height="16" rx="1.5" />
+      <rect x="13.5" y="4" width="7" height="16" rx="1.5" />
+    </Icon>
+  )
+}
+
+/** One preset of the layout menu: columns drawn to their relative widths. */
+export function LayoutPresetIcon({ widths }: { widths: readonly number[] }) {
+  const total = widths.reduce((a, b) => a + b, 0)
+  const gap = 1.5
+  const inner = 20 - gap * (widths.length - 1)
+  let x = 2
+  return (
+    <Icon>
+      {widths.map((w, i) => {
+        const width = (w / total) * inner
+        const rect = <rect key={i} x={x} y="5" width={width} height="14" rx="1" />
+        x += width + gap
+        return rect
+      })}
+    </Icon>
+  )
+}

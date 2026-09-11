@@ -27,7 +27,7 @@ public class ProseMirrorRendererTests
     public void Renders_html_structure_and_marks()
     {
         var html = ProseMirrorRenderer.ToHtml(Rich);
-        Assert.Contains("<h2>Setup</h2>", html);
+        Assert.Contains("<h2 id=\"setup\">Setup</h2>", html);
         Assert.Contains("<code>npm ci</code>", html);
         Assert.Contains("<strong>build</strong>", html);
         Assert.Contains("<ul>", html);
@@ -338,6 +338,107 @@ public class ExportEndpointTests
     private const string Doc = """
     {"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"hello export"}]}]}
     """;
+
+    // -- Phase 7 Wave A structural blocks ------------------------------------
+
+    private const string StructuralDoc = """
+    {"type":"doc","content":[
+      {"type":"tableOfContents"},
+      {"type":"heading","attrs":{"level":1},"content":[{"type":"text","text":"Plan"}]},
+      {"type":"heading","attrs":{"level":3},"content":[{"type":"text","text":"Step one"}]},
+      {"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Plan"}]},
+      {"type":"paragraph","content":[
+        {"type":"text","marks":[{"type":"link","attrs":{"href":"#step-one"}}],"text":"jump"},
+        {"type":"text","text":" "},
+        {"type":"status","attrs":{"text":"In progress","color":"yellow"}},
+        {"type":"text","text":" due "},
+        {"type":"date","attrs":{"date":"2026-09-10"}}]},
+      {"type":"expand","attrs":{"title":"Details <b>"},"content":[
+        {"type":"paragraph","content":[{"type":"text","text":"hidden text"}]}]},
+      {"type":"decision","content":[
+        {"type":"paragraph","content":[{"type":"text","text":"Ship it"}]}]},
+      {"type":"layoutSection","attrs":{"width":"wide"},"content":[
+        {"type":"layoutColumn","attrs":{"width":33.33},"content":[{"type":"paragraph","content":[{"type":"text","text":"left col"}]}]},
+        {"type":"layoutColumn","attrs":{"width":66.67},"content":[{"type":"paragraph","content":[{"type":"text","text":"right col"}]}]}]}
+    ]}
+    """;
+
+    [Fact]
+    public void Renders_heading_ids_and_a_nested_table_of_contents_in_html()
+    {
+        var html = ProseMirrorRenderer.ToHtml(StructuralDoc);
+        Assert.Contains("<h1 id=\"plan\">Plan</h1>", html);
+        Assert.Contains("<h3 id=\"step-one\">", html);
+        Assert.Contains("<h2 id=\"plan-2\">", html);
+        Assert.Contains("<nav data-type=\"table-of-contents\">", html);
+        // Both the H3 and the H2 that follows it are sub-sections of the H1,
+        // so both nest under it — the same tree TocView.tsx builds.
+        Assert.Contains(
+            "<li><a href=\"#plan\">Plan</a><ul>\n"
+            + "<li><a href=\"#step-one\">Step one</a></li>\n"
+            + "<li><a href=\"#plan-2\">Plan</a></li>\n"
+            + "</ul>\n</li>", html);
+        Assert.Contains("<a href=\"#step-one\" rel=\"noreferrer\">jump</a>", html);
+    }
+
+    [Fact]
+    public void Renders_status_date_expand_decision_and_layout_in_html()
+    {
+        var html = ProseMirrorRenderer.ToHtml(StructuralDoc);
+        Assert.Contains("data-status=\"yellow\"", html);
+        Assert.Contains("background: #fff0b3", html);
+        Assert.Contains(">In progress</span>", html);
+        Assert.Contains("<time datetime=\"2026-09-10\">10 Sep 2026</time>", html);
+        Assert.Contains("<details open><summary>Details &lt;b&gt;</summary>", html);
+        Assert.Contains("<strong>Decision</strong>", html);
+        Assert.Contains("data-type=\"layout-section\" data-width=\"wide\"", html);
+        Assert.Contains("flex: 33.33 1 0%", html);
+        Assert.Contains("flex: 66.67 1 0%", html);
+    }
+
+    [Fact]
+    public void Renders_structural_blocks_as_markdown_with_anchors_only_because_the_page_links_to_headings()
+    {
+        var md = ProseMirrorRenderer.ToMarkdown(StructuralDoc);
+        Assert.Contains("- [Plan](#plan)\n  - [Step one](#step-one)\n  - [Plan](#plan-2)\n", md);
+        Assert.Contains("<a id=\"step-one\"></a>\n### Step one", md);
+        Assert.Contains("[jump](#step-one) `In progress` due 10 Sep 2026", md);
+        Assert.Contains("**Details <b>**\n\nhidden text", md);
+        Assert.Contains("> **Decision:**\n>\n> Ship it", md);
+        Assert.Contains("left col\n\nright col", md);
+    }
+
+    [Fact]
+    public void Markdown_headings_carry_no_anchor_when_nothing_links_to_them()
+    {
+        var md = ProseMirrorRenderer.ToMarkdown(Doc);
+        Assert.DoesNotContain("<a id=", md);
+    }
+
+    private const string HostileStructuralDoc = """
+    {"type":"doc","content":[{"type":"paragraph","content":[
+      {"type":"status","attrs":{"text":"<img src=x onerror=alert(1)>","color":"red; background: url(evil)"}},
+      {"type":"date","attrs":{"date":"2026-13-45\" onclick=\"x"}}]},
+      {"type":"layoutSection","content":[
+        {"type":"layoutColumn","attrs":{"width":"1; color: red"},"content":[{"type":"paragraph"}]},
+        {"type":"layoutColumn","attrs":{"width":500},"content":[{"type":"paragraph"}]}]}
+    ]}
+    """;
+
+    [Fact]
+    public void Structural_block_attributes_never_reach_markup_or_styles_unfiltered()
+    {
+        var html = ProseMirrorRenderer.ToHtml(HostileStructuralDoc);
+        Assert.DoesNotContain("<img", html);
+        Assert.Contains("&lt;img", html);
+        Assert.DoesNotContain("url(evil)", html);
+        Assert.Contains("data-status=\"grey\"", html);
+        Assert.DoesNotContain("<time", html);
+        Assert.DoesNotContain("onclick=\"x", html);
+        Assert.DoesNotContain("color: red", html);
+        Assert.Contains("flex: 1 1 0%", html);
+        Assert.DoesNotContain("flex: 500", html);
+    }
 
     private static async Task<(TestAppFactory, HttpClient, PageDetail)> NewClientWithPage()
     {

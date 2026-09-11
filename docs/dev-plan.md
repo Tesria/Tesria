@@ -714,7 +714,7 @@ eight times the schema, renderer and export work.
 | Blog posts (per-space blog) | ❌ | **not an editor element — a content type.** Decide separately; listed so it isn't forgotten. |
 | Live search, User list, Profile picture, Spaces list, Create-from-template, Network | ❌ | low value; revisit after D |
 
-### Wave A — structural blocks (frontend + renderer) — `L` — Model: Opus
+### Wave A — structural blocks (frontend + renderer) — `L` — Model: Opus — ✅ **shipped 2026-09-10** (started as Fable by user override, finished as Opus)
 - **Anchor first**: stable `id` attr on headings (slugified, de-duplicated);
   the link popover gets a "link to heading" list. TOC depends on it.
 - **Table of contents**: a node with no stored content; the node view

@@ -46,6 +46,13 @@
   --panel-success-bg: #e3fcef; --panel-success-border: #4bce97; --panel-success-icon: #216e4e;
   --panel-warning-bg: #fff7d6; --panel-warning-border: #e2b203; --panel-warning-icon: #a54800;
   --panel-error-bg: #ffedeb;  --panel-error-border: #f87168;  --panel-error-icon: #ae2e24;
+  /* Status lozenges (statusExtension.ts): Atlassian's six, background/ink. */
+  --status-grey-bg: #dfe1e6;   --status-grey-ink: #42526e;
+  --status-red-bg: #ffebe6;    --status-red-ink: #de350b;
+  --status-yellow-bg: #fff0b3; --status-yellow-ink: #974f0c;
+  --status-green-bg: #e3fcef;  --status-green-ink: #006644;
+  --status-blue-bg: #deebff;   --status-blue-ink: #0747a6;
+  --status-purple-bg: #eae6ff; --status-purple-ink: #403294;
   --radius: 6px;
   /* Breakpoints are documented here but can't be read into @media conditions
      directly (a CSS limitation) — each @media rule repeats the raw number
@@ -569,16 +576,26 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .link-menu__form { display: flex; gap: 0.4rem; align-items: center; }
 .link-menu__form input, .toolbar__link-popover input { width: min(220px, calc(100vw - 6rem)); padding: 0.3rem 0.5rem; }
 
-/* selection bubble menu — a compact, floating variant of .toolbar */
+/* Floating menus built from .toolbar — the selection bubble, the image
+   hover bar, the layout bar.
+
+   These have to paint their own surface. Since the one-row rebuild .toolbar
+   is the transparent, full-width row that lives *inside* the page action bar
+   (which supplies the background), so a floating copy of it with no
+   background of its own lets the page content show straight through the
+   menu. It also has to undo .toolbar's `nowrap`/`width: 100%`: a floating
+   menu is as wide as its buttons and must wrap on a narrow screen. */
 .toolbar--bubble {
-  position: static; margin: 0; border-bottom: none; border-radius: var(--radius);
-  box-shadow: var(--shadow-md);
+  position: static; margin: 0; width: auto; flex-wrap: wrap;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-md);
+  padding: 0.25rem 0.35rem;
   /* floating-ui sizes its own (invisible, unstyled) positioning wrapper to
      this menu's natural unwrapped width and never shrinks it, which defeats
-     .toolbar's inherited flex-wrap: the flex container is never actually
-     narrower than its content, so wrapping never triggers. Capping this
-     element's own max-width (not the wrapper's) lets it shrink independently
-     of that wrapper and wrap for real on narrow screens. */
+     flex-wrap: the flex container is never actually narrower than its
+     content, so wrapping never triggers. Capping this element's own
+     max-width (not the wrapper's) lets it shrink independently of that
+     wrapper and wrap for real on narrow screens. */
   max-width: calc(100vw - 2rem);
 }
 
@@ -603,7 +620,16 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   display: flex; gap: 0.4rem; align-items: center; background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); box-shadow: var(--shadow-md); padding: 0.4rem 0.6rem;
   max-width: calc(100vw - 2rem);
+  flex-wrap: wrap;
 }
+/* "Headings on this page" under a link popover's URL row (HeadingLinkList.tsx). */
+.link-anchors { flex-basis: 100%; max-height: 200px; overflow-y: auto; border-top: 1px solid var(--border); margin-top: 0.2rem; padding-top: 0.3rem; }
+.link-anchors__title { margin: 0 0 0.2rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.link-anchors__item {
+  display: block; width: 100%; text-align: left; background: none; border: none; border-radius: 4px;
+  padding: 0.25rem 0.5rem; font-size: 0.85rem; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.link-anchors__item:hover { background: var(--bg-alt); }
 /* The inline `left` offset applied via useEdgeAlign (Toolbar.tsx/
    SelectionBubbleMenu.tsx) overrides the `left: 0` above when the anchor
    button sits somewhere a flush-left popover would spill past either
@@ -629,7 +655,10 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
    itself — negative margins on the table just overflow the wrapper's own
    box instead of escaping .paper, triggering the wrapper's scrollbar rather
    than an actual breakout. */
-.editor__content .tableWrapper:has(table[data-layout="full-width"]) {
+/* Scoped to direct children of the content root (`.ProseMirror`): a
+   full-width table inside a layout column, panel or expand fills its
+   container and must not break out of it (dev-plan Phase 7 Wave A). */
+.editor__content > .ProseMirror > .tableWrapper:has(table[data-layout="full-width"]) {
   margin-left: calc(-1 * var(--page-pad));
   margin-right: calc(-1 * var(--page-pad));
   width: calc(100% + 2 * var(--page-pad));
@@ -695,9 +724,11 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .toolbar { display: flex; flex-wrap: nowrap; align-items: center; gap: 0.3rem; padding: 0; min-width: 0; width: 100%; }
 .tb-item { display: inline-flex; flex: 0 0 auto; }
 .tb-item--hidden { display: none; }
-.toolbar__spacer { flex: 1 1 auto; }
-.toolbar__insert { gap: 0.3rem; padding: 0.3rem 0.55rem; font-weight: 600; white-space: nowrap; }
-.toolbar__insert-label { font-size: 0.85rem; }
+.toolbar__insert { gap: 0.1rem; white-space: nowrap; }
+/* The text-style menu previews each style in its own size, like Confluence's. */
+.toolbar-dropdown__style--h1 { font-size: 1.25rem; font-weight: 700; }
+.toolbar-dropdown__style--h2 { font-size: 1.1rem; font-weight: 700; }
+.toolbar-dropdown__style--h3 { font-size: 1rem; font-weight: 700; }
 .toolbar-dropdown__label { font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
 .toolbar-dropdown__menu--insert { min-width: 220px; max-height: min(70vh, 520px); overflow-y: auto; }
 .toolbar-dropdown__heading { margin: 0.35rem 0.6rem 0.1rem; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
@@ -761,7 +792,6 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .collaboration-carets__label { border-radius: 3px 3px 3px 0; color: var(--on-primary); font-size: 0.7rem; font-weight: 600; left: -1px; line-height: 1; padding: 0.1rem 0.3rem; position: absolute; top: -1.4em; user-select: none; white-space: nowrap; }
 
 .editor-form { display: flex; flex-direction: column; }
-.editor-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
 .change-comment { margin-top: 0.75rem; }
 /* read-only rendered page: no padding of its own, .paper already provides it */
 .page-body .editor__content { padding: 0; }
@@ -801,8 +831,6 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
    afford: a narrow reading column on a wide screen is the common case. The
    word "Insert" goes first, then the text-style name; icons and chevrons
    stay, so every control keeps a visible affordance. */
-@container (max-width: 560px) { .toolbar__insert-label { display: none; } }
-@container (max-width: 460px) { .toolbar-dropdown__label { display: none; } }
 .page-actionbar--editor .page-actionbar__secondary { flex: 0 0 auto; flex-wrap: nowrap; }
 /* margin-left: auto (not just relying on .page-actionbar's space-between)
    so __secondary still anchors right even with no __primary sibling at all
@@ -820,6 +848,8 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
      .paper) keeps the full-width table breakout math in sync automatically
      — it reads this same custom property. */
   :root { --page-pad: 0.75rem; }
+  .layout-section { flex-direction: column; }
+  .layout-column { flex: none; }
   /* Sticky at the same top:52px as .space-actionbar (also sticky, mobile
      only) meant the two fought over the same slot while scrolling — one
      visibly sliding over the other rather than stacking. Simplest fix:
@@ -1066,6 +1096,12 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   --panel-success-bg: #10322a; --panel-success-border: #28553f; --panel-success-icon: #7ee2b8;
   --panel-warning-bg: #3a2c06; --panel-warning-border: #6b5504; --panel-warning-icon: #f5cd47;
   --panel-error-bg: #3d201d;   --panel-error-border: #6e3630;   --panel-error-icon: #fd9891;
+  --status-grey-bg: #454f59;   --status-grey-ink: #c7d1db;
+  --status-red-bg: #5d1f1a;    --status-red-ink: #fd9891;
+  --status-yellow-bg: #533f04; --status-yellow-ink: #f5cd47;
+  --status-green-bg: #164b35;  --status-green-ink: #7ee2b8;
+  --status-blue-bg: #1c2b41;   --status-blue-ink: #85b8ff;
+  --status-purple-bg: #352c63; --status-purple-ink: #b8acf6;
   }
 
   /* Author-chosen colours are stored in the document itself (a table cell's
@@ -1128,6 +1164,12 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   --panel-success-bg: #10322a; --panel-success-border: #28553f; --panel-success-icon: #7ee2b8;
   --panel-warning-bg: #3a2c06; --panel-warning-border: #6b5504; --panel-warning-icon: #f5cd47;
   --panel-error-bg: #3d201d;   --panel-error-border: #6e3630;   --panel-error-icon: #fd9891;
+  --status-grey-bg: #454f59;   --status-grey-ink: #c7d1db;
+  --status-red-bg: #5d1f1a;    --status-red-ink: #fd9891;
+  --status-yellow-bg: #533f04; --status-yellow-ink: #f5cd47;
+  --status-green-bg: #164b35;  --status-green-ink: #7ee2b8;
+  --status-blue-bg: #1c2b41;   --status-blue-ink: #85b8ff;
+  --status-purple-bg: #352c63; --status-purple-ink: #b8acf6;
 }
 :root[data-theme="dark"] .editor__content [data-background-color],
 :root[data-theme="dark"] .editor__content mark[style*="background-color"] {
@@ -1549,3 +1591,106 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .icon-picker__custom label { display: grid; gap: 0.25rem; margin-bottom: 0; }
 .icon-picker__custom input { max-width: 10rem; }
 .profile__section .icon-picker__custom .btn { margin-top: 0; height: 34px; padding-top: 0; padding-bottom: 0; }
+
+/* ---- Phase 7 Wave A: structural blocks ---------------------------------- */
+
+/* Status lozenge (statusExtension.ts). Colour by name → token, in the
+   document and in the StatusMenu's swatches alike. */
+.status {
+  display: inline-block; padding: 0 0.4em; border-radius: 3px; font-size: 0.72em; font-weight: 700;
+  line-height: 1.7; letter-spacing: 0.02em; text-transform: uppercase; vertical-align: baseline;
+  white-space: nowrap; cursor: default; border: 1px solid transparent;
+}
+.status--grey { background: var(--status-grey-bg); color: var(--status-grey-ink); }
+.status--red { background: var(--status-red-bg); color: var(--status-red-ink); }
+.status--yellow { background: var(--status-yellow-bg); color: var(--status-yellow-ink); }
+.status--green { background: var(--status-green-bg); color: var(--status-green-ink); }
+.status--blue { background: var(--status-blue-bg); color: var(--status-blue-ink); }
+.status--purple { background: var(--status-purple-bg); color: var(--status-purple-ink); }
+.ProseMirror-selectednode.status, .ProseMirror-selectednode.date-chip { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+/* Date chip (dateExtension.ts). */
+.date-chip {
+  display: inline-block; padding: 0 0.45em; border-radius: 3px; background: var(--bg-alt);
+  border: 1px solid var(--border); font-size: 0.9em; line-height: 1.6; white-space: nowrap; cursor: default;
+}
+
+/* The small popover under a selected status/date (StatusMenu.tsx, DateMenu.tsx). */
+.chip-menu {
+  display: flex; flex-direction: column; gap: 0.4rem; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-md); padding: 0.5rem 0.6rem; margin: 0;
+}
+.chip-menu input { padding: 0.3rem 0.5rem; }
+.chip-menu__colors { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.chip-menu__colors .status { cursor: pointer; font-size: 0.68rem; }
+.chip-menu__colors .status.is-active { border-color: var(--text); }
+
+/* Decision (decisionExtension.ts): the panel construction with a fixed check icon. */
+.decision {
+  position: relative; margin: 1rem 0; padding: 0.85rem 1rem 0.85rem 2.75rem;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-alt);
+}
+.decision::before {
+  content: ''; position: absolute; left: 0.9rem; top: 0.95rem; width: 20px; height: 20px;
+  background-color: var(--panel-success-icon);
+  --decision-icon-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%229%22%2F%3E%3Cpath%20d%3D%22m8%2012.5%202.5%202.5L16%209.5%22%2F%3E%3C%2Fsvg%3E");
+  -webkit-mask: var(--decision-icon-url) center / 20px 20px no-repeat;
+  mask: var(--decision-icon-url) center / 20px 20px no-repeat;
+}
+.decision > :first-child { margin-top: 0; }
+.decision > :last-child { margin-bottom: 0; }
+
+/* Expand (ExpandView.tsx). */
+.expand { margin: 0.75rem 0; border: 1px solid var(--border); border-radius: var(--radius); }
+.expand__header { display: flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.5rem; }
+.expand__toggle {
+  display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: none;
+  border-radius: 4px; background: none; color: var(--muted); cursor: pointer; transition: transform 0.15s;
+  transform: rotate(-90deg);
+}
+.expand.is-open > .expand__header .expand__toggle { transform: none; }
+.expand__toggle:hover { background: var(--bg-alt); color: var(--text); }
+.expand__title {
+  flex: 1; min-width: 0; border: none; background: none; font: inherit; font-weight: 600; color: var(--text); padding: 0.2rem 0.3rem;
+}
+.expand__title:focus { outline: none; background: var(--bg-alt); border-radius: 4px; }
+.expand__title-text {
+  flex: 1; min-width: 0; text-align: left; border: none; background: none; font: inherit; font-weight: 600;
+  color: var(--text); padding: 0.2rem 0.3rem; cursor: pointer;
+}
+.expand__body { padding: 0.25rem 1rem 0.75rem 2.3rem; }
+.expand__body > :first-child { margin-top: 0; }
+.expand__body > :last-child { margin-bottom: 0; }
+
+/* Table of contents (TocView.tsx). */
+.toc { margin: 0.75rem 0; padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-alt); }
+.toc__title { margin: 0 0 0.35rem; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.toc__empty { margin: 0; color: var(--muted); font-size: 0.85rem; }
+.toc__list { margin: 0; padding-left: 1.1rem; }
+.toc__list .toc__list { margin-top: 0.1rem; }
+.toc__list li { margin: 0.1rem 0; }
+.editor--editable .ProseMirror-selectednode.toc { outline: 2px solid var(--primary); }
+
+/* Layouts (layoutExtension.ts). Columns are flex-grow weights, so the
+   browser shares the gap out and widths need not sum to exactly 100. */
+.layout-section { display: flex; gap: 1.25rem; margin: 1rem 0; }
+.layout-column { flex: var(--column-width, 1) 1 0%; min-width: 0; }
+.layout-column > :first-child { margin-top: 0; }
+.layout-column > :last-child { margin-bottom: 0; }
+.editor--editable .layout-column {
+  padding: 0.35rem 0.6rem; border: 1px dashed var(--border); border-radius: var(--radius);
+}
+.editor--editable .layout-column:focus-within { border-color: var(--primary); }
+/* Section width, on the page's own scale. "Wide" is the full-width table's
+   breakout past the page padding; "full" spans the content column
+   (.space-content is an inline-size container, so 100cqw is its width),
+   less a page-pad gutter. Only at the top level — a section is never
+   nested, but keep the rule honest. */
+.editor__content > .ProseMirror > .layout-section--wide {
+  margin-left: calc(-1 * var(--page-pad)); margin-right: calc(-1 * var(--page-pad));
+}
+.editor__content > .ProseMirror > .layout-section--full {
+  width: calc(100cqw - 2 * var(--page-pad));
+  margin-left: calc((100% - 100cqw) / 2 + var(--page-pad));
+}
+.space-content { container-type: inline-size; }

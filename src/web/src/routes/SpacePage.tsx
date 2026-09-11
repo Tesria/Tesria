@@ -33,6 +33,7 @@ export function SpacePage() {
   // mobile action bar below and the desktop sidebar's own "+ New page".
   const matchPageView = useMatch('/spaces/:key/pages/:pageId')
   const matchPageEdit = useMatch('/spaces/:key/pages/:pageId/edit')
+  const matchNew = useMatch('/spaces/:key/new')
   const currentPageId = matchPageView?.params.pageId ?? matchPageEdit?.params.pageId
   const newPageHref = currentPageId
     ? `/spaces/${key}/new?parent=${currentPageId}`
@@ -42,6 +43,11 @@ export function SpacePage() {
   // be a second, redundant header stacked above that one. Desktop is
   // unaffected: this bar is display:none there regardless (see .sidebar).
   const isPageRoute = Boolean(currentPageId)
+  // The editor puts its own breadcrumb *below* the formatting toolbar, which
+  // runs edge to edge along the top of the editing surface (Confluence does
+  // the same). Rendering it here too would stack a second copy above that
+  // bar, so the editor routes opt out and render it themselves.
+  const isEditorRoute = Boolean(matchPageEdit || matchNew)
 
   const reloadTree = useCallback(() => {
     if (!space) return
@@ -155,7 +161,7 @@ export function SpacePage() {
         </>)}
       </aside>
       <section className="space-content">
-        <SpaceBreadcrumb space={space} tree={tree} />
+        {!isEditorRoute && <SpaceBreadcrumb space={space} tree={tree} />}
         <Outlet context={context} />
       </section>
     </div>

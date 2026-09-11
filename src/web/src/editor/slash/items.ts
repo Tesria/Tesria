@@ -3,8 +3,9 @@ import type { Editor } from '@tiptap/react'
 import { uploadAndInsertImage } from '../imageUpload'
 import { PANEL_TYPES, PANEL_LABELS } from '../panelExtension'
 import {
-  BlockquoteIcon, BulletListIcon, CodeBlockIcon, DividerIcon, ErrorPanelIcon, HeadingIcon, ImageIcon,
-  InfoPanelIcon, NotePanelIcon, OrderedListIcon, SuccessPanelIcon, TableIcon, TaskListIcon, WarningPanelIcon,
+  BlockquoteIcon, BulletListIcon, CodeBlockIcon, DateIcon, DecisionIcon, DividerIcon, ErrorPanelIcon, ExpandIcon,
+  HeadingIcon, ImageIcon, InfoPanelIcon, LayoutIcon, NotePanelIcon, OrderedListIcon, StatusIcon, SuccessPanelIcon,
+  TableIcon, TaskListIcon, TocIcon, WarningPanelIcon,
 } from '../icons'
 
 /**
@@ -176,6 +177,55 @@ export const SLASH_ITEMS: SlashItem[] = [
     description: 'Horizontal rule',
     keywords: ['hr', 'rule', 'separator'],
     command: (editor, range) => editor.chain().focus().deleteRange(range).setHorizontalRule().run(),
+  },
+  // Structural blocks (dev-plan Phase 7, Wave A).
+  {
+    title: 'Table of contents',
+    group: 'block',
+    icon: TocIcon,
+    description: 'Links to the headings on this page',
+    keywords: ['toc', 'outline', 'contents'],
+    command: (editor, range) => editor.chain().focus().deleteRange(range).insertTableOfContents().run(),
+  },
+  {
+    title: 'Expand',
+    group: 'block',
+    icon: ExpandIcon,
+    description: 'Collapsible section with a title',
+    keywords: ['collapse', 'toggle', 'details', 'accordion'],
+    command: (editor, range) => editor.chain().focus().deleteRange(range).setExpand().run(),
+  },
+  {
+    title: 'Layout',
+    group: 'block',
+    icon: LayoutIcon,
+    description: 'Two columns — change the shape from the layout bar',
+    keywords: ['columns', 'section', 'grid'],
+    command: (editor, range) => editor.chain().focus().insertLayout('two-equal', range).run(),
+  },
+  {
+    title: 'Decision',
+    group: 'block',
+    icon: DecisionIcon,
+    description: 'Record something that was agreed',
+    keywords: ['decided', 'agreed'],
+    command: (editor, range) => editor.chain().focus().deleteRange(range).setDecision().run(),
+  },
+  {
+    title: 'Status',
+    group: 'block',
+    icon: StatusIcon,
+    description: 'Coloured lozenge, e.g. IN PROGRESS',
+    keywords: ['lozenge', 'badge', 'tag', 'label'],
+    command: (editor, range) => editor.chain().focus().insertStatus(range).run(),
+  },
+  {
+    title: 'Date',
+    group: 'block',
+    icon: DateIcon,
+    description: 'A calendar date, shown in each reader\'s locale',
+    keywords: ['calendar', 'today', 'when'],
+    command: (editor, range) => editor.chain().focus().insertDate(range).run(),
   },
 ]
 
