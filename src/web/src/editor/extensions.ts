@@ -1,4 +1,5 @@
 import StarterKit from '@tiptap/starter-kit'
+import Document from '@tiptap/extension-document'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import {
@@ -15,6 +16,13 @@ import { SlashCommand } from './slash/SlashCommand'
 import { Image } from './imageExtension'
 import { CommentMark } from './commentMark'
 import { Panel } from './panelExtension'
+import { HeadingAnchors } from './headingAnchors'
+import { TableOfContents } from './tocExtension'
+import { Expand } from './expandExtension'
+import { Status } from './statusExtension'
+import { DateChip } from './dateExtension'
+import { Decision } from './decisionExtension'
+import { LayoutColumn, LayoutSection } from './layoutExtension'
 
 type SharedExtensionOptions = {
   /** Collaborative editors let Yjs own undo/redo history instead of StarterKit's. */
@@ -153,9 +161,13 @@ export function getSharedExtensions({ collaborative = false, editable = true }: 
     // attr, so stored content and the export renderer are unaffected.
     StarterKit.configure({
       codeBlock: false,
+      document: false,
       link: { openOnClick: !editable },
       ...(collaborative ? { undoRedo: false } : {}),
     }),
+    // Layout sections live only at the top level (layoutExtension.ts): they
+    // are not `block`s, so this is the one place the schema admits them.
+    Document.extend({ content: '(block | layoutSection)+' }),
     CodeBlock,
     TableKit.configure({ table: false, tableCell: false, tableHeader: false }),
     Table,
@@ -171,6 +183,16 @@ export function getSharedExtensions({ collaborative = false, editable = true }: 
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
     CommentMark,
     Panel,
+    // Phase 7 Wave A structural blocks. Heading ids are decorations, not
+    // attributes — see headingAnchors.ts.
+    HeadingAnchors,
+    TableOfContents,
+    Expand,
+    Status,
+    DateChip,
+    Decision,
+    LayoutSection,
+    LayoutColumn,
     // Read-only rendering never needs "/" commands — skip mounting the
     // suggestion plugin entirely rather than just hiding its output.
     ...(editable ? [SlashCommand] : []),

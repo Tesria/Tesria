@@ -78,7 +78,7 @@ export function ToolbarDropdown({ title, options, showLabel = false }: { title: 
               }}
             >
               {o.icon}
-              <span>{o.label}</span>
+              <span className={o.key.startsWith('h') && showLabel ? `toolbar-dropdown__style toolbar-dropdown__style--${o.key}` : undefined}>{o.label}</span>
             </button>
           ))}
         </div>

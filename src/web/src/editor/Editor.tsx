@@ -6,6 +6,10 @@ import { TableWidthControls } from './TableWidthControls'
 import { LinkMenu } from './LinkMenu'
 import { SelectionBubbleMenu } from './SelectionBubbleMenu'
 import { ImageHoverMenu } from './ImageHoverMenu'
+import { StatusMenu } from './StatusMenu'
+import { DateMenu } from './DateMenu'
+import { LayoutMenu } from './LayoutMenu'
+import { scrollToAnchor } from './headingAnchors'
 import { getSharedExtensions } from './extensions'
 import { handleImageDrop, handleImagePaste } from './imageUpload'
 import { setSlashCommandStorage } from './slash/items'
@@ -55,6 +59,21 @@ export function Editor({ value, editable = true, onChange, getUploadPageId, onUp
     editorProps: {
       handlePaste: (_view, event) => handleImagePaste(editorRef.current, event, getUploadPageId, onUploadError),
       handleDrop: (_view, event) => handleImageDrop(editorRef.current, event, getUploadPageId, onUploadError),
+      handleDOMEvents: {
+        // A link to a heading on this page (`#setup`) scrolls there in the
+        // reading view. Left to the browser it would open a new tab, since
+        // links render with target="_blank"; left to the Link extension it
+        // does nothing at all when the view is not editable.
+        click: (view, event) => {
+          if (view.editable || event.button !== 0) return false
+          const link = (event.target as HTMLElement | null)?.closest('a')
+          const href = link?.getAttribute('href') ?? ''
+          if (!link || !view.dom.contains(link) || !href.startsWith('#')) return false
+          event.preventDefault()
+          scrollToAnchor(view.dom, decodeURIComponent(href.slice(1)))
+          return true
+        },
+      },
     },
   })
   useEffect(() => {
@@ -100,6 +119,9 @@ export function Editor({ value, editable = true, onChange, getUploadPageId, onUp
       {editable && editor && (
         <ImageHoverMenu editor={editor} getPageId={getUploadPageId} onCommentError={onUploadError} />
       )}
+      {editable && editor && <StatusMenu editor={editor} />}
+      {editable && editor && <DateMenu editor={editor} />}
+      {editable && editor && <LayoutMenu editor={editor} />}
       <EditorContent editor={editor} className="editor__content" />
     </div>
   )

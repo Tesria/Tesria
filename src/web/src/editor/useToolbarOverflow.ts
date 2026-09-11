@@ -13,10 +13,10 @@ import { useLayoutEffect, useRef, useState } from 'react'
  * is willing to lose them, so the last is kept longest — until the next
  * item would not fit; that item and everything before it overflow.
  *
- * Two escape hatches keep this honest under conditions measurement cannot
- * see: the container has `overflow: hidden` so a mis-measure clips rather
- * than wraps, and the caller lists items in the order it is willing to lose
- * them.
+ * The container is `flex-wrap: nowrap` (never `overflow: hidden`, which
+ * would clip every dropdown), so a mis-measure shows up as a cramped row
+ * rather than a second line — and the caller lists items in the order it is
+ * willing to lose them.
  */
 export function useToolbarOverflow(keys: string[], reserveKeys: string[] = []) {
   const containerRef = useRef<HTMLDivElement>(null)

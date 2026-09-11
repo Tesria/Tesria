@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import type { Editor as TiptapEditor } from '@tiptap/react'
 import { ToolbarButton } from './ToolbarButton'
+import { HeadingLinkList } from './HeadingLinkList'
 import { ToolbarDropdown } from './ToolbarDropdown'
 import { ToolbarPopover } from './ToolbarPopover'
 import { InsertMenu, type OverflowAction } from './InsertMenu'
@@ -26,7 +27,7 @@ type Collapsible = { key: string; icon: ReactNode; label: string; isActive: bool
 /**
  * The editing toolbar: one row, edge to edge, never wrapping — the shape of
  * Confluence's. Text style and alignment are dropdowns (not runs of buttons),
- * block elements live behind "+ Insert", and whatever formatting buttons
+ * block elements live behind "+", and whatever formatting buttons
  * still do not fit at a given width are moved into that menu by measurement
  * (`useToolbarOverflow`) rather than pushed onto a second line.
  *
@@ -110,6 +111,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
             }}
           />
           <button type="submit" className="link-btn">Apply</button>
+          <HeadingLinkList editor={editor} onPick={setLinkUrl} />
         </form>
       )}
     </div>
@@ -127,10 +129,11 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
           title="Text style"
           showLabel
           options={[
-            { key: 'p', label: 'Normal text', icon: <span className="tb-glyph">¶</span>, isActive: !headingLevel, onSelect: () => chain().setParagraph().run() },
-            { key: 'h1', label: 'Heading 1', icon: <span className="tb-glyph">H1</span>, isActive: headingLevel === 1, onSelect: () => chain().toggleHeading({ level: 1 }).run() },
-            { key: 'h2', label: 'Heading 2', icon: <span className="tb-glyph">H2</span>, isActive: headingLevel === 2, onSelect: () => chain().toggleHeading({ level: 2 }).run() },
-            { key: 'h3', label: 'Heading 3', icon: <span className="tb-glyph">H3</span>, isActive: headingLevel === 3, onSelect: () => chain().toggleHeading({ level: 3 }).run() },
+            // No icons: the trigger reads "Normal text ⌄", as Confluence's does.
+            { key: 'p', label: 'Normal text', icon: null, isActive: !headingLevel, onSelect: () => chain().setParagraph().run() },
+            { key: 'h1', label: 'Heading 1', icon: null, isActive: headingLevel === 1, onSelect: () => chain().toggleHeading({ level: 1 }).run() },
+            { key: 'h2', label: 'Heading 2', icon: null, isActive: headingLevel === 2, onSelect: () => chain().toggleHeading({ level: 2 }).run() },
+            { key: 'h3', label: 'Heading 3', icon: null, isActive: headingLevel === 3, onSelect: () => chain().toggleHeading({ level: 3 }).run() },
           ]}
         />
       </span>
@@ -164,7 +167,6 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
       </span>
       <span className="toolbar__sep" />
       {linkControl}
-      <span className="toolbar__spacer" />
       <InsertMenu editor={editor} overflow={overflowActions} />
     </div>
   )

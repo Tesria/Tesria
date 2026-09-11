@@ -5,6 +5,73 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Editor parity Wave A — structural blocks (dev-plan 7, Wave A) (2026-09-10)
+
+Seven of Confluence's structural elements, in the editor, the reading view
+and both export formats. Started as Fable by user override and finished as
+Opus (the plan tags the wave Opus).
+
+- **Heading anchors.** Every heading gets an id derived from its text
+  (lower-cased, non-alphanumerics collapsed to hyphens, duplicates suffixed
+  `-2`, `-3`). *Derived, never stored* — the same choice Confluence makes:
+  a stored id duplicates on paste, drifts between collaborators and needs a
+  migration for every existing page. The cost is one algorithm written
+  twice, in `headingAnchors.ts` and `Features/Export/HeadingAnchors.cs`,
+  pinned together by `HeadingAnchorTests`. In the editor the ids are
+  ProseMirror *decorations*, so they are recomputed from the document on
+  every change and never serialised. `#slug` links scroll rather than
+  navigate, both in the reading view and when a page is opened at
+  `…/pages/{id}#slug`, and the link popover lists the page's headings to
+  pick from.
+- **Table of contents** — a block with no stored content. The node view
+  lists headings live; the exporter builds the same nested list at export
+  time. Nothing ever holds a stale copy of the page's own outline.
+- **Expand** — collapsible section, title stored, open state not (it starts
+  open while editing and closed for readers). Exports as `<details>`.
+- **Status** — inline lozenge, one of Confluence's six colour *names*; the
+  colour value never comes from the document, so a hostile `color` cannot
+  reach a style attribute. **Decision** — a panel-shaped block with a fixed
+  check icon. **Date** — an ISO calendar date rendered in the reader's own
+  locale (parsed by hand: `new Date('2026-09-10')` is UTC midnight and shows
+  the day before to anyone west of Greenwich).
+- **Layouts** — `layoutSection` of two or three `layoutColumn`s, with
+  Confluence's five presets and a per-section width (centred / wide / full)
+  reusing the page's own `--page-pad` breakout. Sections stack but never
+  nest: `layoutSection` is not in the `block` group and only the document
+  admits it (`Document.extend({ content: '(block | layoutSection)+' })`),
+  so no panel, expand or column can contain one. The full-width *table*
+  breakout was rescoped to direct children of the content root at the same
+  time, so a full-width table inside a column fills the column instead of
+  bleeding out of it.
+- All seven appear in the slash menu and the **+** menu from the one
+  `SLASH_ITEMS` catalogue, so neither can drift.
+
+Also in this pass, from live review:
+
+- The **+** insert trigger is a plain "+" sitting with the other toolbar
+  icons rather than a labelled button pushed to the right edge, and the
+  text-style dropdown reads "Normal text" with no icon — both matching a
+  Confluence screenshot the user supplied.
+- **Publish/Update and Close moved onto the toolbar row**, out of the bottom
+  of the form (`form=` ties the submit button to the form it now sits
+  outside of).
+- **The breadcrumb moved below the toolbar** on the editor routes: the
+  toolbar is the top edge of the editing surface, and the breadcrumb belongs
+  with the page content. `SpacePage` suppresses its own copy there and
+  `PageEditor` renders it.
+- **Fixed: floating toolbar menus were transparent.** A regression from the
+  one-row toolbar rebuild — `.toolbar` stopped having a surface of its own
+  (the page action bar supplies it), so every `.toolbar--bubble` copy of it
+  (the selection bubble, the image hover bar, the new layout bar) let page
+  content show straight through. They now paint their own background, and
+  wrap again on narrow screens.
+
+Verified live at 1000×640: every block created, styled and exported;
+heading links scrolled rather than navigated; every space route rendered
+exactly one breadcrumb with a clean console; a page created, published,
+trashed and permanently purged (sudo re-auth included). 315 backend tests
+pass.
+
 ### Editor chrome: one-row toolbar with an Insert menu, borderless page (2026-09-10)
 
 *Scope added by the user at the start of Phase 7, modelled on Confluence's

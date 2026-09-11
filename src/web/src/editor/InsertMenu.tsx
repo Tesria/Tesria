@@ -13,9 +13,11 @@ export type OverflowAction = {
 }
 
 /**
- * The toolbar's "+ Insert" menu — the same idea as Confluence's: block
- * elements live here rather than as one button each, so the toolbar stays
- * a single row whatever gets added to the editor.
+ * The toolbar's "+" menu — the same idea as Confluence's: block elements
+ * live here rather than as one button each, so the toolbar stays a single
+ * row whatever gets added to the editor. It is a plain "+" sitting with the
+ * other icons, not a labelled button pushed to the right edge — that is
+ * where Confluence keeps it.
  *
  * Its contents come from the slash catalogue (`SLASH_ITEMS`), not a list of
  * their own: a block added there appears here without a second edit, and
@@ -51,11 +53,10 @@ export function InsertMenu({ editor, overflow }: { editor: TiptapEditor; overflo
         aria-expanded={open}
       >
         <PlusIcon />
-        <span className="toolbar__insert-label">Insert</span>
         <ChevronDownIcon />
       </button>
       {open && (
-        <div className="toolbar-dropdown__menu toolbar-dropdown__menu--right toolbar-dropdown__menu--insert">
+        <div className="toolbar-dropdown__menu toolbar-dropdown__menu--insert">
           {overflow.length > 0 && (
             <>
               <p className="toolbar-dropdown__heading">Formatting</p>

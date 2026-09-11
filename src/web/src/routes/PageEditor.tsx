@@ -7,6 +7,7 @@ import { CollaborativeEditor } from '../editor/CollaborativeEditor'
 import { Toolbar } from '../editor/Toolbar'
 import { useAuth } from '../auth/AuthContext'
 import { useSpaceContext } from './SpacePage'
+import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
 
 const EMPTY_DOC = '{"type":"doc","content":[]}'
 
@@ -15,7 +16,7 @@ export function PageEditor() {
   const [searchParams] = useSearchParams()
   const parentPageId = searchParams.get('parent')
   const navigate = useNavigate()
-  const { space, reloadTree } = useSpaceContext()
+  const { space, tree, reloadTree } = useSpaceContext()
   const { user } = useAuth()
   const isEdit = Boolean(pageId)
   // Co-editing applies to existing pages only — a new page has no id to share.
@@ -185,9 +186,22 @@ export function PageEditor() {
           >
             {fullWidth ? '⤡ Normal width' : '⤢ Full width'}
           </button>
+          {/* Publish/Update and Close sit on the toolbar row, where
+              Confluence keeps them — not under the page. They are outside
+              the <form> element, so `form=` ties the submit to it. */}
+          <button type="submit" form="page-editor-form" className="btn btn--primary" disabled={busy}>
+            {busy ? 'Saving…' : isEdit ? 'Update' : 'Publish'}
+          </button>
+          <button type="button" className="btn btn--ghost" onClick={onCancel}>
+            Close
+          </button>
         </div>
       </div>
-      <form className={fullWidth ? 'page-wrap page-wrap--full editor-form' : 'page-wrap editor-form'} onSubmit={onSubmit}>
+      {/* Below the toolbar, not above it: the toolbar is the top edge of the
+          editing surface and the breadcrumb belongs with the page content
+          (SpacePage suppresses its own copy on this route). */}
+      <SpaceBreadcrumb space={space} tree={tree} />
+      <form id="page-editor-form" className={fullWidth ? 'page-wrap page-wrap--full editor-form' : 'page-wrap editor-form'} onSubmit={onSubmit}>
       {error && <p className="alert alert--error">{error}</p>}
       {!isEdit && templates.length > 0 && (
         <label className="change-comment">
@@ -241,14 +255,6 @@ export function PageEditor() {
           <input value={changeComment} onChange={(e) => setChangeComment(e.target.value)} placeholder="e.g. fixed typo" />
         </label>
       )}
-      <div className="editor-actions">
-        <button type="submit" className="btn btn--primary" disabled={busy}>
-          {busy ? 'Saving…' : isEdit ? 'Save changes' : 'Create page'}
-        </button>
-        <button type="button" className="btn btn--ghost" onClick={onCancel}>
-          Cancel
-        </button>
-      </div>
       </form>
     </>
   )

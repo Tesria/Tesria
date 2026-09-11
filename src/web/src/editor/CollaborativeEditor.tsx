@@ -10,6 +10,9 @@ import { TableWidthControls } from './TableWidthControls'
 import { LinkMenu } from './LinkMenu'
 import { SelectionBubbleMenu } from './SelectionBubbleMenu'
 import { ImageHoverMenu } from './ImageHoverMenu'
+import { StatusMenu } from './StatusMenu'
+import { DateMenu } from './DateMenu'
+import { LayoutMenu } from './LayoutMenu'
 import { getSharedExtensions } from './extensions'
 import { handleImageDrop, handleImagePaste } from './imageUpload'
 import { setSlashCommandStorage } from './slash/items'
@@ -147,6 +150,9 @@ export function CollaborativeEditor({
       {editor && <LinkMenu editor={editor} />}
       {editor && <SelectionBubbleMenu editor={editor} getPageId={getUploadPageId} onCommentError={onUploadError} />}
       {editor && <ImageHoverMenu editor={editor} getPageId={getUploadPageId} onCommentError={onUploadError} />}
+      {editor && <StatusMenu editor={editor} />}
+      {editor && <DateMenu editor={editor} />}
+      {editor && <LayoutMenu editor={editor} />}
       <EditorContent editor={editor} className="editor__content" />
     </div>
   )
