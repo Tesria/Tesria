@@ -4,6 +4,7 @@ using Tesria.Api.Features.Blocks;
 using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Email;
 using Tesria.Api.Infrastructure.Settings;
+using Tesria.Api.Infrastructure.Storage;
 using Tesria.Api.Infrastructure.Permissions;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,7 +27,7 @@ public static class ExportEndpoints
     private static async Task<IResult> ExportPage(
         Guid id, string? format, AppDbContext db, IPermissionService perms,
         IDynamicBlockService blocks, ISiteSettingsService settings, IConfiguration config,
-        IWebHostEnvironment env, CancellationToken ct)
+        IWebHostEnvironment env, IAttachmentStorage storage, IPdfRenderer pdf, CancellationToken ct)
     {
         var page = await db.Pages.AsNoTracking()
             .Include(p => p.CurrentVersion)
@@ -36,6 +37,10 @@ public static class ExportEndpoints
 
         var content = page.CurrentVersion.ContentJson;
         var safeName = SafeFileName(page.Title);
+        var wantsFile = (format ?? "markdown").ToLowerInvariant() is "html" or "pdf";
+        // Markdown keeps its attachment URLs: a data: URI is unreadable in a
+        // text file, which is the point of Markdown.
+        if (wantsFile) content = await InlineAssets.InlineImagesAsync(content, db, storage, ct);
 
         // Dynamic blocks are snapshotted now, as this caller, with this
         // caller's permissions (architecture.md, "Dynamic blocks", decision 5).
@@ -52,9 +57,11 @@ public static class ExportEndpoints
                 HtmlDocument(page.Title, ProseMirrorRenderer.ToHtml(content, snapshot, baseUrl, out var usedMermaid), env, usedMermaid),
                 "text/html", $"{safeName}.html"),
 
+            "pdf" => await PdfResultAsync(page.Title, safeName, content, snapshot, baseUrl, env, pdf, ct),
+
             _ => Results.ValidationProblem(new Dictionary<string, string[]>
             {
-                ["format"] = ["Supported formats are 'markdown' and 'html'."],
+                ["format"] = ["Supported formats are 'markdown', 'html' and 'pdf'."],
             }),
         };
     }
@@ -75,6 +82,30 @@ public static class ExportEndpoints
             catch (BlockParamException) { results.Add(null); }
         }
         return results;
+    }
+
+    /// <summary>
+    /// The same HTML the html format returns, rendered by the sidecar. When
+    /// no renderer is configured or it fails, this is a 503 naming the HTML
+    /// export rather than a dead end: printing that page to PDF is exactly
+    /// what the sidecar does, just by hand.
+    /// </summary>
+    private static async Task<IResult> PdfResultAsync(
+        string title, string safeName, string content, List<BlockResult?> snapshot, string baseUrl,
+        IWebHostEnvironment env, IPdfRenderer pdf, CancellationToken ct)
+    {
+        if (!pdf.Available)
+            return Results.Problem(
+                detail: "PDF export is not configured on this instance. Export as HTML and print it to PDF instead.",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+
+        var html = HtmlDocument(title, ProseMirrorRenderer.ToHtml(content, snapshot, baseUrl, out var usedMermaid), env, usedMermaid);
+        var bytes = await pdf.RenderAsync(html, ct);
+        return bytes is null
+            ? Results.Problem(
+                detail: "The PDF renderer did not answer. Export as HTML and print it to PDF instead.",
+                statusCode: StatusCodes.Status503ServiceUnavailable)
+            : Results.File(bytes, "application/pdf", $"{safeName}.pdf");
     }
 
     private static IResult File(string body, string contentType, string fileName) =>

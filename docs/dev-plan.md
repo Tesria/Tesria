@@ -790,14 +790,14 @@ The page at brianintheloop.com/tesria was audited against the product.
 Every present-tense claim holds **except one**; the four roadmap items map
 onto `roadmap.md` and are sequenced here.
 
-### 8.1 PDF export — the one claim that isn't true yet — `M` — Model: Opus
+### 8.1 PDF export — the one claim that isn't true yet — `M` — Model: Opus — ✅ **shipped 2026-09-10**
 - The page says "export any page as Markdown or a PDF". The product exports
   Markdown or **print-ready HTML**. Recommend a Playwright sidecar (the stack
   already has one Node sidecar, so the pattern exists) rendering the HTML
   export to PDF on request; keep the HTML export too. **After Wave A**,
   since layouts and TOC change what "print-ready" means.
 
-### 8.2 Licence — `S` — Model: Opus
+### 8.2 Licence — `S` — Model: Opus — ✅ **shipped 2026-09-10**
 - The page says Apache 2.0 and open source. **The repo has no `LICENSE`
   file** (verified 2026-09-08), and `CLAUDE.md` says it is private pending
   an audit — which is now Phase 3.7. Add the Apache 2.0 text as `LICENSE`

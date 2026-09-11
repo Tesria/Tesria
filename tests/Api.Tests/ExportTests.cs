@@ -578,7 +578,9 @@ public class ExportEndpointTests
         var (factory, client, page) = await NewClientWithPage();
         using var _ = factory;
 
-        var res = await client.GetAsync($"/api/pages/{page.Id}/export?format=pdf");
+        // Was `pdf` until dev-plan 8.1 made that a real format; `docx` is
+        // the stand-in for "a format this app does not have".
+        var res = await client.GetAsync($"/api/pages/{page.Id}/export?format=docx");
         Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
     }
 

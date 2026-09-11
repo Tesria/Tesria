@@ -30,6 +30,7 @@ menu, and a per-page full-width layout toggle — see
 - **Auth:** local accounts (Argon2id), API tokens, and optional OIDC/SSO —
   cookie sessions, all converging on the same permission model
 - **Collaboration:** Node + Hocuspocus/Yjs sidecar for simultaneous editing
+- **PDF export:** Node + Playwright sidecar rendering the print-ready HTML export
 - **Deploy:** Docker Compose — Caddy reverse proxy with automatic HTTPS
 - **Backups:** pgBackRest continuous WAL archiving + point-in-time recovery,
   scheduled `pg_dump` + `uploads` archives, and in-app version history / trash
@@ -51,6 +52,7 @@ placeholders, not blanks, so nothing fails loudly if you skip one:
 | `BACKUP_ENCRYPTION_KEY` | **Required.** Encrypts the pgBackRest repository (`openssl rand -hex 32`). Backups made with it are unrecoverable without it, so keep it somewhere safe — and *don't* reuse a key from another install unless you intend to restore that install's backups. |
 | `DOMAIN`, `ACME_EMAIL` | `localhost` is fine for a laptop. |
 | `COLLAB_SHARED_SECRET` | Optional (`openssl rand -hex 32`). Empty disables real-time co-editing; the editor falls back to single-user. |
+| `PDF_SHARED_SECRET` | Optional (`openssl rand -hex 32`). Empty disables PDF export; `?format=pdf` then answers 503 telling the user to print the HTML export. |
 
 Everything else — schema included — sets itself up: the API runs EF Core
 migrations on startup, and the pgBackRest sidecar creates its stanza on
@@ -128,6 +130,7 @@ Full details and disaster-recovery runbook: [`docs/backup-recovery.md`](./docs/b
 src/Api/        ASP.NET Core API (Domain / Infrastructure / Features slices)
 src/web/        React + Vite + TypeScript SPA (TipTap editor)
 collab/         Real-time collaboration sidecar (Node + Hocuspocus/Yjs)
+pdf/            PDF rendering sidecar (Node + Playwright/Chromium)
 tests/          API integration tests (in-process, SQLite in-memory)
 deploy/         Dockerfile, Caddyfile, backup scripts, pgBackRest (Phase 3)
 docs/           architecture, backup-recovery runbook, CHANGELOG

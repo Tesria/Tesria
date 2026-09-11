@@ -12,5 +12,6 @@
     "@hocuspocus/extension-database": "^3.4.0",
     "@hocuspocus/server": "^3.4.0",
     "pg": "^8.13.1"
-  }
+  },
+  "license": "Apache-2.0"
 }

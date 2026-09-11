@@ -1,0 +1,15 @@
+{
+  "name": "tesria-pdf",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "PDF rendering sidecar for Tesria: turns an exported HTML page into a PDF",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "playwright-core": "1.63.0"
+  },
+  "license": "Apache-2.0"
+}

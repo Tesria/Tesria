@@ -9,6 +9,10 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <Version>0.2.0</Version>
     <InformationalVersion>0.2.0</InformationalVersion>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <Authors>Brian Rodriguez</Authors>
+    <Product>Tesria</Product>
+    <Copyright>Copyright 2026 Brian Rodriguez</Copyright>
     <!-- The built React SPA is copied into wwwroot at Docker build time and
          served as static files. -->
   </PropertyGroup>

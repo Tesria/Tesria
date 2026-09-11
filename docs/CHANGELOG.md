@@ -5,6 +5,44 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### PDF export, and a licence (dev-plan 8.1, 8.2) (2026-09-10)
+
+**PDF export (8.1)** — the one claim on the brand page that was not true.
+A Playwright sidecar renders the *same* print-ready HTML the html format
+returns, so there is one renderer and a PDF cannot drift from the page. A
+real browser engine is the only honest way to do this, and a ~400MB
+Chromium has no business in the app image, so it is a sidecar like collab.
+
+The sidecar runs with **its network switched off** — `offline: true` plus a
+route handler that aborts everything but `data:`. That is only possible
+because the HTML export is now genuinely self-contained: diagrams carry
+their own renderer (last commit) and **images are now inlined as data
+URIs**. That last part fixes a real bug in its own right — an exported HTML
+page referenced `/api/attachments/…`, so its images were broken the moment
+the file left the app. Inlining is bounded (4MB an image, 20MB a document);
+past the budget an image keeps its URL, as before. Markdown is deliberately
+unchanged: a data: URI is unreadable in a text file.
+
+Where no renderer is configured, `?format=pdf` answers **503 with advice**
+— "export as HTML and print it" — rather than a dead end or a 500. The
+same if the sidecar is down.
+
+**Caught immediately, and it is the classic one:** `playwright-core` was
+declared as `^1.56.0` and resolved to 1.63.0 against a v1.56.0 image, so
+every render failed with "Executable doesn't exist". The library version
+and the image tag must be the *same* version; both are now pinned exactly,
+with a comment saying to bump them together or not at all.
+
+**Licence (8.2)** — the brand page says Apache 2.0 and the repo had no
+`LICENSE` file. Added, with a `NOTICE` listing the third-party components,
+and SPDX identifiers in both `package.json`s and the `.csproj`. Public
+visibility is still the user's call; the licence file existing is a
+precondition for that, not a consequence.
+
+Verified end to end: a real PDF of a page carrying dynamic blocks, an
+excerpt, page properties and a Mermaid diagram — the diagram renders as
+*vector text* in the PDF, so the live blocks and the drawing both survive.
+
 ### Editor parity Waves E and F — media, embeds, diagrams, maths, charts (dev-plan 7) (2026-09-10)
 
 **Phase 7 is complete.**
