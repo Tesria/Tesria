@@ -8,8 +8,9 @@ import { useSpaceContext } from './SpacePage'
  *
  * The name and description endpoint existed since Phase 2 with nothing in the
  * UI reaching it; the icon needed somewhere to live, so this page finally
- * gives both a home. Permissions, webhooks and trash keep their own pages —
- * they are lists, not settings.
+ * gives both a home. It is the Details tab of `SpaceSettingsLayout`, which
+ * owns the heading and the tab row — permissions, webhooks and trash are
+ * the other three tabs.
  */
 export function SpaceSettingsPage() {
   const { space, onSpaceChanged } = useSpaceContext()
@@ -42,8 +43,7 @@ export function SpaceSettingsPage() {
   }
 
   return (
-    <div className="page-wrap">
-      <h1>Space settings</h1>
+    <>
       {error && <p className="alert alert--error">{error}</p>}
       {status && <p className="profile__ok">{status}</p>}
 
@@ -79,6 +79,6 @@ export function SpaceSettingsPage() {
           </button>
         </form>
       </section>
-    </div>
+    </>
   )
 }

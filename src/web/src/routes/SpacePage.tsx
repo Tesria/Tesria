@@ -6,7 +6,7 @@ import { OverflowMenu } from '../components/OverflowMenu'
 import { PageTree } from '../components/PageTree'
 import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
 import { SpaceIcon } from '../components/SpaceIcon'
-import { SettingsIcon, PermissionsIcon, WebhooksIcon, TrashIcon } from '../components/NavIcons'
+import { SettingsIcon } from '../components/NavIcons'
 
 export type SpaceOutletContext = {
   space: Space
@@ -111,58 +111,53 @@ export function SpacePage() {
               + New
             </NavLink>
             <OverflowMenu label="Space actions">
-              <NavLink to={`/spaces/${space.key}/settings`} className="btn"><SettingsIcon /> Settings</NavLink>
-              <NavLink to={`/spaces/${space.key}/permissions`} className="btn"><PermissionsIcon /> Permissions</NavLink>
-              <NavLink to={`/spaces/${space.key}/webhooks`} className="btn"><WebhooksIcon /> Webhooks</NavLink>
-              <NavLink to={`/spaces/${space.key}/trash`} className="btn"><TrashIcon /> Trash</NavLink>
+              {/* Permissions, webhooks and trash are tabs of Settings now,
+                  so one entry reaches all four. */}
+              <NavLink to={`/spaces/${space.key}/settings`} className="btn"><SettingsIcon /> Space settings</NavLink>
             </OverflowMenu>
           </div>
         )}
       </div>
+      {/* Three bands: a head and a foot that stay put, and the page tree
+          scrolling between them. The sidebar is its own scroll container
+          (see .sidebar in index.css) rather than part of the document's, so
+          reading a long page no longer carries the space's name, its
+          + New page button and its settings off the top of the screen. */}
       <aside className="sidebar">
-        <div className="sidebar__head">
-          <SpaceIcon space={space} size={32} />
-          <div>
-            <div className="sidebar__key">
-              {space.key}
-              {/* Visible to everyone, so nobody edits a public page thinking it is internal. */}
-              {space.isPublic && <span className="badge badge--public" title="Readable by anyone on the internet">public</span>}
+        <div className="sidebar__top">
+          <div className="sidebar__head">
+            <SpaceIcon space={space} size={32} />
+            <div>
+              <div className="sidebar__key">
+                {space.key}
+                {/* Visible to everyone, so nobody edits a public page thinking it is internal. */}
+                {space.isPublic && <span className="badge badge--public" title="Readable by anyone on the internet">public</span>}
+              </div>
+              <div className="sidebar__name">{space.name}</div>
             </div>
-            <div className="sidebar__name">{space.name}</div>
           </div>
+          {user && (
+            <NavLink to={newPageHref} className="btn btn--primary btn--block">
+              + New page
+            </NavLink>
+          )}
         </div>
-        {user && (
-          <NavLink to={newPageHref} className="btn btn--primary btn--block">
-            + New page
-          </NavLink>
-        )}
+        {/* The tree fills the space between head and foot; its own "PAGES"
+            heading stays put and only the rows scroll. That split is done in
+            CSS (.sidebar .tree-section / .sidebar .tree) rather than with
+            props, because PageTree renders the same markup here and in the
+            mobile inline copy on the space home. */}
         <PageTree tree={tree} spaceKey={space.key} onMoved={reloadTree} readOnly={!user} />
-        {user && (<>
-        <NavLink
-          to={`/spaces/${space.key}/settings`}
-          className={({ isActive }) => (isActive ? 'sidebar__trash is-active' : 'sidebar__trash')}
-        >
-          <SettingsIcon /> Settings
-        </NavLink>
-        <NavLink
-          to={`/spaces/${space.key}/permissions`}
-          className={({ isActive }) => (isActive ? 'sidebar__trash is-active' : 'sidebar__trash')}
-        >
-          <PermissionsIcon /> Permissions
-        </NavLink>
-        <NavLink
-          to={`/spaces/${space.key}/webhooks`}
-          className={({ isActive }) => (isActive ? 'sidebar__trash is-active' : 'sidebar__trash')}
-        >
-          <WebhooksIcon /> Webhooks
-        </NavLink>
-        <NavLink
-          to={`/spaces/${space.key}/trash`}
-          className={({ isActive }) => (isActive ? 'sidebar__trash is-active' : 'sidebar__trash')}
-        >
-          <TrashIcon /> Trash
-        </NavLink>
-        </>)}
+        {user && (
+          <div className="sidebar__foot">
+            <NavLink
+              to={`/spaces/${space.key}/settings`}
+              className={({ isActive }) => (isActive ? 'sidebar__trash is-active' : 'sidebar__trash')}
+            >
+              <SettingsIcon /> Space settings
+            </NavLink>
+          </div>
+        )}
       </aside>
       <section className="space-content">
         {!rendersOwnBreadcrumb && <SpaceBreadcrumb space={space} tree={tree} />}

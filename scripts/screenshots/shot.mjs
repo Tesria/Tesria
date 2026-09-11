@@ -110,6 +110,21 @@ const ANNOTATE = `
 `
 
 const browser = await chromium.launch({ args: ['--font-render-hinting=none'] })
+
+// Uncaught errors and console errors, tagged with the shot that was running.
+// A layout or routing change is checked by walking every route and reading
+// this list — there are no frontend tests to catch a blank screen.
+let current = '(startup)'
+const problems = []
+function watch(p) {
+  p.on('pageerror', (e) => problems.push(`${current}: uncaught ${e.message.split('\n')[0]}`))
+  p.on('console', (m) => {
+    if (m.type() !== 'error') return
+    const t = m.text()
+    if (/Failed to load resource/.test(t)) return // 401/404 probes are normal here
+    problems.push(`${current}: console ${t.slice(0, 160)}`)
+  })
+}
 const ctx = await browser.newContext({
   viewport: { width: 1440, height: 900 },
   deviceScaleFactor: 2,
@@ -117,6 +132,7 @@ const ctx = await browser.newContext({
   ignoreHTTPSErrors: true,
 })
 const page = await ctx.newPage()
+watch(page)
 
 // Sign in once; every shot reuses the session.
 await page.goto(BASE + '/login', { waitUntil: 'domcontentloaded' })
@@ -139,6 +155,7 @@ async function pageFor(s) {
       ignoreHTTPSErrors: true,
     })
     anonPage = await anonCtx.newPage()
+    watch(anonPage)
   }
   return anonPage
 }
@@ -146,6 +163,7 @@ async function pageFor(s) {
 for (const s of spec.shots) {
   if (only && s.name !== only) continue
   const pg = await pageFor(s)
+  current = s.name
   try {
     if (s.url) { await pg.goto(BASE + s.url, { waitUntil: 'domcontentloaded' }); await pg.waitForLoadState('load').catch(() => {}) }
     if (s.viewport) await pg.setViewportSize(s.viewport)
@@ -196,6 +214,13 @@ for (const s of spec.shots) {
     console.error('FAILED', s.name, '::', err.message)
   }
   if (s.viewport) await pg.setViewportSize({ width: 1440, height: 900 })
+}
+
+if (problems.length) {
+  console.error('\n--- page errors ---')
+  for (const p of problems) console.error(' ', p)
+} else {
+  console.log('\nno page errors')
 }
 
 await browser.close()
