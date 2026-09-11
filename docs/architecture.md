@@ -539,6 +539,148 @@ stable answer worth encoding — the set changes every Unicode release — and
 what actually matters is that the value is a glyph rather than prose or
 markup, because it renders inline wherever the space appears.
 
+### Dynamic blocks (spec — dev-plan Phase 7 Wave D, designed 2026-09-10)
+
+**What it is for.** Children display, Recently updated, Content by label,
+Attachments, Change history, Contributors, Excerpt include, Include page,
+Page properties report, Labels lists, Task report and Page tree are all
+the same thing: *a block whose content is the answer to a query, computed
+when the page is looked at*. Confluence ships them as twelve macros. Here
+they are twelve **kinds** of one node, one endpoint, one fetching node
+view and one export snapshot — so the twelfth kind costs what the second
+did: a query.
+
+**The decisions that make that true, and why each is the way it is.**
+
+1. **One node: `dynamicBlock { kind, params }`.** An atom block with no
+   content (`Node.create({ atom: true })`, `src/web/src/editor/dynamicBlock.ts`).
+   `kind` is a string from the catalogue; `params` is a flat
+   `Record<string, string>` — flat because it travels as a query string,
+   strings because the server, not the document, decides what a value
+   means. **Nothing the query returns is ever written into the document.**
+   A stored copy of "children of this page" is wrong the moment a child
+   is added, and a stored copy of "pages with label X" is a permission
+   leak the moment a page is restricted. The document holds the question;
+   the answer is computed for whoever is asking, each time.
+
+2. **One result shape, not one per kind.** Every kind answers with a
+   `BlockResult` in one of three *neutral* shapes, and there is exactly
+   one renderer for those shapes in the SPA (`DynamicBlockView.tsx`) and
+   one in the exporter (`ProseMirrorRenderer`, the `dynamicBlock` case):
+
+   | shape | for | carries |
+   |---|---|---|
+   | `list` | Children, Content by label, Labels lists, Page tree, Contributors | `items[]`, each `{ title, href?, subtitle?, children?[] }` — nested for trees |
+   | `table` | Recently updated, Attachments, Change history, Task report, Page properties report | `columns[] { key, label }` + `items[]` with `cells{ key → cell }` |
+   | `document` | Include page, Excerpt include | `document`: a ProseMirror JSON string of the included content |
+
+   A `cell` is one of `{ text, href? }`, `{ date }`, `{ user }` or
+   `{ checked }`; the renderers decide how a date or a user is drawn, once.
+   **A kind is therefore a query and nothing else** — no React, no HTML,
+   no Markdown. This is what the dev-plan's "eight separate node types
+   would be eight times the work" warning was about; the neutral shape
+   is the fix. If a future kind genuinely needs a fourth shape, add the
+   shape (two renderers) rather than special-casing the kind.
+
+3. **One endpoint: `GET /api/pages/{hostId}/blocks/{kind}?param=value…`.**
+   The *host* is the page the block sits on. It is the context for kinds
+   that need one (children *of this page*, attachments *of this page*) and
+   it is the permission anchor for all of them: the caller must be able to
+   view the host, else **404** — the masking rule the rest of the API
+   uses. Then the kind runs. Unknown kind → 400; a param that fails its
+   kind's validation → 400 with the field named; unknown params are
+   ignored (a newer document against an older server should degrade, not
+   break). `.AllowAnonymous()`, because a public page's blocks are part of
+   the page; the anonymous principal (5.1) falls out of `PermissionService`
+   with no extra code. Cache headers match a page read: anonymous
+   `public, max-age=60`, signed in `private, no-store`.
+
+4. **Permission filtering is the kind's problem, with one helper to make
+   it hard to get wrong.** The rule: **a page the caller cannot view must
+   not influence the result at all** — not its title, not its existence,
+   not a count that includes it. Every kind that lists pages does the same
+   two-pass filter search and the page tree do: narrow in SQL to
+   `ViewableSpaceIdsAsync()`, then `CanViewPageAsync` each candidate and
+   stop once `limit` *visible* rows are in hand (`BlockContext.VisibleAsync`
+   does the loop; kinds call it instead of writing their own). Kinds that
+   aggregate (contributors, counts) aggregate over the filtered set.
+   Assignee `me` for an anonymous caller is empty, not an error.
+
+5. **Export snapshots at export time, as the exporting user.**
+   `ProseMirrorRenderer` stays static and database-free. The export
+   endpoint walks the document for `dynamicBlock`s in order
+   (`DynamicBlocks.Collect`), resolves each through the same
+   `IDynamicBlockService` the endpoint uses — same caller, same filtering —
+   and hands the renderer an `IReadOnlyList<BlockResult?>` in document
+   order; the renderer pairs the nth block with the nth result, the same
+   way it pairs the nth heading with its anchor. A block that failed or
+   is unknown renders as a placeholder naming the kind, never as a failed
+   export. An exported file is a snapshot and says so: the block's
+   `generatedAt` is rendered as a footnote.
+
+6. **`document`-shaped kinds do not recurse.** Include page and Excerpt
+   include render the included page's content with *its* dynamic blocks
+   as placeholders — depth 1, on both sides. A page that includes a page
+   that includes it is otherwise an infinite export and an infinite
+   render. On the client this happens for free: the nested read-only
+   editor has no host page in `editor.storage` (below), so its blocks
+   show "Shown on the page". On the server `DynamicBlocks` is told to
+   render the included document with an empty results list.
+
+7. **The node view learns the host page from `editor.storage`, not from
+   props.** Node views are constructed by the schema, which is shared by
+   every editor instance, so they cannot take React props. The same
+   problem the slash menu's Image item had was solved by stashing
+   callbacks on `editor.storage.slashCommand`; dynamic blocks do the same
+   with `editor.storage.dynamicBlock.getPageId` (`setDynamicBlockStorage`).
+   `Editor`/`CollaborativeEditor` set it from a `getPageId` prop: the
+   editor passes its draft-aware resolver, `PageView` passes the page id.
+   Where nobody sets it — version-history previews, template previews —
+   the block renders a quiet placeholder, which is right: history is not
+   live.
+
+8. **Params are edited by one generic form.** The client catalogue
+   (`dynamicBlockKinds.ts`) declares each kind's params as a schema —
+   `{ key, label, type: 'select' | 'number' | 'text' | 'labels' | 'page', options?, default }`
+   — and `DynamicBlockMenu` renders whichever kind is selected from that
+   schema. A new kind gets a form by declaring its params; nobody writes a
+   menu. The slash menu and the **+** menu list the catalogue, so a kind
+   added there appears in both. Client defaults mirror server defaults;
+   the server is authoritative and validates.
+
+**Adding a kind (Opus, against this contract).**
+
+1. Server: a class implementing `IDynamicBlockKind` in
+   `Features/Blocks/Kinds/` — `Kind` (the URL name) and
+   `RenderAsync(BlockContext)`. Read params through `ctx.Int/Str/Enum`
+   (validated, defaulted, capped); list pages through `ctx.VisibleAsync`.
+   Register it with `AddScoped<IDynamicBlockKind, …>()` in `Program.cs`.
+2. Client: one entry in `DYNAMIC_KINDS` with its param schema.
+3. Tests, three per kind: the result for a normal caller; **a leak test** —
+   a page restricted from the caller appears nowhere in the result (title,
+   count, or child); and an export snapshot containing the rendered rows.
+
+**The kinds, in the order to build them.** Params are `name=default`.
+
+| kind | shape | params | query, and the permission note that matters |
+|---|---|---|---|
+| `children` *(built with the mechanism)* | list | `depth=1` (1–3), `sort=position` (position\|title\|updated) | Live children of the host, recursively to `depth`; a hidden parent hides its subtree (the tree's own rule). |
+| `recently-updated` | table | `scope=space` (space\|tree), `limit=10` (≤50) | Current pages by `UpdatedAt` desc; columns title, updated by (last version's author), when. Over-fetch then filter — the tenth *visible* page may be the fortieth row. |
+| `content-by-label` | list | `labels` (required, comma list), `match=any` (any\|all), `scope=space` (space\|all), `limit=25` | Pages carrying the label(s). `all` = every named label present. |
+| `attachments` | table | — | The host's attachments: name (download href), size, uploaded by, when. Host-anchored, so no extra filter. |
+| `change-history` | table | `limit=10` (≤50) | The host's versions desc: version, author, when, comment. |
+| `contributors` | list | `scope=page` (page\|tree) | Distinct version authors, most versions first; over the *visible* pages of the tree. `subtitle` = "n edits". |
+| `include-page` | document | `page` (required, page id) | The page's current content, if the caller may view it — else the block is empty with the standard placeholder, **not** an error that names the page. Depth 1 (decision 6). |
+| `excerpt-include` | document | `page` (required) | The content of the first `excerpt` node on that page (a static `block+` container node, added with this kind, rendered as a subtle frame in the editor and as nothing in export). Same visibility rule as include-page. |
+| `page-properties-report` | table | `labels` (required), `limit=25` | Pages with the label whose content has a `pageProperties` node (a static container around a two-column table, added with this kind); columns are the union of first-column keys, cells the second column's text. |
+| `labels` | list | `mode=page` (page\|popular\|related), `limit=20` | `page`: the host's labels; `popular`: labels by visible-page count in the space; `related`: labels co-occurring with the host's. Counts over visible pages only. |
+| `task-report` | table | `scope=tree` (tree\|space\|all), `assignee=any` (any\|me\|user id), `status=open` (open\|done\|all), `limit=25` | `taskItem` nodes with the Wave C `assigneeId` attr, walked from candidate pages' current content in-process after the visibility filter. Fine at wiki scale; note in the kind that a jsonb containment prefilter (`@> '{"type":"taskItem"}'`) is the first optimisation if it ever is not. |
+| `page-tree` | list | `root=host` (host\|space), `depth=3` (1–6) | The visible tree under the host or the space, same filtering as `/api/pages/tree`. |
+
+**Naming.** Kinds are kebab-case in URLs and documents; the client
+catalogue's display titles are Confluence's ("Children display",
+"Recently updated"…) so a Confluence user finds what they expect.
+
 ### Roles and administrators (spec — dev-plan 0.1, designed 2026-09-08)
 
 > **Update 2026-09-09:** group management (create/edit/delete/membership)

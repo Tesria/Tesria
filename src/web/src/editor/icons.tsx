@@ -376,3 +376,12 @@ export function ClearFormattingIcon() {
     </Icon>
   )
 }
+
+export function ChildrenBlockIcon() {
+  return (
+    <Icon>
+      <path d="M5 5h14M8 10h11M11 15h8M14 20h5" />
+      <path d="M5 5v12h9" opacity="0.5" />
+    </Icon>
+  )
+}

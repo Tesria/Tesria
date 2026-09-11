@@ -40,6 +40,7 @@ export function InsertMenu({ editor, overflow }: { editor: TiptapEditor; overflo
 
   const blocks = SLASH_ITEMS.filter((i) => i.group === 'block')
   const panels = SLASH_ITEMS.filter((i) => i.group === 'panel')
+  const dynamic = SLASH_ITEMS.filter((i) => i.group === 'dynamic')
 
   return (
     <div className="toolbar-dropdown toolbar-dropdown--insert" ref={ref} data-tb-fixed="insert">
@@ -79,6 +80,13 @@ export function InsertMenu({ editor, overflow }: { editor: TiptapEditor; overflo
           ))}
           <p className="toolbar-dropdown__heading">Panels</p>
           {panels.map((item) => (
+            <button key={item.title} type="button" className="toolbar-dropdown__item"
+              onMouseDown={(e) => e.preventDefault()} onClick={() => insert(item)} title={item.description}>
+              <item.icon /><span>{item.title}</span>
+            </button>
+          ))}
+          <p className="toolbar-dropdown__heading">Live content</p>
+          {dynamic.map((item) => (
             <button key={item.title} type="button" className="toolbar-dropdown__item"
               onMouseDown={(e) => e.preventDefault()} onClick={() => insert(item)} title={item.description}>
               <item.icon /><span>{item.title}</span>
