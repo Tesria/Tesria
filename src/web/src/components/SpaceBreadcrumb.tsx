@@ -5,6 +5,13 @@ import { SpaceIcon } from './SpaceIcon'
 
 type Crumb = { label: string; to?: string }
 
+/** The settings tabs, by their path segment. Keep in step with SpaceSettingsLayout. */
+const SETTINGS_TAB_LABELS: Record<string, string> = {
+  permissions: 'Permissions',
+  webhooks: 'Webhooks',
+  trash: 'Trash',
+}
+
 /** Space Home / Page / Trash / etc. context, one level below the space
  *  action bar — not sticky, just the first thing in the scrolling content,
  *  same place a page's h1 used to be the only wayfinding on offer. */
@@ -13,10 +20,12 @@ export function SpaceBreadcrumb({ space, tree }: { space: Space; tree: PageTreeN
   const matchPageView = useMatch('/spaces/:key/pages/:pageId')
   const matchPageEdit = useMatch('/spaces/:key/pages/:pageId/edit')
   const matchNew = useMatch('/spaces/:key/new')
-  const matchSettings = useMatch('/spaces/:key/settings')
-  const matchPermissions = useMatch('/spaces/:key/permissions')
-  const matchWebhooks = useMatch('/spaces/:key/webhooks')
-  const matchTrash = useMatch('/spaces/:key/trash')
+  // One match for the whole settings section, not one per old URL: the three
+  // that used to be siblings are tabs of it now, and matching them
+  // individually is what left Permissions/Webhooks/Trash with no breadcrumb
+  // at all while Details had one — so the content jumped a line every time
+  // you changed tab.
+  const matchSettings = useMatch('/spaces/:key/settings/*')
 
   const pageId = matchPageView?.params.pageId ?? matchPageEdit?.params.pageId
   const crumbs: Crumb[] = [{ label: space.name, to: `/spaces/${space.key}` }]
@@ -35,13 +44,9 @@ export function SpaceBreadcrumb({ space, tree }: { space: Space; tree: PageTreeN
     })
     crumbs.push({ label: 'New page' })
   } else if (matchSettings) {
-    crumbs.push({ label: 'Settings' })
-  } else if (matchPermissions) {
-    crumbs.push({ label: 'Permissions' })
-  } else if (matchWebhooks) {
-    crumbs.push({ label: 'Webhooks' })
-  } else if (matchTrash) {
-    crumbs.push({ label: 'Trash' })
+    const tab = matchSettings.params['*'] ?? ''
+    crumbs.push(tab ? { label: 'Space settings', to: `/spaces/${space.key}/settings` } : { label: 'Space settings' })
+    if (tab) crumbs.push({ label: SETTINGS_TAB_LABELS[tab] ?? tab })
   } else {
     // Space landing — the h1 there already says where we are.
     return null

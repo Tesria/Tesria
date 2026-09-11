@@ -5,6 +5,51 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Manual: light-theme screenshots, one per feature, and the admin half (2026-09-11)
+
+**Every screenshot retaken in the light theme with the default blue
+accent**, and the count taken from 27 to **86** so that each feature has a
+picture of itself. The gap was the authoring UI: the manual could render a
+panel or a status lozenge live on the page, but a reader could not see the
+menu that produces one. Now they can — the insert catalogue, the slash
+menu, the colour palettes, the cell options, the status and date pickers,
+the live-block settings panel, the image hover menu, the link popover.
+
+**The admin section is complete**, with all eight tabs photographed and
+the prose filled out: what each dashboard number is for and what it is
+*not* for, the full list of audited actions by area, the leaving-checklist
+for suspending an account, and why the base URL matters more than it
+looks. Taking those needed an administrator, so the documentation bot was
+promoted to one — at the repository owner's explicit request, recorded
+here because a standing admin account is a standing risk, and it can be
+demoted from **Administration → Users** whenever the docs are done.
+
+**Section titles carry an emoji** (📘 🚀 ✏️ 🗂️ 💬 📤 👤 🛠️ 🔌). Forty-odd
+leaf pages in one column gave the eye nothing to catch on; eight marked
+rows break the tree into sections at a glance.
+
+Harness changes behind all of it, in `scripts/screenshots/`:
+
+- **Appearance is seeded before first paint** (`SHOT_THEME`, `SHOT_ACCENT`)
+  rather than clicked afterwards, so the first shot of a run is not in
+  whatever the last run left behind.
+- **A clip is in page coordinates; `boundingBox()` is in viewport
+  coordinates.** Every shot below the fold was silently clipping an empty
+  region until the scroll offset was added.
+- **Typing in the editor reaches the collaborative document immediately**,
+  saved or not — so a shot that types has to put the document back. The
+  first attempt used a blanket `Control+Z`, which walked back through the
+  whole Yjs history and emptied the page, breaking every later shot of it.
+  It now deletes exactly what it typed, and the typing shots run last.
+
+### Fix: only the Details tab had a breadcrumb (2026-09-11)
+
+The breadcrumb still matched the pre-move URLs (`/spaces/:key/permissions`
+and friends), so after those became tabs of Settings the other three
+matched nothing and rendered no crumb at all — and the page jumped a line
+every time you changed tab. One match for the whole settings section now,
+and a two-part crumb: **Space settings / Permissions**.
+
 ### Space sidebar: three bands, and settings absorbs its three neighbours (2026-09-11)
 
 Two problems, one shape.
