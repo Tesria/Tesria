@@ -18,8 +18,9 @@ labels list, the live-blocks page demonstrates a content-by-label block.
 
 **27 screenshots**, cropped to what they are about and, where it helps,
 annotated with circles and arrows. They are taken by a Playwright harness
-(`scratchpad/manual/`) running from the **PDF sidecar's image**, which
-already carries a Chromium matched to its Playwright — no new dependency.
+([`scripts/screenshots/`](../scripts/screenshots/README.md)) running from
+the **PDF sidecar's image**, which already carries a Chromium matched to
+its Playwright — no new dependency.
 Two things about that harness are worth recording, because both cost time:
 
 - **It runs inside Caddy's network namespace** (`--network
