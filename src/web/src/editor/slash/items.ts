@@ -3,10 +3,11 @@ import type { Editor } from '@tiptap/react'
 import { uploadAndInsertImage } from '../imageUpload'
 import { PANEL_TYPES, PANEL_LABELS } from '../panelExtension'
 import { DYNAMIC_KINDS, defaultParams } from '../dynamicBlockKinds'
+import { insertPageProperties } from '../excerptExtension'
 import {
   BlockquoteIcon, BulletListIcon, CodeBlockIcon, DateIcon, DecisionIcon, DividerIcon, ErrorPanelIcon, ExpandIcon,
   HeadingIcon, ImageIcon, InfoPanelIcon, LayoutIcon, NotePanelIcon, OrderedListIcon, StatusIcon, SuccessPanelIcon,
-  TableIcon, TaskListIcon, TocIcon, WarningPanelIcon,
+  TableIcon, TaskListIcon, TocIcon, WarningPanelIcon, ExcerptIcon, PropertiesIcon,
 } from '../icons'
 
 /**
@@ -227,6 +228,27 @@ export const SLASH_ITEMS: SlashItem[] = [
     description: 'A calendar date, shown in each reader\'s locale',
     keywords: ['calendar', 'today', 'when'],
     command: (editor, range) => editor.chain().focus().insertDate(range).run(),
+  },
+  // The two static containers the Wave D include/report kinds read from.
+  // Blocks, not dynamic kinds: they hold content rather than fetch it.
+  {
+    title: 'Excerpt',
+    group: 'block',
+    icon: ExcerptIcon,
+    description: 'Mark the part of this page other pages can include',
+    keywords: ['excerpt', 'summary', 'snippet'],
+    command: (editor, range) => editor.chain().focus().deleteRange(range).setExcerpt().run(),
+  },
+  {
+    title: 'Page properties',
+    group: 'block',
+    icon: PropertiesIcon,
+    description: 'A key/value table a properties report can collect',
+    keywords: ['properties', 'metadata', 'fields'],
+    command: (editor, range) => {
+      editor.chain().focus().deleteRange(range).run()
+      insertPageProperties(editor)
+    },
   },
   // Dynamic blocks (dev-plan Phase 7 Wave D): generated from the kind
   // catalogue, so a kind added there appears here and in the + menu.

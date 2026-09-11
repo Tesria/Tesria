@@ -648,7 +648,15 @@ did: a query.
    added there appears in both. Client defaults mirror server defaults;
    the server is authoritative and validates.
 
-**Adding a kind (Opus, against this contract).**
+**All twelve kinds shipped 2026-09-10.** The contract held — no kind needed
+a fourth result shape, a renderer change, or any React. Two static container
+nodes came with them, for the two kinds that read *content* rather than
+rows: `excerpt` (what `excerpt-include` takes) and `pageProperties` (the
+two-column table `page-properties-report` collects). Both are plain
+containers with no node view, so export renders their contents as ordinary
+content. `BlockDocuments` holds the three content readers they share.
+
+**Adding a kind.**
 
 1. Server: a class implementing `IDynamicBlockKind` in
    `Features/Blocks/Kinds/` — `Kind` (the URL name) and

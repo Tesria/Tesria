@@ -64,5 +64,13 @@ function Field({ field, value, onChange }: { field: ParamField; value: string | 
         onChange={(e) => onChange(e.target.value)} />
     )
   }
+  if (field.type === 'labels') {
+    return <input value={value ?? field.default ?? ''} placeholder="release, api" onChange={(e) => onChange(e.target.value)} />
+  }
+  if (field.type === 'page') {
+    // A page id today. The obvious upgrade is a picker; the contract does not
+    // change when it lands, because the param is still one string.
+    return <input value={value ?? field.default ?? ''} placeholder="Page id" onChange={(e) => onChange(e.target.value)} />
+  }
   return <input value={value ?? field.default ?? ''} placeholder={field.placeholder} onChange={(e) => onChange(e.target.value)} />
 }

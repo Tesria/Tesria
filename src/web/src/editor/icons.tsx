@@ -385,3 +385,76 @@ export function ChildrenBlockIcon() {
     </Icon>
   )
 }
+
+export function ClockIcon() {
+  return (
+    <Icon>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </Icon>
+  )
+}
+
+export function LabelIcon() {
+  return (
+    <Icon>
+      <path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h6l9 6-9 6h-6A1.5 1.5 0 0 1 3 16.5Z" />
+      <path d="M7 12h.01" strokeWidth="2.4" />
+    </Icon>
+  )
+}
+
+export function PaperclipIcon() {
+  return (
+    <Icon>
+      <path d="M19 11.5 12 18.5a4.5 4.5 0 0 1-6.4-6.4l7.6-7.6a3 3 0 0 1 4.3 4.3l-7.6 7.6a1.5 1.5 0 0 1-2.1-2.1l6.9-6.9" />
+    </Icon>
+  )
+}
+
+export function HistoryIcon() {
+  return (
+    <Icon>
+      <path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1" />
+      <path d="M3.5 4.5V10H9" />
+      <path d="M12 8v4.5l3 1.8" />
+    </Icon>
+  )
+}
+
+export function PeopleIcon() {
+  return (
+    <Icon>
+      <circle cx="9" cy="8.5" r="3.2" />
+      <path d="M3.5 19a5.5 5.5 0 0 1 11 0" />
+      <path d="M16 6.2a3.2 3.2 0 0 1 0 6.1M17.5 19a5.5 5.5 0 0 0-2-4.3" opacity="0.6" />
+    </Icon>
+  )
+}
+
+export function IncludeIcon() {
+  return (
+    <Icon>
+      <rect x="3.5" y="4" width="17" height="16" rx="2" />
+      <path d="M8 9h8M8 13h5" />
+    </Icon>
+  )
+}
+
+export function ExcerptIcon() {
+  return (
+    <Icon>
+      <path d="M7 7h10M7 11h10" />
+      <rect x="4" y="14" width="16" height="6" rx="1.5" />
+    </Icon>
+  )
+}
+
+export function PropertiesIcon() {
+  return (
+    <Icon>
+      <rect x="3.5" y="5" width="17" height="14" rx="1.5" />
+      <path d="M10 5v14M3.5 10h17" />
+    </Icon>
+  )
+}
