@@ -170,7 +170,7 @@ export function PageEditor() {
 
   return (
     <>
-      <div className="page-actionbar">
+      <div className="page-actionbar page-actionbar--editor">
         <div className="page-actionbar__primary">
           {editorInstance && (
             <Toolbar editor={editorInstance} getUploadPageId={resolveUploadPageId} onUploadError={setError} />

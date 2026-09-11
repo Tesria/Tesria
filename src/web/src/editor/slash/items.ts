@@ -1,10 +1,25 @@
+import type { ComponentType } from 'react'
 import type { Editor } from '@tiptap/react'
 import { uploadAndInsertImage } from '../imageUpload'
 import { PANEL_TYPES, PANEL_LABELS } from '../panelExtension'
+import {
+  BlockquoteIcon, BulletListIcon, CodeBlockIcon, DividerIcon, ErrorPanelIcon, HeadingIcon, ImageIcon,
+  InfoPanelIcon, NotePanelIcon, OrderedListIcon, SuccessPanelIcon, TableIcon, TaskListIcon, WarningPanelIcon,
+} from '../icons'
+
+/**
+ * Where an item belongs. The slash menu lists everything; the toolbar's
+ * Insert menu lists only `block` and `panel` items, because text styles and
+ * lists already have their own toolbar controls.
+ */
+export type SlashGroup = 'text' | 'list' | 'block' | 'panel'
 
 export type SlashItem = {
   title: string
   description: string
+  group: SlashGroup
+  /** A component, not an element: this file is plain TypeScript. */
+  icon: ComponentType
   keywords?: string[]
   command: (editor: Editor, range: { from: number; to: number }) => void
 }
@@ -51,60 +66,94 @@ const PANEL_DESCRIPTIONS: Record<(typeof PANEL_TYPES)[number], string> = {
   error: 'Red callout for a problem',
 }
 
-const ITEMS: SlashItem[] = [
+const PANEL_ICONS: Record<(typeof PANEL_TYPES)[number], ComponentType> = {
+  info: InfoPanelIcon,
+  note: NotePanelIcon,
+  success: SuccessPanelIcon,
+  warning: WarningPanelIcon,
+  error: ErrorPanelIcon,
+}
+
+/**
+ * The one catalogue of insertable things. The slash menu filters it by
+ * query; the toolbar's Insert menu (Toolbar.tsx) lists its block and panel
+ * groups. One list, so the two cannot drift — a new block added here
+ * appears in both.
+ */
+export const SLASH_ITEMS: SlashItem[] = [
   {
     title: 'Heading 1',
+    group: 'text',
+    icon: HeadingIcon,
     description: 'Big section heading',
     command: (editor, range) => editor.chain().focus().deleteRange(range).toggleHeading({ level: 1 }).run(),
   },
   {
     title: 'Heading 2',
+    group: 'text',
+    icon: HeadingIcon,
     description: 'Medium section heading',
     command: (editor, range) => editor.chain().focus().deleteRange(range).toggleHeading({ level: 2 }).run(),
   },
   {
     title: 'Heading 3',
+    group: 'text',
+    icon: HeadingIcon,
     description: 'Small section heading',
     command: (editor, range) => editor.chain().focus().deleteRange(range).toggleHeading({ level: 3 }).run(),
   },
   {
     title: 'Bullet list',
+    group: 'list',
+    icon: BulletListIcon,
     description: 'Simple bullet list',
     keywords: ['ul', 'unordered'],
     command: (editor, range) => editor.chain().focus().deleteRange(range).toggleBulletList().run(),
   },
   {
     title: 'Ordered list',
+    group: 'list',
+    icon: OrderedListIcon,
     description: 'Numbered list',
     keywords: ['ol', 'numbered'],
     command: (editor, range) => editor.chain().focus().deleteRange(range).toggleOrderedList().run(),
   },
   {
     title: 'Task list',
+    group: 'list',
+    icon: TaskListIcon,
     description: 'Checkboxes to track tasks',
     keywords: ['todo', 'checkbox'],
     command: (editor, range) => editor.chain().focus().deleteRange(range).toggleTaskList().run(),
   },
   {
     title: 'Blockquote',
+    group: 'block',
+    icon: BlockquoteIcon,
     description: 'Quoted text',
     keywords: ['quote'],
     command: (editor, range) => editor.chain().focus().deleteRange(range).toggleBlockquote().run(),
   },
   {
     title: 'Code block',
+    group: 'block',
+    icon: CodeBlockIcon,
     description: 'Syntax-highlighted code',
     keywords: ['code', 'snippet'],
     command: (editor, range) => editor.chain().focus().deleteRange(range).toggleCodeBlock().run(),
   },
   {
     title: 'Table',
+    group: 'block',
+    icon: TableIcon,
     description: '3×3 table with a header row',
     command: (editor, range) =>
       editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
   },
   {
     title: 'Image',
+    group: 'block',
+    icon: ImageIcon,
     description: 'Upload an image',
     keywords: ['picture', 'photo', 'upload'],
     command: imageCommand,
@@ -114,12 +163,16 @@ const ITEMS: SlashItem[] = [
   ...PANEL_TYPES.map((type) => ({
     title: `${PANEL_LABELS[type]} panel`,
     description: PANEL_DESCRIPTIONS[type],
+    group: 'panel' as const,
+    icon: PANEL_ICONS[type],
     keywords: ['panel', 'callout', 'admonition', type],
     command: (editor: Editor, range: { from: number; to: number }) =>
       editor.chain().focus().deleteRange(range).setPanel(type).run(),
   })),
   {
     title: 'Divider',
+    group: 'block',
+    icon: DividerIcon,
     description: 'Horizontal rule',
     keywords: ['hr', 'rule', 'separator'],
     command: (editor, range) => editor.chain().focus().deleteRange(range).setHorizontalRule().run(),
@@ -127,9 +180,9 @@ const ITEMS: SlashItem[] = [
 ]
 
 export function filterSlashItems(query: string): SlashItem[] {
-  if (!query) return ITEMS
+  if (!query) return SLASH_ITEMS
   const q = query.toLowerCase()
-  return ITEMS.filter(
+  return SLASH_ITEMS.filter(
     (item) => item.title.toLowerCase().includes(q) || item.keywords?.some((k) => k.includes(q)),
   )
 }

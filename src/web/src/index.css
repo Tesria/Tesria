@@ -475,10 +475,15 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 
 /* ---- paper: the "sheet of paper" surface shared by editing and viewing --- */
 .paper {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
+  /* A continuous page, not a boxed sheet: no border, shadow or distinct
+     background, so title and body read as one surface — Confluence's
+     presentation of a page, in both the editor and the reading view. The
+     name stays: this is still the element the full-width table breakout
+     and --page-pad arithmetic are anchored to. */
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
   /* Must stay --page-pad, not a hardcoded value: the full-width table
      breakout rule cancels exactly this padding via negative margins — if
      they ever drift apart, full-width tables overflow the viewport by the
@@ -487,10 +492,13 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 }
 
 /* ---- editor -------------------------------------------------------------- */
-.title-input { font-size: 1.5rem; font-weight: 700; border: none; background: transparent; padding: 0.3rem 0; margin-bottom: 0.5rem; }
-.title-input:focus { outline: none; border-bottom: 2px solid var(--primary); }
+/* The title is just the first line of the page — no rule under it, focused
+   or not, the same as the body beneath. */
+.title-input { font-size: 1.75rem; font-weight: 700; border: none; background: transparent; padding: 0.3rem 0; margin-bottom: 0.25rem; width: 100%; }
+.title-input:focus { outline: none; }
 .editor--editable { min-height: 260px; }
-.editor__content { padding: 0.75rem 1rem; }
+/* No horizontal padding: body text lines up with the title above it. */
+.editor__content { padding: 0.5rem 0; }
 .editor__content:focus-within { outline: none; }
 .editor__content .ProseMirror { outline: none; min-height: 200px; }
 .editor__content .ProseMirror p { margin: 0.5em 0; }
@@ -678,7 +686,21 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
    own system-accent tint — and only switches to --primary-dark once a
    format is actually active, so "what's currently applied" stays the only
    thing rendered in color. */
-.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; padding: 0.4rem; background: var(--bg-alt); border-radius: var(--radius); }
+/* One row, never wrapping: flex-wrap:nowrap is the guarantee, and
+   useToolbarOverflow moves what does not fit into the Insert menu. Overflow
+   must stay *visible* — every dropdown and popover in this row is absolutely
+   positioned inside it, and overflow:hidden (tried first) clipped them all
+   into invisibility. No background or radius of its own — the bar it sits in
+   (.page-actionbar--editor) spans the full width. */
+.toolbar { display: flex; flex-wrap: nowrap; align-items: center; gap: 0.3rem; padding: 0; min-width: 0; width: 100%; }
+.tb-item { display: inline-flex; flex: 0 0 auto; }
+.tb-item--hidden { display: none; }
+.toolbar__spacer { flex: 1 1 auto; }
+.toolbar__insert { gap: 0.3rem; padding: 0.3rem 0.55rem; font-weight: 600; white-space: nowrap; }
+.toolbar__insert-label { font-size: 0.85rem; }
+.toolbar-dropdown__label { font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
+.toolbar-dropdown__menu--insert { min-width: 220px; max-height: min(70vh, 520px); overflow-y: auto; }
+.toolbar-dropdown__heading { margin: 0.35rem 0.6rem 0.1rem; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
 .toolbar__btn {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 36px; min-height: 36px; border: 1px solid transparent; background: transparent;
@@ -705,7 +727,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
    desktop (same trick Layout.tsx's hamburger nav uses), so nothing about the
    desktop layout changes. Swapped for the dropdown at --bp-mobile below. */
 .toolbar__flat { display: contents; }
-.toolbar-dropdown { display: none; position: relative; }
+.toolbar-dropdown { display: inline-flex; position: relative; }
 .toolbar-dropdown__trigger { gap: 0.15rem; }
 .toolbar-dropdown__menu {
   position: absolute; left: 0; top: calc(100% + 6px); min-width: 160px; max-width: calc(100vw - 2rem); z-index: 20;
@@ -728,7 +750,8 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .tb-underline { text-decoration: underline; }
 .tb-strike { text-decoration: line-through; }
 /* live collaboration */
-.collab-status { display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); background: var(--surface-sunken); }
+/* A quiet line, not a stripe: the page beneath it has no box any more. */
+.collab-status { display: flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0; font-size: 0.75rem; color: var(--muted); }
 .collab-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
 .collab-dot--connected { background: var(--success); }
 .collab-dot--connecting { background: var(--warning); }
@@ -769,6 +792,18 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   padding: 0.5rem 1.5rem; background: var(--surface); border-bottom: 1px solid var(--border);
 }
 .page-actionbar__primary, .page-actionbar__secondary { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+/* The editor's bar: toolbar edge to edge, no inner box, the width toggle at
+   the far right of the same row. min-width:0 lets the toolbar shrink and
+   overflow instead of forcing the row wider. */
+.page-actionbar--editor { flex-wrap: nowrap; padding: 0.3rem 0.75rem; gap: 0.5rem; }
+.page-actionbar--editor .page-actionbar__primary { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; container-type: inline-size; }
+/* The toolbar's own width, not the viewport's, decides how much text it can
+   afford: a narrow reading column on a wide screen is the common case. The
+   word "Insert" goes first, then the text-style name; icons and chevrons
+   stay, so every control keeps a visible affordance. */
+@container (max-width: 560px) { .toolbar__insert-label { display: none; } }
+@container (max-width: 460px) { .toolbar-dropdown__label { display: none; } }
+.page-actionbar--editor .page-actionbar__secondary { flex: 0 0 auto; flex-wrap: nowrap; }
 /* margin-left: auto (not just relying on .page-actionbar's space-between)
    so __secondary still anchors right even with no __primary sibling at all
    — PageView.tsx has nothing left of it since Edit moved in here. With a
@@ -798,11 +833,9 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
      docs for the fuller reasoning. CSS-only: no JS/viewport-detection. */
   .page-actionbar__fullwidth-toggle { display: none; }
   .page-actionbar__new-subpage { display: inline-flex; }
-  /* Collapse heading/list/alignment into dropdowns — at this width the
-     toolbar was wrapping to 3 rows; grouping these three runs of buttons
-     brings it down to ~2. See .toolbar__flat/.toolbar-dropdown above. */
-  .toolbar__flat { display: none; }
-  .toolbar-dropdown { display: inline-flex; }
+  /* The one-row toolbar handles narrow widths by measurement (buttons that
+     do not fit move into the Insert menu) and by the container queries on
+     .page-actionbar__primary above, so nothing viewport-specific is needed. */
 }
 
 .overflow-menu { position: relative; display: inline-flex; }
@@ -1510,5 +1543,9 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .icon-picker__emoji-btn:hover { border-color: var(--primary); }
 .icon-picker__emoji-btn.is-active { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary); }
 .icon-picker__custom { display: flex; align-items: flex-end; gap: 0.5rem; }
-.icon-picker__custom label { display: grid; gap: 0.25rem; }
+/* Same lesson as the token form: the profile card gives labels a bottom
+   margin and buttons a top margin, both of which push an end-aligned button
+   off the input's baseline. Zero them here and size the button to the input. */
+.icon-picker__custom label { display: grid; gap: 0.25rem; margin-bottom: 0; }
 .icon-picker__custom input { max-width: 10rem; }
+.profile__section .icon-picker__custom .btn { margin-top: 0; height: 34px; padding-top: 0; padding-bottom: 0; }
