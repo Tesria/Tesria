@@ -8,7 +8,6 @@ namespace Tesria.Api.Features.Search;
 public static class SearchEndpoints
 {
     private const int MaxResults = 50;
-    private const int SnippetLength = 200;
 
     public record SearchResult(Guid PageId, Guid SpaceId, string SpaceKey, string Title, string Snippet);
 
@@ -54,19 +53,24 @@ public static class SearchEndpoints
 
         var rows = await query
             .Take(MaxResults)
-            .Select(p => new { p.Id, p.SpaceId, SpaceKey = p.Space!.Key, p.Title, p.SearchText })
+            .Select(p => new { p.Id, p.SpaceId, SpaceKey = p.Space!.Key, p.Title })
             .ToListAsync();
 
         // Space access is not enough — drop pages hidden by page restrictions.
-        var results = new List<SearchResult>();
-        foreach (var r in rows)
-        {
-            if (!await perms.CanViewPageAsync(r.Id)) continue;
-            results.Add(new SearchResult(r.Id, r.SpaceId, r.SpaceKey, r.Title, Snippet(r.SearchText)));
-        }
+        var visible = rows.ToList();
+        var allowed = new List<Guid>();
+        foreach (var r in visible)
+            if (await perms.CanViewPageAsync(r.Id)) allowed.Add(r.Id);
+
+        // The passage that matched, not the page's opening line — computed
+        // once for the survivors (SearchSnippets).
+        var matches = await SearchSnippets.ForAsync(db, allowed, term, default);
+        var results = visible
+            .Where(r => allowed.Contains(r.Id))
+            .Select(r => new SearchResult(r.Id, r.SpaceId, r.SpaceKey, r.Title,
+                matches.TryGetValue(r.Id, out var m) ? m.Snippet : ""))
+            .ToList();
         return Results.Ok(results);
     }
 
-    private static string Snippet(string text) =>
-        text.Length <= SnippetLength ? text : text[..SnippetLength].TrimEnd() + "…";
 }
