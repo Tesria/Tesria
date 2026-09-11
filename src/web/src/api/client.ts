@@ -412,6 +412,8 @@ export type ApiTokenSummary = {
   prefix: string
   createdAt: string
   lastUsedAt: string | null
+  /** A read-only token cannot change anything (dev-plan 8.4). */
+  readOnly: boolean
 }
 export type CreatedApiToken = ApiTokenSummary & { token: string }
 
@@ -792,7 +794,8 @@ export const api = {
   },
   apiTokens: {
     list: () => request<ApiTokenSummary[]>('GET', '/api/api-tokens'),
-    create: (name: string) => request<CreatedApiToken>('POST', '/api/api-tokens', { name }),
+    create: (name: string, readOnly = false) =>
+      request<CreatedApiToken>('POST', '/api/api-tokens', { name, readOnly }),
     revoke: (id: string) => request<void>('DELETE', `/api/api-tokens/${id}`),
   },
   webhooks: {

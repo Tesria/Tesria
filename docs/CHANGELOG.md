@@ -5,6 +5,48 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### MCP server — the contract, token scopes, and `/mcp` (dev-plan 8.4 — Fable half) (2026-09-11)
+
+*The plan says to load the `claude-api` skill before designing the tool
+surface; it is not enabled on this account, so the design is from the MCP
+specification and the official C# SDK's conventions directly.*
+
+The contract is in `architecture.md` ("MCP server"). The decisions that are
+expensive to reverse, and why:
+
+- **In-process, in .NET, on the official SDK, stateless.** Not a sidecar:
+  a sidecar would call REST with a forwarded token — a second hop and a
+  second place permissions could go wrong. In-process, a tool runs the same
+  `IPermissionService` every endpoint does, so an assistant sees exactly
+  what its token's owner could. Stateless, so every request stands on its
+  own token and nothing pins to a session behind the proxy.
+- **Token only.** `/mcp` accepts the `ApiToken` scheme and nothing else. A
+  browser session is never a credential there, so a page in someone's tab
+  cannot drive the assistant surface — there is no CSRF question because
+  the credential cannot be ambient. Tested.
+- **Token scopes, finally: `ApiToken.ReadOnly`.** Minted with `readOnly`,
+  shown in the listing and the profile, defaulting to full access so nothing
+  narrows silently on upgrade (existing tokens are unchanged). One claim on
+  the principal; **one middleware** refuses unsafe REST methods from a
+  read-only token with `403 read_only_token` — enforced by HTTP method in a
+  single place rather than per endpoint, because a scope checked per
+  endpoint is one forgotten on the next endpoint. MCP write tools check
+  the same claim first, since their transport is all POST.
+- **Markdown is the content contract.** `get_page` returns the same
+  Markdown the export produces, with dynamic blocks resolved as the caller
+  (a children list arrives as links, not a placeholder). Writes will accept
+  Markdown converted server-side over the subset the export emits, with
+  `contentJson` as the escape hatch for exact copies.
+- **Errors never reveal what the caller may not see.** A page you cannot
+  view is "not found" to a tool, as it is 404 to REST; a listing omits it.
+
+Built with the spec so it is proven rather than hypothetical: the scope end
+to end (domain, claim, middleware, minting, three tests) and `/mcp` with
+`list_spaces` and `get_page` (four tests driving it as a client would:
+JSON-RPC over Streamable HTTP, initialize, tools/list, a call, and the leak
+case). The remaining tools, the `PageWriter` extraction, the Markdown
+converter and the API-space page are Opus work against the contract.
+
 ### OpenAPI spec and a self-hosted API reference (dev-plan 8.3) (2026-09-10)
 
 `GET /api/openapi.json` — OpenAPI 3.1, generated from the routes, so it

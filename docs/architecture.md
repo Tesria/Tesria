@@ -628,6 +628,116 @@ The same trap applies to every future setting.
   Where the bundle is missing (tests, a dev API with no built SPA) the
   export ships the diagram source alone, which is still readable.
 
+### MCP server (spec — dev-plan 8.4, designed 2026-09-11)
+
+**What it is for.** An AI assistant — Claude Code, Claude Desktop, anything
+speaking the Model Context Protocol — reads and writes this wiki through a
+small, typed tool surface instead of scraping HTML or guessing at REST
+calls. The user's own token is the credential, so an assistant can do
+exactly what that person can do, and nothing more.
+
+**The decisions, and why each is the way it is.**
+
+1. **In-process, in .NET, on the official SDK** (`ModelContextProtocol.AspNetCore`,
+   Streamable HTTP at `/mcp`). Not a Node sidecar: a sidecar would have to
+   call the REST API with a forwarded token — a second hop, a second
+   place permissions could be got wrong. In-process, a tool calls the same
+   `IPermissionService` and `CurrentUser` every endpoint does, so an MCP
+   call cannot see or change anything the same token could not through
+   REST. **Stateless mode**: every request carries its own token and is
+   authenticated on its own, so there is no session to pin behind Caddy
+   and nothing to leak between callers.
+
+2. **Token only, never a cookie.** `/mcp` requires the `ApiToken`
+   authentication scheme explicitly. A browser session is never accepted
+   there, so a page in someone's tab cannot drive the assistant surface —
+   the CSRF concern does not arise because the credential cannot be
+   ambient. The token must belong to an active user; the handler already
+   enforces that.
+
+3. **Token scope, finally: `ApiToken.ReadOnly`.** Tokens had no scopes.
+   Now a token is minted read-only or not (`POST /api/api-tokens` takes
+   `readOnly`; the listing shows it; existing tokens stay full-access, so
+   nothing silently narrows). The handler adds one claim,
+   `tesria:token_scope` = `read` | `write`; cookie sessions carry no such
+   claim and are unrestricted. **Enforced in one place for REST**
+   (`TokenScopeMiddleware`: a `read` token making an unsafe-method request
+   under `/api` gets `403 { code: "read_only_token" }`) **and checked by
+   each MCP write tool** (the transport is all POST, so the middleware
+   excludes `/mcp` and the tools ask `McpAccess.RequireWrite`). A scope
+   only the MCP server honoured would not be a scope.
+
+4. **Markdown is the content contract.** Reads return the page as
+   Markdown — the *same* Markdown the export produces, with dynamic blocks
+   snapshotted as the caller — because an assistant reasons in Markdown and
+   the export renderer already exists. Writes accept `content` as Markdown,
+   converted server-side (Markdig → ProseMirror JSON) over the subset the
+   editor's own Markdown export emits: headings, paragraphs, bold/italic/
+   strike/code, links, bullet/ordered/task lists, code blocks with a
+   language, blockquotes, tables, horizontal rules, images. Everything the
+   editor can hold but Markdown cannot say (panels, status, layouts, dynamic
+   blocks) is out of reach through Markdown *by design* — an assistant
+   writes body text; a person enriches it. `contentJson` is the escape
+   hatch for a caller that has ProseMirror JSON (copying a page, 8.5
+   packs): exactly one of the two must be given. `get_page(format: json)`
+   returns the JSON for that purpose.
+
+5. **One write path.** `create_page`/`update_page` do exactly what `POST`/
+   `PUT /api/pages` do — validation, position, search text, audit,
+   watcher notifications, mention notifications, webhooks — because they
+   call the same code. That code is extracted from `PageEndpoints` into a
+   `PageWriter` service used by both; the endpoint tests are the safety net
+   for the extraction. 8.5's importer needs the same writer.
+
+6. **Errors never reveal what the caller may not see.** A page the token's
+   user cannot view is "not found" to a tool, exactly as it is 404 to REST.
+   Forbidden edits say so plainly ("no edit rights on this space"). A
+   read-only token calling a write tool is told how to mint one that can.
+
+**The tool surface.** Names are `verb_noun`, snake_case, as MCP clients
+expect. Read tools work with any token; write tools need a `write` one.
+
+| tool | scope | arguments | returns |
+|---|---|---|---|
+| `list_spaces` | read | — | spaces the user may view: `key`, `name`, `description`, `isPublic` |
+| `get_space_tree` | read | `spaceKey` | the page tree the user may see, nested `{ id, title, children }` |
+| `search_pages` | read | `query`, `spaceKey?`, `limit=20` (≤50) | `{ id, spaceKey, title, snippet }[]`, permission-filtered like `/api/search` |
+| `get_page` | read | `pageId`, `format=markdown\|json` | `title`, `spaceKey`, `parentPageId`, `labels`, `version`, `updatedAt`, `content` |
+| `find_pages_by_label` | read | `label`, `spaceKey?` | `{ id, spaceKey, title }[]` |
+| `list_labels` | read | `spaceKey` | `{ name, pages }[]` over visible pages only |
+| `create_page` | write | `spaceKey`, `title`, `content?` \| `contentJson?`, `parentPageId?` | the new page's `id` and URL |
+| `update_page` | write | `pageId`, `content?` \| `contentJson?`, `title?`, `changeComment?` | the new `version` |
+| `add_page_label` / `remove_page_label` | write | `pageId`, `label` | the page's labels |
+
+**Deliberately not tools:** trash/purge (irreversible; a person's job),
+permissions and restrictions, space creation, anything under `/admin`,
+attachment upload (binary over MCP is a poor fit today; a later `resources`
+surface is the right home). An assistant that needs those is asking a
+person to do them.
+
+**Server metadata.** `serverInfo.name = "tesria"`, the assembly version,
+and an `instructions` string telling the client what the wiki is, that
+content is Markdown, and that "not found" may mean "not permitted".
+
+**Client setup** (documented in the API space): an MCP client is pointed at
+`https://<instance>/mcp` with header `Authorization: Bearer <token>`.
+
+**Adding a tool (Opus, against this contract).** A `[McpServerTool]` method
+on `TesriaTools` taking its arguments as parameters (the SDK derives the
+JSON schema) plus DI services; write tools call `McpAccess.RequireWrite`
+first; permission checks go through `IPermissionService` exactly as the
+matching endpoint's do; a not-viewable target throws `McpException("… not
+found")`. Three tests per tool: the result; the leak test (a token whose
+user cannot view the target gets "not found", and a listing omits it); and,
+for write tools, that a read-only token is refused before anything changes.
+
+**Built with the spec (Fable):** the token scope end to end
+(`ReadOnly`, claim, middleware, minting, tests) and `/mcp` wired with
+`list_spaces` and `get_page`, so transport, auth, permission filtering and
+the Markdown contract are proven. **Opus:** the remaining read tools, the
+`PageWriter` extraction, the Markdown→ProseMirror converter, the write
+tools, the SPA's read-only checkbox and the API-space page.
+
 ### Dynamic blocks (spec — dev-plan Phase 7 Wave D, designed 2026-09-10)
 
 **What it is for.** Children display, Recently updated, Content by label,

@@ -44,7 +44,7 @@ public static class ExportEndpoints
 
         // Dynamic blocks are snapshotted now, as this caller, with this
         // caller's permissions (architecture.md, "Dynamic blocks", decision 5).
-        var snapshot = await SnapshotBlocksAsync(page.Id, content, blocks, ct);
+        var snapshot = await PageSnapshots.BlocksAsync(page.Id, content, blocks, ct);
         var baseUrl = SiteUrl.Resolve(await settings.GetAsync(ct), config);
 
         return (format ?? "markdown").ToLowerInvariant() switch
@@ -64,24 +64,6 @@ public static class ExportEndpoints
                 ["format"] = ["Supported formats are 'markdown', 'html' and 'pdf'."],
             }),
         };
-    }
-
-    /// <summary>
-    /// One result per dynamic block in document order (null where a block
-    /// failed or is unknown — the renderer draws a placeholder rather than
-    /// failing the export). A parameter error in one block must not lose the
-    /// rest of the page.
-    /// </summary>
-    private static async Task<List<BlockResult?>> SnapshotBlocksAsync(
-        Guid hostId, string content, IDynamicBlockService blocks, CancellationToken ct)
-    {
-        var results = new List<BlockResult?>();
-        foreach (var placement in DynamicBlocks.Collect(content))
-        {
-            try { results.Add(await blocks.RenderAsync(hostId, placement.Kind, placement.Params, ct)); }
-            catch (BlockParamException) { results.Add(null); }
-        }
-        return results;
     }
 
     /// <summary>
