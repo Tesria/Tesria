@@ -17,6 +17,9 @@ namespace Tesria.Api.Infrastructure.Security;
 /// </summary>
 public sealed partial class SecurityHeadersMiddleware
 {
+    /// <summary>Where the per-request docs nonce is left for Scalar to read. See InvokeAsync.</summary>
+    public const string CspNonceKey = "tesria.csp-nonce";
+
     private readonly RequestDelegate _next;
     private readonly string _cspTemplate;
     private readonly string _cspHeaderName;
@@ -46,6 +49,19 @@ public sealed partial class SecurityHeadersMiddleware
         // on that.
         var socketScheme = context.Request.IsHttps ? "wss" : "ws";
 
+        // The API reference (dev-plan 8.3) is a third-party UI whose page
+        // carries one inline <script> to configure itself. Rather than open
+        // `unsafe-inline` for the whole app — which would undo the reason
+        // this policy exists — that one path gets a fresh nonce per request,
+        // which Scalar stamps on its script tag. Its own JS is served from
+        // this origin, so nothing else needs relaxing.
+        string? nonce = null;
+        if (context.Request.Path.StartsWithSegments("/api/docs"))
+        {
+            nonce = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16));
+            context.Items[CspNonceKey] = nonce;
+        }
+
         // frame-src is built from the embed allowlist (dev-plan Phase 7 Wave
         // E), so the browser refuses an off-list frame even if a bug let one
         // reach the DOM — the allowlist is enforced here *and* at the resolve
@@ -56,7 +72,8 @@ public sealed partial class SecurityHeadersMiddleware
 
         headers[_cspHeaderName] = _cspTemplate
             .Replace("{socket}", $"{socketScheme}://{context.Request.Host}")
-            .Replace("{frames}", string.Join(' ', frames));
+            .Replace("{frames}", string.Join(' ', frames))
+            .Replace("{nonce}", nonce is null ? "" : $" 'nonce-{nonce}'");
 
         await _next(context);
     }
@@ -70,7 +87,7 @@ public sealed partial class SecurityHeadersMiddleware
             // Every bundle is same-origin; the only inline script is the
             // theme bootstrap in index.html, allowed by hash rather than by
             // 'unsafe-inline' so that an injected <script> still cannot run.
-            $"script-src 'self'{(scripts.Length > 0 ? " " + scripts : "")}",
+            $"script-src 'self'{(scripts.Length > 0 ? " " + scripts : "")}{{nonce}}",
             // The editor writes inline style attributes (text colour, cell
             // colours, alignment) into content it renders, and React sets
             // style attributes directly. Inline *styles* are the accepted

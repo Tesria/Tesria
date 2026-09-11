@@ -805,7 +805,7 @@ onto `roadmap.md` and are sequenced here.
   Public visibility is the user's call — but the licence file should exist
   before it flips, not after.
 
-### 8.3 API: OpenAPI + documentation — `M` — Model: Opus
+### 8.3 API: OpenAPI + documentation — `M` — Model: Opus — ✅ **shipped 2026-09-10**
 - The REST API and webhooks exist and are documented in the **API space**
   (23 pages, created 2026-09-08). Missing: a machine-readable spec. Add
   `Microsoft.AspNetCore.OpenApi` at `/api/openapi.json` with the endpoint

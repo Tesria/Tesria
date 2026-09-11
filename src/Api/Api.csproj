@@ -21,6 +21,7 @@
     <!-- Data layer: EF Core 10 + PostgreSQL (Npgsql). Design package enables
          `dotnet ef` migrations at build/dev time. -->
     <PackageReference Include="MailKit" Version="4.17.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -38,6 +39,7 @@
          Keycloak/Authentik/Google, etc.). Optional at runtime — see Oidc:Authority. -->
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.10" />
     <PackageReference Include="Otp.NET" Version="1.4.1" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.17.3" />
     <PackageReference Include="SkiaSharp" Version="4.152.0" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.152.0" />
   </ItemGroup>

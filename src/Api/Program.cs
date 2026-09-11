@@ -7,6 +7,7 @@ using Tesria.Api.Features.Comments;
 using Tesria.Api.Features.Audit;
 using Tesria.Api.Features.Collab;
 using Tesria.Api.Features.Blocks;
+using Tesria.Api.Features.Docs;
 using Tesria.Api.Features.Embeds;
 using Tesria.Api.Features.Export;
 using Tesria.Api.Features.Groups;
@@ -92,6 +93,9 @@ builder.Services.AddScoped<Tesria.Api.Features.Embeds.ILinkPreviewService, Tesri
 // a self-contained document and renders it with no network of its own.
 builder.Services.AddScoped<Tesria.Api.Features.Export.IPdfRenderer, Tesria.Api.Features.Export.PdfRenderer>();
 builder.Services.AddHttpClient("pdf", c => c.Timeout = TimeSpan.FromSeconds(30));
+
+// Machine-readable API description (dev-plan 8.3).
+builder.Services.AddTesriaOpenApi();
 builder.Services.AddScoped<Tesria.Api.Features.Blocks.IDynamicBlockKind, Tesria.Api.Features.Blocks.Kinds.ChildrenBlock>();
 builder.Services.AddScoped<Tesria.Api.Features.Blocks.IDynamicBlockKind, Tesria.Api.Features.Blocks.Kinds.RecentlyUpdatedBlock>();
 builder.Services.AddScoped<Tesria.Api.Features.Blocks.IDynamicBlockKind, Tesria.Api.Features.Blocks.Kinds.ContentByLabelBlock>();
@@ -507,6 +511,9 @@ api.MapWatchEndpoints();
 api.MapNotificationEndpoints();
 api.MapApiTokenEndpoints();
 api.MapWebhookEndpoints();
+
+// The spec and its reader (dev-plan 8.3).
+app.MapTesriaApiDocs();
 
 // Not under /api: robots.txt and sitemap.xml live at the root (dev-plan 5.2).
 app.MapPublicEndpoints();

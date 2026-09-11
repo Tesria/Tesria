@@ -5,6 +5,44 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### OpenAPI spec and a self-hosted API reference (dev-plan 8.3) (2026-09-10)
+
+`GET /api/openapi.json` — OpenAPI 3.1, generated from the routes, so it
+cannot describe an endpoint that does not exist. A browsable reference is
+at `/api/docs`. Both are open: the shape of an API is not a secret, every
+endpoint still enforces its own permissions, and an operator who disagrees
+can block two paths at the proxy.
+
+Two things the generator could not know, both now in the document:
+
+- **Both ways of authenticating.** A token (`Authorization: Bearer`) and the
+  SPA's session cookie, the latter noting that unsafe requests also need
+  `X-Requested-With: Tesria` — the CSRF defence — and that everything you
+  may not see answers 404 rather than 403.
+- **Which endpoints actually need one.** An endpoint is open two ways here:
+  an explicit `.AllowAnonymous()` (Phase 5's public routes) *and* simply
+  never having asked for authorization — `/api/health` does the latter, and
+  describing it as needing a token would be a lie the generator cannot
+  catch. Both now report no security requirement.
+
+**The reference is a third-party UI inside an app with a strict CSP**, which
+took care. Its own JavaScript is served from this origin (no CDN), its
+default web fonts are turned off rather than silently blocked, and the one
+inline `<script>` on its page runs under a **fresh per-request nonce** that
+`SecurityHeadersMiddleware` mints only for `/api/docs` — rather than opening
+`unsafe-inline` for the whole app, which would undo the reason that policy
+exists. Tests pin that the nonce appears only on that path and differs every
+request.
+
+Some of its sidebar features call the vendor's hosted service. This app's
+`connect-src 'self'` blocks them, which is the behaviour we want from a
+documentation page — the button leading to them is hidden so nothing broken
+is put in front of a reader, and the CSP remains the backstop.
+
+The API space gained a page describing the spec, the reference, both auth
+schemes and how to generate a client, so the prose documentation and the
+machine-readable one stay in step.
+
 ### PDF export, and a licence (dev-plan 8.1, 8.2) (2026-09-10)
 
 **PDF export (8.1)** — the one claim on the brand page that was not true.
