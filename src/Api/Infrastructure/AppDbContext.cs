@@ -107,6 +107,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<PageTemplate> PageTemplates => Set<PageTemplate>();
     public DbSet<Watch> Watches => Set<Watch>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<LinkPreview> LinkPreviews => Set<LinkPreview>();
     public DbSet<ApiToken> ApiTokens => Set<ApiToken>();
     public DbSet<Webhook> Webhooks => Set<Webhook>();
     public DbSet<SpacePermission> SpacePermissions => Set<SpacePermission>();
@@ -353,6 +354,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                 .OnDelete(DeleteBehavior.SetNull);
 
             e.HasIndex(n => new { n.UserId, n.CreatedAt });
+        });
+
+        b.Entity<LinkPreview>(e =>
+        {
+            // The hash, not the URL, carries the unique index: a URL can be
+            // 2048 characters and Postgres will not index that reliably.
+            e.HasIndex(p => p.UrlHash).IsUnique();
+            e.Property(p => p.UrlHash).HasMaxLength(64);
+            e.Property(p => p.Url).HasMaxLength(2048);
+            e.Property(p => p.Title).HasMaxLength(500);
+            e.Property(p => p.Description).HasMaxLength(1000);
+            e.Property(p => p.SiteName).HasMaxLength(200);
+            e.Property(p => p.ImageUrl).HasMaxLength(2048);
+            e.Property(p => p.Error).HasMaxLength(200);
         });
 
         b.Entity<PageTemplate>(e =>

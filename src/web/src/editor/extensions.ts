@@ -34,6 +34,10 @@ import { EmojiSuggestion } from './suggest/EmojiSuggestion'
 import { TaskAssignee } from './taskAssignee'
 import { DynamicBlock } from './dynamicBlock'
 import { Excerpt, PageProperties } from './excerptExtension'
+import { Embed, SmartLink } from './embedExtension'
+import { AttachmentBlock, Gallery } from './mediaExtension'
+import { Math as MathNode } from './mathExtension'
+import { Chart } from './chartExtension'
 
 type SharedExtensionOptions = {
   /** Collaborative editors let Yjs own undo/redo history instead of StarterKit's. */
@@ -247,6 +251,17 @@ export function getSharedExtensions({ collaborative = false, editable = true }: 
     // containers, so export renders their contents as ordinary content.
     Excerpt,
     PageProperties,
+    // Wave E: third-party frames (allowlisted server-side), link previews,
+    // and attachment-backed media.
+    Embed,
+    SmartLink,
+    AttachmentBlock,
+    Gallery,
+    // Wave F. Mermaid is not a node — it is a code-block language whose view
+    // draws rather than highlights (CodeBlockView), so its source stays an
+    // ordinary fenced block in every export.
+    MathNode,
+    Chart,
     // Read-only rendering never needs "/" commands or a link shortcut — skip
     // mounting the plugins entirely rather than just hiding their output.
     ...(editable ? [SlashCommand, LinkShortcut, MentionSuggestion, EmojiSuggestion] : []),

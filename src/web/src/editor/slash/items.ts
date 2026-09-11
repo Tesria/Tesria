@@ -8,6 +8,7 @@ import {
   BlockquoteIcon, BulletListIcon, CodeBlockIcon, DateIcon, DecisionIcon, DividerIcon, ErrorPanelIcon, ExpandIcon,
   HeadingIcon, ImageIcon, InfoPanelIcon, LayoutIcon, NotePanelIcon, OrderedListIcon, StatusIcon, SuccessPanelIcon,
   TableIcon, TaskListIcon, TocIcon, WarningPanelIcon, ExcerptIcon, PropertiesIcon,
+  EmbedIcon, SmartLinkIcon, PaperclipIcon, GalleryIcon, MermaidIcon, MathIcon, ChartIcon,
 } from '../icons'
 
 /**
@@ -249,6 +250,72 @@ export const SLASH_ITEMS: SlashItem[] = [
       editor.chain().focus().deleteRange(range).run()
       insertPageProperties(editor)
     },
+  },
+  // Wave F technical content.
+  {
+    title: 'Diagram (Mermaid)',
+    group: 'block',
+    icon: MermaidIcon,
+    description: 'A flowchart or sequence diagram from text',
+    keywords: ['mermaid', 'diagram', 'flowchart', 'sequence', 'graph'],
+    command: (editor, range) =>
+      editor.chain().focus().deleteRange(range)
+        .insertContent({
+          type: 'codeBlock',
+          attrs: { language: 'mermaid' },
+          content: [{ type: 'text', text: 'flowchart LR\n  A[Start] --> B{Choice}\n  B -->|yes| C[Done]\n  B -->|no| A' }],
+        })
+        .run(),
+  },
+  {
+    title: 'Maths',
+    group: 'block',
+    icon: MathIcon,
+    description: 'A LaTeX expression, inline or on its own line',
+    keywords: ['math', 'latex', 'katex', 'equation', 'formula'],
+    command: (editor, range) => editor.chain().focus().deleteRange(range).insertMath(true, 'e = mc^2').run(),
+  },
+  {
+    title: 'Chart',
+    group: 'block',
+    icon: ChartIcon,
+    description: 'Chart the numbers in a table on this page',
+    keywords: ['chart', 'graph', 'bar', 'pie', 'line'],
+    command: (editor, range) => editor.chain().focus().deleteRange(range).insertChart().run(),
+  },
+  // Wave E media. The embed asks the server what it may frame; the
+  // attachment block picks from what is already on the page.
+  {
+    title: 'Embed',
+    group: 'block',
+    icon: EmbedIcon,
+    description: 'A video, design or board from an allowed site',
+    keywords: ['video', 'youtube', 'vimeo', 'figma', 'iframe', 'embed'],
+    command: (editor, range) => editor.chain().focus().deleteRange(range).insertEmbed().run(),
+  },
+  {
+    title: 'Smart link',
+    group: 'block',
+    icon: SmartLinkIcon,
+    description: 'A link that shows the page it points at',
+    keywords: ['link', 'preview', 'card', 'unfurl'],
+    command: (editor, range) => editor.chain().focus().deleteRange(range).insertSmartLink().run(),
+  },
+  {
+    title: 'File or video',
+    group: 'block',
+    icon: PaperclipIcon,
+    description: 'Play or show a file attached to this page',
+    keywords: ['attachment', 'video', 'pdf', 'audio', 'file'],
+    command: (editor, range) => editor.chain().focus().deleteRange(range).insertAttachmentBlock().run(),
+  },
+  {
+    title: 'Gallery',
+    group: 'block',
+    icon: GalleryIcon,
+    description: 'Tile the images you put inside it',
+    keywords: ['images', 'grid', 'photos', 'gallery'],
+    command: (editor, range) => editor.chain().focus().deleteRange(range).insertGallery().run(),
   },
   // Dynamic blocks (dev-plan Phase 7 Wave D): generated from the kind
   // catalogue, so a kind added there appears here and in the + menu.

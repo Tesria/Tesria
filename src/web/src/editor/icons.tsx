@@ -458,3 +458,63 @@ export function PropertiesIcon() {
     </Icon>
   )
 }
+
+export function EmbedIcon() {
+  return (
+    <Icon>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m10.5 9.5 4 2.5-4 2.5Z" fill="currentColor" />
+    </Icon>
+  )
+}
+
+export function SmartLinkIcon() {
+  return (
+    <Icon>
+      <rect x="3" y="5.5" width="18" height="13" rx="2" />
+      <path d="M3 10h18M7 14h6" opacity="0.7" />
+    </Icon>
+  )
+}
+
+export function GalleryIcon() {
+  return (
+    <Icon>
+      <rect x="3" y="4.5" width="8" height="7" rx="1" />
+      <rect x="13" y="4.5" width="8" height="7" rx="1" />
+      <rect x="3" y="13.5" width="8" height="6" rx="1" />
+      <rect x="13" y="13.5" width="8" height="6" rx="1" />
+    </Icon>
+  )
+}
+
+export function MermaidIcon() {
+  return (
+    <Icon>
+      <rect x="3" y="4" width="7" height="5" rx="1" />
+      <rect x="14" y="15" width="7" height="5" rx="1" />
+      <path d="M6.5 9v5a2 2 0 0 0 2 2h5.5" />
+    </Icon>
+  )
+}
+
+export function MathIcon() {
+  return (
+    <Icon>
+      <path d="M5 5h9l-5.5 7L14 19H5" />
+      <path d="M16 6.5h4M18 4.5v4" opacity="0.7" />
+    </Icon>
+  )
+}
+
+export function ChartIcon() {
+  return (
+    <Icon>
+      <path d="M4 20V4" />
+      <path d="M4 20h16" />
+      <rect x="7" y="12" width="3" height="5" fill="currentColor" stroke="none" />
+      <rect x="12" y="8" width="3" height="9" fill="currentColor" stroke="none" />
+      <rect x="17" y="14" width="3" height="3" fill="currentColor" stroke="none" />
+    </Icon>
+  )
+}

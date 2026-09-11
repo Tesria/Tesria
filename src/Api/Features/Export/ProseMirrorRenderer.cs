@@ -20,11 +20,18 @@ public static class ProseMirrorRenderer
     /// snapshots them. Null entries, or none at all, render as placeholders.
     /// </param>
     /// <param name="baseUrl">Makes the blocks' app-relative hrefs absolute in a standalone file.</param>
-    public static string ToHtml(string contentJson, IReadOnlyList<BlockResult?>? blocks = null, string? baseUrl = null)
+    public static string ToHtml(string contentJson, IReadOnlyList<BlockResult?>? blocks = null, string? baseUrl = null) =>
+        ToHtml(contentJson, blocks, baseUrl, out _);
+
+    /// <param name="usedMermaid">Whether the document contained a Mermaid diagram, so the caller can decide whether the exported file needs a renderer.</param>
+    public static string ToHtml(string contentJson, IReadOnlyList<BlockResult?>? blocks, string? baseUrl, out bool usedMermaid)
     {
+        usedMermaid = false;
         if (!TryParse(contentJson, out var root)) return string.Empty;
         var sb = new StringBuilder();
-        RenderHtmlChildren(root, sb, new Ctx(root, blocks, baseUrl));
+        var ctx = new Ctx(root, blocks, baseUrl);
+        RenderHtmlChildren(root, sb, ctx);
+        usedMermaid = ctx.UsedMermaid;
         return sb.ToString();
     }
 
@@ -54,6 +61,9 @@ public static class ProseMirrorRenderer
             blocks is not null && _nextBlock < blocks.Count ? blocks[_nextBlock++] : null;
 
         public string? BaseUrl { get; } = baseUrl?.TrimEnd('/');
+
+        /// <summary>Set while rendering if the document contains a Mermaid block, so the caller can decide whether to ship a renderer.</summary>
+        public bool UsedMermaid { get; set; }
 
         /// <summary>App-relative block hrefs become absolute when a base URL is known; a standalone file has no app to be relative to.</summary>
         public string Href(string? href) =>
@@ -197,9 +207,36 @@ public static class ProseMirrorRenderer
                 break;
             case "codeBlock":
                 var lang = Attr(node, "language");
+                if (lang == "mermaid")
+                {
+                    // The source, in the shape Mermaid's own script looks for.
+                    // Readable as text even when nothing draws it — see
+                    // ExportEndpoints for the (optional) render script.
+                    ctx.UsedMermaid = true;
+                    sb.Append("<pre class=\"mermaid\">").Append(Escape(PlainText(node))).Append("</pre>\n");
+                    break;
+                }
                 sb.Append(lang is null ? "<pre><code>" : $"<pre><code class=\"language-{Escape(lang)}\">");
                 sb.Append(Escape(PlainText(node)));
                 sb.Append("</code></pre>\n");
+                break;
+            case "math":
+                // The LaTeX source, in the delimiters every maths-aware reader
+                // understands. Rendering it would mean shipping KaTeX's
+                // stylesheet and fonts inside every exported file.
+                var latex = Attr(node, "latex") ?? "";
+                var isDisplay = BoolAttr(node, "display");
+                sb.Append(isDisplay ? "<p class=\"math math--display\">$$" : "<span class=\"math\">$")
+                  .Append(Escape(latex))
+                  .Append(isDisplay ? "$$</p>\n" : "$</span>");
+                break;
+            case "chart":
+                // The numbers are in the table this points at, which is
+                // already in the document — so the export names the source
+                // rather than drawing a second copy of the data.
+                sb.Append($"<p><em>[Chart of table {Escape(Attr(node, "source") ?? "1")}");
+                if (Attr(node, "title") is { Length: > 0 } chartTitle) sb.Append(": ").Append(Escape(chartTitle));
+                sb.Append("]</em></p>\n");
                 break;
             case "horizontalRule":
                 sb.Append("<hr />\n");
@@ -255,6 +292,32 @@ public static class ProseMirrorRenderer
                 break;
             case "dynamicBlock":
                 RenderHtmlBlock(node, ctx.NextBlock(), ctx, sb);
+                break;
+            case "embed":
+            case "smartLink":
+                // An exported file is read outside this app, where an iframe
+                // to a third party is a liability and a cached title is a
+                // stale copy of someone else's page. Both become the link.
+                var target = SafeExternalUrl(Attr(node, "url"));
+                sb.Append("<p>");
+                sb.Append(target is null
+                    ? "<em>[link]</em>"
+                    : $"<a href=\"{Escape(target)}\" rel=\"noreferrer noopener\">{Escape(target)}</a>");
+                sb.Append("</p>\n");
+                break;
+            case "attachmentBlock":
+                // The file itself is not in the export, so the export says so
+                // and links to it rather than rendering a broken player.
+                var attachment = Attr(node, "attachmentId");
+                sb.Append(attachment is null
+                    ? "<p><em>[attached file]</em></p>\n"
+                    : $"<p><a href=\"{Escape(ctx.Href($"/api/attachments/{attachment}/download"))}\">[attached file]</a></p>\n");
+                break;
+            case "gallery":
+                // A layout over ordinary images: the images are what matters.
+                sb.Append("<div data-type=\"gallery\" style=\"display: flex; flex-wrap: wrap; gap: 8px\">\n");
+                RenderHtmlChildren(node, sb, ctx);
+                sb.Append("</div>\n");
                 break;
             case "mention":
                 // The label, not a lookup: an exported file has no directory,
@@ -340,6 +403,26 @@ public static class ProseMirrorRenderer
                 break;
             case "dynamicBlock":
                 RenderMarkdownBlock(node, ctx.NextBlock(), ctx, sb, listDepth);
+                break;
+            case "math":
+                var mdLatex = Attr(node, "latex") ?? "";
+                sb.Append(BoolAttr(node, "display") ? $"\n$$\n{mdLatex}\n$$\n\n" : $"${mdLatex}$");
+                break;
+            case "chart":
+                sb.Append($"_[Chart of table {Attr(node, "source") ?? "1"}]_\n\n");
+                break;
+            case "embed":
+            case "smartLink":
+                var mdTarget = SafeExternalUrl(Attr(node, "url"));
+                if (mdTarget is not null) sb.Append('<').Append(mdTarget).Append(">\n\n");
+                break;
+            case "attachmentBlock":
+                var mdAttachment = Attr(node, "attachmentId");
+                if (mdAttachment is not null)
+                    sb.Append("[attached file](").Append(ctx.Href($"/api/attachments/{mdAttachment}/download")).Append(")\n\n");
+                break;
+            case "gallery":
+                RenderMarkdownChildren(node, sb, listDepth, ctx);
                 break;
             case "date":
                 var mdIso = IsoDate(node);
@@ -726,6 +809,21 @@ public static class ProseMirrorRenderer
         if (cell.Checked is { } c) return c ? "[x]" : "[ ]";
         var text = cell.Text ?? "";
         return cell.Href is null ? text : $"[{text}]({ctx.Href(cell.Href)})";
+    }
+
+    /// <summary>
+    /// An author-supplied external URL, accepted only as plain http(s).
+    /// Document JSON is stored as the client sent it, so a
+    /// <c>javascript:</c> or <c>data:</c> URL would otherwise become a live
+    /// link in an exported file opened straight from disk.
+    /// </summary>
+    private static string? SafeExternalUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return null;
+        return Uri.TryCreate(url.Trim(), UriKind.Absolute, out var uri)
+            && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp)
+                ? uri.ToString()
+                : null;
     }
 
     // -- Phase 7 Wave B formatting ----------------------------------------------

@@ -539,6 +539,82 @@ stable answer worth encoding — the set changes every Unicode release — and
 what actually matters is that the value is a glyph rather than prose or
 markup, because it renders inline wherever the space appears.
 
+### Embeds and link previews (dev-plan Phase 7 Wave E)
+
+**The allowlist is enforced twice, and that is the whole design.** An embed
+is a third-party iframe on a page everyone else reads, so:
+
+1. `GET /api/embeds/resolve` refuses a host that is not on
+   `SiteSettings.EmbedAllowlist`, and returns the URL that may be framed.
+2. The CSP's `frame-src` is built from the *same* list, per request
+   (`SecurityHeadersMiddleware` reads the settings), so a browser refuses an
+   off-list frame even if a client bug put one in the DOM.
+
+The client never decides what may be framed — it asks and frames what it is
+told. Emptying the allowlist turns embeds off entirely, in both places at
+once.
+
+**Host matching (`EmbedAllowlist.IsAllowed`) is on a label boundary, never a
+plain `EndsWith`.** `.youtube.com` must admit `www.youtube.com` and refuse
+`evil-youtube.com` and `youtube.com.attacker.net`. This is four lines and it
+is the entire trust decision, so it is tested with the hostile cases rather
+than the happy ones.
+
+**Providers narrow, they do not merely permit** (`EmbedProviders`). A
+YouTube watch page becomes the no-cookie embed player; a Google Doc becomes
+its `/preview`. A host on the allowlist with *no* provider rule frames as
+pasted — which is what makes "allowlist our internal Grafana" work with no
+code. The iframe itself is sandboxed to scripts, same-origin, presentation
+and popups; never top-level navigation.
+
+**Link previews** (`LinkPreviewService`) fetch Open Graph tags through the
+3.4 egress guard and never around it, cap the response at 256KB, and cache
+per normalised URL — a week for a success, an hour for a failure, so a dead
+link is not an outbound request on every page view. An `og:image` is used
+only when it is an absolute https URL. Unfurling needs an account (it makes
+an outbound request); resolving does not (an embed on a public page is part
+of the page).
+
+**Gotcha — a new settings column needs its default on the migration, not
+just on the property.** `SiteSettings.EmbedAllowlist`'s C# initialiser only
+runs when a *new* settings object is constructed. On an instance that
+already has its singleton row, an `AddColumn` with `defaultValue: ""`
+silently turned embeds off on upgrade. Every test builds a fresh database
+and so never takes that path; it was found by upgrading a running instance.
+The same trap applies to every future setting.
+
+### Technical content — diagrams, maths, charts (dev-plan Phase 7 Wave F)
+
+- **Mermaid is a code-block language, not a node.** Choosing it switches
+  `CodeBlockView` from highlighting to drawing. The source therefore stays
+  an ordinary fenced block in the document and in both exports, there is no
+  second node type to paste into or render, and "what is in this code block"
+  stays one decision. The source is *hidden*, not unmounted, when the
+  diagram shows — ProseMirror needs its view of the node to keep it
+  editable — which needs an explicit `.code-block__body[hidden]` rule,
+  because `display: flex` out-specifies the user agent's `[hidden]`.
+- **Both libraries load on demand.** Mermaid is ~500KB and KaTeX ~280KB with
+  its fonts; each is a dynamic `import()` whose promise is cached at module
+  scope, so ten diagrams share one load and a page with none downloads
+  nothing. Vite splits Mermaid per diagram type.
+- **Charts read a table already on the page, by ordinal.** `source: 2` means
+  "the second table", because ProseMirror nodes have no stable identity and
+  an id would have to be minted, stored and kept unique through copy-paste —
+  and an author thinks in "the second table" anyway. The data is never
+  copied into the chart, so editing the table redraws it. Deliberately *not*
+  a Wave D dynamic block: the table is in the document, so a server round
+  trip would be slower, would miss unsaved edits, and would need a fourth
+  result shape the contract does not have. The chart is plain SVG and
+  flexbox rather than a charting library — four types over one table is a
+  few dozen lines against another ~150KB in the bundle.
+- **Exports stay readable outside the app.** An embed and a smart link
+  become plain links (never an iframe; a `javascript:` URL becomes no link
+  at all — document JSON is stored as the client sent it). Maths exports as
+  `$…$`. A chart names the table it charts. The one exception is an HTML
+  export *containing a Mermaid diagram*, which ships a CDN `<script>` so the
+  diagram draws; the source is always present as readable text, so offline,
+  script-blocked and printed copies still show it.
+
 ### Dynamic blocks (spec — dev-plan Phase 7 Wave D, designed 2026-09-10)
 
 **What it is for.** Children display, Recently updated, Content by label,
