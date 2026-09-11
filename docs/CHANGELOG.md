@@ -140,10 +140,12 @@ Also in this pass, from live review:
 - **Publish/Update and Close moved onto the toolbar row**, out of the bottom
   of the form (`form=` ties the submit button to the form it now sits
   outside of).
-- **The breadcrumb moved below the toolbar** on the editor routes: the
-  toolbar is the top edge of the editing surface, and the breadcrumb belongs
-  with the page content. `SpacePage` suppresses its own copy there and
-  `PageEditor` renders it.
+- **The breadcrumb moved below the page action bar**, on the reading view as
+  well as the editor: the bar is the top edge of the page surface, and the
+  breadcrumb belongs with the content. `SpacePage` suppresses its own copy on
+  those routes and `PageEditor` / `PageView` render it. Routes with no action
+  bar (settings, permissions, webhooks, trash) are unchanged — the breadcrumb
+  is already the first thing on the page there.
 - **Fixed: floating toolbar menus were transparent.** A regression from the
   one-row toolbar rebuild — `.toolbar` stopped having a surface of its own
   (the page action bar supplies it), so every `.toolbar--bubble` copy of it

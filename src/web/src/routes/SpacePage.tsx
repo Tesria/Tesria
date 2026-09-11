@@ -43,11 +43,14 @@ export function SpacePage() {
   // be a second, redundant header stacked above that one. Desktop is
   // unaffected: this bar is display:none there regardless (see .sidebar).
   const isPageRoute = Boolean(currentPageId)
-  // The editor puts its own breadcrumb *below* the formatting toolbar, which
-  // runs edge to edge along the top of the editing surface (Confluence does
-  // the same). Rendering it here too would stack a second copy above that
-  // bar, so the editor routes opt out and render it themselves.
-  const isEditorRoute = Boolean(matchPageEdit || matchNew)
+  // Any route with a page action bar puts its own breadcrumb *below* that
+  // bar — the bar is the top edge of the page surface, and the breadcrumb
+  // belongs with the content (Confluence does the same). Rendering it here
+  // too would stack a second copy above the bar, so those routes opt out and
+  // render it themselves: PageEditor for edit/new, PageView for reading. The
+  // rest (settings, permissions, webhooks, trash) have no action bar, so the
+  // breadcrumb is already the first thing on the page and this still owns it.
+  const rendersOwnBreadcrumb = Boolean(matchPageView || matchPageEdit || matchNew)
 
   const reloadTree = useCallback(() => {
     if (!space) return
@@ -161,7 +164,7 @@ export function SpacePage() {
         </>)}
       </aside>
       <section className="space-content">
-        {!isEditorRoute && <SpaceBreadcrumb space={space} tree={tree} />}
+        {!rendersOwnBreadcrumb && <SpaceBreadcrumb space={space} tree={tree} />}
         <Outlet context={context} />
       </section>
     </div>
