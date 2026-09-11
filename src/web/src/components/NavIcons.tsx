@@ -118,3 +118,20 @@ export function TrashIcon() {
     </NavIcon>
   )
 }
+
+/**
+ * Watching: an eye.
+ *
+ * One icon for both states — the button's own label says which way the
+ * toggle is pointing ("Watching" / "Watch this page"), so a struck-through
+ * variant would be describing the state in one breath and the action in the
+ * next.
+ */
+export function WatchIcon() {
+  return (
+    <NavIcon>
+      <path d="M2.5 12s3.6-6.2 9.5-6.2 9.5 6.2 9.5 6.2-3.6 6.2-9.5 6.2S2.5 12 2.5 12z" />
+      <circle cx="12" cy="12" r="2.7" />
+    </NavIcon>
+  )
+}
