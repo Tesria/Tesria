@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Auth;
 using Tesria.Api.Infrastructure.Permissions;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,12 +27,19 @@ public sealed class BlockParamException(string param, string message) : Exceptio
 /// break — <see cref="VisibleAsync"/>.
 /// </summary>
 public sealed class BlockContext(
-    Page host, IReadOnlyDictionary<string, string> parameters, AppDbContext db, IPermissionService perms)
+    Page host, IReadOnlyDictionary<string, string> parameters, AppDbContext db, IPermissionService perms, Guid? currentUserId)
 {
     /// <summary>The page the block sits on; the caller has already been allowed to view it.</summary>
     public Page Host { get; } = host;
     public AppDbContext Db { get; } = db;
     public IPermissionService Perms { get; } = perms;
+
+    /// <summary>
+    /// Who is asking, or null for an anonymous reader. Only for kinds with an
+    /// "assigned to me"-style filter; permission decisions go through
+    /// <see cref="Perms"/>, never through this.
+    /// </summary>
+    public Guid? CurrentUserId { get; } = currentUserId;
 
     /// <summary>Page hrefs are app-relative; the SPA routes them, the exporter makes them absolute.</summary>
     public string HrefFor(string spaceKey, Guid pageId) => $"/spaces/{spaceKey}/pages/{pageId}";
@@ -96,7 +104,7 @@ public interface IDynamicBlockService
 }
 
 public sealed class DynamicBlockService(
-    AppDbContext db, IPermissionService perms, IEnumerable<IDynamicBlockKind> kinds) : IDynamicBlockService
+    AppDbContext db, IPermissionService perms, CurrentUser current, IEnumerable<IDynamicBlockKind> kinds) : IDynamicBlockService
 {
     private readonly Dictionary<string, IDynamicBlockKind> _kinds =
         kinds.ToDictionary(k => k.Kind, StringComparer.Ordinal);
@@ -109,10 +117,15 @@ public sealed class DynamicBlockService(
         if (!_kinds.TryGetValue(kind, out var impl)) return null;
         // The host is the permission anchor: unviewable host, no block at all.
         if (!await perms.CanViewPageAsync(hostPageId)) return null;
-        var host = await db.Pages.AsNoTracking().Include(p => p.Space)
-            .FirstOrDefaultAsync(p => p.Id == hostPageId, ct);
+        // IgnoreQueryFilters with the soft-delete half reapplied by hand (the
+        // same pattern SetLayout uses): the host may be an unpublished draft —
+        // the editor renders blocks while a brand-new page is still being
+        // composed, and the draft is the only id that exists until Publish.
+        // A trashed page still has no business rendering anything.
+        var host = await db.Pages.AsNoTracking().IgnoreQueryFilters().Include(p => p.Space)
+            .FirstOrDefaultAsync(p => p.Id == hostPageId && p.DeletedAt == null, ct);
         if (host is null) return null;
-        return await impl.RenderAsync(new BlockContext(host, parameters, db, perms), ct);
+        return await impl.RenderAsync(new BlockContext(host, parameters, db, perms, current.Id), ct);
     }
 }
 

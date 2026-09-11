@@ -5,6 +5,51 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Editor parity Wave D — the other eleven kinds (dev-plan 7, Wave D — Opus half) (2026-09-10)
+
+Against the contract Fable designed: **Recently updated, Content by label,
+Attachments, Change history, Contributors, Include page, Excerpt include,
+Page properties report, Labels list, Task report** and **Page tree**. Each
+is one class implementing `IDynamicBlockKind` — a query, and nothing else.
+The contract held: no kind needed a new result shape, a renderer change, or
+a line of React.
+
+Two static container nodes came with them, because two kinds read content
+rather than rows: `excerpt` (what `excerpt-include` takes) and
+`pageProperties` (a two-column table `page-properties-report` collects
+across pages). Both are plain containers with no node view, so an exported
+page shows its excerpt and its properties as ordinary content — which is
+what they are.
+
+The permission rule held everywhere, and the leak tests are the interesting
+ones:
+
+- **Page properties report** derives its *columns* from the pages it finds,
+  so a restricted page could leak a column name ("Salary band") with no row
+  behind it. It does not.
+- **Contributors** and **Labels list** are counts: a contributor whose only
+  edits are on a restricted page, and a label whose only pages are hidden,
+  must not appear — and the counts of those that do must not include the
+  hidden ones.
+- **Task report** filters visibility *before* reading any content, so a
+  restricted page's action items are never walked at all.
+- **Recently updated** over-fetches and filters, so a run of restricted
+  pages makes it look further down rather than return a short list.
+- **Include page** on a page you cannot see reports "nothing to show", never
+  an error naming the page — an error would confirm it exists.
+
+Nineteen tests for the kinds, on top of the mechanism's eight.
+
+Two fixes while building:
+
+- A **draft host** (a brand-new page being composed) was invisible to the
+  block endpoint, because the global query filter hides drafts — every block
+  on a new page 404'd until Publish. Now `IgnoreQueryFilters()` with the
+  soft-delete half reapplied by hand, the same pattern `SetLayout` uses.
+- Candidate pages are ordered **in memory, not in SQL**: SQLite cannot
+  `ORDER BY` a `DateTimeOffset`, and sorting here means both providers order
+  identically rather than only Postgres being exercised.
+
 ### Editor parity Wave D — the dynamic-block contract, and Children display (dev-plan 7, Wave D — Fable half) (2026-09-10)
 
 Wave D is "a block whose content is the answer to a query" — Confluence's

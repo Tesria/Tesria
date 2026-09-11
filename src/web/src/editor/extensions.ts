@@ -33,6 +33,7 @@ import { MentionSuggestion } from './suggest/MentionSuggestion'
 import { EmojiSuggestion } from './suggest/EmojiSuggestion'
 import { TaskAssignee } from './taskAssignee'
 import { DynamicBlock } from './dynamicBlock'
+import { Excerpt, PageProperties } from './excerptExtension'
 
 type SharedExtensionOptions = {
   /** Collaborative editors let Yjs own undo/redo history instead of StarterKit's. */
@@ -242,6 +243,10 @@ export function getSharedExtensions({ collaborative = false, editable = true }: 
     TaskAssignee,
     // Wave D: one node for every query-backed block; kinds live on the server.
     DynamicBlock,
+    // The two static containers the include/report kinds read from. Plain
+    // containers, so export renders their contents as ordinary content.
+    Excerpt,
+    PageProperties,
     // Read-only rendering never needs "/" commands or a link shortcut — skip
     // mounting the plugins entirely rather than just hiding their output.
     ...(editable ? [SlashCommand, LinkShortcut, MentionSuggestion, EmojiSuggestion] : []),
