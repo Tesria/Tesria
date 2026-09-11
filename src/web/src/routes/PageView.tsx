@@ -13,6 +13,7 @@ import { HistoryPanel } from './panels/HistoryPanel'
 import { SaveAsTemplateButton } from '../components/SaveAsTemplateButton'
 import { WatchToggle } from '../components/WatchToggle'
 import { OverflowMenu } from '../components/OverflowMenu'
+import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
 
 type Tab = 'comments' | 'attachments' | 'history' | 'restrictions'
 
@@ -20,7 +21,7 @@ export function PageView() {
   const { key = '', pageId = '' } = useParams()
   const navigate = useNavigate()
   const { hash } = useLocation()
-  const { space, reloadTree } = useSpaceContext()
+  const { space, tree, reloadTree } = useSpaceContext()
   const { user } = useAuth()
   const [page, setPage] = useState<PageDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -101,6 +102,7 @@ export function PageView() {
             <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=html`}>↓ HTML</a>
           </div>
         </div>
+        <SpaceBreadcrumb space={space} tree={tree} />
         <article className={page.fullWidth ? 'page-wrap page-wrap--full' : 'page-wrap'}>
           <div className="paper">
             <div className="page-head"><h1>{page.title}</h1></div>
@@ -164,6 +166,10 @@ export function PageView() {
           </OverflowMenu>
         </div>
       </div>
+      {/* Below the action bar, not above it — the bar is the top edge of the
+          page surface and the breadcrumb belongs with the content. SpacePage
+          suppresses its own copy on this route. */}
+      <SpaceBreadcrumb space={space} tree={tree} />
       <article className={page.fullWidth ? 'page-wrap page-wrap--full' : 'page-wrap'}>
         <div className="paper">
           <div className="page-head">
