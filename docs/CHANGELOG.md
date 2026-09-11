@@ -34,6 +34,10 @@ widths, with a real page created, edited, deleted and purged through the
 moved Trash tab. The purge stops at the sudo-mode password prompt, which
 is the intended behaviour for an irreversible action.
 
+The user manual described the old arrangement, so it was corrected in the
+same pass: five pages reworded and five screenshots retaken. A manual that
+documents a layout the product no longer has is worse than no manual.
+
 ### A user manual, written in Tesria (2026-09-11)
 
 A new **Tesria User Manual** space (`MANUAL`): 47 pages covering getting
