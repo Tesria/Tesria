@@ -1,0 +1,38 @@
+Tesria
+Copyright 2026 Brian Rodriguez
+
+This product includes software developed as part of the Tesria project.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy
+of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations
+under the License.
+
+---
+
+Third-party components are distributed under their own licences. The full
+set, with versions, is in `src/web/package-lock.json`, `collab/package-lock.json`
+and the `PackageReference` entries in `src/Api/Api.csproj`; the notable ones are:
+
+  - ASP.NET Core, Entity Framework Core (Microsoft)      Apache-2.0 / MIT
+  - Npgsql, Npgsql.EntityFrameworkCore.PostgreSQL        PostgreSQL Licence
+  - MailKit / MimeKit                                     MIT
+  - Isopoh.Cryptography.Argon2                            CC0-1.0
+  - Otp.NET                                               MIT
+  - SkiaSharp                                             MIT
+  - React, React DOM                                      MIT
+  - TipTap and ProseMirror                                MIT
+  - Yjs, Hocuspocus                                       MIT
+  - Mermaid                                               MIT
+  - KaTeX                                                 MIT
+  - lowlight / highlight.js                               BSD-3-Clause
+  - qrcode                                                MIT
+  - Vite, oxlint                                          MIT
+  - PostgreSQL, pgBackRest, Caddy (deployed images)       PostgreSQL / MIT / Apache-2.0

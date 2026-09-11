@@ -88,6 +88,10 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 // Adding a kind is one class plus one line here — see architecture.md.
 builder.Services.AddScoped<Tesria.Api.Features.Blocks.IDynamicBlockService, Tesria.Api.Features.Blocks.DynamicBlockService>();
 builder.Services.AddScoped<Tesria.Api.Features.Embeds.ILinkPreviewService, Tesria.Api.Features.Embeds.LinkPreviewService>();
+// PDF export (dev-plan 8.1) goes to the Playwright sidecar, which is handed
+// a self-contained document and renders it with no network of its own.
+builder.Services.AddScoped<Tesria.Api.Features.Export.IPdfRenderer, Tesria.Api.Features.Export.PdfRenderer>();
+builder.Services.AddHttpClient("pdf", c => c.Timeout = TimeSpan.FromSeconds(30));
 builder.Services.AddScoped<Tesria.Api.Features.Blocks.IDynamicBlockKind, Tesria.Api.Features.Blocks.Kinds.ChildrenBlock>();
 builder.Services.AddScoped<Tesria.Api.Features.Blocks.IDynamicBlockKind, Tesria.Api.Features.Blocks.Kinds.RecentlyUpdatedBlock>();
 builder.Services.AddScoped<Tesria.Api.Features.Blocks.IDynamicBlockKind, Tesria.Api.Features.Blocks.Kinds.ContentByLabelBlock>();

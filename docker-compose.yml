@@ -86,6 +86,8 @@ services:
       # Fronting the app with a proxy elsewhere? Name that proxy here.
       Proxy__TrustedNetworks: ${PROXY_TRUSTED_NETWORKS:-}
       # Where links in email point. Overridable at runtime in Admin → Settings.
+      Pdf__Endpoint: "http://pdf:8091"
+      Pdf__SharedSecret: ${PDF_SHARED_SECRET:-}
       Site__BaseUrl: "https://${DOMAIN}"
     volumes:
       - uploads:/app/uploads
@@ -156,6 +158,26 @@ services:
       APP_DB_PASSWORD: ${APP_DB_PASSWORD:-}
     expose:
       - "8090"
+
+  pdf:
+    # PDF export (dev-plan 8.1). A real browser engine is the only honest way
+    # to turn the print-ready HTML export into a PDF, and a ~400MB Chromium
+    # has no business inside the app image — so it is a sidecar, like collab.
+    #
+    # It is handed a self-contained document (images inlined, diagrams
+    # carrying their own renderer) and runs with its network switched off,
+    # so rendering never reaches anything.
+    build:
+      context: .
+      dockerfile: pdf/Dockerfile
+    restart: unless-stopped
+    environment:
+      PDF_PORT: 8091
+      PDF_SHARED_SECRET: ${PDF_SHARED_SECRET:-}
+    expose:
+      - "8091"
+    # Chromium wants more than Docker's default 64MB of shared memory.
+    shm_size: 256mb
 
   pgbackrest:
     # Physical backups + PITR (PLAN §5, Layer 1). Same image as db so it has the

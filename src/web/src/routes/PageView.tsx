@@ -100,6 +100,7 @@ export function PageView() {
           <div className="page-actionbar__secondary">
             <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=markdown`}>↓ Markdown</a>
             <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=html`}>↓ HTML</a>
+            <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=pdf`}>↓ PDF</a>
           </div>
         </div>
         <SpaceBreadcrumb space={space} tree={tree} />
@@ -145,13 +146,18 @@ export function PageView() {
             {page.fullWidth ? '⤡ Normal width' : '⤢ Full width'}
           </button>
           <OverflowMenu>
-            {/* Plain links so the browser downloads the file (auth cookie is sent).
-                HTML export is print-ready — use the browser's Print → Save as PDF. */}
+            {/* Plain links so the browser downloads the file (auth cookie is sent). */}
             <a className="btn" href={`/api/pages/${page.id}/export?format=markdown`}>
               ↓ Export as Markdown
             </a>
             <a className="btn" href={`/api/pages/${page.id}/export?format=html`}>
               ↓ Export as HTML
+            </a>
+            {/* Rendered by the PDF sidecar (dev-plan 8.1). Where no sidecar
+                is configured the API answers 503 with the "print the HTML"
+                advice, which is what this used to be. */}
+            <a className="btn" href={`/api/pages/${page.id}/export?format=pdf`}>
+              ↓ Export as PDF
             </a>
             <WatchToggle
               watchKey={page.id}
