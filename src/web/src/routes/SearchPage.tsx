@@ -1,6 +1,30 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api, type SearchResult } from '../api/client'
+
+/**
+ * A search snippet arrives with the matched words wrapped in `**` — plain
+ * text, because the same snippet is served to the MCP tools and to anything
+ * else reading the API, where HTML would be the wrong thing to send.
+ *
+ * The browser is the one caller that should show it as emphasis rather than
+ * as punctuation, so it is un-marked here, at the edge, and never by
+ * dangerouslySetInnerHTML: the snippet is page content, and page content is
+ * not markup this app trusts.
+ */
+function Snippet({ text }: { text: string }) {
+  return (
+    <p className="search-result__snippet">
+      {text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+        part.startsWith('**') && part.endsWith('**') && part.length > 4 ? (
+          <mark key={i}>{part.slice(2, -2)}</mark>
+        ) : (
+          <Fragment key={i}>{part}</Fragment>
+        ),
+      )}
+    </p>
+  )
+}
 
 export function SearchPage() {
   const [params] = useSearchParams()
@@ -46,7 +70,7 @@ export function SearchPage() {
               {r.title}
             </Link>
             <span className="badge">{r.spaceKey}</span>
-            {r.snippet && <p className="search-result__snippet">{r.snippet}</p>}
+            {r.snippet && <Snippet text={r.snippet} />}
           </li>
         ))}
       </ul>

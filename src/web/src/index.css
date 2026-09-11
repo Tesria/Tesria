@@ -368,6 +368,10 @@ label .password-input { margin-top: 0.25rem; }
 .search-result { display: flex; flex-direction: column; gap: 0.2rem; }
 .search-result__title { font-weight: 600; font-size: 1.05rem; margin-right: 0.5rem; }
 .search-result__snippet { margin: 0.15rem 0 0; color: var(--muted); font-size: 0.9rem; }
+/* The words that matched. A tint rather than a highlighter block: a
+   snippet can carry a dozen of these and a page of yellow bars is
+   harder to read than the sentence was. */
+.search-result__snippet mark { background: none; color: var(--text); font-weight: 600; }
 .content { flex: 1; }
 
 /* ---- spaces list --------------------------------------------------------- */
