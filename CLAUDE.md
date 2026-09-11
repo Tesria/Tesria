@@ -77,6 +77,11 @@ one's on a decision it shouldn't be making — either way, silently.
   (masked), `/search`, `/profile` (redirect), `/login`, `/register`,
   `/reset`. Check the console for `Uncaught` after each. "It rendered" is
   not enough for the editor: create, save and purge a real page.
+- **Browser-automation gotcha:** the key name for Enter is `Enter`, not
+  `Return`. `Return` is not a DOM `key` value, so the page sees a keypress
+  that matches nothing — no newline, no menu selection, nothing — and it
+  looks exactly like a broken feature. This wasted a debugging pass on the
+  slash and mention menus, both of which were fine.
 - **Dependency audit is a release gate.** `scripts/audit.sh` runs
   `npm audit` (web + collab) and `dotnet list package --vulnerable
   --include-transitive`; it must exit 0 before a release or after touching

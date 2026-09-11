@@ -5,6 +5,50 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Editor parity Wave C — mentions, emoji, action-item assignees (dev-plan 7, Wave C) (2026-09-10)
+
+- **@mention.** A `mention` inline node carrying the user's id *and* a
+  snapshot of their display name. The id is what the server diffs; the label
+  is what keeps the mention readable in an exported file, in a page version
+  from last year, and after the account is deleted — none of which have a
+  directory to look the name up in. The `@` popup filters a directory
+  fetched once per page load: a self-hosted wiki's user list is small, and a
+  request per keystroke would make the popup lag behind the typing.
+- **On save, newly mentioned people are notified** (`user.mentioned`).
+  *Newly*: the mentions in the version being replaced are subtracted first,
+  so fixing a typo on a page that names ten people does not ping all ten
+  again.
+  **Each recipient is permission-checked first.** The notification carries
+  the page title, so mentioning someone on a page they cannot open would be
+  a way to leak that title. They are told nothing rather than told and then
+  given a 404. This needed a small seam in `PermissionService`
+  (`AsUser(userId)`): the service was written entirely against the request's
+  own identity, and every rule now reads one `UserId` property so an
+  "as user" evaluation cannot fall back to the caller's rights.
+- **`:emoji` suggestion** over a curated list of ~40, inserting the literal
+  character. Nothing enters the schema, the renderer or the search index — an
+  emoji is text that happened to be typed with a picker. Curated rather than
+  the full Unicode table, which is ~1,900 entries with several names each
+  and a real payload for a feature whose job is three keystrokes. Needs two
+  characters after the `:` before it opens, or every colon in a URL or a
+  time would pop a menu.
+- **Action-item assignees.** Typing `@name` in a task assigns it, exactly as
+  Confluence does. The mention is the source of truth; `assigneeId` /
+  `assigneeName` on the `taskItem` are a denormalised copy kept in step by a
+  plugin, so Wave D's Task report can query "assigned to me" instead of
+  walking every page's document tree. Neither the app nor the export draws
+  the name a second time — the mention it came from is already in the item's
+  own text.
+- **Fixed while building it:** all three `@tiptap/suggestion` plugins
+  (slash, mention, emoji) default to one shared plugin key, so adding the
+  second threw "Adding different instances of a keyed plugin" and took the
+  whole editor down with it. Each now has its own.
+
+Verified live: the `@` popup with avatars, insertion by click and by Enter,
+`:roc` → 🚀, and a task picking up its assignee from the mention typed into
+it. The notification path is covered by tests, including one asserting that
+a mention on a restricted page tells the recipient nothing at all.
+
 ### Editor parity Wave B — text colour, scripts, indent (dev-plan 7, Wave B) (2026-09-10)
 
 - **Text colour**, stored as a colour *name* out of eight, not a hex.

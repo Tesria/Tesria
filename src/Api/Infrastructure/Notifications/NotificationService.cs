@@ -29,6 +29,14 @@ public interface INotificationService
     Task NotifyOfNewPageAsync(Guid pageId, Guid spaceId, Guid actorId, object? metadata = null);
 
     /// <summary>
+    /// Queues a notification for one named person, regardless of whether they
+    /// watch anything — used for a direct mention (dev-plan Phase 7 Wave C).
+    /// The caller is responsible for checking that the recipient may see the
+    /// target; this does not.
+    /// </summary>
+    Task NotifyUserAsync(Guid userId, string action, string targetType, Guid targetId, Guid actorId, object? metadata = null);
+
+    /// <summary>
     /// Queues one notification per active administrator (dev-plan 3.3). No
     /// actor: security alerts come from the system, and an admin whose own
     /// action tripped a detector should still hear about it.
@@ -64,6 +72,13 @@ public sealed class NotificationService(AppDbContext db) : INotificationService
     {
         var recipients = await SpaceWatcherIdsAsync(spaceId);
         Enqueue(recipients, "page", pageId, "page.created", actorId, metadata);
+    }
+
+    public Task NotifyUserAsync(
+        Guid userId, string action, string targetType, Guid targetId, Guid actorId, object? metadata = null)
+    {
+        Enqueue([userId], targetType, targetId, action, actorId, metadata);
+        return Task.CompletedTask;
     }
 
     public async Task NotifyAdminsAsync(string action, Guid targetId, object? metadata = null)

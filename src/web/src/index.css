@@ -1732,3 +1732,29 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 
 /* Indent is a `margin-left` written by the schema (textFormatting.ts), so
    there is no rule for it here. */
+
+/* ---- Phase 7 Wave C: mentions, emoji, task assignee --------------------- */
+
+/* Doubled for the same reason the panel rules are — see the note there. */
+.editor__content .mention, .mention {
+  display: inline-block; padding: 0 0.3em; border-radius: 3px;
+  background: var(--primary-soft); color: var(--primary-dark);
+  font-weight: 500; white-space: nowrap; cursor: default;
+}
+.ProseMirror-selectednode.mention { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+/* An action item's assignee is deliberately *not* drawn again: the mention it
+   is derived from is already in the item's own text (taskAssignee.ts), so a
+   second copy would read as the name twice. The attribute exists for Wave D's
+   Task report to query, not for display. The export renderer skips it for the
+   same reason. */
+
+/* The `@` and `:` popups. One line per row, unlike the slash menu's two. */
+.suggest-menu__item {
+  display: flex; align-items: center; gap: 0.5rem; width: 100%; text-align: left;
+  background: none; border: none; border-radius: 4px; padding: 0.3rem 0.5rem; cursor: pointer;
+  font-size: 0.88rem; color: var(--text);
+}
+.suggest-menu__item:hover, .suggest-menu__item.is-selected { background: var(--bg-alt); }
+.suggest-menu__emoji { font-size: 1.1rem; line-height: 1; width: 22px; text-align: center; }
+.suggest-menu__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

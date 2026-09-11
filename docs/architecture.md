@@ -986,6 +986,32 @@ ProseMirror JSON in `PageVersion.ContentJson`.
     markup and a `NodeSelection` does not survive that — it collapses to a
     text cursor, which would close the very menu doing the editing on every
     keystroke.
+- **Mentions, and the permission seam they needed** (dev-plan Phase 7 Wave
+  C). The `mention` node stores the user's id *and* a snapshot of their
+  display name; `Infrastructure/Mentions` reads the ids straight out of the
+  saved document, so there is no mention table to fall out of step with the
+  content. On save, `PageEndpoints` notifies everyone mentioned now who was
+  not mentioned in the version being replaced.
+  **Gotcha:** capture the previous content *before* setting
+  `page.CurrentVersionId` — EF's navigation fix-up repoints
+  `page.CurrentVersion` at the new version, and the diff would then compare
+  the content against itself and never notify anyone.
+  Each recipient is checked with `IPermissionService.AsUser(userId)` before
+  anything is queued, because the notification carries the page title and a
+  mention must not become a way to leak the title of a restricted page.
+  `PermissionService` was written entirely against the request's own
+  identity; `AsUser` adds a `_asUserId` override and every rule now reads a
+  single `UserId` property, so an evaluation for someone else cannot fall
+  back to the caller's rights. It returns a fresh instance because the
+  principal cache is per-user.
+- **All three suggestion plugins need distinct `pluginKey`s.**
+  `@tiptap/suggestion` defaults to one shared `suggestion$`, so a second
+  plugin throws "Adding different instances of a keyed plugin" at editor
+  construction and the whole editor fails to mount. The slash, mention and
+  emoji suggestions each pass their own key; anything added later must too.
+  Everything else about them is shared (`editor/suggest/`): positioning,
+  scroll tracking and outside-click dismissal all come from Suggestion's own
+  managed `mount()` API.
 - **Text colour stores a name, highlight stores a hex** (dev-plan Phase 7
   Wave B). The asymmetry is deliberate. A highlight is a *background*: dark
   mode keeps the text on it readable by pinning the ink (`[data-theme="dark"]
