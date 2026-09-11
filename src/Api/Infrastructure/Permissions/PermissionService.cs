@@ -34,11 +34,36 @@ public interface IPermissionService
     /// </summary>
     Task<bool> IsPubliclyViewablePageAsync(Guid pageId);
     Task<bool> IsPubliclyViewableSpaceAsync(Guid spaceId);
+
+    /// <summary>
+    /// The same rules, evaluated as a *different* user than the one making
+    /// the request. Needed wherever the app acts on someone else's behalf —
+    /// today, deciding whether a mentioned user may be told about the page
+    /// they were mentioned on (dev-plan Phase 7 Wave C), since a notification
+    /// carries the page title and must not leak a restricted one.
+    ///
+    /// Returns a fresh instance: the principal cache is per-user, so reusing
+    /// this one would answer for the wrong person.
+    /// </summary>
+    IPermissionService AsUser(Guid userId);
 }
 
 public sealed class PermissionService(AppDbContext db, CurrentUser current, ISiteSettingsService settings)
     : IPermissionService
 {
+    /// <summary>
+    /// Set only by <see cref="AsUser"/>. Every rule below reads
+    /// <see cref="UserId"/>, never the request's identity directly, so there
+    /// is exactly one place the identity comes from and an "as user"
+    /// evaluation cannot fall back to the caller's own rights.
+    /// </summary>
+    private Guid? _asUserId;
+
+    private Guid? UserId => _asUserId ?? current.Id;
+
+    public IPermissionService AsUser(Guid userId) =>
+        new PermissionService(db, current, settings) { _asUserId = userId };
+
     // -- the anonymous principal (dev-plan 5.1) --------------------------------
     //
     // No session, no token: exactly one capability, reading a public space's
@@ -80,7 +105,7 @@ public sealed class PermissionService(AppDbContext db, CurrentUser current, ISit
     private async Task<HashSet<Guid>> PrincipalsAsync()
     {
         if (_principals is not null) return _principals;
-        var userId = current.Id;
+        var userId = UserId;
         if (userId is null) return _principals = [];
 
         var groupIds = await db.UserGroups.AsNoTracking()
@@ -100,7 +125,7 @@ public sealed class PermissionService(AppDbContext db, CurrentUser current, ISit
 
     private async Task<bool> HasSpaceAsync(Guid spaceId, SpaceOperation required)
     {
-        if (current.Id is null)
+        if (UserId is null)
             return required == SpaceOperation.View && await IsPubliclyViewableSpaceAsync(spaceId);
 
         var grants = await db.SpacePermissions.AsNoTracking()
@@ -123,7 +148,7 @@ public sealed class PermissionService(AppDbContext db, CurrentUser current, ISit
     /// </summary>
     private async Task<bool> HasExplicitSpaceAdminAsync(Guid spaceId)
     {
-        if (current.Id is null) return false;
+        if (UserId is null) return false;
         var principals = await PrincipalsAsync();
         return await db.SpacePermissions.AsNoTracking()
             .AnyAsync(p => p.SpaceId == spaceId
@@ -134,7 +159,7 @@ public sealed class PermissionService(AppDbContext db, CurrentUser current, ISit
     public async Task<HashSet<Guid>> ViewableSpaceIdsAsync()
     {
         var allIds = await db.Spaces.AsNoTracking().Select(s => s.Id).ToListAsync();
-        if (current.Id is null)
+        if (UserId is null)
         {
             if (!await PublicSpacesAllowedAsync()) return [];
             return (await db.Spaces.AsNoTracking().Where(s => s.IsPublic && !s.Archived).Select(s => s.Id).ToListAsync()).ToHashSet();
@@ -162,7 +187,7 @@ public sealed class PermissionService(AppDbContext db, CurrentUser current, ISit
 
     private async Task<bool> HasPageAsync(Guid pageId, PageOperation required)
     {
-        if (current.Id is null)
+        if (UserId is null)
             return required == PageOperation.View && await IsPubliclyViewablePageAsync(pageId);
 
         // Ignore the soft-delete filter so trash/restore checks still resolve.

@@ -338,3 +338,41 @@ export function LayoutPresetIcon({ widths }: { widths: readonly number[] }) {
     </Icon>
   )
 }
+
+
+/** The "A" with a colour bar under it — the standard text-colour affordance. */
+export function TextColorIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 15.5 10 5l5 10.5M6.8 12h6.4" />
+      <path d="M4 20h16" strokeWidth="3" className="text-color-icon__bar" />
+    </svg>
+  )
+}
+
+export function IndentIcon() {
+  return (
+    <Icon>
+      <path d="M4 6h16M10 12h10M10 18h10" />
+      <path d="m3 10 3 2-3 2Z" fill="currentColor" />
+    </Icon>
+  )
+}
+
+export function OutdentIcon() {
+  return (
+    <Icon>
+      <path d="M4 6h16M10 12h10M10 18h10" />
+      <path d="m6 10-3 2 3 2Z" fill="currentColor" />
+    </Icon>
+  )
+}
+
+export function ClearFormattingIcon() {
+  return (
+    <Icon>
+      <path d="M7 6h11M13 6 9.5 18" />
+      <path d="m15 14 5 5M20 14l-5 5" />
+    </Icon>
+  )
+}

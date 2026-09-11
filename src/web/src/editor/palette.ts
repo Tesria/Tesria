@@ -14,7 +14,13 @@
  * rendering with no stylesheet involved.
  */
 
-export type Swatch = { name: string; value: string }
+export type Swatch = {
+  name: string
+  /** What gets stored. A hex for highlights and cell backgrounds; a colour *name* for text colour. */
+  value: string
+  /** The colour to paint the swatch, when `value` is a name rather than a CSS colour. */
+  css?: string
+}
 
 /**
  * Table cell backgrounds — three tiers of seven hues plus white, matching the
@@ -59,4 +65,26 @@ export const CELL_BACKGROUND_TIERS: Swatch[][] = [
 export const HIGHLIGHT_TIERS: Swatch[][] = [
   CELL_BACKGROUND_TIERS[0].slice(2), // drop white/light-grey — invisible as a highlight
   CELL_BACKGROUND_TIERS[1].slice(1),
+]
+
+
+/**
+ * Text ink colours, keyed by the *name* the `textColor` mark stores (see
+ * textColorMark.ts for why a name and not a hex). The swatch itself is
+ * painted with the light-theme value; under the dark theme the same names
+ * resolve to lighter inks via `--text-color-*` in index.css.
+ */
+export const TEXT_COLOR_TIERS: Swatch[][] = [
+  [
+    { name: 'Grey', value: 'grey', css: '#42526e' },
+    { name: 'Blue', value: 'blue', css: '#0747a6' },
+    { name: 'Teal', value: 'teal', css: '#008da6' },
+    { name: 'Green', value: 'green', css: '#006644' },
+  ],
+  [
+    { name: 'Yellow', value: 'yellow', css: '#946f00' },
+    { name: 'Orange', value: 'orange', css: '#b65c02' },
+    { name: 'Red', value: 'red', css: '#bf2600' },
+    { name: 'Purple', value: 'purple', css: '#403294' },
+  ],
 ]

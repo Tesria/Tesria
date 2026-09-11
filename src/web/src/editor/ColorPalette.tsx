@@ -33,7 +33,7 @@ export function ColorPalette({
               key={s.value}
               type="button"
               className={normalized === s.value ? 'swatch is-active' : 'swatch'}
-              style={{ background: s.value }}
+              style={{ background: s.css ?? s.value }}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => onPick(s.value)}
               title={s.name}

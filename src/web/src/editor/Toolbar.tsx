@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import type { Editor as TiptapEditor } from '@tiptap/react'
 import { ToolbarButton } from './ToolbarButton'
 import { HeadingLinkList } from './HeadingLinkList'
@@ -8,10 +8,13 @@ import { InsertMenu, type OverflowAction } from './InsertMenu'
 import { useToolbarOverflow } from './useToolbarOverflow'
 import { useEdgeAlign } from '../hooks/useEdgeAlign'
 import { ColorPalette } from './ColorPalette'
-import { HIGHLIGHT_TIERS } from './palette'
+import { HIGHLIGHT_TIERS, TEXT_COLOR_TIERS } from './palette'
+import { isTextColor } from './textColorMark'
+import { onLinkShortcut } from './linkShortcut'
 import {
   InlineCodeIcon, HighlightIcon, BulletListIcon, OrderedListIcon, TaskListIcon,
   AlignLeftIcon, AlignCenterIcon, AlignRightIcon, LinkIcon,
+  TextColorIcon, IndentIcon, OutdentIcon, ClearFormattingIcon,
 } from './icons'
 
 type Props = {
@@ -51,6 +54,17 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
     setLinkPopoverOpen(true)
   }
 
+  // Cmd/Ctrl+K opens this same popover — see linkShortcut.ts for why the
+  // shortcut calls in rather than going through a command.
+  useEffect(
+    () =>
+      onLinkShortcut(editor, () => {
+        setLinkUrl((editor.getAttributes('link').href as string | undefined) ?? '')
+        setLinkPopoverOpen(true)
+      }),
+    [editor],
+  )
+
   function applyLink() {
     if (linkUrl.trim()) editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl.trim() }).run()
     setLinkPopoverOpen(false)
@@ -58,9 +72,14 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
 
   const chain = () => editor.chain().focus()
 
-  // In the order they leave the row when space runs out: lists and the
-  // link first, then the rarer marks, bold last.
+  // In the order they leave the row when space runs out: the rarest
+  // formatting first, then lists, then the common marks, bold last.
   const collapsible: Collapsible[] = [
+    { key: 'superscript', icon: <span className="tb-glyph">x²</span>, label: 'Superscript', isActive: editor.isActive('superscript'), run: () => chain().toggleSuperscript().run() },
+    { key: 'subscript', icon: <span className="tb-glyph">x₂</span>, label: 'Subscript', isActive: editor.isActive('subscript'), run: () => chain().toggleSubscript().run() },
+    { key: 'outdent', icon: <OutdentIcon />, label: 'Outdent', isActive: false, run: () => chain().outdent().run() },
+    { key: 'indent', icon: <IndentIcon />, label: 'Indent', isActive: false, run: () => chain().indent().run() },
+    { key: 'clear', icon: <ClearFormattingIcon />, label: 'Clear formatting', isActive: false, run: () => chain().clearFormatting().run() },
     { key: 'task', icon: <TaskListIcon />, label: 'Task list', isActive: editor.isActive('taskList'), run: () => chain().toggleTaskList().run() },
     { key: 'ordered', icon: <OrderedListIcon />, label: 'Ordered list', isActive: editor.isActive('orderedList'), run: () => chain().toggleOrderedList().run() },
     { key: 'bullet', icon: <BulletListIcon />, label: 'Bullet list', isActive: editor.isActive('bulletList'), run: () => chain().toggleBulletList().run() },
@@ -152,8 +171,25 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
           )}
         </ToolbarPopover>
       </span>
+      <span data-tb-fixed="textcolor">
+        <ToolbarPopover icon={<TextColorIcon />} title="Text colour" isActive={editor.isActive('textColor')}>
+          {(close) => (
+            <ColorPalette
+              tiers={TEXT_COLOR_TIERS}
+              current={isTextColor(editor.getAttributes('textColor').color) ? editor.getAttributes('textColor').color : null}
+              onPick={(color) => { if (isTextColor(color)) chain().setTextColor(color).run(); close() }}
+              onClear={() => { chain().unsetTextColor().run(); close() }}
+              clearLabel="Default colour"
+            />
+          )}
+        </ToolbarPopover>
+      </span>
       {sep('sep-lists', ['bullet', 'ordered', 'task'])}
       {['bullet', 'ordered', 'task'].map(item)}
+      {sep('sep-indent', ['outdent', 'indent'])}
+      {['outdent', 'indent'].map(item)}
+      {sep('sep-script', ['subscript', 'superscript', 'clear'])}
+      {['subscript', 'superscript', 'clear'].map(item)}
       <span className="toolbar__sep" />
       <span data-tb-fixed="align">
         <ToolbarDropdown

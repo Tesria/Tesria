@@ -329,15 +329,57 @@ public class ProseMirrorRendererTests
         Assert.Contains("<mark>highlighted</mark>", md);
         Assert.DoesNotContain("text-align", md); // no Markdown alignment concept — intentionally dropped
     }
-}
+    // -- Phase 7 Wave B formatting -------------------------------------------
 
-public class ExportEndpointTests
-{
-    private record PageDetail(Guid Id, Guid SpaceId, string Title);
-
-    private const string Doc = """
-    {"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"hello export"}]}]}
+    private const string InkAndIndentDoc = """
+    {"type":"doc","content":[
+      {"type":"paragraph","attrs":{"textIndent":2,"textAlign":"center"},"content":[
+        {"type":"text","marks":[{"type":"textColor","attrs":{"color":"red"}}],"text":"warning"},
+        {"type":"text","text":" H"},
+        {"type":"text","marks":[{"type":"subscript"}],"text":"2"},
+        {"type":"text","text":"O and x"},
+        {"type":"text","marks":[{"type":"superscript"}],"text":"2"}]},
+      {"type":"heading","attrs":{"level":2,"textIndent":9},"content":[{"type":"text","text":"Deep"}]},
+      {"type":"paragraph","attrs":{"textIndent":"3; position: fixed"},"content":[
+        {"type":"text","marks":[{"type":"textColor","attrs":{"color":"chartreuse; background: url(x)"}}],"text":"hostile"}]}
+    ]}
     """;
+
+    [Fact]
+    public void Renders_text_colour_scripts_and_indent_as_html()
+    {
+        var html = ProseMirrorRenderer.ToHtml(InkAndIndentDoc);
+        Assert.Contains("<span style=\"color: #bf2600\">warning</span>", html);
+        Assert.Contains("<sub>2</sub>", html);
+        Assert.Contains("<sup>2</sup>", html);
+        Assert.Contains("<p style=\"text-align: center; margin-left: 3.5rem\">", html);
+    }
+
+    [Fact]
+    public void Clamps_indent_and_falls_back_on_an_unknown_text_colour()
+    {
+        var html = ProseMirrorRenderer.ToHtml(InkAndIndentDoc);
+        // 9 levels is clamped to the editor's own maximum of 4 (4 x 1.75rem).
+        Assert.Contains("margin-left: 7rem", html);
+        Assert.DoesNotContain("15.75rem", html);
+        // The mark stores a colour *name*, so nothing from the document ever
+        // reaches the style attribute — an unknown name renders as grey.
+        Assert.DoesNotContain("chartreuse", html);
+        Assert.DoesNotContain("url(x)", html);
+        Assert.DoesNotContain("position: fixed", html);
+        Assert.Contains("<span style=\"color: #42526e\">hostile</span>", html);
+    }
+
+    [Fact]
+    public void Renders_text_colour_and_scripts_as_raw_html_in_markdown_and_drops_indent()
+    {
+        var md = ProseMirrorRenderer.ToMarkdown(InkAndIndentDoc);
+        Assert.Contains("<span style=\"color: #bf2600\">warning</span>", md);
+        Assert.Contains("H<sub>2</sub>O", md);
+        Assert.Contains("x<sup>2</sup>", md);
+        // Markdown has no block indent to carry it into.
+        Assert.DoesNotContain("margin-left", md);
+    }
 
     // -- Phase 7 Wave A structural blocks ------------------------------------
 
@@ -411,7 +453,7 @@ public class ExportEndpointTests
     [Fact]
     public void Markdown_headings_carry_no_anchor_when_nothing_links_to_them()
     {
-        var md = ProseMirrorRenderer.ToMarkdown(Doc);
+        var md = ProseMirrorRenderer.ToMarkdown(Rich);
         Assert.DoesNotContain("<a id=", md);
     }
 
@@ -439,6 +481,16 @@ public class ExportEndpointTests
         Assert.Contains("flex: 1 1 0%", html);
         Assert.DoesNotContain("flex: 500", html);
     }
+
+}
+
+public class ExportEndpointTests
+{
+    private record PageDetail(Guid Id, Guid SpaceId, string Title);
+
+    private const string Doc = """
+    {"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"hello export"}]}]}
+    """;
 
     private static async Task<(TestAppFactory, HttpClient, PageDetail)> NewClientWithPage()
     {

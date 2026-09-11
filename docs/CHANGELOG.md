@@ -5,6 +5,47 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Editor parity Wave B — text colour, scripts, indent (dev-plan 7, Wave B) (2026-09-10)
+
+- **Text colour**, stored as a colour *name* out of eight, not a hex.
+  Highlight can afford a hex because it is a background and the ink on top
+  is pinned per theme; coloured *text* has no such escape — a hex dark
+  enough to read on white is invisible on this app's dark background, and no
+  CSS rule can lighten a colour it cannot see. A name can be re-pointed per
+  theme (`--text-color-*`), which is what makes the feature work in dark
+  mode at all, and it also means nothing from the document can reach a
+  `style` attribute. The export renderer inlines the light-theme ink.
+- **Subscript and superscript** (`Mod-,` / `Mod-.`), exporting as
+  `<sub>`/`<sup>` in HTML and as raw HTML in Markdown, which most renderers
+  pass through.
+- **Indent / outdent** (`Mod-]` / `Mod-[`), as a `textIndent` attribute on
+  the paragraph or heading rather than a wrapper node — an indent is a
+  property of the block, and a wrapper would fight list lifting. Capped at
+  four levels, and the rendered `margin-left` is computed from the clamped
+  integer on both sides, never echoed from the document. `Tab` is
+  deliberately untouched: it already moves between table cells and nests
+  list items.
+- **Clear formatting** (`Mod-\`) strips marks, indent and alignment, and
+  turns a heading back into body text — but deliberately *not*
+  `clearNodes()`, which would also unwrap a list, a panel or a layout
+  column. That is a structural edit, not a formatting one.
+- **Shortcut audit against Confluence's set.** Everything it lists was
+  already bound by StarterKit, TextAlign or Highlight — headings
+  (`Mod-Alt-1…6`), normal text (`Mod-Alt-0`), lists (`Mod-Shift-7/8/9`),
+  alignment (`Mod-Shift-l/e/r`), highlight (`Mod-Shift-h`), strike
+  (`Mod-Shift-s`) — with one real gap: **`Mod-K` for links**, now bound. It
+  opens the toolbar's link popover rather than editing the document, so the
+  shortcut calls its subscriber directly instead of faking a transaction to
+  get a React re-render (`linkShortcut.ts`).
+- `@tiptap/extension-subscript` and `-superscript` added;
+  `@tiptap/extension-text-style` was installed and then removed once text
+  colour became a name-keyed mark of its own. `scripts/audit.sh` clean.
+
+Verified live in both themes: every colour legible on each, indent clamping
+at four levels under repeated presses, clear formatting leaving status and
+date atoms and the paragraph itself intact, and `Cmd+K` opening the link
+popover with the heading list.
+
 ### Editor parity Wave A — structural blocks (dev-plan 7, Wave A) (2026-09-10)
 
 Seven of Confluence's structural elements, in the editor, the reading view

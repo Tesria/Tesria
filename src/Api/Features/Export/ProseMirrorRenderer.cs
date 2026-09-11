@@ -114,17 +114,17 @@ public static class ProseMirrorRenderer
                 sb.Append(ApplyHtmlMarks(node));
                 break;
             case "paragraph":
-                var pAlign = Attr(node, "textAlign");
-                sb.Append(pAlign is null ? "<p>" : $"<p style=\"text-align: {Escape(pAlign)}\">");
+                var pStyle = BlockStyle(node);
+                sb.Append(pStyle is null ? "<p>" : $"<p style=\"{pStyle}\">");
                 RenderHtmlChildren(node, sb, ctx); sb.Append("</p>\n");
                 break;
             case "heading":
                 var level = Attr(node, "level") ?? "1";
-                var hAlign = Attr(node, "textAlign");
+                var hStyle = BlockStyle(node);
                 var anchor = ctx.NextHeading();
                 sb.Append($"<h{level}");
                 if (anchor is not null) sb.Append($" id=\"{Escape(anchor.Id)}\"");
-                if (hAlign is not null) sb.Append($" style=\"text-align: {Escape(hAlign)}\"");
+                if (hStyle is not null) sb.Append($" style=\"{hStyle}\"");
                 sb.Append('>');
                 RenderHtmlChildren(node, sb, ctx); sb.Append($"</h{level}>\n");
                 break;
@@ -257,6 +257,9 @@ public static class ProseMirrorRenderer
                 "strike" => $"<s>{text}</s>",
                 "code" => $"<code>{text}</code>",
                 "highlight" => HighlightHtml(mark, text),
+                "textColor" => $"<span style=\"color: {TextColors[TextColorOf(mark)]}\">{text}</span>",
+                "subscript" => $"<sub>{text}</sub>",
+                "superscript" => $"<sup>{text}</sup>",
                 "link" => $"<a href=\"{Escape(Attr(mark, "href") ?? "#")}\" rel=\"noreferrer\">{text}</a>",
                 _ => text,
             };
@@ -540,12 +543,66 @@ public static class ProseMirrorRenderer
                 // GFM has no native highlight syntax; most renderers pass inline
                 // raw HTML through untouched, so this degrades gracefully.
                 "highlight" => HighlightHtml(mark, text),
+                // GFM has no syntax for any of these three; most renderers
+                // pass inline raw HTML through untouched, so they degrade.
+                "textColor" => $"<span style=\"color: {TextColors[TextColorOf(mark)]}\">{text}</span>",
+                "subscript" => $"<sub>{text}</sub>",
+                "superscript" => $"<sup>{text}</sup>",
                 "link" => $"[{text}]({Attr(mark, "href") ?? "#"})",
                 _ => text,
             };
         }
         return text;
     }
+
+    // -- Phase 7 Wave B formatting ----------------------------------------------
+
+    /// <summary>
+    /// Light-theme ink per colour name, matching index.css's
+    /// <c>--text-color-*</c>. The mark stores a name, never a colour value
+    /// (see textColorMark.ts), so nothing from the document can reach a
+    /// style attribute — an unknown name falls back to grey.
+    /// </summary>
+    private static readonly Dictionary<string, string> TextColors = new()
+    {
+        ["grey"] = "#42526e",
+        ["blue"] = "#0747a6",
+        ["teal"] = "#008da6",
+        ["green"] = "#006644",
+        ["yellow"] = "#946f00",
+        ["orange"] = "#b65c02",
+        ["red"] = "#bf2600",
+        ["purple"] = "#403294",
+    };
+
+    private static string TextColorOf(JsonElement mark)
+    {
+        var color = Attr(mark, "color");
+        return color is not null && TextColors.ContainsKey(color) ? color : "grey";
+    }
+
+    /// <summary>
+    /// A block's alignment and indent as one inline style, or null when it
+    /// has neither. The indent is recomputed from a clamped integer — never
+    /// echoed from the document — the same rule textFormatting.ts follows.
+    /// </summary>
+    private static string? BlockStyle(JsonElement node)
+    {
+        var parts = new List<string>();
+        var align = Attr(node, "textAlign");
+        if (align is "left" or "center" or "right" or "justify") parts.Add($"text-align: {align}");
+        if (int.TryParse(Attr(node, "textIndent"), out var raw))
+        {
+            var level = Math.Clamp(raw, 0, MaxIndent);
+            if (level > 0)
+                parts.Add($"margin-left: {(level * IndentStepRem).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}rem");
+        }
+        return parts.Count == 0 ? null : string.Join("; ", parts);
+    }
+
+    /// <summary>Kept in step with textFormatting.ts's MAX_INDENT / INDENT_STEP_REM.</summary>
+    private const int MaxIndent = 4;
+    private const double IndentStepRem = 1.75;
 
     // -- Phase 7 Wave A blocks --------------------------------------------------
 
