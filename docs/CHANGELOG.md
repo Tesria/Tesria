@@ -29,10 +29,18 @@ admin area uses, reached by one sidebar entry pinned to the bottom above
 a rule. The old URLs redirect, so bookmarks and links written into pages
 still land in the right place.
 
-Walked as a member, as an admin and signed out, at desktop and phone
-widths, with a real page created, edited, deleted and purged through the
-moved Trash tab. The purge stops at the sudo-mode password prompt, which
-is the intended behaviour for an irreversible action.
+Walked as a signed-in member and signed out, at desktop and phone widths,
+across every space route plus search, labels, profile and the admin
+refusal — no uncaught errors on any of them. A real page was created,
+edited, deleted and purged through the moved Trash tab; the purge stops
+at the sudo-mode password prompt, which is the intended behaviour for an
+irreversible action.
+
+**Not** walked as an instance administrator: that needs an administrator's
+password, which this assistant does not have and should not be typing.
+Nothing under `/admin` was touched by this change — the route tree that
+moved is entirely under `spaces/:key` — but the admin tabs are worth a
+glance from someone who can sign in as one.
 
 The user manual described the old arrangement, so it was corrected in the
 same pass: five pages reworded and five screenshots retaken. A manual that
