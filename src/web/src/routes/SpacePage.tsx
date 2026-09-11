@@ -6,6 +6,7 @@ import { OverflowMenu } from '../components/OverflowMenu'
 import { PageTree } from '../components/PageTree'
 import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
 import { SpaceIcon } from '../components/SpaceIcon'
+import { SettingsIcon, PermissionsIcon, WebhooksIcon, TrashIcon } from '../components/NavIcons'
 
 export type SpaceOutletContext = {
   space: Space
@@ -110,10 +111,10 @@ export function SpacePage() {
               + New
             </NavLink>
             <OverflowMenu label="Space actions">
-              <NavLink to={`/spaces/${space.key}/settings`} className="btn">⚙ Settings</NavLink>
-            <NavLink to={`/spaces/${space.key}/permissions`} className="btn">🔒 Permissions</NavLink>
-              <NavLink to={`/spaces/${space.key}/webhooks`} className="btn">🪝 Webhooks</NavLink>
-              <NavLink to={`/spaces/${space.key}/trash`} className="btn">🗑 Trash</NavLink>
+              <NavLink to={`/spaces/${space.key}/settings`} className="btn"><SettingsIcon /> Settings</NavLink>
+              <NavLink to={`/spaces/${space.key}/permissions`} className="btn"><PermissionsIcon /> Permissions</NavLink>
+              <NavLink to={`/spaces/${space.key}/webhooks`} className="btn"><WebhooksIcon /> Webhooks</NavLink>
+              <NavLink to={`/spaces/${space.key}/trash`} className="btn"><TrashIcon /> Trash</NavLink>
             </OverflowMenu>
           </div>
         )}
@@ -141,25 +142,25 @@ export function SpacePage() {
           to={`/spaces/${space.key}/settings`}
           className={({ isActive }) => (isActive ? 'sidebar__trash is-active' : 'sidebar__trash')}
         >
-          ⚙ Settings
+          <SettingsIcon /> Settings
         </NavLink>
         <NavLink
           to={`/spaces/${space.key}/permissions`}
           className={({ isActive }) => (isActive ? 'sidebar__trash is-active' : 'sidebar__trash')}
         >
-          🔒 Permissions
+          <PermissionsIcon /> Permissions
         </NavLink>
         <NavLink
           to={`/spaces/${space.key}/webhooks`}
           className={({ isActive }) => (isActive ? 'sidebar__trash is-active' : 'sidebar__trash')}
         >
-          🪝 Webhooks
+          <WebhooksIcon /> Webhooks
         </NavLink>
         <NavLink
           to={`/spaces/${space.key}/trash`}
           className={({ isActive }) => (isActive ? 'sidebar__trash is-active' : 'sidebar__trash')}
         >
-          🗑 Trash
+          <TrashIcon /> Trash
         </NavLink>
         </>)}
       </aside>

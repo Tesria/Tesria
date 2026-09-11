@@ -5,6 +5,27 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### The space sidebar's emoji are now drawn icons (2026-09-11)
+
+`📑 ⚙ 🔒 🪝 🗑` were the only pictures in the app the app did not draw
+itself: full-colour glyphs, a different weight and shape on every
+platform, and no relationship to the chosen accent.
+
+`NavIcons.tsx` replaces them with five outline SVGs in the same language
+as `BrandMark` and the editor's icon set — 24×24 box, 1.8px stroke, round
+caps and joins, `fill: none`. Everything is `currentColor`, so `.nav-icon`
+points them at `--primary` and they follow the theme *and* the accent for
+free, the same trick `.brand__mark` already used. Verified live across all
+six accents.
+
+Two of the drawings are decisions rather than transcriptions. **Webhooks**
+is one event fanning out to two subscribers, not a hook: a hook says
+nothing about what a webhook does, and does not survive 16px. **Pages**
+started as the brand's rhombus without its stack and was changed to a
+plain sheet with a folded corner — the rhombus read as a shape, not as a
+document; it means something in the logo, where the stack gives it
+context, and nothing beside a page tree.
+
 ### Retrieval: snippets that show the match, sections, and a score (2026-09-11)
 
 Groundwork for using the MCP server (8.4) as a context source, and a

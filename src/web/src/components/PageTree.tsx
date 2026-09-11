@@ -11,6 +11,7 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, arrayMove, useSortable } from '@dnd-kit/sortable'
 import { api, type PageTreeNode } from '../api/client'
+import { PagesIcon } from './NavIcons'
 
 /** The chain of nodes from a root page down to (and including) `pageId`, or
  *  null if it isn't in this tree — e.g. a trashed page, or the tree hasn't
@@ -260,7 +261,7 @@ export function PageTree({
 
   const heading = (
     <div className="tree-section__heading">
-      <span>📑 Pages</span>
+      <span><PagesIcon /> Pages</span>
       {tree.length > 0 && (
         editMode ? (
           <span className="tree-section__actions">
