@@ -648,6 +648,12 @@ it, and others can host their own copy publicly too.
 
 ## Phase 7 — Editor parity with Confluence (the audit)
 
+> **Scope added 2026-09-10 (done first):** editor chrome to match
+> Confluence — a borderless, continuous page and title; a single-row,
+> edge-to-edge toolbar; block elements behind a **+ Insert** menu that
+> shares the slash catalogue; measured overflow into that menu instead of
+> wrapping. See the CHANGELOG entry.
+
 The catalogue below is from Atlassian's own Confluence Cloud documentation
 ("Add elements to a page", the macro index, the formatting guide and the
 layouts doc), checked against `extensions.ts`. Each wave is independently

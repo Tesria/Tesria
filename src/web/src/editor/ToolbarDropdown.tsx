@@ -16,14 +16,13 @@ export type ToolbarDropdownOption = {
 const MENU_WIDTH_PX = 160
 
 /**
- * Mobile-only collapsed form of a run of related toolbar buttons (heading
- * levels, list types, alignment). Always mounted alongside its flat
- * button-row equivalent; index.css's `.toolbar-dropdown`/`--flat` rules pick
- * one or the other via `display: none` at `--bp-mobile`, matching this
- * codebase's existing CSS-only responsive convention (see Layout.tsx's
- * hamburger nav) rather than a JS viewport check.
+ * A toolbar dropdown for a set of mutually exclusive choices — text style
+ * and alignment. Shown at every width since the one-row toolbar rebuild:
+ * a dropdown is how Confluence presents these too, and it is what keeps the
+ * row short enough never to wrap. `showLabel` renders the active choice's
+ * name beside its icon (the text-style control reads "Heading 2", not "H2").
  */
-export function ToolbarDropdown({ title, options }: { title: string; options: ToolbarDropdownOption[] }) {
+export function ToolbarDropdown({ title, options, showLabel = false }: { title: string; options: ToolbarDropdownOption[]; showLabel?: boolean }) {
   const [open, setOpen] = useState(false)
   const [alignRight, setAlignRight] = useState(false)
   const ref = useDismissable<HTMLDivElement>(open, () => setOpen(false))
@@ -62,6 +61,7 @@ export function ToolbarDropdown({ title, options }: { title: string; options: To
         title={title}
       >
         {active.icon}
+        {showLabel && <span className="toolbar-dropdown__label">{active.label}</span>}
         <ChevronDownIcon />
       </button>
       {open && (

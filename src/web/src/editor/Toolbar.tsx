@@ -1,50 +1,49 @@
-import { useState, type ChangeEvent, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { Editor as TiptapEditor } from '@tiptap/react'
-import { uploadAndInsertImage } from './imageUpload'
 import { ToolbarButton } from './ToolbarButton'
 import { ToolbarDropdown } from './ToolbarDropdown'
-import { useEdgeAlign } from '../hooks/useEdgeAlign'
 import { ToolbarPopover } from './ToolbarPopover'
+import { InsertMenu, type OverflowAction } from './InsertMenu'
+import { useToolbarOverflow } from './useToolbarOverflow'
+import { useEdgeAlign } from '../hooks/useEdgeAlign'
 import { ColorPalette } from './ColorPalette'
 import { HIGHLIGHT_TIERS } from './palette'
-import { PANEL_TYPES, PANEL_LABELS, type PanelType } from './panelExtension'
 import {
-  InlineCodeIcon, HighlightIcon, BulletListIcon, OrderedListIcon, TaskListIcon, BlockquoteIcon,
-  CodeBlockIcon, TableIcon, ImageIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, LinkIcon,
-  PanelIcon, InfoPanelIcon, NotePanelIcon, SuccessPanelIcon, WarningPanelIcon, ErrorPanelIcon,
+  InlineCodeIcon, HighlightIcon, BulletListIcon, OrderedListIcon, TaskListIcon,
+  AlignLeftIcon, AlignCenterIcon, AlignRightIcon, LinkIcon,
 } from './icons'
-
-const PANEL_ICONS: Record<PanelType, ReactNode> = {
-  info: <InfoPanelIcon />,
-  note: <NotePanelIcon />,
-  success: <SuccessPanelIcon />,
-  warning: <WarningPanelIcon />,
-  error: <ErrorPanelIcon />,
-}
 
 type Props = {
   editor: TiptapEditor
-  /** Resolves the page id image attachments should be uploaded against. Omit to hide the image button. */
+  /** Resolves the page id image attachments should be uploaded against. Omit to hide the image item. */
   getUploadPageId?: () => Promise<string>
   onUploadError?: (message: string) => void
 }
 
-/** Formatting controls, shared by the single-user and collaborative editors. */
+/** A formatting control that can leave the row for the Insert menu's "More" section when space runs out. */
+type Collapsible = { key: string; icon: ReactNode; label: string; isActive: boolean; run: () => void }
+
+/**
+ * The editing toolbar: one row, edge to edge, never wrapping — the shape of
+ * Confluence's. Text style and alignment are dropdowns (not runs of buttons),
+ * block elements live behind "+ Insert", and whatever formatting buttons
+ * still do not fit at a given width are moved into that menu by measurement
+ * (`useToolbarOverflow`) rather than pushed onto a second line.
+ *
+ * Shared by the single-user and collaborative editors. The upload plumbing
+ * is passed through to the slash catalogue's Image item, which is what the
+ * Insert menu calls.
+ */
 export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
   const [linkPopoverOpen, setLinkPopoverOpen] = useState(false)
   const [linkUrl, setLinkUrl] = useState('')
   const linkAlign = useEdgeAlign<HTMLFormElement>(linkPopoverOpen)
 
-  async function onPickImage(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file || !getUploadPageId) return
-    try {
-      await uploadAndInsertImage(editor, file, getUploadPageId)
-    } catch (err) {
-      onUploadError?.(err instanceof Error ? err.message : 'Image upload failed.')
-    }
-  }
+  // The slash catalogue's Image item reads these from editor.storage; the
+  // Editor components set them, so nothing to do here beyond noting that
+  // getUploadPageId/onUploadError are consumed there.
+  void getUploadPageId
+  void onUploadError
 
   function openLinkPopover() {
     setLinkUrl((editor.getAttributes('link').href as string | undefined) ?? '')
@@ -56,141 +55,117 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
     setLinkPopoverOpen(false)
   }
 
-  const btn = (label: ReactNode, isActive: boolean, onClick: () => void, title: string) => (
-    <ToolbarButton label={label} isActive={isActive} onClick={onClick} title={title} />
-  )
-  return (
-    <div className="toolbar">
-      {btn(<span className="tb-glyph tb-bold">B</span>, editor.isActive('bold'), () => editor.chain().focus().toggleBold().run(), 'Bold')}
-      {btn(<span className="tb-glyph tb-italic">I</span>, editor.isActive('italic'), () => editor.chain().focus().toggleItalic().run(), 'Italic')}
-      {btn(<span className="tb-glyph tb-underline">U</span>, editor.isActive('underline'), () => editor.chain().focus().toggleUnderline().run(), 'Underline')}
-      {btn(<span className="tb-glyph tb-strike">S</span>, editor.isActive('strike'), () => editor.chain().focus().toggleStrike().run(), 'Strikethrough')}
-      {btn(<InlineCodeIcon />, editor.isActive('code'), () => editor.chain().focus().toggleCode().run(), 'Inline code')}
-      <ToolbarPopover icon={<HighlightIcon />} title="Highlight colour" isActive={editor.isActive('highlight')}>
-        {(close) => (
-          <ColorPalette
-            tiers={HIGHLIGHT_TIERS}
-            current={editor.getAttributes('highlight').color as string | undefined}
-            onPick={(color) => {
-              editor.chain().focus().setHighlight({ color }).run()
-              close()
+  const chain = () => editor.chain().focus()
+
+  // In the order they leave the row when space runs out: lists and the
+  // link first, then the rarer marks, bold last.
+  const collapsible: Collapsible[] = [
+    { key: 'task', icon: <TaskListIcon />, label: 'Task list', isActive: editor.isActive('taskList'), run: () => chain().toggleTaskList().run() },
+    { key: 'ordered', icon: <OrderedListIcon />, label: 'Ordered list', isActive: editor.isActive('orderedList'), run: () => chain().toggleOrderedList().run() },
+    { key: 'bullet', icon: <BulletListIcon />, label: 'Bullet list', isActive: editor.isActive('bulletList'), run: () => chain().toggleBulletList().run() },
+    { key: 'code', icon: <InlineCodeIcon />, label: 'Inline code', isActive: editor.isActive('code'), run: () => chain().toggleCode().run() },
+    { key: 'strike', icon: <span className="tb-glyph tb-strike">S</span>, label: 'Strikethrough', isActive: editor.isActive('strike'), run: () => chain().toggleStrike().run() },
+    { key: 'underline', icon: <span className="tb-glyph tb-underline">U</span>, label: 'Underline', isActive: editor.isActive('underline'), run: () => chain().toggleUnderline().run() },
+    { key: 'italic', icon: <span className="tb-glyph tb-italic">I</span>, label: 'Italic', isActive: editor.isActive('italic'), run: () => chain().toggleItalic().run() },
+    { key: 'bold', icon: <span className="tb-glyph tb-bold">B</span>, label: 'Bold', isActive: editor.isActive('bold'), run: () => chain().toggleBold().run() },
+  ]
+  // The link button is never collapsed: its popover anchors to the button,
+  // so a hidden button would mean a popover that cannot appear.
+  // Measurement order is "first to go, first in the list"; display order is the reverse.
+  const { containerRef, overflowed } = useToolbarOverflow(collapsible.map((c) => c.key))
+  const byKey = new Map(collapsible.map((c) => [c.key, c]))
+  const show = (key: string) => !overflowed.has(key)
+  const overflowActions: OverflowAction[] = collapsible.filter((c) => overflowed.has(c.key))
+
+  const item = (key: string) => {
+    const c = byKey.get(key)!
+    return (
+      <span key={key} data-tb-item={key} className={show(key) ? 'tb-item' : 'tb-item tb-item--hidden'}>
+        <ToolbarButton label={c.icon} isActive={c.isActive} onClick={c.run} title={c.label} />
+      </span>
+    )
+  }
+
+  const linkControl = (
+    <div className="toolbar__link" data-tb-fixed="link">
+      <ToolbarButton label={<LinkIcon />} isActive={editor.isActive('link')} onClick={openLinkPopover} title="Link" />
+      {linkPopoverOpen && (
+        <form
+          ref={linkAlign.ref}
+          className="toolbar__link-popover"
+          style={{ left: linkAlign.offsetLeft }}
+          onSubmit={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            applyLink()
+          }}
+        >
+          <input
+            autoFocus
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            placeholder="https://…"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setLinkPopoverOpen(false)
             }}
-            onClear={() => {
-              editor.chain().focus().unsetHighlight().run()
-              close()
-            }}
-            clearLabel="No highlight"
           />
-        )}
-      </ToolbarPopover>
-      <span className="toolbar__sep" />
-      {/* Heading, list-type, and alignment groups each render twice: a flat
-          row (desktop) and a collapsed dropdown (mobile, --bp-mobile). CSS
-          picks one via display:none — see .toolbar-dropdown/--flat in
-          index.css — so this isn't duplicated by mistake. */}
-      <div className="toolbar__flat">
-        {btn(<span className="tb-glyph">H1</span>, editor.isActive('heading', { level: 1 }), () => editor.chain().focus().toggleHeading({ level: 1 }).run(), 'Heading 1')}
-        {btn(<span className="tb-glyph">H2</span>, editor.isActive('heading', { level: 2 }), () => editor.chain().focus().toggleHeading({ level: 2 }).run(), 'Heading 2')}
-        {btn(<span className="tb-glyph">H3</span>, editor.isActive('heading', { level: 3 }), () => editor.chain().focus().toggleHeading({ level: 3 }).run(), 'Heading 3')}
-      </div>
-      <ToolbarDropdown
-        title="Heading"
-        options={[
-          { key: 'h1', label: 'Heading 1', icon: <span className="tb-glyph">H1</span>, isActive: editor.isActive('heading', { level: 1 }), onSelect: () => editor.chain().focus().toggleHeading({ level: 1 }).run() },
-          { key: 'h2', label: 'Heading 2', icon: <span className="tb-glyph">H2</span>, isActive: editor.isActive('heading', { level: 2 }), onSelect: () => editor.chain().focus().toggleHeading({ level: 2 }).run() },
-          { key: 'h3', label: 'Heading 3', icon: <span className="tb-glyph">H3</span>, isActive: editor.isActive('heading', { level: 3 }), onSelect: () => editor.chain().focus().toggleHeading({ level: 3 }).run() },
-        ]}
-      />
-      <span className="toolbar__sep" />
-      <div className="toolbar__flat">
-        {btn(<BulletListIcon />, editor.isActive('bulletList'), () => editor.chain().focus().toggleBulletList().run(), 'Bullet list')}
-        {btn(<OrderedListIcon />, editor.isActive('orderedList'), () => editor.chain().focus().toggleOrderedList().run(), 'Ordered list')}
-        {btn(<TaskListIcon />, editor.isActive('taskList'), () => editor.chain().focus().toggleTaskList().run(), 'Task list')}
-      </div>
-      <ToolbarDropdown
-        title="List"
-        options={[
-          { key: 'bullet', label: 'Bullet list', icon: <BulletListIcon />, isActive: editor.isActive('bulletList'), onSelect: () => editor.chain().focus().toggleBulletList().run() },
-          { key: 'ordered', label: 'Ordered list', icon: <OrderedListIcon />, isActive: editor.isActive('orderedList'), onSelect: () => editor.chain().focus().toggleOrderedList().run() },
-          { key: 'task', label: 'Task list', icon: <TaskListIcon />, isActive: editor.isActive('taskList'), onSelect: () => editor.chain().focus().toggleTaskList().run() },
-        ]}
-      />
-      {btn(<BlockquoteIcon />, editor.isActive('blockquote'), () => editor.chain().focus().toggleBlockquote().run(), 'Blockquote')}
-      <ToolbarPopover icon={<PanelIcon />} title="Panel" isActive={editor.isActive('panel')}>
-        {(close) => (
-          <div className="toolbar__popover-list">
-            {PANEL_TYPES.map((type) => (
-              <button
-                key={type}
-                type="button"
-                className={
-                  editor.isActive('panel', { panelType: type })
-                    ? `toolbar-dropdown__item panel-option panel-option--${type} is-active`
-                    : `toolbar-dropdown__item panel-option panel-option--${type}`
-                }
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  editor.chain().focus().togglePanel(type).run()
-                  close()
-                }}
-              >
-                {PANEL_ICONS[type]}
-                <span>{PANEL_LABELS[type]}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </ToolbarPopover>
-      {btn(<CodeBlockIcon />, editor.isActive('codeBlock'), () => editor.chain().focus().toggleCodeBlock().run(), 'Code block')}
-      {btn(<TableIcon />, editor.isActive('table'), () =>
-        editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(), 'Insert table')}
-      {getUploadPageId && (
-        <label className="toolbar__btn upload-btn" title="Insert image">
-          <ImageIcon />
-          <input type="file" accept="image/*" hidden onChange={onPickImage} />
-        </label>
+          <button type="submit" className="link-btn">Apply</button>
+        </form>
       )}
+    </div>
+  )
+
+  const sep = (key: string, after: string[]) =>
+    after.some(show) ? <span key={key} className="toolbar__sep" /> : null
+
+  const headingLevel = [1, 2, 3].find((l) => editor.isActive('heading', { level: l }))
+
+  return (
+    <div className="toolbar" ref={containerRef}>
+      <span data-tb-fixed="style">
+        <ToolbarDropdown
+          title="Text style"
+          showLabel
+          options={[
+            { key: 'p', label: 'Normal text', icon: <span className="tb-glyph">¶</span>, isActive: !headingLevel, onSelect: () => chain().setParagraph().run() },
+            { key: 'h1', label: 'Heading 1', icon: <span className="tb-glyph">H1</span>, isActive: headingLevel === 1, onSelect: () => chain().toggleHeading({ level: 1 }).run() },
+            { key: 'h2', label: 'Heading 2', icon: <span className="tb-glyph">H2</span>, isActive: headingLevel === 2, onSelect: () => chain().toggleHeading({ level: 2 }).run() },
+            { key: 'h3', label: 'Heading 3', icon: <span className="tb-glyph">H3</span>, isActive: headingLevel === 3, onSelect: () => chain().toggleHeading({ level: 3 }).run() },
+          ]}
+        />
+      </span>
       <span className="toolbar__sep" />
-      <div className="toolbar__flat">
-        {btn(<AlignLeftIcon />, editor.isActive({ textAlign: 'left' }), () => editor.chain().focus().setTextAlign('left').run(), 'Align left')}
-        {btn(<AlignCenterIcon />, editor.isActive({ textAlign: 'center' }), () => editor.chain().focus().setTextAlign('center').run(), 'Align center')}
-        {btn(<AlignRightIcon />, editor.isActive({ textAlign: 'right' }), () => editor.chain().focus().setTextAlign('right').run(), 'Align right')}
-      </div>
-      <ToolbarDropdown
-        title="Alignment"
-        options={[
-          { key: 'left', label: 'Align left', icon: <AlignLeftIcon />, isActive: editor.isActive({ textAlign: 'left' }), onSelect: () => editor.chain().focus().setTextAlign('left').run() },
-          { key: 'center', label: 'Align center', icon: <AlignCenterIcon />, isActive: editor.isActive({ textAlign: 'center' }), onSelect: () => editor.chain().focus().setTextAlign('center').run() },
-          { key: 'right', label: 'Align right', icon: <AlignRightIcon />, isActive: editor.isActive({ textAlign: 'right' }), onSelect: () => editor.chain().focus().setTextAlign('right').run() },
-        ]}
-      />
-      <span className="toolbar__sep" />
-      <div className="toolbar__link">
-        {btn(<LinkIcon />, editor.isActive('link'), openLinkPopover, 'Insert link')}
-        {linkPopoverOpen && (
-          <form
-            ref={linkAlign.ref}
-            className="toolbar__link-popover"
-            style={{ left: linkAlign.offsetLeft }}
-            onSubmit={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              applyLink()
-            }}
-          >
-            <input
-              autoFocus
-              value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
-              placeholder="https://…"
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') setLinkPopoverOpen(false)
-              }}
+      {['bold', 'italic', 'underline', 'strike', 'code'].map(item)}
+      <span data-tb-fixed="highlight">
+        <ToolbarPopover icon={<HighlightIcon />} title="Highlight colour" isActive={editor.isActive('highlight')}>
+          {(close) => (
+            <ColorPalette
+              tiers={HIGHLIGHT_TIERS}
+              current={editor.getAttributes('highlight').color as string | undefined}
+              onPick={(color) => { chain().setHighlight({ color }).run(); close() }}
+              onClear={() => { chain().unsetHighlight().run(); close() }}
+              clearLabel="No highlight"
             />
-            <button type="submit" className="link-btn">Apply</button>
-          </form>
-        )}
-      </div>
+          )}
+        </ToolbarPopover>
+      </span>
+      {sep('sep-lists', ['bullet', 'ordered', 'task'])}
+      {['bullet', 'ordered', 'task'].map(item)}
+      <span className="toolbar__sep" />
+      <span data-tb-fixed="align">
+        <ToolbarDropdown
+          title="Alignment"
+          options={[
+            { key: 'left', label: 'Align left', icon: <AlignLeftIcon />, isActive: editor.isActive({ textAlign: 'left' }) || !editor.isActive({ textAlign: 'center' }) && !editor.isActive({ textAlign: 'right' }), onSelect: () => chain().setTextAlign('left').run() },
+            { key: 'center', label: 'Align center', icon: <AlignCenterIcon />, isActive: editor.isActive({ textAlign: 'center' }), onSelect: () => chain().setTextAlign('center').run() },
+            { key: 'right', label: 'Align right', icon: <AlignRightIcon />, isActive: editor.isActive({ textAlign: 'right' }), onSelect: () => chain().setTextAlign('right').run() },
+          ]}
+        />
+      </span>
+      <span className="toolbar__sep" />
+      {linkControl}
+      <span className="toolbar__spacer" />
+      <InsertMenu editor={editor} overflow={overflowActions} />
     </div>
   )
 }

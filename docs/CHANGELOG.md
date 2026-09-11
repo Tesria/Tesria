@@ -5,6 +5,31 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Editor chrome: one-row toolbar with an Insert menu, borderless page (2026-09-10)
+
+*Scope added by the user at the start of Phase 7, modelled on Confluence's
+editor.*
+
+The page is a continuous surface: no box, border or shadow around the
+body, no rule under the title, body text aligned with the title — in the
+editor and the reading view alike. The toolbar runs edge to edge in a
+single row and **never wraps**. Text style ("Normal text", "Heading 1"…)
+and alignment are dropdowns; block elements — table, image, code block,
+quote, divider, the five panels — live behind **+ Insert**, and that menu
+is generated from the same catalogue the slash menu uses, so a block added
+to one appears in both. When the toolbar's own width (a container query,
+not the viewport's) runs short, the "Insert" and text-style labels drop
+first, then formatting buttons move into the Insert menu's *Formatting*
+section by measurement (`useToolbarOverflow`), losing lists first and bold
+last. The link button never collapses: its popover anchors to it.
+
+Two wrong turns on the way, both caught live: `overflow: hidden` as the
+no-wrap guarantee clipped every dropdown into invisibility (nowrap alone
+is the guarantee), and the overflow priority was applied backwards.
+
+Also: the space settings page's "Use it" button sat below its input for
+the same reason the token form's did (card label/button margins); fixed.
+
 ### Fix: page editing, trash, permissions and webhooks were broken for signed-in users (2026-09-10)
 
 **A regression shipped with Phase 5 yesterday.** Nesting `ProtectedRoute`
