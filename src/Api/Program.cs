@@ -6,6 +6,7 @@ using Tesria.Api.Features.Auth;
 using Tesria.Api.Features.Comments;
 using Tesria.Api.Features.Audit;
 using Tesria.Api.Features.Collab;
+using Tesria.Api.Features.Blocks;
 using Tesria.Api.Features.Export;
 using Tesria.Api.Features.Groups;
 using Tesria.Api.Features.Health;
@@ -82,6 +83,10 @@ builder.Services.AddScoped<IInviteService, InviteService>();
 builder.Services.AddScoped<ISiteSettingsService, SiteSettingsService>();
 builder.Services.AddSingleton<ICollabTokenService, CollabTokenService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+// Dynamic blocks (dev-plan Phase 7 Wave D): one service, one kind per class.
+// Adding a kind is one class plus one line here — see architecture.md.
+builder.Services.AddScoped<Tesria.Api.Features.Blocks.IDynamicBlockService, Tesria.Api.Features.Blocks.DynamicBlockService>();
+builder.Services.AddScoped<Tesria.Api.Features.Blocks.IDynamicBlockKind, Tesria.Api.Features.Blocks.Kinds.ChildrenBlock>();
 builder.Services.AddScoped<IApiTokenService, ApiTokenService>();
 builder.Services.AddScoped<IOidcUserProvisioner, OidcUserProvisioner>();
 
@@ -474,6 +479,7 @@ api.MapCommentEndpoints();
 api.MapSearchEndpoints();
 api.MapLabelEndpoints();
 api.MapExportEndpoints();
+api.MapBlockEndpoints();
 api.MapAuditEndpoints();
 api.MapGroupEndpoints();
 api.MapPermissionEndpoints();

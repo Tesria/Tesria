@@ -13,6 +13,8 @@ import { scrollToAnchor } from './headingAnchors'
 import { getSharedExtensions } from './extensions'
 import { handleImageDrop, handleImagePaste } from './imageUpload'
 import { setSlashCommandStorage } from './slash/items'
+import { setDynamicBlockStorage } from './dynamicBlock'
+import { DynamicBlockMenu } from './DynamicBlockMenu'
 
 type Props = {
   /** ProseMirror document as a JSON string. */
@@ -24,6 +26,13 @@ type Props = {
   getUploadPageId?: () => Promise<string>
   /** Reports an image upload failure (paste/drop/toolbar), e.g. into a form's error banner. */
   onUploadError?: (message: string) => void
+  /**
+   * The page this content belongs to, for dynamic blocks (which query the
+   * server about their host page). Defaults to `getUploadPageId`, so the
+   * editor needs nothing extra; the read-only PageView passes the page id.
+   * Omitted for history/template previews, where blocks show a placeholder.
+   */
+  getPageId?: () => Promise<string>
   /**
    * Called with the live TipTap instance once it exists (and with null on
    * unmount), so the host page can render the formatting Toolbar in its own
@@ -46,7 +55,7 @@ function parseDoc(value: string): object | undefined {
  * Block WYSIWYG editor (TipTap/ProseMirror). Used both for editing pages and,
  * with `editable={false}`, for rendering stored content read-only.
  */
-export function Editor({ value, editable = true, onChange, getUploadPageId, onUploadError, onEditorReady }: Props) {
+export function Editor({ value, editable = true, onChange, getUploadPageId, onUploadError, getPageId, onEditorReady }: Props) {
   // editorProps' handlers close over this ref rather than `editor` directly,
   // since they're set at useEditor's initial options and `editor` doesn't
   // exist yet at that point.
@@ -96,6 +105,11 @@ export function Editor({ value, editable = true, onChange, getUploadPageId, onUp
     setSlashCommandStorage(editor, { getUploadPageId, onUploadError })
   }, [editor, getUploadPageId, onUploadError])
 
+  useEffect(() => {
+    if (!editor) return
+    setDynamicBlockStorage(editor, { getPageId: getPageId ?? getUploadPageId })
+  }, [editor, getPageId, getUploadPageId])
+
   // Keep the editor in sync when the source changes externally (e.g. switching
   // which version is previewed). Guarded so it never clobbers active typing.
   useEffect(() => {
@@ -122,6 +136,7 @@ export function Editor({ value, editable = true, onChange, getUploadPageId, onUp
       {editable && editor && <StatusMenu editor={editor} />}
       {editable && editor && <DateMenu editor={editor} />}
       {editable && editor && <LayoutMenu editor={editor} />}
+      {editable && editor && <DynamicBlockMenu editor={editor} />}
       <EditorContent editor={editor} className="editor__content" />
     </div>
   )

@@ -5,6 +5,53 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Editor parity Wave D — the dynamic-block contract, and Children display (dev-plan 7, Wave D — Fable half) (2026-09-10)
+
+Wave D is "a block whose content is the answer to a query" — Confluence's
+Children display, Recently updated, Task report and nine more. The plan
+splits it: Fable designs the mechanism, Opus adds kinds against it. This is
+the Fable half: the contract, written into `architecture.md` ("Dynamic
+blocks"), and the mechanism built end to end with **one** reference kind so
+the contract is proven rather than hypothetical.
+
+The decisions, each with its reason in the spec:
+
+- **One node, `dynamicBlock { kind, params }`,** an atom that stores the
+  question and never the answer. A stored copy of "children of this page"
+  is wrong the moment a child is added and a permission leak the moment a
+  page is restricted.
+- **One result shape** (`list` / `table` / `document`) with exactly one
+  renderer in the SPA and one in the exporter. A kind is therefore *only a
+  query*: no React, no HTML, no Markdown. This is what makes the twelfth
+  kind cost what the second did.
+- **One endpoint,** `GET /api/pages/{host}/blocks/{kind}?…`, anonymous-
+  capable, masking an unviewable host as 404. Unknown kind and bad params
+  are 400s naming the field; out-of-range numbers are clamped so a document
+  written against a looser server still renders.
+- **Permission filtering is the kind's job, with one helper that makes it
+  hard to get wrong** (`BlockContext.VisibleAsync`, the search/tree
+  two-pass rule). A page the caller cannot view must not influence a result
+  at all — not its title, not a count.
+- **Export snapshots at export time, as the exporting user,** through the
+  same service; a failed block is a placeholder, never a failed export.
+  `document`-shaped kinds render their included page's own blocks as
+  placeholders — depth 1 — so an include of an include cannot recurse, on
+  either side.
+- **The node view learns its host page from `editor.storage`,** the same
+  stash the slash menu's upload callbacks use; history and template
+  previews, where nobody sets it, show "Shown on the page".
+- **Params are edited by one generic form** generated from each kind's
+  declared schema in the client catalogue; the slash and + menus list that
+  same catalogue.
+
+`children` (Confluence's Children display) is the reference kind: depth
+1–3, three sort orders, a hidden parent hiding its subtree. Eight tests
+cover the mechanism, including the leak test every future kind owes and an
+export taken as a user who cannot see one branch. Verified live on the API
+space's root page — which now carries a real Children display at depth 2,
+kept deliberately as documentation. Remaining kinds are Opus work; the
+per-kind params and queries are tabulated in the spec.
+
 ### Editor parity Wave C — mentions, emoji, action-item assignees (dev-plan 7, Wave C) (2026-09-10)
 
 - **@mention.** A `mention` inline node carrying the user's id *and* a

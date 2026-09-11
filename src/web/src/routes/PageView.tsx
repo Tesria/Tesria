@@ -109,7 +109,7 @@ export function PageView() {
             <p className="muted small">Updated {new Date(page.updatedAt).toLocaleDateString()}</p>
             <PageLabels pageId={page.id} readOnly />
             <div className="page-body">
-              <Editor value={page.contentJson} editable={false} />
+              <Editor value={page.contentJson} editable={false} getPageId={() => Promise.resolve(page.id)} />
             </div>
           </div>
           {space.publicComments && (
@@ -181,7 +181,7 @@ export function PageView() {
           <PageLabels pageId={page.id} />
 
           <div className="page-body">
-            <Editor value={page.contentJson} editable={false} />
+            <Editor value={page.contentJson} editable={false} getPageId={() => Promise.resolve(page.id)} />
           </div>
         </div>
 

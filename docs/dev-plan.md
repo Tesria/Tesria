@@ -751,7 +751,7 @@ eight times the schema, renderer and export work.
 - **Action item assignee**: `assigneeId` on `taskItem`; Task report (D)
   queries it.
 
-### Wave D — dynamic blocks — `L` — Model: Fable → Opus
+### Wave D — dynamic blocks — `L` — Model: Fable → Opus — 🟡 **contract designed and mechanism shipped 2026-09-10 (Fable); kinds 2–12 pending (Opus)**
 - **Fable designs** the `dynamicBlock` contract (attrs, the per-kind
   endpoint shape, export snapshotting, permission filtering) and writes it
   into `architecture.md`; **Opus adds kinds** against it.
@@ -760,10 +760,12 @@ eight times the schema, renderer and export work.
   reuse the search endpoint's two-pass filtering; and for public spaces,
   5.1's anonymous rules). Export: the renderer calls the same service to
   snapshot the block as static HTML/Markdown at export time.
-- Kinds, in order: Children, Recently updated, Content by label,
-  Attachments, Change history, Contributors, Excerpt/Excerpt include,
-  Include page, Page properties (+ report), Labels lists, Task report,
-  Page tree.
+- Kinds, in order: Children ✅ (built with the mechanism as the reference
+  kind), Recently updated, Content by label, Attachments, Change history,
+  Contributors, Excerpt/Excerpt include, Include page, Page properties
+  (+ report), Labels lists, Task report, Page tree. The contract, the
+  per-kind params and the three tests each kind owes are in
+  `architecture.md`, "Dynamic blocks".
 
 ### Wave E — media and embeds — `M` — Model: Opus
 - Embed node with a **server-enforced allowlist** of hosts (editable in

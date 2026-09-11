@@ -343,6 +343,21 @@ export type Dashboard = {
   }
 }
 
+/** A dynamic block's answer — one of three neutral shapes (architecture.md, "Dynamic blocks"). */
+export type BlockUser = { id: string; displayName: string; avatarHash: string | null; avatarVariant: number | null }
+export type BlockCell = { text?: string | null; href?: string | null; date?: string | null; user?: BlockUser | null; checked?: boolean | null }
+export type BlockItem = { title: string; href?: string | null; subtitle?: string | null; cells?: Record<string, BlockCell> | null; children?: BlockItem[] | null }
+export type BlockResult = {
+  kind: string
+  shape: 'list' | 'table' | 'document'
+  items: BlockItem[]
+  title?: string | null
+  empty?: string | null
+  columns?: { key: string; label: string }[] | null
+  document?: string | null
+  generatedAt: string
+}
+
 export type Directory = {
   id: string
   email: string
@@ -660,6 +675,12 @@ export const api = {
   },
   users: {
     list: () => request<Directory[]>('GET', '/api/users'),
+  },
+  blocks: {
+    get: (hostPageId: string, kind: string, params: Record<string, string>) => {
+      const qs = new URLSearchParams(params).toString()
+      return request<BlockResult>('GET', `/api/pages/${hostPageId}/blocks/${encodeURIComponent(kind)}${qs ? `?${qs}` : ''}`)
+    },
   },
   admin: {
     settings: {

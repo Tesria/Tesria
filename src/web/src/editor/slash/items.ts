@@ -2,6 +2,7 @@ import type { ComponentType } from 'react'
 import type { Editor } from '@tiptap/react'
 import { uploadAndInsertImage } from '../imageUpload'
 import { PANEL_TYPES, PANEL_LABELS } from '../panelExtension'
+import { DYNAMIC_KINDS, defaultParams } from '../dynamicBlockKinds'
 import {
   BlockquoteIcon, BulletListIcon, CodeBlockIcon, DateIcon, DecisionIcon, DividerIcon, ErrorPanelIcon, ExpandIcon,
   HeadingIcon, ImageIcon, InfoPanelIcon, LayoutIcon, NotePanelIcon, OrderedListIcon, StatusIcon, SuccessPanelIcon,
@@ -10,10 +11,10 @@ import {
 
 /**
  * Where an item belongs. The slash menu lists everything; the toolbar's
- * Insert menu lists only `block` and `panel` items, because text styles and
- * lists already have their own toolbar controls.
+ * Insert menu lists the `block`, `panel` and `dynamic` items, because text
+ * styles and lists already have their own toolbar controls.
  */
-export type SlashGroup = 'text' | 'list' | 'block' | 'panel'
+export type SlashGroup = 'text' | 'list' | 'block' | 'panel' | 'dynamic'
 
 export type SlashItem = {
   title: string
@@ -227,6 +228,17 @@ export const SLASH_ITEMS: SlashItem[] = [
     keywords: ['calendar', 'today', 'when'],
     command: (editor, range) => editor.chain().focus().insertDate(range).run(),
   },
+  // Dynamic blocks (dev-plan Phase 7 Wave D): generated from the kind
+  // catalogue, so a kind added there appears here and in the + menu.
+  ...DYNAMIC_KINDS.map((kind) => ({
+    title: kind.title,
+    group: 'dynamic' as const,
+    icon: kind.icon,
+    description: kind.description,
+    keywords: kind.keywords,
+    command: (editor: Editor, range: { from: number; to: number }) =>
+      editor.chain().focus().deleteRange(range).insertDynamicBlock(kind.kind, defaultParams(kind)).run(),
+  })),
 ]
 
 export function filterSlashItems(query: string): SlashItem[] {

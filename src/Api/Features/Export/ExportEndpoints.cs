@@ -1,6 +1,9 @@
 using System.Net;
 using System.Text;
+using Tesria.Api.Features.Blocks;
 using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Email;
+using Tesria.Api.Infrastructure.Settings;
 using Tesria.Api.Infrastructure.Permissions;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,7 +24,8 @@ public static class ExportEndpoints
     /// without shipping a headless-browser dependency in the image.
     /// </summary>
     private static async Task<IResult> ExportPage(
-        Guid id, string? format, AppDbContext db, IPermissionService perms)
+        Guid id, string? format, AppDbContext db, IPermissionService perms,
+        IDynamicBlockService blocks, ISiteSettingsService settings, IConfiguration config, CancellationToken ct)
     {
         var page = await db.Pages.AsNoTracking()
             .Include(p => p.CurrentVersion)
@@ -32,14 +36,19 @@ public static class ExportEndpoints
         var content = page.CurrentVersion.ContentJson;
         var safeName = SafeFileName(page.Title);
 
+        // Dynamic blocks are snapshotted now, as this caller, with this
+        // caller's permissions (architecture.md, "Dynamic blocks", decision 5).
+        var snapshot = await SnapshotBlocksAsync(page.Id, content, blocks, ct);
+        var baseUrl = SiteUrl.Resolve(await settings.GetAsync(ct), config);
+
         return (format ?? "markdown").ToLowerInvariant() switch
         {
             "md" or "markdown" => File(
-                $"# {page.Title}\n\n{ProseMirrorRenderer.ToMarkdown(content)}",
+                $"# {page.Title}\n\n{ProseMirrorRenderer.ToMarkdown(content, snapshot, baseUrl)}",
                 "text/markdown", $"{safeName}.md"),
 
             "html" => File(
-                HtmlDocument(page.Title, ProseMirrorRenderer.ToHtml(content)),
+                HtmlDocument(page.Title, ProseMirrorRenderer.ToHtml(content, snapshot, baseUrl)),
                 "text/html", $"{safeName}.html"),
 
             _ => Results.ValidationProblem(new Dictionary<string, string[]>
@@ -47,6 +56,24 @@ public static class ExportEndpoints
                 ["format"] = ["Supported formats are 'markdown' and 'html'."],
             }),
         };
+    }
+
+    /// <summary>
+    /// One result per dynamic block in document order (null where a block
+    /// failed or is unknown — the renderer draws a placeholder rather than
+    /// failing the export). A parameter error in one block must not lose the
+    /// rest of the page.
+    /// </summary>
+    private static async Task<List<BlockResult?>> SnapshotBlocksAsync(
+        Guid hostId, string content, IDynamicBlockService blocks, CancellationToken ct)
+    {
+        var results = new List<BlockResult?>();
+        foreach (var placement in DynamicBlocks.Collect(content))
+        {
+            try { results.Add(await blocks.RenderAsync(hostId, placement.Kind, placement.Params, ct)); }
+            catch (BlockParamException) { results.Add(null); }
+        }
+        return results;
     }
 
     private static IResult File(string body, string contentType, string fileName) =>

@@ -2,6 +2,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using Tesria.Api.Features.Blocks;
 
 namespace Tesria.Api.Features.Export;
 
@@ -13,19 +14,25 @@ namespace Tesria.Api.Features.Export;
 /// </summary>
 public static class ProseMirrorRenderer
 {
-    public static string ToHtml(string contentJson)
+    /// <param name="blocks">
+    /// Pre-resolved dynamic-block results in document order (dev-plan Phase 7
+    /// Wave D) — the renderer is static and database-free, so the caller
+    /// snapshots them. Null entries, or none at all, render as placeholders.
+    /// </param>
+    /// <param name="baseUrl">Makes the blocks' app-relative hrefs absolute in a standalone file.</param>
+    public static string ToHtml(string contentJson, IReadOnlyList<BlockResult?>? blocks = null, string? baseUrl = null)
     {
         if (!TryParse(contentJson, out var root)) return string.Empty;
         var sb = new StringBuilder();
-        RenderHtmlChildren(root, sb, new Ctx(root));
+        RenderHtmlChildren(root, sb, new Ctx(root, blocks, baseUrl));
         return sb.ToString();
     }
 
-    public static string ToMarkdown(string contentJson)
+    public static string ToMarkdown(string contentJson, IReadOnlyList<BlockResult?>? blocks = null, string? baseUrl = null)
     {
         if (!TryParse(contentJson, out var root)) return string.Empty;
         var sb = new StringBuilder();
-        RenderMarkdownChildren(root, sb, listDepth: 0, new Ctx(root));
+        RenderMarkdownChildren(root, sb, listDepth: 0, new Ctx(root, blocks, baseUrl));
         return sb.ToString().TrimEnd() + "\n";
     }
 
@@ -35,11 +42,22 @@ public static class ProseMirrorRenderer
     /// order <see cref="HeadingAnchors.Collect"/> walked — so the nth
     /// heading gets the nth id, and a table of contents lists them all.
     /// </summary>
-    private sealed class Ctx(JsonElement root)
+    private sealed class Ctx(JsonElement root, IReadOnlyList<BlockResult?>? blocks, string? baseUrl)
     {
         public IReadOnlyList<HeadingAnchors.Anchor> Anchors { get; } = HeadingAnchors.Collect(root);
         private int _next;
         public HeadingAnchors.Anchor? NextHeading() => _next < Anchors.Count ? Anchors[_next++] : null;
+
+        /// <summary>The nth dynamic block gets the nth snapshot, in the same walk order <see cref="DynamicBlocks.Collect"/> used.</summary>
+        private int _nextBlock;
+        public BlockResult? NextBlock() =>
+            blocks is not null && _nextBlock < blocks.Count ? blocks[_nextBlock++] : null;
+
+        public string? BaseUrl { get; } = baseUrl?.TrimEnd('/');
+
+        /// <summary>App-relative block hrefs become absolute when a base URL is known; a standalone file has no app to be relative to.</summary>
+        public string Href(string? href) =>
+            href is not null && href.StartsWith('/') && BaseUrl is not null ? BaseUrl + href : href ?? "#";
 
         /// <summary>
         /// Markdown gets explicit <c>&lt;a id&gt;</c> anchors only when the
@@ -235,6 +253,9 @@ public static class ProseMirrorRenderer
                 RenderHtmlChildren(node, sb, ctx);
                 sb.Append("</div></li>\n");
                 break;
+            case "dynamicBlock":
+                RenderHtmlBlock(node, ctx.NextBlock(), ctx, sb);
+                break;
             case "mention":
                 // The label, not a lookup: an exported file has no directory,
                 // and neither does a page version from before a rename.
@@ -316,6 +337,9 @@ public static class ProseMirrorRenderer
                 break;
             case "mention":
                 sb.Append('@').Append(MentionLabel(node));
+                break;
+            case "dynamicBlock":
+                RenderMarkdownBlock(node, ctx.NextBlock(), ctx, sb, listDepth);
                 break;
             case "date":
                 var mdIso = IsoDate(node);
@@ -566,6 +590,142 @@ public static class ProseMirrorRenderer
             };
         }
         return text;
+    }
+
+    // -- Phase 7 Wave D dynamic blocks (the one renderer per format) -------------
+
+    private static string BlockKindOf(JsonElement node) => Attr(node, "kind") ?? "block";
+
+    private static void RenderHtmlBlock(JsonElement node, BlockResult? result, Ctx ctx, StringBuilder sb)
+    {
+        var kind = BlockKindOf(node);
+        sb.Append($"<div data-type=\"dynamic-block\" data-kind=\"{Escape(kind)}\" style=\"margin: 16px 0\">\n");
+        if (result is null)
+        {
+            // Failed, unknown, or rendered without a snapshot: say so rather
+            // than pretend the block was empty.
+            sb.Append($"<p style=\"color: #6b778c; font-style: italic\">[{Escape(kind)}: dynamic content, shown on the page]</p>\n");
+        }
+        else
+        {
+            if (result.Title is not null) sb.Append($"<p><strong>{Escape(result.Title)}</strong></p>\n");
+            switch (result.Shape)
+            {
+                case "list":
+                    if (result.Items.Count == 0) sb.Append($"<p style=\"color: #6b778c\">{Escape(result.Empty ?? "Nothing to show.")}</p>\n");
+                    else WriteList(result.Items);
+                    break;
+                case "table":
+                    if (result.Items.Count == 0) { sb.Append($"<p style=\"color: #6b778c\">{Escape(result.Empty ?? "Nothing to show.")}</p>\n"); break; }
+                    sb.Append("<table><tr>");
+                    foreach (var c in result.Columns ?? []) sb.Append($"<th>{Escape(c.Label)}</th>");
+                    sb.Append("</tr>\n");
+                    foreach (var item in result.Items)
+                    {
+                        sb.Append("<tr>");
+                        foreach (var c in result.Columns ?? [])
+                        {
+                            sb.Append("<td>");
+                            if (item.Cells is not null && item.Cells.TryGetValue(c.Key, out var cell)) sb.Append(CellHtml(cell, ctx));
+                            sb.Append("</td>");
+                        }
+                        sb.Append("</tr>\n");
+                    }
+                    sb.Append("</table>\n");
+                    break;
+                case "document":
+                    // Depth 1: the included document's own blocks are placeholders
+                    // (no snapshots are passed), so an include of an include stops.
+                    if (result.Document is not null && TryParse(result.Document, out var inner))
+                        RenderHtmlChildren(inner, sb, new Ctx(inner, null, ctx.BaseUrl));
+                    else sb.Append($"<p style=\"color: #6b778c\">{Escape(result.Empty ?? "Nothing to show.")}</p>\n");
+                    break;
+            }
+            sb.Append($"<p style=\"color: #6b778c; font-size: 0.8em\">Snapshot taken {result.GeneratedAt:yyyy-MM-dd HH:mm} UTC</p>\n");
+        }
+        sb.Append("</div>\n");
+
+        void WriteList(IReadOnlyList<BlockItem> items)
+        {
+            sb.Append("<ul>\n");
+            foreach (var item in items)
+            {
+                sb.Append("<li>");
+                sb.Append(item.Href is null ? Escape(item.Title) : $"<a href=\"{Escape(ctx.Href(item.Href))}\">{Escape(item.Title)}</a>");
+                if (item.Subtitle is not null) sb.Append($" <span style=\"color: #6b778c\">{Escape(item.Subtitle)}</span>");
+                if (item.Children is { Count: > 0 }) WriteList(item.Children);
+                sb.Append("</li>\n");
+            }
+            sb.Append("</ul>\n");
+        }
+    }
+
+    private static string CellHtml(BlockCell cell, Ctx ctx)
+    {
+        if (cell.User is not null) return Escape(cell.User.DisplayName);
+        if (cell.Date is { } d) return d.ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
+        if (cell.Checked is { } c) return c ? "☑" : "☐";
+        var text = Escape(cell.Text ?? "");
+        return cell.Href is null ? text : $"<a href=\"{Escape(ctx.Href(cell.Href))}\">{text}</a>";
+    }
+
+    private static void RenderMarkdownBlock(JsonElement node, BlockResult? result, Ctx ctx, StringBuilder sb, int listDepth)
+    {
+        var kind = BlockKindOf(node);
+        if (result is null) { sb.Append($"_[{kind}: dynamic content, shown on the page]_\n\n"); return; }
+        if (result.Title is not null) sb.Append("**").Append(result.Title).Append("**\n\n");
+        switch (result.Shape)
+        {
+            case "list":
+                if (result.Items.Count == 0) sb.Append('_').Append(result.Empty ?? "Nothing to show.").Append("_\n");
+                else WriteList(result.Items, 0);
+                sb.Append('\n');
+                break;
+            case "table":
+                if (result.Items.Count == 0) { sb.Append('_').Append(result.Empty ?? "Nothing to show.").Append("_\n\n"); break; }
+                var cols = result.Columns ?? [];
+                sb.Append('|'); foreach (var c in cols) sb.Append(' ').Append(EscapeTablePipes(c.Label)).Append(" |"); sb.Append('\n');
+                sb.Append('|'); foreach (var _ in cols) sb.Append(" --- |"); sb.Append('\n');
+                foreach (var item in result.Items)
+                {
+                    sb.Append('|');
+                    foreach (var c in cols)
+                    {
+                        var text = item.Cells is not null && item.Cells.TryGetValue(c.Key, out var cell) ? CellMarkdown(cell, ctx) : "";
+                        sb.Append(' ').Append(EscapeTablePipes(text)).Append(" |");
+                    }
+                    sb.Append('\n');
+                }
+                sb.Append('\n');
+                break;
+            case "document":
+                if (result.Document is not null && TryParse(result.Document, out var inner))
+                    RenderMarkdownChildren(inner, sb, listDepth, new Ctx(inner, null, ctx.BaseUrl));
+                else sb.Append('_').Append(result.Empty ?? "Nothing to show.").Append("_\n\n");
+                break;
+        }
+        sb.Append($"_Snapshot taken {result.GeneratedAt:yyyy-MM-dd HH:mm} UTC_\n\n");
+
+        void WriteList(IReadOnlyList<BlockItem> items, int depth)
+        {
+            foreach (var item in items)
+            {
+                sb.Append(new string(' ', depth * 2)).Append("- ");
+                sb.Append(item.Href is null ? item.Title : $"[{item.Title}]({ctx.Href(item.Href)})");
+                if (item.Subtitle is not null) sb.Append(" — ").Append(item.Subtitle);
+                sb.Append('\n');
+                if (item.Children is { Count: > 0 }) WriteList(item.Children, depth + 1);
+            }
+        }
+    }
+
+    private static string CellMarkdown(BlockCell cell, Ctx ctx)
+    {
+        if (cell.User is not null) return cell.User.DisplayName;
+        if (cell.Date is { } d) return d.ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
+        if (cell.Checked is { } c) return c ? "[x]" : "[ ]";
+        var text = cell.Text ?? "";
+        return cell.Href is null ? text : $"[{text}]({ctx.Href(cell.Href)})";
     }
 
     // -- Phase 7 Wave B formatting ----------------------------------------------

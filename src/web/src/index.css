@@ -1758,3 +1758,29 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .suggest-menu__item:hover, .suggest-menu__item.is-selected { background: var(--bg-alt); }
 .suggest-menu__emoji { font-size: 1.1rem; line-height: 1; width: 22px; text-align: center; }
 .suggest-menu__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- Phase 7 Wave D: dynamic blocks -------------------------------------- */
+
+.dynamic-block {
+  margin: 0.75rem 0; padding: 0.6rem 0.9rem; border: 1px dashed var(--border); border-radius: var(--radius);
+}
+/* In the reading view the frame disappears: the content is the point. */
+.page-body .dynamic-block { border-color: transparent; padding: 0; }
+.editor--editable .dynamic-block.is-selected { border-style: solid; border-color: var(--primary); }
+.dynamic-block__head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+.page-body .dynamic-block__head { display: none; }
+.dynamic-block__kind { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.dynamic-block__refresh { border: none; background: none; color: var(--muted); cursor: pointer; padding: 0 0.2rem; border-radius: 4px; }
+.dynamic-block__refresh:hover { background: var(--bg-alt); color: var(--text); }
+.dynamic-block__note { margin: 0; color: var(--muted); font-size: 0.9rem; }
+.dynamic-block__note--error { color: var(--danger, #ae2e24); }
+.dynamic-block__list { margin: 0; padding-left: 1.2rem; }
+.dynamic-block__list .dynamic-block__list { margin-top: 0.1rem; }
+.dynamic-block__subtitle { margin-left: 0.4rem; color: var(--muted); font-size: 0.85em; }
+.dynamic-block__user { display: inline-flex; align-items: center; gap: 0.35rem; }
+.dynamic-block .editor { margin: 0; }
+
+.dynamic-block-menu { min-width: 220px; }
+.dynamic-block-menu__title { margin: 0 0 0.2rem; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.dynamic-block-menu__field { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin: 0; font-size: 0.85rem; }
+.dynamic-block-menu__field select, .dynamic-block-menu__field input { width: 140px; padding: 0.25rem 0.4rem; }

@@ -16,6 +16,8 @@ import { LayoutMenu } from './LayoutMenu'
 import { getSharedExtensions } from './extensions'
 import { handleImageDrop, handleImagePaste } from './imageUpload'
 import { setSlashCommandStorage } from './slash/items'
+import { setDynamicBlockStorage } from './dynamicBlock'
+import { DynamicBlockMenu } from './DynamicBlockMenu'
 
 type Props = {
   pageId: string
@@ -114,6 +116,13 @@ export function CollaborativeEditor({
     setSlashCommandStorage(editor, { getUploadPageId, onUploadError })
   }, [editor, getUploadPageId, onUploadError])
 
+  // The host page for dynamic blocks: a collaborative session always has a
+  // real page id, and it is the same resolver uploads use.
+  useEffect(() => {
+    if (!editor) return
+    setDynamicBlockStorage(editor, { getPageId: getUploadPageId ?? (() => Promise.resolve(pageId)) })
+  }, [editor, getUploadPageId, pageId])
+
   // Seed the shared document from stored content the first time anyone opens
   // it. Guarded on emptiness so we never clobber other people's live edits.
   useEffect(() => {
@@ -153,6 +162,7 @@ export function CollaborativeEditor({
       {editor && <StatusMenu editor={editor} />}
       {editor && <DateMenu editor={editor} />}
       {editor && <LayoutMenu editor={editor} />}
+      {editor && <DynamicBlockMenu editor={editor} />}
       <EditorContent editor={editor} className="editor__content" />
     </div>
   )
