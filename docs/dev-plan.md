@@ -812,7 +812,7 @@ onto `roadmap.md` and are sequenced here.
   records as schemas; Scalar UI at `/api/docs`. **Before MCP** — tools are
   easiest to define from the spec. Keep the API space in step.
 
-### 8.4 MCP server — `L` — Model: Fable → Opus — 🟡 **contract designed, token scope and `/mcp` with two read tools shipped 2026-09-11 (Fable); remaining tools, `PageWriter`, Markdown import pending (Opus)**
+### 8.4 MCP server — `L` — Model: Fable → Opus — ✅ **shipped 2026-09-11** (contract and token scopes as Fable; the ten tools, `PageWriter` and the Markdown converter as Opus)
 - **Fable designs** the tool surface and the auth model; **Opus implements.**
   Load the `claude-api` skill before designing tool definitions.
 - A separate process (Node sidecar, like collab) or a .NET endpoint speaking

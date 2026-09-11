@@ -91,6 +91,8 @@ builder.Services.AddScoped<Tesria.Api.Features.Blocks.IDynamicBlockService, Tesr
 builder.Services.AddScoped<Tesria.Api.Features.Embeds.ILinkPreviewService, Tesria.Api.Features.Embeds.LinkPreviewService>();
 // PDF export (dev-plan 8.1) goes to the Playwright sidecar, which is handed
 // a self-contained document and renders it with no network of its own.
+// One page-write path for REST and MCP alike (dev-plan 8.4).
+builder.Services.AddScoped<Tesria.Api.Features.Pages.IPageWriter, Tesria.Api.Features.Pages.PageWriter>();
 builder.Services.AddScoped<Tesria.Api.Features.Export.IPdfRenderer, Tesria.Api.Features.Export.PdfRenderer>();
 builder.Services.AddHttpClient("pdf", c => c.Timeout = TimeSpan.FromSeconds(30));
 

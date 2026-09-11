@@ -731,12 +731,26 @@ found")`. Three tests per tool: the result; the leak test (a token whose
 user cannot view the target gets "not found", and a listing omits it); and,
 for write tools, that a read-only token is refused before anything changes.
 
-**Built with the spec (Fable):** the token scope end to end
-(`ReadOnly`, claim, middleware, minting, tests) and `/mcp` wired with
-`list_spaces` and `get_page`, so transport, auth, permission filtering and
-the Markdown contract are proven. **Opus:** the remaining read tools, the
-`PageWriter` extraction, the Markdown→ProseMirror converter, the write
-tools, the SPA's read-only checkbox and the API-space page.
+**Shipped 2026-09-11.** All ten tools, and two pieces of plumbing the
+contract required:
+
+- **`PageWriter`** (`Features/Pages/PageWriter.cs`) is now the only place a
+  page is created or updated. `PageEndpoints.Create`/`Update` are thin
+  translations of its result into HTTP; the MCP tools translate the same
+  result into a tool response. That is what makes "a page written by an
+  assistant is indistinguishable from one written in the browser" true
+  rather than aspirational — the audit entry, the watcher and mention
+  notifications and the webhook all come from the one code path. The
+  existing endpoint tests were the safety net for the extraction.
+- **`MarkdownToProseMirror`** converts over exactly the subset the export
+  emits, so a page survives read → edit → write. **Gotcha found by the
+  round-trip test:** Markdig models `[x] done` as a `TaskList` inline
+  followed by the literal `" done"` — the separating space belongs to the
+  marker. Dropping the marker without it makes every round trip indent the
+  text one space further, compounding on each edit.
+  Note also that two `-` lists separated only by a blank line are *one*
+  list in CommonMark, and a list where any item has a checkbox becomes a
+  task list (promoting is lossless; demoting would throw checkboxes away).
 
 ### Dynamic blocks (spec — dev-plan Phase 7 Wave D, designed 2026-09-10)
 
