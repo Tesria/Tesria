@@ -53,6 +53,13 @@
   --status-green-bg: #e3fcef;  --status-green-ink: #006644;
   --status-blue-bg: #deebff;   --status-blue-ink: #0747a6;
   --status-purple-bg: #eae6ff; --status-purple-ink: #403294;
+  /* Text ink colours (textColorMark.ts), keyed by the name the mark stores.
+     The dark theme re-points the same names at lighter inks — which is the
+     whole reason the mark stores a name and not a hex. */
+  --text-color-grey: #42526e;   --text-color-blue: #0747a6;
+  --text-color-teal: #008da6;   --text-color-green: #006644;
+  --text-color-yellow: #946f00; --text-color-orange: #b65c02;
+  --text-color-red: #bf2600;    --text-color-purple: #403294;
   --radius: 6px;
   /* Breakpoints are documented here but can't be read into @media conditions
      directly (a CSS limitation) — each @media rule repeats the raw number
@@ -1102,6 +1109,10 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   --status-green-bg: #164b35;  --status-green-ink: #7ee2b8;
   --status-blue-bg: #1c2b41;   --status-blue-ink: #85b8ff;
   --status-purple-bg: #352c63; --status-purple-ink: #b8acf6;
+  --text-color-grey: #9fadbc;   --text-color-blue: #85b8ff;
+  --text-color-teal: #6cc3e0;   --text-color-green: #7ee2b8;
+  --text-color-yellow: #f5cd47; --text-color-orange: #fea362;
+  --text-color-red: #fd9891;    --text-color-purple: #b8acf6;
   }
 
   /* Author-chosen colours are stored in the document itself (a table cell's
@@ -1170,6 +1181,10 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   --status-green-bg: #164b35;  --status-green-ink: #7ee2b8;
   --status-blue-bg: #1c2b41;   --status-blue-ink: #85b8ff;
   --status-purple-bg: #352c63; --status-purple-ink: #b8acf6;
+  --text-color-grey: #9fadbc;   --text-color-blue: #85b8ff;
+  --text-color-teal: #6cc3e0;   --text-color-green: #7ee2b8;
+  --text-color-yellow: #f5cd47; --text-color-orange: #fea362;
+  --text-color-red: #fd9891;    --text-color-purple: #b8acf6;
 }
 :root[data-theme="dark"] .editor__content [data-background-color],
 :root[data-theme="dark"] .editor__content mark[style*="background-color"] {
@@ -1694,3 +1709,26 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
   margin-left: calc((100% - 100cqw) / 2 + var(--page-pad));
 }
 .space-content { container-type: inline-size; }
+
+/* ---- Phase 7 Wave B: text colour, sub/superscript, indent --------------- */
+
+/* Doubled (.editor__content descendant + bare) for the same reason the panel
+   rules are: .editor__content's own rules would otherwise out-specify a bare
+   class for content rendered outside an editor. */
+.editor__content .text-color, .text-color { color: var(--text-color-ink, inherit); }
+.editor__content [data-text-color="grey"], [data-text-color="grey"] { --text-color-ink: var(--text-color-grey); }
+.editor__content [data-text-color="blue"], [data-text-color="blue"] { --text-color-ink: var(--text-color-blue); }
+.editor__content [data-text-color="teal"], [data-text-color="teal"] { --text-color-ink: var(--text-color-teal); }
+.editor__content [data-text-color="green"], [data-text-color="green"] { --text-color-ink: var(--text-color-green); }
+.editor__content [data-text-color="yellow"], [data-text-color="yellow"] { --text-color-ink: var(--text-color-yellow); }
+.editor__content [data-text-color="orange"], [data-text-color="orange"] { --text-color-ink: var(--text-color-orange); }
+.editor__content [data-text-color="red"], [data-text-color="red"] { --text-color-ink: var(--text-color-red); }
+.editor__content [data-text-color="purple"], [data-text-color="purple"] { --text-color-ink: var(--text-color-purple); }
+/* The bar under the "A" shows the colour currently applied, like Confluence's. */
+.text-color-icon__bar { color: var(--text-color-ink, currentColor); }
+.toolbar__btn.is-active .text-color-icon__bar { color: currentColor; }
+
+.editor__content sub, .editor__content sup { line-height: 0; font-size: 0.75em; }
+
+/* Indent is a `margin-left` written by the schema (textFormatting.ts), so
+   there is no rule for it here. */

@@ -986,6 +986,26 @@ ProseMirror JSON in `PageVersion.ContentJson`.
     markup and a `NodeSelection` does not survive that — it collapses to a
     text cursor, which would close the very menu doing the editing on every
     keystroke.
+- **Text colour stores a name, highlight stores a hex** (dev-plan Phase 7
+  Wave B). The asymmetry is deliberate. A highlight is a *background*: dark
+  mode keeps the text on it readable by pinning the ink (`[data-theme="dark"]
+  … mark[style*="background-color"]` in `index.css`), so the background
+  itself can be any hex and survive export with no stylesheet. Coloured
+  *text* has no equivalent escape — a hex dark enough to read on white is
+  invisible on the dark background, and CSS cannot lighten a colour it
+  cannot see. So `textColorMark.ts` stores one of eight colour *names*,
+  `index.css` re-points them per theme (`--text-color-*`), and the export
+  renderer inlines the light-theme value. The same property that makes it
+  theme-aware also makes it injection-proof: no value from the document ever
+  reaches a `style` attribute.
+- **Indent is an attribute, not a wrapper.** `textFormatting.ts` adds
+  `textIndent` to the same block types `TextAlign` is configured for — keep
+  the two lists in step. A wrapper node would have to be nested N deep and
+  would fight list lifting. Both the editor and `ProseMirrorRenderer`
+  recompute the `margin-left` from a clamped 0–4 integer rather than echoing
+  the stored value. `clearFormatting` deliberately avoids `clearNodes()`:
+  unwrapping a list, panel or layout column is a structural edit, not a
+  formatting one.
 - **`.toolbar--bubble` must paint its own surface.** Since the one-row
   toolbar rebuild, `.toolbar` is a transparent, full-width row that lives
   inside the page action bar (which supplies the background). Any floating

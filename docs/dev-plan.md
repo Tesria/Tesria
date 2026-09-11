@@ -736,7 +736,7 @@ eight times the schema, renderer and export work.
 - Slash-menu and toolbar entries for each, sharing `PANEL_TYPES`-style
   constants so the two can't drift.
 
-### Wave B — formatting marks and input rules — `M` — Model: Opus
+### Wave B — formatting marks and input rules — `M` — Model: Opus — ✅ **shipped 2026-09-10**
 - Text colour mark (palette-limited, reusing `ColorPalette` and the
   dark-mode ink-pinning approach). Subscript/superscript. Paragraph indent
   (`textIndent` attr, capped at ~4). Clear formatting. Shortcut audit

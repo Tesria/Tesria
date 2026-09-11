@@ -9,6 +9,8 @@ import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import Highlight from '@tiptap/extension-highlight'
 import TextAlign from '@tiptap/extension-text-align'
+import Subscript from '@tiptap/extension-subscript'
+import Superscript from '@tiptap/extension-superscript'
 import type { AnyExtension } from '@tiptap/core'
 import { lowlight } from './lowlight'
 import { CodeBlockView } from './CodeBlockView'
@@ -23,6 +25,9 @@ import { Status } from './statusExtension'
 import { DateChip } from './dateExtension'
 import { Decision } from './decisionExtension'
 import { LayoutColumn, LayoutSection } from './layoutExtension'
+import { TextColorMark } from './textColorMark'
+import { TextIndent } from './textFormatting'
+import { LinkShortcut } from './linkShortcut'
 
 type SharedExtensionOptions = {
   /** Collaborative editors let Yjs own undo/redo history instead of StarterKit's. */
@@ -193,8 +198,15 @@ export function getSharedExtensions({ collaborative = false, editable = true }: 
     Decision,
     LayoutSection,
     LayoutColumn,
-    // Read-only rendering never needs "/" commands — skip mounting the
-    // suggestion plugin entirely rather than just hiding its output.
-    ...(editable ? [SlashCommand] : []),
+    // Wave B formatting. TextIndent adds a `textIndent` attribute to the same
+    // block types TextAlign is configured for, so it must stay in step with
+    // the line above it.
+    Subscript,
+    Superscript,
+    TextColorMark,
+    TextIndent,
+    // Read-only rendering never needs "/" commands or a link shortcut — skip
+    // mounting the plugins entirely rather than just hiding their output.
+    ...(editable ? [SlashCommand, LinkShortcut] : []),
   ]
 }
