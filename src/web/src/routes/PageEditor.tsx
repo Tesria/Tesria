@@ -200,6 +200,7 @@ export function PageEditor() {
       {/* Below the toolbar, not above it: the toolbar is the top edge of the
           editing surface and the breadcrumb belongs with the page content
           (SpacePage suppresses its own copy on this route). */}
+      <div className="page-column">
       <SpaceBreadcrumb space={space} tree={tree} />
       <form id="page-editor-form" className={fullWidth ? 'page-wrap page-wrap--full editor-form' : 'page-wrap editor-form'} onSubmit={onSubmit}>
       {error && <p className="alert alert--error">{error}</p>}
@@ -256,6 +257,7 @@ export function PageEditor() {
         </label>
       )}
       </form>
+      </div>
     </>
   )
 }

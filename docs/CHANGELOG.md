@@ -5,6 +5,36 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Links: one dialog, reached from Insert, with display text (2026-09-14)
+
+- **Link lives under + → Insert**, first in the list, and no longer on the
+  toolbar row. `Cmd/Ctrl+K`, the selection bubble's link button and the
+  Edit button on a link's own bubble all open the same dialog.
+- **The dialog has two fields**: the address and the words that carry it.
+  A selection prefills the display text; a selected address prefills both.
+  Opening it on an existing link prefills both from the link and adds
+  **Remove link**. An address typed without a scheme gets `https://`.
+  Headings on this page are listed beneath for anchor links, as before.
+- **Tapping a link in the editor** shows its bubble — the address (opens in
+  a new tab), Edit, Remove. Editor only; a reader's tap follows the link.
+- **A bug of the first cut, caught before it shipped:** the Insert menu
+  hands an item the current selection as the range to delete (right for a
+  typed `/link` query, which is what the slash items expect). Choosing Link
+  with a paragraph selected therefore deleted the paragraph from the
+  collaborative document. The item now removes only a slash query. The one
+  page it happened to (in the manual) had its collaborative document reset
+  so the editor re-seeds from the published version; the published page
+  was never affected.
+- **iOS: the action bar scrolling away, a best-informed fix.** The content
+  column was a size container (`container-type: inline-size`, for the
+  full-width layout rules) and the sticky action bar was its descendant.
+  WebKit has been seen to lose `position: sticky` on descendants of a size
+  container, which matches "both bars disappear sometimes while scrolling"
+  on iPhone. The container moved to a wrapper that starts *below* the bar
+  (`.page-column`), same width, so the `100cqw` maths is unchanged. Not
+  yet verified on iOS: the simulator needs `xcode-select` pointed at Xcode
+  first, which needs an administrator's password.
+
 ### Phone toolbar: the two menus and nothing else (2026-09-13)
 
 At phone width the editor row is **Aa** and **+** beside the page

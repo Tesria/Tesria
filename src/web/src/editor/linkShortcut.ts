@@ -31,17 +31,20 @@ export function onLinkShortcut(editor: Editor, fn: Listener): () => void {
   }
 }
 
+/** Open whatever link UI is mounted for this editor — the same thing Cmd/Ctrl+K does. */
+export function triggerLinkDialog(editor: Editor): boolean {
+  const set = listeners.get(editor)
+  if (!set || set.size === 0) return false
+  for (const fn of set) fn()
+  return true
+}
+
 export const LinkShortcut = Extension.create({
   name: 'linkShortcut',
 
   addKeyboardShortcuts() {
     return {
-      'Mod-k': () => {
-        const set = listeners.get(this.editor as Editor)
-        if (!set || set.size === 0) return false
-        for (const fn of set) fn()
-        return true
-      },
+      'Mod-k': () => triggerLinkDialog(this.editor as Editor),
     }
   },
 })

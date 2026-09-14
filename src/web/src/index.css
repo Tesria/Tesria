@@ -730,9 +730,12 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .slash-menu__item:hover, .slash-menu__item.is-selected { background: var(--bg-alt); }
 .slash-menu__title { font-size: 0.88rem; font-weight: 500; color: var(--text); }
 .slash-menu__desc { font-size: 0.76rem; color: var(--muted); }
-/* The same form inside the text menu on a phone: static, full width. */
-.toolbar__link-form { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; padding: 0.25rem 0.6rem 0.5rem; }
-.toolbar__link-form input { flex: 1 1 140px; min-width: 0; padding: 0.3rem 0.5rem; }
+/* The link dialog (LinkDialog.tsx): the reauth prompt's overlay and card,
+   with two labelled fields and the heading picker beneath them. */
+.link-dialog__card label { display: block; margin-bottom: 0.6rem; font-size: 0.85rem; color: var(--muted); }
+.link-dialog__card label input { display: block; width: 100%; margin-top: 0.25rem; padding: 0.45rem 0.6rem; font-size: 0.95rem; }
+.link-dialog__headings { margin: 0.25rem 0 0.75rem; max-height: 180px; overflow-y: auto; }
+.link-dialog__actions { flex-wrap: wrap; }
 .toolbar__link-popover {
   position: absolute; top: 100%; left: 0; margin-top: 0.3rem; z-index: 6;
   display: flex; gap: 0.4rem; align-items: center; background: var(--surface); border: 1px solid var(--border);
@@ -1829,7 +1832,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .editor--editable .layout-column:focus-within { border-color: var(--primary); }
 /* Section width, on the page's own scale. "Wide" is the full-width table's
    breakout past the page padding; "full" spans the content column
-   (.space-content is an inline-size container, so 100cqw is its width),
+   (.page-column is an inline-size container, so 100cqw is its width),
    less a page-pad gutter. Only at the top level — a section is never
    nested, but keep the rule honest. */
 .editor__content > .ProseMirror > .layout-section--wide {
@@ -1839,7 +1842,14 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
   width: calc(100cqw - 2 * var(--page-pad));
   margin-left: calc((100% - 100cqw) / 2 + var(--page-pad));
 }
-.space-content { container-type: inline-size; }
+/* The content column's size container lives on .page-column — the wrapper
+   PageView and PageEditor put around the breadcrumb and the page, *below*
+   the sticky action bar — rather than on .space-content itself. Same width
+   (a block child of the column), so 100cqw means the same thing; the
+   difference is that the sticky bar is no longer a descendant of a size
+   container, which WebKit has been seen to mishandle: on iOS the bar would
+   sometimes scroll away with the page. */
+.page-column { container-type: inline-size; }
 
 /* ---- Phase 7 Wave B: text colour, sub/superscript, indent --------------- */
 

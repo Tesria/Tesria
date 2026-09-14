@@ -4,11 +4,12 @@ import { uploadAndInsertImage } from '../imageUpload'
 import { PANEL_TYPES, PANEL_LABELS } from '../panelExtension'
 import { DYNAMIC_KINDS, defaultParams } from '../dynamicBlockKinds'
 import { insertPageProperties } from '../excerptExtension'
+import { triggerLinkDialog } from '../linkShortcut'
 import {
   BlockquoteIcon, BulletListIcon, CodeBlockIcon, DateIcon, DecisionIcon, DividerIcon, ErrorPanelIcon, ExpandIcon,
   HeadingIcon, ImageIcon, InfoPanelIcon, LayoutIcon, NotePanelIcon, OrderedListIcon, StatusIcon, SuccessPanelIcon,
   TableIcon, TaskListIcon, TocIcon, WarningPanelIcon, ExcerptIcon, PropertiesIcon,
-  EmbedIcon, SmartLinkIcon, PaperclipIcon, GalleryIcon, MermaidIcon, MathIcon, ChartIcon,
+  EmbedIcon, SmartLinkIcon, PaperclipIcon, GalleryIcon, MermaidIcon, MathIcon, ChartIcon, LinkIcon,
 } from '../icons'
 
 /**
@@ -129,6 +130,24 @@ export const SLASH_ITEMS: SlashItem[] = [
     description: 'Checkboxes to track tasks',
     keywords: ['todo', 'checkbox'],
     command: (editor, range) => editor.chain().focus().deleteRange(range).toggleTaskList().run(),
+  },
+  {
+    title: 'Link',
+    group: 'block',
+    icon: LinkIcon,
+    description: 'A link, with its address and the words that carry it',
+    keywords: ['url', 'href', 'anchor'],
+    // Not a document edit: the dialog does the inserting once it has both
+    // fields. The range is the "/link" query when typed, and the SELECTION
+    // when chosen from the + menu — and a selection is exactly what the
+    // dialog should turn into the link's text, not something to delete.
+    // Only a slash query goes; this once removed a selected paragraph.
+    command: (editor, range) => {
+      const typed = editor.state.doc.textBetween(range.from, range.to, ' ')
+      if (typed.startsWith('/')) editor.chain().focus().deleteRange(range).run()
+      else editor.chain().focus().run()
+      triggerLinkDialog(editor)
+    },
   },
   {
     title: 'Blockquote',

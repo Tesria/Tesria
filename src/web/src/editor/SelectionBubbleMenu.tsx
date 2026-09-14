@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { BubbleMenu } from '@tiptap/react/menus'
 import { NodeSelection } from '@tiptap/pm/state'
 import type { Editor as TiptapEditor } from '@tiptap/react'
+import { triggerLinkDialog } from './linkShortcut'
 import { ToolbarButton } from './ToolbarButton'
-import { HeadingLinkList } from './HeadingLinkList'
 import { addInlineTextComment } from './commentAction'
 import { InlineCodeIcon, HighlightIcon, LinkIcon, CommentIcon } from './icons'
 import { useEdgeAlign } from '../hooks/useEdgeAlign'
@@ -17,19 +17,11 @@ type Props = {
 
 /** A condensed formatting bar that floats above a non-empty text selection. */
 export function SelectionBubbleMenu({ editor, getPageId, onCommentError }: Props) {
-  const [linkPopoverOpen, setLinkPopoverOpen] = useState(false)
-  const [linkUrl, setLinkUrl] = useState('')
   const [commentPopoverOpen, setCommentPopoverOpen] = useState(false)
   const [commentBody, setCommentBody] = useState('')
   const [commentRange, setCommentRange] = useState<{ from: number; to: number } | null>(null)
-  const linkAlign = useEdgeAlign<HTMLFormElement>(linkPopoverOpen)
   const commentAlign = useEdgeAlign<HTMLFormElement>(commentPopoverOpen)
 
-  function applyLink() {
-    if (linkUrl.trim()) editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl.trim() }).run()
-    setLinkPopoverOpen(false)
-    setLinkUrl('')
-  }
 
   function openCommentPopover() {
     const { from, to } = editor.state.selection
@@ -77,36 +69,7 @@ export function SelectionBubbleMenu({ editor, getPageId, onCommentError }: Props
         <ToolbarButton label={<span className="tb-glyph tb-strike">S</span>} isActive={editor.isActive('strike')} onClick={() => editor.chain().focus().toggleStrike().run()} title="Strikethrough" />
         <ToolbarButton label={<InlineCodeIcon />} isActive={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()} title="Inline code" />
         <ToolbarButton label={<HighlightIcon />} isActive={editor.isActive('highlight')} onClick={() => editor.chain().focus().toggleHighlight().run()} title="Highlight selected text" />
-        <div className="toolbar__link">
-          <ToolbarButton label={<LinkIcon />} isActive={false} onClick={() => setLinkPopoverOpen(true)} title="Add link" />
-          {linkPopoverOpen && (
-            <form
-              ref={linkAlign.ref}
-              className="toolbar__link-popover"
-              style={{ left: linkAlign.offsetLeft }}
-              onSubmit={(e) => {
-                // Stop this from also submitting the page's own save <form>
-                // it's nested in (React events bubble the component tree
-                // regardless of BubbleMenu's DOM portal).
-                e.preventDefault()
-                e.stopPropagation()
-                applyLink()
-              }}
-            >
-              <input
-                autoFocus
-                value={linkUrl}
-                onChange={(e) => setLinkUrl(e.target.value)}
-                placeholder="https://…"
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') setLinkPopoverOpen(false)
-                }}
-              />
-              <button type="submit" className="link-btn">Apply</button>
-              <HeadingLinkList editor={editor} onPick={setLinkUrl} />
-            </form>
-          )}
-        </div>
+        <ToolbarButton label={<LinkIcon />} isActive={false} onClick={() => triggerLinkDialog(editor)} title="Add link" />
         {getPageId && (
           <div className="toolbar__link">
             <ToolbarButton label={<CommentIcon />} isActive={false} onClick={openCommentPopover} title="Comment on this selection" />

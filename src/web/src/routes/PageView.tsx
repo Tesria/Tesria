@@ -103,6 +103,7 @@ export function PageView() {
             <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=pdf`}>↓ PDF</a>
           </div>
         </div>
+        <div className="page-column">
         <SpaceBreadcrumb space={space} tree={tree} />
         <article className={page.fullWidth ? 'page-wrap page-wrap--full' : 'page-wrap'}>
           <div className="paper">
@@ -120,6 +121,7 @@ export function PageView() {
             </>
           )}
         </article>
+        </div>
       </>
     )
   }
@@ -175,6 +177,11 @@ export function PageView() {
       {/* Below the action bar, not above it — the bar is the top edge of the
           page surface and the breadcrumb belongs with the content. SpacePage
           suppresses its own copy on this route. */}
+      {/* The size container for the content (container queries, 100cqw in
+          the full-width layout rules) starts here, below the sticky bar:
+          WebKit has been seen to lose position: sticky on a descendant of a
+          size container, which is how the bar came to scroll away on iOS. */}
+      <div className="page-column">
       <SpaceBreadcrumb space={space} tree={tree} />
       <article className={page.fullWidth ? 'page-wrap page-wrap--full' : 'page-wrap'}>
         <div className="paper">
@@ -214,6 +221,7 @@ export function PageView() {
           )}
         </div>
       </article>
+      </div>
     </>
   )
 }
