@@ -11,7 +11,7 @@
  * real DOM overlays drawn before the capture rather than pixels painted
  * afterwards, so circles and arrows come out as crisp as the UI under them.
  */
-import { chromium } from 'playwright-core'
+import { chromium, webkit, firefox } from 'playwright-core'
 import { readFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 
@@ -109,7 +109,13 @@ const ANNOTATE = `
 }
 `
 
-const browser = await chromium.launch({ args: ['--font-render-hinting=none'] })
+// SHOT_BROWSER=webkit runs the same spec in Safari's engine — the image
+// ships all three — which is how a layout bug that only shows on an iPhone
+// gets reproduced without an iPhone. Not Safari itself (no address-bar
+// collapse, no software keyboard), but the same rendering engine.
+const engines = { chromium, webkit, firefox }
+const engine = engines[process.env.SHOT_BROWSER || 'chromium'] || chromium
+const browser = await engine.launch(engine === chromium ? { args: ['--font-render-hinting=none'] } : {})
 
 // Uncaught errors and console errors, tagged with the shot that was running.
 // A layout or routing change is checked by walking every route and reading
@@ -145,6 +151,7 @@ const seedAppearance = `
 const contextOptions = {
   viewport: { width: 1440, height: 900 },
   deviceScaleFactor: 2,
+  ...(process.env.SHOT_MOBILE ? { isMobile: true, hasTouch: true, deviceScaleFactor: 3, viewport: { width: 390, height: 844 } } : {}),
   // Matches THEME so that anything reading prefers-color-scheme (the editor's
   // embedded frames, a "system" preference) agrees with the seeded choice.
   colorScheme: THEME === 'dark' ? 'dark' : 'light',
@@ -192,6 +199,7 @@ for (const s of spec.shots) {
       if (step.type) await pg.fill(step.selector, step.type)
       if (step.press) await pg.press(step.selector || 'body', step.press)
       if (step.keys) await pg.keyboard.type(step.keys, { delay: 12 })
+      if (step.css) await pg.addStyleTag({ content: step.css })
       if (step.hover) await pg.hover(step.hover)
       if (step.tripleClick) await pg.click(step.tripleClick, { clickCount: 3 })
       if (step.scrollTo) await pg.locator(step.scrollTo).first().scrollIntoViewIfNeeded().catch(() => {})

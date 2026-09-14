@@ -151,6 +151,17 @@ input, textarea {
 }
 input:focus, textarea:focus { outline: 2px solid var(--primary); outline-offset: -1px; }
 label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.6rem; }
+/* Form controls never smaller than 16px on a phone. iOS Safari zooms the
+   page into any control it focuses that is set below 16px — and keeps that
+   zoom after the field is left and the app navigates on. With the label
+   above at 0.85rem and `font: inherit` on inputs, every field in a label
+   was 13.6px: signing in zoomed the page, and in the editor a link dialog
+   or change comment would zoom it, after which the sticky bars sat partly
+   outside the zoomed viewport. That is the "toolbars disappear on iPhone"
+   report. 16px is the threshold at which Safari leaves the page alone. */
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  input, select, textarea { font-size: 16px; }
+}
 label input, label textarea { margin-top: 0.25rem; }
 /* Password fields (PasswordInput.tsx): a wrapper div takes the place of the
    bare input as the label's direct child, so it needs the same top margin

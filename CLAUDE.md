@@ -95,6 +95,20 @@ one's on a decision it shouldn't be making — either way, silently.
   `--disable-features=HttpsUpgrades`. Annotations (circles, arrows, labels)
   are drawn as a DOM overlay before the capture, not painted onto the PNG.
 
+- **Driving the iOS Simulator, learned the hard way (2026-09-14).** Boot
+  exactly one device and wait for `xcrun simctl bootstatus -b` before
+  anything else — this machine is tight on memory, and a second boot takes
+  it down. Caddy's CA goes in with `xcrun simctl keychain <udid>
+  add-root-cert`, then `https://localhost` in Safari is the instance with no
+  warning. Disconnect the hardware keyboard (`defaults write
+  com.apple.iphonesimulator ConnectHardwareKeyboard -bool false`, relaunch
+  the app) or the software keyboard never appears. Injected taps do **not**
+  reliably move focus between web form fields, and the software keyboard
+  drops shift (`@` types as `2`); ask the person to focus the field and
+  then type. Never tap right after a swipe — the page is still moving.
+  `xcrun simctl openurl` and `xcrun simctl io <udid> screenshot` need no
+  panel access and are the reliable half.
+
 - **Dependency audit is a release gate.** `scripts/audit.sh` runs
   `npm audit` (web + collab) and `dotnet list package --vulnerable
   --include-transitive`; it must exit 0 before a release or after touching
