@@ -5,6 +5,29 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### iOS: the vanishing toolbars were Safari's input zoom (2026-09-14)
+
+Reproduced in the iOS Simulator (iPhone 17 Pro, iOS 26.5) rather than
+guessed at. Signing in zoomed the page and the zoom stayed after
+navigating on: the Spaces page rendered wider than the screen with
+"New space" and "Sign out" cut off. Cause: `label { font-size: 0.85rem }`
+plus `font: inherit` on inputs put every field inside a label at 13.6px,
+and iOS Safari zooms the page into any control it focuses below 16px, and
+keeps that zoom. In the editor, the change comment or the link dialog's
+fields did the same, after which the sticky bars sat partly outside the
+zoomed viewport — the "both toolbars get hidden, sometimes" report.
+
+Fix: form controls are 16px at phone width. Also checked on the device:
+with the editor focused and the page scrolled, both bars stay docked on
+the current build. The `container-type` move from the previous entry was
+not the cause — headless WebKit kept the bars docked with the old rule
+re-injected — but it is harmless and stays.
+
+Not yet confirmed on the device: a focused input no longer zooming. The
+simulator tool's injected taps do not move focus into web form fields on
+this page (a tool limitation; the same taps work on a real phone), so the
+final check needs a human tap.
+
 ### Links: one dialog, reached from Insert, with display text (2026-09-14)
 
 - **Link lives under + → Insert**, first in the list, and no longer on the

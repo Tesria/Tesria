@@ -25,6 +25,7 @@ SPECDIR="$(cd "$(dirname "$SPEC")" && pwd)"
 [ -n "$SHOT_EMAIL" ] && [ -n "$SHOT_PASSWORD" ] || { echo "set SHOT_EMAIL and SHOT_PASSWORD" >&2; exit 2; }
 mkdir -p "$SPECDIR/shots"
 docker run --rm --network "container:tesria-caddy-1" --shm-size 256mb \
+  -e SHOT_BROWSER="${SHOT_BROWSER:-chromium}" -e SHOT_MOBILE="${SHOT_MOBILE:-}" -e SHOT_THEME="${SHOT_THEME:-}" -e SHOT_ACCENT="${SHOT_ACCENT:-}" \
   -e BASE="${SHOT_BASE:-https://tesria.localhost}" \
   -e EMAIL="$SHOT_EMAIL" -e PASSWORD="$SHOT_PASSWORD" \
   -v "$HERE/shot.mjs":/app/shot.mjs \
