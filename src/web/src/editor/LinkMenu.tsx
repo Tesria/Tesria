@@ -1,5 +1,5 @@
 import { BubbleMenu } from '@tiptap/react/menus'
-import type { Editor as TiptapEditor } from '@tiptap/react'
+import { useEditorState, type Editor as TiptapEditor } from '@tiptap/react'
 import { triggerLinkDialog } from './linkShortcut'
 
 /**
@@ -9,7 +9,12 @@ import { triggerLinkDialog } from './linkShortcut'
  * removes it. Editor only; a reader's tap on a link follows it.
  */
 export function LinkMenu({ editor }: { editor: TiptapEditor }) {
-  const href = (editor.getAttributes('link').href as string | undefined) ?? ''
+  // Subscribed, not read once: the bubble appears on a selection change,
+  // and a value captured at the previous render was the empty string.
+  const href = useEditorState({
+    editor,
+    selector: ({ editor }) => (editor.getAttributes('link').href as string | undefined) ?? '',
+  })
   return (
     <BubbleMenu
       editor={editor}
