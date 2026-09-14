@@ -280,6 +280,8 @@ label .password-input { margin-top: 0.25rem; }
 /* The open space's tree inside the phone menu (Layout.tsx, spaceNav.ts).
    Nothing to do above --bp-mobile, where the sidebar shows the same tree. */
 .topbar__space { display: none; }
+/* The menu's close button, likewise phone only. */
+.topbar__close { display: none; }
 
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   .topbar__hamburger { display: inline-flex; align-items: center; }
@@ -292,6 +294,14 @@ label .password-input { margin-top: 0.25rem; }
     max-height: calc(100dvh - 52px); overflow-y: auto; overscroll-behavior: contain;
   }
   .topbar__collapsible.is-open { display: flex; }
+  .topbar__close {
+    display: inline-flex; align-items: center; justify-content: center;
+    position: absolute; top: 0.5rem; right: 0.6rem; width: 2.25rem; height: 2.25rem;
+    border: none; background: none; border-radius: 6px; color: var(--muted); cursor: pointer;
+  }
+  .topbar__close:hover { background: var(--hover); color: var(--text); }
+  /* Room for the button so the first link does not sit under it. */
+  .topbar__nav { padding-right: 2.5rem; }
   /* Three bands, the same shape as the desktop sidebar: Spaces, Admin,
      search, the space's name and + New page stay at the top; Space
      settings stays at the bottom; only the page tree between them scrolls.
