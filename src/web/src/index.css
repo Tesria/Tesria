@@ -277,14 +277,31 @@ label .password-input { margin-top: 0.25rem; }
   .topbar__username { display: none; }
 }
 
+/* The open space's tree inside the phone menu (Layout.tsx, spaceNav.ts).
+   Nothing to do above --bp-mobile, where the sidebar shows the same tree. */
+.topbar__space { display: none; }
+
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   .topbar__hamburger { display: inline-flex; align-items: center; }
   .topbar__collapsible {
     display: none; position: absolute; top: 52px; left: 0; right: 0; z-index: 12;
     flex-direction: column; gap: 0.6rem; background: var(--surface); border-bottom: 1px solid var(--border);
     padding: 0.75rem 1rem; box-shadow: var(--shadow-lg);
+    /* A space tree can be longer than a phone screen: the menu scrolls
+       inside itself rather than growing off the bottom of the viewport. */
+    max-height: calc(100dvh - 52px); overflow-y: auto; overscroll-behavior: contain;
   }
   .topbar__collapsible.is-open { display: flex; }
+  .topbar__space {
+    display: flex; flex-direction: column; gap: 0.5rem;
+    border-top: 1px solid var(--border); padding-top: 0.75rem; margin-top: 0.15rem;
+  }
+  .topbar__space-head { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; }
+  .topbar__space-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* The same rows as the desktop tree; rows are the tap target, so give
+     them a little more height here than the mouse needs. */
+  .topbar__space .tree__link { padding: 0.45rem 0.5rem; }
+  .topbar__space .tree-section { margin-top: 0.25rem; }
   .topbar__nav { flex-direction: column; align-items: stretch; gap: 0.15rem; margin-left: 0; }
   .topbar__link--secondary { display: inline-flex; }
   .topbar__more { display: none; }
@@ -796,6 +813,20 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .toolbar-dropdown__style--h2 { font-size: 1.1rem; font-weight: 700; }
 .toolbar-dropdown__style--h3 { font-size: 1rem; font-weight: 700; }
 .toolbar-dropdown__label { font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
+/* "Aa" in place of "Normal text" when the editor's row is narrow. The query
+   is on the action bar's primary slot (an inline-size container, see
+   .page-actionbar--editor), so it is the toolbar's own width that decides,
+   not the viewport's: a narrow reading column on a wide screen counts too.
+   The threshold is where the full label, B, I, link and + no longer fit
+   beside Update/Close. */
+.toolbar-dropdown__compact { display: none; font-size: 0.9rem; font-weight: 700; letter-spacing: -0.02em; }
+@container (max-width: 560px) {
+  .toolbar-dropdown__label { display: none; }
+  .toolbar-dropdown__compact { display: inline; }
+}
+/* An overflowed palette unfolded inside the Insert menu. */
+.toolbar-dropdown__group { display: flex; flex-direction: column; }
+.toolbar-dropdown__panel { padding: 0.25rem 0.6rem 0.5rem; }
 .toolbar-dropdown__menu--insert { min-width: 220px; max-height: min(70vh, 520px); overflow-y: auto; }
 .toolbar-dropdown__heading { margin: 0.35rem 0.6rem 0.1rem; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
 .toolbar__btn {
@@ -1581,6 +1612,13 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
   .dash__tables { grid-template-columns: 1fr; }
   /* Row actions already wrap; the table itself still needs an escape hatch. */
   .admin-table { display: block; overflow-x: auto; }
+  /* At this width the table scrolls sideways, so the actions cell should
+     stay one line and be scrolled to — wrapped, six buttons stacked into a
+     narrow cell and every row grew to the height of the stack. */
+  .admin-table__actions { flex-wrap: nowrap; white-space: nowrap; }
+  .admin-table td, .admin-table th { white-space: nowrap; }
+  /* The one cell that should wrap: a name over an email address. */
+  .admin-table__user { white-space: normal; }
 }
 
 /* ---- recovery prompt ----------------------------------------------------- */

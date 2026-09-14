@@ -73,7 +73,10 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
   const chain = () => editor.chain().focus()
 
   // In the order they leave the row when space runs out: the rarest
-  // formatting first, then lists, then the common marks, bold last.
+  // formatting first, then lists, then the coloured and aligned things,
+  // then the common marks, bold last. On a phone everything down to
+  // italic goes and the row reads "Aa · B I · link · +" beside
+  // Update/Close — the four things a thumb actually reaches for.
   const collapsible: Collapsible[] = [
     { key: 'superscript', icon: <span className="tb-glyph">x²</span>, label: 'Superscript', isActive: editor.isActive('superscript'), run: () => chain().toggleSuperscript().run() },
     { key: 'subscript', icon: <span className="tb-glyph">x₂</span>, label: 'Subscript', isActive: editor.isActive('subscript'), run: () => chain().toggleSubscript().run() },
@@ -83,6 +86,12 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
     { key: 'task', icon: <TaskListIcon />, label: 'Task list', isActive: editor.isActive('taskList'), run: () => chain().toggleTaskList().run() },
     { key: 'ordered', icon: <OrderedListIcon />, label: 'Ordered list', isActive: editor.isActive('orderedList'), run: () => chain().toggleOrderedList().run() },
     { key: 'bullet', icon: <BulletListIcon />, label: 'Bullet list', isActive: editor.isActive('bulletList'), run: () => chain().toggleBulletList().run() },
+    // Alignment, colour and highlight are dropdowns on the row; in the menu
+    // they become three alignment items and two inline palettes (see
+    // overflowActions below). Their keys are measured like any other item.
+    { key: 'align', icon: <AlignLeftIcon />, label: 'Alignment', isActive: false, run: () => {} },
+    { key: 'textcolor', icon: <TextColorIcon />, label: 'Text colour', isActive: editor.isActive('textColor'), run: () => {} },
+    { key: 'highlight', icon: <HighlightIcon />, label: 'Highlight', isActive: editor.isActive('highlight'), run: () => {} },
     { key: 'code', icon: <InlineCodeIcon />, label: 'Inline code', isActive: editor.isActive('code'), run: () => chain().toggleCode().run() },
     { key: 'strike', icon: <span className="tb-glyph tb-strike">S</span>, label: 'Strikethrough', isActive: editor.isActive('strike'), run: () => chain().toggleStrike().run() },
     { key: 'underline', icon: <span className="tb-glyph tb-underline">U</span>, label: 'Underline', isActive: editor.isActive('underline'), run: () => chain().toggleUnderline().run() },
@@ -95,7 +104,47 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
   const { containerRef, overflowed } = useToolbarOverflow(collapsible.map((c) => c.key))
   const byKey = new Map(collapsible.map((c) => [c.key, c]))
   const show = (key: string) => !overflowed.has(key)
-  const overflowActions: OverflowAction[] = collapsible.filter((c) => overflowed.has(c.key))
+
+  const alignOptions = [
+    { key: 'left', label: 'Align left', icon: <AlignLeftIcon />, isActive: editor.isActive({ textAlign: 'left' }) || !editor.isActive({ textAlign: 'center' }) && !editor.isActive({ textAlign: 'right' }), onSelect: () => chain().setTextAlign('left').run() },
+    { key: 'center', label: 'Align center', icon: <AlignCenterIcon />, isActive: editor.isActive({ textAlign: 'center' }), onSelect: () => chain().setTextAlign('center').run() },
+    { key: 'right', label: 'Align right', icon: <AlignRightIcon />, isActive: editor.isActive({ textAlign: 'right' }), onSelect: () => chain().setTextAlign('right').run() },
+  ]
+  const highlightPalette = (close: () => void) => (
+    <ColorPalette
+      tiers={HIGHLIGHT_TIERS}
+      current={editor.getAttributes('highlight').color as string | undefined}
+      onPick={(color) => { chain().setHighlight({ color }).run(); close() }}
+      onClear={() => { chain().unsetHighlight().run(); close() }}
+      clearLabel="No highlight"
+    />
+  )
+  const textColorPalette = (close: () => void) => (
+    <ColorPalette
+      tiers={TEXT_COLOR_TIERS}
+      current={isTextColor(editor.getAttributes('textColor').color) ? editor.getAttributes('textColor').color : null}
+      onPick={(color) => { if (isTextColor(color)) chain().setTextColor(color).run(); close() }}
+      onClear={() => { chain().unsetTextColor().run(); close() }}
+      clearLabel="Default colour"
+    />
+  )
+
+  // What the Insert menu shows under "Formatting" for whatever left the row.
+  // Alignment expands to its three choices; the two colour controls carry
+  // their palette with them so a phone still has every colour.
+  const overflowActions: OverflowAction[] = collapsible
+    .filter((c) => overflowed.has(c.key))
+    // `collapsible` is in the order things are *lost*; the menu is read
+    // top-down, so it lists them in the order they sat on the row —
+    // italic first, superscript last.
+    .reverse()
+    .flatMap((c): OverflowAction[] => {
+      if (c.key === 'align')
+        return alignOptions.map((o) => ({ key: `align-${o.key}`, icon: o.icon, label: o.label, isActive: o.isActive, run: o.onSelect }))
+      if (c.key === 'highlight') return [{ ...c, panel: highlightPalette }]
+      if (c.key === 'textcolor') return [{ ...c, panel: textColorPalette }]
+      return [c]
+    })
 
   const item = (key: string) => {
     const c = byKey.get(key)!
@@ -147,6 +196,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
         <ToolbarDropdown
           title="Text style"
           showLabel
+          compactLabel="Aa"
           options={[
             // No icons: the trigger reads "Normal text ⌄", as Confluence's does.
             { key: 'p', label: 'Normal text', icon: null, isActive: !headingLevel, onSelect: () => chain().setParagraph().run() },
@@ -158,30 +208,14 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
       </span>
       <span className="toolbar__sep" />
       {['bold', 'italic', 'underline', 'strike', 'code'].map(item)}
-      <span data-tb-fixed="highlight">
+      <span data-tb-item="highlight" className={show('highlight') ? 'tb-item' : 'tb-item tb-item--hidden'}>
         <ToolbarPopover icon={<HighlightIcon />} title="Highlight colour" isActive={editor.isActive('highlight')}>
-          {(close) => (
-            <ColorPalette
-              tiers={HIGHLIGHT_TIERS}
-              current={editor.getAttributes('highlight').color as string | undefined}
-              onPick={(color) => { chain().setHighlight({ color }).run(); close() }}
-              onClear={() => { chain().unsetHighlight().run(); close() }}
-              clearLabel="No highlight"
-            />
-          )}
+          {highlightPalette}
         </ToolbarPopover>
       </span>
-      <span data-tb-fixed="textcolor">
+      <span data-tb-item="textcolor" className={show('textcolor') ? 'tb-item' : 'tb-item tb-item--hidden'}>
         <ToolbarPopover icon={<TextColorIcon />} title="Text colour" isActive={editor.isActive('textColor')}>
-          {(close) => (
-            <ColorPalette
-              tiers={TEXT_COLOR_TIERS}
-              current={isTextColor(editor.getAttributes('textColor').color) ? editor.getAttributes('textColor').color : null}
-              onPick={(color) => { if (isTextColor(color)) chain().setTextColor(color).run(); close() }}
-              onClear={() => { chain().unsetTextColor().run(); close() }}
-              clearLabel="Default colour"
-            />
-          )}
+          {textColorPalette}
         </ToolbarPopover>
       </span>
       {sep('sep-lists', ['bullet', 'ordered', 'task'])}
@@ -190,16 +224,9 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
       {['outdent', 'indent'].map(item)}
       {sep('sep-script', ['subscript', 'superscript', 'clear'])}
       {['subscript', 'superscript', 'clear'].map(item)}
-      <span className="toolbar__sep" />
-      <span data-tb-fixed="align">
-        <ToolbarDropdown
-          title="Alignment"
-          options={[
-            { key: 'left', label: 'Align left', icon: <AlignLeftIcon />, isActive: editor.isActive({ textAlign: 'left' }) || !editor.isActive({ textAlign: 'center' }) && !editor.isActive({ textAlign: 'right' }), onSelect: () => chain().setTextAlign('left').run() },
-            { key: 'center', label: 'Align center', icon: <AlignCenterIcon />, isActive: editor.isActive({ textAlign: 'center' }), onSelect: () => chain().setTextAlign('center').run() },
-            { key: 'right', label: 'Align right', icon: <AlignRightIcon />, isActive: editor.isActive({ textAlign: 'right' }), onSelect: () => chain().setTextAlign('right').run() },
-          ]}
-        />
+      {sep('sep-align', ['align'])}
+      <span data-tb-item="align" className={show('align') ? 'tb-item' : 'tb-item tb-item--hidden'}>
+        <ToolbarDropdown title="Alignment" options={alignOptions} />
       </span>
       <span className="toolbar__sep" />
       {linkControl}

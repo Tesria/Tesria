@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useCallback, useMemo, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { UserRole } from '../api/client'
@@ -9,6 +9,10 @@ import { Avatar } from './Avatar'
 import { RecoveryCodesPrompt } from './RecoveryCodesPrompt'
 import { ReauthDialog } from './ReauthDialog'
 import { useDismissable } from '../hooks/useDismissable'
+import { PageTree } from './PageTree'
+import { SpaceIcon } from './SpaceIcon'
+import { SettingsIcon } from './NavIcons'
+import { SpaceNavContext, type SpaceNav } from './spaceNav'
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
   isActive ? 'topbar__link is-active' : 'topbar__link'
@@ -90,6 +94,12 @@ export function Layout() {
   const [navOpen, setNavOpen] = useState(false)
   const navRef = useDismissable<HTMLDivElement>(navOpen, () => setNavOpen(false))
   const secondaryNav = SECONDARY_NAV.filter((i) => !i.adminOnly || user?.role === UserRole.Admin)
+  // The open space's tree, published by SpacePage (see spaceNav.ts). Only the
+  // phone menu renders it; wider viewports have the sidebar.
+  const [spaceNav, setSpaceNavState] = useState<SpaceNav | null>(null)
+  const setSpaceNav = useCallback((nav: SpaceNav | null) => setSpaceNavState(nav), [])
+  const spaceNavContext = useMemo(() => ({ nav: spaceNav, setNav: setSpaceNav }), [spaceNav, setSpaceNav])
+  const closeNav = () => setNavOpen(false)
 
   async function onLogout() {
     await logout()
@@ -105,6 +115,7 @@ export function Layout() {
   }
 
   return (
+    <SpaceNavContext.Provider value={spaceNavContext}>
     <div className="app">
       <header className="topbar">
         <button
@@ -144,6 +155,30 @@ export function Layout() {
               aria-label="Search pages"
             />
           </form>
+          {/* Phone only (hidden by CSS above --bp-mobile): the open space's
+              own navigation, so moving between two pages of one space is
+              menu → page rather than menu → Spaces → space → page. */}
+          {spaceNav && (
+            <div className="topbar__space">
+              <div className="topbar__space-head">
+                <SpaceIcon space={spaceNav.space} size={22} />
+                <span className="topbar__space-name">{spaceNav.space.name}</span>
+              </div>
+              {user && (
+                <NavLink to={spaceNav.newPageHref} className="btn btn--primary btn--block" onClick={closeNav}>
+                  + New page
+                </NavLink>
+              )}
+              {/* readOnly: no reorder pencil and no dragging inside a menu
+                  that closes on the first tap — navigation only. */}
+              <PageTree tree={spaceNav.tree} spaceKey={spaceNav.space.key} readOnly onNavigate={closeNav} />
+              {user && (
+                <NavLink to={`/spaces/${spaceNav.space.key}/settings`} className="sidebar__trash" onClick={closeNav}>
+                  <SettingsIcon /> Space settings
+                </NavLink>
+              )}
+            </div>
+          )}
         </div>
         <div className="topbar__right">
           <ThemeToggle />
@@ -175,5 +210,6 @@ export function Layout() {
       <RecoveryCodesPrompt />
       <ReauthDialog />
     </div>
+    </SpaceNavContext.Provider>
   )
 }

@@ -5,6 +5,52 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Mobile: the phone menu carries the space's pages, and the toolbar finally fits (2026-09-13)
+
+Three things the recent chrome and theme work had left broken at phone
+width, found by shooting every route at 390, 640, 700, 768, 900, 1100,
+1440 and 1800 pixels with the screenshot harness.
+
+- **The editor toolbar overlapped Update and Close on a phone and a
+  tablet.** Only the thirteen formatting buttons could leave the row; the
+  text-style dropdown, the two colour palettes, alignment, link and the
+  `+` menu were fixed, and together they were already wider than a phone.
+  Alignment, text colour and highlight are collapsible now (alignment
+  becomes three items in the `+` menu; each palette unfolds in place
+  under its item, so a phone still has every colour), and the text-style
+  trigger shrinks to **Aa** under a container query on the editor's own
+  row — a narrow reading column on a wide screen counts too. At 390px the
+  row reads `Aa · B · link · +` beside Update and Close; at 640px the
+  marks and both palettes are back; at 1800px everything is. The overflow
+  list in the menu is in display order (italic first), not loss order.
+- **The overflow measurement never counted the separators**, which is why
+  the `+` chevron sat under Full width on a 1440px screen while everything
+  supposedly fit. Counted now.
+- **Changing page on a phone took three taps** — hamburger → Spaces → the
+  space → the page — because the menu knew nothing about the space you
+  were in. `SpacePage` now publishes its tree through a small context
+  (`spaceNav.ts`) and the menu renders it, with `+ New page` above and
+  Space settings below, phone only. The menu scrolls inside itself, since
+  a tree is taller than a phone.
+- **Admin tables were wider than a phone and their rows grew to fit a
+  vertical stack of actions.** At phone width the cells stay on one line
+  and the table scrolls sideways, so rows are rows again.
+
+Checked and left alone: the space layout at 700px (a 260px sidebar beside
+a 440px column, nothing overflowing), the settings and admin tab rows
+(they already scroll sideways), and the dashboard, security, audit,
+profile and search views, which stack correctly.
+
+Found while doing this and **not fixed here**, because it is a design
+decision: the collaborative document for a page is loaded by name from
+`CollabDocuments` and never reconciled with the page's current version.
+The API, `PageWriter` and the MCP `update_page` tool write the page and
+leave that document alone, so the next person to open the editor sees the
+last *editor* state, not the page — and pressing Update would write it
+back over the API's changes. It showed up as a broken image in the
+editor (a manual page whose screenshot attachment had been replaced by
+script). See the note in `docs/architecture.md`.
+
 ### Manual: light-theme screenshots, one per feature, and the admin half (2026-09-11)
 
 **Every screenshot retaken in the light theme with the default blue

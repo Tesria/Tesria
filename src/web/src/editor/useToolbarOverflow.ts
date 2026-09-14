@@ -42,6 +42,14 @@ export function useToolbarOverflow(keys: string[], reserveKeys: string[] = []) {
       const gap = parseFloat(getComputedStyle(container).columnGap || '0') || 0
       let available = container.clientWidth
       for (const el of container.querySelectorAll<HTMLElement>('[data-tb-fixed]')) available -= el.offsetWidth + gap
+      // Separators are not items, but they take room: each is a 1px rule
+      // with margins and a gap on either side. Leaving them out is why the
+      // last control on the row sat a few pixels under the buttons beside
+      // it on a wide screen — everything "fit" by measurement, and did not.
+      for (const el of container.querySelectorAll<HTMLElement>('.toolbar__sep')) {
+        const m = getComputedStyle(el)
+        available -= el.offsetWidth + (parseFloat(m.marginLeft) || 0) + (parseFloat(m.marginRight) || 0) + gap
+      }
       for (const key of reserveKeys) available -= (widths.current.get(key) ?? 0) + gap
 
       // `keys` is the order items are *lost* in, so the row is filled from

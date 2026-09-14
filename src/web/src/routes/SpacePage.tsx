@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { NavLink, Outlet, useMatch, useOutletContext, useParams, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { api, type PageTreeNode, type Space } from '../api/client'
@@ -7,6 +7,7 @@ import { PageTree } from '../components/PageTree'
 import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
 import { SpaceIcon } from '../components/SpaceIcon'
 import { SettingsIcon } from '../components/NavIcons'
+import { usePublishSpaceNav } from '../components/spaceNav'
 
 export type SpaceOutletContext = {
   space: Space
@@ -57,6 +58,14 @@ export function SpacePage() {
     if (!space) return
     api.pages.tree(space.id).then(setTree).catch(() => {})
   }, [space])
+
+  // Hand the tree to the app shell for the phone menu (spaceNav.ts). Memoised
+  // so the shell's effect runs when the space or tree changes, not on every
+  // render of this route.
+  usePublishSpaceNav(useMemo(
+    () => (space ? { space, tree, newPageHref } : null),
+    [space, tree, newPageHref],
+  ))
 
   useEffect(() => {
     let cancelled = false
