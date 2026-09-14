@@ -10,6 +10,8 @@ export type OverflowAction = {
   label: string
   isActive: boolean
   run: () => void
+  /** A control that is a palette rather than a click: tapping the item opens this in place. */
+  panel?: (close: () => void) => ReactNode
 }
 
 /**
@@ -27,7 +29,9 @@ export type OverflowAction = {
  */
 export function InsertMenu({ editor, overflow }: { editor: TiptapEditor; overflow: OverflowAction[] }) {
   const [open, setOpen] = useState(false)
-  const ref = useDismissable<HTMLDivElement>(open, () => setOpen(false))
+  // Which overflowed palette (highlight, text colour) is unfolded, if any.
+  const [openPanel, setOpenPanel] = useState<string | null>(null)
+  const ref = useDismissable<HTMLDivElement>(open, () => { setOpen(false); setOpenPanel(null) })
 
   // Slash items delete the "/query" range before inserting; here the range
   // is the current selection, so an empty selection deletes nothing and a
@@ -62,12 +66,23 @@ export function InsertMenu({ editor, overflow }: { editor: TiptapEditor; overflo
             <>
               <p className="toolbar-dropdown__heading">Formatting</p>
               {overflow.map((a) => (
-                <button key={a.key} type="button"
-                  className={a.isActive ? 'toolbar-dropdown__item is-active' : 'toolbar-dropdown__item'}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => { a.run(); setOpen(false) }}>
-                  {a.icon}<span>{a.label}</span>
-                </button>
+                <div key={a.key} className="toolbar-dropdown__group">
+                  <button type="button"
+                    className={a.isActive ? 'toolbar-dropdown__item is-active' : 'toolbar-dropdown__item'}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      if (a.panel) { setOpenPanel((k) => (k === a.key ? null : a.key)); return }
+                      a.run(); setOpen(false)
+                    }}
+                    aria-expanded={a.panel ? openPanel === a.key : undefined}>
+                    {a.icon}<span>{a.label}</span>
+                  </button>
+                  {a.panel && openPanel === a.key && (
+                    <div className="toolbar-dropdown__panel">
+                      {a.panel(() => { setOpenPanel(null); setOpen(false) })}
+                    </div>
+                  )}
+                </div>
               ))}
             </>
           )}
