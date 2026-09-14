@@ -22,18 +22,7 @@ const MENU_WIDTH_PX = 160
  * row short enough never to wrap. `showLabel` renders the active choice's
  * name beside its icon (the text-style control reads "Heading 2", not "H2").
  */
-export function ToolbarDropdown({ title, options, showLabel = false, compactLabel }: {
-  title: string
-  options: ToolbarDropdownOption[]
-  showLabel?: boolean
-  /**
-   * A short stand-in for the label where the row is narrow ("Aa" for the
-   * text-style control). Both are rendered; a container query on the
-   * editor's action bar decides which one shows, so the toolbar's overflow
-   * measurement sees the real width either way.
-   */
-  compactLabel?: string
-}) {
+export function ToolbarDropdown({ title, options, showLabel = false }: { title: string; options: ToolbarDropdownOption[]; showLabel?: boolean }) {
   const [open, setOpen] = useState(false)
   const [alignRight, setAlignRight] = useState(false)
   const ref = useDismissable<HTMLDivElement>(open, () => setOpen(false))
@@ -73,7 +62,6 @@ export function ToolbarDropdown({ title, options, showLabel = false, compactLabe
       >
         {active.icon}
         {showLabel && <span className="toolbar-dropdown__label">{active.label}</span>}
-        {showLabel && compactLabel && <span className="toolbar-dropdown__compact" aria-hidden="true">{compactLabel}</span>}
         <ChevronDownIcon />
       </button>
       {open && (

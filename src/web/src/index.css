@@ -292,9 +292,24 @@ label .password-input { margin-top: 0.25rem; }
     max-height: calc(100dvh - 52px); overflow-y: auto; overscroll-behavior: contain;
   }
   .topbar__collapsible.is-open { display: flex; }
+  /* Three bands, the same shape as the desktop sidebar: Spaces, Admin,
+     search, the space's name and + New page stay at the top; Space
+     settings stays at the bottom; only the page tree between them scrolls.
+     The whole menu was one scroll before, so on a long space the settings
+     link and the way back to Spaces were both a long swipe away. */
+  .topbar__collapsible { overflow: hidden; }
+  .topbar__nav, .topbar__search { flex: 0 0 auto; }
   .topbar__space {
-    display: flex; flex-direction: column; gap: 0.5rem;
+    display: flex; flex-direction: column; gap: 0.5rem; flex: 1 1 auto; min-height: 0;
     border-top: 1px solid var(--border); padding-top: 0.75rem; margin-top: 0.15rem;
+  }
+  .topbar__space-head, .topbar__space > .btn { flex: 0 0 auto; }
+  .topbar__space .tree-section { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .topbar__space .tree-section__heading { flex: 0 0 auto; }
+  .topbar__space .tree { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .topbar__space > .sidebar__trash {
+    flex: 0 0 auto; margin-top: 0.25rem; padding-top: 0.6rem; border-top: 1px solid var(--border);
+    border-radius: 0;
   }
   .topbar__space-head { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; }
   .topbar__space-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -322,6 +337,13 @@ label .password-input { margin-top: 0.25rem; }
 .theme-menu__panel {
   position: absolute; right: 0; top: calc(100% + 8px); z-index: 20;
   width: min(260px, calc(100vw - 2rem));
+}
+/* On a phone the toggle sits mid-bar, and a panel hung off its right edge
+   ran off the left of the screen. Pin it to the viewport instead. */
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .theme-menu__panel { position: fixed; left: 1rem; right: 1rem; top: 60px; width: auto; }
+}
+.theme-menu__panel {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   box-shadow: var(--shadow-lg); padding: 0.6rem;
 }
@@ -828,6 +850,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .toolbar-dropdown__group { display: flex; flex-direction: column; }
 .toolbar-dropdown__panel { padding: 0.25rem 0.6rem 0.5rem; }
 .toolbar-dropdown__menu--insert { min-width: 220px; max-height: min(70vh, 520px); overflow-y: auto; }
+.toolbar-dropdown__menu--text { min-width: 240px; max-height: min(70vh, 560px); overflow-y: auto; }
 .toolbar-dropdown__heading { margin: 0.35rem 0.6rem 0.1rem; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
 .toolbar__btn {
   display: inline-flex; align-items: center; justify-content: center;
@@ -947,14 +970,12 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   :root { --page-pad: 0.75rem; }
   .layout-section { flex-direction: column; }
   .layout-column { flex: none; }
-  /* Sticky at the same top:52px as .space-actionbar (also sticky, mobile
-     only) meant the two fought over the same slot while scrolling — one
-     visibly sliding over the other rather than stacking. Simplest fix:
-     only one sticky bar below the app topbar at this width; this one
-     becomes a normal, non-sticky row (scrolls away with the content, right
-     below the breadcrumb) instead of trying to stack a second sticky
-     offset under a bar whose height isn't a fixed, reliable number. */
-  .page-actionbar { position: static; padding: 0.5rem 0.75rem; }
+  /* Sticky here as on desktop. The space bar (.space-actionbar, also
+     sticky at 52px) is hidden on every route that renders this bar — see
+     isPageRoute in SpacePage.tsx — so there is exactly one bar under the
+     topbar and nothing to fight over. It used to go static at this width,
+     which is why Edit and the toolbar scrolled away on a phone. */
+  .page-actionbar { padding: 0.5rem 0.75rem; }
   /* Full width vs. normal is a distinction without a difference at this
      width (the reading column already fills the viewport either way) — see
      docs for the fuller reasoning. CSS-only: no JS/viewport-detection. */

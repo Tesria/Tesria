@@ -1,18 +1,8 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import type { Editor as TiptapEditor } from '@tiptap/react'
 import { useDismissable } from '../hooks/useDismissable'
 import { ChevronDownIcon, PlusIcon } from './icons'
 import { SLASH_ITEMS, type SlashItem } from './slash/items'
-
-export type OverflowAction = {
-  key: string
-  icon: ReactNode
-  label: string
-  isActive: boolean
-  run: () => void
-  /** A control that is a palette rather than a click: tapping the item opens this in place. */
-  panel?: (close: () => void) => ReactNode
-}
 
 /**
  * The toolbar's "+" menu — the same idea as Confluence's: block elements
@@ -23,15 +13,13 @@ export type OverflowAction = {
  *
  * Its contents come from the slash catalogue (`SLASH_ITEMS`), not a list of
  * their own: a block added there appears here without a second edit, and
- * the two can never disagree about what can be inserted. Formatting buttons
- * squeezed off a narrow toolbar are appended under "More", so nothing is
- * ever out of reach — only further away.
+ * the two can never disagree about what can be inserted. Nothing else lives
+ * here: text controls that leave a narrow toolbar go into the text menu
+ * (TextStyleMenu), so "+" always means "insert something".
  */
-export function InsertMenu({ editor, overflow }: { editor: TiptapEditor; overflow: OverflowAction[] }) {
+export function InsertMenu({ editor }: { editor: TiptapEditor }) {
   const [open, setOpen] = useState(false)
-  // Which overflowed palette (highlight, text colour) is unfolded, if any.
-  const [openPanel, setOpenPanel] = useState<string | null>(null)
-  const ref = useDismissable<HTMLDivElement>(open, () => { setOpen(false); setOpenPanel(null) })
+  const ref = useDismissable<HTMLDivElement>(open, () => setOpen(false))
 
   // Slash items delete the "/query" range before inserting; here the range
   // is the current selection, so an empty selection deletes nothing and a
@@ -62,30 +50,6 @@ export function InsertMenu({ editor, overflow }: { editor: TiptapEditor; overflo
       </button>
       {open && (
         <div className="toolbar-dropdown__menu toolbar-dropdown__menu--insert">
-          {overflow.length > 0 && (
-            <>
-              <p className="toolbar-dropdown__heading">Formatting</p>
-              {overflow.map((a) => (
-                <div key={a.key} className="toolbar-dropdown__group">
-                  <button type="button"
-                    className={a.isActive ? 'toolbar-dropdown__item is-active' : 'toolbar-dropdown__item'}
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => {
-                      if (a.panel) { setOpenPanel((k) => (k === a.key ? null : a.key)); return }
-                      a.run(); setOpen(false)
-                    }}
-                    aria-expanded={a.panel ? openPanel === a.key : undefined}>
-                    {a.icon}<span>{a.label}</span>
-                  </button>
-                  {a.panel && openPanel === a.key && (
-                    <div className="toolbar-dropdown__panel">
-                      {a.panel(() => { setOpenPanel(null); setOpen(false) })}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </>
-          )}
           <p className="toolbar-dropdown__heading">Insert</p>
           {blocks.map((item) => (
             <button key={item.title} type="button" className="toolbar-dropdown__item"

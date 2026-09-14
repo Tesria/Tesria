@@ -44,7 +44,11 @@ export function SpacePage() {
   // title) and its own Edit/+New/⋮ row (PageView.tsx) — this bar would just
   // be a second, redundant header stacked above that one. Desktop is
   // unaffected: this bar is display:none there regardless (see .sidebar).
-  const isPageRoute = Boolean(currentPageId)
+  // Includes the new-page editor: every route that renders its own action
+  // bar (PageView, PageEditor) hides this one, which is what lets that bar
+  // be sticky under the topbar on a phone without two bars fighting for
+  // the same slot.
+  const isPageRoute = Boolean(currentPageId) || Boolean(matchNew)
   // Any route with a page action bar puts its own breadcrumb *below* that
   // bar — the bar is the top edge of the page surface, and the breadcrumb
   // belongs with the content (Confluence does the same). Rendering it here

@@ -5,6 +5,32 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Mobile, second pass: docked bars, two toolbar menus, a banded hamburger (2026-09-13)
+
+Five more things at phone width, each verified with the screenshot
+harness at 390px (and the toolbar change at 1440px, where it is inert).
+
+- **The theme popup ran off the left edge.** It hung off the toggle's
+  right edge, and on a phone the toggle sits mid-bar. It is pinned to the
+  viewport at that width now.
+- **The editor toolbar and the page action bar scrolled away.** Both went
+  `position: static` on a phone to avoid fighting the space bar for the
+  same sticky slot. The space bar is now hidden on every route that
+  renders one of them — the new-page editor included, which it was not —
+  so both bars stay docked under the top bar, as on desktop.
+- **The toolbar has two menus, and they mean different things.**
+  Everything that has left the row for want of space now goes into the
+  **Aa** menu, grouped as Style, Format, Colour and Paragraph (the colour
+  palettes unfold in place); the **+** menu holds only things to insert.
+  On a wide screen the Aa menu is just the block styles, because nothing
+  has overflowed. The previous pass had put overflow under **+**, which
+  made "insert" mean "and also some formatting".
+- **The hamburger has three bands**, the same shape as the desktop
+  sidebar: Spaces, Admin, search, the space's name and **+ New page** stay
+  at the top; **Space settings** stays at the bottom; only the page tree
+  between them scrolls. The whole menu was one scroll before, so on a
+  long space the way back to Spaces was a swipe away.
+
 ### Design: API and MCP writes become tracked changes in a live draft (2026-09-13)
 
 The stale-collaborative-document gap found on 2026-09-13 has a design now,
