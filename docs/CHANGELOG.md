@@ -5,6 +5,14 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### The phone menu has a close button (2026-09-13)
+
+An X at the top right of the hamburger panel. Tapping outside or pressing
+Escape already closed it, but neither is discoverable, and a menu that
+covers the screen needs a visible way out. Phone only: above the
+breakpoint the same element is inline in the top bar and the button is
+hidden.
+
 ### Mobile, second pass: docked bars, two toolbar menus, a banded hamburger (2026-09-13)
 
 Five more things at phone width, each verified with the screenshot

@@ -132,6 +132,16 @@ export function Layout() {
           <span className="brand__word">Tesria</span>
         </Link>
         <div ref={navRef} className={navOpen ? 'topbar__collapsible is-open' : 'topbar__collapsible'}>
+          {/* Phone only (the panel is a dropdown there; above the breakpoint
+              this element is display: contents and the button is hidden).
+              Tapping outside or Escape also closes it; a visible way out
+              is for the person who does not know that. */}
+          <button type="button" className="topbar__close" aria-label="Close menu" onClick={closeNav}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
           <nav className="topbar__nav">
             <NavLink to="/spaces" className={navClass} onClick={() => setNavOpen(false)}>Spaces</NavLink>
             {secondaryNav.map((item) => (
