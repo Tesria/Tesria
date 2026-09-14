@@ -4,7 +4,9 @@ import { ToolbarButton } from './ToolbarButton'
 import { HeadingLinkList } from './HeadingLinkList'
 import { ToolbarDropdown } from './ToolbarDropdown'
 import { ToolbarPopover } from './ToolbarPopover'
-import { InsertMenu, type OverflowAction } from './InsertMenu'
+import { InsertMenu } from './InsertMenu'
+import { TextStyleMenu } from './TextStyleMenu'
+import type { OverflowAction } from './OverflowItems'
 import { useToolbarOverflow } from './useToolbarOverflow'
 import { useEdgeAlign } from '../hooks/useEdgeAlign'
 import { ColorPalette } from './ColorPalette'
@@ -25,7 +27,7 @@ type Props = {
 }
 
 /** A formatting control that can leave the row for the Insert menu's "More" section when space runs out. */
-type Collapsible = { key: string; icon: ReactNode; label: string; isActive: boolean; run: () => void }
+type Collapsible = { key: string; icon: ReactNode; label: string; isActive: boolean; run: () => void; group: OverflowAction['group'] }
 
 /**
  * The editing toolbar: one row, edge to edge, never wrapping — the shape of
@@ -78,25 +80,25 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
   // italic goes and the row reads "Aa · B I · link · +" beside
   // Update/Close — the four things a thumb actually reaches for.
   const collapsible: Collapsible[] = [
-    { key: 'superscript', icon: <span className="tb-glyph">x²</span>, label: 'Superscript', isActive: editor.isActive('superscript'), run: () => chain().toggleSuperscript().run() },
-    { key: 'subscript', icon: <span className="tb-glyph">x₂</span>, label: 'Subscript', isActive: editor.isActive('subscript'), run: () => chain().toggleSubscript().run() },
-    { key: 'outdent', icon: <OutdentIcon />, label: 'Outdent', isActive: false, run: () => chain().outdent().run() },
-    { key: 'indent', icon: <IndentIcon />, label: 'Indent', isActive: false, run: () => chain().indent().run() },
-    { key: 'clear', icon: <ClearFormattingIcon />, label: 'Clear formatting', isActive: false, run: () => chain().clearFormatting().run() },
-    { key: 'task', icon: <TaskListIcon />, label: 'Task list', isActive: editor.isActive('taskList'), run: () => chain().toggleTaskList().run() },
-    { key: 'ordered', icon: <OrderedListIcon />, label: 'Ordered list', isActive: editor.isActive('orderedList'), run: () => chain().toggleOrderedList().run() },
-    { key: 'bullet', icon: <BulletListIcon />, label: 'Bullet list', isActive: editor.isActive('bulletList'), run: () => chain().toggleBulletList().run() },
+    { key: 'superscript', group: 'format', icon: <span className="tb-glyph">x²</span>, label: 'Superscript', isActive: editor.isActive('superscript'), run: () => chain().toggleSuperscript().run() },
+    { key: 'subscript', group: 'format', icon: <span className="tb-glyph">x₂</span>, label: 'Subscript', isActive: editor.isActive('subscript'), run: () => chain().toggleSubscript().run() },
+    { key: 'outdent', group: 'paragraph', icon: <OutdentIcon />, label: 'Outdent', isActive: false, run: () => chain().outdent().run() },
+    { key: 'indent', group: 'paragraph', icon: <IndentIcon />, label: 'Indent', isActive: false, run: () => chain().indent().run() },
+    { key: 'clear', group: 'format', icon: <ClearFormattingIcon />, label: 'Clear formatting', isActive: false, run: () => chain().clearFormatting().run() },
+    { key: 'task', group: 'paragraph', icon: <TaskListIcon />, label: 'Task list', isActive: editor.isActive('taskList'), run: () => chain().toggleTaskList().run() },
+    { key: 'ordered', group: 'paragraph', icon: <OrderedListIcon />, label: 'Ordered list', isActive: editor.isActive('orderedList'), run: () => chain().toggleOrderedList().run() },
+    { key: 'bullet', group: 'paragraph', icon: <BulletListIcon />, label: 'Bullet list', isActive: editor.isActive('bulletList'), run: () => chain().toggleBulletList().run() },
     // Alignment, colour and highlight are dropdowns on the row; in the menu
     // they become three alignment items and two inline palettes (see
     // overflowActions below). Their keys are measured like any other item.
-    { key: 'align', icon: <AlignLeftIcon />, label: 'Alignment', isActive: false, run: () => {} },
-    { key: 'textcolor', icon: <TextColorIcon />, label: 'Text colour', isActive: editor.isActive('textColor'), run: () => {} },
-    { key: 'highlight', icon: <HighlightIcon />, label: 'Highlight', isActive: editor.isActive('highlight'), run: () => {} },
-    { key: 'code', icon: <InlineCodeIcon />, label: 'Inline code', isActive: editor.isActive('code'), run: () => chain().toggleCode().run() },
-    { key: 'strike', icon: <span className="tb-glyph tb-strike">S</span>, label: 'Strikethrough', isActive: editor.isActive('strike'), run: () => chain().toggleStrike().run() },
-    { key: 'underline', icon: <span className="tb-glyph tb-underline">U</span>, label: 'Underline', isActive: editor.isActive('underline'), run: () => chain().toggleUnderline().run() },
-    { key: 'italic', icon: <span className="tb-glyph tb-italic">I</span>, label: 'Italic', isActive: editor.isActive('italic'), run: () => chain().toggleItalic().run() },
-    { key: 'bold', icon: <span className="tb-glyph tb-bold">B</span>, label: 'Bold', isActive: editor.isActive('bold'), run: () => chain().toggleBold().run() },
+    { key: 'align', group: 'paragraph', icon: <AlignLeftIcon />, label: 'Alignment', isActive: false, run: () => {} },
+    { key: 'textcolor', group: 'colour', icon: <TextColorIcon />, label: 'Text colour', isActive: editor.isActive('textColor'), run: () => {} },
+    { key: 'highlight', group: 'colour', icon: <HighlightIcon />, label: 'Highlight', isActive: editor.isActive('highlight'), run: () => {} },
+    { key: 'code', group: 'format', icon: <InlineCodeIcon />, label: 'Inline code', isActive: editor.isActive('code'), run: () => chain().toggleCode().run() },
+    { key: 'strike', group: 'format', icon: <span className="tb-glyph tb-strike">S</span>, label: 'Strikethrough', isActive: editor.isActive('strike'), run: () => chain().toggleStrike().run() },
+    { key: 'underline', group: 'format', icon: <span className="tb-glyph tb-underline">U</span>, label: 'Underline', isActive: editor.isActive('underline'), run: () => chain().toggleUnderline().run() },
+    { key: 'italic', group: 'format', icon: <span className="tb-glyph tb-italic">I</span>, label: 'Italic', isActive: editor.isActive('italic'), run: () => chain().toggleItalic().run() },
+    { key: 'bold', group: 'format', icon: <span className="tb-glyph tb-bold">B</span>, label: 'Bold', isActive: editor.isActive('bold'), run: () => chain().toggleBold().run() },
   ]
   // The link button is never collapsed: its popover anchors to the button,
   // so a hidden button would mean a popover that cannot appear.
@@ -129,9 +131,10 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
     />
   )
 
-  // What the Insert menu shows under "Formatting" for whatever left the row.
-  // Alignment expands to its three choices; the two colour controls carry
-  // their palette with them so a phone still has every colour.
+  // What the text menu shows beneath the block styles for whatever left the
+  // row. Alignment expands to its three choices; the two colour controls
+  // carry their palette with them so a phone still has every colour. The
+  // "+" menu never receives any of this: it is for things to insert.
   const overflowActions: OverflowAction[] = collapsible
     .filter((c) => overflowed.has(c.key))
     // `collapsible` is in the order things are *lost*; the menu is read
@@ -140,7 +143,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
     .reverse()
     .flatMap((c): OverflowAction[] => {
       if (c.key === 'align')
-        return alignOptions.map((o) => ({ key: `align-${o.key}`, icon: o.icon, label: o.label, isActive: o.isActive, run: o.onSelect }))
+        return alignOptions.map((o) => ({ key: `align-${o.key}`, group: 'paragraph' as const, icon: o.icon, label: o.label, isActive: o.isActive, run: o.onSelect }))
       if (c.key === 'highlight') return [{ ...c, panel: highlightPalette }]
       if (c.key === 'textcolor') return [{ ...c, panel: textColorPalette }]
       return [c]
@@ -193,16 +196,16 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
   return (
     <div className="toolbar" ref={containerRef}>
       <span data-tb-fixed="style">
-        <ToolbarDropdown
-          title="Text style"
-          showLabel
+        <TextStyleMenu
+          title="Text"
           compactLabel="Aa"
-          options={[
-            // No icons: the trigger reads "Normal text ⌄", as Confluence's does.
-            { key: 'p', label: 'Normal text', icon: null, isActive: !headingLevel, onSelect: () => chain().setParagraph().run() },
-            { key: 'h1', label: 'Heading 1', icon: null, isActive: headingLevel === 1, onSelect: () => chain().toggleHeading({ level: 1 }).run() },
-            { key: 'h2', label: 'Heading 2', icon: null, isActive: headingLevel === 2, onSelect: () => chain().toggleHeading({ level: 2 }).run() },
-            { key: 'h3', label: 'Heading 3', icon: null, isActive: headingLevel === 3, onSelect: () => chain().toggleHeading({ level: 3 }).run() },
+          overflow={overflowActions}
+          styles={[
+            // The trigger reads "Normal text ⌄", as Confluence's does.
+            { key: 'p', label: 'Normal text', isActive: !headingLevel, onSelect: () => chain().setParagraph().run() },
+            { key: 'h1', label: 'Heading 1', isActive: headingLevel === 1, onSelect: () => chain().toggleHeading({ level: 1 }).run() },
+            { key: 'h2', label: 'Heading 2', isActive: headingLevel === 2, onSelect: () => chain().toggleHeading({ level: 2 }).run() },
+            { key: 'h3', label: 'Heading 3', isActive: headingLevel === 3, onSelect: () => chain().toggleHeading({ level: 3 }).run() },
           ]}
         />
       </span>
@@ -230,7 +233,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
       </span>
       <span className="toolbar__sep" />
       {linkControl}
-      <InsertMenu editor={editor} overflow={overflowActions} />
+      <InsertMenu editor={editor} />
     </div>
   )
 }
