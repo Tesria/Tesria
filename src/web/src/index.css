@@ -730,6 +730,9 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .slash-menu__item:hover, .slash-menu__item.is-selected { background: var(--bg-alt); }
 .slash-menu__title { font-size: 0.88rem; font-weight: 500; color: var(--text); }
 .slash-menu__desc { font-size: 0.76rem; color: var(--muted); }
+/* The same form inside the text menu on a phone: static, full width. */
+.toolbar__link-form { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; padding: 0.25rem 0.6rem 0.5rem; }
+.toolbar__link-form input { flex: 1 1 140px; min-width: 0; padding: 0.3rem 0.5rem; }
 .toolbar__link-popover {
   position: absolute; top: 100%; left: 0; margin-top: 0.3rem; z-index: 6;
   display: flex; gap: 0.4rem; align-items: center; background: var(--surface); border: 1px solid var(--border);

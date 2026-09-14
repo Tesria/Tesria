@@ -9,6 +9,7 @@ import { TextStyleMenu } from './TextStyleMenu'
 import type { OverflowAction } from './OverflowItems'
 import { useToolbarOverflow } from './useToolbarOverflow'
 import { useEdgeAlign } from '../hooks/useEdgeAlign'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 import { ColorPalette } from './ColorPalette'
 import { HIGHLIGHT_TIERS, TEXT_COLOR_TIERS } from './palette'
 import { isTextColor } from './textColorMark'
@@ -73,6 +74,36 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
   }
 
   const chain = () => editor.chain().focus()
+  // Keep in sync with --bp-mobile in index.css. Below it the row is
+  // "Aa · +" beside the page buttons and nothing else — no measuring.
+  const phone = useMediaQuery('(max-width: 640px)')
+
+  // The link form, shared by the row's popover and the text menu's panel.
+  const linkForm = (className: string, close: () => void) => (
+    <form
+      ref={className === 'toolbar__link-popover' ? linkAlign.ref : undefined}
+      className={className}
+      style={className === 'toolbar__link-popover' ? { left: linkAlign.offsetLeft } : undefined}
+      onSubmit={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        applyLink()
+        close()
+      }}
+    >
+      <input
+        autoFocus
+        value={linkUrl}
+        onChange={(e) => setLinkUrl(e.target.value)}
+        placeholder="https://…"
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') close()
+        }}
+      />
+      <button type="submit" className="link-btn">Apply</button>
+      <HeadingLinkList editor={editor} onPick={setLinkUrl} />
+    </form>
+  )
 
   // In the order they leave the row when space runs out: the rarest
   // formatting first, then lists, then the coloured and aligned things,
@@ -96,6 +127,10 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
     { key: 'highlight', group: 'colour', icon: <HighlightIcon />, label: 'Highlight', isActive: editor.isActive('highlight'), run: () => {} },
     { key: 'code', group: 'format', icon: <InlineCodeIcon />, label: 'Inline code', isActive: editor.isActive('code'), run: () => chain().toggleCode().run() },
     { key: 'strike', group: 'format', icon: <span className="tb-glyph tb-strike">S</span>, label: 'Strikethrough', isActive: editor.isActive('strike'), run: () => chain().toggleStrike().run() },
+    // In the menu the link is a panel holding the same form as the row's
+    // popover, so a phone can add a link without the button it would
+    // otherwise anchor to.
+    { key: 'link', group: 'format', icon: <LinkIcon />, label: 'Link', isActive: editor.isActive('link'), run: () => {} },
     { key: 'underline', group: 'format', icon: <span className="tb-glyph tb-underline">U</span>, label: 'Underline', isActive: editor.isActive('underline'), run: () => chain().toggleUnderline().run() },
     { key: 'italic', group: 'format', icon: <span className="tb-glyph tb-italic">I</span>, label: 'Italic', isActive: editor.isActive('italic'), run: () => chain().toggleItalic().run() },
     { key: 'bold', group: 'format', icon: <span className="tb-glyph tb-bold">B</span>, label: 'Bold', isActive: editor.isActive('bold'), run: () => chain().toggleBold().run() },
@@ -103,7 +138,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
   // The link button is never collapsed: its popover anchors to the button,
   // so a hidden button would mean a popover that cannot appear.
   // Measurement order is "first to go, first in the list"; display order is the reverse.
-  const { containerRef, overflowed } = useToolbarOverflow(collapsible.map((c) => c.key))
+  const { containerRef, overflowed } = useToolbarOverflow(collapsible.map((c) => c.key), [], phone)
   const byKey = new Map(collapsible.map((c) => [c.key, c]))
   const show = (key: string) => !overflowed.has(key)
 
@@ -146,6 +181,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
         return alignOptions.map((o) => ({ key: `align-${o.key}`, group: 'paragraph' as const, icon: o.icon, label: o.label, isActive: o.isActive, run: o.onSelect }))
       if (c.key === 'highlight') return [{ ...c, panel: highlightPalette }]
       if (c.key === 'textcolor') return [{ ...c, panel: textColorPalette }]
+      if (c.key === 'link') return [{ ...c, panel: (close) => { return linkForm('toolbar__link-form', close) } }]
       return [c]
     })
 
@@ -159,32 +195,9 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
   }
 
   const linkControl = (
-    <div className="toolbar__link" data-tb-fixed="link">
+    <div className={show('link') ? 'toolbar__link tb-item' : 'toolbar__link tb-item tb-item--hidden'} data-tb-item="link">
       <ToolbarButton label={<LinkIcon />} isActive={editor.isActive('link')} onClick={openLinkPopover} title="Link" />
-      {linkPopoverOpen && (
-        <form
-          ref={linkAlign.ref}
-          className="toolbar__link-popover"
-          style={{ left: linkAlign.offsetLeft }}
-          onSubmit={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            applyLink()
-          }}
-        >
-          <input
-            autoFocus
-            value={linkUrl}
-            onChange={(e) => setLinkUrl(e.target.value)}
-            placeholder="https://…"
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') setLinkPopoverOpen(false)
-            }}
-          />
-          <button type="submit" className="link-btn">Apply</button>
-          <HeadingLinkList editor={editor} onPick={setLinkUrl} />
-        </form>
-      )}
+      {linkPopoverOpen && linkForm('toolbar__link-popover', () => setLinkPopoverOpen(false))}
     </div>
   )
 
@@ -209,7 +222,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
           ]}
         />
       </span>
-      <span className="toolbar__sep" />
+      {sep('sep-marks', ['bold', 'italic', 'underline', 'strike', 'code', 'highlight', 'textcolor'])}
       {['bold', 'italic', 'underline', 'strike', 'code'].map(item)}
       <span data-tb-item="highlight" className={show('highlight') ? 'tb-item' : 'tb-item tb-item--hidden'}>
         <ToolbarPopover icon={<HighlightIcon />} title="Highlight colour" isActive={editor.isActive('highlight')}>
@@ -231,7 +244,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
       <span data-tb-item="align" className={show('align') ? 'tb-item' : 'tb-item tb-item--hidden'}>
         <ToolbarDropdown title="Alignment" options={alignOptions} />
       </span>
-      <span className="toolbar__sep" />
+      {sep('sep-link', ['link'])}
       {linkControl}
       <InsertMenu editor={editor} />
     </div>

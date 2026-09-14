@@ -5,6 +5,16 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Phone toolbar: the two menus and nothing else (2026-09-13)
+
+At phone width the editor row is **Aa** and **+** beside the page
+buttons. Nothing is measured there any more: every text control,
+including the link, lives in the text menu, and the link's URL form —
+with the same headings-on-this-page list as the row's popover — unfolds
+in place under its item. Above the breakpoint the row still keeps
+whatever fits. Separators go with the controls they separate, so no
+stray rule is left between the two menus.
+
 ### The phone menu has a close button (2026-09-13)
 
 An X at the top right of the hamburger panel. Tapping outside or pressing
