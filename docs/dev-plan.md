@@ -835,6 +835,136 @@ onto `roadmap.md` and are sequenced here.
 - **Last, on purpose:** every earlier phase adds fields the pack must
   carry. Building it earlier means rebuilding it.
 
+### 8.6 External edits — API and MCP writes as tracked changes in a live draft — `L` — Model: Fable → Opus
+
+**The problem (found 2026-09-13).** A page has two stores: the page
+version in Postgres, and the Yjs document in `CollabDocuments` that the
+editor actually edits. The API, `PageWriter` and the MCP `update_page`
+tool write the first and never touch the second; the editor seeds the
+second only when it is empty. So once a page has been opened in the
+editor, a write from anywhere else is invisible to the next editing
+session, and pressing Update there writes the stale draft over it. Every
+assistant-written change is one browser edit away from being lost.
+
+**The decision.** Treat an API or MCP write the way a second person's
+typing is treated: it lands in the live document, visibly, and the human
+decides what to do with it. Concretely —
+
+1. **The write lands in the draft as tracked changes.** Text the write
+   added is marked `externalInsert`; text it removed stays in place,
+   marked `externalDelete`, struck through. Both marks carry
+   `{ source: 'api' | 'mcp' | 'page', actor, at }`, so the highlight can
+   say *Added by MCP · Brian's laptop token, 2 minutes ago* on hover and
+   colour by source.
+2. **Publishing accepts.** Before the editor sends its content, it runs
+   `acceptExternalEdits`: `externalDelete` ranges are removed,
+   `externalInsert` marks are unwrapped, and the result is what gets
+   published. The human can edit inside a highlighted run first — it is
+   ordinary text with a mark on it. A banner above the editor says how
+   many external changes are pending, with **Accept all** and **Reject
+   all** (reject = delete the inserts, un-strike the deletes) for people
+   who want to decide before they finish.
+3. **No session open means nothing is lost either.** When the sidecar
+   loads a stored document whose recorded page version is behind the
+   page's current version, it applies the same tracked-change
+   reconciliation before handing it to the first client. Unpublished
+   edits from a session everyone closed are kept, marked against what was
+   published meanwhile — never silently discarded, never silently kept as
+   if newer.
+4. **Publish is optimistic-concurrency checked.** The editor sends the
+   version it last reconciled to; if the page has moved on (a notification
+   was missed), the API answers 409 and the editor reconciles from the
+   response with source `page` and shows the banner, instead of
+   overwriting. API and MCP callers may omit the version and keep
+   last-write-wins, as today.
+
+**One reconcile function, three callers.** `reconcile(ydoc, pageJson,
+{ source, actor, version })` lives in the web tree
+(`src/web/src/editor/externalEdits.ts`) next to the schema it depends
+on, and is used by: the sidecar on a live-write notification; the
+sidecar on load of a stale document; the client on a 409. The diff is
+**block-level**: top-level blocks compared by canonical JSON (with any
+pending external marks stripped from the old side first, i.e. "old as if
+accepted"), longest-common-subsequence over the block list, removed
+blocks re-inserted with `externalDelete` on their inline content, added
+blocks inserted with `externalInsert`, applied as Y.XmlFragment
+insert/delete inside one `ydoc.transact`. A replaced paragraph therefore
+reads as the old one struck through followed by the new one highlighted.
+Blocks with no inline content (images, live blocks, rules) are inserted
+or removed plainly, because a mark cannot sit on a block; say so in the
+manual. Character-level merging inside one paragraph is the refinement
+for later, not the first version.
+
+**The schema is the one in `extensions.ts`, in both places.** The sidecar
+needs the ProseMirror schema to convert JSON to Yjs. It must not get a
+second copy: a second Vite entry (`vite.schema.config.ts`) bundles
+`getSharedExtensions` plus `externalEdits.ts` into one headless ESM file
+that the collab image copies in at build time. Any schema change then
+reaches the sidecar by rebuilding, and nothing can drift. (`y-prosemirror`
+becomes an explicit dependency of the web package; it is already there
+transitively through the collaboration extension.)
+
+**The version lives in the document.** A `Y.Map('meta')` with `version`,
+set by the client when it seeds, by every reconcile, and by the client
+after a successful publish. The sidecar's `fetch` compares it to
+`PageVersions.VersionNumber` for the page (the sidecar already signs in
+as the app's database role) and reconciles on mismatch before returning
+the state.
+
+**The write path notifies the sidecar.** `PageWriter.UpdateAsync` and
+`CreateAsync`, after commit, POST `{ contentJson, source, actor,
+version }` to the sidecar's `POST /pages/{id}/reconcile` (a plain HTTP
+route on the Hocuspocus server via its `onRequest` hook, served on the
+same port, guarded by the existing `COLLAB_SHARED_SECRET` in a header —
+the same shape as the PDF sidecar's `X-Pdf-Secret`). Source is decided by
+how the caller authenticated: cookie session → `editor`, bearer token →
+`api`, the MCP endpoint → `mcp`. For `editor` the sidecar only records
+the version — the content is already the document's. The call is
+best-effort with a short timeout: a failure is logged, the page write
+stands, and item 3 or 4 catches up later. The sidecar applies a live
+notification with `server.openDirectConnection`, so a document nobody has
+open is not loaded just to be edited — it is reconciled on next load
+instead.
+
+**Defensive strip on the server.** `PageWriter` removes both marks from
+anything it stores, so a client that forgot to accept, or a script that
+copied a draft, cannot publish tracked changes into a page version. One
+JSON walk, one test.
+
+**Opus implements, in this order, each step shippable alone:**
+1. The two marks in `extensions.ts` with CSS (tint by source, strike for
+   deletes, `title` for hover); `acceptExternalEdits` / `rejectExternalEdits`
+   commands; the server-side strip with a test. Nothing produces the marks
+   yet, so this is inert.
+2. `externalEdits.ts` (block diff + Yjs apply) with unit tests against
+   fixture documents, including "old has pending marks" and "block with no
+   inline content".
+3. The schema bundle build and the sidecar's `fetch`-time reconcile with
+   `meta.version`; the client seeds `meta.version`. This alone fixes the
+   no-session case.
+4. The notifier in `PageWriter`, the sidecar's `onRequest` route, source
+   detection by auth scheme, `openDirectConnection` apply. This is the
+   live case.
+5. The editor banner, `baseVersion` on publish, 409 handling and client
+   reconcile.
+6. Manual pages: *Saving, drafts and editing together* gains a section on
+   changes from assistants; *The MCP server* says what an assistant's
+   write looks like to someone mid-edit.
+
+**Verify** with two browser contexts on one page plus an MCP write between
+them: the highlighted change appears in both; editing inside it works;
+Reject all restores the page; Accept all then Update publishes the merged
+text; the audit log shows the MCP version and the human version in order.
+Then the no-session case: close every editor, write via MCP, reopen — the
+change is highlighted with source `page`. Then the 409 case with the
+sidecar stopped.
+
+**Not decided here, deliberately:** whether a page *view* should show
+pending tracked changes to a reader (recommend no — the page is what was
+published), and whether an assistant should be able to mark its own write
+as "needs review" so it stays highlighted after publish (a different
+feature; do not conflate).
+
 ---
 
 ## Order of execution, flattened
@@ -847,7 +977,7 @@ onto `roadmap.md` and are sequenced here.
 6. **5.1** Anonymous permission model + leak matrix (Fable) → **5.2** Server → **5.3** SPA → **5.4** Operator controls
 7. **6** Space icons
 8. **7.A** → **7.B** → **7.C** → **7.D** (Fable→Opus) → **7.E** → **7.F**
-9. **8.1** PDF (after 7.A) → **8.2** Licence (any time) → **8.3** OpenAPI → **8.4** MCP (Fable→Opus) → **8.5** Wiki packs (Fable→Opus)
+9. **8.1** PDF (after 7.A) → **8.2** Licence (any time) → **8.3** OpenAPI → **8.4** MCP (Fable→Opus) → **8.6** External edits as tracked changes (Fable→Opus) → **8.5** Wiki packs (Fable→Opus)
 
 Phases 6 and 8.2 are floaters — small, no dependents — and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm

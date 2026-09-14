@@ -5,6 +5,18 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Design: API and MCP writes become tracked changes in a live draft (2026-09-13)
+
+The stale-collaborative-document gap found on 2026-09-13 has a design now,
+as dev-plan **8.6** (Fable half done; Opus implements). An API or MCP write
+lands in an open draft the way a second person's typing does — added text
+highlighted, removed text struck through, both labelled with their
+source — and publishing accepts it. A document nobody has open is
+reconciled the same way when it is next loaded, and publish carries the
+version it was reconciled to so a missed notification cannot overwrite.
+One reconcile function, one schema, three callers. The plan entry has the
+full shape, the implementation order and the verification.
+
 ### Mobile: the phone menu carries the space's pages, and the toolbar finally fits (2026-09-13)
 
 Three things the recent chrome and theme work had left broken at phone
