@@ -18,11 +18,11 @@ import { useLayoutEffect, useRef, useState } from 'react'
  * rather than a second line — and the caller lists items in the order it is
  * willing to lose them.
  */
-export function useToolbarOverflow(keys: string[], reserveKeys: string[] = []) {
+export function useToolbarOverflow(keys: string[], reserveKeys: string[] = [], collapseAll = false) {
   const containerRef = useRef<HTMLDivElement>(null)
   const widths = useRef<Map<string, number>>(new Map())
   const [overflowed, setOverflowed] = useState<Set<string>>(new Set())
-  const signature = keys.join('|') + '::' + reserveKeys.join('|')
+  const signature = keys.join('|') + '::' + reserveKeys.join('|') + '::' + (collapseAll ? 'all' : 'fit')
 
   useLayoutEffect(() => {
     const container = containerRef.current
@@ -39,6 +39,12 @@ export function useToolbarOverflow(keys: string[], reserveKeys: string[] = []) {
 
     const layout = () => {
       measure()
+      // On a phone nothing is measured: the row is the two menus and the
+      // page buttons, and every text control lives in the text menu.
+      if (collapseAll) {
+        setOverflowed((prev) => (prev.size === keys.length ? prev : new Set(keys)))
+        return
+      }
       const gap = parseFloat(getComputedStyle(container).columnGap || '0') || 0
       let available = container.clientWidth
       for (const el of container.querySelectorAll<HTMLElement>('[data-tb-fixed]')) available -= el.offsetWidth + gap
