@@ -37,6 +37,7 @@ export function StatusMenu({ editor }: { editor: TiptapEditor }) {
 
   return (
     <BubbleMenu
+      className="floating-menu"
       editor={editor}
       pluginKey="statusMenu"
       shouldShow={({ editor }) => editor.isActive('status')}

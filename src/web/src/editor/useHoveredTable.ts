@@ -78,6 +78,13 @@ export function useHoveredTable(editor: TiptapEditor) {
       )
     }
     function onMove(e: MouseEvent) {
+      // A floating editor menu (a block's settings, the selection bubble) can
+      // sit over a table. Pointing at the menu is not pointing at the table —
+      // counting it made the table's controls draw over the menu.
+      if (e.target instanceof Element && e.target.closest('.floating-menu')) {
+        setTable((current) => (current === null ? current : null))
+        return
+      }
       const tables = Array.from(editor.view.dom.querySelectorAll('table')) as HTMLTableElement[]
       const hit = tables.find((t) => withinHoverZone(e, t.getBoundingClientRect()))
       setTable((current) => (hit ?? null) === current ? current : (hit ?? null))

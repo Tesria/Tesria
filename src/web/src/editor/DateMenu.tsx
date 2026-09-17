@@ -12,6 +12,7 @@ export function DateMenu({ editor }: { editor: TiptapEditor }) {
 
   return (
     <BubbleMenu
+      className="floating-menu"
       editor={editor}
       pluginKey="dateMenu"
       shouldShow={({ editor }) => editor.isActive('date')}

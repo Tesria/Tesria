@@ -845,6 +845,9 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 /* table hover controls (TableControls.tsx) — only rendered at all while the
    mouse is near the table (tracked in JS), so no extra CSS-hover reveal is
    needed; these are fixed-position, so the wrapper itself needs no styling. */
+/* Floating editor menus (BubbleMenu className) sit above the table controls
+   (z-index 6–7), which otherwise drew over a block's settings panel. */
+.floating-menu { z-index: 30; }
 /* The table controls are positioned inside the editor's own wrapper, not
    the viewport (useHoveredTable.ts's controlOrigin). */
 .editor { position: relative; }
@@ -1045,7 +1048,18 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 /* The editor's bar: toolbar edge to edge, no inner box, the width toggle at
    the far right of the same row. min-width:0 lets the toolbar shrink and
    overflow instead of forcing the row wider. */
-.page-actionbar--editor { flex-wrap: nowrap; padding: 0.3rem 0.75rem; gap: 0.5rem; }
+.page-actionbar--editor { flex-wrap: nowrap; padding: 0.3rem 0.75rem; gap: 0.5rem; container: editorbar / inline-size; }
+/* The bar's own width decides, not the viewport's: with the sidebar open, a
+   tablet-width window leaves the bar ~400px, where Style, Insert, Full width,
+   Update and Close do not fit and the menus ran into Full width. Full width
+   gives up its label first, then leaves altogether — in a column that
+   narrow it makes no visible difference, the same reasoning as on a phone. */
+@container editorbar (max-width: 720px) {
+  .page-actionbar__fullwidth-label { display: none; }
+}
+@container editorbar (max-width: 440px) {
+  .page-actionbar__fullwidth-toggle { display: none; }
+}
 .page-actionbar--editor .page-actionbar__primary { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; container-type: inline-size; }
 /* The toolbar's own width, not the viewport's, decides how much text it can
    afford: a narrow reading column on a wide screen is the common case. The

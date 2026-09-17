@@ -56,6 +56,7 @@ export function TocMenu({ editor }: { editor: TiptapEditor }) {
 
   return (
     <BubbleMenu
+      className="floating-menu"
       editor={editor}
       pluginKey="tocMenu"
       shouldShow={({ editor }) => editor.state.selection instanceof NodeSelection && editor.isActive('tableOfContents')}

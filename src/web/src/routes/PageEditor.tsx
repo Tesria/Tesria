@@ -242,8 +242,10 @@ export function PageEditor() {
             className="btn btn--ghost page-actionbar__fullwidth-toggle"
             onClick={toggleFullWidth}
             title={fullWidth ? 'Switch to normal width' : 'Switch to full width'}
+            aria-label={fullWidth ? 'Switch to normal width' : 'Switch to full width'}
           >
-            {fullWidth ? '⤡ Normal width' : '⤢ Full width'}
+            <span aria-hidden="true">{fullWidth ? '⤡' : '⤢'}</span>
+            <span className="page-actionbar__fullwidth-label">{fullWidth ? 'Normal width' : 'Full width'}</span>
           </button>
           {/* Publish/Update and Close sit on the toolbar row, where
               Confluence keeps them — not under the page. They are outside

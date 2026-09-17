@@ -32,6 +32,7 @@ export function LayoutMenu({ editor }: { editor: TiptapEditor }) {
 
   return (
     <BubbleMenu
+      className="floating-menu"
       editor={editor}
       pluginKey="layoutMenu"
       shouldShow={({ editor }) => editor.isActive('layoutSection')}

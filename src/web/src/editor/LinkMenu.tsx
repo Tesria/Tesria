@@ -17,6 +17,7 @@ export function LinkMenu({ editor }: { editor: TiptapEditor }) {
   })
   return (
     <BubbleMenu
+      className="floating-menu"
       editor={editor}
       pluginKey="linkMenu"
       shouldShow={({ editor }) => editor.isActive('link')}
