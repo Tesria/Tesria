@@ -31,6 +31,7 @@ export function DynamicBlockMenu({ editor }: { editor: TiptapEditor }) {
 
   return (
     <BubbleMenu
+      className="floating-menu"
       editor={editor}
       pluginKey="dynamicBlockMenu"
       shouldShow={({ editor }) => editor.state.selection instanceof NodeSelection && editor.isActive('dynamicBlock')}

@@ -40,6 +40,7 @@ export function ImageHoverMenu({ editor, getPageId, onCommentError }: Props) {
 
   return (
     <BubbleMenu
+      className="floating-menu"
       editor={editor}
       pluginKey="imageMenu"
       options={{ placement: 'top' }}

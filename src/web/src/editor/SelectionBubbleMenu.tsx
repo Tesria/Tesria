@@ -43,6 +43,7 @@ export function SelectionBubbleMenu({ editor, getPageId, onCommentError }: Props
 
   return (
     <BubbleMenu
+      className="floating-menu"
       editor={editor}
       pluginKey="selectionMenu"
       options={{ placement: 'top' }}

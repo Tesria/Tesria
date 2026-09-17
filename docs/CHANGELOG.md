@@ -5,6 +5,22 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Editor bar at tablet widths; table controls over settings panels (2026-09-17)
+
+- **Insert ran into Full width.** Between the phone breakpoint and a wide
+  desktop, the sidebar leaves the editor bar ~400px, and Style, Insert,
+  Full width, Update and Close do not fit; the menu triggers are fixed and
+  overflowed into Full width. The bar is now a size container: Full width
+  drops to its icon under 720px of bar, and leaves under 440px, where it
+  makes no visible difference. Checked at 661, 800, 1024 and 1440px wide —
+  no overlap at any of them.
+- **A table's controls drew over a table of contents' settings panel**
+  when the panel floated over the table. Table hover is detected by
+  position, so pointing at the panel counted as pointing at the table.
+  Every floating editor menu now carries `.floating-menu`: the hover
+  detection ignores the pointer while it is over one, and they stack above
+  the table controls.
+
 ### Table of contents options, and fifteen light-theme colours that were never set (2026-09-16)
 
 - **Table of contents options, as Confluence Cloud documents them.** Select
