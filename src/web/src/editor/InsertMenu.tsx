@@ -38,7 +38,7 @@ export function InsertMenu({ editor }: { editor: TiptapEditor }) {
     <div className="toolbar-dropdown toolbar-dropdown--insert" ref={ref} data-tb-fixed="insert">
       <button
         type="button"
-        className="toolbar__btn toolbar-dropdown__trigger toolbar__insert"
+        className="toolbar__btn toolbar-dropdown__trigger toolbar-dropdown__trigger--menu toolbar__insert"
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => setOpen((v) => !v)}
         title="Insert an element"

@@ -57,7 +57,7 @@ export function TextStyleMenu({ title, styles, overflow, compactLabel }: {
     >
       <button
         type="button"
-        className={active.isActive ? 'toolbar__btn toolbar-dropdown__trigger is-active' : 'toolbar__btn toolbar-dropdown__trigger'}
+        className="toolbar__btn toolbar-dropdown__trigger toolbar-dropdown__trigger--menu"
         onMouseDown={(e) => e.preventDefault()}
         onClick={toggleOpen}
         title={title}

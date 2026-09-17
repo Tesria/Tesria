@@ -370,6 +370,8 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
    ran off the left of the screen. Pin it to the viewport instead. */
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   .theme-menu__panel { position: fixed; left: 1rem; right: 1rem; top: 60px; width: auto; }
+  .notif__dropdown { position: fixed; left: 1rem; right: 1rem; top: 60px; width: auto; }
+  .popover__close { display: inline-flex; }
 }
 .theme-menu__panel {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
@@ -415,6 +417,15 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .notif__bell:hover { color: var(--text); }
 .notif__badge { position: absolute; top: -2px; right: -4px; background: var(--danger); color: var(--on-primary); font-size: 0.65rem; font-weight: 700; border-radius: 999px; padding: 0.05rem 0.35rem; min-width: 16px; text-align: center; }
 .notif__dropdown { position: absolute; right: 0; top: calc(100% + 8px); width: min(340px, calc(100vw - 2rem)); max-height: 420px; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); z-index: 20; }
+/* Phone-only close button on the theme and notification popups — the
+   same affordance as the hamburger's. */
+.popover__close {
+  display: none; align-items: center; justify-content: center;
+  width: 2rem; height: 2rem; border: none; background: none; border-radius: 6px; color: var(--muted); cursor: pointer;
+}
+.popover__close:hover { background: var(--hover); color: var(--text); }
+.theme-menu__panel { position: relative; }
+.theme-menu__panel .popover__close { position: absolute; top: 0.35rem; right: 0.35rem; }
 .notif__header { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 0.9rem; }
 .notif__list { list-style: none; margin: 0; padding: 0; }
 .notif__item { display: flex; flex-direction: column; gap: 0.15rem; width: 100%; text-align: left; background: none; border: none; border-bottom: 1px solid var(--border); padding: 0.6rem 0.75rem; cursor: pointer; font-size: 0.85rem; color: var(--text); }
@@ -864,6 +875,11 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .tb-item { display: inline-flex; flex: 0 0 auto; }
 .tb-item--hidden { display: none; }
 .toolbar__insert { gap: 0.1rem; white-space: nowrap; }
+/* The two menus' triggers: a plain border, never the accent "active"
+   look — a menu is not a state, and the text menu always has a current
+   style, so it was permanently blue. */
+.toolbar__btn.toolbar-dropdown__trigger--menu { border-color: var(--border); }
+.toolbar__btn.toolbar-dropdown__trigger--menu:hover { border-color: var(--muted); }
 /* The text-style menu previews each style in its own size, like Confluence's. */
 .toolbar-dropdown__style--h1 { font-size: 1.25rem; font-weight: 700; }
 .toolbar-dropdown__style--h2 { font-size: 1.1rem; font-weight: 700; }
