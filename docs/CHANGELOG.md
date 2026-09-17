@@ -5,6 +5,14 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Phone toolbar wording, and the Live bar on the breadcrumb's indent (2026-09-16)
+
+On a phone the two toolbar menus now say what they are: **Aa Text Style**
+and **+ Insert**, icons kept. Wider screens are unchanged — the text menu
+shows the current style there and the row carries every button, so the
+plus alone is enough. The Live bar moved out of the paper to sit directly
+under the breadcrumb on the same indent, where page chrome belongs.
+
 ### iOS: sticky bars follow the keyboard; Return in the title; the Live bar (2026-09-16)
 
 - **The bars really were scrolling away on an iPhone, and it was the

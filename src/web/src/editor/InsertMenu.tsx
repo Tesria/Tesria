@@ -46,6 +46,7 @@ export function InsertMenu({ editor }: { editor: TiptapEditor }) {
         aria-expanded={open}
       >
         <PlusIcon />
+        <span className="toolbar__insert-word">Insert</span>
         <ChevronDownIcon />
       </button>
       {open && (

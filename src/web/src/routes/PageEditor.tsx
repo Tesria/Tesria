@@ -204,6 +204,7 @@ export function PageEditor() {
           (SpacePage suppresses its own copy on this route). */}
       <div className="page-column">
       <SpaceBreadcrumb space={space} tree={tree} />
+      {collab && pageId && collabStatus && <CollabStatus status={collabStatus} />}
       <form id="page-editor-form" className={fullWidth ? 'page-wrap page-wrap--full editor-form' : 'page-wrap editor-form'} onSubmit={onSubmit}>
       {error && <p className="alert alert--error">{error}</p>}
       {!isEdit && templates.length > 0 && (
@@ -220,7 +221,6 @@ export function PageEditor() {
         </label>
       )}
       <div className="paper">
-        {collab && pageId && collabStatus && <CollabStatus status={collabStatus} />}
         <input
           className="title-input"
           value={title}

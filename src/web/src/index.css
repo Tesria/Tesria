@@ -875,10 +875,17 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
    not the viewport's: a narrow reading column on a wide screen counts too.
    The threshold is where the full label, B, I, link and + no longer fit
    beside Update/Close. */
-.toolbar-dropdown__compact { display: none; font-size: 0.9rem; font-weight: 700; letter-spacing: -0.02em; }
+.toolbar-dropdown__compact { display: none; align-items: center; gap: 0.35rem; font-size: 0.85rem; font-weight: 600; }
+.toolbar-dropdown__compact-glyph { font-weight: 700; letter-spacing: -0.02em; font-size: 0.9rem; }
+/* "Insert" beside the + on a phone only; the + alone is enough where the
+   row also carries every formatting button. */
+.toolbar__insert-word { display: none; font-size: 0.85rem; font-weight: 600; margin-left: 0.15rem; }
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .toolbar__insert-word { display: inline; }
+}
 @container (max-width: 560px) {
   .toolbar-dropdown__label { display: none; }
-  .toolbar-dropdown__compact { display: inline; }
+  .toolbar-dropdown__compact { display: inline-flex; }
 }
 /* An overflowed palette unfolded inside the Insert menu. */
 .toolbar-dropdown__group { display: flex; flex-direction: column; }
@@ -940,7 +947,9 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 /* Above the title, in its own box, so it reads as chrome rather than as
    the document's first line. */
 .collab-status--bar {
-  width: fit-content; max-width: 100%; margin: 0 0 0.75rem;
+  /* Indented like the breadcrumb above it (1.5rem, 0.75rem on a phone),
+     not like the title: it is page chrome, and it sits with the crumb. */
+  width: fit-content; max-width: calc(100% - 3rem); margin: 0.6rem 1.5rem 0;
   padding: 0.35rem 0.7rem; border: 1px solid var(--border); border-radius: var(--radius);
   background: var(--surface);
 }
@@ -967,6 +976,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .breadcrumb__current { color: var(--text); font-weight: 600; }
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   .breadcrumb { padding: 0.6rem 0.75rem 0; }
+  .collab-status--bar { margin: 0.6rem 0.75rem 0; max-width: calc(100% - 1.5rem); }
 }
 
 /* ---- page view ----------------------------------------------------------- */
