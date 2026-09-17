@@ -5,6 +5,15 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Table of contents: section numbers keep the bullet style (2026-09-17)
+
+Turning on section numbers used to drop the bullets whatever style was
+chosen. The chosen style now stays alongside the numbers — Bullet, Mixed,
+Circle, Square and None all apply as picked. The one exception is
+Numbered, which would print two numbers per line ("1." and "1.1"), so
+there the outline numbers replace the list's own. Editor and export
+changed together; two tests added.
+
 ### Editor bar at tablet widths; table controls over settings panels (2026-09-17)
 
 - **Insert ran into Full width.** Between the phone breakpoint and a wide

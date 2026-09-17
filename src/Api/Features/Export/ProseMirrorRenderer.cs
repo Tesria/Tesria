@@ -944,8 +944,10 @@ public static class ProseMirrorRenderer
         }
 
         /// <summary>The list-style for a nesting depth, or null for "leave it to the browser" (Bullet).</summary>
+        /// Section numbers sit alongside the chosen bullet, except Numbered, where
+        /// two numbers per line would print — the outline numbers replace the list's.
         public string? ListStyle(int depth) =>
-            SectionNumbers ? "none" : BulletStyle switch
+            SectionNumbers && BulletStyle == "numbered" ? "none" : BulletStyle switch
             {
                 "mixed" => new[] { "disc", "circle", "square" }[depth % 3],
                 "circle" => "circle",

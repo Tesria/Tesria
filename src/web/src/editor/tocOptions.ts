@@ -129,9 +129,13 @@ export function flattenTocTree(entries: TocEntry[]): TocEntry[] {
  * the stylesheet". Bullet returns '' so a table of contents saved before
  * options existed looks exactly as it did (browsers already vary the bullet
  * by depth). Mixed cycles disc, circle, square explicitly.
+ *
+ * Section numbers sit alongside whatever bullet was chosen — except
+ * Numbered, which would print two numbers per line ("1." and "1.1"), so
+ * there the outline numbers replace the list's own.
  */
 export function tocListStyle(style: TocBulletStyle, depth: number, sectionNumbers: boolean): string {
-  if (sectionNumbers) return 'none'
+  if (sectionNumbers && style === 'numbered') return 'none'
   switch (style) {
     case 'mixed': return ['disc', 'circle', 'square'][depth % 3]
     case 'circle': return 'circle'

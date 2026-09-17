@@ -72,7 +72,25 @@ public class TocOptionsTests
         Assert.Contains(">1.2 Step two</a>", toc);
         Assert.Contains(">1.2.1 Detail</a>", toc);
         Assert.Contains(">2 Appendix A</a>", toc);
+        // Default Bullet is left to the browser, numbers or not.
+        Assert.DoesNotContain("list-style-type", toc);
+    }
+
+    [Fact]
+    public void Section_numbers_keep_the_chosen_bullet_style()
+    {
+        var toc = Toc(ProseMirrorRenderer.ToHtml(Doc("\"sectionNumbers\":true,\"bulletStyle\":\"square\"")));
+        Assert.Contains(">1.1 Step one</a>", toc);
+        Assert.Contains("list-style-type: square", toc);
+    }
+
+    [Fact]
+    public void Section_numbers_replace_numbered_bullets_rather_than_doubling_them()
+    {
+        var toc = Toc(ProseMirrorRenderer.ToHtml(Doc("\"sectionNumbers\":true,\"bulletStyle\":\"numbered\"")));
+        Assert.Contains(">1.1 Step one</a>", toc);
         Assert.Contains("list-style-type: none", toc);
+        Assert.DoesNotContain("decimal", toc);
     }
 
     [Fact]
