@@ -370,7 +370,6 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
    ran off the left of the screen. Pin it to the viewport instead. */
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   .theme-menu__panel { position: fixed; left: 1rem; right: 1rem; top: 60px; width: auto; }
-  .notif__dropdown { position: fixed; left: 1rem; right: 1rem; top: 60px; width: auto; }
 }
 .theme-menu__panel {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
@@ -427,6 +426,12 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
   .popover__close { display: inline-flex; }
 }
 .theme-menu__panel .popover__close { position: absolute; top: 0.35rem; right: 0.35rem; }
+/* Pinned to the viewport on a phone, like the theme panel: hung off the
+   bell it ran off the edge of the screen. Placed after the base rule above
+   on purpose — the same specificity, so order decides. */
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .notif__dropdown { position: fixed; left: 1rem; right: 1rem; top: 60px; width: auto; }
+}
 .notif__header { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 0.9rem; }
 .notif__list { list-style: none; margin: 0; padding: 0; }
 .notif__item { display: flex; flex-direction: column; gap: 0.15rem; width: 100%; text-align: left; background: none; border: none; border-bottom: 1px solid var(--border); padding: 0.6rem 0.75rem; cursor: pointer; font-size: 0.85rem; color: var(--text); }
