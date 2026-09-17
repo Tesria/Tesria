@@ -55,7 +55,9 @@ export function ToolbarDropdown({ title, options, showLabel = false }: { title: 
     >
       <button
         type="button"
-        className={active.isActive ? 'toolbar__btn toolbar-dropdown__trigger is-active' : 'toolbar__btn toolbar-dropdown__trigger'}
+        // Never the accent "active" look: one option is always current
+        // (left alignment, by default), so the trigger was permanently blue.
+        className="toolbar__btn toolbar-dropdown__trigger"
         onMouseDown={(e) => e.preventDefault()}
         onClick={toggleOpen}
         title={title}
