@@ -2,6 +2,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Tesria.Api.Features.Blocks;
 
 namespace Tesria.Api.Features.Export;
@@ -157,7 +158,7 @@ public static class ProseMirrorRenderer
                 RenderHtmlChildren(node, sb, ctx); sb.Append($"</h{level}>\n");
                 break;
             case "tableOfContents":
-                RenderHtmlToc(ctx, sb);
+                RenderHtmlToc(node, ctx, sb);
                 break;
             case "expand":
                 // <details> is the one collapsible element HTML has; open by
@@ -386,7 +387,7 @@ public static class ProseMirrorRenderer
                 sb.Append("\n\n");
                 break;
             case "tableOfContents":
-                RenderMarkdownToc(ctx, sb);
+                RenderMarkdownToc(node, ctx, sb);
                 break;
             case "expand":
                 // Markdown has no collapsible block: the title in bold, then the body.
@@ -886,7 +887,94 @@ public static class ProseMirrorRenderer
     {
         public HeadingAnchors.Anchor Anchor { get; } = anchor;
         public List<TocNode> Children { get; } = [];
+        /// <summary>Outline number, "1", "1.2" — shown when section numbers are on.</summary>
+        public string Number { get; set; } = "";
     }
+
+    /// <summary>
+    /// A table of contents' options — Confluence Cloud's macro parameters. The
+    /// same rules as the editor's tocOptions.ts, and the same defaults: a node
+    /// with no options renders exactly as it did before options existed.
+    /// </summary>
+    internal sealed record TocOptions(
+        string Display, string BulletStyle, int MinLevel, int MaxLevel, bool SectionNumbers,
+        string Indent, string Include, string Exclude, string CssClass, bool ExcludeInPdf)
+    {
+        public static readonly TocOptions Default = new("vertical", "bullet", 1, 6, false, "", "", "", "", false);
+        private static readonly string[] BulletStyles = ["bullet", "mixed", "circle", "square", "numbered", "none"];
+        private static readonly Regex Length = new(@"^(0|\d+(\.\d+)?(px|em|rem|pt|%))$", RegexOptions.CultureInvariant);
+        private static readonly Regex ClassToken = new(@"^[A-Za-z_][A-Za-z0-9_-]*$", RegexOptions.CultureInvariant);
+
+        public static TocOptions Read(JsonElement node)
+        {
+            static int Level(string? raw, int fallback) =>
+                int.TryParse(raw, out var n) ? Math.Clamp(n, 1, 6) : fallback;
+            var min = Level(Attr(node, "minLevel"), 1);
+            var max = Level(Attr(node, "maxLevel"), 6);
+            var bullet = Attr(node, "bulletStyle");
+            var indent = (Attr(node, "indent") ?? "").Trim();
+            var cssClass = string.Join(' ', (Attr(node, "cssClass") ?? "")
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(t => ClassToken.IsMatch(t)).Take(5));
+            return new TocOptions(
+                Attr(node, "display") == "horizontal" ? "horizontal" : "vertical",
+                bullet is not null && BulletStyles.Contains(bullet) ? bullet : "bullet",
+                Math.Min(min, max), Math.Max(min, max),
+                BoolAttr(node, "sectionNumbers"),
+                // Validated, not escaped: it lands in a style attribute.
+                Length.IsMatch(indent) ? indent : "",
+                Attr(node, "include") ?? "", Attr(node, "exclude") ?? "",
+                cssClass, BoolAttr(node, "excludeInPdf"));
+        }
+
+        /// <summary>`|`-separated, case-sensitive, whole-text patterns; `*` any run of characters, `?` one.</summary>
+        private static List<Regex> Patterns(string value) =>
+            value.Split('|').Select(p => p.Trim()).Where(p => p.Length > 0)
+                .Select(p => new Regex("^" + Regex.Escape(p).Replace("\\*", ".*").Replace("\\?", ".") + "$",
+                    RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100)))
+                .ToList();
+
+        public List<HeadingAnchors.Anchor> Filter(IReadOnlyList<HeadingAnchors.Anchor> anchors)
+        {
+            var include = Patterns(Include);
+            var exclude = Patterns(Exclude);
+            return anchors.Where(a =>
+                a.Level >= MinLevel && a.Level <= MaxLevel
+                && (include.Count == 0 || include.Any(r => r.IsMatch(a.Text)))
+                && !exclude.Any(r => r.IsMatch(a.Text))).ToList();
+        }
+
+        /// <summary>The list-style for a nesting depth, or null for "leave it to the browser" (Bullet).</summary>
+        public string? ListStyle(int depth) =>
+            SectionNumbers ? "none" : BulletStyle switch
+            {
+                "mixed" => new[] { "disc", "circle", "square" }[depth % 3],
+                "circle" => "circle",
+                "square" => "square",
+                "numbered" => "decimal",
+                "none" => "none",
+                _ => null,
+            };
+
+        public string? UlStyle(int depth)
+        {
+            var parts = new List<string>();
+            if (ListStyle(depth) is { } ls) parts.Add($"list-style-type: {ls}");
+            if (Indent.Length > 0) parts.Add($"padding-left: {Indent}");
+            return parts.Count == 0 ? null : string.Join("; ", parts);
+        }
+    }
+
+    private static void NumberToc(List<TocNode> nodes, string prefix)
+    {
+        for (var i = 0; i < nodes.Count; i++)
+        {
+            nodes[i].Number = prefix + (i + 1);
+            NumberToc(nodes[i].Children, nodes[i].Number + ".");
+        }
+    }
+
+    private static IEnumerable<TocNode> FlattenToc(List<TocNode> nodes) =>
+        nodes.SelectMany(n => new[] { n }.Concat(FlattenToc(n.Children)));
 
     private static List<TocNode> TocTree(IReadOnlyList<HeadingAnchors.Anchor> anchors)
     {
@@ -904,38 +992,78 @@ public static class ProseMirrorRenderer
 
     private static string TocText(HeadingAnchors.Anchor a) => a.Text.Length == 0 ? "Untitled heading" : a.Text;
 
-    private static void RenderHtmlToc(Ctx ctx, StringBuilder sb)
+    private static void RenderHtmlToc(JsonElement node, Ctx ctx, StringBuilder sb)
     {
-        if (ctx.Anchors.Count == 0) return;
-        sb.Append("<nav data-type=\"table-of-contents\">\n");
-        Write(TocTree(ctx.Anchors));
+        var o = TocOptions.Read(node);
+        var tree = TocTree(o.Filter(ctx.Anchors));
+        if (tree.Count == 0) return;
+        NumberToc(tree, "");
+
+        var classes = new List<string>();
+        if (o.Display == "horizontal") classes.Add("toc--horizontal");
+        if (o.ExcludeInPdf) classes.Add("toc--exclude-print");
+        if (o.CssClass.Length > 0) classes.Add(o.CssClass);
+        sb.Append("<nav data-type=\"table-of-contents\"");
+        if (classes.Count > 0) sb.Append($" class=\"{Escape(string.Join(' ', classes))}\"");
+        sb.Append(">\n");
+
+        if (o.Display == "horizontal")
+        {
+            sb.Append("<p class=\"toc__inline\">");
+            sb.Append(string.Join("<span class=\"toc__sep\"> | </span>", FlattenToc(tree).Select(Link)));
+            sb.Append("</p>\n");
+        }
+        else
+        {
+            Write(tree, 0);
+        }
         sb.Append("</nav>\n");
 
-        void Write(List<TocNode> nodes)
+        string Link(TocNode n) =>
+            $"<a href=\"#{Escape(n.Anchor.Id)}\">{(o.SectionNumbers ? Escape(n.Number) + " " : "")}{Escape(TocText(n.Anchor))}</a>";
+
+        void Write(List<TocNode> nodes, int depth)
         {
-            sb.Append("<ul>\n");
+            var style = o.UlStyle(depth);
+            sb.Append(style is null ? "<ul>\n" : $"<ul style=\"{Escape(style)}\">\n");
             foreach (var n in nodes)
             {
-                sb.Append($"<li><a href=\"#{Escape(n.Anchor.Id)}\">{Escape(TocText(n.Anchor))}</a>");
-                if (n.Children.Count > 0) Write(n.Children);
+                sb.Append("<li>").Append(Link(n));
+                if (n.Children.Count > 0) Write(n.Children, depth + 1);
                 sb.Append("</li>\n");
             }
             sb.Append("</ul>\n");
         }
     }
 
-    private static void RenderMarkdownToc(Ctx ctx, StringBuilder sb)
+    private static void RenderMarkdownToc(JsonElement node, Ctx ctx, StringBuilder sb)
     {
-        if (ctx.Anchors.Count == 0) return;
-        Write(TocTree(ctx.Anchors), 0);
+        var o = TocOptions.Read(node);
+        var tree = TocTree(o.Filter(ctx.Anchors));
+        if (tree.Count == 0) return;
+        NumberToc(tree, "");
+
+        string Link(TocNode n) =>
+            "[" + (o.SectionNumbers ? n.Number + " " : "") + TocText(n.Anchor).Replace("]", "\\]") + "](#" + n.Anchor.Id + ")";
+
+        if (o.Display == "horizontal")
+        {
+            sb.Append(string.Join(" | ", FlattenToc(tree).Select(Link))).Append("\n\n");
+            return;
+        }
+        Write(tree, 0);
         sb.Append('\n');
 
         void Write(List<TocNode> nodes, int depth)
         {
+            var i = 0;
             foreach (var n in nodes)
             {
-                sb.Append(new string(' ', depth * 2)).Append("- [").Append(TocText(n.Anchor).Replace("]", "\\]"))
-                  .Append("](#").Append(n.Anchor.Id).Append(")\n");
+                i++;
+                // Markdown has no bullet shapes; "Numbered" (without section
+                // numbers, which already number the text) is the one style it can say.
+                var marker = o.BulletStyle == "numbered" && !o.SectionNumbers ? $"{i}." : "-";
+                sb.Append(new string(' ', depth * (marker == "-" ? 2 : 3))).Append(marker).Append(' ').Append(Link(n)).Append('\n');
                 Write(n.Children, depth + 1);
             }
         }

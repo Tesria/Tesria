@@ -5,6 +5,37 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Table of contents options, and fifteen light-theme colours that were never set (2026-09-16)
+
+- **Table of contents options, as Confluence Cloud documents them.** Select
+  a table of contents in the editor and a settings panel opens:
+  **Display as** (vertical or horizontal list), **Bullet style** (Bullet,
+  Mixed, Circle, Square, Numbered, None), **Heading levels** from–to,
+  **Include section numbers** (outline numbering, 1, 1.1, 1.2), and under
+  Advanced **Indent headings** (a CSS length), **Include / Exclude headings
+  with** (case-sensitive, `*` and `?` wildcards, `|` between
+  alternatives), **CSS class name**, and **Exclude in PDF export**. The
+  editor (`tocOptions.ts`) and the exporter (`ProseMirrorRenderer`'s
+  `TocOptions`) implement the same rules; `TocOptionsTests` pins them.
+  A table of contents with no options set renders exactly as before, in the
+  editor and byte-for-byte in exports. Indent and class name are validated
+  rather than escaped, since they land in style and class attributes.
+  "Exclude in PDF export" is a print rule on the exported HTML, which is
+  what the PDF is printed from, so it also drops out of a paper print.
+- **The green "Live" dot was missing in the light theme — and so were
+  fourteen other colours.** Since 2026-09-08 the light palette defined
+  `--success`, `--danger-soft`, `--primary-soft`, `--primary-softer`,
+  `--primary-soft-border`, `--surface-sunken`, `--mark-bg`,
+  `--comment-bg`, `--selected-cell`, `--resize-hover`, `--swatch-border`,
+  `--shadow-sm/md/lg` and `--img-shadow` as *themselves*
+  (`--x: var(--x)`), which is invalid, so each computed to nothing: no
+  popover or card shadows, no tint behind active toolbar buttons and tree
+  rows under the default blue accent, no selected-cell, comment or mark
+  highlight, no soft red behind errors. The dark palette was fine, and the
+  non-blue accents masked the tints, which is how it went unseen. Values
+  restored from the literal colours those rules used before they were
+  tokenised; the green is the palette's own.
+
 ### Leaving the editor asks first; tables and headings on a phone (2026-09-16)
 
 - **Navigating away from the editor now asks.** Tapping the profile avatar

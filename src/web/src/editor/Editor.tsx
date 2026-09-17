@@ -15,6 +15,7 @@ import { handleImageDrop, handleImagePaste } from './imageUpload'
 import { setSlashCommandStorage } from './slash/items'
 import { setDynamicBlockStorage } from './dynamicBlock'
 import { DynamicBlockMenu } from './DynamicBlockMenu'
+import { TocMenu } from './TocMenu'
 
 type Props = {
   /** ProseMirror document as a JSON string. */
@@ -137,6 +138,7 @@ export function Editor({ value, editable = true, onChange, getUploadPageId, onUp
       {editable && editor && <DateMenu editor={editor} />}
       {editable && editor && <LayoutMenu editor={editor} />}
       {editable && editor && <DynamicBlockMenu editor={editor} />}
+      {editable && editor && <TocMenu editor={editor} />}
       <EditorContent editor={editor} className="editor__content" />
     </div>
   )

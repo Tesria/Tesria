@@ -157,6 +157,8 @@ public static class ExportEndpoints
           pre code { background: none; padding: 0; }
           blockquote { border-left: 3px solid #e4e6eb; margin-left: 0; padding-left: 1rem; color: #6b778c; }
           @media print { body { margin: 0; max-width: none; } }
+          @media print { .toc--exclude-print { display: none; } }
+          .toc__inline a + a::before, .toc__sep { color: #6b778c; }
         </style>
         </head>
         <body>
