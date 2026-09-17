@@ -5,6 +5,23 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Inline comments open where they are (2026-09-17)
+
+An inline comment could only be read by scrolling to the Comments tab and
+working out which one it was. Clicking highlighted text — in the reading
+view or the editor — now opens that comment's thread in a popover under
+the text (InlineCommentPopover.tsx), with Reply, Edit and Delete: the same
+component as the Comments tab, now exported from CommentsPanel.tsx, and
+the tab reloads when a comment changes from the popover or the selection
+bubble. Escape, the X or a click elsewhere closes it; highlighted text
+shows a pointer. The popover renders into the document body, so in the
+editor it is not inside the page's own <form>, and both comment forms
+stop their submit from propagating — a reply posted from the editor was
+checked not to save the page or trigger the leave prompt.
+
+Also moved the router's Root component out of main.tsx, which had brought
+back a fast-refresh lint warning.
+
 ### Table of contents: section numbers keep the bullet style (2026-09-17)
 
 Turning on section numbers used to drop the bullets whatever style was

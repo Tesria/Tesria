@@ -720,7 +720,20 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .editor__content img.img-border { border: 1px solid var(--border); padding: 2px; }
 .editor__content img.img-shadow { box-shadow: var(--img-shadow); }
 .editor__content mark { background: var(--mark-bg); padding: 0.05em 0.1em; border-radius: 2px; }
-.editor__content .comment-highlight { background: var(--comment-bg); border-bottom: 2px solid var(--comment-border); cursor: default; }
+.editor__content .comment-highlight { background: var(--comment-bg); border-bottom: 2px solid var(--comment-border); cursor: pointer; }
+/* The thread for a clicked inline comment (InlineCommentPopover.tsx). */
+.inline-comment-popover {
+  position: absolute; z-index: 40; max-height: min(60vh, 480px); overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-lg); padding: 0.4rem 0.75rem 0.6rem;
+}
+.inline-comment-popover__head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+}
+.inline-comment-popover .comment-list { margin: 0.2rem 0 0; padding: 0; }
+/* The phone-only close button, shown at every width in this popover. */
+.popover__close.popover__close--always { display: inline-flex; }
 
 /* link editing */
 .link-menu {

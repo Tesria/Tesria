@@ -16,6 +16,7 @@ import { setSlashCommandStorage } from './slash/items'
 import { setDynamicBlockStorage } from './dynamicBlock'
 import { DynamicBlockMenu } from './DynamicBlockMenu'
 import { TocMenu } from './TocMenu'
+import { InlineCommentPopover } from './InlineCommentPopover'
 
 type Props = {
   /** ProseMirror document as a JSON string. */
@@ -139,6 +140,8 @@ export function Editor({ value, editable = true, onChange, getUploadPageId, onUp
       {editable && editor && <LayoutMenu editor={editor} />}
       {editable && editor && <DynamicBlockMenu editor={editor} />}
       {editable && editor && <TocMenu editor={editor} />}
+      {/* Reading view and editor both: clicking commented text opens its thread. */}
+      {editor && <InlineCommentPopover editor={editor} getPageId={getPageId ?? getUploadPageId} />}
       <EditorContent editor={editor} className="editor__content" />
     </div>
   )

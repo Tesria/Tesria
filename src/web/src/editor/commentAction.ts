@@ -1,5 +1,6 @@
 import type { Editor as TiptapEditor } from '@tiptap/react'
 import { api } from '../api/client'
+import { announceCommentsChanged } from '../routes/panels/commentThreads'
 
 /**
  * Creates a real page comment (already-supported AnchorJson/isInline on the
@@ -16,6 +17,7 @@ export async function addInlineTextComment(
   const pageId = await getPageId()
   const comment = await api.comments.create(pageId, { body, anchorJson: JSON.stringify({ type: 'text' }) })
   editor.chain().focus().setTextSelection(range).setMark('comment', { commentId: comment.id }).run()
+  announceCommentsChanged()
 }
 
 /**

@@ -2,26 +2,7 @@ import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { api, type Comment } from '../../api/client'
 import { Avatar } from '../../components/Avatar'
 import { useAuth } from '../../auth/AuthContext'
-
-type Node = Comment & { replies: Node[] }
-
-function buildThreads(comments: Comment[]): Node[] {
-  const nodes = new Map<string, Node>()
-  for (const c of comments) nodes.set(c.id, { ...c, replies: [] })
-  const roots: Node[] = []
-  for (const node of nodes.values()) {
-    const parent = node.parentCommentId ? nodes.get(node.parentCommentId) : undefined
-    if (parent) parent.replies.push(node)
-    else roots.push(node)
-  }
-  const byDate = (a: Node, b: Node) => a.createdAt.localeCompare(b.createdAt)
-  const sort = (list: Node[]) => {
-    list.sort(byDate)
-    for (const n of list) sort(n.replies)
-  }
-  sort(roots)
-  return roots
-}
+import { buildThreads, COMMENTS_CHANGED, announceCommentsChanged, type CommentNode as Node } from './commentThreads'
 
 export function CommentsPanel({ pageId, readOnly = false }: { pageId: string; readOnly?: boolean }) {
   const [comments, setComments] = useState<Comment[] | null>(null)
@@ -37,6 +18,10 @@ export function CommentsPanel({ pageId, readOnly = false }: { pageId: string; re
   useEffect(() => {
     setComments(null)
     reload()
+    // Changes made outside this tab (the inline-comment popover, the
+    // selection bubble) announce themselves; reload so the list keeps up.
+    window.addEventListener(COMMENTS_CHANGED, reload)
+    return () => window.removeEventListener(COMMENTS_CHANGED, reload)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageId])
 
@@ -56,7 +41,7 @@ export function CommentsPanel({ pageId, readOnly = false }: { pageId: string; re
   )
 }
 
-function CommentItem({ node, pageId, onChanged, readOnly = false }: { node: Node; pageId: string; onChanged: () => void; readOnly?: boolean }) {
+export function CommentItem({ node, pageId, onChanged, readOnly = false }: { node: Node; pageId: string; onChanged: () => void; readOnly?: boolean }) {
   const { user } = useAuth()
   const [replying, setReplying] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -65,15 +50,20 @@ function CommentItem({ node, pageId, onChanged, readOnly = false }: { node: Node
 
   async function saveEdit(e: FormEvent) {
     e.preventDefault()
+    // This form can render inside the page editor's own <form> (the inline
+    // comment popover); do not let the submit reach it.
+    e.stopPropagation()
     await api.comments.update(node.id, editBody)
     setEditing(false)
     onChanged()
+    announceCommentsChanged()
   }
 
   async function remove() {
     if (!confirm('Delete this comment?')) return
     await api.comments.remove(node.id)
     onChanged()
+    announceCommentsChanged()
   }
 
   return (
@@ -151,12 +141,14 @@ function CommentForm({
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
+    e.stopPropagation() // see saveEdit above
     if (!body.trim()) return
     setBusy(true)
     try {
       await api.comments.create(pageId, { body, parentCommentId: parentCommentId ?? null })
       setBody('')
       onAdded()
+      announceCommentsChanged()
     } finally {
       setBusy(false)
     }
