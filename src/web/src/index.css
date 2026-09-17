@@ -765,6 +765,13 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .slash-menu__item:hover, .slash-menu__item.is-selected { background: var(--bg-alt); }
 .slash-menu__title { font-size: 0.88rem; font-weight: 500; color: var(--text); }
 .slash-menu__desc { font-size: 0.76rem; color: var(--muted); }
+/* The leave-the-editor prompt (LeaveEditorDialog.tsx). */
+.leave-dialog__card h2 { margin-top: 0; }
+.leave-dialog__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .leave-dialog__actions { flex-direction: column; }
+  .leave-dialog__actions .btn { width: 100%; }
+}
 /* The link dialog (LinkDialog.tsx): the reauth prompt's overlay and card,
    with two labelled fields and the heading picker beneath them. */
 .link-dialog__card label { display: block; margin-bottom: 0.6rem; font-size: 0.85rem; color: var(--muted); }
@@ -833,23 +840,28 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 /* table hover controls (TableControls.tsx) — only rendered at all while the
    mouse is near the table (tracked in JS), so no extra CSS-hover reveal is
    needed; these are fixed-position, so the wrapper itself needs no styling. */
+/* The table controls are positioned inside the editor's own wrapper, not
+   the viewport (useHoveredTable.ts's controlOrigin). */
+.editor { position: relative; }
 .table-hover__add, .table-hover__grip {
-  position: fixed; z-index: 6; border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+  position: absolute; z-index: 6; border: 1px solid var(--border); background: var(--surface); color: var(--muted);
   cursor: pointer; padding: 0; line-height: 1; display: flex; align-items: center; justify-content: center;
 }
 .table-hover__add:hover, .table-hover__grip:hover { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
 .table-hover__add { width: 16px; height: 16px; border-radius: 999px; font-size: 0.75rem; }
+/* Sitting on the grip strip in a narrow gutter: above the grips. */
+.table-hover__add.is-compact { z-index: 7; }
 .table-hover__grip { font-size: 0.7rem; border-radius: 3px; }
 .table-hover__grip--col { height: 14px; }
 .table-hover__grip--row { width: 14px; }
 .table-hover__fullwidth {
-  position: fixed; z-index: 6; width: 24px; height: 24px; border-radius: 4px;
+  position: absolute; z-index: 6; width: 24px; height: 24px; border-radius: 4px;
   border: 1px solid var(--border); background: var(--surface); color: var(--muted);
   cursor: pointer; padding: 0; line-height: 1; font-size: 0.85rem; display: flex; align-items: center; justify-content: center;
 }
 .table-hover__fullwidth:hover { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
 .table-hover__fullwidth.is-active { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
-.table-hover__edge { position: fixed; z-index: 6; width: 6px; cursor: col-resize; }
+.table-hover__edge { position: absolute; z-index: 6; width: 6px; cursor: col-resize; }
 .table-hover__edge:hover { background: var(--resize-hover); }
 
 /* task lists */
@@ -897,7 +909,17 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
    not the viewport's: a narrow reading column on a wide screen counts too.
    The threshold is where the full label, B, I, link and + no longer fit
    beside Update/Close. */
-.toolbar-dropdown__compact { display: none; align-items: center; gap: 0.35rem; font-size: 0.85rem; font-weight: 600; }
+.toolbar-dropdown__compact { display: none; align-items: center; gap: 0.35rem; font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
+/* The narrowest phones (375px and below): "Aa Text Style", "+ Insert",
+   Update and Close have to share one row, so the four buttons give up a
+   little padding rather than any label wrapping onto two lines. */
+@media (max-width: 400px) {
+  .page-actionbar--editor { gap: 0.35rem; padding-left: 0.5rem; padding-right: 0.5rem; }
+  .page-actionbar--editor .toolbar { gap: 0.25rem; }
+  .page-actionbar--editor .toolbar-dropdown__trigger--menu { padding-left: 0.4rem; padding-right: 0.4rem; }
+  .page-actionbar--editor .page-actionbar__secondary { gap: 0.35rem; }
+  .page-actionbar--editor .page-actionbar__secondary .btn { padding-left: 0.6rem; padding-right: 0.6rem; }
+}
 .toolbar-dropdown__compact-glyph { font-weight: 700; letter-spacing: -0.02em; font-size: 0.9rem; }
 /* "Insert" beside the + on a phone only; the + alone is enough where the
    row also carries every formatting button. */
@@ -1223,7 +1245,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
    position: fixed, like .table-hover — these track a cell's viewport rect
    directly rather than being positioned by DOM ancestry, since the menu
    renders outside the table's own subtree. */
-.cell-menu__trigger, .cell-menu__panel { position: fixed; z-index: 7; }
+.cell-menu__trigger, .cell-menu__panel { position: absolute; z-index: 7; }
 .cell-menu__trigger {
   display: inline-flex; align-items: center; justify-content: center;
   width: 17px; height: 17px; padding: 0; cursor: pointer;

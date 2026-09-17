@@ -114,6 +114,18 @@ one's on a decision it shouldn't be making — either way, silently.
   running, and looks like success unless its output is read. Do not use the
   simulator on this machine at all unless asked: it is an 8 GB Mac.
 
+- **The app uses a data router** (`createBrowserRouter` in `main.tsx`,
+  since 2026-09-16), not `<BrowserRouter>` — `PageEditor`'s leave prompt
+  depends on `useBlocker`, which only a data router provides. Anything that
+  needs the router (hooks like `useLocation`) must render inside the route
+  tree; `Root` in `main.tsx` is where app-wide router-aware components go.
+- **Screenshot-harness steps run *before* a shot's `settle` wait**, so a
+  `probe` placed first reads the page before the session check has answered
+  and every signed-in route looks like "Loading…". Put a `{ "wait": 2500 }`
+  step ahead of any probe. `tap` needs `SHOT_MOBILE=1` (touch);
+  `SHOT_BROWSER=webkit` runs Safari's engine. The debug account's sign-in is
+  in the gitignored `.debug-credentials` at the repo root.
+
 - **Dependency audit is a release gate.** `scripts/audit.sh` runs
   `npm audit` (web + collab) and `dotnet list package --vulnerable
   --include-transitive`; it must exit 0 before a release or after touching

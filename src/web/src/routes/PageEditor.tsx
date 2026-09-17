@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useBlocker, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import type { Editor as TiptapEditor } from '@tiptap/react'
 import { api, ApiError, type CollabToken, type PageTemplate } from '../api/client'
 import { Editor } from '../editor/Editor'
@@ -9,6 +9,7 @@ import { useAuth } from '../auth/AuthContext'
 import { CollabStatus, type CollabConnection } from '../editor/CollabStatus'
 import { useSpaceContext } from './SpacePage'
 import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
+import { LeaveEditorDialog } from './LeaveEditorDialog'
 
 const EMPTY_DOC = '{"type":"doc","content":[]}'
 
@@ -116,26 +117,81 @@ export function PageEditor() {
     }
   }, [pageId])
 
+  // Set just before the editor navigates on its own account (after Publish
+  // or Close), so the leave-the-editor prompt does not ask about a
+  // navigation the person has already chosen.
+  const leavingRef = useRef(false)
+  const blocker = useBlocker(({ currentLocation, nextLocation }) =>
+    !leavingRef.current && currentLocation.pathname !== nextLocation.pathname)
+  const [leaveError, setLeaveError] = useState<string | null>(null)
+
+  // Reloading or closing the tab gets the browser's own prompt — the only
+  // kind a page is allowed to show for that.
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (leavingRef.current) return
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [])
+
+  /** Publish (new page) or update (existing page). Returns the saved page's id, or throws. */
+  async function save(): Promise<string> {
+    if (!title.trim()) throw new Error('Give the page a title before publishing.')
+    let saved
+    if (pageId) {
+      saved = await api.pages.update(pageId, { title, contentJson: content, changeComment: changeComment || null })
+    } else {
+      const id = draftId ?? (await draftIdRef.current)
+      if (!id) throw new Error('Still preparing this page — try again in a moment.')
+      saved = await api.pages.publish(id, { title, contentJson: content })
+    }
+    reloadTree()
+    return saved.id
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     setBusy(true)
     setError(null)
     try {
-      let saved
-      if (pageId) {
-        saved = await api.pages.update(pageId, { title, contentJson: content, changeComment: changeComment || null })
-      } else {
-        const id = draftId ?? (await draftIdRef.current)
-        if (!id) throw new Error('Still preparing this page — try again in a moment.')
-        saved = await api.pages.publish(id, { title, contentJson: content })
-      }
-      reloadTree()
-      navigate(`/spaces/${key}/pages/${saved.id}`)
+      const savedId = await save()
+      leavingRef.current = true
+      navigate(`/spaces/${key}/pages/${savedId}`)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not save the page.')
+      setError(err instanceof ApiError || err instanceof Error ? err.message : 'Could not save the page.')
     } finally {
       setBusy(false)
     }
+  }
+
+  async function publishAndLeave() {
+    if (blocker.state !== 'blocked') return
+    setBusy(true)
+    setLeaveError(null)
+    try {
+      await save()
+      leavingRef.current = true
+      blocker.proceed()
+    } catch (err) {
+      setLeaveError(err instanceof ApiError || err instanceof Error ? err.message : 'Could not save the page.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function leaveUnpublished() {
+    if (blocker.state !== 'blocked') return
+    // A new page that leaves unpublished is reachable from nowhere; discard it
+    // exactly as Close does. An existing page's edits stay in its draft.
+    if (!pageId) {
+      const id = draftId ?? (await draftIdRef.current?.catch(() => null))
+      if (id) api.pages.deleteDraft(id).catch(() => {})
+    }
+    leavingRef.current = true
+    blocker.proceed()
   }
 
   /** The page id image attachments should be uploaded against, in either mode. */
@@ -158,6 +214,7 @@ export function PageEditor() {
   }
 
   async function onCancel() {
+    leavingRef.current = true
     if (pageId) {
       navigate(`/spaces/${key}/pages/${pageId}`)
       return
@@ -272,6 +329,17 @@ export function PageEditor() {
       )}
       </form>
       </div>
+      {blocker.state === 'blocked' && (
+        <LeaveEditorDialog
+          isNew={!pageId}
+          keepsDraft={Boolean(collab)}
+          busy={busy}
+          error={leaveError}
+          onStay={() => { setLeaveError(null); blocker.reset() }}
+          onLeave={leaveUnpublished}
+          onPublish={publishAndLeave}
+        />
+      )}
     </>
   )
 }

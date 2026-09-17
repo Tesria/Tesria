@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import type { Editor as TiptapEditor } from '@tiptap/react'
-import { useHoveredTable } from './useHoveredTable'
+import { controlOrigin, useHoveredTable } from './useHoveredTable'
 
 // Matches real Confluence's own column-drag cap.
 const MAX_WIDTH = 1800
@@ -82,13 +82,14 @@ export function TableWidthControls({ editor }: { editor: TiptapEditor }) {
   }
 
   const stop = (e: React.MouseEvent) => e.preventDefault()
+  const o = controlOrigin(editor)
 
   return (
     <div className="table-hover">
       <button
         type="button"
         className={layout === 'full-width' ? 'table-hover__fullwidth is-active' : 'table-hover__fullwidth'}
-        style={{ left: tableRect.right - 34, top: tableRect.top - 30 }}
+        style={{ left: tableRect.right - 34 - o.x, top: tableRect.top - 30 - o.y }}
         onMouseDown={stop}
         onClick={toggleFullWidth}
         title={layout === 'full-width' ? 'Switch to normal width' : 'Switch to full width'}
@@ -97,7 +98,7 @@ export function TableWidthControls({ editor }: { editor: TiptapEditor }) {
       </button>
       <div
         className="table-hover__edge"
-        style={{ left: tableRect.right - 2, top: tableRect.top, height: tableRect.height }}
+        style={{ left: tableRect.right - 2 - o.x, top: tableRect.top - o.y, height: tableRect.height }}
         onMouseDown={onEdgeMouseDown}
         title="Drag to resize table"
       />

@@ -31,6 +31,19 @@ function tableElementFromNodeDom(dom: Node | null): HTMLTableElement | null {
  * behavior — no special handling needed to make that happen) is what reveals
  * the controls instead, dismissed once the selection leaves the table.
  */
+/**
+ * The box the table controls are positioned in: the editor's own wrapper
+ * (`.editor`, position: relative). Controls are placed in its coordinates,
+ * not the viewport's, so they stay on the table however the page scrolls,
+ * zooms or pans — on an iPhone, position: fixed drifted off the table
+ * whenever Safari moved the visual viewport.
+ */
+export function controlOrigin(editor: TiptapEditor): { x: number; y: number } {
+  const host = editor.view.dom.closest('.editor') as HTMLElement | null
+  const r = host?.getBoundingClientRect()
+  return { x: r?.left ?? 0, y: r?.top ?? 0 }
+}
+
 export function useHoveredTable(editor: TiptapEditor) {
   const [table, setTable] = useState<HTMLTableElement | null>(null)
   const [, tick] = useState(0)
