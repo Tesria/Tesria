@@ -16,31 +16,36 @@
      Identical to --bg in light mode, deliberately lighter than it in dark —
      which is the whole reason it is a separate token. */
   --surface: #ffffff;
-  --surface-sunken: var(--surface-sunken);
+  /* These fifteen were `--x: var(--x)` from 2026-09-08 to 2026-09-16 — a
+     token defined as itself is invalid, so in the light theme they all
+     computed to nothing: no shadows, no active tints, no selected-cell or
+     comment highlight, no green "Live" dot. Values restored from the literal
+     colours the rules used before they were tokenised. Keep them literal. */
+  --surface-sunken: #f4f5f7;
   --border: #e4e6eb;
   --hover: #e9ebef;
   --text: #172b4d;
   --muted: #6b778c;
   --primary: #0c66e4;
   --primary-dark: #0055cc;
-  --primary-soft: var(--primary-soft);
-  --primary-softer: var(--primary-softer);
-  --primary-soft-border: var(--primary-soft-border);
+  --primary-soft: #dfebfb;
+  --primary-softer: #eef4fd;
+  --primary-soft-border: #afcdf6;
   --on-primary: #ffffff;
   --danger: #c9372c;
-  --danger-soft: var(--danger-soft);
-  --success: var(--success);
+  --danger-soft: #ffeceb;
+  --success: #22a06b;
   --warning: #d9a000;
-  --mark-bg: var(--mark-bg);
-  --comment-bg: var(--comment-bg);
+  --mark-bg: #fdf0c2;
+  --comment-bg: #fdf0c2;
   --comment-border: #d9a000;
-  --selected-cell: var(--selected-cell);
-  --resize-hover: var(--resize-hover);
-  --swatch-border: var(--swatch-border);
-  --shadow-sm: var(--shadow-sm);
-  --shadow-md: var(--shadow-md);
-  --shadow-lg: var(--shadow-lg);
-  --img-shadow: var(--img-shadow);
+  --selected-cell: rgba(12, 102, 228, 0.1);
+  --resize-hover: rgba(12, 102, 228, 0.3);
+  --swatch-border: rgba(9, 30, 66, 0.2);
+  --shadow-sm: 0 1px 3px rgba(23, 43, 77, 0.08);
+  --shadow-md: 0 4px 14px rgba(23, 43, 77, 0.15);
+  --shadow-lg: 0 8px 24px rgba(23, 43, 77, 0.18);
+  --img-shadow: 0 4px 14px rgba(23, 43, 77, 0.25);
   --panel-info-bg: #deebff;   --panel-info-border: #579dff;   --panel-info-icon: #0c66e4;
   --panel-note-bg: #eae6ff;   --panel-note-border: #9f8fef;   --panel-note-icon: #5e4db2;
   --panel-success-bg: #e3fcef; --panel-success-border: #4bce97; --panel-success-icon: #216e4e;
@@ -1897,6 +1902,23 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .toc__list { margin: 0; padding-left: 1.1rem; }
 .toc__list .toc__list { margin-top: 0.1rem; }
 .toc__list li { margin: 0.1rem 0; }
+/* Options (tocOptions.ts). List styles are inline per level; these are the rest. */
+.toc__number { margin-right: 0.4rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.toc__inline { margin: 0; display: flex; flex-wrap: wrap; gap: 0.2rem 0; }
+/* After each item but the last, not before each but the first: when the line
+   wraps, the separator stays at the end of the line it belongs to instead of
+   opening the next one. */
+.toc__inline-item:not(:last-child)::after { content: '|'; margin: 0 0.5rem; color: var(--muted); }
+@media print { .toc--exclude-print { display: none !important; } }
+.toc-menu { min-width: 240px; max-width: min(320px, calc(100vw - 2rem)); }
+.toc-menu__range { display: flex; align-items: center; gap: 0.4rem; }
+/* Out-specifies .dynamic-block-menu__field select's fixed 140px, which comes
+   later in the file: two of those side by side overflowed the panel. */
+.toc-menu .toc-menu__range select { width: 3.75rem; }
+.toc-menu__check { display: flex; align-items: center; gap: 0.45rem; margin: 0.35rem 0; color: var(--text); font-size: 0.82rem; }
+.toc-menu__check input { width: auto; margin: 0; }
+.toc-menu__advanced { margin: 0.25rem 0; font-size: 0.8rem; }
+.toc-menu__hint { margin: -0.1rem 0 0.4rem; font-size: 0.72rem; color: var(--muted); }
 .editor--editable .ProseMirror-selectednode.toc { outline: 2px solid var(--primary); }
 
 /* Layouts (layoutExtension.ts). Columns are flex-grow weights, so the
