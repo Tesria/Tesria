@@ -108,6 +108,11 @@ one's on a decision it shouldn't be making — either way, silently.
   then type. Never tap right after a swipe — the page is still moving.
   `xcrun simctl openurl` and `xcrun simctl io <udid> screenshot` need no
   panel access and are the reliable half.
+  Switching `xcode-select` to Xcode also routes `git` and `python3` through
+  Xcode's tools, and both refuse to run until `sudo xcodebuild -license
+  accept` — a patch script then prints the licence notice instead of
+  running, and looks like success unless its output is read. Do not use the
+  simulator on this machine at all unless asked: it is an 8 GB Mac.
 
 - **Dependency audit is a release gate.** `scripts/audit.sh` runs
   `npm audit` (web + collab) and `dotnet list package --vulnerable

@@ -6,6 +6,7 @@ import { Editor } from '../editor/Editor'
 import { CollaborativeEditor } from '../editor/CollaborativeEditor'
 import { Toolbar } from '../editor/Toolbar'
 import { useAuth } from '../auth/AuthContext'
+import { CollabStatus, type CollabConnection } from '../editor/CollabStatus'
 import { useSpaceContext } from './SpacePage'
 import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
 
@@ -21,6 +22,7 @@ export function PageEditor() {
   const isEdit = Boolean(pageId)
   // Co-editing applies to existing pages only — a new page has no id to share.
   const [collab, setCollab] = useState<CollabToken | null>(null)
+  const [collabStatus, setCollabStatus] = useState<CollabConnection | null>(null)
 
   const [title, setTitle] = useState('')
   const [content, setContent] = useState(EMPTY_DOC)
@@ -218,6 +220,7 @@ export function PageEditor() {
         </label>
       )}
       <div className="paper">
+        {collab && pageId && collabStatus && <CollabStatus status={collabStatus} />}
         <input
           className="title-input"
           value={title}
@@ -225,6 +228,16 @@ export function PageEditor() {
           placeholder="Page title"
           required
           autoFocus={!isEdit}
+          // Return in the title goes to the first line of the body. Without
+          // this, the title being the form's only text input means Return
+          // is HTML's implicit submission — on a phone, where Return is the
+          // obvious way to leave the title, that published the page.
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              editorInstance?.commands.focus('start')
+            }
+          }}
         />
         {collab && pageId ? (
           <CollaborativeEditor
@@ -237,6 +250,7 @@ export function PageEditor() {
             getUploadPageId={resolveUploadPageId}
             onUploadError={setError}
             onEditorReady={setEditorInstance}
+            onStatusChange={setCollabStatus}
           />
         ) : (
           <Editor

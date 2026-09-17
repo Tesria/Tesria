@@ -9,6 +9,7 @@ import { Avatar } from './Avatar'
 import { RecoveryCodesPrompt } from './RecoveryCodesPrompt'
 import { ReauthDialog } from './ReauthDialog'
 import { useDismissable } from '../hooks/useDismissable'
+import { useVisualViewportOffset } from '../hooks/useVisualViewportOffset'
 import { PageTree } from './PageTree'
 import { SpaceIcon } from './SpaceIcon'
 import { SettingsIcon } from './NavIcons'
@@ -93,6 +94,8 @@ export function Layout() {
   // topbar flex children, so nothing changes above the breakpoint.
   const [navOpen, setNavOpen] = useState(false)
   const navRef = useDismissable<HTMLDivElement>(navOpen, () => setNavOpen(false))
+  // Sticky bars follow the visual viewport while a phone keyboard is up.
+  useVisualViewportOffset()
   const secondaryNav = SECONDARY_NAV.filter((i) => !i.adminOnly || user?.role === UserRole.Admin)
   // The open space's tree, published by SpacePage (see spaceNav.ts). Only the
   // phone menu renders it; wider viewports have the sidebar.
