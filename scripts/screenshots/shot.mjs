@@ -201,6 +201,10 @@ for (const s of spec.shots) {
       if (step.keys) await pg.keyboard.type(step.keys, { delay: 12 })
       if (step.css) await pg.addStyleTag({ content: step.css })
       if (step.hover) await pg.hover(step.hover)
+      // A real touch tap (needs SHOT_MOBILE, which turns on hasTouch).
+      if (step.tap) await pg.tap(step.tap)
+      // Evaluate an expression and print its result: DOM facts beside the picture.
+      if (step.probe) console.log('PROBE', s.name, step.label || '', JSON.stringify(await pg.evaluate(step.probe)))
       if (step.tripleClick) await pg.click(step.tripleClick, { clickCount: 3 })
       if (step.scrollTo) await pg.locator(step.scrollTo).first().scrollIntoViewIfNeeded().catch(() => {})
       if (step.eval) await pg.evaluate(step.eval)

@@ -5,6 +5,42 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Leaving the editor asks first; tables and headings on a phone (2026-09-16)
+
+- **Navigating away from the editor now asks.** Tapping the profile avatar
+  mid-edit used to leave instantly, with no obvious way back. Any
+  navigation out of the editor that isn't its own Publish/Update or Close —
+  a link in the top bar, the page tree, the browser's back button, an
+  iPhone's swipe-back — opens a dialog: **Publish/Update and leave**,
+  **Leave unpublished** (an existing page's edits stay in its draft for
+  next time), or **Stay in the editor**. On a brand-new page the middle
+  choice is **Discard page**, because an unpublished new page is reachable
+  from nowhere. Reloading or closing the tab gets the browser's own prompt.
+  This needed the app to move from `<BrowserRouter>` to a data router
+  (`createBrowserRouter`): only a data router supports `useBlocker`, and
+  only a blocker sees the back button and swipe-back. Route walk after the
+  change: all 21 signed-in routes and 9 signed-out ones render as before,
+  redirects intact, no page errors, and a page created, published and
+  purged.
+- **Table controls stay on the table.** The row/column add and delete
+  buttons, the width controls and the cell menu were `position: fixed`
+  from viewport rectangles, which drifts off the table on an iPhone
+  whenever Safari pans or zooms the page. They are positioned inside the
+  editor's own box now. At phone width the row controls were also at
+  `left: -6px`, partly off-screen; in a narrow gutter the add buttons now
+  sit on the grip strip.
+- **Heading 1 looked broken because the Style menu lied.** The toolbar
+  re-rendered only when content changed, so after moving the caret the
+  menu still marked the style of wherever the caret had been — on page
+  load, the document's first line, usually a Heading 1. And the style items
+  *toggled*, so choosing Heading 1 on a line that already was one turned
+  it back into normal text. The toolbar now re-renders on every
+  transaction, and the style items set rather than toggle (Normal text is
+  the way back). Toolbar commands also restore the editor's last selection
+  if focus was taken from it, as iOS can do.
+- **"Aa Style"** replaces "Aa Text Style" on a phone, and the editor row
+  fits on one line at 375px.
+
 ### Toolbar menu triggers, and close buttons on the phone popups (2026-09-16)
 
 The Text Style trigger was permanently blue: it borrowed the toolbar's

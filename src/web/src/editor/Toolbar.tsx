@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useReducer, useRef, useState, type ReactNode } from 'react'
 import type { Editor as TiptapEditor } from '@tiptap/react'
 import { ToolbarButton } from './ToolbarButton'
 import { ToolbarDropdown } from './ToolbarDropdown'
@@ -53,7 +53,45 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
   // button all open the one dialog — see linkShortcut.ts for the registry.
   useEffect(() => onLinkShortcut(editor, () => setLinkDialogOpen(true)), [editor])
 
-  const chain = () => editor.chain().focus()
+  // The editor's last selection while it had focus. On an iPhone, tapping
+  // into a toolbar menu can take focus from the editor, and a command run
+  // after that acted on whatever selection ProseMirror fell back to rather
+  // than the line the person was on — which is how "Heading 1 only works
+  // with text selected" presented. Commands restore it when focus was lost.
+  const lastSelection = useRef<{ from: number; to: number } | null>(null)
+
+  // Re-render on every transaction, selection-only ones included. The row's
+  // active states and the Style menu's "current style" are read from the
+  // editor at render time, and the toolbar used to re-render only when the
+  // content changed — so after moving the caret the menu still showed the
+  // style of wherever the caret had been (on page load, the document's
+  // first line), which made choosing a heading look broken.
+  const [, rerender] = useReducer((n: number) => n + 1, 0)
+  useEffect(() => {
+    editor.on('transaction', rerender)
+    return () => { editor.off('transaction', rerender) }
+  }, [editor])
+  useEffect(() => {
+    const remember = () => {
+      if (!editor.isFocused) return
+      const { from, to } = editor.state.selection
+      lastSelection.current = { from, to }
+    }
+    remember()
+    editor.on('selectionUpdate', remember)
+    editor.on('focus', remember)
+    return () => {
+      editor.off('selectionUpdate', remember)
+      editor.off('focus', remember)
+    }
+  }, [editor])
+  const chain = () => {
+    const wasFocused = editor.isFocused
+    const c = editor.chain().focus()
+    const saved = lastSelection.current
+    if (!wasFocused && saved && saved.to <= editor.state.doc.content.size) c.setTextSelection(saved)
+    return c
+  }
   // Keep in sync with --bp-mobile in index.css. Below it the row is
   // "Aa · +" beside the page buttons and nothing else — no measuring.
   const phone = useMediaQuery('(max-width: 640px)')
@@ -152,14 +190,14 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
       <span data-tb-fixed="style">
         <TextStyleMenu
           title="Text"
-          compactLabel={<><span className="toolbar-dropdown__compact-glyph">Aa</span> Text Style</>}
+          compactLabel={<><span className="toolbar-dropdown__compact-glyph">Aa</span> Style</>}
           overflow={overflowActions}
           styles={[
             // The trigger reads "Normal text ⌄", as Confluence's does.
             { key: 'p', label: 'Normal text', isActive: !headingLevel, onSelect: () => chain().setParagraph().run() },
-            { key: 'h1', label: 'Heading 1', isActive: headingLevel === 1, onSelect: () => chain().toggleHeading({ level: 1 }).run() },
-            { key: 'h2', label: 'Heading 2', isActive: headingLevel === 2, onSelect: () => chain().toggleHeading({ level: 2 }).run() },
-            { key: 'h3', label: 'Heading 3', isActive: headingLevel === 3, onSelect: () => chain().toggleHeading({ level: 3 }).run() },
+            { key: 'h1', label: 'Heading 1', isActive: headingLevel === 1, onSelect: () => chain().setHeading({ level: 1 }).run() },
+            { key: 'h2', label: 'Heading 2', isActive: headingLevel === 2, onSelect: () => chain().setHeading({ level: 2 }).run() },
+            { key: 'h3', label: 'Heading 3', isActive: headingLevel === 3, onSelect: () => chain().setHeading({ level: 3 }).run() },
           ]}
         />
       </span>

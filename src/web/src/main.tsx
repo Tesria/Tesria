@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { createBrowserRouter, createRoutesFromElements, Navigate, Outlet, Route, RouterProvider } from 'react-router-dom'
 import './index.css'
 import { startFaviconSync } from './theme'
 import { AuthProvider } from './auth/AuthContext'
@@ -38,12 +38,26 @@ import { AdminSecurityPage } from './routes/admin/AdminSecurityPage'
 // it in step when the OS flips light/dark.
 startFaviconSync()
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <AuthProvider>
-      <BrowserRouter>
-        <ScrollToTop />
-        <Routes>
+/**
+ * The app root inside the router. ScrollToTop reads the location, so it has
+ * to live under the router rather than beside it.
+ */
+function Root() {
+  return (
+    <>
+      <ScrollToTop />
+      <Outlet />
+    </>
+  )
+}
+
+// A data router (createBrowserRouter), not <BrowserRouter>: only a data
+// router supports useBlocker, which is what lets the editor ask before a
+// navigation leaves it — including the browser's back button and an
+// iPhone's swipe-back, which no click handler can see.
+const router = createBrowserRouter(
+  createRoutesFromElements(
+        <Route element={<Root />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/recover" element={<RecoverPage />} />
@@ -100,8 +114,14 @@ createRoot(document.getElementById('root')!).render(
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/spaces" replace />} />
-        </Routes>
-      </BrowserRouter>
+        </Route>,
+  ),
+)
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <AuthProvider>
+      <RouterProvider router={router} />
     </AuthProvider>
   </StrictMode>,
 )

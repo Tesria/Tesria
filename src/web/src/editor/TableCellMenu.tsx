@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { controlOrigin } from './useHoveredTable'
 import type { Editor as TiptapEditor } from '@tiptap/react'
 import { findTable, selectedRect, TableMap } from '@tiptap/pm/tables'
 import { useDismissable } from '../hooks/useDismissable'
@@ -86,6 +87,8 @@ export function TableCellMenu({ editor }: { editor: TiptapEditor }) {
   const cell = editor.isActive('table') ? currentCellElement(editor) : null
   if (!cell || !cell.isConnected) return null
   const rect = cell.getBoundingClientRect()
+  // In the editor wrapper's coordinates, like the other table controls.
+  const o = controlOrigin(editor)
 
   /**
    * Writes the attribute across every cell in scope in one transaction, rather
@@ -128,7 +131,7 @@ export function TableCellMenu({ editor }: { editor: TiptapEditor }) {
       <button
         type="button"
         className="cell-menu__trigger"
-        style={{ left: rect.right - 20, top: rect.top + 3 }}
+        style={{ left: rect.right - 20 - o.x, top: rect.top + 3 - o.y }}
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => setOpen((v) => !v)}
         title="Cell options"
@@ -137,7 +140,7 @@ export function TableCellMenu({ editor }: { editor: TiptapEditor }) {
         <ChevronDownIcon />
       </button>
       {open && (
-        <div className="cell-menu__panel" style={{ left: rect.right - 20, top: rect.bottom + 4 }}>
+        <div className="cell-menu__panel" style={{ left: rect.right - 20 - o.x, top: rect.bottom + 4 - o.y }}>
           <p className="cell-menu__heading">Background colour</p>
           <div className="cell-menu__scopes">
             {SCOPES.map((s) => (

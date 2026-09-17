@@ -1,5 +1,5 @@
 import type { Editor as TiptapEditor } from '@tiptap/react'
-import { useHoveredTable } from './useHoveredTable'
+import { controlOrigin, useHoveredTable } from './useHoveredTable'
 
 /**
  * Hover-triggered row/column insert (+) and delete (×) controls rendered
@@ -36,6 +36,8 @@ export function TableControls({ editor }: { editor: TiptapEditor }) {
     cellSelectionChain(index, 0).deleteRow().run()
   }
 
+  // Everything below is in the editor wrapper's coordinates (see controlOrigin).
+  const o = controlOrigin(editor)
   const firstRow = table.rows[0]
   const colRects = firstRow ? Array.from(firstRow.cells).map((c) => c.getBoundingClientRect()) : []
   const rowRects = Array.from(table.rows).map((r) => r.getBoundingClientRect())
@@ -45,6 +47,13 @@ export function TableControls({ editor }: { editor: TiptapEditor }) {
 
   const stop = (e: React.MouseEvent) => e.preventDefault()
 
+  // The row controls normally sit in two strips left of the table (grips at
+  // -16px, add buttons at -30px). A phone's page gutter is ~24px, so the add
+  // buttons went off the left edge; there they move onto the grip strip,
+  // centred on each row boundary, above the grips.
+  const compactRows = tableRect.left < 34
+  const rowAddLeft = compactRows ? tableRect.left - 17 : tableRect.left - 30
+
   return (
     <div className="table-hover">
       {colBoundaries.map((x, i) => (
@@ -52,7 +61,7 @@ export function TableControls({ editor }: { editor: TiptapEditor }) {
           key={`col-add-${i}`}
           type="button"
           className="table-hover__add table-hover__add--col"
-          style={{ left: x - 8, top: tableRect.top - 30 }}
+          style={{ left: x - 8 - o.x, top: tableRect.top - 30 - o.y }}
           onMouseDown={stop}
           onClick={() => insertColumn(i)}
           title={i === colBoundaries.length - 1 ? 'Add column' : 'Insert column before'}
@@ -65,7 +74,7 @@ export function TableControls({ editor }: { editor: TiptapEditor }) {
           key={`col-del-${i}`}
           type="button"
           className="table-hover__grip table-hover__grip--col"
-          style={{ left: r.left, top: tableRect.top - 16, width: r.width }}
+          style={{ left: r.left - o.x, top: tableRect.top - 16 - o.y, width: r.width }}
           onMouseDown={stop}
           onClick={() => deleteColumn(i)}
           title="Delete column"
@@ -77,8 +86,8 @@ export function TableControls({ editor }: { editor: TiptapEditor }) {
         <button
           key={`row-add-${i}`}
           type="button"
-          className="table-hover__add table-hover__add--row"
-          style={{ top: y - 8, left: tableRect.left - 30 }}
+          className={compactRows ? 'table-hover__add table-hover__add--row is-compact' : 'table-hover__add table-hover__add--row'}
+          style={{ top: y - 8 - o.y, left: rowAddLeft - o.x }}
           onMouseDown={stop}
           onClick={() => insertRow(i)}
           title={i === rowBoundaries.length - 1 ? 'Add row' : 'Insert row above'}
@@ -91,7 +100,7 @@ export function TableControls({ editor }: { editor: TiptapEditor }) {
           key={`row-del-${i}`}
           type="button"
           className="table-hover__grip table-hover__grip--row"
-          style={{ top: r.top, left: tableRect.left - 16, height: r.height }}
+          style={{ top: r.top - o.y, left: tableRect.left - 16 - o.x, height: r.height }}
           onMouseDown={stop}
           onClick={() => deleteRow(i)}
           title="Delete row"
