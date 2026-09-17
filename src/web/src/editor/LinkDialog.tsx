@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { createPortal } from 'react-dom'
 import type { Editor as TiptapEditor } from '@tiptap/react'
 import { getMarkRange } from '@tiptap/core'
 import { HeadingLinkList } from './HeadingLinkList'
@@ -83,7 +84,10 @@ export function LinkDialog({ editor, open, onClose }: { editor: TiptapEditor; op
     onClose()
   }
 
-  return (
+  // A portal: the dialog is a fixed overlay, and its natural parent (the
+  // toolbar) is translated while a phone keyboard is up, which would make
+  // the bar the overlay's containing block.
+  return createPortal(
     <div className="recovery-prompt link-dialog" role="dialog" aria-modal="true" aria-label={existing ? 'Edit link' : 'Add link'}>
       <form className="recovery-prompt__card link-dialog__card" onSubmit={save}>
         <h2>{existing ? 'Edit link' : 'Add link'}</h2>
@@ -120,6 +124,7 @@ export function LinkDialog({ editor, open, onClose }: { editor: TiptapEditor; op
           <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
         </div>
       </form>
-    </div>
+    </div>,
+    document.body,
   )
 }

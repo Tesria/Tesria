@@ -18,6 +18,7 @@ import { handleImageDrop, handleImagePaste } from './imageUpload'
 import { setSlashCommandStorage } from './slash/items'
 import { setDynamicBlockStorage } from './dynamicBlock'
 import { DynamicBlockMenu } from './DynamicBlockMenu'
+import type { CollabConnection } from './CollabStatus'
 
 type Props = {
   pageId: string
@@ -32,6 +33,8 @@ type Props = {
   onUploadError?: (message: string) => void
   /** Called with the live TipTap instance once it exists (and with null on unmount) — see Editor.tsx. */
   onEditorReady?: (editor: TiptapEditor | null) => void
+  /** The session's connection state, for the page to show above the title (CollabStatus). */
+  onStatusChange?: (status: CollabConnection) => void
 }
 
 function parseDoc(value: string): object | undefined {
@@ -56,9 +59,10 @@ function colourFor(name: string): string {
  * StarterKit's own history is disabled to avoid the two fighting.
  */
 export function CollaborativeEditor({
-  pageId, token, initialContent, displayName, onChange, getUploadPageId, onUploadError, onEditorReady,
+  pageId, token, initialContent, displayName, onChange, getUploadPageId, onUploadError, onEditorReady, onStatusChange,
 }: Props) {
-  const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting')
+  const [status, setStatus] = useState<CollabConnection>('connecting')
+  useEffect(() => { onStatusChange?.(status) }, [status, onStatusChange])
   const editorRef = useRef<TiptapEditor | null>(null)
 
   // One document + provider per page, torn down when the page changes.
@@ -145,14 +149,6 @@ export function CollaborativeEditor({
 
   return (
     <div className="editor editor--editable">
-      <div className="collab-status">
-        <span className={`collab-dot collab-dot--${status}`} />
-        {status === 'connected'
-          ? 'Live — changes are shared as you type'
-          : status === 'connecting'
-            ? 'Connecting to collaboration…'
-            : 'Offline — your changes are local until reconnected'}
-      </div>
       {editor && <TableControls editor={editor} />}
       {editor && <TableWidthControls editor={editor} />}
       {editor && <TableCellMenu editor={editor} />}

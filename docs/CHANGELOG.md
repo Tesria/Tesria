@@ -5,6 +5,30 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### iOS: sticky bars follow the keyboard; Return in the title; the Live bar (2026-09-16)
+
+- **The bars really were scrolling away on an iPhone, and it was the
+  keyboard, not zoom.** Two screenshots from a real device showed it: with
+  the keyboard up, the top bar was gone, then the toolbar too. iOS Safari
+  keeps two viewports; sticky and fixed elements attach to the *layout*
+  viewport, and when the keyboard shrinks the *visual* viewport Safari
+  scrolls the visual one inside the layout one to keep the caret in view,
+  taking anything pinned to the layout top out of sight. The app now
+  listens to `window.visualViewport` (useVisualViewportOffset.ts) and,
+  only while it reports an offset, translates the top bar and the editor
+  bar down by that amount. The link dialog moved to a portal at the
+  document root, because a transformed bar would otherwise become the
+  containing block of its fixed overlay.
+- **Return in the title published the page.** The title is the editor
+  form's only text `<input>`, so Return was HTML's implicit submission —
+  on a phone, the obvious way to leave the title. Return now moves the
+  caret to the first line of the body.
+- **The "Live — changes are shared as you type" line** sat between the
+  title and the body and read as the document's first line. It is a small
+  bordered bar above the title now, under the breadcrumb, aligned with
+  the title (CollabStatus.tsx); the collaborative editor reports its
+  connection state upward instead of rendering it.
+
 ### iOS: the vanishing toolbars were Safari's input zoom (2026-09-14)
 
 Reproduced in the iOS Simulator (iPhone 17 Pro, iOS 26.5) rather than

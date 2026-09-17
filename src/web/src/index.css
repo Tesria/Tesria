@@ -191,6 +191,13 @@ label .password-input { margin-top: 0.25rem; }
 
 /* ---- app chrome ---------------------------------------------------------- */
 .app { min-height: 100vh; display: flex; flex-direction: column; }
+/* While a phone keyboard has scrolled the visual viewport inside the
+   layout viewport (useVisualViewportOffset.ts sets --vv-top and this
+   class), the sticky bars are translated down to the visible top. Only
+   under the class: a transform makes the bar the containing block for
+   fixed descendants, which would relocate the theme panel. */
+html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(var(--vv-top, 0px)); }
+
 .topbar {
   /* flex-start, not space-between: space-between splits leftover width
      evenly into every gap, which floated the nav somewhere between the brand
@@ -930,6 +937,13 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 /* live collaboration */
 /* A quiet line, not a stripe: the page beneath it has no box any more. */
 .collab-status { display: flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0; font-size: 0.75rem; color: var(--muted); }
+/* Above the title, in its own box, so it reads as chrome rather than as
+   the document's first line. */
+.collab-status--bar {
+  width: fit-content; max-width: 100%; margin: 0 0 0.75rem;
+  padding: 0.35rem 0.7rem; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface);
+}
 .collab-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
 .collab-dot--connected { background: var(--success); }
 .collab-dot--connecting { background: var(--warning); }
