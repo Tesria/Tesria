@@ -74,7 +74,10 @@ function Sparkline({
       </svg>
       <p className="spark__hint muted small">
         {active
-          ? `${new Date(active.date).toLocaleDateString()} · ${active.count}`
+          ? // A bare "2026-09-16" parses as midnight UTC, which is the previous
+            // evening anywhere west of Greenwich — the label showed the wrong
+            // day. With a time and no offset it parses as local midnight.
+            `${new Date(`${active.date}T00:00:00`).toLocaleDateString()} · ${active.count}`
           : `Last ${points.length} days`}
       </p>
     </div>

@@ -210,6 +210,45 @@ public class AdminPanelTests
         Assert.Equal(30, dash.People.LoginsPerDay.Count);
     }
 
+    [Theory]
+    [InlineData(30)]
+    [InlineData(1)]
+    public async Task The_dashboard_charts_end_today_and_include_todays_activity(int rangeDays)
+    {
+        // Regression: the daily series used to start at now - rangeDays, so the
+        // last bucket was yesterday and anything that happened today was
+        // counted but dropped. On a fresh instance — where everything is from
+        // today — every chart read flat zero. The test above only checked the
+        // series length, which the bug never changed.
+        using var factory = new TestAppFactory();
+        var admin = factory.CreateClient();
+        await RegisterAsync(admin, "admin@example.com");
+        var spaceId = await admin.CreateSpaceAsync();
+        var page = await (await admin.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = "Today", ContentJson = Doc }))
+            .Content.ReadFromJsonAsync<Dictionary<string, object>>();
+        await admin.GetAsync($"/api/pages/{Guid.Parse(page!["id"].ToString()!)}");
+
+        Assert.True((await factory.CreateClient().PostAsJsonAsync("/api/auth/login",
+            new { Email = "admin@example.com", Password = "supersecret" })).IsSuccessStatusCode);
+        Assert.False((await factory.CreateClient().PostAsJsonAsync("/api/auth/login",
+            new { Email = "admin@example.com", Password = "wrong-password" })).IsSuccessStatusCode);
+
+        var dash = (await admin.GetFromJsonAsync<DashboardDto>($"/api/admin/dashboard?rangeDays={rangeDays}"))!;
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        foreach (var series in new[] { dash.People.LoginsPerDay, dash.People.FailedLoginsPerDay,
+                     dash.Content.PagesCreatedPerDay, dash.Usage.ViewsPerDay })
+        {
+            Assert.Equal(rangeDays, series.Count);
+            Assert.Equal(today, series[^1].Date);
+        }
+        Assert.True(dash.People.LoginsPerDay[^1].Count >= 1);
+        Assert.Equal(1, dash.People.FailedLoginsPerDay[^1].Count);
+        Assert.Equal(1, dash.Content.PagesCreatedPerDay[^1].Count);
+        Assert.Equal(1, dash.Usage.ViewsPerDay[^1].Count);
+    }
+
     [Fact]
     public async Task The_dashboard_range_is_clamped()
     {

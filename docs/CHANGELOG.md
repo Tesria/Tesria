@@ -5,6 +5,54 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Design: backups in the admin portal, and the offsite plan (2026-09-17)
+
+Dev-plan Phase 9, written by Fable 5.1 per the model gate (the owner
+asked for the feature, Opus gathered the facts from the live stack and
+the offsite research, then stopped and handed over). Nothing is
+implemented yet.
+
+- **9.1 Backups admin section** (Fable → Opus, ready for Opus): the
+  database is the contract between the app and the two backup sidecars
+  (three new tables the sidecars write and the app reads; the policy on
+  `SiteSettings`). One retention rule for both systems, as the owner
+  chose: a backup is removed only when it is outside both "newest N" and
+  "last D days"; retention off keeps everything. A 24-hour grace period
+  on reductions, enforced by the sidecars rather than the app. The
+  sidecars are rewritten to poll, persist their schedule (no more full
+  backup on every restart), retry failures in minutes rather than a day,
+  clean up orphaned temp files, and run "Back up now" and "Test restore"
+  jobs. Six new alert kinds. The dashboard's Health tiles from 2.5 land
+  here.
+- **9.2 Offsite backups** (Fable → Opus, unscheduled): the research on
+  pgBackRest dual repositories, restic, NAS mounts, immutability,
+  credentials, costs and restore drills, with a recommendation (local
+  first, then replicate; B2 as the documented default; restic for the
+  dumps and uploads) and the seven decisions the owner still has to make.
+
+### Fix: dashboard charts dropped today (2026-09-17)
+
+The admin dashboard's Sign-ins, Failed sign-ins and Pages created charts
+read flat zero on this instance. None of the data was missing: logins and
+failed logins are still audited on the real sign-in path, and pages still
+carry their creation time. The daily series (`Daily()` in
+DashboardEndpoints.cs) started at `now − rangeDays`, so its last bucket was
+yesterday. Anything from today was counted and then had nowhere to land.
+On an instance whose telemetry began today — as this one's did, right after
+the dev-plan migrations were applied — every chart was empty. The range is
+now whole UTC days ending with today. Views per day had the same bug.
+
+The chart's hover label had a matching off-by-one of its own. A bare
+`2026-09-16` parses as midnight UTC, which is the evening before anywhere
+west of Greenwich, so the label showed the previous day. It now parses
+the date as local midnight.
+
+The existing dashboard test only checked each series' length, which the
+bug never changed. The new test (`The_dashboard_charts_end_today_and_include_todays_activity`,
+at 30- and 1-day ranges) signs in, fails a sign-in, creates and views a
+page, and asserts all four series end today with those counts. It fails
+without the fix.
+
 ### Inline comments open where they are (2026-09-17)
 
 An inline comment could only be read by scrolling to the Comments tab and
