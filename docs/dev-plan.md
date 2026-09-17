@@ -311,6 +311,8 @@ undetectable without a login history.
   - **Health:** DB size, last logical backup, last pgBackRest backup (both
     already surfaced by scripts — see `backup-recovery.md`), open security
     alerts (3.3).
+    *Shipped without the backup tiles: nothing in the app could see the
+    sidecars. They land with 9.1.*
 - One aggregate endpoint `GET /api/admin/dashboard?range=30d` computed
   server-side; the page must not fire fifteen queries.
 - **Charts:** load the `dataviz` skill before writing any chart code. One
@@ -967,6 +969,469 @@ feature; do not conflate).
 
 ---
 
+## Phase 9 — Backups: an admin section now, offsite targets later
+
+Written 2026-09-17 by Fable 5.1, at the owner's request, from the code and
+from the live stack (not from the docs; the docs described a stub that was
+never wired). Two items: **9.1** is specified below in full and is ready
+for Opus. **9.2** is a future item; it holds the research and the
+decisions the owner still has to make.
+
+**What is true today, and what this phase changes.** There are two
+independent backup systems and the app can see neither:
+
+- The `backup` sidecar (`deploy/backup/run.sh`) takes a `pg_dump` and a
+  `tar.gz` of uploads on start and then every `BACKUP_INTERVAL_HOURS`,
+  and prunes with `find -mtime +RETENTION_DAYS`. A failed run is retried
+  a full interval later (24 h by default; on 2026-09-17 a restart cost a
+  day of backups exactly this way). Interrupted runs leave 0-byte
+  `*.tmp` files that nothing removes (six on this instance).
+- The `pgbackrest` sidecar (`deploy/pgbackrest/run.sh`) holds its
+  full/incremental counter in memory, so **every restart takes a full
+  backup**, and `repo1-retention-full=2` then expires the oldest. Two
+  restarts in a day shrink the point-in-time window to hours. `set -e`
+  turns one failed backup into a container exit and another full.
+- Neither records what it did. "Keep forever" is not expressible. The
+  dashboard's Health tiles (2.5) were never built because there was
+  nothing to read.
+
+**The owner's decisions (2026-09-17), fixed for both items:**
+
+1. A backup is **kept** if it is one of the newest *N* **or** taken within
+   the last *D* days; it is **removed only when it is outside both**. An
+   outage can therefore never erode the newest *N*.
+2. **One policy governs both systems.** For pgBackRest "a backup" is a
+   full plus the incrementals that depend on it.
+3. Retention **off means keep everything forever**.
+4. Extras, all four: alert admins on failure or lateness; a **Back up
+   now** button; a **Test restore** button that records when a backup was
+   last proven restorable; automatic clean-up of orphaned temp files.
+5. The retention policy affects backups only. Nothing else in the app
+   reads it.
+
+### 9.1 Backups admin section — `L` — Model: Fable → Opus
+
+**The decision: the database is the contract between the app and the
+sidecars.** The sidecars already connect as the database owner (they need
+it to dump and to archive), so they can read a policy row and write run
+records with no new credential, port or volume. The app reads those rows
+through its least-privilege role and never touches a backup file: the
+plaintext dumps and the encrypted pgBackRest repository stay out of the
+web process, which is the same reason the runtime role split exists (3.1).
+
+Rejected, and why: a *status file on a shared volume* means mounting the
+`backups` volume (plaintext dumps) into the app, gives no history, and
+needs ad-hoc locking for requests; an *HTTP endpoint in each sidecar* is
+a new network surface plus a new shared secret inside images that have no
+web server; *mounting the volumes read-only* still cannot read pgBackRest
+(the repository is encrypted and `info` needs the cipher key) and cannot
+carry requests back. The database already has transactions, a queue
+primitive (`FOR UPDATE SKIP LOCKED`), the audit log and the alerting.
+
+**Schema: one migration, `Backups`.** Column names are PascalCase and
+quoted, like every other table; the sidecars write them by name.
+
+- On `SiteSettings` (typed columns, cached 30 s, like every other setting):
+  `BackupRetentionEnabled` (bool, default true), `BackupKeepCount` (int,
+  default 3, valid 1..1000), `BackupKeepDays` (int, default 14, valid
+  1..3650), `BackupPolicyChangedAt` (nullable; null means "never set by
+  anyone", see the seed below), `BackupPolicyChangedById`.
+- `BackupAgents`, one row per sidecar, primary key `Name` (`logical` |
+  `physical`): `StartedAt`, `LastSeenAt` (heartbeat), `NextRunAt`,
+  `IntervalHours`, `FullEveryDays` (physical only), `ToolVersion`
+  (`pg_dump`/pgBackRest version string), `VolumeFreeBytes`,
+  `VolumeTotalBytes`, `WalArchivedAt` (physical: mtime of the newest
+  archived WAL file, which is how far forward PITR reaches),
+  `AppliedRetentionEnabled`, `AppliedKeepCount`, `AppliedKeepDays`,
+  `PolicyObservedAt` (see the grace period), `Message` (the last log line,
+  for the status card). **App role: read-only.**
+- `Backups`, the inventory (the disk is the truth; this is its mirror,
+  refreshed every poll): `Id`, `Agent`, `Label` (the cycle stamp
+  `20260917T050527Z` for logical; the pgBackRest label `20260917-034639F`
+  for physical), `Type` (`dump` | `full` | `diff` | `incr`), `Prior`
+  (physical: the label this one depends on), `StartedAt`, `CompletedAt`,
+  `SizeBytes` (logical: dump plus archive on disk; physical: the
+  repository size of that backup, `info.repository.size`), `DetailJson`
+  (file names; WAL start/stop and LSNs), `HasUploads`, `Error`,
+  `FirstSeenAt`, `LastSeenAt`, `RemovedAt` (null while present),
+  `RemovedReason` (`retention` | `missing`), `LastVerifiedAt`,
+  `LastVerifyOk`. Rows are never deleted: a removed backup stays as
+  history. **App role: read-only.**
+- `BackupJobs`, the queue and the run log: `Id`, `Agent`, `Kind` (`backup`
+  | `restore-test`), `Trigger` (`scheduled` | `manual` | `startup`),
+  `Status` (`requested` | `running` | `succeeded` | `failed`), `Target`
+  (a backup label, restore tests only), `RequestedAt`, `RequestedById`,
+  `StartedAt`, `FinishedAt`, `Error`, `ResultJson` (what was produced:
+  labels and sizes; what retention removed and why; orphans cleaned;
+  restored table count), `LogTail` (last 40 lines). The app inserts
+  `requested` rows; the sidecars insert `scheduled`/`startup` rows and own
+  every update. **App role: append-only** (add to
+  `DatabaseRoles.AppendOnlyTables`).
+- `DatabaseRoles` gains `ReadOnlyTables = ["BackupAgents", "Backups"]`
+  (revoke INSERT, UPDATE, DELETE, TRUNCATE from the app role), applied in
+  `EnsureAppRoleAsync` next to the append-only loop, with a test that both
+  lists name these tables (SQLite cannot enforce them, so the list is what
+  the test protects; see `ThreatDetectionTests` for the existing one).
+
+**The retention rule, exactly.** Take one agent's *successful* backups,
+newest first, index `i` from 0. Backup `i` is kept if `i < KeepCount` or
+`StartedAt >= now - KeepDays × 24 h`; otherwise it is removed. Retention
+disabled: nothing is removed, ever. Consequences that follow and are not
+separately configurable: the newest backup is always kept (`KeepCount >=
+1`); a stretch of failures cannot cause deletions (failures are not in the
+list and each success only pushes old ones down by one).
+
+- *Logical:* the unit is a **cycle**, one stamp shared by the dump and
+  the uploads archive. `run.sh` computes the stamp once and passes it to
+  both scripts (`BACKUP_STAMP`); a cycle exists if either file does.
+  Removing a cycle removes both files.
+- *Physical:* the list is of **full** backups; removing a full removes its
+  incrementals and, through pgBackRest's own archive retention, the WAL
+  before the oldest surviving full. Implement it as pgBackRest's native
+  count: `K = max(KeepCount, number of fulls with StartedAt >= now -
+  KeepDays)`, clamped to at least 1, and run `pgbackrest expire
+  --repo1-retention-full=K` after each successful backup. Never use
+  `expire --set` (it has its own WAL rules and is easy to get wrong).
+  `pgbackrest.conf` changes `repo1-retention-full` to `9999999` with a
+  comment saying the sidecar supplies the real value per run; this also
+  means an operator running `pgbackrest backup` by hand no longer expires
+  anything (document that in the runbook).
+- Retention disabled on the physical side: skip `expire` entirely (with
+  the conf at 9999999, the automatic expire after a backup keeps all).
+
+The same rule lives twice, in C# (`BackupRetention.Plan(policy, backups,
+now)` in `Infrastructure/Backups/`, used by the preview endpoint and the
+tests) and in bash (each sidecar, with `RETENTION_DRY_RUN=1` printing
+the plan without deleting). Opus verifies the bash against the C# cases
+by hand with the dry run. The cases, with ages in days:
+
+| KeepCount | KeepDays | Backups (age) | Removed |
+|---|---|---|---|
+| 3 | 14 | 1, 2, 3, 20, 30 | 20, 30 |
+| 3 | 14 | 20, 30, 40, 50 | 50 |
+| 1 | 1 | 0.5, 2 | 2 |
+| 5 | 14 | 1, 2 | none |
+| disabled | | anything | none |
+| physical, 2 | 14 | fulls 1, 10, 20, 30 | fulls 20, 30 and their incrementals (K = 2) |
+
+**The grace period on reductions, enforced by the sidecar.** Each agent
+records the policy it last applied (`Applied*`). When it observes a policy
+stricter than that (retention newly enabled, or a smaller count, or fewer
+days), it sets `PolicyObservedAt = now` and keeps applying the *old* policy
+until 24 hours have passed, then applies the new one. Loosening applies at
+once. "Never applied one" counts as stricter, so an upgrade or a fresh
+sidecar removes nothing during its first day. Why: the app role can write
+`SiteSettings`, so a compromised admin session could otherwise set 1 day /
+1 backup and have the history gone before anyone reads the alert. The app
+merely displays the resulting "takes effect at" time, computed from the
+agent row; it cannot shorten it.
+
+**Seeding the policy on upgrade.** Compose passes
+`Backup__SeedRetentionDays: ${BACKUP_RETENTION_DAYS:-14}` to the app. At
+startup, after migrations, if `BackupPolicyChangedAt` is null the app sets
+`KeepDays` from that value, `KeepCount = 3`, `Enabled = true`,
+`ChangedAt = now`, `ChangedById = null`. An operator who had raised
+`BACKUP_RETENTION_DAYS` keeps their days; the count of 3 keeps at least as
+many fulls as today's 2. After the seed the variable is not read again;
+`.env.example` says so. `RETENTION_DAYS` leaves the `backup` service's
+environment. The `BACKUP_S3_ENABLED` stub (a log line and nothing else)
+leaves `run.sh`, compose and `.env.example`; the `S3_*` lines stay
+commented as "reserved for 9.2".
+
+**The sidecars, rewritten.** Bash, no new binaries: `psql` writes the
+rows and **Postgres parses the JSON** (`pgbackrest info --output=json` is
+passed as a `psql` variable and unpacked with `jsonb_array_elements`;
+`find -printf` builds the logical listing the same way). Both sidecars
+share the same loop shape, in a sourced `common.sh`:
+
+1. Wait for the database (`pg_isready` loop; this is the bug behind the
+   2026-09-17 gap). If `to_regclass('"BackupJobs"')` is null the tables do
+   not exist yet (first boot before the app migrated): run in **legacy
+   mode**, backing up on the interval and removing nothing, and re-check
+   each poll.
+2. On start, mark this agent's own `running` jobs `failed` ("agent
+   restarted"); upsert the agent row with `StartedAt`, versions and the
+   interval. `NextRunAt` is read from the row: if it is null or in the
+   past, a backup is due now; otherwise the schedule survived the restart.
+   This is what removes the restart-takes-a-full behaviour.
+3. Every `POLL_SECONDS` (60): heartbeat (`LastSeenAt`, disk from
+   `df -B1`, `WalArchivedAt` on the physical side); sync the inventory
+   from disk or `info` (new rows, `LastSeenAt` on present ones,
+   `RemovedAt`/`missing` on rows whose files are gone without a retention
+   record); claim one `requested` job for this agent (`UPDATE ... WHERE
+   Id = (SELECT ... FOR UPDATE SKIP LOCKED) RETURNING`); run the due
+   scheduled backup; run claimed jobs.
+4. A backup job: insert or claim the row, run, then on success apply
+   retention (subject to the grace period) and, on the logical side,
+   delete `*.tmp` files older than one hour; write `ResultJson`,
+   `LogTail`, `Status`, and set `NextRunAt = now + interval`. On failure:
+   `failed` with `Error`, and `NextRunAt = now + backoff` (15 min,
+   doubling, capped at 6 h). Nothing in the loop runs under `set -e`; a
+   failure is a row, not an exit.
+5. Physical backup type: `full` if there is no full or the newest full's
+   start is older than `BACKUP_FULL_EVERY_DAYS` (7, env), else `incr`.
+   Then `expire --repo1-retention-full=K` as above, then `info` to
+   refresh the inventory.
+6. Restore-test job: logical runs `verify-backup.sh <dump>` (it already
+   restores into a throwaway database and counts tables); physical runs
+   `verify.sh`, extended to accept `--set=<label>` (it restores to
+   `/tmp` inside the container and checks `pg_controldata`). Either way
+   the job records the outcome and the backup row's `LastVerifiedAt` /
+   `LastVerifyOk`. `pitr-selftest.sh` stays manual: it writes to the live
+   database.
+7. Compose healthchecks for both services: the loop touches
+   `/tmp/heartbeat` each poll; `test: find /tmp/heartbeat -mmin -5`.
+
+`backup.sh`, `backup-files.sh` and `verify-backup.sh` stay runnable by
+hand exactly as the runbook shows; a file made by hand is picked up by
+the next inventory sync as an ordinary backup.
+
+**Endpoints** (`Features/Admin/BackupEndpoints.cs`, group
+`/api/admin/backups`, `RequireAdmin`; sudo where marked, audited where
+marked, both via the existing helpers):
+
+- `GET /` overview: the policy with each agent's `effectiveAt`; both
+  agents (online = `LastSeenAt` within 5 min; `nextRunAt`; disk; tool
+  version); per agent: last successful backup (label, when, size), last
+  failure, success rate over 30 days, present backups count and total
+  bytes, oldest restore point, and for physical the PITR window (oldest
+  full's start to `WalArchivedAt`); last restore test (when, label,
+  ok); the present backups newest first, each with its verify status;
+  the last 50 jobs. `?includeRemoved=true` adds backups removed in the
+  last 30 days with `RemovedReason`.
+- `PUT /policy` (**sudo**; audit `backup.policy_changed` with old and
+  new values): validates the ranges; when the new policy is stricter,
+  raises `backup.retention_reduced` (Critical, alert) through the
+  detector, so every admin gets the email.
+- `POST /policy/preview`: runs `BackupRetention.Plan` against the current
+  inventory and returns, per agent, what would be removed (labels,
+  count, bytes) and the new oldest restore point. Advisory: the sidecar
+  decides, and its `ResultJson` says what it actually did.
+- `POST /run` `{ agents?: [...] }` (audit `backup.requested`): inserts
+  one `requested` `backup` job per agent; 409 if that agent already has a
+  `requested` or `running` job.
+- `POST /{label}/restore-test` (audit `backup.restore_test_requested`):
+  same shape, `Kind = restore-test`, `Target = label`.
+- `GET /jobs/{id}`: one job with its log tail, for polling a running one.
+- Deliberately **no download endpoint**: backup files never pass through
+  the web tier. The runbook's `docker compose exec`/`docker run` lines
+  stay the way to fetch them.
+
+**Alerts.** `BackupMonitor : BackgroundService` (1 min initial delay,
+every 5 min; same shape as `AuditChainMonitor`), using a new
+`ISecurityDetector.BackupProblemAsync(kind, severity, metadata)` that
+wraps `RaiseAsync(alert: true, key: agent)`; the existing cooldown by
+`(kind, key)` keeps a flapping agent to one alert per window:
+
+- `backup.failed` (Warning): a job finished `failed` since the last check.
+- `backup.overdue` (Critical): no successful backup within
+  2 × `IntervalHours`, except during the first interval after
+  `StartedAt`.
+- `backup.agent_offline` (Warning): `LastSeenAt` older than 15 min, or
+  no agent row 10 min after the app started.
+- `backup.restore_test_failed` (Critical).
+- `backup.disk_low` (Warning): free space under 10 % of the volume or
+  under twice the last backup's size.
+- `backup.retention_reduced` (Critical): raised inline by `PUT /policy`.
+
+Add the six kinds wherever the existing kinds are listed for operators
+(the detection section of `docs/security.md` or `architecture.md`,
+whichever holds the table today).
+
+**UI: `/admin/backups`, tab "Backups" after Security.** Routes in
+`main.tsx`, the tab in `AdminLayout.tsx`, so **the live-walk rule
+applies in full** (member, admin, signed out).
+
+- *Status strip:* one card per agent ("Database dumps and uploads",
+  "Physical backups and point-in-time recovery"): a status dot (online /
+  offline / last run failed), last backup with age and size, next run,
+  oldest restore point (physical: the PITR window as a range), disk free,
+  last restore test. **Back up now** (both agents) sits above the cards;
+  each card has **Test restore** for its newest backup. A running job
+  shows inline and polls `GET /jobs/{id}` every 5 s until it finishes.
+- *Policy form:* a choice between "Keep every backup forever" and "Prune
+  old backups", the latter with "Keep the newest [N] backups and
+  everything from the last [D] days" and the sentence *A backup is
+  deleted only when it is outside both.* Save calls the preview first and
+  shows what will be removed and the new oldest restore point in a
+  confirmation panel (not `window.confirm`: it has a list in it); the
+  client's `reauth_required` handling supplies the sudo prompt. A
+  reduction shows "Takes effect at <time>; nothing is removed before
+  then."
+- *Backups table:* label, kind (physical rows say full/incr and name their
+  full), taken, size, verified (time or "never"), a **Test restore**
+  action. A collapsed "Removed" section lists the last 30 days of removed
+  ones with the reason.
+- *Runs table:* the last 50 jobs (when, trigger, kind, status, duration,
+  a one-line summary from `ResultJson`), each expandable to its log tail.
+- *Dashboard (2.5's Health, finally):* two stat tiles, "Last database
+  dump" and "Last physical backup", showing age and a tick or cross,
+  linking to the tab. Both read from the same overview data (a slim
+  `GET /api/admin/backups/summary`, or fold two fields into the dashboard
+  response; Opus's call, but not a second heavy query).
+- Themed like the rest of the admin area; the status dot uses
+  `--danger` only for failure, never for "no backup yet".
+
+**Tests** (`tests/Api.Tests/BackupTests.cs`): the retention rule (the
+table above, plus the boundary at exactly `KeepDays`); policy validation,
+sudo, audit row, and the `backup.retention_reduced` alert only when
+stricter; the preview's numbers against a seeded inventory; `POST /run`
+inserts one job per agent and 409s on a pending one; the overview's
+overdue/offline computations and the PITR window; `BackupMonitor` raising
+each kind from seeded rows and staying quiet when healthy; the
+`DatabaseRoles` lists; the startup seed (null `ChangedAt` → seeded from
+config; non-null → untouched); the dashboard tiles.
+
+**Verification, live.** Rebuild `app`; restart `backup` and `pgbackrest`
+with their new scripts. Expect the inventory to show this instance's
+present files (the 6 dumps, 4 uploads archives and 2 pgBackRest fulls as
+of 2026-09-17) and the six `.tmp` orphans to be gone after the first
+logical cycle. Press **Back up now** and watch both jobs run to
+`succeeded`; run **Test restore** on each newest backup; change the
+policy to a stricter one and confirm the preview lists the right
+backups, the grace time is shown, and nothing is removed; loosen it and
+confirm it applies at once. Stop the `backup` container for 16 minutes
+(or lower the threshold in a test build) and confirm
+`backup.agent_offline` arrives as an alert and an email. Then the full
+live walk.
+
+**Docs.** `backup-recovery.md` (the layers table gets a retention row;
+the admin tab becomes the first thing the runbook points at; the
+`pgbackrest.conf` retention note; the env changes and the upgrade seed;
+the offsite section now says "see dev-plan 9.2"), `README.md`'s
+backup paragraph, `architecture.md`'s backups section (the contract and
+the three tables), `.env.example`, `docs/security.md` (the role lists and
+the alert kinds), and a dated CHANGELOG entry.
+
+**Decided out of scope (say so in the CHANGELOG):** the schedule
+(`BACKUP_INTERVAL_HOURS`, `BACKUP_FULL_EVERY_DAYS`) stays deploy-time and
+is shown read-only; automatic scheduled restore tests (a later toggle);
+encrypting the logical dumps (a prerequisite of 9.2, done there or as its
+own small item); downloading backups through the app; `pitr-selftest.sh`
+in the UI.
+
+### 9.2 Offsite backups — network drives and cloud storage — `L` — Model: Fable → Opus
+
+**Not scheduled.** Research done 2026-09-17 (Opus, from official docs;
+items marked *unverified* were not confirmed). Fable's remaining design
+work is small once the owner answers the open decisions at the end; Opus
+then implements. **Prerequisites:** 9.1 shipped (the sidecars must be
+able to report offsite runs the same way), and the logical dumps
+**encrypted before anything copies them off the box** (they are plaintext
+today).
+
+**Recommendation.** Local first, then replicate (3-2-1); never
+remote-only, because a remote outage would then fill `pg_wal`.
+
+- *Database:* pgBackRest **dual repository**: keep `repo1` local, add
+  `repo2` on S3-compatible storage (Backblaze B2 as the documented
+  default) or a NAS. WAL streams to both continuously, so PITR exists
+  offsite; each repo has its own retention, cipher passphrase and backup
+  command (`backup --repo=2`, weekly is enough). Set
+  `repo2-bundle=y`, and set `archive-push-queue-max` so a dead remote
+  cannot fill the disk (WAL past the limit is *dropped*, which breaks
+  PITR from that repo until its next backup, so alert when it trips).
+  Upgrade pgBackRest to 2.59.1 (2.59.0 fixed dotted bucket names with
+  path-style URIs).
+- *Uploads and logical dumps:* **restic**, not `rclone` or a plain copy.
+  It encrypts client-side always, deduplicates (back up the uploads
+  volume directly instead of a fresh tarball), and its `forget
+  --keep-last N --keep-within Dd --prune` **is the owner's retention
+  rule**. Backends: local, SFTP, its own `rest-server`, S3 and
+  compatibles, B2, Azure, GCS. `check --read-data-subset=5%` after each
+  run. Not Glacier or Deep Archive: they break restic, and 12 to 48 hour
+  restores with 90/180-day minimums are a trap for disaster recovery
+  anyway.
+- *NAS:* a Docker named volume with `driver: local` and `type=nfs` or
+  `cifs`. If the NAS is offline the container fails to start, which is
+  the right failure (a host *bind* mount to a missing share silently
+  writes to local disk). NFS volumes can fail to come back after a reboot
+  (moby#47153). SMB has no symlinks or POSIX uids: mount with
+  `uid=999,gid=999` and use `repo-type=cifs` or `repo-symlink=n`
+  (pgBackRest 2.57+). Keep spool and lock paths local; never put PGDATA
+  on a NAS. Best used as a copy target (repo2, or a restic
+  `rest-server --append-only` on the NAS), not as the only repository.
+- *Immutability:* S3 Object Lock (needs versioning; *governance* can be
+  bypassed with a permission, *compliance* cannot be shortened), B2
+  Object Lock with an application key lacking `deleteFiles`, restic's
+  `rest-server --append-only`. R2 has bucket locks but no Object Lock API,
+  no versioning, and slow pgBackRest restores (pgbackrest#2782).
+  **Immutability conflicts with retention:** a credential that cannot
+  delete makes `expire` and `prune` fail, so retention moves to provider
+  lifecycle rules (with the lock no longer than retention), or a separate
+  maintenance key kept off the host. "Keep forever" must never shorten a
+  lock.
+- *Credentials:* deploy-time (`.env` or Compose secrets), not the UI.
+  Anything the app can write, an attacker who owns the app can use; keys
+  that can delete or bypass a lock stay out of its reach. The admin
+  screen for this (a "Storage targets" section beside 9.1's) edits type,
+  endpoint, bucket, prefix, region, URI style, enabled, per-target
+  retention and schedule; shows read-only whether credentials are set
+  (key-id fingerprint only), encryption, versioning or lock detected,
+  last offsite backup and WAL push, bytes stored, last verify and any
+  archive-gap or staleness warning; and has **Test connection**, which
+  the sidecar runs (`check --repo=2`, `restic snapshots`) and reports
+  through the 9.1 tables. `EgressGuard` covers only the app; sidecar
+  egress is unguarded and a LAN NAS is a private address the guard would
+  refuse anyway.
+- *Costs at 1 to 50 GB (list prices, 2026-09):* B2 $6.95/TB with 10 GB
+  free (about $0.30/month at 50 GB, free egress up to 3× stored, Object
+  Lock); AWS S3 Standard about $1.15/month at 50 GB plus $0.09/GB
+  egress; R2 $0.015/GB after 10 GB, free egress, no lock; Wasabi has a
+  1 TB minimum bill and a 90-day minimum storage duration, so not at
+  this scale.
+- *Proving it restores:* `pgbackrest --repo=2 verify` (manifests, WAL
+  continuity, checksums) daily and `--repo=2 check` for WAL arrival; a
+  real drill restores `--repo=2 --type=time` into a throwaway
+  `postgres:18` container and records how long it took. restic:
+  `check --read-data-subset`, and periodically `restore latest` followed
+  by `pg_restore --list` and an uploads file count. Wire both into 9.1's
+  restore-test jobs.
+
+**Phasing when scheduled:** (1) database offsite: repo2 on B2, own
+passphrase, `repo2-retention-full` about 4, `archive-push-queue-max`,
+weekly `backup --repo=2`, daily `verify --repo=2`, alerts, credentials
+in `.env`, pgBackRest 2.59.1; (2) uploads and dumps offsite: restic
+replaces the tarball, the 9.1 policy drives `forget`; (3) the Storage
+targets screen, versioning plus a governance lock no longer than
+retention, a write-only daily key and an offline maintenance key, and a
+monthly automated scratch restore. *LAN-only alternative:* the NAS as
+repo2 (SFTP, or NFS with `repo-symlink=n`, or `cifs`) plus a restic
+`rest-server --append-only` on it; a cloud copy of the NAS can come
+later.
+
+**Open decisions for the owner (the item waits on these):**
+
+1. The documented default provider: B2, generic S3, or R2.
+2. Offsite credentials: deploy-time only (recommended), or editable in
+   the UI.
+3. Lock mode and period, and how "keep forever" or a short local
+   retention interacts with it.
+4. Local and remote passphrases: the same or separate (recommended
+   separate), and where they are escrowed. A lost passphrase makes the
+   remote copy unrecoverable.
+5. Whether repo2 gets its own schedule and retention (recommended yes).
+6. restic replaces the uploads tarball, or both are kept.
+7. NAS as a first-class target type, or a documented recipe.
+
+**Risks to carry into the design:** a repo2 archive gap silently breaks
+PITR from it; `archive-push-queue-max` trades a full disk for dropped
+WAL; NFS after reboot; SMB and symlinks; no-delete credentials break
+`expire`/`prune`; Wasabi minimums; Glacier breaks restic; R2 restores;
+`rclone sync` deletes and its config passwords are only obscured; a lost
+passphrase; sidecar egress is unguarded; today's dumps are plaintext.
+
+**Sources:** pgbackrest.org (configuration, user-guide, command,
+release notes); pgbackrest issues 2782, 2854, 2148, 592;
+restic.readthedocs.io (preparing a new repo, forget, working with repos,
+faq); restic 0.19.1 release notes; github.com/restic/rest-server;
+rclone.org (crypt, sync); docs.docker.com (volumes, secrets);
+moby/moby#47153; AWS S3 Object Lock and pricing pages; Backblaze B2
+pricing, Object Lock and application-key docs; Wasabi pricing and FAQ;
+Cloudflare R2 pricing and bucket locks.
+
+---
+
 ## Order of execution, flattened
 
 1. **0.1** Roles (Fable→Opus) → **0.2** Settings → **0.3** Telemetry → **0.4** Media storage
@@ -978,6 +1443,7 @@ feature; do not conflate).
 7. **6** Space icons
 8. **7.A** → **7.B** → **7.C** → **7.D** (Fable→Opus) → **7.E** → **7.F**
 9. **8.1** PDF (after 7.A) → **8.2** Licence (any time) → **8.3** OpenAPI → **8.4** MCP (Fable→Opus) → **8.6** External edits as tracked changes (Fable→Opus) → **8.5** Wiki packs (Fable→Opus)
+10. **9.1** Backups admin section (Fable→Opus; spec written 2026-09-17, ready for Opus) → **9.2** Offsite backups (Fable→Opus; unscheduled, waits on the owner's seven decisions listed in the item)
 
 Phases 6 and 8.2 are floaters — small, no dependents — and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm
@@ -991,3 +1457,5 @@ findings don't get better by waiting.
 - Blog posts as a content type (Phase 7 table) — a product decision.
 - Public repo visibility (8.2).
 - Immediate vs. digest for email notifications (4.3).
+- Everything under 9.2's "Open decisions": provider, where credentials live, lock mode, passphrases, repo2 schedule, restic vs. tarball, NAS as a target type.
+- Whether the backup schedule joins the retention policy in the admin UI (9.1 keeps it in `.env`).

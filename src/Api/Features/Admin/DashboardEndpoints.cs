@@ -48,7 +48,12 @@ public static class DashboardEndpoints
     {
         var days = Math.Clamp(rangeDays ?? 30, 1, 365);
         var now = DateTimeOffset.UtcNow;
-        var since = now.AddDays(-days);
+        // The range is whole UTC days ending with today: `days` of them, today
+        // last. Starting from `now - days` instead gave a window whose final
+        // day was yesterday, so everything that happened today was counted but
+        // had no bucket to land in — every chart read zero for the current day.
+        var firstDay = DateOnly.FromDateTime(now.UtcDateTime).AddDays(-(days - 1));
+        var since = new DateTimeOffset(firstDay.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
 
         // Timestamps are compared and grouped in memory throughout. The SQLite
         // provider used by the tests can neither compare nor ORDER BY a
@@ -148,6 +153,9 @@ public static class DashboardEndpoints
     /// The zero days matter: a sparkline built only from days that had activity
     /// silently compresses a quiet week into a single point and reads as steady
     /// use when the truth is the opposite.
+    ///
+    /// <paramref name="since"/> must be midnight UTC of the first day, so the
+    /// <paramref name="days"/> buckets end on today (see GetDashboard).
     /// </summary>
     private static List<DailyPoint> Daily(
         IEnumerable<DateTimeOffset> timestamps, DateTimeOffset since, int days)
