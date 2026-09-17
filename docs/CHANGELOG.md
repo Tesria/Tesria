@@ -5,6 +5,16 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Toolbar menu triggers, and close buttons on the phone popups (2026-09-16)
+
+The Text Style trigger was permanently blue: it borrowed the toolbar's
+"active" look, and a text menu always has a current style. Both menu
+triggers now carry a plain border and never the accent state — a menu is
+not a state. The theme and notification popups get the same phone-only X
+as the hamburger, and the notification dropdown is pinned to the viewport
+on a phone the way the theme panel already was, so it cannot run off the
+edge either.
+
 ### Phone toolbar wording, and the Live bar on the breadcrumb's indent (2026-09-16)
 
 On a phone the two toolbar menus now say what they are: **Aa Text Style**

@@ -120,7 +120,12 @@ export function NotificationBell() {
         <div className="notif__dropdown">
           <div className="notif__header">
             <span>Notifications</span>
-            <button type="button" className="link-btn" onClick={markAllRead}>Mark all read</button>
+            <span className="row-gap" style={{ alignItems: 'center' }}>
+              <button type="button" className="link-btn" onClick={markAllRead}>Mark all read</button>
+              <button type="button" className="popover__close" aria-label="Close" onClick={() => setOpen(false)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+            </span>
           </div>
           {items === null && <p className="muted small" style={{ padding: '0.5rem' }}>Loading…</p>}
           {items?.length === 0 && <p className="muted small" style={{ padding: '0.5rem' }}>You're all caught up.</p>}
