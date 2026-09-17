@@ -371,7 +371,6 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   .theme-menu__panel { position: fixed; left: 1rem; right: 1rem; top: 60px; width: auto; }
   .notif__dropdown { position: fixed; left: 1rem; right: 1rem; top: 60px; width: auto; }
-  .popover__close { display: inline-flex; }
 }
 .theme-menu__panel {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
@@ -424,7 +423,9 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
   width: 2rem; height: 2rem; border: none; background: none; border-radius: 6px; color: var(--muted); cursor: pointer;
 }
 .popover__close:hover { background: var(--hover); color: var(--text); }
-.theme-menu__panel { position: relative; }
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .popover__close { display: inline-flex; }
+}
 .theme-menu__panel .popover__close { position: absolute; top: 0.35rem; right: 0.35rem; }
 .notif__header { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 0.9rem; }
 .notif__list { list-style: none; margin: 0; padding: 0; }
