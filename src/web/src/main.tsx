@@ -1,13 +1,13 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { createBrowserRouter, createRoutesFromElements, Navigate, Outlet, Route, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, createRoutesFromElements, Navigate, Route, RouterProvider } from 'react-router-dom'
 import './index.css'
 import { startFaviconSync } from './theme'
 import { AuthProvider } from './auth/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { SessionGate } from './components/SessionGate'
 import { Layout } from './components/Layout'
-import { ScrollToTop } from './components/ScrollToTop'
+import { Root } from './Root'
 import { LoginPage } from './routes/LoginPage'
 import { RegisterPage } from './routes/RegisterPage'
 import { SpacesPage } from './routes/SpacesPage'
@@ -37,19 +37,6 @@ import { AdminSecurityPage } from './routes/admin/AdminSecurityPage'
 // Paints the tab icon in the chosen accent before React renders, and keeps
 // it in step when the OS flips light/dark.
 startFaviconSync()
-
-/**
- * The app root inside the router. ScrollToTop reads the location, so it has
- * to live under the router rather than beside it.
- */
-function Root() {
-  return (
-    <>
-      <ScrollToTop />
-      <Outlet />
-    </>
-  )
-}
 
 // A data router (createBrowserRouter), not <BrowserRouter>: only a data
 // router supports useBlocker, which is what lets the editor ask before a

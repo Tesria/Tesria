@@ -19,6 +19,7 @@ import { setSlashCommandStorage } from './slash/items'
 import { setDynamicBlockStorage } from './dynamicBlock'
 import { DynamicBlockMenu } from './DynamicBlockMenu'
 import { TocMenu } from './TocMenu'
+import { InlineCommentPopover } from './InlineCommentPopover'
 import type { CollabConnection } from './CollabStatus'
 
 type Props = {
@@ -161,6 +162,7 @@ export function CollaborativeEditor({
       {editor && <LayoutMenu editor={editor} />}
       {editor && <DynamicBlockMenu editor={editor} />}
       {editor && <TocMenu editor={editor} />}
+      {editor && <InlineCommentPopover editor={editor} getPageId={getUploadPageId} />}
       <EditorContent editor={editor} className="editor__content" />
     </div>
   )
