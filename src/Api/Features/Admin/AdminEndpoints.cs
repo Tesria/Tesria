@@ -125,7 +125,11 @@ public static class AdminEndpoints
         group.MapPost("/spaces/{key}/recover-access", RecoverSpaceAccess);
         group.MapPost("/users/{userId:guid}/reset-password", IssuePasswordReset);
         group.MapGet("/users", ListUsers);
-        group.MapPut("/users/{userId:guid}/role", SetRole);
+        // Only the owner decides who administers the instance (dev-plan 10.1).
+        group.MapPut("/users/{userId:guid}/role", SetRole)
+            .RequireAuthorization(AuthPolicies.RequireOwner);
+        group.MapPost("/users/{userId:guid}/transfer-ownership", TransferOwnership)
+            .RequireAuthorization(AuthPolicies.RequireOwner);
         group.MapPut("/users/{userId:guid}/status", SetStatus);
         group.MapPost("/users/{userId:guid}/revoke-sessions", RevokeSessions);
         group.MapPost("/users/{userId:guid}/revoke-tokens", RevokeTokens);
@@ -356,12 +360,32 @@ public static class AdminEndpoints
     /// set a password: an administrator should be able to restore access
     /// without ever knowing the credential that results.
     /// </summary>
+    /// <summary>
+    /// Refuses an administrator acting on the owner's account (dev-plan 10.1).
+    ///
+    /// Without this, the role guards are theatre: an administrator could issue
+    /// the owner a password-reset link and walk in, or sign them out of every
+    /// device on a loop. The owner acting on their own account is fine.
+    /// </summary>
+    private static async Task<IResult?> RefuseIfOwnersAccountAsync(User target, CurrentUser current)
+    {
+        if (target.Role != UserRole.Owner) return null;
+        if (target.Id == current.Id || await current.IsOwnerAsync()) return null;
+        return Results.Json(new
+        {
+            title = "Forbidden",
+            status = 403,
+            message = "Only the owner can act on the owner's account.",
+        }, statusCode: StatusCodes.Status403Forbidden);
+    }
+
     private static async Task<IResult> IssuePasswordReset(
         Guid userId, AppDbContext db, CurrentUser current,
         IAuditLogger audit, IAccountRecoveryService recovery)
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Results.NotFound();
+        if (await RefuseIfOwnersAccountAsync(user, current) is { } refused) return refused;
 
         if (user.PasswordHash is null)
             return Results.ValidationProblem(new Dictionary<string, string[]>
@@ -449,16 +473,19 @@ public static class AdminEndpoints
             .ToListAsync();
 
         // Ordered in memory: SQLite cannot ORDER BY a DateTimeOffset, and this
-        // list is bounded by the instance's user count.
-        return Results.Ok(users.OrderBy(u => u.DisplayName).ToList());
+        // list is bounded by the instance's user count. The owner leads, then
+        // administrators: the rows whose role someone came here to check.
+        return Results.Ok(users
+            .OrderByDescending(u => u.Role)
+            .ThenBy(u => u.DisplayName)
+            .ToList());
     }
 
     /// <summary>
-    /// Promotes or demotes an administrator.
-    ///
-    /// Refuses to remove the last one. An instance with no administrator has no
-    /// way back — nobody can change settings, issue invites or restore access —
-    /// and the only remedy would be editing the database by hand.
+    /// Promotes or demotes an administrator. The owner's own role is not
+    /// changeable here: ownership moves by transfer, which keeps the seat
+    /// filled, so the instance can never be left with nobody able to
+    /// administer it (dev-plan 10.1).
     /// </summary>
     private static async Task<IResult> SetRole(
         Guid userId, SetRoleRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit,
@@ -470,16 +497,11 @@ public static class AdminEndpoints
         // Changing who administers the instance is sudo territory (dev-plan 3.5).
         if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
 
-        if (req.Role != UserRole.Admin && user.Role == UserRole.Admin)
-        {
-            var otherAdmins = await db.Users.CountAsync(u =>
-                u.Role == UserRole.Admin && u.Id != userId && u.Status == UserStatus.Active);
-            if (otherAdmins == 0)
-                return Results.ValidationProblem(new Dictionary<string, string[]>
-                {
-                    ["role"] = ["This is the only administrator. Promote someone else first."],
-                });
-        }
+        if (user.Role == UserRole.Owner || req.Role == UserRole.Owner)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["role"] = ["Ownership is transferred, not assigned."],
+            });
 
         user.Role = req.Role;
         audit.Record("user.role_changed", "user", user.Id, new { user.Email, Role = req.Role.ToString() });
@@ -488,6 +510,52 @@ public static class AdminEndpoints
         if (req.Role == UserRole.Admin) await detector.AdminPromotedAsync(current.RequireId(), user);
         await db.SaveChangesAsync();
         return Results.Ok(await OneUserAsync(db, userId));
+    }
+
+    /// <summary>
+    /// Hands the instance to someone else (dev-plan 10.1): the target becomes
+    /// the owner and the caller becomes an administrator, in one save, so
+    /// there is never a moment with two owners or none.
+    ///
+    /// Nothing is rotated. The role is read from the row on every request, so
+    /// both people's existing sessions simply mean something different from
+    /// the next request onwards.
+    /// </summary>
+    private static async Task<IResult> TransferOwnership(
+        Guid userId, AppDbContext db, CurrentUser current, IAuditLogger audit,
+        ISecurityDetector detector, HttpContext http, IConfiguration config)
+    {
+        var target = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (target is null) return Results.NotFound();
+
+        var meId = current.RequireId();
+        if (target.Id == meId)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["userId"] = ["You already own this instance."],
+            });
+        if (target.Status != UserStatus.Active)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["userId"] = ["A suspended account cannot own the instance."],
+            });
+
+        // Giving the instance away is the most destructive administrative
+        // action there is (dev-plan 3.5).
+        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
+
+        var me = await db.Users.FirstAsync(u => u.Id == meId);
+        target.Role = UserRole.Owner;
+        me.Role = UserRole.Admin;
+
+        audit.Record("owner.transferred", "user", target.Id,
+            new { From = me.Email, To = target.Email });
+        // Every administrator hears, including the one who just gave it away:
+        // if this was not their doing, it is the last moment they could act.
+        await detector.OwnerTransferredAsync(meId, new { From = me.Email, To = target.Email });
+        await db.SaveChangesAsync();
+
+        return Results.Ok(await OneUserAsync(db, target.Id));
     }
 
     /// <summary>
@@ -509,10 +577,18 @@ public static class AdminEndpoints
                 ["status"] = ["You cannot suspend your own account."],
             });
 
-        if (req.Status != UserStatus.Active && user.Role == UserRole.Admin)
+        // The owner is the instance's way back in; suspending it would leave
+        // nobody who can transfer ownership or change a role.
+        if (req.Status != UserStatus.Active && user.Role == UserRole.Owner)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["status"] = ["The owner cannot be suspended. Transfer ownership first."],
+            });
+
+        if (req.Status != UserStatus.Active && user.Role >= UserRole.Admin)
         {
             var otherAdmins = await db.Users.CountAsync(u =>
-                u.Role == UserRole.Admin && u.Id != userId && u.Status == UserStatus.Active);
+                u.Role >= UserRole.Admin && u.Id != userId && u.Status == UserStatus.Active);
             if (otherAdmins == 0)
                 return Results.ValidationProblem(new Dictionary<string, string[]>
                 {
@@ -530,10 +606,11 @@ public static class AdminEndpoints
 
     /// <summary>Signs every device out of an account without changing its password.</summary>
     private static async Task<IResult> RevokeSessions(
-        Guid userId, AppDbContext db, IAuditLogger audit)
+        Guid userId, AppDbContext db, IAuditLogger audit, CurrentUser current)
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Results.NotFound();
+        if (await RefuseIfOwnersAccountAsync(user, current) is { } refused) return refused;
 
         user.SecurityStamp = Guid.NewGuid().ToString("N");
         // The stamp rotation is what kills the cookies; the rows are marked
@@ -552,10 +629,11 @@ public static class AdminEndpoints
     /// revocation does not touch them, so "lock this account out" needs both.
     /// </summary>
     private static async Task<IResult> RevokeTokens(
-        Guid userId, AppDbContext db, IAuditLogger audit)
+        Guid userId, AppDbContext db, IAuditLogger audit, CurrentUser current)
     {
         var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Results.NotFound();
+        if (await RefuseIfOwnersAccountAsync(user, current) is { } refused) return refused;
 
         var tokens = await db.ApiTokens.Where(t => t.UserId == userId).ToListAsync();
         db.ApiTokens.RemoveRange(tokens);

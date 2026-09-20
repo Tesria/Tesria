@@ -138,4 +138,16 @@ public enum UserRole
 {
     Member = 0,
     Admin = 1,
+
+    /// <summary>
+    /// The one account that owns the instance (dev-plan 10.1). Everything an
+    /// administrator can do, plus the two things only it can: change anyone's
+    /// role, and hand ownership to someone else. Exactly one exists, it cannot
+    /// be demoted or suspended, and ownership moves only by transfer, so an
+    /// attacker holding an admin session cannot take the instance.
+    ///
+    /// Ordered above <see cref="Admin"/> on purpose: every administrative
+    /// check is "this role or above", so nothing has to list both.
+    /// </summary>
+    Owner = 2,
 }

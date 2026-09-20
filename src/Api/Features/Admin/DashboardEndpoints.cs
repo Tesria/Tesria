@@ -72,7 +72,7 @@ public static class DashboardEndpoints
 
         var people = new PeopleStats(
             Total: users.Count,
-            Admins: users.Count(u => u.Role == UserRole.Admin),
+            Admins: users.Count(u => u.Role >= UserRole.Admin),
             Suspended: users.Count(u => u.Status == UserStatus.Suspended),
             ActiveLast7Days: users.Count(u => u.LastSeenAt >= now.AddDays(-7)),
             ActiveLast30Days: users.Count(u => u.LastSeenAt >= now.AddDays(-30)),

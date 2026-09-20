@@ -381,11 +381,15 @@ builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>
     ProxyTrust.Configure(o, builder.Configuration));
 
 builder.Services.AddScoped<IAuthorizationHandler, AdminRequirementHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, OwnerRequirementHandler>();
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(AuthPolicies.RequireAdmin, policy => policy
         .RequireAuthenticatedUser()
         .AddRequirements(new AdminRequirement()));
+    options.AddPolicy(AuthPolicies.RequireOwner, policy => policy
+        .RequireAuthenticatedUser()
+        .AddRequirements(new OwnerRequirement()));
 });
 
 // Health checks, incl. a database probe now that EF Core is wired in.
@@ -447,6 +451,13 @@ using (var scope = app.Services.CreateScope())
     // The first start after dev-plan 9.1 turns BACKUP_RETENTION_DAYS into a policy.
     await Tesria.Api.Infrastructure.Backups.BackupPolicySeed.EnsureAsync(
         scope.ServiceProvider.GetRequiredService<ISiteSettingsService>(), app.Configuration, startupLog);
+
+    // The first start after dev-plan 10.1 gives an existing instance its owner.
+    await Tesria.Api.Infrastructure.Auth.OwnerSeed.EnsureAsync(
+        db,
+        scope.ServiceProvider.GetRequiredService<IAuditLogger>(),
+        scope.ServiceProvider.GetRequiredService<ISiteSettingsService>(),
+        startupLog);
 }
 
 // A broken audit chain is a security alert, not just a log line.

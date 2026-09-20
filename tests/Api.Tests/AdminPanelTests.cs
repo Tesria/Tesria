@@ -35,7 +35,7 @@ public class AdminPanelTests
     private record DashboardDto(int RangeDays, DateTimeOffset GeneratedAt,
         PeopleDto People, ContentDto Content, UsageDto Usage);
 
-    private const int Member = 0, Admin = 1;
+    private const int Member = 0, Admin = 1, Owner = 2;
     private const int Active = 0, Suspended = 1;
     private const string Doc = """{"type":"doc","content":[]}""";
 
@@ -56,7 +56,7 @@ public class AdminPanelTests
         Assert.Equal(2, users!.Count);
 
         var owner = users.Single(u => u.Email == "admin@example.com");
-        Assert.Equal(Admin, owner.Role);
+        Assert.Equal(Owner, owner.Role);
         Assert.Equal(Active, owner.Status);
         Assert.False(owner.IsSso);
         // Everyone registering now gets a set, so the admin can see who has none.
@@ -90,40 +90,10 @@ public class AdminPanelTests
             new { Email = "member@example.com", Password = "supersecret" })).EnsureSuccessStatusCode();
     }
 
-    [Fact]
-    public async Task The_last_administrator_cannot_be_demoted_or_suspended()
-    {
-        using var factory = new TestAppFactory();
-        var admin = factory.CreateClient();
-        var owner = await RegisterAsync(admin, "admin@example.com");
-        await RegisterAsync(factory.CreateClient(), "member@example.com");
-
-        // An instance with no admin has no way back: nobody could change
-        // settings, issue invites or restore access without editing the database.
-        Assert.Equal(HttpStatusCode.BadRequest, (await admin.PutAsJsonAsync(
-            $"/api/admin/users/{owner.Id}/role", new { Role = Member })).StatusCode);
-
-        // Self-suspension is refused separately, before the last-admin check.
-        Assert.Equal(HttpStatusCode.BadRequest, (await admin.PutAsJsonAsync(
-            $"/api/admin/users/{owner.Id}/status", new { Status = Suspended })).StatusCode);
-    }
-
-    [Fact]
-    public async Task Demotion_is_allowed_once_another_admin_exists()
-    {
-        using var factory = new TestAppFactory();
-        var admin = factory.CreateClient();
-        var owner = await RegisterAsync(admin, "admin@example.com");
-        var second = await RegisterAsync(factory.CreateClient(), "second@example.com");
-
-        (await admin.PutAsJsonAsync($"/api/admin/users/{second.Id}/role", new { Role = Admin }))
-            .EnsureSuccessStatusCode();
-        (await admin.PutAsJsonAsync($"/api/admin/users/{owner.Id}/role", new { Role = Member }))
-            .EnsureSuccessStatusCode();
-
-        // Having demoted itself, that session is no longer an admin.
-        Assert.Equal(HttpStatusCode.Forbidden, (await admin.GetAsync("/api/admin/users")).StatusCode);
-    }
+    // The old rules here ("the last administrator cannot be demoted or
+    // suspended", "demotion is allowed once another admin exists") are the
+    // owner's job now: the seat always exists and only its holder changes
+    // roles. See OwnerTests.
 
     [Fact]
     public async Task Sessions_and_tokens_are_revoked_separately()

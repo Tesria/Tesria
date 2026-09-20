@@ -42,6 +42,7 @@ service by sheer volume, which is the network's job, not the app's.
 |---|---|---|
 | Proxy trust + secure cookie (3.0) | Per-address limits keying on Caddy's address; the session cookie ever travelling over plain HTTP | A proxy on a *public* address that the operator has not named in `PROXY_TRUSTED_NETWORKS`; publishing port 8080 to a LAN, where any client could then set forwarded headers |
 | Security headers + CSP (3.0) | Clickjacking, MIME sniffing, injected inline script, the site being framed or embedded | Injected inline *styles* (allowed — the editor needs them); images loaded from arbitrary `https:` hosts (allowed — authors paste image URLs; a tracking pixel can learn a reader's address) |
+| The owner role (10.1) | An administrator, or a stolen admin session, promoting itself or anyone else, unseating the owner, or getting at the owner's account through a password reset or a session revoke | An attacker who takes the *owner's* session within the sudo window; the owner's own mistakes, which is why the transfer is confirmed, audited and alerted |
 | Least-privilege DB role (3.1) | A compromised app deleting or rewriting `AuditLogs`, `PageViews`, `SecurityEvents` | The same app writing *misleading new* audit rows; anyone holding the owner password |
 | Backup contract (9.1) | A compromised app hiding a failed backup (it cannot write `Backups` or `BackupAgents`, nor alter `BackupJobs`); reaching backup files (it never mounts them); quietly destroying history through the retention policy (sudo, a Critical alert, and a 24-hour wait the sidecars enforce) | An attacker with an admin session who also suppresses the alert email for a day; anyone holding the owner password, which the sidecars have; the offsite gap (there is no offsite copy yet, dev-plan 9.2) |
 | Audit hash chain + stdout copy (3.1) | Silent edits or deletions in the middle of the log, by anyone including the owner; loss of the database copy | Truncation of the tail between daily checks (the monitor catches it only while the process lives — the stdout copy is the record); a compromised app binary lying at the verify endpoint |
@@ -113,6 +114,8 @@ before DNS points at the box.
 - [ ] `OIDC_REQUIRE_HTTPS_METADATA` is `true` (the default) if SSO is on.
 
 **Accounts**
+- [ ] The owner account has two-factor on and its recovery codes saved:
+      it is the one account that cannot be suspended or reset by anyone else.
 - [ ] Every administrator has two-factor on, and **Require two-factor for
       administrators** is on (Admin → Security → Kill switches).
 - [ ] Every administrator has saved their recovery codes.

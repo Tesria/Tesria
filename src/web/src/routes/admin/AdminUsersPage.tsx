@@ -6,6 +6,7 @@ import { Avatar } from '../../components/Avatar'
 /** Admin → Users (dev-plan 2.2). */
 export function AdminUsersPage() {
   const { user: me } = useAuth()
+  const iAmOwner = me?.role === UserRole.Owner
   const [users, setUsers] = useState<AdminUser[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -87,6 +88,10 @@ export function AdminUsersPage() {
         <tbody>
           {users.map((u) => {
             const isSelf = u.id === me?.id
+            // Signing the owner out, revoking their tokens or resetting their
+            // password are all ways for an administrator to take the instance
+            // or keep its owner out of it; the server refuses them too.
+            const othersOwnerRow = u.role === UserRole.Owner && !isSelf
             const busy = busyId === u.id
             return (
               <tr key={u.id}>
@@ -101,7 +106,9 @@ export function AdminUsersPage() {
                   </span>
                 </td>
                 <td>
-                  {u.role === UserRole.Admin ? <span className="badge">admin</span> : 'Member'}
+                  {u.role === UserRole.Owner
+                    ? <span className="badge badge--owner">owner</span>
+                    : u.role === UserRole.Admin ? <span className="badge">admin</span> : 'Member'}
                   {u.isSso && <span className="badge">sso</span>}
                 </td>
                 <td>
@@ -125,17 +132,38 @@ export function AdminUsersPage() {
                   {u.lastSeenAt ? new Date(u.lastSeenAt).toLocaleDateString() : 'Never'}
                 </td>
                 <td className="admin-table__actions">
-                  <button
-                    type="button"
-                    className="link-btn"
-                    disabled={busy}
-                    onClick={() => act(u.id, () => api.admin.users.setRole(
-                      u.id, u.role === UserRole.Admin ? UserRole.Member : UserRole.Admin,
-                    ), 'Could not change the role.')}
-                  >
-                    {u.role === UserRole.Admin ? 'Demote' : 'Make admin'}
-                  </button>
-                  {!isSelf && (
+                  {/* The owner's own row carries nothing that could unseat or
+                      lock out the instance's last way back in. */}
+                  {u.role !== UserRole.Owner && (
+                    <button
+                      type="button"
+                      className="link-btn"
+                      disabled={busy || !iAmOwner}
+                      title={iAmOwner ? undefined : 'Only the owner changes roles.'}
+                      onClick={() => act(u.id, () => api.admin.users.setRole(
+                        u.id, u.role === UserRole.Admin ? UserRole.Member : UserRole.Admin,
+                      ), 'Could not change the role.')}
+                    >
+                      {u.role === UserRole.Admin ? 'Demote' : 'Make admin'}
+                    </button>
+                  )}
+                  {iAmOwner && !isSelf && u.status === UserStatus.Active && (
+                    <button
+                      type="button"
+                      className="link-btn link-btn--danger"
+                      disabled={busy}
+                      onClick={() => {
+                        if (!window.confirm(
+                          `Make ${u.displayName} the owner of this instance? `
+                          + 'You become an administrator, and only they will be able to change roles or hand it back.',
+                        )) return
+                        void act(u.id, () => api.admin.users.transferOwnership(u.id), 'Could not transfer ownership.')
+                      }}
+                    >
+                      Transfer ownership
+                    </button>
+                  )}
+                  {!isSelf && u.role !== UserRole.Owner && (
                     <button
                       type="button"
                       className="link-btn"
@@ -147,25 +175,29 @@ export function AdminUsersPage() {
                       {u.status === UserStatus.Suspended ? 'Reactivate' : 'Suspend'}
                     </button>
                   )}
-                  <button
-                    type="button"
-                    className="link-btn"
-                    disabled={busy}
-                    onClick={() => act(u.id, () => api.admin.users.revokeSessions(u.id),
-                      'Could not revoke sessions.')}
-                  >
-                    Sign out
-                  </button>
-                  <button
-                    type="button"
-                    className="link-btn"
-                    disabled={busy}
-                    onClick={() => act(u.id, () => api.admin.users.revokeTokens(u.id),
-                      'Could not revoke tokens.')}
-                  >
-                    Revoke tokens
-                  </button>
-                  {u.hasPassword && (
+                  {!othersOwnerRow && (
+                    <button
+                      type="button"
+                      className="link-btn"
+                      disabled={busy}
+                      onClick={() => act(u.id, () => api.admin.users.revokeSessions(u.id),
+                        'Could not revoke sessions.')}
+                    >
+                      Sign out
+                    </button>
+                  )}
+                  {!othersOwnerRow && (
+                    <button
+                      type="button"
+                      className="link-btn"
+                      disabled={busy}
+                      onClick={() => act(u.id, () => api.admin.users.revokeTokens(u.id),
+                        'Could not revoke tokens.')}
+                    >
+                      Revoke tokens
+                    </button>
+                  )}
+                  {u.hasPassword && !othersOwnerRow && (
                     <button type="button" className="link-btn" disabled={busy} onClick={() => issueReset(u)}>
                       Reset password
                     </button>

@@ -66,7 +66,7 @@ public sealed class OidcUserProvisioner(AppDbContext db) : IOidcUserProvisioner
             PasswordHash = null, // OIDC-only account — no local password.
             OidcSubject = subject,
             Status = UserStatus.Active,
-            Role = isFirstAccount ? UserRole.Admin : UserRole.Member,
+            Role = isFirstAccount ? UserRole.Owner : UserRole.Member,
             SecurityStamp = Guid.NewGuid().ToString("N"),
             CreatedAt = DateTimeOffset.UtcNow,
         };

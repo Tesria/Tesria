@@ -84,7 +84,7 @@ public sealed class NotificationService(AppDbContext db) : INotificationService
     public async Task NotifyAdminsAsync(string action, Guid targetId, object? metadata = null)
     {
         var admins = await db.Users.AsNoTracking()
-            .Where(u => u.Role == UserRole.Admin && u.Status == UserStatus.Active)
+            .Where(u => u.Role >= UserRole.Admin && u.Status == UserStatus.Active)
             .Select(u => u.Id)
             .ToListAsync();
 
