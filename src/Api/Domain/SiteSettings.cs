@@ -116,6 +116,27 @@ public class SiteSettings
 
     public int LockoutMaxSeconds { get; set; } = 900;
 
+    // --- Backup retention (dev-plan 9.1). Read by the backup sidecars, which
+    // apply it; the app only stores it and previews its effect. A backup is
+    // removed only when it is outside both limits: not among the newest
+    // BackupKeepCount, and older than BackupKeepDays.
+
+    /// <summary>False keeps every backup forever.</summary>
+    public bool BackupRetentionEnabled { get; set; } = true;
+
+    public int BackupKeepCount { get; set; } = 3;
+
+    public int BackupKeepDays { get; set; } = 14;
+
+    /// <summary>
+    /// Null means no one has set the policy yet, and the sidecars remove
+    /// nothing. Set at startup from <c>BACKUP_RETENTION_DAYS</c> (see
+    /// BackupPolicySeed) and whenever an administrator saves it.
+    /// </summary>
+    public DateTimeOffset? BackupPolicyChangedAt { get; set; }
+
+    public Guid? BackupPolicyChangedById { get; set; }
+
     public DateTimeOffset UpdatedAt { get; set; }
     public Guid? UpdatedById { get; set; }
 }

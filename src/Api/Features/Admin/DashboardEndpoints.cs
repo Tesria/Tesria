@@ -32,9 +32,12 @@ public static class DashboardEndpoints
     public record TopPage(Guid PageId, string Title, string SpaceKey, int Views);
     public record TopEditor(Guid UserId, string DisplayName, int Versions);
 
+    /// <summary>The Health tiles 2.5 promised; they needed dev-plan 9.1 to have anything to read.</summary>
+    public record HealthStats(IReadOnlyList<BackupEndpoints.Health> Backups);
+
     public record DashboardResponse(
         int RangeDays, DateTimeOffset GeneratedAt,
-        PeopleStats People, ContentStats Content, UsageStats Usage);
+        PeopleStats People, ContentStats Content, UsageStats Usage, HealthStats Health);
 
     public static IEndpointRouteBuilder MapDashboardEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -143,7 +146,9 @@ public static class DashboardEndpoints
             TopPages: topPages,
             TopEditors: topEditors);
 
-        return Results.Ok(new DashboardResponse(days, now, people, content, usage));
+        var health = new HealthStats(await BackupEndpoints.HealthAsync(db));
+
+        return Results.Ok(new DashboardResponse(days, now, people, content, usage, health));
     }
 
     /// <summary>

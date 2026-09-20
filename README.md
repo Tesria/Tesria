@@ -112,9 +112,13 @@ without Docker or a live PostgreSQL.
 
 ## Backups
 
-The `backup` container takes a compressed logical backup on startup and every
-`BACKUP_INTERVAL_HOURS`, keeping `BACKUP_RETENTION_DAYS` of history on the
-`backups` volume.
+Two sidecars back the instance up every `BACKUP_INTERVAL_HOURS`: `backup`
+(a `pg_dump` plus an archive of uploads, on the `backups` volume) and
+`pgbackrest` (physical backups and continuous WAL archiving for point-in-time
+recovery). **Administration → Backups** shows both, runs a backup or a restore
+test on demand, and sets the retention policy (keep the newest *N* and the last
+*D* days, or keep everything). `BACKUP_RETENTION_DAYS` only seeds that policy
+on the first start after upgrading.
 
 ```bash
 docker compose exec backup /scripts/backup.sh          # backup now

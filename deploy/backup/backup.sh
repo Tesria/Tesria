@@ -5,8 +5,12 @@
 set -euo pipefail
 
 BACKUP_DIR="/backups"
-STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+# The sidecar passes one stamp to both scripts so a dump and its uploads
+# archive share it (dev-plan 9.1); run by hand, each takes its own.
+STAMP="${BACKUP_STAMP:-$(date -u +%Y%m%dT%H%M%SZ)}"
 OUT="${BACKUP_DIR}/db-${STAMP}.dump"
+# An interrupted run must not leave its .tmp behind (a 0-byte one never goes away).
+trap 'rm -f "${OUT}.tmp"' EXIT
 
 log() { echo "[backup $(date -u +%FT%TZ)] $*"; }
 

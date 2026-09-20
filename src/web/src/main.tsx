@@ -33,6 +33,7 @@ import { AdminSpacesPage } from './routes/admin/AdminSpacesPage'
 import { AdminInvitesPage } from './routes/admin/AdminInvitesPage'
 import { AdminSettingsPage } from './routes/admin/AdminSettingsPage'
 import { AdminSecurityPage } from './routes/admin/AdminSecurityPage'
+import { AdminBackupsPage } from './routes/admin/AdminBackupsPage'
 
 // Paints the tab icon in the chosen accent before React renders, and keeps
 // it in step when the OS flips light/dark.
@@ -93,6 +94,7 @@ const router = createBrowserRouter(
                   <Route path="spaces" element={<AdminSpacesPage />} />
                   <Route path="invites" element={<AdminInvitesPage />} />
                   <Route path="security" element={<AdminSecurityPage />} />
+                  <Route path="backups" element={<AdminBackupsPage />} />
                   <Route path="groups" element={<GroupsPage />} />
                   <Route path="audit" element={<AuditPage />} />
                   <Route path="settings" element={<AdminSettingsPage />} />

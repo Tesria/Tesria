@@ -10,12 +10,42 @@ so a single failure never loses data.
 | 1. Physical PITR | pgBackRest continuous WAL archiving → restore to any second | **Active** |
 | 2. Logical dumps | Scheduled `pg_dump` (custom format) with retention + verify | **Active** |
 | 3. File backups | Attachment (`uploads`) archives on the same schedule | **Active** |
-| 4. Offsite | S3-compatible replication, encrypted | Optional — off by default |
+| 4. Offsite | A copy off this machine | **Not implemented** (dev-plan 9.2) |
 | 5. In-app | Page version history + trash / soft-delete | **Active** |
+
+Layers 1 to 3 report to the app and are managed from **Administration →
+Backups** (dev-plan 9.1): status, a retention policy that covers all three,
+**Back up now**, and **Test restore**. Start there; the commands below are for
+when the app is down or you are working on the host.
 
 The pgBackRest repository is **encrypted at rest** (AES-256-CBC) with the
 passphrase from `BACKUP_ENCRYPTION_KEY`. **Keep that key safe and off-box** — the
 repository cannot be restored without it.
+
+---
+
+## Administration → Backups
+
+- **Status.** One card per backup agent: last backup, next run, how far back
+  a restore reaches (for pgBackRest, the window you can restore to any moment
+  in), disk free, the last restore test, and the success rate over 30 days.
+  An agent that stops checking in, falls behind, fails a backup or a restore
+  test, or runs low on disk raises an alert to every administrator (Security
+  tab, and email when email is configured).
+- **Retention policy.** Either keep every backup forever, or keep the newest
+  *N* backups and everything from the last *D* days: a backup is removed only
+  when it is outside both. The policy applies to the database dumps with their
+  uploads archives, and to pgBackRest's full backups with everything that
+  depends on them. It affects nothing but backups. A change is previewed
+  first, needs your password, and is audited. **A change that could remove
+  more waits 24 hours before it takes effect**, and every administrator is
+  alerted when it is saved; loosening applies at once.
+- **Back up now** queues a backup on both agents; each picks it up within a
+  minute. **Test restore** restores that backup somewhere throwaway (a scratch
+  database, or a scratch directory for pgBackRest) and records the result.
+- **Upgrading from before 9.1:** the first start seeds the policy from
+  `BACKUP_RETENTION_DAYS` (days) with *N* = 3, and the agents then wait their
+  24 hours before removing anything. After that the variable is not read.
 
 ---
 
@@ -40,16 +70,26 @@ docker compose exec pgbackrest bash /scripts/verify.sh
 docker compose exec pgbackrest bash /scripts/pitr-selftest.sh
 ```
 
-Run `verify.sh` on a schedule you trust — an unverified backup is not a backup.
+Run `verify.sh` on a schedule you trust (or press **Test restore**); an
+unverified backup is not a backup. `verify.sh --set=LABEL` tests one backup.
+
+Retention is not in `pgbackrest.conf` any more: `repo1-retention-full=9999999`
+there only stops the expire that follows every backup from removing anything.
+The sidecar expires according to the admin page's policy after each scheduled
+or requested backup. **A backup you take by hand with the command above never
+expires anything.** A full backup is taken when the newest is
+`BACKUP_FULL_EVERY_DAYS` (default 7) old; a restart no longer forces one.
 
 ---
 
 ## Layer 2 — logical dumps, and Layer 3 — file backups
 
 The `backup` container (`deploy/backup/run.sh`) takes a compressed `pg_dump` and
-a `tar` of the `uploads` volume on startup and every `BACKUP_INTERVAL_HOURS`,
-pruning both older than `BACKUP_RETENTION_DAYS`. Artifacts land on the `backups`
-volume as `db-<timestamp>.dump` and `uploads-<timestamp>.tar.gz`.
+a `tar` of the `uploads` volume every `BACKUP_INTERVAL_HOURS`, sharing one
+timestamp, and applies the retention policy from the admin page. A failed run
+is retried after 15 minutes (doubling to at most 6 hours) instead of waiting a
+whole interval. Artifacts land on the `backups` volume as `db-<timestamp>.dump`
+and `uploads-<timestamp>.tar.gz`.
 
 ```bash
 docker compose exec backup /scripts/backup.sh          # DB dump now
@@ -148,28 +188,16 @@ docker run --rm -v tesria_uploads:/u -v tesria_backups:/b alpine \
 
 ---
 
-## Offsite backups (optional, off by default)
+## Offsite backups (not implemented)
 
-Set `BACKUP_S3_ENABLED=true` and the `S3_*` values in `.env`, then choose one or
-both:
+Nothing copies backups off this machine yet. `BACKUP_S3_ENABLED` and the
+`S3_*` variables were never wired to anything and have been removed from
+`.env.example` (an old `.env` that still sets them is harmless). The research,
+a recommended design (a second pgBackRest repository on S3-compatible storage
+or a NAS, and restic for dumps and uploads) and the decisions it waits on are
+in [dev-plan 9.2](./dev-plan.md).
 
-- **pgBackRest S3 repository (recommended for the database).** pgBackRest has
-  native, encrypted, deduplicated S3 support. Point the repository at S3 by
-  supplying these to the `db` and `pgbackrest` services (via `.env` →
-  compose `environment`) instead of the local repo:
-  ```
-  PGBACKREST_REPO1_TYPE=s3
-  PGBACKREST_REPO1_S3_ENDPOINT=${S3_ENDPOINT}
-  PGBACKREST_REPO1_S3_BUCKET=${S3_BUCKET}
-  PGBACKREST_REPO1_S3_REGION=${S3_REGION}
-  PGBACKREST_REPO1_S3_KEY=${S3_ACCESS_KEY}
-  PGBACKREST_REPO1_S3_KEY_SECRET=${S3_SECRET_KEY}
-  ```
-  Continuous WAL and full/incr backups then land offsite automatically, still
-  encrypted with `BACKUP_ENCRYPTION_KEY`.
-- **File replication for the logical dumps + uploads archives.** Sync the
-  `backups` volume to your bucket with a tool of choice (`rclone`, `aws s3
-  sync`) from a scheduled job or a small sidecar.
-
-Test a restore from the offsite copy the same way as Scenario C — untested
-offsite backups are not backups either.
+Until then, copy the `backups` volume off the box yourself (the `docker run`
+line under Layer 2) and keep `BACKUP_ENCRYPTION_KEY` somewhere other than this
+machine. **The database dumps are not encrypted**: store any copy of them
+accordingly.

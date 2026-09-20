@@ -21,10 +21,10 @@ at 14:32").
 
 | Script | Purpose |
 |--------|---------|
-| `run.sh` | Sidecar entrypoint: stanza-create + check, then scheduled full/incr backups. |
-| `verify.sh` | Restore the latest backup to a throwaway dir and sanity-check it. |
+| `run.sh` | Sidecar entrypoint: stanza-create + check, then the shared loop in `deploy/backup/common.sh` (schedule, job queue, retention, reporting to the app; dev-plan 9.1). |
+| `verify.sh` | Restore the latest backup, or `--set=LABEL`, to a throwaway dir and sanity-check it. The admin page's Test restore runs this. |
 | `pitr-selftest.sh` | Prove PITR end-to-end: recover to a target time and check the result. |
 | `restore.sh` | Disaster-recovery / PITR restore into the live data dir (Postgres stopped). |
 
 See [`docs/backup-recovery.md`](../../docs/backup-recovery.md) for the full
-runbook, including point-in-time recovery and offsite (S3) configuration.
+runbook, including point-in-time recovery. Retention is set on the admin page, not in `pgbackrest.conf`.

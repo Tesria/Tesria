@@ -150,6 +150,14 @@ public interface ISecurityDetector
     Task AuditChainBrokenAsync(Audit.AuditChainReport report);
     /// <summary>Called by the denied-response middleware once its own counter crosses.</summary>
     Task DeniedSpikeAsync(string ip, int count);
+    /// <summary>
+    /// A backup problem (dev-plan 9.1): <c>backup.failed</c>, <c>backup.overdue</c>,
+    /// <c>backup.agent_offline</c>, <c>backup.restore_test_failed</c> or
+    /// <c>backup.disk_low</c>, keyed by agent. Always an alert.
+    /// </summary>
+    Task BackupProblemAsync(string kind, SecuritySeverity severity, string agent, object? metadata);
+    /// <summary>An administrator saved a backup policy that can remove more than the last one. Always an alert.</summary>
+    Task BackupRetentionReducedAsync(Guid actorId, object metadata);
 }
 
 /// <summary>
@@ -268,6 +276,13 @@ public sealed class SecurityDetector(AppDbContext db, SecurityCounters counters,
     public Task DeniedSpikeAsync(string ip, int count) =>
         RaiseAsync("http.denied_spike", SecuritySeverity.Warning, key: ip, ip: ip, alert: true,
             metadata: new { Denied = count, WindowMinutes = SecurityThresholds.DeniedWindow.TotalMinutes });
+
+    public Task BackupProblemAsync(string kind, SecuritySeverity severity, string agent, object? metadata) =>
+        RaiseAsync(kind, severity, key: agent, alert: true, metadata: metadata);
+
+    public Task BackupRetentionReducedAsync(Guid actorId, object metadata) =>
+        RaiseAsync("backup.retention_reduced", SecuritySeverity.Critical, key: "instance", alert: true,
+            actorId: actorId, metadata: metadata, cooldown: false);
 
     /// <summary>
     /// Writes the event and, if it is alert-worthy and not in cooldown, the

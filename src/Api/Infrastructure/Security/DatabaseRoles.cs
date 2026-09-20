@@ -23,7 +23,14 @@ namespace Tesria.Api.Infrastructure.Security;
 public static partial class DatabaseRoles
 {
     /// <summary>Tables the runtime role may append to but never change.</summary>
-    public static readonly string[] AppendOnlyTables = ["AuditLogs", "PageViews", "SecurityEvents"];
+    public static readonly string[] AppendOnlyTables = ["AuditLogs", "PageViews", "SecurityEvents", "BackupJobs"];
+
+    /// <summary>
+    /// Tables the runtime role may read but never write (dev-plan 9.1). The
+    /// backup sidecars own them; a compromised app must not be able to make
+    /// a failed backup look healthy.
+    /// </summary>
+    public static readonly string[] ReadOnlyTables = ["BackupAgents", "Backups"];
 
     /// <summary>
     /// Which connection the running app should use. The app connection wins
@@ -91,12 +98,14 @@ public static partial class DatabaseRoles
         };
         foreach (var table in AppendOnlyTables)
             sql.Add($"REVOKE UPDATE, DELETE, TRUNCATE ON \"{table}\" FROM \"{role}\"");
+        foreach (var table in ReadOnlyTables)
+            sql.Add($"REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON \"{table}\" FROM \"{role}\"");
 
         foreach (var statement in sql)
             await ownerDb.Database.ExecuteSqlRawAsync(statement, ct);
 
-        logger.LogInformation("Database role {Role} provisioned; append-only: {Tables}",
-            role, string.Join(", ", AppendOnlyTables));
+        logger.LogInformation("Database role {Role} provisioned; append-only: {Tables}; read-only: {ReadOnly}",
+            role, string.Join(", ", AppendOnlyTables), string.Join(", ", ReadOnlyTables));
     }
 
     [GeneratedRegex("^[a-z_][a-z0-9_]*$")]

@@ -365,7 +365,122 @@ export type Dashboard = {
     topPages: { pageId: string; title: string; spaceKey: string; views: number }[]
     topEditors: { userId: string; displayName: string; versions: number }[]
   }
+  /** Dev-plan 9.1: one entry per backup agent. */
+  health: { backups: BackupHealth[] }
 }
+
+/** Backups (dev-plan 9.1). The two sidecars: pg_dump plus uploads, and pgBackRest. */
+export type BackupAgentName = 'logical' | 'physical'
+
+export type BackupPolicy = {
+  enabled: boolean
+  keepCount: number
+  keepDays: number
+  changedAt: string | null
+  changedByName: string | null
+}
+
+export type Backup = {
+  id: string
+  agent: BackupAgentName
+  /** Logical: the cycle's timestamp. Physical: pgBackRest's label. */
+  label: string
+  type: 'dump' | 'full' | 'diff' | 'incr'
+  prior: string | null
+  /** Physical incrementals: the full backup they belong to. */
+  fullLabel: string | null
+  startedAt: string
+  completedAt: string | null
+  sizeBytes: number
+  hasUploads: boolean
+  error: string | null
+  removedAt: string | null
+  removedReason: 'retention' | 'missing' | null
+  lastVerifiedAt: string | null
+  lastVerifyOk: boolean | null
+  detailJson: string | null
+}
+
+export type BackupJob = {
+  id: string
+  agent: BackupAgentName
+  kind: 'backup' | 'restore-test'
+  trigger: 'scheduled' | 'manual' | 'startup'
+  status: 'requested' | 'running' | 'succeeded' | 'failed'
+  target: string | null
+  requestedAt: string
+  requestedByName: string | null
+  startedAt: string | null
+  finishedAt: string | null
+  error: string | null
+  resultJson: string | null
+  /** Only from `job(id)`. */
+  logTail: string | null
+}
+
+export type BackupAgent = {
+  name: BackupAgentName
+  /** False until the sidecar has written its first row. */
+  reporting: boolean
+  online: boolean
+  overdue: boolean
+  lastRunFailed: boolean
+  diskLow: boolean
+  startedAt: string | null
+  lastSeenAt: string | null
+  nextRunAt: string | null
+  intervalHours: number | null
+  fullEveryDays: number | null
+  toolVersion: string | null
+  message: string | null
+  volumeFreeBytes: number | null
+  volumeTotalBytes: number | null
+  walArchivedAt: string | null
+  lastSuccess: Backup | null
+  lastFailure: BackupJob | null
+  successRate30Days: number | null
+  presentCount: number
+  presentBytes: number
+  oldestRestorePoint: string | null
+  lastVerifiedAt: string | null
+  lastVerifyOk: boolean | null
+  appliedPolicy: BackupPolicy | null
+  /** When a stricter saved policy starts removing backups on this agent. */
+  policyEffectiveAt: string | null
+  policyPending: boolean
+}
+
+export type BackupOverview = {
+  policy: BackupPolicy
+  agents: BackupAgent[]
+  backups: Backup[]
+  removed: Backup[]
+  jobs: BackupJob[]
+}
+
+export type BackupPreview = {
+  stricter: boolean
+  agents: {
+    agent: BackupAgentName
+    removed: Backup[]
+    removedBytes: number
+    oldestRestorePoint: string | null
+    newOldestRestorePoint: string | null
+    stricter: boolean
+  }[]
+}
+
+export type BackupHealth = {
+  agent: BackupAgentName
+  reporting: boolean
+  online: boolean
+  overdue: boolean
+  lastRunFailed: boolean
+  lastBackupAt: string | null
+  lastBackupBytes: number | null
+}
+
+export type BackupPolicyInput = { enabled: boolean; keepCount: number; keepDays: number }
 
 /** A dynamic block's answer — one of three neutral shapes (architecture.md, "Dynamic blocks"). */
 export type BlockUser = { id: string; displayName: string; avatarHash: string | null; avatarVariant: number | null }
@@ -752,6 +867,17 @@ export const api = {
     },
     dashboard: (rangeDays: number) =>
       request<Dashboard>('GET', `/api/admin/dashboard?rangeDays=${rangeDays}`),
+    backups: {
+      overview: (includeRemoved = false) =>
+        request<BackupOverview>('GET', `/api/admin/backups${includeRemoved ? '?includeRemoved=true' : ''}`),
+      /** Sudo: the client asks for the password if the session is past the window. */
+      savePolicy: (input: BackupPolicyInput) => request<BackupPolicy>('PUT', '/api/admin/backups/policy', input),
+      preview: (input: BackupPolicyInput) => request<BackupPreview>('POST', '/api/admin/backups/policy/preview', input),
+      run: (agents?: BackupAgentName[]) => request<BackupJob[]>('POST', '/api/admin/backups/run', { agents }),
+      restoreTest: (label: string) =>
+        request<BackupJob>('POST', `/api/admin/backups/${encodeURIComponent(label)}/restore-test`),
+      job: (id: string) => request<BackupJob>('GET', `/api/admin/backups/jobs/${id}`),
+    },
     security: {
       limits: () => request<SecurityLimits>('GET', '/api/admin/security/limits'),
       verifyAuditChain: () => request<AuditChainReport>('POST', '/api/admin/audit/verify'),
