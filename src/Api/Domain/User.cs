@@ -114,6 +114,13 @@ public class User
 
     public DateTimeOffset? TotpEnabledAt { get; set; }
 
+    /// <summary>
+    /// When this person confirmed they had saved their recovery codes
+    /// (dev-plan 10.2). The wizard will not let the owner past the account
+    /// step without it, because codes shown once and closed are codes lost.
+    /// </summary>
+    public DateTimeOffset? RecoveryCodesAcknowledgedAt { get; set; }
+
     /// <summary>The last time step a code was accepted for, so no code is accepted twice.</summary>
     public long? TotpLastStep { get; set; }
 

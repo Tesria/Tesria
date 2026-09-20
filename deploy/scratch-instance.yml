@@ -1,0 +1,57 @@
+# A throwaway instance for testing first-run behaviour (dev-plan 10.2).
+#
+#   scripts/scratch-instance.sh up      # build and start, on http://localhost:8099
+#   scripts/scratch-instance.sh down    # stop and destroy, volumes included
+#
+# Two containers and nothing else: the setup wizard needs a database and the
+# app, not collaboration, PDF rendering, backups or a proxy. It runs under its
+# own compose project name and its own volumes, so `down -v` here can never
+# touch the real instance.
+#
+# Plain HTTP, which is why Security__AllowInsecureCookies is on: the session
+# cookie is Secure in production, and over HTTP a Secure cookie is silently
+# dropped, which would make every request look signed out. That setting is
+# documented as unsafe and belongs nowhere but here.
+name: tesria-scratch
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: scratch
+      POSTGRES_PASSWORD: scratch
+      POSTGRES_DB: scratch
+    volumes:
+      - scratchdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scratch -d scratch"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: "Host=db;Port=5432;Database=scratch;Username=scratch;Password=scratch"
+      # No least-privilege role here: it is a throwaway database, and the
+      # empty password makes the app fall back to the owner with a warning.
+      ConnectionStrings__App: ""
+      Collab__Secret: ""
+      Oidc__Authority: ""
+      Oidc__ClientId: ""
+      Oidc__ClientSecret: ""
+      Oidc__DisplayName: ""
+      Security__AllowInsecureCookies: "true"
+      Site__BaseUrl: "http://localhost:8099"
+    ports:
+      - "8099:8080"
+
+volumes:
+  scratchdata:

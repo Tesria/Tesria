@@ -10,6 +10,7 @@ import { SessionGate } from './components/SessionGate'
 import { Layout } from './components/Layout'
 import { Root } from './Root'
 import { LoginPage } from './routes/LoginPage'
+import { SetupPage } from './routes/SetupPage'
 import { RegisterPage } from './routes/RegisterPage'
 import { SpacesPage } from './routes/SpacesPage'
 import { SpacePage } from './routes/SpacePage'
@@ -48,6 +49,9 @@ startFaviconSync()
 const router = createBrowserRouter(
   createRoutesFromElements(
         <Route element={<Root />}>
+          {/* First-run setup (dev-plan 10.2). Outside SessionGate: on a
+              brand-new instance there is no session to gate on. */}
+          <Route path="/setup" element={<SetupPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/recover" element={<RecoverPage />} />

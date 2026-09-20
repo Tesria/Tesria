@@ -131,3 +131,71 @@ recording adds:
 
 Annotate nothing: a circle drawn over a moving picture reads as part of the
 UI. The clips rely on hover states and focus rings instead.
+
+## The setup wizard (dev-plan 10.2)
+
+`/setup` is where a brand-new instance starts: the steps down the left, one
+step's form on the right. It runs in two situations, both decided by
+`SetupGate`:
+
+- **No accounts at all.** Every visitor goes to `/setup`, because there is
+  nothing else there yet. `/register` still works and still makes the first
+  account the owner; the wizard is the friendlier door to the same room.
+- **An owner who has not finished.** That owner is sent back to `/setup`
+  until they do, and nobody else is: an administrator or a member who arrives
+  meanwhile carries on as normal.
+
+This is convenience, not enforcement. The API is not blocked while setup is
+unfinished. A person who would rather use the API can, and the wizard will
+notice what they did, because it checks the same evidence.
+
+**Five steps are required** and have no Skip: the owner account, the instance
+name and address, who can join, the rights matrix, and the backup retention
+policy. Email, two-factor and a first space can wait. The server refuses to
+record a required step as skipped, so the client cannot decide otherwise.
+
+**Completion is checked against evidence, not clicks.** `POST
+/api/setup/complete` looks at whether the owner acknowledged their recovery
+codes, whether settings were actually written, whether the permissions matrix
+was reviewed, and whether a backup policy was saved. Clicking through every
+step without doing any of them returns 409 naming the earliest one
+outstanding, and the wizard jumps there. An instance that predates the wizard
+is stamped complete by `OwnerSeed` and never sees it.
+
+### Re-running a step
+
+There is no way back into the wizard once it is finished, and there does not
+need to be: every step is a page in Administration.
+
+| Step | Where it lives afterwards |
+|---|---|
+| Your account | Profile |
+| This instance | Administration → Settings |
+| Who can join | Administration → Settings |
+| What roles may do | Administration → Roles |
+| Backups | Administration → Backups |
+| Email | Administration → Settings |
+| Two-factor | Profile |
+| A first space | Spaces → New space |
+
+### Testing it
+
+First-run behaviour cannot be reached on an instance that already has
+accounts, and faking it by editing the database is not worth the risk.
+`scripts/scratch-instance.sh` brings up a throwaway Tesria on
+`http://localhost:8099` under its own compose project and its own volumes,
+so `down -v` there cannot touch anything real:
+
+```sh
+scripts/scratch-instance.sh up      # empty instance, needsOwner true
+scripts/scratch-instance.sh reset   # destroy and start again
+scripts/scratch-instance.sh down    # destroy it
+```
+
+Two things to know when driving it from a browser. **Cookies ignore the
+port**, so `localhost:8099` shares a cookie jar with a real instance on
+`localhost`; use `127.0.0.1:8099`, which is a different host as far as
+cookies are concerned. And it runs over plain HTTP with
+`Security__AllowInsecureCookies`, because a Secure cookie is silently dropped
+over HTTP and every request would look signed out. That setting is documented
+as unsafe and belongs nowhere else.

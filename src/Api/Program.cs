@@ -22,6 +22,7 @@ using Tesria.Api.Features.Templates;
 using Tesria.Api.Features.Watches;
 using Tesria.Api.Features.Webhooks;
 using Tesria.Api.Features.Public;
+using Tesria.Api.Features.Setup;
 using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Audit;
@@ -537,6 +538,7 @@ app.UseMiddleware<Tesria.Api.Infrastructure.Security.TokenScopeMiddleware>();
 // API endpoints live under /api. Feature endpoints are registered via
 // extension methods to keep Program.cs thin (vertical-slice style).
 var api = app.MapGroup("/api");
+api.MapSetupEndpoints();
 api.MapHealthEndpoints();
 api.MapAuthEndpoints();
 api.MapAdminEndpoints();
