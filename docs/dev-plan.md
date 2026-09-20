@@ -2064,7 +2064,7 @@ sign in as the admin fixture, see the policy read-only and get 403 on
 `PUT`), a member deleting their own page and being refused on someone
 else's, and the full live walk, since `Layout.tsx` and `main.tsx` change.
 
-### 11.2 Custom roles — `M` — Model: Fable → Opus — shipped 2026-09-20
+### 11.2 Custom roles — `M` — Model: Fable → Opus — ✅ **shipped 2026-09-20**
 
 A custom role is a named set of rights within the User or Admin tier.
 People are assigned to it instead of to the tier's built-in role; their
@@ -2098,7 +2098,7 @@ owner's reserved powers) is unaffected.
   admin and works for the owner; a custom role's grants apply and its
   deletion is blocked until reassignment; `/auth/me` names the role.
 
-### 11.3 Delete a space — `M` — Model: Fable → Opus
+### 11.3 Delete a space — `M` — Model: Fable → Opus — ✅ **shipped 2026-09-20**
 
 **What the owner asked for (2026-09-20).** Administrators and the owner
 can delete a space, from the space's settings page, with a warning that
@@ -2197,6 +2197,27 @@ instance-wide one is not; an archived space can be deleted. Live: delete
 a throwaway space with a page open in another tab and confirm the editor
 disconnects; then the full walk, since the settings route changes.
 
+**As built (2026-09-20), where it differs from the spec above.**
+- **Collab document names are the bare page id**, not `page:<id>`: the token
+  endpoint issues `id.ToString()` and the sidecar binds the token to it. The
+  spec asked for this to be confirmed; it is, and the deletion matches on the
+  plain id.
+- **The sidecar polls rather than being told.** Its store hook writes only
+  when the page still exists (and closes that document's connections when it
+  does not), and a 15-second sweep closes connections for any open document
+  whose page is gone. The sweep is what reaches an editor that is open but
+  idle, since the store hook only runs when someone is typing. Polling keeps
+  the sidecar's only inbound surface the websocket, and covers a page purged
+  on its own as well as a whole space deleted.
+- **A space the caller cannot view is 404, not deletable.** The spec's step
+  list was silent on this; 11.1 says rights are additive over space
+  permissions and never a bypass, so `spaces.delete` means "may destroy
+  spaces at all", and reaching a space you hold no grant for still means
+  recover-access first, which is audited.
+- **A deletion preview endpoint** (`GET /spaces/{key}/deletion-preview`,
+  same right) supplies the counts the dialog shows, rather than the dialog
+  borrowing the admin spaces list, which needs `spaces.manage`.
+
 **Not decided here, deliberately:** whether invites can name a role
 (recommended later, and only user-tier roles for invites created by
 non-owners); whether groups should carry instance rights (no: groups are a
@@ -2218,7 +2239,7 @@ export.
 8. **7.A** → **7.B** → **7.C** → **7.D** (Fable→Opus) → **7.E** → **7.F**
 9. **8.1** PDF (after 7.A) → **8.2** Licence (any time) → **8.3** OpenAPI → **8.4** MCP (Fable→Opus) → **8.6** External edits as tracked changes (Fable→Opus) → **8.5** Wiki packs (Fable→Opus)
 10. **9.1** Backups admin section (Fable→Opus; shipped 2026-09-17) → **9.2** Offsite backups (Fable→Opus; unscheduled, waits on the owner's seven decisions listed in the item)
-11. **10.1** Owner role (shipped 2026-09-20) → **11.1** Instance rights and the Roles tab (shipped 2026-09-20) → **11.2** Custom roles (shipped 2026-09-20) → **11.3** Delete a space → **5.5** Anonymous access is opt-in twice → **10.4** Media harness → **10.2** Owner setup wizard → **10.3** Tour and tips (all specified 2026-09-20 as Fable; Opus implements). Phase 11 goes before the wizard because the wizard has a required step that reviews the matrix, and before 10.3 because the tour's screens should show the real Roles tab. 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
+11. **10.1** Owner role (shipped 2026-09-20) → **11.1** Instance rights and the Roles tab (shipped 2026-09-20) → **11.2** Custom roles (shipped 2026-09-20) → **11.3** Delete a space (shipped 2026-09-20) → **5.5** Anonymous access is opt-in twice → **10.4** Media harness → **10.2** Owner setup wizard → **10.3** Tour and tips (all specified 2026-09-20 as Fable; Opus implements). Phase 11 goes before the wizard because the wizard has a required step that reviews the matrix, and before 10.3 because the tour's screens should show the real Roles tab. 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
 
 Phases 6 and 8.2 are floaters — small, no dependents — and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm

@@ -57,6 +57,7 @@ service by sheer volume, which is the network's job, not the app's.
 | Sessions (3.5) | A copied cookie outliving sign-out; forever-sessions; no way to sign out one device | Cookie theft *while* the session lives (use two-factor and short lifetimes) |
 | Two-factor (3.5) | A stolen or guessed password alone | A stolen recovery code; a device with the authenticator *and* the password |
 | Sudo mode (3.5) | An unattended signed-in browser being used for destructive administration | The same browser within five minutes of sign-in |
+| Password inside the request (11.3) | An unattended browser deleting a space, which the sudo window alone would allow; deleting the wrong space, which the space key typed back catches | Someone who knows the password and means it. The point is deliberateness, not a second factor (an account without a password answers with a one-time code instead) |
 | Pinned Argon2id (3.5) | Offline cracking of a leaked hash | A weak password against a determined offline attacker with time — length still matters |
 | Dependency audit (3.6) | Known vulnerabilities in what ships | Unknown ones; a compromised upstream package (Dependabot + lockfiles narrow the window) |
 

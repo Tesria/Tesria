@@ -81,9 +81,18 @@ export function CollaborativeEditor({
   useEffect(() => {
     const onStatus = ({ status }: { status: string }) =>
       setStatus(status === 'connected' ? 'connected' : 'disconnected')
+    // `status` does not fire again when the server refuses the *re*-connection,
+    // which is what happens once a page is gone (dev-plan 11.3): the sidecar
+    // closes the session and then turns the retry away. Without this the bar
+    // would sit on "Live" for a page that no longer exists.
+    const onRefused = () => setStatus('disconnected')
     provider.on('status', onStatus)
+    provider.on('authenticationFailed', onRefused)
+    provider.on('disconnect', onRefused)
     return () => {
       provider.off('status', onStatus)
+      provider.off('authenticationFailed', onRefused)
+      provider.off('disconnect', onRefused)
       provider.destroy()
       ydoc.destroy()
     }

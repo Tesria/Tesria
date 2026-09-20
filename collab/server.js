@@ -31,6 +31,18 @@ if (!DATABASE_URL) {
 
 const pool = new pg.Pool({ connectionString: DATABASE_URL })
 
+// A document name is a page id. Checked before it is ever cast to uuid in
+// SQL, so a malformed name is ignored rather than throwing.
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const SWEEP_MS = Number(process.env.COLLAB_SWEEP_MS ?? 15000)
+
+/** Whether the page a document stands for is still there. */
+async function pageExists(documentName) {
+  if (!UUID.test(documentName)) return false
+  const result = await pool.query('SELECT 1 FROM "Pages" WHERE "Id" = $1::uuid', [documentName])
+  return result.rowCount > 0
+}
+
 const fromBase64Url = (value) =>
   Buffer.from(value.replaceAll('-', '+').replaceAll('_', '/'), 'base64')
 
@@ -70,6 +82,14 @@ const server = new Server({
   async onAuthenticate({ token, documentName }) {
     const payload = verifyToken(token, documentName)
     if (!payload) throw new Error('Unauthorized')
+    // A token stays valid for its lifetime, so closing a deleted page's
+    // connections is not enough on its own: the client reconnects and
+    // authenticates again with the same token. Refusing here is what actually
+    // ends the session, and what stops a token outliving its page.
+    if (!(await pageExists(documentName))) {
+      console.warn(`[collab] refusing ${documentName}: no such page`)
+      throw new Error('Unauthorized')
+    }
     // Surfaced to other clients as the collaborator's identity.
     return { user: { id: payload.userId, name: payload.displayName } }
   },
@@ -84,19 +104,62 @@ const server = new Server({
         return result.rows[0]?.State ?? null
       },
       store: async ({ documentName, state }) => {
-        await pool.query(
+        if (!UUID.test(documentName)) return
+        // Only if the page is still there. A space can be deleted (dev-plan
+        // 11.3) while someone has one of its pages open; that session holds
+        // the document in memory and would otherwise write it straight back,
+        // resurrecting a row for a page that no longer exists.
+        // The id is passed twice, as $1 and $3, because Postgres deduces one
+        // type per parameter: $1 is the varchar document name, $3 the uuid.
+        const written = await pool.query(
           `INSERT INTO "CollabDocuments" ("DocumentName", "State", "UpdatedAt")
-           VALUES ($1, $2, now())
+           SELECT $1, $2, now()
+           WHERE EXISTS (SELECT 1 FROM "Pages" WHERE "Id" = $3::uuid)
            ON CONFLICT ("DocumentName")
            DO UPDATE SET "State" = EXCLUDED."State", "UpdatedAt" = now()`,
-          [documentName, state],
+          [documentName, state, documentName],
         )
+        if (written.rowCount === 0) {
+          console.warn(`[collab] ${documentName} is gone; dropping its session`)
+          server.hocuspocus.closeConnections(documentName)
+        }
       },
     }),
   ],
 })
 
-server.listen().then(() => console.log(`[collab] listening on ${PORT}`))
+/**
+ * Ends sessions whose page has been deleted.
+ *
+ * The store hook above catches this too, but only when someone is still
+ * typing: an open, idle editor would otherwise sit there believing it is
+ * connected to a page that no longer exists. This sweep is the one that
+ * reaches it. Polling rather than a push from the API keeps the sidecar's
+ * only inbound surface the websocket, and covers a page purged on its own as
+ * well as a whole space deleted.
+ */
+async function dropDeletedDocuments() {
+  // `Server` wraps the Hocuspocus instance rather than being one; the open
+  // documents and closeConnections both live on it.
+  const open = [...server.hocuspocus.documents.keys()].filter((name) => UUID.test(name))
+  if (open.length === 0) return
+  const alive = await pool.query('SELECT "Id"::text FROM "Pages" WHERE "Id" = ANY($1::uuid[])', [open])
+  const live = new Set(alive.rows.map((r) => r.Id))
+  for (const name of open) {
+    if (live.has(name)) continue
+    console.warn(`[collab] ${name} no longer exists; closing its connections`)
+    server.hocuspocus.closeConnections(name)
+  }
+}
+
+server.listen().then(() => {
+  console.log(`[collab] listening on ${PORT}`)
+  const sweep = setInterval(
+    () => dropDeletedDocuments().catch((err) => console.error('[collab] sweep failed', err)),
+    SWEEP_MS,
+  )
+  sweep.unref()
+})
 
 for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, async () => {

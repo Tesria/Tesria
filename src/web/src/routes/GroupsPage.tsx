@@ -1,8 +1,10 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { api, ApiError, type Directory, type Group, type GroupMember } from '../api/client'
+import { useConfirm } from '../components/ConfirmDialog'
 
 export function GroupsPage() {
   const [groups, setGroups] = useState<Group[] | null>(null)
+  const { ask, dialog } = useConfirm()
   const [error, setError] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -32,7 +34,18 @@ export function GroupsPage() {
   }
 
   async function remove(g: Group) {
-    if (!confirm(`Delete the group "${g.name}"? Any permissions granted to it are removed.`)) return
+    const ok = await ask({
+      title: `Delete the group ${g.name}?`,
+      danger: true,
+      confirmLabel: 'Delete the group',
+      body: (
+        <>
+          <p>Everyone in it stays; only the group goes.</p>
+          <p>Any space permission granted to this group is removed with it, so people who reached a space only through it lose that access.</p>
+        </>
+      ),
+    })
+    if (!ok) return
     await api.groups.remove(g.id)
     if (selected?.id === g.id) setSelected(null)
     load()
@@ -80,6 +93,8 @@ export function GroupsPage() {
       </ul>
 
       {selected && <MemberEditor group={selected} onChanged={load} />}
+
+      {dialog}
     </div>
   )
 }

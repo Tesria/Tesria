@@ -1,5 +1,6 @@
 import { type ChangeEvent, useEffect, useRef, useState } from 'react'
 import { api, ApiError, type Attachment } from '../../api/client'
+import { useConfirm } from '../../components/ConfirmDialog'
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -12,6 +13,7 @@ export function AttachmentsPanel({ pageId }: { pageId: string }) {
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
+  const { ask, dialog } = useConfirm()
 
   function reload() {
     api.attachments
@@ -43,7 +45,13 @@ export function AttachmentsPanel({ pageId }: { pageId: string }) {
   }
 
   async function remove(id: string) {
-    if (!confirm('Delete this attachment?')) return
+    const ok = await ask({
+      title: 'Delete this attachment?',
+      danger: true,
+      confirmLabel: 'Delete the attachment',
+      body: <p>The file goes with it. Anywhere it is embedded in this page stops rendering.</p>,
+    })
+    if (!ok) return
     await api.attachments.remove(id)
     reload()
   }
@@ -69,6 +77,8 @@ export function AttachmentsPanel({ pageId }: { pageId: string }) {
           </li>
         ))}
       </ul>
+
+      {dialog}
     </div>
   )
 }

@@ -2275,3 +2275,10 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
 .confirm__body { display: grid; gap: 0.5rem; color: var(--muted); font-size: 0.9rem; }
 .confirm__body p { margin: 0; }
 .confirm__body strong { color: var(--text); }
+
+/* Space settings: deleting a space (dev-plan 11.3). Set apart from the rest
+   of the page because nothing else there is irreversible. */
+.danger-zone { border-color: color-mix(in srgb, var(--danger) 35%, var(--border)); }
+.danger-zone h2 { color: var(--danger); }
+.danger-form label { display: grid; gap: 0.25rem; margin-top: 0.75rem; }
+.danger-form .confirm__body { margin-bottom: 0.25rem; }

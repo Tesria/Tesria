@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, ApiError, type VersionContent, type VersionMeta } from '../../api/client'
 import { Avatar } from '../../components/Avatar'
+import { useConfirm } from '../../components/ConfirmDialog'
 import { Editor } from '../../editor/Editor'
 
 export function HistoryPanel({
@@ -16,6 +17,7 @@ export function HistoryPanel({
   const [preview, setPreview] = useState<VersionContent | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const { ask, dialog } = useConfirm()
 
   useEffect(() => {
     setPreview(null)
@@ -30,7 +32,13 @@ export function HistoryPanel({
   }
 
   async function restore(n: number) {
-    if (!confirm(`Restore version ${n}? This adds a new version with that content.`)) return
+    // Not destructive, so the affirmative button is the ordinary one.
+    const ok = await ask({
+      title: `Restore version ${n}?`,
+      confirmLabel: `Restore version ${n}`,
+      body: <p>This adds a new version with that content on top. Nothing in the history is lost.</p>,
+    })
+    if (!ok) return
     setBusy(true)
     setError(null)
     try {
@@ -86,6 +94,8 @@ export function HistoryPanel({
           </div>
         </div>
       )}
+
+      {dialog}
     </div>
   )
 }

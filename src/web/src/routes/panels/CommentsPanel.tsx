@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { api, type Comment } from '../../api/client'
 import { Avatar } from '../../components/Avatar'
+import { useConfirm } from '../../components/ConfirmDialog'
 import { useAuth } from '../../auth/AuthContext'
 import { buildThreads, COMMENTS_CHANGED, announceCommentsChanged, type CommentNode as Node } from './commentThreads'
 
@@ -47,6 +48,7 @@ export function CommentItem({ node, pageId, onChanged, readOnly = false }: { nod
   const [editing, setEditing] = useState(false)
   const [editBody, setEditBody] = useState(node.body ?? '')
   const isOwn = user?.id === node.authorId && !node.isDeleted
+  const { ask, dialog } = useConfirm()
 
   async function saveEdit(e: FormEvent) {
     e.preventDefault()
@@ -60,7 +62,13 @@ export function CommentItem({ node, pageId, onChanged, readOnly = false }: { nod
   }
 
   async function remove() {
-    if (!confirm('Delete this comment?')) return
+    const ok = await ask({
+      title: 'Delete this comment?',
+      danger: true,
+      confirmLabel: 'Delete the comment',
+      body: <p>Replies to it stay, under a note saying this one was deleted.</p>,
+    })
+    if (!ok) return
     await api.comments.remove(node.id)
     onChanged()
     announceCommentsChanged()
@@ -121,6 +129,8 @@ export function CommentItem({ node, pageId, onChanged, readOnly = false }: { nod
           ))}
         </ul>
       )}
+
+      {dialog}
     </li>
   )
 }

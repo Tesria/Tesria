@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api, ApiError, type TrashedPage } from '../api/client'
+import { useConfirm } from '../components/ConfirmDialog'
 import { useSpaceContext } from './SpacePage'
 
 /** Lists trashed pages for the space, with restore and permanent-delete. */
@@ -7,6 +8,7 @@ export function TrashPage() {
   const { space, reloadTree } = useSpaceContext()
   const [items, setItems] = useState<TrashedPage[] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const { ask, dialog } = useConfirm()
 
   const load = useCallback(() => {
     setError(null)
@@ -32,7 +34,18 @@ export function TrashPage() {
   }
 
   async function purge(id: string, title: string) {
-    if (!confirm(`Permanently delete "${title}" and its sub-pages? This cannot be undone.`)) return
+    const ok = await ask({
+      title: `Permanently delete ${title}?`,
+      danger: true,
+      confirmLabel: 'Delete permanently',
+      body: (
+        <>
+          <p>The page and any sub-pages go, with every version, comment and attachment.</p>
+          <p>This is what the trash was protecting against, so there is nothing left to restore from afterwards.</p>
+        </>
+      ),
+    })
+    if (!ok) return
     try {
       await api.pages.purge(id)
       load()
@@ -60,6 +73,8 @@ export function TrashPage() {
           </li>
         ))}
       </ul>
+
+      {dialog}
     </>
   )
 }

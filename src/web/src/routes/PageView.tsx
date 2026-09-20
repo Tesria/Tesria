@@ -14,6 +14,7 @@ import { SaveAsTemplateButton } from '../components/SaveAsTemplateButton'
 import { WatchToggle } from '../components/WatchToggle'
 import { OverflowMenu } from '../components/OverflowMenu'
 import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
+import { useConfirm } from '../components/ConfirmDialog'
 
 type Tab = 'comments' | 'attachments' | 'history' | 'restrictions'
 
@@ -26,6 +27,7 @@ export function PageView() {
   const [page, setPage] = useState<PageDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('comments')
+  const { ask, dialog } = useConfirm()
 
   const load = useCallback(() => {
     setError(null)
@@ -55,7 +57,13 @@ export function PageView() {
 
   async function onDelete() {
     if (!page) return
-    if (!confirm(`Move "${page.title}" and any sub-pages to the trash?`)) return
+    // The trash is reversible, so this asks plainly rather than as a danger.
+    const ok = await ask({
+      title: `Move ${page.title} to the trash?`,
+      confirmLabel: 'Move to the trash',
+      body: <p>Any sub-pages go with it. A space administrator can restore the lot from the space&rsquo;s Trash.</p>,
+    })
+    if (!ok) return
     try {
       await api.pages.remove(page.id)
       reloadTree()
@@ -227,6 +235,8 @@ export function PageView() {
         </div>
       </article>
       </div>
+
+      {dialog}
     </>
   )
 }

@@ -1,9 +1,11 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { api, ApiError, type ApiTokenSummary, type CreatedApiToken } from '../api/client'
+import { useConfirm } from './ConfirmDialog'
 
 /** Profile → API tokens: personal credentials, so they live with the profile. */
 export function ApiTokensSection() {
   const [tokens, setTokens] = useState<ApiTokenSummary[] | null>(null)
+  const { ask, dialog } = useConfirm()
   const [name, setName] = useState('')
   const [readOnly, setReadOnly] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -31,7 +33,13 @@ export function ApiTokensSection() {
   }
 
   async function revoke(id: string) {
-    if (!confirm('Revoke this token? Anything using it will stop working immediately.')) return
+    const ok = await ask({
+      title: 'Revoke this token?',
+      danger: true,
+      confirmLabel: 'Revoke the token',
+      body: <p>Anything using it stops working immediately. Revoking cannot be undone; issue a new token instead.</p>,
+    })
+    if (!ok) return
     await api.apiTokens.revoke(id)
     load()
   }
@@ -94,6 +102,8 @@ export function ApiTokensSection() {
           </li>
         ))}
       </ul>
+
+      {dialog}
     </>
   )
 }

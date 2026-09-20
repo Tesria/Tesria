@@ -147,6 +147,17 @@ export type Space = {
   iconColor: number | null
 }
 
+/** What the delete dialog counts up before asking (dev-plan 11.3). */
+export type SpaceDeletionPreview = {
+  key: string
+  name: string
+  /** Every page, including drafts and whatever is already in the trash. */
+  pages: number
+  attachments: number
+  bytes: number
+  isPublic: boolean
+}
+
 export type PageDetail = {
   id: string
   spaceId: string
@@ -844,6 +855,12 @@ export const api = {
       request<Space>('POST', `/api/spaces/${encodeURIComponent(key)}/archive`, {}),
     unarchive: (key: string) =>
       request<Space>('POST', `/api/spaces/${encodeURIComponent(key)}/unarchive`, {}),
+    /** What the delete dialog counts up before asking (dev-plan 11.3). */
+    deletionPreview: (key: string) =>
+      request<SpaceDeletionPreview>('GET', `/api/spaces/${encodeURIComponent(key)}/deletion-preview`),
+    /** Irreversible. The key proves the space, the password proves the person. */
+    remove: (key: string, input: { confirmKey: string; password?: string; code?: string }) =>
+      request<void>('DELETE', `/api/spaces/${encodeURIComponent(key)}`, input),
   },
   pages: {
     tree: (spaceId: string) => request<PageTreeNode[]>('GET', `/api/pages/tree?spaceId=${spaceId}`),

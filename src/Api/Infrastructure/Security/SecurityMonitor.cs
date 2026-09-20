@@ -162,6 +162,8 @@ public interface ISecurityDetector
     Task OwnerTransferredAsync(Guid actorId, object metadata);
     /// <summary>A role gained rights (dev-plan 11.1). Always an alert.</summary>
     Task PermissionsExpandedAsync(Guid actorId, SecuritySeverity severity, object metadata);
+
+    Task SpaceDeletedAsync(Guid actorId, object metadata);
 }
 
 /// <summary>
@@ -294,6 +296,12 @@ public sealed class SecurityDetector(AppDbContext db, SecurityCounters counters,
 
     public Task PermissionsExpandedAsync(Guid actorId, SecuritySeverity severity, object metadata) =>
         RaiseAsync("permissions.expanded", severity, key: "instance", alert: true,
+            actorId: actorId, metadata: metadata, cooldown: false);
+
+    // No cooldown and no target id: the space it points at is gone, and the
+    // metadata is the only surviving description of what was destroyed.
+    public Task SpaceDeletedAsync(Guid actorId, object metadata) =>
+        RaiseAsync("space.deleted", SecuritySeverity.Critical, key: "instance", alert: true,
             actorId: actorId, metadata: metadata, cooldown: false);
 
     /// <summary>
