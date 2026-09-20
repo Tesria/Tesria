@@ -1625,7 +1625,7 @@ to self; a transfer swaps both roles atomically, audits, alerts, and the
 old owner is now an admin; the owner passes every `RequireAdmin` route;
 `RequireTotpForAdmins` binds the owner; alert emails reach the owner.
 
-### 10.4 Onboarding media harness — `M` — Model: Opus
+### 10.4 Onboarding media harness — `M` — Model: Opus — ✅ **shipped 2026-09-20**
 
 Extends `scripts/screenshots/shot.mjs` so one spec produces the stills and
 clips 10.2 and 10.3 embed. Runs the way the harness already runs (the PDF
@@ -1674,6 +1674,32 @@ The clips (each in both themes):
 
 Stills only (light and dark): `admin-overview` (the Administration
 dashboard), `admin-backups` (the Backups tab), for 10.2's Done screen.
+
+**As built (2026-09-20), where it differs from the above.**
+- **The video is scaled, not the viewport.** The page still renders at
+  1280×800; Playwright writes the video at 864×540. At 1280×800 the set
+  came to 13.6 MB against an 8 MB budget, and every clip was already
+  inside the 6-to-10-second window, so resolution was the only lever with
+  give in it. Posters stay at the full 1280×800. The set is 7.6 MB.
+- **`page-tree-drag` reorders rather than nests.** Dropping on a sibling's
+  centre is a reorder to dnd-kit; nesting needs a horizontal offset that
+  would take several fourteen-minute runs to tune blind. The clip shows a
+  page being moved in the tree and saved, which is the tip either way.
+- **Two leaks had to be closed** once the first recordings were looked at,
+  and both are the kind that only show up in the output: the spaces list
+  filmed every real space on the instance, and `@` resolved to a real
+  person. The clip now hides non-demo space cards through a shot-level
+  `css` applied before the first held frame, and the mention types `@Demo`
+  so it lands on the recording account. `setup` creates two further demo
+  spaces so the list still looks like a list.
+- **Recording raises two Critical `space.deleted` alerts**, one per theme,
+  because the demo space really is destroyed each time. That is 11.3
+  working, not noise to suppress.
+- **Steps beyond the item's list:** `dragTo`, `deleteSpace` (teardown needs
+  11.3's password-in-request, which cannot live in a JSON spec),
+  `skipCapture`, a shot-level `css`, and a spec-level `deviceScaleFactor`
+  so a set that ships inside the app is not shot at the documentation
+  harness's 2x.
 
 ### 10.2 First-run setup for the owner — `L` — Model: Fable → Opus
 
@@ -2262,7 +2288,7 @@ export.
 8. **7.A** → **7.B** → **7.C** → **7.D** (Fable→Opus) → **7.E** → **7.F**
 9. **8.1** PDF (after 7.A) → **8.2** Licence (any time) → **8.3** OpenAPI → **8.4** MCP (Fable→Opus) → **8.6** External edits as tracked changes (Fable→Opus) → **8.5** Wiki packs (Fable→Opus)
 10. **9.1** Backups admin section (Fable→Opus; shipped 2026-09-17) → **9.2** Offsite backups (Fable→Opus; unscheduled, waits on the owner's seven decisions listed in the item)
-11. **10.1** Owner role (shipped 2026-09-20) → **11.1** Instance rights and the Roles tab (shipped 2026-09-20) → **11.2** Custom roles (shipped 2026-09-20) → **11.3** Delete a space (shipped 2026-09-20) → **5.5** Anonymous access is opt-in twice (shipped 2026-09-20) → **10.4** Media harness → **10.2** Owner setup wizard → **10.3** Tour and tips (all specified 2026-09-20 as Fable; Opus implements). Phase 11 goes before the wizard because the wizard has a required step that reviews the matrix, and before 10.3 because the tour's screens should show the real Roles tab. 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
+11. **10.1** Owner role (shipped 2026-09-20) → **11.1** Instance rights and the Roles tab (shipped 2026-09-20) → **11.2** Custom roles (shipped 2026-09-20) → **11.3** Delete a space (shipped 2026-09-20) → **5.5** Anonymous access is opt-in twice (shipped 2026-09-20) → **10.4** Media harness (shipped 2026-09-20) → **10.2** Owner setup wizard → **10.3** Tour and tips (all specified 2026-09-20 as Fable; Opus implements). Phase 11 goes before the wizard because the wizard has a required step that reviews the matrix, and before 10.3 because the tour's screens should show the real Roles tab. 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
 
 Phases 6 and 8.2 are floaters — small, no dependents — and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm

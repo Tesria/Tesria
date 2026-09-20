@@ -1,0 +1,689 @@
+{
+  "nameByTheme": true,
+  "deviceScaleFactor": 1,
+  "shots": [
+    {
+      "name": "setup",
+      "url": "/spaces",
+      "settle": 1200,
+      "skipCapture": true,
+      "steps": [
+        {
+          "eval": "(async () => { const H = { 'Content-Type': 'application/json', 'X-Requested-With': 'Tesria' }; const call = async (m, u, b) => { const r = await fetch(u, { method: m, credentials: 'include', headers: H, body: b ? JSON.stringify(b) : undefined }); return r.status === 204 ? null : r.json().catch(() => null) }; const doc = (t) => JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: t }] }] }); const sp = await call('POST', '/api/spaces', { Key: 'DEMO', Name: 'Getting started', Description: 'Everything a new arrival needs.' }); if (!sp || !sp.id) throw new Error('DEMO already exists, or could not be created'); const w = await call('POST', '/api/pages', { SpaceId: sp.id, ParentPageId: null, Title: 'Welcome', ContentJson: doc('A space holds pages, and a page holds everything else: text, tables, images and comments.') }); await call('POST', '/api/pages', { SpaceId: sp.id, ParentPageId: w.id, Title: 'Writing here', ContentJson: doc('Select any text to format it, or press slash on a blank line to insert something.') }); await call('POST', '/api/pages', { SpaceId: sp.id, ParentPageId: null, Title: 'House rules', ContentJson: doc('Write plainly. Link generously. Leave the page better than you found it.') }); const eng = await call('POST', '/api/spaces', { Key: 'DEMOENG', Name: 'Engineering', Description: 'How the thing is built.' }); if (eng && eng.id) await call('POST', '/api/pages', { SpaceId: eng.id, ParentPageId: null, Title: 'Architecture', ContentJson: doc('One service, one database, one editor.') }); const hb = await call('POST', '/api/spaces', { Key: 'DEMOHB', Name: 'Handbook', Description: 'How we work.' }); if (hb && hb.id) await call('POST', '/api/pages', { SpaceId: hb.id, ParentPageId: null, Title: 'Time off', ContentJson: doc('Take it. Tell someone first.') }); })()"
+        },
+        {
+          "wait": 1000
+        }
+      ]
+    },
+    {
+      "name": "spaces",
+      "url": "/spaces",
+      "record": {
+        "seconds": 8
+      },
+      "waitFor": ".space-grid",
+      "steps": [
+        {
+          "probe": "[...document.querySelectorAll('.space-card')].filter(c => getComputedStyle(c).display !== 'none').map(c => c.querySelector('a')?.getAttribute('href'))",
+          "label": "spaces visible in frame (must be demo only)"
+        },
+        {
+          "moveTo": ".space-card a[href='/spaces/DEMO']"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "click": ".space-card a[href='/spaces/DEMO']"
+        },
+        {
+          "waitFor": ".sidebar .tree-section"
+        },
+        {
+          "wait": 1400
+        },
+        {
+          "moveTo": ".sidebar .tree-section a:has-text('Welcome')"
+        },
+        {
+          "wait": 700
+        },
+        {
+          "click": ".sidebar .tree-section a:has-text('Welcome')"
+        },
+        {
+          "waitFor": "article"
+        },
+        {
+          "wait": 1600
+        }
+      ],
+      "css": ".space-grid .space-card { display: none }\n.space-grid .space-card:has(a[href='/spaces/DEMO']),\n.space-grid .space-card:has(a[href='/spaces/DEMOENG']),\n.space-grid .space-card:has(a[href='/spaces/DEMOHB']) { display: list-item }"
+    },
+    {
+      "name": "new-page",
+      "url": "/spaces/DEMO",
+      "record": {
+        "seconds": 10
+      },
+      "waitFor": ".sidebar .tree-section",
+      "steps": [
+        {
+          "moveTo": ".sidebar a[href='/spaces/DEMO/new']"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": ".sidebar a[href='/spaces/DEMO/new']"
+        },
+        {
+          "waitFor": ".title-input"
+        },
+        {
+          "wait": 900
+        },
+        {
+          "typeSlowly": "Meeting notes",
+          "selector": ".title-input"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": ".ProseMirror"
+        },
+        {
+          "typeSlowly": "Agreed to ship the onboarding media this week.",
+          "delay": 42
+        },
+        {
+          "wait": 900
+        },
+        {
+          "moveTo": "button[type='submit']"
+        },
+        {
+          "wait": 500
+        },
+        {
+          "click": "button[type='submit']"
+        },
+        {
+          "waitFor": "article"
+        },
+        {
+          "wait": 1300
+        }
+      ]
+    },
+    {
+      "name": "editor-slash",
+      "url": "/spaces/DEMO",
+      "record": {
+        "seconds": 9
+      },
+      "waitFor": ".sidebar .tree-section",
+      "steps": [
+        {
+          "click": ".sidebar .tree-section a:has-text('Writing here')"
+        },
+        {
+          "waitFor": ".page-actionbar a:has-text('Edit')"
+        },
+        {
+          "click": ".page-actionbar a:has-text('Edit')"
+        },
+        {
+          "waitFor": ".ProseMirror"
+        },
+        {
+          "wait": 1200
+        },
+        {
+          "click": ".ProseMirror p"
+        },
+        {
+          "press": "End",
+          "selector": ".ProseMirror"
+        },
+        {
+          "press": "Enter",
+          "selector": ".ProseMirror"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "typeSlowly": "/",
+          "delay": 90
+        },
+        {
+          "waitFor": ".slash-menu"
+        },
+        {
+          "wait": 1200
+        },
+        {
+          "typeSlowly": "tab",
+          "delay": 140
+        },
+        {
+          "wait": 1200
+        },
+        {
+          "press": "Enter",
+          "selector": ".ProseMirror"
+        },
+        {
+          "wait": 1500
+        }
+      ]
+    },
+    {
+      "name": "editor-toolbar",
+      "url": "/spaces/DEMO",
+      "record": {
+        "seconds": 10
+      },
+      "waitFor": ".sidebar .tree-section",
+      "steps": [
+        {
+          "click": ".sidebar .tree-section a:has-text('House rules')"
+        },
+        {
+          "waitFor": ".page-actionbar a:has-text('Edit')"
+        },
+        {
+          "click": ".page-actionbar a:has-text('Edit')"
+        },
+        {
+          "waitFor": ".ProseMirror"
+        },
+        {
+          "wait": 1200
+        },
+        {
+          "tripleClick": ".ProseMirror p"
+        },
+        {
+          "waitFor": ".toolbar--bubble"
+        },
+        {
+          "wait": 1300
+        },
+        {
+          "moveTo": ".toolbar--bubble button[title='Bold']"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": ".toolbar--bubble button[title='Bold']"
+        },
+        {
+          "wait": 1000
+        },
+        {
+          "click": ".ProseMirror p"
+        },
+        {
+          "press": "End",
+          "selector": ".ProseMirror"
+        },
+        {
+          "press": "Enter",
+          "selector": ".ProseMirror"
+        },
+        {
+          "click": "button[title='Text']"
+        },
+        {
+          "waitFor": ".toolbar-dropdown__menu"
+        },
+        {
+          "wait": 1000
+        },
+        {
+          "click": ".toolbar-dropdown__menu button:has-text('Heading 2')"
+        },
+        {
+          "typeSlowly": "A new section",
+          "delay": 55
+        },
+        {
+          "wait": 1300
+        }
+      ]
+    },
+    {
+      "name": "mention",
+      "url": "/spaces/DEMO",
+      "record": {
+        "seconds": 8
+      },
+      "waitFor": ".sidebar .tree-section",
+      "steps": [
+        {
+          "click": ".sidebar .tree-section a:has-text('Welcome')"
+        },
+        {
+          "waitFor": ".page-actionbar a:has-text('Edit')"
+        },
+        {
+          "click": ".page-actionbar a:has-text('Edit')"
+        },
+        {
+          "waitFor": ".ProseMirror"
+        },
+        {
+          "wait": 1200
+        },
+        {
+          "click": ".ProseMirror p"
+        },
+        {
+          "press": "End",
+          "selector": ".ProseMirror"
+        },
+        {
+          "press": "Enter",
+          "selector": ".ProseMirror"
+        },
+        {
+          "typeSlowly": "Ask ",
+          "delay": 60
+        },
+        {
+          "wait": 400
+        },
+        {
+          "typeSlowly": "@Demo",
+          "delay": 80
+        },
+        {
+          "waitFor": ".suggest-menu"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "press": "Enter",
+          "selector": ".ProseMirror"
+        },
+        {
+          "wait": 1500
+        }
+      ]
+    },
+    {
+      "name": "inline-comment",
+      "url": "/spaces/DEMO",
+      "record": {
+        "seconds": 10
+      },
+      "waitFor": ".sidebar .tree-section",
+      "steps": [
+        {
+          "click": ".sidebar .tree-section a:has-text('Welcome')"
+        },
+        {
+          "waitFor": ".page-actionbar a:has-text('Edit')"
+        },
+        {
+          "click": ".page-actionbar a:has-text('Edit')"
+        },
+        {
+          "waitFor": ".ProseMirror"
+        },
+        {
+          "wait": 1200
+        },
+        {
+          "tripleClick": ".ProseMirror p"
+        },
+        {
+          "waitFor": ".toolbar--bubble"
+        },
+        {
+          "wait": 1000
+        },
+        {
+          "moveTo": ".toolbar--bubble button[title='Comment on this selection']"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": ".toolbar--bubble button[title='Comment on this selection']"
+        },
+        {
+          "waitFor": ".toolbar__comment-popover"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "typeSlowly": "Should this mention templates too?",
+          "selector": ".toolbar__comment-popover textarea",
+          "delay": 42
+        },
+        {
+          "wait": 1600
+        }
+      ]
+    },
+    {
+      "name": "page-tree-drag",
+      "url": "/spaces/DEMO",
+      "record": {
+        "seconds": 9
+      },
+      "waitFor": ".sidebar .tree-section",
+      "steps": [
+        {
+          "wait": 800
+        },
+        {
+          "moveTo": ".sidebar .tree-section__reorder"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": ".sidebar .tree-section__reorder"
+        },
+        {
+          "wait": 1000
+        },
+        {
+          "waitFor": ".sidebar .tree__link--draggable"
+        },
+        {
+          "dragTo": {
+            "from": ".sidebar .tree__link--draggable:has-text('House rules')",
+            "to": ".sidebar .tree__link--draggable:has-text('Welcome')"
+          }
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "moveTo": ".sidebar .tree-section__actions button.btn--primary"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": ".sidebar .tree-section__actions button.btn--primary"
+        },
+        {
+          "wait": 1500
+        }
+      ]
+    },
+    {
+      "name": "search",
+      "url": "/spaces/DEMO",
+      "record": {
+        "seconds": 9
+      },
+      "waitFor": ".sidebar .tree-section",
+      "steps": [
+        {
+          "wait": 700
+        },
+        {
+          "moveTo": "input[aria-label='Search pages']"
+        },
+        {
+          "wait": 500
+        },
+        {
+          "click": "input[aria-label='Search pages']"
+        },
+        {
+          "typeSlowly": "plainly",
+          "delay": 115
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "press": "Enter",
+          "selector": "input[aria-label='Search pages']"
+        },
+        {
+          "waitFor": ".search-result__snippet"
+        },
+        {
+          "wait": 2000
+        }
+      ]
+    },
+    {
+      "name": "templates",
+      "url": "/spaces/DEMO",
+      "record": {
+        "seconds": 10
+      },
+      "waitFor": ".sidebar .tree-section",
+      "steps": [
+        {
+          "click": ".sidebar .tree-section a:has-text('House rules')"
+        },
+        {
+          "waitFor": ".page-actionbar"
+        },
+        {
+          "wait": 900
+        },
+        {
+          "click": ".page-actionbar button:has-text('\u22ee')"
+        },
+        {
+          "waitFor": ".overflow-menu__dropdown"
+        },
+        {
+          "wait": 900
+        },
+        {
+          "moveTo": ".overflow-menu__dropdown button:has-text('Save as template')"
+        },
+        {
+          "wait": 500
+        },
+        {
+          "click": ".overflow-menu__dropdown button:has-text('Save as template')"
+        },
+        {
+          "waitFor": ".template-form"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "typeSlowly": "House rules",
+          "selector": ".template-form input",
+          "delay": 55
+        },
+        {
+          "wait": 700
+        },
+        {
+          "click": ".template-form button[type='submit']"
+        },
+        {
+          "wait": 1800
+        }
+      ]
+    },
+    {
+      "name": "link-shortcut",
+      "url": "/spaces/DEMO",
+      "record": {
+        "seconds": 8
+      },
+      "waitFor": ".sidebar .tree-section",
+      "steps": [
+        {
+          "click": ".sidebar .tree-section a:has-text('Welcome')"
+        },
+        {
+          "waitFor": ".page-actionbar a:has-text('Edit')"
+        },
+        {
+          "click": ".page-actionbar a:has-text('Edit')"
+        },
+        {
+          "waitFor": ".ProseMirror"
+        },
+        {
+          "wait": 1200
+        },
+        {
+          "tripleClick": ".ProseMirror p"
+        },
+        {
+          "wait": 1000
+        },
+        {
+          "press": "ControlOrMeta+k",
+          "selector": ".ProseMirror"
+        },
+        {
+          "wait": 1100
+        },
+        {
+          "typeSlowly": "https://example.com/handbook",
+          "delay": 38
+        },
+        {
+          "wait": 1500
+        }
+      ]
+    },
+    {
+      "name": "watch",
+      "url": "/spaces/DEMO",
+      "record": {
+        "seconds": 8
+      },
+      "waitFor": ".sidebar .tree-section",
+      "steps": [
+        {
+          "click": ".sidebar .tree-section a:has-text('Welcome')"
+        },
+        {
+          "waitFor": ".page-actionbar"
+        },
+        {
+          "wait": 1000
+        },
+        {
+          "click": ".page-actionbar button:has-text('\u22ee')"
+        },
+        {
+          "waitFor": ".overflow-menu__dropdown"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "moveTo": ".overflow-menu__dropdown button:has-text('Watch this page')"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": ".overflow-menu__dropdown button:has-text('Watch this page')"
+        },
+        {
+          "wait": 1300
+        },
+        {
+          "moveTo": ".topbar button[aria-label='Notifications']"
+        },
+        {
+          "wait": 700
+        },
+        {
+          "click": ".topbar button[aria-label='Notifications']"
+        },
+        {
+          "wait": 1600
+        }
+      ]
+    },
+    {
+      "name": "profile",
+      "url": "/profile",
+      "record": {
+        "seconds": 9
+      },
+      "waitFor": ".profile__section",
+      "steps": [
+        {
+          "wait": 1400
+        },
+        {
+          "eval": "window.scrollTo(0, 420)"
+        },
+        {
+          "wait": 1900
+        },
+        {
+          "eval": "window.scrollTo(0, 1000)"
+        },
+        {
+          "wait": 1900
+        },
+        {
+          "eval": "window.scrollTo(0, 0)"
+        },
+        {
+          "wait": 1200
+        }
+      ]
+    },
+    {
+      "name": "admin-overview",
+      "url": "/admin",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "waitFor": ".dash__grid",
+      "settle": 2000
+    },
+    {
+      "name": "admin-backups",
+      "url": "/admin/backups",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "waitFor": ".backup-cards",
+      "settle": 2400
+    },
+    {
+      "name": "teardown",
+      "url": "/spaces",
+      "skipCapture": true,
+      "settle": 600,
+      "steps": [
+        {
+          "deleteSpace": [
+            "DEMO",
+            "DEMOENG",
+            "DEMOHB"
+          ]
+        },
+        {
+          "wait": 500
+        }
+      ]
+    }
+  ]
+}

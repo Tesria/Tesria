@@ -12,8 +12,9 @@
  * afterwards, so circles and arrows come out as crisp as the UI under them.
  */
 import { chromium, webkit, firefox } from 'playwright-core'
-import { readFileSync, mkdirSync } from 'node:fs'
+import { readFileSync, mkdirSync, copyFileSync, rmSync, mkdtempSync, statSync } from 'node:fs'
 import path from 'node:path'
+import os from 'node:os'
 
 const BASE = process.env.BASE || 'https://tesria.localhost'
 const EMAIL = process.env.EMAIL
@@ -138,6 +139,15 @@ function watch(p) {
 // would leave the first screenshot of every run in whatever the previous
 // one ended on. SHOT_THEME / SHOT_ACCENT override for a run that needs
 // something else.
+// Clips are shot at a fixed, smaller viewport than stills: the onboarding
+// screens show them at a few hundred pixels wide, and every pixel is paid
+// for twice over in the size budget (dev-plan 10.4).
+const RECORD_VIEWPORT = { width: 1280, height: 800 }
+// The video is scaled down from that viewport rather than shrinking the
+// viewport itself: the layout stays the one people actually use, while the
+// file pays for two thirds of the pixels. Onboarding shows these a few
+// hundred pixels wide, so the detail is not missed.
+const RECORD_VIDEO = { width: 864, height: 540 }
 const THEME = process.env.SHOT_THEME || 'light'
 const ACCENT = process.env.SHOT_ACCENT || 'blue'
 const seedAppearance = `
@@ -150,7 +160,10 @@ const seedAppearance = `
 `
 const contextOptions = {
   viewport: { width: 1440, height: 900 },
-  deviceScaleFactor: 2,
+  // Documentation stills are shot at 2x so they stay sharp when scaled. A
+  // set that ships inside the app pays for that in bytes, so a spec can ask
+  // for 1x (dev-plan 10.4).
+  deviceScaleFactor: spec.deviceScaleFactor || 2,
   ...(process.env.SHOT_MOBILE ? { isMobile: true, hasTouch: true, deviceScaleFactor: 3, viewport: { width: 390, height: 844 } } : {}),
   // Matches THEME so that anything reading prefers-color-scheme (the editor's
   // embedded frames, a "system" preference) agrees with the seeded choice.
@@ -187,38 +200,165 @@ async function pageFor(s) {
   return anonPage
 }
 
+/**
+ * One step of a shot. Shared by stills and recordings so a clip and the
+ * screenshot beside it are produced by the same instructions.
+ */
+async function runSteps(pg, steps, name) {
+  for (const step of steps || []) {
+    if (step.click) await pg.click(step.click)
+    if (step.type) await pg.fill(step.selector, step.type)
+    if (step.press) await pg.press(step.selector || 'body', step.press)
+    if (step.keys) await pg.keyboard.type(step.keys, { delay: 12 })
+    // Typing that reads as typing (dev-plan 10.4). A clip of someone using
+    // the editor is unwatchable at fill() speed and unreadable at 12ms.
+    if (step.typeSlowly) {
+      if (step.selector) await pg.click(step.selector)
+      await pg.keyboard.type(step.typeSlowly, { delay: step.delay == null ? 55 : step.delay })
+    }
+    // A recording has no visible cursor, so movement is conveyed by what
+    // lights up on the way. Moving in steps lets hover states actually fire.
+    if (step.moveTo) {
+      const el = await pg.locator(step.moveTo).first().boundingBox()
+      if (el) await pg.mouse.move(el.x + el.width / 2, el.y + el.height / 2, { steps: step.moveSteps || 18 })
+    }
+    if (step.css) await pg.addStyleTag({ content: step.css })
+    if (step.hover) await pg.hover(step.hover)
+    // A real touch tap (needs SHOT_MOBILE, which turns on hasTouch).
+    if (step.tap) await pg.tap(step.tap)
+    // Evaluate an expression and print its result: DOM facts beside the picture.
+    if (step.probe) console.log('PROBE', name, step.label || '', JSON.stringify(await pg.evaluate(step.probe)))
+    if (step.tripleClick) await pg.click(step.tripleClick, { clickCount: 3 })
+    // A drag slow enough to see. dragAndDrop() jumps; the page tree's own
+    // drop indicator is half of what the clip is showing (dev-plan 10.4).
+    if (step.dragTo) {
+      const from = await pg.locator(step.dragTo.from).first().boundingBox()
+      const to = await pg.locator(step.dragTo.to).first().boundingBox()
+      if (from && to) {
+        await pg.mouse.move(from.x + from.width / 2, from.y + from.height / 2, { steps: 10 })
+        await pg.mouse.down()
+        await pg.waitForTimeout(250)
+        await pg.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: step.dragTo.steps || 25 })
+        await pg.waitForTimeout(450)
+        await pg.mouse.up()
+      }
+    }
+    if (step.scrollTo) await pg.locator(step.scrollTo).first().scrollIntoViewIfNeeded().catch(() => {})
+    if (step.eval) await pg.evaluate(step.eval)
+    // Teardown (dev-plan 10.4). Deleting a space needs the key typed back
+    // and the password in the same request (11.3), and the password is the
+    // harness's, not the spec's — so this is a step rather than an `eval`,
+    // and the credential never appears in the JSON or on screen.
+    for (const key of [].concat(step.deleteSpace || [])) {
+      const result = await pg.evaluate(async ([key, password]) => {
+        const res = await fetch(`/api/spaces/${key}`, {
+          method: 'DELETE',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'Tesria' },
+          body: JSON.stringify({ confirmKey: key, password }),
+        })
+        return res.status
+      }, [key, PASSWORD])
+      if (result !== 204 && result !== 404) {
+        throw new Error(`could not delete ${key}: HTTP ${result}`)
+      }
+      console.log(result === 204 ? 'removed space' : 'no space to remove:', key)
+    }
+    if (step.wait) await pg.waitForTimeout(step.wait)
+    if (step.waitFor) await pg.waitForSelector(step.waitFor, { timeout: 15000 })
+  }
+}
+
+/**
+ * A clip (dev-plan 10.4).
+ *
+ * Playwright records a context, not a page, and names the file itself, so a
+ * recording gets its own short-lived context and the file is renamed
+ * afterwards. The session is carried over as storage state rather than
+ * signing in again: a sign-in at the head of every clip would be twelve
+ * more sign-ins and would show in the first frames.
+ *
+ * The poster is the last frame's state captured as a PNG before the context
+ * closes, so the still and the clip cannot drift apart.
+ */
+async function record(s) {
+  const viewport = s.viewport || RECORD_VIEWPORT
+  const size = s.record.size || RECORD_VIDEO
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'clip-'))
+  const recCtx = await browser.newContext({
+    ...contextOptions,
+    viewport,
+    // 1x: a clip is watched at its own size, and 2x quadruples the bytes
+    // against a budget measured in hundreds of kilobytes.
+    deviceScaleFactor: 1,
+    storageState: await ctx.storageState(),
+    recordVideo: { dir, size },
+  })
+  await recCtx.addInitScript(seedAppearance)
+  const pg = await recCtx.newPage()
+  watch(pg)
+
+  if (s.url) {
+    await pg.goto(BASE + s.url, { waitUntil: 'domcontentloaded' })
+    await pg.waitForLoadState('load').catch(() => {})
+  }
+  if (s.waitFor) await pg.waitForSelector(s.waitFor, { timeout: 15000 })
+  // Applied before the held opening frame rather than as a step, so it is
+  // in place for the very first frame the viewer sees.
+  if (s.css) await pg.addStyleTag({ content: s.css })
+  // Hold the opening frame, so a loop does not start mid-motion.
+  await pg.waitForTimeout(s.lead == null ? 700 : s.lead)
+
+  await runSteps(pg, s.steps, s.name)
+
+  // And hold the closing frame. The spec asks the first and last frames to
+  // match; where they cannot, this at least stops the loop snapping.
+  await pg.waitForTimeout(s.tail == null ? 900 : s.tail)
+
+  // The poster, from the state the clip ends in.
+  await pg.addStyleTag({ content: '*{caret-color:transparent !important}' }).catch(() => {})
+  await pg.screenshot({ path: path.join(OUT, `${s.name}.${THEME}.png`) })
+
+  const video = pg.video()
+  await recCtx.close() // flushes the video file
+  const produced = await video.path()
+  // Copy rather than rename: the temporary directory and /out are different
+  // filesystems inside the container (a bind mount), and rename across them
+  // fails with EXDEV.
+  copyFileSync(produced, path.join(OUT, `${s.name}.${THEME}.webm`))
+  rmSync(dir, { recursive: true, force: true })
+
+  // Clips are cheap to make and easy to bloat; the size is part of the
+  // output, so it is printed rather than discovered later by the budget.
+  const kb = Math.round(statSync(path.join(OUT, `${s.name}.${THEME}.webm`)).size / 1024)
+  console.log('clip', `${s.name}.${THEME}.webm`, kb + ' KB')
+}
+
 for (const s of spec.shots) {
   if (only && s.name !== only) continue
-  const pg = await pageFor(s)
   current = s.name
+  if (s.record) {
+    try { await record(s) } catch (err) { console.error('FAILED', s.name, '::', err.message) }
+    continue
+  }
+  const pg = await pageFor(s)
   try {
     if (s.url) { await pg.goto(BASE + s.url, { waitUntil: 'domcontentloaded' }); await pg.waitForLoadState('load').catch(() => {}) }
     if (s.viewport) await pg.setViewportSize(s.viewport)
-    for (const step of s.steps || []) {
-      if (step.click) await pg.click(step.click)
-      if (step.type) await pg.fill(step.selector, step.type)
-      if (step.press) await pg.press(step.selector || 'body', step.press)
-      if (step.keys) await pg.keyboard.type(step.keys, { delay: 12 })
-      if (step.css) await pg.addStyleTag({ content: step.css })
-      if (step.hover) await pg.hover(step.hover)
-      // A real touch tap (needs SHOT_MOBILE, which turns on hasTouch).
-      if (step.tap) await pg.tap(step.tap)
-      // Evaluate an expression and print its result: DOM facts beside the picture.
-      if (step.probe) console.log('PROBE', s.name, step.label || '', JSON.stringify(await pg.evaluate(step.probe)))
-      if (step.tripleClick) await pg.click(step.tripleClick, { clickCount: 3 })
-      if (step.scrollTo) await pg.locator(step.scrollTo).first().scrollIntoViewIfNeeded().catch(() => {})
-      if (step.eval) await pg.evaluate(step.eval)
-      if (step.wait) await pg.waitForTimeout(step.wait)
-      if (step.waitFor) await pg.waitForSelector(step.waitFor, { timeout: 15000 })
-    }
+    await runSteps(pg, s.steps, s.name)
     if (s.waitFor) await pg.waitForSelector(s.waitFor, { timeout: 15000 })
     await pg.waitForTimeout(s.settle == null ? 450 : s.settle)
+    // setup and teardown are shots so that they run in order with the rest;
+    // they are not pictures of anything (dev-plan 10.4).
+    if (s.skipCapture) { console.log('ran', s.name); continue }
     if (s.hideCaret !== false) {
       await pg.addStyleTag({ content: '*{caret-color:transparent !important} *::selection{background:transparent}' })
     }
     if (s.annotate) await pg.evaluate(`(${ANNOTATE})(${JSON.stringify(s.annotate)})`)
 
-    const file = path.join(OUT, s.name + '.png')
+    // The onboarding set ships a light and a dark variant of everything, so
+    // its stills carry the theme in the filename the way its clips do.
+    const file = path.join(OUT, spec.nameByTheme ? `${s.name}.${THEME}.png` : s.name + '.png')
     if (s.clipTo) {
       const sels = Array.isArray(s.clipTo) ? s.clipTo : [s.clipTo]
       const boxes = []
