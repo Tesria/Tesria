@@ -137,6 +137,11 @@ do, from creating spaces to changing the backup retention policy.
 Administrators may shape user roles; only the owner may change what
 administrators can do.
 
+You can add your own roles alongside the three, in either the user or the
+administrator tier: **New role** copies an existing one and you edit the
+copy in the matrix. A role is a set of rights, not a rank, so moving
+someone between roles of the same tier never promotes them.
+
 ## Repository layout
 
 ```

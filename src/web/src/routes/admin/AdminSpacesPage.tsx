@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, ApiError, type AdminSpace } from '../../api/client'
+import { useConfirm } from '../../components/ConfirmDialog'
 
 /** Formats bytes for humans; storage figures are the point of this page. */
 function bytes(value: number): string {
@@ -22,6 +23,7 @@ export function AdminSpacesPage() {
   const [allowPublic, setAllowPublic] = useState<boolean | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
+  const { ask, dialog } = useConfirm()
 
   const load = useCallback(() => {
     Promise.all([api.admin.spaces.list(), api.admin.settings.get()])
@@ -36,10 +38,28 @@ export function AdminSpacesPage() {
 
   /** Publishing names exactly what becomes visible before asking (dev-plan 5.4). */
   async function setPublic(s: AdminSpace, isPublic: boolean) {
-    const what = isPublic
-      ? `Publish "${s.name}" (${s.key}) to the internet?\n\n${s.pageCount} page${s.pageCount === 1 ? '' : 's'} and ${s.attachmentCount} attachment${s.attachmentCount === 1 ? '' : 's'} become readable by anyone, no account needed. Restricted pages stay hidden. Comments stay private unless you allow them.`
-      : `Withdraw "${s.name}" (${s.key}) from public reading? Anonymous readers lose access within a minute.`
-    if (!window.confirm(what)) return
+    const ok = await ask(isPublic
+      ? {
+        title: `Publish "${s.name}" to the internet?`,
+        danger: true,
+        confirmLabel: 'Publish the space',
+        body: (
+          <>
+            <p>
+              <strong>{s.pageCount} page{s.pageCount === 1 ? '' : 's'}</strong> and{' '}
+              <strong>{s.attachmentCount} attachment{s.attachmentCount === 1 ? '' : 's'}</strong> in{' '}
+              <strong>{s.key}</strong> become readable by anyone, with no account.
+            </p>
+            <p>Restricted pages stay hidden. Comments stay private unless you allow them.</p>
+          </>
+        ),
+      }
+      : {
+        title: `Withdraw "${s.name}" from public reading?`,
+        confirmLabel: 'Withdraw the space',
+        body: <p>Anonymous readers lose access to <strong>{s.key}</strong> within a minute.</p>,
+      })
+    if (!ok) return
     setBusy(s.id)
     setError(null)
     try {
@@ -119,6 +139,8 @@ export function AdminSpacesPage() {
           ))}
         </tbody>
       </table>
+
+      {dialog}
     </>
   )
 }

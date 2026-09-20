@@ -41,7 +41,9 @@ public static class AdminEndpoints
         Guid Id, string Email, string DisplayName, UserRole Role, UserStatus Status,
         string? AvatarHash, int? AvatarVariant, bool HasPassword, bool IsSso,
         int RecoveryCodesRemaining, DateTimeOffset? LastSeenAt, DateTimeOffset CreatedAt,
-        int FailedLoginCount, DateTimeOffset? LockedUntil);
+        int FailedLoginCount, DateTimeOffset? LockedUntil,
+        /// <summary>Which role, not just which tier (dev-plan 11.2).</summary>
+        Guid? RoleId, string RoleName);
 
     public record LockoutRow(Guid UserId, string Email, string DisplayName, int FailedLoginCount, DateTimeOffset LockedUntil);
     public record SecurityLimitsResponse(
@@ -49,7 +51,13 @@ public static class AdminEndpoints
         int LockoutThreshold, int LockoutBaseSeconds, int LockoutMaxSeconds,
         IReadOnlyList<LockoutRow> ActiveLockouts);
 
-    public record SetRoleRequest(UserRole Role);
+    /// <summary>
+    /// Either a tier (<paramref name="Role"/>, the 10.1 promotion path) or a
+    /// specific role (<paramref name="RoleId"/>, dev-plan 11.2). A role whose
+    /// tier differs from the account's is a tier change and follows the same
+    /// rules as one.
+    /// </summary>
+    public record SetRoleRequest(UserRole? Role, Guid? RoleId);
     public record SetStatusRequest(UserStatus Status);
 
     public record AdminSpaceResponse(
@@ -546,7 +554,8 @@ public static class AdminEndpoints
                 u.AvatarKey == null ? null : u.AvatarHash, u.AvatarVariant,
                 u.PasswordHash != null, u.OidcSubject != null,
                 db.RecoveryCodes.Count(c => c.UserId == u.Id && c.UsedAt == null),
-                u.LastSeenAt, u.CreatedAt, u.FailedLoginCount, u.LockedUntil))
+                u.LastSeenAt, u.CreatedAt, u.FailedLoginCount, u.LockedUntil,
+                u.RoleId, u.InstanceRole == null ? "" : u.InstanceRole.Name))
             .ToListAsync();
 
         // Ordered in memory: SQLite cannot ORDER BY a DateTimeOffset, and this
@@ -570,14 +579,52 @@ public static class AdminEndpoints
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Results.NotFound();
-        if (user.Role == req.Role) return Results.Ok(await OneUserAsync(db, userId));
+
+        // A role names the tier it belongs to, so both shapes of request end
+        // up as "which role, and therefore which tier" (dev-plan 11.2).
+        Role? target = null;
+        if (req.RoleId is { } roleId)
+        {
+            target = await db.Roles.AsNoTracking().FirstOrDefaultAsync(r => r.Id == roleId);
+            if (target is null)
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    ["roleId"] = ["That role no longer exists."],
+                });
+        }
+        var tier = target?.Tier ?? req.Role
+            ?? throw new BadHttpRequestException("Either role or roleId is required.");
+
+        if (user.Role == tier && (target is null || user.RoleId == target.Id))
+            return Results.Ok(await OneUserAsync(db, userId));
 
         // The owner may make any change; an administrator holding
         // users.promote_admins may only promote a user, never demote an
-        // administrator, so administrators cannot unmake one another.
+        // administrator, so administrators cannot unmake one another. Moving
+        // someone between roles inside their own tier is its own right.
         var held = await rights.ForCurrentUserAsync();
-        var promoting = user.Role == UserRole.Member && req.Role == UserRole.Admin;
-        if (!held.Contains(InstancePermissions.RolesAssignTier)
+        var promoting = user.Role == UserRole.Member && tier == UserRole.Admin;
+        var sameTier = user.Role == tier;
+        if (sameTier)
+        {
+            var mayAssign = held.Contains(InstancePermissions.UsersAssignRoles)
+                && (tier < UserRole.Admin || held.Contains(InstancePermissions.PermissionsEditAdminTier));
+            if (!mayAssign)
+                return Results.Json(new
+                {
+                    title = "Forbidden",
+                    status = 403,
+                    code = "permission_required",
+                    permission = tier >= UserRole.Admin
+                        ? InstancePermissions.PermissionsEditAdminTier
+                        : InstancePermissions.UsersAssignRoles,
+                    message = tier >= UserRole.Admin
+                        ? "Only the owner moves an administrator between roles."
+                        : "Your role does not allow assigning roles.",
+                }, statusCode: StatusCodes.Status403Forbidden);
+        }
+        if (!sameTier
+            && !held.Contains(InstancePermissions.RolesAssignTier)
             && !(promoting && held.Contains(InstancePermissions.UsersPromoteAdmins)))
             return Results.Json(new
             {
@@ -592,20 +639,25 @@ public static class AdminEndpoints
         // Changing who administers the instance is sudo territory (dev-plan 3.5).
         if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
 
-        if (user.Role == UserRole.Owner || req.Role == UserRole.Owner)
+        if (user.Role == UserRole.Owner || tier == UserRole.Owner)
             return Results.ValidationProblem(new Dictionary<string, string[]>
             {
                 ["role"] = ["Ownership is transferred, not assigned."],
             });
 
-        user.Role = req.Role;
-        // The role follows the tier (dev-plan 11.1); 11.2 lets the caller pick
-        // one within a tier instead.
-        user.RoleId = await Infrastructure.Permissions.RoleSeed.BuiltInIdAsync(db, req.Role) ?? user.RoleId;
-        audit.Record("user.role_changed", "user", user.Id, new { user.Email, Role = req.Role.ToString() });
+        var from = await db.Roles.AsNoTracking().Where(r => r.Id == user.RoleId)
+            .Select(r => r.Name).FirstOrDefaultAsync();
+        user.Role = tier;
+        // A named role when one was asked for, the tier's built-in otherwise.
+        user.RoleId = target?.Id
+            ?? await Infrastructure.Permissions.RoleSeed.BuiltInIdAsync(db, tier)
+            ?? user.RoleId;
+        var to = target?.Name ?? Role.NameFor(tier);
+        audit.Record("user.role_changed", "user", user.Id,
+            new { user.Email, Role = tier.ToString(), From = from, To = to });
         // A new administrator is the single most valuable thing an attacker
         // with one admin session can create; every one is an alert.
-        if (req.Role == UserRole.Admin) await detector.AdminPromotedAsync(current.RequireId(), user);
+        if (tier == UserRole.Admin && !sameTier) await detector.AdminPromotedAsync(current.RequireId(), user);
         await db.SaveChangesAsync();
         return Results.Ok(await OneUserAsync(db, userId));
     }
@@ -750,7 +802,8 @@ public static class AdminEndpoints
                 u.AvatarKey == null ? null : u.AvatarHash, u.AvatarVariant,
                 u.PasswordHash != null, u.OidcSubject != null,
                 db.RecoveryCodes.Count(c => c.UserId == u.Id && c.UsedAt == null),
-                u.LastSeenAt, u.CreatedAt, u.FailedLoginCount, u.LockedUntil))
+                u.LastSeenAt, u.CreatedAt, u.FailedLoginCount, u.LockedUntil,
+                u.RoleId, u.InstanceRole == null ? "" : u.InstanceRole.Name))
             .FirstOrDefaultAsync();
 
     // ---- spaces -------------------------------------------------------------

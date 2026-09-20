@@ -1833,6 +1833,16 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
   font-size: 0.75rem; color: var(--muted);
 }
 .roles-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 1rem; }
+.roles-actions--top { margin-top: 0; margin-bottom: 1rem; }
+.roles-table__role-actions { display: flex; gap: 0.5rem; justify-content: center; font-weight: 400; }
+.roles-table__rename { display: flex; gap: 0.35rem; align-items: center; font-weight: 400; }
+.roles-table__rename input { margin: 0; min-width: 6rem; }
+/* The create form: a row of short fields that wraps on a phone. */
+.roles-new { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; margin-bottom: 1rem; }
+.roles-new label { margin: 0; }
+.roles-new input, .roles-new select { margin-top: 0.25rem; }
+/* The role picker sits under the tier badge in the Users table. */
+.users__role { margin-top: 0.35rem; max-width: 12rem; font-size: 0.85rem; }
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   /* The table scrolls sideways rather than squeezing the descriptions. */
   .roles-table td:first-child, .roles-table th:first-child { width: auto; min-width: 14rem; }
@@ -2259,3 +2269,9 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
   .backup-policy > .muted { margin-left: 0; }
   .backup-result { min-width: 0; white-space: normal; }
 }
+
+/* A confirmation the page draws itself, because window.confirm is silently
+   refused in some embedded browsers (components/ConfirmDialog.tsx). */
+.confirm__body { display: grid; gap: 0.5rem; color: var(--muted); font-size: 0.9rem; }
+.confirm__body p { margin: 0; }
+.confirm__body strong { color: var(--text); }

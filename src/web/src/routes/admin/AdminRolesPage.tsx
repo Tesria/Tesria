@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   api,
   ApiError,
@@ -8,6 +8,7 @@ import {
   type PermissionMatrix,
 } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
+import { useConfirm } from '../../components/ConfirmDialog'
 
 /** Draft state: role id to the set of keys it would hold after Save. */
 type Draft = Record<string, Set<string>>
@@ -37,6 +38,12 @@ export function AdminRolesPage() {
   const [status, setStatus] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [reviewing, setReviewing] = useState(false)
+  const [creating, setCreating] = useState(false)
+  // Renaming is an inline field, not window.prompt: a browser that refuses
+  // dialogs throws there, which is how Resolve on the Security page was dead
+  // for days.
+  const [renaming, setRenaming] = useState<string | null>(null)
+  const { ask, dialog } = useConfirm()
 
   const load = useCallback(() => {
     api.admin.roles
@@ -83,6 +90,51 @@ export function AdminRolesPage() {
     } finally {
       setBusy(false)
     }
+  }
+
+  async function create(e: FormEvent) {
+    e.preventDefault()
+    const form = new FormData(e.currentTarget as HTMLFormElement)
+    const copyFrom = String(form.get('copyFrom') ?? '')
+    await run(
+      () => api.admin.roles.create({
+        name: String(form.get('name') ?? '').trim(),
+        description: String(form.get('description') ?? '').trim() || undefined,
+        tier: Number(form.get('tier')) as UserRole,
+        copyFrom: copyFrom || undefined,
+      }),
+      'Role created.',
+      'Could not create the role.',
+    )
+    setCreating(false)
+  }
+
+  async function rename(role: InstanceRole, name: string) {
+    setRenaming(null)
+    if (!name || name === role.name) return
+    await run(() => api.admin.roles.rename(role.id, { name }), 'Role renamed.', 'Could not rename the role.')
+  }
+
+  async function remove(role: InstanceRole) {
+    const ok = await ask({
+      title: `Delete the role ${role.name}?`,
+      danger: true,
+      confirmLabel: 'Delete the role',
+      body: (
+        <>
+          <p>The rights it holds go with it. Nothing else changes.</p>
+          <p>
+            {role.members === 0
+              ? 'Nobody holds it, so it can go now.'
+              : `${role.members} account${role.members === 1 ? '' : 's'} still `
+                + `hold${role.members === 1 ? 's' : ''} it. Move them to another role first, `
+                + 'or this will be refused.'}
+          </p>
+        </>
+      ),
+    })
+    if (!ok) return
+    await run(() => api.admin.roles.remove(role.id), 'Role deleted.', 'Could not delete the role.')
   }
 
   async function save() {
@@ -132,6 +184,44 @@ export function AdminRolesPage() {
       </p>
 
       <div className="profile__section profile__section--wide">
+        <div className="roles-actions roles-actions--top">
+          {(can('permissions.edit_user_tier') || can('permissions.edit_admin_tier')) && (
+            <button type="button" className="btn btn--ghost btn--sm" disabled={busy}
+              onClick={() => setCreating((v) => !v)}>
+              {creating ? 'Cancel' : 'New role'}
+            </button>
+          )}
+          <span className="muted small">
+            A role is a set of rights within a tier. Someone's tier still decides who may act on whom.
+          </span>
+        </div>
+
+        {creating && (
+          <form className="roles-new" onSubmit={create}>
+            <label>Name<input name="name" required maxLength={60} autoFocus /></label>
+            <label>Description<input name="description" maxLength={500} /></label>
+            <label>
+              Tier
+              <select name="tier" defaultValue={String(UserRole.Member)}>
+                <option value={String(UserRole.Member)}>User</option>
+                {can('permissions.edit_admin_tier') && (
+                  <option value={String(UserRole.Admin)}>Administrator</option>
+                )}
+              </select>
+            </label>
+            <label>
+              Copy rights from
+              <select name="copyFrom" defaultValue="">
+                <option value="">The tier's built-in role</option>
+                {matrix.roles.filter((r) => r.tier < UserRole.Owner).map((r) => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </select>
+            </label>
+            <button type="submit" className="btn btn--primary" disabled={busy}>Create role</button>
+          </form>
+        )}
+
         <table className="admin-table roles-table">
           <thead>
             <tr>
@@ -148,6 +238,28 @@ export function AdminRolesPage() {
                     {role.members} {role.members === 1 ? 'account' : 'accounts'}
                   </div>
                   {!role.editable && <div className="muted small">Only the owner edits this role</div>}
+                  {role.editable && !role.builtIn && (
+                    renaming === role.id ? (
+                      <form
+                        className="roles-table__rename"
+                        onSubmit={(e) => {
+                          e.preventDefault()
+                          void rename(role, new FormData(e.currentTarget).get('name')?.toString().trim() ?? '')
+                        }}
+                      >
+                        <input name="name" defaultValue={role.name} autoFocus aria-label={`Rename ${role.name}`}
+                          onKeyDown={(e) => e.key === 'Escape' && setRenaming(null)} />
+                        <button type="submit" className="link-btn" disabled={busy}>Save</button>
+                      </form>
+                    ) : (
+                      <div className="roles-table__role-actions">
+                        <button type="button" className="link-btn" disabled={busy}
+                          onClick={() => setRenaming(role.id)}>Rename</button>
+                        <button type="button" className="link-btn link-btn--danger" disabled={busy}
+                          onClick={() => remove(role)}>Delete</button>
+                      </div>
+                    )
+                  )}
                 </th>
               ))}
             </tr>
@@ -197,8 +309,16 @@ export function AdminRolesPage() {
           {matrix.roles.filter((r) => r.editable).map((role) => (
             <button key={role.id} type="button" className="link-btn" disabled={busy}
               onClick={() => {
-                if (!window.confirm(`Reset ${role.name} to the defaults?`)) return
-                void run(() => api.admin.roles.reset(role.id), `${role.name} reset.`, 'Could not reset the role.')
+                void (async () => {
+                  const ok = await ask({
+                    title: `Reset ${role.name} to the defaults?`,
+                    confirmLabel: 'Reset the role',
+                    body: <p>Every right this role holds goes back to what Tesria ships for its tier.
+                      Unsaved changes in the matrix are left alone.</p>,
+                  })
+                  if (!ok) return
+                  await run(() => api.admin.roles.reset(role.id), `${role.name} reset.`, 'Could not reset the role.')
+                })()
               }}>
               Reset {role.name}
             </button>
@@ -237,6 +357,8 @@ export function AdminRolesPage() {
       {!can('permissions.edit_user_tier') && !can('permissions.edit_admin_tier') && (
         <p className="muted small">You can see this matrix but not change it.</p>
       )}
+
+      {dialog}
     </>
   )
 }

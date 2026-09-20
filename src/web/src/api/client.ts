@@ -288,6 +288,9 @@ export type AdminUser = {
   email: string
   displayName: string
   role: UserRole
+  /** Which role, not just which tier (dev-plan 11.2). */
+  roleId: string | null
+  roleName: string
   status: UserStatus
   avatarHash: string | null
   avatarVariant: number | null
@@ -917,8 +920,12 @@ export const api = {
     },
     users: {
       list: () => request<AdminUser[]>('GET', '/api/admin/users'),
+      /** A tier: the promotion path (dev-plan 10.1). */
       setRole: (id: string, role: UserRole) =>
         request<AdminUser>('PUT', `/api/admin/users/${id}/role`, { role }),
+      /** A specific role (dev-plan 11.2). Crossing tiers follows the same rules as a promotion. */
+      assignRole: (id: string, roleId: string) =>
+        request<AdminUser>('PUT', `/api/admin/users/${id}/role`, { roleId }),
       /** Owner only, and sudo: the caller becomes an administrator. */
       transferOwnership: (id: string) =>
         request<AdminUser>('POST', `/api/admin/users/${id}/transfer-ownership`),
@@ -955,6 +962,13 @@ export const api = {
       reset: (roleId: string) =>
         request<{ id: string; permissions: string[] }>('POST', `/api/admin/roles/${roleId}/reset`),
       review: () => request<void>('POST', '/api/admin/roles/review'),
+      /** Custom roles (dev-plan 11.2). Starts as a copy of `copyFrom`, or of the tier's built-in. */
+      create: (input: { name: string; description?: string; tier: UserRole; copyFrom?: string }) =>
+        request<InstanceRole>('POST', '/api/admin/roles', input),
+      rename: (roleId: string, input: { name: string; description?: string }) =>
+        request<{ id: string; name: string }>('PUT', `/api/admin/roles/${roleId}`, input),
+      /** Sudo. Refused while anyone still holds the role. */
+      remove: (roleId: string) => request<void>('DELETE', `/api/admin/roles/${roleId}`),
     },
     backups: {
       overview: (includeRemoved = false) =>

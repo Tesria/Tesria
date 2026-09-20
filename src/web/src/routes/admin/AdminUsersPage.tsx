@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
-import { api, ApiError, Permission, UserRole, UserStatus, type AdminUser } from '../../api/client'
+import { useCallback, useEffect, useState } from 'react'
+import { api, ApiError, Permission, UserRole, UserStatus, type AdminUser, type InstanceRole } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import { Avatar } from '../../components/Avatar'
+import { useConfirm } from '../../components/ConfirmDialog'
 
 /** Admin → Users (dev-plan 2.2). */
 export function AdminUsersPage() {
@@ -14,19 +15,29 @@ export function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const { ask, dialog } = useConfirm()
   const [resetLink, setResetLink] = useState<{ name: string; url: string } | null>(null)
+  // The roles a person could be moved to, when the viewer may see them.
+  const [roles, setRoles] = useState<InstanceRole[]>([])
 
-  async function load() {
+  const load = useCallback(async () => {
     try {
       setUsers(await api.admin.users.list())
+      if (can(Permission.PermissionsView)) {
+        try {
+          setRoles((await api.admin.roles.matrix()).roles)
+        } catch {
+          // Seeing roles is its own right; the page works without it.
+        }
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not load users.')
     }
-  }
+  }, [can])
 
   useEffect(() => {
     void load()
-  }, [])
+  }, [load])
 
   async function act(id: string, work: () => Promise<unknown>, fallback: string) {
     setBusyId(id)
@@ -114,6 +125,32 @@ export function AdminUsersPage() {
                     ? <span className="badge badge--owner">owner</span>
                     : u.role === UserRole.Admin ? <span className="badge">admin</span> : 'Member'}
                   {u.isSso && <span className="badge">sso</span>}
+                  {/* The role within the tier (dev-plan 11.2). A picker only
+                      where there is a choice to make and the right to make it. */}
+                  {(() => {
+                    const inTier = roles.filter((r) => r.tier === u.role)
+                    const mayAssign = u.role === UserRole.Owner ? false
+                      : u.role === UserRole.Admin ? iAmOwner : can(Permission.UsersAssignRoles)
+                    if (inTier.length < 2) {
+                      return u.roleName && !inTier.some((r) => r.builtIn && r.name === u.roleName)
+                        ? <div className="muted small">{u.roleName}</div>
+                        : null
+                    }
+                    return mayAssign ? (
+                      <select
+                        className="users__role"
+                        aria-label={`Role for ${u.displayName}`}
+                        value={u.roleId ?? ''}
+                        disabled={busy}
+                        onChange={(e) => act(u.id, () => api.admin.users.assignRole(u.id, e.target.value),
+                          'Could not change the role.')}
+                      >
+                        {inTier.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                      </select>
+                    ) : (
+                      <div className="muted small">{u.roleName}</div>
+                    )
+                  })()}
                 </td>
                 <td>
                   {u.status === UserStatus.Suspended
@@ -161,11 +198,25 @@ export function AdminUsersPage() {
                       className="link-btn link-btn--danger"
                       disabled={busy}
                       onClick={() => {
-                        if (!window.confirm(
-                          `Make ${u.displayName} the owner of this instance? `
-                          + 'You become an administrator, and only they will be able to change roles or hand it back.',
-                        )) return
-                        void act(u.id, () => api.admin.users.transferOwnership(u.id), 'Could not transfer ownership.')
+                        void (async () => {
+                          const ok = await ask({
+                            title: `Make ${u.displayName} the owner of this instance?`,
+                            danger: true,
+                            confirmLabel: 'Transfer ownership',
+                            body: (
+                              <>
+                                <p>You become an administrator.</p>
+                                <p>
+                                  Only <strong>{u.displayName}</strong> will be able to change roles,
+                                  or hand ownership back to you.
+                                </p>
+                              </>
+                            ),
+                          })
+                          if (!ok) return
+                          await act(u.id, () => api.admin.users.transferOwnership(u.id),
+                            'Could not transfer ownership.')
+                        })()
                       }}
                     >
                       Transfer ownership
@@ -226,6 +277,8 @@ export function AdminUsersPage() {
           })}
         </tbody>
       </table>
+
+      {dialog}
     </>
   )
 }

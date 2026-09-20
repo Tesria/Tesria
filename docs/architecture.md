@@ -994,11 +994,12 @@ same two-factor rule as `RequireAdmin`.
 
 The tier above is the ordering. What a person may actually *do* is their
 **role**: a named set of rights. Three built-in roles ship, one per tier
-(User, Administrator, Owner), and `User.RoleId` points at one whose tier
-always matches `User.Role`.
+(User, Administrator, Owner), an instance may add **custom roles** to the
+user and administrator tiers (11.2), and `User.RoleId` points at one whose
+tier always matches `User.Role`.
 
 - **The catalogue is code** (`Infrastructure/Permissions/InstancePermissions.cs`):
-  28 assignable rights, each with a key, an area, a label, a description and
+  29 assignable rights, each with a key, an area, a label, a description and
   the lowest tier that holds it by default. Three more are **reserved to the
   owner** and never stored as grants: changing tiers, transferring
   ownership, and editing administrator or owner rows. They are added to the
@@ -1043,6 +1044,16 @@ always matches `User.Role`.
 - **`RoleSeed`** creates the built-ins at startup and attaches every account
   to one. It never edits a role that already exists, so an owner's changes
   survive a restart.
+- **Custom roles** (11.2) are the same rows with `Key = null` and
+  `BuiltIn = false`. They start as a copy of another role of their tier,
+  can be renamed and deleted, and are refused deletion while anyone holds
+  one, so nobody is ever left pointing at a role that is gone. Creating one
+  needs the right that edits that tier, and copying from a higher tier
+  needs the right that edits *it*, so an administrator cannot mint a
+  user-tier role holding administrator rights. Nothing about a custom role
+  changes a tier, which is why the promotion rules above are untouched by
+  it: assigning within a tier needs `users.assign_roles`, crossing tiers is
+  still 10.1's promotion or demotion.
 
 **How the role is checked.** `CurrentUser.IsAdminAsync()` reads the row
 (one indexed primary-key lookup, cached for the request) rather than
@@ -1299,6 +1310,26 @@ not exist both return 404, so the endpoint cannot be used to probe for ids.
   during the Docker build.
 - Routing is React Router 7; a typed `api/client.ts` wraps all REST calls and
   an `AuthContext` holds the session.
+
+### Asking before a destructive action (`components/ConfirmDialog.tsx`)
+
+`window.confirm` and `window.prompt` are not used anywhere in the SPA, and
+should not come back. A browser is free to refuse a native dialog: in an
+embedded one (a desktop app's pane, a WebView, a preview) `confirm` returns
+false and `prompt` throws, and either way the guarded action never runs
+with nothing on screen to explain the silence. That is exactly how Resolve
+on the security page came to look dead.
+
+`useConfirm()` returns an `ask(request)` that resolves true only on
+confirmation, and the `dialog` node to render. Because the question is JSX
+rather than a string it can carry the specifics that make the answer
+obvious: how many accounts still hold the role being deleted, how many
+pages and attachments a publish is about to expose. Escape cancels, a
+second question answers the first "no" rather than stranding its promise,
+and unmounting resolves rather than hanging. It shares the
+`.recovery-prompt` shell with `ReauthDialog`, which is the other modal the
+admin pages put in front of a consequential action, and the two compose:
+confirm first, then the server asks for the password.
 
 ### Responsive layout
 

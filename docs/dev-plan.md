@@ -2064,7 +2064,7 @@ sign in as the admin fixture, see the policy read-only and get 403 on
 `PUT`), a member deleting their own page and being refused on someone
 else's, and the full live walk, since `Layout.tsx` and `main.tsx` change.
 
-### 11.2 Custom roles — `M` — Model: Fable → Opus
+### 11.2 Custom roles — `M` — Model: Fable → Opus — shipped 2026-09-20
 
 A custom role is a named set of rights within the User or Admin tier.
 People are assigned to it instead of to the tier's built-in role; their
@@ -2218,7 +2218,7 @@ export.
 8. **7.A** → **7.B** → **7.C** → **7.D** (Fable→Opus) → **7.E** → **7.F**
 9. **8.1** PDF (after 7.A) → **8.2** Licence (any time) → **8.3** OpenAPI → **8.4** MCP (Fable→Opus) → **8.6** External edits as tracked changes (Fable→Opus) → **8.5** Wiki packs (Fable→Opus)
 10. **9.1** Backups admin section (Fable→Opus; shipped 2026-09-17) → **9.2** Offsite backups (Fable→Opus; unscheduled, waits on the owner's seven decisions listed in the item)
-11. **10.1** Owner role (shipped 2026-09-20) → **11.1** Instance rights and the Roles tab (shipped 2026-09-20) → **11.2** Custom roles → **11.3** Delete a space → **5.5** Anonymous access is opt-in twice → **10.4** Media harness → **10.2** Owner setup wizard → **10.3** Tour and tips (all specified 2026-09-20 as Fable; Opus implements). Phase 11 goes before the wizard because the wizard has a required step that reviews the matrix, and before 10.3 because the tour's screens should show the real Roles tab. 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
+11. **10.1** Owner role (shipped 2026-09-20) → **11.1** Instance rights and the Roles tab (shipped 2026-09-20) → **11.2** Custom roles (shipped 2026-09-20) → **11.3** Delete a space → **5.5** Anonymous access is opt-in twice → **10.4** Media harness → **10.2** Owner setup wizard → **10.3** Tour and tips (all specified 2026-09-20 as Fable; Opus implements). Phase 11 goes before the wizard because the wizard has a required step that reviews the matrix, and before 10.3 because the tour's screens should show the real Roles tab. 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
 
 Phases 6 and 8.2 are floaters — small, no dependents — and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm
