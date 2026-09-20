@@ -5,6 +5,37 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Design: roles with assignable rights (2026-09-20)
+
+Dev-plan Phase 11, written by Fable 5.1 at the owner's request, after
+10.1 shipped. Nothing is implemented yet. The owner decided: the owner
+edits every role's rights and administrators edit only user-tier roles;
+the owner is subject to the matrix except for roles, ownership and the
+matrix itself; users get "delete pages you created" by default but not
+"delete pages created by others".
+
+- **11.1 Instance rights:** a catalogue of 28 assignable rights and 3 reserved to the owner, in code; grants in the
+  database, one built-in role per tier (the existing enum becomes the
+  tier), every administrative route named by its right, settings checked
+  per field, delete rights layered over space permissions, tokens going
+  inert when the right is withdrawn, and a Roles tab with a reviewed,
+  sudo-guarded, audited, alerting save. Defaults change one thing on
+  upgrade: users can no longer delete pages made by others.
+- **11.2 Custom roles:** named rights sets within the User or Admin tier,
+  assignable without changing anyone's tier.
+- **11.3 Delete a space:** an instance right (`spaces.delete`, administrators
+  and the owner by default) from the space's settings page, confirmed by
+  typing the key and the password in one request, audited with the counts
+  of what was destroyed, and alerting every administrator.
+- **10.2** gains a required wizard step where the owner reviews the matrix.
+  Phase 11 now precedes the rest of Phase 10 in the order of execution.
+- **5.5 Anonymous access is opt-in twice** (added the same day): an
+  instance publishes nothing unless the switch is on *and* a space is
+  public, and until then anonymous visitors land on sign-in rather than an
+  empty Spaces page. The wizard's registration step gains the switch, off
+  by default. One anonymous endpoint, `GET /api/instance`, carries the
+  facts the SPA needs before a session exists.
+
 ### The Owner role (2026-09-20)
 
 Dev-plan 10.1, implemented by Opus 5 against the spec Fable 5.1 wrote the
