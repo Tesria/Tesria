@@ -5,6 +5,47 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Custom roles (2026-09-20)
+
+A role is now a named set of rights within a tier, not just the one
+built-in per tier. **New role** on Administration -> Roles takes a name, a
+description, the tier and a role to copy from (the tier's built-in by
+default), and the new column joins the matrix like any other. Custom
+columns can be renamed in place and deleted; the built-ins can be neither.
+
+Who may create what follows 11.1: a user-tier role needs
+`permissions.edit_user_tier`, an admin-tier role needs the owner's
+reserved `permissions.edit_admin_tier`, and copying from a higher tier
+needs the same right as editing it. Nobody creates an Owner-tier role.
+
+On the Users page a role picker appears next to the tier whenever that
+tier has more than one role to choose between, listing only the roles the
+viewer may assign. Assigning within a tier needs `users.assign_roles` and
+leaves the tier alone, so alerts, the two-factor requirement and the
+owner's reserved powers are unaffected; crossing tiers is still the 10.1
+promotion or demotion, still audited as `user.role_changed` with both role
+names. Both paths ask for the password again.
+
+Deleting a role that someone still holds is refused with "N account(s)
+holds this role. Move them to another role first." rather than silently
+stranding people on a role that no longer exists.
+
+### Fix: confirmations that silently did nothing (2026-09-20)
+
+Five admin actions guarded themselves with `window.confirm`, which is the
+same trap as the Resolve bug below: an embedded browser may refuse the
+dialog and simply return false, so the action never runs and nothing
+appears on screen to say why. Deleting a role, resetting a role,
+publishing or withdrawing a space, and transferring ownership were all
+one browser setting away from looking broken.
+
+They now use an in-page confirmation (`components/ConfirmDialog.tsx`),
+which also lets the question carry more than a line of plain text: the
+delete dialog says whether anyone still holds the role, and publishing
+names the page and attachment counts that are about to become readable by
+anyone. Escape cancels, and a cancelled question resolves rather than
+leaving its promise hanging.
+
 ### Fix: Resolve did nothing on a security alert (2026-09-20)
 
 Reported by the owner: pressing **Resolve** on Administration -> Security

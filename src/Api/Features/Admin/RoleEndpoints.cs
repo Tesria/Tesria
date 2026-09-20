@@ -34,6 +34,8 @@ public static class RoleEndpoints
         string? ReviewedByName);
 
     public record UpdatePermissionsRequest(string[] Permissions);
+    public record CreateRoleRequest(string Name, string? Description, UserRole Tier, Guid? CopyFrom);
+    public record UpdateRoleRequest(string Name, string? Description);
 
     public static IEndpointRouteBuilder MapRoleEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -45,6 +47,9 @@ public static class RoleEndpoints
         // row", and the owner's edit right is reserved, so their way back is
         // never closed. Each handler still checks the row it touches.
         group.MapGet("", GetMatrix);
+        group.MapPost("", CreateRole);
+        group.MapPut("/{roleId:guid}", UpdateRole);
+        group.MapDelete("/{roleId:guid}", DeleteRole);
         group.MapPut("/{roleId:guid}/permissions", UpdatePermissions);
         group.MapPost("/{roleId:guid}/reset", ResetPermissions);
         group.MapPost("/review", MarkReviewed);
@@ -85,6 +90,145 @@ public static class RoleEndpoints
                     MayEdit(r, held)))],
             site.PermissionsReviewedAt,
             reviewedBy));
+    }
+
+    /// <summary>
+    /// Creates a role in the user or administrator tier (dev-plan 11.2).
+    ///
+    /// It starts as a copy of an existing role rather than empty: a role with
+    /// no rights is useless, and copying the tier's built-in is what someone
+    /// means by "like a user, but...".
+    /// </summary>
+    private static async Task<IResult> CreateRole(
+        CreateRoleRequest req, AppDbContext db, IInstancePermissions rights, PermissionCache cache,
+        CurrentUser current, IAuditLogger audit)
+    {
+        var name = (req.Name ?? "").Trim();
+        if (name.Length is 0 or > 60)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["name"] = ["A name of 1 to 60 characters is required."],
+            });
+        // Exactly one account owns the instance, so a second owner-tier role
+        // would describe nobody.
+        if (req.Tier is not (UserRole.Member or UserRole.Admin))
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["tier"] = ["A role belongs to the user or the administrator tier."],
+            });
+        if (await Refused(req.Tier, rights) is { } refusal) return refusal;
+        if (await db.Roles.AnyAsync(r => r.Name.ToLower() == name.ToLower()))
+            return Results.Conflict(new { message = $"A role called '{name}' already exists." });
+
+        // Copy from the named role, or from the tier's built-in.
+        var source = req.CopyFrom is { } from
+            ? await db.Roles.AsNoTracking().Include(r => r.Permissions).FirstOrDefaultAsync(r => r.Id == from)
+            : await db.Roles.AsNoTracking().Include(r => r.Permissions)
+                .FirstOrDefaultAsync(r => r.Key == Role.Keys.For(req.Tier));
+        if (req.CopyFrom is not null && source is null)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["copyFrom"] = ["That role no longer exists."],
+            });
+        // Copying a role of a higher tier would hand out rights the caller may
+        // not be able to grant directly.
+        if (source is not null && source.Tier > req.Tier && !await rights.HasAsync(InstancePermissions.PermissionsEditAdminTier))
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["copyFrom"] = ["You cannot copy a role from a higher tier."],
+            });
+
+        var role = new Role
+        {
+            Id = Guid.NewGuid(),
+            Key = null,
+            Name = name,
+            Description = string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim(),
+            Tier = req.Tier,
+            BuiltIn = false,
+            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedById = current.RequireId(),
+        };
+        role.Permissions = [.. (source?.Permissions.Select(p => p.Key) ?? InstancePermissions.DefaultsFor(req.Tier))
+            .Where(InstancePermissions.IsAssignable)
+            .Distinct()
+            .Select(k => new RolePermission { RoleId = role.Id, Key = k })];
+        db.Roles.Add(role);
+
+        audit.Record("role.created", "role", role.Id,
+            new { role.Name, Tier = role.Tier.ToString(), CopiedFrom = source?.Name });
+        await db.SaveChangesAsync();
+        cache.Invalidate();
+
+        return Results.Created($"/api/admin/roles/{role.Id}", new RoleDto(
+            role.Id, role.Key, role.Name, role.Description, role.Tier, role.BuiltIn,
+            [.. role.Permissions.Select(p => p.Key).Order()], 0, true));
+    }
+
+    /// <summary>Renames a custom role. Built-in names are fixed: the seed recreates them by key.</summary>
+    private static async Task<IResult> UpdateRole(
+        Guid roleId, UpdateRoleRequest req, AppDbContext db, IInstancePermissions rights,
+        PermissionCache cache, IAuditLogger audit)
+    {
+        var role = await db.Roles.FirstOrDefaultAsync(r => r.Id == roleId);
+        if (role is null) return Results.NotFound();
+        if (role.BuiltIn)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["name"] = ["The built-in roles cannot be renamed."],
+            });
+        if (await Refused(role.Tier, rights) is { } refusal) return refusal;
+
+        var name = (req.Name ?? "").Trim();
+        if (name.Length is 0 or > 60)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["name"] = ["A name of 1 to 60 characters is required."],
+            });
+        if (await db.Roles.AnyAsync(r => r.Id != roleId && r.Name.ToLower() == name.ToLower()))
+            return Results.Conflict(new { message = $"A role called '{name}' already exists." });
+
+        var before = role.Name;
+        role.Name = name;
+        role.Description = string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim();
+        audit.Record("role.updated", "role", role.Id, new { From = before, To = role.Name });
+        await db.SaveChangesAsync();
+        cache.Invalidate();
+        return Results.Ok(new { role.Id, role.Name, role.Description });
+    }
+
+    /// <summary>
+    /// Removes a custom role nobody holds. Reassigning first is deliberate:
+    /// silently moving people to another role would change what they may do
+    /// without anyone deciding it.
+    /// </summary>
+    private static async Task<IResult> DeleteRole(
+        Guid roleId, AppDbContext db, IInstancePermissions rights, PermissionCache cache,
+        IAuditLogger audit, HttpContext http, IConfiguration config)
+    {
+        var role = await db.Roles.FirstOrDefaultAsync(r => r.Id == roleId);
+        if (role is null) return Results.NotFound();
+        if (role.BuiltIn)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["roleId"] = ["The built-in roles cannot be deleted."],
+            });
+        if (await Refused(role.Tier, rights) is { } refusal) return refusal;
+        if (AuthEndpointsSudo(http, config) is { } denied) return denied;
+
+        var members = await db.Users.CountAsync(u => u.RoleId == roleId);
+        if (members > 0)
+            return Results.Conflict(new
+            {
+                message = $"{members} {(members == 1 ? "account holds" : "accounts hold")} this role. "
+                    + "Move them to another role first.",
+            });
+
+        db.Roles.Remove(role);
+        audit.Record("role.deleted", "role", role.Id, new { role.Name, Tier = role.Tier.ToString() });
+        await db.SaveChangesAsync();
+        cache.Invalidate();
+        return Results.NoContent();
     }
 
     private static async Task<IResult> UpdatePermissions(
@@ -167,6 +311,21 @@ public static class RoleEndpoints
         role.Tier >= UserRole.Admin
             ? held.Contains(InstancePermissions.PermissionsEditAdminTier)
             : held.Contains(InstancePermissions.PermissionsEditUserTier);
+
+    private static async Task<IResult?> Refused(UserRole tier, IInstancePermissions rights) =>
+        (tier >= UserRole.Admin
+            ? (await rights.ForCurrentUserAsync()).Contains(InstancePermissions.PermissionsEditAdminTier)
+            : (await rights.ForCurrentUserAsync()).Contains(InstancePermissions.PermissionsEditUserTier))
+            ? null
+            : Results.Json(new
+            {
+                title = "Forbidden",
+                status = 403,
+                code = "permission_required",
+                message = tier >= UserRole.Admin
+                    ? "Only the owner shapes administrator roles."
+                    : "You do not have the right to edit roles.",
+            }, statusCode: StatusCodes.Status403Forbidden);
 
     private static async Task<IResult?> Refused(Role role, IInstancePermissions rights) =>
         MayEdit(role, await rights.ForCurrentUserAsync())
