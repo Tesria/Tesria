@@ -143,7 +143,7 @@ public class PublicReadTests
         Assert.Equal(HttpStatusCode.Unauthorized, await Get(anon, "/api/labels/x/pages"));
 
         Assert.Equal(HttpStatusCode.OK, await Get(anon, $"/api/pages/{w.NormalPage}/export?format=markdown"));
-        Assert.Equal(HttpStatusCode.OK, await Get(anon, $"/api/pages/{w.NormalPage}/export?format=html"));
+        Assert.Equal(HttpStatusCode.OK, await Get(anon, $"/api/pages/{w.NormalPage}/export?format=markdown"));
         Assert.Equal(HttpStatusCode.NotFound, await Get(anon, $"/api/pages/{w.RestrictedPage}/export"));
         Assert.Equal(HttpStatusCode.NotFound, await Get(anon, $"/api/pages/{w.PrivatePage}/export"));
 

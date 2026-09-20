@@ -1,5 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
+using Tesria.Api.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Tesria.Api.Tests;
@@ -314,4 +317,33 @@ public class PageTests
         Assert.Empty((await client.GetFromJsonAsync<List<TrashedPage>>($"/api/pages/trash?spaceId={spaceId}"))!);
         Assert.Equal(HttpStatusCode.NotFound, (await client.PostAsync($"/api/pages/{page.Id}/restore", null)).StatusCode);
     }
+    [Fact]
+    public async Task A_page_whose_current_version_pointer_is_missing_can_still_be_edited()
+    {
+        // The wedged state a half-committed create used to leave behind: a
+        // page with a version and no pointer at it. Numbering the next
+        // version from zero collided with the one already there and failed
+        // every edit from then on (found by the 12.1 fixture).
+        using var factory = new TestAppFactory();
+        var client = factory.CreateClient();
+        await client.RegisterAndSignInAsync();
+        var spaceId = await client.CreateSpaceAsync();
+        var page = await (await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = "Wedged", ContentJson = Doc }))
+            .Content.ReadFromJsonAsync<PageDetail>();
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var row = await db.Pages.FirstAsync(p => p.Id == page!.Id);
+            row.CurrentVersionId = null;
+            await db.SaveChangesAsync();
+        }
+
+        var res = await client.PutAsJsonAsync($"/api/pages/{page!.Id}",
+            new { Title = "Wedged", ContentJson = Doc });
+
+        Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+    }
+
 }

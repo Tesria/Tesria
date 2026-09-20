@@ -2382,3 +2382,99 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
   .tour__skip { margin-left: 0; }
   .tip { left: 1rem; right: 1rem; width: auto; }
 }
+
+/* The export capture route (dev-plan 12.1). No topbar, no sidebar: the same
+   .paper the reading view uses, and nothing else, because this is what the
+   sidecar photographs. */
+.export { padding: 2rem 1rem; background: var(--bg); min-height: 100vh; }
+.export .paper { margin: 0 auto; }
+.export--failed { display: grid; place-content: center; color: var(--muted); }
+.export__crumb { color: var(--muted); font-size: 0.85rem; margin-bottom: 0.75rem; }
+
+/* Paper rules. These live beside the screen rules they modify rather than in
+   a second stylesheet, which is the whole point of capturing the real page:
+   there is one place where a table is styled, and this is next to it. */
+@media print {
+  .export { padding: 0; background: #fff; min-height: 0; }
+  .export .paper { box-shadow: none; border: 0; max-width: none; padding: 0; }
+
+  /* Nothing that is only useful on screen. A control that cannot be used is
+     furniture, and furniture in a printed document reads as a mistake. */
+  .topbar, .sidebar, .page-actionbar, .tip, .toc--exclude-print,
+  .code-block__header-actions, .code-block__copy, .code-block__linenum-toggle,
+  .table-hover__add, .table-hover__grip, .column-resize-handle,
+  .dynamic-block__refresh, .expand__toggle-hint { display: none !important; }
+
+  /* The language stays: it says what the code is. The control around it does
+     not, so it prints as a label rather than a dropdown. Its colour is left
+     alone: the header is dark, and inheriting would put dark text on it. */
+  .code-block__lang {
+    appearance: none; border: 0 !important; background: none !important;
+    padding: 0 !important; font: inherit;
+  }
+
+  /* A diagram needs no caption saying it is a diagram. */
+  .code-block:has(.mermaid) .code-block__header { display: none !important; }
+
+  /* Keep things whole. A table row split across a page break is the single
+     most common way a printed document looks broken. */
+  tr, img, pre, blockquote,
+  .panel, .decision, .expand, .dynamic-block, .mermaid, .chart, .smart-link,
+  .embed, .attachment-block { break-inside: avoid; }
+  h1, h2, h3, h4 { break-after: avoid; }
+  h1, h2, h3, h4, p, li { orphans: 3; widows: 3; }
+
+  /* A full-width table has no viewport to be wide against; the page is the
+     width. Without this the breakout maths pushes it off the paper. */
+  .editor__content > .ProseMirror > .tableWrapper:has(table[data-layout="full-width"]) {
+    margin-left: 0; margin-right: 0; width: auto;
+  }
+  .editor__content .tableWrapper { overflow-x: visible; }
+  .editor__content table[style*="--table-target-width"] { width: 100% !important; }
+
+  /* An expand is a disclosure on screen and a heading with its contents on
+     paper: there is nothing to click. */
+  .expand__body { display: block !important; }
+
+  /* An iframe prints as a blank rectangle, so the card is what goes on the
+     page. Both kinds keep their link, which is the useful part on paper. */
+  .embed__frame, .embed iframe, .attachment-block iframe { display: none !important; }
+
+  /* Marks that mean "somebody is working on this" are not part of the
+     document: they read as highlighting to anyone holding the printout. */
+  .comment-mark, .external-insert, .external-delete {
+    background: none !important; border: 0 !important; text-decoration: none !important;
+  }
+
+  a { text-decoration: underline; }
+  /* Link targets are not printed after the text: a wiki is full of links and
+     the result is unreadable. The HTML export keeps them clickable instead. */
+}
+
+/* An exported static site (dev-plan 12.2). These rules ship inside the
+   exported stylesheet, so they have to stand on their own: the site has no
+   application around them. */
+.export--site { display: grid; grid-template-columns: 16rem 1fr; gap: 2rem; max-width: 76rem; margin: 0 auto; }
+.site-nav { font-size: 0.9rem; }
+.site-nav ul { list-style: none; margin: 0; padding: 0 0 0 0.75rem; display: grid; gap: 0.15rem; }
+.site-nav > ul { padding-left: 0; }
+.site-nav a { display: block; padding: 0.15rem 0.35rem; border-radius: 4px; color: var(--text); text-decoration: none; }
+.site-nav a:hover { background: var(--bg-alt); }
+.site-nav a.is-current { background: var(--primary-soft, var(--bg-alt)); font-weight: 600; }
+.site-lede { color: var(--muted); }
+.site-foot { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.85rem; }
+.site-theme { position: fixed; top: 0.75rem; right: 0.75rem; display: flex; gap: 0.25rem; z-index: 5; }
+.site-theme button {
+  font: inherit; font-size: 0.75rem; padding: 0.2rem 0.5rem; cursor: pointer;
+  border: 1px solid var(--border); border-radius: 5px; background: var(--surface); color: var(--muted);
+}
+.site-theme button:hover { color: var(--text); }
+/* A link to a page that is not in the export: still readable, plainly not a
+   link any more. */
+.export--site a[href="#"] { color: var(--muted); text-decoration: none; cursor: default; }
+
+@media (max-width: 860px) { /* keep in sync with --bp-tablet */
+  .export--site { grid-template-columns: 1fr; }
+  .site-theme { position: static; justify-content: flex-end; margin-bottom: 0.5rem; }
+}
+@media print { .site-nav, .site-theme, .site-foot { display: none !important; } }

@@ -1,10 +1,8 @@
-using System.Net;
 using System.Text;
 using Tesria.Api.Features.Blocks;
 using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Email;
 using Tesria.Api.Infrastructure.Settings;
-using Tesria.Api.Infrastructure.Storage;
 using Tesria.Api.Infrastructure.Permissions;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,15 +18,18 @@ public static class ExportEndpoints
     }
 
     /// <summary>
-    /// Exports a page as Markdown or standalone HTML. The HTML variant is
-    /// print-ready, so "Print → Save as PDF" in the browser produces a PDF
-    /// without shipping a headless-browser dependency in the image.
+    /// Exports a page as Markdown, as one HTML file, or as a PDF.
+    ///
+    /// Markdown is rendered from the document; HTML and PDF are captured from
+    /// the page's own render route by the sidecar, so what comes out is the
+    /// rendering a reader sees rather than a second renderer's impression of
+    /// it (dev-plan 12.1).
     /// </summary>
     private static async Task<IResult> ExportPage(
         Guid id, string? format, AppDbContext db, IPermissionService perms,
         Infrastructure.Permissions.IInstancePermissions rights, Infrastructure.Auth.CurrentUser current,
         IDynamicBlockService blocks, ISiteSettingsService settings, IConfiguration config,
-        IWebHostEnvironment env, IAttachmentStorage storage, IPdfRenderer pdf, CancellationToken ct)
+        Infrastructure.Export.IRenderTokens renderTokens, IPdfRenderer pdf, CancellationToken ct)
     {
         var page = await db.Pages.AsNoTracking()
             .Include(p => p.CurrentVersion)
@@ -44,140 +45,68 @@ public static class ExportEndpoints
             : await rights.AnonymousHasAsync(Infrastructure.Permissions.InstancePermissions.PagesExport);
         if (!mayExport) return Results.Forbid();
 
-        var content = page.CurrentVersion.ContentJson;
         var safeName = SafeFileName(page.Title);
-        var wantsFile = (format ?? "markdown").ToLowerInvariant() is "html" or "pdf";
-        // Markdown keeps its attachment URLs: a data: URI is unreadable in a
-        // text file, which is the point of Markdown.
-        if (wantsFile) content = await InlineAssets.InlineImagesAsync(content, db, storage, ct);
+        var wanted = (format ?? "markdown").ToLowerInvariant();
 
-        // Dynamic blocks are snapshotted now, as this caller, with this
-        // caller's permissions (architecture.md, "Dynamic blocks", decision 5).
-        var snapshot = await PageSnapshots.BlocksAsync(page.Id, content, blocks, ct);
-        var baseUrl = SiteUrl.Resolve(await settings.GetAsync(ct), config);
-
-        return (format ?? "markdown").ToLowerInvariant() switch
+        if (wanted is "md" or "markdown")
         {
-            "md" or "markdown" => File(
-                $"# {page.Title}\n\n{ProseMirrorRenderer.ToMarkdown(content, snapshot, baseUrl)}",
-                "text/markdown", $"{safeName}.md"),
+            // Markdown keeps its attachment URLs: a data: URI is unreadable in
+            // a text file, which is rather the point of Markdown. It is also
+            // the one format that is genuinely a different document rather
+            // than a picture of this one, which is why it is still rendered
+            // rather than captured.
+            var snapshot = await PageSnapshots.BlocksAsync(page.Id, page.CurrentVersion.ContentJson, blocks, ct);
+            var baseUrl = SiteUrl.Resolve(await settings.GetAsync(ct), config);
+            var markdown = $"# {page.Title}\n\n{ProseMirrorRenderer.ToMarkdown(page.CurrentVersion.ContentJson, snapshot, baseUrl)}";
+            return Results.File(Encoding.UTF8.GetBytes(markdown), "text/markdown", $"{safeName}.md");
+        }
 
-            "html" => File(
-                HtmlDocument(page.Title, ProseMirrorRenderer.ToHtml(content, snapshot, baseUrl, out var usedMermaid), env, usedMermaid),
-                "text/html", $"{safeName}.html"),
-
-            "pdf" => await PdfResultAsync(page.Title, safeName, content, snapshot, baseUrl, env, pdf, ct),
-
-            _ => Results.ValidationProblem(new Dictionary<string, string[]>
+        if (wanted is not ("html" or "pdf"))
+            return Results.ValidationProblem(new Dictionary<string, string[]>
             {
                 ["format"] = ["Supported formats are 'markdown', 'html' and 'pdf'."],
-            }),
-        };
+            });
+
+        return await CaptureAsync(page.Id, page.Title, safeName, wanted, current, renderTokens, pdf, config, ct);
     }
 
     /// <summary>
-    /// The same HTML the html format returns, rendered by the sidecar. When
-    /// no renderer is configured or it fails, this is a 503 naming the HTML
-    /// export rather than a dead end: printing that page to PDF is exactly
-    /// what the sidecar does, just by hand.
+    /// PDF and single-file HTML are photographs of the page's own render
+    /// route, taken by the sidecar (dev-plan 12.1). Nothing here builds a
+    /// document: the app says which page, and hands over a token that lets
+    /// the sidecar's browser read it as this caller and nothing more.
     /// </summary>
-    private static async Task<IResult> PdfResultAsync(
-        string title, string safeName, string content, List<BlockResult?> snapshot, string baseUrl,
-        IWebHostEnvironment env, IPdfRenderer pdf, CancellationToken ct)
+    private static async Task<IResult> CaptureAsync(
+        Guid pageId, string title, string safeName, string format,
+        Infrastructure.Auth.CurrentUser current, Infrastructure.Export.IRenderTokens renderTokens,
+        IPdfRenderer pdf, IConfiguration config, CancellationToken ct)
     {
-        if (!pdf.Available)
+        if (!pdf.Available || !renderTokens.IsConfigured)
             return Results.Problem(
-                detail: "PDF export is not configured on this instance. Export as HTML and print it to PDF instead.",
+                detail: "This instance has no export renderer configured. Export as Markdown instead.",
                 statusCode: StatusCodes.Status503ServiceUnavailable);
 
-        var html = HtmlDocument(title, ProseMirrorRenderer.ToHtml(content, snapshot, baseUrl, out var usedMermaid), env, usedMermaid);
-        var bytes = await pdf.RenderAsync(html, ct);
-        return bytes is null
-            ? Results.Problem(
-                detail: "The PDF renderer did not answer. Export as HTML and print it to PDF instead.",
-                statusCode: StatusCodes.Status503ServiceUnavailable)
+        var token = renderTokens.IssueForPage(pageId, current.IsAuthenticated ? current.RequireId() : null);
+        var url = $"{RenderOrigin(config)}/export/pages/{pageId}";
+        var bytes = await pdf.CaptureAsync(url, token, format, title, ct);
+
+        if (bytes is null)
+            return Results.Problem(
+                detail: "The export renderer did not answer. Export as Markdown instead, or try again.",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+
+        return format == "html"
+            ? Results.File(bytes, "text/html", $"{safeName}.html")
             : Results.File(bytes, "application/pdf", $"{safeName}.pdf");
     }
 
-    private static IResult File(string body, string contentType, string fileName) =>
-        Results.File(Encoding.UTF8.GetBytes(body), contentType, fileName);
-
-    /// <summary>Wraps rendered content in a minimal, print-friendly HTML document.</summary>
-
     /// <summary>
-    /// The single-file Mermaid bundle the web build produces
-    /// (`npm run build:mermaid` → `wwwroot/export/`). Read once and kept: it
-    /// is ~3MB, and an export that has a diagram would otherwise read it off
-    /// disk every time.
+    /// Where the sidecar reaches this app. Inside the compose network that is
+    /// the service name, not the public address: a capture must not depend on
+    /// the instance being reachable from the internet, or on its TLS.
     /// </summary>
-    private static string? _mermaidBundle;
-    private static bool _mermaidBundleChecked;
-
-    private static string? MermaidBundle(IWebHostEnvironment env)
-    {
-        if (_mermaidBundleChecked) return _mermaidBundle;
-        _mermaidBundleChecked = true;
-        var path = Path.Combine(env.WebRootPath ?? "", "export", "mermaid-standalone.js");
-        // Absent in tests and in a dev API with no built SPA. The export then
-        // ships the diagram source alone, which is still readable — never a
-        // fetch to somewhere else.
-        if (System.IO.File.Exists(path)) _mermaidBundle = System.IO.File.ReadAllText(path);
-        return _mermaidBundle;
-    }
-
-    /// <param name="withMermaid">
-    /// Inlines this instance's own Mermaid bundle, so a page with a diagram
-    /// draws it with no network of any kind — no CDN, and no dependency on
-    /// this instance still being reachable. An exported file is meant to be
-    /// something you can keep, and a document that only renders while a
-    /// server answers is not that.
-    ///
-    /// The cost is ~3MB, and only on pages that actually have a diagram.
-    /// That is a download-time cost paid once (and gzipped to ~900KB in
-    /// transit); the alternative was a file that stops working. Where the
-    /// bundle is missing the export ships the diagram source alone, which is
-    /// still readable.
-    /// </param>
-    private static string HtmlDocument(string title, string bodyHtml, IWebHostEnvironment env, bool withMermaid = false)
-    {
-        var escapedTitle = WebUtility.HtmlEncode(title);
-        var bundle = withMermaid ? MermaidBundle(env) : null;
-        // Inlined, not linked: a </script> inside the bundle would end this
-        // one early, so the sequence is broken up the standard way. (Mermaid
-        // has none today; a future version must not be able to break every
-        // exported file.)
-        var mermaidScript = bundle is null
-            ? ""
-            : "<script>" + bundle.Replace("</script>", "<\\/script>") + "</script>";
-        // $$ raises the interpolation delimiter to {{ }} so the CSS braces below
-        // are treated as literal text.
-        return $$"""
-        <!doctype html>
-        <html lang="en">
-        <head>
-        <meta charset="utf-8" />
-        <title>{{escapedTitle}}</title>
-        <style>
-          body { font: 16px/1.6 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-                 color: #172b4d; max-width: 46rem; margin: 2rem auto; padding: 0 1rem; }
-          h1, h2, h3 { line-height: 1.25; }
-          pre { background: #f4f5f7; padding: 0.75rem; border-radius: 6px; overflow-x: auto; }
-          code { background: #f4f5f7; padding: 0.1em 0.3em; border-radius: 4px; }
-          pre code { background: none; padding: 0; }
-          blockquote { border-left: 3px solid #e4e6eb; margin-left: 0; padding-left: 1rem; color: #6b778c; }
-          @media print { body { margin: 0; max-width: none; } }
-          @media print { .toc--exclude-print { display: none; } }
-          .toc__inline a + a::before, .toc__sep { color: #6b778c; }
-        </style>
-        </head>
-        <body>
-        <h1>{{escapedTitle}}</h1>
-        {{bodyHtml}}
-        {{mermaidScript}}
-        </body>
-        </html>
-        """;
-    }
+    internal static string RenderOrigin(IConfiguration config) =>
+        (config["Pdf:AppOrigin"] ?? "http://app:8080").TrimEnd('/');
 
     /// <summary>Makes a page title safe to use as a download filename.</summary>
     private static string SafeFileName(string title)

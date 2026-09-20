@@ -4,6 +4,7 @@ import { api, ApiError, Permission, type Space } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { SpaceIconPicker } from '../components/SpaceIconPicker'
 import { DeleteSpaceDialog } from './DeleteSpaceDialog'
+import { SiteExportSection } from '../components/SiteExportSection'
 import { useSpaceContext } from './SpacePage'
 
 /**
@@ -105,6 +106,13 @@ export function SpaceSettingsPage() {
           </button>
         </form>
       </section>
+
+      {can(Permission.PagesExport) && (
+        <section className="profile__section profile__section--wide" id="export">
+          <h2>Export as a site</h2>
+          <SiteExportSection spaceKey={space.key} />
+        </section>
+      )}
 
       <section className="profile__section profile__section--wide" id="archive">
         <h2>Archive</h2>

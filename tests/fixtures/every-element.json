@@ -1,0 +1,156 @@
+{
+  "type": "doc",
+  "content": [
+    { "type": "paragraph", "content": [{ "type": "text", "text": "Every element Tesria can put on a page, once each. This page is the fixture the export fidelity matrix is measured against (dev-plan 12.1); if something renders wrongly in a PDF or an exported site, it renders wrongly here first." }] },
+
+    { "type": "tableOfContents" },
+
+    { "type": "heading", "attrs": { "level": 1 }, "content": [{ "type": "text", "text": "Text and marks" }] },
+    { "type": "paragraph", "content": [
+      { "type": "text", "marks": [{ "type": "bold" }], "text": "Bold" },
+      { "type": "text", "text": ", " },
+      { "type": "text", "marks": [{ "type": "italic" }], "text": "italic" },
+      { "type": "text", "text": ", " },
+      { "type": "text", "marks": [{ "type": "underline" }], "text": "underline" },
+      { "type": "text", "text": ", " },
+      { "type": "text", "marks": [{ "type": "strike" }], "text": "strikethrough" },
+      { "type": "text", "text": ", " },
+      { "type": "text", "marks": [{ "type": "code" }], "text": "inline code" },
+      { "type": "text", "text": ", " },
+      { "type": "text", "marks": [{ "type": "highlight", "attrs": { "color": "yellow" } }], "text": "highlighted" },
+      { "type": "text", "text": ", " },
+      { "type": "text", "marks": [{ "type": "textColor", "attrs": { "color": "red" } }], "text": "coloured" },
+      { "type": "text", "text": ", H" },
+      { "type": "text", "marks": [{ "type": "subscript" }], "text": "2" },
+      { "type": "text", "text": "O and E=mc" },
+      { "type": "text", "marks": [{ "type": "superscript" }], "text": "2" },
+      { "type": "text", "text": ", and " },
+      { "type": "text", "marks": [{ "type": "link", "attrs": { "href": "https://example.com/handbook" } }], "text": "a link" },
+      { "type": "text", "text": "." }
+    ] },
+    { "type": "paragraph", "attrs": { "textAlign": "center" }, "content": [{ "type": "text", "text": "Centred text." }] },
+    { "type": "paragraph", "attrs": { "textAlign": "right" }, "content": [{ "type": "text", "text": "Right-aligned text." }] },
+
+    { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "text": "Headings go to three" }] },
+    { "type": "heading", "attrs": { "level": 3 }, "content": [{ "type": "text", "text": "Third level" }] },
+
+    { "type": "heading", "attrs": { "level": 1 }, "content": [{ "type": "text", "text": "Lists" }] },
+    { "type": "bulletList", "content": [
+      { "type": "listItem", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "A bullet" }] }] },
+      { "type": "listItem", "content": [
+        { "type": "paragraph", "content": [{ "type": "text", "text": "A bullet with a nested list" }] },
+        { "type": "bulletList", "content": [
+          { "type": "listItem", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Nested one" }] }] },
+          { "type": "listItem", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Nested two" }] }] }
+        ] }
+      ] },
+      { "type": "listItem", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "A third bullet, so the indent tip has something to fire on" }] }] }
+    ] },
+    { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+      { "type": "listItem", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "First" }] }] },
+      { "type": "listItem", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Second" }] }] }
+    ] },
+    { "type": "taskList", "content": [
+      { "type": "taskItem", "attrs": { "checked": true }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "A finished task" }] }] },
+      { "type": "taskItem", "attrs": { "checked": false }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "An unfinished task" }] }] }
+    ] },
+
+    { "type": "heading", "attrs": { "level": 1 }, "content": [{ "type": "text", "text": "Blocks" }] },
+    { "type": "blockquote", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "A blockquote, for when somebody else said it better." }] }] },
+    { "type": "codeBlock", "attrs": { "language": "csharp" }, "content": [{ "type": "text", "text": "public static string Greet(string name) =>\n    $\"Hello, {name}\";" }] },
+    { "type": "horizontalRule" },
+
+    { "type": "panel", "attrs": { "panelType": "info" }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "An info panel." }] }] },
+    { "type": "panel", "attrs": { "panelType": "note" }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "A note panel." }] }] },
+    { "type": "panel", "attrs": { "panelType": "success" }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "A success panel." }] }] },
+    { "type": "panel", "attrs": { "panelType": "warning" }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "A warning panel." }] }] },
+    { "type": "panel", "attrs": { "panelType": "error" }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "An error panel." }] }] },
+
+    { "type": "expand", "attrs": { "title": "An expand, collapsed on the page" }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Its contents. In an export this has to be open, because paper does not expand." }] }] },
+
+    { "type": "decision", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Exports are captured from the real page rather than regenerated." }] }] },
+
+    { "type": "paragraph", "content": [
+      { "type": "text", "text": "Inline chips: " },
+      { "type": "status", "attrs": { "text": "In progress", "color": "yellow" } },
+      { "type": "text", "text": " and " },
+      { "type": "status", "attrs": { "text": "Done", "color": "green" } },
+      { "type": "text", "text": ", a date " },
+      { "type": "date", "attrs": { "date": "2026-09-20" } },
+      { "type": "text", "text": ", and a mention of " },
+      { "type": "mention", "attrs": { "userId": "00000000-0000-0000-0000-000000000000", "label": "Somebody" } },
+      { "type": "text", "text": " plus an emoji 🎉." }
+    ] },
+
+    { "type": "heading", "attrs": { "level": 1 }, "content": [{ "type": "text", "text": "Layout" }] },
+    { "type": "layoutSection", "content": [
+      { "type": "layoutColumn", "attrs": { "width": 50 }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "The left column of a two-column layout." }] }] },
+      { "type": "layoutColumn", "attrs": { "width": 50 }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "The right column. These must stay side by side in a PDF." }] }] }
+    ] },
+
+    { "type": "heading", "attrs": { "level": 1 }, "content": [{ "type": "text", "text": "Tables" }] },
+    { "type": "table", "content": [
+      { "type": "tableRow", "content": [
+        { "type": "tableHeader", "attrs": { "colspan": 1, "rowspan": 1, "colwidth": [220] }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Element" }] }] },
+        { "type": "tableHeader", "attrs": { "colspan": 1, "rowspan": 1, "colwidth": [120] }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Status" }] }] },
+        { "type": "tableHeader", "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Notes" }] }] }
+      ] },
+      { "type": "tableRow", "content": [
+        { "type": "tableCell", "attrs": { "colspan": 1, "rowspan": 1, "colwidth": [220] }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "A cell with a set column width" }] }] },
+        { "type": "tableCell", "attrs": { "colspan": 1, "rowspan": 1, "colwidth": [120], "backgroundColor": "#abf5d1" }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Green background" }] }] },
+        { "type": "tableCell", "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Column widths and cell colours are the thing that looked worst before 12.1." }] }] }
+      ] },
+      { "type": "tableRow", "content": [
+        { "type": "tableCell", "attrs": { "colspan": 2, "rowspan": 1, "colwidth": [220, 120] }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "A cell spanning two columns" }] }] },
+        { "type": "tableCell", "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null }, "content": [{ "type": "bulletList", "content": [
+          { "type": "listItem", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "A list inside a cell" }] }] }
+        ] }] }
+      ] }
+    ] },
+
+    { "type": "heading", "attrs": { "level": 1 }, "content": [{ "type": "text", "text": "Drawn and computed" }] },
+    { "type": "codeBlock", "attrs": { "language": "mermaid" }, "content": [{ "type": "text", "text": "flowchart LR\n  A[Page] --> B{Export}\n  B -->|PDF| C[Chromium prints it]\n  B -->|HTML| D[DOM serialised]\n  B -->|Site| E[One file per page]" }] },
+
+    { "type": "paragraph", "content": [
+      { "type": "text", "text": "Inline maths " },
+      { "type": "math", "attrs": { "latex": "e^{i\\pi} + 1 = 0", "display": false } },
+      { "type": "text", "text": " sits in a sentence." }
+    ] },
+    { "type": "math", "attrs": { "latex": "\\int_{0}^{\\infty} e^{-x^2}\\,dx = \\frac{\\sqrt{\\pi}}{2}", "display": true } },
+
+    { "type": "paragraph", "content": [{ "type": "text", "text": "The chart below reads the table above it." }] },
+    { "type": "table", "content": [
+      { "type": "tableRow", "content": [
+        { "type": "tableHeader", "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Format" }] }] },
+        { "type": "tableHeader", "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Pages" }] }] }
+      ] },
+      { "type": "tableRow", "content": [
+        { "type": "tableCell", "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "PDF" }] }] },
+        { "type": "tableCell", "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "128" }] }] }
+      ] },
+      { "type": "tableRow", "content": [
+        { "type": "tableCell", "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "HTML" }] }] },
+        { "type": "tableCell", "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "74" }] }] }
+      ] },
+      { "type": "tableRow", "content": [
+        { "type": "tableCell", "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Site" }] }] },
+        { "type": "tableCell", "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null }, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "212" }] }] }
+      ] }
+    ] },
+    { "type": "chart", "attrs": { "chartType": "column", "title": "Pages exported per format", "source": 2 } },
+
+    { "type": "heading", "attrs": { "level": 1 }, "content": [{ "type": "text", "text": "Live blocks" }] },
+    { "type": "dynamicBlock", "attrs": { "kind": "children", "params": {} } },
+    { "type": "dynamicBlock", "attrs": { "kind": "recently-updated", "params": {} } },
+    { "type": "dynamicBlock", "attrs": { "kind": "labels", "params": {} } },
+    { "type": "dynamicBlock", "attrs": { "kind": "contributors", "params": {} } },
+    { "type": "pageProperties" },
+    { "type": "excerpt", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "The excerpt other pages can include." }] }] },
+
+    { "type": "heading", "attrs": { "level": 1 }, "content": [{ "type": "text", "text": "Links out and files" }] },
+    { "type": "smartLink", "attrs": { "url": "https://example.com/handbook", "display": "card" } },
+    { "type": "embed", "attrs": { "url": "https://example.com/video", "display": "card" } },
+
+    { "type": "paragraph", "content": [{ "type": "text", "text": "The image, attachment and gallery below are seeded by the fixture loader, which uploads real files and rewrites their ids: an export has to prove it carries the bytes, not a URL." }] }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "shots": [
+    {
+      "name": "seed",
+      "url": "/spaces",
+      "skipCapture": true,
+      "settle": 1200,
+      "steps": [
+        {
+          "seedFixture": {
+            "key": "FIXTURE",
+            "name": "Export fixture",
+            "description": "The every-element page the export fidelity matrix is measured against (dev-plan 12.1).",
+            "title": "Every element",
+            "file": "tests/fixtures/every-element.json"
+          }
+        },
+        { "wait": 800 }
+      ]
+    }
+  ]
+}

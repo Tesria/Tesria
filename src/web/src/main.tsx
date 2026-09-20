@@ -12,6 +12,7 @@ import { Root } from './Root'
 import { LoginPage } from './routes/LoginPage'
 import { SetupPage } from './routes/SetupPage'
 import { WelcomePage } from './routes/WelcomePage'
+import { ExportPage } from './routes/ExportPage'
 import { RegisterPage } from './routes/RegisterPage'
 import { SpacesPage } from './routes/SpacesPage'
 import { SpacePage } from './routes/SpacePage'
@@ -56,6 +57,10 @@ const router = createBrowserRouter(
           {/* The welcome tour (dev-plan 10.3). Signed in, but outside the
               shell: it is full-screen and has no use for a topbar. */}
           <Route path="/welcome" element={<WelcomePage />} />
+          {/* What an export is captured from (dev-plan 12.1). Outside the
+              shell and outside every gate: a redirect here would be captured
+              instead of the page. */}
+          <Route path="/export/pages/:id" element={<ExportPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/recover" element={<RecoverPage />} />

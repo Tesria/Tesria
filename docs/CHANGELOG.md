@@ -5,6 +5,55 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Exports that look like the page (2026-09-20)
+
+Reported by the owner: exports flatten elements and look nothing like the
+rendered page, tables worst of all. Three causes, and none of them was a
+table bug. The exported stylesheet was fifteen lines with no table rule in
+it. `ProseMirrorRenderer.cs` rendered thirty-five node types a second time in
+C#, copying colours out of `index.css` by hand. And eight node types are
+React node views whose output only a browser can produce.
+
+**PDF and HTML are now captured from the real page.** The sidecar loads a
+chrome-free route rendering the same read-only editor, in the same `.paper`,
+under the same stylesheet as the reading view; waits for that page to signal
+it has finished drawing; and prints it or serialises its DOM. Tables keep
+their column widths, header styling, cell colours and spans. Panels keep
+their colours and icons. Diagrams are diagrams, maths is typeset, charts are
+charts, live blocks carry their data. Markdown is still rendered from the
+document, because it is a genuinely different target.
+
+Print rules now live in `index.css` beside the screen rules they modify:
+rows, panels and images do not split across pages, an expand prints open, an
+embed prints as its card, and editing furniture (the language dropdown, the
+copy button, resize handles) is gone from the paper.
+
+**A space can be published as a static site.** `GET
+/spaces/{key}/export/site` returns a zip in Cloudflare Pages shape: one
+directory per page mirroring the tree, the compiled stylesheet verbatim, real
+asset files, internal links rewritten to relative paths, `404.html`. The
+default audience is what the public can already read, which is the leak-proof
+choice for a documentation site: it cannot contain a private page by
+accident, whatever the exporter can see. Light, dark and system come with it,
+through the app's own theme script and a toggle, which is the only JavaScript
+in the output.
+
+The sidecar's posture changed to make this possible, and is worth knowing:
+it used to run with the network off and be handed a document; it now reaches
+the app service and nothing else, enforced by a request allowlist and by the
+compose network. It authenticates with a short-lived, read-only, page- or
+space-scoped render token that grants nothing its user did not already have.
+
+Building the fixture that all of this is measured against turned up three
+real bugs, all fixed and covered: a mention of a user id with no account
+returned 500 on save; a half-committed page create left a page that was
+invisible and could never be edited again; and version numbers came from the
+current-version pointer, so a page missing it collided with itself forever.
+
+`docs/export-fidelity.md` has the matrix: thirty-four element types, counted
+in the reading view, the print rendering and the exported site, all
+identical.
+
 ### The welcome tour and tips (2026-09-20)
 
 A new account is shown `/welcome` once: five screens, each one of 10.4's

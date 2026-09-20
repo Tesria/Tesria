@@ -46,6 +46,14 @@ public interface IPermissionService
     /// this one would answer for the wrong person.
     /// </summary>
     IPermissionService AsUser(Guid userId);
+
+    /// <summary>
+    /// The same rules evaluated as a reader with no account at all. Used by
+    /// the site export (dev-plan 12.2), whose default audience is the public:
+    /// deciding which pages go into a site by the exporter's own access is
+    /// how a private page ends up on the internet.
+    /// </summary>
+    IPermissionService AsAnonymous();
 }
 
 public sealed class PermissionService(AppDbContext db, CurrentUser current, ISiteSettingsService settings)
@@ -59,10 +67,16 @@ public sealed class PermissionService(AppDbContext db, CurrentUser current, ISit
     /// </summary>
     private Guid? _asUserId;
 
-    private Guid? UserId => _asUserId ?? current.Id;
+    /// <summary>Set by <see cref="AsAnonymous"/>: evaluate as nobody, whoever is calling.</summary>
+    private bool _asAnonymous;
+
+    private Guid? UserId => _asAnonymous ? null : _asUserId ?? current.Id;
 
     public IPermissionService AsUser(Guid userId) =>
         new PermissionService(db, current, settings) { _asUserId = userId };
+
+    public IPermissionService AsAnonymous() =>
+        new PermissionService(db, current, settings) { _asAnonymous = true };
 
     // -- the anonymous principal (dev-plan 5.1) --------------------------------
     //

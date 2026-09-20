@@ -559,17 +559,18 @@ public class ExportEndpointTests
     }
 
     [Fact]
-    public async Task Exports_standalone_html()
+    public async Task Html_is_captured_rather_than_generated_and_needs_the_renderer()
     {
+        // Until 12.1 this asserted the shape of HTML built in-process. There
+        // is no such HTML any more: the file is the page itself, photographed
+        // by the sidecar, which is why an export finally looks like the page.
+        // Without a sidecar the format is honestly unavailable.
         var (factory, client, page) = await NewClientWithPage();
         using var _ = factory;
 
         var res = await client.GetAsync($"/api/pages/{page.Id}/export?format=html");
-        Assert.Equal(HttpStatusCode.OK, res.StatusCode);
-        var body = await res.Content.ReadAsStringAsync();
-        Assert.Contains("<!doctype html>", body);
-        Assert.Contains("<h1>Export Me</h1>", body);
-        Assert.Contains("hello export", body);
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, res.StatusCode);
     }
 
     [Fact]

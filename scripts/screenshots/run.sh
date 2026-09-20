@@ -33,5 +33,5 @@ docker run --rm --network "container:tesria-caddy-1" --shm-size 256mb \
   -e BASE="${SHOT_BASE:-https://tesria.localhost}" \
   -e EMAIL="$SHOT_EMAIL" -e PASSWORD="$SHOT_PASSWORD" \
   -v "$HERE/shot.mjs":/app/shot.mjs \
-  -v "$SPECDIR":/work -v "$OUTDIR":/out -w /app \
+  -v "$SPECDIR":/work -v "$OUTDIR":/out -v "$HERE/../..":/repo:ro -w /app \
   --entrypoint node tesria-pdf /app/shot.mjs "/work/$(basename "$SPEC")" "$2"
