@@ -164,16 +164,17 @@ public class DynamicBlockTests
     }
 
     [Fact]
-    public void Renderer_draws_a_placeholder_when_no_snapshot_was_supplied()
+    public void Markdown_draws_a_placeholder_when_no_snapshot_was_supplied()
     {
-        var html = ProseMirrorRenderer.ToHtml(WithChildrenBlock());
-        Assert.Contains("[children: dynamic content, shown on the page]", html);
+        // A block with nothing resolved for it must say so rather than
+        // vanish: an export silently missing a section is the worse failure.
         var md = ProseMirrorRenderer.ToMarkdown(WithChildrenBlock());
+
         Assert.Contains("_[children: dynamic content, shown on the page]_", md);
     }
 
     [Fact]
-    public void Renderer_draws_the_neutral_shapes_and_does_not_recurse_into_included_documents()
+    public void Markdown_draws_the_neutral_shapes_and_does_not_recurse_into_included_documents()
     {
         var table = BlockResult.Table("t", [new("who", "Who"), new("when", "When"), new("done", "Done")],
             [new BlockItem("row", Cells: new Dictionary<string, BlockCell>
@@ -189,16 +190,13 @@ public class DynamicBlockTests
                 + "{\"type\":\"dynamicBlock\",\"attrs\":{\"kind\":\"t\",\"params\":{}}},"
                 + "{\"type\":\"dynamicBlock\",\"attrs\":{\"kind\":\"include-page\",\"params\":{}}}]}";
 
-        var html = ProseMirrorRenderer.ToHtml(doc, [table, document], "https://wiki.example");
-        Assert.Contains("<th>Who</th><th>When</th><th>Done</th>", html);
-        Assert.Contains("<td>Ana &lt;b&gt;</td><td>10 Sep 2026</td><td>☑</td>", html);
-        Assert.Contains("<p>included</p>", html);
-        // The included document's own block is a placeholder — depth 1.
-        Assert.Contains("[children: dynamic content, shown on the page]", html);
-
         var md = ProseMirrorRenderer.ToMarkdown(doc, [table, document]);
+
         Assert.Contains("| Who | When | Done |", md);
         Assert.Contains("| Ana <b> | 10 Sep 2026 | [x] |", md);
         Assert.Contains("included", md);
+        // The included document's own block stays a placeholder: depth 1, so
+        // two pages that include each other cannot export forever.
+        Assert.Contains("_[children: dynamic content, shown on the page]_", md);
     }
 }

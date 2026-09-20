@@ -44,11 +44,24 @@ the app service and nothing else, enforced by a request allowlist and by the
 compose network. It authenticates with a short-lived, read-only, page- or
 space-scoped render token that grants nothing its user did not already have.
 
-Building the fixture that all of this is measured against turned up three
+Building the fixture that all of this is measured against turned up four
 real bugs, all fixed and covered: a mention of a user id with no account
 returned 500 on save; a half-committed page create left a page that was
-invisible and could never be edited again; and version numbers came from the
-current-version pointer, so a page missing it collided with itself forever.
+invisible and could never be edited again; version numbers came from the
+current-version pointer, so a page missing it collided with itself forever;
+and the Markdown export did not sanitise link hrefs, so a stored
+`javascript:` URL came out of an exported file as a working link.
+
+**The second C# renderer is gone.** With nothing reaching it, `ToHtml` and
+the four `RenderHtml*` methods were deleted, along with thirteen helpers that
+only they used (found by walking what `ToMarkdown` can actually reach, not by
+eye). `InlineAssets.cs` went too: a captured export inlines its own assets in
+the browser. `ProseMirrorRenderer.cs` is 726 lines where it was 1145, and it
+renders exactly one format. Its header now says why nothing in it should grow
+an HTML path again: an export that should look like the page is a capture of
+the page. The table-of-contents tests moved to Markdown, where what they pin
+is which headings are listed, in what order and how numbered; bullet shapes
+belong to the stylesheet now and are covered by the fidelity matrix.
 
 `docs/export-fidelity.md` has the matrix: thirty-four element types, counted
 in the reading view, the print rendering and the exported site, all
