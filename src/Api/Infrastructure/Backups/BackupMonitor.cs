@@ -24,8 +24,19 @@ public sealed class BackupMonitor(IServiceScopeFactory scopes, ILogger<BackupMon
     /// <summary>When this process started. Settable so tests can age it.</summary>
     public DateTimeOffset ProcessStartedAt { get; set; } = DateTimeOffset.UtcNow;
 
-    /// <summary>Failed jobs finished after this are new. Starts one interval back, to cover a restart.</summary>
-    private DateTimeOffset _lastCheck = DateTimeOffset.UtcNow - Interval;
+    /// <summary>
+    /// A pass this long after the previous one means the process was not
+    /// running in between: the host slept, or Docker paused the container.
+    /// The sidecars' heartbeats are then stale for the same reason, not
+    /// because an agent is down.
+    /// </summary>
+    public static readonly TimeSpan SuspendedAfter = 2 * Interval;
+
+    /// <summary>
+    /// Failed jobs finished after this are new. Starts one interval back, to
+    /// cover a restart. Settable so tests can simulate a suspended host.
+    /// </summary>
+    public DateTimeOffset LastCheck { get; set; } = DateTimeOffset.UtcNow - Interval;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -47,8 +58,18 @@ public sealed class BackupMonitor(IServiceScopeFactory scopes, ILogger<BackupMon
             var detector = scope.ServiceProvider.GetRequiredService<ISecurityDetector>();
 
             var snapshot = await BackupStatus.LoadAsync(db, ct);
-            var since = _lastCheck;
-            _lastCheck = snapshot.Now;
+            var since = LastCheck;
+            LastCheck = snapshot.Now;
+
+            // After a suspend every clock jumped together, so on this pass a
+            // stale heartbeat or a late backup says nothing about the agent.
+            // Failed jobs are real whenever they finished, so those still
+            // count; the next pass, five minutes on, judges with heartbeats
+            // the sidecars have had time to refresh.
+            var suspended = snapshot.Now - since > SuspendedAfter;
+            if (suspended)
+                logger.LogInformation("Backup monitor: {Gap} since the last pass, so the process was suspended; not judging heartbeats or schedules this time",
+                    snapshot.Now - since);
 
             var open = await db.SecurityAlerts.AsNoTracking()
                 .Where(a => a.Status != SecurityAlertStatus.Resolved && a.Kind.StartsWith("backup."))
@@ -71,17 +92,17 @@ public sealed class BackupMonitor(IServiceScopeFactory scopes, ILogger<BackupMon
 
                 if (agent is null)
                 {
-                    if (snapshot.Now - ProcessStartedAt > NoAgentGrace)
+                    if (!suspended && snapshot.Now - ProcessStartedAt > NoAgentGrace)
                         await Raise("backup.agent_offline", SecuritySeverity.Warning, name,
                             new { Agent = name, Problem = "The backup agent has never reported." });
                     continue;
                 }
 
-                if (agent.LastSeenAt is not { } seen || snapshot.Now - seen > BackupStatus.OfflineAlertAfter)
+                if (!suspended && (agent.LastSeenAt is not { } seen || snapshot.Now - seen > BackupStatus.OfflineAlertAfter))
                     await Raise("backup.agent_offline", SecuritySeverity.Warning, name,
                         new { Agent = name, LastSeenAt = agent.LastSeenAt });
 
-                if (health.Overdue)
+                if (!suspended && health.Overdue)
                     await Raise("backup.overdue", SecuritySeverity.Critical, name,
                         new { Agent = name, LastSuccessAt = health.LastSuccess?.CompletedAt ?? health.LastSuccess?.StartedAt, agent.IntervalHours });
 

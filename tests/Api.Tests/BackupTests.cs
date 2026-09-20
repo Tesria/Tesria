@@ -481,6 +481,41 @@ public class BackupTests
         Assert.DoesNotContain(await AlertsAsync(admin), a => a.Kind == "backup.agent_offline");
     }
 
+    [Fact]
+    public async Task A_suspended_host_does_not_make_the_agents_look_offline()
+    {
+        using var factory = new TestAppFactory();
+        var admin = await AdminAsync(factory);
+        var now = DateTimeOffset.UtcNow;
+        await SeedAsync(factory, db =>
+        {
+            foreach (var name in BackupNames.Agents)
+                db.BackupAgents.Add(new BackupAgent
+                {
+                    Name = name, StartedAt = now.AddDays(-5), LastSeenAt = now.AddHours(-1), IntervalHours = 24,
+                    VolumeFreeBytes = 900_000, VolumeTotalBytes = 1_000_000,
+                });
+            db.Backups.AddRange(Logical(0.2, 100, now), Full(0.2, now));
+            db.BackupJobs.Add(Job(BackupNames.Logical, "failed", now.AddMinutes(-1)));
+        });
+
+        // The laptop slept for an hour (2026-09-17): both heartbeats went
+        // stale at once, and the monitor's timer fired before the sidecars'
+        // loops did. A failed job finished when it finished, so that one
+        // is still reported.
+        await RunMonitorAsync(factory, processAge: TimeSpan.FromHours(2), sinceLastCheck: TimeSpan.FromHours(1));
+        var kinds = (await AlertsAsync(admin)).Where(a => a.Kind.StartsWith("backup.")).Select(a => a.Kind).ToList();
+        Assert.Equal(["backup.failed"], kinds);
+
+        // The sidecars have caught up by the next pass: still nothing.
+        await SeedAsync(factory, db =>
+        {
+            foreach (var agent in db.BackupAgents) agent.LastSeenAt = DateTimeOffset.UtcNow;
+        });
+        await RunMonitorAsync(factory, processAge: TimeSpan.FromHours(2));
+        Assert.DoesNotContain(await AlertsAsync(admin), a => a.Kind is "backup.agent_offline" or "backup.overdue");
+    }
+
     // --- Seeding the policy.
 
     [Fact]
@@ -519,10 +554,11 @@ public class BackupTests
         await db.SaveChangesAsync();
     }
 
-    private static Task RunMonitorAsync(TestAppFactory factory, TimeSpan processAge)
+    private static Task RunMonitorAsync(TestAppFactory factory, TimeSpan processAge, TimeSpan? sinceLastCheck = null)
     {
         var monitor = factory.Services.GetRequiredService<BackupMonitor>();
         monitor.ProcessStartedAt = DateTimeOffset.UtcNow - processAge;
+        if (sinceLastCheck is { } gap) monitor.LastCheck = DateTimeOffset.UtcNow - gap;
         return monitor.RunOnceAsync();
     }
 
