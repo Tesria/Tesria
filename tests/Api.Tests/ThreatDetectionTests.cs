@@ -239,6 +239,26 @@ public class ThreatDetectionTests
     }
 
     [Fact]
+    public async Task An_alert_resolves_without_a_note()
+    {
+        using var factory = new TestAppFactory();
+        var admin = await AdminAsync(factory);
+        var attacker = From(factory, "203.0.113.44");
+        await RegisterAsync(factory.CreateClient(), "victim@example.com");
+        for (var i = 0; i < SecurityThresholds.FailedLoginsPerAddress; i++)
+            await LoginAsync(attacker, "victim@example.com", "wrong");
+
+        var alert = (await AlertsAsync(admin, "login.failed_burst_ip")).Single();
+        // The note is optional, and the button that sends none used to be the
+        // only way to resolve (it asked through window.prompt, which not every
+        // browser will show, so the click threw and nothing happened).
+        var resolved = await (await admin.PostAsJsonAsync(
+            $"/api/admin/security/alerts/{alert.Id}/resolve", new { })).Content.ReadFromJsonAsync<AlertDto>();
+        Assert.Equal(2, resolved!.Status);
+        Assert.Null(resolved.Note);
+    }
+
+    [Fact]
     public async Task A_blocked_address_is_refused_before_authentication()
     {
         using var factory = new TestAppFactory();
