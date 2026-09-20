@@ -5,6 +5,27 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fix: Resolve did nothing on a security alert (2026-09-20)
+
+Reported by the owner: pressing **Resolve** on Administration -> Security
+had no effect, on acknowledged alerts too. The button asked for the
+optional resolution note through `window.prompt`, which throws where a
+browser refuses dialogs (the in-app browser always, and Chrome once
+someone has ticked "prevent this page from creating additional dialogs").
+The click died there, before it ever called the endpoint, which is why
+Acknowledge worked and only Resolve looked dead.
+
+The note is now an inline field on the alert, with Resolve and Cancel,
+Escape to dismiss, and the note left out entirely when it is blank. The
+endpoint was never at fault; a test covers resolving with no note, which
+is the path this makes reachable. Two alert kinds added since the label
+map was written, `owner.transferred` and `permissions.expanded`, were
+showing their raw keys and now read as sentences.
+
+Four alerts had accumulated on this instance while the button was broken.
+One of them, a `permissions.expanded` from testing 11.1, was resolved with
+a note as the live check.
+
 ### Administrators can be allowed to promote (2026-09-20)
 
 A 29th right, `users.promote_admins`, **off for administrators by

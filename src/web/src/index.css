@@ -1805,6 +1805,11 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .block-form { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
 .block-form input { flex: 1 1 12rem; }
 
+/* Admin → Security: resolving an alert takes a note inline rather than
+   through window.prompt, which not every browser will show. */
+.alerts__resolve { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.alerts__resolve input { flex: 1 1 16rem; margin: 0; }
+
 /* Profile → Two-factor (dev-plan 3.5). */
 .totp-enrol img { display: block; border-radius: 6px; background: #fff; padding: 0.25rem; margin-bottom: 0.5rem; }
 .totp-secret { user-select: all; letter-spacing: 0.08em; }

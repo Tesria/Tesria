@@ -34,6 +34,8 @@ const KIND_LABEL: Record<string, string> = {
   'backup.restore_test_failed': 'A restore test failed',
   'backup.disk_low': 'Backup disk nearly full',
   'backup.retention_reduced': 'Backup retention policy made stricter',
+  'owner.transferred': 'Ownership of this instance was transferred',
+  'permissions.expanded': 'A role was given more rights',
 }
 
 function meta(json: string | null): Record<string, unknown> {
@@ -73,6 +75,11 @@ export function AdminSecurityPage() {
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // Which alert is being resolved, if any. The note used to come from
+  // window.prompt, which throws where a browser refuses dialogs (the in-app
+  // browser always, Chrome once someone ticks "prevent additional dialogs"),
+  // so the click died before it ever called the API and Resolve looked dead.
+  const [resolving, setResolving] = useState<string | null>(null)
 
   const load = useCallback(() => {
     Promise.all([
@@ -243,13 +250,33 @@ export function AdminSecurityPage() {
                         Acknowledge
                       </button>
                     )}
-                    <button type="button" className="btn btn--ghost btn--sm" disabled={busy}
-                      onClick={() => {
-                        const note = window.prompt('Resolution note (optional)') ?? undefined
-                        void act(() => api.admin.security.resolve(a.id, note), 'Resolved.', 'Could not resolve.')
-                      }}>
-                      Resolve
-                    </button>
+                    {resolving === a.id ? (
+                      <form
+                        className="alerts__resolve"
+                        onSubmit={(e) => {
+                          e.preventDefault()
+                          const note = new FormData(e.currentTarget).get('note')?.toString().trim()
+                          setResolving(null)
+                          void act(
+                            () => api.admin.security.resolve(a.id, note || undefined),
+                            'Resolved.', 'Could not resolve.',
+                          )
+                        }}
+                      >
+                        <input name="note" placeholder="Resolution note (optional)" autoFocus
+                          onKeyDown={(e) => e.key === 'Escape' && setResolving(null)} />
+                        <button type="submit" className="btn btn--ghost btn--sm" disabled={busy}>Resolve</button>
+                        <button type="button" className="btn btn--ghost btn--sm" disabled={busy}
+                          onClick={() => setResolving(null)}>
+                          Cancel
+                        </button>
+                      </form>
+                    ) : (
+                      <button type="button" className="btn btn--ghost btn--sm" disabled={busy}
+                        onClick={() => setResolving(a.id)}>
+                        Resolve
+                      </button>
+                    )}
                     {mitigations(a).map((m) => (
                       <button key={m.label} type="button" className="btn btn--ghost btn--sm" disabled={busy}
                         onClick={() => act(m.run, m.done, 'The action failed.')}>
