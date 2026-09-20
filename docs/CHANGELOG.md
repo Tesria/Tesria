@@ -5,6 +5,20 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fix: a sleeping laptop woke up to two false "agent offline" alerts (2026-09-20)
+
+On 2026-09-17 at 09:06:51 UTC `BackupMonitor` raised `backup.agent_offline`
+for both agents in the same second, and both had normal heartbeats a minute
+later. The host (Docker Desktop on a laptop) had been asleep: every
+container's clock jumped together, and the monitor's timer fired before the
+sidecars' 60-second heartbeat loops caught up. The monitor now notices when
+more than two intervals (10 minutes) have passed since its previous pass,
+logs that the process was suspended, and skips the `backup.agent_offline`
+and `backup.overdue` checks for that one pass. Failed jobs are still
+reported on it, and the next pass judges with fresh heartbeats. New test
+`A_suspended_host_does_not_make_the_agents_look_offline` in `BackupTests`
+(26 pass). The two alerts from the 17th are still open on this instance.
+
 ### Backups in the admin portal (2026-09-17)
 
 Dev-plan 9.1, implemented by Opus 5 against the spec Fable 5.1 wrote
