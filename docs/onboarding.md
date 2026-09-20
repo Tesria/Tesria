@@ -199,3 +199,69 @@ cookies are concerned. And it runs over plain HTTP with
 `Security__AllowInsecureCookies`, because a Secure cookie is silently dropped
 over HTTP and every request would look signed out. That setting is documented
 as unsafe and belongs nowhere else.
+
+## The welcome tour (dev-plan 10.3)
+
+`/welcome`, five screens, each a clip beside three sentences. A new account
+is sent there once per session until it either finishes or leaves; leaving by
+any route counts as skipping, including closing the tab, so nobody is asked
+twice. The profile can reopen it.
+
+| Screen | Clip | Covers |
+|---|---|---|
+| Spaces and pages | `spaces` | What a space is, that pages nest, where the tree is |
+| Writing | `new-page` | New page, publish, drafts are private |
+| Working together | `inline-comment` | Live editing, comments on a selection, @, Watch |
+| Finding things | `search` | Search covers what you may see; labels |
+| You | `profile` | Avatar, two-factor, email, where to turn tips off |
+
+Accounts that existed before this shipped were marked as having skipped the
+tour by the migration. Nobody is shown a tour of a product they already use.
+
+## Tips
+
+One at a time, **at most three a day**, each one only once, and never over a
+dialog, inside the wizard, during the tour, while a menu is open, or while
+the editor has a selection. A tip whose control is not on the page is passed
+over rather than queued: the moment has gone, and it will come round again.
+
+Counters (how many editing sessions, pages created, searches, visits to this
+page) live in `localStorage` keyed by user id. They are deliberately not sent
+to the server: losing them costs one repeated tip, and how often somebody
+opens the editor is nobody's business. Dismissals do go to the server, since
+they should hold across devices.
+
+| Key | Where | Fires when |
+|---|---|---|
+| `slash-menu` | editor | the editor is open |
+| `bubble-menu` | editor | more than three words are selected |
+| `clear-formatting` | editor | text carrying formatting was pasted |
+| `mention` | editor | the page has comments or other live editors |
+| `link-shortcut` | editor | the second editing session |
+| `page-tree-drag` | space | a space with three or more pages |
+| `templates` | editor | the third page this person has created |
+| `indent` | editor | a list of three or more items |
+| `emoji` | editor | the tenth editing session |
+| `inline-comment` | page | a page with no comments, second visit |
+| `watch` | page | a page written by somebody else |
+| `labels` | page | your own page with no labels |
+| `full-width` | page | a page containing a table |
+| `search-scope` | search | the second search |
+| `two-factor` | profile | two-factor off, third profile visit |
+
+Each tip has **Got it**, which retires it for good, and **Turn off tips**,
+which stops all of them and offers ten seconds of undo. Profile → Tour and
+tips has the same switch, **Show the tour again**, and **Reset dismissed
+tips**.
+
+### Adding one
+
+`src/web/src/onboarding/tips.ts` is the catalogue: a key, the context it
+belongs to, a CSS anchor, the words, an optional clip, a priority, and a
+predicate over `TipState`. If the predicate needs a fact nothing records yet,
+add a signal in `onboarding/signals.ts` and call it where the thing actually
+happens, rather than scraping it out of the DOM later.
+
+Keep the count honest. Every tip added is one more interruption competing for
+the same three-a-day budget, and the tip that gets shown is the one with the
+lowest priority number.

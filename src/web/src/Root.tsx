@@ -1,5 +1,6 @@
 import { ScrollToTop } from './components/ScrollToTop'
 import { SetupGate } from './components/SetupGate'
+import { TipHost } from './components/TipHost'
 
 /**
  * The app root inside the router. ScrollToTop reads the location, so it has
@@ -13,6 +14,7 @@ export function Root() {
       <ScrollToTop />
       {/* Wraps the outlet: as a sibling its redirect raced SessionGate's. */}
       <SetupGate />
+      <TipHost />
     </>
   )
 }

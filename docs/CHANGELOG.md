@@ -5,6 +5,42 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### The welcome tour and tips (2026-09-20)
+
+A new account is shown `/welcome` once: five screens, each one of 10.4's
+clips beside three sentences, covering spaces and pages, writing, working
+together, finding things, and the profile. Leaving it by any route counts as
+skipping, including closing the tab, so nobody is asked twice. Profile →
+Tour and tips can reopen it.
+
+**Tips** teach the things the product will not otherwise mention: type `/`
+for blocks, select text to comment on exactly those words, Ctrl or Cmd and K
+for a link, drag pages to rearrange them. Fifteen of them, each fired by a
+condition that makes it worth saying at that moment: the third page you
+create suggests templates, a page somebody else wrote suggests Watch, a
+second visit to an uncommented page suggests commenting.
+
+The restraint is the feature. One at a time, at most three a day, each one
+only once, and never over a dialog, inside the setup wizard, during the tour,
+while a menu is open, or while the editor has a selection. A tip whose
+control is not on screen is passed over rather than queued. Every tip carries
+**Got it** and **Turn off tips**, the latter with ten seconds of undo.
+
+The counters behind the triggers stay in the browser, keyed by user id.
+Losing one costs a repeated tip, and the alternative is telling the server
+how often somebody opens the editor. Dismissals do go to the server, so
+retiring a tip holds across devices.
+
+Accounts that existed before this shipped were marked as having skipped the
+tour by the migration: nobody is shown a tour of a product they already use,
+and tips arrive on for everyone.
+
+One thing only running it could have shown: at 375px the clip loaded, stayed
+paused and displayed nothing at all, because the `autoplay` attribute is a
+request rather than a guarantee. `Clip` now asks the video to play and falls
+back to the still when that is refused, which is also what somebody who has
+asked for reduced motion gets.
+
 ### First-run setup for the owner (2026-09-20)
 
 A new instance opens on `/setup` instead of a sign-in form: the steps down

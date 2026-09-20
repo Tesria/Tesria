@@ -79,7 +79,9 @@ public static class AuthEndpoints
         /// <summary>The rights this account holds (dev-plan 11.1); the SPA renders from these.</summary>
         string[] Permissions, string RoleName,
         /// <summary>The owner of an instance whose first-run setup is unfinished (dev-plan 10.2).</summary>
-        bool SetupRequired);
+        bool SetupRequired,
+        /// <summary>The tour and tips this person has or has not seen (dev-plan 10.3).</summary>
+        Onboarding.Summary Onboarding);
     public record NotificationPreferenceRequest(EmailNotificationMode EmailNotifications);
 
     /// <summary>The password was right; a one-time code is still needed.</summary>
@@ -128,6 +130,7 @@ public static class AuthEndpoints
         group.MapPost("/login/totp", LoginWithTotp).RequireRateLimiting(RateLimits.AuthPolicy);
         group.MapPost("/reauth", Reauthenticate).RequireAuthorization().RequireRateLimiting(RateLimits.AuthPolicy);
         group.MapPut("/me/notifications", SetNotificationPreference).RequireAuthorization();
+        group.MapPut("/me/onboarding", UpdateOnboarding).RequireAuthorization();
         group.MapGet("/me/sessions", ListSessions).RequireAuthorization();
         group.MapDelete("/me/sessions/others", RevokeOtherSessions).RequireAuthorization();
         group.MapDelete("/me/sessions/{id:guid}", RevokeSession).RequireAuthorization();
@@ -394,6 +397,23 @@ public static class AuthEndpoints
     /// call, because the claim is made after the codes have been read, and
     /// the wizard will not continue until it is.
     /// </summary>
+    /// <summary>
+    /// The tour and tips, for this account only (dev-plan 10.3). Every field
+    /// is optional, so the SPA sends one thing at a time: dismissing a tip
+    /// should not be able to turn the tour back on by omission.
+    /// </summary>
+    private static async Task<IResult> UpdateOnboarding(
+        Onboarding.UpdateRequest req, AppDbContext db, CurrentUser current)
+    {
+        // No status check here: OnValidatePrincipal already rejects the
+        // cookie of any account that is not Active, so a suspended one never
+        // reaches this handler at all.
+        var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
+        var summary = Onboarding.Apply(user, req);
+        await db.SaveChangesAsync();
+        return Results.Ok(summary);
+    }
+
     private static async Task<IResult> AcknowledgeCodes(
         AppDbContext db, CurrentUser current, IAuditLogger audit)
     {
@@ -662,7 +682,7 @@ public static class AuthEndpoints
         var setupRequired = await Features.Setup.SetupEndpoints.RequiredForAsync(user, siteSettings);
         return new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.AvatarVariant,
             user.PasswordHash != null, remaining, enabled, required, user.EmailNotifications, held, roleName,
-            setupRequired);
+            setupRequired, Onboarding.SummaryFor(user));
     }
 
     private static async Task<IResult> UpdateProfile(

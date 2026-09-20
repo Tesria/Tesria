@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useState , useEffect} from 'react'
 import { api, ApiError, Permission } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { PasswordInput } from '../components/PasswordInput'
@@ -7,7 +7,9 @@ import { RecoveryCodesSection } from '../components/RecoveryCodesSection'
 import { SessionsSection } from '../components/SessionsSection'
 import { ApiTokensSection } from '../components/ApiTokensSection'
 import { NotificationPreferences } from '../components/NotificationPreferences'
+import { TourAndTipsSection } from '../components/TourAndTipsSection'
 import { TotpSection } from '../components/TotpSection'
+import { noteProfileVisit } from '../onboarding/signals'
 
 type Status = { kind: 'ok' | 'error'; message: string } | null
 
@@ -22,6 +24,7 @@ type Status = { kind: 'ok' | 'error'; message: string } | null
  */
 export function ProfilePage() {
   const { user, refresh, can } = useAuth()
+  useEffect(() => { noteProfileVisit() }, [])
 
   const [displayName, setDisplayName] = useState(user?.displayName ?? '')
   const [nameStatus, setNameStatus] = useState<Status>(null)
@@ -187,6 +190,11 @@ export function ProfilePage() {
       <section className="profile__section" id="notifications">
         <h2>Email notifications</h2>
         <NotificationPreferences />
+      </section>
+
+      <section className="profile__section" id="tour-and-tips">
+        <h2>Tour and tips</h2>
+        <TourAndTipsSection />
       </section>
 
       {can(Permission.TokensUse) ? (

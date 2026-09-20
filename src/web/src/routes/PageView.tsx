@@ -15,6 +15,7 @@ import { WatchToggle } from '../components/WatchToggle'
 import { OverflowMenu } from '../components/OverflowMenu'
 import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
 import { useConfirm } from '../components/ConfirmDialog'
+import { noteOpenPage, notePageVisit } from '../onboarding/signals'
 
 type Tab = 'comments' | 'attachments' | 'history' | 'restrictions'
 
@@ -41,6 +42,15 @@ export function PageView() {
     setPage(null)
     load()
   }, [load])
+
+  // Signals for the tips (dev-plan 10.3): which page is open, who wrote it,
+  // and how many times this person has been here.
+  useEffect(() => {
+    if (!page) return
+    noteOpenPage({ id: page.id, createdById: page.createdById })
+    notePageVisit(page.id)
+    return () => noteOpenPage(null)
+  }, [page])
 
   // `/pages/{id}#setup` lands on that heading once the content has rendered.
   // Looked up inside the page body only — a heading called "Root" must not

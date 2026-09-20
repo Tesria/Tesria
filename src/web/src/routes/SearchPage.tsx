@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api, type SearchResult } from '../api/client'
+import { noteSearch } from '../onboarding/signals'
 
 /**
  * A search snippet arrives with the matched words wrapped in `**` — plain
@@ -38,6 +39,7 @@ export function SearchPage() {
       return
     }
     let cancelled = false
+    noteSearch()
     setResults(null)
     setError(null)
     api

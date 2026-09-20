@@ -1804,7 +1804,7 @@ a **fresh** compose stack (`docker compose down -v` on a scratch project
 name, never on this instance), in both themes and at 375 px; then the full
 live walk, since `main.tsx` and `Root` change.
 
-### 10.3 Welcome tour and tips — `L` — Model: Fable → Opus
+### 10.3 Welcome tour and tips — `L` — Model: Fable → Opus — ✅ **shipped 2026-09-20**
 
 **State.** On `User`: `TipsEnabled` (bool, default true) and
 `OnboardingJson` (jsonb: `{ tourCompletedAt?, tourSkippedAt?, tourVersion?,
@@ -1869,6 +1869,32 @@ not queued. The tour's "Done" schedules `slash-menu` as the first tip.
 
 **Profile → "Tour and tips" section:** the tips toggle, **Show the tour
 again**, **Reset dismissed tips**. The owner sees the same section.
+
+**As built (2026-09-20), where it differs from the above.**
+- **"Created after the migration" is recorded, not computed.** The
+  migration stamps every existing account as having skipped the tour
+  rather than the server comparing `CreatedAt` to a deploy time it would
+  have to know. Same outcome, no clock to get wrong.
+- **The tour gate lives in `SetupGate`**, which already runs above every
+  route and already answers "where should this person be". A second gate
+  beside it would have raced the first, which is the bug 10.2 hit.
+- **`Clip` asks the video to play** rather than trusting the `autoplay`
+  attribute, and falls back to the poster when that is refused. Found at
+  375px, where the clip loaded, stayed paused and showed nothing: the
+  spec's "where the video does not play" turns out to include "where it
+  simply never started".
+- **The in-handler suspended check was removed as unreachable.**
+  `OnValidatePrincipal` already rejects the cookie of any account that is
+  not Active, so the endpoint cannot be reached by one; the test asserts
+  the 401 that actually happens and says where it comes from.
+- **Triggers read from signals, not the DOM, where the fact is not
+  visual.** `onboarding/signals.ts` records editing sessions, pages
+  created, searches, profile and page visits, and who wrote the open page,
+  in `localStorage` per user id. The server is never told: losing a
+  counter costs one repeated tip, and the alternative is reporting how
+  often somebody opens the editor.
+- **Dismissals do go to the server**, so retiring a tip holds across
+  devices, which a `localStorage` counter would not.
 
 **Docs and tests.** `docs/onboarding.md` gains the catalogue with each
 tip's trigger. Tests (`OnboardingTests.cs`): `tourDue` is true for a new
@@ -2321,7 +2347,7 @@ export.
 8. **7.A** → **7.B** → **7.C** → **7.D** (Fable→Opus) → **7.E** → **7.F**
 9. **8.1** PDF (after 7.A) → **8.2** Licence (any time) → **8.3** OpenAPI → **8.4** MCP (Fable→Opus) → **8.6** External edits as tracked changes (Fable→Opus) → **8.5** Wiki packs (Fable→Opus)
 10. **9.1** Backups admin section (Fable→Opus; shipped 2026-09-17) → **9.2** Offsite backups (Fable→Opus; unscheduled, waits on the owner's seven decisions listed in the item)
-11. **10.1** Owner role (shipped 2026-09-20) → **11.1** Instance rights and the Roles tab (shipped 2026-09-20) → **11.2** Custom roles (shipped 2026-09-20) → **11.3** Delete a space (shipped 2026-09-20) → **5.5** Anonymous access is opt-in twice (shipped 2026-09-20) → **10.4** Media harness (shipped 2026-09-20) → **10.2** Owner setup wizard (shipped 2026-09-20) → **10.3** Tour and tips (all specified 2026-09-20 as Fable; Opus implements). Phase 11 goes before the wizard because the wizard has a required step that reviews the matrix, and before 10.3 because the tour's screens should show the real Roles tab. 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
+11. **10.1** Owner role (shipped 2026-09-20) → **11.1** Instance rights and the Roles tab (shipped 2026-09-20) → **11.2** Custom roles (shipped 2026-09-20) → **11.3** Delete a space (shipped 2026-09-20) → **5.5** Anonymous access is opt-in twice (shipped 2026-09-20) → **10.4** Media harness (shipped 2026-09-20) → **10.2** Owner setup wizard (shipped 2026-09-20) → **10.3** Tour and tips (shipped 2026-09-20) (all specified 2026-09-20 as Fable; Opus implements). Phase 11 goes before the wizard because the wizard has a required step that reviews the matrix, and before 10.3 because the tour's screens should show the real Roles tab. 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
 
 Phases 6 and 8.2 are floaters — small, no dependents — and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm
