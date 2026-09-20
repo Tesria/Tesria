@@ -127,6 +127,23 @@ public class User
     /// <summary>How this person wants their own notifications by email (dev-plan 4.3). Security alerts to administrators ignore this.</summary>
     public EmailNotificationMode EmailNotifications { get; set; } = EmailNotificationMode.Off;
 
+    // --- Onboarding (dev-plan 10.3).
+
+    /// <summary>Whether the in-app tips may appear. Turned off from a tip itself, or from the profile.</summary>
+    public bool TipsEnabled { get; set; } = true;
+
+    /// <summary>
+    /// The tour and which tips have been dismissed:
+    /// <c>{ "tourCompletedAt": "…", "tourSkippedAt": "…", "tourVersion": 1,
+    /// "tips": { "slash-menu": "…" } }</c>.
+    ///
+    /// JSON rather than columns because it is a record of what one person has
+    /// already been shown: it grows with the tip catalogue, nothing queries
+    /// across it, and a tip that is retired should leave no column behind.
+    /// Null means a brand-new account, which is what makes the tour due.
+    /// </summary>
+    public string? OnboardingJson { get; set; }
+
     /// <summary>When the last daily digest went out, so the next is a day later.</summary>
     public DateTimeOffset? LastDigestAt { get; set; }
 }

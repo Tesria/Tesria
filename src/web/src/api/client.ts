@@ -40,6 +40,25 @@ export type User = {
   roleName: string
   /** The owner of an instance whose first-run setup is unfinished (dev-plan 10.2). */
   setupRequired: boolean
+  /** The tour and tips this person has or has not seen (dev-plan 10.3). */
+  onboarding: OnboardingSummary
+}
+
+/** What the SPA knows on load about the tour and tips (dev-plan 10.3). */
+export type OnboardingSummary = {
+  tourDue: boolean
+  tipsEnabled: boolean
+  dismissedTips: string[]
+}
+
+/** Every field optional: one call changes one thing. */
+export type OnboardingUpdate = {
+  tourCompleted?: boolean
+  tourSkipped?: boolean
+  tipsEnabled?: boolean
+  dismissTip?: string
+  resetTips?: boolean
+  resetTour?: boolean
 }
 
 /** Instance rights (dev-plan 11.1). Keys match Infrastructure/Permissions/InstancePermissions.cs. */
@@ -832,6 +851,9 @@ export const api = {
     oidcStatus: () => request<{ enabled: boolean; displayName: string }>('GET', '/api/auth/oidc/status'),
     /** "I have saved these" on the recovery codes (dev-plan 10.2). */
     acknowledgeRecoveryCodes: () => request<void>('POST', '/api/auth/me/recovery-codes/acknowledge'),
+    /** The tour and tips (dev-plan 10.3). */
+    updateOnboarding: (input: OnboardingUpdate) =>
+      request<OnboardingSummary>('PUT', '/api/auth/me/onboarding', input),
     updateProfile: (input: { displayName: string }) =>
       request<User>('PUT', '/api/auth/me', input),
     changeEmail: (input: { currentPassword: string; email: string }) =>

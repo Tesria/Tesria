@@ -10,6 +10,7 @@ import { CollabStatus, type CollabConnection } from '../editor/CollabStatus'
 import { useSpaceContext } from './SpacePage'
 import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
 import { LeaveEditorDialog } from './LeaveEditorDialog'
+import { clearPasted, noteEditorSession, notePastedFormatting } from '../onboarding/signals'
 
 const EMPTY_DOC = '{"type":"doc","content":[]}'
 
@@ -21,6 +22,17 @@ export function PageEditor() {
   const { space, tree, reloadTree } = useSpaceContext()
   const { user } = useAuth()
   const isEdit = Boolean(pageId)
+  // One editing session per visit to the editor (dev-plan 10.3).
+  useEffect(() => {
+    noteEditorSession()
+    clearPasted()
+    const onPaste = (e: ClipboardEvent) => {
+      const html = e.clipboardData?.getData('text/html')
+      if (html && /<(strong|em|b|i|u|h[1-6]|span style)/i.test(html)) notePastedFormatting()
+    }
+    document.addEventListener('paste', onPaste)
+    return () => document.removeEventListener('paste', onPaste)
+  }, [])
   // Co-editing applies to existing pages only — a new page has no id to share.
   const [collab, setCollab] = useState<CollabToken | null>(null)
   const [collabStatus, setCollabStatus] = useState<CollabConnection | null>(null)

@@ -2339,3 +2339,46 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
   .setup__panel { padding: 1.25rem 1rem; }
   .setup__cards { grid-template-columns: 1fr; }
 }
+
+/* The welcome tour (dev-plan 10.3). Full-screen: it runs before the person
+   has any use for a topbar. */
+.tour { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; background: var(--bg); }
+.tour__card {
+  width: min(62rem, 100%); display: grid; grid-template-columns: 1.15fr 1fr; gap: 1.75rem;
+  align-items: center; padding: 1.75rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+.tour__clip { width: 100%; border-radius: 8px; border: 1px solid var(--border); display: block; }
+.tour__body { display: grid; gap: 0.6rem; align-content: start; }
+.tour__body h1 { margin: 0; font-size: 1.5rem; }
+.tour__body p { margin: 0; color: var(--muted); }
+.tour__count { margin: 0 !important; letter-spacing: 0.04em; text-transform: uppercase; }
+.tour__tips { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.4rem; }
+.tour__actions { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.6rem; }
+.tour__skip { margin-left: auto; }
+.tour__dots { list-style: none; display: flex; gap: 0.35rem; margin: 0.5rem 0 0; padding: 0; }
+.tour__dots li { width: 1.5rem; height: 3px; border-radius: 2px; background: var(--border); }
+.tour__dots li.is-at { background: var(--primary); }
+.tour__dots li.is-past { background: color-mix(in srgb, var(--primary) 45%, var(--border)); }
+
+/* A tip (dev-plan 10.3). Bottom-right and small: it is an aside, and it has
+   to be ignorable without being dismissed. */
+.tip {
+  position: fixed; right: 1rem; bottom: 1rem; z-index: 40;
+  width: min(21rem, calc(100vw - 2rem));
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-lg); overflow: hidden;
+}
+.tip__clip { width: 100%; display: block; border-bottom: 1px solid var(--border); }
+.tip__body { padding: 0.85rem; display: grid; gap: 0.35rem; }
+.tip__body p { margin: 0; }
+.tip__actions { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.4rem; }
+.tip--undo { display: flex; gap: 0.75rem; align-items: center; padding: 0.7rem 0.85rem; }
+
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .tour__card { grid-template-columns: 1fr; padding: 1rem; gap: 1rem; }
+  .tour__actions { flex-wrap: wrap; }
+  .tour__skip { margin-left: 0; }
+  .tip { left: 1rem; right: 1rem; width: auto; }
+}

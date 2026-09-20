@@ -11,6 +11,7 @@ import { Layout } from './components/Layout'
 import { Root } from './Root'
 import { LoginPage } from './routes/LoginPage'
 import { SetupPage } from './routes/SetupPage'
+import { WelcomePage } from './routes/WelcomePage'
 import { RegisterPage } from './routes/RegisterPage'
 import { SpacesPage } from './routes/SpacesPage'
 import { SpacePage } from './routes/SpacePage'
@@ -52,6 +53,9 @@ const router = createBrowserRouter(
           {/* First-run setup (dev-plan 10.2). Outside SessionGate: on a
               brand-new instance there is no session to gate on. */}
           <Route path="/setup" element={<SetupPage />} />
+          {/* The welcome tour (dev-plan 10.3). Signed in, but outside the
+              shell: it is full-screen and has no use for a topbar. */}
+          <Route path="/welcome" element={<WelcomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/recover" element={<RecoverPage />} />

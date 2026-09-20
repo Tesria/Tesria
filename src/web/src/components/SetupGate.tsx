@@ -2,8 +2,17 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { useInstance } from '../InstanceContext'
 
+/** Once per tab: the tour should not reappear on every navigation. */
+const OFFERED = 'tesria-tour-offered'
+const tourOfferedThisSession = () => {
+  try { return sessionStorage.getItem(OFFERED) === '1' } catch { return false }
+}
+const markTourOffered = () => {
+  try { sessionStorage.setItem(OFFERED, '1') } catch { /* nothing to do */ }
+}
+
 /** Paths the gate never redirects away from. */
-const ALLOWED = ['/setup', '/logout']
+const ALLOWED = ['/setup', '/welcome', '/logout']
 
 /**
  * Sends first-run traffic to the wizard (dev-plan 10.2).
@@ -34,7 +43,15 @@ export function SetupGate() {
   // true; trusting it here left the new owner bounced back to /setup
   // forever, including from the wizard's own last step.
   if (user) {
-    return user.setupRequired ? <Navigate to="/setup" replace /> : <Outlet />
+    if (user.setupRequired) return <Navigate to="/setup" replace />
+    // The welcome tour (dev-plan 10.3), once per session: a person who
+    // leaves it is not asked again until they ask for it, and one who
+    // navigates away mid-tour has skipped it as far as the server knows.
+    if (user.onboarding?.tourDue && !tourOfferedThisSession()) {
+      markTourOffered()
+      return <Navigate to="/welcome" replace />
+    }
+    return <Outlet />
   }
 
   // Nobody signed in. An instance with no accounts has nothing else to show,
