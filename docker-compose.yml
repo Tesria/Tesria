@@ -73,6 +73,9 @@ services:
       # Shared with the collab sidecar; signs the tokens that authorise a user
       # to join a page's live editing session. Empty disables co-editing.
       Collab__Secret: ${COLLAB_SHARED_SECRET}
+      # Read once, on the first start after dev-plan 9.1, to seed the backup
+      # retention policy; after that the policy lives on the admin page.
+      Backup__SeedRetentionDays: ${BACKUP_RETENTION_DAYS:-14}
       # OIDC/SSO — empty OIDC_AUTHORITY disables it entirely (local accounts
       # only). See .env.example for the full set of variables.
       Oidc__Authority: ${OIDC_AUTHORITY}
@@ -125,15 +128,21 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD}
       PGDATABASE: ${POSTGRES_DB}
       BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS}
-      RETENTION_DAYS: ${BACKUP_RETENTION_DAYS}
-      # Offsite (S3-compatible) is supported but OFF by default. Enable by
-      # setting BACKUP_S3_ENABLED=true and the S3_* values in .env (Phase 3).
-      BACKUP_S3_ENABLED: ${BACKUP_S3_ENABLED}
+      # Retention is not set here any more: it is the policy on the admin
+      # page (dev-plan 9.1), which this sidecar reads from the database.
     entrypoint: ["/bin/bash", "/scripts/run.sh"]
     volumes:
       - ./deploy/backup:/scripts:ro
+      - ./deploy/backup/common.sh:/opt/tesria/common.sh:ro
       - backups:/backups
       - uploads:/data/uploads:ro
+    # The loop touches this every minute, even in the middle of a long backup.
+    healthcheck:
+      test: ["CMD-SHELL", "find /tmp/heartbeat -mmin -5 | grep -q ."]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
 
   collab:
     # Real-time co-editing (Yjs/Hocuspocus). The editor engine is JS-only, so
@@ -193,6 +202,12 @@ services:
     environment:
       # Non-PGBACKREST_ prefix so pgBackRest's option parser ignores it.
       BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS}
+      BACKUP_FULL_EVERY_DAYS: ${BACKUP_FULL_EVERY_DAYS:-7}
+      # psql, for reporting to the app's backup tables (dev-plan 9.1). libpq
+      # reads these only for what pgBackRest does not set itself.
+      PGHOST: /var/run/postgresql
+      PGUSER: ${POSTGRES_USER}
+      PGDATABASE: ${POSTGRES_DB}
       # Connect as the instance superuser over the socket (there is no "postgres"
       # role — the superuser is POSTGRES_USER). PGPASSWORD covers scram auth.
       PGBACKREST_PG1_USER: ${POSTGRES_USER}
@@ -202,10 +217,17 @@ services:
     entrypoint: ["/bin/bash", "/scripts/run.sh"]
     volumes:
       - ./deploy/pgbackrest:/scripts:ro
+      - ./deploy/backup/common.sh:/opt/tesria/common.sh:ro
       - ./deploy/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
       - pgbackrest:/var/lib/pgbackrest
       - pgsocket:/var/run/postgresql
       - pgdata:/var/lib/postgresql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "find /tmp/heartbeat -mmin -5 | grep -q ."]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
 
 volumes:
   pgdata:

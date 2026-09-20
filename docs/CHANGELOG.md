@@ -5,6 +5,108 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Backups in the admin portal (2026-09-17)
+
+Dev-plan 9.1, implemented by Opus 5 against the spec Fable 5.1 wrote
+earlier the same day (the plan's Fable → Opus split; no override).
+**Administration → Backups** shows both backup agents, sets one retention
+policy for both, and runs a backup or a restore test on demand. The
+dashboard gains the Health tiles 2.5 promised.
+
+**The contract.** The two sidecars write `BackupAgents` (heartbeat,
+schedule, disk, the policy they applied), `Backups` (the inventory,
+mirrored from disk or `pgbackrest info` every minute; rows are never
+deleted) and `BackupJobs` (the queue and run log). The app role can read
+the first two and only append to the third
+(`DatabaseRoles.ReadOnlyTables`, `AppendOnlyTables`). The app never
+touches a backup file and has no download endpoint. The policy lives on
+`SiteSettings`; `BackupPolicySeed` sets it once from
+`BACKUP_RETENTION_DAYS` on upgrade (keep 3, and that many days).
+
+**The sidecars were rewritten** on a shared loop, `deploy/backup/common.sh`.
+Fixes to problems found on this instance:
+- A failed backup retried after 24 hours; it now retries after 15 minutes,
+  doubling to 6 hours, and nothing exits on failure.
+- Every pgBackRest restart took a full backup and expired the oldest; the
+  schedule and the full/incremental choice now come from the database.
+- The logical sidecar did not wait for the database after a restart
+  (this morning's missed backup); it does now.
+- Six 0-byte `.tmp` files from interrupted dumps were removed on the first
+  run, and a failing `backup.sh` no longer leaves one.
+- A dump and its uploads archive now share one timestamp. Older pairs a
+  second apart are matched up.
+- Both sidecars have compose healthchecks.
+
+**Retention** keeps a backup if it is one of the newest *N* or within *D*
+days; off keeps everything. pgBackRest expires with its native
+`--repo1-retention-full=K`, `K = max(N, fulls within D days)`;
+`pgbackrest.conf` now says `9999999` so nothing else expires. A stricter
+policy needs sudo, raises a Critical `backup.retention_reduced` alert, and
+the sidecars wait 24 hours from first seeing it, keeping anything either
+policy keeps until then.
+
+**Alerts** (`BackupMonitor`, every 5 minutes): `backup.failed`,
+`backup.overdue`, `backup.agent_offline`, `backup.restore_test_failed`,
+`backup.disk_low`, one open alert per problem per agent.
+
+Choices made while implementing, beyond the spec:
+- During the grace period an agent enforces the union of the old and new
+  policies (the larger *N* and the larger *D*), rather than the old policy
+  alone. It never removes anything either policy would keep.
+- `WalArchivedAt` comes from `pg_stat_archiver.last_archived_time`, not a
+  file's mtime in the repository. It is cheaper, and it is Postgres's own
+  record of the last segment pgBackRest accepted.
+- A physical backup's size is its repository **delta**, so an
+  incremental's size is what it adds, and the per-agent total is real disk
+  use. The full sizes are in `DetailJson`.
+- A second Back up now or Test restore is refused (409) only while a job
+  of the **same kind** is pending for that agent, so a scheduled backup
+  does not block a restore test.
+- Any successful backup, manual included, sets the next scheduled run one
+  interval later.
+
+`BACKUP_S3_ENABLED` (which only ever logged a line) is gone from compose,
+`run.sh` and `.env.example`; the `S3_*` lines say they are reserved for 9.2.
+New: `BACKUP_FULL_EVERY_DAYS` (default 7). Your own `.env` still has
+`BACKUP_S3_ENABLED`; it is harmless and can be deleted.
+
+**Verified.**
+- `dotnet test`: 487 passed, including 25 new in `BackupTests` (the
+  retention table, grace, validation, sudo, audit, preview, queue, status,
+  dashboard, monitor, seed, role lists).
+- `npm run build` and `npm run lint` pass, with only the existing warnings.
+- Live, after rebuilding: the migration applied, the policy was seeded
+  (3 / 14), and both sidecars registered and took a startup backup (an
+  incremental, not a full). Both waited on the grace period and removed
+  nothing; the logical one cleaned the six orphans.
+- **Back up now** ran on both agents, and the page updated itself when they
+  finished.
+- **Test restore** passed on both: 34 tables restored from the dump, and
+  pgBackRest restored `--set` to a valid cluster.
+- The policy preview (keep 2 / 7 days) listed the same two cycles that the
+  sidecar's SQL selects on the live inventory.
+- The failure and deletion paths ran against a scratch database and fake
+  files inside the `backup` container, then both were removed:
+  - a failed backup (retry after 15, then 30 minutes);
+  - retention removing whole cycles;
+  - a stricter policy waiting, then applying once its day was up;
+  - keep forever.
+- pgBackRest's `expire` step has not run live: every full backup on this
+  instance is inside the policy.
+- Walked `/admin/backups` at 375 px (no sideways scroll) and in dark mode.
+  Every `/admin/*` tab and the signed-in routes were walked as the admin;
+  the signed-out routes were walked in a fresh browser context, with private
+  content masked and `/admin/backups` and `/profile` redirecting to sign-in.
+- **Not walked as a member**: that needs a member's password, which the
+  assistant does not enter. `BackupTests.Members_cannot_see_or_change_backups`
+  covers the API. Creating, saving and purging a page was also skipped,
+  since this change does not touch the editor routes.
+
+**What happens next on this instance:** the grace period ends at about
+06:18 UTC on 2026-09-18. The first backup after that applies keep 3 / 14
+days, which removes the 2026-09-02 and 2026-09-04 dump cycles. The old
+sidecar's `find -mtime +14` would have removed those as well.
+
 ### Design: backups in the admin portal, and the offsite plan (2026-09-17)
 
 Dev-plan Phase 9, written by Fable 5.1 per the model gate (the owner

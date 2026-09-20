@@ -2179,3 +2179,58 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .chart__legend { display: flex; flex-wrap: wrap; gap: 0.75rem; list-style: none; margin: 0; padding: 0; font-size: 0.8rem; color: var(--muted); }
 .chart__legend li { display: flex; align-items: center; gap: 0.3rem; }
 .chart__swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+
+/* Admin → Backups (dev-plan 9.1). The status dot uses the danger colour for
+   failure only; "no backup yet" is idle grey, not red. */
+.backup-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+.backup-cards { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.backup-card {
+  padding: 1rem 1.1rem; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+}
+.backup-card__title { margin: 0 0 0.35rem; font-size: 1rem; }
+.backup-card__state { margin: 0 0 0.75rem; display: flex; align-items: center; gap: 0.45rem; font-weight: 600; }
+.backup-card__facts {
+  display: grid; grid-template-columns: max-content 1fr; gap: 0.3rem 0.9rem;
+  margin: 0 0 0.75rem; font-size: 0.88rem;
+}
+.backup-card__facts dt { color: var(--muted); }
+.backup-card__facts dd { margin: 0; overflow-wrap: anywhere; }
+.backup-card__pending {
+  border-radius: var(--radius); padding: 0.5rem 0.7rem; margin: 0.5rem 0;
+  background: var(--panel-warning-bg); color: var(--panel-warning-icon);
+}
+.backup-dot { width: 0.65rem; height: 0.65rem; border-radius: 50%; flex: 0 0 auto; background: var(--muted); }
+.backup-dot--ok { background: var(--success); }
+.backup-dot--warn { background: var(--warning); }
+.backup-dot--bad { background: var(--danger); }
+.backup-text--bad { color: var(--danger); }
+.badge--ok { background: color-mix(in srgb, var(--success) 18%, transparent); color: var(--success); }
+.backup-policy .admin__toggle { margin-bottom: 0.5rem; }
+.backup-policy__rule { margin: 0.25rem 0 0.25rem 1.6rem; line-height: 2.2; }
+.backup-policy__rule input { width: 5.5rem; display: inline-block; margin: 0 0.15rem; }
+.backup-policy > .muted { margin-left: 1.6rem; }
+.backup-preview {
+  margin-top: 1rem; padding: 1rem; border: 1px solid var(--primary-soft-border);
+  background: var(--primary-softer); border-radius: var(--radius);
+}
+.backup-preview h3 { margin: 0 0 0.75rem; font-size: 0.98rem; }
+.backup-preview__agent { margin-bottom: 0.75rem; }
+.backup-preview__agent p { margin: 0.2rem 0; }
+.backup-preview__list { margin: 0.25rem 0; padding-left: 1.2rem; max-height: 12rem; overflow-y: auto; }
+.backup-preview__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.backup-removed-toggle { margin-top: 1rem; }
+.backup-result { min-width: 14rem; }
+.backup-log {
+  margin: 0; padding: 0.6rem 0.75rem; max-height: 20rem; overflow: auto;
+  background: var(--surface-sunken); border-radius: 4px; font-size: 0.78rem; white-space: pre-wrap;
+}
+/* A dashboard tile that is also a way in. */
+a.stat--link { display: block; color: inherit; }
+a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-border); }
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .backup-cards { grid-template-columns: 1fr; }
+  .backup-policy__rule { margin-left: 0; }
+  .backup-policy > .muted { margin-left: 0; }
+  .backup-result { min-width: 0; white-space: normal; }
+}

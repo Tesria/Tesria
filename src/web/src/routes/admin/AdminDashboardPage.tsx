@@ -1,15 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api, ApiError, type DailyPoint, type Dashboard } from '../../api/client'
+import { api, ApiError, type BackupHealth, type DailyPoint, type Dashboard } from '../../api/client'
+import { bytes, relative } from './format'
 
 const RANGES = [7, 30, 90] as const
 
-function bytes(value: number): string {
-  if (value === 0) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1)
-  return `${(value / 1024 ** i).toFixed(i === 0 ? 0 : 1)} ${units[i]}`
-}
 
 /**
  * A single-series sparkline.
@@ -92,6 +87,33 @@ function Stat({ label, value, hint }: { label: string; value: string | number; h
       <p className="stat__value">{value}</p>
       {hint && <p className="muted small">{hint}</p>}
     </div>
+  )
+}
+
+const BACKUP_TILE: Record<string, string> = {
+  logical: 'Last database dump',
+  physical: 'Last physical backup',
+}
+
+/**
+ * One backup agent's health (dev-plan 2.5's Health row, which needed 9.1).
+ * Failure is the only thing drawn in the danger colour; "no backup yet" on
+ * a fresh instance is not a failure.
+ */
+function BackupTile({ health }: { health: BackupHealth }) {
+  const problem = health.lastRunFailed ? 'Last run failed'
+    : health.overdue ? 'Overdue'
+      : !health.reporting ? 'Not reporting'
+        : !health.online ? 'Agent offline'
+          : null
+  return (
+    <Link to="/admin/backups" className="stat stat--link">
+      <p className="stat__label">{BACKUP_TILE[health.agent] ?? health.agent}</p>
+      <p className="stat__value">{health.lastBackupAt ? relative(health.lastBackupAt, Date.now(), 'short') : 'None yet'}</p>
+      <p className={problem && (health.lastRunFailed || health.overdue) ? 'small backup-text--bad' : 'muted small'}>
+        {problem ?? (health.lastBackupBytes != null ? `OK · ${bytes(health.lastBackupBytes)}` : 'OK')}
+      </p>
+    </Link>
   )
 }
 
@@ -182,6 +204,11 @@ export function AdminDashboardPage() {
               <p className="stat__label">Views per day</p>
               <Sparkline points={data.usage.viewsPerDay} label="Views per day" />
             </div>
+          </div>
+
+          <h2 className="dash__heading">Health</h2>
+          <div className="dash__grid">
+            {data.health.backups.map((h) => <BackupTile key={h.agent} health={h} />)}
           </div>
 
           <div className="dash__tables">

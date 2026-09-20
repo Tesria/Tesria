@@ -1,0 +1,159 @@
+namespace Tesria.Api.Domain;
+
+/// <summary>
+/// The names shared by the app and the two backup sidecars (dev-plan 9.1).
+/// These strings are written by bash in <c>deploy/backup</c> and
+/// <c>deploy/pgbackrest</c>, so they are plain text columns rather than
+/// integer enums: a row read in psql has to mean something without the C#.
+/// </summary>
+public static class BackupNames
+{
+    /// <summary>The <c>backup</c> sidecar: pg_dump plus the uploads archive.</summary>
+    public const string Logical = "logical";
+
+    /// <summary>The <c>pgbackrest</c> sidecar: physical backups and WAL archiving.</summary>
+    public const string Physical = "physical";
+
+    public static readonly string[] Agents = [Logical, Physical];
+
+    public const string KindBackup = "backup";
+    public const string KindRestoreTest = "restore-test";
+
+    public const string TriggerScheduled = "scheduled";
+    public const string TriggerManual = "manual";
+    public const string TriggerStartup = "startup";
+
+    public const string StatusRequested = "requested";
+    public const string StatusRunning = "running";
+    public const string StatusSucceeded = "succeeded";
+    public const string StatusFailed = "failed";
+
+    public const string RemovedByRetention = "retention";
+    public const string RemovedMissing = "missing";
+}
+
+/// <summary>
+/// One row per backup sidecar, written only by that sidecar: its heartbeat,
+/// schedule, disk and the retention policy it last applied. The app role
+/// can read it and nothing else (<c>DatabaseRoles.ReadOnlyTables</c>).
+/// </summary>
+public class BackupAgent
+{
+    /// <summary><see cref="BackupNames.Logical"/> or <see cref="BackupNames.Physical"/>.</summary>
+    public required string Name { get; set; }
+
+    public DateTimeOffset? StartedAt { get; set; }
+    public DateTimeOffset? LastSeenAt { get; set; }
+
+    /// <summary>
+    /// When the next scheduled backup is due. Persisted, so a restart picks
+    /// the schedule up where it was instead of starting a new one.
+    /// </summary>
+    public DateTimeOffset? NextRunAt { get; set; }
+
+    public int IntervalHours { get; set; }
+
+    /// <summary>Physical only: a new full backup once the newest is this old.</summary>
+    public int? FullEveryDays { get; set; }
+
+    public string? ToolVersion { get; set; }
+    public long? VolumeFreeBytes { get; set; }
+    public long? VolumeTotalBytes { get; set; }
+
+    /// <summary>Physical only: when Postgres last archived a WAL segment (pg_stat_archiver).</summary>
+    public DateTimeOffset? WalArchivedAt { get; set; }
+
+    /// <summary>The policy this agent last applied. Null until it applies one.</summary>
+    public bool? AppliedRetentionEnabled { get; set; }
+    public int? AppliedKeepCount { get; set; }
+    public int? AppliedKeepDays { get; set; }
+
+    /// <summary>
+    /// When this agent first saw a policy stricter than the applied one. The
+    /// stricter policy takes effect <see cref="Infrastructure.Backups.BackupRetention.Grace"/>
+    /// later; until then nothing either policy would keep is removed.
+    /// </summary>
+    public DateTimeOffset? PolicyObservedAt { get; set; }
+
+    /// <summary>The agent's last notable log line, for the status card.</summary>
+    public string? Message { get; set; }
+}
+
+/// <summary>
+/// The inventory: one row per backup that exists or once existed. The disk
+/// (or pgBackRest's own catalogue) is the truth; the sidecar mirrors it here
+/// every minute. Rows are never deleted, so a removed backup stays as history.
+/// </summary>
+public class Backup
+{
+    public Guid Id { get; set; }
+
+    public required string Agent { get; set; }
+
+    /// <summary>
+    /// Logical: the cycle stamp shared by the dump and the uploads archive,
+    /// e.g. <c>20260917T050527Z</c>. Physical: pgBackRest's label, e.g.
+    /// <c>20260917-034639F</c> or <c>20260917-034639F_20260918-040000I</c>.
+    /// </summary>
+    public required string Label { get; set; }
+
+    /// <summary><c>dump</c>, <c>full</c>, <c>diff</c> or <c>incr</c>.</summary>
+    public required string Type { get; set; }
+
+    /// <summary>Physical: the backup this one depends on.</summary>
+    public string? Prior { get; set; }
+
+    public DateTimeOffset StartedAt { get; set; }
+    public DateTimeOffset? CompletedAt { get; set; }
+    public long SizeBytes { get; set; }
+
+    /// <summary>File names (logical) or WAL range and LSNs (physical).</summary>
+    public string? DetailJson { get; set; }
+
+    /// <summary>Logical: the cycle includes an uploads archive.</summary>
+    public bool HasUploads { get; set; }
+
+    public string? Error { get; set; }
+
+    public DateTimeOffset FirstSeenAt { get; set; }
+    public DateTimeOffset LastSeenAt { get; set; }
+    public DateTimeOffset? RemovedAt { get; set; }
+
+    /// <summary><c>retention</c>, or <c>missing</c> when the files went without a retention run.</summary>
+    public string? RemovedReason { get; set; }
+
+    public DateTimeOffset? LastVerifiedAt { get; set; }
+    public bool? LastVerifyOk { get; set; }
+
+    /// <summary>Physical: the full backup a diff or incr belongs to.</summary>
+    public string? FullLabel => Type is "diff" or "incr" && Label.IndexOf('_') is > 0 and var i ? Label[..i] : null;
+}
+
+/// <summary>
+/// The queue and the run log. The app appends <c>requested</c> rows (Back up
+/// now, Test restore); the sidecars append their own scheduled runs and own
+/// every update. Append-only for the app role.
+/// </summary>
+public class BackupJob
+{
+    public Guid Id { get; set; }
+    public required string Agent { get; set; }
+    public required string Kind { get; set; }
+    public required string Trigger { get; set; }
+    public required string Status { get; set; }
+
+    /// <summary>Restore tests: the label of the backup to restore.</summary>
+    public string? Target { get; set; }
+
+    public DateTimeOffset RequestedAt { get; set; }
+    public Guid? RequestedById { get; set; }
+    public DateTimeOffset? StartedAt { get; set; }
+    public DateTimeOffset? FinishedAt { get; set; }
+    public string? Error { get; set; }
+
+    /// <summary>What was produced, what retention removed and why, orphans cleaned, tables restored.</summary>
+    public string? ResultJson { get; set; }
+
+    /// <summary>The last 40 lines of the job's output.</summary>
+    public string? LogTail { get; set; }
+}

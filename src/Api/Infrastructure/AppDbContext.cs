@@ -117,6 +117,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<SecurityEvent> SecurityEvents => Set<SecurityEvent>();
     public DbSet<SecurityAlert> SecurityAlerts => Set<SecurityAlert>();
     public DbSet<BlockedNetwork> BlockedNetworks => Set<BlockedNetwork>();
+    public DbSet<BackupAgent> BackupAgents => Set<BackupAgent>();
+    public DbSet<Backup> Backups => Set<Backup>();
+    public DbSet<BackupJob> BackupJobs => Set<BackupJob>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -498,6 +501,42 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.Cidr).HasMaxLength(64);
             e.Property(x => x.Reason).HasMaxLength(500);
             e.HasIndex(x => x.Cidr).IsUnique();
+        });
+
+        // Backups (dev-plan 9.1). Written by the backup sidecars in bash, so
+        // the vocabulary columns are text, not integer enums.
+        b.Entity<BackupAgent>(e =>
+        {
+            e.HasKey(x => x.Name);
+            e.Property(x => x.Name).HasMaxLength(20);
+            e.Property(x => x.ToolVersion).HasMaxLength(200);
+            e.Property(x => x.Message).HasMaxLength(2000);
+        });
+        b.Entity<Backup>(e =>
+        {
+            e.Property(x => x.Agent).HasMaxLength(20);
+            e.Property(x => x.Label).HasMaxLength(100);
+            e.Property(x => x.Type).HasMaxLength(10);
+            e.Property(x => x.Prior).HasMaxLength(100);
+            e.Property(x => x.RemovedReason).HasMaxLength(20);
+            e.Property(x => x.Error).HasMaxLength(2000);
+            e.Property(x => x.DetailJson).HasColumnType("jsonb");
+            e.Ignore(x => x.FullLabel);
+            // The sidecars upsert on this.
+            e.HasIndex(x => new { x.Agent, x.Label }).IsUnique();
+        });
+        b.Entity<BackupJob>(e =>
+        {
+            e.Property(x => x.Agent).HasMaxLength(20);
+            e.Property(x => x.Kind).HasMaxLength(20);
+            e.Property(x => x.Trigger).HasMaxLength(20);
+            e.Property(x => x.Status).HasMaxLength(20);
+            e.Property(x => x.Target).HasMaxLength(100);
+            e.Property(x => x.Error).HasMaxLength(2000);
+            e.Property(x => x.ResultJson).HasColumnType("jsonb");
+            // The sidecars claim with "oldest requested job for this agent".
+            e.HasIndex(x => new { x.Agent, x.Status, x.RequestedAt });
+            e.HasIndex(x => x.RequestedAt);
         });
 
         b.Entity<Label>(e =>

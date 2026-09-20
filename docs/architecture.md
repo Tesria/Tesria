@@ -13,7 +13,7 @@ Browser ──HTTPS──► Caddy (auto-TLS) ──► app (ASP.NET Core .NET 1
                                           │  serves built React SPA (wwwroot)
                                           ├──► PostgreSQL 18  (pgdata volume)
                                           └──► uploads volume (attachments)
-                        backup sidecar ──► pg_dump ──► backups volume (+ S3, Phase 3)
+                        backup sidecar ──► pg_dump ──► backups volume (status in BackupAgents/Backups/BackupJobs)
 ```
 
 ## Backend (`src/Api`)
@@ -254,6 +254,12 @@ mis-set under pressure.
 | `settings.public_spaces_toggled` | — | always | Critical |
 | `webhook.private_target` | actor | always (3.4 also blocks it) | Warning |
 | `audit.chain_broken` | — | always | Critical |
+| `backup.failed` | agent | a backup job finished failed (BackupMonitor, every 5 min) | Warning |
+| `backup.overdue` | agent | no successful backup within 2 × the interval | Critical |
+| `backup.agent_offline` | agent | no heartbeat for 15 min, or no agent row 10 min after start | Warning |
+| `backup.restore_test_failed` | agent | a restore test finished failed | Critical |
+| `backup.disk_low` | agent | free space under 10 % or under twice the newest backup | Warning |
+| `backup.retention_reduced` | instance | an admin saved a policy that can remove more | Critical |
 
 Counters are in-process (`SecurityCounters`, a singleton of timestamp
 queues per `(kind, key)`, pruned on use and capped in size). A restart
@@ -1600,10 +1606,79 @@ See [`backup-recovery.md`](./backup-recovery.md). Layered by design:
   WAL archiving to an encrypted repository (a `pgbackrest` sidecar runs
   scheduled full/incr backups), enabling point-in-time recovery.
 - **Logical `pg_dump`** (Layer 2) and **`uploads` file archives** (Layer 3) on a
-  schedule with retention, via the `backup` sidecar.
+  schedule, via the `backup` sidecar.
 - **In-app safety nets**: page version history + rollback, and soft-delete/trash
   with restore.
-- **Offsite S3** is supported but off by default (`BACKUP_S3_ENABLED`).
+- **Offsite**: not implemented. Dev-plan 9.2 holds the research and the
+  decisions it waits on.
+
+### The admin section and its contract with the sidecars (dev-plan 9.1)
+
+**The database is the contract.** The two backup sidecars already connect as
+the database owner (they must, to dump and to archive), so they report there
+instead of through a new port, secret or shared volume. The app reads what
+they write through its least-privilege role and never touches a backup file:
+plaintext dumps and the encrypted repository stay out of the web process.
+There is no download endpoint.
+
+| Table | Written by | App role | Holds |
+|---|---|---|---|
+| `BackupAgents` | each sidecar, one row (`logical`, `physical`) | read-only | heartbeat, `NextRunAt`, interval, tool version, disk, `WalArchivedAt` (from `pg_stat_archiver`), the policy it last applied, `PolicyObservedAt` |
+| `Backups` | the sidecar that owns them | read-only | the inventory, mirrored every minute from the disk or `pgbackrest info`; rows are never deleted (`RemovedAt` + `RemovedReason` = `retention` or `missing`); `LastVerifiedAt`/`LastVerifyOk` |
+| `BackupJobs` | the app appends `requested` rows; the sidecars append their scheduled runs and own every update | append-only | the queue and the run log: status, error, `ResultJson` (what was produced and removed), `LogTail` |
+
+The vocabulary columns are text, not integer enums, because bash writes them
+(`BackupNames` in `Domain/Backup.cs` holds the strings). The policy lives on
+`SiteSettings` (`BackupRetentionEnabled`, `BackupKeepCount`, `BackupKeepDays`,
+`BackupPolicyChangedAt`). A null `BackupPolicyChangedAt` means no policy, and
+the sidecars remove nothing; `BackupPolicySeed` sets it on the first start
+after upgrading, from `BACKUP_RETENTION_DAYS`.
+
+**The sidecars** share one loop, `deploy/backup/common.sh`, mounted into both
+at `/opt/tesria/common.sh`; `deploy/backup/run.sh` and
+`deploy/pgbackrest/run.sh` supply the parts specific to each. Every
+`BACKUP_POLL_SECONDS` (60) a sidecar reads the policy, syncs its inventory,
+claims `requested` jobs (`FOR UPDATE SKIP LOCKED`) and runs a scheduled backup
+when `NextRunAt` has passed. A background loop writes the heartbeat and touches
+`/tmp/heartbeat` for the compose healthcheck, so a long backup does not look
+like a dead agent. Nothing runs under `set -e`: a failure is a job row, retried
+after 15 minutes, doubling to at most 6 hours. JSON is parsed by Postgres
+(neither image has `jq`), and listings reach psql through a file and `\copy`,
+since a long history outgrows a command-line argument. Before the app has
+migrated (the tables do not exist) a sidecar backs up on the interval and
+removes nothing.
+
+- *Logical:* a **cycle** is one stamp shared by the dump and its uploads
+  archive (`BACKUP_STAMP`). Files from before 9.1 were stamped separately;
+  an archive with no exact match joins the latest dump up to five minutes
+  before it. Orphaned `*.tmp` files older than an hour are removed after a
+  successful backup.
+- *Physical:* full or incremental is decided from the inventory (a full when
+  the newest is `BACKUP_FULL_EVERY_DAYS` old), not from a counter in memory,
+  which used to reset on every restart and take a full each time.
+
+**Retention.** A backup is kept if it is one of the newest *N* or started
+within the last *D* days, and removed only when outside both. Disabled keeps
+everything. The rule exists twice, in `BackupRetention.Plan` (C#: the preview,
+the tests) and in `common.sh` (SQL: what deletes); change one, change both.
+Logical removes whole cycles. Physical runs pgBackRest's native
+`expire --repo1-retention-full=K` with `K = max(N, fulls within D days)`;
+`pgbackrest.conf` sets `repo1-retention-full=9999999` so the automatic expire
+after each backup removes nothing.
+
+**The grace period** is enforced by the sidecar, not the app, because the app
+role can write `SiteSettings`. A saved policy stricter than the one an agent
+applied (pruning turned on, a smaller *N* or *D*, or none applied yet) waits
+24 hours from when that agent first sees it, restarting if the policy changes
+again. Until then the agent keeps anything either policy keeps. Looser
+policies apply at once. The app only displays the resulting time
+(`BackupRetention.EffectiveAt`), and saving a stricter policy needs sudo and
+raises `backup.retention_reduced` to every admin.
+
+**Alerts.** `BackupMonitor` (every 5 minutes) computes the same status the page
+shows (`BackupStatus`) and raises the `backup.*` kinds in the table above
+through `ISecurityDetector`. While an unresolved alert of the same kind for the
+same agent exists, it raises no new one.
 
 ## Decisions
 

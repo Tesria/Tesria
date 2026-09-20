@@ -28,6 +28,12 @@ const KIND_LABEL: Record<string, string> = {
   'settings.public_spaces_toggled': 'Public spaces switch changed',
   'webhook.private_target': 'Webhook aimed at a private address',
   'audit.chain_broken': 'Audit log chain broken',
+  'backup.failed': 'A backup failed',
+  'backup.overdue': 'Backups are overdue',
+  'backup.agent_offline': 'A backup agent is not reporting',
+  'backup.restore_test_failed': 'A restore test failed',
+  'backup.disk_low': 'Backup disk nearly full',
+  'backup.retention_reduced': 'Backup retention policy made stricter',
 }
 
 function meta(json: string | null): Record<string, unknown> {

@@ -312,7 +312,7 @@ undetectable without a login history.
     already surfaced by scripts — see `backup-recovery.md`), open security
     alerts (3.3).
     *Shipped without the backup tiles: nothing in the app could see the
-    sidecars. They land with 9.1.*
+    sidecars. They landed with 9.1 (2026-09-17).*
 - One aggregate endpoint `GET /api/admin/dashboard?range=30d` computed
   server-side; the page must not fire fifteen queries.
 - **Charts:** load the `dataviz` skill before writing any chart code. One
@@ -1009,7 +1009,7 @@ independent backup systems and the app can see neither:
 5. The retention policy affects backups only. Nothing else in the app
    reads it.
 
-### 9.1 Backups admin section — `L` — Model: Fable → Opus
+### 9.1 Backups admin section — `L` — Model: Fable → Opus — ✅ **shipped 2026-09-17** (spec as Fable, implementation as Opus)
 
 **The decision: the database is the contract between the app and the
 sidecars.** The sidecars already connect as the database owner (they need
@@ -1443,7 +1443,7 @@ Cloudflare R2 pricing and bucket locks.
 7. **6** Space icons
 8. **7.A** → **7.B** → **7.C** → **7.D** (Fable→Opus) → **7.E** → **7.F**
 9. **8.1** PDF (after 7.A) → **8.2** Licence (any time) → **8.3** OpenAPI → **8.4** MCP (Fable→Opus) → **8.6** External edits as tracked changes (Fable→Opus) → **8.5** Wiki packs (Fable→Opus)
-10. **9.1** Backups admin section (Fable→Opus; spec written 2026-09-17, ready for Opus) → **9.2** Offsite backups (Fable→Opus; unscheduled, waits on the owner's seven decisions listed in the item)
+10. **9.1** Backups admin section (Fable→Opus; shipped 2026-09-17) → **9.2** Offsite backups (Fable→Opus; unscheduled, waits on the owner's seven decisions listed in the item)
 
 Phases 6 and 8.2 are floaters — small, no dependents — and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm

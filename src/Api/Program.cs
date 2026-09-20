@@ -72,6 +72,8 @@ builder.Services.AddSingleton<SecurityCounters>();
 builder.Services.AddSingleton<BlocklistCache>();
 builder.Services.AddScoped<ISecurityDetector, SecurityDetector>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<AuditChainMonitor>());
+builder.Services.AddSingleton<Tesria.Api.Infrastructure.Backups.BackupMonitor>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<Tesria.Api.Infrastructure.Backups.BackupMonitor>());
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddSingleton<SiteSettingsCache>();
 builder.Services.AddSingleton<LastSeenTracker>();
@@ -441,6 +443,10 @@ using (var scope = app.Services.CreateScope())
     // values from the first request rather than defaults until someone
     // happens to sign in.
     await scope.ServiceProvider.GetRequiredService<ISiteSettingsService>().GetAsync();
+
+    // The first start after dev-plan 9.1 turns BACKUP_RETENTION_DAYS into a policy.
+    await Tesria.Api.Infrastructure.Backups.BackupPolicySeed.EnsureAsync(
+        scope.ServiceProvider.GetRequiredService<ISiteSettingsService>(), app.Configuration, startupLog);
 }
 
 // A broken audit chain is a security alert, not just a log line.
@@ -510,6 +516,7 @@ api.MapHealthEndpoints();
 api.MapAuthEndpoints();
 api.MapAdminEndpoints();
 api.MapSecurityEndpoints();
+api.MapBackupEndpoints();
 api.MapDashboardEndpoints();
 api.MapMediaEndpoints();
 api.MapSpaceEndpoints();
