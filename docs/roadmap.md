@@ -16,6 +16,22 @@ the CHANGELOG once it's actually built.
 > Entries added after that date are **unscheduled**: they are ideas, not
 > commitments, and each says what would make it worth doing.
 
+## Known bugs
+
+Reported by the owner, not yet investigated. Fix these before the next
+release; each should land with a regression test.
+
+- **Resolve does nothing on a security alert (reported 2026-09-20).** On
+  Administration -> Security, pressing **Resolve** appears to have no
+  effect, including on an alert that has already been acknowledged. Worth
+  checking first: the endpoint (`POST /admin/security/alerts/{id}/resolve`)
+  and whether the row is written; the `window.prompt` the button opens for
+  the optional note, which some browsers suppress; and whether the list
+  simply reloads without the resolved alert (the default filter hides
+  resolved ones) so a successful resolve looks like nothing happening. The
+  two stale `backup.agent_offline` alerts from 2026-09-17 and the
+  `admin.promoted` one from 2026-09-20 are live examples to test against.
+
 ## MCP support
 
 Expose the knowledge base as an [MCP](https://modelcontextprotocol.io) server
