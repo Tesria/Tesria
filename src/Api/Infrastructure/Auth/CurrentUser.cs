@@ -10,7 +10,7 @@ namespace Tesria.Api.Infrastructure.Auth;
 /// </summary>
 public sealed class CurrentUser(IHttpContextAccessor accessor, AppDbContext db)
 {
-    private bool? _isAdmin;
+    private UserRole? _role;
 
     private ClaimsPrincipal? Principal => accessor.HttpContext?.User;
 
@@ -31,7 +31,8 @@ public sealed class CurrentUser(IHttpContextAccessor accessor, AppDbContext db)
         Id ?? throw new InvalidOperationException("No authenticated user on the request.");
 
     /// <summary>
-    /// Whether the caller holds the instance Admin role.
+    /// Whether the caller administers the instance: Admin or Owner
+    /// (dev-plan 10.1).
     ///
     /// Reads the row rather than trusting a claim: a role claim would be stale
     /// until the user's next sign-in, so a demotion would not take effect until
@@ -39,15 +40,24 @@ public sealed class CurrentUser(IHttpContextAccessor accessor, AppDbContext db)
     /// primary-key lookup, cached for the lifetime of this scoped instance, so
     /// repeated checks within a request cost nothing.
     /// </summary>
-    public async Task<bool> IsAdminAsync()
+    public async Task<bool> IsAdminAsync() => await RoleAsync() >= UserRole.Admin;
+
+    /// <summary>Whether the caller owns the instance (dev-plan 10.1).</summary>
+    public async Task<bool> IsOwnerAsync() => await RoleAsync() == UserRole.Owner;
+
+    /// <summary>
+    /// The caller's role, or <see cref="UserRole.Member"/> when the request is
+    /// anonymous or the account has gone.
+    /// </summary>
+    public async Task<UserRole> RoleAsync()
     {
-        if (_isAdmin is { } cached) return cached;
-        if (Id is not { } id) return (_isAdmin = false).Value;
+        if (_role is { } cached) return cached;
+        if (Id is not { } id) return (_role = UserRole.Member).Value;
 
         var role = await db.Users.AsNoTracking()
             .Where(u => u.Id == id)
             .Select(u => (UserRole?)u.Role)
             .FirstOrDefaultAsync();
-        return (_isAdmin = role == UserRole.Admin).Value;
+        return (_role = role ?? UserRole.Member).Value;
     }
 }

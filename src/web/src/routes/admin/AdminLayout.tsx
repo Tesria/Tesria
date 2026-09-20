@@ -17,7 +17,7 @@ export function AdminLayout() {
 
   // The server refuses every /api/admin route to members; this is the human
   // version of that refusal, in place of a silent bounce to the spaces list.
-  if (user.role !== UserRole.Admin) {
+  if (user.role < UserRole.Admin) {
     return (
       <div className="page-wrap">
         <h1>Administration</h1>

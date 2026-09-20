@@ -158,6 +158,8 @@ public interface ISecurityDetector
     Task BackupProblemAsync(string kind, SecuritySeverity severity, string agent, object? metadata);
     /// <summary>An administrator saved a backup policy that can remove more than the last one. Always an alert.</summary>
     Task BackupRetentionReducedAsync(Guid actorId, object metadata);
+    /// <summary>The instance changed hands (dev-plan 10.1). Always an alert.</summary>
+    Task OwnerTransferredAsync(Guid actorId, object metadata);
 }
 
 /// <summary>
@@ -199,7 +201,7 @@ public sealed class SecurityDetector(AppDbContext db, SecurityCounters counters,
 
     public async Task SucceededLoginAsync(User user, string? ip)
     {
-        if (user.Role != UserRole.Admin || ip is null) return;
+        if (user.Role < UserRole.Admin || ip is null) return;
 
         // The account's sign-in history, from the audit log's Ip metadata.
         // No history at all means no baseline, and no alert: the first ever
@@ -282,6 +284,10 @@ public sealed class SecurityDetector(AppDbContext db, SecurityCounters counters,
 
     public Task BackupRetentionReducedAsync(Guid actorId, object metadata) =>
         RaiseAsync("backup.retention_reduced", SecuritySeverity.Critical, key: "instance", alert: true,
+            actorId: actorId, metadata: metadata, cooldown: false);
+
+    public Task OwnerTransferredAsync(Guid actorId, object metadata) =>
+        RaiseAsync("owner.transferred", SecuritySeverity.Critical, key: "instance", alert: true,
             actorId: actorId, metadata: metadata, cooldown: false);
 
     /// <summary>

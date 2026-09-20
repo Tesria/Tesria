@@ -1484,7 +1484,7 @@ onboarding skipped; the critical first-time owner setup cannot be.
   10.3 ships have been using the product; the tour is a link on their
   profile, not a modal on their next sign-in.
 
-### 10.1 The Owner role — `M` — Model: Fable → Opus
+### 10.1 The Owner role — `M` — Model: Fable → Opus — ✅ **shipped 2026-09-20** (spec as Fable, implementation as Opus)
 
 **Model.** `UserRole.Owner = 2`. Every admin check becomes `>= Admin`:
 `CurrentUser.IsAdminAsync` (and a new `IsOwnerAsync`), the places that
@@ -1748,7 +1748,7 @@ undo, the profile section, and every route touched by `Root`.
 8. **7.A** → **7.B** → **7.C** → **7.D** (Fable→Opus) → **7.E** → **7.F**
 9. **8.1** PDF (after 7.A) → **8.2** Licence (any time) → **8.3** OpenAPI → **8.4** MCP (Fable→Opus) → **8.6** External edits as tracked changes (Fable→Opus) → **8.5** Wiki packs (Fable→Opus)
 10. **9.1** Backups admin section (Fable→Opus; shipped 2026-09-17) → **9.2** Offsite backups (Fable→Opus; unscheduled, waits on the owner's seven decisions listed in the item)
-11. **10.1** Owner role → **10.4** Media harness → **10.2** Owner setup wizard → **10.3** Tour and tips (all specified 2026-09-20 as Fable; Opus implements). 10.1 comes first because 10.2 creates an owner, and 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
+11. **10.1** Owner role (shipped 2026-09-20) → **10.4** Media harness → **10.2** Owner setup wizard → **10.3** Tour and tips (all specified 2026-09-20 as Fable; Opus implements). 10.1 comes first because 10.2 creates an owner, and 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
 
 Phases 6 and 8.2 are floaters — small, no dependents — and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm

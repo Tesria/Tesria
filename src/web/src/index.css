@@ -1818,6 +1818,10 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .admin-table .nowrap { white-space: nowrap; }
 
 /* Public spaces (dev-plan 5.3): the badge everyone sees. */
+/* The instance's owner (dev-plan 10.1): a standing fact about the account,
+   not a warning, so it wears the accent rather than the danger colour. */
+.badge--owner { background: color-mix(in srgb, var(--primary) 18%, transparent); color: var(--primary); }
+
 .badge--public { background: color-mix(in srgb, var(--primary) 18%, transparent); color: var(--primary); margin-left: 0.4rem; }
 
 /* Space icons (dev-plan 6). Rounded squares against the avatar's circle —

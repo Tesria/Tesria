@@ -85,7 +85,7 @@ public sealed class NotificationEmailService(
             var alerts = group.Where(n => n.Action == "security.alert").ToList();
             var rest = group.Except(alerts).ToList();
 
-            if (alerts.Count > 0 && user.Role == UserRole.Admin)
+            if (alerts.Count > 0 && user.Role >= UserRole.Admin)
             {
                 var text = Describe(settings.InstanceName, baseUrl, alerts, pageInfo,
                     alerts.Count == 1 ? "A security alert needs your attention." : $"{alerts.Count} security alerts need your attention.");

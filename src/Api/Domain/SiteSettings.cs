@@ -137,6 +137,13 @@ public class SiteSettings
 
     public Guid? BackupPolicyChangedById { get; set; }
 
+    /// <summary>
+    /// When the owner finished first-run setup (dev-plan 10.2). Null means the
+    /// wizard is still to be done; an instance upgraded from before it existed
+    /// is stamped by <see cref="Infrastructure.Auth.OwnerSeed"/> instead.
+    /// </summary>
+    public DateTimeOffset? SetupCompletedAt { get; set; }
+
     public DateTimeOffset UpdatedAt { get; set; }
     public Guid? UpdatedById { get; set; }
 }

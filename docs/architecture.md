@@ -945,6 +945,10 @@ catalogue's display titles are Confluence's ("Children display",
 > stays open to any signed-in user for the permission picker. In the SPA,
 > Groups and Audit are Admin tabs and API tokens live on the profile.
 
+> **Update 2026-09-20 (dev-plan 10.1):** a third role, `Owner = 2`, sits
+> above `Admin`. Everything below still holds for administrators; what the
+> owner adds is at the end of this section.
+
 Two roles, one enum: `User.Role` is `Member = 0 | Admin = 1`. An enum, not
 a bool, so a future `Viewer` or `Moderator` is a new value rather than a
 migration of a bool.
@@ -957,6 +961,34 @@ serializable transaction so two racing first registrations cannot both win
 the column also **promotes the earliest-created user** on existing installs,
 so no instance is left with content and nobody able to administer it. On
 this dev instance that is the owner's account, not the docs bot.
+
+**The owner (dev-plan 10.1).** `Owner = 2` is the account that owns the
+instance. It does everything an administrator does, plus the two things
+only it can: change anyone's role, and hand the instance to someone else
+(`POST /admin/users/{id}/transfer-ownership`, sudo, audited, and a Critical
+alert to every administrator). Exactly one exists at a time:
+
+- The first account on an empty instance is the owner, by the same
+  serializable "is the table empty" check as before.
+- `OwnerSeed`, a startup step, gives an upgraded instance its owner: the
+  longest-standing active administrator, audited as `owner.assigned`. It
+  also stamps `SiteSettings.SetupCompletedAt`, so an instance that predates
+  the setup wizard (10.2) is never sent through it.
+- The owner cannot be demoted, suspended, or assigned: the role endpoint
+  refuses both directions with "Ownership is transferred, not assigned",
+  and a transfer swaps both roles in one save, so the seat is never empty.
+  That is what replaced the old "cannot demote the last administrator"
+  rule.
+- An administrator cannot act on the owner's account at all: no password
+  reset, no revoking its sessions or tokens. Each of those would otherwise
+  be a way to take the instance or lock its owner out of it.
+
+Because the ordering is meaningful, every administrative check reads
+"`>= Admin`" rather than listing both roles: the policy handler, the
+recipients of admin notifications and alert email, the dashboard's
+administrator count, the two-factor requirement, and the SPA's nav and
+admin shell. `AuthPolicies.RequireOwner` is the second policy, with the
+same two-factor rule as `RequireAdmin`.
 
 **How the role is checked.** `CurrentUser.IsAdminAsync()` reads the row
 (one indexed primary-key lookup, cached for the request) rather than

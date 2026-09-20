@@ -96,7 +96,7 @@ export function Layout() {
   const navRef = useDismissable<HTMLDivElement>(navOpen, () => setNavOpen(false))
   // Sticky bars follow the visual viewport while a phone keyboard is up.
   useVisualViewportOffset()
-  const secondaryNav = SECONDARY_NAV.filter((i) => !i.adminOnly || user?.role === UserRole.Admin)
+  const secondaryNav = SECONDARY_NAV.filter((i) => !i.adminOnly || (user?.role ?? UserRole.Member) >= UserRole.Admin)
   // The open space's tree, published by SpacePage (see spaceNav.ts). Only the
   // phone menu renders it; wider viewports have the sidebar.
   const [spaceNav, setSpaceNavState] = useState<SpaceNav | null>(null)

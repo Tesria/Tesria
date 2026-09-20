@@ -200,8 +200,8 @@ public static class AuthEndpoints
         if (await db.Users.AnyAsync(u => u.Email == email))
             return Results.Conflict(new { message = "An account with this email already exists." });
 
-        // The first account on an empty instance administers it — otherwise a
-        // fresh install has content and nobody able to manage it.
+        // The first account on an empty instance owns it (dev-plan 10.1) —
+        // otherwise a fresh install has content and nobody able to manage it.
         var isFirstAccount = !await db.Users.AnyAsync();
 
         // Closed registration is deliberately ignored for that very first
@@ -224,7 +224,7 @@ public static class AuthEndpoints
             DisplayName = displayName,
             PasswordHash = hasher.Hash(req.Password!),
             Status = UserStatus.Active,
-            Role = isFirstAccount ? UserRole.Admin : UserRole.Member,
+            Role = isFirstAccount ? UserRole.Owner : UserRole.Member,
             CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Users.Add(user);
@@ -512,7 +512,7 @@ public static class AuthEndpoints
             || (!string.IsNullOrEmpty(req.CurrentPassword) && user.PasswordHash is not null && hasher.Verify(req.CurrentPassword, user.PasswordHash));
         if (!ok) return Results.ValidationProblem(Error("code", "Enter your current password or a code from your authenticator."));
 
-        if ((await siteSettings.GetAsync()).RequireTotpForAdmins && user.Role == UserRole.Admin)
+        if ((await siteSettings.GetAsync()).RequireTotpForAdmins && user.Role >= UserRole.Admin)
             return Results.ValidationProblem(Error("code", "Administrators on this instance must keep two-factor on."));
 
         totp.Disable(user);
@@ -597,7 +597,7 @@ public static class AuthEndpoints
     {
         var remaining = await recovery.RemainingCodesAsync(user.Id);
         var enabled = user.TotpEnabledAt is not null;
-        var required = user.Role == UserRole.Admin && !enabled && (await siteSettings.GetAsync()).RequireTotpForAdmins;
+        var required = user.Role >= UserRole.Admin && !enabled && (await siteSettings.GetAsync()).RequireTotpForAdmins;
         return new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.AvatarVariant,
             user.PasswordHash != null, remaining, enabled, required, user.EmailNotifications);
     }

@@ -23,6 +23,7 @@ public class RoleTests
 
     private const int Member = 0;
     private const int Admin = 1;
+    private const int Owner = 2;
 
     private static async Task<UserDto> RegisterAsync(HttpClient client, string email)
     {
@@ -33,12 +34,12 @@ public class RoleTests
     }
 
     [Fact]
-    public async Task First_registered_user_is_admin_and_the_second_is_not()
+    public async Task First_registered_user_owns_the_instance_and_the_second_is_a_member()
     {
         using var factory = new TestAppFactory();
 
         var first = await RegisterAsync(factory.CreateClient(), "first@example.com");
-        Assert.Equal(Admin, first.Role);
+        Assert.Equal(Owner, first.Role);
 
         var second = await RegisterAsync(factory.CreateClient(), "second@example.com");
         Assert.Equal(Member, second.Role);
@@ -48,11 +49,11 @@ public class RoleTests
         await client.PostAsJsonAsync("/api/auth/login",
             new { Email = "first@example.com", Password = "supersecret" });
         var me = await client.GetFromJsonAsync<UserDto>("/api/auth/me");
-        Assert.Equal(Admin, me!.Role);
+        Assert.Equal(Owner, me!.Role);
     }
 
     [Fact]
-    public async Task First_oidc_provisioned_user_on_an_empty_instance_is_admin()
+    public async Task First_oidc_provisioned_user_on_an_empty_instance_owns_it()
     {
         using var factory = new TestAppFactory();
         using var scope = factory.Services.CreateScope();
@@ -60,7 +61,7 @@ public class RoleTests
             .GetRequiredService<Tesria.Api.Infrastructure.Auth.IOidcUserProvisioner>();
 
         var first = await provisioner.ResolveOrProvisionAsync("sub-1", "sso-first@example.com", true, "SSO First");
-        Assert.Equal(UserRole.Admin, first.Role);
+        Assert.Equal(UserRole.Owner, first.Role);
 
         var second = await provisioner.ResolveOrProvisionAsync("sub-2", "sso-second@example.com", true, "SSO Second");
         Assert.Equal(UserRole.Member, second.Role);

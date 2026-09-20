@@ -31,12 +31,14 @@ public class SiteSettingsTests
         return (await res.Content.ReadFromJsonAsync<UserDto>())!;
     }
 
-    /// <summary>Registers the admin (first account) and returns their client.</summary>
+    /// <summary>Registers the owner (first account) and returns their client.</summary>
     private static async Task<HttpClient> AdminClientAsync(TestAppFactory factory)
     {
         var client = factory.CreateClient();
         var user = await RegisterAsync(client, "admin@example.com");
-        Assert.Equal(1, user.Role);
+        // The first account owns the instance (dev-plan 10.1) and so passes
+        // every administrative policy.
+        Assert.Equal(2, user.Role);
         return client;
     }
 
@@ -185,7 +187,8 @@ public class SiteSettingsTests
         var first = await factory.CreateClient().PostAsJsonAsync("/api/auth/register",
             new { Email = "founder@example.com", DisplayName = "Founder", Password = "supersecret" });
         first.EnsureSuccessStatusCode();
-        Assert.Equal(1, (await first.Content.ReadFromJsonAsync<UserDto>())!.Role);
+        // The first account owns the instance (dev-plan 10.1).
+        Assert.Equal(2, (await first.Content.ReadFromJsonAsync<UserDto>())!.Role);
 
         // ...and that the exemption really is only for the first account.
         var second = await factory.CreateClient().PostAsJsonAsync("/api/auth/register",

@@ -5,6 +5,78 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### The Owner role (2026-09-20)
+
+Dev-plan 10.1, implemented by Opus 5 against the spec Fable 5.1 wrote the
+same day. `UserRole.Owner = 2` sits above `Admin`, and every administrative
+check now reads "this role or above" rather than naming both.
+
+- **Exactly one owner, always.** The first account on an empty instance is
+  the owner (local or SSO). On an existing instance, a startup step
+  (`OwnerSeed`) promotes the longest-standing active administrator and
+  audits it as `owner.assigned`. On this instance that is
+  brianintheloopdev@gmail.com.
+- **Only the owner changes roles.** `PUT /admin/users/{id}/role` moved to a
+  new `RequireOwner` policy, which carries the same two-factor rule as
+  `RequireAdmin`.
+- **Ownership moves only by transfer.**
+  `POST /admin/users/{id}/transfer-ownership` (sudo, audited) makes the
+  target the owner and the caller an administrator in one save, so the seat
+  is never empty and there are never two. It raises a Critical
+  `owner.transferred` alert to every administrator, including the one who
+  just gave it away. Nothing is rotated: the role is read from the row on
+  every request, so both sessions simply mean something different from the
+  next request onwards.
+- **The owner cannot be demoted, suspended, or assigned.** That replaces the
+  old "cannot demote or suspend the last administrator" rule, which existed
+  because the seat could otherwise be emptied.
+- **An administrator cannot act on the owner's account**: no password reset,
+  no revoking its sessions or tokens. This was not in the spec and is the
+  one thing added while implementing: without it the role guards are
+  theatre, since a reset link is a way into the account and repeated session
+  revokes keep the owner out of their own instance. The UI hides those
+  actions on the owner's row and the server refuses them.
+- **UI:** an owner badge, the owner first in the user list, a **Transfer
+  ownership** action with a confirmation naming the person, and role
+  controls disabled for administrators with the reason on hover.
+- `SiteSettings.SetupCompletedAt` arrives with this item, though it belongs
+  to 10.2: the seed stamps it so an upgraded instance is never sent through
+  the setup wizard.
+
+Tests: 498 pass, 12 new in `OwnerTests`. Two tests in `AdminPanelTests` that
+encoded the last-administrator rule were removed, and the assertions that
+the first account has role 1 became role 2 across four suites.
+
+**Verified live** on this instance, in all three states (the owner signed
+each account in; the assistant does not enter passwords):
+
+- **Upgrade:** the app rebuilt, the seed promoted the owner, chained its
+  `owner.assigned` entry and stamped `SetupCompletedAt`.
+- **Member** (`dnd-tester`): no Admin entry in the nav, `/admin` shows the
+  refusal page, and the editor round trip is real: a page created,
+  published, reopened, edited, saved, trashed and purged. All the space and
+  content routes render with no `Uncaught` in the console.
+- **Administrator** (`claude-assistant`): all nine admin tabs render; the
+  owner's row shows the badge and carries no actions; Demote and Make admin
+  are disabled with "Only the owner changes roles"; no Transfer ownership
+  anywhere. The server refuses what the UI hides, from a real admin
+  session: promote 403, transfer 403, reset the owner's password 403,
+  revoke the owner's sessions 403, suspend the owner 400, while
+  `/admin/spaces` still returns 200. The dashboard counts 2 administrators,
+  the owner included.
+- **Owner:** Transfer ownership appears on every other active row, with the
+  confirmation "Make <name> the owner of this instance? You become an
+  administrator, and only they will be able to change roles or hand it
+  back." Declining it changed no roles. The transfer itself was not run on
+  this instance; `OwnerTests` covers it.
+- **Signed out:** unchanged, with private content masked and `/admin/*`
+  redirecting to sign-in.
+
+Worth knowing for future walks: the automated browser auto-dismisses
+`window.confirm`, so a Delete click appears to do nothing. Stub `confirm`
+for that click, the same class of gotcha as the `Enter` versus `Return`
+note in `CLAUDE.md`.
+
 ### Fix: a sleeping laptop woke up to two false "agent offline" alerts (2026-09-20)
 
 On 2026-09-17 at 09:06:51 UTC `BackupMonitor` raised `backup.agent_offline`

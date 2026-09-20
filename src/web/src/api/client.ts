@@ -6,7 +6,8 @@ import type { SpaceIconKind } from '../components/spaceIconIdentity'
 
 /** Matches Api.Domain.UserRole. A const object rather than a TS `enum`:
  *  this project builds with `erasableSyntaxOnly`, which rejects enums. */
-export const UserRole = { Member: 0, Admin: 1 } as const
+/** Owner is above Admin, and every check is "this or above" (dev-plan 10.1). */
+export const UserRole = { Member: 0, Admin: 1, Owner: 2 } as const
 export type UserRole = (typeof UserRole)[keyof typeof UserRole]
 
 export type User = {
@@ -842,6 +843,9 @@ export const api = {
       list: () => request<AdminUser[]>('GET', '/api/admin/users'),
       setRole: (id: string, role: UserRole) =>
         request<AdminUser>('PUT', `/api/admin/users/${id}/role`, { role }),
+      /** Owner only, and sudo: the caller becomes an administrator. */
+      transferOwnership: (id: string) =>
+        request<AdminUser>('POST', `/api/admin/users/${id}/transfer-ownership`),
       setStatus: (id: string, status: UserStatus) =>
         request<AdminUser>('PUT', `/api/admin/users/${id}/status`, { status }),
       revokeSessions: (id: string) =>
