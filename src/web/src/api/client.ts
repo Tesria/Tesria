@@ -922,6 +922,15 @@ export const api = {
     /** Irreversible. The key proves the space, the password proves the person. */
     remove: (key: string, input: { confirmKey: string; password?: string; code?: string }) =>
       request<void>('DELETE', `/api/spaces/${encodeURIComponent(key)}`, input),
+    /** The whole space as a static site, as a zip (dev-plan 12.2). */
+    exportSite: async (key: string, audience: 'anonymous' | 'me'): Promise<Blob> => {
+      const res = await fetch(
+        `/api/spaces/${encodeURIComponent(key)}/export/site?audience=${audience}`,
+        { credentials: 'include', headers: CSRF_HEADER },
+      )
+      if (!res.ok) return handle<Blob>(res)
+      return res.blob()
+    },
   },
   pages: {
     tree: (spaceId: string) => request<PageTreeNode[]>('GET', `/api/pages/tree?spaceId=${spaceId}`),

@@ -2384,7 +2384,7 @@ exported document is the same document a reader sees, fetched with the
 same permissions, so the 5.1 masking holds without a second
 implementation of it.
 
-### 12.1 Capture-based export, and every element checked — `L` — Model: Fable → Opus
+### 12.1 Capture-based export, and every element checked — `L` — Model: Fable → Opus — ✅ **shipped 2026-09-20**
 
 **The render route.** `/export/pages/:id` in the SPA, outside `Layout`
 (like `/welcome`): the title and `<Editor editable={false}>` inside the
@@ -2480,7 +2480,43 @@ its HTML file opened from disk with the network off and its theme toggle
 tried; both themes for the view and the HTML file, light only for PDF,
 which is deliberate; 375 px for the view.
 
-### 12.2 Publish a space as a static site — `L` — Model: Fable → Opus
+**As built (2026-09-20), where it differs from the above.**
+- **Chromium would not load the app over plain http.** It upgrades an
+  http navigation to https whenever the host is a *name*, whatever
+  `--disable-features=HttpsUpgrades` says, and there is no TLS on the
+  app's port inside the compose network. The sidecar resolves the app's
+  hostname to an address per capture and navigates to that; bare addresses
+  are exempt from the upgrade. The allowlist still checks the configured
+  origin, so the substitution cannot widen what may be loaded.
+- **Assets are inlined in the browser, not by `InlineAssets`.** The
+  captured DOM's image sources still point at the instance, so the page
+  fetches its own images and file links and rewrites them to data URIs
+  before serialising. The site export turns that off and ships real files
+  under `assets/` instead, which keeps pages small and lets a browser
+  cache an image once rather than once per page.
+- **`GET`, not `POST`, for the site export.** Building a site reads pages
+  and changes nothing, it is the verb the single-page export already uses,
+  and a read-only API token should be able to do it; `POST` locked those
+  out through `TokenScopeMiddleware`. The audience is a query parameter.
+- **Validation before infrastructure.** "This space is not public" is
+  something the caller can act on and a missing renderer is not, so the
+  audience check answers first.
+- **`IPermissionService.AsAnonymous()`** is new, beside `AsUser`. Deciding
+  which pages go into a public site by the exporter's own access is how a
+  private page reaches the internet; the anonymous audience is evaluated
+  as nobody, whoever is calling.
+- **The HTML half of `ProseMirrorRenderer` is not deleted yet.** It is
+  unreachable from any export path, and its only remaining caller is
+  `TocOptionsTests`, which asserts TOC option handling that the Markdown
+  path shares. Deleting six hundred lines out of a file whose helpers are
+  interleaved is cleanup with real regression risk and no user-visible
+  benefit, so it is its own change rather than part of this one.
+- **Three bugs found by the fixture**, all fixed with tests: a mention of
+  an id with no account 500'd the save; a half-committed create left a
+  page that was invisible and permanently unupdatable; and version numbers
+  came from the current-version pointer rather than the versions.
+
+### 12.2 Publish a space as a static site — `L` — Model: Fable → Opus — ✅ **shipped 2026-09-20**
 
 **What it is for.** Write the documentation in Tesria, export the space,
 host the result on Cloudflare Pages, GitHub Pages or any static host.
@@ -2584,7 +2620,7 @@ a phone width.
 9. **8.1** PDF (after 7.A) → **8.2** Licence (any time) → **8.3** OpenAPI → **8.4** MCP (Fable→Opus) → **8.6** External edits as tracked changes (Fable→Opus) → **8.5** Wiki packs (Fable→Opus)
 10. **9.1** Backups admin section (Fable→Opus; shipped 2026-09-17) → **9.2** Offsite backups (Fable→Opus; unscheduled, waits on the owner's seven decisions listed in the item)
 11. **10.1** Owner role (shipped 2026-09-20) → **11.1** Instance rights and the Roles tab (shipped 2026-09-20) → **11.2** Custom roles (shipped 2026-09-20) → **11.3** Delete a space (shipped 2026-09-20) → **5.5** Anonymous access is opt-in twice (shipped 2026-09-20) → **10.4** Media harness (shipped 2026-09-20) → **10.2** Owner setup wizard (shipped 2026-09-20) → **10.3** Tour and tips (shipped 2026-09-20) (all specified 2026-09-20 as Fable; Opus implements). Phase 11 goes before the wizard because the wizard has a required step that reviews the matrix, and before 10.3 because the tour's screens should show the real Roles tab. 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
-12. **12.1** Capture-based export and the element audit (Fable→Opus; specified 2026-09-20) → **12.2** Publish a space as a static site (Fable→Opus). 12 before 8.5 because the site export builds the walk over a space that the wiki pack will reuse, and because the owner's documentation is waiting on it.
+12. **12.1** Capture-based export and the element audit (shipped 2026-09-20) → **12.2** Publish a space as a static site (shipped 2026-09-20). 12 before 8.5 because the site export builds the walk over a space that the wiki pack will reuse, and because the owner's documentation is waiting on it.
 
 Phases 6 and 8.2 are floaters — small, no dependents — and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm

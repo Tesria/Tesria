@@ -263,15 +263,20 @@ public class TechnicalContentExportTests
             ContentJson = Doc,
         })).Content.ReadFromJsonAsync<PageRef>();
 
-        var html = await (await client.GetAsync($"/api/pages/{page!.Id}/export?format=html")).Content.ReadAsStringAsync();
+        var md = await (await client.GetAsync($"/api/pages/{page!.Id}/export?format=markdown")).Content.ReadAsStringAsync();
 
-        // Nothing in an exported file may reach the network.
-        Assert.DoesNotContain("cdn.jsdelivr.net", html);
-        Assert.DoesNotContain("https://cdn", html);
-        Assert.DoesNotContain("<script src=", html);
-        // The source is present either way — the test web root has no built
-        // bundle, so this export ships the diagram as readable text alone.
-        Assert.Contains("<pre class=\"mermaid\">flowchart LR", html);
+        // Nothing in an exported file may reach the network. Asserted on
+        // Markdown since 12.1; the captured formats inherit the same
+        // guarantee from the sidecar, which aborts every request that is not
+        // this app or a data: URI.
+        Assert.DoesNotContain("cdn.jsdelivr.net", md);
+        Assert.DoesNotContain("https://cdn", md);
+        Assert.DoesNotContain("<script src=", md);
+        // The diagram travels as its source, which is what Markdown can carry
+        // and what any Markdown renderer knows what to do with. In a captured
+        // export it is an SVG, drawn by the page before the photograph.
+        Assert.Contains("```mermaid", md);
+        Assert.Contains("flowchart LR", md);
     }
 
     private record PageRef(Guid Id);

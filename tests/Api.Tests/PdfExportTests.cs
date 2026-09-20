@@ -5,8 +5,14 @@ using Xunit;
 namespace Tesria.Api.Tests;
 
 /// <summary>
-/// PDF export (dev-plan 8.1) and the image inlining that makes an export a
-/// file you can actually keep.
+/// PDF and single-file HTML export (dev-plan 8.1, rebuilt by 12.1).
+///
+/// Both are now captured from the page's own render route by the sidecar, so
+/// what can be asserted in-process is the contract around that: which formats
+/// exist, and what happens on an instance with no renderer. The fidelity of
+/// the capture itself is the fixture and the matrix in
+/// docs/export-fidelity.md, because it takes a browser to have an opinion
+/// about it.
 /// </summary>
 public class PdfExportTests
 {
@@ -37,7 +43,7 @@ public class PdfExportTests
         // the instance simply has no renderer, and the user is told what to
         // do instead rather than left at a dead end.
         Assert.Equal(HttpStatusCode.ServiceUnavailable, res.StatusCode);
-        Assert.Contains("print it to PDF", await res.Content.ReadAsStringAsync());
+        Assert.Contains("Markdown", await res.Content.ReadAsStringAsync());
     }
 
     [Fact]
@@ -54,8 +60,29 @@ public class PdfExportTests
     }
 
     [Fact]
-    public async Task Html_export_inlines_attached_images_so_the_file_works_on_its_own()
+    public async Task Html_needs_the_renderer_too_and_says_so()
     {
+        // HTML used to be built in-process; since 12.1 it is a capture of the
+        // real page, so an instance with no sidecar cannot produce one. It
+        // says which format it can still produce rather than failing blankly.
+        using var factory = new TestAppFactory();
+        var client = factory.CreateClient();
+        await client.RegisterAndSignInAsync();
+        var page = await NewPage(client, await client.CreateSpaceAsync(), Plain);
+
+        var res = await client.GetAsync($"/api/pages/{page.Id}/export?format=html");
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, res.StatusCode);
+        Assert.Contains("Markdown", await res.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task Markdown_keeps_its_attachment_urls()
+    {
+        // The half of the old inlining test that still means something: a
+        // data: URI is unreadable in a text file, so Markdown keeps the URL.
+        // The HTML file's images being carried inside it is the sidecar's
+        // job now, and is checked in the fidelity walk.
         using var factory = new TestAppFactory();
         var client = factory.CreateClient();
         await client.RegisterAndSignInAsync();
@@ -73,27 +100,9 @@ public class PdfExportTests
             + "{\"src\":\"/api/attachments/" + attachment!.Id + "/download\",\"alt\":\"dot\"}}]}]}";
         (await client.PutAsJsonAsync($"/api/pages/{page.Id}", new { ContentJson = withImage })).EnsureSuccessStatusCode();
 
-        var html = await (await client.GetAsync($"/api/pages/{page.Id}/export?format=html")).Content.ReadAsStringAsync();
-        Assert.Contains("src=\"data:image/png;base64,", html);
-        // The authenticated URL is gone — that is the point.
-        Assert.DoesNotContain($"/api/attachments/{attachment.Id}/download", html);
-
-        // Markdown keeps the URL: a data: URI is unreadable in a text file.
         var md = await (await client.GetAsync($"/api/pages/{page.Id}/export?format=markdown")).Content.ReadAsStringAsync();
+
         Assert.Contains($"/api/attachments/{attachment.Id}/download", md);
         Assert.DoesNotContain("data:image", md);
-    }
-
-    [Fact]
-    public async Task An_image_that_is_not_an_attachment_is_left_alone()
-    {
-        using var factory = new TestAppFactory();
-        var client = factory.CreateClient();
-        await client.RegisterAndSignInAsync();
-        var doc = """{"type":"doc","content":[{"type":"paragraph","content":[{"type":"image","attrs":{"src":"https://example.com/logo.png"}}]}]}""";
-        var page = await NewPage(client, await client.CreateSpaceAsync(), doc);
-
-        var html = await (await client.GetAsync($"/api/pages/{page.Id}/export?format=html")).Content.ReadAsStringAsync();
-        Assert.Contains("https://example.com/logo.png", html);
     }
 }

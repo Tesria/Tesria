@@ -131,13 +131,14 @@ public class DynamicBlockTests
         var (f, alice, bob, space, home, open, _, _) = await Fixture();
         using var _ = f;
 
-        var html = await (await alice.GetAsync($"/api/pages/{home.Id}/export?format=html")).Content.ReadAsStringAsync();
-        Assert.Contains("data-type=\"dynamic-block\" data-kind=\"children\"", html);
-        Assert.Contains($">Open</a>", html);
-        Assert.Contains(">Secret</a>", html);
-        // Hrefs are absolute in a standalone file.
-        Assert.Contains($"href=\"https://localhost/spaces/{space.Key}/pages/{open.Id}\"", html);
-        Assert.Contains("Snapshot taken", html);
+        // Asserted through Markdown since 12.1: HTML and PDF are captured in
+        // a browser, where the block is fetched by the page itself under the
+        // render token. Markdown is still rendered here, and it is the same
+        // snapshot, taken with the same permissions.
+        var alicesMd = await (await alice.GetAsync($"/api/pages/{home.Id}/export?format=markdown")).Content.ReadAsStringAsync();
+        Assert.Contains($"- [Open](https://localhost/spaces/{space.Key}/pages/{open.Id})", alicesMd);
+        Assert.Contains("Secret", alicesMd);
+        Assert.Contains("Snapshot taken", alicesMd);
 
         var bobsMd = await (await bob.GetAsync($"/api/pages/{home.Id}/export?format=markdown")).Content.ReadAsStringAsync();
         Assert.Contains($"- [Open](https://localhost/spaces/{space.Key}/pages/{open.Id})", bobsMd);

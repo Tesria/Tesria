@@ -87,6 +87,7 @@ builder.Services.AddHostedService(sp => sp.GetRequiredService<Tesria.Api.Infrast
 builder.Services.AddScoped<IInviteService, InviteService>();
 builder.Services.AddScoped<ISiteSettingsService, SiteSettingsService>();
 builder.Services.AddSingleton<ICollabTokenService, CollabTokenService>();
+builder.Services.AddSingleton<Tesria.Api.Infrastructure.Export.IRenderTokens, Tesria.Api.Infrastructure.Export.RenderTokens>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 // Dynamic blocks (dev-plan Phase 7 Wave D): one service, one kind per class.
 // Adding a kind is one class plus one line here — see architecture.md.
@@ -534,6 +535,8 @@ app.UseAuthorization();
 app.UseMiddleware<LastSeenMiddleware>();
 // Read-only API tokens may not change anything over REST (dev-plan 8.4).
 app.UseMiddleware<Tesria.Api.Infrastructure.Security.TokenScopeMiddleware>();
+// A render token may only read the page or space it was minted for (12.1).
+app.UseMiddleware<Tesria.Api.Infrastructure.Security.RenderScopeMiddleware>();
 
 // API endpoints live under /api. Feature endpoints are registered via
 // extension methods to keep Program.cs thin (vertical-slice style).
@@ -554,6 +557,7 @@ api.MapCommentEndpoints();
 api.MapSearchEndpoints();
 api.MapLabelEndpoints();
 api.MapExportEndpoints();
+api.MapSiteExportEndpoints();
 api.MapBlockEndpoints();
 api.MapEmbedEndpoints();
 api.MapAuditEndpoints();

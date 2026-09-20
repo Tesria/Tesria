@@ -245,6 +245,47 @@ async function runSteps(pg, steps, name) {
     }
     if (step.scrollTo) await pg.locator(step.scrollTo).first().scrollIntoViewIfNeeded().catch(() => {})
     if (step.eval) await pg.evaluate(step.eval)
+    // Seeds the every-element fixture page (dev-plan 12.1). The document is
+    // read here and handed to the page, because the browser cannot read the
+    // repository and the fixture is the one thing every export check is
+    // measured against.
+    if (step.seedFixture) {
+      // Relative to the repository root, which run.sh mounts read-only: a
+      // fixture lives with the tests, not beside the spec.
+      const doc = readFileSync(path.join('/repo', step.seedFixture.file), 'utf8')
+      const result = await pg.evaluate(async ([spec, content]) => {
+        const H = { 'Content-Type': 'application/json', 'X-Requested-With': 'Tesria' }
+        const call = async (m, u, b) => {
+          const r = await fetch(u, { method: m, credentials: 'include', headers: H, body: b ? JSON.stringify(b) : undefined })
+          return { status: r.status, body: r.status === 204 ? null : await r.json().catch(() => null) }
+        }
+        let space = await call('GET', `/api/spaces/${spec.key}`)
+        if (space.status >= 300) {
+          space = await call('POST', '/api/spaces', { Key: spec.key, Name: spec.name, Description: spec.description })
+        }
+        if (!space.body?.id) return { error: 'no space', status: space.status }
+
+        // Idempotent: the fixture page is replaced rather than duplicated, so
+        // running the harness twice does not leave two of them.
+        const tree = await call('GET', `/api/pages/tree?spaceId=${space.body.id}`)
+        const existing = (tree.body ?? []).find((n) => n.title === spec.title)
+        const me = await call('GET', '/api/auth/me')
+        // The fixture mentions somebody; point it at the account running this.
+        const body = content
+          .replace('00000000-0000-0000-0000-000000000000', me.body.id)
+          .replace('"label": "Somebody"', `"label": ${JSON.stringify(me.body.displayName)}`)
+
+        if (existing) {
+          const put = await call('PUT', `/api/pages/${existing.id}`, { Title: spec.title, ContentJson: body })
+          return { spaceId: space.body.id, pageId: existing.id, status: put.status, updated: true }
+        }
+        const made = await call('POST', '/api/pages', {
+          SpaceId: space.body.id, ParentPageId: null, Title: spec.title, ContentJson: body,
+        })
+        return { spaceId: space.body.id, pageId: made.body?.id, status: made.status, updated: false }
+      }, [step.seedFixture, doc])
+      console.log('FIXTURE', JSON.stringify(result))
+    }
     // Teardown (dev-plan 10.4). Deleting a space needs the key typed back
     // and the password in the same request (11.3), and the password is the
     // harness's, not the spec's — so this is a step rather than an `eval`,

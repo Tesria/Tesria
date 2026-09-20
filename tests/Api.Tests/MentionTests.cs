@@ -144,4 +144,25 @@ public class MentionNotificationTests
 
         Assert.DoesNotContain(await NotificationsOf(alice), n => n.Action == "user.mentioned");
     }
+    [Fact]
+    public async Task A_mention_of_an_id_that_is_not_a_user_does_not_fail_the_save()
+    {
+        // A document carries whatever id it says. One that names nobody used
+        // to reach the notification insert and break the write on a foreign
+        // key, turning bad content into a 500 (found by the 12.1 fixture).
+        using var factory = new TestAppFactory();
+        var client = factory.CreateClient();
+        await client.RegisterAndSignInAsync();
+        var spaceId = await client.CreateSpaceAsync();
+
+        var ghost = Guid.NewGuid();
+        var doc = "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":["
+            + "{\"type\":\"mention\",\"attrs\":{\"userId\":\"" + ghost + "\",\"label\":\"Nobody\"}}]}]}";
+
+        var res = await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = "Ghost", ContentJson = doc });
+
+        Assert.Equal(HttpStatusCode.Created, res.StatusCode);
+    }
+
 }

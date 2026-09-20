@@ -12,7 +12,7 @@ const markTourOffered = () => {
 }
 
 /** Paths the gate never redirects away from. */
-const ALLOWED = ['/setup', '/welcome', '/logout']
+const ALLOWED = ['/setup', '/welcome', '/export', '/logout']
 
 /**
  * Sends first-run traffic to the wizard (dev-plan 10.2).

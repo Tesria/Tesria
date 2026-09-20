@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -25,7 +26,8 @@ public sealed class ApiTokenAuthenticationHandler(
     UrlEncoder encoder,
     IApiTokenService tokens,
     AppDbContext db,
-    Permissions.IInstancePermissions rights)
+    Permissions.IInstancePermissions rights,
+    Export.IRenderTokens renderTokens)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -35,6 +37,12 @@ public sealed class ApiTokenAuthenticationHandler(
         if (!value.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)) return AuthenticateResult.NoResult();
 
         var rawToken = value["Bearer ".Length..].Trim();
+
+        // An export's render token (dev-plan 12.1): no database row, so it is
+        // recognised by its prefix and verified by recomputing its signature.
+        if (rawToken.StartsWith(Export.RenderTokens.Prefix, StringComparison.Ordinal))
+            return await RenderTokenResultAsync(rawToken);
+
         var token = await tokens.ValidateAsync(rawToken);
         if (token is null) return AuthenticateResult.Fail("Invalid or expired API token.");
 
@@ -61,5 +69,44 @@ public sealed class ApiTokenAuthenticationHandler(
         var identity = new ClaimsIdentity(claims, Scheme.Name);
         var ticket = new AuthenticationTicket(new ClaimsPrincipal(identity), Scheme.Name);
         return AuthenticateResult.Success(ticket);
+    }
+
+    /// <summary>
+    /// A render token authenticates the browser that is photographing a page
+    /// (dev-plan 12.1). It grants nothing the exporting user did not already
+    /// have: the principal is theirs, read-only, and carrying the scope so
+    /// <see cref="Security.RenderScopeMiddleware"/> can hold it to the one
+    /// page or space it was minted for.
+    /// </summary>
+    private async Task<AuthenticateResult> RenderTokenResultAsync(string rawToken)
+    {
+        if (renderTokens.Verify(rawToken) is not { } claims)
+            return AuthenticateResult.Fail("Invalid or expired render token.");
+
+        // An anonymous export renders as nobody, which is the whole point of
+        // it: no principal, so every check downstream is the anonymous one.
+        if (claims.UserId is null)
+        {
+            Request.HttpContext.Items[RenderScope.ItemKey] = claims;
+            return AuthenticateResult.NoResult();
+        }
+
+        var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == claims.UserId);
+        if (user is null || user.Status != Domain.UserStatus.Active)
+            return AuthenticateResult.Fail("Invalid or expired render token.");
+
+        Request.HttpContext.Items[RenderScope.ItemKey] = claims;
+        var identity = new ClaimsIdentity(
+            [
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Name, user.DisplayName),
+                // Read only, always: an export reads a page and nothing else,
+                // and this is what TokenScopeMiddleware already enforces.
+                new Claim(TokenScope.ClaimType, TokenScope.Read),
+            ],
+            Scheme.Name);
+        return AuthenticateResult.Success(
+            new AuthenticationTicket(new ClaimsPrincipal(identity), Scheme.Name));
     }
 }

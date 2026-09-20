@@ -388,12 +388,14 @@ public class DynamicBlockKindTests
         """;
         var w = await Build(doc); using var _ = w.F;
 
-        var aliceHtml = await (await w.Alice.GetAsync($"/api/pages/{w.Home.Id}/export?format=html")).Content.ReadAsStringAsync();
-        Assert.Contains("data-kind=\"page-tree\"", aliceHtml);
-        Assert.Contains("data-kind=\"recently-updated\"", aliceHtml);
-        Assert.Contains(">Secret</a>", aliceHtml);
-        Assert.Contains("<th>Updated by</th>", aliceHtml);
-        Assert.Equal(3, System.Text.RegularExpressions.Regex.Matches(aliceHtml, "Snapshot taken").Count);
+        // Through Markdown since 12.1: HTML is captured in a browser now, so
+        // the shape of every block is checked in the format that is still
+        // rendered here. What is being tested is the snapshot and its
+        // filtering, not the markup.
+        var aliceMd = await (await w.Alice.GetAsync($"/api/pages/{w.Home.Id}/export?format=markdown")).Content.ReadAsStringAsync();
+        Assert.Contains("Secret", aliceMd);
+        Assert.Contains("Updated by", aliceMd);
+        Assert.Equal(3, System.Text.RegularExpressions.Regex.Matches(aliceMd, "Snapshot taken").Count);
 
         var bobMd = await (await w.Bob.GetAsync($"/api/pages/{w.Home.Id}/export?format=markdown")).Content.ReadAsStringAsync();
         Assert.Contains("Open", bobMd);

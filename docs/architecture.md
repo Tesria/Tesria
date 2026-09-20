@@ -1360,6 +1360,67 @@ permission check on each render. Page attachments stay permission-checked,
 which is the case that matters. A user with no avatar and a user id that does
 not exist both return 404, so the endpoint cannot be used to probe for ids.
 
+## Exports are captured, not regenerated (dev-plan 12)
+
+An export used to be a second rendering of the document: `ProseMirrorRenderer`
+walked the ProseMirror JSON in C# and emitted HTML against a fifteen-line
+stylesheet. That is why exports looked nothing like the page. Two renderers
+drift, and eight of the node types are React node views whose output only a
+browser can produce at all.
+
+**PDF and HTML are now photographs of the real page.** The sidecar loads
+`/export/pages/{id}`, a route rendering the same `<Editor editable={false}>`
+in the same `.paper` under the same `index.css` as the reading view, with no
+topbar, sidebar or comments. It waits for the page's own ready signal, and
+then prints it or serialises its DOM. There is one renderer, and an export cannot
+drift from the page without the page breaking too. Markdown is still rendered
+by `ProseMirrorRenderer`, because it is a genuinely different target.
+
+**The ready signal** (`web/src/export/ready.ts`) is two conditions, both
+required: nothing known to be outstanding (a Mermaid diagram that has neither
+drawn nor failed, a dynamic block still loading, maths not yet typeset, an
+image in flight, a font not loaded), and then a quiet period with no DOM
+mutations at all. The second condition covers work this file has never heard
+of, so a node view added later is handled without anyone remembering to teach
+it. `data-export-ready` lands on `<html>` and the sidecar waits for it, with
+a timeout that captures anyway rather than hanging.
+
+**Print rules live in `index.css`**, beside the screen rules they modify,
+under `@media print`. That is the point of capturing: there is one place a
+table is styled, and the paper variant is next to it.
+
+**The posture change.** The sidecar used to run with its network switched off
+and be handed a self-contained document. It now reaches the app, and nothing
+else: a `page.route` allowlist aborts every request that is not this app's
+origin or a `data:` URI, and the compose network gives it nowhere else to go.
+It still never reaches the internet. One wrinkle worth knowing: Chromium
+upgrades a plain-http navigation to https whenever the host is a *name*,
+whatever `--disable-features=HttpsUpgrades` says, so the sidecar resolves the
+app's hostname to an address and navigates to that. Bare addresses are exempt.
+
+**The render token** (`Infrastructure/Export/RenderTokens.cs`) is how the
+sidecar's browser reads the page. An HMAC over `{ user | anonymous, scope,
+exp }` signed with `Pdf:SharedSecret`, fifteen minutes, no database row, and
+not counted against the token mint limit a fifty-page site export would
+exhaust. It yields the exporting user's own principal with a read-only scope
+claim, so `TokenScopeMiddleware` already refuses writes and every permission
+check downstream is the one that would have run for that reader anyway:
+masking is inherited rather than reimplemented. `RenderScopeMiddleware` holds
+it to the page or space it was minted for, so one that escapes into a log is
+worth almost nothing.
+
+**A space as a static site** (12.2) is the same capture run over every page a
+chosen audience may see, written into a zip in Cloudflare Pages shape: one
+directory per page mirroring the tree, `assets/site.css` verbatim, real asset
+files, internal links rewritten to relative paths, and a link to a page that
+is *not* in the export turned into plain text rather than a guaranteed 404.
+The default audience is **anonymous**, rendered as a reader with no account
+through `IPermissionService.AsAnonymous()`, which is the leak-proof choice
+for a documentation site: it cannot contain a private page by accident,
+whatever the exporter can see. The only JavaScript in the output is the app's
+own theme script and a toggle, so light, dark, system and the accent colours
+survive with the reader's choice in their own browser.
+
 ## Frontend (`src/web`)
 
 - React 19 + TypeScript, built with Vite.

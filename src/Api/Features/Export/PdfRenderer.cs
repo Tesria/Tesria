@@ -1,23 +1,33 @@
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 
 namespace Tesria.Api.Features.Export;
 
 public interface IPdfRenderer
 {
-    /// <summary>Whether a renderer is configured at all — without one, PDF is simply not an offered format.</summary>
+    /// <summary>Whether a renderer is configured at all — without one, PDF and single-file HTML are simply not offered.</summary>
     bool Available { get; }
 
-    /// <summary>Renders a complete, self-contained HTML document to PDF bytes, or null if the sidecar refused or failed.</summary>
-    Task<byte[]?> RenderAsync(string html, CancellationToken ct);
+    /// <summary>
+    /// Captures a page of this app, as PDF bytes or as one HTML file, or null
+    /// if the sidecar refused or failed (dev-plan 12.1). The url is one of the
+    /// app's own render routes; the token authenticates the sidecar's browser
+    /// as whoever asked for the export.
+    /// </summary>
+    Task<byte[]?> CaptureAsync(
+        string url, string token, string format, string title, CancellationToken ct,
+        bool inlineAssets = true);
 }
 
 /// <summary>
-/// Calls the PDF sidecar (see <c>pdf/server.js</c>). The sidecar runs a real
-/// browser with its network switched off, so the HTML it is handed must
-/// already be self-contained — which is exactly what the HTML export is
-/// (images inlined by <see cref="InlineAssets"/>, diagrams carrying their
-/// own renderer).
+/// Calls the export sidecar (see <c>pdf/server.js</c>), which loads one of
+/// this app's own render routes in a real browser and either prints it or
+/// serialises its DOM (dev-plan 12.1).
+///
+/// The app tells it which url to load rather than handing it a document,
+/// which is what lets an export be the same rendering a reader sees. The
+/// sidecar will only load this app's origin, and reaches nothing else.
 /// </summary>
 public sealed class PdfRenderer(IHttpClientFactory http, IConfiguration config, ILogger<PdfRenderer> log) : IPdfRenderer
 {
@@ -26,31 +36,34 @@ public sealed class PdfRenderer(IHttpClientFactory http, IConfiguration config, 
 
     public bool Available => !string.IsNullOrWhiteSpace(Endpoint) && !string.IsNullOrWhiteSpace(Secret);
 
-    public async Task<byte[]?> RenderAsync(string html, CancellationToken ct)
+    public async Task<byte[]?> CaptureAsync(
+        string url, string token, string format, string title, CancellationToken ct,
+        bool inlineAssets = true)
     {
         if (!Available) return null;
         try
         {
             var client = http.CreateClient("pdf");
+            var payload = JsonSerializer.Serialize(new { url, token, format, title, inlineAssets });
             using var request = new HttpRequestMessage(HttpMethod.Post, $"{Endpoint!.TrimEnd('/')}/render")
             {
-                Content = new StringContent(html, Encoding.UTF8, new MediaTypeHeaderValue("text/html")),
+                Content = new StringContent(payload, Encoding.UTF8, new MediaTypeHeaderValue("application/json")),
             };
             request.Headers.Add("X-Pdf-Secret", Secret);
 
             using var response = await client.SendAsync(request, ct);
             if (!response.IsSuccessStatusCode)
             {
-                log.LogWarning("PDF sidecar returned {Status}", (int)response.StatusCode);
+                log.LogWarning("Export sidecar returned {Status}", (int)response.StatusCode);
                 return null;
             }
             return await response.Content.ReadAsByteArrayAsync(ct);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
-            // A missing or slow sidecar must degrade to "PDF unavailable",
-            // never to a 500 on an export the user could have had as HTML.
-            log.LogWarning(ex, "PDF sidecar unreachable");
+            // A missing or slow sidecar must degrade to "not available",
+            // never to a 500 on an export the user could have had as Markdown.
+            log.LogWarning(ex, "Export sidecar unreachable");
             return null;
         }
     }

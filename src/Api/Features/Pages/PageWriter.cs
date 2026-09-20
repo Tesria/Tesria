@@ -89,14 +89,31 @@ public sealed class PageWriter(
         // Page.CurrentVersionId and PageVersion.PageId reference each other, so
         // insert both first (leaving the pointer null), then set the pointer —
         // otherwise EF cannot order the two inserts.
-        await db.SaveChangesAsync(ct);
-        page.CurrentVersionId = version.Id;
-        audit.Record("page.created", "page", page.Id, new { page.Title, page.SpaceId });
-        // Space watchers hear about new pages; the page itself has no watchers
-        // yet since nobody could watch it before it existed.
-        await notifications.NotifyOfNewPageAsync(page.Id, page.SpaceId, userId, new { page.Title });
-        await NotifyNewMentionsAsync(page, before: null, content, userId);
-        await db.SaveChangesAsync(ct);
+        //
+        // Both saves are one transaction. They used not to be, and a failure
+        // in the second left a page that was committed, had a version, and had
+        // no CurrentVersionId: invisible to every read, and permanently
+        // unupdatable because the next version number collided with the one
+        // already there. A half-created page is worse than no page.
+        var owned = db.Database.CurrentTransaction is null
+            ? await db.Database.BeginTransactionAsync(ct)
+            : null;
+        try
+        {
+            await db.SaveChangesAsync(ct);
+            page.CurrentVersionId = version.Id;
+            audit.Record("page.created", "page", page.Id, new { page.Title, page.SpaceId });
+            // Space watchers hear about new pages; the page itself has no
+            // watchers yet since nobody could watch it before it existed.
+            await notifications.NotifyOfNewPageAsync(page.Id, page.SpaceId, userId, new { page.Title });
+            await NotifyNewMentionsAsync(page, before: null, content, userId);
+            await db.SaveChangesAsync(ct);
+            if (owned is not null) await owned.CommitAsync(ct);
+        }
+        finally
+        {
+            if (owned is not null) await owned.DisposeAsync();
+        }
         // Dispatched only after the create is durably committed — webhooks are
         // fire-and-forget outbound calls, not part of the unit of work.
         await webhooks.DispatchAsync(page.SpaceId, "page.created", "page", page.Id, new { page.Title });
@@ -130,7 +147,15 @@ public sealed class PageWriter(
         var previousContent = page.CurrentVersion?.ContentJson;
 
         var now = DateTimeOffset.UtcNow;
-        var nextNumber = (page.CurrentVersion?.VersionNumber ?? 0) + 1;
+        // From the versions themselves, not from the current-version pointer.
+        // A page whose pointer is missing still has versions, and numbering
+        // from zero would collide with them on the unique index and fail every
+        // future edit. Reading the maximum makes such a page repair itself on
+        // its next save.
+        var highest = await db.PageVersions
+            .Where(v => v.PageId == page.Id)
+            .MaxAsync(v => (int?)v.VersionNumber, ct) ?? 0;
+        var nextNumber = Math.Max(page.CurrentVersion?.VersionNumber ?? 0, highest) + 1;
         var userId = current.RequireId();
         var version = NewVersion(page, nextNumber, content, userId,
             string.IsNullOrWhiteSpace(changeComment) ? null : changeComment.Trim(), now);
@@ -155,7 +180,20 @@ public sealed class PageWriter(
     /// </summary>
     private async Task NotifyNewMentionsAsync(Page page, string? before, string after, Guid authorId)
     {
-        foreach (var userId in Mentions.NewlyMentioned(before, after, authorId))
+        var mentioned = Mentions.NewlyMentioned(before, after, authorId).ToList();
+        if (mentioned.Count == 0) return;
+
+        // Only ids that are really accounts. A mention carries whatever id the
+        // document says, and a document can arrive from the API, from MCP or
+        // from an import; an id with no user behind it used to reach the
+        // notification insert and fail the whole write on a foreign key, which
+        // turned bad content into a 500 on save.
+        var real = await db.Users.AsNoTracking()
+            .Where(u => mentioned.Contains(u.Id) && u.Status == UserStatus.Active)
+            .Select(u => u.Id)
+            .ToListAsync();
+
+        foreach (var userId in real)
         {
             if (!await perms.AsUser(userId).CanViewPageAsync(page.Id)) continue;
             await notifications.NotifyUserAsync(userId, "user.mentioned", "page", page.Id, authorId, new { page.Title });
