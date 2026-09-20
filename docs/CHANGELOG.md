@@ -5,6 +5,33 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Onboarding media harness (2026-09-20)
+
+The screenshot harness records clips now, not just stills. A shot with
+`record` gets its own browser context with video on, carries the signed-in
+session across as storage state (so no sign-in shows in the opening frames),
+and its poster PNG is captured from the state the clip ends in, which is
+what stops a still and its clip drifting apart. New steps: `typeSlowly`,
+`moveTo`, `dragTo`, `deleteSpace`, `skipCapture`, and a shot-level `css`.
+
+`scripts/screenshots/onboarding.sh` runs `onboarding.json` in both themes
+into `src/web/public/onboarding/` and fails if any clip passes 600 KB or the
+set passes 8 MB. The set is twelve clips and two stills, light and dark,
+52 files, 7.6 MB. The wizard (10.2) and the tour (10.3) embed them.
+
+The spec builds the space it films: `DEMO` with three pages, plus two more
+so the spaces list looks like a list, and deletes all three afterwards.
+Deleting a space needs the key typed back and the password in the same
+request (11.3), so `deleteSpace` supplies both from the harness's own
+credentials rather than putting a password in a JSON file.
+
+Looking at the first recordings caught two leaks that nothing else would
+have: the spaces list filmed every real space on the instance, and `@`
+resolved to a real person. The spaces clip now hides non-demo cards before
+its first frame, and the mention types `@Demo` so it lands on the recording
+account. `docs/onboarding.md` has the media table, the shot each file comes
+from, and what to re-record when the UI moves.
+
 ### Anonymous reading is opt-in twice (2026-09-20)
 
 An instance that publishes nothing now looks like one. Before, a visitor

@@ -23,11 +23,15 @@ SPEC="$1"
 [ -n "$SPEC" ] || { echo "usage: run.sh <spec.json> [shot-name]" >&2; exit 2; }
 SPECDIR="$(cd "$(dirname "$SPEC")" && pwd)"
 [ -n "$SHOT_EMAIL" ] && [ -n "$SHOT_PASSWORD" ] || { echo "set SHOT_EMAIL and SHOT_PASSWORD" >&2; exit 2; }
-mkdir -p "$SPECDIR/shots"
+# Output goes beside the spec unless told otherwise; the onboarding set
+# writes straight into the SPA's public/ directory (dev-plan 10.4).
+OUTDIR="${SHOT_OUT:-$SPECDIR/shots}"
+mkdir -p "$OUTDIR"
+OUTDIR="$(cd "$OUTDIR" && pwd)"
 docker run --rm --network "container:tesria-caddy-1" --shm-size 256mb \
   -e SHOT_BROWSER="${SHOT_BROWSER:-chromium}" -e SHOT_MOBILE="${SHOT_MOBILE:-}" -e SHOT_THEME="${SHOT_THEME:-}" -e SHOT_ACCENT="${SHOT_ACCENT:-}" \
   -e BASE="${SHOT_BASE:-https://tesria.localhost}" \
   -e EMAIL="$SHOT_EMAIL" -e PASSWORD="$SHOT_PASSWORD" \
   -v "$HERE/shot.mjs":/app/shot.mjs \
-  -v "$SPECDIR":/work -v "$SPECDIR/shots":/out -w /app \
+  -v "$SPECDIR":/work -v "$OUTDIR":/out -w /app \
   --entrypoint node tesria-pdf /app/shot.mjs "/work/$(basename "$SPEC")" "$2"
