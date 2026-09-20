@@ -2335,6 +2335,242 @@ export.
 
 ---
 
+## Phase 12 — Exports that look like the page
+
+*Added 2026-09-20 at the owner's request, designed by Fable. The complaint:
+"the export output is terrible; it flattens elements and makes them look
+nothing like the rendered page; tables look completely different." Plus
+two new formats: a page as a static HTML file, and a whole space as a
+static site that can be hosted on Cloudflare Pages and looks the same.
+The motivating use is the official Tesria documentation: written here,
+published cheaply.*
+
+**Why it is terrible, precisely.** Three causes, and none of them is a
+table bug.
+
+1. The exported document's whole stylesheet is fifteen lines: `pre`,
+   `code`, `blockquote`. The page renders content through about two
+   thousand lines of `index.css`. There is no table rule in the export at
+   all, so every table is a browser-default table.
+2. `ProseMirrorRenderer.cs` is a hand-written *second* renderer of
+   thirty-five node types that copies colours out of `index.css` by hand
+   (its own comments say "matching index.css"). The plan already pays the
+   tax: every editor change needs "a matching case in
+   `ProseMirrorRenderer`" (7.D). Two renderers drift; that is what
+   renderers do.
+3. Eight node types are React node views: charts (inline SVG), Mermaid,
+   maths, embeds, dynamic blocks with live data, expand, table of
+   contents, media. Anything that is not the browser reproduces those a
+   third way, and a headless `generateHTML` pass would leave them hollow.
+
+**The decision: exports are captured from the real page, not
+regenerated.** The PDF sidecar already runs Chromium. Instead of being
+handed hand-made HTML, it loads a chrome-free export route of the SPA,
+waits for the page's own ready signal, and then prints (PDF) or
+serialises the DOM (HTML, and the site). One renderer. What you see is
+what you export, by construction, and the fidelity problem cannot come
+back without also breaking the page view. `ProseMirrorRenderer` keeps
+Markdown, which is a genuinely different target and which it does well;
+its HTML path is retired.
+
+**The posture change, stated plainly.** The sidecar today runs with the
+network switched off and is handed a self-contained document. Capture
+means it reaches the app. The rule becomes: the sidecar may reach **the
+app service and nothing else**, enforced in the sidecar by a `page.route`
+allowlist (`http://app:8080/**` and `data:`; everything else aborted)
+and by the compose network, exactly as today. It still never reaches the
+internet, and the files it produces are still self-contained. The
+exported document is the same document a reader sees, fetched with the
+same permissions, so the 5.1 masking holds without a second
+implementation of it.
+
+### 12.1 Capture-based export, and every element checked — `L` — Model: Fable → Opus
+
+**The render route.** `/export/pages/:id` in the SPA, outside `Layout`
+(like `/welcome`): the title and `<Editor editable={false}>` inside the
+same `.paper`, the same `index.css`, and nothing else. No topbar, sidebar,
+labels, comments or action bar. It forces the light theme
+(`data-theme=light`) whatever the account prefers, because a PDF is
+paper. It sets `data-export-ready` on `<html>` when its own work is done:
+the editor has mounted, every image has loaded or failed, Mermaid and
+KaTeX have rendered, every dynamic block has answered. The sidecar waits
+for that attribute with a timeout and then one short quiet period, which
+is a signal rather than a guess. `?chrome=site` (12.2) adds the space
+tree, a breadcrumb and a footer; the default adds nothing.
+
+**Print rules live in `index.css`, next to the screen rules,** under
+`@media print` and a `.paper--export` class: `break-inside: avoid` on
+table rows, panels, images, code blocks and decisions; headings keep
+their next block (`break-after: avoid`); a full-width table falls back to
+the page width; an embed renders as its card (the `card` kind already
+exists) because an iframe has nothing to show on paper; the comment mark
+and external-edit marks (8.6) render as plain text. Every one of these
+is a rule beside the screen rule it modifies, not a copy of it.
+
+**The render token.** The sidecar's browser has no session. The export
+endpoint mints a token for it: HMAC over `{ userId | anonymous, scope:
+page:<id> | space:<id>, exp }`, five minutes, signed with `Pdf:SharedSecret`
+which both sides already hold, prefix `trx_`. `ApiTokenAuthenticationHandler`
+accepts it as a second token form: no database row, no counting against
+the twenty-an-hour mint limit (which a fifty-page site export would blow
+through), read scope only, and the principal it yields is the exporting
+user or the anonymous principal. The sidecar sets it as
+`Authorization: Bearer` through `extraHTTPHeaders`, so every fetch the
+page makes is authenticated the same way the reader's would be.
+
+**The endpoint.** `GET /pages/{id}/export?format=pdf|html|markdown` is
+unchanged in shape. `pdf` and `html` now go through the sidecar:
+`POST /render` takes `{ url, token, format: 'pdf' | 'html' }`.
+- `pdf`: A4, `printBackground`, 16/18 mm margins as today, and a footer
+  template with the page title and "n of N", because a document with
+  page numbers is one somebody can cite.
+- `html`: the serialised DOM of the render route, with the compiled
+  stylesheet inlined, images and file links inlined as data URIs through
+  the existing `InlineAssets`, every `contenteditable` stripped, and
+  every `<script>` stripped except the theme script and toggle described
+  in 12.2, so a single exported file keeps the same light, dark and
+  system choice the site does. One file that opens anywhere. The Mermaid
+  bundle that the HTML export used to carry is gone: the SVG is already
+  rendered.
+- `markdown`: `ProseMirrorRenderer`, as today.
+
+**The fixture: one page with everything on it.** `tests/fixtures/
+every-element.json` is a page containing each insertable element once
+(the slash catalogue: headings, lists, task list, link, blockquote, code
+block, table, image, divider, table of contents, expand, layout,
+decision, status, date, excerpt, page properties, Mermaid, maths, chart,
+embed, smart link, file, gallery) plus every mark (bold, italic,
+underline, strike, inline code, highlight, text colour, sub, sup, link),
+alignment, indent, a mention, an emoji, a table with column widths, cell
+backgrounds and a header row, a full-width table, a full-width page, and
+one of each dynamic block kind. It is loaded by the export tests, seeded
+into a space by the screenshot harness for the visual check, and is the
+page a future "does export still look right" question is answered
+against.
+
+**The audit, which is the other half of what was asked.** For each row of
+the fixture, five columns, each checked live and recorded in
+`docs/export-fidelity.md`: **Editor** (inserts, edits, saves, survives a
+reload), **View** (renders on the page), **PDF**, **HTML**, **Site**
+(12.2). A cell is either a checkmark or the number of the bug it found.
+Bugs in the editor found this way are fixed in this item, because
+"renders properly in the export" is not a claim worth making about an
+element that does not work in the editor. Each fix gets its own CHANGELOG
+line.
+
+**What is removed.** The HTML half of `ProseMirrorRenderer` and its
+inlined stylesheet, `IPdfRenderer.RenderAsync(html)` in favour of
+`RenderAsync(url, token, format)`, and the Mermaid bundle in exports.
+The Markdown half stays, and so do its tests.
+
+**Tests** (`ExportTests`, rewritten for the html path; `PdfExportTests`;
+new `RenderTokenTests`): a render token authenticates read-only, as the
+right user, only inside its scope, only before expiry, and never for a
+write; a page the user cannot see is masked through the token exactly as
+through a cookie; the html export contains the elements of the fixture
+by class and carries no `<script>`; the sidecar refuses a `url` that is
+not the app's own render route; the anonymous principal through the
+token sees exactly what 5.1's matrix says. The fidelity itself is not a
+unit test; it is the harness shooting the fixture page and the PDF of
+it, and the matrix above.
+
+**Live.** The fixture page in the editor (every element inserted through
+the UI, not the API, at least once); its view; its PDF opened and read;
+its HTML file opened from disk with the network off and its theme toggle
+tried; both themes for the view and the HTML file, light only for PDF,
+which is deliberate; 375 px for the view.
+
+### 12.2 Publish a space as a static site — `L` — Model: Fable → Opus
+
+**What it is for.** Write the documentation in Tesria, export the space,
+host the result on Cloudflare Pages, GitHub Pages or any static host.
+Readers get the same rendering with no server, no editor and no way to
+change anything. This is not 8.5's wiki pack, which is a portable
+archive for importing into another Tesria; it is a website. The two share
+the walk over a space's pages and attachments and nothing else, and 8.5
+should reuse that walk when it comes.
+
+**Endpoint.** `POST /api/spaces/{key}/export/site` with
+`{ audience: 'anonymous' | 'me', includeTree: true }`; returns a zip.
+Needs `pages.export` (the right to export pages one by one, batched) and
+view on the space; no new right, because it grants nothing the caller
+could not already do page by page.
+- **`audience: 'anonymous'`** renders every page as the anonymous
+  principal: the space has to be public and anonymous reading on, and
+  restricted pages, drafts and the trash are absent by the same rule that
+  keeps them off the public web. This is the default for the stated use
+  and the leak-proof one: a docs site built this way cannot contain a
+  private page by accident, whatever the exporter's own access. On a
+  space that is not public it exports nothing and says so.
+- **`audience: 'me'`** renders as the caller, for a handbook to be hosted
+  behind the host's own access control. The dialog says which of the two
+  it is doing and why that matters.
+
+**The site.** Cloudflare Pages conventions, which are everyone's:
+
+```
+index.html                    the space: name, description, the tree
+getting-started/index.html    one directory per page, clean URLs
+getting-started/install/      nested to mirror the tree
+assets/site.css               the app's compiled stylesheet, verbatim
+assets/fonts/…                KaTeX's fonts, when a page uses maths
+assets/<attachment id>-<name> images and files, real files not data URIs
+404.html
+```
+
+Slugs are the kebab-case title, deduplicated with `-2`, `-3` among
+siblings. Each page is the render route with `?chrome=site`: the tree on
+the left with the current page marked, a breadcrumb, the content, and a
+footer reading "Exported from <instance> on <date>", which is also the
+honest caption for dynamic blocks, frozen at the moment of export. Every
+internal link (`/spaces/KEY/pages/ID`, with or without a heading anchor)
+is rewritten to a relative site path; a link to a page not in the export
+(restricted, another space) becomes plain text with a `title` saying so.
+Attachment URLs are rewritten to `assets/`. Embeds keep their iframe, the
+site is online.
+
+**Themes survive the export.** *(Owner's request, 2026-09-20.)* The app's
+light, dark and system themes and its accent colours are a `data-theme`
+and `data-accent` attribute on `<html>`, set from `localStorage` by a
+small inline script before first paint (`theme.ts`, and the same logic
+in `index.html`). The site ships that script verbatim in every page and
+a theme toggle in the header, the same control the app has. That is the
+only JavaScript in the output: a few lines, no dependencies, and the
+reader's choice lives in their own browser. A reader who never touches
+it gets the system theme through the stylesheet's `prefers-color-scheme`
+rule exactly as before. `index.html` and `theme.ts` already have to be
+kept in step (architecture.md, "Theming"); the exporter reads the script
+from one place rather than adding a third copy to keep in step.
+
+**Size and time.** One page renders in roughly a second. The export runs
+synchronously with a cap of 300 pages and streams the zip as it goes;
+above the cap it refuses and names the number. A job model with progress
+is the follow-up if a real space ever needs it, and it is not built
+before one does.
+
+**Not in v1, deliberately:** search (Pagefind is the obvious fit and
+needs no server; a follow-up once a site exists to try it on); a custom
+domain, base path or theme; comments; versions; anything that needs a
+server. **Not decided here:** whether a site export should be schedulable
+or hookable (a webhook on publish that re-exports), which is the natural
+next step for documentation and belongs with 8.5's "export it, host it".
+
+**UI.** Space settings → **Export** section, above the Danger zone:
+**Export as a site**, with the audience choice and a sentence on where to
+host the result. The page menu's Export entries are unchanged.
+
+**Tests** (`SiteExportTests`): every page the audience may see is in the
+zip and no other; slugs are unique and mirror the tree; every internal
+link resolves to a file in the zip; every attachment referenced is in
+`assets/` and nothing else is; `audience: 'anonymous'` on a private space
+returns an empty site with a message; the cap. **Live:** export the
+fixture space, serve the zip with a plain static file server, walk it in
+the browser with the network to the instance blocked, check a table, a
+diagram, a chart, an image and an internal link; then the same site on
+a phone width.
+
+---
+
 ## Order of execution, flattened
 
 1. **0.1** Roles (Fable→Opus) → **0.2** Settings → **0.3** Telemetry → **0.4** Media storage
@@ -2348,6 +2584,7 @@ export.
 9. **8.1** PDF (after 7.A) → **8.2** Licence (any time) → **8.3** OpenAPI → **8.4** MCP (Fable→Opus) → **8.6** External edits as tracked changes (Fable→Opus) → **8.5** Wiki packs (Fable→Opus)
 10. **9.1** Backups admin section (Fable→Opus; shipped 2026-09-17) → **9.2** Offsite backups (Fable→Opus; unscheduled, waits on the owner's seven decisions listed in the item)
 11. **10.1** Owner role (shipped 2026-09-20) → **11.1** Instance rights and the Roles tab (shipped 2026-09-20) → **11.2** Custom roles (shipped 2026-09-20) → **11.3** Delete a space (shipped 2026-09-20) → **5.5** Anonymous access is opt-in twice (shipped 2026-09-20) → **10.4** Media harness (shipped 2026-09-20) → **10.2** Owner setup wizard (shipped 2026-09-20) → **10.3** Tour and tips (shipped 2026-09-20) (all specified 2026-09-20 as Fable; Opus implements). Phase 11 goes before the wizard because the wizard has a required step that reviews the matrix, and before 10.3 because the tour's screens should show the real Roles tab. 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
+12. **12.1** Capture-based export and the element audit (Fable→Opus; specified 2026-09-20) → **12.2** Publish a space as a static site (Fable→Opus). 12 before 8.5 because the site export builds the walk over a space that the wiki pack will reuse, and because the owner's documentation is waiting on it.
 
 Phases 6 and 8.2 are floaters — small, no dependents — and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm

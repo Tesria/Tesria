@@ -38,6 +38,11 @@ syntax-highlighted code blocks.
 
 ## Portable space/site export ("wiki packs")
 
+> **Split 2026-09-20.** The *website* half of this idea (export a space as
+> static HTML and host it anywhere) is now dev-plan **Phase 12**, designed;
+> the *portable archive* half (import into another Tesria) remains 8.5.
+
+
 Export a single space — or the entire site — as one downloadable file that
 bundles all its pages, structure, and content, which anyone else can import
 to stand up their own fully-populated instance from scratch. E.g. someone
