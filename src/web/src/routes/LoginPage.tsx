@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react
 import { useAuth } from '../auth/AuthContext'
 import { api, ApiError } from '../api/client'
 import { PasswordInput } from '../components/PasswordInput'
+import { useInstance } from '../InstanceContext'
 
 export function LoginPage() {
   const { user, login, completeTotp } = useAuth()
@@ -18,6 +19,11 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(searchParams.get('ssoError'))
   const [busy, setBusy] = useState(false)
   const [oidc, setOidc] = useState<{ enabled: boolean; displayName: string } | null>(null)
+  const instance = useInstance()
+  // An invite link is its own authorisation, so it shows the sign-up route
+  // even on an instance that has closed public registration.
+  const invited = searchParams.get('invite') !== null
+  const mayRegister = invited || (instance?.allowPublicRegistration ?? false)
 
   // Hooks must run unconditionally, so this is fetched before the `user`
   // early-return below rather than after it.
@@ -119,9 +125,18 @@ export function LoginPage() {
         <p className="muted">
           <Link to="/recover">Forgot your password?</Link>
         </p>
-        <p className="muted small">
-          No account? <Link to="/register">Create one</Link>
-        </p>
+        {mayRegister && (
+          <p className="muted small">
+            No account? <Link to="/register">Create one</Link>
+          </p>
+        )}
+        {/* Somebody who reached sign-in out of habit on an instance that does
+            publish something should not be stranded here (dev-plan 5.5). */}
+        {instance?.publicReading && (
+          <p className="muted small">
+            <Link to="/spaces">Browse what is public</Link>
+          </p>
+        )}
       </form>
     </div>
   )

@@ -5,6 +5,31 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Anonymous reading is opt-in twice (2026-09-20)
+
+An instance that publishes nothing now looks like one. Before, a visitor
+with no account got the public shell and a Spaces page reading "Nothing is
+published for public reading", both with the instance-wide switch off and
+with it on but nothing marked public. Now they get the sign-in page.
+
+Anonymous reading exists only when **Allow public spaces** is on **and**
+at least one non-archived space is public, which is the rule the server
+has always applied per space; this makes the first screen agree with it.
+A deep link to a page still carries where it was going, so signing in
+lands the reader there rather than on the spaces list.
+
+`GET /api/instance` is the one thing the SPA may ask before a session
+exists: the instance name, whether the instance still needs its owner
+(10.2 will read that), whether there is any public reading, and whether
+sign-up is open. Four fields, with a test that asserts it is exactly those
+four and leaks no space key or address. The login page uses the last two:
+"Browse what is public" appears only when there is something to browse,
+and "Create one" only when registration is open, unless the URL carries an
+invite token, which is its own authorisation.
+
+Signed-in behaviour is unchanged. The "Nothing is published" copy stays
+for the case it still describes: a signed-in user who can see no spaces.
+
 ### Fix: eight more confirmations that did nothing (2026-09-20)
 
 The previous entry claimed no native confirmation was left in the SPA. That

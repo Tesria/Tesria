@@ -576,6 +576,7 @@ app.MapMcp("/mcp").RequireAuthorization(new Microsoft.AspNetCore.Authorization.A
 
 // Not under /api: robots.txt and sitemap.xml live at the root (dev-plan 5.2).
 app.MapPublicEndpoints();
+app.MapInstanceEndpoints();
 
 // SPA fallback: any non-API, non-file route returns index.html so client-side
 // routing works. Guarded so it never swallows /api/* requests. Reuses the same

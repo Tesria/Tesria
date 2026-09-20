@@ -315,6 +315,103 @@ public class PublicReadTests
         Assert.Contains("<title>Tesria</title>", privShell);
     }
 
+    // ---- /api/instance: opt-in twice (dev-plan 5.5) -------------------------
+
+    private record InstanceDto(string InstanceName, bool NeedsOwner, bool PublicReading, bool AllowPublicRegistration);
+
+    private static Task<InstanceDto?> InstanceAsync(HttpClient c) =>
+        c.GetFromJsonAsync<InstanceDto>("/api/instance");
+
+    [Fact]
+    public async Task Public_reading_needs_the_instance_switch_as_well_as_a_public_space()
+    {
+        // Built with a public space, but the instance switch turned back off.
+        var w = await BuildAsync();
+        using var _ = w.Factory;
+        Assert.True((await InstanceAsync(w.Anon))!.PublicReading);
+
+        (await w.Admin.PutAsJsonAsync("/api/admin/settings", new { AllowPublicSpaces = false }))
+            .EnsureSuccessStatusCode();
+
+        Assert.False((await InstanceAsync(w.Anon))!.PublicReading);
+    }
+
+    [Fact]
+    public async Task Public_reading_needs_a_public_space_as_well_as_the_instance_switch()
+    {
+        // The switch is on throughout BuildAsync; publish nothing.
+        var w = await BuildAsync(publish: false);
+        using var _ = w.Factory;
+
+        Assert.False((await InstanceAsync(w.Anon))!.PublicReading);
+
+        (await w.Admin.PutAsJsonAsync("/api/admin/spaces/PUB/public", new { IsPublic = true }))
+            .EnsureSuccessStatusCode();
+
+        Assert.True((await InstanceAsync(w.Anon))!.PublicReading);
+    }
+
+    [Fact]
+    public async Task An_archived_public_space_does_not_count_as_publishing_anything()
+    {
+        var w = await BuildAsync();
+        using var _ = w.Factory;
+        Assert.True((await InstanceAsync(w.Anon))!.PublicReading);
+
+        // Archiving is how a space is taken out of circulation without
+        // destroying it; it must take the public reading with it.
+        (await w.Admin.PostAsJsonAsync("/api/spaces/PUB/archive", new { })).EnsureSuccessStatusCode();
+
+        Assert.False((await InstanceAsync(w.Anon))!.PublicReading);
+    }
+
+    [Fact]
+    public async Task Needs_owner_is_true_only_until_the_first_account_exists()
+    {
+        using var factory = new TestAppFactory();
+        var anon = factory.CreateClient();
+
+        Assert.True((await InstanceAsync(anon))!.NeedsOwner);
+
+        (await anon.PostAsJsonAsync("/api/auth/register",
+            new { Email = "first@example.com", DisplayName = "First", Password = "supersecret" }))
+            .EnsureSuccessStatusCode();
+
+        Assert.False((await InstanceAsync(factory.CreateClient()))!.NeedsOwner);
+    }
+
+    [Fact]
+    public async Task The_sign_up_hint_follows_the_registration_setting()
+    {
+        var w = await BuildAsync(publish: false);
+        using var _ = w.Factory;
+        Assert.True((await InstanceAsync(w.Anon))!.AllowPublicRegistration);
+
+        (await w.Admin.PutAsJsonAsync("/api/admin/settings", new { AllowPublicRegistration = false }))
+            .EnsureSuccessStatusCode();
+
+        Assert.False((await InstanceAsync(w.Anon))!.AllowPublicRegistration);
+    }
+
+    [Fact]
+    public async Task The_instance_endpoint_says_nothing_an_anonymous_caller_should_not_know()
+    {
+        var w = await BuildAsync();
+        using var _ = w.Factory;
+
+        var body = await w.Anon.GetStringAsync("/api/instance");
+
+        // The four documented fields and nothing else: no space keys, no
+        // account count, no addresses, no settings beyond these.
+        var fields = System.Text.Json.JsonDocument.Parse(body).RootElement
+            .EnumerateObject().Select(p => p.Name).Order().ToArray();
+        Assert.Equal(
+            ["allowPublicRegistration", "instanceName", "needsOwner", "publicReading"],
+            fields);
+        Assert.DoesNotContain("PUB", body);
+        Assert.DoesNotContain("admin@example.com", body);
+    }
+
     private static IEnumerable<TreeNode> Flatten(List<TreeNode> nodes) =>
         nodes.SelectMany(n => new[] { n }.Concat(Flatten(n.Children)));
 }

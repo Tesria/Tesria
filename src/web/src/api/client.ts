@@ -147,6 +147,16 @@ export type Space = {
   iconColor: number | null
 }
 
+/** What the SPA may know before a session exists (dev-plan 5.5). */
+export type InstanceInfo = {
+  instanceName: string
+  /** No accounts yet, so the first one to register becomes the owner. */
+  needsOwner: boolean
+  /** Anonymous reading is opt-in twice: the instance switch AND a public space. */
+  publicReading: boolean
+  allowPublicRegistration: boolean
+}
+
 /** What the delete dialog counts up before asking (dev-plan 11.3). */
 export type SpaceDeletionPreview = {
   key: string
@@ -821,6 +831,7 @@ export const api = {
     resetWithToken: (input: { token: string; newPassword: string }) =>
       request<void>('POST', '/api/auth/recover/token', input),
   },
+  instance: () => request<InstanceInfo>('GET', '/api/instance'),
   spaces: {
     list: (includeArchived = false) =>
       request<Space[]>('GET', `/api/spaces?includeArchived=${includeArchived}`),
