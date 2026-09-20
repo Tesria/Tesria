@@ -2282,3 +2282,60 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
 .danger-zone h2 { color: var(--danger); }
 .danger-form label { display: grid; gap: 0.25rem; margin-top: 0.75rem; }
 .danger-form .confirm__body { margin-bottom: 0.25rem; }
+
+/* First-run setup (dev-plan 10.2). Its own full-page layout: the wizard runs
+   before there is a topbar or a sidebar to sit inside. */
+.setup { display: grid; grid-template-columns: 17rem 1fr; min-height: 100vh; background: var(--bg); }
+.setup--notice {
+  display: grid; place-content: center; justify-items: start;
+  gap: 0.5rem; padding: 2rem; max-width: 34rem; margin: 0 auto;
+}
+.setup--notice .btn { margin-top: 0.5rem; }
+.setup__rail {
+  padding: 1.5rem 1rem; border-right: 1px solid var(--border); background: var(--surface);
+}
+.setup__brand { font-size: 1.05rem; margin: 0 0 1.25rem; padding: 0 0.5rem; }
+.setup__rail ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.15rem; }
+.setup__step {
+  width: 100%; display: flex; gap: 0.6rem; align-items: flex-start; text-align: left;
+  padding: 0.5rem; border: 0; border-radius: 6px; background: transparent;
+  color: var(--text); cursor: pointer; font: inherit;
+}
+.setup__step:hover:not(:disabled) { background: var(--bg); }
+.setup__step:disabled { opacity: 0.45; cursor: default; }
+.setup__step.is-current { background: var(--primary-soft, var(--bg)); }
+.setup__step strong { display: block; font-size: 0.9rem; }
+.setup__step .small { display: block; }
+.setup__step-mark {
+  flex: 0 0 1.4rem; height: 1.4rem; border-radius: 50%; display: grid; place-items: center;
+  font-size: 0.75rem; border: 1px solid var(--border); color: var(--muted);
+}
+.setup__step.is-done .setup__step-mark { background: var(--primary); border-color: var(--primary); color: #fff; }
+.setup__panel { padding: 2rem; overflow-y: auto; }
+.setup__step-panel { max-width: 44rem; display: grid; gap: 0.85rem; }
+.setup__step-panel h2 { margin: 0; }
+.setup__step-panel label { display: grid; gap: 0.25rem; }
+.setup__actions { margin-top: 0.75rem; }
+.setup__check { display: flex; gap: 0.6rem; align-items: flex-start; }
+.setup__check input { margin-top: 0.2rem; }
+.setup__cards { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.setup__card {
+  display: grid; gap: 0.3rem; text-align: left; padding: 0.9rem;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); color: var(--text); cursor: pointer; font: inherit;
+}
+.setup__card.is-chosen { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+.setup__inline { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin: 0; }
+.setup__inline input { width: 5rem; }
+/* The rights matrix is a whole admin page; inside the wizard it needs its own
+   scroll rather than stretching the step panel. */
+.setup__embed { max-height: 26rem; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem; }
+.setup__shot img { max-width: 100%; border: 1px solid var(--border); border-radius: var(--radius); display: block; }
+
+@media (max-width: 860px) { /* keep in sync with --bp-tablet */
+  .setup { grid-template-columns: 1fr; }
+  .setup__rail { border-right: 0; border-bottom: 1px solid var(--border); }
+  .setup__rail ol { grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); display: grid; }
+  .setup__panel { padding: 1.25rem 1rem; }
+  .setup__cards { grid-template-columns: 1fr; }
+}

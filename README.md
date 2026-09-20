@@ -56,8 +56,11 @@ placeholders, not blanks, so nothing fails loudly if you skip one:
 
 Everything else — schema included — sets itself up: the API runs EF Core
 migrations on startup, and the pgBackRest sidecar creates its stanza on
-first boot. Register the first account at `https://<domain>/register`; a
-fresh database has no users.
+first boot. Then open `https://<domain>/` and the setup wizard takes it from
+there: it creates the owner account, names the instance, and walks you
+through who can join, what each role may do, and how much backup history to
+keep. A fresh database has no users, so the first account to be created owns
+the instance.
 
 > **Bring the whole stack up together** (`docker compose up -d`), not
 > `docker compose up -d db` on its own. On a fresh volume the database

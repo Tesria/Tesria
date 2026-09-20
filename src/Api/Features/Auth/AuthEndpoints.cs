@@ -77,7 +77,9 @@ public static class AuthEndpoints
         string? AvatarHash, int? AvatarVariant, bool HasPassword,
         int RecoveryCodesRemaining, bool TotpEnabled, bool TotpRequired, EmailNotificationMode EmailNotifications,
         /// <summary>The rights this account holds (dev-plan 11.1); the SPA renders from these.</summary>
-        string[] Permissions, string RoleName);
+        string[] Permissions, string RoleName,
+        /// <summary>The owner of an instance whose first-run setup is unfinished (dev-plan 10.2).</summary>
+        bool SetupRequired);
     public record NotificationPreferenceRequest(EmailNotificationMode EmailNotifications);
 
     /// <summary>The password was right; a one-time code is still needed.</summary>
@@ -141,6 +143,7 @@ public static class AuthEndpoints
         group.MapPut("/me/password", ChangePassword).RequireAuthorization();
         group.MapGet("/me/recovery-codes", RecoveryStatus).RequireAuthorization();
         group.MapPost("/me/recovery-codes", RegenerateCodes).RequireAuthorization();
+        group.MapPost("/me/recovery-codes/acknowledge", AcknowledgeCodes).RequireAuthorization();
         group.MapGet("/recovery-options", RecoveryOptions);
         group.MapPost("/recover/email", RecoverByEmail).RequireRateLimiting(RateLimits.AuthPolicy);
         group.MapPost("/recover/code", RecoverWithCode).RequireRateLimiting(RateLimits.AuthPolicy);
@@ -382,6 +385,25 @@ public static class AuthEndpoints
         audit.Record("user.reauthenticated", "user", user.Id);
         await db.SaveChangesAsync();
         await SignIn(http, db, user, authTime: now, sessionId: SessionIdOf(http.User));
+        return Results.NoContent();
+    }
+
+    /// <summary>
+    /// Records that this person says they have saved their recovery codes
+    /// (dev-plan 10.2). Its own endpoint rather than a flag on the generate
+    /// call, because the claim is made after the codes have been read, and
+    /// the wizard will not continue until it is.
+    /// </summary>
+    private static async Task<IResult> AcknowledgeCodes(
+        AppDbContext db, CurrentUser current, IAuditLogger audit)
+    {
+        var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
+        if (user.RecoveryCodesAcknowledgedAt is null)
+        {
+            user.RecoveryCodesAcknowledgedAt = DateTimeOffset.UtcNow;
+            audit.Record("user.recovery_codes_acknowledged", "user", user.Id);
+            await db.SaveChangesAsync();
+        }
         return Results.NoContent();
     }
 
@@ -637,8 +659,10 @@ public static class AuthEndpoints
             .Where(r => r.Id == user.RoleId)
             .Select(r => r.Name)
             .FirstOrDefaultAsync() ?? Role.NameFor(user.Role);
+        var setupRequired = await Features.Setup.SetupEndpoints.RequiredForAsync(user, siteSettings);
         return new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.AvatarVariant,
-            user.PasswordHash != null, remaining, enabled, required, user.EmailNotifications, held, roleName);
+            user.PasswordHash != null, remaining, enabled, required, user.EmailNotifications, held, roleName,
+            setupRequired);
     }
 
     private static async Task<IResult> UpdateProfile(

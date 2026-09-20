@@ -125,6 +125,13 @@ export function LoginPage() {
         <p className="muted">
           <Link to="/recover">Forgot your password?</Link>
         </p>
+        {/* Somebody who reached sign-in on an instance nobody has claimed
+            yet (dev-plan 10.2). */}
+        {instance?.needsOwner && (
+          <p className="alert alert--error">
+            This instance has no owner yet. <Link to="/setup">Set it up.</Link>
+          </p>
+        )}
         {mayRegister && (
           <p className="muted small">
             No account? <Link to="/register">Create one</Link>

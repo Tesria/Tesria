@@ -38,6 +38,8 @@ export type User = {
   permissions: string[]
   /** The role's name: User, Administrator, Owner, or a custom one. */
   roleName: string
+  /** The owner of an instance whose first-run setup is unfinished (dev-plan 10.2). */
+  setupRequired: boolean
 }
 
 /** Instance rights (dev-plan 11.1). Keys match Infrastructure/Permissions/InstancePermissions.cs. */
@@ -145,6 +147,14 @@ export type Space = {
   iconValue: string | null
   /** Tile colour index, or null to derive one from the key. */
   iconColor: number | null
+}
+
+/** First-run setup (dev-plan 10.2). */
+export type SetupStep = { at: string; skipped: boolean }
+export type SetupStatus = {
+  required: boolean
+  completedAt: string | null
+  steps: Record<string, SetupStep>
 }
 
 /** What the SPA may know before a session exists (dev-plan 5.5). */
@@ -695,13 +705,20 @@ export class ApiError extends Error {
   readonly fieldErrors: Record<string, string[]>
   /** A machine-readable reason, e.g. `reauth_required`. */
   readonly code: string | null
+  /** The parsed error body, for the fields that are particular to one
+   *  endpoint — setup's 409 naming the step still outstanding, say. */
+  readonly details: Record<string, unknown>
 
-  constructor(status: number, message: string, fieldErrors: Record<string, string[]> = {}, code: string | null = null) {
+  constructor(
+    status: number, message: string, fieldErrors: Record<string, string[]> = {},
+    code: string | null = null, details: Record<string, unknown> = {},
+  ) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.fieldErrors = fieldErrors
     this.code = code
+    this.details = details
   }
 }
 
@@ -751,7 +768,8 @@ async function handle<T>(res: Response): Promise<T> {
     const code = data && typeof data === 'object' && 'code' in data
       ? String((data as { code: unknown }).code)
       : null
-    throw new ApiError(res.status, message, fieldErrors, code)
+    const details = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>
+    throw new ApiError(res.status, message, fieldErrors, code, details)
   }
   return data as T
 }
@@ -812,6 +830,8 @@ export const api = {
       }),
     logout: () => request<void>('POST', '/api/auth/logout'),
     oidcStatus: () => request<{ enabled: boolean; displayName: string }>('GET', '/api/auth/oidc/status'),
+    /** "I have saved these" on the recovery codes (dev-plan 10.2). */
+    acknowledgeRecoveryCodes: () => request<void>('POST', '/api/auth/me/recovery-codes/acknowledge'),
     updateProfile: (input: { displayName: string }) =>
       request<User>('PUT', '/api/auth/me', input),
     changeEmail: (input: { currentPassword: string; email: string }) =>
@@ -832,6 +852,14 @@ export const api = {
       request<void>('POST', '/api/auth/recover/token', input),
   },
   instance: () => request<InstanceInfo>('GET', '/api/instance'),
+  setup: {
+    status: () => request<SetupStatus>('GET', '/api/setup'),
+    /** Records that a step was answered. The server refuses to record a required one as skipped. */
+    recordStep: (key: string, skipped = false) =>
+      request<SetupStatus>('POST', `/api/setup/steps/${encodeURIComponent(key)}`, { skipped }),
+    /** Checked against evidence server-side; 409 names the step still outstanding. */
+    complete: () => request<SetupStatus>('POST', '/api/setup/complete'),
+  },
   spaces: {
     list: (includeArchived = false) =>
       request<Space[]>('GET', `/api/spaces?includeArchived=${includeArchived}`),

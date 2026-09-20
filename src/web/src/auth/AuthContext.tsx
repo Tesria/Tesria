@@ -59,7 +59,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string, displayName: string, password: string, inviteToken?: string,
   ) => {
     const registered = await api.auth.register(email, displayName, password, inviteToken)
-    setUser(registered)
+    // The register response is a *partial* user: it carries the recovery codes
+    // but no permissions, role name or setupRequired. Setting it as the
+    // session would leave the app thinking this account may do nothing, which
+    // matters most for the first-run owner (dev-plan 10.2). Read the session
+    // back instead, and fall back to the partial one if that fails.
+    try {
+      setUser(await api.auth.me())
+    } catch {
+      setUser(registered)
+    }
     return registered.recoveryCodes
   }, [])
 

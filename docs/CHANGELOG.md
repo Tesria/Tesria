@@ -5,6 +5,42 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### First-run setup for the owner (2026-09-20)
+
+A new instance opens on `/setup` instead of a sign-in form: the steps down
+the left, one step's form on the right, and a finished step you can go back
+to. It creates the owner account and its recovery codes, names the instance,
+asks who can join and whether anonymous reading is on (5.5), puts the rights
+matrix (11.1) in front of the owner to approve, and settles the backup
+retention policy (9.1). Email, two-factor and a first space can be skipped.
+
+Every step saves through the endpoint that already owns its setting; the two
+new routes only record that a step was answered. **Completion is checked
+against evidence rather than clicks**: whether the recovery codes were
+acknowledged, whether settings were written, whether the matrix was reviewed,
+whether a policy was saved. Clicking through every step without doing any of
+them returns 409 naming the earliest one outstanding, and the wizard jumps
+there. The server also refuses to record a required step as skipped, so the
+client cannot decide otherwise.
+
+The wizard is convenience, not enforcement. `/register` still works and still
+makes the first account the owner, and the API is not blocked while setup is
+unfinished. An instance upgraded from before the wizard existed is stamped
+complete and never sees it.
+
+Two bugs came out of running it on a genuinely empty instance, neither
+visible from reading the code. `SetupGate` sitting beside the outlet raced
+`SessionGate`'s redirect and lost, so a fresh instance landed on `/login`.
+And `POST /auth/register` returns a different shape from `/auth/me`, with no
+permissions and no role name; the SPA had been setting that partial object as
+the session, which left a newly registered owner holding no rights at all.
+That one was not new to the wizard: it affected every registration since
+permissions existed.
+
+`scripts/scratch-instance.sh` brings up a throwaway instance on port 8099
+under its own compose project, which is how the first-run path gets tested
+without touching a real one.
+
 ### Onboarding media harness (2026-09-20)
 
 The screenshot harness records clips now, not just stills. A shot with

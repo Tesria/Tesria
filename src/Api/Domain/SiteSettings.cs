@@ -161,6 +161,15 @@ public class SiteSettings
     /// </summary>
     public DateTimeOffset? SetupCompletedAt { get; set; }
 
+    /// <summary>
+    /// Which wizard steps have been answered, as
+    /// <c>{ "registration": { "at": "…", "skipped": false }, … }</c>
+    /// (dev-plan 10.2). Kept as JSON rather than a column each because the
+    /// step list is a product decision that will move, while the evidence
+    /// that actually gates completion is in real columns beside this one.
+    /// </summary>
+    public string? SetupProgressJson { get; set; }
+
     public DateTimeOffset UpdatedAt { get; set; }
     public Guid? UpdatedById { get; set; }
 }

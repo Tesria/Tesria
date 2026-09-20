@@ -1701,7 +1701,7 @@ dashboard), `admin-backups` (the Backups tab), for 10.2's Done screen.
   so a set that ships inside the app is not shot at the documentation
   harness's 2x.
 
-### 10.2 First-run setup for the owner — `L` — Model: Fable → Opus
+### 10.2 First-run setup for the owner — `L` — Model: Fable → Opus — ✅ **shipped 2026-09-20**
 
 **When it runs.** `GET /api/instance` (from 5.5; anonymous):
 `{ instanceName, needsOwner, publicReading, allowPublicRegistration }`.
@@ -1759,6 +1759,39 @@ empty instance: the first provisioned user is the owner and lands in the
 wizard at step 1's recovery-codes half (SSO accounts have no codes; that
 half is skipped for them and the requirement waived, since codes reset a
 password they do not have).
+
+**As built (2026-09-20), where it differs from the above.**
+- **`SetupGate` wraps the outlet** rather than sitting beside it in `Root`.
+  As a sibling its `<Navigate>` raced `SessionGate`'s, which renders
+  deeper and won, so a fresh instance landed on `/login` instead of the
+  wizard. Found by running it, not by reading it.
+- **A signed-in account answers for itself.** `needsOwner` comes from
+  `/api/instance`, which is fetched once at load and never refetched, so
+  after the owner is created it still says "true". The gate therefore uses
+  `user.setupRequired` whenever there is a session and only falls back to
+  `needsOwner` for anonymous visitors. Without that, finishing the wizard
+  bounced the new owner straight back into it.
+- **Registering now reads the session back.** `POST /auth/register` returns
+  `RegisteredResponse`, which is a *different* shape from `UserResponse`:
+  no permissions, no role name, no `setupRequired`. The SPA was setting
+  that partial object as the session, so a newly registered owner had an
+  empty rights list and the wizard's matrix step rendered read-only.
+  `AuthContext.register` now calls `/auth/me` after registering. This was
+  a latent bug in every registration, not only the first.
+- **`ApiError` carries the parsed body** as `details`, which is how the
+  409's `step` reaches the client so the wizard can jump there. There was
+  no way to read it before, and a cast made the mistake typecheck.
+- **The email step is a short form**, not the full SMTP form with a test
+  send: the password field and **Send test email** stay in Administration
+  → Settings, which already has them. The step saves host, port, username
+  and from-address, and says where to finish.
+- **A throwaway stack for testing it**: `deploy/scratch-instance.yml` and
+  `scripts/scratch-instance.sh`, two containers under their own project
+  name. See `docs/onboarding.md` for the two traps (cookies ignore the
+  port; a Secure cookie is dropped over HTTP).
+- **Not done:** the instance name in the wizard's own heading does not
+  update when the instance step changes it, because `InstanceProvider` has
+  no refresh. It is cosmetic and lasts for the rest of one wizard run.
 
 **Docs and tests.** `README.md`'s Quick start points at `/setup` instead
 of `/register`. `docs/onboarding.md` describes the wizard and how to re-run
@@ -2288,7 +2321,7 @@ export.
 8. **7.A** → **7.B** → **7.C** → **7.D** (Fable→Opus) → **7.E** → **7.F**
 9. **8.1** PDF (after 7.A) → **8.2** Licence (any time) → **8.3** OpenAPI → **8.4** MCP (Fable→Opus) → **8.6** External edits as tracked changes (Fable→Opus) → **8.5** Wiki packs (Fable→Opus)
 10. **9.1** Backups admin section (Fable→Opus; shipped 2026-09-17) → **9.2** Offsite backups (Fable→Opus; unscheduled, waits on the owner's seven decisions listed in the item)
-11. **10.1** Owner role (shipped 2026-09-20) → **11.1** Instance rights and the Roles tab (shipped 2026-09-20) → **11.2** Custom roles (shipped 2026-09-20) → **11.3** Delete a space (shipped 2026-09-20) → **5.5** Anonymous access is opt-in twice (shipped 2026-09-20) → **10.4** Media harness (shipped 2026-09-20) → **10.2** Owner setup wizard → **10.3** Tour and tips (all specified 2026-09-20 as Fable; Opus implements). Phase 11 goes before the wizard because the wizard has a required step that reviews the matrix, and before 10.3 because the tour's screens should show the real Roles tab. 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
+11. **10.1** Owner role (shipped 2026-09-20) → **11.1** Instance rights and the Roles tab (shipped 2026-09-20) → **11.2** Custom roles (shipped 2026-09-20) → **11.3** Delete a space (shipped 2026-09-20) → **5.5** Anonymous access is opt-in twice (shipped 2026-09-20) → **10.4** Media harness (shipped 2026-09-20) → **10.2** Owner setup wizard (shipped 2026-09-20) → **10.3** Tour and tips (all specified 2026-09-20 as Fable; Opus implements). Phase 11 goes before the wizard because the wizard has a required step that reviews the matrix, and before 10.3 because the tour's screens should show the real Roles tab. 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
 
 Phases 6 and 8.2 are floaters — small, no dependents — and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm
