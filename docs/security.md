@@ -57,6 +57,7 @@ service by sheer volume, which is the network's job, not the app's.
 | Sessions (3.5) | A copied cookie outliving sign-out; forever-sessions; no way to sign out one device | Cookie theft *while* the session lives (use two-factor and short lifetimes) |
 | Two-factor (3.5) | A stolen or guessed password alone | A stolen recovery code; a device with the authenticator *and* the password |
 | Sudo mode (3.5) | An unattended signed-in browser being used for destructive administration | The same browser within five minutes of sign-in |
+| Anonymous reading opt-in twice (5.5) | An instance-wide switch left on with nothing published still presenting a public face; a deep link to a page on an instance that publishes nothing rendering the public shell | Anything about a space that *is* published: that is the point of publishing it. `/api/instance` is anonymous by design and says the instance name, whether it needs an owner, whether anything is public, and whether sign-up is open |
 | Password inside the request (11.3) | An unattended browser deleting a space, which the sudo window alone would allow; deleting the wrong space, which the space key typed back catches | Someone who knows the password and means it. The point is deliberateness, not a second factor (an account without a password answers with a one-time code instead) |
 | Pinned Argon2id (3.5) | Offline cracking of a leaked hash | A weak password against a determined offline attacker with time — length still matters |
 | Dependency audit (3.6) | Known vulnerabilities in what ships | Unknown ones; a compromised upstream package (Dependabot + lockfiles narrow the window) |
@@ -131,6 +132,11 @@ before DNS points at the box.
       published space is readable — and its pages exportable — by anyone,
       with restricted pages, drafts, trash and history excluded. Publish
       spaces one at a time from Admin → Spaces; every publish is an alert.
+      Anonymous reading is **opt-in twice** (5.5): this switch *and* a space
+      marked public. With either missing there is no anonymous reading at
+      all, and a visitor with no session gets the sign-in page rather than
+      an empty public shell, so leaving the switch on with nothing published
+      does not quietly expose a surface.
 - [ ] The fixture accounts from development are gone or demoted.
 
 **Operations**

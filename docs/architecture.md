@@ -464,6 +464,33 @@ with exactly one capability:
 * `ViewableSpaceIds` = the public spaces, or nothing when the switch is off.
 * Every edit/admin capability is false.
 
+**And the instance has to look like what it is (5.5).** The two switches
+above decide what an anonymous *request* may read. They also decide what
+the SPA shows a visitor before any request is made, which used to be a
+separate question and answered wrongly: with nothing published, `/` still
+rendered the public shell and a Spaces page saying "Nothing is published
+for public reading."
+
+`GET /api/instance` (anonymous, covered by the global rate limiter that
+already bounds every session-less caller) answers `{ instanceName,
+needsOwner, publicReading, allowPublicRegistration }`, where
+`publicReading` is the same conjunction the permission service applies:
+the switch, and at least one non-archived public space. `InstanceProvider`
+fetches it once beside the session check, and `SessionGate` sends a
+visitor with no session to `/login` whenever `publicReading` is false,
+carrying `from` so a deep link still arrives where it meant to once they
+sign in. A link to a public page on an instance that publishes nothing
+therefore lands on sign-in, which is the truthful answer: nothing is
+public. The login page offers "Browse what is public" only when there is
+something to browse, and hides the sign-up link when registration is
+closed (an `?invite=` token shows it regardless, because the invite is its
+own authorisation).
+
+This is also the one endpoint that tells an anonymous caller anything
+about the instance, which is why it is four fields and a test asserts that
+it is exactly those four. `needsOwner` is what 10.2's setup wizard will
+key off; the first account becomes the owner.
+
 **Masking.** Anything anonymous may not see is **404, never 403** — the
 rule that already protects restricted pages from signed-in users. That
 includes private spaces by key. The SPA therefore says "sign in to view

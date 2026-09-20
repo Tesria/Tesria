@@ -119,6 +119,11 @@ one's on a decision it shouldn't be making — either way, silently.
   depends on `useBlocker`, which only a data router provides. Anything that
   needs the router (hooks like `useLocation`) must render inside the route
   tree; `Root` in `main.tsx` is where app-wide router-aware components go.
+- **For an anonymous browser without signing anyone out**, use
+  `https://tesria.localhost` instead of `https://localhost`. Caddy serves
+  both and cookies are per-host, so the second hostname has no session
+  while the first keeps yours. This is how the signed-out half of a live
+  walk gets done without asking the owner to sign back in afterwards.
 - **Screenshot-harness steps run *before* a shot's `settle` wait**, so a
   `probe` placed first reads the page before the session check has answered
   and every signed-in route looks like "Loading…". Put a `{ "wait": 2500 }`

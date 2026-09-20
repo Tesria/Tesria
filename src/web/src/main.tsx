@@ -4,6 +4,7 @@ import { createBrowserRouter, createRoutesFromElements, Navigate, Route, RouterP
 import './index.css'
 import { startFaviconSync } from './theme'
 import { AuthProvider } from './auth/AuthContext'
+import { InstanceProvider } from './InstanceContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { SessionGate } from './components/SessionGate'
 import { Layout } from './components/Layout'
@@ -111,8 +112,10 @@ const router = createBrowserRouter(
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
+    <InstanceProvider>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </InstanceProvider>
   </StrictMode>,
 )
