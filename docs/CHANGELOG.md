@@ -19,6 +19,25 @@ reported on it, and the next pass judges with fresh heartbeats. New test
 `A_suspended_host_does_not_make_the_agents_look_offline` in `BackupTests`
 (26 pass). The two alerts from the 17th are still open on this instance.
 
+### Design: Owner role, first-run setup, and onboarding (2026-09-20)
+
+Dev-plan Phase 10, written by Fable 5.1 at the owner's request. Nothing is
+implemented yet. The owner decided that Owner powers are ownership only
+(promoting and demoting administrators, transferring ownership) and that
+four setup steps cannot be skipped: recovery codes, instance name and
+address, registration mode, and the backup retention policy.
+
+- **10.1 Owner role:** `UserRole.Owner`, exactly one, transferable, never
+  demotable; the first account is the owner; on upgrade the earliest active
+  administrator becomes it and the wizard is marked complete.
+- **10.4 Media harness:** the screenshot harness records silent WebM loops
+  with PNG posters, both themes, from a demo space it creates and removes.
+- **10.2 First-run setup:** `/setup` on an empty instance, eight steps, the
+  four required ones enforced by evidence the server holds.
+- **10.3 Tour and tips:** a five-screen welcome tour for new accounts and
+  fifteen contextual tips, at most three a day, dismissable for good, with
+  a profile toggle; existing accounts get tips only.
+
 ### Backups in the admin portal (2026-09-17)
 
 Dev-plan 9.1, implemented by Opus 5 against the spec Fable 5.1 wrote

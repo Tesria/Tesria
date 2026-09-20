@@ -1432,6 +1432,310 @@ Cloudflare R2 pricing and bucket locks.
 
 ---
 
+## Phase 10 — Owner and onboarding
+
+Written 2026-09-20 by Fable 5.1 at the owner's request, from the code as
+it stands after 9.1. Four items, in order: **10.1** the Owner role,
+**10.4** the media harness (the clips the tours use), **10.2** first-run
+setup for the owner, **10.3** the tour and tips for everyone else. Each is
+specified below in full and is ready for Opus.
+
+**What the owner asked for.** A built-in onboarding: on a fresh server, the
+first sign-in walks the administrator through creating their account and
+configuring the instance (retention policy, email server, and so on). A new
+role, **Owner**, above admin; the first account is the owner. Onboarding for
+every new user explaining spaces, the editor and the rest, with recorded
+clips or at least screenshots, and power-user features taught as tips (the
+`/` menu, for one). Tips can be turned off and the non-essential parts of
+onboarding skipped; the critical first-time owner setup cannot be.
+
+**The owner's decisions (2026-09-20), fixed:**
+
+1. **Owner powers are ownership only.** Only the Owner promotes or demotes
+   administrators and transfers ownership. Administrators keep every other
+   power they have today.
+2. **Four owner setup steps cannot be skipped:** saving recovery codes,
+   instance name and address, the registration mode, and the backup
+   retention policy. Everything else (email, two-factor, the first space)
+   can be skipped and finished later from Administration.
+
+**Decisions made here (Fable), which the items below depend on:**
+
+- **Exactly one owner, always.** Ownership moves by transfer, never by
+  editing a role. The owner cannot be demoted, suspended, deleted or
+  have the role set through the role endpoint.
+- **On upgrade, the earliest-created active administrator becomes the
+  owner** and the setup wizard is marked complete, so an existing instance
+  changes nothing visible except a badge. A fresh instance runs the wizard.
+- **The wizard is enforced by the SPA and by data, not by blocking the
+  API.** The owner's own API calls are what complete the steps; blocking
+  them would fight the wizard. `/auth/me` says `setupRequired`; the SPA
+  routes the owner to `/setup` until it is false. The server decides
+  "complete" from evidence it holds, not from a flag the client sets.
+- **Clips are silent WebM loops with a PNG poster, in both themes,**
+  recorded by the existing screenshot harness (Playwright's own video
+  recording; the PDF image has no ffmpeg, so no MP4 or GIF). A poster is
+  what shows where WebM will not play or when the viewer prefers reduced
+  motion. GIF was the request; a video loop is smaller, sharper and pauses.
+- **Tips live in code, state lives on the user.** The catalogue of tips is
+  a TypeScript file; which ones a person has dismissed, and whether they
+  want tips at all, is on their account so it follows them across devices.
+- **Existing accounts get tips, not the tour.** Accounts created before
+  10.3 ships have been using the product; the tour is a link on their
+  profile, not a modal on their next sign-in.
+
+### 10.1 The Owner role — `M` — Model: Fable → Opus
+
+**Model.** `UserRole.Owner = 2`. Every admin check becomes `>= Admin`:
+`CurrentUser.IsAdminAsync` (and a new `IsOwnerAsync`), the places that
+pick administrators as recipients (`NotificationService.NotifyAdminsAsync`,
+`NotificationEmailService`), `RequireTotpForAdmins` (applies to the owner
+too), `DashboardEndpoints` counts, `SecurityMonitor`'s admin new-address
+check, and the five frontend sites (`AdminLayout`, `Layout`,
+`AdminUsersPage`; `UserRole` in `client.ts` gains `Owner: 2`). A new policy
+`AuthPolicies.RequireOwner` with its own requirement handler, same shape as
+`AdminRequirementHandler` including the two-factor rule.
+
+**Invariant: exactly one owner.** Enforced in three places:
+- `Register` and `OidcUserProvisioner`: the first account is `Owner`, not
+  `Admin` (the existing serializable transaction already makes "first"
+  safe).
+- **`OwnerSeed`, a startup step beside `BackupPolicySeed`:** if users exist
+  and none is an owner, promote the earliest-created **active**
+  administrator; if there is none, the earliest-created administrator of
+  any status; if there is none, the earliest-created user. Audit
+  `owner.assigned` with `{ Source = "upgrade", Email }` (a startup step
+  rather than migration SQL so the row is chained). Also set
+  `SiteSettings.SetupCompletedAt = now` when it is null and any user
+  exists, so an upgraded instance never sees the wizard (10.2).
+- Guards on every mutation of a user: the owner's role cannot be changed by
+  `SetRole` (400 "Ownership is transferred, not assigned"), the owner
+  cannot be suspended (400) or deleted, and a transfer never leaves the
+  seat empty.
+
+**Endpoints.**
+- `PUT /api/admin/users/{id}/role` now requires **Owner** (every role
+  change is about administrators). The "only administrator" guard goes:
+  the owner is always there. Promotion still raises `admin.promoted`.
+- `POST /api/admin/users/{id}/transfer-ownership` (**Owner**, **sudo**,
+  audited `owner.transferred` with both emails): target must be active and
+  not the caller; in one transaction the target becomes `Owner` and the
+  caller becomes `Admin`. Raises `owner.transferred` (Critical, alert, no
+  cooldown) so every administrator, including the one who just lost it,
+  hears about it. Rotate nothing: sessions stay valid; the role is read
+  from the database on every request.
+- `GET /api/admin/users` rows carry `role` as today; the list sorts the
+  owner first.
+
+**UI.** Users page: an "Owner" badge; on the owner's own row nothing
+destructive; on every other active row, for the owner only, a **Transfer
+ownership** action with a confirmation naming the person and saying the
+caller becomes an administrator. Administrators see the role controls
+disabled with the hint "Only the owner changes roles." Profile page: the
+owner's role reads "Owner". The admin refusal text in `AdminLayout` stays.
+
+**Docs and tests.** `docs/security.md`: a row in the layers table (what an
+admin session can no longer do), and the checklist item "the owner account
+has two-factor and recovery codes". `architecture.md`'s roles paragraph.
+Tests (`OwnerTests.cs`): first account is owner (local and OIDC); the seed
+picks the earliest active admin on an instance with several, and marks
+setup complete; an admin cannot change roles (403) and the owner can; the
+owner cannot be demoted, suspended, or transferred to a suspended user or
+to self; a transfer swaps both roles atomically, audits, alerts, and the
+old owner is now an admin; the owner passes every `RequireAdmin` route;
+`RequireTotpForAdmins` binds the owner; alert emails reach the owner.
+
+### 10.4 Onboarding media harness — `M` — Model: Opus
+
+Extends `scripts/screenshots/shot.mjs` so one spec produces the stills and
+clips 10.2 and 10.3 embed. Runs the way the harness already runs (the PDF
+image, Caddy's network namespace, a real signed-in account) against a
+demo space the spec itself creates and removes.
+
+- **`record`:** a shot with `"record": { "seconds": 8 }` opens a fresh
+  context with `recordVideo` at the viewport size, runs its steps with
+  their `wait`s as the pacing, closes the context, and moves Playwright's
+  randomly named `.webm` to `<name>.<theme>.webm`. A final screenshot of
+  the same state is the poster, `<name>.<theme>.png`. Steps gain
+  `typeSlowly` (per-character delay, so typing reads as typing) and
+  `moveTo` (a visible cursor path is not available in a recording, so the
+  clip relies on hover states and focus rings instead; annotate nothing).
+- **Themes:** `SHOT_THEME=light` and `dark` produce the two variants; the
+  runner script `scripts/screenshots/onboarding.sh` runs both and fails if
+  any clip exceeds **600 KB** or the set exceeds **8 MB**. Viewport
+  1280×800; clips 6 to 10 seconds; the first and last frames should match
+  so a loop does not jump.
+- **The demo space:** a `setup` shot creates space `DEMO` ("Getting
+  started") with three pages through the UI, and `teardown` deletes it;
+  both run every time, so the clips never depend on this instance's real
+  content and never leak it.
+- **Output is committed:** `src/web/public/onboarding/` (Vite copies
+  `public/` into the build). The spec is `scripts/screenshots/onboarding.json`.
+  The media list, with the shot each comes from, is the first section of
+  `docs/onboarding.md`, so a UI change that dates a clip has a recipe to
+  re-record it.
+
+The clips (each in both themes):
+
+| Name | Shows | Used by |
+|---|---|---|
+| `spaces` | the spaces list, opening a space, the page tree | 10.3 tour |
+| `new-page` | New page, a title, typing a paragraph, Publish | 10.3 tour |
+| `editor-slash` | typing `/`, the menu filtering, inserting a table | 10.3 tour, tip |
+| `editor-toolbar` | selecting text, the bubble menu, a heading from the toolbar | 10.3 tour |
+| `mention` | typing `@`, picking a person | tip |
+| `inline-comment` | selecting text, Comment, a reply | 10.3 tour, tip |
+| `page-tree-drag` | dragging a page under another | tip |
+| `search` | the search box, results, a label chip | 10.3 tour |
+| `templates` | Save as template, then New page from it | tip |
+| `link-shortcut` | Cmd/Ctrl+K on a selection | tip |
+| `watch` | the Watch toggle and the bell | tip |
+| `profile` | avatar, two-factor section, notifications | 10.3 tour |
+
+Stills only (light and dark): `admin-overview` (the Administration
+dashboard), `admin-backups` (the Backups tab), for 10.2's Done screen.
+
+### 10.2 First-run setup for the owner — `L` — Model: Fable → Opus
+
+**When it runs.** `GET /api/setup` (anonymous, rate-limited with the auth
+policy): `{ needsOwner, instanceName }`. `needsOwner` is "no users exist".
+When true, the SPA sends `/`, `/login` and `/register` to `/setup`; the
+Login page itself shows "This instance has no owner yet. Set it up." with
+the link, for anyone who lands on it directly. Once the owner exists, the
+wizard continues only for the owner: `/auth/me` carries
+`setupRequired = role == Owner && SiteSettings.SetupCompletedAt == null`,
+and a global `SetupGate` (in `Root`, beside `RecoveryCodesPrompt`) routes
+every path except `/setup` and `/logout` there while it is true. This is
+convenience: the API is not blocked, and the docs say so.
+
+**Steps.** A single page, `/setup`, with a left rail of steps and one
+step's form on the right, so progress is visible and the owner can go back
+to a completed step. Required steps show a lock glyph and no Skip button;
+optional ones have **Skip for now**. Each step saves through the endpoint
+that already exists for it, then records itself with
+`POST /api/setup/steps/{key}` (**Owner**; body `{ skipped }`), which
+appends to `SiteSettings.SetupProgressJson` (`{ key: { at, skipped } }`).
+The server refuses to record a required step as skipped.
+
+| # | Key | Required | What it does | Saves through |
+|---|---|---|---|---|
+| 0 | `welcome` | | What this wizard covers, and that the required steps take two minutes | nothing |
+| 1 | `account` | yes | Create the owner account (email, name, password); then the recovery codes, with **I have saved these** as a checkbox the Continue button needs | `POST /auth/register` (first account); the checkbox records `User.RecoveryCodesAcknowledgedAt` via `POST /auth/me/recovery-codes/acknowledge` |
+| 2 | `instance` | yes | Instance name; public address (prefilled from the deploy-time value; explained: "links in email use this") | `PUT /admin/settings` |
+| 3 | `registration` | yes | Two cards, neither preselected: **Invite only** ("you create invite links; nobody can sign up on their own") and **Open** ("anyone who can reach this address can create an account"). Continue needs a choice | `PUT /admin/settings` |
+| 4 | `backups` | yes | The retention policy as 9.1's form, prefilled with the seeded values, plus one sentence on what the two backup systems are and that `BACKUP_ENCRYPTION_KEY` in `.env` must be kept off this machine. **Keep these settings** or **Save changes**; either records the step. Saving needs sudo: the owner signed in a minute ago, so the client will not prompt; if the wizard sat idle past the window, `ReauthDialog` asks, which is correct | `PUT /admin/backups/policy` |
+| 5 | `email` | | SMTP host, port, username, password, from, TLS; **Send test email** to the owner's address; Continue is enabled after a successful test or a Skip | `PUT /admin/settings`, `POST /admin/settings/email/test` |
+| 6 | `two-factor` | | The profile's TOTP enrolment inline, with "recommended for the account that owns this instance" | the existing `/auth/me/totp/*` |
+| 7 | `first-space` | | Name and key for a first space, or Skip | `POST /spaces` |
+| 8 | `done` | | What was set, what was skipped with a link to finish each in Administration, the `admin-overview` still, and two buttons: **Invite people** (Administration → Invites) and **Take the tour** (10.3) | `POST /api/setup/complete` |
+
+`POST /api/setup/complete` (**Owner**) verifies the evidence server-side
+and sets `SetupCompletedAt`: the caller has `RecoveryCodesAcknowledgedAt`;
+`SiteSettings.UpdatedById` is not null; `registration` and `instance` are
+recorded and not skipped; `BackupPolicyChangedById` is not null (9.1's
+seed leaves it null; an owner saving or keeping the policy sets it). A
+missing piece returns 409 with the step key, and the SPA jumps there.
+Audit `setup.completed` with the list of skipped keys.
+
+**Also.** Registration is not disabled while `needsOwner`: `/register` is
+the same endpoint and still makes the first account the owner; the wizard
+is the friendlier door to the same room. A second person arriving at
+`/setup` after the owner exists sees "This instance already has an owner"
+with a sign-in link (the `needsOwner` check, re-read on load). OIDC on an
+empty instance: the first provisioned user is the owner and lands in the
+wizard at step 1's recovery-codes half (SSO accounts have no codes; that
+half is skipped for them and the requirement waived, since codes reset a
+password they do not have).
+
+**Docs and tests.** `README.md`'s Quick start points at `/setup` instead
+of `/register`. `docs/onboarding.md` describes the wizard and how to re-run
+a skipped step. Tests (`SetupTests.cs`): `needsOwner` flips on the first
+account; a member cannot record steps or complete; a required step cannot
+be recorded as skipped; complete refuses with 409 naming each missing
+piece, then succeeds and audits; an upgraded instance (seed) is already
+complete; `setupRequired` on `/auth/me`. Live: run the wizard end to end on
+a **fresh** compose stack (`docker compose down -v` on a scratch project
+name, never on this instance), in both themes and at 375 px; then the full
+live walk, since `main.tsx` and `Root` change.
+
+### 10.3 Welcome tour and tips — `L` — Model: Fable → Opus
+
+**State.** On `User`: `TipsEnabled` (bool, default true) and
+`OnboardingJson` (jsonb: `{ tourCompletedAt?, tourSkippedAt?, tourVersion?,
+tips: { key: dismissedAt } }`). `GET /auth/me` includes `onboarding:
+{ tourDue, tipsEnabled, dismissedTips[] }` so the SPA has it on load;
+`PUT /auth/me/onboarding` takes partial updates (`tourCompleted`,
+`tourSkipped`, `tipsEnabled`, `dismissTip`, `resetTips`, `resetTour`).
+`tourDue` is true for accounts created after the migration that have
+neither completed nor skipped the tour, and after **Show the tour again**.
+
+**The tour: `/welcome`.** Full-screen, five screens, each a clip (poster
+under `prefers-reduced-motion` or where the video does not play) beside
+three sentences; Next, Back, **Skip the tour** on every screen, and on the
+last one **Done** with the checkbox "Show me tips as I go" (checked). The
+SPA sends a signed-in user there when `tourDue`, once per session; leaving
+mid-way marks it skipped, and the profile can reopen it.
+
+1. *Spaces and pages* (`spaces`): a space is a home for related pages;
+   pages nest; the tree on the left is the map.
+2. *Writing* (`new-page`, `editor-toolbar`): New page, type, Publish; the
+   toolbar and the bubble menu; drafts are private until published.
+3. *Working together* (`inline-comment`): live co-editing, comments on a
+   selection, `@` to bring someone in, Watch to be told.
+4. *Finding things* (`search`): search everything you can see; labels;
+   the recent list.
+5. *You* (`profile`): avatar, two-factor, email notifications; where tips
+   can be turned off.
+
+**Tips.** A catalogue in `src/web/src/onboarding/tips.ts`: `key`,
+`context` (where it may appear), `trigger` (a predicate over the page's
+state), `title`, `body`, optional `clip`, `priority`. The `TipHost`
+component (in `Root`) shows **at most one tip at a time, at most three per
+day per person** (a counter in `localStorage` per user id), only when
+`tipsEnabled`, never inside a modal or the wizard, never while the editor
+has a selection or a menu open. A tip is a small card anchored to its
+control (bottom-right of the viewport when the control is off-screen or on
+a phone) with **Got it** (dismisses this tip for good) and **Turn off tips**
+(sets `TipsEnabled = false`, with an undo link for ten seconds). Dismissals
+save through `dismissTip`; a network failure keeps the tip dismissed for
+the session.
+
+| Key | Where | Fires when | Teaches |
+|---|---|---|---|
+| `slash-menu` | editor | the editor gains focus for the first time | type `/` for blocks: tables, panels, diagrams, charts |
+| `bubble-menu` | editor | a selection of more than three words | select to format, link, or comment |
+| `link-shortcut` | editor | the second editing session | Cmd/Ctrl+K on a selection makes a link |
+| `mention` | editor | a page has two or more collaborators, or any comment exists | `@` to bring someone in |
+| `emoji` | editor | the tenth editor session | `:` for emoji |
+| `indent` | editor | a list with three or more items | Cmd/Ctrl+] and Cmd/Ctrl+[ |
+| `clear-formatting` | editor | pasted text carrying marks | Cmd/Ctrl+\ clears formatting |
+| `templates` | editor | the third page created by this person | Save as template, then New page from it |
+| `page-tree-drag` | space | a space with three or more pages | drag pages to reorder or nest |
+| `inline-comment` | page view | a published page with no comments, second visit | select text to comment on it |
+| `watch` | page view | a page by someone else | Watch to be notified of changes |
+| `labels` | page view | a page with no labels, owned by this person | labels group pages across spaces |
+| `search-scope` | search | the second search | search finds titles, text, and labels; a space filter narrows it |
+| `full-width` | page view | a page containing a table | Full width for wide tables |
+| `two-factor` | profile | two-factor off, third visit | protect the account |
+
+Order is by `priority`; a tip whose control is not on the page is skipped,
+not queued. The tour's "Done" schedules `slash-menu` as the first tip.
+
+**Profile → "Tour and tips" section:** the tips toggle, **Show the tour
+again**, **Reset dismissed tips**. The owner sees the same section.
+
+**Docs and tests.** `docs/onboarding.md` gains the catalogue with each
+tip's trigger. Tests (`OnboardingTests.cs`): `tourDue` is true for a new
+account and false for one created before the migration (seed the
+`CreatedAt`); each `PUT /auth/me/onboarding` field; a member can only
+change their own; `/auth/me` carries the summary; a suspended account
+cannot update. Frontend has no tests, so the live walk covers: the tour
+on a fresh member account in both themes and at 375 px, reduced motion
+(the poster), three tips firing and the daily cap, Turn off tips and its
+undo, the profile section, and every route touched by `Root`.
+
+---
+
 ## Order of execution, flattened
 
 1. **0.1** Roles (Fable→Opus) → **0.2** Settings → **0.3** Telemetry → **0.4** Media storage
@@ -1444,6 +1748,7 @@ Cloudflare R2 pricing and bucket locks.
 8. **7.A** → **7.B** → **7.C** → **7.D** (Fable→Opus) → **7.E** → **7.F**
 9. **8.1** PDF (after 7.A) → **8.2** Licence (any time) → **8.3** OpenAPI → **8.4** MCP (Fable→Opus) → **8.6** External edits as tracked changes (Fable→Opus) → **8.5** Wiki packs (Fable→Opus)
 10. **9.1** Backups admin section (Fable→Opus; shipped 2026-09-17) → **9.2** Offsite backups (Fable→Opus; unscheduled, waits on the owner's seven decisions listed in the item)
+11. **10.1** Owner role → **10.4** Media harness → **10.2** Owner setup wizard → **10.3** Tour and tips (all specified 2026-09-20 as Fable; Opus implements). 10.1 comes first because 10.2 creates an owner, and 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
 
 Phases 6 and 8.2 are floaters — small, no dependents — and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm
@@ -1459,3 +1764,6 @@ findings don't get better by waiting.
 - Immediate vs. digest for email notifications (4.3).
 - Everything under 9.2's "Open decisions": provider, where credentials live, lock mode, passphrases, repo2 schedule, restic vs. tarball, NAS as a target type.
 - Whether the backup schedule joins the retention policy in the admin UI (9.1 keeps it in `.env`).
+- Whether the welcome tour should also run for accounts that existed before 10.3 (decided no for now: tips only; the tour is on their profile).
+- Whether invites should be able to carry a role, so an invited person arrives as an administrator (10.1 leaves promotion to the owner afterwards).
+- MP4 alongside WebM for the clips (needs ffmpeg in an image; the poster is the fallback until someone asks).
