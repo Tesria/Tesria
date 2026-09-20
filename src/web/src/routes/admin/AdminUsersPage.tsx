@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react'
-import { api, ApiError, UserRole, UserStatus, type AdminUser } from '../../api/client'
+import { api, ApiError, Permission, UserRole, UserStatus, type AdminUser } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import { Avatar } from '../../components/Avatar'
 
 /** Admin → Users (dev-plan 2.2). */
 export function AdminUsersPage() {
-  const { user: me } = useAuth()
+  const { user: me, can } = useAuth()
   const iAmOwner = me?.role === UserRole.Owner
+  // An administrator may be allowed to promote (dev-plan 11.1); demoting an
+  // administrator stays with the owner, so two of them cannot unmake each
+  // other. Both are refused server-side as well.
+  const mayPromote = iAmOwner || can(Permission.UsersPromoteAdmins)
   const [users, setUsers] = useState<AdminUser[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -138,8 +142,12 @@ export function AdminUsersPage() {
                     <button
                       type="button"
                       className="link-btn"
-                      disabled={busy || !iAmOwner}
-                      title={iAmOwner ? undefined : 'Only the owner changes roles.'}
+                      disabled={busy || (u.role === UserRole.Admin ? !iAmOwner : !mayPromote)}
+                      title={
+                        u.role === UserRole.Admin
+                          ? (iAmOwner ? undefined : 'Only the owner demotes an administrator.')
+                          : (mayPromote ? undefined : 'Your role does not allow promoting people to administrator.')
+                      }
                       onClick={() => act(u.id, () => api.admin.users.setRole(
                         u.id, u.role === UserRole.Admin ? UserRole.Member : UserRole.Admin,
                       ), 'Could not change the role.')}

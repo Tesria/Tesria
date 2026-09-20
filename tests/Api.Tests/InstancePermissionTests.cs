@@ -37,6 +37,16 @@ public class InstancePermissionTests
     private static async Task<MatrixDto> MatrixAsync(HttpClient client) =>
         (await client.GetFromJsonAsync<MatrixDto>("/api/admin/roles"))!;
 
+    private static async Task SeedAsync(TestAppFactory factory)
+    {
+        using var scope = factory.Services.CreateScope();
+        await RoleSeed.EnsureAsync(
+            scope.ServiceProvider.GetRequiredService<AppDbContext>(),
+            scope.ServiceProvider.GetRequiredService<PermissionCache>(),
+            scope.ServiceProvider.GetRequiredService<Tesria.Api.Infrastructure.Settings.ISiteSettingsService>(),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance);
+    }
+
     private static async Task<T> InScopeAsync<T>(TestAppFactory factory, Func<AppDbContext, Task<T>> work)
     {
         using var scope = factory.Services.CreateScope();
@@ -79,9 +89,15 @@ public class InstancePermissionTests
         // The one thing an upgrade changes for users.
         Assert.DoesNotContain(InstancePermissions.PagesDeleteAny, user);
         Assert.Contains(InstancePermissions.PagesDeleteAny, admin);
-        // Administrators keep everything they could do before 11.1.
+        // Administrators keep everything they could do before 11.1, except
+        // the rights an owner has to grant deliberately.
         Assert.True(user.IsSubsetOf(admin));
-        Assert.Equal(InstancePermissions.All.Count, admin.Count);
+        Assert.DoesNotContain(InstancePermissions.UsersPromoteAdmins, admin);
+        Assert.Equal(
+            InstancePermissions.All.Count(p => p.DefaultFrom <= UserRole.Admin),
+            admin.Count);
+        Assert.Contains(InstancePermissions.UsersPromoteAdmins,
+            InstancePermissions.DefaultsFor(UserRole.Owner));
         // The owner's extra three are never stored as grants.
         Assert.All(InstancePermissions.Reserved, p => Assert.False(InstancePermissions.IsAssignable(p.Key)));
     }
@@ -112,7 +128,11 @@ public class InstancePermissionTests
                 //               any row", and the owner's edit right is
                 //               reserved, so they can always undo a change
                 //               that took permissions.view away from them.
+                //   users/{id}/role - two rights reach it: the owner's
+                //               reserved one, and users.promote_admins, which
+                //               only promotes.
                 if (endpoint.RoutePattern.RawText is "/api/admin/settings"
+                        or "/api/admin/users/{userId:guid}/role"
                     || endpoint.RoutePattern.RawText?.StartsWith("/api/admin/roles") == true) continue;
                 unnamed.Add(endpoint.RoutePattern.RawText!);
                 continue;
@@ -154,12 +174,80 @@ public class InstancePermissionTests
         await RoleSeed.EnsureAsync(
             scope.ServiceProvider.GetRequiredService<AppDbContext>(),
             scope.ServiceProvider.GetRequiredService<PermissionCache>(),
+            scope.ServiceProvider.GetRequiredService<Tesria.Api.Infrastructure.Settings.ISiteSettingsService>(),
             Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance);
 
         var admin = await InScopeAsync(factory, db => db.Roles.AsNoTracking().Include(r => r.Permissions)
             .FirstAsync(r => r.Key == Role.Keys.Admin));
         Assert.DoesNotContain(admin.Permissions, p => p.Key == InstancePermissions.BackupsPolicy);
         Assert.Equal(3, await InScopeAsync(factory, db => db.Roles.CountAsync()));
+    }
+
+    [Fact]
+    public async Task A_right_added_in_a_later_release_reaches_the_roles_that_default_to_it()
+    {
+        using var factory = new TestAppFactory();
+        await RegisterAsync(factory.CreateClient(), "owner@example.com");
+
+        // An instance that predates a right: forget that it was ever handed
+        // out, and take it off every role, the way an upgrade would find it.
+        await InScopeAsync(factory, async db =>
+        {
+            var roles = await db.Roles.Include(r => r.Permissions).ToListAsync();
+            foreach (var role in roles) role.Permissions.RemoveAll(p => p.Key == InstancePermissions.SpacesDelete);
+            var site = await db.SiteSettings.FirstAsync();
+            site.SeededPermissionKeys = System.Text.Json.JsonSerializer.Serialize(
+                InstancePermissions.All.Select(p => p.Key).Where(k => k != InstancePermissions.SpacesDelete));
+            await db.SaveChangesAsync();
+            return 0;
+        });
+
+        await SeedAsync(factory);
+
+        var roles = await InScopeAsync(factory, db =>
+            db.Roles.AsNoTracking().Include(r => r.Permissions).ToListAsync());
+        // Its default is the administrator tier, so those two rows gain it.
+        Assert.Contains(roles.Single(r => r.Key == Role.Keys.Admin).Permissions,
+            p => p.Key == InstancePermissions.SpacesDelete);
+        Assert.Contains(roles.Single(r => r.Key == Role.Keys.Owner).Permissions,
+            p => p.Key == InstancePermissions.SpacesDelete);
+        Assert.DoesNotContain(roles.Single(r => r.Key == Role.Keys.User).Permissions,
+            p => p.Key == InstancePermissions.SpacesDelete);
+
+        // A right the owner has deliberately removed is not handed back: it
+        // has been seeded once, and the record says so.
+        await RevokeAsync(factory, UserRole.Admin, InstancePermissions.SpacesDelete);
+        await SeedAsync(factory);
+        var after = await InScopeAsync(factory, db =>
+            db.Roles.AsNoTracking().Include(r => r.Permissions).FirstAsync(r => r.Key == Role.Keys.Admin));
+        Assert.DoesNotContain(after.Permissions, p => p.Key == InstancePermissions.SpacesDelete);
+    }
+
+    [Fact]
+    public async Task An_upgrade_with_no_record_yet_does_not_hand_back_a_removed_right()
+    {
+        using var factory = new TestAppFactory();
+        await RegisterAsync(factory.CreateClient(), "owner@example.com");
+
+        // An instance from before the record existed, whose owner had already
+        // decided administrators should not change the retention policy.
+        await RevokeAsync(factory, UserRole.Admin, InstancePermissions.BackupsPolicy);
+        await InScopeAsync(factory, async db =>
+        {
+            var site = await db.SiteSettings.FirstAsync();
+            site.SeededPermissionKeys = null;
+            await db.SaveChangesAsync();
+            return 0;
+        });
+
+        await SeedAsync(factory);
+
+        var admin = await InScopeAsync(factory, db => db.Roles.AsNoTracking().Include(r => r.Permissions)
+            .FirstAsync(r => r.Key == Role.Keys.Admin));
+        Assert.DoesNotContain(admin.Permissions, p => p.Key == InstancePermissions.BackupsPolicy);
+        // ...and the record now exists, so a later release's rights do arrive.
+        Assert.NotNull(await InScopeAsync(factory, async db =>
+            (await db.SiteSettings.AsNoTracking().FirstAsync()).SeededPermissionKeys));
     }
 
     // --- What the owner sees and may change.
@@ -282,6 +370,53 @@ public class InstancePermissionTests
         var promote = await ownerClient.PutAsJsonAsync($"/api/admin/users/{other.Id}/role", new { Role = 1 });
         Assert.True(promote.IsSuccessStatusCode, await promote.Content.ReadAsStringAsync());
         (await ownerClient.PostAsync($"/api/admin/roles/{ownerRole.Id}/reset", null)).EnsureSuccessStatusCode();
+    }
+
+    [Fact]
+    public async Task An_administrator_promotes_only_when_the_owner_has_allowed_it()
+    {
+        using var factory = new TestAppFactory();
+        var ownerClient = factory.CreateClient();
+        await RegisterAsync(ownerClient, "owner@example.com");
+        var adminClient = factory.CreateClient();
+        var admin = await RegisterAsync(adminClient, "admin@example.com");
+        var member = await RegisterAsync(factory.CreateClient(), "member@example.com");
+        var second = await RegisterAsync(factory.CreateClient(), "second@example.com");
+        (await ownerClient.PutAsJsonAsync($"/api/admin/users/{admin.Id}/role", new { Role = 1 }))
+            .EnsureSuccessStatusCode();
+
+        // Off by default: an administrator cannot widen the circle.
+        var refused = await adminClient.PutAsJsonAsync($"/api/admin/users/{member.Id}/role", new { Role = 1 });
+        Assert.Equal(HttpStatusCode.Forbidden, refused.StatusCode);
+        Assert.Contains("users.promote_admins", await refused.Content.ReadAsStringAsync());
+
+        await GrantAsync(factory, UserRole.Admin, InstancePermissions.UsersPromoteAdmins);
+
+        // Now they may promote, and it still raises the admin.promoted alert.
+        (await adminClient.PutAsJsonAsync($"/api/admin/users/{member.Id}/role", new { Role = 1 }))
+            .EnsureSuccessStatusCode();
+        var alerts = await ownerClient.GetFromJsonAsync<List<AlertDto>>("/api/admin/security/alerts?status=all");
+        Assert.Contains(alerts!, a => a.Kind == "admin.promoted");
+
+        // Demoting an administrator is still the owner's alone, so two
+        // administrators cannot unmake each other.
+        var demote = await adminClient.PutAsJsonAsync($"/api/admin/users/{member.Id}/role", new { Role = 0 });
+        Assert.Equal(HttpStatusCode.Forbidden, demote.StatusCode);
+        Assert.Contains("Only the owner", await demote.Content.ReadAsStringAsync());
+        (await ownerClient.PutAsJsonAsync($"/api/admin/users/{member.Id}/role", new { Role = 0 }))
+            .EnsureSuccessStatusCode();
+
+        // The owner's account and the owner role itself are out of reach: the
+        // authorization check answers first, so an administrator is told it is
+        // not theirs to do rather than why the change is invalid.
+        var owner = (await ownerClient.GetFromJsonAsync<UserDto>("/api/auth/me"))!;
+        Assert.Equal(HttpStatusCode.Forbidden, (await adminClient.PutAsJsonAsync(
+            $"/api/admin/users/{owner.Id}/role", new { Role = 1 })).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await adminClient.PutAsJsonAsync(
+            $"/api/admin/users/{second.Id}/role", new { Role = 2 })).StatusCode);
+        // The owner gets the validation message instead, which OwnerTests pins.
+        Assert.Equal(HttpStatusCode.BadRequest, (await ownerClient.PutAsJsonAsync(
+            $"/api/admin/users/{second.Id}/role", new { Role = 2 })).StatusCode);
     }
 
     // --- Enforcement, right by right.

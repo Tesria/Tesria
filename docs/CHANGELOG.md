@@ -5,6 +5,35 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Administrators can be allowed to promote (2026-09-20)
+
+A 29th right, `users.promote_admins`, **off for administrators by
+default**: an owner has to decide to allow it, because promoting is how an
+administrator would widen the circle that can act on the instance.
+
+It only promotes. Demoting an administrator stays with the owner's
+reserved right, so two administrators cannot unmake each other, and the
+owner's own account remains out of reach either way. Promotion still
+raises the `admin.promoted` alert whoever does it. On the Users page the
+Make admin and Demote buttons are gated separately, each saying why when
+it is disabled.
+
+`PUT /admin/users/{id}/role` is now reached by either right, so its check
+moved into the handler; the endpoint-metadata test lists it as the third
+documented exception.
+
+Adding this right showed that `RoleSeed` had no way to hand out a right
+introduced after an instance was built: it never edits an existing role,
+so a new one would have arrived switched off for everyone, the owner
+included, with nobody told. `SiteSettings.SeededPermissionKeys` now records
+what has been handed out, and a key that is new against that record reaches
+the roles whose defaults include it. A key that is simply unrecorded (the
+first start after this change) is recorded and not granted, because an
+owner may already have taken rights away and a seed must never undo a
+decision. Two tests cover both directions.
+
+Tests: 517 pass, three new.
+
 ### Roles with assignable rights (2026-09-20)
 
 Dev-plan 11.1, implemented by Opus 5 against the spec Fable 5.1 wrote the

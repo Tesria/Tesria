@@ -461,7 +461,10 @@ using (var scope = app.Services.CreateScope())
     // attaches every account to one. Before the owner seed, so the account it
     // promotes already has a role to be moved between.
     await Tesria.Api.Infrastructure.Permissions.RoleSeed.EnsureAsync(
-        db, scope.ServiceProvider.GetRequiredService<Tesria.Api.Infrastructure.Permissions.PermissionCache>(), startupLog);
+        db,
+        scope.ServiceProvider.GetRequiredService<Tesria.Api.Infrastructure.Permissions.PermissionCache>(),
+        scope.ServiceProvider.GetRequiredService<ISiteSettingsService>(),
+        startupLog);
 
     // The first start after dev-plan 10.1 gives an existing instance its owner.
     await Tesria.Api.Infrastructure.Auth.OwnerSeed.EnsureAsync(

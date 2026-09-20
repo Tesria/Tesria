@@ -48,6 +48,7 @@ public static class InstancePermissions
     public const string UsersView = "users.view";
     public const string UsersManage = "users.manage";
     public const string UsersAssignRoles = "users.assign_roles";
+    public const string UsersPromoteAdmins = "users.promote_admins";
     public const string InvitesManage = "invites.manage";
     public const string GroupsManage = "groups.manage";
 
@@ -109,6 +110,14 @@ public static class InstancePermissions
         new(UsersAssignRoles, "People", "Assign roles",
             "Give someone a different role within their own tier.",
             PermissionScope.Administration, UserRole.Admin),
+        // Off for administrators by default: promoting someone is how an
+        // administrator would widen the circle that can act on the instance,
+        // so an owner has to decide to allow it. Demoting an administrator
+        // stays the owner's alone, so two administrators cannot unmake each
+        // other.
+        new(UsersPromoteAdmins, "People", "Promote users to administrator",
+            "Make a user an administrator. Demoting one stays with the owner.",
+            PermissionScope.Administration, UserRole.Owner),
         new(InvitesManage, "People", "Manage invite links",
             "See and revoke everyone's invite links.", PermissionScope.Administration, UserRole.Admin),
         new(GroupsManage, "People", "Manage groups",

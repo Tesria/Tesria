@@ -133,9 +133,10 @@ public static class AdminEndpoints
         group.MapPost("/spaces/{key}/recover-access", RecoverSpaceAccess).RequirePermission(InstancePermissions.SpacesManage);
         group.MapPost("/users/{userId:guid}/reset-password", IssuePasswordReset).RequirePermission(InstancePermissions.UsersManage);
         group.MapGet("/users", ListUsers).RequirePermission(InstancePermissions.UsersView);
-        // Only the owner decides who administers the instance (dev-plan 10.1).
-        group.MapPut("/users/{userId:guid}/role", SetRole)
-            .RequirePermission(InstancePermissions.RolesAssignTier);
+        // Two rights reach this one route, so it is checked in the handler:
+        // the owner's reserved roles.assign_tier, and users.promote_admins,
+        // which an owner may grant and which only promotes (dev-plan 11.1).
+        group.MapPut("/users/{userId:guid}/role", SetRole);
         group.MapPost("/users/{userId:guid}/transfer-ownership", TransferOwnership)
             .RequirePermission(InstancePermissions.OwnershipTransfer);
         group.MapPut("/users/{userId:guid}/status", SetStatus).RequirePermission(InstancePermissions.UsersManage);
@@ -565,11 +566,29 @@ public static class AdminEndpoints
     /// </summary>
     private static async Task<IResult> SetRole(
         Guid userId, SetRoleRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit,
-        ISecurityDetector detector, HttpContext http, IConfiguration config)
+        ISecurityDetector detector, HttpContext http, IConfiguration config, IInstancePermissions rights)
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Results.NotFound();
         if (user.Role == req.Role) return Results.Ok(await OneUserAsync(db, userId));
+
+        // The owner may make any change; an administrator holding
+        // users.promote_admins may only promote a user, never demote an
+        // administrator, so administrators cannot unmake one another.
+        var held = await rights.ForCurrentUserAsync();
+        var promoting = user.Role == UserRole.Member && req.Role == UserRole.Admin;
+        if (!held.Contains(InstancePermissions.RolesAssignTier)
+            && !(promoting && held.Contains(InstancePermissions.UsersPromoteAdmins)))
+            return Results.Json(new
+            {
+                title = "Forbidden",
+                status = 403,
+                code = "permission_required",
+                permission = promoting ? InstancePermissions.UsersPromoteAdmins : InstancePermissions.RolesAssignTier,
+                message = promoting
+                    ? "Your role does not allow promoting people to administrator."
+                    : "Only the owner changes an administrator's role.",
+            }, statusCode: StatusCodes.Status403Forbidden);
         // Changing who administers the instance is sudo territory (dev-plan 3.5).
         if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
 
