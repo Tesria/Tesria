@@ -2,6 +2,7 @@ using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Audit;
 using Tesria.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure.Permissions;
 using Tesria.Api.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,17 +35,16 @@ public static class SecurityEndpoints
 
     public static IEndpointRouteBuilder MapSecurityEndpoints(this IEndpointRouteBuilder routes)
     {
-        var group = routes.MapGroup("/admin/security").WithTags("Admin")
-            .RequireAuthorization(AuthPolicies.RequireAdmin);
+        var group = routes.MapGroup("/admin/security").WithTags("Admin").RequireAuthorization();
 
-        group.MapGet("/overview", GetOverview);
-        group.MapGet("/events", ListEvents);
-        group.MapGet("/alerts", ListAlerts);
-        group.MapPost("/alerts/{id:guid}/acknowledge", Acknowledge);
-        group.MapPost("/alerts/{id:guid}/resolve", Resolve);
-        group.MapGet("/blocks", ListBlocks);
-        group.MapPost("/blocks", AddBlock);
-        group.MapDelete("/blocks/{id:guid}", RemoveBlock);
+        group.MapGet("/overview", GetOverview).RequirePermission(InstancePermissions.SecurityView);
+        group.MapGet("/events", ListEvents).RequirePermission(InstancePermissions.SecurityView);
+        group.MapGet("/alerts", ListAlerts).RequirePermission(InstancePermissions.SecurityView);
+        group.MapPost("/alerts/{id:guid}/acknowledge", Acknowledge).RequirePermission(InstancePermissions.SecurityRespond);
+        group.MapPost("/alerts/{id:guid}/resolve", Resolve).RequirePermission(InstancePermissions.SecurityRespond);
+        group.MapGet("/blocks", ListBlocks).RequirePermission(InstancePermissions.SecurityView);
+        group.MapPost("/blocks", AddBlock).RequirePermission(InstancePermissions.SecurityRespond);
+        group.MapDelete("/blocks/{id:guid}", RemoveBlock).RequirePermission(InstancePermissions.SecurityRespond);
         return routes;
     }
 

@@ -21,7 +21,9 @@ public static class GroupEndpoints
         // list. Shaping them is instance administration.
         groups.MapGet("/", List);
         groups.MapGet("/{id:guid}/members", Members);
-        var manage = groups.MapGroup("").RequireAuthorization(Infrastructure.Auth.AuthPolicies.RequireAdmin);
+        var manage = groups.MapGroup("")
+            .RequireAuthorization(Infrastructure.Permissions.PermissionPolicyProvider.Prefix
+                + Infrastructure.Permissions.InstancePermissions.GroupsManage);
         manage.MapPost("/", Create);
         manage.MapPut("/{id:guid}", Update);
         manage.MapDelete("/{id:guid}", Delete);

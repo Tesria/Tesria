@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { api, ApiError, type PageDetail } from '../api/client'
+import { api, ApiError, type PageDetail, Permission } from '../api/client'
 import { Editor } from '../editor/Editor'
 import { scrollToAnchor } from '../editor/headingAnchors'
 import { useAuth } from '../auth/AuthContext'
@@ -22,7 +22,7 @@ export function PageView() {
   const navigate = useNavigate()
   const { hash } = useLocation()
   const { space, tree, reloadTree } = useSpaceContext()
-  const { user } = useAuth()
+  const { user, can } = useAuth()
   const [page, setPage] = useState<PageDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('comments')
@@ -168,9 +168,14 @@ export function PageView() {
               unwatch={() => api.pageWatch.unwatch(page.id)}
             />
             <SaveAsTemplateButton spaceId={space.id} contentJson={page.contentJson} defaultName={page.title} />
-            <button type="button" className="btn btn--danger" onClick={onDelete}>
-              Delete
-            </button>
+            {/* Hidden when the role does not allow it; the server refuses it
+                either way (dev-plan 11.1). */}
+            {(can(Permission.PagesDeleteAny)
+              || (can(Permission.PagesDeleteOwn) && page.createdById === user?.id)) && (
+              <button type="button" className="btn btn--danger" onClick={onDelete}>
+                Delete
+              </button>
+            )}
           </OverflowMenu>
         </div>
       </div>

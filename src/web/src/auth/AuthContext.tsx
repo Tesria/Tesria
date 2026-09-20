@@ -18,6 +18,9 @@ type AuthState = {
   /** Re-reads the session — after editing your own profile, so the topbar and
    *  anything else reading `user` pick the change up without a reload. */
   refresh: () => Promise<void>
+  /** Whether the signed-in account holds an instance right (dev-plan 11.1).
+   *  False while the session check is in flight and for anonymous readers. */
+  can: (permission: string) => boolean
 }
 
 const AuthContext = createContext<AuthState | null>(null)
@@ -74,9 +77,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }, [])
 
+  // Hiding a control the server would refuse spares people a page of 403s;
+  // it is never the enforcement itself (dev-plan 11.1).
+  const can = useCallback(
+    (permission: string) => user?.permissions?.includes(permission) ?? false,
+    [user],
+  )
+
   const value = useMemo<AuthState>(
-    () => ({ user, login, completeTotp, register, logout, refresh }),
-    [user, login, completeTotp, register, logout, refresh],
+    () => ({ user, login, completeTotp, register, logout, refresh, can }),
+    [user, login, completeTotp, register, logout, refresh, can],
   )
   return <AuthContext value={value}>{children}</AuthContext>
 }

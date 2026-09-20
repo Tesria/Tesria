@@ -24,7 +24,8 @@ public sealed class ApiTokenAuthenticationHandler(
     ILoggerFactory logger,
     UrlEncoder encoder,
     IApiTokenService tokens,
-    AppDbContext db)
+    AppDbContext db,
+    Permissions.IInstancePermissions rights)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -39,6 +40,13 @@ public sealed class ApiTokenAuthenticationHandler(
 
         var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == token.UserId);
         if (user is null) return AuthenticateResult.Fail("Invalid or expired API token.");
+
+        // A token is only as good as its owner's role (dev-plan 11.1). Taking
+        // the right away makes existing tokens inert rather than deleting
+        // them, so granting it back restores them; the MCP server rides on
+        // tokens, so this covers it too.
+        if (!(await rights.ForUserAsync(user.Id)).Contains(Permissions.InstancePermissions.TokensUse))
+            return AuthenticateResult.Fail("This account may not use API tokens.");
 
         var claims = new List<Claim>
         {

@@ -3,6 +3,7 @@ using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Audit;
 using Tesria.Api.Infrastructure.Auth;
 using Tesria.Api.Infrastructure.Backups;
+using Tesria.Api.Infrastructure.Permissions;
 using Tesria.Api.Infrastructure.Security;
 using Tesria.Api.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
@@ -61,15 +62,14 @@ public static class BackupEndpoints
 
     public static IEndpointRouteBuilder MapBackupEndpoints(this IEndpointRouteBuilder routes)
     {
-        var group = routes.MapGroup("/admin/backups").WithTags("Admin")
-            .RequireAuthorization(AuthPolicies.RequireAdmin);
+        var group = routes.MapGroup("/admin/backups").WithTags("Admin").RequireAuthorization();
 
-        group.MapGet("", GetOverview);
-        group.MapPut("/policy", UpdatePolicy);
-        group.MapPost("/policy/preview", PreviewPolicy);
-        group.MapPost("/run", RequestBackup);
-        group.MapPost("/{label}/restore-test", RequestRestoreTest);
-        group.MapGet("/jobs/{id:guid}", GetJob);
+        group.MapGet("", GetOverview).RequirePermission(InstancePermissions.BackupsView);
+        group.MapPut("/policy", UpdatePolicy).RequirePermission(InstancePermissions.BackupsPolicy);
+        group.MapPost("/policy/preview", PreviewPolicy).RequirePermission(InstancePermissions.BackupsPolicy);
+        group.MapPost("/run", RequestBackup).RequirePermission(InstancePermissions.BackupsRun);
+        group.MapPost("/{label}/restore-test", RequestRestoreTest).RequirePermission(InstancePermissions.BackupsRun);
+        group.MapGet("/jobs/{id:guid}", GetJob).RequirePermission(InstancePermissions.BackupsView);
         return routes;
     }
 

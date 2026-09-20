@@ -11,6 +11,7 @@ import {
   type BackupPreview,
 } from '../../api/client'
 import { bytes, duration, relative } from './format'
+import { useAuth } from '../../auth/AuthContext'
 
 const AGENT_TITLE: Record<BackupAgentName, string> = {
   logical: 'Database dumps and uploads',
@@ -90,12 +91,13 @@ function describeBackup(b: Backup): string {
 }
 
 function AgentCard({
-  agent, busy, pendingText, onTest,
+  agent, busy, pendingText, onTest, canRun,
 }: {
   agent: BackupAgent
   busy: boolean
   pendingText: string | null
   onTest: (label: string) => void
+  canRun: boolean
 }) {
   const state = agentState(agent)
   const newest = agent.lastSuccess
@@ -157,7 +159,7 @@ function AgentCard({
       <button
         type="button"
         className="btn btn--ghost btn--sm"
-        disabled={busy || !newest || !agent.reporting}
+        disabled={busy || !newest || !agent.reporting || !canRun}
         onClick={() => newest && onTest(newest.label)}
       >
         Test restore of newest
@@ -168,6 +170,7 @@ function AgentCard({
 
 /** Admin → Backups (dev-plan 9.1). */
 export function AdminBackupsPage() {
+  const { can } = useAuth()
   const [data, setData] = useState<BackupOverview | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
@@ -270,6 +273,7 @@ export function AdminBackupsPage() {
   if (!data || !draft) return <p className="muted">{error ?? 'Loading…'}</p>
 
   const policy = data.policy
+  const mayEditPolicy = can('backups.policy')
   const dirty = draft.enabled !== policy.enabled || draft.keepCount !== policy.keepCount || draft.keepDays !== policy.keepDays
 
   function pendingText(agent: BackupAgent): string | null {
@@ -285,9 +289,11 @@ export function AdminBackupsPage() {
       {status && <p className="profile__ok">{status}</p>}
 
       <div className="backup-actions">
-        <button type="button" className="btn btn--primary" disabled={busy || active.length > 0} onClick={backUpNow}>
-          Back up now
-        </button>
+        {can('backups.run') && (
+          <button type="button" className="btn btn--primary" disabled={busy || active.length > 0} onClick={backUpNow}>
+            Back up now
+          </button>
+        )}
         <span className="muted small">
           {active.length > 0
             ? `${active.length} job${active.length === 1 ? '' : 's'} in progress; this page updates when they finish.`
@@ -297,7 +303,8 @@ export function AdminBackupsPage() {
 
       <div className="backup-cards">
         {data.agents.map((a) => (
-          <AgentCard key={a.name} agent={a} busy={busy} pendingText={pendingText(a)} onTest={testRestore} />
+          <AgentCard key={a.name} agent={a} busy={busy} pendingText={pendingText(a)} onTest={testRestore}
+            canRun={can('backups.run')} />
         ))}
       </div>
 
@@ -310,27 +317,34 @@ export function AdminBackupsPage() {
         </p>
         <form onSubmit={review} className="backup-policy">
           <label className="admin__toggle">
-            <input type="radio" name="mode" checked={!draft.enabled} onChange={() => setDraft({ ...draft, enabled: false })} />
+            <input type="radio" name="mode" checked={!draft.enabled} disabled={!mayEditPolicy}
+              onChange={() => setDraft({ ...draft, enabled: false })} />
             <span><strong>Keep every backup forever</strong><br />
               <span className="muted small">Nothing is ever removed. Watch the disk space above.</span></span>
           </label>
           <label className="admin__toggle">
-            <input type="radio" name="mode" checked={draft.enabled} onChange={() => setDraft({ ...draft, enabled: true })} />
+            <input type="radio" name="mode" checked={draft.enabled} disabled={!mayEditPolicy}
+              onChange={() => setDraft({ ...draft, enabled: true })} />
             <span><strong>Prune old backups</strong></span>
           </label>
           <p className="backup-policy__rule">
             Keep the newest{' '}
-            <input type="number" min={1} max={1000} value={draft.keepCount} disabled={!draft.enabled}
+            <input type="number" min={1} max={1000} value={draft.keepCount} disabled={!draft.enabled || !mayEditPolicy}
               aria-label="Backups to keep"
               onChange={(e) => setDraft({ ...draft, keepCount: Number(e.target.value) })} />{' '}
             backups and everything from the last{' '}
-            <input type="number" min={1} max={3650} value={draft.keepDays} disabled={!draft.enabled}
+            <input type="number" min={1} max={3650} value={draft.keepDays} disabled={!draft.enabled || !mayEditPolicy}
               aria-label="Days to keep"
               onChange={(e) => setDraft({ ...draft, keepDays: Number(e.target.value) })} />{' '}
             days.
           </p>
           <p className="muted small">A backup is deleted only when it is outside both.</p>
-          <button type="submit" className="btn btn--primary" disabled={busy || !dirty}>Review change</button>
+          <button type="submit" className="btn btn--primary" disabled={busy || !dirty || !mayEditPolicy}>
+            Review change
+          </button>
+          {!mayEditPolicy && (
+            <p className="muted small">Your role does not allow changing the retention policy.</p>
+          )}
           {policy.changedAt && (
             <p className="muted small">
               Last changed {when(policy.changedAt)}{policy.changedByName ? ` by ${policy.changedByName}` : ' (set from BACKUP_RETENTION_DAYS on upgrade)'}.
@@ -406,7 +420,8 @@ export function AdminBackupsPage() {
                       : <span className="muted">Never</span>}
                   </td>
                   <td className="admin-table__actions">
-                    <button type="button" className="link-btn" disabled={busy || !!b.error} onClick={() => testRestore(b.label)}>
+                    <button type="button" className="link-btn" disabled={busy || !!b.error || !can('backups.run')}
+                      onClick={() => testRestore(b.label)}>
                       Test restore
                     </button>
                   </td>

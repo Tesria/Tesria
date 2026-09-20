@@ -1,4 +1,5 @@
 using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Permissions;
 using Tesria.Api.Infrastructure.Auth;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,7 +17,8 @@ public static class ApiTokenEndpoints
     {
         var group = routes.MapGroup("/api-tokens").WithTags("ApiTokens").RequireAuthorization();
         group.MapGet("/", List);
-        group.MapPost("/", Create).RequireRateLimiting(Infrastructure.Security.RateLimits.TokenMintPolicy);
+        group.MapPost("/", Create).RequireRateLimiting(Infrastructure.Security.RateLimits.TokenMintPolicy)
+            .RequirePermission(Infrastructure.Permissions.InstancePermissions.TokensUse);
         group.MapDelete("/{id:guid}", Revoke);
         return routes;
     }

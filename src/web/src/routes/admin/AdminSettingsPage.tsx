@@ -1,9 +1,11 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { api, ApiError, type SiteSettings } from '../../api/client'
+import { api, ApiError, type SiteSettings, Permission } from '../../api/client'
+import { useAuth } from '../../auth/AuthContext'
 import { PasswordInput } from '../../components/PasswordInput'
 
 /** Admin → Settings (dev-plan 2.3), the UI over the SiteSettings row. */
 export function AdminSettingsPage() {
+  const { can } = useAuth()
   const [settings, setSettings] = useState<SiteSettings | null>(null)
   const [instanceName, setInstanceName] = useState('')
   const [baseUrl, setBaseUrl] = useState('')
@@ -63,11 +65,21 @@ export function AdminSettingsPage() {
 
   if (!settings) return <p className="muted">{error ?? 'Loading…'}</p>
 
+  // Each section is gated by its own right (dev-plan 11.1); a role holding
+  // none of them would otherwise be shown a blank page.
+  const anySection = can(Permission.SettingsInstance) || can(Permission.SecuritySettings)
+    || can(Permission.SettingsRegistration) || can(Permission.SettingsPublicSpaces)
+    || can(Permission.SettingsEmail)
+
   return (
     <>
       {error && <p className="alert alert--error">{error}</p>}
       {status && <p className="profile__ok">{status}</p>}
+      {!anySection && (
+        <p className="muted">Your role does not allow changing any of this instance's settings.</p>
+      )}
 
+      {can(Permission.SettingsInstance) && (
       <section className="profile__section">
         <h2>Instance</h2>
         <label>
@@ -90,7 +102,9 @@ export function AdminSettingsPage() {
           Save
         </button>
       </section>
+      )}
 
+      {can(Permission.SecuritySettings) && (
       <section className="profile__section">
         <h2>Embeds</h2>
         <p className="muted small">
@@ -120,7 +134,9 @@ export function AdminSettingsPage() {
           Save
         </button>
       </section>
+      )}
 
+      {(can(Permission.SettingsRegistration) || can(Permission.SettingsPublicSpaces)) && (
       <section className="profile__section">
         <h2>Access</h2>
         <label className="admin__toggle">
@@ -166,7 +182,9 @@ export function AdminSettingsPage() {
           </span>
         </label>
       </section>
+      )}
 
+      {can(Permission.SettingsEmail) && (
       <section className="profile__section">
         <h2>Email</h2>
         <label className="admin__toggle">
@@ -250,6 +268,7 @@ export function AdminSettingsPage() {
           {testResult && <p className={testResult.startsWith('Sent') ? 'profile__ok' : 'alert alert--error'}>{testResult}</p>}
         </form>
       </section>
+      )}
     </>
   )
 }

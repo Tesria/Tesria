@@ -31,7 +31,8 @@ public static partial class SpaceEndpoints
 
         // Readable without a session (dev-plan 5.2); the permission service decides what an anonymous caller sees.
         group.MapGet("/", List).AllowAnonymous();
-        group.MapPost("/", Create);
+        group.MapPost("/", Create)
+            .RequirePermission(Infrastructure.Permissions.InstancePermissions.SpacesCreate);
         group.MapGet("/{key}", GetByKey).AllowAnonymous();
         group.MapPut("/{key}", Update);
         group.MapPost("/{key}/archive",

@@ -990,6 +990,53 @@ administrator count, the two-factor requirement, and the SPA's nav and
 admin shell. `AuthPolicies.RequireOwner` is the second policy, with the
 same two-factor rule as `RequireAdmin`.
 
+### Instance rights (dev-plan 11.1)
+
+The tier above is the ordering. What a person may actually *do* is their
+**role**: a named set of rights. Three built-in roles ship, one per tier
+(User, Administrator, Owner), and `User.RoleId` points at one whose tier
+always matches `User.Role`.
+
+- **The catalogue is code** (`Infrastructure/Permissions/InstancePermissions.cs`):
+  28 assignable rights, each with a key, an area, a label, a description and
+  the lowest tier that holds it by default. Three more are **reserved to the
+  owner** and never stored as grants: changing tiers, transferring
+  ownership, and editing administrator or owner rows. They are added to the
+  owner's effective set in code, so no configuration can remove them and no
+  owner can lock themselves out.
+- **The grants are data**: `Roles` and `RolePermissions`, cached for 30
+  seconds by `PermissionCache` and invalidated on every write, the same
+  arrangement as `SiteSettingsCache` and for the same reason.
+- **Routes name their right.** `RequirePermission("backups.policy")` builds
+  a `perm:<key>` policy on demand through `PermissionPolicyProvider`; the
+  handler checks the right and, for callers in the administrator tier,
+  the two-factor rule from 3.5. `RequireAdmin` is no longer used by any
+  route. A test walks the endpoint metadata and fails if an `/api/admin`
+  route names nothing, with two documented exceptions: the settings pair
+  (the read needs any settings right, the write is checked **field by
+  field**, since one request may touch several areas) and the roles routes
+  (reaching the matrix is "may see it or may edit any row", so an owner who
+  has taken `permissions.view` from their own role can still undo it).
+- **Rights are additive over space permissions, never a bypass.**
+  `pages.delete_any` says a person may delete other people's pages at all;
+  the space's own Edit grant still decides where. Deleting a page checks
+  `pages.delete_own` or `pages.delete_any` depending on who wrote it.
+- **Anonymous readers** get exactly what the built-in User role holds, so a
+  visitor is never more privileged than a member. That is how `pages.export`
+  reaches the public export route.
+- **API tokens follow their owner's role.** Withdrawing `tokens.use` makes
+  existing tokens fail authentication rather than deleting them, so granting
+  it back restores them. MCP rides on tokens, so it is covered.
+- **Who may edit what.** An administrator may shape user-tier roles
+  (`permissions.edit_user_tier`); only the owner may touch administrator or
+  owner rows. Every save is sudo, audited as a diff
+  (`permissions.changed`), and raises `permissions.expanded` when a role
+  gains rights: Critical for an administrator row, Warning for a user-tier
+  role gaining an administration right.
+- **`RoleSeed`** creates the built-ins at startup and attaches every account
+  to one. It never edits a role that already exists, so an owner's changes
+  survive a restart.
+
 **How the role is checked.** `CurrentUser.IsAdminAsync()` reads the row
 (one indexed primary-key lookup, cached for the request) rather than
 trusting a claim. A role claim would be stale until the next sign-in;

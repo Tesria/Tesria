@@ -382,6 +382,11 @@ builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>
 
 builder.Services.AddScoped<IAuthorizationHandler, AdminRequirementHandler>();
 builder.Services.AddScoped<IAuthorizationHandler, OwnerRequirementHandler>();
+// Instance rights (dev-plan 11.1): perm:<key> policies, built on demand.
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+builder.Services.AddScoped<IAuthorizationHandler, PermissionRequirementHandler>();
+builder.Services.AddScoped<IInstancePermissions, InstancePermissionService>();
+builder.Services.AddSingleton<PermissionCache>();
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(AuthPolicies.RequireAdmin, policy => policy
@@ -451,6 +456,12 @@ using (var scope = app.Services.CreateScope())
     // The first start after dev-plan 9.1 turns BACKUP_RETENTION_DAYS into a policy.
     await Tesria.Api.Infrastructure.Backups.BackupPolicySeed.EnsureAsync(
         scope.ServiceProvider.GetRequiredService<ISiteSettingsService>(), app.Configuration, startupLog);
+
+    // The first start after dev-plan 11.1 creates the built-in roles and
+    // attaches every account to one. Before the owner seed, so the account it
+    // promotes already has a role to be moved between.
+    await Tesria.Api.Infrastructure.Permissions.RoleSeed.EnsureAsync(
+        db, scope.ServiceProvider.GetRequiredService<Tesria.Api.Infrastructure.Permissions.PermissionCache>(), startupLog);
 
     // The first start after dev-plan 10.1 gives an existing instance its owner.
     await Tesria.Api.Infrastructure.Auth.OwnerSeed.EnsureAsync(
@@ -528,6 +539,7 @@ api.MapAuthEndpoints();
 api.MapAdminEndpoints();
 api.MapSecurityEndpoints();
 api.MapBackupEndpoints();
+api.MapRoleEndpoints();
 api.MapDashboardEndpoints();
 api.MapMediaEndpoints();
 api.MapSpaceEndpoints();

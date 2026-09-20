@@ -1,5 +1,6 @@
 using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure.Audit;
+using Tesria.Api.Infrastructure.Permissions;
 using Tesria.Api.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 
@@ -40,6 +41,8 @@ public static class OwnerSeed
         if (owner is null) return null;
 
         owner.Role = UserRole.Owner;
+        // The role follows the tier (dev-plan 11.1); RoleSeed has already run.
+        owner.RoleId = await Permissions.RoleSeed.BuiltInIdAsync(db, UserRole.Owner, ct) ?? owner.RoleId;
         audit.RecordAs(null, "owner.assigned", "user", owner.Id,
             new { Source = "upgrade", owner.Email });
         await db.SaveChangesAsync(ct);

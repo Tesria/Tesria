@@ -21,16 +21,24 @@ the CHANGELOG once it's actually built.
 Reported by the owner, not yet investigated. Fix these before the next
 release; each should land with a regression test.
 
-- **Resolve does nothing on a security alert (reported 2026-09-20).** On
-  Administration -> Security, pressing **Resolve** appears to have no
-  effect, including on an alert that has already been acknowledged. Worth
-  checking first: the endpoint (`POST /admin/security/alerts/{id}/resolve`)
-  and whether the row is written; the `window.prompt` the button opens for
-  the optional note, which some browsers suppress; and whether the list
-  simply reloads without the resolved alert (the default filter hides
-  resolved ones) so a successful resolve looks like nothing happening. The
-  two stale `backup.agent_offline` alerts from 2026-09-17 and the
-  `admin.promoted` one from 2026-09-20 are live examples to test against.
+- **Resolve does nothing on a security alert (reported 2026-09-20; cause
+  found the same day).** On Administration -> Security, pressing
+  **Resolve** has no effect, on acknowledged alerts too. The console says
+  `Uncaught Error: prompt() is not supported` from the button's onClick:
+  `AdminSecurityPage` opens `window.prompt` for the optional resolution
+  note, and where the browser refuses prompts (the in-app browser always,
+  and Chrome after someone ticks "prevent this page from creating
+  additional dialogs") the handler throws before it ever calls
+  `POST /admin/security/alerts/{id}/resolve`. Acknowledge does not prompt,
+  which is why only Resolve looks dead.
+
+  The fix is to stop using `window.prompt`: a small dialog with a note
+  field and Resolve/Cancel, like the backup policy's confirmation panel,
+  or resolve with no note and let the note be added afterwards. The same
+  pattern appears in one other place worth checking, the Roles tab's
+  "Reset" confirmation, which uses `window.confirm` (supported, but the
+  in-app browser auto-dismisses it). Regression test: the endpoint already
+  has coverage, so the test belongs in whatever replaces the prompt.
 
 ## MCP support
 

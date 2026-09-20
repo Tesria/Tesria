@@ -33,6 +33,77 @@ export type User = {
   totpRequired: boolean
   /** 0 off, 1 immediate, 2 daily digest (dev-plan 4.3). */
   emailNotifications: EmailNotificationMode
+  /** Instance rights this account holds (dev-plan 11.1). The UI renders from
+   *  these; every one is enforced server-side as well. */
+  permissions: string[]
+  /** The role's name: User, Administrator, Owner, or a custom one. */
+  roleName: string
+}
+
+/** Instance rights (dev-plan 11.1). Keys match Infrastructure/Permissions/InstancePermissions.cs. */
+export const Permission = {
+  SpacesCreate: 'spaces.create',
+  PagesDeleteOwn: 'pages.delete_own',
+  PagesDeleteAny: 'pages.delete_any',
+  PagesExport: 'pages.export',
+  TokensUse: 'tokens.use',
+  InvitesCreate: 'invites.create',
+  UsersView: 'users.view',
+  UsersManage: 'users.manage',
+  UsersAssignRoles: 'users.assign_roles',
+  InvitesManage: 'invites.manage',
+  GroupsManage: 'groups.manage',
+  SpacesManage: 'spaces.manage',
+  SpacesPublish: 'spaces.publish',
+  SpacesDelete: 'spaces.delete',
+  AuditView: 'audit.view',
+  SecurityView: 'security.view',
+  SecurityRespond: 'security.respond',
+  SecuritySettings: 'security.settings',
+  BackupsView: 'backups.view',
+  BackupsRun: 'backups.run',
+  BackupsPolicy: 'backups.policy',
+  DashboardView: 'dashboard.view',
+  SettingsInstance: 'settings.instance',
+  SettingsRegistration: 'settings.registration',
+  SettingsEmail: 'settings.email',
+  SettingsPublicSpaces: 'settings.public_spaces',
+  PermissionsView: 'permissions.view',
+  PermissionsEditUserTier: 'permissions.edit_user_tier',
+  RolesAssignTier: 'roles.assign_tier',
+  OwnershipTransfer: 'ownership.transfer',
+  PermissionsEditAdminTier: 'permissions.edit_admin_tier',
+} as const
+
+export type InstancePermissionDto = {
+  key: string
+  area: string
+  label: string
+  description: string
+  scope: 'Content' | 'Administration'
+}
+
+export type InstanceRole = {
+  id: string
+  /** `user`, `admin`, `owner` for the built-ins; null for a custom role. */
+  key: string | null
+  name: string
+  description: string | null
+  tier: UserRole
+  builtIn: boolean
+  permissions: string[]
+  members: number
+  /** Whether this viewer may change this row. */
+  editable: boolean
+}
+
+export type PermissionMatrix = {
+  catalogue: InstancePermissionDto[]
+  /** The owner's three, shown without checkboxes. */
+  reserved: InstancePermissionDto[]
+  roles: InstanceRole[]
+  reviewedAt: string | null
+  reviewedByName: string | null
 }
 
 export const EmailNotificationMode = { Off: 0, Immediate: 1, DailyDigest: 2 } as const
@@ -85,6 +156,8 @@ export type PageDetail = {
   currentVersionNumber: number
   contentJson: string
   fullWidth: boolean
+  /** Who wrote it, for "delete pages you created" (dev-plan 11.1). */
+  createdById: string
   createdAt: string
   updatedAt: string
 }
@@ -190,6 +263,8 @@ export type SiteSettings = {
   smtpFromAddress: string | null
   smtpTls: number
   requireTotpForAdmins: boolean
+  /** Which parts of this the caller may change (dev-plan 11.1). */
+  permissions: string[]
   /** Hosts an embed block may frame, one per line (dev-plan Phase 7 Wave E). */
   embedAllowlist: string
   /** Brute-force protection (dev-plan 3.2). Every limiter is tunable. */
@@ -871,6 +946,15 @@ export const api = {
     },
     dashboard: (rangeDays: number) =>
       request<Dashboard>('GET', `/api/admin/dashboard?rangeDays=${rangeDays}`),
+    roles: {
+      matrix: () => request<PermissionMatrix>('GET', '/api/admin/roles'),
+      /** Sudo: the client asks for the password if the session is past the window. */
+      savePermissions: (roleId: string, permissions: string[]) =>
+        request<{ id: string; permissions: string[] }>('PUT', `/api/admin/roles/${roleId}/permissions`, { permissions }),
+      reset: (roleId: string) =>
+        request<{ id: string; permissions: string[] }>('POST', `/api/admin/roles/${roleId}/reset`),
+      review: () => request<void>('POST', '/api/admin/roles/review'),
+    },
     backups: {
       overview: (includeRemoved = false) =>
         request<BackupOverview>('GET', `/api/admin/backups${includeRemoved ? '?includeRemoved=true' : ''}`),

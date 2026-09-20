@@ -75,7 +75,9 @@ public static class AuthEndpoints
     public record UserResponse(
         Guid Id, string Email, string DisplayName, UserRole Role,
         string? AvatarHash, int? AvatarVariant, bool HasPassword,
-        int RecoveryCodesRemaining, bool TotpEnabled, bool TotpRequired, EmailNotificationMode EmailNotifications);
+        int RecoveryCodesRemaining, bool TotpEnabled, bool TotpRequired, EmailNotificationMode EmailNotifications,
+        /// <summary>The rights this account holds (dev-plan 11.1); the SPA renders from these.</summary>
+        string[] Permissions, string RoleName);
     public record NotificationPreferenceRequest(EmailNotificationMode EmailNotifications);
 
     /// <summary>The password was right; a one-time code is still needed.</summary>
@@ -225,6 +227,8 @@ public static class AuthEndpoints
             PasswordHash = hasher.Hash(req.Password!),
             Status = UserStatus.Active,
             Role = isFirstAccount ? UserRole.Owner : UserRole.Member,
+            RoleId = await Infrastructure.Permissions.RoleSeed.BuiltInIdAsync(
+                db, isFirstAccount ? UserRole.Owner : UserRole.Member),
             CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Users.Add(user);
@@ -255,7 +259,8 @@ public static class AuthEndpoints
     private static async Task<IResult> Login(
         LoginRequest req, AppDbContext db, IPasswordHasher hasher, HttpContext http,
         IAuditLogger audit, IAccountRecoveryService recovery, ISiteSettingsService siteSettings,
-        ISecurityDetector detector, ITotpService totp)
+        ISecurityDetector detector, ITotpService totp,
+        Infrastructure.Permissions.IInstancePermissions rights)
     {
         var email = (req.Email ?? "").Trim().ToLowerInvariant();
         var user = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
@@ -304,14 +309,15 @@ public static class AuthEndpoints
             return Results.Ok(new TotpChallengeResponse(true, totp.IssueChallenge(user.Id, ClientIp(http))));
         }
 
-        return await CompleteSignInAsync(db, http, audit, recovery, siteSettings, detector, user, totp: false);
+        return await CompleteSignInAsync(db, http, audit, recovery, siteSettings, detector, user, totp: false, rights);
     }
 
     /// <summary>The second step of a two-factor sign-in: a one-time code, or a recovery code in its place.</summary>
     private static async Task<IResult> LoginWithTotp(
         TotpLoginRequest req, AppDbContext db, HttpContext http, IAuditLogger audit,
         IAccountRecoveryService recovery, ISiteSettingsService siteSettings, ISecurityDetector detector,
-        ITotpService totp)
+        ITotpService totp,
+        Infrastructure.Permissions.IInstancePermissions rights)
     {
         var userId = totp.RedeemChallenge(req.Challenge, ClientIp(http));
         var user = userId is null ? null : await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
@@ -339,13 +345,14 @@ public static class AuthEndpoints
             return Results.Unauthorized();
         }
 
-        return await CompleteSignInAsync(db, http, audit, recovery, siteSettings, detector, user, totp: true);
+        return await CompleteSignInAsync(db, http, audit, recovery, siteSettings, detector, user, totp: true, rights);
     }
 
     /// <summary>What both sign-in paths share once identity is proven.</summary>
     private static async Task<IResult> CompleteSignInAsync(
         AppDbContext db, HttpContext http, IAuditLogger audit, IAccountRecoveryService recovery,
-        ISiteSettingsService siteSettings, ISecurityDetector detector, User user, bool totp)
+        ISiteSettingsService siteSettings, ISecurityDetector detector, User user, bool totp,
+        Infrastructure.Permissions.IInstancePermissions rights)
     {
         AuthLockout.Reset(user);
         // Before the login row is written, so the history it consults is the
@@ -355,7 +362,7 @@ public static class AuthEndpoints
         await db.SaveChangesAsync();
 
         await SignIn(http, db, user);
-        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user));
+        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user, rights));
     }
 
     /// <summary>
@@ -388,11 +395,12 @@ public static class AuthEndpoints
     }
 
     private static async Task<IResult> Me(
-        AppDbContext db, CurrentUser current, IAccountRecoveryService recovery, ISiteSettingsService siteSettings)
+        AppDbContext db, CurrentUser current, IAccountRecoveryService recovery, ISiteSettingsService siteSettings,
+        Infrastructure.Permissions.IInstancePermissions rights)
     {
         if (current.Id is not { } id) return Results.Unauthorized();
         var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
-        return user is null ? Results.Unauthorized() : Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user));
+        return user is null ? Results.Unauthorized() : Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user, rights));
     }
 
     private static async Task<IResult> Logout(AppDbContext db, HttpContext http)
@@ -407,12 +415,13 @@ public static class AuthEndpoints
 
     private static async Task<IResult> SetNotificationPreference(
         NotificationPreferenceRequest req, AppDbContext db, CurrentUser current,
-        IAccountRecoveryService recovery, ISiteSettingsService siteSettings)
+        IAccountRecoveryService recovery, ISiteSettingsService siteSettings,
+        Infrastructure.Permissions.IInstancePermissions rights)
     {
         var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
         user.EmailNotifications = req.EmailNotifications;
         await db.SaveChangesAsync();
-        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user));
+        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user, rights));
     }
 
     private static async Task<IResult> ListSessions(AppDbContext db, CurrentUser current, HttpContext http)
@@ -481,7 +490,8 @@ public static class AuthEndpoints
 
     private static async Task<IResult> TotpEnable(
         TotpCodeRequest req, AppDbContext db, CurrentUser current, HttpContext http, IAuditLogger audit,
-        ITotpService totp, IAccountRecoveryService recovery, ISiteSettingsService siteSettings)
+        ITotpService totp, IAccountRecoveryService recovery, ISiteSettingsService siteSettings,
+        Infrastructure.Permissions.IInstancePermissions rights)
     {
         var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
         if (user.TotpPendingSecretProtected is null)
@@ -496,15 +506,16 @@ public static class AuthEndpoints
         audit.Record("user.totp_enabled", "user", user.Id);
         await db.SaveChangesAsync();
         await SignIn(http, db, user, AuthTimeOf(http), SessionIdOf(http.User));
-        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user));
+        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user, rights));
     }
 
     private static async Task<IResult> TotpDisable(
         TotpDisableRequest req, AppDbContext db, IPasswordHasher hasher, CurrentUser current, HttpContext http,
-        IAuditLogger audit, ITotpService totp, IAccountRecoveryService recovery, ISiteSettingsService siteSettings)
+        IAuditLogger audit, ITotpService totp, IAccountRecoveryService recovery, ISiteSettingsService siteSettings,
+        Infrastructure.Permissions.IInstancePermissions rights)
     {
         var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
-        if (user.TotpEnabledAt is null) return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user));
+        if (user.TotpEnabledAt is null) return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user, rights));
 
         // Turning the second factor off needs the second factor or the
         // password — never just a live session.
@@ -520,7 +531,7 @@ public static class AuthEndpoints
         audit.Record("user.totp_disabled", "user", user.Id);
         await db.SaveChangesAsync();
         await SignIn(http, db, user, AuthTimeOf(http), SessionIdOf(http.User));
-        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user));
+        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user, rights));
     }
 
     /// <summary>
@@ -593,18 +604,27 @@ public static class AuthEndpoints
     }
 
     private static async Task<UserResponse> ResponseForAsync(
-        AppDbContext db, IAccountRecoveryService recovery, ISiteSettingsService siteSettings, User user)
+        AppDbContext db, IAccountRecoveryService recovery, ISiteSettingsService siteSettings, User user,
+        Infrastructure.Permissions.IInstancePermissions? rights = null)
     {
         var remaining = await recovery.RemainingCodesAsync(user.Id);
         var enabled = user.TotpEnabledAt is not null;
         var required = user.Role >= UserRole.Admin && !enabled && (await siteSettings.GetAsync()).RequireTotpForAdmins;
+        // The SPA renders from these: which nav entries, tabs and buttons
+        // exist at all (dev-plan 11.1). Every one is enforced server-side too.
+        var held = rights is null ? [] : (await rights.ForUserAsync(user.Id)).Order().ToArray();
+        var roleName = await db.Roles.AsNoTracking()
+            .Where(r => r.Id == user.RoleId)
+            .Select(r => r.Name)
+            .FirstOrDefaultAsync() ?? Role.NameFor(user.Role);
         return new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.AvatarVariant,
-            user.PasswordHash != null, remaining, enabled, required, user.EmailNotifications);
+            user.PasswordHash != null, remaining, enabled, required, user.EmailNotifications, held, roleName);
     }
 
     private static async Task<IResult> UpdateProfile(
         UpdateProfileRequest req, AppDbContext db, CurrentUser current, HttpContext http,
-        IAccountRecoveryService recovery, ISiteSettingsService siteSettings)
+        IAccountRecoveryService recovery, ISiteSettingsService siteSettings,
+        Infrastructure.Permissions.IInstancePermissions rights)
     {
         var displayName = (req.DisplayName ?? "").Trim();
         if (displayName.Length == 0)
@@ -619,12 +639,13 @@ public static class AuthEndpoints
         // The name is carried in the cookie's claims, so re-issue it — otherwise
         // the topbar would keep showing the old name until the next sign-in.
         await SignIn(http, db, user, AuthTimeOf(http), SessionIdOf(http.User));
-        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user));
+        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user, rights));
     }
 
     private static async Task<IResult> ChangeEmail(
         ChangeEmailRequest req, AppDbContext db, IPasswordHasher hasher, CurrentUser current,
-        IAuditLogger audit, HttpContext http, IAccountRecoveryService recovery, ISiteSettingsService siteSettings)
+        IAuditLogger audit, HttpContext http, IAccountRecoveryService recovery, ISiteSettingsService siteSettings,
+        Infrastructure.Permissions.IInstancePermissions rights)
     {
         var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
         if (user.PasswordHash is null)
@@ -650,12 +671,13 @@ public static class AuthEndpoints
         await db.SaveChangesAsync();
 
         await SignIn(http, db, user, AuthTimeOf(http), SessionIdOf(http.User));
-        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user));
+        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user, rights));
     }
 
     private static async Task<IResult> ChangePassword(
         ChangePasswordRequest req, AppDbContext db, IPasswordHasher hasher, CurrentUser current,
-        IAuditLogger audit, HttpContext http, IAccountRecoveryService recovery, ISiteSettingsService siteSettings)
+        IAuditLogger audit, HttpContext http, IAccountRecoveryService recovery, ISiteSettingsService siteSettings,
+        Infrastructure.Permissions.IInstancePermissions rights)
     {
         var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
         if (user.PasswordHash is null)
@@ -681,7 +703,7 @@ public static class AuthEndpoints
         // Re-issue this session with the new stamp, so the person who just
         // changed their password is not signed out along with everyone else.
         await SignIn(http, db, user, sessionId: SessionIdOf(http.User));
-        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user));
+        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user, rights));
     }
 
     private static async Task<IResult> RecoveryStatus(

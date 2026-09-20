@@ -67,6 +67,8 @@ public sealed class OidcUserProvisioner(AppDbContext db) : IOidcUserProvisioner
             OidcSubject = subject,
             Status = UserStatus.Active,
             Role = isFirstAccount ? UserRole.Owner : UserRole.Member,
+            RoleId = await Permissions.RoleSeed.BuiltInIdAsync(
+                db, isFirstAccount ? UserRole.Owner : UserRole.Member),
             SecurityStamp = Guid.NewGuid().ToString("N"),
             CreatedAt = DateTimeOffset.UtcNow,
         };

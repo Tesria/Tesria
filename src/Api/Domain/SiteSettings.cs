@@ -138,6 +138,15 @@ public class SiteSettings
     public Guid? BackupPolicyChangedById { get; set; }
 
     /// <summary>
+    /// When the owner last reviewed the rights matrix (dev-plan 11.1). Null
+    /// means nobody has looked at the defaults yet, which the Roles tab says
+    /// and the setup wizard requires.
+    /// </summary>
+    public DateTimeOffset? PermissionsReviewedAt { get; set; }
+
+    public Guid? PermissionsReviewedById { get; set; }
+
+    /// <summary>
     /// When the owner finished first-run setup (dev-plan 10.2). Null means the
     /// wizard is still to be done; an instance upgraded from before it existed
     /// is stamped by <see cref="Infrastructure.Auth.OwnerSeed"/> instead.

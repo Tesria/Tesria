@@ -2,10 +2,10 @@ import { type FormEvent, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { SpaceIcon } from '../components/SpaceIcon'
-import { api, ApiError, type Space } from '../api/client'
+import { api, ApiError, type Space, Permission } from '../api/client'
 
 export function SpacesPage() {
-  const { user } = useAuth()
+  const { user, can } = useAuth()
   const [spaces, setSpaces] = useState<Space[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
@@ -21,7 +21,7 @@ export function SpacesPage() {
     <div className="page-wrap">
       <div className="row-between">
         <h1>Spaces</h1>
-        {user && (
+        {user && can(Permission.SpacesCreate) && (
           <button type="button" className="btn btn--primary" onClick={() => setCreating((v) => !v)}>
             {creating ? 'Cancel' : 'New space'}
           </button>

@@ -120,6 +120,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<BackupAgent> BackupAgents => Set<BackupAgent>();
     public DbSet<Backup> Backups => Set<Backup>();
     public DbSet<BackupJob> BackupJobs => Set<BackupJob>();
+    public DbSet<Role> Roles => Set<Role>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -178,6 +180,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 
         b.Entity<User>(e =>
         {
+            // Restrict, not cascade: a role still held by someone cannot be
+            // deleted out from under them (dev-plan 11.2 makes the UI say so).
+            e.HasOne(u => u.InstanceRole).WithMany().HasForeignKey(u => u.RoleId)
+                .OnDelete(DeleteBehavior.Restrict);
             e.Property(u => u.Email).HasMaxLength(320);
             e.Property(u => u.DisplayName).HasMaxLength(200);
             e.Property(u => u.OidcSubject).HasMaxLength(400);
@@ -501,6 +507,25 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.Cidr).HasMaxLength(64);
             e.Property(x => x.Reason).HasMaxLength(500);
             e.HasIndex(x => x.Cidr).IsUnique();
+        });
+
+        // Instance roles and their rights (dev-plan 11.1). Ordinary tables:
+        // the app writes them through audited, sudo-guarded endpoints, and the
+        // audit entry's before-and-after diff is the record.
+        b.Entity<Role>(e =>
+        {
+            e.Property(x => x.Key).HasMaxLength(20);
+            e.Property(x => x.Name).HasMaxLength(60);
+            e.Property(x => x.Description).HasMaxLength(500);
+            e.HasIndex(x => x.Name).IsUnique();
+            e.HasIndex(x => x.Key).IsUnique().HasFilter("\"Key\" IS NOT NULL");
+        });
+        b.Entity<RolePermission>(e =>
+        {
+            e.HasKey(x => new { x.RoleId, x.Key });
+            e.Property(x => x.Key).HasMaxLength(100);
+            e.HasOne(x => x.Role).WithMany(r => r.Permissions).HasForeignKey(x => x.RoleId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Backups (dev-plan 9.1). Written by the backup sidecars in bash, so

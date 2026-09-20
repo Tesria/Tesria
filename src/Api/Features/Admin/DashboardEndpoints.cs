@@ -1,6 +1,7 @@
 using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure.Permissions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Tesria.Api.Features.Admin;
@@ -43,7 +44,8 @@ public static class DashboardEndpoints
     {
         routes.MapGet("/admin/dashboard", GetDashboard)
             .WithTags("Admin")
-            .RequireAuthorization(AuthPolicies.RequireAdmin);
+            .RequireAuthorization()
+            .RequirePermission(InstancePermissions.DashboardView);
         return routes;
     }
 

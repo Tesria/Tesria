@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from 'react'
-import { api, ApiError } from '../api/client'
+import { api, ApiError, Permission } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { PasswordInput } from '../components/PasswordInput'
 import { AvatarPicker } from '../components/AvatarPicker'
@@ -21,7 +21,7 @@ type Status = { kind: 'ok' | 'error'; message: string } | null
  * other two.
  */
 export function ProfilePage() {
-  const { user, refresh } = useAuth()
+  const { user, refresh, can } = useAuth()
 
   const [displayName, setDisplayName] = useState(user?.displayName ?? '')
   const [nameStatus, setNameStatus] = useState<Status>(null)
@@ -189,10 +189,20 @@ export function ProfilePage() {
         <NotificationPreferences />
       </section>
 
-      <section className="profile__section" id="api-tokens">
-        <h2>API tokens</h2>
-        <ApiTokensSection />
-      </section>
+      {can(Permission.TokensUse) ? (
+        <section className="profile__section" id="api-tokens">
+          <h2>API tokens</h2>
+          <ApiTokensSection />
+        </section>
+      ) : (
+        <section className="profile__section" id="api-tokens">
+          <h2>API tokens</h2>
+          <p className="muted small">
+            Your role does not allow API tokens. An administrator can grant it under
+            Administration, Roles.
+          </p>
+        </section>
+      )}
 
       <section className="profile__section">
         <h2>Password</h2>
