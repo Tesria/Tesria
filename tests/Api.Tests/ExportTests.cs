@@ -24,19 +24,6 @@ public class ProseMirrorRendererTests
     """;
 
     [Fact]
-    public void Renders_html_structure_and_marks()
-    {
-        var html = ProseMirrorRenderer.ToHtml(Rich);
-        Assert.Contains("<h2 id=\"setup\">Setup</h2>", html);
-        Assert.Contains("<code>npm ci</code>", html);
-        Assert.Contains("<strong>build</strong>", html);
-        Assert.Contains("<ul>", html);
-        Assert.Contains("<li>", html);
-        Assert.Contains("language-bash", html);
-        Assert.Contains("echo hi", html);
-    }
-
-    [Fact]
     public void Renders_markdown_structure_and_marks()
     {
         var md = ProseMirrorRenderer.ToMarkdown(Rich);
@@ -49,22 +36,12 @@ public class ProseMirrorRendererTests
     }
 
     [Fact]
-    public void Escapes_html_so_exported_content_cannot_inject_markup()
-    {
-        var doc = """
-        {"type":"doc","content":[{"type":"paragraph","content":[
-          {"type":"text","text":"<script>alert('x')</script>"}]}]}
-        """;
-        var html = ProseMirrorRenderer.ToHtml(doc);
-        Assert.DoesNotContain("<script>", html);
-        Assert.Contains("&lt;script&gt;", html);
-    }
-
-    [Fact]
     public void Malformed_or_empty_content_renders_empty_rather_than_throwing()
     {
-        Assert.Equal(string.Empty, ProseMirrorRenderer.ToHtml("{not json"));
-        Assert.Equal(string.Empty, ProseMirrorRenderer.ToHtml(""));
+        // Content comes from stored JSON, which the API accepts as arbitrary
+        // JSON: an export must not be the thing that discovers it is broken.
+        Assert.Equal(string.Empty, ProseMirrorRenderer.ToMarkdown("{not json"));
+        Assert.Equal(string.Empty, ProseMirrorRenderer.ToMarkdown(""));
     }
 
     private const string TableDoc = """
@@ -80,24 +57,6 @@ public class ProseMirrorRendererTests
     ]}
     """;
 
-    [Fact]
-    public void Renders_table_as_html()
-    {
-        var html = ProseMirrorRenderer.ToHtml(TableDoc);
-        Assert.Contains("<table>", html);
-        Assert.Contains("<th><p>Name</p>\n</th>", html);
-        Assert.Contains("<td><p>Widget | Pro</p>\n</td>", html);
-    }
-
-    [Fact]
-    public void Renders_table_as_a_pipe_escaped_markdown_table()
-    {
-        var md = ProseMirrorRenderer.ToMarkdown(TableDoc);
-        Assert.Contains("| Name | Qty |", md);
-        Assert.Contains("| --- | --- |", md);
-        Assert.Contains("Widget \\| Pro", md); // literal pipe in cell content is escaped
-    }
-
     private const string TableWithWidthDoc = """
     {"type":"doc","content":[
       {"type":"table","attrs":{"width":420},"content":[
@@ -107,145 +66,12 @@ public class ProseMirrorRendererTests
     ]}
     """;
 
-    private const string TableFullWidthDoc = """
-    {"type":"doc","content":[
-      {"type":"table","attrs":{"layout":"full-width"},"content":[
-        {"type":"tableRow","content":[
-          {"type":"tableHeader","content":[{"type":"paragraph","content":[{"type":"text","text":"Name"}]}]}]}
-      ]}
-    ]}
-    """;
-
-    [Fact]
-    public void Renders_manually_sized_table_width_as_an_inline_style_capped_to_the_viewport()
-    {
-        var html = ProseMirrorRenderer.ToHtml(TableWithWidthDoc);
-        Assert.Contains("<table style=\"width: min(420px, 100%)\">", html);
-    }
-
-    [Fact]
-    public void Renders_full_width_table_layout_as_an_inline_style()
-    {
-        var html = ProseMirrorRenderer.ToHtml(TableFullWidthDoc);
-        Assert.Contains("<table style=\"width: 100%\">", html);
-    }
-
-    [Fact]
-    public void Table_width_and_layout_do_not_affect_markdown_export()
-    {
-        // GFM pipe tables have no width concept — degrades silently, same as
-        // any other display-only attribute (e.g. image border/shadow).
-        var md = ProseMirrorRenderer.ToMarkdown(TableWithWidthDoc);
-        Assert.Contains("| Name |", md);
-    }
-
     private const string PanelDoc = """
     {"type":"doc","content":[
       {"type":"panel","attrs":{"panelType":"warning"},"content":[
         {"type":"paragraph","content":[{"type":"text","text":"Mind the gap"}]}]}
     ]}
     """;
-
-    private const string CellBackgroundDoc = """
-    {"type":"doc","content":[
-      {"type":"table","content":[
-        {"type":"tableRow","content":[
-          {"type":"tableHeader","attrs":{"backgroundColor":"#deebff"},"content":[
-            {"type":"paragraph","content":[{"type":"text","text":"Name"}]}]},
-          {"type":"tableCell","attrs":{"backgroundColor":"#ffbdad"},"content":[
-            {"type":"paragraph","content":[{"type":"text","text":"Value"}]}]}]}
-      ]}
-    ]}
-    """;
-
-    private const string HostileColorDoc = """
-    {"type":"doc","content":[
-      {"type":"table","content":[
-        {"type":"tableRow","content":[
-          {"type":"tableCell","attrs":{"backgroundColor":"red;} body { display: none } td {"},"content":[
-            {"type":"paragraph","content":[{"type":"text","text":"x"}]}]}]}
-      ]}
-    ]}
-    """;
-
-    [Fact]
-    public void Renders_a_panel_with_its_type_label_and_inlined_colours()
-    {
-        var html = ProseMirrorRenderer.ToHtml(PanelDoc);
-        Assert.Contains("data-panel-type=\"warning\"", html);
-        Assert.Contains("<strong>Warning</strong>", html);
-        // Colours are inlined, not left to a stylesheet — an exported file is
-        // opened standalone, with none of the app's CSS.
-        Assert.Contains("background: #fff7d6", html);
-        Assert.Contains("Mind the gap", html);
-    }
-
-    [Fact]
-    public void Renders_a_panel_as_a_labelled_blockquote_in_markdown()
-    {
-        var md = ProseMirrorRenderer.ToMarkdown(PanelDoc);
-        Assert.Contains("> **Warning**", md);
-        Assert.Contains("> Mind the gap", md);
-    }
-
-    private const string UnknownPanelDoc = """
-    {"type":"doc","content":[
-      {"type":"panel","attrs":{"panelType":"nonsense"},"content":[
-        {"type":"paragraph","content":[{"type":"text","text":"hi"}]}]}
-    ]}
-    """;
-
-    [Fact]
-    public void Renders_an_unknown_panel_type_as_info_rather_than_failing()
-    {
-        var html = ProseMirrorRenderer.ToHtml(UnknownPanelDoc);
-        Assert.Contains("data-panel-type=\"info\"", html);
-        Assert.Contains("hi", html);
-    }
-
-    [Fact]
-    public void Renders_table_cell_background_colours_on_both_cell_kinds()
-    {
-        var html = ProseMirrorRenderer.ToHtml(CellBackgroundDoc);
-        Assert.Contains("<th style=\"background-color: #deebff\">", html);
-        Assert.Contains("<td style=\"background-color: #ffbdad\">", html);
-    }
-
-    private const string ColoredHighlightDoc = """
-    {"type":"doc","content":[
-      {"type":"paragraph","content":[
-        {"type":"text","marks":[{"type":"highlight","attrs":{"color":"#fff0b3"}}],"text":"lit"}]}
-    ]}
-    """;
-
-    private const string LegacyHighlightDoc = """
-    {"type":"doc","content":[
-      {"type":"paragraph","content":[
-        {"type":"text","marks":[{"type":"highlight"}],"text":"lit"}]}
-    ]}
-    """;
-
-    [Fact]
-    public void Renders_a_highlight_colour_when_the_mark_carries_one()
-    {
-        Assert.Contains(
-            "<mark style=\"background-color: #fff0b3\">lit</mark>",
-            ProseMirrorRenderer.ToHtml(ColoredHighlightDoc));
-
-        // Highlights stored before the palette existed have no colour attr and
-        // must still render as a plain <mark>, not a broken style.
-        Assert.Contains("<mark>lit</mark>", ProseMirrorRenderer.ToHtml(LegacyHighlightDoc));
-    }
-
-    [Fact]
-    public void Drops_a_colour_attribute_that_is_not_a_plain_hex_value()
-    {
-        // Document JSON is stored as-is, so a colour reaching a `style`
-        // attribute unvalidated would be CSS injection into exported HTML.
-        var html = ProseMirrorRenderer.ToHtml(HostileColorDoc);
-        Assert.DoesNotContain("display: none", html);
-        Assert.Contains("<td>", html);
-    }
 
     private const string TaskListDoc = """
     {"type":"doc","content":[
@@ -256,52 +82,11 @@ public class ProseMirrorRendererTests
     ]}
     """;
 
-    [Fact]
-    public void Renders_task_list_as_html_with_disabled_checkboxes()
-    {
-        var html = ProseMirrorRenderer.ToHtml(TaskListDoc);
-        Assert.Contains("data-type=\"taskList\"", html);
-        Assert.Contains("<input type=\"checkbox\" disabled checked />", html);
-        Assert.Contains("<input type=\"checkbox\" disabled />", html);
-        Assert.Contains("Done thing", html);
-    }
-
-    [Fact]
-    public void Renders_task_list_as_gfm_markdown_checkboxes()
-    {
-        var md = ProseMirrorRenderer.ToMarkdown(TaskListDoc);
-        Assert.Contains("- [x] Done thing", md);
-        Assert.Contains("- [ ] Todo thing", md);
-    }
-
     private const string ImageDoc = """
     {"type":"doc","content":[
       {"type":"image","attrs":{"src":"/api/attachments/abc/download","alt":"a diagram","title":null}}
     ]}
     """;
-
-    [Fact]
-    public void Renders_image_as_html_img_tag()
-    {
-        var html = ProseMirrorRenderer.ToHtml(ImageDoc);
-        Assert.Contains("<img src=\"/api/attachments/abc/download\" alt=\"a diagram\" />", html);
-    }
-
-    [Fact]
-    public void Renders_image_as_markdown()
-    {
-        var md = ProseMirrorRenderer.ToMarkdown(ImageDoc);
-        Assert.Contains("![a diagram](/api/attachments/abc/download)", md);
-    }
-
-    [Fact]
-    public void An_image_node_does_not_silently_vanish_without_the_image_case()
-    {
-        // Regression guard for the exact bug class Phase 4 exists to close: a
-        // leaf node with no children previously rendered nothing at all.
-        var html = ProseMirrorRenderer.ToHtml(ImageDoc);
-        Assert.NotEmpty(html);
-    }
 
     private const string FormattingDoc = """
     {"type":"doc","content":[
@@ -312,24 +97,6 @@ public class ProseMirrorRendererTests
       ]}
     ]}
     """;
-
-    [Fact]
-    public void Renders_underline_and_highlight_and_text_align_as_html()
-    {
-        var html = ProseMirrorRenderer.ToHtml(FormattingDoc);
-        Assert.Contains("<p style=\"text-align: center\">", html);
-        Assert.Contains("<u>underlined</u>", html);
-        Assert.Contains("<mark>highlighted</mark>", html);
-    }
-
-    [Fact]
-    public void Renders_highlight_as_raw_mark_in_markdown_and_drops_text_align()
-    {
-        var md = ProseMirrorRenderer.ToMarkdown(FormattingDoc);
-        Assert.Contains("<mark>highlighted</mark>", md);
-        Assert.DoesNotContain("text-align", md); // no Markdown alignment concept — intentionally dropped
-    }
-    // -- Phase 7 Wave C mentions ---------------------------------------------
 
     private const string MentionDoc = """
     {"type":"doc","content":[
@@ -346,30 +113,6 @@ public class ProseMirrorRendererTests
     ]}
     """;
 
-    [Fact]
-    public void Renders_a_mention_by_its_stored_label_not_its_id()
-    {
-        var html = ProseMirrorRenderer.ToHtml(MentionDoc);
-        Assert.Contains("@Ana &lt;b&gt;", html);
-        Assert.DoesNotContain("<b>", html);
-        // A mention with no usable label still reads as something.
-        Assert.Contains("@Unknown user", html);
-        // The id is for the server's mention diff, not for display.
-        Assert.DoesNotContain("11111111-1111", html);
-    }
-
-    [Fact]
-    public void Renders_a_mention_as_plain_at_name_in_markdown_without_repeating_the_assignee()
-    {
-        var md = ProseMirrorRenderer.ToMarkdown(MentionDoc);
-        Assert.Contains("ask @Ana <b> and @Unknown user", md);
-        // The assignee attribute is a copy of the mention already in the item.
-        Assert.Contains("- [ ] @Ana to review", md);
-        Assert.DoesNotContain("@Ana @Ana", md);
-    }
-
-    // -- Phase 7 Wave B formatting -------------------------------------------
-
     private const string InkAndIndentDoc = """
     {"type":"doc","content":[
       {"type":"paragraph","attrs":{"textIndent":2,"textAlign":"center"},"content":[
@@ -383,44 +126,6 @@ public class ProseMirrorRendererTests
         {"type":"text","marks":[{"type":"textColor","attrs":{"color":"chartreuse; background: url(x)"}}],"text":"hostile"}]}
     ]}
     """;
-
-    [Fact]
-    public void Renders_text_colour_scripts_and_indent_as_html()
-    {
-        var html = ProseMirrorRenderer.ToHtml(InkAndIndentDoc);
-        Assert.Contains("<span style=\"color: #bf2600\">warning</span>", html);
-        Assert.Contains("<sub>2</sub>", html);
-        Assert.Contains("<sup>2</sup>", html);
-        Assert.Contains("<p style=\"text-align: center; margin-left: 3.5rem\">", html);
-    }
-
-    [Fact]
-    public void Clamps_indent_and_falls_back_on_an_unknown_text_colour()
-    {
-        var html = ProseMirrorRenderer.ToHtml(InkAndIndentDoc);
-        // 9 levels is clamped to the editor's own maximum of 4 (4 x 1.75rem).
-        Assert.Contains("margin-left: 7rem", html);
-        Assert.DoesNotContain("15.75rem", html);
-        // The mark stores a colour *name*, so nothing from the document ever
-        // reaches the style attribute — an unknown name renders as grey.
-        Assert.DoesNotContain("chartreuse", html);
-        Assert.DoesNotContain("url(x)", html);
-        Assert.DoesNotContain("position: fixed", html);
-        Assert.Contains("<span style=\"color: #42526e\">hostile</span>", html);
-    }
-
-    [Fact]
-    public void Renders_text_colour_and_scripts_as_raw_html_in_markdown_and_drops_indent()
-    {
-        var md = ProseMirrorRenderer.ToMarkdown(InkAndIndentDoc);
-        Assert.Contains("<span style=\"color: #bf2600\">warning</span>", md);
-        Assert.Contains("H<sub>2</sub>O", md);
-        Assert.Contains("x<sup>2</sup>", md);
-        // Markdown has no block indent to carry it into.
-        Assert.DoesNotContain("margin-left", md);
-    }
-
-    // -- Phase 7 Wave A structural blocks ------------------------------------
 
     private const string StructuralDoc = """
     {"type":"doc","content":[
@@ -445,36 +150,74 @@ public class ProseMirrorRendererTests
     """;
 
     [Fact]
-    public void Renders_heading_ids_and_a_nested_table_of_contents_in_html()
+    public void Renders_table_as_a_pipe_escaped_markdown_table()
     {
-        var html = ProseMirrorRenderer.ToHtml(StructuralDoc);
-        Assert.Contains("<h1 id=\"plan\">Plan</h1>", html);
-        Assert.Contains("<h3 id=\"step-one\">", html);
-        Assert.Contains("<h2 id=\"plan-2\">", html);
-        Assert.Contains("<nav data-type=\"table-of-contents\">", html);
-        // Both the H3 and the H2 that follows it are sub-sections of the H1,
-        // so both nest under it — the same tree TocView.tsx builds.
-        Assert.Contains(
-            "<li><a href=\"#plan\">Plan</a><ul>\n"
-            + "<li><a href=\"#step-one\">Step one</a></li>\n"
-            + "<li><a href=\"#plan-2\">Plan</a></li>\n"
-            + "</ul>\n</li>", html);
-        Assert.Contains("<a href=\"#step-one\" rel=\"noreferrer\">jump</a>", html);
+        var md = ProseMirrorRenderer.ToMarkdown(TableDoc);
+        Assert.Contains("| Name | Qty |", md);
+        Assert.Contains("| --- | --- |", md);
+        Assert.Contains("Widget \\| Pro", md); // literal pipe in cell content is escaped
     }
 
     [Fact]
-    public void Renders_status_date_expand_decision_and_layout_in_html()
+    public void Table_width_and_layout_do_not_affect_markdown_export()
     {
-        var html = ProseMirrorRenderer.ToHtml(StructuralDoc);
-        Assert.Contains("data-status=\"yellow\"", html);
-        Assert.Contains("background: #fff0b3", html);
-        Assert.Contains(">In progress</span>", html);
-        Assert.Contains("<time datetime=\"2026-09-10\">10 Sep 2026</time>", html);
-        Assert.Contains("<details open><summary>Details &lt;b&gt;</summary>", html);
-        Assert.Contains("<strong>Decision</strong>", html);
-        Assert.Contains("data-type=\"layout-section\" data-width=\"wide\"", html);
-        Assert.Contains("flex: 33.33 1 0%", html);
-        Assert.Contains("flex: 66.67 1 0%", html);
+        // GFM pipe tables have no width concept: it degrades silently, same as
+        // any other display-only attribute (e.g. image border/shadow). The
+        // width is not lost, it is carried by the captured formats instead.
+        var md = ProseMirrorRenderer.ToMarkdown(TableWithWidthDoc);
+        Assert.Contains("| Name |", md);
+    }
+
+    [Fact]
+    public void Renders_a_panel_as_a_labelled_blockquote_in_markdown()
+    {
+        var md = ProseMirrorRenderer.ToMarkdown(PanelDoc);
+        Assert.Contains("> **Warning**", md);
+        Assert.Contains("> Mind the gap", md);
+    }
+
+    [Fact]
+    public void Renders_task_list_as_gfm_markdown_checkboxes()
+    {
+        var md = ProseMirrorRenderer.ToMarkdown(TaskListDoc);
+        Assert.Contains("- [x] Done thing", md);
+        Assert.Contains("- [ ] Todo thing", md);
+    }
+
+    [Fact]
+    public void Renders_image_as_markdown()
+    {
+        var md = ProseMirrorRenderer.ToMarkdown(ImageDoc);
+        Assert.Contains("![a diagram](/api/attachments/abc/download)", md);
+    }
+
+    [Fact]
+    public void Renders_highlight_as_raw_mark_in_markdown_and_drops_text_align()
+    {
+        var md = ProseMirrorRenderer.ToMarkdown(FormattingDoc);
+        Assert.Contains("<mark>highlighted</mark>", md);
+        Assert.DoesNotContain("text-align", md); // no Markdown alignment concept, intentionally dropped
+    }
+
+    [Fact]
+    public void Renders_a_mention_as_plain_at_name_in_markdown_without_repeating_the_assignee()
+    {
+        var md = ProseMirrorRenderer.ToMarkdown(MentionDoc);
+        Assert.Contains("ask @Ana <b> and @Unknown user", md);
+        // The assignee attribute is a copy of the mention already in the item.
+        Assert.Contains("- [ ] @Ana to review", md);
+        Assert.DoesNotContain("@Ana @Ana", md);
+    }
+
+    [Fact]
+    public void Renders_text_colour_and_scripts_as_raw_html_in_markdown_and_drops_indent()
+    {
+        var md = ProseMirrorRenderer.ToMarkdown(InkAndIndentDoc);
+        Assert.Contains("<span style=\"color: #bf2600\">warning</span>", md);
+        Assert.Contains("H<sub>2</sub>O", md);
+        Assert.Contains("x<sup>2</sup>", md);
+        // Markdown has no block indent to carry it into.
+        Assert.DoesNotContain("margin-left", md);
     }
 
     [Fact]
@@ -495,32 +238,6 @@ public class ProseMirrorRendererTests
         var md = ProseMirrorRenderer.ToMarkdown(Rich);
         Assert.DoesNotContain("<a id=", md);
     }
-
-    private const string HostileStructuralDoc = """
-    {"type":"doc","content":[{"type":"paragraph","content":[
-      {"type":"status","attrs":{"text":"<img src=x onerror=alert(1)>","color":"red; background: url(evil)"}},
-      {"type":"date","attrs":{"date":"2026-13-45\" onclick=\"x"}}]},
-      {"type":"layoutSection","content":[
-        {"type":"layoutColumn","attrs":{"width":"1; color: red"},"content":[{"type":"paragraph"}]},
-        {"type":"layoutColumn","attrs":{"width":500},"content":[{"type":"paragraph"}]}]}
-    ]}
-    """;
-
-    [Fact]
-    public void Structural_block_attributes_never_reach_markup_or_styles_unfiltered()
-    {
-        var html = ProseMirrorRenderer.ToHtml(HostileStructuralDoc);
-        Assert.DoesNotContain("<img", html);
-        Assert.Contains("&lt;img", html);
-        Assert.DoesNotContain("url(evil)", html);
-        Assert.Contains("data-status=\"grey\"", html);
-        Assert.DoesNotContain("<time", html);
-        Assert.DoesNotContain("onclick=\"x", html);
-        Assert.DoesNotContain("color: red", html);
-        Assert.Contains("flex: 1 1 0%", html);
-        Assert.DoesNotContain("flex: 500", html);
-    }
-
 }
 
 public class ExportEndpointTests

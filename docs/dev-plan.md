@@ -2505,16 +2505,33 @@ which is deliberate; 375 px for the view.
   which pages go into a public site by the exporter's own access is how a
   private page reaches the internet; the anonymous audience is evaluated
   as nobody, whoever is calling.
-- **The HTML half of `ProseMirrorRenderer` is not deleted yet.** It is
-  unreachable from any export path, and its only remaining caller is
-  `TocOptionsTests`, which asserts TOC option handling that the Markdown
-  path shares. Deleting six hundred lines out of a file whose helpers are
-  interleaved is cleanup with real regression risk and no user-visible
-  benefit, so it is its own change rather than part of this one.
-- **Three bugs found by the fixture**, all fixed with tests: a mention of
+- **The HTML half of `ProseMirrorRenderer` is deleted** (done as its own
+  change after 12.2 shipped, for the regression risk). `ToHtml`,
+  `RenderHtml*` and thirteen helpers left orphaned by them went, found by
+  walking reachability from `ToMarkdown`; `InlineAssets.cs` went with them,
+  since a captured export inlines its assets in the browser. 1145 lines to
+  726. `TocOptionsTests` was rewritten against Markdown: what it pins is
+  the option *semantics*, and bullet *shapes* are now the stylesheet's,
+  covered by the fidelity capture instead. Worth knowing: the hostile-value
+  filtering for `indent` and `cssClass` moved with them, into
+  `tocOptions.ts`, which is correct now that the browser renders but leaves
+  it with no automated test, this repo having no frontend tests.
+- **The removal script over-reached and was caught by counting.** Deleting
+  "the HTML tests" by pattern took fifteen Markdown tests with them, for
+  code that is still live: pipe escaping, GFM checkboxes, panel
+  blockquotes, mention labels, the anchors-only-when-linked rule, maths
+  delimiters, the chart reference, the neutral dynamic-block shapes and
+  the `javascript:` guard on embeds. The suite total dropping by 44 when
+  about 13 were meant to go is what surfaced it, and the arithmetic had to
+  be made to reconcile before it was believed. All fifteen are restored as
+  Markdown-only tests. The lesson is the obvious one: a pattern that
+  matches a *file*'s tests is not a pattern that matches a *renderer*'s.
+- **Four bugs found by the fixture**, all fixed with tests: a mention of
   an id with no account 500'd the save; a half-committed create left a
-  page that was invisible and permanently unupdatable; and version numbers
-  came from the current-version pointer rather than the versions.
+  page that was invisible and permanently unupdatable; version numbers
+  came from the current-version pointer rather than the versions; and the
+  Markdown export did not sanitise link hrefs, so a stored
+  `javascript:` URL came out of it as a working link.
 
 ### 12.2 Publish a space as a static site — `L` — Model: Fable → Opus — ✅ **shipped 2026-09-20**
 

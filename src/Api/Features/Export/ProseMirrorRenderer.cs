@@ -8,34 +8,22 @@ using Tesria.Api.Features.Blocks;
 namespace Tesria.Api.Features.Export;
 
 /// <summary>
-/// Renders a stored ProseMirror/TipTap document (the JSON we persist per page
-/// version) to HTML or Markdown for export. Covers the node and mark types
-/// produced by the editor's StarterKit; unknown nodes degrade to their text
-/// content rather than failing the export.
+/// Renders a stored ProseMirror/TipTap document (the JSON persisted per page
+/// version) to Markdown. Unknown nodes degrade to their text content rather
+/// than failing the export.
+///
+/// It used to render HTML as well, and that was the reason exports looked
+/// nothing like the page: a second renderer, in another language, against a
+/// fifteen-line stylesheet, copying colours out of index.css by hand. Since
+/// dev-plan 12.1 HTML and PDF are captured from the page itself, and only
+/// Markdown is rendered here, because Markdown is a genuinely different
+/// document rather than a picture of this one.
+///
+/// Nothing in this file should grow an HTML path again. If an export needs
+/// to look like the page, it should be a capture of the page.
 /// </summary>
 public static class ProseMirrorRenderer
 {
-    /// <param name="blocks">
-    /// Pre-resolved dynamic-block results in document order (dev-plan Phase 7
-    /// Wave D) — the renderer is static and database-free, so the caller
-    /// snapshots them. Null entries, or none at all, render as placeholders.
-    /// </param>
-    /// <param name="baseUrl">Makes the blocks' app-relative hrefs absolute in a standalone file.</param>
-    public static string ToHtml(string contentJson, IReadOnlyList<BlockResult?>? blocks = null, string? baseUrl = null) =>
-        ToHtml(contentJson, blocks, baseUrl, out _);
-
-    /// <param name="usedMermaid">Whether the document contained a Mermaid diagram, so the caller can decide whether the exported file needs a renderer.</param>
-    public static string ToHtml(string contentJson, IReadOnlyList<BlockResult?>? blocks, string? baseUrl, out bool usedMermaid)
-    {
-        usedMermaid = false;
-        if (!TryParse(contentJson, out var root)) return string.Empty;
-        var sb = new StringBuilder();
-        var ctx = new Ctx(root, blocks, baseUrl);
-        RenderHtmlChildren(root, sb, ctx);
-        usedMermaid = ctx.UsedMermaid;
-        return sb.ToString();
-    }
-
     public static string ToMarkdown(string contentJson, IReadOnlyList<BlockResult?>? blocks = null, string? baseUrl = null)
     {
         if (!TryParse(contentJson, out var root)) return string.Empty;
@@ -127,237 +115,6 @@ public static class ProseMirrorRenderer
         && attrs.ValueKind == JsonValueKind.Object
         && attrs.TryGetProperty(name, out var v)
         && v.ValueKind == JsonValueKind.True;
-
-    // -- HTML -----------------------------------------------------------------
-
-    private static void RenderHtmlChildren(JsonElement node, StringBuilder sb, Ctx ctx)
-    {
-        foreach (var child in Children(node)) RenderHtml(child, sb, ctx);
-    }
-
-    private static void RenderHtml(JsonElement node, StringBuilder sb, Ctx ctx)
-    {
-        switch (TypeOf(node))
-        {
-            case "text":
-                sb.Append(ApplyHtmlMarks(node));
-                break;
-            case "paragraph":
-                var pStyle = BlockStyle(node);
-                sb.Append(pStyle is null ? "<p>" : $"<p style=\"{pStyle}\">");
-                RenderHtmlChildren(node, sb, ctx); sb.Append("</p>\n");
-                break;
-            case "heading":
-                var level = Attr(node, "level") ?? "1";
-                var hStyle = BlockStyle(node);
-                var anchor = ctx.NextHeading();
-                sb.Append($"<h{level}");
-                if (anchor is not null) sb.Append($" id=\"{Escape(anchor.Id)}\"");
-                if (hStyle is not null) sb.Append($" style=\"{hStyle}\"");
-                sb.Append('>');
-                RenderHtmlChildren(node, sb, ctx); sb.Append($"</h{level}>\n");
-                break;
-            case "tableOfContents":
-                RenderHtmlToc(node, ctx, sb);
-                break;
-            case "expand":
-                // <details> is the one collapsible element HTML has; open by
-                // default so a printed or scripted-off copy still shows it all.
-                sb.Append("<details open><summary>").Append(Escape(Attr(node, "title") ?? "")).Append("</summary>\n");
-                RenderHtmlChildren(node, sb, ctx);
-                sb.Append("</details>\n");
-                break;
-            case "status":
-                var (statusBg, statusInk) = StatusColors[StatusColorOf(node)];
-                sb.Append($"<span data-status=\"{StatusColorOf(node)}\" style=\"display: inline-block; padding: 0 0.4em; border-radius: 3px; ")
-                  .Append($"font-size: 0.75em; font-weight: 700; text-transform: uppercase; background: {statusBg}; color: {statusInk}\">")
-                  .Append(Escape(StatusText(node))).Append("</span>");
-                break;
-            case "date":
-                var iso = IsoDate(node);
-                if (iso is null) sb.Append(Escape(Attr(node, "date") ?? ""));
-                else sb.Append($"<time datetime=\"{iso.Value:yyyy-MM-dd}\">{DateText(iso.Value)}</time>");
-                break;
-            case "decision":
-                sb.Append("<div data-type=\"decision\" style=\"border: 1px solid #e4e6eb; background: #f4f5f7; border-radius: 6px; padding: 12px 16px; margin: 16px 0\">\n");
-                sb.Append("<strong>Decision</strong>\n");
-                RenderHtmlChildren(node, sb, ctx);
-                sb.Append("</div>\n");
-                break;
-            case "layoutSection":
-                sb.Append($"<div data-type=\"layout-section\" data-width=\"{LayoutWidthOf(node)}\" style=\"display: flex; gap: 20px; margin: 16px 0\">\n");
-                RenderHtmlChildren(node, sb, ctx);
-                sb.Append("</div>\n");
-                break;
-            case "layoutColumn":
-                sb.Append($"<div data-type=\"layout-column\" style=\"flex: {ColumnWeight(node)} 1 0%; min-width: 0\">\n");
-                RenderHtmlChildren(node, sb, ctx);
-                sb.Append("</div>\n");
-                break;
-            case "bulletList":
-                sb.Append("<ul>\n"); RenderHtmlChildren(node, sb, ctx); sb.Append("</ul>\n");
-                break;
-            case "orderedList":
-                sb.Append("<ol>\n"); RenderHtmlChildren(node, sb, ctx); sb.Append("</ol>\n");
-                break;
-            case "listItem":
-                sb.Append("<li>"); RenderHtmlChildren(node, sb, ctx); sb.Append("</li>\n");
-                break;
-            case "blockquote":
-                sb.Append("<blockquote>\n"); RenderHtmlChildren(node, sb, ctx); sb.Append("</blockquote>\n");
-                break;
-            case "codeBlock":
-                var lang = Attr(node, "language");
-                if (lang == "mermaid")
-                {
-                    // The source, in the shape Mermaid's own script looks for.
-                    // Readable as text even when nothing draws it — see
-                    // ExportEndpoints for the (optional) render script.
-                    ctx.UsedMermaid = true;
-                    sb.Append("<pre class=\"mermaid\">").Append(Escape(PlainText(node))).Append("</pre>\n");
-                    break;
-                }
-                sb.Append(lang is null ? "<pre><code>" : $"<pre><code class=\"language-{Escape(lang)}\">");
-                sb.Append(Escape(PlainText(node)));
-                sb.Append("</code></pre>\n");
-                break;
-            case "math":
-                // The LaTeX source, in the delimiters every maths-aware reader
-                // understands. Rendering it would mean shipping KaTeX's
-                // stylesheet and fonts inside every exported file.
-                var latex = Attr(node, "latex") ?? "";
-                var isDisplay = BoolAttr(node, "display");
-                sb.Append(isDisplay ? "<p class=\"math math--display\">$$" : "<span class=\"math\">$")
-                  .Append(Escape(latex))
-                  .Append(isDisplay ? "$$</p>\n" : "$</span>");
-                break;
-            case "chart":
-                // The numbers are in the table this points at, which is
-                // already in the document — so the export names the source
-                // rather than drawing a second copy of the data.
-                sb.Append($"<p><em>[Chart of table {Escape(Attr(node, "source") ?? "1")}");
-                if (Attr(node, "title") is { Length: > 0 } chartTitle) sb.Append(": ").Append(Escape(chartTitle));
-                sb.Append("]</em></p>\n");
-                break;
-            case "horizontalRule":
-                sb.Append("<hr />\n");
-                break;
-            case "hardBreak":
-                sb.Append("<br />");
-                break;
-            case "image":
-                var src = Attr(node, "src") ?? "";
-                var alt = Attr(node, "alt");
-                var imgTitle = Attr(node, "title");
-                var imgStyle = ImageStyle(node);
-                sb.Append($"<img src=\"{Escape(src)}\"");
-                if (alt is not null) sb.Append($" alt=\"{Escape(alt)}\"");
-                if (imgTitle is not null) sb.Append($" title=\"{Escape(imgTitle)}\"");
-                if (imgStyle is not null) sb.Append($" style=\"{imgStyle}\"");
-                sb.Append(" />\n");
-                break;
-            case "table":
-                var tableStyle = TableStyle(node);
-                sb.Append(tableStyle is null ? "<table>\n" : $"<table style=\"{tableStyle}\">\n");
-                RenderHtmlChildren(node, sb, ctx); sb.Append("</table>\n");
-                break;
-            case "tableRow":
-                sb.Append("<tr>\n"); RenderHtmlChildren(node, sb, ctx); sb.Append("</tr>\n");
-                break;
-            case "tableHeader":
-            case "tableCell":
-                var cellTag = TypeOf(node) == "tableHeader" ? "th" : "td";
-                var cellBg = CellBackgroundStyle(node);
-                sb.Append(cellBg is null ? $"<{cellTag}>" : $"<{cellTag} style=\"{cellBg}\">");
-                RenderHtmlChildren(node, sb, ctx);
-                sb.Append($"</{cellTag}>\n");
-                break;
-            case "panel":
-                var panelType = PanelTypeOf(node);
-                // Colours inlined rather than left to a stylesheet: an exported
-                // HTML file is opened on its own, with none of the app's CSS.
-                sb.Append($"<div data-panel-type=\"{panelType}\" style=\"{PanelStyle(panelType)}\">\n");
-                sb.Append($"<strong>{PanelLabels[panelType]}</strong>\n");
-                RenderHtmlChildren(node, sb, ctx);
-                sb.Append("</div>\n");
-                break;
-            case "taskList":
-                sb.Append("<ul data-type=\"taskList\">\n"); RenderHtmlChildren(node, sb, ctx); sb.Append("</ul>\n");
-                break;
-            case "taskItem":
-                sb.Append("<li><label><input type=\"checkbox\" disabled");
-                if (BoolAttr(node, "checked")) sb.Append(" checked");
-                sb.Append(" /></label><div>");
-                RenderHtmlChildren(node, sb, ctx);
-                sb.Append("</div></li>\n");
-                break;
-            case "dynamicBlock":
-                RenderHtmlBlock(node, ctx.NextBlock(), ctx, sb);
-                break;
-            case "embed":
-            case "smartLink":
-                // An exported file is read outside this app, where an iframe
-                // to a third party is a liability and a cached title is a
-                // stale copy of someone else's page. Both become the link.
-                var target = SafeExternalUrl(Attr(node, "url"));
-                sb.Append("<p>");
-                sb.Append(target is null
-                    ? "<em>[link]</em>"
-                    : $"<a href=\"{Escape(target)}\" rel=\"noreferrer noopener\">{Escape(target)}</a>");
-                sb.Append("</p>\n");
-                break;
-            case "attachmentBlock":
-                // The file itself is not in the export, so the export says so
-                // and links to it rather than rendering a broken player.
-                var attachment = Attr(node, "attachmentId");
-                sb.Append(attachment is null
-                    ? "<p><em>[attached file]</em></p>\n"
-                    : $"<p><a href=\"{Escape(ctx.Href($"/api/attachments/{attachment}/download"))}\">[attached file]</a></p>\n");
-                break;
-            case "gallery":
-                // A layout over ordinary images: the images are what matters.
-                sb.Append("<div data-type=\"gallery\" style=\"display: flex; flex-wrap: wrap; gap: 8px\">\n");
-                RenderHtmlChildren(node, sb, ctx);
-                sb.Append("</div>\n");
-                break;
-            case "mention":
-                // The label, not a lookup: an exported file has no directory,
-                // and neither does a page version from before a rename.
-                sb.Append($"<span data-type=\"mention\" style=\"background: #deebff; color: #0747a6; ")
-                  .Append("padding: 0 0.3em; border-radius: 3px\">@")
-                  .Append(Escape(MentionLabel(node))).Append("</span>");
-                break;
-            default:
-                RenderHtmlChildren(node, sb, ctx);
-                break;
-        }
-    }
-
-    private static string ApplyHtmlMarks(JsonElement textNode)
-    {
-        var text = Escape(textNode.TryGetProperty("text", out var t) ? t.GetString() ?? "" : "");
-        if (!textNode.TryGetProperty("marks", out var marks) || marks.ValueKind != JsonValueKind.Array)
-            return text;
-
-        foreach (var mark in marks.EnumerateArray())
-        {
-            text = TypeOf(mark) switch
-            {
-                "bold" => $"<strong>{text}</strong>",
-                "italic" => $"<em>{text}</em>",
-                "underline" => $"<u>{text}</u>",
-                "strike" => $"<s>{text}</s>",
-                "code" => $"<code>{text}</code>",
-                "highlight" => HighlightHtml(mark, text),
-                "textColor" => $"<span style=\"color: {TextColors[TextColorOf(mark)]}\">{text}</span>",
-                "subscript" => $"<sub>{text}</sub>",
-                "superscript" => $"<sup>{text}</sup>",
-                "link" => $"<a href=\"{Escape(Attr(mark, "href") ?? "#")}\" rel=\"noreferrer\">{text}</a>",
-                _ => text,
-            };
-        }
-        return text;
-    }
 
     // -- Markdown -------------------------------------------------------------
 
@@ -521,22 +278,6 @@ public static class ProseMirrorRenderer
 
     private static string EscapeTablePipes(string text) => text.Replace("|", "\\|");
 
-    /// <summary>The border/drop-shadow display attrs (editor-only affordances) as an inline style, or null.</summary>
-    private static string? ImageStyle(JsonElement node)
-    {
-        var parts = new List<string>();
-        if (BoolAttr(node, "border")) parts.Add("border: 1px solid #e4e6eb; padding: 2px");
-        if (BoolAttr(node, "shadow")) parts.Add("box-shadow: 0 4px 14px rgba(23, 43, 77, 0.25)");
-        return parts.Count == 0 ? null : string.Join("; ", parts);
-    }
-
-    /// <summary>A table cell's background colour (TableCellMenu's palette) as an inline style, or null.</summary>
-    private static string? CellBackgroundStyle(JsonElement node)
-    {
-        var color = Attr(node, "backgroundColor");
-        return IsSafeCssColor(color) ? $"background-color: {color}" : null;
-    }
-
     /// <summary>
     /// A highlight mark, carrying its colour when the editor set one
     /// (extensions.ts configures Highlight with multicolor). Marks stored
@@ -587,22 +328,6 @@ public static class ProseMirrorRenderer
     {
         var type = Attr(node, "panelType");
         return type is not null && PanelColors.ContainsKey(type) ? type : "info";
-    }
-
-    private static string PanelStyle(string panelType)
-    {
-        var (bg, border, text) = PanelColors[panelType];
-        return $"background: {bg}; border: 1px solid {border}; color: {text}; "
-             + "border-radius: 6px; padding: 12px 16px; margin: 16px 0";
-    }
-
-    /// <summary>The table's manually-dragged width or full-width toggle (see extensions.ts's Table
-    /// extension) as an inline style, or null for the unset/default case.</summary>
-    private static string? TableStyle(JsonElement node)
-    {
-        if (Attr(node, "layout") == "full-width") return "width: 100%";
-        var width = Attr(node, "width");
-        return width is not null && int.TryParse(width, out var px) ? $"width: min({px}px, 100%)" : null;
     }
 
     private static void RenderMarkdownTaskList(JsonElement listNode, StringBuilder sb, int depth, Ctx ctx)
@@ -669,7 +394,12 @@ public static class ProseMirrorRenderer
                 "textColor" => $"<span style=\"color: {TextColors[TextColorOf(mark)]}\">{text}</span>",
                 "subscript" => $"<sub>{text}</sub>",
                 "superscript" => $"<sup>{text}</sup>",
-                "link" => $"[{text}]({Attr(mark, "href") ?? "#"})",
+                // Sanitised, not passed through: a Markdown file gets rendered
+                // by something eventually, and a javascript: url that survives
+                // into a permissive renderer is a live link. The HTML path
+                // checked this and Markdown did not, which 12.1's cleanup
+                // found when the HTML path was removed.
+                "link" => $"[{text}]({SafeLinkTarget(Attr(mark, "href"))})",
                 _ => text,
             };
         }
@@ -679,79 +409,6 @@ public static class ProseMirrorRenderer
     // -- Phase 7 Wave D dynamic blocks (the one renderer per format) -------------
 
     private static string BlockKindOf(JsonElement node) => Attr(node, "kind") ?? "block";
-
-    private static void RenderHtmlBlock(JsonElement node, BlockResult? result, Ctx ctx, StringBuilder sb)
-    {
-        var kind = BlockKindOf(node);
-        sb.Append($"<div data-type=\"dynamic-block\" data-kind=\"{Escape(kind)}\" style=\"margin: 16px 0\">\n");
-        if (result is null)
-        {
-            // Failed, unknown, or rendered without a snapshot: say so rather
-            // than pretend the block was empty.
-            sb.Append($"<p style=\"color: #6b778c; font-style: italic\">[{Escape(kind)}: dynamic content, shown on the page]</p>\n");
-        }
-        else
-        {
-            if (result.Title is not null) sb.Append($"<p><strong>{Escape(result.Title)}</strong></p>\n");
-            switch (result.Shape)
-            {
-                case "list":
-                    if (result.Items.Count == 0) sb.Append($"<p style=\"color: #6b778c\">{Escape(result.Empty ?? "Nothing to show.")}</p>\n");
-                    else WriteList(result.Items);
-                    break;
-                case "table":
-                    if (result.Items.Count == 0) { sb.Append($"<p style=\"color: #6b778c\">{Escape(result.Empty ?? "Nothing to show.")}</p>\n"); break; }
-                    sb.Append("<table><tr>");
-                    foreach (var c in result.Columns ?? []) sb.Append($"<th>{Escape(c.Label)}</th>");
-                    sb.Append("</tr>\n");
-                    foreach (var item in result.Items)
-                    {
-                        sb.Append("<tr>");
-                        foreach (var c in result.Columns ?? [])
-                        {
-                            sb.Append("<td>");
-                            if (item.Cells is not null && item.Cells.TryGetValue(c.Key, out var cell)) sb.Append(CellHtml(cell, ctx));
-                            sb.Append("</td>");
-                        }
-                        sb.Append("</tr>\n");
-                    }
-                    sb.Append("</table>\n");
-                    break;
-                case "document":
-                    // Depth 1: the included document's own blocks are placeholders
-                    // (no snapshots are passed), so an include of an include stops.
-                    if (result.Document is not null && TryParse(result.Document, out var inner))
-                        RenderHtmlChildren(inner, sb, new Ctx(inner, null, ctx.BaseUrl));
-                    else sb.Append($"<p style=\"color: #6b778c\">{Escape(result.Empty ?? "Nothing to show.")}</p>\n");
-                    break;
-            }
-            sb.Append($"<p style=\"color: #6b778c; font-size: 0.8em\">Snapshot taken {result.GeneratedAt:yyyy-MM-dd HH:mm} UTC</p>\n");
-        }
-        sb.Append("</div>\n");
-
-        void WriteList(IReadOnlyList<BlockItem> items)
-        {
-            sb.Append("<ul>\n");
-            foreach (var item in items)
-            {
-                sb.Append("<li>");
-                sb.Append(item.Href is null ? Escape(item.Title) : $"<a href=\"{Escape(ctx.Href(item.Href))}\">{Escape(item.Title)}</a>");
-                if (item.Subtitle is not null) sb.Append($" <span style=\"color: #6b778c\">{Escape(item.Subtitle)}</span>");
-                if (item.Children is { Count: > 0 }) WriteList(item.Children);
-                sb.Append("</li>\n");
-            }
-            sb.Append("</ul>\n");
-        }
-    }
-
-    private static string CellHtml(BlockCell cell, Ctx ctx)
-    {
-        if (cell.User is not null) return Escape(cell.User.DisplayName);
-        if (cell.Date is { } d) return d.ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
-        if (cell.Checked is { } c) return c ? "☑" : "☐";
-        var text = Escape(cell.Text ?? "");
-        return cell.Href is null ? text : $"<a href=\"{Escape(ctx.Href(cell.Href))}\">{text}</a>";
-    }
 
     private static void RenderMarkdownBlock(JsonElement node, BlockResult? result, Ctx ctx, StringBuilder sb, int listDepth)
     {
@@ -852,29 +509,6 @@ public static class ProseMirrorRenderer
         var color = Attr(mark, "color");
         return color is not null && TextColors.ContainsKey(color) ? color : "grey";
     }
-
-    /// <summary>
-    /// A block's alignment and indent as one inline style, or null when it
-    /// has neither. The indent is recomputed from a clamped integer — never
-    /// echoed from the document — the same rule textFormatting.ts follows.
-    /// </summary>
-    private static string? BlockStyle(JsonElement node)
-    {
-        var parts = new List<string>();
-        var align = Attr(node, "textAlign");
-        if (align is "left" or "center" or "right" or "justify") parts.Add($"text-align: {align}");
-        if (int.TryParse(Attr(node, "textIndent"), out var raw))
-        {
-            var level = Math.Clamp(raw, 0, MaxIndent);
-            if (level > 0)
-                parts.Add($"margin-left: {(level * IndentStepRem).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}rem");
-        }
-        return parts.Count == 0 ? null : string.Join("; ", parts);
-    }
-
-    /// <summary>Kept in step with textFormatting.ts's MAX_INDENT / INDENT_STEP_REM.</summary>
-    private const int MaxIndent = 4;
-    private const double IndentStepRem = 1.75;
 
     // -- Phase 7 Wave A blocks --------------------------------------------------
 
@@ -994,50 +628,6 @@ public static class ProseMirrorRenderer
 
     private static string TocText(HeadingAnchors.Anchor a) => a.Text.Length == 0 ? "Untitled heading" : a.Text;
 
-    private static void RenderHtmlToc(JsonElement node, Ctx ctx, StringBuilder sb)
-    {
-        var o = TocOptions.Read(node);
-        var tree = TocTree(o.Filter(ctx.Anchors));
-        if (tree.Count == 0) return;
-        NumberToc(tree, "");
-
-        var classes = new List<string>();
-        if (o.Display == "horizontal") classes.Add("toc--horizontal");
-        if (o.ExcludeInPdf) classes.Add("toc--exclude-print");
-        if (o.CssClass.Length > 0) classes.Add(o.CssClass);
-        sb.Append("<nav data-type=\"table-of-contents\"");
-        if (classes.Count > 0) sb.Append($" class=\"{Escape(string.Join(' ', classes))}\"");
-        sb.Append(">\n");
-
-        if (o.Display == "horizontal")
-        {
-            sb.Append("<p class=\"toc__inline\">");
-            sb.Append(string.Join("<span class=\"toc__sep\"> | </span>", FlattenToc(tree).Select(Link)));
-            sb.Append("</p>\n");
-        }
-        else
-        {
-            Write(tree, 0);
-        }
-        sb.Append("</nav>\n");
-
-        string Link(TocNode n) =>
-            $"<a href=\"#{Escape(n.Anchor.Id)}\">{(o.SectionNumbers ? Escape(n.Number) + " " : "")}{Escape(TocText(n.Anchor))}</a>";
-
-        void Write(List<TocNode> nodes, int depth)
-        {
-            var style = o.UlStyle(depth);
-            sb.Append(style is null ? "<ul>\n" : $"<ul style=\"{Escape(style)}\">\n");
-            foreach (var n in nodes)
-            {
-                sb.Append("<li>").Append(Link(n));
-                if (n.Children.Count > 0) Write(n.Children, depth + 1);
-                sb.Append("</li>\n");
-            }
-            sb.Append("</ul>\n");
-        }
-    }
-
     private static void RenderMarkdownToc(JsonElement node, Ctx ctx, StringBuilder sb)
     {
         var o = TocOptions.Read(node);
@@ -1071,24 +661,6 @@ public static class ProseMirrorRenderer
         }
     }
 
-    // Background/ink per status colour, matching index.css's light --status-* tokens.
-    private static readonly Dictionary<string, (string Bg, string Ink)> StatusColors = new()
-    {
-        ["grey"] = ("#dfe1e6", "#42526e"),
-        ["red"] = ("#ffebe6", "#de350b"),
-        ["yellow"] = ("#fff0b3", "#974f0c"),
-        ["green"] = ("#e3fcef", "#006644"),
-        ["blue"] = ("#deebff", "#0747a6"),
-        ["purple"] = ("#eae6ff", "#403294"),
-    };
-
-    /// <summary>The status's colour name, defaulted to grey — never a value from the document.</summary>
-    private static string StatusColorOf(JsonElement node)
-    {
-        var color = Attr(node, "color");
-        return color is not null && StatusColors.ContainsKey(color) ? color : "grey";
-    }
-
     /// <summary>
     /// A mention's stored display-name snapshot. The node also carries the
     /// user's id, but an export has no directory to resolve it against and a
@@ -1115,16 +687,6 @@ public static class ProseMirrorRenderer
     /// <summary>"10 Sep 2026" — invariant; an export has no viewer locale to honour.</summary>
     private static string DateText(DateOnly date) => date.ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
 
-    private static string LayoutWidthOf(JsonElement node) =>
-        Attr(node, "width") is "wide" or "full" ? Attr(node, "width")! : "default";
-
-    /// <summary>A column's flex weight: its stored percentage when it is a sane number, else an equal share.</summary>
-    private static string ColumnWeight(JsonElement node) =>
-        double.TryParse(Attr(node, "width"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var w)
-        && w > 0 && w <= 100
-            ? w.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
-            : "1";
-
     // -- shared ---------------------------------------------------------------
 
     /// <summary>Concatenated text of a node's descendants (used for code blocks).</summary>
@@ -1142,4 +704,23 @@ public static class ProseMirrorRenderer
     }
 
     private static string Escape(string value) => WebUtility.HtmlEncode(value);
+
+    /// <summary>
+    /// A link target safe to write into an exported document: http(s), a
+    /// same-document anchor, or a path within this instance. Anything else
+    /// (<c>javascript:</c>, <c>data:</c>, <c>vbscript:</c>) becomes an inert
+    /// placeholder, because the text of the link is still worth keeping and
+    /// the destination is not.
+    /// </summary>
+    private static string SafeLinkTarget(string? href)
+    {
+        var value = href?.Trim();
+        if (string.IsNullOrEmpty(value)) return "#";
+        if (value.StartsWith('#') || value.StartsWith('/')) return value;
+        return Uri.TryCreate(value, UriKind.Absolute, out var uri)
+            && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp)
+                ? value
+                : "#";
+    }
+
 }

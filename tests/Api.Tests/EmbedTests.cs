@@ -193,26 +193,15 @@ public class EmbedExportTests
     """;
 
     [Fact]
-    public void An_export_turns_frames_and_previews_into_plain_links()
+    public void An_embedded_hostile_url_never_becomes_a_link_in_markdown()
     {
-        var html = ProseMirrorRenderer.ToHtml(Doc, null, "https://wiki.example");
-        // Never an iframe in a file that will be opened outside the app.
-        Assert.DoesNotContain("<iframe", html);
-        Assert.Contains("https://www.youtube.com/watch?v=dQw4w9WgXcQ", html);
-        Assert.Contains("https://example.com/post", html);
-        Assert.Contains("https://wiki.example/api/attachments/11111111-1111-1111-1111-111111111111/download", html);
-        // A gallery is a layout: its images are ordinary images.
-        Assert.Contains("alt=\"one\"", html);
-    }
-
-    [Fact]
-    public void A_hostile_url_never_becomes_a_link()
-    {
-        var html = ProseMirrorRenderer.ToHtml(Doc);
-        Assert.DoesNotContain("javascript:", html);
-        Assert.Contains("<em>[link]</em>", html);
-
+        // An embed or smart link carries a url straight out of the document,
+        // so it is the obvious place to smuggle `javascript:` into a file
+        // somebody opens outside the app. Asserted on Markdown since 12.1;
+        // in a captured export the frame is the page's own, under the app's
+        // CSP and its allowlist.
         var md = ProseMirrorRenderer.ToMarkdown(Doc);
+
         Assert.DoesNotContain("javascript:", md);
         Assert.Contains("<https://example.com/post>", md);
     }
@@ -232,21 +221,6 @@ public class TechnicalContentExportTests
       {"type":"chart","attrs":{"source":2,"chartType":"pie","title":"Spend"}}
     ]}
     """;
-
-    [Fact]
-    public void A_mermaid_block_exports_its_source_in_the_shape_a_renderer_looks_for()
-    {
-        var html = ProseMirrorRenderer.ToHtml(Doc, null, null, out var usedMermaid);
-        Assert.True(usedMermaid);
-        Assert.Contains("<pre class=\"mermaid\">flowchart LR", html);
-        // Not a highlighted code block — it is meant to be drawn.
-        Assert.DoesNotContain("language-mermaid", html);
-
-        // Markdown keeps it a fenced block, which GitHub and others render.
-        var md = ProseMirrorRenderer.ToMarkdown(Doc);
-        Assert.Contains("```mermaid", md);
-        Assert.Contains("flowchart LR", md);
-    }
 
     [Fact]
     public async Task An_exported_diagram_carries_its_renderer_rather_than_fetching_one()
@@ -282,20 +256,31 @@ public class TechnicalContentExportTests
     private record PageRef(Guid Id);
 
     [Fact]
-    public void A_page_with_no_diagram_does_not_claim_to_need_a_renderer()
+    public void A_hostile_url_never_becomes_a_link()
     {
-        ProseMirrorRenderer.ToHtml("""{"type":"doc","content":[{"type":"paragraph"}]}""", null, null, out var used);
-        Assert.False(used);
+        // The stored document can say anything; a javascript: url must not
+        // come out of an export as something clickable. Asserted on Markdown
+        // since 12.1, which is the only format still rendered here.
+        var doc = """
+        {"type":"doc","content":[{"type":"paragraph","content":[
+          {"type":"text","marks":[{"type":"link","attrs":{"href":"javascript:alert(1)"}}],"text":"click"}]}]}
+        """;
+
+        var md = ProseMirrorRenderer.ToMarkdown(doc);
+
+        Assert.DoesNotContain("javascript:", md);
+        Assert.Contains("click", md);
     }
 
     [Fact]
-    public void Maths_exports_as_its_latex_source_in_the_usual_delimiters()
+    public void Maths_exports_as_its_latex_source_in_the_right_delimiters()
     {
-        var html = ProseMirrorRenderer.ToHtml(Doc);
-        Assert.Contains("<span class=\"math\">$e = mc^2$</span>", html);
-        Assert.Contains("$$\\sum_{i=1}^{n} i$$", html);
-
+        // Markdown has no maths of its own, so the source in delimiters is
+        // both the honest answer and the one every renderer understands.
+        // Inline maths stays in its sentence; display maths gets its own
+        // block, which is the difference `display` exists to make.
         var md = ProseMirrorRenderer.ToMarkdown(Doc);
+
         Assert.Contains("where $e = mc^2$ holds.", md);
         Assert.Contains("$$\n\\sum_{i=1}^{n} i\n$$", md);
     }
@@ -303,8 +288,9 @@ public class TechnicalContentExportTests
     [Fact]
     public void A_chart_names_the_table_it_charts_rather_than_copying_the_data()
     {
-        var html = ProseMirrorRenderer.ToHtml(Doc);
-        Assert.Contains("[Chart of table 2: Spend]", html);
+        // A chart is drawn from a table already in the document. Copying the
+        // numbers would let the two disagree; in a captured export the chart
+        // is the real one, drawn by the page.
         Assert.Contains("[Chart of table 2]", ProseMirrorRenderer.ToMarkdown(Doc));
     }
 }
