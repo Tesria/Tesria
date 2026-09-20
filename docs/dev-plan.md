@@ -625,6 +625,63 @@ it, and others can host their own copy publicly too.
   both set `AllowPublicSpaces = false`; the per-space flags are preserved
   so re-enabling restores the previous state.
 
+### 5.5 Anonymous access is opt-in twice — `S` — Model: Opus
+
+*Added 2026-09-20 at the owner's request, specified by Fable 5.1. Sequenced
+before the onboarding wizard (10.2), which gains the switch.*
+
+**The problem.** With **Allow public spaces** off (the default), an
+anonymous visitor to `/` still gets the public shell: a Spaces page saying
+"Nothing is published for public reading. Sign in to see more." The same
+happens with the switch on and no space marked public. An instance that
+publishes nothing should look like one: a sign-in page.
+
+**The rule.** Anonymous reading exists only when **both** the instance
+switch (`AllowPublicSpaces`) is on **and** at least one non-archived space
+is public. The server already enforces this per space
+(`PermissionService.IsPubliclyViewableSpaceAsync`); this item makes the
+SPA's landing behaviour match it.
+
+- `GET /api/instance` (anonymous, rate-limited with the anonymous policy;
+  10.2's `GET /api/setup` folds into it): `{ instanceName, needsOwner,
+  publicReading, allowPublicRegistration }`. `publicReading` is the rule
+  above, computed from the cached settings and one indexed query. This is
+  the one place the SPA learns anything before a session exists; 10.2
+  reads `needsOwner` from it, and the login page reads
+  `allowPublicRegistration` to show or hide **Create one** (an invite
+  token in the URL shows the register page regardless).
+- `SessionGate`: when the session check answers "no user" and
+  `publicReading` is false, every shell route (`/`, `/spaces`, a space, a
+  page, `/search`, `/labels/:name`) sends the visitor to `/login` with
+  `from` set, as it did before Phase 5. When `publicReading` is true the
+  public shell renders as today. A deep link to a public page on an
+  instance that publishes nothing therefore lands on sign-in, which is
+  correct: nothing is public.
+- The login page, when `publicReading` is true, offers "Browse what is
+  public" under the form, so a visitor who arrived at `/login` by habit
+  is not stranded.
+- Signed-in behaviour does not change. The "Nothing is published" copy
+  stays for the one case it still describes: a signed-in user with no
+  spaces visible to them.
+
+**Wizard (10.2, step 3).** Below the registration cards, a switch **Allow
+anonymous reading**, off by default, with: "Off: every visitor must sign
+in. On: spaces you mark public can be read without an account; nothing is
+public until you mark a space." The step is already required (the
+registration choice); the switch has a default, so it needs no choice.
+Turning it on is sudo territory (3.5), which the fresh sign-in covers.
+
+**Docs and tests.** `docs/security.md`'s public-read paragraph gains the
+two-switch rule; `architecture.md`'s Phase 5 section too. Tests
+(`PublicReadTests`): `publicReading` is false with the switch off, false
+with it on and no public space, false with only an archived public space,
+true otherwise; `needsOwner` flips on the first account;
+`allowPublicRegistration` follows the setting. The redirect is SPA
+behaviour, so it is walked live: signed out with the switch off (login),
+with it on and no public space (login), with a public space (the shell);
+a public page's deep link in each state; and then the full walk, since
+`SessionGate` changes.
+
 ---
 
 ## Phase 6 — Space icons — `S` — Model: Opus — ✅ **shipped 2026-09-10**
@@ -1597,8 +1654,9 @@ dashboard), `admin-backups` (the Backups tab), for 10.2's Done screen.
 
 ### 10.2 First-run setup for the owner — `L` — Model: Fable → Opus
 
-**When it runs.** `GET /api/setup` (anonymous, rate-limited with the auth
-policy): `{ needsOwner, instanceName }`. `needsOwner` is "no users exist".
+**When it runs.** `GET /api/instance` (from 5.5; anonymous):
+`{ instanceName, needsOwner, publicReading, allowPublicRegistration }`.
+`needsOwner` is "no users exist".
 When true, the SPA sends `/`, `/login` and `/register` to `/setup`; the
 Login page itself shows "This instance has no owner yet. Set it up." with
 the link, for anyone who lands on it directly. Once the owner exists, the
@@ -1607,6 +1665,10 @@ wizard continues only for the owner: `/auth/me` carries
 and a global `SetupGate` (in `Root`, beside `RecoveryCodesPrompt`) routes
 every path except `/setup` and `/logout` there while it is true. This is
 convenience: the API is not blocked, and the docs say so.
+
+> **Update 2026-09-20:** Phase 11 adds a required `permissions` step
+> (the rights matrix) between registration and backups, and one more piece
+> of completion evidence. The table and the evidence list below include it.
 
 **Steps.** A single page, `/setup`, with a left rail of steps and one
 step's form on the right, so progress is visible and the owner can go back
@@ -1622,17 +1684,19 @@ The server refuses to record a required step as skipped.
 | 0 | `welcome` | | What this wizard covers, and that the required steps take two minutes | nothing |
 | 1 | `account` | yes | Create the owner account (email, name, password); then the recovery codes, with **I have saved these** as a checkbox the Continue button needs | `POST /auth/register` (first account); the checkbox records `User.RecoveryCodesAcknowledgedAt` via `POST /auth/me/recovery-codes/acknowledge` |
 | 2 | `instance` | yes | Instance name; public address (prefilled from the deploy-time value; explained: "links in email use this") | `PUT /admin/settings` |
-| 3 | `registration` | yes | Two cards, neither preselected: **Invite only** ("you create invite links; nobody can sign up on their own") and **Open** ("anyone who can reach this address can create an account"). Continue needs a choice | `PUT /admin/settings` |
-| 4 | `backups` | yes | The retention policy as 9.1's form, prefilled with the seeded values, plus one sentence on what the two backup systems are and that `BACKUP_ENCRYPTION_KEY` in `.env` must be kept off this machine. **Keep these settings** or **Save changes**; either records the step. Saving needs sudo: the owner signed in a minute ago, so the client will not prompt; if the wizard sat idle past the window, `ReauthDialog` asks, which is correct | `PUT /admin/backups/policy` |
-| 5 | `email` | | SMTP host, port, username, password, from, TLS; **Send test email** to the owner's address; Continue is enabled after a successful test or a Skip | `PUT /admin/settings`, `POST /admin/settings/email/test` |
-| 6 | `two-factor` | | The profile's TOTP enrolment inline, with "recommended for the account that owns this instance" | the existing `/auth/me/totp/*` |
-| 7 | `first-space` | | Name and key for a first space, or Skip | `POST /spaces` |
-| 8 | `done` | | What was set, what was skipped with a link to finish each in Administration, the `admin-overview` still, and two buttons: **Invite people** (Administration → Invites) and **Take the tour** (10.3) | `POST /api/setup/complete` |
+| 3 | `registration` | yes | Two cards, neither preselected: **Invite only** ("you create invite links; nobody can sign up on their own") and **Open** ("anyone who can reach this address can create an account"). Continue needs a choice. Below them, *(added 2026-09-20, see 5.5)* the switch **Allow anonymous reading**, off by default, with its two-sentence explanation | `PUT /admin/settings` |
+| 4 | `permissions` | yes | *(Added 2026-09-20 for Phase 11.)* The rights matrix from 11.1 as it stands, the Owner column included, with one sentence on what a tier is. **Keep these defaults** or edit and **Save**; either records the step and sets `PermissionsReviewedAt`. Only the owner can be here, so every column is editable | `POST /admin/roles/review` or `PUT /admin/roles/{id}/permissions` |
+| 5 | `backups` | yes | The retention policy as 9.1's form, prefilled with the seeded values, plus one sentence on what the two backup systems are and that `BACKUP_ENCRYPTION_KEY` in `.env` must be kept off this machine. **Keep these settings** or **Save changes**; either records the step. Saving needs sudo: the owner signed in a minute ago, so the client will not prompt; if the wizard sat idle past the window, `ReauthDialog` asks, which is correct | `PUT /admin/backups/policy` |
+| 6 | `email` | | SMTP host, port, username, password, from, TLS; **Send test email** to the owner's address; Continue is enabled after a successful test or a Skip | `PUT /admin/settings`, `POST /admin/settings/email/test` |
+| 7 | `two-factor` | | The profile's TOTP enrolment inline, with "recommended for the account that owns this instance" | the existing `/auth/me/totp/*` |
+| 8 | `first-space` | | Name and key for a first space, or Skip | `POST /spaces` |
+| 9 | `done` | | What was set, what was skipped with a link to finish each in Administration, the `admin-overview` still, and two buttons: **Invite people** (Administration → Invites) and **Take the tour** (10.3) | `POST /api/setup/complete` |
 
 `POST /api/setup/complete` (**Owner**) verifies the evidence server-side
 and sets `SetupCompletedAt`: the caller has `RecoveryCodesAcknowledgedAt`;
 `SiteSettings.UpdatedById` is not null; `registration` and `instance` are
-recorded and not skipped; `BackupPolicyChangedById` is not null (9.1's
+recorded and not skipped; `PermissionsReviewedAt` is not null (Phase 11);
+`BackupPolicyChangedById` is not null (9.1's
 seed leaves it null; an owner saving or keeping the policy sets it). A
 missing piece returns 409 with the step key, and the SPA jumps there.
 Audit `setup.completed` with the list of skipped keys.
@@ -1736,6 +1800,411 @@ undo, the profile section, and every route touched by `Root`.
 
 ---
 
+## Phase 11 — Roles with assignable rights
+
+Written 2026-09-20 by Fable 5.1 at the owner's request, from the code as it
+stands after 10.1. Three items: **11.1** the permission model, the matrix
+and its enforcement; **11.2** custom roles; **11.3** deleting a space, the
+first destructive action gated by a right from 11.1. All three are
+specified in full below.
+Phase 10's remaining items move behind them (see the order of execution):
+10.2's wizard gains a required step where the owner reviews the matrix, and
+that step should be built once, against the real thing.
+
+**What the owner asked for.** Rights assignable to roles: Owner, Admin and
+User for now, with good defaults. The owner reviews and approves the
+defaults, or changes them, during onboarding. The example given: an
+instance may not want administrators to be able to change the backup
+retention policy.
+
+**The owner's decisions (2026-09-20), fixed:**
+
+1. **The owner edits everything.** Administrators cannot change the rights
+   of administrators, but can change the rights of users, and of any other
+   roles that get created.
+2. **The owner is subject to the matrix, except for roles and ownership.**
+   The owner can switch their own access to an area off and back on; what
+   they cannot give up is changing roles, transferring ownership, and (so
+   that "back on" is always possible) editing the matrix itself.
+3. **User-level rights in the matrix:** create spaces; create API tokens
+   and use the API and MCP with them; export pages; create invite links
+   (off by default); and two delete rights: **delete pages you created**
+   (on by default for users) and **delete pages created by others** (off by
+   default for users; administrators and the owner have it).
+
+**Decisions made here (Fable):**
+
+- **Tier and role are two different things, and the code already has the
+  first.** The existing `UserRole` enum (`Member`, `Admin`, `Owner`) stays
+  and becomes the *tier*: the ordering that decides who may edit whom, who
+  receives alerts, whom the two-factor requirement binds, and what the
+  owner alone can do. A *role* is a named set of rights that belongs to a
+  tier. Three built-in roles exist, one per tier, and custom roles (11.2)
+  are extra roles within the User or Admin tier. Nothing in 10.1 changes.
+- **Defaults preserve today's behaviour, with exactly two exceptions**:
+  users lose "delete pages created by others" (the owner's decision), and
+  gain nothing they did not have. An upgraded instance therefore changes
+  in one visible way, stated in the CHANGELOG and shown on the new Roles
+  tab. Administrators keep everything they can do today.
+- **Rights are additive over space permissions, never a bypass.** An
+  instance right says what a person may do at all; the space's own View,
+  Edit and Admin grants still decide where. "Delete pages created by
+  others" does not let anyone delete in a space they cannot edit.
+- **Three powers are reserved to the owner and never appear as checkboxes:**
+  changing a user's tier, transferring ownership, and editing admin-tier
+  or owner rows of the matrix. That is what makes "the owner can never
+  lock themselves out" true without a special case.
+- **The catalogue is code; the grants are data.** Which rights exist, their
+  wording, grouping and defaults live in one C# file, so a new right is a
+  code change with a test. Which roles hold which rights is rows in the
+  database, cached like site settings.
+- **Editing the matrix is sudo, audited as a diff, and alerts.** A stolen
+  session that widens an administrator's rights is the new way to take an
+  instance short of ownership; it is treated like reducing backup
+  retention was in 9.1.
+
+### 11.1 Permission model, matrix and enforcement — `L` — Model: Fable → Opus
+
+**The catalogue** (`Infrastructure/Permissions/InstancePermissions.cs`):
+a static list of `(Key, Area, Label, Description, Scope, Defaults)`, where
+`Scope` is `Content` (meaningful for users) or `Administration`, and
+`Defaults` names which built-in roles hold it. Keys are stable strings and
+are what the database stores.
+
+| Key | Right | User | Admin | Owner |
+|---|---|---|---|---|
+| **Content** | | | | |
+| `spaces.create` | Create spaces | yes | yes | yes |
+| `pages.delete_own` | Delete pages you created | yes | yes | yes |
+| `pages.delete_any` | Delete pages created by others | no | yes | yes |
+| `pages.export` | Export pages as PDF, HTML or Markdown | yes | yes | yes |
+| `tokens.use` | Create personal API tokens; use the API and MCP with them | yes | yes | yes |
+| `invites.create` | Create invite links | no | yes | yes |
+| **People** | | | | |
+| `users.view` | See the user list | no | yes | yes |
+| `users.manage` | Suspend, unlock, sign out, revoke tokens, reset passwords (never on the owner) | no | yes | yes |
+| `users.assign_roles` | Assign a user-tier role to a user (11.2) | no | yes | yes |
+| `invites.manage` | See and revoke invite links | no | yes | yes |
+| `groups.manage` | Create and shape groups | no | yes | yes |
+| **Spaces** | | | | |
+| `spaces.manage` | See every space; recover access; archive | no | yes | yes |
+| `spaces.publish` | Make a space public or private | no | yes | yes |
+| `spaces.delete` | Delete a space and everything in it (11.3) | no | yes | yes |
+| **Security** | | | | |
+| `audit.view` | Read the audit log and verify the chain | no | yes | yes |
+| `security.view` | Security overview, events, alerts, limits | no | yes | yes |
+| `security.respond` | Acknowledge and resolve alerts; block and unblock addresses | no | yes | yes |
+| `security.settings` | Rate limits, lockout, the two-factor requirement, the embed allowlist | no | yes | yes |
+| **Backups** | | | | |
+| `backups.view` | See the Backups tab | no | yes | yes |
+| `backups.run` | Back up now; test restore | no | yes | yes |
+| `backups.policy` | Change the retention policy | no | yes | yes |
+| **Instance** | | | | |
+| `dashboard.view` | The administration dashboard | no | yes | yes |
+| `settings.instance` | Instance name and public address | no | yes | yes |
+| `settings.registration` | Open or close registration | no | yes | yes |
+| `settings.email` | The email server | no | yes | yes |
+| `settings.public_spaces` | The instance-wide public reading switch | no | yes | yes |
+| `permissions.view` | See the Roles tab | no | yes | yes |
+| `permissions.edit_user_tier` | Edit user-tier roles; create user-tier custom roles | no | yes | yes |
+| **Always the owner** (listed on the tab, no checkboxes) | | | | |
+| `roles.assign_tier` | Promote to or demote from administrator | | | always |
+| `ownership.transfer` | Hand the instance to someone else | | | always |
+| `permissions.edit_admin_tier` | Edit admin-tier and owner rows; create admin-tier roles | | | always |
+
+**Schema: one migration, `Roles`.**
+- `Roles`: `Id`, `Key` (`user` | `admin` | `owner` for the built-ins, null
+  for custom), `Name` (unique, 60), `Description`, `Tier` (`UserRole`),
+  `BuiltIn`, `CreatedAt`, `CreatedById`. Built-ins cannot be renamed
+  (their names are fixed strings: User, Administrator, Owner), deleted or
+  re-tiered.
+- `RolePermissions`: `RoleId`, `Key` (100), primary key on both. A row is
+  a grant; absence is not. Unknown keys (a right removed from the
+  catalogue) are ignored on read and dropped on the next write.
+- `Users.RoleId` (nullable FK, restrict delete). Null means "the built-in
+  role of my tier", which is also what `RoleSeed` fills in and what every
+  write from now on sets explicitly. The tier column stays authoritative
+  for ordering; `RoleId` is validated to belong to a role of that tier.
+- `SiteSettings.PermissionsReviewedAt` (nullable), for 10.2's step.
+- **App role:** `Roles` and `RolePermissions` are ordinary tables (the app
+  writes them through audited endpoints). Not append-only: the audit diff
+  is the record.
+
+**`RoleSeed`, a startup step beside `OwnerSeed`:** creates any missing
+built-in role with the catalogue defaults; gives every user with a null
+`RoleId` the built-in of their tier; on an instance that already has
+users and no `PermissionsReviewedAt`, leaves it null (10.2's wizard is
+skipped on upgraded instances anyway, because `SetupCompletedAt` is set;
+the Roles tab is where an upgraded owner reviews). Idempotent; never
+resets a built-in's rights once it exists.
+
+**Effective rights** (`IInstancePermissions`, scoped, with a singleton
+`PermissionCache` of 30 seconds like `SiteSettingsCache`, invalidated on
+every write): the user's role's grants, plus the three reserved keys when
+the tier is Owner. Anonymous callers have no rights, with one exception
+below. A suspended account has none.
+
+**Enforcement.** A `RequirePermission("key")` route extension backed by an
+`IAuthorizationPolicyProvider` that materialises `perm:<key>` policies on
+demand, and one handler: authenticated, holds the key, and, when the
+holder's tier is Admin or above and `RequireTotpForAdmins` is on,
+enrolled (the same rule `RequireAdmin` applies today). `RequireAdmin`
+stays for exactly one thing: the `/admin` route group's *listing* of the
+administration area is replaced by per-route keys, so `RequireAdmin` is
+no longer used by any route and is removed, along with the blanket policy
+on the admin, security, backup, dashboard, group and audit groups. Every
+route names its key:
+
+- `/admin/users` → `users.view`; status, unlock, sessions, tokens, reset →
+  `users.manage` (the 10.1 owner-account guard stays on top); role →
+  `roles.assign_tier` (owner) for tier changes and `users.assign_roles`
+  for a role within the user tier (11.2); transfer → `ownership.transfer`.
+- `/admin/spaces` → `spaces.manage`; `/public` → `spaces.publish`;
+  `recover-access` → `spaces.manage`.
+- `/admin/invites` GET and DELETE → `invites.manage`; POST →
+  `invites.create`. A user with only `invites.create` sees an Invites page
+  that creates and lists their own.
+- `/admin/settings` GET → any `settings.*` or `security.settings`; PUT is
+  checked **per field**: the handler maps each request field to its key
+  (`InstanceName`, `BaseUrl` → `settings.instance`;
+  `AllowPublicRegistration` → `settings.registration`; the SMTP fields →
+  `settings.email`; `AllowPublicSpaces` → `settings.public_spaces`;
+  `RequireTotpForAdmins`, `EmbedAllowlist`, the limits →
+  `security.settings`) and refuses the whole request with 403 naming the
+  first missing key. The response's `permissions` tells the SPA which
+  sections to render editable.
+- `/admin/security/*` → `security.view` for reads, `security.respond` for
+  alerts and blocks; `/admin/security/limits` → `security.view`.
+- `/admin/backups` GET and `jobs/{id}` → `backups.view`; `run` and
+  `restore-test` → `backups.run`; `policy` and `policy/preview` →
+  `backups.policy`.
+- `/admin/dashboard` → `dashboard.view`.
+- `/admin/audit/verify` and `/audit` → `audit.view`.
+- Group create, update, delete, membership → `groups.manage`; listing
+  stays open to any signed-in user.
+- `POST /spaces` → `spaces.create`.
+- Page delete (trash) and purge: the existing space check first (edit for
+  trash, space admin for purge), then `pages.delete_any`, or
+  `pages.delete_own` when `Page.CreatedById` is the caller. Restore and
+  discarding one's own draft are unchanged: neither destroys anything
+  someone else made.
+- Export: a signed-in caller needs `pages.export`; an anonymous reader of
+  a public page is allowed exactly when the built-in **User** role holds
+  it (anonymous is never more privileged than a user).
+- API tokens: `POST /api-tokens` needs `tokens.use`, and
+  `ApiTokenAuthenticationHandler` fails a token whose owner no longer
+  holds it ("This account may not use API tokens."). Existing tokens go
+  inert rather than being deleted, and work again if the right returns.
+  MCP goes through tokens, so this covers it.
+
+**Endpoints** (`Features/Admin/RoleEndpoints.cs`, group `/admin/roles`):
+- `GET /` (`permissions.view`): the catalogue (keys, areas, labels,
+  descriptions, scope), every role with its tier and grants, the reserved
+  keys, and `editable: string[]` (which role ids this caller may edit).
+- `PUT /{roleId}/permissions` (**sudo**, audited `permissions.changed`
+  with `{ Role, Added, Removed }`): the full set of keys for one role.
+  Caller must hold `permissions.edit_user_tier` for a user-tier role or be
+  the owner for admin-tier and owner rows (`permissions.edit_admin_tier`,
+  reserved). Reserved keys in the body are ignored. Raises
+  `permissions.expanded` (Critical, no cooldown) when an admin-tier or
+  owner row gains a key, and (Warning) when a user-tier row gains an
+  Administration-scope key.
+- `POST /{roleId}/reset` (same guards, sudo, audited): back to the
+  catalogue defaults for that role.
+- `POST /review` (**Owner**, audited `permissions.reviewed`): sets
+  `PermissionsReviewedAt`. 10.2's wizard calls it for **Keep these
+  defaults**; a save through `PUT` also sets it.
+
+`/auth/me` gains `permissions: string[]` (effective) and `roleName`.
+
+**UI.**
+- **Administration → Roles** (`/admin/roles`, after Users): the matrix,
+  rows grouped by area with the label and a description on hover, one
+  column per role in tier order. Columns the viewer may not edit are
+  read-only with a lock and "Only the owner edits this role". Checkboxes
+  edit a draft; **Review changes** lists what each role gains and loses;
+  **Save** (sudo through the client's reauth) commits. **Reset to
+  defaults** per column. The reserved powers are a final group titled
+  "Always the owner" with no checkboxes. A banner on an upgraded instance
+  until the owner has saved or reviewed: "Users can no longer delete pages
+  created by others. Review these defaults."
+- **Everywhere else, rights decide what renders.** `useAuth` exposes
+  `can(key)`. The Admin nav entry shows when any Administration-scope key
+  is held; `AdminLayout` renders only the tabs the user can open; Settings
+  renders sections editable or read-only per field group; the Backups
+  policy form is read-only without `backups.policy`; the page view hides
+  Delete when neither delete right applies to this page; the profile hides
+  API tokens without `tokens.use` and says why; New space is hidden without
+  `spaces.create`. Every hidden control is also refused server-side; the
+  hiding spares people a page of 403s.
+- The Users page's role column shows the role name (User, Administrator,
+  Owner, or a custom name) with the tier badge as today.
+
+**Docs and tests.** `docs/security.md`: a layers row ("Instance rights
+(11.1)") and an update to the owner row; `docs/architecture.md`: a section
+"Instance rights" after "Roles and administrators" (tier versus role, the
+catalogue, additive over space permissions, the reserved powers, caching,
+the per-field settings check); README's admin paragraph; CHANGELOG with the
+upgrade note. Tests (`InstancePermissionTests.cs`): the catalogue's defaults
+match the table above and every route's key is in the catalogue (a test
+that walks the endpoint metadata); the seed creates built-ins, fills
+`RoleId`, and is idempotent; each enforcement bullet above (one test per
+route family, including the per-field settings refusal naming the key);
+delete own versus any against space permissions; anonymous export follows
+the User role; a token goes inert and returns; an admin cannot edit an
+admin-tier row (403) and can edit the user row; the owner can remove
+`backups.policy` from their own row and is then refused, and can put it
+back; reserved keys cannot be removed from the owner's effective set;
+`permissions.changed` audits a diff; `permissions.expanded` alerts;
+`/auth/me` carries the set. Live: the Roles tab as owner and as admin
+(locked columns), a saved change taking effect within 30 seconds, the
+retention example end to end (remove `backups.policy` from Administrator,
+sign in as the admin fixture, see the policy read-only and get 403 on
+`PUT`), a member deleting their own page and being refused on someone
+else's, and the full live walk, since `Layout.tsx` and `main.tsx` change.
+
+### 11.2 Custom roles — `M` — Model: Fable → Opus
+
+A custom role is a named set of rights within the User or Admin tier.
+People are assigned to it instead of to the tier's built-in role; their
+tier does not change, so everything tier-based (alerts, two-factor, the
+owner's reserved powers) is unaffected.
+
+- `POST /admin/roles` `{ name, description, tier, copyFrom? }`: creating
+  a user-tier role needs `permissions.edit_user_tier`; an admin-tier role
+  needs the owner. The new role starts as a copy of `copyFrom` (default:
+  the tier's built-in). `PUT /{id}` renames or describes (same guards;
+  built-ins refuse). `DELETE /{id}` (sudo, audited) only when no user holds
+  it; the UI offers "Move everyone to <built-in> first".
+- **Assigning:** `PUT /admin/users/{id}/role` takes `{ roleId }`. If the
+  role's tier equals the user's current tier, the caller needs
+  `users.assign_roles` (and, for an admin-tier role, must be the owner).
+  If the tier differs, this is the 10.1 promotion or demotion and stays
+  owner-only, audited as `user.role_changed` with both role names. The
+  owner's role cannot be changed here (10.1's rule); a transfer gives the
+  new owner the built-in Owner role and the old one the built-in
+  Administrator role.
+- **Registration and SSO** assign the built-in User role. Invites do not
+  carry a role (see the open questions).
+- **UI:** the Roles tab gains **New role** (name, description, tier
+  limited to what the caller may create, copy from) and a rename or delete
+  per custom column; the Users page role picker lists the roles of the
+  user's tier the caller may assign, and the owner additionally sees the
+  tier change as a separate, confirmed action.
+- **Tests** (`CustomRoleTests.cs`): create in each tier with the right
+  guard; copy-from; rename refuses built-ins; delete refuses while held;
+  assign within tier by an admin; cross-tier assignment refused for an
+  admin and works for the owner; a custom role's grants apply and its
+  deletion is blocked until reassignment; `/auth/me` names the role.
+
+### 11.3 Delete a space — `M` — Model: Fable → Opus
+
+**What the owner asked for (2026-09-20).** Administrators and the owner
+can delete a space, from the space's settings page, with a warning that
+it is irreversible and destroys every page under it, a confirmation
+prompt, and the password required to confirm.
+
+**Decisions.**
+- **It is an instance right, `spaces.delete`, not a space permission.**
+  A space's own admin (the person who created it, say) cannot delete it
+  unless their role grants the right; by default only administrators and
+  the owner hold it. Archiving remains the reversible alternative for
+  space admins, and the dialog says so.
+- **Confirmation is the key plus the password, in one dialog.** Typing the
+  space key proves the person is looking at the right space; the password
+  proves it is them. The password is verified by the server in the same
+  request, with the same rules as `/auth/reauth`: an account with a
+  password gives its password; an SSO account with no password gives a
+  one-time code. A wrong answer counts as a failed sign-in for lockout
+  purposes, as reauth does. The ordinary five-minute sudo window is not
+  enough here: this is the one action where "you signed in a few minutes
+  ago" must not stand in for "you mean it".
+- **"Irreversible" is told truthfully.** The dialog says the pages,
+  versions, comments, attachments and history are destroyed and cannot be
+  restored from the trash, and that only a backup taken before now still
+  holds them. It does not promise there is no way back at all, because
+  9.1's backups exist and an operator should know that.
+- **Files are deleted after the database commits, best effort.** The row
+  deletion is one transaction; attachment files and the icon are removed
+  afterwards, and any that fail are logged by path so the runbook can
+  sweep them. A crash between the two leaves orphan files, never a
+  half-deleted space.
+- **The audit entry keeps what the pages cannot:** the space key and name,
+  the page count, attachment count and bytes, and who did it. The rows
+  are gone; the record of the deletion is not.
+
+**Endpoint.** `DELETE /api/spaces/{key}` (`spaces.delete`), body
+`{ confirmKey, password?, code? }`:
+1. 404 if no such space (including archived: an archived space can be
+   deleted, and archiving first is not required).
+2. 400 `confirmKey` if it does not match the key exactly (case-sensitive,
+   as displayed).
+3. 401 if the password or code does not verify, recorded as a failed
+   sign-in attempt and counted toward lockout, exactly like reauth.
+4. In one transaction: clear `CurrentVersionId` on every page in the
+   space (the restrict FK, as purge does), delete every page including
+   drafts and trashed ones (versions, attachments, comments, labels,
+   views, restrictions cascade), delete the space's `CollabDocuments` by
+   their document names (`page:<id>` for each page; confirm the naming in
+   `CollabEndpoints` and the sidecar), delete `Watches` whose target is
+   the space or any of its pages, delete the space row (webhooks,
+   templates scoped to it, space permissions cascade). Notifications are
+   left: they are a person's history, and a link to a deleted page
+   already 404s gracefully.
+5. Audit `space.deleted` with `{ Key, Name, Pages, Attachments, Bytes,
+   WasPublic }`. Raise `space.deleted` (Critical, alert, no cooldown)
+   through the detector: a whole space gone is the loudest thing after
+   ownership changing, whoever did it.
+6. After commit: delete each attachment file by storage key and the icon
+   image if any, logging failures. Then 204.
+7. The collab sidecar: any live editing session on those pages must end.
+   The sidecar loads a document from `CollabDocuments` on first open, so
+   a new session finds nothing; an *open* session holds the document in
+   memory and would write it back. Add the small thing this needs: the
+   sidecar's store hook checks the page still exists (or the app's token
+   endpoint refuses a token for a page that is gone, and the sidecar
+   closes connections whose token check fails), whichever the sidecar's
+   code makes simplest. The test is a page open in the editor when its
+   space is deleted: the editor is disconnected and nothing is
+   resurrected.
+
+**UI.** Space settings → a final **Danger zone** section, rendered only
+when `can('spaces.delete')`, with **Delete this space**. The dialog (a
+modal, not `window.confirm`: it has a form in it): the warning in full,
+the counts ("42 pages, 17 attachments, 3.4 MB"), the archive alternative
+as a link, a field "Type **APP** to confirm", the password field (or
+one-time code for an SSO account), and **Delete space** disabled until
+both are filled. On success, navigate to `/spaces` with "The space APP
+was deleted." Public spaces: the sitemap and any public URLs simply stop.
+
+**Sequencing.** After 11.1, so the right and `can()` exist. If it is ever
+pulled forward, gate it on tier `>= Admin` and swap in the right later.
+
+**Docs and tests.** Runbook: a line under recovery scenarios ("a deleted
+space is restored from a backup taken before the deletion, as scenario B
+or C"), and the orphan-file sweep. `docs/security.md`: the sudo row gains
+"deleting a space needs the password again in the same request".
+Tests (`SpaceDeleteTests.cs`): a member is refused even as the space's
+creator; an admin succeeds and everything under the space is gone,
+including a trashed page and a draft, and the audit entry carries the
+counts; the wrong key is 400 and nothing changes; the wrong password is
+401, nothing changes, and the failed attempt counts toward lockout; an
+SSO account confirms with a code; the alert is raised; attachment files
+are removed from the uploads directory; watches on the space and its
+pages are gone; a template scoped to the space is gone and an
+instance-wide one is not; an archived space can be deleted. Live: delete
+a throwaway space with a page open in another tab and confirm the editor
+disconnects; then the full walk, since the settings route changes.
+
+**Not decided here, deliberately:** whether invites can name a role
+(recommended later, and only user-tier roles for invites created by
+non-owners); whether groups should carry instance rights (no: groups are a
+space-permission mechanism and mixing the two is how "who can do what"
+becomes unanswerable); whether anonymous readers get any right beyond
+export.
+
+---
+
 ## Order of execution, flattened
 
 1. **0.1** Roles (Fable→Opus) → **0.2** Settings → **0.3** Telemetry → **0.4** Media storage
@@ -1748,7 +2217,7 @@ undo, the profile section, and every route touched by `Root`.
 8. **7.A** → **7.B** → **7.C** → **7.D** (Fable→Opus) → **7.E** → **7.F**
 9. **8.1** PDF (after 7.A) → **8.2** Licence (any time) → **8.3** OpenAPI → **8.4** MCP (Fable→Opus) → **8.6** External edits as tracked changes (Fable→Opus) → **8.5** Wiki packs (Fable→Opus)
 10. **9.1** Backups admin section (Fable→Opus; shipped 2026-09-17) → **9.2** Offsite backups (Fable→Opus; unscheduled, waits on the owner's seven decisions listed in the item)
-11. **10.1** Owner role (shipped 2026-09-20) → **10.4** Media harness → **10.2** Owner setup wizard → **10.3** Tour and tips (all specified 2026-09-20 as Fable; Opus implements). 10.1 comes first because 10.2 creates an owner, and 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
+11. **10.1** Owner role (shipped 2026-09-20) → **11.1** Instance rights and the Roles tab → **11.2** Custom roles → **11.3** Delete a space → **5.5** Anonymous access is opt-in twice → **10.4** Media harness → **10.2** Owner setup wizard → **10.3** Tour and tips (all specified 2026-09-20 as Fable; Opus implements). Phase 11 goes before the wizard because the wizard has a required step that reviews the matrix, and before 10.3 because the tour's screens should show the real Roles tab. 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
 
 Phases 6 and 8.2 are floaters — small, no dependents — and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm
@@ -1767,3 +2236,4 @@ findings don't get better by waiting.
 - Whether the welcome tour should also run for accounts that existed before 10.3 (decided no for now: tips only; the tour is on their profile).
 - Whether invites should be able to carry a role, so an invited person arrives as an administrator (10.1 leaves promotion to the owner afterwards).
 - MP4 alongside WebM for the clips (needs ffmpeg in an image; the poster is the fallback until someone asks).
+- Phase 11's three: invites naming a role, groups carrying instance rights (recommended no), and anonymous rights beyond export.
