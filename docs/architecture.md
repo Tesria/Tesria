@@ -1065,6 +1065,39 @@ correct and cheap answer. `RequireAdmin` is an authorization policy over
 that check; `/api/auth/me` returns `role` so the SPA can show admin
 navigation.
 
+**Deleting a space** (11.3) is the one action whose gate is not the ordinary
+sudo window. `DELETE /api/spaces/{key}` carries the space key typed back and
+the password in the same request, and verifies the password itself through
+`AuthEndpoints.VerifyPasswordOrCodeAsync`, which is the reauth path's own
+logic: a locked account is refused, and a wrong answer counts toward lockout.
+The two answers catch two different mistakes. The key proves the right space
+is on screen, which is the error people actually make; the password proves
+deliberateness, which "you signed in four minutes ago" does not. An account
+with no password (provisioned through SSO) answers with a one-time code.
+
+Unlike `/auth/reauth`, this does **not** refresh the sudo window: proving the
+password here buys this one deletion and nothing else, so a sudo action right
+afterwards still asks. That is the conservative direction, and deliberate.
+
+The right, `spaces.delete`, says a person may destroy spaces at all, not that
+they may destroy any particular one: a space they cannot view is 404, and
+reaching it means recover-access first, which is audited. The rows go in one
+transaction and the files afterwards, so the failure mode is orphaned bytes
+rather than a half-deleted space; `space.deleted` in the audit log keeps the
+key, name, counts and bytes that the deleted rows no longer can, and the
+Critical alert fires whoever did it. Two things have no foreign key to cascade
+from and are deleted by hand: `CollabDocuments`, keyed by the page id as a
+string, and `Watches`, which name their target by type and id. Notifications
+are deliberately left: they are a person's own history, and a link to a
+deleted page 404s gracefully.
+
+The collaboration sidecar has to be told, in its own way. Its store hook
+writes only when the page still exists and closes the document's connections
+when it does not, and a 15-second sweep closes connections for any open
+document whose page is gone, which is what reaches an editor that is open but
+idle. Polling rather than a push from the API keeps the sidecar's only inbound
+surface the websocket.
+
 **Admins do not silently bypass permissions.** This is the decision the
 plan left open, and the answer is Confluence's own: a site admin sees
 exactly what their grants allow, like anyone else. What they have that
@@ -1313,12 +1346,17 @@ not exist both return 404, so the endpoint cannot be used to probe for ids.
 
 ### Asking before a destructive action (`components/ConfirmDialog.tsx`)
 
-`window.confirm` and `window.prompt` are not used anywhere in the SPA, and
-should not come back. A browser is free to refuse a native dialog: in an
+No native `confirm`, `prompt` or `alert` is used anywhere in the SPA, and
+none should come back. A browser is free to refuse a native dialog: in an
 embedded one (a desktop app's pane, a WebView, a preview) `confirm` returns
 false and `prompt` throws, and either way the guarded action never runs
 with nothing on screen to explain the silence. That is exactly how Resolve
 on the security page came to look dead.
+
+**Grep for the bare spelling, not just `window.`** Most call sites in this
+codebase were written as `confirm(...)`, not `window.confirm(...)`, and a
+search for the qualified form found five of thirteen and looked conclusive.
+The check that works is `(^|[^.\w])(confirm|prompt|alert)\s*\(`.
 
 `useConfirm()` returns an `ask(request)` that resolves true only on
 confirmation, and the `dialog` node to render. Because the question is JSX

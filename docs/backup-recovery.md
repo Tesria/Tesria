@@ -136,6 +136,28 @@ No ops required — use the in-app safety nets:
 - **Deleted page:** the space sidebar → **Trash** → **Restore** (brings the page
   and its sub-pages back).
 
+### A2. A space was deleted
+
+Deleting a space (dev-plan 11.3) is not a trash operation: the pages,
+versions, comments, attachments and history are gone from the database, and
+the Trash cannot bring them back. Only a backup taken **before** the deletion
+still holds them, so this is scenario **B** if the instance is otherwise
+healthy and you want the moment just before it, or **C** if you are rebuilding
+anyway.
+
+The audit log survives, and it is where to start: `space.deleted` records the
+key, the name, the page and attachment counts, the bytes and who did it, which
+gives you both the timestamp for a point-in-time target and a way to check
+afterwards that everything came back.
+
+**Orphaned files.** Attachment bytes are deleted after the database commits,
+best effort. A file that will not delete is logged with its storage key
+(`Orphaned attachment file after deleting space …`), and a crash between the
+commit and the sweep leaves the same thing behind. These are harmless but they
+occupy the uploads volume; `grep Orphaned` in the app logs lists them for
+removal from `Storage:UploadsPath`. The failure is always in this direction:
+never a half-deleted space, only bytes with nothing pointing at them.
+
 ### B. Point-in-time recovery (bad migration, mass delete, corruption)
 
 Roll the database back to an exact moment — e.g. just before a bad change at

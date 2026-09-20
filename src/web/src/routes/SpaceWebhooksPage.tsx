@@ -1,9 +1,11 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, ApiError, type CreatedWebhook, type Webhook } from '../api/client'
+import { useConfirm } from '../components/ConfirmDialog'
 import { useSpaceContext } from './SpacePage'
 
 export function SpaceWebhooksPage() {
   const { space } = useSpaceContext()
+  const { ask, dialog } = useConfirm()
   const [hooks, setHooks] = useState<Webhook[] | null>(null)
   const [url, setUrl] = useState('')
   const [events, setEvents] = useState('*')
@@ -42,7 +44,13 @@ export function SpaceWebhooksPage() {
   }
 
   async function remove(id: string) {
-    if (!confirm('Delete this webhook?')) return
+    const ok = await ask({
+      title: 'Delete this webhook?',
+      danger: true,
+      confirmLabel: 'Delete the webhook',
+      body: <p>This space stops sending events to it. The receiving end is not told.</p>,
+    })
+    if (!ok) return
     await api.webhooks.remove(space.key, id)
     load()
   }
@@ -110,6 +118,8 @@ export function SpaceWebhooksPage() {
           </li>
         ))}
       </ul>
+
+      {dialog}
     </>
   )
 }

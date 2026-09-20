@@ -375,18 +375,9 @@ public static class AuthEndpoints
     {
         var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
         var now = DateTimeOffset.UtcNow;
-        if (AuthLockout.IsLocked(user, now)) return Results.Unauthorized();
-
-        var ok = (!string.IsNullOrEmpty(req.Password) && user.PasswordHash is not null && hasher.Verify(req.Password, user.PasswordHash))
-            || (!string.IsNullOrEmpty(req.Code) && totp.Verify(user, req.Code));
-        if (!ok)
-        {
-            // A guess here is a guess at the password; it counts like one.
-            AuthLockout.RecordFailure(user, await siteSettings.GetAsync(), now);
-            if (AuthLockout.IsLocked(user, now)) await detector.AccountLockedAsync(user, ClientIp(http));
-            await db.SaveChangesAsync();
+        if (!await VerifyPasswordOrCodeAsync(
+                req.Password, req.Code, user, db, hasher, totp, siteSettings, detector, http, now))
             return Results.Unauthorized();
-        }
 
         audit.Record("user.reauthenticated", "user", user.Id);
         await db.SaveChangesAsync();
@@ -584,6 +575,35 @@ public static class AuthEndpoints
 
     public static Guid? SessionIdOf(ClaimsPrincipal principal) =>
         Guid.TryParse(principal.FindFirstValue(SessionClaim), out var id) ? id : null;
+
+    /// <summary>
+    /// Verifies a password or one-time code against <paramref name="user"/>,
+    /// with the same rules and consequences as <c>/auth/reauth</c>: a locked
+    /// account is refused outright, and a wrong answer is recorded as a failed
+    /// sign-in and counts toward lockout, because a guess here is a guess at
+    /// the password.
+    ///
+    /// Shared so that an action too grave for the five-minute sudo window can
+    /// ask for the password inside its own request (dev-plan 11.3). The caller
+    /// saves; this only writes the failure path, which must persist even when
+    /// the caller then abandons its own work.
+    /// </summary>
+    public static async Task<bool> VerifyPasswordOrCodeAsync(
+        string? password, string? code, User user, AppDbContext db, IPasswordHasher hasher,
+        ITotpService totp, ISiteSettingsService siteSettings, ISecurityDetector detector,
+        HttpContext http, DateTimeOffset now)
+    {
+        if (AuthLockout.IsLocked(user, now)) return false;
+
+        var ok = (!string.IsNullOrEmpty(password) && user.PasswordHash is not null && hasher.Verify(password, user.PasswordHash))
+            || (!string.IsNullOrEmpty(code) && totp.Verify(user, code));
+        if (ok) return true;
+
+        AuthLockout.RecordFailure(user, await siteSettings.GetAsync(), now);
+        if (AuthLockout.IsLocked(user, now)) await detector.AccountLockedAsync(user, ClientIp(http));
+        await db.SaveChangesAsync();
+        return false;
+    }
 
     /// <summary>
     /// Refuses a destructive administrative action from a session past the

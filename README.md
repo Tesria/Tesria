@@ -142,6 +142,12 @@ administrator tier: **New role** copies an existing one and you edit the
 copy in the matrix. A role is a set of rights, not a rank, so moving
 someone between roles of the same tier never promotes them.
 
+Administrators and the owner can also **delete a space**, from its settings
+page. That destroys every page in it and cannot be undone from inside Tesria,
+so it asks for the space key typed back and your password in the same step.
+Archiving is the reversible alternative, and a space's own administrator can
+do that without holding the right.
+
 ## Repository layout
 
 ```

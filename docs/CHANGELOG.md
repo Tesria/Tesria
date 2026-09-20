@@ -5,6 +5,62 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fix: eight more confirmations that did nothing (2026-09-20)
+
+The previous entry claimed no native confirmation was left in the SPA. That
+was wrong: the search behind it looked for `window.confirm`, and eight call
+sites use the bare `confirm(...)` spelling. All eight were dead in an
+embedded browser, where the call returns false and the guarded action never
+runs: purging a page, deleting a comment, deleting an attachment, revoking an
+API token, deleting a group, deleting a webhook, restoring a version, and
+moving a page to the trash.
+
+They now use `ConfirmDialog` like the rest, and the question says what
+actually happens: deleting a group names the space access that goes with it,
+deleting an attachment says embeds stop rendering, restoring a version says
+nothing in the history is lost. Restoring a version and moving a page to the
+trash are reversible, so they are ordinary confirmations rather than
+destructive ones, and focus starts on the affirmative button instead of
+Cancel.
+
+The search that found them covers `confirm`, `prompt` and `alert` in any
+spelling, and all thirteen were then exercised in the running app.
+
+### Deleting a space (2026-09-20)
+
+Space settings gains a **Danger zone** with **Delete this space**, shown only
+to a role holding the new-in-11.1 `spaces.delete` right (administrators and
+the owner by default). It destroys the space and every page in it, with all
+versions, comments, attachments, labels, restrictions, webhooks, templates
+and watches. The Trash does not hold any of it: only a backup taken before
+the deletion still does, and the dialog says exactly that rather than
+claiming there is no way back at all.
+
+The dialog asks two things, for two different mistakes. Typing the space key
+proves the right space is on screen, which is the error people actually make.
+The password, verified by the server in the same request, proves
+deliberateness. The ordinary five-minute sudo window is not enough here: "you
+signed in a few minutes ago" is not "you mean it". A wrong password counts
+toward lockout exactly as it does at sign-in, and an account with no password
+(provisioned through SSO) answers with a one-time code instead.
+
+A space's own administrator still only archives, which is reversible. The
+right is an instance one, not a space permission, and it is not a way into a
+space you cannot see: that is a 404, and an administrator who needs to reach
+one uses recover-access first, which is audited.
+
+The rows go in one transaction and the attachment files afterwards, best
+effort, so a crash between them leaves orphaned bytes rather than a
+half-deleted space; those are logged by storage key for the runbook's sweep.
+`space.deleted` in the audit log keeps the key, name, page and attachment
+counts, bytes and who did it, which is the only surviving description of what
+was destroyed, and a Critical alert fires whoever did it.
+
+The collaboration sidecar learned not to resurrect what has been deleted. Its
+store hook now writes only when the page still exists, and a 15-second sweep
+closes connections for any open document whose page is gone, which is what
+reaches an editor left open and idle.
+
 ### Custom roles (2026-09-20)
 
 A role is now a named set of rights within a tier, not just the one

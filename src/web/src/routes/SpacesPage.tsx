@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { SpaceIcon } from '../components/SpaceIcon'
 import { api, ApiError, type Space, Permission } from '../api/client'
@@ -9,6 +9,9 @@ export function SpacesPage() {
   const [spaces, setSpaces] = useState<Space[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
+  // Left behind by a deletion (dev-plan 11.3): the space it happened on is
+  // gone, so the confirmation has to land somewhere else.
+  const notice = (useLocation().state as { notice?: string } | null)?.notice ?? null
 
   useEffect(() => {
     api.spaces
@@ -37,6 +40,7 @@ export function SpacesPage() {
         />
       )}
 
+      {notice && <p className="profile__ok">{notice}</p>}
       {error && <p className="alert alert--error">{error}</p>}
       {!spaces && !error && <p className="muted">Loading…</p>}
       {spaces && spaces.length === 0 && (
