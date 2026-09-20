@@ -1,7 +1,7 @@
 import { type FormEvent, useCallback, useMemo, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import { UserRole } from '../api/client'
+import { Permission } from '../api/client'
 import { NotificationBell } from './NotificationBell'
 import { ThemeToggle } from './ThemeToggle'
 import { BrandMark } from './BrandMark'
@@ -23,6 +23,15 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
    (--bp-mobile..--bp-tablet) — with CSS choosing which is visible. That is
    the same trick the editor toolbar uses for its heading/list/alignment
    groups (.toolbar__flat vs .toolbar-dropdown), not an accident. */
+/** Any one of these means the Administration area has something in it for you. */
+const ADMIN_ENTRY_RIGHTS = [
+  Permission.DashboardView, Permission.UsersView, Permission.SpacesManage, Permission.InvitesManage,
+  Permission.SecurityView, Permission.BackupsView, Permission.GroupsManage, Permission.AuditView,
+  Permission.PermissionsView, Permission.SettingsInstance, Permission.SettingsRegistration,
+  Permission.SettingsEmail, Permission.SettingsPublicSpaces, Permission.SecuritySettings,
+  Permission.PermissionsEditAdminTier,
+]
+
 const SECONDARY_NAV: { to: string; label: string; adminOnly?: boolean }[] = [
   // Groups and the audit log live under Admin; API tokens under the profile.
   // Server-enforced too; hiding it just spares members a page of 403s.
@@ -85,7 +94,7 @@ function MoreMenu({ onNavigate, items }: { onNavigate: () => void; items: typeof
 
 /** Authenticated app chrome: top bar + routed content. */
 export function Layout() {
-  const { user, logout } = useAuth()
+  const { user, logout, can } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [query, setQuery] = useState('')
@@ -96,7 +105,10 @@ export function Layout() {
   const navRef = useDismissable<HTMLDivElement>(navOpen, () => setNavOpen(false))
   // Sticky bars follow the visual viewport while a phone keyboard is up.
   useVisualViewportOffset()
-  const secondaryNav = SECONDARY_NAV.filter((i) => !i.adminOnly || (user?.role ?? UserRole.Member) >= UserRole.Admin)
+  // Anyone holding an administration right has somewhere to go under /admin
+  // (dev-plan 11.1), which is no longer the same as "is an administrator".
+  const administers = ADMIN_ENTRY_RIGHTS.some((p) => can(p))
+  const secondaryNav = SECONDARY_NAV.filter((i) => !i.adminOnly || administers)
   // The open space's tree, published by SpacePage (see spaceNav.ts). Only the
   // phone menu renders it; wider viewports have the sidebar.
   const [spaceNav, setSpaceNavState] = useState<SpaceNav | null>(null)

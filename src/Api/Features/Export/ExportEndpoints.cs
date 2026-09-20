@@ -26,6 +26,7 @@ public static class ExportEndpoints
     /// </summary>
     private static async Task<IResult> ExportPage(
         Guid id, string? format, AppDbContext db, IPermissionService perms,
+        Infrastructure.Permissions.IInstancePermissions rights, Infrastructure.Auth.CurrentUser current,
         IDynamicBlockService blocks, ISiteSettingsService settings, IConfiguration config,
         IWebHostEnvironment env, IAttachmentStorage storage, IPdfRenderer pdf, CancellationToken ct)
     {
@@ -34,6 +35,14 @@ public static class ExportEndpoints
             .FirstOrDefaultAsync(p => p.Id == id);
         if (page?.CurrentVersion is null) return Results.NotFound();
         if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
+
+        // Signed in: the caller's own right. Anonymous: whatever the built-in
+        // User role holds, so a reader is never more privileged than a member
+        // (dev-plan 11.1).
+        var mayExport = current.IsAuthenticated
+            ? await rights.HasAsync(Infrastructure.Permissions.InstancePermissions.PagesExport)
+            : await rights.AnonymousHasAsync(Infrastructure.Permissions.InstancePermissions.PagesExport);
+        if (!mayExport) return Results.Forbid();
 
         var content = page.CurrentVersion.ContentJson;
         var safeName = SafeFileName(page.Title);

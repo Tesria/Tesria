@@ -1817,6 +1817,22 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .profile__section { overflow-x: auto; }
 .admin-table .nowrap { white-space: nowrap; }
 
+/* Admin → Roles (dev-plan 11.1). A matrix: rights down, roles across. The
+   first column carries the explanation, so it takes the width. */
+.roles-table td:first-child, .roles-table th:first-child { width: 45%; }
+.roles-table__role { text-align: center; }
+.roles-table__cell { text-align: center; vertical-align: middle; }
+.roles-table__cell input { width: auto; margin: 0; }
+.roles-table__area th {
+  background: var(--bg-alt); text-transform: uppercase; letter-spacing: 0.03em;
+  font-size: 0.75rem; color: var(--muted);
+}
+.roles-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 1rem; }
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  /* The table scrolls sideways rather than squeezing the descriptions. */
+  .roles-table td:first-child, .roles-table th:first-child { width: auto; min-width: 14rem; }
+}
+
 /* Public spaces (dev-plan 5.3): the badge everyone sees. */
 /* The instance's owner (dev-plan 10.1): a standing fact about the account,
    not a warning, so it wears the accent rather than the danger colour. */

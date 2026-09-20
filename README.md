@@ -128,6 +128,15 @@ docker compose exec backup /scripts/restore.sh         # restore newest (destruc
 
 Full details and disaster-recovery runbook: [`docs/backup-recovery.md`](./docs/backup-recovery.md).
 
+## Roles
+
+Three roles ship: **User**, **Administrator** and **Owner**. The owner is the
+one account that owns the instance; only it changes roles or hands the
+instance on. **Administration → Roles** is the matrix of what each role may
+do, from creating spaces to changing the backup retention policy.
+Administrators may shape user roles; only the owner may change what
+administrators can do.
+
 ## Repository layout
 
 ```

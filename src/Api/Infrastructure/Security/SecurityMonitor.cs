@@ -160,6 +160,8 @@ public interface ISecurityDetector
     Task BackupRetentionReducedAsync(Guid actorId, object metadata);
     /// <summary>The instance changed hands (dev-plan 10.1). Always an alert.</summary>
     Task OwnerTransferredAsync(Guid actorId, object metadata);
+    /// <summary>A role gained rights (dev-plan 11.1). Always an alert.</summary>
+    Task PermissionsExpandedAsync(Guid actorId, SecuritySeverity severity, object metadata);
 }
 
 /// <summary>
@@ -288,6 +290,10 @@ public sealed class SecurityDetector(AppDbContext db, SecurityCounters counters,
 
     public Task OwnerTransferredAsync(Guid actorId, object metadata) =>
         RaiseAsync("owner.transferred", SecuritySeverity.Critical, key: "instance", alert: true,
+            actorId: actorId, metadata: metadata, cooldown: false);
+
+    public Task PermissionsExpandedAsync(Guid actorId, SecuritySeverity severity, object metadata) =>
+        RaiseAsync("permissions.expanded", severity, key: "instance", alert: true,
             actorId: actorId, metadata: metadata, cooldown: false);
 
     /// <summary>

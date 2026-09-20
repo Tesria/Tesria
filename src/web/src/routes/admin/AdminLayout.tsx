@@ -1,6 +1,6 @@
 import { Link, NavLink, Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
-import { UserRole } from '../../api/client'
+import { Permission, UserRole } from '../../api/client'
 
 /**
  * The admin section's shell (dev-plan 2.1).
@@ -10,7 +10,7 @@ import { UserRole } from '../../api/client'
  * sees a redirect rather than a page of failed requests.
  */
 export function AdminLayout() {
-  const { user } = useAuth()
+  const { user, can } = useAuth()
 
   if (user === undefined) return <p className="muted page-wrap">Loading…</p>
   if (!user) return <Navigate to="/login" replace />
@@ -48,19 +48,35 @@ export function AdminLayout() {
 
   const tab = ({ isActive }: { isActive: boolean }) => (isActive ? 'tab is-active' : 'tab')
 
+  // Only the tabs this person can actually open (dev-plan 11.1). Every one is
+  // refused server-side too; this keeps the shell honest about what is there.
+  const tabs: { to: string; label: string; end?: boolean; permission: string }[] = [
+    { to: '/admin', label: 'Dashboard', end: true, permission: Permission.DashboardView },
+    { to: '/admin/users', label: 'Users', permission: Permission.UsersView },
+    { to: '/admin/spaces', label: 'Spaces', permission: Permission.SpacesManage },
+    { to: '/admin/invites', label: 'Invites', permission: Permission.InvitesManage },
+    { to: '/admin/security', label: 'Security', permission: Permission.SecurityView },
+    { to: '/admin/backups', label: 'Backups', permission: Permission.BackupsView },
+    { to: '/admin/roles', label: 'Roles', permission: Permission.PermissionsView },
+    { to: '/admin/groups', label: 'Groups', permission: Permission.GroupsManage },
+    { to: '/admin/audit', label: 'Audit', permission: Permission.AuditView },
+  ]
+  const visible = tabs.filter((t) => can(t.permission))
+  // The owner always reaches the matrix, even having taken permissions.view
+  // from their own role: it is how they would undo that.
+  if (!visible.some((t) => t.to === '/admin/roles') && can(Permission.PermissionsEditAdminTier))
+    visible.splice(6, 0, { to: '/admin/roles', label: 'Roles', permission: Permission.PermissionsEditAdminTier })
+  const settingsVisible = can(Permission.SettingsInstance) || can(Permission.SettingsRegistration)
+    || can(Permission.SettingsEmail) || can(Permission.SettingsPublicSpaces) || can(Permission.SecuritySettings)
+
   return (
     <div className="page-wrap">
       <h1>Administration</h1>
       <nav className="tabs">
-        <NavLink to="/admin" end className={tab}>Dashboard</NavLink>
-        <NavLink to="/admin/users" className={tab}>Users</NavLink>
-        <NavLink to="/admin/spaces" className={tab}>Spaces</NavLink>
-        <NavLink to="/admin/invites" className={tab}>Invites</NavLink>
-        <NavLink to="/admin/security" className={tab}>Security</NavLink>
-        <NavLink to="/admin/backups" className={tab}>Backups</NavLink>
-        <NavLink to="/admin/groups" className={tab}>Groups</NavLink>
-        <NavLink to="/admin/audit" className={tab}>Audit</NavLink>
-        <NavLink to="/admin/settings" className={tab}>Settings</NavLink>
+        {visible.map((t) => (
+          <NavLink key={t.to} to={t.to} end={t.end} className={tab}>{t.label}</NavLink>
+        ))}
+        {settingsVisible && <NavLink to="/admin/settings" className={tab}>Settings</NavLink>}
       </nav>
       <div className="tab-panel">
         <Outlet />

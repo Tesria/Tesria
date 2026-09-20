@@ -2,6 +2,7 @@ using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Audit;
 using Tesria.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure.Permissions;
 using Tesria.Api.Infrastructure.Settings;
 using Tesria.Api.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
@@ -83,7 +84,9 @@ public static class AdminEndpoints
         int LockoutThreshold,
         int LockoutBaseSeconds,
         int LockoutMaxSeconds,
-        DateTimeOffset UpdatedAt);
+        DateTimeOffset UpdatedAt,
+        /// <summary>Which parts of this the caller may change (dev-plan 11.1).</summary>
+        string[] Permissions);
 
     /// <summary>
     /// Every field is optional: an omitted (null) field leaves the stored value
@@ -116,31 +119,36 @@ public static class AdminEndpoints
 
     public static IEndpointRouteBuilder MapAdminEndpoints(this IEndpointRouteBuilder routes)
     {
-        var group = routes.MapGroup("/admin").WithTags("Admin")
-            .RequireAuthorization(AuthPolicies.RequireAdmin);
+        // Every route names the right it needs (dev-plan 11.1). The group
+        // only requires a session; what the caller may reach inside it is the
+        // matrix's business, not a blanket "is an administrator".
+        var group = routes.MapGroup("/admin").WithTags("Admin").RequireAuthorization();
 
+        // Readable by anyone who may change any part of it; the handler says which parts.
         group.MapGet("/settings", GetSettings);
+        // Checked field by field inside the handler: one request may touch
+        // settings from several areas.
         group.MapPut("/settings", UpdateSettings);
-        group.MapPost("/settings/email/test", SendTestEmail);
-        group.MapPost("/spaces/{key}/recover-access", RecoverSpaceAccess);
-        group.MapPost("/users/{userId:guid}/reset-password", IssuePasswordReset);
-        group.MapGet("/users", ListUsers);
+        group.MapPost("/settings/email/test", SendTestEmail).RequirePermission(InstancePermissions.SettingsEmail);
+        group.MapPost("/spaces/{key}/recover-access", RecoverSpaceAccess).RequirePermission(InstancePermissions.SpacesManage);
+        group.MapPost("/users/{userId:guid}/reset-password", IssuePasswordReset).RequirePermission(InstancePermissions.UsersManage);
+        group.MapGet("/users", ListUsers).RequirePermission(InstancePermissions.UsersView);
         // Only the owner decides who administers the instance (dev-plan 10.1).
         group.MapPut("/users/{userId:guid}/role", SetRole)
-            .RequireAuthorization(AuthPolicies.RequireOwner);
+            .RequirePermission(InstancePermissions.RolesAssignTier);
         group.MapPost("/users/{userId:guid}/transfer-ownership", TransferOwnership)
-            .RequireAuthorization(AuthPolicies.RequireOwner);
-        group.MapPut("/users/{userId:guid}/status", SetStatus);
-        group.MapPost("/users/{userId:guid}/revoke-sessions", RevokeSessions);
-        group.MapPost("/users/{userId:guid}/revoke-tokens", RevokeTokens);
-        group.MapGet("/spaces", ListSpaces);
-        group.MapPut("/spaces/{key}/public", SetSpacePublic);
-        group.MapGet("/invites", ListInvites);
-        group.MapPost("/invites", CreateInvite);
-        group.MapDelete("/invites/{id:guid}", RevokeInvite);
-        group.MapPost("/audit/verify", VerifyAuditChain);
-        group.MapPost("/users/{userId:guid}/unlock", Unlock);
-        group.MapGet("/security/limits", GetLimits);
+            .RequirePermission(InstancePermissions.OwnershipTransfer);
+        group.MapPut("/users/{userId:guid}/status", SetStatus).RequirePermission(InstancePermissions.UsersManage);
+        group.MapPost("/users/{userId:guid}/revoke-sessions", RevokeSessions).RequirePermission(InstancePermissions.UsersManage);
+        group.MapPost("/users/{userId:guid}/revoke-tokens", RevokeTokens).RequirePermission(InstancePermissions.UsersManage);
+        group.MapGet("/spaces", ListSpaces).RequirePermission(InstancePermissions.SpacesManage);
+        group.MapPut("/spaces/{key}/public", SetSpacePublic).RequirePermission(InstancePermissions.SpacesPublish);
+        group.MapGet("/invites", ListInvites).RequirePermission(InstancePermissions.InvitesManage);
+        group.MapPost("/invites", CreateInvite).RequirePermission(InstancePermissions.InvitesCreate);
+        group.MapDelete("/invites/{id:guid}", RevokeInvite).RequirePermission(InstancePermissions.InvitesManage);
+        group.MapPost("/audit/verify", VerifyAuditChain).RequirePermission(InstancePermissions.AuditView);
+        group.MapPost("/users/{userId:guid}/unlock", Unlock).RequirePermission(InstancePermissions.UsersManage);
+        group.MapGet("/security/limits", GetLimits).RequirePermission(InstancePermissions.SecurityView);
 
         return routes;
     }
@@ -191,8 +199,59 @@ public static class AdminEndpoints
         return Results.Ok(new RecoverAccessResponse(space.Id, space.Key, space.Name, false));
     }
 
-    private static async Task<IResult> GetSettings(ISiteSettingsService settings, IConfiguration config) =>
-        Results.Ok(ToResponse(await settings.GetAsync(), config));
+    /// <summary>
+    /// The settings a caller may see, with the rights they hold over them, so
+    /// the SPA can render each section editable or read-only (dev-plan 11.1).
+    /// </summary>
+    private static async Task<IResult> GetSettings(
+        ISiteSettingsService settings, IConfiguration config, IInstancePermissions permissions)
+    {
+        var held = await permissions.ForCurrentUserAsync();
+        if (!SettingsFields.Keys.Any(held.Contains)) return Results.Forbid();
+        return Results.Ok(ToResponse(await settings.GetAsync(), config) with
+        {
+            Permissions = [.. SettingsFields.Keys.Where(held.Contains)],
+        });
+    }
+
+    /// <summary>
+    /// Which right each settings field needs. One request may carry fields
+    /// from several areas, so the check is per field rather than per route:
+    /// an administrator allowed to fix the email server but not to open
+    /// registration gets exactly that.
+    /// </summary>
+    private static class SettingsFields
+    {
+        public static readonly string[] Keys =
+        [
+            InstancePermissions.SettingsInstance, InstancePermissions.SettingsRegistration,
+            InstancePermissions.SettingsEmail, InstancePermissions.SettingsPublicSpaces,
+            InstancePermissions.SecuritySettings,
+        ];
+
+        public static IEnumerable<(string Field, string Key)> Required(UpdateSettingsRequest r)
+        {
+            if (r.InstanceName is not null) yield return (nameof(r.InstanceName), InstancePermissions.SettingsInstance);
+            if (r.BaseUrl is not null) yield return (nameof(r.BaseUrl), InstancePermissions.SettingsInstance);
+            if (r.AllowPublicRegistration is not null) yield return (nameof(r.AllowPublicRegistration), InstancePermissions.SettingsRegistration);
+            if (r.AllowPublicSpaces is not null) yield return (nameof(r.AllowPublicSpaces), InstancePermissions.SettingsPublicSpaces);
+            if (r.EmailEnabled is not null) yield return (nameof(r.EmailEnabled), InstancePermissions.SettingsEmail);
+            if (r.SmtpHost is not null) yield return (nameof(r.SmtpHost), InstancePermissions.SettingsEmail);
+            if (r.SmtpPort is not null) yield return (nameof(r.SmtpPort), InstancePermissions.SettingsEmail);
+            if (r.SmtpUsername is not null) yield return (nameof(r.SmtpUsername), InstancePermissions.SettingsEmail);
+            if (r.SmtpPassword is not null) yield return (nameof(r.SmtpPassword), InstancePermissions.SettingsEmail);
+            if (r.SmtpFromAddress is not null) yield return (nameof(r.SmtpFromAddress), InstancePermissions.SettingsEmail);
+            if (r.SmtpTls is not null) yield return (nameof(r.SmtpTls), InstancePermissions.SettingsEmail);
+            if (r.RequireTotpForAdmins is not null) yield return (nameof(r.RequireTotpForAdmins), InstancePermissions.SecuritySettings);
+            if (r.EmbedAllowlist is not null) yield return (nameof(r.EmbedAllowlist), InstancePermissions.SecuritySettings);
+            if (r.LoginRateLimitPerMinute is not null) yield return (nameof(r.LoginRateLimitPerMinute), InstancePermissions.SecuritySettings);
+            if (r.AnonymousRateLimitPerMinute is not null) yield return (nameof(r.AnonymousRateLimitPerMinute), InstancePermissions.SecuritySettings);
+            if (r.TokenMintLimitPerHour is not null) yield return (nameof(r.TokenMintLimitPerHour), InstancePermissions.SecuritySettings);
+            if (r.LockoutThreshold is not null) yield return (nameof(r.LockoutThreshold), InstancePermissions.SecuritySettings);
+            if (r.LockoutBaseSeconds is not null) yield return (nameof(r.LockoutBaseSeconds), InstancePermissions.SecuritySettings);
+            if (r.LockoutMaxSeconds is not null) yield return (nameof(r.LockoutMaxSeconds), InstancePermissions.SecuritySettings);
+        }
+    }
 
     /// <summary>
     /// Sends a short message to the calling administrator's own address, so
@@ -216,8 +275,23 @@ public static class AdminEndpoints
     private static async Task<IResult> UpdateSettings(
         UpdateSettingsRequest req, ISiteSettingsService settings,
         CurrentUser current, IAuditLogger audit, AppDbContext db, ISecurityDetector detector,
-        HttpContext http, IConfiguration config)
+        HttpContext http, IConfiguration config, IInstancePermissions permissions)
     {
+        // Per field (dev-plan 11.1), and the whole request is refused rather
+        // than partly applied: a half-saved settings form is worse than a
+        // refusal that names what was missing.
+        var held = await permissions.ForCurrentUserAsync();
+        foreach (var (field, key) in SettingsFields.Required(req))
+            if (!held.Contains(key))
+                return Results.Json(new
+                {
+                    title = "Forbidden",
+                    status = 403,
+                    code = "permission_required",
+                    permission = key,
+                    message = $"You do not have the right to change {field}.",
+                }, statusCode: StatusCodes.Status403Forbidden);
+
         // The public-read switch in either direction is sudo territory
         // (dev-plan 3.5): exposing content, or undoing a mitigation.
         if (req.AllowPublicSpaces is not null && Auth.AuthEndpoints.RequireSudo(http, config) is { } denied)
@@ -350,7 +424,9 @@ public static class AdminEndpoints
         s.LockoutThreshold,
         s.LockoutBaseSeconds,
         s.LockoutMaxSeconds,
-        s.UpdatedAt);
+        s.UpdatedAt,
+        // Filled in by GetSettings, which knows who is asking.
+        Permissions: []);
 
     /// <summary>
     /// Issues a one-time, short-lived password reset for another account.
@@ -504,6 +580,9 @@ public static class AdminEndpoints
             });
 
         user.Role = req.Role;
+        // The role follows the tier (dev-plan 11.1); 11.2 lets the caller pick
+        // one within a tier instead.
+        user.RoleId = await Infrastructure.Permissions.RoleSeed.BuiltInIdAsync(db, req.Role) ?? user.RoleId;
         audit.Record("user.role_changed", "user", user.Id, new { user.Email, Role = req.Role.ToString() });
         // A new administrator is the single most valuable thing an attacker
         // with one admin session can create; every one is an alert.
@@ -546,7 +625,9 @@ public static class AdminEndpoints
 
         var me = await db.Users.FirstAsync(u => u.Id == meId);
         target.Role = UserRole.Owner;
+        target.RoleId = await Infrastructure.Permissions.RoleSeed.BuiltInIdAsync(db, UserRole.Owner) ?? target.RoleId;
         me.Role = UserRole.Admin;
+        me.RoleId = await Infrastructure.Permissions.RoleSeed.BuiltInIdAsync(db, UserRole.Admin) ?? me.RoleId;
 
         audit.Record("owner.transferred", "user", target.Id,
             new { From = me.Email, To = target.Email });

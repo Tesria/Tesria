@@ -29,6 +29,16 @@ public class User
     /// </summary>
     public UserRole Role { get; set; } = UserRole.Member;
 
+    /// <summary>
+    /// The role whose rights this account holds (dev-plan 11.1). Null means
+    /// the built-in role of <see cref="Role"/>'s tier, which is what
+    /// <c>RoleSeed</c> fills in; every write since sets it explicitly. Its
+    /// tier always matches <see cref="Role"/>.
+    /// </summary>
+    public Guid? RoleId { get; set; }
+
+    public Domain.Role? InstanceRole { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
 
     /// <summary>

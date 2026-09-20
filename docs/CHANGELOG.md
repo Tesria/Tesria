@@ -5,6 +5,69 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Roles with assignable rights (2026-09-20)
+
+Dev-plan 11.1, implemented by Opus 5 against the spec Fable 5.1 wrote the
+same day. The instance role enum becomes the **tier**; what a person may do
+is their **role**, a named set of rights.
+
+- **A catalogue of 28 rights in code**, from `spaces.create` to
+  `backups.policy`, each with a label and a description, grouped by area.
+  Three more are reserved to the owner and never stored: changing tiers,
+  transferring ownership, and editing administrator or owner rows.
+- **Grants live in the database** (`Roles`, `RolePermissions`), cached for
+  30 seconds and invalidated on write. `RoleSeed` creates the three
+  built-ins at startup and attaches every account; it never edits a role
+  that already exists.
+- **Every administrative route names its right.** `RequireAdmin` is gone
+  from the routes, and a test walks the endpoint metadata to prove nothing
+  was missed. Settings are checked **field by field**, so an administrator
+  may be allowed to fix the email server but not to open registration; a
+  request touching anything they may not change is refused whole, naming
+  the right.
+- **Content rights too:** creating spaces, exporting, API tokens, and two
+  delete rights. **Users can no longer delete pages other people created**,
+  only their own. That is the one behaviour this changes on upgrade, and
+  the Roles tab says so until the owner reviews it.
+- **Rights are additive over space permissions, never a bypass.**
+- **Anonymous readers** get what the built-in User role holds, so a visitor
+  is never more privileged than a member.
+- **API tokens follow their owner's role:** withdrawing `tokens.use` makes
+  existing tokens inert rather than deleting them, and granting it back
+  restores them. MCP rides on tokens, so it is covered.
+- **Administration → Roles:** the matrix, with rows grouped by area and a
+  column per role. Administrators may shape user roles; only the owner may
+  touch administrator or owner rows, and those columns are locked with the
+  reason. Saving is sudo, previewed as "gains and loses" per role, audited
+  as a diff, and alerts every administrator when a role gains rights.
+- The SPA renders from `/auth/me`'s new `permissions`: which admin tabs
+  exist, whether Delete appears on a page, whether the profile offers API
+  tokens, whether New space is there. Every one is enforced server-side.
+
+Two things found while implementing, both fixed:
+- The Roles routes were first gated on `permissions.view`, which is
+  assignable. An owner who cleared their own row would have had no way back
+  to the matrix. Reaching the tab is now "may see it, or may edit any row",
+  and the owner's edit right is reserved, so the way back is never closed.
+  A test covers it.
+- `PageDetailResponse` gained `createdById`: without it the SPA could not
+  tell whether "delete pages you created" applied to the page in front of
+  you.
+
+Tests: 514 pass, 16 new in `InstancePermissionTests`.
+
+**Verified live** on this instance: the app rebuilt, the seed created the
+three roles (Owner and Administrator with all 28 rights, User with four)
+and attached all four accounts. The Roles tab renders as the owner with
+every column editable, the upgrade banner about page deletion, and the
+reserved group listed without checkboxes. Unchecking **Change the
+retention policy** for Administrator and pressing Review changes reported
+"Administrator (1 account) Loses: Change the retention policy"; the change
+was discarded rather than saved, since saving needs the owner's password
+and would alter the live configuration. The tab gating for a restricted
+administrator is covered by tests rather than a browser pass: it needs a
+second account signed in, which the assistant cannot do.
+
 ### Design: roles with assignable rights (2026-09-20)
 
 Dev-plan Phase 11, written by Fable 5.1 at the owner's request, after

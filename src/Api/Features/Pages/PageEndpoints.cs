@@ -27,7 +27,9 @@ public static class PageEndpoints
 
     public record PageDetailResponse(
         Guid Id, Guid SpaceId, Guid? ParentPageId, string Title, int Position, PageStatus Status,
-        int CurrentVersionNumber, string ContentJson, bool FullWidth, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
+        int CurrentVersionNumber, string ContentJson, bool FullWidth, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt,
+        /// <summary>Who created it: the SPA needs it to know whether "delete your own pages" applies (dev-plan 11.1).</summary>
+        Guid CreatedById);
     public record PageVersionResponse(
         Guid Id, int VersionNumber, string? ChangeComment, Guid AuthorId,
         string AuthorName, string? AuthorAvatarHash, int? AuthorAvatarVariant,
@@ -346,12 +348,17 @@ public static class PageEndpoints
 
     private static async Task<IResult> Delete(
         Guid id, AppDbContext db, CurrentUser current, IAuditLogger audit, IPermissionService perms,
+        Infrastructure.Permissions.IInstancePermissions rights,
         ISecurityDetector detector)
     {
         var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == id);
         if (page is null) return Results.NotFound();
         if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
         if (!await perms.CanEditPageAsync(id)) return Results.Forbid();
+        // The space's own rules decide where; this decides whether at all
+        // (dev-plan 11.1). Users may trash what they wrote unless the right is
+        // taken away, and other people's work only if the right is granted.
+        if (await DeniedByInstanceRightAsync(db, rights, current, id) is { } refusal) return refusal;
 
         // Soft-delete (trash) the page and its whole subtree, so the tree stays
         // consistent and the deletion can be restored (PLAN §5 in-app safety net).
@@ -367,6 +374,35 @@ public static class PageEndpoints
         await detector.PagesRemovedAsync(userId, subtree.Count, "page.trashed", page.Id);
         await db.SaveChangesAsync();
         return Results.NoContent();
+    }
+
+    /// <summary>
+    /// Refuses a deletion the caller's role does not allow: their own page
+    /// needs <c>pages.delete_own</c>, anyone else's needs
+    /// <c>pages.delete_any</c> (dev-plan 11.1).
+    /// </summary>
+    private static async Task<IResult?> DeniedByInstanceRightAsync(
+        AppDbContext db, Infrastructure.Permissions.IInstancePermissions rights,
+        CurrentUser current, Guid pageId)
+    {
+        var authorId = await db.Pages.IgnoreQueryFilters().AsNoTracking()
+            .Where(p => p.Id == pageId).Select(p => (Guid?)p.CreatedById).FirstOrDefaultAsync();
+        var mine = authorId == current.Id;
+        var key = mine
+            ? Infrastructure.Permissions.InstancePermissions.PagesDeleteOwn
+            : Infrastructure.Permissions.InstancePermissions.PagesDeleteAny;
+        if (await rights.HasAsync(key)) return null;
+
+        return Results.Json(new
+        {
+            title = "Forbidden",
+            status = 403,
+            code = "permission_required",
+            permission = key,
+            message = mine
+                ? "Your role does not allow deleting pages."
+                : "Your role only allows deleting pages you created.",
+        }, statusCode: StatusCodes.Status403Forbidden);
     }
 
     private static async Task<IResult> Restore(
@@ -394,13 +430,15 @@ public static class PageEndpoints
 
     private static async Task<IResult> Purge(
         Guid id, AppDbContext db, IAuditLogger audit, IPermissionService perms,
-        CurrentUser current, ISecurityDetector detector, HttpContext http, IConfiguration config)
+        CurrentUser current, ISecurityDetector detector, HttpContext http, IConfiguration config,
+        Infrastructure.Permissions.IInstancePermissions rights)
     {
         var page = await db.Pages.IgnoreQueryFilters()
             .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt != null);
         if (page is null) return Results.NotFound();
         // Permanent deletion is an admin-level act on the space.
         if (!await perms.CanAdminSpaceAsync(page.SpaceId)) return Results.Forbid();
+        if (await DeniedByInstanceRightAsync(db, rights, current, id) is { } refusal) return refusal;
         // ...and irreversible, so it is sudo territory (dev-plan 3.5).
         if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
 
@@ -643,7 +681,8 @@ public static class PageEndpoints
     /// <summary>Concatenates the text nodes of a ProseMirror document, ignoring structure.</summary>
     private static PageDetailResponse ToDetail(Page page, PageVersion version) => new(
         page.Id, page.SpaceId, page.ParentPageId, page.Title, page.Position, page.Status,
-        version.VersionNumber, version.ContentJson, page.FullWidth, page.CreatedAt, page.UpdatedAt);
+        version.VersionNumber, version.ContentJson, page.FullWidth, page.CreatedAt, page.UpdatedAt,
+        page.CreatedById);
 
     private static Dictionary<string, string[]> Error(string field, string message) =>
         new() { [field] = [message] };
