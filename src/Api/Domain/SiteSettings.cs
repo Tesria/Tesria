@@ -142,6 +142,14 @@ public class SiteSettings
     /// means nobody has looked at the defaults yet, which the Roles tab says
     /// and the setup wizard requires.
     /// </summary>
+    /// <summary>
+    /// The permission keys <c>RoleSeed</c> has already handed out, as a JSON
+    /// array (dev-plan 11.1). It is how a right added in a later release can
+    /// be given to the roles whose defaults include it, without handing back
+    /// a right an owner deliberately removed.
+    /// </summary>
+    public string? SeededPermissionKeys { get; set; }
+
     public DateTimeOffset? PermissionsReviewedAt { get; set; }
 
     public Guid? PermissionsReviewedById { get; set; }

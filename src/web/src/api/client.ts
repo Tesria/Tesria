@@ -51,6 +51,7 @@ export const Permission = {
   UsersView: 'users.view',
   UsersManage: 'users.manage',
   UsersAssignRoles: 'users.assign_roles',
+  UsersPromoteAdmins: 'users.promote_admins',
   InvitesManage: 'invites.manage',
   GroupsManage: 'groups.manage',
   SpacesManage: 'spaces.manage',

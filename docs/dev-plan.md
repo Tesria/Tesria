@@ -1884,6 +1884,7 @@ are what the database stores.
 | `users.view` | See the user list | no | yes | yes |
 | `users.manage` | Suspend, unlock, sign out, revoke tokens, reset passwords (never on the owner) | no | yes | yes |
 | `users.assign_roles` | Assign a user-tier role to a user (11.2) | no | yes | yes |
+| `users.promote_admins` | Promote a user to administrator. Demoting one stays the owner's. *(added 2026-09-20, off for administrators by default)* | no | no | yes |
 | `invites.manage` | See and revoke invite links | no | yes | yes |
 | `groups.manage` | Create and shape groups | no | yes | yes |
 | **Spaces** | | | | |

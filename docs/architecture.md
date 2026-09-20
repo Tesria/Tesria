@@ -1027,6 +1027,13 @@ always matches `User.Role`.
 - **API tokens follow their owner's role.** Withdrawing `tokens.use` makes
   existing tokens fail authentication rather than deleting them, so granting
   it back restores them. MCP rides on tokens, so it is covered.
+- **Promotion** is its own right, `users.promote_admins`, off for
+  administrators by default. It only promotes: demoting an administrator
+  stays with the owner's reserved `roles.assign_tier`, so two
+  administrators cannot unmake each other. One route,
+  `PUT /admin/users/{id}/role`, is reached by either right, so it is
+  checked in the handler rather than by a route policy, and the
+  endpoint-metadata test lists it as an exception.
 - **Who may edit what.** An administrator may shape user-tier roles
   (`permissions.edit_user_tier`); only the owner may touch administrator or
   owner rows. Every save is sudo, audited as a diff

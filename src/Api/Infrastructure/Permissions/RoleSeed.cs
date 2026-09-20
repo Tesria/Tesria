@@ -1,4 +1,6 @@
+using System.Text.Json;
 using Tesria.Api.Domain;
+using Tesria.Api.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 
 namespace Tesria.Api.Infrastructure.Permissions;
@@ -23,7 +25,9 @@ public static class RoleSeed
             .Select(r => (Guid?)r.Id)
             .FirstOrDefaultAsync(ct);
 
-    public static async Task EnsureAsync(AppDbContext db, PermissionCache cache, ILogger logger, CancellationToken ct = default)
+    public static async Task EnsureAsync(
+        AppDbContext db, PermissionCache cache, ISiteSettingsService settings, ILogger logger,
+        CancellationToken ct = default)
     {
         var existing = await db.Roles.Where(r => r.Key != null).ToListAsync(ct);
         var created = new List<string>();
@@ -67,10 +71,59 @@ public static class RoleSeed
             user.RoleId = builtIns.First(r => r.Tier == user.Role).Id;
         if (unattached.Count > 0) await db.SaveChangesAsync(ct);
 
+        var added = await GrantNewRightsAsync(db, settings, ct);
+
         cache.Invalidate();
-        if (created.Count > 0 || unattached.Count > 0)
+        if (created.Count > 0 || unattached.Count > 0 || added.Count > 0)
             logger.LogInformation(
-                "Instance roles seeded: created {Created}, attached {Attached} account(s)",
-                created.Count == 0 ? "none" : string.Join(", ", created), unattached.Count);
+                "Instance roles seeded: created {Created}, attached {Attached} account(s), new rights {Added}",
+                created.Count == 0 ? "none" : string.Join(", ", created), unattached.Count,
+                added.Count == 0 ? "none" : string.Join(", ", added));
+    }
+
+    /// <summary>
+    /// Hands out rights the catalogue has gained since the last start, to the
+    /// built-in roles whose defaults include them.
+    ///
+    /// Without this a right added in a later release would arrive switched
+    /// off for everyone, the owner included, and nobody would know to turn it
+    /// on. The record of what has already been handed out is what keeps this
+    /// from undoing a deliberate removal: a key that has been seeded once is
+    /// never granted again.
+    /// </summary>
+    private static async Task<List<string>> GrantNewRightsAsync(
+        AppDbContext db, ISiteSettingsService settings, CancellationToken ct)
+    {
+        // Read from the row, not through the settings cache: at startup the
+        // cache is cold anyway, and a stale copy here would silently skip a
+        // release's new rights.
+        var stored = await db.SiteSettings.AsNoTracking()
+            .Select(x => x.SeededPermissionKeys)
+            .FirstOrDefaultAsync(ct);
+        var seeded = stored is { } json
+            ? JsonSerializer.Deserialize<string[]>(json) ?? []
+            : [];
+        var known = seeded.ToHashSet();
+        var fresh = InstancePermissions.All.Where(p => !known.Contains(p.Key)).ToList();
+        if (fresh.Count == 0) return [];
+
+        // Only when there is a record to compare against. The first run after
+        // this record existed finds every key "new" although none is: the
+        // roles were built from the same catalogue, and an owner may already
+        // have taken rights away. Recording them without granting anything is
+        // the only reading that cannot undo a decision.
+        var builtIns = await db.Roles.Include(r => r.Permissions).Where(r => r.Key != null).ToListAsync(ct);
+        var granting = seeded.Length > 0;
+        if (granting)
+            foreach (var permission in fresh)
+                foreach (var role in builtIns.Where(r => r.Tier >= permission.DefaultFrom))
+                    if (role.Permissions.All(p => p.Key != permission.Key))
+                        role.Permissions.Add(new RolePermission { RoleId = role.Id, Key = permission.Key });
+
+        await db.SaveChangesAsync(ct);
+        await settings.UpdateAsync(
+            s => s.SeededPermissionKeys = JsonSerializer.Serialize(InstancePermissions.All.Select(p => p.Key)),
+            actorId: null, ct);
+        return granting ? [.. fresh.Select(p => p.Key)] : [];
     }
 }
