@@ -39,6 +39,15 @@
   --mark-bg: #fdf0c2;
   --comment-bg: #fdf0c2;
   --comment-border: #d9a000;
+  /* Tracked changes from outside this editing session (dev-plan 8.6). Green
+     for what a write added, red for what it removed, which is the convention
+     every diff uses; the source only changes the label, not the colour, so
+     the two questions a reader has ("what changed" and "who did it") do not
+     compete for the same channel. */
+  --external-insert-bg: #dcfff1;
+  --external-insert-border: #22a06b;
+  --external-delete-bg: #ffeceb;
+  --external-delete-border: #c9372c;
   --selected-cell: rgba(12, 102, 228, 0.1);
   --resize-hover: rgba(12, 102, 228, 0.3);
   --swatch-border: rgba(9, 30, 66, 0.2);
@@ -721,6 +730,18 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .editor__content img.img-shadow { box-shadow: var(--img-shadow); }
 .editor__content mark { background: var(--mark-bg); padding: 0.05em 0.1em; border-radius: 2px; }
 .editor__content .comment-highlight { background: var(--comment-bg); border-bottom: 2px solid var(--comment-border); cursor: pointer; }
+/* A change made from outside this session (dev-plan 8.6). Not scoped to
+   .editor__content: the same marks have to read correctly in the read-only
+   renderer too, since a draft can be previewed. They never reach a published
+   version, which PageWriter enforces. */
+.external-edit { border-radius: 2px; padding: 0 1px; }
+.external-edit--insert { background: var(--external-insert-bg); border-bottom: 2px solid var(--external-insert-border); }
+/* Struck through because it is text that is already gone from the page: it is
+   shown so the change is legible, not because it is still there. */
+.external-edit--delete {
+  background: var(--external-delete-bg); border-bottom: 2px solid var(--external-delete-border);
+  text-decoration: line-through; text-decoration-thickness: 1px;
+}
 /* The thread for a clicked inline comment (InlineCommentPopover.tsx). */
 .inline-comment-popover {
   position: absolute; z-index: 40; max-height: min(60vh, 480px); overflow-y: auto;
@@ -1327,6 +1348,10 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   --mark-bg: #7f6a1a;
   --comment-bg: #4a3f14;
   --comment-border: #e2b203;
+  --external-insert-bg: #163d2c;
+  --external-insert-border: #4bce97;
+  --external-delete-bg: #42221f;
+  --external-delete-border: #f87168;
   --selected-cell: rgba(87, 157, 255, 0.18);
   --resize-hover: rgba(87, 157, 255, 0.4);
   --swatch-border: rgba(255, 255, 255, 0.24);
@@ -2441,8 +2466,12 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
   .embed__frame, .embed iframe, .attachment-block iframe { display: none !important; }
 
   /* Marks that mean "somebody is working on this" are not part of the
-     document: they read as highlighting to anyone holding the printout. */
-  .comment-mark, .external-insert, .external-delete {
+     document: they read as highlighting to anyone holding the printout.
+     These selectors were written before the classes existed and matched
+     nothing, so a commented passage printed with its yellow ground; the
+     names here are now the ones commentMark.ts and externalEditMarks.ts
+     actually render. */
+  .comment-highlight, .external-edit {
     background: none !important; border: 0 !important; text-decoration: none !important;
   }
 
