@@ -5,6 +5,44 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Design 8.5: wiki packs (2026-09-21, Fable)
+
+The owner settled that the rebuilt manual's source of truth is the wiki, which
+makes a portable, committable export a prerequisite rather than a nicety: the
+last manual was lost with the database it lived in. This is the design for
+that export and its import; Opus implements it next. The full entry is in
+`dev-plan.md`, and the decisions that matter most are these.
+
+**A pack carries content and structure, and no identities and no
+permissions.** Every id in it is re-minted on import. Authors are recorded
+by display name only, in a file, and every row on the target is attributed to
+the importer, because matching identities across instances is an identity
+decision and attributing words to the wrong real person is worse than
+attributing them to the importer. Neither space permissions nor page
+restrictions travel, since carrying their principals by name is how a
+stranger with the right display name would end up with access; the manifest
+records that restrictions existed, as counts, so the importer knows to set
+them. `IsPublic` does not travel either: publishing is 5.5's two-step opt-in,
+and a zip must not bypass it.
+
+**Full version history travels; drafts and the trash do not.** Comments
+travel with their threads and tombstones, and since what ties an inline
+comment to text is the `commentId` on a mark inside the document, comment
+ids are rewritten in content along with page links, attachment links and
+mentions. A link to a page that is not in the pack is left as it was: on a
+same-instance re-import it may still work, and a link that 404s honestly
+beats one silently destroyed.
+
+**Output is canonical**, sorted keys and fixed ordering, so the manual's pack
+can be committed unzipped and a one-word edit diffs as a one-word edit. That
+is a format requirement, not a nicety, and it is what 10.5 depends on.
+
+**Import is atomic and treats the zip as hostile**: format checked first,
+entry names validated against zip slip, size and count caps, every document
+through the same `TryNormalize` door every page write uses, every
+attachment's type re-derived from its bytes, and one transaction so a
+failure leaves no half-space.
+
 ### The manual is gone, and the plan now says so (2026-09-21)
 
 Finishing dev-plan 8.6 meant adding two sections to the user manual, and the
