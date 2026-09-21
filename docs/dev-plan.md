@@ -917,6 +917,28 @@ onto `roadmap.md` and are sequenced here.
 - **Last, on purpose:** every earlier phase adds fields the pack must
   carry. Building it earlier means rebuilding it.
 
+**What a space is made of today** (taken from the schema on 2026-09-21, as
+input for the design rather than as any part of it: the sketch above says
+"every earlier phase adds fields the pack must carry", so here is the list
+as it now stands). Whether each of these travels, and how, is Fable's call.
+
+| Rows | Fields worth a decision |
+|---|---|
+| `Spaces` | `Key` (unique, so a collision is an import question), `HomepageId`, `Archived`, `IsPublic`, `PublicComments`, `PublicSince`, `IconKind`/`IconValue`/`IconColor` (6; an uploaded icon is a file, like an attachment) |
+| `Pages` | `ParentPageId` and `Position` (tree order), `CurrentVersionId`, `Status`, `DeletedAt`/`DeletedById` (is the trash in the pack?), `FullWidth` (12.2), `SearchText`/`SearchVector` (derived, so rebuilt rather than carried) |
+| `PageVersions` | the whole history, or only the current one. `ContentHtml` is dead since 12.1 and should not travel |
+| `Attachments` | `StorageKey` is a local storage path, so it needs re-keying on import; the bytes are files in the zip |
+| `Labels`, `PageLabels` | labels are instance-wide, not per-space, so an import merges by name rather than by id |
+| `PageTemplates` | per space, and carries `ContentJson` like a page |
+| `Comments` | threads (`ParentCommentId`), `AnchorJson` into the document, and `DeletedAt` tombstones |
+| `SpacePermissions` | `PrincipalType`/`PrincipalId` pointing at users, groups or roles that may not exist on the target. The hard one |
+| `Watches`, `Webhooks` | per-user and per-space respectively; both point outward (`Webhooks.Secret` is a credential and must not travel) |
+| `CollabDocuments` | the live Yjs draft (8.6). Almost certainly not in a pack: it is a session, not content, and it carries `meta.version` bound to this instance's version numbers |
+
+Every one of these has a `CreatedById`/`AuthorId`/`UploadedById` pointing at
+a `User` row that the target instance will not have, which is the same
+question as permissions in a different coat.
+
 ### 8.6 External edits — API and MCP writes as tracked changes in a live draft — `L` — Model: Fable → Opus — ✅ **shipped 2026-09-21** (steps 1–5; step 6 folded into 10.5)
 
 **The problem (found 2026-09-13).** A page has two stores: the page
