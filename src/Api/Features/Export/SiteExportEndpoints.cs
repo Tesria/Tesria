@@ -24,6 +24,9 @@ public static class SiteExportEndpoints
     /// <summary>Above this a space needs a job with progress, which is not built until something needs it.</summary>
     private const int MaxPages = 300;
 
+    /// <summary>Where a space's uploaded icon lands in the site. Always webp, as stored.</summary>
+    private const string SpaceIconAsset = "assets/space-icon.webp";
+
     public static IEndpointRouteBuilder MapSiteExportEndpoints(this IEndpointRouteBuilder routes)
     {
         // GET, not POST: building a site reads pages and changes nothing, it
@@ -46,7 +49,7 @@ public static class SiteExportEndpoints
     private static async Task<IResult> ExportSite(
         string key, string? audience, AppDbContext db, IPermissionService perms,
         Infrastructure.Export.IRenderTokens renderTokens, IPdfRenderer renderer,
-        IAttachmentStorage storage, ISiteSettingsService settings, IConfiguration config,
+        IAttachmentStorage storage, IProfileMediaService media, ISiteSettingsService settings, IConfiguration config,
         CurrentUser current, IWebHostEnvironment env, CancellationToken ct)
     {
         var space = await db.Spaces.AsNoTracking().FirstOrDefaultAsync(s => s.Key == key.ToUpperInvariant(), ct);
@@ -94,7 +97,19 @@ public static class SiteExportEndpoints
         var instanceName = (await settings.GetAsync(ct)).InstanceName;
         var footer = Footer(instanceName);
         var css = await StylesheetAsync(env, ct);
-        var themeScript = ThemeScript();
+
+        // The wordmark is the instance name, which is the half of instance
+        // branding that already exists: an administrator sets it and it
+        // defaults to "Tesria". A replaceable mark is the other half, and
+        // SiteChrome.Brand is where it will arrive.
+        var brand = new SiteChrome.Brand(instanceName);
+
+        // A space with an uploaded icon needs that file in the site: the
+        // sidebar cannot reach back to the instance for it.
+        var icon = space.IconKind == SpaceIconKind.Image
+            ? media.OpenRead(media.KeyFor(ProfileMediaKind.SpaceIcon, space.Id))
+            : null;
+        var head = SiteChrome.HeadOf(space, icon is null ? null : SpaceIconAsset);
 
         // Attachments referenced by the pages that are actually in the site.
         var assets = await AssetsAsync(db, placed.Select(p => p.Id).ToList(), ct);
@@ -104,9 +119,19 @@ public static class SiteExportEndpoints
         {
             await WriteTextAsync(zip, "assets/site.css", css, ct);
             await WriteTextAsync(zip, "index.html",
-                SiteExport.Index(space, placed, css, themeScript, footer), ct);
+                SiteExport.Index(space, placed, css, brand, head, footer), ct);
             await WriteTextAsync(zip, "404.html",
-                SiteExport.NotFound(space, css, themeScript, footer), ct);
+                SiteExport.NotFound(space, css, brand, head, placed, footer), ct);
+
+            if (icon is not null)
+            {
+                await using (icon)
+                {
+                    var entry = zip.CreateEntry(SpaceIconAsset, CompressionLevel.Optimal);
+                    await using var target = entry.Open();
+                    await icon.CopyToAsync(target, ct);
+                }
+            }
 
             foreach (var page in placed)
             {
@@ -120,7 +145,7 @@ public static class SiteExportEndpoints
 
                 var html = Encoding.UTF8.GetString(captured);
                 html = SiteExport.RewriteLinks(html, page.Path, pagePaths, assets.Names);
-                html = InjectSiteChrome(html, placed, page, footer, themeScript);
+                html = InjectSiteChrome(html, placed, page, brand, head, footer);
                 await WriteTextAsync(zip, $"{page.Path}/index.html", html, ct);
             }
 
@@ -214,62 +239,32 @@ public static class SiteExportEndpoints
         return css is null ? "" : await System.IO.File.ReadAllTextAsync(css, ct);
     }
 
-    /// <summary>
-    /// The app's own theme script, so an exported site keeps light, dark and
-    /// system and the accent colours, with the reader's choice in their own
-    /// browser (owner's request, 2026-09-20). It is the only script in the
-    /// output, and it is marked so the capture keeps it.
-    /// </summary>
-    private static string ThemeScript() =>
-        """
-        <script data-export-keep>
-        (function () {
-          try {
-            var t = localStorage.getItem('tesria-theme');
-            if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
-            var a = localStorage.getItem('tesria-accent');
-            if (a) document.documentElement.setAttribute('data-accent', a);
-          } catch (e) { /* a browser with storage blocked still renders */ }
-          window.__tesriaTheme = function (next) {
-            try {
-              if (next === 'system') localStorage.removeItem('tesria-theme');
-              else localStorage.setItem('tesria-theme', next);
-            } catch (e) { /* as above */ }
-            if (next === 'system') document.documentElement.removeAttribute('data-theme');
-            else document.documentElement.setAttribute('data-theme', next);
-          };
-        })();
-        </script>
-        """;
-
     private static string Footer(string instanceName) =>
         $"""<footer class="site-foot">Exported from {SiteExport.Escape(instanceName)} on {DateTimeOffset.UtcNow:d MMMM yyyy}.</footer>""";
 
     /// <summary>
-    /// Adds the navigation, the footer and the theme control to a captured
-    /// page. The capture is the page; this is the site around it.
+    /// Wraps a captured page in the application's chrome: the top bar, the
+    /// space sidebar with its page tree, and the footer. The capture is the
+    /// page; this is the product around it.
     /// </summary>
     private static string InjectSiteChrome(
         string html, IReadOnlyList<SiteExport.Placed> pages, SiteExport.Placed page,
-        string footer, string themeScript)
+        SiteChrome.Brand brand, SiteChrome.SpaceHead head, string footer)
     {
-        var nav = SiteExport.Nav(pages, page.Path);
-        var toggle = """
-        <div class="site-theme">
-          <button type="button" onclick="__tesriaTheme('light')">Light</button>
-          <button type="button" onclick="__tesriaTheme('dark')">Dark</button>
-          <button type="button" onclick="__tesriaTheme('system')">System</button>
-        </div>
-        """;
-        var head = themeScript + $"<link rel=\"stylesheet\" href=\"{SiteExport.Relative(page.Path, "assets/site.css")}\" />";
-        html = html.Replace("</head>", head + "</head>");
+        var inHead = SiteChrome.ThemeScript()
+            + $"<link rel=\"stylesheet\" href=\"{SiteExport.Relative(page.Path, "assets/site.css")}\" />";
+        html = html.Replace("</head>", inHead + "</head>");
 
-        // The navigation goes *inside* the export container, which is the grid
-        // that puts it in the left column; as a sibling it stacked above the
-        // page instead. The theme control is fixed-position and belongs
-        // outside it.
-        html = html.Replace("<div class=\"export\">", $"{toggle}<div class=\"export export--site\">{nav}");
-        return html.Replace("</body>", footer + "</body>");
+        // The captured document is `<div class="export">…</div>` and nothing
+        // else. It becomes the content column of the app's own two-column
+        // layout, with the bar above it and the sidebar beside it, so the
+        // stylesheet the site already ships lays it out with no new rules.
+        var before = SiteChrome.Topbar(brand, SiteExport.Root(page.Path))
+            + "<div class=\"space-layout space-layout--export\">"
+            + SiteChrome.Sidebar(head, pages, page.Path)
+            + "<section class=\"space-content\">";
+        html = html.Replace("<div class=\"export\">", before + "<div class=\"export export--site\">");
+        return html.Replace("</body>", footer + "</section></div></body>");
     }
 
     private static async Task WriteTextAsync(ZipArchive zip, string path, string content, CancellationToken ct)

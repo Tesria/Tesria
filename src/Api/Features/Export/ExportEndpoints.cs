@@ -67,7 +67,8 @@ public static class ExportEndpoints
                 ["format"] = ["Supported formats are 'markdown', 'html' and 'pdf'."],
             });
 
-        return await CaptureAsync(page.Id, page.Title, safeName, wanted, current, renderTokens, pdf, config, ct);
+        var brand = new SiteChrome.Brand((await settings.GetAsync(ct)).InstanceName);
+        return await CaptureAsync(page.Id, page.Title, safeName, wanted, brand, current, renderTokens, pdf, config, ct);
     }
 
     /// <summary>
@@ -77,7 +78,7 @@ public static class ExportEndpoints
     /// the sidecar's browser read it as this caller and nothing more.
     /// </summary>
     private static async Task<IResult> CaptureAsync(
-        Guid pageId, string title, string safeName, string format,
+        Guid pageId, string title, string safeName, string format, SiteChrome.Brand brand,
         Infrastructure.Auth.CurrentUser current, Infrastructure.Export.IRenderTokens renderTokens,
         IPdfRenderer pdf, IConfiguration config, CancellationToken ct)
     {
@@ -87,7 +88,10 @@ public static class ExportEndpoints
                 statusCode: StatusCodes.Status503ServiceUnavailable);
 
         var token = renderTokens.IssueForPage(pageId, current.IsAuthenticated ? current.RequireId() : null);
-        var url = $"{RenderOrigin(config)}/export/pages/{pageId}";
+        // `chrome=page` tells the render route this is a file somebody will
+        // open in a browser rather than paper, so it keeps the reader's theme
+        // instead of forcing light. A PDF asks for no chrome and stays paper.
+        var url = $"{RenderOrigin(config)}/export/pages/{pageId}" + (format == "html" ? "?chrome=page" : "");
         var bytes = await pdf.CaptureAsync(url, token, format, title, ct);
 
         if (bytes is null)
@@ -95,9 +99,18 @@ public static class ExportEndpoints
                 detail: "The export renderer did not answer. Export as Markdown instead, or try again.",
                 statusCode: StatusCodes.Status503ServiceUnavailable);
 
-        return format == "html"
-            ? Results.File(bytes, "text/html", $"{safeName}.html")
-            : Results.File(bytes, "application/pdf", $"{safeName}.pdf");
+        if (format != "html") return Results.File(bytes, "application/pdf", $"{safeName}.pdf");
+
+        // The top bar, so a single-file export looks like the product it came
+        // from (owner's request, 2026-09-20). No sidebar: one page has no
+        // tree to show, and the brand links nowhere because there is nowhere
+        // in a single file to go.
+        var html = Encoding.UTF8.GetString(bytes);
+        html = html.Replace("</head>", SiteChrome.ThemeScript() + "</head>");
+        html = html.Replace(
+            "<div class=\"export\">",
+            SiteChrome.Topbar(brand, homeHref: null) + "<div class=\"export export--file\">");
+        return Results.File(Encoding.UTF8.GetBytes(html), "text/html", $"{safeName}.html");
     }
 
     /// <summary>

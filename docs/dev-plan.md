@@ -2622,7 +2622,41 @@ the browser with the network to the instance blocked, check a table, a
 diagram, a chart, an image and an internal link; then the same site on
 a phone width.
 
+
+**Follow-up, same day: the chrome (owner's request).** The export was the
+page and nothing else, which is faithful and does not look like Tesria. Both
+HTML exports now carry the app's top bar (the mark, the instance name, and
+the full appearance menu with three modes and six accents), and a site also
+carries the space sidebar: icon, key, public badge, name, and the page tree
+under a PAGES heading with the current page marked. The index and the 404
+carry it too.
+
+- **The chrome is built, not captured, and that is the one exception to 12.1's
+  rule.** It is in `Features/Export/SiteChrome.cs`. The rule exists because a
+  second renderer of page *content* drifts; the chrome is not content, it is
+  the exporter's own answers (which pages are in the site, what they are
+  called, where they live, which one you are on), and the capture route has
+  no chrome to photograph in the first place. Building it once also covers
+  the index and the 404, which are not captures; rendering it in the SPA
+  would have left those two needing a second copy, which is the drift the
+  rule is about. It emits the app's class names against the app's compiled
+  stylesheet, so restyling the app restyles every export.
+- **A bug only the phone showed.** The app hides `.sidebar` under
+  `--bp-mobile` because `.space-actionbar` covers its jobs; an export has no
+  action bar, so a site would have shipped with no navigation at all on a
+  phone. `.space-layout--export` brings it back, stacked above the page and
+  capped at 45vh.
+- **PDFs are untouched**, and the render route now says so explicitly:
+  `chrome=page` and `chrome=site` keep the reader's theme, no chrome at all
+  means paper and stays forced light.
+- **Branding is half done by accident.** The wordmark is the instance name,
+  which an administrator already sets, so it already travels. The replaceable
+  mark is the other half and is written up in `roadmap.md`;
+  `SiteChrome.Brand.LogoPath` is the seam, and a space's uploaded icon (which
+  is copied into `assets/` here) is the pattern to copy.
+
 ---
+
 
 ## Order of execution, flattened
 

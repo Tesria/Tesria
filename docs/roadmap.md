@@ -50,6 +50,33 @@ builds out a complete World of Warcraft knowledge wiki, exports it as a
 single file, and shares it — anyone else downloads that file and imports it
 to get the whole wiki, ready to go, on their own instance.
 
+## Instance branding
+
+*Asked for by the owner on 2026-09-20, while reviewing the HTML export's new
+top bar: "in the future I want to enable branding where users can replace the
+icon and Tesria title with their own icon and name for their instance. This
+should be exported also."*
+
+An instance replaces the mark and the wordmark in the top bar with its own,
+and both travel with an export.
+
+**Half of it already works.** The wordmark is the instance name, which an
+administrator sets in Administration → Settings and which defaults to
+"Tesria". Exports already carry it: `SiteChrome.Brand` is built from it, so a
+site published by an instance called "Acme Wiki" says Acme Wiki.
+
+**What is left is the mark.** An upload, stored the way space icons and
+avatars already are (`IProfileMediaService`, webp, content-hashed), a setting
+pointing at it, and the admin UI to put it there. The export side is already
+built for it: set `SiteChrome.Brand.LogoPath` to the file's path inside the
+export and copy the file in beside `assets/site.css`, exactly as a space's
+uploaded icon is copied today. Nothing else in the exporter changes.
+
+Worth deciding when it is scheduled: whether the favicon follows the uploaded
+mark (today it is generated from the accent in `theme.ts`), whether the mark
+gets a separate dark-theme variant, and whether removing Tesria's own name
+from an instance is something the licence should have an opinion about.
+
 ## Semantic search over the wiki (hybrid retrieval)
 
 Search today is PostgreSQL full-text: lexical, English-stemmed, and very

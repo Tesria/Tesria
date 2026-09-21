@@ -29,13 +29,16 @@ export function ExportPage() {
   const root = useRef<HTMLDivElement>(null)
 
   // A PDF is paper: it is light, whatever the capturing browser or the
-  // account would otherwise prefer. The site export (12.2) overrides this
-  // again from its own script, which is why the attribute is set rather than
-  // the stylesheet being changed.
+  // account would otherwise prefer. An HTML export is not paper, it is a file
+  // somebody opens in a browser, so it keeps the reader's theme and carries
+  // the appearance menu to change it (`chrome=page` for a single file,
+  // `chrome=site` for a published space). Both override this from the theme
+  // script, which is why the attribute is set rather than the stylesheet
+  // being changed. No chrome at all means a PDF.
   useEffect(() => {
     const html = document.documentElement
     const previous = html.getAttribute('data-theme')
-    if (chrome !== 'site') html.setAttribute('data-theme', 'light')
+    if (chrome === null) html.setAttribute('data-theme', 'light')
     return () => {
       if (previous === null) html.removeAttribute('data-theme')
       else html.setAttribute('data-theme', previous)

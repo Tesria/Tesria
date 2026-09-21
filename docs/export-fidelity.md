@@ -43,6 +43,12 @@ is printed from, and the exported site file, on the fixture page
 (`tests/fixtures/every-element.json`). A tick means the count matched what
 the page shows.
 
+The counts are of the *page*, so the site column excludes the chrome around
+it (the top bar and the sidebar, added 2026-09-20). The chrome contributes
+only links: the brand and one tree row per page. It used to contribute a list
+as well, when the navigation was a `<ul>`; the tree is anchors now, which is
+what the application's own sidebar uses.
+
 | Element | On the page | PDF | HTML file | Site |
 |---|---|---|---|---|
 | Headings | 11 | ✓ | ✓ | ✓ |
@@ -54,7 +60,7 @@ the page shows.
 | Sub / superscript | 2 | ✓ | ✓ | ✓ |
 | Link | 3 | ✓ | ✓ | ✓ |
 | Text alignment | 11 | ✓ | ✓ | ✓ |
-| Bullet list | 20 | ✓ | ✓ | ✓ (+1, the site nav is a list) |
+| Bullet list | 20 | ✓ | ✓ | ✓ |
 | Ordered list | 2 | ✓ | ✓ | ✓ |
 | Task list | 2 | ✓ | ✓ | ✓ |
 | Blockquote | 1 | ✓ | ✓ | ✓ |
@@ -113,7 +119,7 @@ which is the property capture buys and the reason this document is short.
 
 ## Bugs this found
 
-Building the fixture turned up three real ones, all fixed:
+Building the fixture turned up four real ones, all fixed:
 
 1. **A mention of a user id with no account 500'd the save.** Any document
    arriving from the API, MCP or an import could carry one; the notification
@@ -127,3 +133,12 @@ Building the fixture turned up three real ones, all fixed:
    missing that pointer numbered its next version from zero and collided
    forever. They come from the versions themselves now, which makes such a
    page repair itself on its next save.
+4. **The Markdown export did not sanitise link hrefs.** A stored
+   `javascript:` URL came out of an exported file as a working link. Found
+   when deleting the HTML renderer left the Markdown path as the only link
+   handling to look at.
+
+And one the chrome turned up, which only a phone width showed: the app hides
+its sidebar under `--bp-mobile` because the space action bar covers the same
+jobs, and an export has no action bar, so a published site would have had no
+navigation at all on a phone.
