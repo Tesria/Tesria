@@ -2054,13 +2054,14 @@ survives as a worked example of the spec format, and is the place to start.
   so 12.2 can publish it as a static site, which is the other half of why it
   is worth writing well.
 
-**A decision for the owner, when this is scheduled:** whether the manual's
-source of truth is the wiki (written in Tesria, exported for the web) or the
-repository (written as Markdown, imported). The wiki is the honest
-dogfooding answer and is what was done before; the repository is what would
-have saved the last one. 8.5's wiki packs would make the wiki answer safe by
-giving it a committed export, which is an argument for sequencing this after
-8.5 rather than before it.
+**Decided by the owner, 2026-09-21: the wiki is the source of truth.** The
+manual is written in Tesria and exported, not written as Markdown and
+imported. It is the dogfooding answer and it is what was done before.
+
+That makes **8.5 a prerequisite rather than a preference.** A manual whose
+only copy lives in the instance is how the last one was lost, so the
+rebuild waits until a wiki pack can give it a committed export to come back
+from. 12.2 already publishes it for readers; 8.5 is what preserves it.
 
 ---
 
@@ -2855,7 +2856,7 @@ carry it too.
 11. **10.1** Owner role (shipped 2026-09-20) → **11.1** Instance rights and the Roles tab (shipped 2026-09-20) → **11.2** Custom roles (shipped 2026-09-20) → **11.3** Delete a space (shipped 2026-09-20) → **5.5** Anonymous access is opt-in twice (shipped 2026-09-20) → **10.4** Media harness (shipped 2026-09-20) → **10.2** Owner setup wizard (shipped 2026-09-20) → **10.3** Tour and tips (shipped 2026-09-20) (all specified 2026-09-20 as Fable; Opus implements). Phase 11 goes before the wizard because the wizard has a required step that reviews the matrix, and before 10.3 because the tour's screens should show the real Roles tab. 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
 12. **12.1** Capture-based export and the element audit (shipped 2026-09-20) → **12.2** Publish a space as a static site (shipped 2026-09-20). 12 before 8.5 because the site export builds the walk over a space that the wiki pack will reuse, and because the owner's documentation is waiting on it.
 13. **8.6** External edits as tracked changes (steps 1–5 shipped 2026-09-21; step 6 folded into 10.5).
-14. **10.5** Rebuild the user manual — unscheduled, and worth taking **after 8.5**: the last manual was lost because it existed only inside the instance, and wiki packs are what would give a rebuilt one a committed export to be restored from.
+14. **10.5** Rebuild the user manual — **after 8.5**, now that the owner has settled the wiki as its source of truth (2026-09-21). A manual whose only copy is inside the instance is how the last one was lost, so the pack that can export it is a prerequisite, not a preference.
 
 Phases 6 and 8.2 are floaters — small, no dependents — and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm
