@@ -2649,6 +2649,16 @@ carry it too.
 - **PDFs are untouched**, and the render route now says so explicitly:
   `chrome=page` and `chrome=site` keep the reader's theme, no chrome at all
   means paper and stays forced light.
+- **An export now works from the filesystem** (owner, same day). Unzipped
+  and opened, clicking a sidebar link showed Chrome's folder listing instead
+  of the page: every link ended at a directory, which a server resolves to
+  its index file and `file://` cannot. Links name `index.html` now (sidebar,
+  body and brand alike), which works in both places and costs a hosted site
+  nothing, and the 404 stopped linking to `/`, the root of the disk. The one
+  case still not right is a host serving `404.html` for a missing path
+  *below* the root, where the browser resolves its relative links against
+  that path; making them root-absolute would fix it and break `file://`, and
+  the export is more often read locally than 404'd at depth.
 - **The width toggle came back** (owner, same day). The capture route has no
   action bar, so an export had lost both the reading view's full-width
   control and the page's own `fullWidth` setting, which meant every exported
