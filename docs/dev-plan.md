@@ -2649,6 +2649,14 @@ carry it too.
 - **PDFs are untouched**, and the render route now says so explicitly:
   `chrome=page` and `chrome=site` keep the reader's theme, no chrome at all
   means paper and stays forced light.
+- **The width toggle came back** (owner, same day). The capture route has no
+  action bar, so an export had lost both the reading view's full-width
+  control and the page's own `fullWidth` setting, which meant every exported
+  page was full width regardless of how it was written. An HTML export now
+  opens at the page's width and carries the toggle in the top bar; the
+  reader's choice persists across a site, and the phone hides it for the same
+  reason the app does. A PDF gets neither: the sheet is the width, and
+  `.page-wrap`'s 900px cap on A4 would be margins nobody asked for.
 - **Two tweaks after the first look** (owner, same day). The PDF footer's
   page numbering was four flex items under `space-between`, so it read
   "Every element    1    of    4"; it is one item now, right-justified. And

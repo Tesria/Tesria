@@ -90,8 +90,32 @@ public static class SiteChrome
             ? $"<span class=\"brand\">{inner}</span>"
             : $"<a class=\"brand\" href=\"{SiteExport.Escape(homeHref)}\">{inner}</a>";
 
-        return $"""<header class="topbar">{home}<div class="topbar__right">{ThemeMenu()}</div></header>""";
+        return $"""<header class="topbar">{home}<div class="topbar__right">{WidthToggle()}{ThemeMenu()}</div></header>""";
     }
+
+    /// <summary>
+    /// Switches the page between its normal width and full width, the same
+    /// control the reading view has in its action bar. An export has no action
+    /// bar, so it sits in the top bar beside the appearance menu.
+    ///
+    /// <para>The page opens at whatever width it was given in the wiki; this
+    /// is the reader's override, and like the theme it is theirs and sticks
+    /// across the pages of a site.</para>
+    /// </summary>
+    /// <remarks>
+    /// Both labels ship and the script shows one, because a captured export
+    /// has no React left to re-render the text. <c>data-width-label</c> names
+    /// the state the label belongs to, while the text names what clicking
+    /// does, which is the same inversion the reading view's button has: while
+    /// the page is full width the button offers "Normal width".
+    /// </remarks>
+    private static string WidthToggle() =>
+        """
+        <button type="button" class="btn btn--ghost btn--sm" data-export-width-toggle>
+        <span data-width-label="normal">&#10530; Full width</span>
+        <span data-width-label="full" style="display: none">&#10529; Normal width</span>
+        </button>
+        """;
 
     /// <summary>
     /// The space sidebar: the icon, key and name, then the page tree under a
@@ -262,7 +286,8 @@ public static class SiteChrome
     /// <summary>
     /// The one script an export carries. It applies the stored theme and
     /// accent before first paint (without it the file renders light for a
-    /// frame and then flips) and drives the appearance menu afterwards.
+    /// frame and then flips), then drives the appearance menu and the
+    /// full-width toggle.
     /// Marked <c>data-export-keep</c>, which is how the capture knows to keep
     /// it when it strips the application's own scripts.
     ///
@@ -282,6 +307,7 @@ public static class SiteChrome
         (function () {
           var d = document, root = d.documentElement;
           var THEME = 'tesria-theme', ACCENT = 'tesria-accent', DEFAULT_ACCENT = 'blue';
+          var WIDTH = 'tesria-export-width';
           function get(k) { try { return localStorage.getItem(k) } catch (e) { return null } }
           function set(k, v) { try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v) } catch (e) {} }
 
@@ -290,6 +316,26 @@ public static class SiteChrome
           if (stored === 'light' || stored === 'dark') root.setAttribute('data-theme', stored);
           var storedAccent = get(ACCENT);
           if (storedAccent) root.setAttribute('data-accent', storedAccent);
+
+          // Width is a class on an element rather than an attribute on <html>,
+          // so it cannot be applied before the body exists. It is applied in
+          // syncWidth() below, which runs as soon as the DOM is ready.
+          function widthEl() { return d.querySelector('[data-export-width]') }
+
+          function syncWidth() {
+            var el = widthEl();
+            if (!el) return;
+            var stored = get(WIDTH);
+            // No stored choice means the page keeps the width it was given in
+            // the wiki, which is the class already on it.
+            if (stored === 'full') el.classList.add('page-wrap--full');
+            else if (stored === 'normal') el.classList.remove('page-wrap--full');
+            var full = el.classList.contains('page-wrap--full');
+            d.querySelectorAll('[data-width-label]').forEach(function (label) {
+              label.style.display =
+                label.getAttribute('data-width-label') === (full ? 'full' : 'normal') ? '' : 'none';
+            });
+          }
 
           function systemTheme() { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light' }
           function mode() { var v = get(THEME); return (v === 'light' || v === 'dark') ? v : 'system' }
@@ -362,6 +408,14 @@ public static class SiteChrome
               });
               d.addEventListener('keydown', function (e) { if (e.key === 'Escape') close() });
             }
+            d.querySelectorAll('[data-export-width-toggle]').forEach(function (b) {
+              b.addEventListener('click', function () {
+                var el = widthEl();
+                if (!el) return;
+                set(WIDTH, el.classList.contains('page-wrap--full') ? 'normal' : 'full');
+                syncWidth();
+              });
+            });
             d.querySelectorAll('[data-theme-close]').forEach(function (b) { b.addEventListener('click', close) });
             d.querySelectorAll('[data-theme-mode]').forEach(function (b) {
               b.addEventListener('click', function () {
@@ -383,6 +437,7 @@ public static class SiteChrome
             // resolving to, so both have to follow it changing.
             matchMedia('(prefers-color-scheme: dark)').addEventListener('change', sync);
             sync();
+            syncWidth();
           }
 
           if (d.readyState === 'loading') d.addEventListener('DOMContentLoaded', wire);

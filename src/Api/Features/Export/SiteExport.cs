@@ -197,9 +197,10 @@ public static partial class SiteExport
         <div class="space-layout space-layout--export">
         {SiteChrome.Sidebar(head, pages, currentPath)}
         <section class="space-content">
-        <div class="export export--site"><article class="paper paper--export">
+        <div class="export export--site">
+        <div class="page-wrap" data-export-width><article class="paper paper--export">
         {body}
-        </article>
+        </article></div>
         {footer}
         </div>
         </section>
