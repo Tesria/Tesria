@@ -1,7 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Claims;
 using System.Text.Json;
+using Microsoft.AspNetCore.Http;
 using Tesria.Api.Features.Pages;
+using Tesria.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure.Collab;
 using Xunit;
 
 namespace Tesria.Api.Tests;
@@ -178,5 +182,63 @@ public class ExternalMarkEndpointTests
 
         using var parsed = JsonDocument.Parse(created!.ContentJson);
         Assert.Equal("doc", parsed.RootElement.GetProperty("type").GetString());
+    }
+}
+
+/// <summary>
+/// Which door a write came through (dev-plan 8.6). This decides what a
+/// highlight says, and more importantly whether the sidecar shows the write
+/// at all: a write from the editor is the editor's own document, so it is
+/// recorded and not drawn.
+/// </summary>
+public class WriteSourceTests
+{
+    private static HttpContext Request(string path, string? scheme)
+    {
+        var context = new DefaultHttpContext();
+        context.Request.Path = path;
+        context.User = scheme is null
+            ? new ClaimsPrincipal(new ClaimsIdentity())
+            : new ClaimsPrincipal(new ClaimsIdentity([], scheme));
+        return context;
+    }
+
+    private const string Token = ApiTokenAuthenticationDefaults.AuthenticationScheme;
+
+    [Fact]
+    public void A_browser_session_is_the_editor()
+    {
+        Assert.Equal(WriteSource.Editor, WriteSources.Of(Request("/api/pages/x", "Cookies")));
+    }
+
+    [Fact]
+    public void An_api_token_on_a_rest_route_is_the_api()
+    {
+        Assert.Equal(WriteSource.Api, WriteSources.Of(Request("/api/pages/x", Token)));
+    }
+
+    [Fact]
+    public void The_same_token_at_the_mcp_endpoint_is_an_assistant()
+    {
+        // MCP authenticates with the same API tokens REST does, so the
+        // endpoint is what separates them, not the credential.
+        Assert.Equal(WriteSource.Mcp, WriteSources.Of(Request("/mcp", Token)));
+        Assert.Equal(WriteSource.Mcp, WriteSources.Of(Request("/mcp/messages", Token)));
+    }
+
+    [Fact]
+    public void A_path_that_merely_begins_with_those_letters_is_not_mcp()
+    {
+        // StartsWithSegments, not StartsWith: /mcpanything is another route.
+        Assert.Equal(WriteSource.Api, WriteSources.Of(Request("/mcpanything", Token)));
+    }
+
+    [Fact]
+    public void An_unauthenticated_or_absent_request_falls_back_to_the_editor()
+    {
+        // The quiet option: "editor" records a version and draws nothing, so
+        // an unexpected caller cannot put highlighting into someone's draft.
+        Assert.Equal(WriteSource.Editor, WriteSources.Of(Request("/api/pages/x", scheme: null)));
+        Assert.Equal(WriteSource.Editor, WriteSources.Of((HttpContext?)null));
     }
 }

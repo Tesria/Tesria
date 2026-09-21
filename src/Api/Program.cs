@@ -97,8 +97,14 @@ builder.Services.AddScoped<Tesria.Api.Features.Embeds.ILinkPreviewService, Tesri
 // a self-contained document and renders it with no network of its own.
 // One page-write path for REST and MCP alike (dev-plan 8.4).
 builder.Services.AddScoped<Tesria.Api.Features.Pages.IPageWriter, Tesria.Api.Features.Pages.PageWriter>();
+builder.Services.AddScoped<Tesria.Api.Infrastructure.Collab.ICollabNotifier, Tesria.Api.Infrastructure.Collab.CollabNotifier>();
 builder.Services.AddScoped<Tesria.Api.Features.Export.IPdfRenderer, Tesria.Api.Features.Export.PdfRenderer>();
 builder.Services.AddHttpClient("pdf", c => c.Timeout = TimeSpan.FromSeconds(30));
+// The collab sidecar is told about a page write *after* it has committed
+// (dev-plan 8.6), so this timeout only bounds how long a save waits to tell
+// it. Short on purpose: the reconciliation has a second, slower path (the
+// document's next load), and a save should not sit behind a sick sidecar.
+builder.Services.AddHttpClient("collab", c => c.Timeout = TimeSpan.FromSeconds(3));
 
 // Machine-readable API description (dev-plan 8.3).
 builder.Services.AddTesriaOpenApi();

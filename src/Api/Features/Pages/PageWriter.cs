@@ -2,6 +2,7 @@ using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Audit;
 using Tesria.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure.Collab;
 using Tesria.Api.Infrastructure.Mentions;
 using Tesria.Api.Infrastructure.Notifications;
 using Tesria.Api.Infrastructure.Permissions;
@@ -41,7 +42,8 @@ public interface IPageWriter
 
 public sealed class PageWriter(
     AppDbContext db, CurrentUser current, IAuditLogger audit, IPermissionService perms,
-    INotificationService notifications, IWebhookDispatcher webhooks) : IPageWriter
+    INotificationService notifications, IWebhookDispatcher webhooks,
+    ICollabNotifier collab, IHttpContextAccessor accessor) : IPageWriter
 {
     public async Task<PageWriteResult> CreateAsync(
         Guid spaceId, Guid? parentPageId, string? title, string? contentJson, CancellationToken ct = default)
@@ -117,6 +119,7 @@ public sealed class PageWriter(
         // Dispatched only after the create is durably committed — webhooks are
         // fire-and-forget outbound calls, not part of the unit of work.
         await webhooks.DispatchAsync(page.SpaceId, "page.created", "page", page.Id, new { page.Title });
+        await NotifyCollabAsync(page.Id, content, version.VersionNumber, ct);
 
         return PageWriteResult.Ok(page, version);
     }
@@ -169,8 +172,22 @@ public sealed class PageWriter(
 
         await db.SaveChangesAsync(ct);
         await webhooks.DispatchAsync(page.SpaceId, "page.updated", "page", page.Id, new { page.Title });
+        await NotifyCollabAsync(page.Id, content, nextNumber, ct);
         return PageWriteResult.Ok(page, version);
     }
+
+    /// <summary>
+    /// Tells the collaboration sidecar that this page has moved on (dev-plan
+    /// 8.6), so anyone with it open sees the change as tracked edits instead
+    /// of writing over it with their draft.
+    ///
+    /// After the commit, and after webhooks, for the same reason those are:
+    /// it is an outbound call about something that has already happened. It
+    /// cannot fail the write, and a sidecar that is down simply means the
+    /// reconciliation waits for the document's next load.
+    /// </summary>
+    private Task NotifyCollabAsync(Guid pageId, string content, int version, CancellationToken ct) =>
+        collab.NotifyAsync(pageId, content, WriteSources.Of(accessor), version, ct);
 
     /// <summary>
     /// Tells anyone newly mentioned that they were, checked with

@@ -73,6 +73,11 @@ services:
       # Shared with the collab sidecar; signs the tokens that authorise a user
       # to join a page's live editing session. Empty disables co-editing.
       Collab__Secret: ${COLLAB_SHARED_SECRET}
+      # Where the app tells the sidecar that a page has been written, so an
+      # editor somebody has open shows it as a tracked change instead of
+      # overwriting it (dev-plan 8.6). Service name, not the public address:
+      # this never leaves the compose network.
+      Collab__Endpoint: "http://collab:8090"
       # Read once, on the first start after dev-plan 9.1, to seed the backup
       # retention policy; after that the policy lives on the admin page.
       Backup__SeedRetentionDays: ${BACKUP_RETENTION_DAYS:-14}
