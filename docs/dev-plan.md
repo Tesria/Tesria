@@ -1102,8 +1102,23 @@ JSON walk, one test.
    with an *empty* value means "handled", while rejecting with a real error
    is rethrown, so the route rejects with nothing after writing its own
    response.
-5. The editor banner, `baseVersion` on publish, 409 handling and client
-   reconcile.
+5. ✅ **shipped 2026-09-21.** The editor banner, `baseVersion` on publish,
+   409 handling and client reconcile.
+   As built: the banner sits above the editor beside the connection status,
+   not inside the page, because it is about the document rather than any one
+   place in it; it counts pending runs and offers Accept all and Reject all.
+   Pressing Update accepts anyway, as the last thing before the content
+   leaves, and reads the body back from the editor rather than from React
+   state, which lags a transaction behind.
+   `baseVersion` is `meta.version`, the version this draft was last
+   reconciled to, and it is **optional on the wire**: an API or MCP caller
+   holds no draft that could be stale, so last-write-wins stays right for
+   them and no existing script breaks. The 409 carries the page as it stands,
+   not just a refusal, because the editor reconciles against that body to
+   show the difference and cannot do it from a status code.
+   The non-collaborative editor deliberately gets none of this: with no
+   shared document there is nowhere for an outside write to land, so it is
+   always looking at exactly what it loaded.
 6. Manual pages: *Saving, drafts and editing together* gains a section on
    changes from assistants; *The MCP server* says what an assistant's
    write looks like to someone mid-edit.

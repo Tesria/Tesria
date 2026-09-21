@@ -1509,6 +1509,16 @@ sidecar compares it on load and reconciles on mismatch. A document with no
 draft that predates the feature from lighting up on the first load after a
 deploy.
 
+**Publishing is a decision.** The editor runs `acceptExternalEdits` as the
+last thing before sending, so pressing Update accepts whatever is pending;
+the banner above the editor (counting pending runs, with Accept all and
+Reject all) is for deciding first. It also sends `baseVersion`, the
+`meta.version` its draft was reconciled to, and the API answers **409** if
+the page has moved past it. That 409 carries the page as it stands, because
+the editor reconciles against the body to show the difference. `baseVersion`
+is optional: API and MCP callers hold no draft that could be stale, so
+last-write-wins stays right for them.
+
 Two things worth knowing if you touch the diff. It compares blocks by
 canonical JSON *after* putting both sides through the schema, because
 ProseMirror materialises default attributes and stored JSON does not, so a

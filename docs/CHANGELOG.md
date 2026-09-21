@@ -5,6 +5,36 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Deciding what to do with an assistant's change (2026-09-21)
+
+Step 5 of dev-plan 8.6. Steps 3 and 4 made an outside write *visible*; this
+makes it decidable, and closes the overwrite it started from.
+
+**A banner above the editor** counts what is waiting and offers Accept all
+and Reject all. It sits with the connection status rather than inside the
+page, because it is about the document rather than any one place in it. You
+can also just edit inside a highlighted run: it is ordinary text that happens
+to carry a mark.
+
+**Pressing Update accepts.** Whatever an assistant or the API changed is
+resolved as the last thing before the content leaves: its deletions really
+go, its insertions become ordinary text, and that is what gets published.
+The banner is for people who want to decide first.
+
+**A publish that would overwrite an unseen change is refused.** The editor
+sends the version its draft was last brought up to date with; if the page has
+moved past it, the server answers 409 and the answer *carries the page as it
+now stands*, so the editor reconciles against it and shows the difference
+instead of just being told no. That is what a status code alone cannot do.
+
+Sending the version is optional on the wire, deliberately: an API or MCP
+caller holds no draft that could be stale, so last-write-wins stays right for
+them and no existing script breaks.
+
+The non-collaborative editor gets none of this. With no shared document there
+is nowhere for an outside write to land, so it is always looking at exactly
+what it loaded.
+
 ### An assistant's write appears in the editor you have open (2026-09-21)
 
 Step 4 of dev-plan 8.6, the live case. Step 3 caught up a page you reopened;

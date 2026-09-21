@@ -735,6 +735,16 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
    renderer too, since a draft can be previewed. They never reach a published
    version, which PageWriter enforces. */
 .external-edit { border-radius: 2px; padding: 0 1px; }
+/* The banner above the editor that counts them (dev-plan 8.6). Sits with the
+   collaboration status, not inside the page, because it is about the document
+   rather than about any one place in it. */
+.external-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;
+  margin: 0 auto 0.5rem; max-width: 900px; padding: 0.5rem 0.75rem;
+  border: 1px solid var(--external-insert-border); border-radius: var(--radius);
+  background: var(--external-insert-bg); color: var(--text); font-size: 0.9rem;
+}
+.external-banner__actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
 .external-edit--insert { background: var(--external-insert-bg); border-bottom: 2px solid var(--external-insert-border); }
 /* Struck through because it is text that is already gone from the page: it is
    shown so the change is legible, not because it is still there. */

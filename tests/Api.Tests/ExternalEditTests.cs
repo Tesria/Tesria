@@ -242,3 +242,111 @@ public class WriteSourceTests
         Assert.Equal(WriteSource.Editor, WriteSources.Of((HttpContext?)null));
     }
 }
+
+/// <summary>
+/// Publishing when the page has moved on (dev-plan 8.6, step 5).
+///
+/// The editor sends the version its draft was last reconciled to. If the page
+/// is past that, something wrote to it that this draft has not seen, and
+/// publishing would overwrite it. The refusal carries the page as it stands
+/// so the editor can show the difference rather than just saying no.
+/// </summary>
+public class PublishConflictTests
+{
+    private record PageDetail(Guid Id, string Title, string ContentJson, int CurrentVersionNumber);
+
+    private static string Doc(string text) =>
+        $$"""{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"{{text}}"}]}]}""";
+
+    private static async Task<(TestAppFactory, HttpClient, PageDetail)> NewPage()
+    {
+        var factory = new TestAppFactory();
+        var client = factory.CreateClient();
+        await client.RegisterAndSignInAsync();
+        var spaceId = await client.CreateSpaceAsync();
+        var page = await (await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = "Page", ContentJson = Doc("first") }))
+            .Content.ReadFromJsonAsync<PageDetail>();
+        return (factory, client, page!);
+    }
+
+    [Fact]
+    public async Task Publishing_from_the_version_you_have_succeeds()
+    {
+        var (factory, client, page) = await NewPage();
+        using var _ = factory;
+
+        var res = await client.PutAsJsonAsync($"/api/pages/{page.Id}",
+            new { Title = "Page", ContentJson = Doc("second"), BaseVersion = page.CurrentVersionNumber });
+
+        Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task Publishing_from_a_version_the_page_has_passed_is_refused()
+    {
+        var (factory, client, page) = await NewPage();
+        using var _ = factory;
+
+        // Somebody else writes. An API caller sends no version, so this one
+        // wins as it always has.
+        (await client.PutAsJsonAsync($"/api/pages/{page.Id}",
+            new { Title = "Page", ContentJson = Doc("written by an assistant") })).EnsureSuccessStatusCode();
+
+        // Now the editor publishes a draft based on what it loaded first.
+        var res = await client.PutAsJsonAsync($"/api/pages/{page.Id}",
+            new { Title = "Page", ContentJson = Doc("my stale draft"), BaseVersion = page.CurrentVersionNumber });
+
+        Assert.Equal(HttpStatusCode.Conflict, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task The_refusal_carries_the_page_as_it_now_stands()
+    {
+        // Not just a status code: the editor reconciles against this body to
+        // show the difference, and cannot do that from a 409 alone.
+        var (factory, client, page) = await NewPage();
+        using var _ = factory;
+        (await client.PutAsJsonAsync($"/api/pages/{page.Id}",
+            new { Title = "Page", ContentJson = Doc("what the page says now") })).EnsureSuccessStatusCode();
+
+        var res = await client.PutAsJsonAsync($"/api/pages/{page.Id}",
+            new { Title = "Page", ContentJson = Doc("my stale draft"), BaseVersion = page.CurrentVersionNumber });
+        var body = await res.Content.ReadFromJsonAsync<PageDetail>();
+
+        Assert.Contains("what the page says now", body!.ContentJson);
+        Assert.True(body.CurrentVersionNumber > page.CurrentVersionNumber);
+    }
+
+    [Fact]
+    public async Task A_refused_publish_changes_nothing()
+    {
+        var (factory, client, page) = await NewPage();
+        using var _ = factory;
+        (await client.PutAsJsonAsync($"/api/pages/{page.Id}",
+            new { Title = "Page", ContentJson = Doc("the good version") })).EnsureSuccessStatusCode();
+
+        await client.PutAsJsonAsync($"/api/pages/{page.Id}",
+            new { Title = "Page", ContentJson = Doc("would have clobbered it"), BaseVersion = page.CurrentVersionNumber });
+
+        var after = await client.GetFromJsonAsync<PageDetail>($"/api/pages/{page.Id}");
+        Assert.Contains("the good version", after!.ContentJson);
+        Assert.DoesNotContain("would have clobbered", after.ContentJson);
+    }
+
+    [Fact]
+    public async Task Omitting_the_version_keeps_last_write_wins()
+    {
+        // What every API and MCP caller does. They hold no draft that could
+        // be stale, and requiring a version would break existing scripts.
+        var (factory, client, page) = await NewPage();
+        using var _ = factory;
+        (await client.PutAsJsonAsync($"/api/pages/{page.Id}",
+            new { Title = "Page", ContentJson = Doc("second") })).EnsureSuccessStatusCode();
+
+        var res = await client.PutAsJsonAsync($"/api/pages/{page.Id}",
+            new { Title = "Page", ContentJson = Doc("third, no version sent") });
+
+        Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+    }
+}
