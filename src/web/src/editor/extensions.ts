@@ -17,6 +17,7 @@ import { CodeBlockView } from './CodeBlockView'
 import { SlashCommand } from './slash/SlashCommand'
 import { Image } from './imageExtension'
 import { CommentMark } from './commentMark'
+import { ExternalDelete, ExternalEditCommands, ExternalInsert } from './externalEditMarks'
 import { Panel } from './panelExtension'
 import { HeadingAnchors } from './headingAnchors'
 import { TableOfContents } from './tocExtension'
@@ -223,6 +224,12 @@ export function getSharedExtensions({ collaborative = false, editable = true }: 
     Highlight.configure({ multicolor: true }),
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
     CommentMark,
+    // dev-plan 8.6: how a write from the API or MCP shows up in a live draft.
+    // Part of the *shared* schema, not the editor's alone, because the Yjs
+    // document carries these marks and every peer has to be able to read one.
+    ExternalInsert,
+    ExternalDelete,
+    ExternalEditCommands,
     Panel,
     // Phase 7 Wave A structural blocks. Heading ids are decorations, not
     // attributes — see headingAnchors.ts.

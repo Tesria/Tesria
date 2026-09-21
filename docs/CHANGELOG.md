@@ -5,6 +5,45 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Tracked changes from outside the editor: the marks (2026-09-20)
+
+First of the six steps in dev-plan 8.6. Inert on its own: nothing produces
+these marks yet, and the next steps are what make them appear.
+
+**The problem it is the start of.** A page has two stores, the published
+version in Postgres and the Yjs document the editor actually edits. The API,
+`PageWriter` and the MCP `update_page` tool write the first and never touch
+the second, and the editor only seeds the second when it is empty. So once a
+page has been opened in the editor, a write from anywhere else is invisible
+there, and pressing Update writes the stale draft back over it. Every
+assistant-written change is one browser edit away from being lost.
+
+**What landed.** Two marks in the shared editor schema, `externalInsert` and
+`externalDelete`, carrying the source, the actor and the time, so a highlight
+can say *Added by MCP · Docs Bot* on hover. Green for added, struck red for
+removed, the convention every diff uses; the source changes the label, not
+the colour, so "what changed" and "who did it" do not compete for the same
+channel. Both are non-inclusive, so typing at the edge of a highlighted run
+produces your own ordinary text rather than more text attributed to a bot.
+
+`acceptExternalEdits` and `rejectExternalEdits` resolve them, including the
+case worth the extra pass: a block the write deleted entirely is re-inserted
+with every character marked, so accepting has to remove the block rather than
+leave an empty paragraph behind.
+
+**A published version can never carry them.** `PageContent.TryNormalize` is
+the single door every page write goes through, and it strips both marks
+there rather than trusting every client to have accepted first. The text is
+kept, deliberately, including text marked as deleted: this is a safety net,
+not a merge, and it cannot know what the human meant. Skipped entirely unless
+the raw JSON mentions the marks at all, since a page save is hot and almost
+no document has them.
+
+One thing fell out of it: the print rules that hide "somebody is working on
+this" highlighting named `.comment-mark`, a class nothing renders, so a
+commented passage had been printing with its yellow ground despite the export
+docs saying otherwise. Both selectors are now the ones actually rendered.
+
 ### An exported site works from the filesystem (2026-09-20)
 
 Reported by the owner: unzip a site export, open it, click a link in the

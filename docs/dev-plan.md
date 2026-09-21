@@ -1014,10 +1014,20 @@ copied a draft, cannot publish tracked changes into a page version. One
 JSON walk, one test.
 
 **Opus implements, in this order, each step shippable alone:**
-1. The two marks in `extensions.ts` with CSS (tint by source, strike for
-   deletes, `title` for hover); `acceptExternalEdits` / `rejectExternalEdits`
-   commands; the server-side strip with a test. Nothing produces the marks
-   yet, so this is inert.
+1. ✅ **shipped 2026-09-20.** The two marks in `extensions.ts` with CSS (tint
+   by source, strike for deletes, `title` for hover);
+   `acceptExternalEdits` / `rejectExternalEdits` commands; the server-side
+   strip with a test. Nothing produces the marks yet, so this is inert.
+   As built: the marks live in `editor/externalEditMarks.ts` and are
+   registered in the *shared* schema, not the editor's alone, because the Yjs
+   document carries them and every peer has to be able to read one. Colour is
+   by insert/delete rather than by source (green added, struck red removed),
+   with the source in the hover label: two questions, two channels. The
+   strip is in `PageContent.TryNormalize`, the single door every page write
+   goes through, and keeps the text including the deletions, because a safety
+   net cannot know what the human meant. Found on the way: the print rules
+   hiding this kind of highlighting named `.comment-mark`, which nothing
+   renders, so commented text had been printing with its ground.
 2. `externalEdits.ts` (block diff + Yjs apply) with unit tests against
    fixture documents, including "old has pending marks" and "block with no
    inline content".
