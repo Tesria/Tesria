@@ -905,17 +905,215 @@ onto `roadmap.md` and are sequenced here.
   benefits).
 - Depends on 8.3 and benefits from Phase 7 stabilising the content schema.
 
-### 8.5 Wiki packs — space/site export and import — `XL` — Model: Fable → Opus
-- **Fable designs the format** (and the import's id-remapping rules);
-  **Opus implements** export then import. The hard half is import: id
-  remapping, attachment re-keying, permission principals that don't exist
-  on the target, tree order, labels, templates, the space icon (6), and
-  whether a pack carries `IsPublic` (recommend: no — the importer decides).
-- Format: a zip with `manifest.json` (format version, source instance,
-  counts), one JSON per page including versions, attachments as files,
-  `spaces.json`. Version the format from day one.
-- **Last, on purpose:** every earlier phase adds fields the pack must
-  carry. Building it earlier means rebuilding it.
+### 8.5 Wiki packs — space export and import — `XL` — Model: Fable → Opus — designed 2026-09-21 (Fable)
+
+**What it is for.** A pack is how a wiki survives its instance. The manual
+written on 2026-09-11 was lost with the database it lived in, and the owner
+has since decided the rebuilt manual's source of truth is the wiki, not the
+repository. So the pack is the thing 10.5 commits: export the manual, keep
+the export in git, import it anywhere. The second use is moving a space
+between two instances. It is **not** a sync, a merge, or a backup of the
+instance; Phase 9 does backups, and merging is deliberately out of scope
+(see "Not decided").
+
+**The shape of the problem.** Every row a space is made of carries ids that
+mean nothing on another instance: page ids, attachment storage keys,
+comment ids, and above all user and group ids as authors and as permission
+principals. A pack therefore carries *content and structure* and lets the
+importer re-mint every identity, and it carries *no permissions and no
+identities*, because those are the two things that would let a zip file
+grant access. The inventory at the end of this item is what the decisions
+below were made against.
+
+**The format, version 1.** A zip:
+
+```
+manifest.json          format, generator, exportedAt, source, space {key, name},
+                       counts, omitted (see export), restrictions (counts only)
+space.json             key, name, description, homepage (page id), icon
+                       {kind, value, file?}, templates [{name, description, content}]
+authors.json           { "<id>": { "displayName": "..." } }   attribution record only
+pages/<id>.json        one per page, in tree order (below)
+attachments/<id>       the bytes; filename and type live in the page's json
+space-icon.webp        only when the space has an uploaded icon
+```
+
+A page file:
+
+```
+{ "id", "parent", "position", "title", "fullWidth", "createdAt", "createdBy",
+  "current": <version number>,
+  "versions": [ { "number", "createdAt", "author", "comment", "content": <ProseMirror JSON> } ],
+  "labels": [ "name", ... ],
+  "attachments": [ { "id", "filename", "contentType", "size", "file": "attachments/<id>" } ],
+  "comments": [ { "id", "parent", "author", "body", "anchor", "createdAt", "updatedAt", "deletedAt" } ] }
+```
+
+Ids inside the pack are the source instance's ids, used only as join keys
+between files; an importer always mints new ones. **Output is canonical**:
+JSON pretty-printed with sorted keys, pages ordered by tree position, zip
+entries in a fixed order, no timestamps in the zip headers. The reason is
+10.5: the manual's pack will be committed unzipped, and a re-export after a
+one-word edit must diff as a one-word edit, not as forty-seven rewritten
+files. `format` is an integer, `1`; adding an optional field does not bump
+it, changing the meaning of one does, and an importer refuses a pack whose
+format is newer than it knows ("made by a newer Tesria") rather than
+guessing.
+
+**What travels, and what does not.** Each of these is a decision.
+
+1. **Pages: current, published pages only.** Drafts (`Status = Draft`) are an
+   unfinished edit belonging to a session, not the space. The trash does not
+   travel either: a deleted page is not part of the space, and restoring it
+   before export is the way to say otherwise.
+2. **Full version history travels.** The manual's edit history is part of the
+   record, the sketch asked for it, and the cost is bounded. `ContentHtml`
+   never travels; it has been dead since 12.1.
+3. **Attachments travel as bytes**, and are re-keyed on import through
+   `IAttachmentStorage` with a freshly minted storage key. Their content type
+   is re-derived from the bytes (`ContentTypes.Resolve`) exactly as an upload
+   is, never trusted from the manifest, and each is subject to the same 25 MB
+   cap an upload has.
+4. **Labels travel by name.** They are instance-wide and lower-cased, so an
+   import finds-or-creates by name, which is what `AddToPage` already does.
+5. **Templates travel**, since they are per space and are content.
+6. **Comments travel**, with threads and tombstones (`DeletedAt` kept, so a
+   deleted parent does not orphan replies). The anchor payload travels as-is;
+   what actually ties an inline comment to text is the `commentId` on the
+   comment mark inside the document, and that is rewritten with the rest of
+   the content (below).
+7. **The space icon travels**: emoji and colour as values, an uploaded icon as
+   a file, re-keyed on import through the same media service.
+8. **`IsPublic`, `PublicComments`, `PublicSince` do not travel.** An imported
+   space is private, and publishing it is 5.5's two-step opt-in, which a zip
+   file must not be able to bypass. `Archived` does not travel either; an
+   imported space is live.
+9. **Permissions do not travel: neither `SpacePermissions` nor
+   `PageRestrictions`.** Their principals are ids on another instance.
+   Carrying names instead would invite matching by name, and matching by
+   name is how a stranger with the right display name ends up with access.
+   An imported space starts as open as a new one (open to members, closed to
+   the internet), and the importer restricts it afterwards. So that the
+   importer knows to, the manifest records *that* restrictions existed, as
+   counts, and the import's response says so in words.
+10. **Watches, webhooks, notifications, page views and collaboration drafts
+    do not travel.** The first four point outward or at people; the last is
+    a session, and carries a `meta.version` bound to the source instance.
+11. **Attribution goes to the importer.** Every `CreatedById`, `AuthorId` and
+    `UploadedById` on the target is the importing user. The original authors
+    are recorded by display name only in `authors.json`, and the import's
+    audit event carries the same record, so who wrote what is not lost; it is
+    just not asserted against the target's accounts. Display names only:
+    no email addresses go into a file that will be committed to a repository.
+    Matching identities across instances is an identity decision, and
+    attributing words to the wrong real person is worse than attributing
+    them to the importer.
+
+**Rewriting content on import.** One pure function, `PackRewriter`, takes a
+document and the id maps and returns the document as it must be on the
+target. It is a pure function so it can be tested against fixtures, the way
+8.6's diff is.
+
+- Page links `/spaces/<key>/pages/<id>[#anchor]` (12.2's regex) become the
+  target key and the new id when the page is in the pack. A link to a page
+  that is *not* in the pack is **left unchanged**: on a same-instance
+  re-import it may still be valid, and a link that 404s honestly beats one
+  silently destroyed. The site export's "#" rule is right for a static site
+  and wrong here.
+- Attachment links `/api/attachments/<id>/download` become the new ids.
+- Comment marks' `commentId` become the new comment ids.
+- Mentions keep their `label` and have `userId` set to null; task assignees
+  keep `assigneeName` and have `assigneeId` set to null. The mention node
+  already renders from the label when there is no user behind it, which is
+  what 12.1's fixture found and fixed.
+- `homepage` and `parent` are mapped through the page id map.
+- Every document then goes through `PageContent.TryNormalize`, which is the
+  one door every stored page passes through: it validates the JSON and, since
+  8.6, strips tracked-change marks. A pack cannot smuggle either.
+
+**Export.** `GET /api/spaces/{key}/export/pack`, requiring `PagesExport` and
+view rights on the space. It exports **everything the caller can see**: this
+is preservation, not publishing, so the audience is the exporter, not the
+anonymous reader 12.2 defaults to. Pages the caller cannot view are omitted,
+and the manifest's `omitted` says how many, without titles. It **streams**
+the zip to the response rather than buffering it: 12.2 caps a site at 300
+pages because each page is a browser capture, and a pack has no such cost,
+so it has no such cap. Audited as `space.exported`.
+
+**Import.** `POST /api/spaces/import`, multipart: the zip, a target `key`,
+and an optional `name`. Requires `SpacesCreate`, because that is what it
+does, and a full (not read-only) token if it comes through the API.
+
+- The key must not exist; 409 otherwise, and no merge in version 1. A pack
+  imported twice is two spaces under two keys.
+- **Atomic.** All rows in one transaction; attachment and icon bytes written
+  to storage before the commit and deleted again on rollback, best effort.
+  A failed import leaves no half-space, which is 12.1's lesson about page
+  creation applied to a thousand rows at once.
+- **Untrusted input, throughout.** The manifest's `format` is checked first.
+  Entry names are validated against the expected paths and refused on `..`,
+  a leading `/`, or anything unexpected (zip slip). The zip has an entry
+  count cap and a total uncompressed size cap (500 MB), and each attachment
+  the upload cap. Every page document goes through `TryNormalize`; every
+  attachment's type is re-derived from its bytes. The page tree is checked
+  for cycles and dangling parents (a dangling parent lifts the page to the
+  root, as 12.2 does). Positions are renormalised, and version numbers are
+  renormalised to 1..n in `createdAt` order. `source` in the manifest is
+  shown to the importer and used for nothing else.
+- Rate limited per user, like token minting (ten imports an hour is plenty
+  for anyone who is not a script).
+- `SearchText` is rebuilt on import, not carried. No `CollabDocuments` are
+  created; the first person to open an imported page seeds the shared
+  document from it, which is 8.6 step 3 doing its ordinary job.
+- Audited as `space.imported`, with counts, the source instance name and the
+  `authors.json` record.
+
+**Where it lives in the UI.** Space settings already has "Export as a site"
+for readers; it gains "Export as a pack" beside it, with one sentence on the
+difference (a site is for people, a pack is for Tesria). The spaces list
+gains "Import a pack" next to "New space", for anyone with `SpacesCreate`:
+choose the file, give it a key, done, and the result says what came in and
+whether the source had restrictions the importer should now set.
+
+**How 10.5 uses it.** The manual's pack is committed **unzipped** under
+`docs/manual/pack/`, so a page edit diffs as a page edit, and a two-line
+script zips it back for import. The canonical-output rule above is what
+makes that work; it is a format requirement, not a nicety.
+
+**Opus implements, in this order, each step shippable alone:**
+1. `WikiPack.cs`: the model, a canonical writer (model to zip) and a
+   validating reader (zip to model), as pure code, with tests: a round trip
+   is byte-identical; a newer `format` is refused; zip-slip names, an oversize
+   entry and a cyclic tree are refused; output is deterministic across runs.
+2. The export endpoint and its button: build the model from a space using
+   12.2's walk with the exporter's own permissions, stream, audit.
+3. `PackRewriter`, pure, with fixture tests for every rewrite above,
+   including a link to a page that is not in the pack and a mention of a
+   user who is not on the target.
+4. The import endpoint: transaction, storage, rewriting, audit, the 409, the
+   rate limit; and the spaces-list UI.
+5. A round trip through HTTP in the test suite: export a space with every
+   kind of thing in it, import it under a new key as a *different* user,
+   and compare trees, versions, attachment bytes, labels, comment threads
+   and templates; assert attribution is the importer and the space is
+   private with no permission rows.
+6. `architecture.md` and the CHANGELOG. The manual chapter is 10.5's.
+
+**Verify** with the FIXTURE space, which has every element: export it,
+import it as FIXTURE2, open each page and compare, including a page link
+between two pages in the pack, an attachment download, an inline comment
+thread, labels and the template. Then: the same pack a second time under
+the same key is refused; a manifest edited to `format: 2` is refused; a zip
+with a `../` entry is refused; import as a member who cannot see one of the
+pages and confirm the manifest's `omitted` count. Then re-export FIXTURE2
+and diff the unzipped trees: only ids and dates should differ.
+
+**Not decided here, deliberately.** Matching authors to target accounts by
+email (an identity decision; version 1 attributes to the importer).
+Carrying restrictions by principal *name* for an importer to confirm one by
+one (useful, and the same risk as matching by name, so it needs its own
+design). Importing into an existing space as an update (a merge; a different
+problem). Exporting an entire instance (Phase 9). Signing or encrypting packs.
 
 **What a space is made of today** (taken from the schema on 2026-09-21, as
 input for the design rather than as any part of it: the sketch above says
@@ -2878,6 +3076,7 @@ carry it too.
 11. **10.1** Owner role (shipped 2026-09-20) → **11.1** Instance rights and the Roles tab (shipped 2026-09-20) → **11.2** Custom roles (shipped 2026-09-20) → **11.3** Delete a space (shipped 2026-09-20) → **5.5** Anonymous access is opt-in twice (shipped 2026-09-20) → **10.4** Media harness (shipped 2026-09-20) → **10.2** Owner setup wizard (shipped 2026-09-20) → **10.3** Tour and tips (shipped 2026-09-20) (all specified 2026-09-20 as Fable; Opus implements). Phase 11 goes before the wizard because the wizard has a required step that reviews the matrix, and before 10.3 because the tour's screens should show the real Roles tab. 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
 12. **12.1** Capture-based export and the element audit (shipped 2026-09-20) → **12.2** Publish a space as a static site (shipped 2026-09-20). 12 before 8.5 because the site export builds the walk over a space that the wiki pack will reuse, and because the owner's documentation is waiting on it.
 13. **8.6** External edits as tracked changes (steps 1–5 shipped 2026-09-21; step 6 folded into 10.5).
+13a. **8.5** Wiki packs (designed 2026-09-21 as Fable; Opus implements next). Before 10.5, because the pack is what a rebuilt manual is committed as.
 14. **10.5** Rebuild the user manual — **after 8.5**, now that the owner has settled the wiki as its source of truth (2026-09-21). A manual whose only copy is inside the instance is how the last one was lost, so the pack that can export it is a prerequisite, not a preference.
 
 Phases 6 and 8.2 are floaters — small, no dependents — and can fill gaps.
@@ -2898,3 +3097,4 @@ findings don't get better by waiting.
 - Whether invites should be able to carry a role, so an invited person arrives as an administrator (10.1 leaves promotion to the owner afterwards).
 - MP4 alongside WebM for the clips (needs ffmpeg in an image; the poster is the fallback until someone asks).
 - Phase 11's three: invites naming a role, groups carrying instance rights (recommended no), and anonymous rights beyond export.
+- 8.5's four: matching pack authors to accounts by email, carrying restrictions by principal name for confirmation, importing into an existing space as a merge, and signed or encrypted packs.
