@@ -3,7 +3,7 @@ import { useBlocker, useNavigate, useParams, useSearchParams } from 'react-route
 import type { Editor as TiptapEditor } from '@tiptap/react'
 import { api, ApiError, type CollabToken, type PageTemplate } from '../api/client'
 import { Editor } from '../editor/Editor'
-import { CollaborativeEditor } from '../editor/CollaborativeEditor'
+import { CollaborativeEditor, type CollabHandle } from '../editor/CollaborativeEditor'
 import { Toolbar } from '../editor/Toolbar'
 import { useAuth } from '../auth/AuthContext'
 import { CollabStatus, type CollabConnection } from '../editor/CollabStatus'
@@ -54,6 +54,9 @@ export function PageEditor() {
   // inside the paper card), same as view mode — the Editor/CollaborativeEditor
   // hand their live TipTap instance up via this callback once created.
   const [editorInstance, setEditorInstance] = useState<TiptapEditor | null>(null)
+  /** Tracked changes from outside this session, waiting to be decided (dev-plan 8.6). */
+  const [pendingExternal, setPendingExternal] = useState(0)
+  const collabRef = useRef<CollabHandle | null>(null)
 
   // A brand-new page has no id until the user clicks "Create page" — but
   // attachments (and, later, other id-keyed features) need a real one right
@@ -158,16 +161,58 @@ export function PageEditor() {
   /** Publish (new page) or update (existing page). Returns the saved page's id, or throws. */
   async function save(): Promise<string> {
     if (!title.trim()) throw new Error('Give the page a title before publishing.')
+
+    // Publishing is a decision (dev-plan 8.6). Anything an assistant or the
+    // API changed while this draft was open is accepted here, as the last
+    // thing before the content leaves: its deletions really go and its
+    // insertions become ordinary text. Someone who wanted to decide first
+    // has the banner above the editor; this is what happens when they simply
+    // press Update. The content is read back from the editor rather than
+    // from `content`, because that state lags a transaction behind.
+    let body = content
+    if (editorInstance && pendingExternal > 0) {
+      editorInstance.commands.acceptExternalEdits()
+      body = JSON.stringify(editorInstance.getJSON())
+    }
+
     let saved
     if (pageId) {
-      saved = await api.pages.update(pageId, { title, contentJson: content, changeComment: changeComment || null })
+      saved = await api.pages.update(pageId, {
+        title,
+        contentJson: body,
+        changeComment: changeComment || null,
+        // What this draft was last brought up to date with. If the page has
+        // moved past it, the server refuses rather than letting this
+        // overwrite a change nobody here has seen.
+        baseVersion: collabRef.current?.version() ?? null,
+      })
     } else {
       const id = draftId ?? (await draftIdRef.current)
       if (!id) throw new Error('Still preparing this page — try again in a moment.')
-      saved = await api.pages.publish(id, { title, contentJson: content })
+      saved = await api.pages.publish(id, { title, contentJson: body })
     }
     reloadTree()
     return saved.id
+  }
+
+  /**
+   * A publish refused because the page moved on (dev-plan 8.6).
+   *
+   * The answer carries the page as it now stands, so the draft is reconciled
+   * against it and the difference appears as tracked changes, exactly as a
+   * live write would have. Returns whether it handled the error; the caller
+   * stays where it is either way, because the page is not saved.
+   */
+  function handleConflict(err: unknown): boolean {
+    if (!(err instanceof ApiError) || err.status !== 409) return false
+    const page = err.details as { contentJson?: unknown; currentVersionNumber?: unknown }
+    if (typeof page.contentJson !== 'string' || typeof page.currentVersionNumber !== 'number') return false
+    collabRef.current?.reconcileTo(page.contentJson, page.currentVersionNumber)
+    setError(
+      'This page changed while you were editing, so it was not published. '
+      + 'The difference is highlighted above: accept or reject it, then publish again.',
+    )
+    return true
   }
 
   async function onSubmit(e: FormEvent) {
@@ -179,6 +224,7 @@ export function PageEditor() {
       leavingRef.current = true
       navigate(`/spaces/${key}/pages/${savedId}`)
     } catch (err) {
+      if (handleConflict(err)) return
       setError(err instanceof ApiError || err instanceof Error ? err.message : 'Could not save the page.')
     } finally {
       setBusy(false)
@@ -194,6 +240,12 @@ export function PageEditor() {
       leavingRef.current = true
       blocker.proceed()
     } catch (err) {
+      if (handleConflict(err)) {
+        // Staying put is the point: the highlighted difference is on the
+        // page they were about to leave.
+        setLeaveError('This page changed while you were editing. Look at the highlighted difference before publishing.')
+        return
+      }
       setLeaveError(err instanceof ApiError || err instanceof Error ? err.message : 'Could not save the page.')
     } finally {
       setBusy(false)
@@ -282,6 +334,35 @@ export function PageEditor() {
       <div className="page-column">
       <SpaceBreadcrumb space={space} tree={tree} />
       {collab && pageId && collabStatus && <CollabStatus status={collabStatus} />}
+      {/* Changes that arrived from outside this session (dev-plan 8.6).
+          Above the editor rather than inside it, beside the connection
+          status, because it is about the document as a whole. Pressing
+          Update accepts these anyway; this is for deciding first. */}
+      {pendingExternal > 0 && editorInstance && (
+        <div className="external-banner" role="status">
+          <span>
+            {pendingExternal === 1
+              ? '1 change from outside this editor is highlighted below.'
+              : `${pendingExternal} changes from outside this editor are highlighted below.`}
+          </span>
+          <span className="external-banner__actions">
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              onClick={() => editorInstance.commands.rejectExternalEdits()}
+            >
+              Reject all
+            </button>
+            <button
+              type="button"
+              className="btn btn--primary btn--sm"
+              onClick={() => editorInstance.commands.acceptExternalEdits()}
+            >
+              Accept all
+            </button>
+          </span>
+        </div>
+      )}
       <form id="page-editor-form" className={fullWidth ? 'page-wrap page-wrap--full editor-form' : 'page-wrap editor-form'} onSubmit={onSubmit}>
       {error && <p className="alert alert--error">{error}</p>}
       {!isEdit && templates.length > 0 && (
@@ -328,9 +409,14 @@ export function PageEditor() {
             getUploadPageId={resolveUploadPageId}
             onUploadError={setError}
             onEditorReady={setEditorInstance}
+            onPendingExternalChange={setPendingExternal}
+            onCollabReady={(handle) => { collabRef.current = handle }}
             onStatusChange={setCollabStatus}
           />
         ) : (
+          /* No tracked-change props here: without a shared document there is
+             nowhere for an outside write to land, so this editor is always
+             looking at exactly what it loaded. */
           <Editor
             key={pageId ?? `new-${templateId || 'blank'}`}
             value={content}

@@ -18,7 +18,13 @@ public static class PageEndpoints
     private const string EmptyDoc = PageContent.EmptyDoc;
 
     public record CreatePageRequest(Guid SpaceId, Guid? ParentPageId, string Title, string? ContentJson);
-    public record UpdatePageRequest(string? Title, string ContentJson, string? ChangeComment);
+    /// <param name="BaseVersion">
+    /// Which published version this edit started from (dev-plan 8.6). The
+    /// editor sends it so a write that would overwrite an unseen change is
+    /// refused with 409 rather than silently winning. Optional: API and MCP
+    /// callers omit it and keep last-write-wins.
+    /// </param>
+    public record UpdatePageRequest(string? Title, string ContentJson, string? ChangeComment, int? BaseVersion = null);
     public record MovePageRequest(Guid? ParentPageId, int Index);
     public record CreateDraftRequest(Guid SpaceId, Guid? ParentPageId);
     public record PublishPageRequest(string Title, string ContentJson);
@@ -268,12 +274,17 @@ public static class PageEndpoints
     private static async Task<IResult> Update(
         Guid id, UpdatePageRequest req, IPageWriter writer, CancellationToken ct)
     {
-        var result = await writer.UpdateAsync(id, req.Title, req.ContentJson, req.ChangeComment, ct);
+        var result = await writer.UpdateAsync(id, req.Title, req.ContentJson, req.ChangeComment, ct, req.BaseVersion);
         return result.Status switch
         {
             PageWriteStatus.NotFound => Results.NotFound(),
             PageWriteStatus.Forbidden => Results.Forbid(),
             PageWriteStatus.Invalid => Results.ValidationProblem(Error(result.Field!, result.Message!)),
+            // 409 carries the page as it stands, not just a refusal: the
+            // editor reconciles against it and shows the difference, which it
+            // cannot do from a status code alone (dev-plan 8.6).
+            PageWriteStatus.Conflict => Results.Json(
+                ToDetail(result.Page!, result.Version!), statusCode: StatusCodes.Status409Conflict),
             _ => Results.Ok(ToDetail(result.Page!, result.Version!)),
         };
     }

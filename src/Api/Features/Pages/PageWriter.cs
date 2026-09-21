@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Tesria.Api.Features.Pages;
 
-public enum PageWriteStatus { Ok, NotFound, Forbidden, Invalid }
+public enum PageWriteStatus { Ok, NotFound, Forbidden, Invalid, Conflict }
 
 /// <summary>The outcome of a write, in terms both callers can translate: REST into a status code, MCP into a message.</summary>
 public sealed record PageWriteResult(
@@ -22,6 +22,15 @@ public sealed record PageWriteResult(
     public static PageWriteResult Forbidden(string message) => new(PageWriteStatus.Forbidden, Message: message);
     public static PageWriteResult Invalid(string field, string message) => new(PageWriteStatus.Invalid, Field: field, Message: message);
     public static PageWriteResult Ok(Page page, PageVersion version) => new(PageWriteStatus.Ok, page, version);
+
+    /// <summary>
+    /// The page has moved on since the caller last saw it (dev-plan 8.6).
+    /// Carries the current page and version so the caller can show the
+    /// difference rather than just being told no.
+    /// </summary>
+    public static PageWriteResult Conflict(Page page, PageVersion current) =>
+        new(PageWriteStatus.Conflict, page, current,
+            Message: "This page has changed since you started editing.");
 }
 
 /// <summary>
@@ -37,7 +46,16 @@ public sealed record PageWriteResult(
 public interface IPageWriter
 {
     Task<PageWriteResult> CreateAsync(Guid spaceId, Guid? parentPageId, string? title, string? contentJson, CancellationToken ct = default);
-    Task<PageWriteResult> UpdateAsync(Guid pageId, string? title, string? contentJson, string? changeComment, CancellationToken ct = default);
+    /// <param name="baseVersion">
+    /// The page version the caller believes it is editing (dev-plan 8.6).
+    /// When given and the page has moved past it, the write is refused as a
+    /// <see cref="PageWriteStatus.Conflict"/> instead of overwriting. Null
+    /// keeps the last-write-wins behaviour API and MCP callers have always
+    /// had: they do not hold a draft that could be stale.
+    /// </param>
+    Task<PageWriteResult> UpdateAsync(
+        Guid pageId, string? title, string? contentJson, string? changeComment,
+        CancellationToken ct = default, int? baseVersion = null);
 }
 
 public sealed class PageWriter(
@@ -125,7 +143,8 @@ public sealed class PageWriter(
     }
 
     public async Task<PageWriteResult> UpdateAsync(
-        Guid pageId, string? title, string? contentJson, string? changeComment, CancellationToken ct = default)
+        Guid pageId, string? title, string? contentJson, string? changeComment,
+        CancellationToken ct = default, int? baseVersion = null)
     {
         if (!await perms.CanViewPageAsync(pageId)) return PageWriteResult.NotFound();
         if (!await perms.CanEditPageAsync(pageId)) return PageWriteResult.Forbidden("You do not have edit rights on that page.");
@@ -158,7 +177,21 @@ public sealed class PageWriter(
         var highest = await db.PageVersions
             .Where(v => v.PageId == page.Id)
             .MaxAsync(v => (int?)v.VersionNumber, ct) ?? 0;
-        var nextNumber = Math.Max(page.CurrentVersion?.VersionNumber ?? 0, highest) + 1;
+        var currentNumber = Math.Max(page.CurrentVersion?.VersionNumber ?? 0, highest);
+
+        // Optimistic concurrency (dev-plan 8.6). The editor sends the version
+        // its draft was last reconciled to; if the page has moved past that,
+        // something wrote to it and this draft has not seen it, so publishing
+        // would overwrite. Refusing and handing back what the page says now
+        // lets the editor show the difference instead.
+        //
+        // Only when the caller asks for it. An API or MCP caller holds no
+        // draft that could be stale, so last-write-wins remains right for
+        // them, and requiring a version would break every existing script.
+        if (baseVersion is { } expected && expected != currentNumber && page.CurrentVersion is { } latest)
+            return PageWriteResult.Conflict(page, latest);
+
+        var nextNumber = currentNumber + 1;
         var userId = current.RequireId();
         var version = NewVersion(page, nextNumber, content, userId,
             string.IsNullOrWhiteSpace(changeComment) ? null : changeComment.Trim(), now);

@@ -14,6 +14,8 @@ import { StatusMenu } from './StatusMenu'
 import { DateMenu } from './DateMenu'
 import { LayoutMenu } from './LayoutMenu'
 import { getSharedExtensions } from './extensions'
+import { countPendingExternalEdits } from './externalEditMarks'
+import { reconcileYDoc } from './externalEdits'
 import { handleImageDrop, handleImagePaste } from './imageUpload'
 import { setSlashCommandStorage } from './slash/items'
 import { setDynamicBlockStorage } from './dynamicBlock'
@@ -43,6 +45,30 @@ type Props = {
   onEditorReady?: (editor: TiptapEditor | null) => void
   /** The session's connection state, for the page to show above the title (CollabStatus). */
   onStatusChange?: (status: CollabConnection) => void
+  /**
+   * How many tracked changes from outside this session are waiting to be
+   * accepted or rejected (dev-plan 8.6). Drives the banner above the editor.
+   */
+  onPendingExternalChange?: (count: number) => void
+  /**
+   * Hands out the two things only this component can reach into the shared
+   * document for: which page version the draft is reconciled to, and how to
+   * reconcile it against a page that has moved on (the 409 path). Null on
+   * unmount, like `onEditorReady`.
+   */
+  onCollabReady?: (handle: CollabHandle | null) => void
+}
+
+/** The shared document, for the page that owns this editor (dev-plan 8.6). */
+export type CollabHandle = {
+  /** The published version this draft has been brought up to date with, if known. */
+  version: () => number | null
+  /**
+   * Shows what a published page says inside this draft, as tracked changes.
+   * Used when a publish is refused because the page moved on: the editor
+   * reconciles against the answer instead of overwriting it.
+   */
+  reconcileTo: (publishedJson: string, version: number) => void
 }
 
 function parseDoc(value: string): object | undefined {
@@ -68,7 +94,7 @@ function colourFor(name: string): string {
  */
 export function CollaborativeEditor({
   pageId, token, initialContent, initialVersion, displayName, onChange, getUploadPageId,
-  onUploadError, onEditorReady, onStatusChange,
+  onUploadError, onEditorReady, onStatusChange, onPendingExternalChange, onCollabReady,
 }: Props) {
   const [status, setStatus] = useState<CollabConnection>('connecting')
   useEffect(() => { onStatusChange?.(status) }, [status, onStatusChange])
@@ -176,6 +202,39 @@ export function CollaborativeEditor({
       provider.off('synced', seed)
     }
   }, [editor, provider, ydoc, initialContent, initialVersion, onChange])
+
+  // The banner's count. Recomputed on every transaction, which covers both
+  // this person typing and an update arriving over the wire, since Yjs
+  // applies those as transactions too.
+  const pendingRef = useRef(onPendingExternalChange)
+  pendingRef.current = onPendingExternalChange
+  useEffect(() => {
+    if (!editor) return
+    const report = () => pendingRef.current?.(countPendingExternalEdits(editor.state.doc))
+    report()
+    editor.on('transaction', report)
+    return () => { editor.off('transaction', report) }
+  }, [editor])
+
+  const readyRef = useRef(onCollabReady)
+  readyRef.current = onCollabReady
+  useEffect(() => {
+    if (!editor) return
+    const handle: CollabHandle = {
+      version: () => {
+        const value = ydoc.getMap('meta').get('version')
+        return typeof value === 'number' ? value : null
+      },
+      reconcileTo: (publishedJson, version) => {
+        const parsed = parseDoc(publishedJson)
+        if (!parsed) return
+        reconcileYDoc(ydoc, editor.schema, parsed, { source: 'page', actor: null })
+        ydoc.getMap('meta').set('version', version)
+      },
+    }
+    readyRef.current?.(handle)
+    return () => readyRef.current?.(null)
+  }, [editor, ydoc])
 
   return (
     <div className="editor editor--editable">

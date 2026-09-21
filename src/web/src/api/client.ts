@@ -941,8 +941,21 @@ export const api = {
       title: string
       contentJson?: string
     }) => request<PageDetail>('POST', '/api/pages', input),
-    update: (id: string, input: { title?: string | null; contentJson: string; changeComment?: string | null }) =>
-      request<PageDetail>('PUT', `/api/pages/${id}`, input),
+    update: (
+      id: string,
+      input: {
+        title?: string | null
+        contentJson: string
+        changeComment?: string | null
+        /**
+         * Which published version this edit started from (dev-plan 8.6).
+         * Sending it turns a publish that would overwrite an unseen change
+         * into a 409 carrying the page as it stands. Omit it for
+         * last-write-wins.
+         */
+        baseVersion?: number | null
+      },
+    ) => request<PageDetail>('PUT', `/api/pages/${id}`, input),
     move: (id: string, input: { parentPageId?: string | null; index: number }) =>
       request<void>('PUT', `/api/pages/${id}/move`, input),
     setLayout: (id: string, input: { fullWidth: boolean }) =>
