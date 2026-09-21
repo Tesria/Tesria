@@ -136,11 +136,17 @@ async function renderPdf(url, token, title) {
       // A document somebody might cite needs to say which page they are on.
       displayHeaderFooter: true,
       headerTemplate: '<div></div>',
+      // The numbering is ONE flex item, deliberately. As four (the number,
+      // the word between them, the total, each its own item, plus the title)
+      // space-between spread them the whole width of the page and it read as
+      // "Every element    1    of    4" rather than a page number.
       footerTemplate:
         '<div style="width:100%;margin:0 16mm;font:9px -apple-system,Segoe UI,Roboto,sans-serif;'
-        + 'color:#6b778c;display:flex;justify-content:space-between">'
+        + 'color:#6b778c;display:flex;justify-content:space-between;align-items:baseline">'
         + `<span>${escapeHtml(title ?? '')}</span>`
+        + '<span style="white-space:nowrap">'
         + '<span class="pageNumber"></span> of <span class="totalPages"></span>'
+        + '</span>'
         + '</div>',
       timeout: RENDER_TIMEOUT_MS,
     })

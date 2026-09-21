@@ -1447,6 +1447,13 @@ The wordmark is the instance name, which is the half of instance branding
 that already exists; a replaceable mark is the other half, and
 `SiteChrome.Brand` is where it will arrive.
 
+Two things the export draws differently from the app, both on purpose. The
+space's generated tile is the theme accent rather than one of the twelve
+per-space colours, because those exist to tell spaces apart in a list and an
+export is one space; the app is untouched. And the PDF footer's page
+numbering is a single flex item, because as separate items `space-between`
+spread "1 of 4" across the whole page.
+
 ## Frontend (`src/web`)
 
 - React 19 + TypeScript, built with Vite.

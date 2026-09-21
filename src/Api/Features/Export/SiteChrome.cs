@@ -59,12 +59,17 @@ public static class SiteChrome
     /// A site-relative path to the space's uploaded icon, or null when it has
     /// none and the tile is drawn from its key.
     /// </param>
+    /// <summary>
+    /// No tile colour: the application's per-space colour is deliberately not
+    /// carried into an export, because an export is one space and the colour
+    /// only means something in a list of them. See <see cref="SpaceIcon"/>.
+    /// </summary>
     public record SpaceHead(
         string Key, string Name, bool IsPublic,
-        SpaceIconKind IconKind, string? IconValue, int? IconColor, string? IconPath);
+        SpaceIconKind IconKind, string? IconValue, string? IconPath);
 
     public static SpaceHead HeadOf(Space space, string? iconPath) =>
-        new(space.Key, space.Name, space.IsPublic, space.IconKind, space.IconValue, space.IconColor, iconPath);
+        new(space.Key, space.Name, space.IsPublic, space.IconKind, space.IconValue, iconPath);
 
     /* ---- the pieces ------------------------------------------------------ */
 
@@ -153,37 +158,21 @@ public static class SiteChrome
                  + $"style=\"width: {size}px; height: {size}px; border-radius: {radius}px; font-size: {(int)Math.Round(size * 0.62)}px\">"
                  + $"{SiteExport.Escape(space.IconValue)}</span>";
 
-        var color = TileColors[TileIndex(space)];
+        // In an export the generated tile is the theme's accent, where in the
+        // application it is one of twelve colours picked per space. The owner's
+        // reasoning (2026-09-20): those colours exist to tell spaces apart in a
+        // list, and an export is one space by definition, so the colour carries
+        // no information there and may as well look like the rest of the
+        // product. It follows the reader's accent and light/dark with it, which
+        // is why these are the tokens rather than the hex they resolve to;
+        // --on-primary is the letter's colour for the same reason a filled
+        // button uses it, being the one already tuned for contrast on --primary
+        // in each theme.
         var initial = char.ToUpperInvariant(space.Key.Length > 0 ? space.Key[0] : '?');
         return $"<svg class=\"space-icon\" width=\"{size}\" height=\"{size}\" viewBox=\"0 0 40 40\" role=\"img\" aria-hidden=\"true\" focusable=\"false\">"
-             + $"<rect width=\"40\" height=\"40\" rx=\"9\" fill=\"{color}\" />"
-             + "<text x=\"20\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" fill=\"#ffffff\" "
+             + "<rect width=\"40\" height=\"40\" rx=\"9\" fill=\"var(--primary)\" />"
+             + "<text x=\"20\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" fill=\"var(--on-primary)\" "
              + $"font-size=\"19\" font-weight=\"700\" font-family=\"inherit\">{SiteExport.Escape(initial.ToString())}</text></svg>";
-    }
-
-    /// <summary>The twelve tile colours, from <c>avatarIdentity.ts</c>.</summary>
-    private static readonly string[] TileColors =
-    [
-        "#0c66e4", "#0b6b82", "#1a6c45", "#5b47ba",
-        "#9a4d00", "#a53a7f", "#216e4e", "#ae2e24",
-        "#4c3f9e", "#0f6674", "#7a5c00", "#44505e",
-    ];
-
-    /// <summary>
-    /// The chosen tile colour, or a stable one from the key. The hash is
-    /// FNV-1a, matching <c>stableIndex</c> in <c>avatarIdentity.ts</c>, so a
-    /// space keeps the same colour in an export that it has in the app.
-    /// </summary>
-    private static int TileIndex(SpaceHead space)
-    {
-        if (space.IconColor is int chosen && chosen >= 0 && chosen < TileColors.Length) return chosen;
-        uint hash = 0x811c9dc5;
-        foreach (var c in space.Key)
-        {
-            hash ^= c;
-            hash *= 0x01000193;
-        }
-        return (int)(hash % (uint)TileColors.Length);
     }
 
     /* ---- icons ----------------------------------------------------------- */
