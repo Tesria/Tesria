@@ -61,13 +61,20 @@ one's on a decision it shouldn't be making — either way, silently.
   docker compose build app && docker compose up -d app
   ```
   `dotnet test` (SQLite in-memory, no Docker needed) covers backend logic;
-  `npm run build && npm run lint` covers the frontend. Both should stay green,
-  but neither substitutes for looking at the running app for UI changes.
-- **There are no frontend tests, so routing and layout changes get a live
-  walk — every time, in every state.** A regression shipped on 2026-09-09
-  because a route restructure was verified only along the paths it was
-  *for* (anonymous reading); the nested `ProtectedRoute` had silently broken
-  page editing, trash, permissions and webhooks for every signed-in user.
+  `npm run build && npm run lint && npm test` covers the frontend. All should
+  stay green, but none substitutes for looking at the running app for UI
+  changes.
+- **Frontend tests are for logic, never for rendering** (`npm test`, vitest,
+  added 2026-09-20 for the 8.6 block diff). What belongs there is pure
+  functions with edge cases a walk cannot cover honestly. Components,
+  routing and layout do *not* get unit tests here: a mounted-and-asserted
+  component passes while the real page is broken, which is exactly the
+  failure mode the rule below exists for.
+- **Routing and layout changes get a live walk — every time, in every
+  state.** A regression shipped on 2026-09-09 because a route restructure was
+  verified only along the paths it was *for* (anonymous reading); the nested
+  `ProtectedRoute` had silently broken page editing, trash, permissions and
+  webhooks for every signed-in user.
   After touching `main.tsx`, `Layout.tsx`, `ProtectedRoute`/`SessionGate`,
   or any `useOutletContext` consumer, open in the browser: as a **member** —
   `/spaces`, a space, a page, `/new` (create a page), `edit` (save it),

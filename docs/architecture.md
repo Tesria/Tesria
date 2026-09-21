@@ -1466,6 +1466,15 @@ spread "1 of 4" across the whole page.
 
 ## Frontend (`src/web`)
 
+- Unit tests (`npm test`, vitest) cover **logic, never rendering**. The block
+  diff in `editor/externalEdits.ts` is the first and the shape of the rest:
+  a pure function with edge cases a browser walk cannot cover honestly.
+  Components, routing and layout deliberately have none, because a
+  mounted-and-asserted component passes while the real page is broken, which
+  is the failure this repo has actually shipped. Those get a live walk (see
+  CLAUDE.md).
+
+
 - React 19 + TypeScript, built with Vite.
 - In development, Vite serves the SPA on `:5173` and proxies `/api` to the API
   on `:5291`, so the frontend always uses same-origin relative URLs — identical
