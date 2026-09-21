@@ -27,6 +27,12 @@ type Props = {
   token: string
   /** Stored page content, used to seed the shared document the first time. */
   initialContent: string
+  /**
+   * Which published version `initialContent` is (dev-plan 8.6). Recorded in
+   * the shared document so the sidecar can tell, on a later load, whether the
+   * page has moved on underneath the draft.
+   */
+  initialVersion?: number
   displayName: string
   onChange: (json: string) => void
   /** Resolves the page id image attachments should be uploaded against. */
@@ -61,7 +67,8 @@ function colourFor(name: string): string {
  * StarterKit's own history is disabled to avoid the two fighting.
  */
 export function CollaborativeEditor({
-  pageId, token, initialContent, displayName, onChange, getUploadPageId, onUploadError, onEditorReady, onStatusChange,
+  pageId, token, initialContent, initialVersion, displayName, onChange, getUploadPageId,
+  onUploadError, onEditorReady, onStatusChange,
 }: Props) {
   const [status, setStatus] = useState<CollabConnection>('connecting')
   useEffect(() => { onStatusChange?.(status) }, [status, onStatusChange])
@@ -148,6 +155,18 @@ export function CollaborativeEditor({
         const parsed = parseDoc(initialContent)
         if (parsed) editor.commands.setContent(parsed)
       }
+      // Which published version this draft is built on (dev-plan 8.6). The
+      // sidecar reads it on a later load to tell whether the page moved on
+      // while nobody had it open; without it, an API or MCP write would be
+      // invisible here and the next Update would write over it.
+      //
+      // Only ever set, never corrected: if the sidecar has already reconciled
+      // this document to a newer version, that number is the true one and
+      // this client's idea of "the version I loaded" is the stale one.
+      const meta = ydoc.getMap('meta')
+      if (typeof initialVersion === 'number' && typeof meta.get('version') !== 'number') {
+        meta.set('version', initialVersion)
+      }
       // Make sure the parent has the current content even without an edit.
       onChange(JSON.stringify(editor.getJSON()))
     }
@@ -156,7 +175,7 @@ export function CollaborativeEditor({
     return () => {
       provider.off('synced', seed)
     }
-  }, [editor, provider, ydoc, initialContent, onChange])
+  }, [editor, provider, ydoc, initialContent, initialVersion, onChange])
 
   return (
     <div className="editor editor--editable">

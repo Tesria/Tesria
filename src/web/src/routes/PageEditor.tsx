@@ -39,6 +39,11 @@ export function PageEditor() {
 
   const [title, setTitle] = useState('')
   const [content, setContent] = useState(EMPTY_DOC)
+  /**
+   * The published version `content` came from (dev-plan 8.6), handed to the
+   * collaborative editor so the shared document records what it is based on.
+   */
+  const [loadedVersion, setLoadedVersion] = useState<number | undefined>(undefined)
   const [changeComment, setChangeComment] = useState('')
   const [loading, setLoading] = useState(isEdit)
   const [busy, setBusy] = useState(false)
@@ -106,6 +111,7 @@ export function PageEditor() {
         if (cancelled) return
         setTitle(p.title)
         setContent(p.contentJson)
+        setLoadedVersion(p.currentVersionNumber)
         setFullWidth(p.fullWidth)
       })
       .catch((err: unknown) => !cancelled && setError(err instanceof Error ? err.message : 'Failed to load page.'))
@@ -316,6 +322,7 @@ export function PageEditor() {
             pageId={pageId}
             token={collab.token}
             initialContent={content}
+            initialVersion={loadedVersion}
             displayName={user?.displayName ?? 'Anonymous'}
             onChange={setContent}
             getUploadPageId={resolveUploadPageId}

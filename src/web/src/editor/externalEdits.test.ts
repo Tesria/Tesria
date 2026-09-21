@@ -7,6 +7,7 @@ import {
   blockKey, diffBlocks, hasInlineText, markBlock, needsReconcile, reconcileDocument,
   reconcileYDoc, stripExternalMarks,
 } from './externalEdits'
+import { ExternalInsert } from './externalEditMarks'
 
 /**
  * The block diff behind dev-plan 8.6.
@@ -258,7 +259,14 @@ describe('applying it to a Yjs document', () => {
   const schema = new Schema({
     nodes: {
       doc: { content: 'block+' },
-      paragraph: { group: 'block', content: 'inline*', toDOM: () => ['p', 0] },
+      // `textIndent` has a non-null default, exactly like the real schema's,
+      // which is what the regression test below turns on.
+      paragraph: {
+        group: 'block',
+        content: 'inline*',
+        attrs: { textAlign: { default: null }, textIndent: { default: 0 } },
+        toDOM: () => ['p', 0],
+      },
       image: { group: 'block', attrs: { src: {} }, toDOM: () => ['img'] },
       text: { group: 'inline' },
     },
@@ -342,6 +350,23 @@ describe('applying it to a Yjs document', () => {
     expect(textWith(read(b), 'externalDelete')).toEqual(['old'])
   })
 
+  it('does not mistake the schema\'s own default attributes for a change', () => {
+    // The bug this is here for: ProseMirror materialises every attribute a
+    // node declares, so a paragraph out of the CRDT carries `textIndent: 0`
+    // while the same paragraph as the API stored it carries no attrs at all.
+    // Compared directly, every block in every document reads as changed, on
+    // every reconcile. Found by running the sidecar, not by reading the code.
+    const ydoc = seed(doc(p('unchanged')))
+    const asTheApiStoredIt: JSONContent = {
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'unchanged' }] }],
+    }
+
+    expect(reconcileYDoc(ydoc, schema, asTheApiStoredIt, ORIGIN)).toBe(false)
+    expect(textWith(read(ydoc), 'externalInsert')).toEqual([])
+    expect(read(ydoc).content).toHaveLength(1)
+  })
+
   it('carries a block with no inline content through without marking it', () => {
     const image: JSONContent = { type: 'image', attrs: { src: '/x.png' } }
     const ydoc = seed(doc(p('a')))
@@ -351,5 +376,41 @@ describe('applying it to a Yjs document', () => {
     const result = read(ydoc)
     expect(result.content?.[1]?.type).toBe('image')
     expect(textWith(result, 'externalInsert')).toEqual([])
+  })
+})
+
+describe('the hover label', () => {
+  // Rendered through the real mark, since that is where the wording lives.
+  const titleOf = (attrs: Record<string, unknown>) => {
+    const rendered = ExternalInsert.config.renderHTML?.call(
+      { options: {}, name: 'externalInsert' } as never,
+      { HTMLAttributes: {}, mark: { attrs } } as never,
+    ) as [string, Record<string, string>, number]
+    return rendered[1].title
+  }
+
+  it('says who and how long ago, in words', () => {
+    const label = titleOf({ source: 'mcp', actor: 'Docs Bot', at: new Date(Date.now() - 125_000).toISOString() })
+
+    expect(label).toBe('Added by MCP · Docs Bot, 2 minutes ago')
+  })
+
+  it('uses the singular for one of anything', () => {
+    expect(titleOf({ source: 'api', at: new Date(Date.now() - 3_600_000).toISOString() }))
+      .toBe('Added by the API, 1 hour ago')
+  })
+
+  it('says "just now" rather than "0 seconds ago", or a time in the future', () => {
+    expect(titleOf({ source: 'page', at: new Date().toISOString() })).toContain('just now')
+    // A clock that disagrees is not worth a sentence about the future.
+    expect(titleOf({ source: 'page', at: new Date(Date.now() + 60_000).toISOString() })).toContain('just now')
+  })
+
+  it('falls back to whatever was stored rather than printing NaN', () => {
+    expect(titleOf({ source: 'mcp', at: 'not a date' })).toContain('not a date')
+  })
+
+  it('still reads when nobody is named', () => {
+    expect(titleOf({ source: 'mcp' })).toBe('Added by MCP')
   })
 })
