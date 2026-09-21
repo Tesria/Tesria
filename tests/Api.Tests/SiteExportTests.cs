@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using Tesria.Api.Domain;
 using Tesria.Api.Features.Export;
 using Xunit;
 
@@ -131,15 +132,117 @@ public class SiteExportTests
         Assert.Equal(html, rewritten);
     }
 
+    // --- The chrome around a page.
+
     [Fact]
-    public void The_navigation_marks_the_page_it_is_on()
+    public void The_page_tree_marks_the_page_it_is_on()
     {
         var placed = SiteExport.Place([Node("Guides", Node("Install"))]);
 
-        var nav = SiteExport.Nav(placed, "guides/install");
+        var tree = SiteChrome.Tree(placed, "guides/install");
 
-        Assert.Contains("aria-current=\"page\"", nav);
-        Assert.Contains("is-current", nav);
+        Assert.Contains("aria-current=\"page\"", tree);
+        Assert.Contains("tree__link is-active", tree);
+    }
+
+    [Fact]
+    public void The_page_tree_indents_by_depth_the_way_the_application_does()
+    {
+        // The app sets this inline per row (8px plus 14px a level), so an
+        // export has to as well: the stylesheet has no depth rules to lean on.
+        var placed = SiteExport.Place([Node("Guides", Node("Install"))]);
+
+        var tree = SiteChrome.Tree(placed, "");
+
+        Assert.Contains("padding-left: 8px", tree);
+        Assert.Contains("padding-left: 22px", tree);
+    }
+
+    [Fact]
+    public void The_sidebar_carries_the_space_name_key_and_a_pages_heading()
+    {
+        var head = new SiteChrome.SpaceHead("DOCS", "Documentation", true, SpaceIconKind.None, null, null, null);
+
+        var sidebar = SiteChrome.Sidebar(head, SiteExport.Place([Node("Install")]), "install");
+
+        Assert.Contains("Documentation", sidebar);
+        Assert.Contains("DOCS", sidebar);
+        Assert.Contains("Pages", sidebar);
+        // The app's own classes, which is what makes the exported stylesheet
+        // lay this out with no rules written for the export.
+        Assert.Contains("class=\"sidebar\"", sidebar);
+        Assert.Contains("tree-section__heading", sidebar);
+        // A public space says so, exactly as the app's sidebar does.
+        Assert.Contains("badge--public", sidebar);
+    }
+
+    [Fact]
+    public void A_space_with_no_icon_gets_the_same_letter_tile_the_app_draws()
+    {
+        // The tile colour comes from an FNV-1a hash of the key, mirroring
+        // avatarIdentity.ts. If the two ever disagree a space changes colour
+        // on its way out of the app, which is exactly the kind of small
+        // infidelity this phase exists to remove.
+        var head = new SiteChrome.SpaceHead("DOCS", "Documentation", false, SpaceIconKind.None, null, null, null);
+
+        var sidebar = SiteChrome.Sidebar(head, [], "");
+
+        Assert.Contains(">D</text>", sidebar);
+        Assert.Contains("#216e4e", sidebar); // stableIndex("DOCS", 12) == 6
+    }
+
+    [Fact]
+    public void A_chosen_tile_colour_wins_over_the_derived_one()
+    {
+        var head = new SiteChrome.SpaceHead("DOCS", "Documentation", false, SpaceIconKind.None, null, 5, null);
+
+        Assert.Contains("#a53a7f", SiteChrome.Sidebar(head, [], ""));
+    }
+
+    [Fact]
+    public void An_uploaded_space_icon_is_referenced_relative_to_the_page()
+    {
+        // Every asset in a site is a real file, and "assets/x" from two
+        // directories down is not the same file.
+        var head = new SiteChrome.SpaceHead(
+            "DOCS", "Documentation", false, SpaceIconKind.Image, "hash", null, "assets/space-icon.webp");
+
+        var deep = SiteChrome.Sidebar(head, [], "guides/install");
+
+        Assert.Contains("../../assets/space-icon.webp", deep);
+        Assert.DoesNotContain("/api/media/", deep);
+    }
+
+    [Fact]
+    public void The_top_bar_carries_the_instance_name_and_the_appearance_menu()
+    {
+        var bar = SiteChrome.Topbar(new SiteChrome.Brand("Acme Wiki"), homeHref: "../");
+
+        Assert.Contains("Acme Wiki", bar);
+        Assert.Contains("class=\"topbar\"", bar);
+        // The full menu, not a row of buttons: three modes and six accents.
+        foreach (var mode in new[] { "system", "light", "dark" })
+            Assert.Contains($"data-theme-mode=\"{mode}\"", bar);
+        foreach (var accent in new[] { "blue", "teal", "green", "purple", "orange", "magenta" })
+            Assert.Contains($"data-theme-accent=\"{accent}\"", bar);
+    }
+
+    [Fact]
+    public void The_brand_is_not_a_link_when_there_is_nowhere_to_go()
+    {
+        // A single-file export has no index to return to.
+        var bar = SiteChrome.Topbar(new SiteChrome.Brand("Tesria"), homeHref: null);
+
+        Assert.Contains("<span class=\"brand\">", bar);
+        Assert.DoesNotContain("<a class=\"brand\"", bar);
+    }
+
+    [Fact]
+    public void The_site_root_from_a_nested_page_is_not_a_malformed_path()
+    {
+        Assert.Equal("./", SiteExport.Root(""));
+        Assert.Equal("../", SiteExport.Root("install"));
+        Assert.Equal("../../", SiteExport.Root("guides/install"));
     }
 
     // --- Who the site is for.

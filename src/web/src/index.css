@@ -2451,30 +2451,47 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
      the result is unreadable. The HTML export keeps them clickable instead. */
 }
 
-/* An exported static site (dev-plan 12.2). These rules ship inside the
-   exported stylesheet, so they have to stand on their own: the site has no
-   application around them. */
-.export--site { display: grid; grid-template-columns: 16rem 1fr; gap: 2rem; max-width: 76rem; margin: 0 auto; }
-.site-nav { font-size: 0.9rem; }
-.site-nav ul { list-style: none; margin: 0; padding: 0 0 0 0.75rem; display: grid; gap: 0.15rem; }
-.site-nav > ul { padding-left: 0; }
-.site-nav a { display: block; padding: 0.15rem 0.35rem; border-radius: 4px; color: var(--text); text-decoration: none; }
-.site-nav a:hover { background: var(--bg-alt); }
-.site-nav a.is-current { background: var(--primary-soft, var(--bg-alt)); font-weight: 600; }
+/* Exported HTML (dev-plan 12.2). These rules ship inside the exported
+   stylesheet, so they have to stand on their own: an export has no
+   application around it, only the markup SiteChrome.cs writes.
+
+   The chrome itself needs no rules here. It is the app's own .topbar,
+   .space-layout, .sidebar and .tree markup, so everything above already
+   styles it, and restyling the app restyles an export with it. What is left
+   is the handful of differences an export actually has. */
+
+/* Inside the app .export is the whole viewport. In an export it is the
+   content column under the 52px bar, and .space-layout owns the height. */
+.export--site { min-height: 0; padding: 1.5rem 1rem 0; }
+/* A single-file export has no sidebar and so no .space-layout to give it a
+   height; it keeps filling the window under the bar. */
+.export--file { min-height: calc(100vh - 52px); padding: 1.5rem 1rem 0; }
 .site-lede { color: var(--muted); }
-.site-foot { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.85rem; }
-.site-theme { position: fixed; top: 0.75rem; right: 0.75rem; display: flex; gap: 0.25rem; z-index: 5; }
-.site-theme button {
-  font: inherit; font-size: 0.75rem; padding: 0.2rem 0.5rem; cursor: pointer;
-  border: 1px solid var(--border); border-radius: 5px; background: var(--surface); color: var(--muted);
+/* Sits below .export in the content column, so it carries the same 1rem
+   side padding to line up with the page above it. */
+.site-foot {
+  margin-top: 3rem; padding: 1rem 1rem 2rem;
+  border-top: 1px solid var(--border); color: var(--muted); font-size: 0.85rem;
 }
-.site-theme button:hover { color: var(--text); }
 /* A link to a page that is not in the export: still readable, plainly not a
    link any more. */
 .export--site a[href="#"] { color: var(--muted); text-decoration: none; cursor: default; }
 
-@media (max-width: 860px) { /* keep in sync with --bp-tablet */
-  .export--site { grid-template-columns: 1fr; }
-  .site-theme { position: static; justify-content: flex-end; margin-bottom: 0.5rem; }
+/* On a phone the application hides .sidebar, because .space-actionbar and
+   .space-home-tree do its two jobs instead. An export has neither, so hiding
+   it there would leave a site with no navigation at all. It stacks above the
+   page instead: static rather than sticky (nothing to stick within once it is
+   a row), and capped so a big space does not push the page off the screen. */
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .space-layout--export .sidebar {
+    display: flex; position: static; height: auto; max-height: 45vh;
+    border-right: 0; border-bottom: 1px solid var(--border);
+  }
 }
-@media print { .site-nav, .site-theme, .site-foot { display: none !important; } }
+
+@media print {
+  /* Paper has no navigation and no chrome, whatever the file carries. */
+  .topbar, .sidebar, .site-foot { display: none !important; }
+  .space-layout { display: block; }
+  .export--site, .export--file { padding: 0; }
+}

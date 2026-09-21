@@ -129,26 +129,14 @@ public static partial class SiteExport
     }
 
     /// <summary>
-    /// The navigation every page carries: the whole tree, with the current
-    /// page marked. A static site has no way to fetch a tree, so each page
-    /// gets its own copy; it is a few kilobytes and it compresses away.
+    /// The site root as seen from a page, for the brand link in the top bar.
+    /// Not <see cref="Relative"/> with an empty target: that appends a slash
+    /// to a prefix which already ends in one.
     /// </summary>
-    public static string Nav(IReadOnlyList<Placed> pages, string currentPath)
-    {
-        var sb = new StringBuilder();
-        sb.Append("<nav class=\"site-nav\"><ul>");
-        var depth = 0;
-        foreach (var page in pages)
-        {
-            while (depth < page.Depth) { sb.Append("<ul>"); depth++; }
-            while (depth > page.Depth) { sb.Append("</ul>"); depth--; }
-            var current = page.Path == currentPath ? " class=\"is-current\" aria-current=\"page\"" : "";
-            sb.Append($"<li><a{current} href=\"{Relative(currentPath, page.Path)}\">{Escape(page.Title)}</a></li>");
-        }
-        while (depth > 0) { sb.Append("</ul>"); depth--; }
-        sb.Append("</ul></nav>");
-        return sb.ToString();
-    }
+    public static string Root(string fromPath) =>
+        fromPath.Length == 0
+            ? "./"
+            : string.Concat(Enumerable.Repeat("../", fromPath.Split('/').Length));
 
     public static string Escape(string value) =>
         value.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;");
@@ -157,31 +145,43 @@ public static partial class SiteExport
     /// The site's front page: what the space is, and the whole tree. Not a
     /// page of the wiki, so it is built here rather than captured.
     /// </summary>
-    public static string Index(Space space, IReadOnlyList<Placed> pages, string css, string themeScript, string footer)
+    /// <summary>
+    /// The site's front page: the space, its description, and its pages. It
+    /// is the only page of a site that is not a capture, because there is no
+    /// page in the wiki for it to be a capture of.
+    /// </summary>
+    public static string Index(
+        Space space, IReadOnlyList<Placed> pages, string css,
+        SiteChrome.Brand brand, SiteChrome.SpaceHead head, string footer)
     {
         var body = new StringBuilder();
         body.Append($"<h1>{Escape(space.Name)}</h1>");
         if (!string.IsNullOrWhiteSpace(space.Description))
             body.Append($"<p class=\"site-lede\">{Escape(space.Description)}</p>");
-        body.Append(Nav(pages, ""));
-        return Shell(space.Name, body.ToString(), css, themeScript, footer, "");
+        return Shell(space.Name, body.ToString(), css, brand, head, pages, footer, "");
     }
 
-    /// <summary>What a reader gets for an address that is not in the site.</summary>
-    public static string NotFound(Space space, string css, string themeScript, string footer) =>
-        Shell($"Not found · {space.Name}",
-            "<h1>Not found</h1><p class=\"site-lede\">That page is not part of this site.</p>"
-            + "<p><a href=\"/\">Back to the start</a></p>",
-            css, themeScript, footer, "");
+    public static string NotFound(
+        Space space, string css, SiteChrome.Brand brand, SiteChrome.SpaceHead head,
+        IReadOnlyList<Placed> pages, string footer) =>
+        Shell($"Not found \u00b7 {space.Name}",
+            "<h1>Not found</h1><p class=\"site-lede\">That page is not part of this site.</p>",
+            // No current page: nothing in the tree is marked, which is honest
+            // for a page that is not in the site.
+            css, brand, head, pages, footer, "", homeHref: "/");
 
     /// <summary>
     /// The page frame shared by the index and the 404. A captured page brings
     /// its own document, so this is only for the pages the export writes.
+    /// These two are also the reason the chrome is built in
+    /// <see cref="SiteChrome"/> rather than rendered in the SPA: they need
+    /// exactly the same chrome and neither of them is a capture.
     /// </summary>
     private static string Shell(
-        string title, string body, string css, string themeScript, string footer, string currentPath)
+        string title, string body, string css, SiteChrome.Brand brand, SiteChrome.SpaceHead head,
+        IReadOnlyList<Placed> pages, string footer, string currentPath, string? homeHref = null)
     {
-        var root = Relative(currentPath, "assets/site.css");
+        var stylesheet = Relative(currentPath, "assets/site.css");
         return $"""
         <!doctype html>
         <html lang="en">
@@ -189,14 +189,21 @@ public static partial class SiteExport
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{Escape(title)}</title>
-        <link rel="stylesheet" href="{root}" />
-        {themeScript}
+        <link rel="stylesheet" href="{stylesheet}" />
+        {SiteChrome.ThemeScript()}
         </head>
         <body>
+        {SiteChrome.Topbar(brand, homeHref)}
+        <div class="space-layout space-layout--export">
+        {SiteChrome.Sidebar(head, pages, currentPath)}
+        <section class="space-content">
         <div class="export export--site"><article class="paper paper--export">
         {body}
+        </article>
         {footer}
-        </article></div>
+        </div>
+        </section>
+        </div>
         </body>
         </html>
         """;

@@ -5,6 +5,41 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### An exported page looks like the product it came from (2026-09-20)
+
+Reported by the owner the same day the capture work shipped: the HTML export
+was the page and nothing else, which is faithful but does not look like
+Tesria. It now carries the application's own chrome.
+
+**The top bar**, on both the single-file HTML export and a published site:
+the mark and the instance name on the left, the appearance menu on the right.
+Not a row of three buttons, the real menu: system, light and dark with the
+system row naming what the operating system currently resolves to, and the
+six accent swatches. A single file's brand is not a link, because there is
+nowhere in one file to go.
+
+**The sidebar**, on a published site: the space's icon, its key, its public
+badge and its name, then the page tree under the PAGES heading, indented by
+depth with the page you are on marked. The site's index and its 404 carry it
+too, so a reader who lands on a broken link can still navigate.
+
+The markup is the application's own class names against the application's own
+compiled stylesheet, so restyling the app restyles every export with it. One
+rule an export needs for itself: the app hides the sidebar on a phone because
+its action bar covers the same jobs, and an export has no action bar, so the
+sidebar stacks above the page there instead of disappearing. That would have
+shipped a site with no navigation at all on a phone, and only opening one at
+375px showed it.
+
+**PDFs are unchanged.** A PDF is paper: no bar, no sidebar, no theme, still
+forced light. The render route now distinguishes the two, so an HTML export
+keeps the reader's theme (and can change it) while a PDF stays print.
+
+The wordmark is the instance name, which is half of the instance branding the
+owner wants: an administrator already sets it and it already travels. The
+replaceable mark is the other half; `SiteChrome.Brand` is the seam it will
+arrive through, and `docs/roadmap.md` records what is left to build.
+
 ### Exports that look like the page (2026-09-20)
 
 Reported by the owner: exports flatten elements and look nothing like the

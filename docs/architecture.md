@@ -1417,9 +1417,35 @@ is *not* in the export turned into plain text rather than a guaranteed 404.
 The default audience is **anonymous**, rendered as a reader with no account
 through `IPermissionService.AsAnonymous()`, which is the leak-proof choice
 for a documentation site: it cannot contain a private page by accident,
-whatever the exporter can see. The only JavaScript in the output is the app's
-own theme script and a toggle, so light, dark, system and the accent colours
-survive with the reader's choice in their own browser.
+whatever the exporter can see.
+
+**The chrome around an exported page** (`Features/Export/SiteChrome.cs`) is
+the one thing in Phase 12 that is *built* rather than captured, and the
+exception is deliberate. The capture route has no chrome by design, so there
+is nothing there to photograph; and the two pages a site needs that are not
+captures at all, its index and its 404, need exactly the same chrome. One
+builder covering all three beats a React version plus a C# version of the
+same bar. It is also the half of an export that is not content: which pages
+are in the site, what they are called, where they live and which one you are
+on are all the exporter's own answers.
+
+What stops it drifting is that it emits the *application's* class names
+(`.topbar`, `.brand`, `.space-layout`, `.sidebar`, `.tree`, `.theme-menu`)
+and ships the application's compiled stylesheet, so restyling the app
+restyles every export with nothing to keep in step. Only the markup's shape
+and a few icon paths are duplicated, and each says where it was copied from.
+One rule an export needs for itself: the app hides `.sidebar` under
+`--bp-mobile` because `.space-actionbar` covers its jobs, and an export has
+no actionbar, so `.space-layout--export` brings it back stacked above the
+page. A PDF gets none of this: it is paper.
+
+The only JavaScript in the output is the theme script, which applies the
+stored theme and accent before first paint and then drives the appearance
+menu (three modes, six accents) through `data-theme-*` hooks, because the
+React component's own behaviour cannot survive a capture that strips scripts.
+The wordmark is the instance name, which is the half of instance branding
+that already exists; a replaceable mark is the other half, and
+`SiteChrome.Brand` is where it will arrive.
 
 ## Frontend (`src/web`)
 
