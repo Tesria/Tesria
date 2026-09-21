@@ -1414,6 +1414,9 @@ chosen audience may see, written into a zip in Cloudflare Pages shape: one
 directory per page mirroring the tree, `assets/site.css` verbatim, real asset
 files, internal links rewritten to relative paths, and a link to a page that
 is *not* in the export turned into plain text rather than a guaranteed 404.
+Those links name `index.html` rather than ending at the directory, so an
+export also works opened straight off the filesystem: a server would have
+served the index file, and `file://` has nothing that does.
 The default audience is **anonymous**, rendered as a reader with no account
 through `IPermissionService.AsAnonymous()`, which is the leak-proof choice
 for a documentation site: it cannot contain a private page by accident,

@@ -81,7 +81,9 @@ public class SiteExportTests
 
         var rewritten = SiteExport.RewriteLinks(html, "reference/api", paths, new Dictionary<Guid, string>());
 
-        Assert.Contains("../../guides/install/", rewritten);
+        // Names index.html rather than ending at the directory, so the link
+        // works from the filesystem as well as from a server.
+        Assert.Contains("../../guides/install/index.html", rewritten);
         Assert.DoesNotContain("/spaces/DOCS/pages/", rewritten);
     }
 
@@ -94,7 +96,7 @@ public class SiteExportTests
 
         var rewritten = SiteExport.RewriteLinks(html, "", paths, new Dictionary<Guid, string>());
 
-        Assert.Contains("./guides/install/#requirements", rewritten);
+        Assert.Contains("./guides/install/index.html#requirements", rewritten);
     }
 
     [Fact]
@@ -120,6 +122,34 @@ public class SiteExportTests
 
         Assert.Contains($"../../assets/{file:N}-diagram.png", rewritten);
         Assert.DoesNotContain("/api/attachments/", rewritten);
+    }
+
+    [Fact]
+    public void No_link_in_a_site_ends_at_a_directory()
+    {
+        // Reported by the owner, 2026-09-20: unzipped and opened from the
+        // filesystem, clicking a sidebar link showed Chrome's folder listing
+        // instead of the page. A server serves a directory's index file;
+        // file:// has nothing to do that, so every link names the file.
+        var target = Guid.NewGuid();
+        var paths = new Dictionary<Guid, string> { [target] = "guides/install" };
+        var placed = SiteExport.Place([Node("Guides", Node("Install"))]);
+
+        var body = SiteExport.RewriteLinks(
+            $"""<a href="/spaces/DOCS/pages/{target}">Install</a>""",
+            "reference/api", paths, new Dictionary<Guid, string>());
+        var tree = SiteChrome.Tree(placed, "guides");
+        var brand = SiteChrome.Topbar(new SiteChrome.Brand("Tesria"), SiteExport.Root("guides/install"));
+
+        foreach (var html in new[] { body, tree, brand })
+        {
+            var hrefs = System.Text.RegularExpressions.Regex
+                .Matches(html, "href=\"(?<url>[^\"]*)\"")
+                .Select(m => m.Groups["url"].Value)
+                .ToList();
+            Assert.NotEmpty(hrefs);
+            Assert.All(hrefs, href => Assert.EndsWith("index.html", href));
+        }
     }
 
     [Fact]
@@ -250,11 +280,11 @@ public class SiteExportTests
     }
 
     [Fact]
-    public void The_site_root_from_a_nested_page_is_not_a_malformed_path()
+    public void The_site_root_from_a_nested_page_names_the_front_page()
     {
-        Assert.Equal("./", SiteExport.Root(""));
-        Assert.Equal("../", SiteExport.Root("install"));
-        Assert.Equal("../../", SiteExport.Root("guides/install"));
+        Assert.Equal("./index.html", SiteExport.Root(""));
+        Assert.Equal("../index.html", SiteExport.Root("install"));
+        Assert.Equal("../../index.html", SiteExport.Root("guides/install"));
     }
 
     // --- Who the site is for.

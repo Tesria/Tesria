@@ -5,6 +5,21 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### An exported site works from the filesystem (2026-09-20)
+
+Reported by the owner: unzip a site export, open it, click a link in the
+sidebar, and Chrome shows a listing of the folder instead of the page.
+
+Every link pointed at a directory (`../frontend-architecture/`). A web server
+answers that with the directory's index file; nothing does that for
+`file://`, so the browser listed the folder. Links name `index.html` now, in
+the sidebar, in the page body and on the brand, which works in both places
+and costs a hosted site nothing. The 404's brand link stopped pointing at
+`/`, which on a filesystem is the root of the disk.
+
+So "unzip it and open index.html" is now a real way to read an export, and
+the export panel says so.
+
 ### The width toggle comes back in an HTML export (2026-09-20)
 
 The reading view lets you switch a page between its normal column and full

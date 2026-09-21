@@ -118,25 +118,35 @@ public static partial class SiteExport
 
     /// <summary>
     /// A path from one page's directory to somewhere else in the site. Every
-    /// page is served as <c>&lt;path&gt;/index.html</c>, so a page at depth
+    /// page is written as <c>&lt;path&gt;/index.html</c>, so a page at depth
     /// two is two levels from the root.
+    ///
+    /// <para><b>A page link names <c>index.html</c> rather than ending at the
+    /// directory.</b> A web server serves a directory's index file for you;
+    /// nothing does that for <c>file://</c>, where the browser shows a listing
+    /// of the folder instead, which is what somebody who unzips an export and
+    /// opens it gets. Naming the file works in both places, and costs a
+    /// served site nothing.</para>
     /// </summary>
     public static string Relative(string fromPath, string toPath)
     {
         var up = fromPath.Length == 0 ? 0 : fromPath.Split('/').Length;
         var prefix = up == 0 ? "./" : string.Concat(Enumerable.Repeat("../", up));
-        return prefix + toPath + (toPath.StartsWith("assets/", StringComparison.Ordinal) ? "" : "/");
+        // assets/… is already a file; a page path is a directory holding one.
+        var suffix = toPath.StartsWith("assets/", StringComparison.Ordinal) ? "" : "/index.html";
+        return prefix + toPath + suffix;
     }
 
     /// <summary>
-    /// The site root as seen from a page, for the brand link in the top bar.
-    /// Not <see cref="Relative"/> with an empty target: that appends a slash
-    /// to a prefix which already ends in one.
+    /// The site's front page as seen from a page, for the brand link in the
+    /// top bar. Not <see cref="Relative"/> with an empty target: that would
+    /// put the separator in twice. Names the file for the same reason
+    /// <see cref="Relative"/> does.
     /// </summary>
     public static string Root(string fromPath) =>
-        fromPath.Length == 0
+        (fromPath.Length == 0
             ? "./"
-            : string.Concat(Enumerable.Repeat("../", fromPath.Split('/').Length));
+            : string.Concat(Enumerable.Repeat("../", fromPath.Split('/').Length))) + "index.html";
 
     public static string Escape(string value) =>
         value.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;");
@@ -168,7 +178,13 @@ public static partial class SiteExport
             "<h1>Not found</h1><p class=\"site-lede\">That page is not part of this site.</p>",
             // No current page: nothing in the tree is marked, which is honest
             // for a page that is not in the site.
-            css, brand, head, pages, footer, "", homeHref: "/");
+            //
+            // Relative links, like every other page, so 404.html also works
+            // opened straight off the filesystem. The one case they are wrong
+            // in is a host that serves this file for a missing path *below*
+            // the root, where the browser resolves them against that path;
+            // root-absolute links would fix that and break file:// instead.
+            css, brand, head, pages, footer, "", homeHref: "./index.html");
 
     /// <summary>
     /// The page frame shared by the index and the 404. A captured page brings

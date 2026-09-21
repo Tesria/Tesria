@@ -39,7 +39,8 @@ export function SiteExportSection({ spaceKey }: { spaceKey: string }) {
       <p className="muted small">
         Every page as a static HTML file, in a zip: no server, no editor, nothing
         to sign in to. Unpack it onto Cloudflare Pages, GitHub Pages or any static
-        host and it reads like the wiki does, light and dark included.
+        host and it reads like the wiki does, light and dark included. It also
+        works straight from your computer: unzip it and open index.html.
       </p>
       {error && <p className="alert alert--error">{error}</p>}
 
