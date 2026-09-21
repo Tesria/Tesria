@@ -187,22 +187,24 @@ does unprompted) — safe to remove or ignore:
   real content.
 - A **"Trash Test Page"** sitting in the real **"App Design"** space's
   Trash, from an earlier trash/restore verification pass.
-- An **"API Docs Bot"** account (`api-docs-bot@tesria.local`) and the
-  **"API"** space it authored, created 2026-09-08 to document the REST API
-  end-to-end and exercise the editor's full feature set against real content
-  (23 pages, 8 labels, panels, coloured tables, a saved template). The space
-  is real documentation worth keeping; the bot account is a fixture and can
-  be deleted once its pages are reassigned or the space is re-owned.
-- A **"Manual Bot"** account (`manual-bot@tesria.local`) and the **"Tesria
-  User Manual"** (`MANUAL`) space it authored, created 2026-09-11: 47 pages
-  and 86 screenshots documenting the product for end users. Same arrangement
-  as the API bot — the space is real documentation, the account is a fixture.
-  Its password is **not** in the repo; regenerate it (or reset from the admin
-  area) if the screenshot harness needs to run again.
-  It was **promoted to instance administrator** on 2026-09-11, at the owner's
-  explicit request, so that the manual could document the admin area. That is
-  a standing admin account and therefore a standing risk: demote it from
-  Administration → Users once the documentation is settled.
+- ~~An **"API Docs Bot"** account and the **"API"** space it authored,
+  created 2026-09-08 (23 pages, 8 labels, panels, coloured tables, a saved
+  template).~~ **Also gone** (noticed 2026-09-21), the same way the manual
+  was. The API's own reference still exists where it always did, as OpenAPI
+  plus `docs/` (8.3), which is the reason this one is a smaller loss.
+- ~~A **"Manual Bot"** account and the **"Tesria User Manual"** (`MANUAL`)
+  space it authored, created 2026-09-11: 47 pages and 86 screenshots.~~
+  **Both are gone** (noticed 2026-09-21): this database has four spaces and
+  none is the manual, the API space and its bot went the same way, and the
+  oldest retained logical backup (2026-09-17) already lacks them. Nothing in
+  the repository held a copy, because the manual was a wiki rather than a
+  file. Rebuilding it is **dev-plan 10.5**. The standing-admin risk the old
+  note warned about is gone with the account.
+
+  The lesson is worth more than the pages were: **content that lives only in
+  the instance is content one reset deletes.** Anything written here that
+  must survive needs a committed export (8.5's wiki packs) or to be written
+  in the repository instead.
 
 If a new session picks up UI work in the "App Design" space (the
 dogfooding space documenting Tesria's own architecture), note it's real,
