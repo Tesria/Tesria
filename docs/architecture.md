@@ -1464,6 +1464,44 @@ export is one space; the app is untouched. And the PDF footer's page
 numbering is a single flex item, because as separate items `space-between`
 spread "1 of 4" across the whole page.
 
+## Writes from outside the editor (dev-plan 8.6)
+
+A page has two stores: the published version in Postgres and the Yjs document
+in `CollabDocuments` that the editor actually edits. Anything that writes the
+first without touching the second (the API, `PageWriter`, the MCP
+`update_page` tool) used to be invisible to an open or saved draft, and the
+next Update wrote that draft back over it.
+
+Such a write is now treated the way a second person's typing is: it lands in
+the document, visibly, and the human decides. `editor/externalEditMarks.ts`
+holds the two marks (`externalInsert`, `externalDelete`) and the commands
+that resolve them; `editor/externalEdits.ts` holds the block-level diff that
+produces them and the Yjs write that applies it. Neither mark can reach a
+published version: `PageContent.TryNormalize` strips both, on the way in,
+for every door into a page write.
+
+**The sidecar shares the editor's schema rather than restating it.** It needs
+one to turn stored JSON into Yjs, and a second copy would silently drop any
+node added to `extensions.ts` and forgotten here. `vite.schema.config.ts`
+bundles `getSharedExtensions` plus `externalEdits.ts` into one headless ESM
+file, built inside the collab image, with `yjs` and `y-prosemirror` left
+external because two copies of Yjs in one process do not share types.
+
+**`meta.version`** is a `Y.Map` in the shared document naming the page version
+that document was last reconciled to. The client seeds it on first open; the
+sidecar compares it on load and reconciles on mismatch. A document with no
+`meta.version` is adopted rather than reconciled, which is what keeps every
+draft that predates the feature from lighting up on the first load after a
+deploy.
+
+Two things worth knowing if you touch the diff. It compares blocks by
+canonical JSON *after* putting both sides through the schema, because
+ProseMirror materialises default attributes and stored JSON does not, so a
+direct comparison marks everything as changed. And the Yjs write goes through
+y-prosemirror's `updateYFragment`, the minimal-change applier the
+collaboration extension already uses, so untouched blocks keep their CRDT
+identity and other people's cursors survive.
+
 ## Frontend (`src/web`)
 
 - Unit tests (`npm test`, vitest) cover **logic, never rendering**. The block

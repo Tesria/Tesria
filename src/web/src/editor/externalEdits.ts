@@ -243,6 +243,19 @@ export function needsReconcile(draft: Block, published: Block): boolean {
 /* ---- applying it to the shared document --------------------------------- */
 
 /**
+ * A document as the schema itself would write it, so two of them can be
+ * compared.
+ *
+ * Throws if the content does not fit the schema, which for the published side
+ * means a document this build cannot represent. The caller must treat that as
+ * "leave the draft alone": refusing to reconcile loses nothing, while writing
+ * a half-understood document over somebody's draft loses their work.
+ */
+export function normalise(schema: Schema, document: Block): Block {
+  return schema.nodeFromJSON(document).toJSON() as Block
+}
+
+/**
  * Puts the reconciled document into the Yjs document the editors are sharing.
  *
  * The write is a *diff*, not a replacement: `updateYFragment` is
@@ -270,15 +283,24 @@ export function reconcileYDoc(
   fragmentName = 'default',
 ): boolean {
   const fragment = ydoc.getXmlFragment(fragmentName)
-  const draft = yXmlFragmentToProsemirrorJSON(fragment) as Block
+
+  // Both sides go through the schema before anything is compared, and this is
+  // not ceremony. ProseMirror materialises every attribute a node type
+  // declares, so a paragraph that came out of the CRDT carries
+  // `textIndent: 0` while the same paragraph as the API stored it carries no
+  // attrs at all. Comparing those two directly marks every block in the
+  // document as changed, every time. (Found by running it, not by reading
+  // it: the canonicaliser already forgives a null, and 0 is not a null.)
+  const draft = normalise(schema, yXmlFragmentToProsemirrorJSON(fragment) as Block)
+  const page = normalise(schema, published)
 
   // An empty fragment means nobody has opened this page since it was last
   // published, so there is no draft to reconcile against and nothing to mark:
   // seeding it with the page is the whole answer.
   const isEmpty = fragment.length === 0
-  if (!isEmpty && !needsReconcile(draft, published)) return false
+  if (!isEmpty && !needsReconcile(draft, page)) return false
 
-  const merged = isEmpty ? published : reconcileDocument(draft, published, origin)
+  const merged = isEmpty ? page : reconcileDocument(draft, page, origin)
   const node = schema.nodeFromJSON(merged)
   ydoc.transact(() => {
     updateYFragment(ydoc, fragment, node, { mapping: new Map(), isOMark: new Map() })

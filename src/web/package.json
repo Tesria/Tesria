@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "test": "vitest run",
     "preview": "vite preview",
-    "build:mermaid": "vite build --config vite.config.mermaid.ts"
+    "build:mermaid": "vite build --config vite.config.mermaid.ts",
+    "build:schema": "vite build --config vite.schema.config.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -1049,9 +1049,35 @@ JSON walk, one test.
    when a draft holds an unresolved deletion.
    **Vitest was added to the web package** for this, at the owner's approval,
    with the boundary written into CLAUDE.md: logic yes, rendering never.
-3. The schema bundle build and the sidecar's `fetch`-time reconcile with
-   `meta.version`; the client seeds `meta.version`. This alone fixes the
-   no-session case.
+3. ✅ **shipped 2026-09-20.** The schema bundle build and the sidecar's
+   `fetch`-time reconcile with `meta.version`; the client seeds
+   `meta.version`. This alone fixes the no-session case.
+   As built: `vite.schema.config.ts` bundles `getSharedExtensions` plus
+   `externalEdits.ts` into one headless ESM file, built inside the collab
+   image (a first stage runs `npm run build:schema`), so a schema change
+   reaches the sidecar by rebuilding and cannot drift. `yjs` and
+   `y-prosemirror` stay external, because two copies of Yjs in one process do
+   not share types and the failure is confusing rather than loud.
+   **A document with no `meta.version` is adopted, not reconciled.** Every
+   draft that existed before this shipped is in that state, and their
+   unpublished edits are not an assistant's changes; marking them all up on
+   the first load after deploying would be noise in the one feature whose
+   job is to be believed. The cost is that a genuinely stale pre-existing
+   draft is not caught, which is the behaviour those drafts already had.
+   **Two bugs only running it could find.** First: ProseMirror materialises
+   every attribute a node declares, so a paragraph out of the CRDT carries
+   `textIndent: 0` where the same paragraph as the API stored it carries no
+   attrs at all. Compared directly, *every block of every document* read as
+   changed on *every* reconcile. Both sides now go through
+   `schema.nodeFromJSON().toJSON()` first, with a regression test. Second,
+   and worse: a reconcile that is not *persisted* is re-run from the same
+   stale state on the next load, and because Yjs merges rather than
+   replaces, the second run's insertions land beside the first's, so the
+   page's new paragraph appears twice. Hocuspocus only stores a document
+   that changed while somebody was connected, so a reconcile nobody then
+   edited was forgotten. The sidecar writes it immediately now, through one
+   `persist()` the store hook shares. Found by restarting the sidecar with a
+   page open, which is also how it is now verified.
 4. The notifier in `PageWriter`, the sidecar's `onRequest` route, source
    detection by auth scheme, `openDirectConnection` apply. This is the
    live case.

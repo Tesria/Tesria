@@ -5,6 +5,53 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### An assistant's write is no longer lost when you reopen a page (2026-09-20)
+
+Step 3 of dev-plan 8.6, and the first with teeth. Until now, a write from the
+API or MCP changed the published page and never touched the Yjs document the
+editor actually edits, so reopening a page you had drafted and pressing
+Update wrote your stale copy straight over the assistant's work. That case is
+closed.
+
+**The sidecar reconciles a stale document before anyone opens it.** It keeps
+`meta.version` in the shared document, the page version that document was
+last brought up to date with, and compares it with the page's current
+version when it loads. If the page has moved on, the difference arrives as
+tracked changes: what the write removed struck through, what it added
+highlighted, labelled with who and how long ago. Nothing is discarded and
+nothing is silently kept as if it were newer.
+
+**The schema is built, not copied.** The sidecar needs the editor's schema to
+turn stored JSON into Yjs, and a second copy of a schema is a slow-motion
+bug: a node added in `extensions.ts` and forgotten in the sidecar would be
+dropped from every document it reconciled, quietly. So the collab image now
+builds the real thing from `src/web` at image build time.
+
+**A document with no `meta.version` is adopted, not reconciled.** Every draft
+that existed before this shipped is in that state, and their unpublished
+edits are not an assistant's changes; marking them all up on the first load
+after deploying would be noise in the one feature whose job is to be
+believed.
+
+Two bugs only running it could have found. ProseMirror materialises every
+attribute a node type declares, so a paragraph that comes out of the CRDT
+carries `textIndent: 0` while the same paragraph as the API stored it carries
+none. Compared directly, every block of every document read as changed, on
+every reconcile. Both sides go through the schema before anything is compared
+now, with a regression test.
+
+And the one that mattered more: a reconcile that was not written back was
+re-run from the same stale state next time the document loaded, and since
+Yjs merges rather than replaces, the second run's insertions landed beside
+the first's and the assistant's paragraph appeared twice. Hocuspocus only
+stores a document that changed while somebody was connected, so a reconcile
+nobody then edited was simply forgotten. It is written immediately now.
+Found by restarting the sidecar with a page open, which is how the fix is
+verified too.
+
+Hover labels also stopped printing raw ISO timestamps and say "2 minutes ago"
+like they were meant to.
+
 ### Tracked changes from outside the editor: the diff (2026-09-20)
 
 Step 2 of dev-plan 8.6, and still inert: nothing calls this yet. Steps 3 and

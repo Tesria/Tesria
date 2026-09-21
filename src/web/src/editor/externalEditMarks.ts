@@ -42,13 +42,35 @@ const SOURCE_LABELS: Record<ExternalEditSource, string> = {
 }
 
 /**
- * The hover text. Built at render time rather than stored, so it stays
- * truthful as the document ages: "2 minutes ago" would not.
+ * How long ago, in the words somebody would use.
+ *
+ * Computed when the mark renders rather than stored with it, which is the
+ * point: a stored "2 minutes ago" is a lie within the hour, and a stored
+ * timestamp is what the attribute already holds.
+ */
+function ago(iso: string): string {
+  const then = Date.parse(iso)
+  if (Number.isNaN(then)) return iso
+  const seconds = Math.round((Date.now() - then) / 1000)
+  // A clock that disagrees is not worth a sentence about the future.
+  if (seconds < 0) return 'just now'
+  const [value, unit] =
+    seconds < 60 ? [seconds, 'second']
+    : seconds < 3600 ? [Math.floor(seconds / 60), 'minute']
+    : seconds < 86_400 ? [Math.floor(seconds / 3600), 'hour']
+    : [Math.floor(seconds / 86_400), 'day']
+  if (value === 0) return 'just now'
+  return `${value} ${unit}${value === 1 ? '' : 's'} ago`
+}
+
+/**
+ * The hover text, built at render time so the "when" stays true as the
+ * document ages.
  */
 function title(kind: 'Added' | 'Removed', attrs: Partial<ExternalEditAttrs>): string {
   const source = attrs.source ? SOURCE_LABELS[attrs.source] ?? attrs.source : 'outside this session'
   const actor = attrs.actor ? ` · ${attrs.actor}` : ''
-  const at = attrs.at ? `, ${attrs.at}` : ''
+  const at = attrs.at ? `, ${ago(attrs.at)}` : ''
   return `${kind} by ${source}${actor}${at}`
 }
 
