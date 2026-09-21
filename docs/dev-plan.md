@@ -2649,6 +2649,14 @@ carry it too.
 - **PDFs are untouched**, and the render route now says so explicitly:
   `chrome=page` and `chrome=site` keep the reader's theme, no chrome at all
   means paper and stays forced light.
+- **Two tweaks after the first look** (owner, same day). The PDF footer's
+  page numbering was four flex items under `space-between`, so it read
+  "Every element    1    of    4"; it is one item now, right-justified. And
+  the space tile in an export is the theme accent rather than one of the
+  app's twelve per-space colours: those tell spaces apart in a list and an
+  export is one space, so the colour says nothing there. Export only, the
+  app keeps its own colours, and `SiteChrome.SpaceHead` deliberately does
+  not carry `IconColor` so nothing can quietly start using it.
 - **Branding is half done by accident.** The wordmark is the instance name,
   which an administrator already sets, so it already travels. The replaceable
   mark is the other half and is written up in `roadmap.md`;

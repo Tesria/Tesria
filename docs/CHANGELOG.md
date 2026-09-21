@@ -5,6 +5,23 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Two export tweaks (2026-09-20)
+
+**PDF page numbers.** The footer was a flex row whose page number, the word
+between them and the total were each their own item, so `space-between`
+spread them the width of the page: "Every element    1    of    4". The
+numbering is one item now, so it reads "1 of 4" at the right margin with the
+title still on the left.
+
+**The space tile in an export** is drawn in the theme's accent instead of one
+of the app's twelve per-space colours. Those colours exist to tell spaces
+apart in a list, and an export is one space by definition, so the colour
+carries no information there and may as well match the rest of the page. It
+follows the reader's accent and light/dark with everything else, and the
+letter uses the same token a filled accent button does, so the contrast is
+the one already tuned per theme. **Inside the app nothing changes**: spaces
+keep their own colours, where they still do their job.
+
 ### An exported page looks like the product it came from (2026-09-20)
 
 Reported by the owner the same day the capture work shipped: the HTML export

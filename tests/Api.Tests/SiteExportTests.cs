@@ -161,7 +161,7 @@ public class SiteExportTests
     [Fact]
     public void The_sidebar_carries_the_space_name_key_and_a_pages_heading()
     {
-        var head = new SiteChrome.SpaceHead("DOCS", "Documentation", true, SpaceIconKind.None, null, null, null);
+        var head = new SiteChrome.SpaceHead("DOCS", "Documentation", true, SpaceIconKind.None, null, null);
 
         var sidebar = SiteChrome.Sidebar(head, SiteExport.Place([Node("Install")]), "install");
 
@@ -177,26 +177,24 @@ public class SiteExportTests
     }
 
     [Fact]
-    public void A_space_with_no_icon_gets_the_same_letter_tile_the_app_draws()
+    public void A_generated_tile_is_drawn_in_the_theme_accent()
     {
-        // The tile colour comes from an FNV-1a hash of the key, mirroring
-        // avatarIdentity.ts. If the two ever disagree a space changes colour
-        // on its way out of the app, which is exactly the kind of small
-        // infidelity this phase exists to remove.
-        var head = new SiteChrome.SpaceHead("DOCS", "Documentation", false, SpaceIconKind.None, null, null, null);
+        // Owner's request, 2026-09-20, and export-only: the app's twelve
+        // per-space colours exist to tell spaces apart in a list, and an
+        // export is one space. Tokens rather than the hex they resolve to, so
+        // the tile follows the reader's accent and light/dark with the rest
+        // of the page.
+        var head = new SiteChrome.SpaceHead("DOCS", "Documentation", false, SpaceIconKind.None, null, null);
 
         var sidebar = SiteChrome.Sidebar(head, [], "");
 
         Assert.Contains(">D</text>", sidebar);
-        Assert.Contains("#216e4e", sidebar); // stableIndex("DOCS", 12) == 6
-    }
-
-    [Fact]
-    public void A_chosen_tile_colour_wins_over_the_derived_one()
-    {
-        var head = new SiteChrome.SpaceHead("DOCS", "Documentation", false, SpaceIconKind.None, null, 5, null);
-
-        Assert.Contains("#a53a7f", SiteChrome.Sidebar(head, [], ""));
+        Assert.Contains("fill=\"var(--primary)\"", sidebar);
+        // The letter takes the token already tuned for contrast on a filled
+        // accent in each theme, not a hardcoded white.
+        Assert.Contains("fill=\"var(--on-primary)\"", sidebar);
+        // None of the app's palette travels with it.
+        Assert.DoesNotContain("#", sidebar);
     }
 
     [Fact]
@@ -205,7 +203,7 @@ public class SiteExportTests
         // Every asset in a site is a real file, and "assets/x" from two
         // directories down is not the same file.
         var head = new SiteChrome.SpaceHead(
-            "DOCS", "Documentation", false, SpaceIconKind.Image, "hash", null, "assets/space-icon.webp");
+            "DOCS", "Documentation", false, SpaceIconKind.Image, "hash", "assets/space-icon.webp");
 
         var deep = SiteChrome.Sidebar(head, [], "guides/install");
 
