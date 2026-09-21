@@ -917,7 +917,7 @@ onto `roadmap.md` and are sequenced here.
 - **Last, on purpose:** every earlier phase adds fields the pack must
   carry. Building it earlier means rebuilding it.
 
-### 8.6 External edits — API and MCP writes as tracked changes in a live draft — `L` — Model: Fable → Opus
+### 8.6 External edits — API and MCP writes as tracked changes in a live draft — `L` — Model: Fable → Opus — ✅ **shipped 2026-09-21** (steps 1–5; step 6 folded into 10.5)
 
 **The problem (found 2026-09-13).** A page has two stores: the page
 version in Postgres, and the Yjs document in `CollabDocuments` that the
@@ -1119,9 +1119,16 @@ JSON walk, one test.
    The non-collaborative editor deliberately gets none of this: with no
    shared document there is nowhere for an outside write to land, so it is
    always looking at exactly what it loaded.
-6. Manual pages: *Saving, drafts and editing together* gains a section on
-   changes from assistants; *The MCP server* says what an assistant's
-   write looks like to someone mid-edit.
+6. ⏸ **moved to 10.5** (2026-09-21). Manual pages: *Saving, drafts and
+   editing together* gains a section on changes from assistants; *The MCP
+   server* says what an assistant's write looks like to someone mid-edit.
+   Those pages no longer exist: the manual was written as content inside
+   the instance, and this database has no such space, nor does the oldest
+   retained backup. Rather than write two sections into a manual that is
+   gone and out of date besides, the whole manual is rebuilt as **10.5**
+   and this is part of its "working together" chapter. How the mechanism
+   works is in `architecture.md` and `CHANGELOG.md` already, so nothing
+   technical is waiting on that.
 
 **Verify** with two browser contexts on one page plus an MCP write between
 them: the highlighted change appears in both; editing inside it works;
@@ -1996,6 +2003,65 @@ on a fresh member account in both themes and at 375 px, reduced motion
 (the poster), three tips firing and the daily cap, Turn off tips and its
 undo, the profile section, and every route touched by `Root`.
 
+### 10.5 Rebuild the user manual — `L` — Model: Opus
+
+**Why it is here.** A manual was written on 2026-09-11 (47 pages, 86
+screenshots) as content inside the instance, and it is gone: this database
+has four spaces and none of them is it, the oldest retained logical backup
+(2026-09-17) already lacks it, and the API space went the same way. Nothing
+in the repository held a copy, because the manual was a wiki, not a file.
+
+Two things follow, and the second is the more important one.
+
+1. It has to be written again, and that is no loss: it documented a product
+   that has since gained the owner role, instance rights and custom roles
+   (11.1–11.3), the setup wizard and the tour (10.2–10.3), capture-based
+   export and static sites (12.1–12.2), and tracked changes from assistants
+   (8.6). A manual describing the 2026-09-11 build would be wrong on every
+   one of those.
+2. **Content that only lives in the instance is content one reset deletes.**
+   That is a fact about this system, not an accident of this manual, and it
+   is worth stating in the item that rebuilds it: whatever is written must
+   be reproducible, which is what the harness below is for.
+
+**Scope.** The pages a person who has never seen Tesria needs, in the order
+they need them: signing in and finding their way about; spaces and pages;
+writing (the editor, the slash menu, panels, tables, diagrams, maths, live
+blocks); working together (comments, mentions, watching, co-editing, and
+**what an assistant's write looks like while you are mid-edit**, which is
+8.6 step 6 folded in here); finding things; exporting and publishing a
+space; the profile; and the administration area, including roles and
+backups. Retire nothing silently: a page that described something now
+removed is deleted rather than left to rot.
+
+**How the media is made.** `scripts/screenshots/` already does this, and the
+defaults are already right: **light theme, blue accent**, which is the
+owner's instruction and happens to be what `shot.mjs` seeds before first
+paint (`SHOT_THEME` / `SHOT_ACCENT` override). It draws annotations as a DOM
+overlay before the capture, so circles, boxes, arrows and labels come out as
+crisp as the interface under them, and it records clips (10.4) for the few
+things a still cannot show: dragging a page in the tree, the slash menu
+opening, a comment being made on a selection. `manual-space.example.json`
+survives as a worked example of the spec format, and is the place to start.
+
+- **Every picture is regenerable.** The spec that produced the set is
+  committed; a screenshot nobody can reproduce is a screenshot that will be
+  wrong after the next redesign and cannot be fixed.
+- **Shoot against seeded content, not real content.** The old set leaked
+  real space names and a real person's name into onboarding clips (10.4),
+  which is exactly the failure to avoid twice.
+- **The manual space is public** so it can be read without an account, and
+  so 12.2 can publish it as a static site, which is the other half of why it
+  is worth writing well.
+
+**A decision for the owner, when this is scheduled:** whether the manual's
+source of truth is the wiki (written in Tesria, exported for the web) or the
+repository (written as Markdown, imported). The wiki is the honest
+dogfooding answer and is what was done before; the repository is what would
+have saved the last one. 8.5's wiki packs would make the wiki answer safe by
+giving it a committed export, which is an argument for sequencing this after
+8.5 rather than before it.
+
 ---
 
 ## Phase 11 — Roles with assignable rights
@@ -2788,6 +2854,8 @@ carry it too.
 10. **9.1** Backups admin section (Fable→Opus; shipped 2026-09-17) → **9.2** Offsite backups (Fable→Opus; unscheduled, waits on the owner's seven decisions listed in the item)
 11. **10.1** Owner role (shipped 2026-09-20) → **11.1** Instance rights and the Roles tab (shipped 2026-09-20) → **11.2** Custom roles (shipped 2026-09-20) → **11.3** Delete a space (shipped 2026-09-20) → **5.5** Anonymous access is opt-in twice (shipped 2026-09-20) → **10.4** Media harness (shipped 2026-09-20) → **10.2** Owner setup wizard (shipped 2026-09-20) → **10.3** Tour and tips (shipped 2026-09-20) (all specified 2026-09-20 as Fable; Opus implements). Phase 11 goes before the wizard because the wizard has a required step that reviews the matrix, and before 10.3 because the tour's screens should show the real Roles tab. 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
 12. **12.1** Capture-based export and the element audit (shipped 2026-09-20) → **12.2** Publish a space as a static site (shipped 2026-09-20). 12 before 8.5 because the site export builds the walk over a space that the wiki pack will reuse, and because the owner's documentation is waiting on it.
+13. **8.6** External edits as tracked changes (steps 1–5 shipped 2026-09-21; step 6 folded into 10.5).
+14. **10.5** Rebuild the user manual — unscheduled, and worth taking **after 8.5**: the last manual was lost because it existed only inside the instance, and wiki packs are what would give a rebuilt one a committed export to be restored from.
 
 Phases 6 and 8.2 are floaters — small, no dependents — and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm

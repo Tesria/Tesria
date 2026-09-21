@@ -5,6 +5,34 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### The manual is gone, and the plan now says so (2026-09-21)
+
+Finishing dev-plan 8.6 meant adding two sections to the user manual, and the
+manual is not there. This database has four spaces and none of them is it;
+the API documentation space went the same way; the oldest retained logical
+backup, from 2026-09-17, already lacks both. Nothing in the repository held
+a copy, because the manual was a wiki rather than a file.
+
+Restoring 47 pages by point-in-time recovery in order to add two sections
+would be the wrong trade, and the pages would be wrong anyway: they describe
+a build from 2026-09-11, before the owner role, instance rights, custom
+roles, the setup wizard, the tour, capture-based export, static sites, and
+the very feature those sections were meant to document.
+
+So **10.5 rebuilds the manual**, 8.6's last step folds into its "working
+together" chapter, and the phase is recorded as shipped in its first five.
+The media is specified as light theme with the blue accent, which is already
+what `scripts/screenshots/` seeds before first paint, and every picture must
+be regenerable from a committed spec, because a screenshot nobody can
+reproduce is one that will be wrong after the next redesign.
+
+CLAUDE.md's handoff notes, which still described both spaces as living
+content, now say what actually happened. The lesson is worth more than the
+pages were, and is written down in both places: **content that lives only in
+the instance is content one reset deletes.** That is an argument for
+sequencing the rebuild after 8.5's wiki packs, so a rebuilt manual has a
+committed export to come back from.
+
 ### Deciding what to do with an assistant's change (2026-09-21)
 
 Step 5 of dev-plan 8.6. Steps 3 and 4 made an outside write *visible*; this
