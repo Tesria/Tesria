@@ -5,6 +5,33 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### An assistant's write appears in the editor you have open (2026-09-21)
+
+Step 4 of dev-plan 8.6, the live case. Step 3 caught up a page you reopened;
+this one shows the change while you are looking at it, without a reload.
+
+After a page write commits, the app tells the collaboration sidecar, beside
+the webhook dispatch and for the same reason: it is an outbound call about
+something that has already happened. The sidecar applies it to the document
+if somebody has it open, and otherwise does nothing, because a page nobody is
+editing is reconciled on its next load anyway. That keeps the sidecar's
+memory a function of how many people are editing rather than of how busy the
+API is.
+
+The call is best effort with a short timeout. The page is already saved by
+then, and a sidecar that is down or restarting just means the reconciliation
+waits for the next load. A healthy API refusing to save because an optional
+live-editing service is unwell would be the worse trade.
+
+**What a highlight says depends on how the caller signed in**, not on
+anything it says about itself: a browser session is the editor, an API token
+is the API, and the same token used against `/mcp` is an assistant. A write
+from the editor records the version and draws nothing, which is not laziness:
+publishing and then carrying on typing is ordinary, so by the time the
+notification arrives the draft is legitimately ahead of the page, and
+diffing would strike through the words you are still writing and attribute
+them to somebody else.
+
 ### An assistant's write is no longer lost when you reopen a page (2026-09-20)
 
 Step 3 of dev-plan 8.6, and the first with teeth. Until now, a write from the

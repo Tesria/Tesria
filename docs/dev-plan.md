@@ -1078,9 +1078,30 @@ JSON walk, one test.
    edited was forgotten. The sidecar writes it immediately now, through one
    `persist()` the store hook shares. Found by restarting the sidecar with a
    page open, which is also how it is now verified.
-4. The notifier in `PageWriter`, the sidecar's `onRequest` route, source
-   detection by auth scheme, `openDirectConnection` apply. This is the
-   live case.
+4. ✅ **shipped 2026-09-21.** The notifier in `PageWriter`, the sidecar's
+   `onRequest` route, source detection by auth scheme,
+   `openDirectConnection` apply. This is the live case.
+   As built: `ICollabNotifier` posts to `POST /pages/{id}/reconcile` after
+   the commit, beside the webhook dispatch and for the same reason, guarded
+   by the `Collab:Secret` the two already share and with a three-second
+   timeout. Best effort on purpose: the page is already saved, and a sidecar
+   that is down means the reconciliation waits for the document's next load
+   (step 3). Failing the write instead would be a healthy API refusing to
+   save because an optional service is unwell.
+   `openDirectConnection` is used **only if the document is already open**;
+   a page nobody is editing is left for its next load, so the sidecar's
+   memory tracks how many people are editing rather than how busy the API is.
+   **Why an `editor` write records the version and draws nothing**, beyond
+   "the content is already the document's": publishing and then carrying on
+   typing is ordinary, so by the time the notification lands the draft is
+   legitimately ahead of the page, and diffing would strike through the
+   words the human is still writing and blame somebody else. The gap that
+   leaves is a cookie-session write that did not come from the open editor,
+   which the application has no flow for.
+   Hocuspocus's `onRequest` contract is worth knowing: a hook that rejects
+   with an *empty* value means "handled", while rejecting with a real error
+   is rethrown, so the route rejects with nothing after writing its own
+   response.
 5. The editor banner, `baseVersion` on publish, 409 handling and client
    reconcile.
 6. Manual pages: *Saving, drafts and editing together* gains a section on

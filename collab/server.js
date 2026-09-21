@@ -180,9 +180,117 @@ function verifyToken(token, documentName) {
   return payload
 }
 
+/**
+ * Tells Hocuspocus this request is dealt with.
+ *
+ * Its convention, from `requestHandler`: a hook that rejects with an *empty*
+ * value means "handled, do nothing further", while rejecting with a real
+ * error is rethrown. So this rejects with nothing on purpose. Returning
+ * normally instead would have Hocuspocus append its own "Welcome to
+ * Hocuspocus!" to a response already written.
+ */
+const handled = () => Promise.reject()
+
+/**
+ * Reads a JSON request body, with a ceiling.
+ *
+ * A page document can be large, but not unbounded: this endpoint is reachable
+ * only from inside the compose network and only with the shared secret, and a
+ * cap still beats letting one request decide how much memory the sidecar uses.
+ */
+async function readJson(request, limit = 8 * 1024 * 1024) {
+  const chunks = []
+  let size = 0
+  for await (const chunk of request) {
+    size += chunk.length
+    if (size > limit) throw new Error('payload too large')
+    chunks.push(chunk)
+  }
+  return JSON.parse(Buffer.concat(chunks).toString('utf8'))
+}
+
+/**
+ * Applies a page write to a document somebody currently has open (dev-plan
+ * 8.6, the live case). The app posts here after it commits.
+ *
+ * `openDirectConnection` would *load* a document that is not open, which is
+ * deliberately not wanted: a page nobody is editing needs no live update, and
+ * loading every written page into memory would make this sidecar's footprint
+ * a function of how busy the API is rather than of how many people are
+ * editing. Such a page is reconciled on its next load instead, by the same
+ * code, which is the path step 3 built.
+ *
+ * A write from the editor itself carries no content worth showing: the
+ * document already *is* that content, the human made it. Only the version is
+ * recorded, so the next load does not mistake their own publish for somebody
+ * else's change.
+ *
+ * Reconciling those too would look safer and is worse. Publishing and then
+ * carrying on typing is ordinary, and by the time this notification arrives
+ * the draft is legitimately ahead of the page; a diff would strike through
+ * the words the human is still writing and attribute them to somebody else.
+ * The gap that leaves is a cookie-session write that did *not* come from the
+ * open editor, which the application has no flow for.
+ */
+async function applyWrite(documentName, { contentJson, source, version }) {
+  if (!UUID.test(documentName)) return { status: 404, body: 'unknown document' }
+  if (!server.hocuspocus.documents.has(documentName)) {
+    // Not open. Nothing to do now; the next load reconciles.
+    return { status: 202, body: 'not open' }
+  }
+
+  const connection = await server.hocuspocus.openDirectConnection(documentName)
+  try {
+    await connection.transact((doc) => {
+      const meta = doc.getMap('meta')
+      if (source === 'editor') {
+        if (typeof version === 'number') meta.set('version', version)
+        return
+      }
+      const changed = reconcile(doc, JSON.parse(contentJson), { source, actor: null })
+      if (typeof version === 'number') meta.set('version', version)
+      if (changed) console.log(`[collab] ${documentName} took a live ${source} write (version ${version})`)
+    })
+  } finally {
+    await connection.disconnect()
+  }
+  return { status: 200, body: 'applied' }
+}
+
 const server = new Server({
   port: PORT,
   address: '0.0.0.0',
+
+  /**
+   * The one HTTP route this sidecar answers, beside the websocket: the app
+   * telling it a page has been written (dev-plan 8.6). Guarded by the shared
+   * secret the app already holds, and reachable only inside the compose
+   * network, which is why there is no user identity here to check.
+   */
+  async onRequest({ request, response }) {
+    const match = /^\/pages\/([^/]+)\/reconcile$/.exec((request.url ?? '').split('?')[0])
+    if (request.method !== 'POST' || !match) return
+
+    const provided = request.headers['x-collab-secret']
+    // Constant-time, and length-checked first, as timingSafeEqual requires.
+    const expected = Buffer.from(SECRET)
+    const given = Buffer.from(typeof provided === 'string' ? provided : '')
+    if (given.length !== expected.length || !crypto.timingSafeEqual(given, expected)) {
+      response.writeHead(403).end('forbidden')
+      return handled()
+    }
+
+    try {
+      const result = await applyWrite(match[1], await readJson(request))
+      response.writeHead(result.status).end(result.body)
+    } catch (err) {
+      // Never fatal: the app has already committed the page, and the
+      // document reconciles on its next load regardless.
+      console.error(`[collab] reconcile request failed for ${match[1]}`, err)
+      response.writeHead(500).end('failed')
+    }
+    return handled()
+  },
 
   async onAuthenticate({ token, documentName }) {
     const payload = verifyToken(token, documentName)

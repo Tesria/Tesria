@@ -1487,6 +1487,21 @@ bundles `getSharedExtensions` plus `externalEdits.ts` into one headless ESM
 file, built inside the collab image, with `yjs` and `y-prosemirror` left
 external because two copies of Yjs in one process do not share types.
 
+**The write path tells the sidecar**, after the commit, at
+`POST /pages/{id}/reconcile` on the sidecar's own port, guarded by the
+`Collab:Secret` the two already share (`ICollabNotifier`). It is best effort
+with a short timeout: the page is saved by then, and a sidecar that is down
+only means the reconciliation waits for the document's next load. The sidecar
+applies it with `openDirectConnection` **only if the document is already
+open**, so a page nobody is editing is not loaded into memory just to be
+edited.
+
+The source is decided by how the caller authenticated, never by what it says:
+a browser session is `editor`, an API token is `api`, and the same token at
+`/mcp` is `mcp`. An `editor` write records the version and draws nothing,
+because publishing and then carrying on typing is ordinary and a diff would
+strike through the words the human is still writing.
+
 **`meta.version`** is a `Y.Map` in the shared document naming the page version
 that document was last reconciled to. The client seeds it on first open; the
 sidecar compares it on load and reconciles on mismatch. A document with no
