@@ -84,15 +84,30 @@ export function ExportPage() {
   }
   if (!page) return <div className="export" />
 
+  const paper = (
+    <article className="paper paper--export">
+      {chrome === 'site' && space && (
+        <nav className="export__crumb"><span>{space.name}</span></nav>
+      )}
+      <h1>{page.title}</h1>
+      <Editor value={page.contentJson} editable={false} getPageId={() => Promise.resolve(page.id)} />
+    </article>
+  )
+
   return (
     <div className="export" ref={root}>
-      <article className="paper paper--export">
-        {chrome === 'site' && space && (
-          <nav className="export__crumb"><span>{space.name}</span></nav>
-        )}
-        <h1>{page.title}</h1>
-        <Editor value={page.contentJson} editable={false} getPageId={() => Promise.resolve(page.id)} />
-      </article>
+      {/* An HTML export carries the page's own width, and a control to change
+          it, the same way the reading view does. A PDF does not: the sheet is
+          the width, and capping the text at .page-wrap's 900px would leave an
+          A4 page with margins nobody asked for. */}
+      {chrome === null ? paper : (
+        <div
+          className={page.fullWidth ? 'page-wrap page-wrap--full' : 'page-wrap'}
+          data-export-width
+        >
+          {paper}
+        </div>
+      )}
     </div>
   )
 }

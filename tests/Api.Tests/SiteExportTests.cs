@@ -226,6 +226,20 @@ public class SiteExportTests
     }
 
     [Fact]
+    public void The_top_bar_carries_a_full_width_toggle()
+    {
+        // The reading view has one in its action bar; an export has no action
+        // bar, so it moves to the top bar (owner's request, 2026-09-20).
+        var bar = SiteChrome.Topbar(new SiteChrome.Brand("Tesria"), homeHref: null);
+
+        Assert.Contains("data-export-width-toggle", bar);
+        // Both labels ship and the script shows one: a captured export has no
+        // React left to re-render the text.
+        Assert.Contains("Full width", bar);
+        Assert.Contains("Normal width", bar);
+    }
+
+    [Fact]
     public void The_brand_is_not_a_link_when_there_is_nowhere_to_go()
     {
         // A single-file export has no index to return to.

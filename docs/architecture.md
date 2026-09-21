@@ -1447,7 +1447,14 @@ The wordmark is the instance name, which is the half of instance branding
 that already exists; a replaceable mark is the other half, and
 `SiteChrome.Brand` is where it will arrive.
 
-Two things the export draws differently from the app, both on purpose. The
+The **width toggle** is the app's own, moved: the reading view keeps it in the
+page action bar, which an export does not have, so it sits in the top bar.
+The page's stored `fullWidth` decides the width the file opens at, the script
+drives the class on `[data-export-width]` afterwards, and the reader's choice
+persists per export origin. A PDF gets neither the control nor the column
+cap, because the sheet is the width.
+
+Two more things the export draws differently from the app, both on purpose. The
 space's generated tile is the theme accent rather than one of the twelve
 per-space colours, because those exist to tell spaces apart in a list and an
 export is one space; the app is untouched. And the PDF footer's page

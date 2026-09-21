@@ -2477,6 +2477,13 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
    link any more. */
 .export--site a[href="#"] { color: var(--muted); text-decoration: none; cursor: default; }
 
+/* Full width vs normal is a distinction without a difference on a phone: the
+   reading column fills the viewport either way. The application hides its own
+   toggle under this width for exactly that reason, and an export follows. */
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  [data-export-width-toggle] { display: none; }
+}
+
 /* On a phone the application hides .sidebar, because .space-actionbar and
    .space-home-tree do its two jobs instead. An export has neither, so hiding
    it there would leave a site with no navigation at all. It stacks above the

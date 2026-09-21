@@ -5,6 +5,28 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### The width toggle comes back in an HTML export (2026-09-20)
+
+The reading view lets you switch a page between its normal column and full
+width; the capture route had no action bar, so an export lost both the
+control and the page's own setting, and every exported page was full width
+whether or not it was written that way.
+
+An HTML export now opens at the width the page has in the wiki, and carries
+the toggle to change it. It sits in the top bar beside the appearance menu,
+because an export has no action bar to put it in. Like the theme, the
+reader's choice is theirs and sticks across the pages of a site; until they
+make one, each page opens at its own width. Both labels ship in the markup
+and the script shows one, since a captured page has no React left to
+re-render the text.
+
+It is hidden on a phone, where full width and normal are the same thing,
+which is the reason the application hides its own there.
+
+**PDFs keep no width control and no column cap.** The sheet is the width, and
+capping the text at 900px would leave an A4 page with margins nobody asked
+for.
+
 ### Two export tweaks (2026-09-20)
 
 **PDF page numbers.** The footer was a flex row whose page number, the word
