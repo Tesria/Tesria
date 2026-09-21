@@ -5,6 +5,42 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Tracked changes from outside the editor: the diff (2026-09-20)
+
+Step 2 of dev-plan 8.6, and still inert: nothing calls this yet. Steps 3 and
+4 are what will.
+
+`editor/externalEdits.ts` works out what an outside write did to a page and
+shows it inside an open draft. The diff is block-level, so a rewritten
+paragraph reads as the old one struck through followed by the new one
+highlighted, which is a diff anyone has read before. Character-level merging
+inside a paragraph is a refinement for later, and the block version is the
+one that cannot lie: a word-level merge of two genuinely different sentences
+produces a third sentence nobody wrote.
+
+Two blocks are "the same block" by canonical JSON: keys sorted, null and
+empty attributes dropped. That last part is not fussiness. TipTap writes a
+paragraph as `attrs: { textAlign: null }` and the API writes the same
+paragraph with no attrs at all, and without canonicalising, every reconcile
+would declare every block changed.
+
+The Yjs write is a diff, not a replacement. It goes through
+y-prosemirror's own `updateYFragment`, the minimal-change applier the
+collaboration extension uses for every keystroke, so blocks nobody touched
+are left alone in the CRDT and other people's cursors stay where they were.
+A wholesale replacement would look identical in a screenshot and clobber
+anyone typing at the time.
+
+**Vitest joins the web package** for this, and CLAUDE.md now says where the
+line is: logic yes, rendering never. A mounted-and-asserted component passes
+while the real page is broken, which is the exact failure this repo has
+shipped before and the reason routing and layout still get a live walk. The
+33 tests here cover the two cases the plan names by name, a draft that
+already carries pending marks and a block with nothing a mark can sit on,
+plus the properties that matter in the CRDT: untouched blocks keep their
+identity, the whole reconciliation is one update, and it reaches a second
+peer.
+
 ### Tracked changes from outside the editor: the marks (2026-09-20)
 
 First of the six steps in dev-plan 8.6. Inert on its own: nothing produces

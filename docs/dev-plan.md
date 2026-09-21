@@ -1028,9 +1028,27 @@ JSON walk, one test.
    net cannot know what the human meant. Found on the way: the print rules
    hiding this kind of highlighting named `.comment-mark`, which nothing
    renders, so commented text had been printing with its ground.
-2. `externalEdits.ts` (block diff + Yjs apply) with unit tests against
-   fixture documents, including "old has pending marks" and "block with no
-   inline content".
+2. ✅ **shipped 2026-09-20.** `externalEdits.ts` (block diff + Yjs apply)
+   with unit tests against fixture documents, including "old has pending
+   marks" and "block with no inline content".
+   As built: the diff is pure and Yjs-free (`diffBlocks`,
+   `reconcileDocument`) with the CRDT write a thin wrapper over
+   y-prosemirror's own `updateYFragment`, which is the minimal-change
+   applier the collaboration extension already uses for every keystroke.
+   That is what keeps an untouched paragraph untouched in the CRDT, and so
+   keeps other people's cursors where they were; a wholesale replacement
+   would look identical in a screenshot and clobber anyone typing.
+   `blockKey` canonicalises before comparing: sorted keys, and null or empty
+   attributes dropped, because TipTap writes `attrs: { textAlign: null }`
+   where the API writes no attrs at all and the two are the same block.
+   **One deliberate departure from the spec above:** "old as if accepted" is
+   read as *marks stripped*, not *changes accepted*. The text under a
+   pending deletion stays. Truly accepting would let a second write silently
+   accept the first one's deletion on the human's behalf, which is the thing
+   this phase exists to stop; the cost is a redundant (idempotent) reconcile
+   when a draft holds an unresolved deletion.
+   **Vitest was added to the web package** for this, at the owner's approval,
+   with the boundary written into CLAUDE.md: logic yes, rendering never.
 3. The schema bundle build and the sidecar's `fetch`-time reconcile with
    `meta.version`; the client seeds `meta.version`. This alone fixes the
    no-session case.
