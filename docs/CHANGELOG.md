@@ -78,6 +78,36 @@ and estimated monthly cost instead of inventing one. The same numbers drive
 a low-space warning whose threshold is two backup sets, not a percentage.
 Full design in `dev-plan.md` as 9.3.
 
+### 9.2 step 2: the uploads and the dumps go offsite, encrypted (2026-09-22)
+
+restic now carries the uploads volume and the logical dumps to the
+configured offsite target, which is what finally satisfies 9.2's
+prerequisite that **the dumps are encrypted before anything copies them off
+the box**. Local backups are untouched: 9.1's dump, tarball, inventory and
+restore path all work exactly as before, and this runs after them, because
+the rule is local first then replicate.
+
+- **restic reads the uploads volume and the dump directory directly**, not
+  the nightly tarball. A freshly compressed archive is new bytes end to end
+  every cycle, so shipping it would have defeated deduplication entirely.
+- **Retention is the admin page's policy, translated**, so both copies
+  expire together instead of drifting apart: "keep the newest N and
+  everything from D days" becomes `--keep-last N --keep-within Dd`. The rule
+  is in C# with tests and mirrored in bash. With retention off there are no
+  arguments and `forget` does not run, because `forget` with no rules
+  deletes every snapshot.
+- **`BackupTargets` gained a `Kind`**, `database` or `files`. A slot holds
+  two repositories written by two sidecars, and the NAS and removable slots
+  coming in steps 3 and 4 have only the files half.
+- `check --read-data-subset=5%` after every run, rather than reading the
+  whole repository back out of object storage each time.
+
+Verified by restoring: a dump came back from the offsite repository
+byte-identical to the local original and listed 36 tables, and the uploads
+matched the live volume. The encryption was checked against MinIO's own
+stored files rather than taken on trust, with a control to prove the scan
+could find plaintext if it were there.
+
 ### 9.2 step 1: the offsite cloud repository (2026-09-22)
 
 Backups can now go to S3-compatible storage as a second pgBackRest

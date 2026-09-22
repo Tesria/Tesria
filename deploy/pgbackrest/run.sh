@@ -96,11 +96,11 @@ publish_cloud_target() {
   q -v slot=cloud -v enabled="$enabled" -v problem="$problem" -v type="$type" \
     -v endpoint="$endpoint" -v bucket="$bucket" -v prefix="$prefix" \
     -v keyfp="$keyfp" -v passfp="$passfp" >/dev/null 2>&1 <<'SQL' || true
-INSERT INTO "BackupTargets" ("Slot", "Type", "Location", "Bucket", "Prefix", "Enabled", "Problem",
+INSERT INTO "BackupTargets" ("Slot", "Kind", "Type", "Location", "Bucket", "Prefix", "Enabled", "Problem",
                              "KeyFingerprint", "PassphraseFingerprint", "UpdatedAt")
-VALUES (:'slot', NULLIF(:'type',''), NULLIF(:'endpoint',''), NULLIF(:'bucket',''), NULLIF(:'prefix',''),
+VALUES (:'slot', 'database', NULLIF(:'type',''), NULLIF(:'endpoint',''), NULLIF(:'bucket',''), NULLIF(:'prefix',''),
         :'enabled'::boolean, NULLIF(:'problem',''), NULLIF(:'keyfp',''), NULLIF(:'passfp',''), now())
-ON CONFLICT ("Slot") DO UPDATE
+ON CONFLICT ("Slot", "Kind") DO UPDATE
    SET "Type" = EXCLUDED."Type", "Location" = EXCLUDED."Location", "Bucket" = EXCLUDED."Bucket",
        "Prefix" = EXCLUDED."Prefix", "Enabled" = EXCLUDED."Enabled", "Problem" = EXCLUDED."Problem",
        "KeyFingerprint" = EXCLUDED."KeyFingerprint",
@@ -118,7 +118,7 @@ sync_cloud_status() {
   # what the two hold, which is more honest than any timestamp.
   json="$(pgbr --log-level-console=off --output=json info 2>/dev/null)" || {
     q -v msg="The cloud repository could not be read." >/dev/null 2>&1 <<'SQL' || true
-UPDATE "BackupTargets" SET "Message" = :'msg', "UpdatedAt" = now() WHERE "Slot" = 'cloud';
+UPDATE "BackupTargets" SET "Message" = :'msg', "UpdatedAt" = now() WHERE "Slot" = 'cloud' AND "Kind" = 'database';
 SQL
     return 1
   }
@@ -149,7 +149,7 @@ UPDATE "BackupTargets" t
            THEN now() ELSE t."LastWalAt" END,
        "Message"      = NULL,
        "UpdatedAt"    = now()
- WHERE t."Slot" = 'cloud';
+ WHERE t."Slot" = 'cloud' AND t."Kind" = 'database';
 SQL
 }
 
@@ -164,7 +164,7 @@ cloud_backup_due() {
 SELECT CASE WHEN "LastBackupAt" IS NULL
               OR "LastBackupAt" < now() - make_interval(days => :'every'::int)
             THEN 't' ELSE 'f' END
-  FROM "BackupTargets" WHERE "Slot" = 'cloud';
+  FROM "BackupTargets" WHERE "Slot" = 'cloud' AND "Kind" = 'database';
 SQL
 )" || return 1
   [ "$due" = "t" ]
@@ -179,7 +179,7 @@ run_cloud_backup() {
     local tail_out; tail_out="$(tail -3 /tmp/cloud-backup.log | tr '\n' ' ')"
     log "ERROR: cloud backup failed: $tail_out"
     q -v msg="The last offsite backup failed: $tail_out" >/dev/null 2>&1 <<'SQL' || true
-UPDATE "BackupTargets" SET "Message" = left(:'msg', 2000), "UpdatedAt" = now() WHERE "Slot" = 'cloud';
+UPDATE "BackupTargets" SET "Message" = left(:'msg', 2000), "UpdatedAt" = now() WHERE "Slot" = 'cloud' AND "Kind" = 'database';
 SQL
   fi
 }
@@ -192,7 +192,7 @@ cloud_verify_due() {
   due="$(q <<'SQL'
 SELECT CASE WHEN "LastVerifyAt" IS NULL OR "LastVerifyAt" < now() - interval '1 day'
             THEN 't' ELSE 'f' END
-  FROM "BackupTargets" WHERE "Slot" = 'cloud';
+  FROM "BackupTargets" WHERE "Slot" = 'cloud' AND "Kind" = 'database';
 SQL
 )" || return 1
   [ "$due" = "t" ]
@@ -207,7 +207,7 @@ UPDATE "BackupTargets"
    SET "LastVerifyAt" = CASE WHEN :'ok' = 't' THEN now() ELSE "LastVerifyAt" END,
        "Message" = CASE WHEN :'ok' = 't' THEN NULL ELSE left('Verify failed: ' || :'msg', 2000) END,
        "UpdatedAt" = now()
- WHERE "Slot" = 'cloud';
+ WHERE "Slot" = 'cloud' AND "Kind" = 'database';
 SQL
   [ "$ok" = t ] && log "cloud: verify passed" || log "ERROR: cloud verify failed: $out"
 }
@@ -230,7 +230,7 @@ publish_wal_backlog() {
   n="$(find /var/lib/postgresql/18/docker/pg_wal/archive_status -name '*.ready' 2>/dev/null | wc -l | tr -d ' ')"
   [ -z "$n" ] && return 0
   q -v n="$n" >/dev/null 2>&1 <<'SQL' || true
-UPDATE "BackupTargets" SET "WalBacklogFiles" = :'n'::int, "UpdatedAt" = now() WHERE "Slot" = 'cloud';
+UPDATE "BackupTargets" SET "WalBacklogFiles" = :'n'::int, "UpdatedAt" = now() WHERE "Slot" = 'cloud' AND "Kind" = 'database';
 SQL
 }
 

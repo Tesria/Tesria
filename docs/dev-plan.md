@@ -2109,10 +2109,33 @@ must be operated.
    the time the queue trips the WAL is already gone.
    Verified against MinIO (which needs TLS: pgBackRest has no plain-HTTP
    mode for S3), including a real outage, the alert firing, and recovery.
-2. restic replaces the tarball: uploads volume and logical dumps to every
-   configured target, per-target `forget` from the slot's retention,
-   `check --read-data-subset`, and with it the plaintext prerequisite is
-   met. Tests for the retention translation.
+2. ✅ **shipped 2026-09-22.** restic carries the uploads volume and the
+   logical dumps to every configured target, per-target `forget` from the
+   slot's retention, `check --read-data-subset=5%`, and with it the
+   plaintext prerequisite is met. Tests for the retention translation (14).
+   As built: restic reads **the uploads volume and the dump directory
+   directly**, not the nightly tarball. Shipping the tarball would have
+   defeated deduplication completely, since a freshly compressed archive is
+   new bytes end to end every cycle. The local tarball is untouched: 9.1's
+   restore path is a shipped feature and this step does not disturb it.
+   `BackupTargets` gained a `Kind` (`database` or `files`) and is now keyed
+   on the pair. A slot holds two repositories written by two sidecars: the
+   database goes to pgBackRest (cloud only), the files to restic (every
+   slot). Two rows rather than two sets of columns is also what lets 9.3's
+   cloud card chart one against the other, and it means the NAS and
+   removable slots, which have no database repository, simply have no such
+   row.
+   The retention translation lives in C# (`ResticRetention`) with the tests,
+   and in bash as `restic_forget_args`, the same "change one, change both"
+   arrangement `BackupRetention` already uses. The case worth pinning: with
+   retention off there are **no** arguments and `forget` must not run at
+   all, because `forget` with no rules deletes every snapshot.
+   Verified against MinIO: a snapshot of both paths, then a restore of a
+   dump that came back **byte-identical** to the local original and listed
+   36 tables, and uploads matching the live volume. The encryption claim was
+   checked by scanning MinIO's own data files: 20MB across 11 objects, none
+   containing the `PGDMP` header or the string `Tesria`, with a control file
+   proving the scan could detect them.
 3. The path mechanism: host mount plus bind mount plus sentinel, shared by
    the NAS and removable slots; the NAS slot scheduled with its absence an
    alert; the SFTP `repo3` recipe and the NAS-snapshot recipe in the

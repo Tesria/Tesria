@@ -553,8 +553,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         });
         b.Entity<BackupTarget>(e =>
         {
-            e.HasKey(x => x.Slot);
+            e.HasKey(x => new { x.Slot, x.Kind });
             e.Property(x => x.Slot).HasMaxLength(20);
+            e.Property(x => x.Kind).HasMaxLength(20);
             e.Property(x => x.Type).HasMaxLength(20);
             e.Property(x => x.Location).HasMaxLength(500);
             e.Property(x => x.Bucket).HasMaxLength(200);
