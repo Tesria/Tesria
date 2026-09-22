@@ -79,6 +79,10 @@ export function AdminSettingsPage() {
         <p className="muted">Your role does not allow changing any of this instance's settings.</p>
       )}
 
+      {/* A grid, so these independent forms use the width of a large display
+          instead of stacking in one narrow column beside empty space. */}
+      <div className="admin-settings">
+
       {can(Permission.SettingsInstance) && (
       <section className="profile__section">
         <h2>Instance</h2>
@@ -269,6 +273,7 @@ export function AdminSettingsPage() {
         </form>
       </section>
       )}
+      </div>
     </>
   )
 }

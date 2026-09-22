@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { api, ApiError, type BackupTarget } from '../../api/client'
+import { PieChart } from '../../components/PieChart'
 
 /**
  * Administration → Backups → Storage targets (dev-plan 9.2 step 5).
@@ -142,6 +143,8 @@ function TargetCard({
         )}
       </dl>
 
+      <Composition rows={rows} />
+
       {primary.message && <p className="backup-card__pending small">{primary.message}</p>}
       {error && <p className="alert alert--error small">{error}</p>}
 
@@ -157,6 +160,85 @@ function TargetCard({
       )}
       <p className="muted small">Checked {relative(primary.updatedAt)}</p>
     </section>
+  )
+}
+
+/**
+ * Roughly what this much storage costs a month, from the provider's list
+ * price. Deliberately "about", and deliberately showing when the price was
+ * last checked: list prices move, and a stale number presented as fact is a
+ * small lie on a card whose job is to be trusted. Storage only; egress is
+ * free on B2 up to three times what you store, and a restore is the only
+ * time it matters.
+ */
+const PRICES_CHECKED = 'Sep 2026'
+const PRICE_PER_GB_MONTH: Record<string, number> = {
+  b2: 0.006,   // $6/TB, first 10GB free
+  s3: 0.023,   // S3 Standard
+}
+
+function cost(type: string | null | undefined, bytesStored: number): string | null {
+  const rate = type ? PRICE_PER_GB_MONTH[type] : undefined
+  if (rate === undefined) return null
+  const gb = bytesStored / 1024 ** 3
+  const free = type === 'b2' ? 10 : 0
+  const billable = Math.max(0, gb - free)
+  const monthly = billable * rate
+  if (monthly < 0.01) return `nothing yet (${PRICES_CHECKED} prices)`
+  return `$${monthly.toFixed(2)} a month (${PRICES_CHECKED} prices)`
+}
+
+/**
+ * What this target is holding, as a pie.
+ *
+ * Cloud storage has no free space and no total, so a used-against-free chart
+ * would have to invent a denominator, which would be a lie on a card whose
+ * whole job is to be trusted. This charts **composition** instead: the
+ * database repository against the files one, which is a real ratio and the
+ * one worth knowing, since the database is usually the smaller of the two
+ * and grows differently. A slot with only one repository has no composition
+ * to show and gets nothing.
+ */
+function Composition({ rows }: { rows: BackupTarget[] }) {
+  const sized = rows.filter((r) => (r.bytesStored ?? 0) > 0)
+  if (sized.length < 2) return null
+
+  const slices = sized.map((r, i) => ({
+    label: KIND_LABEL[r.kind] ?? r.kind,
+    value: r.bytesStored ?? 0,
+    color: i === 0 ? 'var(--chart-wiki)' : 'var(--chart-backups)',
+  }))
+  const total = slices.reduce((sum, s) => sum + s.value, 0)
+
+  return (
+    <div className="disk-chart">
+      <PieChart
+        slices={slices}
+        size={72}
+        label={slices.map((s) => `${s.label} ${bytes(s.value)}`).join(', ')}
+      />
+      <ul className="disk-chart__legend">
+        {slices.map((s) => (
+          <li key={s.label} className="disk-chart__row">
+            <span className="disk-chart__name">
+              <span className="disk-chart__key" style={{ background: s.color }} aria-hidden="true" />
+              {s.label}
+            </span>
+            <span className="disk-chart__value">{bytes(s.value)}</span>
+          </li>
+        ))}
+        <li className="disk-chart__row disk-chart__row--total">
+          <span className="disk-chart__name">Stored</span>
+          <span className="disk-chart__value">{bytes(total)}</span>
+        </li>
+        {cost(rows[0]?.type, total) && (
+          <li className="disk-chart__row">
+            <span className="disk-chart__name">Costs about</span>
+            <span className="disk-chart__value">{cost(rows[0]?.type, total)}</span>
+          </li>
+        )}
+      </ul>
+    </div>
   )
 }
 

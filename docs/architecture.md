@@ -1527,6 +1527,41 @@ which is why a failed drill is a *critical* alert and outranks everything
 else on the card: a backup that fails is noticed, while one that quietly will
 not restore looks healthy until the morning it is needed.
 
+## What the backups page charts (dev-plan 9.3)
+
+One pie per **filesystem**, not per agent: both sidecars normally write to
+the same disk, and drawing it twice would double its free space. They are
+grouped by the filesystem each agent reports (`df --output=source`), and an
+agent that has not reported one is left out rather than assumed to share,
+since assuming would be the double count again.
+
+**Free space is measured through a host bind mount, not the container's own
+volume.** Under Docker Desktop that volume sits on a sparse virtual disk
+which reports the size it may grow to: on a Mac with 700GB free it will
+claim 1.7TB. A bind mount is passed through the host's filesystem, so `df`
+on one reports the host's real figures, and both sidecars already mount
+their scripts that way. On a Linux host the two are normally the same
+filesystem and this changes nothing. The distinction matters because the
+warning exists to fire *before* the disk fills, and the sparse number would
+have fired late or never.
+
+The other numbers, what the backups occupy and what the live wiki occupies,
+are `du` on the agent's own paths, taken on a ten-minute clock rather than
+every heartbeat.
+`df` and `du` are two commands moments apart and will disagree; `df`'s free
+space is treated as authoritative and the backups are fitted into what is
+used, so the slices always sum to the disk rather than to more than it.
+
+The low-space warning is **two backup sets**, not a percentage, because a
+percentage means the wrong thing at both ends of the range this product runs
+on. Cloud storage has no free space at all, so its card charts composition,
+the database repository against the files one, and never invents a
+denominator.
+
+`components/PieChart.tsx` is the one pie in the product, extracted from the
+editor's chart node so that both draw the same thing and there is no chart
+library.
+
 ## Wiki packs: a space that outlives its instance (dev-plan 8.5)
 
 A site export (12.2, above) is for people; a **pack** is for Tesria. It is the

@@ -70,7 +70,7 @@ export function AdminLayout() {
     || can(Permission.SettingsEmail) || can(Permission.SettingsPublicSpaces) || can(Permission.SecuritySettings)
 
   return (
-    <div className="page-wrap">
+    <div className="page-wrap page-wrap--admin">
       <h1>Administration</h1>
       <nav className="tabs">
         {visible.map((t) => (

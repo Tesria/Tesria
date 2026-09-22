@@ -7,6 +7,8 @@
 AGENT=physical
 VOLUME=/var/lib/pgbackrest
 STANZA=main
+# This sidecar's view of the live wiki: the database itself (dev-plan 9.3).
+WIKI_PATH=/var/lib/postgresql
 FULL_EVERY_DAYS="${BACKUP_FULL_EVERY_DAYS:-7}"
 TOOL_VERSION="$(pgbackrest version 2>/dev/null)"
 

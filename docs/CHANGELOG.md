@@ -78,6 +78,56 @@ and estimated monthly cost instead of inventing one. The same numbers drive
 a low-space warning whose threshold is two backup sets, not a percentage.
 Full design in `dev-plan.md` as 9.3.
 
+### 9.3 Space charts on the backups page (2026-09-22)
+
+Administration → Backups now shows how much of the disk the backups
+themselves take, against everything else and what is free, and the cloud
+target shows what it is holding as a composition of its two repositories
+with a rough monthly cost.
+
+- **One chart per disk, not per agent.** Both backup agents normally write
+  to the same disk, and drawing it twice would double its free space on the
+  screen and invite somebody to read two charts as two disks.
+- **The low-space warning is measured in backup sets**, not a percentage.
+  Ten per cent of a 100 GB disk is not enough for one backup; ten per cent
+  of a 10 TB NAS is headroom nobody needs to hear about. The threshold is
+  two sets: the next backup plus the one it replaces.
+- **Cloud storage has no free space**, so its card charts composition
+  instead of inventing a denominator, and the cost estimate carries the date
+  its prices were checked, because a stale price shown as fact is a small
+  lie on a card whose job is to be trusted.
+- **One pie in the product.** The editor's SVG pie was extracted and shared
+  rather than adding a chart library; the editor still renders the same
+  geometry and colours, checked rather than assumed. It gained a fix on the
+  way: a pie of one slice used to draw a degenerate arc, which is invisible.
+
+**Corrected the same day, after the owner checked it against macOS.** The
+chart said 1.6 TB free; his Mac said 761 GB. `df` on the container's own
+volume reports Docker's *virtual* disk, which under Docker Desktop is sparse
+and reports the size it may grow to rather than the space the host can still
+give it. For a warning meant to fire before backups fill the disk, that is
+the worst way to be wrong. A host bind mount is passed through the host's
+filesystem, so `df` on one reports the real figures, and both sidecars
+already have such a mount; the measurement uses it now and matches the
+operating system. Along with it: a slice for the live wiki itself, a drop
+shadow so the cards lift off the section behind them, and the administration
+area using the width it is given instead of the 900px measure meant for
+prose, which was making tables scroll sideways on a large display. The
+Settings tab needed that separately, since its forms carry a 480px form
+width and left most of a wide display empty; they are a grid now.
+
+The slice colours were wrong on the first pass and the owner said so: grey
+read as *disabled* rather than as a slice, and the wiki and its backups were
+near enough in shade to be taken for each other. Four distinct hues now,
+with their own tokens and dark-mode values, and the pie has the same drop
+shadow as the cards.
+
+A test caught the bug worth having tests for: when `df` and `du` disagree,
+which they will, being two commands taken moments apart, clamping each
+number separately made the slices sum to more than the disk. `df`'s free
+space is authoritative now and the backups are fitted into what is used, so
+the three always add up.
+
 ### 9.2 step 6: the restore drill, and how to come back (2026-09-22)
 
 The last step, and the one that makes the rest trustworthy. **9.2 is

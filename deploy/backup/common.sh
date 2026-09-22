@@ -91,15 +91,70 @@ SQL
 
 # Runs in the background for the life of the container, so a long backup
 # does not make the agent look offline. Also feeds the compose healthcheck.
+# What this agent's own backups occupy, and which filesystem they sit on
+# (dev-plan 9.3). `df` already gives free and total; the missing number is
+# how much of the used space is *ours*, which is what makes "backups vs
+# everything else vs free" answerable rather than guessed.
+#
+# Measured on its own clock rather than every heartbeat: `du` walks the whole
+# backup directory, which is cheap on a few gigabytes and not free on a large
+# repository, and the number moves slowly. The filesystem id comes from `df`,
+# and is what lets two agents sharing one disk draw one chart instead of two
+# of the same disk.
+MEASURE_EVERY="${BACKUP_MEASURE_SECONDS:-600}"
+MEASURED_AT=0
+MEASURED_BYTES=""
+MEASURED_WIKI=""
+MEASURED_FS=""
+MEASURED_FREE=""
+MEASURED_TOTAL=""
+
+# A path that is a bind mount from the host, so that `df` on it reports the
+# *host's* disk. Both sidecars already mount their scripts this way.
+HOST_REF="${BACKUP_HOST_REF:-/scripts}"
+
+measure_volume() {
+  local now
+  now="$(date +%s)"
+  (( now - MEASURED_AT < MEASURE_EVERY )) && return 0
+  MEASURED_AT="$now"
+  MEASURED_BYTES="$(du -sb "$VOLUME" 2>/dev/null | cut -f1)"
+  # What the live wiki itself occupies: the uploads for one sidecar, the
+  # database directory for the other. Each reports its own part.
+  MEASURED_WIKI=""
+  [ -n "${WIKI_PATH:-}" ] && [ -d "$WIKI_PATH" ] \
+    && MEASURED_WIKI="$(du -sb "$WIKI_PATH" 2>/dev/null | cut -f1)"
+
+  # The disk that actually constrains this machine.
+  #
+  # `df` on the container's own volume is not it. Under Docker Desktop that
+  # volume lives on a *sparse* virtual disk which reports the size it may
+  # grow to, not the space the host can still give it: on a Mac with 700GB
+  # free it will happily claim 1.7TB. Backups then fill the real disk long
+  # before any warning here would fire, which is the one failure this
+  # measurement exists to prevent.
+  #
+  # A host bind mount is passed through the host's filesystem, so `df` on it
+  # reports the host's real figures. On a Linux host the two are usually the
+  # same filesystem anyway and this changes nothing.
+  read -r MEASURED_FREE MEASURED_TOTAL < <(df -B1 --output=avail,size "$HOST_REF" 2>/dev/null | tail -1)
+  MEASURED_FS="$(df --output=source "$HOST_REF" 2>/dev/null | tail -1 | tr -d ' ')"
+}
+
 heartbeat() {
   touch /tmp/heartbeat
-  local free total
-  read -r free total < <(df -B1 --output=avail,size "$VOLUME" 2>/dev/null | tail -1)
-  q -v free="${free:-}" -v total="${total:-}" >/dev/null 2>&1 <<'SQL' || true
+  measure_volume
+  q -v free="${MEASURED_FREE:-}" -v total="${MEASURED_TOTAL:-}" \
+    -v used="${MEASURED_BYTES:-}" -v wiki="${MEASURED_WIKI:-}" -v fs="${MEASURED_FS:-}" >/dev/null 2>&1 <<'SQL' || true
 UPDATE "BackupAgents"
    SET "LastSeenAt" = now(),
-       "VolumeFreeBytes" = NULLIF(:'free', '')::bigint,
-       "VolumeTotalBytes" = NULLIF(:'total', '')::bigint,
+       "VolumeFreeBytes" = coalesce(NULLIF(:'free', '')::bigint, "VolumeFreeBytes"),
+       "VolumeTotalBytes" = coalesce(NULLIF(:'total', '')::bigint, "VolumeTotalBytes"),
+       "VolumeWikiBytes" = coalesce(NULLIF(:'wiki', '')::bigint, "VolumeWikiBytes"),
+       -- Left alone when the measurement has not run this pass, so the last
+       -- known figure stays on the screen rather than blinking to nothing.
+       "VolumeBackupBytes" = coalesce(NULLIF(:'used', '')::bigint, "VolumeBackupBytes"),
+       "VolumeFilesystem" = coalesce(NULLIF(:'fs', ''), "VolumeFilesystem"),
        -- How far forward point-in-time recovery reaches: the last segment
        -- Postgres handed to pgBackRest. archive-push with archive-async
        -- only reports success once the segment is in the repository.

@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { PieChart } from '../components/PieChart'
 import { NodeViewWrapper, useEditorState, type ReactNodeViewProps } from '@tiptap/react'
 import type { Node as PMNode } from '@tiptap/pm/model'
 import { CHART_TYPES, CHART_TYPE_LABELS, isChartType, type ChartType } from './chartExtension'
@@ -123,23 +124,12 @@ function Plot({ data, type }: { data: TableData; type: ChartType }) {
 
   if (type === 'pie') {
     // A pie charts one column: the first, which is what people mean.
+    // The drawing itself lives in components/PieChart (dev-plan 9.3), so the
+    // editor and the backups page share one pie rather than two that drift.
     const slices = data.series.map((s, i) => ({ label: s.label, value: Math.max(s.values[0] ?? 0, 0), color: COLORS[i % COLORS.length] }))
-    const total = slices.reduce((sum, s) => sum + s.value, 0)
-    let angle = -Math.PI / 2
     return (
       <div className="chart__plot">
-        <svg viewBox="0 0 120 120" role="img" aria-label="Pie chart">
-          {total > 0 && slices.map((slice) => {
-            const sweep = (slice.value / total) * Math.PI * 2
-            const [x1, y1] = [60 + 55 * Math.cos(angle), 60 + 55 * Math.sin(angle)]
-            angle += sweep
-            const [x2, y2] = [60 + 55 * Math.cos(angle), 60 + 55 * Math.sin(angle)]
-            return (
-              <path key={slice.label} fill={slice.color}
-                d={`M60 60 L${x1.toFixed(2)} ${y1.toFixed(2)} A55 55 0 ${sweep > Math.PI ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`} />
-            )
-          })}
-        </svg>
+        <PieChart slices={slices} size={120} label="Pie chart" />
         <Legend items={slices.map((s) => ({ label: s.label, color: s.color }))} />
       </div>
     )

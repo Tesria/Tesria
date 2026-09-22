@@ -1,5 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { StorageTargets } from './StorageTargets'
+import { DiskSpace } from './DiskSpace'
 import {
   api,
   ApiError,
@@ -308,6 +309,8 @@ export function AdminBackupsPage() {
             canRun={can('backups.run')} />
         ))}
       </div>
+
+      <DiskSpace disks={data.disks} />
 
       <StorageTargets
         targets={data.targets}
