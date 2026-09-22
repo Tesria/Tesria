@@ -16,6 +16,7 @@ import { OverflowMenu } from '../components/OverflowMenu'
 import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
 import { useConfirm } from '../components/ConfirmDialog'
 import { noteOpenPage, notePageVisit } from '../onboarding/signals'
+import { useTitlePage } from '../components/DocumentTitle'
 
 type Tab = 'comments' | 'attachments' | 'history' | 'restrictions'
 
@@ -26,6 +27,7 @@ export function PageView() {
   const { space, tree, reloadTree } = useSpaceContext()
   const { user, can } = useAuth()
   const [page, setPage] = useState<PageDetail | null>(null)
+  useTitlePage(page?.title)
   const [error, setError] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('comments')
   const { ask, dialog } = useConfirm()

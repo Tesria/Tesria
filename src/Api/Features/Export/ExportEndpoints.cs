@@ -29,10 +29,12 @@ public static class ExportEndpoints
         Guid id, string? format, AppDbContext db, IPermissionService perms,
         Infrastructure.Permissions.IInstancePermissions rights, Infrastructure.Auth.CurrentUser current,
         IDynamicBlockService blocks, ISiteSettingsService settings, IConfiguration config,
-        Infrastructure.Export.IRenderTokens renderTokens, IPdfRenderer pdf, CancellationToken ct)
+        Infrastructure.Export.IRenderTokens renderTokens, IPdfRenderer pdf,
+        Infrastructure.Branding.IBrandAssets brandAssets, IWebHostEnvironment env, CancellationToken ct)
     {
         var page = await db.Pages.AsNoTracking()
             .Include(p => p.CurrentVersion)
+            .Include(p => p.Space)
             .FirstOrDefaultAsync(p => p.Id == id);
         if (page?.CurrentVersion is null) return Results.NotFound();
         if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
@@ -67,8 +69,15 @@ public static class ExportEndpoints
                 ["format"] = ["Supported formats are 'markdown', 'html' and 'pdf'."],
             });
 
-        var brand = new SiteChrome.Brand((await settings.GetAsync(ct)).InstanceName);
-        return await CaptureAsync(page.Id, page.Title, safeName, wanted, brand, current, renderTokens, pdf, config, ct);
+        // The branding at this moment, inlined: a single file has nowhere to
+        // keep a logo but inside itself (dev-plan 13.1). Not needed for a PDF,
+        // which is paper and carries none, so it is only packed for HTML.
+        var s = await settings.GetAsync(ct);
+        var brand = wanted == "html"
+            ? (await BrandExport.PackAsync(s, brandAssets, env, inline: true, ct)).Brand
+            : new SiteChrome.Brand(Infrastructure.Branding.BrandView.From(s).Name) { Instance = s.InstanceName };
+        var title = Infrastructure.Branding.BrandTitle.Format(s.InstanceName, page.Space?.Name, page.Title);
+        return await CaptureAsync(page.Id, page.Title, title, safeName, wanted, brand, current, renderTokens, pdf, config, ct);
     }
 
     /// <summary>
@@ -78,7 +87,7 @@ public static class ExportEndpoints
     /// the sidecar's browser read it as this caller and nothing more.
     /// </summary>
     private static async Task<IResult> CaptureAsync(
-        Guid pageId, string title, string safeName, string format, SiteChrome.Brand brand,
+        Guid pageId, string title, string documentTitle, string safeName, string format, SiteChrome.Brand brand,
         Infrastructure.Auth.CurrentUser current, Infrastructure.Export.IRenderTokens renderTokens,
         IPdfRenderer pdf, IConfiguration config, CancellationToken ct)
     {
@@ -106,6 +115,10 @@ public static class ExportEndpoints
         // tree to show, and the brand links nowhere because there is nowhere
         // in a single file to go.
         var html = Encoding.UTF8.GetString(bytes);
+        // Title, favicon, accent and theme locks, whatever the capture brought
+        // with it (dev-plan 13.1), then the export's own theme script, which
+        // reads the locks.
+        html = SiteChrome.ApplyToDocument(html, brand, documentTitle, "");
         html = html.Replace("</head>", SiteChrome.ThemeScript() + "</head>");
         html = html.Replace(
             "<div class=\"export\">",

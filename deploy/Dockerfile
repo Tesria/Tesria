@@ -23,13 +23,21 @@ RUN npm run build          # -> /web/dist
 # --- Stage 2: api build -----------------------------------------------------
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
+# Publish for the one platform this image runs on (dev-plan 13.1). Without a
+# runtime identifier, every native library the image-processing packages
+# ship is copied in for every platform they support: Windows builds with
+# their debug symbols, macOS, musl, loongarch. That was over 500 MB of files
+# a Linux container never loads, and it grew by another 150 MB when the SVG
+# renderer arrived. BuildKit sets TARGETARCH (amd64 or arm64).
+ARG TARGETARCH
+RUN case "$TARGETARCH" in arm64) echo linux-arm64 ;; *) echo linux-x64 ;; esac > /tmp/rid
 COPY src/Api/Api.csproj src/Api/
-RUN dotnet restore src/Api/Api.csproj
+RUN dotnet restore src/Api/Api.csproj -r "$(cat /tmp/rid)"
 COPY src/Api/ src/Api/
 # Embed the built SPA so `dotnet publish` includes it in the image.
 RUN rm -rf src/Api/wwwroot && mkdir -p src/Api/wwwroot
 COPY --from=web /web/dist/ src/Api/wwwroot/
-RUN dotnet publish src/Api/Api.csproj -c Release -o /app /p:UseAppHost=false
+RUN dotnet publish src/Api/Api.csproj -c Release -o /app -r "$(cat /tmp/rid)" --self-contained false /p:UseAppHost=false
 
 # --- Stage 3: runtime -------------------------------------------------------
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime

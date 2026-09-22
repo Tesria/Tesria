@@ -42,7 +42,43 @@ function isPreference(value: unknown): value is ThemePreference {
  * null, in a browser configured to block site data, and a theme preference
  * is never worth taking the app down for.
  */
+/* ---- the instance's branding (dev-plan 13.1) ----------------------------
+   The server writes these onto <html> in the page it sends, so they are
+   there before any script runs: the inline script in index.html reads them
+   for the first paint, and these read them for everything after. Attributes
+   rather than script because that script is allowed by the CSP by its hash
+   and must not change per instance. */
+
+function brandAttr(name: string): string | null {
+  return typeof document === 'undefined' ? null : document.documentElement.getAttribute(name)
+}
+
+/** A theme everyone is held to, or null when people choose. */
+export function themeLock(): 'light' | 'dark' | null {
+  const v = brandAttr('data-theme-lock')
+  return v === 'light' || v === 'dark' ? v : null
+}
+
+/** Whether the instance has its own accent colour, offered as "brand". */
+export function hasBrandAccent(): boolean {
+  return Boolean(brandAttr('data-brand-accent-light') || brandAttr('data-brand-accent-dark'))
+}
+
+/** An accent everyone is held to, or null when people choose. */
+export function accentLock(): AccentName | null {
+  const v = brandAttr('data-accent-lock')
+  return isAccent(v) ? v : null
+}
+
+/** The accent someone gets before they have chosen one. */
+export function accentDefault(): AccentName {
+  const v = brandAttr('data-accent-default')
+  return isAccent(v) ? v : DEFAULT_ACCENT
+}
+
 export function readPreference(): ThemePreference {
+  const locked = themeLock()
+  if (locked) return locked
   try {
     const stored = localStorage.getItem(THEME_STORAGE_KEY)
     return isPreference(stored) ? stored : 'system'
@@ -79,7 +115,7 @@ export function systemTheme(): 'light' | 'dark' {
 
 /* ---- accent colour ------------------------------------------------------ */
 
-export type AccentName = 'blue' | 'teal' | 'green' | 'purple' | 'orange' | 'magenta'
+export type AccentName = 'blue' | 'teal' | 'green' | 'purple' | 'orange' | 'magenta' | 'brand'
 
 export const ACCENT_STORAGE_KEY = 'tesria-accent'
 
@@ -95,23 +131,30 @@ export const ACCENTS: { name: AccentName; label: string }[] = [
   { name: 'magenta', label: 'Magenta' },
 ]
 
+/** "brand" only counts while the instance actually has a brand colour to show. */
 function isAccent(value: unknown): value is AccentName {
+  if (value === 'brand') return hasBrandAccent()
   return ACCENTS.some((a) => a.name === value)
 }
 
 export function readAccent(): AccentName {
+  const locked = accentLock()
+  if (locked) return locked
   try {
     const stored = localStorage.getItem(ACCENT_STORAGE_KEY)
-    return isAccent(stored) ? stored : DEFAULT_ACCENT
+    return isAccent(stored) ? stored : accentDefault()
   } catch {
-    return DEFAULT_ACCENT
+    return accentDefault()
   }
 }
 
+/**
+ * Stored whatever it is, blue included: once an instance has a default of
+ * its own, "blue" is a choice someone made, not the absence of one.
+ */
 export function saveAccent(accent: AccentName): void {
   try {
-    if (accent === DEFAULT_ACCENT) localStorage.removeItem(ACCENT_STORAGE_KEY)
-    else localStorage.setItem(ACCENT_STORAGE_KEY, accent)
+    localStorage.setItem(ACCENT_STORAGE_KEY, accent)
   } catch {
     // Ignore: the accent still applies for this page's lifetime.
   }
@@ -133,7 +176,7 @@ export function applyAccent(accent: AccentName): void {
  * the page's custom properties, which is also why a single themeable SVG
  * favicon is not possible, and the colour has to be baked in per variant.
  */
-export const ACCENT_HEX: Record<AccentName, { light: string; dark: string }> = {
+export const ACCENT_HEX: Record<Exclude<AccentName, 'brand'>, { light: string; dark: string }> = {
   blue: { light: '#2496ed', dark: '#6cb6f7' },
   teal: { light: '#0b6b82', dark: '#6cc3e0' },
   green: { light: '#1a6c45', dark: '#4bce97' },
@@ -174,7 +217,14 @@ function faviconSvg(color: string): string {
  * no request. public/favicon.svg stays as the pre-JS default.
  */
 export function applyFavicon(accent: AccentName): void {
-  const pair = ACCENT_HEX[accent] ?? ACCENT_HEX[DEFAULT_ACCENT]
+  // An uploaded favicon is linked in the page by the server; painting over
+  // it would replace the instance's own icon with Tesria's mark.
+  if (brandAttr('data-brand-favicon')) return
+  const brand = {
+    light: brandAttr('data-brand-accent-light') ?? brandAttr('data-brand-accent-dark') ?? ACCENT_HEX.blue.light,
+    dark: brandAttr('data-brand-accent-dark') ?? brandAttr('data-brand-accent-light') ?? ACCENT_HEX.blue.dark,
+  }
+  const pair = accent === 'brand' ? brand : ACCENT_HEX[accent as Exclude<AccentName, 'brand'>] ?? ACCENT_HEX.blue
   const color = systemTheme() === 'dark' ? pair.dark : pair.light
   const href = 'data:image/svg+xml,' + encodeURIComponent(faviconSvg(color))
 

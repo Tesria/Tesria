@@ -44,6 +44,7 @@
     <PackageReference Include="Scalar.AspNetCore" Version="2.17.3" />
     <PackageReference Include="SkiaSharp" Version="4.152.0" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.152.0" />
+    <PackageReference Include="Svg.Skia" Version="5.2.3" />
   </ItemGroup>
 
 </Project>

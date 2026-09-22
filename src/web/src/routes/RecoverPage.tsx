@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api, ApiError } from '../api/client'
 import { PasswordInput } from '../components/PasswordInput'
+import { AuthPage } from '../components/Brand'
 
 /**
  * Regaining access.
@@ -72,7 +73,7 @@ export function RecoverPage() {
 
   if (done) {
     return (
-      <div className="center">
+      <AuthPage>
         <div className="authcard">
           <h1>Password reset</h1>
           <p className="muted small">
@@ -83,13 +84,13 @@ export function RecoverPage() {
             Sign in
           </button>
         </div>
-      </div>
+      </AuthPage>
     )
   }
 
   if (!token && method === 'email') {
     return (
-      <div className="center">
+      <AuthPage>
         <form className="authcard" onSubmit={requestLink}>
           <h1>Reset your password</h1>
           {emailSent ? (
@@ -112,12 +113,12 @@ export function RecoverPage() {
             {' · '}<Link to="/login">Back to sign in</Link>
           </p>
         </form>
-      </div>
+      </AuthPage>
     )
   }
 
   return (
-    <div className="center">
+    <AuthPage>
       <form className="authcard" onSubmit={submit}>
         <h1>{token ? 'Choose a new password' : 'Reset your password'}</h1>
 
@@ -189,6 +190,6 @@ export function RecoverPage() {
           {!token && !emailOffered && ' · Lost your codes? Ask an administrator to issue a reset link.'}
         </p>
       </form>
-    </div>
+    </AuthPage>
   )
 }

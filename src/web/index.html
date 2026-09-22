@@ -8,30 +8,44 @@
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#161a1d" />
     <title>Tesria</title>
     <!--
-      Applies the saved theme before first paint. Without this the document
-      renders light for one frame and then flips, the classic dark-mode
-      flash, because the stylesheet cannot read localStorage and React has
-      not mounted yet. Deliberately inline and synchronous: a deferred or
-      module script runs too late to help.
+      Applies the theme and accent before first paint. Without this the
+      document renders light for one frame and then flips, the classic
+      dark-mode flash, because the stylesheet cannot read localStorage and
+      React has not mounted yet. Deliberately inline and synchronous: a
+      deferred or module script runs too late to help.
+
+      The instance's branding (dev-plan 13.1) arrives as attributes the
+      server writes onto <html>: data-theme-lock and data-accent-lock hold
+      everyone to a theme or accent, data-accent-default is what a newcomer
+      gets, and data-brand-accent-* say a custom "brand" accent exists. They
+      are attributes, not values in this script, because the CSP allows this
+      script by its hash: its text must be identical on every instance.
+
+      Storage is read through a guard so that a browser blocking site data
+      still gets the locks, which do not depend on storage at all.
 
       The storage keys and attribute logic are duplicated from src/theme.ts;
-      change them together. ('blue' is the default and stores nothing, so it
-      is deliberately absent from the accent pattern above.)
+      change them together.
     -->
     <script>
       (function () {
-        try {
-          var root = document.documentElement;
-          var pref = localStorage.getItem('tesria-theme');
-          if (pref === 'light' || pref === 'dark') {
-            root.setAttribute('data-theme', pref);
-          }
-          var accent = localStorage.getItem('tesria-accent');
-          if (/^(teal|green|purple|orange|magenta)$/.test(accent || '')) {
-            root.setAttribute('data-accent', accent);
-          }
-        } catch (e) {
-          /* Storage blocked: fall through to the prefers-color-scheme default. */
+        var root = document.documentElement;
+        function stored(key) {
+          try { return localStorage.getItem(key); } catch (e) { return null; }
+        }
+        var theme = root.getAttribute('data-theme-lock') || stored('tesria-theme');
+        if (theme === 'light' || theme === 'dark') {
+          root.setAttribute('data-theme', theme);
+        }
+        var brand = root.hasAttribute('data-brand-accent-light') || root.hasAttribute('data-brand-accent-dark');
+        function valid(a) {
+          return /^(blue|teal|green|purple|orange|magenta)$/.test(a || '') || (a === 'brand' && brand);
+        }
+        var accent = root.getAttribute('data-accent-lock');
+        if (!valid(accent)) accent = stored('tesria-accent');
+        if (!valid(accent)) accent = root.getAttribute('data-accent-default');
+        if (valid(accent) && accent !== 'blue') {
+          root.setAttribute('data-accent', accent);
         }
       })();
     </script>

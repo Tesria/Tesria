@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthContext'
 import { Permission } from '../api/client'
 import { NotificationBell } from './NotificationBell'
 import { ThemeToggle } from './ThemeToggle'
-import { BrandMark } from './BrandMark'
+import { BrandLockup } from './Brand'
 import { Avatar } from './Avatar'
 import { RecoveryCodesPrompt } from './RecoveryCodesPrompt'
 import { ReauthDialog } from './ReauthDialog'
@@ -142,9 +142,9 @@ export function Layout() {
         >
           ☰
         </button>
+        {/* The instance's brand, or Tesria's until someone sets one (dev-plan 13.1). */}
         <Link to="/spaces" className="brand">
-          <span className="brand__mark" aria-hidden="true"><BrandMark /></span>
-          <span className="brand__word">Tesria</span>
+          <BrandLockup />
         </Link>
         <div ref={navRef} className={navOpen ? 'topbar__collapsible is-open' : 'topbar__collapsible'}>
           {/* Phone only (the panel is a dropdown there; above the breakpoint

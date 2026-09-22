@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link, NavLink, Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { Permission, UserRole } from '../../api/client'
@@ -60,6 +61,7 @@ export function AdminLayout() {
     { to: '/admin/roles', label: 'Roles', permission: Permission.PermissionsView },
     { to: '/admin/groups', label: 'Groups', permission: Permission.GroupsManage },
     { to: '/admin/audit', label: 'Audit', permission: Permission.AuditView },
+    { to: '/admin/branding', label: 'Branding', permission: Permission.SettingsBranding },
   ]
   const visible = tabs.filter((t) => can(t.permission))
   // The owner always reaches the matrix, even having taken permissions.view
@@ -81,6 +83,31 @@ export function AdminLayout() {
       <div className="tab-panel">
         <Outlet />
       </div>
+      <VersionLine />
     </div>
+  )
+}
+
+/**
+ * "Tesria" and the version, at the foot of every Administration tab
+ * (dev-plan 13.1, decision F). The one place the product names itself on a
+ * branded instance besides the sign-in page, and only administrators see it.
+ * Worth having anyway: it is the first thing to quote when asking for help.
+ */
+function VersionLine() {
+  const [version, setVersion] = useState<string | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/health', { credentials: 'include' })
+      .then((r) => r.json() as Promise<{ version?: string }>)
+      .then((h) => { if (!cancelled && h.version) setVersion(h.version) })
+      .catch(() => { /* the line simply shows no number */ })
+    return () => { cancelled = true }
+  }, [])
+  return (
+    <p className="admin-version">
+      <a href="https://brianintheloop.com/tesria" target="_blank" rel="noopener noreferrer">Tesria</a>
+      {version && <> {version.split('+')[0]}</>}
+    </p>
   )
 }

@@ -168,13 +168,14 @@ public static partial class SiteExport
         body.Append($"<h1>{Escape(space.Name)}</h1>");
         if (!string.IsNullOrWhiteSpace(space.Description))
             body.Append($"<p class=\"site-lede\">{Escape(space.Description)}</p>");
-        return Shell(space.Name, body.ToString(), css, brand, head, pages, footer, "");
+        return Shell(Infrastructure.Branding.BrandTitle.Format(brand.Instance, space.Name),
+            body.ToString(), css, brand, head, pages, footer, "");
     }
 
     public static string NotFound(
         Space space, string css, SiteChrome.Brand brand, SiteChrome.SpaceHead head,
         IReadOnlyList<Placed> pages, string footer) =>
-        Shell($"Not found \u00b7 {space.Name}",
+        Shell(Infrastructure.Branding.BrandTitle.Format(brand.Instance, space.Name, "Not found"),
             "<h1>Not found</h1><p class=\"site-lede\">That page is not part of this site.</p>",
             // No current page: nothing in the tree is marked, which is honest
             // for a page that is not in the site.
@@ -200,16 +201,17 @@ public static partial class SiteExport
         var stylesheet = Relative(currentPath, "assets/site.css");
         return $"""
         <!doctype html>
-        <html lang="en">
+        {SiteChrome.HtmlOpen(brand)}
         <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{Escape(title)}</title>
         <link rel="stylesheet" href="{stylesheet}" />
+        {SiteChrome.HeadExtras(brand, currentPath)}
         {SiteChrome.ThemeScript()}
         </head>
         <body>
-        {SiteChrome.Topbar(brand, homeHref)}
+        {SiteChrome.Topbar(brand, homeHref, currentPath)}
         <div class="space-layout space-layout--export">
         {SiteChrome.Sidebar(head, pages, currentPath)}
         <section class="space-content">

@@ -1562,6 +1562,62 @@ denominator.
 editor's chart node so that both draw the same thing and there is no chart
 library.
 
+## Instance branding (dev-plan 13.1)
+
+An owner can give the instance its own name, logo, favicon and colours.
+Every default reproduces Tesria, and one projection, `BrandView.From`, is
+what the SPA, the page shell and the exports all read, so they cannot
+disagree about what "branded" means.
+
+**The branding arrives before any script runs.** A forced theme that arrived
+with the JavaScript bundle would be a flash of the wrong colours on every
+load, so the server writes the branding into the page it sends. Every
+application route, `/` included, is served by one endpoint
+(`Features/Public/SpaShell.cs`), which replaced the static-files fallback.
+It writes the tab title, the favicon links, a `<style id="brand-accent">`
+block and attributes on `<html>`: `data-theme-lock`, `data-accent-lock`,
+`data-accent-default` and `data-brand-*`.
+
+**The inline script never changes per instance.** The CSP allows the theme
+bootstrap in `index.html` by its SHA-256, computed at startup from the file
+on disk. Writing a colour or a lock into that script would change its hash
+and silently stop it running. So the script reads the attributes instead,
+and a test renders a fully branded shell from the real `index.html` and
+compares the script byte for byte.
+
+**A custom accent is two colours and a derivation.** `AccentColors` works in
+OKLCH, where "the same hue, lighter" is a straight line. It derives the hover
+colour, two tints, a border tint, and the text colour on buttons (chosen by
+measured contrast) from one colour per mode, and checks the WCAG 4.5:1 rule
+the six built-in accents meet. Colours are stored only as normalised
+`#rrggbb`, because they are written into a stylesheet on every page. The
+owner may keep a colour that fails the check. The admin page offers the
+nearest passing shade, and the audit entry records the override.
+
+**An uploaded SVG has two defences, and either would do alone.**
+`SvgSanitizer` rebuilds the file from the parse, keeping only allowlisted
+elements and attributes, and `url()` only when it points inside the file. It
+refuses DTDs, entities and anything unparseable. Independently, a branding
+SVG is only ever displayed through `<img>`, where it cannot run script or
+fetch anything, and it is served with `default-src 'none'; sandbox` so that
+opening its URL directly is inert too. Exported files, which have no CSP at
+all, rely on the `<img>` rule, which is why `SiteChrome` never inlines a
+logo. Raster images are re-encoded by SkiaSharp, keeping their shape within
+1024×256, as lossless WebP. Favicons become 32, 180 and 512 pixel PNGs, drawn
+from a sanitised SVG by Svg.Skia in this process.
+
+**Names.** The brand name is its own field. The instance name keeps the
+places that identify the installation: the tab title (`Instance - Space /
+Page`, by `BrandTitle` and its SPA twin `title.ts`), link previews, email,
+the authenticator entry, and the export footer. The two title
+implementations share their test cases.
+
+**The image.** Svg.Skia brought HarfBuzz, and the publish was
+framework-dependent with no runtime identifier. That copied every native
+library for about fifteen platforms into a Linux image. The Dockerfile now
+publishes for the build's own architecture, which took the app image from
+1,070 MB to 455 MB.
+
 ## Restoring the wiki, from the page that took the backup (dev-plan 9.4)
 
 Everything above is about *taking* backups. This is the one thing that spends

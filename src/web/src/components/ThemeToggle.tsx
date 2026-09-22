@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useDismissable } from '../hooks/useDismissable'
 import {
-  ACCENTS, applyAccent, applyFavicon, applyPreference, readAccent, readPreference, saveAccent,
-  savePreference, systemTheme, THEME_LABELS, THEME_ORDER,
+  ACCENTS, accentLock, applyAccent, applyFavicon, applyPreference, hasBrandAccent, readAccent,
+  readPreference, saveAccent, savePreference, systemTheme, themeLock, THEME_LABELS, THEME_ORDER,
   type AccentName, type ThemePreference,
 } from '../theme'
+import { useInstance } from '../InstanceContext'
 
 /* Local icons, matching NotificationBell's convention (app chrome defines its
    own rather than importing the editor toolbar's set): 24x24, 1.8px stroke,
@@ -77,6 +78,7 @@ const MODE_HINTS: Record<ThemePreference, string> = {
  * changes their OS theme with this page open.
  */
 export function ThemeToggle() {
+  const instance = useInstance()
   const [open, setOpen] = useState(false)
   const [preference, setPreference] = useState<ThemePreference>(readPreference)
   const [accent, setAccent] = useState<AccentName>(readAccent)
@@ -108,12 +110,24 @@ export function ThemeToggle() {
     saveAccent(next)
   }
 
+  // The instance may hold everyone to a theme or an accent (dev-plan 13.1).
+  // What is locked is not offered, and with both locked there is nothing to
+  // choose, so there is no menu.
+  const themeLocked = themeLock() !== null
+  const accentLocked = accentLock() !== null
+  // The brand's own colour comes first, under the brand's name.
+  const swatches: { name: AccentName; label: string }[] = hasBrandAccent()
+    ? [{ name: 'brand', label: instance?.branding.name ?? 'Brand' }, ...ACCENTS]
+    : ACCENTS
+
   const showing = preference === 'system' ? resolvedSystem : preference
   const TriggerIcon = preference === 'system' ? SystemIcon : showing === 'dark' ? MoonIcon : SunIcon
   const triggerLabel =
     preference === 'system'
       ? `Appearance: system (currently ${resolvedSystem})`
       : `Appearance: ${preference}`
+
+  if (themeLocked && accentLocked) return null
 
   return (
     <div className="theme-menu" ref={ref}>
@@ -133,6 +147,7 @@ export function ThemeToggle() {
           <button type="button" className="popover__close" aria-label="Close" onClick={() => setOpen(false)}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
+          {!themeLocked && (<>
           <p className="theme-menu__heading">Theme</p>
           <div className="theme-menu__modes">
             {THEME_ORDER.map((mode) => {
@@ -160,10 +175,12 @@ export function ThemeToggle() {
               )
             })}
           </div>
+          </>)}
 
+          {!accentLocked && (<>
           <p className="theme-menu__heading">Accent colour</p>
           <div className="theme-menu__accents">
-            {ACCENTS.map((a) => (
+            {swatches.map((a) => (
               <button
                 key={a.name}
                 type="button"
@@ -178,6 +195,7 @@ export function ThemeToggle() {
               />
             ))}
           </div>
+          </>)}
         </div>
       )}
     </div>

@@ -82,6 +82,14 @@ public static class InstancePermissions
     public const string SettingsRegistration = "settings.registration";
     public const string SettingsEmail = "settings.email";
     public const string SettingsPublicSpaces = "settings.public_spaces";
+
+    /// <summary>
+    /// The instance's look (dev-plan 13.1): brand name, logos, favicon,
+    /// colours and theme locks. Owner by default, grantable. Separate from
+    /// <see cref="SettingsInstance"/> on the owner's instruction: the
+    /// instance name and the branding are two different things.
+    /// </summary>
+    public const string SettingsBranding = "settings.branding";
     public const string PermissionsView = "permissions.view";
     public const string PermissionsEditUserTier = "permissions.edit_user_tier";
 
@@ -174,6 +182,9 @@ public static class InstancePermissions
         new(SettingsInstance, "Instance", "Change the instance name and address",
             "What this instance is called, and the address links in email use.",
             PermissionScope.Administration, UserRole.Admin),
+        new(SettingsBranding, "Instance", "Change the branding",
+            "The brand name, logo, favicon and colours everyone sees, and whether people may choose their own theme.",
+            PermissionScope.Administration, UserRole.Owner),
         new(SettingsRegistration, "Instance", "Change registration",
             "Whether anyone may create an account, or only invited people.",
             PermissionScope.Administration, UserRole.Admin),

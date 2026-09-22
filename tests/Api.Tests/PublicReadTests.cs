@@ -302,7 +302,10 @@ public class PublicReadTests
         var html = new HttpRequestMessage(HttpMethod.Get, $"/spaces/PUB/pages/{w.NormalPage}");
         html.Headers.Accept.ParseAdd("text/html");
         var shell = await (await w.Anon.SendAsync(html)).Content.ReadAsStringAsync();
-        Assert.Contains("<title>Public page ", shell); // "·" is entity-encoded in the shell
+        // Instance - Space / Page (dev-plan 13.1); the link preview's own
+        // title is still the bare page title.
+        Assert.Matches("<title>Tesria - [^<]+ / Public page[^<]*</title>", shell);
+        Assert.Contains("og:title\" content=\"Public page", shell);
         Assert.Contains("og:title", shell);
         Assert.Contains("pineapple", shell); // the description
 
@@ -401,12 +404,13 @@ public class PublicReadTests
 
         var body = await w.Anon.GetStringAsync("/api/instance");
 
-        // The four documented fields and nothing else: no space keys, no
-        // account count, no addresses, no settings beyond these.
+        // The documented fields and nothing else: no space keys, no account
+        // count, no addresses, no settings beyond these. "branding" (dev-plan
+        // 13.1) is what every page, the sign-in page included, already shows.
         var fields = System.Text.Json.JsonDocument.Parse(body).RootElement
             .EnumerateObject().Select(p => p.Name).Order().ToArray();
         Assert.Equal(
-            ["allowPublicRegistration", "instanceName", "needsOwner", "publicReading"],
+            ["allowPublicRegistration", "branding", "instanceName", "needsOwner", "publicReading"],
             fields);
         Assert.DoesNotContain("PUB", body);
         Assert.DoesNotContain("admin@example.com", body);
