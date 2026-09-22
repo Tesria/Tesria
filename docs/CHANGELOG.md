@@ -66,6 +66,49 @@ Tests: 19 rewriter fixtures, 13 HTTP round trips (importing as a *different*
 user, which is what makes the attribution and permission assertions mean
 anything), on top of step 1's 27 format tests.
 
+### Design 9.3: space charts on the backups page (2026-09-21, Fable)
+
+At the owner's request: a pie chart of backups against other usage against
+free space, one per backup target. The sidecar already measures free and
+total bytes; the one missing number is what the backups themselves occupy,
+and that is the whole data-model change. The editor's existing SVG pie is
+extracted and reused, so there is one pie in the product and no new
+dependency. Cloud storage has no free space, so its card charts composition
+and estimated monthly cost instead of inventing one. The same numbers drive
+a low-space warning whose threshold is two backup sets, not a percentage.
+Full design in `dev-plan.md` as 9.3.
+
+### Design 9.2: offsite backups to cloud, NAS and removable media (2026-09-21, Fable)
+
+The owner answered the seven decisions 9.2 had waited on since 2026-09-17,
+added removable media to its scope, and offered his NAS for testing. The
+full design is in `dev-plan.md`; the decisions that shape it are these.
+
+**Every offsite secret stays in `.env` and is read only by the backup
+sidecar.** The admin-page alternative was analysed and put to the owner,
+and it turns on one fact from the code: Data Protection keys live in the
+database, so a UI-stored key would travel inside every backup along with
+the means to decrypt it, and a key that can delete is the fatal case. The
+owner chose `.env` for simplicity and safety. The screen shows fingerprints
+the sidecar publishes; the app never holds a value.
+
+**Three fixed slots, cloud, NAS and removable, each with its own
+passphrase.** pgBackRest carries the database to the cloud slot (`repo2`,
+PITR off the box); restic carries the uploads and the logical dumps to
+every slot, encrypted client-side, which is what finally takes the dumps
+off the box in something other than plaintext. **A NAS is not a pgBackRest
+repository by default**, because a mounted path cannot be one safely from
+the database container; SFTP is the documented recipe for a LAN-only
+instance that wants PITR on its NAS.
+
+**One mechanism for the two path targets.** NAS and removable drive are
+both a host mount bind-mounted into the sidecar with a sentinel file on the
+target itself, so the sidecar always starts and an absent mount is reported
+rather than written into. They differ only in policy: the NAS is scheduled
+and its absence an alert; the drive is on demand only, and an instance
+whose only target is a drive is told in words that it has no offsite
+backup.
+
 ### Design 8.5: wiki packs (2026-09-21, Fable)
 
 The owner settled that the rebuilt manual's source of truth is the wiki, which
