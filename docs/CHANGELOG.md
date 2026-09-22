@@ -66,6 +66,26 @@ Tests: 19 rewriter fixtures, 13 HTTP round trips (importing as a *different*
 user, which is what makes the attribution and permission assertions mean
 anything), on top of step 1's 27 format tests.
 
+### Design 9.4: restore from the admin page (2026-09-22, Fable)
+
+At the owner's request: the backups page could test a restore but never
+perform one, and only the newest backup was reachable by hand. Now any
+backup on the page can be restored, logical or point-in-time, behind a
+gate stronger than deleting a space: a right of its own that only the owner
+holds by default, the label typed back, the password in the request, a
+safety backup that cannot be skipped, an audit entry on each side of the
+restore and a Critical alert to every administrator. The design's centre is
+that the job status lives in the database being replaced, so a logical
+restore goes into a new database and is swapped in by rename (the old one
+is kept as the undo), the sidecar carries the backup history across from
+its own volume, and the app restarts itself afterwards. Point-in-time
+recovery needs Postgres stopped, so the `db` container gains a supervisor
+that stops and starts its own database on a request only the `pgbackrest`
+sidecar can write. The previous copy is kept as the undo and ages
+out under the retention policy like any backup, the owner's call. Full
+design in `dev-plan.md` as 9.4; the five decisions were answered the same
+day.
+
 ### Design 9.3: space charts on the backups page (2026-09-21, Fable)
 
 At the owner's request: a pie chart of backups against other usage against
