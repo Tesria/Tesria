@@ -12,7 +12,7 @@
 # ---------------------------------------------------------------------------
 
 # --- Stage 1: web -----------------------------------------------------------
-FROM node:22-slim AS web
+FROM node:25-slim AS web
 WORKDIR /web
 # Install deps first for better layer caching.
 COPY src/web/package.json src/web/package-lock.json ./
