@@ -38,19 +38,30 @@ Read first, in this order:
 
 ## Model gate: check before starting any dev-plan item
 
-[`docs/dev-plan.md`](./docs/dev-plan.md) tags every item with the model
-that should execute it: **Opus** (well-specified implementation), **Fable**
-(design or security-model decisions that are expensive to reverse), or
-**Fable → Opus** (Fable writes the spec, Opus implements it).
+**Since 2026-09-22, Opus 5.5 does both halves: design and implementation.**
+The owner switched on trial after Anthropic's launch page reported Opus 5.5
+performing at Fable 5.1's level on most work at lower cost. The earlier
+split (Fable designs, Opus implements) is retired for new work. The tags on
+items already in [`docs/dev-plan.md`](./docs/dev-plan.md) stay as the record
+of who did what, and new items are tagged **`Model: Opus 5.5`**.
 
-**Before starting an item, compare its tag to the model you are running as**:
-the system prompt states it ("You are powered by the model named …").
-If they differ, **stop before any tool call that does work.** Say which model
-the plan asks for and, in one line, why; then offer exactly two options:
-switch models, or override for this item. Wait for the answer. If the user
-overrides, note it in the item's CHANGELOG entry. The point is to avoid
-burning a large model's tokens on routine implementation, or a smaller
-one's on a decision it shouldn't be making: either way, silently.
+**Before starting an item, check you are running as Opus 5.5**: the system
+prompt states it ("You are powered by the model named …"). If you are
+anything else, **stop before any tool call that does work.** Say which model
+the plan now expects and offer exactly two options: switch models, or
+override for this item. Wait for the answer, and if the user overrides, note
+it in the item's CHANGELOG entry. The point is unchanged: no silent design
+decisions on a model the owner has not chosen for them.
+
+**Fable is still available as a second opinion, on request.** It is not
+required for anything. When a design turns on a security model or a
+decision that is expensive to reverse (a migration, an auth change, a file
+format), name those decisions in the design so the owner can choose to have
+them reviewed.
+
+**This is a trial.** If a design by Opus 5.5 misses something Fable-level
+design would have caught, say so plainly when it surfaces, and record it in
+the item's CHANGELOG entry, so the owner has evidence either way.
 
 ## Working conventions established in this repo
 

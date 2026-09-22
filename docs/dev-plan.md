@@ -13,27 +13,29 @@ are now scheduled are pulled in here). Move items to the
 
 ## Model gate: read this first
 
-Every item below carries a tag:
+**Since 2026-09-22, Opus 5.5 designs and implements every item.** The owner
+switched on trial after Anthropic's launch page reported Opus 5.5 at Fable
+5.1's level on most work, for less. New items are tagged
+**`Model: Opus 5.5`**. Tags on earlier items are kept as history:
 
-- **`Model: Opus`**: well-specified implementation. Opus 5 executes it.
-- **`Model: Fable`**: a design or security-model decision that is expensive
-  to reverse if wrong. Fable 5.1 executes it.
-- **`Model: Fable → Opus`**: Fable writes the design (a spec section in this
-  file or in `architecture.md`), then Opus implements against it. Two
-  separate sittings; the handoff is the written spec.
+- **`Model: Opus`**: well-specified implementation, executed by Opus 5.
+- **`Model: Fable`**: a design or security-model decision, executed by Fable 5.1.
+- **`Model: Fable → Opus`**: Fable wrote the spec, then Opus implemented it,
+  in two sittings with the written spec as the handoff.
 
-**Before starting any item, compare its tag to the model you are running as
-(the system prompt states it: "You are powered by the model named …"). If
-they differ, STOP before any tool call that does work.** Tell the user which
-model the plan asks for and in one line why, then offer exactly two options:
-switch models, or override for this item. Do not proceed until they answer.
-If they override, record it in that item's CHANGELOG entry ("executed by X,
-plan asked for Y, user override"). This rule also lives in `CLAUDE.md`, so
-it applies whether or not a session has read this file.
+**Before starting any item, check you are running as Opus 5.5** (the system
+prompt states it: "You are powered by the model named …"). **If not, STOP
+before any tool call that does work.** Tell the user the plan expects Opus
+5.5, then offer exactly two options: switch models, or override for this
+item. Do not proceed until they answer. If they override, record it in that
+item's CHANGELOG entry ("executed by X, plan asked for Opus 5.5, user
+override"). This rule also lives in `CLAUDE.md`, so it applies whether or
+not a session has read this file.
 
-The assignment rule: Fable where a wrong call costs a migration, a security
-hole, or a rewrite; Opus everywhere the spec is already precise enough that
-the main risk is execution, which Opus handles well and cheaply.
+Fable stays available as an optional second opinion. A design names its
+security-model and hard-to-reverse decisions so the owner can ask for one.
+Because this is a trial, anything an Opus 5.5 design missed that surfaces
+later is recorded in that item's CHANGELOG entry.
 
 ## How to read this
 
@@ -4088,6 +4090,445 @@ carry it too.
 ---
 
 
+## Phase 13: Branding
+
+### 13.1 Instance branding · `L` · Model: Opus 5.5 · **designed 2026-09-22; every decision answered, ready to build**
+
+**What the owner asked for (2026-09-22).** "Add branding support to the app.
+It will allow owners and admins (off by default) to edit the page branding.
+They can set a new logo for Tesria and replace the word Tesria on the header
+bar with their own brand name. They can also set the favicon." Logos in
+several formats (SVG, PNG and so on). Theme options can be restricted for
+users: only light, only dark, and a fixed accent colour. The accent can be a
+custom colour, not only one of the six built in, and "if they allow both dark
+and light themes they can set both a light and dark accent color". And:
+"The branding should also be reflected in the web export. If someone exports
+a page or site the branding they set should be visible in their exported
+html."
+
+**Model note.** The first item designed under the 2026-09-22 model gate, in
+which Opus 5.5 does design and implementation. The decisions most worth a
+second opinion, if the owner wants one, are the SVG handling (decision 6) and
+getting branding into the page before first paint (decision 3), because a
+mistake in either is a security hole or a visible flash on every load.
+
+**What already exists, and shapes this.**
+- **The name already exists.** `SiteSettings.InstanceName` (default "Tesria")
+  is used in email subjects, the two-factor issuer, the public page titles
+  `PublicMetaMiddleware` writes, the export's wordmark and the static site's
+  footer. Only three places still hard-code "Tesria": the header in
+  `Layout.tsx`, the `<title>` in `index.html`, and the setup wizard's fallback.
+- **The export already has a seam.** `SiteChrome.Brand(Name, LogoPath)`
+  was left for this, with a note saying so. `LogoPath` is always null today,
+  and the `<img>` it would emit is fixed at 20×20, which would squash a wide
+  logo.
+- **Themes and accents are per browser**, in `localStorage`, applied before
+  first paint by an inline script in `index.html`. That script is allowed by
+  the CSP **by hash**, computed at startup from the file on disk
+  (`SecurityHeadersMiddleware.InlineScriptHashes`). Anything that changes the
+  script's text per instance breaks the hash and the script stops running.
+- **An accent is six tokens per mode**, hand-tuned and contrast-checked
+  (`index.css`, the accent block): `--primary`, `--primary-dark`,
+  `--primary-soft`, `--primary-softer`, `--primary-soft-border`,
+  `--on-primary`, plus an `--accent-dot-*` swatch.
+- **The favicon is generated at runtime** from the accent (`theme.ts`,
+  `applyFavicon`), following the OS theme rather than the app's.
+- **Uploaded images are re-encoded by SkiaSharp**, which is the security
+  control (EXIF stripped, polyglots defeated, decompression bombs bounded),
+  and **SVG is rejected outright** (`ProfileMediaService`). Output is a 256px
+  WebP square: right for an avatar, wrong for a logo.
+- **The licence is Apache 2.0.** It asks for a NOTICE file in
+  redistributions and nothing in the running product's UI, so the product can
+  be fully white-labelled without a "Powered by" line.
+
+**Decisions made in this design, with the reasons.**
+
+1. **The brand name is its own field, and nothing changes until someone sets
+   it** (the owner's decisions A and B). `BrandName` is empty by default, and
+   empty means "Tesria". Renaming the instance does not touch the header: an
+   instance renamed "Acme Docs" with no branding still says Tesria in the top
+   left. The brand name, when set, is the only name the interface shows:
+   - **It is used in** the header, the sign-in, registration, reset and
+     setup pages, the maintenance overlay, and the exported wordmark.
+   - **The instance name keeps** the places that name *this installation*
+     rather than decorate it: the browser tab title (decision 15), link
+     previews' `og:site_name`, email subjects, the authenticator app's entry,
+     and the static site's "Exported from" footer.
+   - **One behaviour changes for existing instances.** The name beside the
+     logo in the top bar of an exported HTML page or site (the export's copy
+     of the app header) shows the instance name today, while the app itself
+     says "Tesria". After 13.1 both say the same thing: the brand name, or
+     Tesria.
+
+2. **A right of its own, `settings.branding`,** Administration scope,
+   `DefaultFrom: Owner`, grantable to a role on the Roles tab. This is what
+   "owners and admins (off by default)" means in the rights model 11.1
+   built, and it is the same shape as `users.promote_admins` and
+   `backups.restore`. It covers the brand name, logos, favicon, colours and
+   locks. The instance name stays under `settings.instance`, which
+   administrators keep, because the two are separate things.
+
+3. **Branding reaches the page before first paint, and the inline script
+   never changes.** The server already rewrites the HTML shell for public
+   pages (`PublicMetaMiddleware`). That becomes the rule for every SPA HTML
+   response, so the shell arrives with the branding in it:
+   - `<title>` following the pattern in decision 15;
+   - the favicon `<link>`s pointing at the brand's favicon when there is one;
+   - a `<style id="brand-accent">` block holding the custom accent's tokens,
+     which the CSP already allows (`style-src 'unsafe-inline'`);
+   - `data-theme-lock` and `data-accent-lock` attributes on `<html>`.
+   The inline bootstrap script reads those attributes and **its text stays
+   byte-identical**, so its CSP hash still matches. Putting the policy inside
+   the script would have been the obvious move, and it would have silently
+   disabled the script on every branded instance. The shell stays
+   `no-cache` (it already is), so a change reaches everyone on their next
+   load. The SPA also receives the same branding from `/api/instance`, for
+   the header and to react to a change without a reload.
+
+4. **A custom accent is one colour per mode, and everything else is
+   derived.** The owner picks a light-mode colour and, when both themes are
+   allowed, a dark-mode one. The server derives the other five tokens with a
+   fixed algorithm in OKLCH (a darker hover, two soft tints, a border tint,
+   and `--on-primary` chosen by measured contrast, white or dark ink). The
+   algorithm lives once, in C#, and the preview endpoint returns its output,
+   so the admin page shows exactly what the server will emit. **Stored as
+   normalised `#rrggbb` and validated as such, never as free CSS text**,
+   because a colour field rendered into a `<style>` block is a CSS injection
+   point otherwise.
+
+5. **The custom accent is checked for readability, and the owner has the
+   last word** (decision C). `--primary` is link text, so the check is
+   **4.5:1 against the page background** in its mode (`#ffffff` light,
+   `--bg` dark), and `--on-primary` at 4.5:1 against `--primary`: the same
+   checks the built-in six pass. A colour that fails is shown with its
+   ratio, and the nearest passing shade (same hue, lightness adjusted, computed
+   by the server) is offered beside it as a one-click swap. The owner can
+   still save the original. It is then saved with a plain warning that links
+   and buttons will be hard for some people to read, and the audit entry
+   records that the check was overridden.
+
+6. **SVG logos are accepted, with two independent defences.** SVG is a
+   document format that can carry script, which is why avatars refuse it.
+   A logo is where people actually have SVG, so here it is accepted, but:
+   - **Sanitised on upload by an allowlist, not a blocklist.** Elements:
+     `svg g path rect circle ellipse line polyline polygon text tspan defs
+     linearGradient radialGradient stop clipPath mask use symbol title desc`.
+     Attributes: geometry, presentation and transform attributes, `id`,
+     `class`, `viewBox`, `xmlns`, and `href`/`xlink:href` only as an internal
+     `#fragment`. Removed: `<script>`, `<foreignObject>`, `<style>` elements,
+     every `on*` attribute, any `url(` that is not `url(#…)`, external
+     references, entities and DOCTYPEs (parsed with DTD processing off, which
+     also closes XML bombs). Anything unparseable is refused, never
+     "cleaned as far as possible". Capped at 256 KB.
+   - **Only ever displayed through `<img>`, never inlined as markup**, in
+     the SPA and in every export. An SVG inside an `<img>` cannot run script
+     or load anything, whatever it contains, so a sanitiser bug is not an
+     XSS. It is served with `Content-Security-Policy: default-src 'none';
+     style-src 'unsafe-inline'; sandbox` and `X-Content-Type-Options:
+     nosniff`, so opening the file's URL directly is inert too.
+   Raster logos (PNG, JPEG, WebP) are re-encoded by SkiaSharp like every
+   other upload, with **the aspect ratio kept**: fitted within 1024×256,
+   stored as lossless WebP (logos are flat colour and need their
+   transparency). GIF is refused: an animated logo in the header is not a
+   feature. 2 MB upload cap before decoding, the existing decoded-pixel cap
+   after.
+
+7. **A dark-mode logo, optional.** A black logo vanishes on the dark theme.
+   When both themes are allowed, the owner may upload a second logo for dark
+   mode; without one, the light logo is used in both. It is switched by CSS
+   on the same attributes the theme uses, so it never flashes. This is decision
+   D only because the owner did not ask for it.
+
+8. **The logo and the name are displayed in one of three ways**: logo and
+   name (the default, as Tesria is today), logo only (for a logo that already
+   contains the name), or name only. The logo renders at the header's
+   height with its width following its aspect ratio, capped so a very wide
+   logo cannot push the search box off the bar.
+
+9. **The favicon is separate from the logo.** A wide logo makes a useless
+   16px icon, so reusing it would be a trap rather than a convenience.
+   Accepted: SVG, PNG, ICO, JPEG, WebP. Stored: the sanitised SVG when one
+   was given, plus PNG at 32px (tabs), 180px (`apple-touch-icon`) and 512px.
+   Rasterising an SVG favicon needs an SVG renderer: `Svg.Skia`, a NuGet
+   library on the SkiaSharp already in the app (decision E, answered). **It
+   is not a new image or container.** It runs inside the existing `app`
+   process and does work only while an SVG favicon is being uploaded, so its
+   steady-state memory cost is nothing. **Unverified until Opus checks:** its
+   licence, that it fetches nothing and runs nothing, and how much it adds to
+   the app image. Opus records the size difference in the changelog, and if
+   it proves heavy, falls back to requiring a PNG alongside an SVG favicon. When a favicon is set, the
+   runtime accent favicon stops. With no custom favicon, a custom accent
+   paints the built-in mark in the brand colour, as the six do now.
+
+10. **Theme and accent policy.**
+    - Theme: *users choose* (today), *light only*, or *dark only*.
+    - Accent: *users choose*, with the brand accent as the default for anyone
+      who has not picked and shown first in the picker under the brand name;
+      or *locked* to the brand accent, which removes the picker.
+    - Only the modes in use need an accent colour: light only needs the light
+      value, dark only the dark one, both themes need both.
+    - A lock overrides a person's stored preference without deleting it, so
+      lifting the lock gives everyone back what they had chosen.
+    - The appearance menu hides what is locked, and disappears when both are.
+    - Locking the accent to one of the six built-in colours is allowed too.
+      A custom colour is not required to lock.
+
+11. **Where the branding appears:** the header, the tab title and favicon,
+    the sign-in, registration, reset and setup pages (which today show no
+    brand at all), the maintenance overlay, public read-only pages, and both
+    web exports. **Not in:**
+    - The PDF. It is paper: chromeless and forced light by design (12.1).
+    - Email. It already carries the name; logos in HTML email are out of
+      scope.
+    - Wiki packs. A pack is content and moves between instances; branding
+      belongs to whichever instance renders it.
+
+12. **Exports carry the branding as it was at export time.** An export is
+    a photograph, and it does not change when the branding does.
+    - `SiteChrome.Brand` gains the dark logo, the display mode and the accent
+      block.
+    - A site export copies the logo, dark logo and favicon into `assets/`.
+    - A single-page HTML export inlines them as `data:` URIs.
+    - Both reference them only through `<img>` and `<link rel=icon>`, never as
+      inline SVG markup. An exported file is opened from disk with no CSP at
+      all, so `<img>` is its only defence.
+    - The custom accent's `<style>` block goes into the export's `<head>`.
+    - The export's own theme script honours the same two lock attributes.
+    - Its appearance menu hides locked parts, and shows the brand accent as a
+      swatch when the accent is free.
+    - The fixed 20×20 logo size in `SiteChrome.Topbar` is replaced by a
+      height with automatic width.
+
+13. **Audited, not alerted.** `branding.changed` records who changed what,
+    with before and after values and file hashes. A changed logo is visible
+    to everyone at once, which makes it its own alarm. An alert would add
+    noise and no new information.
+
+14. **A "Reset to Tesria" button** clears the brand name, removes every
+    uploaded file, and restores Tesria's mark, the six accents with no locks,
+    and the generated favicon. It asks for confirmation first, because the
+    uploaded files cannot come back. The instance name is untouched: it was
+    never branding.
+
+15. **Tab titles are `Instance Name - Space Name / Page Name`** (the owner's
+    instruction, 2026-09-22). Today the application never sets the title, so
+    every tab says "Tesria" whatever is open in it. From here:
+    - A page: `Acme Docs - Engineering / Architecture`.
+    - A space with no page open (its overview, settings, trash):
+      `Acme Docs - Engineering`.
+    - Anywhere else, the section: `Acme Docs - Search`,
+      `Acme Docs - Administration`, `Acme Docs - Sign in`.
+    - Before a page's title has loaded, the space alone. It never flashes
+      "Tesria" in between.
+    - The server-rendered shell starts with the same title for public pages,
+      replacing today's `Page · Space · Instance`, so a link preview and the
+      first paint agree with what the app shows afterwards. `og:title` stays
+      the bare page title.
+    - Exports use the same pattern, including a site's index
+      (`Acme Docs - Engineering`) and each exported page.
+    - One small pure function builds the title, in the SPA and mirrored in
+      C# for the shell and the exports, so the two cannot disagree.
+
+16. **The sign-in page carries the brand** (the owner's request,
+    2026-09-22: "Above that put the Logo and Branding"). Today the card says
+    only "Sign in". From here, above the card's heading, the brand block in
+    one of four arrangements (the owner's refinement, the same day):
+    - **Logo and name side by side, the default.** Unbranded, that is
+      `[Tesria mark] Tesria`, the header's own arrangement at a larger size:
+      the logo up to 48px tall, the name at heading size, centred on each
+      other.
+    - **Logo above name, stacked.** The logo up to 72px tall, the name
+      beneath it.
+    - **Logo only.** For a logo that already contains the name, up to 72px
+      tall.
+    - **Name only.**
+
+    It is **one setting that covers the header and the sign-in page, plus one
+    sign-in-only choice.** *What to show* (logo and name, logo only, name
+    only; decision 8) applies to both places, so a logo that contains the
+    name never gets the name printed twice beside it on one screen but not
+    the other. *How to arrange them* (side by side, or stacked) matters only
+    when both are shown, and only on the sign-in page, because the header is
+    always side by side. Together they give exactly the owner's four options.
+    - **Sizing.** Logo widths follow the logo's aspect ratio, capped at the
+      card's width. The dark logo is used in dark mode, as in the header.
+    - **Unbranded, it is Tesria's own mark and name,** side by side. The page
+      is no longer anonymous, and it doesn't look like it is waiting to be
+      configured.
+    - **The same block is on every page built on the sign-in card**: sign-in,
+      its two-factor step, registration, account recovery, and the setup
+      wizard's first screen.
+    - **No separate sign-in logo is needed.** An SVG scales to any size
+      cleanly. A raster logo is stored at up to 256px tall (decision 6), which
+      is enough for 72px on a high-density screen. The one thing that can look
+      soft is a small raster original, so the Branding tab warns when an
+      uploaded raster logo is under 150px tall and suggests SVG or a larger
+      file. An optional separate sign-in logo, for a compact header mark with
+      a full lockup at sign-in, is easy to add later if anyone asks.
+    - "Powered by Tesria" sits under the card, as decision F says.
+
+**Schema.** One migration, on `SiteSettings`:
+- `BrandLogoHash`, `BrandLogoFormat` (`svg` | `webp`), `BrandLogoDarkHash`,
+  `BrandLogoDarkFormat`;
+- `BrandFaviconHash`, `BrandFaviconHasSvg`;
+- `BrandName` (nullable; empty means "Tesria"), `BrandDisplay`
+  (`logo-and-name` | `logo` | `name`), `SignInArrangement` (`side-by-side` |
+  `stacked`, default `side-by-side`);
+- `ThemePolicy` (`any` | `light` | `dark`), `AccentPolicy` (`any` | `locked`),
+  `AccentName` (one of the six, or `brand`), `BrandAccentLight`,
+  `BrandAccentDark` (both nullable `#rrggbb`);
+- `BrandChangedAt`, `BrandChangedById`.
+
+Files go through `IAttachmentStorage` under `branding/` with deterministic
+keys, like avatars, so a replacement overwrites and the S3 slot that
+interface reserves covers them. The content hash is the cache buster.
+
+**Endpoints.**
+- `GET /api/branding/logo`, `/logo-dark`, `/favicon.svg`, `/favicon-{32|180|512}.png`:
+  anonymous, because the sign-in page needs them. Immutable caching on
+  `?v=<hash>`, and the SVG headers from decision 6.
+- `GET /api/instance` gains a `branding` object: the brand name (or
+  Tesria), display mode, logo URLs, policies, accent name and the derived
+  tokens.
+- `GET /api/admin/branding`, and `PUT /api/admin/branding` for the brand
+  name, display mode, policies and colours (`settings.branding`, sudo,
+  audited).
+- `POST /api/admin/branding/logo`, `/logo-dark` and `/favicon`, as multipart
+  uploads, each with a `DELETE`.
+- `POST /api/admin/branding/accent-preview` takes `{ light, dark }` and
+  returns the derived tokens, the four contrast ratios, pass or fail, and
+  the nearest passing shade.
+- `POST /api/admin/branding/reset`, with sudo and audit.
+
+**UI.** Administration gains a **Branding** tab, shown with the right:
+- A live preview of the header bar in both themes that follows every change
+  before it is saved.
+- The brand name, blank by default with "Tesria" as its placeholder.
+- The logo, the dark logo and the favicon, each with an upload, a preview and
+  a remove button. The logo previews show both the header size and the
+  sign-in size, and a raster logo under 150px tall gets the softness warning
+  from decision 16.
+- What to show (logo and name, logo only, name only), and, when both are
+  shown, how the sign-in page arranges them (side by side, or stacked). The
+  live preview includes the sign-in block.
+- The theme policy.
+- The accent: the six built-in swatches plus "Custom", which opens two colour
+  fields with their contrast readouts, the nearest passing shade offered as a
+  one-click swap, and the warning when a failing colour is kept.
+- The accent policy.
+- Save, and **Reset to Tesria**, which confirms first.
+- At the foot of the tab, as on every Administration tab, the version line
+  from decision F.
+
+**Steps for Opus, each a commit that leaves the product working.**
+1. **The name, titles and the shell.** `BrandName` and the right exist. The
+   header, sign-in, reset, registration and setup pages and the export's
+   wordmark show the brand name, or Tesria. Tab titles follow decision 15
+   everywhere, including the shell and exports. The shell is rewritten for
+   every SPA HTML response. "Powered by Tesria" and the version line from
+   decision F. No uploads yet.
+2. **Theme and accent.** Policies, custom accents with the derivation and
+   contrast checks, the lock attributes, the bootstrap script reading them
+   (unchanged text, hash test), the appearance menu honouring them, the
+   preview endpoint, and the tab's accent and policy sections.
+3. **Logos and favicon.** The sanitiser, raster re-encoding, storage, the
+   serving endpoints with their headers, the dark logo, display modes, the
+   brand block on the sign-in card (decision 16), the favicon set, and the
+   tab's upload sections.
+4. **Exports.** `SiteChrome`, the site export's assets, the single-page
+   export's data URIs, and the export theme script honouring the locks.
+5. **Docs.** `architecture.md`, `security.md` (a layers row for SVG uploads),
+   the changelog, and a note for 10.5 so the manual's screenshots are taken
+   unbranded.
+
+**Tests.**
+- **Unit:**
+  - The right is the owner's by default and grantable.
+  - A wrong colour format is refused.
+  - The derivation is stable, and each built-in accent put through it passes
+    its own contrast checks.
+  - Renaming the instance leaves the header saying Tesria. Setting a brand
+    name changes it, and clearing the brand name goes back to Tesria.
+  - The title function, for a page, a space, a section, a page still loading,
+    and names containing a slash or a hyphen (vitest on the SPA's copy, xunit
+    on the C# copy, the same cases in both).
+  - The public shell's title follows the pattern, and `og:title` is the bare
+    page title.
+  - "Powered by Tesria" is absent from an unbranded sign-in page and present
+    on a branded one.
+  - A colour below 4.5:1 gets the warning and a suggested shade that passes.
+    Saving it anyway works, and the audit entry records the override.
+  - The shell carries the title, favicon, style block and lock attributes.
+  - **The inline script's hash is the same on a branded and an unbranded
+    shell.**
+  - Locks: light only needs no dark colour.
+  - Reset to Tesria clears the brand name and every file, and leaves the
+    instance name alone.
+  - Audit entries are written.
+- **The sanitiser gets its own suite of hostile SVGs:** `<script>`, `onload`,
+  `<foreignObject>` with HTML, `javascript:` and external `href`,
+  `url(https:…)` in a style attribute, `@import` in a `<style>` element, an
+  XXE entity, a billion-laughs DOCTYPE, `<use>` pointing at another file, and
+  an SVG that is also valid HTML. Each is either refused or comes out inert,
+  and a benign logo comes out visually unchanged.
+- **Raster:** aspect ratio is kept, EXIF is gone, a decompression bomb is
+  refused and a GIF is refused.
+- **Live:**
+  - Brand this instance with an SVG logo, a dark logo, a custom favicon and a
+    custom accent.
+  - Walk the header in both themes, a public page, and the tab icon.
+  - Walk the sign-in page signed out: unbranded, then branded with an SVG
+    logo and a small PNG, in all four arrangements, in both themes and at
+    phone width. Also the two-factor step, registration and recovery.
+  - Check the tab title on a page, a space, search and Administration, and
+    in an exported page and site.
+  - Lock to dark and confirm there is no light flash on load, then unlock and
+    confirm each person's own choice comes back.
+  - Export a page and a site, open both from disk offline, and check the logo,
+    accent and locks are there.
+  - Open the logo's URL directly and confirm nothing runs.
+  - Reset, and leave the instance unbranded as it was found.
+
+**Decisions, answered by the owner 2026-09-22.** The owner's words are
+quoted where they settled something.
+- **A. Branding and the instance name are separate.** "The instance name and
+  branding are two separate entities." Branding has its own right, and the
+  instance name stays with administrators under `settings.instance`.
+- **B. Only the brand name shows in the interface.** "The instance name is
+  pretty inconsequential." Nothing changes until branding is set on purpose:
+  "This should only replace the branding if someone intentionally configures
+  the branding." See decision 1.
+- **C. Suggest a better shade, but let the owner keep theirs.** "Suggest a
+  better shade, but allow users to override it if they like." See decision 5.
+- **D. The dark-mode logo is in.** "This is a good idea."
+- **E. `Svg.Skia` is in, as long as it adds no image.** "As long as this isn't
+  another docker image. I am worried about the number of images and the
+  amount of ram required to run Tesria." It is a library inside the existing
+  app process. See decision 9 for the size check and the fallback.
+- **F. Attribution: subtle, in two places.** "I want it to be light if
+  someone wants to use their branding. I don't need to be in users face
+  screaming that this is Tesria. I like a subtle approach."
+  - **Under the sign-in form**, a single muted line, "Powered by Tesria",
+    in the small secondary text size, linking to the project. Shown only
+    once branding is configured: before then the page already carries
+    Tesria's mark and name, and saying it twice is the opposite of subtle.
+  - **At the foot of Administration**, a version line, "Tesria" and the
+    version `/api/health` already reports, on every tab, always. Only administrators see it, and it
+    is useful anyway when asking for help.
+  - Not in exports, not in the app's header or any page readers use, and no
+    footer is added. No switch to hide it either: it is already as quiet as
+    it can be while still being there, and a switch can be added later.
+
+**Not decided here, deliberately:**
+- Per-space branding.
+- Custom fonts.
+- Arbitrary custom CSS. Never recommended: it is script-adjacent and
+  unreviewable.
+- A logo in HTML email.
+- Branding the PDF.
+
+---
+
 ## Order of execution, flattened
 
 1. **0.1** Roles (Fable→Opus) → **0.2** Settings → **0.3** Telemetry → **0.4** Media storage
@@ -4104,6 +4545,7 @@ carry it too.
 12. **12.1** Capture-based export and the element audit (shipped 2026-09-20) → **12.2** Publish a space as a static site (shipped 2026-09-20). 12 before 8.5 because the site export builds the walk over a space that the wiki pack will reuse, and because the owner's documentation is waiting on it.
 13. **8.6** External edits as tracked changes (steps 1–5 shipped 2026-09-21; step 6 folded into 10.5).
 13a. **8.5** Wiki packs (designed 2026-09-21 as Fable; Opus implements next). Before 10.5, because the pack is what a rebuilt manual is committed as.
+13b. **13.1** Instance branding (designed 2026-09-22 by Opus 5.5, the first item under the new model gate; every decision answered, ready to build). Before 10.5 at the owner's request, and the manual's screenshots are then taken on an unbranded instance.
 14. **10.5** Rebuild the user manual, **after 8.5**, now that the owner has settled the wiki as its source of truth (2026-09-21). A manual whose only copy is inside the instance is how the last one was lost, so the pack that can export it is a prerequisite, not a preference.
 
 Phases 6 and 8.2 are floaters (small, no dependents) and can fill gaps.
@@ -4125,4 +4567,5 @@ findings don't get better by waiting.
 - MP4 alongside WebM for the clips (needs ffmpeg in an image; the poster is the fallback until someone asks).
 - Phase 11's three: invites naming a role, groups carrying instance rights (recommended no), and anonymous rights beyond export.
 - 8.5's four: matching pack authors to accounts by email, carrying restrictions by principal name for confirmation, importing into an existing space as a merge, and signed or encrypted packs.
+- 13.1's five: per-space branding, custom fonts, arbitrary custom CSS (never recommended), a logo in HTML email, and branding the PDF.
 - 9.4's three: restoring one space or page out of a backup, restoring a dump from a newer schema, and more than one `app` container.
