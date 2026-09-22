@@ -42,3 +42,6 @@ collab/vendor/
 
 # --- Local debug account credentials (never commit) ---
 .debug-credentials
+
+# --- The owner's NAS, for 9.2 offsite-backup work (never commit) ---
+.nas-credentials

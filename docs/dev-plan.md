@@ -1748,15 +1748,16 @@ encrypting the logical dumps (a prerequisite of 9.2, done there or as its
 own small item); downloading backups through the app; `pitr-selftest.sh`
 in the UI.
 
-### 9.2 Offsite backups: network drives and cloud storage · `L` · Model: Fable → Opus
+### 9.2 Offsite backups: cloud, network drives and removable media · `L` · Model: Fable → Opus · designed 2026-09-21 (Fable)
 
-**Not scheduled.** Research done 2026-09-17 (Opus, from official docs;
-items marked *unverified* were not confirmed). Fable's remaining design
-work is small once the owner answers the open decisions at the end; Opus
-then implements. **Prerequisites:** 9.1 shipped (the sidecars must be
-able to report offsite runs the same way), and the logical dumps
-**encrypted before anything copies them off the box** (they are plaintext
-today).
+**Designed 2026-09-21 (Fable); ready for Opus.** Research done 2026-09-17
+(Opus, from official docs; items marked *unverified* were not confirmed).
+The owner answered every open decision on 2026-09-21; the answers are
+recorded with the questions below, and the design that follows them is
+what Opus implements. **Prerequisites:** 9.1 shipped (it did), and the
+logical dumps **encrypted before anything copies them off the box** (they
+are plaintext today; step 2 of the design is what satisfies this, because
+nothing leaves the box except through restic).
 
 **Recommendation.** Local first, then replicate (3-2-1); never
 remote-only, because a remote outage would then fill `pg_wal`.
@@ -1789,6 +1790,37 @@ remote-only, because a remote outage would then fill `pg_wal`.
   (pgBackRest 2.57+). Keep spool and lock paths local; never put PGDATA
   on a NAS. Best used as a copy target (repo2, or a restic
   `rest-server --append-only` on the NAS), not as the only repository.
+- *Removable media (a drive plugged into the host):* the classic offline
+  copy, and **a different target class from a NAS**, because it is absent
+  most of the time. That one fact rules out everything continuous. It can
+  never be a pgBackRest repository or a WAL destination: an unplugged
+  `repo2` makes `archive_command` fail, which is the postmaster crash-loop
+  this machine has already been through. So it is an **on-demand copy** of
+  the latest verified backup set, as a restic repository on the drive,
+  written by the sidecar when asked, with `check` after the write and
+  `sync` before the screen says "safe to remove". restic is the format for
+  the offsite reasons plus one more: a drive leaves the building, so
+  client-side encryption is the whole point, and a restic repository is
+  self-contained (restic and the passphrase restore it on any machine, with
+  no Tesria). The mount is a host **bind** mount at a fixed path,
+  deliberately the opposite of the NAS choice: the container must start
+  whether or not the drive is there. That reopens the silent-write trap (an
+  absent drive leaves an ordinary directory on the boot disk, and a copy
+  into it fills the boot disk), and the defence is a **sentinel file on the
+  drive itself**: `.tesria-backup-target`, written once when the target is
+  set up and carrying the target's id. No sentinel, no write, and the
+  screen says "drive not present" rather than "done". A mount-point check
+  cannot do this job from inside a container, where a bind mount is always
+  a mount point. Filesystems: exFAT and FAT32 have no ownership, no
+  symlinks and no hardlinks; restic needs none of those, and the setup step
+  formats nothing and warns on FAT32 (its 4 GB file limit; restic's packs
+  stay under it by default, but say so). Retention is per target and
+  conservative, `--keep-last N` with no time window, because a drive
+  plugged in twice a year must not prune itself to nothing. "Copy whenever
+  it appears" is possible without udev or launchd, which a container cannot
+  see: the sidecar polls for the sentinel on a schedule. On this Mac a
+  drive lives under `/Volumes/<name>`, which Docker Desktop shares by
+  default.
 - *Immutability:* S3 Object Lock (needs versioning; *governance* can be
   bypassed with a permission, *compliance* cannot be shortened), B2
   Object Lock with an application key lacking `deleteFiles`, restic's
@@ -1833,12 +1865,23 @@ in `.env`, pgBackRest 2.59.1; (2) uploads and dumps offsite: restic
 replaces the tarball, the 9.1 policy drives `forget`; (3) the Storage
 targets screen, versioning plus a governance lock no longer than
 retention, a write-only daily key and an offline maintenance key, and a
-monthly automated scratch restore. *LAN-only alternative:* the NAS as
+monthly automated scratch restore; (4) removable media as an on-demand
+target with the sentinel, once the screen exists to put its button on.
+*LAN-only alternative:* the NAS as
 repo2 (SFTP, or NFS with `repo-symlink=n`, or `cifs`) plus a restic
 `rest-server --append-only` on it; a cloud copy of the NAS can come
 later.
 
-**Open decisions for the owner (the item waits on these):**
+**Open decisions for the owner, all answered 2026-09-21.** In order: (1)
+B2 is the documented default; (2) credentials stay in `.env`, never the
+UI, the owner's words being "keep it all in .env to avoid issues and keep
+top security", and the analysis that led there is in the design below;
+(3) governance lock, no longer than retention; (4) separate passphrases,
+escrowed off the host; (5) each remote gets its own schedule and
+retention; (6) restic replaces the uploads tarball; (7) NAS first-class,
+SMB tested; (8) removable media is on-demand only and never counts as the
+only copy off the box. The questions stay as the record of what was asked.
+
 
 1. The documented default provider: B2, generic S3, or R2.
 2. Offsite credentials: deploy-time only (recommended), or editable in
@@ -1850,14 +1893,183 @@ later.
    remote copy unrecoverable.
 5. Whether repo2 gets its own schedule and retention (recommended yes).
 6. restic replaces the uploads tarball, or both are kept.
-7. NAS as a first-class target type, or a documented recipe.
+7. ~~NAS as a first-class target type, or a documented recipe.~~
+   **Answered 2026-09-21: first-class.** The owner wants people to use the
+   storage they already have, and has made his own NAS available for
+   building and testing: an SMB share on the LAN, credentials in the
+   gitignored `.nas-credentials`, with two standing rules, that only the
+   `G\claude` path may be touched and that nothing there is deleted without
+   explicit permission. SMB/CIFS is therefore the documented and tested LAN
+   protocol; NFS stays a recipe.
+8. Removable media (added 2026-09-21 at the owner's request): on-demand
+   only, which is the recommendation for version 1, or also "copy whenever
+   the drive appears" by polling for the sentinel. And whether a removable
+   target may stand as an instance's *only* copy off the box, or whether the
+   screen says plainly that an offline copy is not a schedule.
 
 **Risks to carry into the design:** a repo2 archive gap silently breaks
 PITR from it; `archive-push-queue-max` trades a full disk for dropped
 WAL; NFS after reboot; SMB and symlinks; no-delete credentials break
 `expire`/`prune`; Wasabi minimums; Glacier breaks restic; R2 restores;
 `rclone sync` deletes and its config passwords are only obscured; a lost
-passphrase; sidecar egress is unguarded; today's dumps are plaintext.
+passphrase; sidecar egress is unguarded; today's dumps are plaintext; an
+absent removable drive is an ordinary directory and the sentinel is the only
+guard; FAT32's 4 GB file limit; a drive pulled mid-write.
+
+**The design (2026-09-21, Fable).** Three target types, one rule each
+was chosen by, and a mechanism that is the same for the two that are paths.
+
+**Why the credentials are not in the admin page.** The retention policy is
+enforced by Tesria's code, and a stolen credential never passes through
+Tesria's code, so a policy in the UI protects against Tesria's own
+mistakes and against a stolen key not at all. Worse, and this is from the
+code rather than from theory: Data Protection keys are persisted **in the
+database** (`Program.cs`, `PersistKeysToDbContext`), so a logical dump
+would contain both a UI-stored key and the means to decrypt it, and every
+backup would carry the key to delete itself. A key that can delete is the
+fatal case, since `forget --prune` and `expire` need one. The write-only
+design (a key without `deleteFiles`, verified by Test connection refusing
+a key that can delete, with pruning moved to provider lifecycle rules) was
+put to the owner and he chose `.env` instead, for simplicity: one place,
+no misconfiguration that quietly weakens it. So: **every offsite secret
+lives in `.env`, is read only by the backup sidecar, and never reaches the
+app, the database, a log, or a screen.** The screen shows fingerprints.
+
+**Three targets, fixed slots.** Rather than a numbered list of arbitrary
+targets, `.env` declares at most one of each kind: `OFFSITE_CLOUD_*`,
+`OFFSITE_NAS_*`, `OFFSITE_REMOVABLE_*`. Fixed slots are readable in a
+`.env`, map one-to-one onto three cards on the screen, and cover "use the
+storage you have"; a second cloud is rare enough to be a later extension.
+Each slot has its own passphrase (`_PASSPHRASE`), separate from the local
+repository's and from each other's, so a leaked cloud passphrase does not
+read the NAS copy and a lost drive does not expose either. Four
+passphrases in all (local, cloud, NAS, removable); the runbook says to
+escrow every one in a password manager off the host, and the sidecar
+**refuses to run a target whose passphrase is missing** rather than
+falling back to another's. A lost passphrase is a lost copy, by design.
+
+**The database goes offsite through pgBackRest; the files through
+restic.** These are the two tools, one each, and the split is by what
+each is for:
+
+- *pgBackRest* keeps `repo1` local and adds **`repo2` on the cloud slot**
+  (S3 API; B2 is the documented default). WAL streams to both, so
+  point-in-time recovery exists off the box; `repo2` has its own cipher
+  passphrase, `repo2-bundle=y`, `repo2-retention-full` from the slot's
+  retention, a weekly `backup --repo=2` and a daily `verify --repo=2`.
+  `archive-push-queue-max` bounds what a dead remote can do to the disk,
+  and tripping it raises an alert, because WAL past the limit is dropped
+  and PITR from that repo is broken until its next backup. Upgrade to
+  pgBackRest 2.59.1 first. **A NAS is not a pgBackRest repository by
+  default.** A mounted path cannot be one safely: `archive_command` runs
+  in the *database* container, where no sentinel check can run, and an
+  unmounted share is an ordinary directory that pgBackRest would happily
+  make a fresh repository in, on the boot disk. The one safe way is the
+  **SFTP repository type** (pgBackRest 2.46+, no mount at all; the NAS
+  being down is a network error, not a silent local write), and that is a
+  documented recipe for a LAN-only instance that wants PITR on its NAS,
+  not a slot. Step 1 must confirm the pinned version's multi-repository
+  `archive-push` semantics (whether one failing repository fails the
+  command) before relying on them; the research did not verify this.
+- *restic* replaces the uploads tarball and carries **both the uploads
+  volume and the logical dumps** to every configured target: the cloud
+  slot (B2 backend), the NAS slot (a path), the removable slot (a path).
+  It encrypts client-side always, which is what satisfies the plaintext
+  prerequisite; it deduplicates, so the uploads volume is backed up
+  directly; and `forget --keep-last N --keep-within Dd --prune` is the
+  slot's retention, applied per target. `check --read-data-subset=5%`
+  after every run. One repository per target, never shared.
+
+**One mechanism for the two path targets.** The NAS and a removable drive
+are both "a path on the host that may or may not be a real mount right
+now", and they get the same guard: the share or drive is mounted **on the
+host** (macOS: Finder or `mount_smbfs`, under `/Volumes`; Linux: `fstab`
+with `_netdev,nofail`) and **bind-mounted** into the backup sidecar, so
+the sidecar always starts, and a **sentinel file** on the target itself
+(`.tesria-backup-target`, written once at setup, carrying the slot's id)
+is checked before every write. No sentinel means no write and a plain
+status ("NAS not reachable", "drive not present"), never a copy into the
+empty directory the absent mount leaves on the boot disk. A Docker
+`cifs`/`nfs` named volume stays as a documented alternative where host
+mounting is awkward, with its known trade (the container does not start
+while the share is down). They differ only in **policy**: the NAS is
+scheduled, every 9.1 run pushes to it, and its absence is an alert; the
+removable drive is **on demand only**, a "Copy now" button and nothing
+scheduled, its absence is normal, and retention is `--keep-last N` with no
+time window so a drive plugged in twice a year cannot prune itself away.
+After a removable copy the sidecar runs `check`, then `sync`, and only
+then reports "safe to remove"; it formats nothing and warns on FAT32. NAS
+immutability is the NAS's own snapshot schedule (every mainstream NAS has
+one), documented as the recipe; `rest-server --append-only` is the
+stronger alternative for a NAS that can run it.
+
+**Where it appears.** The 9.1 backups section gains **Storage targets**:
+three cards, Cloud, NAS, Removable. The app never reads `.env` for this;
+the **sidecar publishes its own configuration, secrets reduced to
+fingerprints, into the 9.1 status tables**, and the cards show that: type,
+endpoint or path, bucket and prefix, whether a key and a passphrase are
+set (fingerprints), encryption on, and for the cloud whether versioning
+and a lock were detected; then last backup, last WAL push, bytes stored,
+last verify, and any warning (archive gap, queue tripped, stale, not
+reachable, drive absent). Two actions, both sidecar jobs reported through
+the 9.1 tables: **Test connection** (`check --repo=2`, `restic snapshots`,
+the sentinel check) and, on the removable card only, **Copy now**. One
+more thing the dashboard says, per decision 8: an instance whose only
+configured target is removable media has **no offsite backup**, in those
+words, because an offline copy is not a schedule.
+
+**Proving it restores.** `pgbackrest --repo=2 verify` daily; a monthly
+automated drill that restores `--repo=2 --type=time` into a throwaway
+`postgres:18` container and records how long it took; for restic, `check
+--read-data-subset` after each run and a monthly `restore latest` followed
+by `pg_restore --list` and an uploads file count. All wired into 9.1's
+restore-test jobs, so they show where the local ones do. And the runbook
+gains the chapter that is the point of all of this: **the machine is
+gone**. Fresh host, `.env` and the passphrases from escrow, and the steps
+from a B2 bucket, a NAS share or a drive back to a running Tesria, using
+`deploy/scratch-instance.yml`, which already exists for exactly this.
+
+**Security notes carried in.** Sidecar egress is unguarded (`EgressGuard`
+covers the app only; a LAN NAS is a private address the guard would refuse
+anyway). Secrets are redacted in every sidecar log line. `.env` stays mode
+600. The sidecar reports fingerprints, never values, and the app has no
+code path that can return a value because it never holds one.
+
+**Opus implements, in this order, each step shippable alone:**
+1. The slot model and the cloud repository: `.env` schema for the three
+   slots, sidecar config publishing (fingerprints), pgBackRest 2.59.1,
+   `repo2` on the cloud slot with its own passphrase, retention, bundle,
+   queue limit, weekly backup, daily verify, and the archive-gap and
+   queue-tripped alerts. Confirm multi-repository `archive-push` semantics
+   on the pinned version and write down what was found. Test against a
+   MinIO container (S3 API, free, repeatable); one real run against B2 if
+   the owner provides a bucket.
+2. restic replaces the tarball: uploads volume and logical dumps to every
+   configured target, per-target `forget` from the slot's retention,
+   `check --read-data-subset`, and with it the plaintext prerequisite is
+   met. Tests for the retention translation.
+3. The path mechanism: host mount plus bind mount plus sentinel, shared by
+   the NAS and removable slots; the NAS slot scheduled with its absence an
+   alert; the SFTP `repo3` recipe and the NAS-snapshot recipe in the
+   runbook. Verify against the owner's NAS (SMB, `G\claude` only, delete
+   nothing without permission; credentials in `.nas-credentials`).
+4. The removable slot: `Copy now`, `--keep-last`, `check` then `sync` then
+   "safe to remove", the FAT32 warning, and the "no offsite backup"
+   dashboard warning. Verify with a mounted exFAT disk image (`hdiutil`
+   on this Mac), which behaves as a removable volume under `/Volumes`
+   without needing hardware, then once with a real drive.
+5. The Storage targets screen: three cards from the published
+   configuration, Test connection, Copy now, warnings. Live walk as admin
+   and as a member (who must not see it).
+6. Restore drills wired into 9.1's restore-test jobs; the "machine is
+   gone" chapter in `backup-recovery.md`; `architecture.md`; CHANGELOG.
+
+**Verify** end to end with the scratch instance: configure all three
+slots, run a backup, unplug the drive and unmount the NAS and confirm the
+sidecar reports both plainly and writes nothing to the boot disk, then
+restore from the cloud copy alone into the scratch instance and open a
+page. Then the drill everyone skips: delete the `.env` passphrase for one
+slot and confirm that slot refuses to run rather than falling back.
 
 **Sources:** pgbackrest.org (configuration, user-guide, command,
 release notes); pgbackrest issues 2782, 2854, 2148, 592;
@@ -1867,6 +2079,99 @@ rclone.org (crypt, sync); docs.docker.com (volumes, secrets);
 moby/moby#47153; AWS S3 Object Lock and pricing pages; Backblaze B2
 pricing, Object Lock and application-key docs; Wasabi pricing and FAQ;
 Cloudflare R2 pricing and bucket locks.
+
+---
+
+### 9.3 Space charts on the backups page · `M` · Model: Opus · designed 2026-09-21 (Fable)
+
+**What the owner asked for (2026-09-21).** A pie chart on the backups page
+showing backups against overall disk usage against free space, and one such
+chart per backup target, so that a person with a NAS or a drive configured
+sees a chart for each. "Every backup target should be represented here."
+
+**What each chart says.** Three slices: **backups** (this target's backup
+data), **other** (everything else on that disk or share), **free**. The
+numbers sit beside the chart, in bytes a person can read and with the time
+they were measured, because the numbers are the point and a pie without
+them is decoration. The caption names the mount, for the reason below.
+
+**Where the numbers come from, and the one that is missing.** The sidecar
+already measures free and total bytes for its volume on every run
+(`deploy/backup/common.sh`, `df`, into `BackupAgent.VolumeFreeBytes` and
+`VolumeTotalBytes`). It does not measure what its backups occupy, so that
+is the whole data-model change for the local chart: `VolumeBackupBytes`, a
+`du` of the agent's backup path, and the filesystem's identity
+(`df --output=source`) so that two agents on one filesystem draw **one**
+chart rather than two of the same disk. "Other" is then total minus free
+minus backups. Both agents normally share a filesystem (on this Mac, always:
+see below), so the local card usually has one chart; two only when the
+logical dumps and the pgBackRest repository genuinely live on different
+disks. The app never runs `df` or `du` itself; it renders what the sidecar
+published, the same rule as everything on this page.
+
+**On a Mac the disk is Docker's.** Under Docker Desktop the volumes live on
+the Docker VM's virtual disk, which has its own size cap in Docker Desktop's
+settings, so the chart will not match Finder and should not. The caption
+says which mount was measured, and the runbook has one sentence on why the
+number differs from the Mac's own.
+
+**The other targets (after 9.2).** 9.2's sidecar publishes per-slot status
+into the 9.1 tables; each slot gains the same three numbers and a measured
+time, taken once per run and on Test connection. **NAS:** `df` on the mount
+gives the share's total and free (SMB reports them), and backups are the
+restic repository's size on it. **Removable:** the same, but only while the
+drive is present; when it is absent the card shows the **last-known** chart
+labelled "as of <date>, drive not present", because the question the chart
+answers ("is my drive filling up") is still worth answering from the last
+copy. **Cloud:** there is no disk and no free space, and a pie that invents
+one would be a lie. The cloud card instead charts **composition**, the
+database repository against the files repository, with the total stored
+and an **estimated monthly cost** from the provider's list price (one
+constant per provider, with the date it was checked; the 2026-09 figures
+are in 9.2's research). An optional `OFFSITE_CLOUD_BUDGET_GB` in `.env`
+gives the pie a denominator for people who want a "free space" feel, stored
+against remaining budget; without it, composition only. That is how every
+target is represented without a number being made up for one of them.
+
+**The alert the chart exists to prevent.** "Backups stopped because the
+disk was full" is the classic failure, and a chart nobody looks at does not
+prevent it. The same numbers drive a **low-space warning** on the card and
+in 9.1's alerts, with a threshold that scales itself: free space below the
+size of the two largest backup sets on that target, rather than a
+percentage, which means the wrong thing on a 100 GB disk and a 10 TB NAS.
+
+**Rendering.** The editor's pie in `editor/ChartView.tsx` is a small
+themed SVG with `role="img"` and a label; extract that drawing into
+`components/PieChart.tsx` and use it in both places, so there is one pie
+in the product and no new dependency. Theme tokens for the slices, the
+legend carrying the bytes, and the aria label reading the three numbers
+out.
+
+**Dependencies.** The local chart depends on nothing and can ship now. The
+NAS, removable and cloud charts depend on 9.2 steps 1 to 5, since they draw
+what 9.2's slot status publishes.
+
+**Opus implements, in this order, each step shippable alone:**
+1. The sidecar measures `VolumeBackupBytes` and the filesystem identity;
+   the migration; a test that two agents on one filesystem collapse to one
+   chart and on two do not.
+2. `PieChart.tsx` extracted from the editor (the editor's chart must render
+   identically afterwards: check a page with a pie), the local chart on the
+   backups page with its legend and caption, and the low-space warning.
+   Live walk as admin and as a member.
+3. After 9.2 step 5: the three per-slot numbers in the published status,
+   the NAS and removable charts with the last-known rule, and the cloud
+   composition-and-cost card with the optional budget denominator.
+4. `architecture.md`, the runbook sentence on Docker's disk, CHANGELOG.
+
+**Verify** by filling a scratch volume with a large file and watching the
+"other" slice grow and "free" shrink on the next run; delete it and watch
+them return; take a backup and watch "backups" grow. Then the warning:
+shrink the volume until free space is under two backup sets and confirm the
+card and the alert both say so. After 9.2: unmount the NAS and confirm its
+chart stays with a "not reachable" note; unplug the drive and confirm "as
+of <date>, drive not present"; point the cloud slot at MinIO and confirm
+composition and cost.
 
 ---
 
