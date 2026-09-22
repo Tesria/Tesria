@@ -111,6 +111,10 @@ export function PageView() {
   }
   if (!page) return <p className="muted page-wrap">Loading…</p>
 
+  // Only the downloads this space allows (dev-plan 12.3). The server refuses
+  // the rest anyway; offering a button that can only fail is worse than none.
+  const allows = space.exports ?? { markdown: true, html: true, pdf: true, site: true, pack: true }
+
   // Anonymous readers (dev-plan 5.3): the action bar collapses to Export;
   // comments only where the space allows them, read-only.
   if (!user) {
@@ -118,9 +122,9 @@ export function PageView() {
       <>
         <div className="page-actionbar">
           <div className="page-actionbar__secondary">
-            <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=markdown`}>↓ Markdown</a>
-            <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=html`}>↓ HTML</a>
-            <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=pdf`}>↓ PDF</a>
+            {allows.markdown && <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=markdown`}>↓ Markdown</a>}
+            {allows.html && <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=html`}>↓ HTML</a>}
+            {allows.pdf && <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=pdf`}>↓ PDF</a>}
           </div>
         </div>
         <div className="page-column">
@@ -169,18 +173,24 @@ export function PageView() {
           </button>
           <OverflowMenu>
             {/* Plain links so the browser downloads the file (auth cookie is sent). */}
-            <a className="btn" href={`/api/pages/${page.id}/export?format=markdown`}>
-              ↓ Export as Markdown
-            </a>
-            <a className="btn" href={`/api/pages/${page.id}/export?format=html`}>
-              ↓ Export as HTML
-            </a>
+            {allows.markdown && (
+              <a className="btn" href={`/api/pages/${page.id}/export?format=markdown`}>
+                ↓ Export as Markdown
+              </a>
+            )}
+            {allows.html && (
+              <a className="btn" href={`/api/pages/${page.id}/export?format=html`}>
+                ↓ Export as HTML
+              </a>
+            )}
             {/* Rendered by the PDF sidecar (dev-plan 8.1). Where no sidecar
                 is configured the API answers 503 with the "print the HTML"
                 advice, which is what this used to be. */}
-            <a className="btn" href={`/api/pages/${page.id}/export?format=pdf`}>
-              ↓ Export as PDF
-            </a>
+            {allows.pdf && (
+              <a className="btn" href={`/api/pages/${page.id}/export?format=pdf`}>
+                ↓ Export as PDF
+              </a>
+            )}
             <WatchToggle
               watchKey={page.id}
               fetchStatus={() => api.pageWatch.status(page.id)}

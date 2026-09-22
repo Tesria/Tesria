@@ -57,6 +57,12 @@ public static class InstancePermissions
     public const string SpacesPublish = "spaces.publish";
     public const string SpacesDelete = "spaces.delete";
 
+    /// <summary>
+    /// Turn a space's exports on and off, format by format (dev-plan 12.3):
+    /// for a space more sensitive than the rest of the instance.
+    /// </summary>
+    public const string SpacesExports = "spaces.exports";
+
     // --- Security
     public const string AuditView = "audit.view";
     public const string SecurityView = "security.view";
@@ -147,6 +153,9 @@ public static class InstancePermissions
             PermissionScope.Administration, UserRole.Admin),
         new(SpacesDelete, "Spaces", "Delete spaces",
             "Destroy a space and every page, version, comment and attachment in it. Irreversible.",
+            PermissionScope.Administration, UserRole.Admin),
+        new(SpacesExports, "Spaces", "Control a space's exports",
+            "Turn Markdown, HTML, PDF, website and wiki pack exports on or off for one space. Everything is on until someone turns it off.",
             PermissionScope.Administration, UserRole.Admin),
 
         new(AuditView, "Security", "Read the audit log",

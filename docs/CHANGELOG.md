@@ -66,6 +66,27 @@ Tests: 19 rewriter fixtures, 13 HTTP round trips (importing as a *different*
 user, which is what makes the attribution and permission assertions mean
 anything), on top of step 1's 27 format tests.
 
+### 12.3 Turn a space's exports off, format by format (2026-09-22, Opus 5.5)
+
+An administrator can now turn a space's exports off in **Space settings →
+Exports**, for a space more sensitive than the rest of the instance. There
+are five switches, all on by default: Markdown, HTML, PDF, Website and Wiki
+pack. The request named three. The other two, a page as a single HTML file
+and the whole space as a pack with its history, are here because leaving them
+open would defeat the point.
+
+- A new right, **Control a space's exports** (`spaces.exports`), which
+  administrators and the owner hold by default.
+- Off means off for everyone, administrators and the owner included. The
+  export routes answer 403 with `export_disabled` before any rendering
+  starts. Changes are audited as `space.exports_changed`.
+- The page view only offers the downloads a space allows. Space settings
+  hide the website and pack sections when those are off.
+- It stops downloads, not reading: anyone who can read a page can still copy
+  it, and the settings page says so.
+
+Tests: 11 new.
+
 ### 13.1 Instance branding (2026-09-22, Opus 5.5)
 
 An owner, and anyone the owner grants the new right to, can now brand the
