@@ -303,7 +303,91 @@ Then `restic restore latest --target /tmp/restored` and take the dump or the
 attachments from there. A restic repository is self-contained: the binary
 and the passphrase are enough to read it on any machine, with no Tesria.
 
-### Still local only
+## Offsite backups: a network drive (dev-plan 9.2, step 3)
 
-Network drives and removable disks are steps 3 and 4. Until then the only
-offsite copy is the cloud slot.
+The uploads and the dumps can also go to a NAS on the LAN, as a restic
+repository on a mounted path, encrypted with that slot's own passphrase.
+
+**Tesria does not mount anything.** Mount the share on the host, where your
+system already handles credentials, reconnects and reboots, and give Tesria
+the host path in `OFFSITE_NAS_PATH`.
+
+- macOS: mount it in Finder; the path is then under `/Volumes`. Docker
+  Desktop must also be allowed to share that directory. The first container
+  that touches it prompts, and **until you allow it the mount hangs rather
+  than failing**, which looks like the backup being stuck.
+- Linux: an `/etc/fstab` line with `_netdev,nofail` so a missing share
+  delays neither boot nor the backup sidecar.
+
+Then claim it once:
+
+```bash
+docker compose exec backup /scripts/claim-target.sh nas
+```
+
+### The sentinel, and why it exists
+
+That command writes `.tesria-backup-target` into the share, and the sidecar
+refuses to write to a path that does not carry it.
+
+The reason is the failure it prevents. When a network share is not mounted,
+the mount point is still there: an ordinary empty directory on the boot
+disk. Backing up into that would not fail; it would quietly fill the boot
+disk while appearing to work, and the NAS would hold nothing. A file on the
+far side cannot be faked by an absent mount, and a mount-point check cannot
+do this from inside a container, where a bind mount is always a mount point.
+
+This is also why the share is a **bind mount** rather than a Docker
+`cifs`/`nfs` volume. A named network volume stops the container starting
+while the share is down, which would take the *local* backups down with it.
+
+Deleting the sentinel stops backups to that target and deletes nothing.
+
+### Point-in-time recovery on a NAS: the SFTP recipe
+
+The database does **not** go to a mounted path, because `archive_command`
+runs inside the `db` container where nothing can check the share is really
+there, and pgBackRest would happily build a fresh repository in the empty
+directory an unmounted share leaves behind.
+
+If you want PITR on the NAS rather than only the files, use pgBackRest's
+SFTP repository type, which is a network connection rather than a mount, so
+the NAS being down is an error instead of a silent local write. Enable SSH
+on the NAS, then add a third repository to
+`deploy/pgbackrest/pgbackrest.conf`:
+
+```ini
+repo3-type=sftp
+repo3-path=/volume1/tesria/pgbackrest
+repo3-sftp-host=nas.lan
+repo3-sftp-host-user=tesria
+repo3-sftp-private-key-file=/etc/pgbackrest/nas_ed25519
+repo3-cipher-type=aes-256-cbc
+```
+
+Mount the key into both the `db` and `pgbackrest` containers, supply
+`repo3-cipher-pass` the way `repo2` gets its passphrase, and read the
+archive-push warnings above first: a third repository is a third one that
+must accept every WAL segment before Postgres is told the segment is
+archived.
+
+### Immutability on a NAS
+
+Use the NAS's own snapshot schedule, which every mainstream model has, and
+point it at the directory holding the restic repository. A snapshot the
+Tesria host cannot delete is what protects the backups from a compromise of
+the host. The stronger alternative, if the NAS can run it, is restic's
+`rest-server --append-only`, which accepts new data and refuses deletions;
+retention then has to be run separately with a key that can delete.
+
+### Restoring from the network drive
+
+```bash
+docker compose exec backup bash -lc 'export RESTIC_REPOSITORY=/mnt/nas/restic RESTIC_PASSWORD="$OFFSITE_NAS_PASSPHRASE"; restic snapshots'
+```
+
+Then `restic restore latest --target /tmp/restored`.
+
+### Still to come
+
+Removable disks are step 4, and the Storage targets screen is step 5.

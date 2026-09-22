@@ -2136,11 +2136,29 @@ must be operated.
    checked by scanning MinIO's own data files: 20MB across 11 objects, none
    containing the `PGDMP` header or the string `Tesria`, with a control file
    proving the scan could detect them.
-3. The path mechanism: host mount plus bind mount plus sentinel, shared by
-   the NAS and removable slots; the NAS slot scheduled with its absence an
-   alert; the SFTP `repo3` recipe and the NAS-snapshot recipe in the
-   runbook. Verify against the owner's NAS (SMB, `a folder set aside for it` only, delete
-   nothing without permission; credentials in `.nas-credentials`).
+3. ✅ **shipped 2026-09-22.** The path mechanism: host mount plus bind
+   mount plus sentinel, shared by the NAS and removable slots; the NAS slot
+   scheduled with its absence an alert; the SFTP `repo3` recipe and the
+   NAS-snapshot recipe in the runbook.
+   As built, and worth knowing before step 4 uses the same mechanism: **on
+   macOS, Docker Desktop must be granted access to the mounted share**, and
+   until it is, the bind mount *hangs* rather than failing. It looks exactly
+   like a stuck backup. Allowing it once fixed it and the mechanism then
+   worked unchanged; this is in the runbook.
+   `BackupTargets` gained `Present`, kept separate from `Enabled`, because
+   for a path target they are different questions: a removable drive is
+   configured and absent most of the time, which is normal, while a network
+   drive that is absent is a problem. Only the NAS raises
+   `backup.offsite_absent`; alerting on a drive in a drawer would train
+   people to ignore the whole class.
+   The default for an unconfigured path slot is a committed empty directory
+   with no sentinel, since Compose cannot leave a mount out, and a path with
+   no sentinel is exactly what "not there" already means.
+   Verified against the owner's NAS over SMB, inside `a folder set aside for it` only: the
+   unclaimed share was reported absent with nothing written, claiming it
+   started backups, the copy on the NAS restored **byte-identical** with 36
+   tables, and a scan of the NAS files (with a control) found no `PGDMP`
+   header and no plaintext.
 4. The removable slot: `Copy now`, `--keep-last`, `check` then `sync` then
    "safe to remove", the FAT32 warning, and the "no offsite backup"
    dashboard warning. Verify with a mounted exFAT disk image (`hdiutil`

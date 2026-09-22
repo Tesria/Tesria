@@ -158,6 +158,14 @@ public sealed class BackupMonitor(IServiceScopeFactory scopes, ILogger<BackupMon
                     await Raise("backup.offsite_stale", SecuritySeverity.Warning, target.Slot,
                         new { target.Slot, target.LastWalAt, target.LastBackupAt });
 
+                // A network drive that should always be there and is not.
+                // Deliberately not raised for a removable drive: one that is
+                // unplugged has not failed, it is in a drawer, and alerting
+                // on that would train people to ignore this whole class.
+                if (target.Slot == "nas" && target.Present == false)
+                    await Raise("backup.offsite_absent", SecuritySeverity.Warning, target.Slot,
+                        new { target.Slot, target.Location, target.LastBackupAt });
+
                 // Anything the sidecar could not do: a failed offsite backup,
                 // a failed verify, a repository it could not read.
                 if (!string.IsNullOrWhiteSpace(target.Message))
