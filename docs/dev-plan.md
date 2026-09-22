@@ -2179,9 +2179,28 @@ must be operated.
    manual-only warning fired while the drive was the only target. APFS
    rather than exFAT, because `diskutil` will not make a blank exFAT image;
    the filesystem is not what the mechanism depends on.
-5. The Storage targets screen: three cards from the published
-   configuration, Test connection, Copy now, warnings. Live walk as admin
-   and as a member (who must not see it).
+5. ✅ **shipped 2026-09-22.** The Storage targets screen: a card per slot
+   built from the published configuration, Copy now, warnings.
+   As built: **Test connection was dropped**, because by the time the screen
+   existed it had nothing to add. The sidecars already test every target on
+   every pass and publish the result, so the card is never more than a
+   minute stale, and a button that re-ran what just ran would be a second
+   way to say the same thing. If a target can be configured but not yet
+   exercised, this is worth revisiting.
+   Three bugs the walk found, none of which the shell testing could have.
+   A **stale restic lock** left by a sidecar killed mid-run wedges a
+   repository permanently, and the error reads like a broken target; runs
+   now clear a stale lock first, which also means a container restart during
+   a backup is survivable. `cat config` failing does **not** mean a
+   repository is missing (a lock or a slow share look the same), so an
+   `init` that is refused for already existing is treated as "there but
+   unreadable this time" rather than a fault. And an absent target was
+   storing its absence as a *message*, which then sat on the card after the
+   drive came back saying "not plugged in" next to a green Healthy; absence
+   is a state now, the screen says it in its own words, and coming back from
+   absent clears what was said while away.
+   Walked as an administrator with all three targets live, and as a plain
+   member, who is refused the overview and the copy endpoint alike.
 6. Restore drills wired into 9.1's restore-test jobs; the "machine is
    gone" chapter in `backup-recovery.md`; `architecture.md`; CHANGELOG.
 

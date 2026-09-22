@@ -606,6 +606,34 @@ export type BackupOverview = {
   backups: Backup[]
   removed: Backup[]
   jobs: BackupJob[]
+  targets: BackupTarget[]
+  offsiteIsManualOnly: boolean
+}
+
+/**
+ * One offsite target (dev-plan 9.2), as the backup sidecars published it.
+ * Keys and passphrases are fingerprints and nothing else: the credentials
+ * live in .env, are read only by the sidecars, and the app never holds one.
+ */
+export type BackupTarget = {
+  slot: 'cloud' | 'nas' | 'removable'
+  kind: 'database' | 'files'
+  type: string | null
+  location: string | null
+  bucket: string | null
+  prefix: string | null
+  enabled: boolean
+  present: boolean | null
+  problem: string | null
+  message: string | null
+  keyFingerprint: string | null
+  passphraseFingerprint: string | null
+  lastBackupAt: string | null
+  lastWalAt: string | null
+  lastVerifyAt: string | null
+  bytesStored: number | null
+  walBacklogFiles: number | null
+  updatedAt: string
 }
 
 export type BackupPreview = {
@@ -1125,6 +1153,9 @@ export const api = {
       savePolicy: (input: BackupPolicyInput) => request<BackupPolicy>('PUT', '/api/admin/backups/policy', input),
       preview: (input: BackupPolicyInput) => request<BackupPreview>('POST', '/api/admin/backups/policy/preview', input),
       run: (agents?: BackupAgentName[]) => request<BackupJob[]>('POST', '/api/admin/backups/run', { agents }),
+      /** Copies to a target that is only there sometimes (a drive, 9.2 step 4). */
+      copyToTarget: (slot: string) =>
+        request<BackupJob>('POST', `/api/admin/backups/targets/${encodeURIComponent(slot)}/copy`, {}),
       restoreTest: (label: string) =>
         request<BackupJob>('POST', `/api/admin/backups/${encodeURIComponent(label)}/restore-test`),
       job: (id: string) => request<BackupJob>('GET', `/api/admin/backups/jobs/${id}`),

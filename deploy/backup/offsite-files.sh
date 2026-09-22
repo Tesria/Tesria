@@ -76,13 +76,47 @@ restic_tls_flag() {
 
 rst() { restic $(restic_tls_flag) "$@"; }
 
+# Clears locks left behind by a run that did not finish.
+#
+# restic takes an exclusive lock while it works and releases it when it is
+# done. A sidecar that is killed part way through (a container restart, a
+# host reboot, a drive pulled early) never releases, and every later run
+# then fails on a repository that looks broken but is only locked. `unlock`
+# removes only locks restic considers stale, which is what this is: the
+# process that took it is gone, and only this sidecar ever writes here.
+restic_clear_stale_lock() {
+  local held
+  held="$(rst list locks 2>/dev/null | head -1)"
+  [ -z "$held" ] && return 0
+  note "offsite files: clearing a lock left by an earlier run"
+  rst unlock >/dev/null 2>&1
+}
+
 # Creates the repository on first use. Anything else is left alone: an
 # existing repository with a different passphrase must fail loudly rather
 # than be replaced, because replacing it would discard every backup in it.
 restic_ensure_repo() {
+  restic_clear_stale_lock
   if rst cat config >/dev/null 2>&1; then return 0; fi
+
+  # `cat config` failing does not mean the repository is missing: a lock, a
+  # slow share or a dropped connection all look the same from here. So `init`
+  # is attempted, and its own refusal is what tells the two apart. A
+  # repository that already exists is *not* a failure; it means the read
+  # failed for some other reason, and the next pass will try again rather
+  # than this one reporting a broken target.
   note "offsite files: initialising the restic repository"
-  rst init >/dev/null 2>&1
+  local out
+  if out="$(rst init 2>&1 | tail -2 | tr '\n' ' ')"; then return 0; fi
+  case "$out" in
+    *"config file already exists"*|*"repository master key and config already initialized"*)
+      note "offsite files: the repository is there but could not be read this time; leaving it alone"
+      RESTIC_LAST_ERROR=""
+      return 1 ;;
+  esac
+  note "offsite files: could not open or create the repository: $out"
+  RESTIC_LAST_ERROR="$out"
+  return 1
 }
 
 # The admin page's policy, in restic's words. Mirrors ResticRetention in C#,
@@ -109,7 +143,8 @@ restic_run_for() {
   restic_env_for "$slot" || return 1
 
   if ! restic_ensure_repo; then
-    offsite_files_status "$slot" "The restic repository could not be opened or created."
+    [ -n "${RESTIC_LAST_ERROR:-}" ] \
+      && offsite_files_status "$slot" "The repository could not be opened or created. ${RESTIC_LAST_ERROR}"
     return 1
   fi
 
@@ -154,7 +189,8 @@ restic_run_removable() {
   offsite_warn_filesystem /mnt/removable
 
   if ! restic_ensure_repo; then
-    offsite_files_status removable "The restic repository on the drive could not be opened or created."
+    [ -n "${RESTIC_LAST_ERROR:-}" ] \
+      && offsite_files_status removable "The repository on the drive could not be opened or created. ${RESTIC_LAST_ERROR}"
     return 1
   fi
 
@@ -273,7 +309,10 @@ offsite_files_status() {
 INSERT INTO "BackupTargets" ("Slot", "Kind", "Enabled", "Message", "UpdatedAt")
 VALUES (:'slot', 'files', true, left(:'msg', 2000), now())
 ON CONFLICT ("Slot", "Kind") DO UPDATE
-   SET "Message" = left(:'msg', 2000), "UpdatedAt" = now();
+   -- Enabled as well as the message: a slot that is configured and failing
+   -- is still configured, and leaving this alone would take its card off the
+   -- screen at exactly the moment somebody needs to read the error on it.
+   SET "Enabled" = true, "Message" = left(:'msg', 2000), "UpdatedAt" = now();
 SQL
 }
 
@@ -282,23 +321,45 @@ SQL
 # a drawer (step 4) that is the useful answer, and for a NAS it is what makes
 # the alert meaningful.
 offsite_files_absent() {
-  q -v slot="$1" -v msg="$2" >/dev/null 2>&1 <<'SQL' || true
-INSERT INTO "BackupTargets" ("Slot", "Kind", "Enabled", "Present", "Message", "UpdatedAt")
-VALUES (:'slot', 'files', true, false, left(:'msg', 2000), now())
+  # The second argument is kept for the log only. The row records that the
+  # target is not there, and the screen says so in its own words; writing a
+  # sentence here as well would leave "not plugged in" on the card after the
+  # drive came back, which is how this was found.
+  note "offsite files: ${1} absent: ${2}"
+  q -v slot="$1" >/dev/null 2>&1 <<'SQL' || true
+INSERT INTO "BackupTargets" ("Slot", "Kind", "Enabled", "Present", "UpdatedAt")
+VALUES (:'slot', 'files', true, false, now())
 ON CONFLICT ("Slot", "Kind") DO UPDATE
-   SET "Enabled" = true, "Present" = false,
-       "Message" = left(:'msg', 2000), "UpdatedAt" = now();
+   SET "Enabled" = true, "Present" = false, "UpdatedAt" = now();
 SQL
 }
 
 # Present, but nothing was copied: a removable drive that is plugged in and
 # waiting to be asked. Leaves every date alone, because none of them changed.
 offsite_files_seen() {
-  q -v slot="$1" >/dev/null 2>&1 <<'SQL' || true
-INSERT INTO "BackupTargets" ("Slot", "Kind", "Enabled", "Present", "UpdatedAt")
-VALUES (:'slot', 'files', true, true, now())
+  local slot="$1" loc passfp
+  case "$slot" in
+    nas)       loc="${OFFSITE_NAS_PATH:-}";       passfp="$(offsite_fingerprint "${OFFSITE_NAS_PASSPHRASE:-}")" ;;
+    removable) loc="${OFFSITE_REMOVABLE_PATH:-}"; passfp="$(offsite_fingerprint "${OFFSITE_REMOVABLE_PASSPHRASE:-}")" ;;
+    *) loc=""; passfp="" ;;
+  esac
+  # The dates are left alone: nothing was copied. Only what the target *is*
+  # gets refreshed, so a path edited in .env shows correctly straight away
+  # rather than after the next copy.
+  q -v slot="$slot" -v loc="$loc" -v passfp="$passfp" >/dev/null 2>&1 <<'SQL' || true
+INSERT INTO "BackupTargets" ("Slot", "Kind", "Type", "Location", "Prefix", "Enabled", "Present",
+                             "PassphraseFingerprint", "UpdatedAt")
+VALUES (:'slot', 'files', 'path', NULLIF(:'loc',''), 'restic', true, true,
+        NULLIF(:'passfp',''), now())
 ON CONFLICT ("Slot", "Kind") DO UPDATE
-   SET "Enabled" = true, "Present" = true, "UpdatedAt" = now();
+   SET "Type" = 'path', "Location" = EXCLUDED."Location", "Prefix" = 'restic',
+       "Enabled" = true, "Present" = true,
+       "PassphraseFingerprint" = EXCLUDED."PassphraseFingerprint",
+       -- A target that has just come back keeps nothing it said while it was
+       -- away; one that was here all along keeps its last run's message.
+       "Message" = CASE WHEN "BackupTargets"."Present" IS DISTINCT FROM true
+                        THEN NULL ELSE "BackupTargets"."Message" END,
+       "UpdatedAt" = now();
 SQL
 }
 
