@@ -44,15 +44,15 @@ public sealed partial class SecurityHeadersMiddleware
         headers["Cross-Origin-Resource-Policy"] = "same-origin";
 
         // The collaboration socket is same-origin, and CSP3 says 'self'
-        // covers ws/wss on the same host — but not every browser agrees, so
+        // covers ws/wss on the same host, but not every browser agrees, so
         // the socket origin is spelled out per request rather than relying
         // on that.
         var socketScheme = context.Request.IsHttps ? "wss" : "ws";
 
         // The API reference (dev-plan 8.3) is a third-party UI whose page
         // carries one inline <script> to configure itself. Rather than open
-        // `unsafe-inline` for the whole app — which would undo the reason
-        // this policy exists — that one path gets a fresh nonce per request,
+        // `unsafe-inline` for the whole app, which would undo the reason
+        // this policy exists, that one path gets a fresh nonce per request,
         // which Scalar stamps on its script tag. Its own JS is served from
         // this origin, so nothing else needs relaxing.
         string? nonce = null;
@@ -64,7 +64,7 @@ public sealed partial class SecurityHeadersMiddleware
 
         // frame-src is built from the embed allowlist (dev-plan Phase 7 Wave
         // E), so the browser refuses an off-list frame even if a bug let one
-        // reach the DOM — the allowlist is enforced here *and* at the resolve
+        // reach the DOM: the allowlist is enforced here *and* at the resolve
         // endpoint, and a change to it takes effect on the next request.
         // 'self' is for the PDF viewer, which frames an attachment.
         var frames = Features.Embeds.EmbedAllowlist.CspSources(
@@ -129,7 +129,7 @@ public sealed partial class SecurityHeadersMiddleware
         foreach (Match m in InlineScript().Matches(html))
         {
             // The hash covers the exact bytes between the tags, whitespace
-            // included — that is what the browser hashes too.
+            // included: that is what the browser hashes too.
             var body = Encoding.UTF8.GetBytes(m.Groups["body"].Value);
             hashes.Add(Convert.ToBase64String(SHA256.HashData(body)));
         }

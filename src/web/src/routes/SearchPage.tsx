@@ -4,7 +4,7 @@ import { api, type SearchResult } from '../api/client'
 import { noteSearch } from '../onboarding/signals'
 
 /**
- * A search snippet arrives with the matched words wrapped in `**` — plain
+ * A search snippet arrives with the matched words wrapped in `**`: plain
  * text, because the same snippet is served to the MCP tools and to anything
  * else reading the API, where HTML would be the wrong thing to send.
  *

@@ -10,15 +10,15 @@
 #    a liability: anyone who connects with an arbitrary server name gets a
 #    certificate minted for it, for free, forever. Only {$DOMAIN} is served.
 #  - HSTS is on. Browsers that have seen it once will refuse plain HTTP and
-#    will refuse to let a user click past a certificate error — exactly what
+#    will refuse to let a user click past a certificate error: exactly what
 #    you want on a real domain with a Let's Encrypt certificate, and exactly
 #    what you do not want on `localhost` with an internal CA, which is why
 #    the default file does not send it.
 #  - Plain HTTP only redirects; /ca.crt is not served (there is no internal
 #    CA to trust on a public deployment).
 #
-# Everything else — the app and collab proxies, compression, the upload size
-# limit — is identical. The app itself adds the rest of the security headers
+# Everything else (the app and collab proxies, compression, the upload size
+# limit) is identical. The app itself adds the rest of the security headers
 # (CSP, nosniff, frame-ancestors, ...), so they are not repeated here.
 #
 # Before pointing DNS at this, read docs/security.md's internet-readiness

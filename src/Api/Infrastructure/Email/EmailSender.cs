@@ -18,14 +18,14 @@ public interface IEmailSender
 
 /// <summary>
 /// Outbound mail over SMTP (dev-plan 4.1), configured at runtime from the
-/// site settings an administrator fills in — no environment variables, no
+/// site settings an administrator fills in: no environment variables, no
 /// restart. Plain text is the message; a minimal HTML twin is generated
 /// from it so clients that prefer HTML get readable line breaks and a link
 /// that is clickable. No template engine: every email this app sends is a
 /// few sentences and one link.
 ///
 /// With <c>EmailEnabled</c> off, or the settings incomplete, nothing is
-/// attempted and the result says so — the "null sender" the plan describes
+/// attempted and the result says so: the "null sender" the plan describes
 /// is this same class declining, so there is one code path to reason about.
 /// A delivery failure is audited as <c>email.failed</c> (recipient and
 /// subject, never the body) and logged.

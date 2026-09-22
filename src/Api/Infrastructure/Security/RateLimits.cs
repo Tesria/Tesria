@@ -11,7 +11,7 @@ namespace Tesria.Api.Infrastructure.Security;
 ///
 /// Three limiters: a tight one on the endpoints that take a credential
 /// (sign-in, registration, recovery), a per-account one on API-token minting,
-/// and a generous global one for callers with no session at all — which is
+/// and a generous global one for callers with no session at all, which is
 /// what stands between a public-read space (Phase 5) and a scraper. Signed-in
 /// callers are not globally limited: their identity is the accountability,
 /// and the account lockout in <see cref="AuthLockout"/> covers the credential
@@ -26,7 +26,7 @@ public static class RateLimits
     public const string AuthPolicy = "auth";
     public const string TokenMintPolicy = "token-mint";
 
-    /// <summary>Default when settings have not loaded yet — the same defaults <see cref="SiteSettings"/> declares.</summary>
+    /// <summary>Default when settings have not loaded yet: the same defaults <see cref="SiteSettings"/> declares.</summary>
     private static readonly SiteSettings Defaults = new();
 
     public static void Configure(RateLimiterOptions options, SiteSettingsCache cache)

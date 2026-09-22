@@ -8,15 +8,15 @@ const MIN_WIDTH = 120
 
 /**
  * Table-level width chrome: a full-width toggle and a drag handle on the
- * table's own right edge — distinct from prosemirror-tables' built-in
+ * table's own right edge: distinct from prosemirror-tables' built-in
  * per-column border dragging (unaffected, still works exactly as before).
- * Same floating-overlay convention as TableControls, not a NodeView — see
+ * Same floating-overlay convention as TableControls, not a NodeView: see
  * extensions.ts's Table extension for where `width`/`layout` actually live.
  */
 export function TableWidthControls({ editor }: { editor: TiptapEditor }) {
   const hovered = useHoveredTable(editor)
   // Persists across renders without needing its own re-render on every
-  // mousemove tick during a drag — only the final commit needs to touch
+  // mousemove tick during a drag: only the final commit needs to touch
   // React/ProseMirror state.
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null)
 
@@ -29,12 +29,12 @@ export function TableWidthControls({ editor }: { editor: TiptapEditor }) {
   }
   // prosemirror-tables' TableView NodeView only re-applies HTMLAttributes
   // (the style/data-layout output of extensions.ts's renderHTML) once, in
-  // its constructor — its own `update(node)` (used for every subsequent
+  // its constructor: its own `update(node)` (used for every subsequent
   // attribute change on an already-mounted table, i.e. every edit after the
   // first) only recalculates the colgroup and never re-touches style or
   // data-* attributes at all. So the schema alone isn't enough to keep the
   // DOM in sync live; apply the same effect directly, right after the PM
-  // transaction commits. (Fresh mounts — a page load, an export — are
+  // transaction commits. (Fresh mounts (a page load, an export) are
   // unaffected and already correct via the schema alone.)
   function applyDomEffects(px: number | null, nextLayout: string) {
     if (nextLayout === 'full-width') {
@@ -63,7 +63,7 @@ export function TableWidthControls({ editor }: { editor: TiptapEditor }) {
     function onMove(ev: MouseEvent) {
       if (!dragRef.current) return
       const next = clamp(dragRef.current.startWidth + (ev.clientX - dragRef.current.startX), MIN_WIDTH, MAX_WIDTH)
-      // Live visual feedback only — no PM transaction per pixel, matching
+      // Live visual feedback only: no PM transaction per pixel, matching
       // how prosemirror-tables' own column-resize handle behaves. The
       // !important CSS rule (index.css) picks this custom property up
       // immediately; committed for real on mouseup.

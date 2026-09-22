@@ -110,8 +110,8 @@ const ANNOTATE = `
 }
 `
 
-// SHOT_BROWSER=webkit runs the same spec in Safari's engine — the image
-// ships all three — which is how a layout bug that only shows on an iPhone
+// SHOT_BROWSER=webkit runs the same spec in Safari's engine, the image
+// ships all three, which is how a layout bug that only shows on an iPhone
 // gets reproduced without an iPhone. Not Safari itself (no address-bar
 // collapse, no software keyboard), but the same rendering engine.
 const engines = { chromium, webkit, firefox }
@@ -120,7 +120,7 @@ const browser = await engine.launch(engine === chromium ? { args: ['--font-rende
 
 // Uncaught errors and console errors, tagged with the shot that was running.
 // A layout or routing change is checked by walking every route and reading
-// this list — there are no frontend tests to catch a blank screen.
+// this list: there are no frontend tests to catch a blank screen.
 let current = '(startup)'
 const problems = []
 function watch(p) {
@@ -135,7 +135,7 @@ function watch(p) {
 // Documentation is shot in one appearance so the pictures agree with each
 // other: light theme, the default blue accent. Both are per-browser
 // preferences (theme.ts writes them to localStorage), so they are seeded
-// before the app's first paint rather than clicked afterwards — a click
+// before the app's first paint rather than clicked afterwards: a click
 // would leave the first screenshot of every run in whatever the previous
 // one ended on. SHOT_THEME / SHOT_ACCENT override for a run that needs
 // something else.
@@ -288,7 +288,7 @@ async function runSteps(pg, steps, name) {
     }
     // Teardown (dev-plan 10.4). Deleting a space needs the key typed back
     // and the password in the same request (11.3), and the password is the
-    // harness's, not the spec's — so this is a step rather than an `eval`,
+    // harness's, not the spec's, so this is a step rather than an `eval`,
     // and the credential never appears in the JSON or on screen.
     for (const key of [].concat(step.deleteSpace || [])) {
       const result = await pg.evaluate(async ([key, password]) => {
@@ -427,7 +427,7 @@ for (const s of spec.shots) {
       await pg.screenshot({ path: file, fullPage: !!s.fullPage })
     }
     // Typing into the editor reaches the collaborative document immediately,
-    // whether or not the page is ever saved — so a shot that types has to put
+    // whether or not the page is ever saved, so a shot that types has to put
     // the document back, or the next run photographs the last run's leftovers.
     for (const step of s.after || []) {
       if (step.press) await pg.press(step.selector || 'body', step.press)

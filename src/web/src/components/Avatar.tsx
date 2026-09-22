@@ -6,7 +6,7 @@ import { AVATAR_COLORS, avatarVariantFor, initialsOf, type AvatarSubject } from 
  * generated one drawn from their id and name.
  *
  * The generated form is inline SVG rather than a request, so every user has an
- * avatar from the moment they register — no storage, no round trip, and no
+ * avatar from the moment they register: no storage, no round trip, and no
  * broken-image state while one loads.
  */
 export function Avatar({ subject, size = 28 }: { subject: AvatarSubject; size?: number }) {

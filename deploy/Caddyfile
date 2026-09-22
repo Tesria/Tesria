@@ -6,10 +6,10 @@
 #    obtain and auto-renew a Let's Encrypt certificate over HTTPS.
 #  - Set DOMAIN to `localhost` for local testing; Caddy serves HTTPS using its
 #    own internal CA (your browser will warn about the self-signed cert until
-#    you trust it once — see docs/tls-and-lan-access.md).
+#    you trust it once: see docs/tls-and-lan-access.md).
 #
 # A second, catch-all block below serves anything reached by an address OTHER
-# than {$DOMAIN} — your LAN IP, a `.local` hostname, 127.0.0.1, etc. — with a
+# than {$DOMAIN}: your LAN IP, a `.local` hostname, 127.0.0.1, etc., with a
 # certificate minted on the fly via Caddy's On-Demand TLS, using the same
 # internal CA. No need to list every LAN IP/hostname by hand, and it keeps
 # working even if your machine's LAN IP changes (DHCP). This is what makes the
@@ -22,29 +22,29 @@
 {
 	email {$ACME_EMAIL}
 	# Clients that connect by raw IP address send no SNI at all (SNI is only
-	# defined for hostnames, not IP literals) — without this, Caddy falls back
+	# defined for hostnames, not IP literals), without this, Caddy falls back
 	# to whatever certificate happens to be cached first, which is arbitrary
 	# and confusing. Pin the fallback to {$DOMAIN}'s certificate so it's at
 	# least deterministic. This does NOT make raw-IP access validate cleanly
-	# (the SAN still won't match an IP) — see docs/tls-and-lan-access.md for
+	# (the SAN still won't match an IP): see docs/tls-and-lan-access.md for
 	# why hostname-based LAN access (e.g. a `.local` name) is the reliable
 	# path, not a bare IP.
 	default_sni {$DOMAIN}
 	# Caddy's automatic HTTPS otherwise inserts its own HTTP->HTTPS redirect
 	# for {$DOMAIN} specifically, and that auto-inserted route wins over any
-	# route in our own :80 block below for that hostname — found via testing:
+	# route in our own :80 block below for that hostname: found via testing:
 	# curl -H "Host: localhost" (the managed hostname) got redirected before
 	# ever reaching our /ca.crt exception, while any other Host reached it
 	# fine. We already redirect everything else ourselves in the :80 block
 	# below, so tell Caddy not to also add its own (cert automation for
-	# {$DOMAIN} is unaffected — this only concerns the redirect route).
+	# {$DOMAIN} is unaffected: this only concerns the redirect route).
 	auto_https disable_redirects
 }
 
 (app_proxy) {
 	encode gzip zstd
 
-	# The internal CA's root certificate, for clients to download and trust —
+	# The internal CA's root certificate, for clients to download and trust:
 	# see deploy/scripts/trust-ca.sh / trust-ca.ps1. Not secret: this is the
 	# public half of the CA, safe to serve to anyone who can reach this server.
 	handle /ca.crt {
@@ -77,7 +77,7 @@
 
 # Catch-all for LAN/mobile access via IP or another local hostname (anything
 # not matching {$DOMAIN} above). Only reachable from wherever this server is
-# network-reachable — if you expose port 443 straight to the public internet,
+# network-reachable, if you expose port 443 straight to the public internet,
 # firewall it to your LAN/VPN, since this will mint an internal cert for
 # whatever hostname/SNI a client sends.
 :443 {

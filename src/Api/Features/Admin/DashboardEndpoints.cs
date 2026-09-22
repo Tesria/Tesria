@@ -56,7 +56,7 @@ public static class DashboardEndpoints
         // The range is whole UTC days ending with today: `days` of them, today
         // last. Starting from `now - days` instead gave a window whose final
         // day was yesterday, so everything that happened today was counted but
-        // had no bucket to land in — every chart read zero for the current day.
+        // had no bucket to land in: every chart read zero for the current day.
         var firstDay = DateOnly.FromDateTime(now.UtcDateTime).AddDays(-(days - 1));
         var since = new DateTimeOffset(firstDay.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
 

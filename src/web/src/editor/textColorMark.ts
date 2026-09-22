@@ -7,7 +7,7 @@ import { Mark, mergeAttributes } from '@tiptap/core'
  * The highlight mark stores a hex because a highlight is a background: the
  * text on top of it stays legible in dark mode by pinning the ink (see
  * index.css's `[data-theme="dark"] … mark[style*="background-color"]`).
- * Coloured *text* has no such escape — a hex dark enough to read on white
+ * Coloured *text* has no such escape: a hex dark enough to read on white
  * is invisible on this app's dark background, and no CSS rule can lighten a
  * colour it cannot see. A name can be re-pointed per theme, so that is what
  * the document carries; `index.css` maps it (`--text-color-*`) and the

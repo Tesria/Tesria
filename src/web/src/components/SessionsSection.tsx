@@ -42,7 +42,7 @@ export function SessionsSection() {
           {sessions.map((s) => (
             <tr key={s.id} className={s.revokedAt ? 'muted' : undefined}>
               <td>
-                <code>{s.ip ?? '—'}</code>
+                <code>{s.ip ?? '–'}</code>
                 {s.current && <span className="badge">this browser</span>}
                 {s.revokedAt && <span className="badge">signed out</span>}
                 <br />

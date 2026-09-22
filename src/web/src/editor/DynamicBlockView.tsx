@@ -74,7 +74,7 @@ function Body({ result }: { result: BlockResult }) {
     return (
       <Suspense fallback={<p className="dynamic-block__note">Loading…</p>}>
         {/* No host page is stashed on the nested editor, so any blocks inside
-            the included content show as placeholders — depth 1, by construction. */}
+            the included content show as placeholders: depth 1, by construction. */}
         <NestedEditor value={result.document} editable={false} />
       </Suspense>
     )

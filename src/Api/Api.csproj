@@ -38,7 +38,7 @@
     <!-- Argon2id password hashing (PLAN §4: password hash = Argon2id). -->
     <PackageReference Include="Isopoh.Cryptography.Argon2" Version="2.0.0" />
     <!-- OIDC/SSO (PLAN §1: "architected for OIDC/SSO later", pluggable for
-         Keycloak/Authentik/Google, etc.). Optional at runtime — see Oidc:Authority. -->
+         Keycloak/Authentik/Google, etc.). Optional at runtime: see Oidc:Authority. -->
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.10" />
     <PackageReference Include="Otp.NET" Version="1.4.1" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.17.3" />

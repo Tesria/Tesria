@@ -1,14 +1,14 @@
 /**
- * Toolbar icon set — shared by Toolbar.tsx (the sticky edit toolbar) and
+ * Toolbar icon set: shared by Toolbar.tsx (the sticky edit toolbar) and
  * SelectionBubbleMenu.tsx (the floating selection menu), so both present the
  * same visual language. One consistent style throughout: 24x24 viewBox,
  * 1.8px stroke, round caps/joins, `currentColor` so each icon inherits its
- * button's text color (neutral by default, primary blue when active — see
+ * button's text color (neutral by default, primary blue when active: see
  * .toolbar__btn in index.css). Deliberately not using an icon font/library:
  * this app has none installed, and a dozen-odd inline SVGs is cheap enough
  * not to warrant a new dependency.
  *
- * Bold/Italic/Underline/Strikethrough are NOT here — a literal styled
+ * Bold/Italic/Underline/Strikethrough are NOT here: a literal styled
  * "B"/"I"/"U"/"S" glyph (ToolbarButton's tb-bold/tb-italic/etc. classes) is
  * the actual standard treatment for these four specifically (Google Docs,
  * Word, Notion all do the same), not a cop-out.
@@ -169,7 +169,7 @@ export function CommentIcon() {
   )
 }
 
-/** Small caret for dropdown triggers (mobile toolbar grouping) — deliberately
+/** Small caret for dropdown triggers (mobile toolbar grouping): deliberately
  * smaller than the other 18x18 icons so it reads as a suffix, not a peer. */
 export function ChevronDownIcon() {
   return (
@@ -340,7 +340,7 @@ export function LayoutPresetIcon({ widths }: { widths: readonly number[] }) {
 }
 
 
-/** The "A" with a colour bar under it — the standard text-colour affordance. */
+/** The "A" with a colour bar under it: the standard text-colour affordance. */
 export function TextColorIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

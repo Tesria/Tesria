@@ -7,7 +7,7 @@ import type { SuggestionListRef } from './SuggestionList'
  * The `render` half of a `@tiptap/suggestion` plugin: mount a React component
  * at the cursor, keep it updated, hand it the keys, tear it down.
  *
- * Identical for every suggestion (slash, mention, emoji) — positioning,
+ * Identical for every suggestion (slash, mention, emoji): positioning,
  * scroll/resize tracking and outside-click dismissal all come from
  * Suggestion's own managed `mount()` API, so there is nothing per-suggestion
  * here except which component to draw.

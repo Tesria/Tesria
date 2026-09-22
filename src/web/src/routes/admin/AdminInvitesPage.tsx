@@ -76,7 +76,7 @@ export function AdminInvitesPage() {
 
       {issued && (
         <div className="admin__notice">
-          <p>Invite link — shown once:</p>
+          <p>Invite link, shown once:</p>
           <code className="admin__link">{issued}</code>
           <div className="row-gap">
             <button

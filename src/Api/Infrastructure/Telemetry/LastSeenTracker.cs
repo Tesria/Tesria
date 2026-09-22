@@ -26,7 +26,7 @@ public sealed class LastSeenTracker
     private readonly ConcurrentDictionary<Guid, DateTimeOffset> _lastWritten = new();
 
     /// <summary>
-    /// True at most once per <see cref="Interval"/> per user — the caller should
+    /// True at most once per <see cref="Interval"/> per user: the caller should
     /// write only when this returns true. Marks the user as written immediately,
     /// so concurrent requests don't all decide to write.
     /// </summary>
@@ -80,7 +80,7 @@ public sealed class LastSeenMiddleware(RequestDelegate next, LastSeenTracker tra
                     .ExecuteUpdateAsync(u => u.SetProperty(x => x.LastSeenAt, DateTimeOffset.UtcNow));
 
             // The session row too (dev-plan 3.5), on the same throttle, keyed
-            // by the session id — a different id space from user ids.
+            // by the session id: a different id space from user ids.
             if (Features.Auth.AuthEndpoints.SessionIdOf(context.User) is { } sessionId && tracker.ShouldWrite(sessionId))
             {
                 var ip = context.Connection.RemoteIpAddress?.ToString();

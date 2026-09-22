@@ -15,8 +15,8 @@ namespace Tesria.Api.Features.Mcp;
 /// be read as Markdown, edited, and written back without losing its shape:
 /// headings, paragraphs, bold/italic/strike/code, links, bullet/ordered/task
 /// lists, fenced code with a language, blockquotes, GFM tables, rules and
-/// images. Anything the editor can hold that Markdown cannot say — panels,
-/// status lozenges, layouts, dynamic blocks — is out of reach here *by
+/// images. Anything the editor can hold that Markdown cannot say (panels,
+/// status lozenges, layouts, dynamic blocks) is out of reach here *by
 /// design*: an assistant writes body text, and a person enriches it. A
 /// caller that genuinely has a document uses `contentJson` instead.
 ///
@@ -107,7 +107,7 @@ public static class MarkdownToProseMirror
 
     /// <summary>
     /// A list where *any* item carries a checkbox becomes a task list, and
-    /// its unchecked-marker-less items become unchecked tasks — the schema
+    /// its unchecked-marker-less items become unchecked tasks: the schema
     /// has no "list with some checkboxes", so one kind has to win, and
     /// promoting is lossless where demoting would throw the checkboxes away.
     ///
@@ -187,7 +187,7 @@ public static class MarkdownToProseMirror
             AppendInline(inline, content, []);
         }
         // Markdig models "[x] done" as a TaskList inline followed by the
-        // literal " done" — the separating space belongs to the marker, not
+        // literal " done": the separating space belongs to the marker, not
         // the text. Dropping the marker without it makes every round trip
         // add a space ("- [x]  done"), which compounds on each edit.
         if (skipFirstTaskMarker) TrimLeadingSpace(content);

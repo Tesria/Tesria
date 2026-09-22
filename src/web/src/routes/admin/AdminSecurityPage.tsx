@@ -135,7 +135,7 @@ export function AdminSecurityPage() {
         setReport(r)
         return r
       },
-      (r) => (r.ok ? `Audit chain intact: ${r.checked} rows.` : 'Audit chain BROKEN — see below.'),
+      (r) => (r.ok ? `Audit chain intact: ${r.checked} rows.` : 'Audit chain BROKEN: see below.'),
       'Could not verify the audit chain.',
     )
   }
@@ -334,7 +334,7 @@ export function AdminSecurityPage() {
               {blocks.map((b) => (
                 <tr key={b.id}>
                   <td><code>{b.cidr}</code></td>
-                  <td>{b.reason ?? <span className="muted">—</span>}</td>
+                  <td>{b.reason ?? <span className="muted">–</span>}</td>
                   <td>{b.expiresAt ? new Date(b.expiresAt).toLocaleString() : 'Never'}</td>
                   <td className="muted small">{b.createdByName ?? 'system'} · {new Date(b.createdAt).toLocaleDateString()}</td>
                   <td className="admin-table__actions">
@@ -363,8 +363,8 @@ export function AdminSecurityPage() {
                   <td className="muted small nowrap">{new Date(e.createdAt).toLocaleString()}</td>
                   <td><Severity level={e.severity} /></td>
                   <td>{KIND_LABEL[e.kind] ?? e.kind}</td>
-                  <td className="nowrap">{e.ip ? <code>{e.ip}</code> : <span className="muted">—</span>}</td>
-                  <td>{e.actorName ?? <span className="muted">—</span>}</td>
+                  <td className="nowrap">{e.ip ? <code>{e.ip}</code> : <span className="muted">–</span>}</td>
+                  <td>{e.actorName ?? <span className="muted">–</span>}</td>
                 </tr>
               ))}
             </tbody>

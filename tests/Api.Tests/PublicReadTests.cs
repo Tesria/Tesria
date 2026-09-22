@@ -306,8 +306,8 @@ public class PublicReadTests
         Assert.Contains("og:title", shell);
         Assert.Contains("pineapple", shell); // the description
 
-        // A restricted page's title never reaches a link preview — even for
-        // someone who could read it — because the check is anonymous.
+        // A restricted page's title never reaches a link preview, even for
+        // someone who could read it, because the check is anonymous.
         var priv = new HttpRequestMessage(HttpMethod.Get, $"/spaces/PUB/pages/{w.RestrictedPage}");
         priv.Headers.Accept.ParseAdd("text/html");
         var privShell = await (await w.Admin.SendAsync(priv)).Content.ReadAsStringAsync();

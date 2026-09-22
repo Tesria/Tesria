@@ -16,7 +16,7 @@ declare module '@tiptap/core' {
  * A page attachment shown in place: a video player, a PDF, or a file card.
  *
  * Which one is decided from the attachment's stored content type rather
- * than from an author's choice — a .mp4 is a video wherever it appears, and
+ * than from an author's choice: a .mp4 is a video wherever it appears, and
  * a mode attribute would just be a second source of truth that can disagree
  * with the file. The document stores the attachment id; everything else is
  * looked up, so renaming or replacing the file updates every page showing it.
@@ -67,7 +67,7 @@ export const AttachmentBlock = Node.create({
 /**
  * A gallery is a *layout over image nodes*, not a new kind of image: drop
  * images inside and they tile. That keeps every image affordance already
- * built — upload, paste, border, shadow, comments — working unchanged, and
+ * built (upload, paste, border, shadow, comments) working unchanged, and
  * costs the export renderer nothing, because the images inside are ordinary
  * images.
  */

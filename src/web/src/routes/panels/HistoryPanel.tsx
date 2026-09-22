@@ -86,7 +86,7 @@ export function HistoryPanel({
       {preview && (
         <div className="version-preview paper">
           <div className="row-between">
-            <h3>Preview — version {preview.versionNumber}</h3>
+            <h3>Preview: version {preview.versionNumber}</h3>
             <button type="button" className="link-btn" onClick={() => setPreview(null)}>Close</button>
           </div>
           <div className="page-body">

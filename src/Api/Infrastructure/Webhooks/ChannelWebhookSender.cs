@@ -5,7 +5,7 @@ namespace Tesria.Api.Infrastructure.Webhooks;
 /// <summary>
 /// Queues deliveries onto an in-process channel for <see cref="WebhookDeliveryBackgroundService"/>
 /// to send. Keeps outbound HTTP calls (which can be slow or hang) off the
-/// request thread — a request that triggers webhooks returns as soon as the
+/// request thread: a request that triggers webhooks returns as soon as the
 /// delivery is queued, not once it's actually been sent.
 /// </summary>
 public sealed class ChannelWebhookSender : IWebhookSender

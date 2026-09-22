@@ -11,7 +11,7 @@ namespace Tesria.Api.Infrastructure.Security;
 /// instance superuser) is used once at startup to apply migrations and to
 /// provision the <em>app</em> role (<c>ConnectionStrings:App</c>), which the
 /// running app then uses for everything else. The app role can read and write
-/// every table but cannot UPDATE or DELETE the append-only ones — so a
+/// every table but cannot UPDATE or DELETE the append-only ones, so a
 /// compromised app can add audit rows but never remove or alter them.
 ///
 /// Provisioned by the app itself rather than a database init script because

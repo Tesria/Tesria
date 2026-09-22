@@ -16,7 +16,7 @@ namespace Tesria.Api.Features.Export;
 /// Every page is captured from its own render route, exactly as a single-page
 /// HTML export is, so a site looks like the wiki for the same reason a PDF
 /// does: it is the same rendering. What this file adds is everything that is
-/// the *site* rather than the pages — where files go, what links mean once
+/// the *site* rather than the pages, where files go, what links mean once
 /// pages are files, and which pages are in it at all.
 /// </summary>
 public static class SiteExportEndpoints

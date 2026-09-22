@@ -15,7 +15,7 @@ declare module '@tiptap/core' {
 
 /**
  * Expand: Confluence's collapsible section. Only the title is stored; whether
- * it is open is view state, not content — the author opening it to edit
+ * it is open is view state, not content: the author opening it to edit
  * must not publish it open for every reader.
  */
 export const Expand = Node.create({

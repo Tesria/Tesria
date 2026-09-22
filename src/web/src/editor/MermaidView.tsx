@@ -17,7 +17,7 @@ function loadMermaid() {
     m.default.initialize({
       startOnLoad: false,
       // The editor's own theme decides light/dark, so Mermaid is told rather
-      // than left to sniff — it cannot see our CSS variables.
+      // than left to sniff: it cannot see our CSS variables.
       theme: document.documentElement.dataset.theme === 'dark'
         || (!document.documentElement.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches)
         ? 'dark' : 'default',

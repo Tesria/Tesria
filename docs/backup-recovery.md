@@ -19,7 +19,7 @@ Backups** (dev-plan 9.1): status, a retention policy that covers all three,
 when the app is down or you are working on the host.
 
 The pgBackRest repository is **encrypted at rest** (AES-256-CBC) with the
-passphrase from `BACKUP_ENCRYPTION_KEY`. **Keep that key safe and off-box** — the
+passphrase from `BACKUP_ENCRYPTION_KEY`. **Keep that key safe and off-box**: the
 repository cannot be restored without it.
 
 ---
@@ -49,7 +49,7 @@ repository cannot be restored without it.
 
 ---
 
-## Layer 1 — pgBackRest (physical backups + point-in-time recovery)
+## Layer 1: pgBackRest (physical backups + point-in-time recovery)
 
 The `db` image bundles pgBackRest and archives every WAL segment
 (`archive_command`) to the `pgbackrest` repository volume. The `pgbackrest`
@@ -82,7 +82,7 @@ expires anything.** A full backup is taken when the newest is
 
 ---
 
-## Layer 2 — logical dumps, and Layer 3 — file backups
+## Layer 2 (logical dumps, and Layer 3) file backups
 
 The `backup` container (`deploy/backup/run.sh`) takes a compressed `pg_dump` and
 a `tar` of the `uploads` volume every `BACKUP_INTERVAL_HOURS`, sharing one
@@ -113,7 +113,7 @@ Since dev-plan 3.1 the app runs as `tesria_app`, a least-privilege role it
 creates itself at startup from the owner connection. Nothing in this
 runbook changes: backups and restores keep using the owner (`POSTGRES_USER`),
 `pg_restore` already runs `--no-privileges`, and the role is re-provisioned
-the next time the app starts — including on a brand-new host where it did
+the next time the app starts, including on a brand-new host where it did
 not exist. Two things worth knowing:
 
 * Start `app` before `collab` after a restore (compose does: collab depends
@@ -122,14 +122,14 @@ not exist. Two things worth knowing:
   Security → Verify). A point-in-time restore legitimately shortens the
   audit chain to the target time; the chain will verify, and the in-process
   monitor's "shorter than last time" warning on the next daily run is
-  expected once. A restore should never produce a *broken* chain — if it
+  expected once. A restore should never produce a *broken* chain, if it
   does, the backup itself was taken from an already-tampered database.
 
 ## Recovery scenarios
 
 ### A. A user deleted or broke a page (the common case)
 
-No ops required — use the in-app safety nets:
+No ops required: use the in-app safety nets:
 
 - **Bad edit:** open the page → **History** tab → preview a prior version →
   **Restore** (rollback appends a new version; nothing is lost).
@@ -160,7 +160,7 @@ never a half-deleted space, only bytes with nothing pointing at them.
 
 ### B. Point-in-time recovery (bad migration, mass delete, corruption)
 
-Roll the database back to an exact moment — e.g. just before a bad change at
+Roll the database back to an exact moment: e.g. just before a bad change at
 `14:32`.
 
 ```bash
@@ -184,7 +184,7 @@ Timestamps use Postgres syntax with a timezone offset (e.g. `+00` for UTC).
 
 ### C. Full disaster recovery on a new host
 
-1. Install Docker, clone the repo, and recreate `.env` — **including the same
+1. Install Docker, clone the repo, and recreate `.env`, **including the same
    `BACKUP_ENCRYPTION_KEY`** as the original instance.
 2. Restore the pgBackRest repository (and `uploads`) onto the new host. If you
    kept an offsite copy of the `pgbackrest` volume, load it into a fresh volume;

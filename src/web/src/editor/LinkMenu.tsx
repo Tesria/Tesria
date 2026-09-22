@@ -3,7 +3,7 @@ import { useEditorState, type Editor as TiptapEditor } from '@tiptap/react'
 import { triggerLinkDialog } from './linkShortcut'
 
 /**
- * A floating bar shown only while the cursor is inside a link — on a phone,
+ * A floating bar shown only while the cursor is inside a link: on a phone,
  * that is what tapping the link does, since links do not navigate in the
  * editor. Shows the address, opens it, edits it (in the link dialog) or
  * removes it. Editor only; a reader's tap on a link follows it.

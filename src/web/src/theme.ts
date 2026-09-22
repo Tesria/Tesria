@@ -3,7 +3,7 @@
  *
  * Three preferences, not two: `system` follows the OS and is the default, so a
  * fresh visitor gets whatever they already asked their machine for. `light`
- * and `dark` are explicit overrides that win in both directions — including
+ * and `dark` are explicit overrides that win in both directions, including
  * "dark while the OS is light", which a `prefers-color-scheme` media query
  * alone can never express.
  *
@@ -16,8 +16,8 @@
  * a `data-accent` attribute. Absent means the default blue.
  *
  * index.html applies both stored values in a tiny inline script before first
- * paint. Without that, the document renders light for one frame and then flips
- * — the classic dark-mode flash. THE STORAGE KEYS AND THE ATTRIBUTE LOGIC ARE
+ * paint. Without that, the document renders light for one frame and then flips:
+ *the classic dark-mode flash. THE STORAGE KEYS AND THE ATTRIBUTE LOGIC ARE
  * DUPLICATED THERE; change them together.
  */
 
@@ -38,8 +38,8 @@ function isPreference(value: unknown): value is ThemePreference {
 }
 
 /**
- * Storage access is wrapped because it throws outright — not just returns
- * null — in a browser configured to block site data, and a theme preference
+ * Storage access is wrapped because it throws outright, not just returns
+ * null, in a browser configured to block site data, and a theme preference
  * is never worth taking the app down for.
  */
 export function readPreference(): ThemePreference {
@@ -66,7 +66,7 @@ export function applyPreference(preference: ThemePreference): void {
   else root.setAttribute('data-theme', preference)
 }
 
-/** The next preference in the cycle — what the toggle button switches to. */
+/** The next preference in the cycle: what the toggle button switches to. */
 export function nextPreference(current: ThemePreference): ThemePreference {
   return THEME_ORDER[(THEME_ORDER.indexOf(current) + 1) % THEME_ORDER.length]
 }
@@ -130,7 +130,7 @@ export function applyAccent(accent: AccentName): void {
  * The accent's hex values, light and dark. This is the source of truth the
  * favicon renders from; index.css declares the same pairs for the DOM. They
  * are duplicated because a favicon is a separate document that can never read
- * the page's custom properties — which is also why a single themeable SVG
+ * the page's custom properties, which is also why a single themeable SVG
  * favicon is not possible, and the colour has to be baked in per variant.
  */
 export const ACCENT_HEX: Record<AccentName, { light: string; dark: string }> = {
@@ -144,7 +144,7 @@ export const ACCENT_HEX: Record<AccentName, { light: string; dark: string }> = {
 
 /**
  * Tesria's mark, stroked in one colour. Kept in step with BrandMark.tsx and
- * public/favicon.svg by hand — three copies of two path strings is cheaper
+ * public/favicon.svg by hand, three copies of two path strings is cheaper
  * than a build step to share them, but they do have to move together.
  *
  * Stroke is 2 rather than the brand's 1.8 for the same reason the static file
@@ -190,7 +190,7 @@ export function applyFavicon(accent: AccentName): void {
 
 /**
  * Paints the favicon now and repaints it whenever the OS flips light/dark.
- * Called once at startup, so the accent reaches the tab icon on every route —
+ * Called once at startup, so the accent reaches the tab icon on every route,
  * including the sign-in pages, where the appearance menu isn't mounted.
  */
 export function startFaviconSync(): () => void {

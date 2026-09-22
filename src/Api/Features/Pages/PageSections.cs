@@ -18,7 +18,7 @@ public static class PageSections
 {
     public sealed record Heading(string Id, string Text, int Level);
 
-    /// <summary>The page's headings, in document order — the map an assistant picks a section from.</summary>
+    /// <summary>The page's headings, in document order, the map an assistant picks a section from.</summary>
     public static List<Heading> Outline(string contentJson)
     {
         try
@@ -36,7 +36,7 @@ public static class PageSections
 
     /// <summary>
     /// The heading with this anchor plus everything under it, as its own
-    /// document — up to the next heading of the same or a higher level, so
+    /// document: up to the next heading of the same or a higher level, so
     /// "Deployment" brings its sub-headings with it but stops at the next
     /// peer.
     ///
@@ -55,7 +55,7 @@ public static class PageSections
 
         // Re-derive the ids over the whole document so duplicates are
         // numbered exactly as the anchors and the table of contents number
-        // them — a section id must mean the same thing everywhere.
+        // them: a section id must mean the same thing everywhere.
         using var doc = JsonDocument.Parse(contentJson);
         var anchors = HeadingAnchors.Collect(doc.RootElement);
         var wanted = anchors.FirstOrDefault(a => a.Id == anchorId);

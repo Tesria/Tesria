@@ -6,7 +6,7 @@ namespace Tesria.Api.Tests;
 
 /// <summary>
 /// The machine-readable spec (dev-plan 8.3). These assert it describes the
-/// API this app actually has — a spec generated from the routes cannot
+/// API this app actually has: a spec generated from the routes cannot
 /// invent an endpoint, but it can silently stop being served.
 /// </summary>
 public class OpenApiTests

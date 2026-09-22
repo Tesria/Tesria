@@ -5,7 +5,7 @@ import { useConfirm } from '../../components/ConfirmDialog'
 
 /** Formats bytes for humans; storage figures are the point of this page. */
 function bytes(value: number): string {
-  if (value === 0) return '—'
+  if (value === 0) return '–'
   const units = ['B', 'KB', 'MB', 'GB', 'TB']
   const i = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1)
   return `${(value / 1024 ** i).toFixed(i === 0 ? 0 : 1)} ${units[i]}`
@@ -15,7 +15,7 @@ function bytes(value: number): string {
  * Admin → Spaces (dev-plan 2.4).
  *
  * Metadata only, deliberately. Admins do not bypass space permissions, so this
- * shows ownership, size and counts — never content. To read a space they hold
+ * shows ownership, size and counts, never content. To read a space they hold
  * no grant for, an admin uses recover-access, which is audited.
  */
 export function AdminSpacesPage() {

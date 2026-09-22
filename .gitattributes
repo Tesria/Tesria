@@ -1,4 +1,4 @@
-# Normalize line endings. Files that run inside Linux containers MUST stay LF —
+# Normalize line endings. Files that run inside Linux containers MUST stay LF:
 # CRLF would break shebangs (`/usr/bin/env bash\r`) and config parsing.
 * text=auto
 

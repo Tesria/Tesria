@@ -55,7 +55,7 @@ export function ApiTokensSection() {
       {justCreated && (
         <div className="card">
           <p style={{ marginTop: 0 }}>
-            <strong>Copy this token now — it won't be shown again:</strong>
+            <strong>Copy this token now, it won't be shown again:</strong>
           </p>
           <code style={{ wordBreak: 'break-all', display: 'block', marginBottom: '0.5rem' }}>
             {justCreated.token}
@@ -77,7 +77,7 @@ export function ApiTokensSection() {
             <strong>Read-only</strong>
             <br />
             <span className="muted small">
-              Can read pages and search, but change nothing — the right choice for
+              Can read pages and search, but change nothing: the right choice for
               an assistant or a script that only looks things up.
             </span>
           </span>

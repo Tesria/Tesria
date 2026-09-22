@@ -17,7 +17,7 @@ function parseNumber(text: string): number | null {
 /**
  * Reads the nth table on the page into rows of numbers. The first column is
  * the label; every other column is a series. A row with no numbers at all is
- * skipped rather than charted as zero — a spacer row is not data.
+ * skipped rather than charted as zero: a spacer row is not data.
  */
 function readTable(doc: PMNode, ordinal: number): TableData | null {
   let found: PMNode | null = null
@@ -57,7 +57,7 @@ export function ChartView({ node, editor, selected, updateAttributes }: ReactNod
   const title = String(node.attrs.title ?? '')
 
   // Re-read whenever the document changes, so editing the table redraws the
-  // chart — the whole reason the data is not copied in.
+  // chart: the whole reason the data is not copied in.
   const data = useEditorState({
     editor,
     selector: ({ editor }) => readTable(editor.state.doc, source),

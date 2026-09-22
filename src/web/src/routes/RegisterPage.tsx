@@ -19,7 +19,7 @@ export function RegisterPage() {
   const [codes, setCodes] = useState<string[] | null>(null)
 
   // Registration signs the user straight in, so this guard would fire the
-  // moment the account exists and redirect past the recovery codes — which are
+  // moment the account exists and redirect past the recovery codes, which are
   // shown exactly once. Hold the redirect until they have been acknowledged.
   if (user && !codes) return <Navigate to="/spaces" replace />
 

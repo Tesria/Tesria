@@ -15,7 +15,7 @@ public sealed class OidcEmailNotVerifiedException(string email)
 
 /// <summary>
 /// Resolves an external OIDC identity (the "sub" claim, plus email/name) to a
-/// local <see cref="User"/> row — signing in a returning user, linking to an
+/// local <see cref="User"/> row: signing in a returning user, linking to an
 /// existing local account, or provisioning a brand-new one (PLAN §1: local
 /// accounts now, "architected for OIDC/SSO later"). Deliberately independent of
 /// ASP.NET Core's OIDC event plumbing so this security-sensitive matching logic
@@ -63,7 +63,7 @@ public sealed class OidcUserProvisioner(AppDbContext db) : IOidcUserProvisioner
             Id = Guid.NewGuid(),
             Email = normalizedEmail,
             DisplayName = string.IsNullOrWhiteSpace(displayName) ? normalizedEmail : displayName.Trim(),
-            PasswordHash = null, // OIDC-only account — no local password.
+            PasswordHash = null, // OIDC-only account: no local password.
             OidcSubject = subject,
             Status = UserStatus.Active,
             Role = isFirstAccount ? UserRole.Owner : UserRole.Member,

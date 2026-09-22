@@ -53,7 +53,7 @@ export function PageView() {
   }, [page])
 
   // `/pages/{id}#setup` lands on that heading once the content has rendered.
-  // Looked up inside the page body only — a heading called "Root" must not
+  // Looked up inside the page body only: a heading called "Root" must not
   // resolve to the app's own #root (headingAnchors.ts).
   useEffect(() => {
     if (!page || !hash) return
@@ -86,7 +86,7 @@ export function PageView() {
   async function toggleFullWidth() {
     if (!page) return
     const fullWidth = !page.fullWidth
-    setPage({ ...page, fullWidth }) // optimistic — this is display metadata, not content
+    setPage({ ...page, fullWidth }) // optimistic: this is display metadata, not content
     try {
       await api.pages.setLayout(page.id, { fullWidth })
     } catch {
@@ -151,7 +151,7 @@ export function PageView() {
           <Link className="btn btn--primary" to={`/spaces/${key}/pages/${page.id}/edit`}>
             Edit
           </Link>
-          {/* Mobile only — desktop already has this in the always-visible
+          {/* Mobile only: desktop already has this in the always-visible
               sidebar (.sidebar's "+ New page"); showing it here too would
               just duplicate it right next to Edit for no reason. */}
           <Link className="btn btn--primary page-actionbar__new-subpage" to={`/spaces/${key}/new?parent=${page.id}`}>
@@ -197,7 +197,7 @@ export function PageView() {
           </OverflowMenu>
         </div>
       </div>
-      {/* Below the action bar, not above it — the bar is the top edge of the
+      {/* Below the action bar, not above it: the bar is the top edge of the
           page surface and the breadcrumb belongs with the content. SpacePage
           suppresses its own copy on this route. */}
       {/* The size container for the content (container queries, 100cqw in

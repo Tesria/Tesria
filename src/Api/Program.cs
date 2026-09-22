@@ -53,7 +53,7 @@ var builder = WebApplication.CreateBuilder(args);
 // ConnectionStrings:Default is the owner, used at startup for migrations and
 // to provision the least-privilege role; ConnectionStrings:App is that role,
 // used by the running app. With no app role configured the owner is used for
-// both, with a warning — see DatabaseRoles.
+// both, with a warning: see DatabaseRoles.
 var ownerConnectionString = builder.Configuration.GetConnectionString("Default")
     ?? "Host=localhost;Port=5432;Database=confluence;Username=confluence;Password=confluence";
 var appConnectionString = builder.Configuration.GetConnectionString("App");
@@ -90,7 +90,7 @@ builder.Services.AddSingleton<ICollabTokenService, CollabTokenService>();
 builder.Services.AddSingleton<Tesria.Api.Infrastructure.Export.IRenderTokens, Tesria.Api.Infrastructure.Export.RenderTokens>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 // Dynamic blocks (dev-plan Phase 7 Wave D): one service, one kind per class.
-// Adding a kind is one class plus one line here — see architecture.md.
+// Adding a kind is one class plus one line here: see architecture.md.
 builder.Services.AddScoped<Tesria.Api.Features.Blocks.IDynamicBlockService, Tesria.Api.Features.Blocks.DynamicBlockService>();
 builder.Services.AddScoped<Tesria.Api.Features.Embeds.ILinkPreviewService, Tesria.Api.Features.Embeds.LinkPreviewService>();
 // PDF export (dev-plan 8.1) goes to the Playwright sidecar, which is handed
@@ -172,7 +172,7 @@ builder.Services.AddDataProtection()
 const string SmartScheme = "Smart";
 
 // The session cookie is only ever sent over HTTPS in production. Caddy
-// terminates TLS, so as the app sees it the request is plain HTTP — which is
+// terminates TLS, so as the app sees it the request is plain HTTP, which is
 // why "secure if the request was" used to mean "never". Forwarded headers
 // (below) fix the scheme, but the cookie should not depend on the proxy
 // being configured correctly. Security:AllowInsecureCookies is the escape
@@ -217,7 +217,7 @@ var authBuilder = builder.Services
         };
         // What makes a stateless cookie revocable. The stamp is issued into the
         // cookie at sign-in and compared against the stored one here, on every
-        // request — so a password change, a suspension or an admin force-logout
+        // request, so a password change, a suspension or an admin force-logout
         // takes effect on the very next request rather than whenever the cookie
         // happens to expire.
         //
@@ -261,8 +261,8 @@ var authBuilder = builder.Services
                 reject = true;
 
             // Per-session revocation (dev-plan 3.5): a cookie whose session row
-            // is revoked — by its owner from the sessions list, by sign-out,
-            // or by an admin — is dead even though the stamp still matches.
+            // is revoked (by its owner from the sessions list, by sign-out,
+            // or by an admin) is dead even though the stamp still matches.
             // A cookie with no session claim predates sessions and is rejected,
             // which signs everyone in once; the safe direction, as above.
             if (!reject)
@@ -283,7 +283,7 @@ var authBuilder = builder.Services
         ApiTokenAuthenticationDefaults.AuthenticationScheme, _ => { });
 
 // OIDC/SSO (PLAN §1: "architected for OIDC/SSO later", pluggable for
-// Keycloak/Authentik/Google, etc.) — entirely optional. With no Authority
+// Keycloak/Authentik/Google, etc.): entirely optional. With no Authority
 // configured, this scheme is never registered and the app behaves exactly as
 // it did with local accounts only.
 var oidcAuthority = builder.Configuration["Oidc:Authority"];
@@ -310,7 +310,7 @@ if (!string.IsNullOrWhiteSpace(oidcAuthority))
         options.SaveTokens = false;
 
         // Complete sign-in on our normal cookie scheme using OUR internal user
-        // id — not the provider's own claim shape — so every other endpoint
+        // id, not the provider's own claim shape, so every other endpoint
         // (CurrentUser, permissions, audit, ...) keeps working unchanged
         // regardless of which auth method the caller used.
         options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -345,7 +345,7 @@ if (!string.IsNullOrWhiteSpace(oidcAuthority))
                 {
                     // ctx.Fail() alone does not reliably stop TicketReceived from
                     // completing sign-in with the provider's own (unmapped)
-                    // principal — write the rejection ourselves and mark the
+                    // principal: write the rejection ourselves and mark the
                     // response handled, the same explicit pattern OnRemoteFailure
                     // uses below, so no session is ever established on failure.
                     ctx.HttpContext.Response.Redirect("/login?ssoError=" + Uri.EscapeDataString(ex.Message));
@@ -353,8 +353,8 @@ if (!string.IsNullOrWhiteSpace(oidcAuthority))
                     return;
                 }
 
-                // Replace the provider's claims with our own internal shape —
-                // the same one local login produces — before the handler signs
+                // Replace the provider's claims with our own internal shape,
+                // the same one local login produces, before the handler signs
                 // into the cookie scheme.
                 var claims = new List<Claim>
                 {
@@ -384,7 +384,7 @@ builder.Services.AddOptions<Microsoft.AspNetCore.RateLimiting.RateLimiterOptions
     .Configure<SiteSettingsCache>((o, cache) => RateLimits.Configure(o, cache));
 
 // Believe X-Forwarded-For / X-Forwarded-Proto from the reverse proxy, and
-// nothing else — see ProxyTrust for what "the proxy" means here.
+// nothing else: see ProxyTrust for what "the proxy" means here.
 builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(o =>
     ProxyTrust.Configure(o, builder.Configuration));
 
@@ -434,7 +434,7 @@ using (var scope = app.Services.CreateScope())
     if (db.Database.IsNpgsql())
     {
         // Production: everything that needs ownership happens here, on the
-        // owner connection, before the app serves a request — migrations,
+        // owner connection, before the app serves a request: migrations,
         // chaining any pre-chain audit rows (an UPDATE the runtime role is
         // not allowed), and provisioning that runtime role.
         // Unpooled: once startup is over, no owner connection should remain
@@ -493,8 +493,8 @@ app.Services.GetRequiredService<AuditChainMonitor>().OnBroken = async (services,
 // Pipeline
 // ---------------------------------------------------------------------------
 
-// First, so that everything after it — rate limiting, audit metadata, the
-// cookie's secure flag — sees the client's address and scheme, not Caddy's.
+// First, so that everything after it (rate limiting, audit metadata, the
+// cookie's secure flag) sees the client's address and scheme, not Caddy's.
 app.UseForwardedHeaders();
 // A blocked address is turned away here, before anything else runs.
 app.UseMiddleware<BlocklistMiddleware>();
@@ -508,7 +508,7 @@ if (app.Environment.IsDevelopment())
 
 // Serve the built React SPA from wwwroot in production. No Cache-Control was
 // set here before, so browsers applied heuristic caching to index.html itself
-// (not just the content-hashed /assets/* bundles it references) — a client
+// (not just the content-hashed /assets/* bundles it references): a client
 // could keep rendering a stale index.html referencing assets from a prior
 // deploy for an unpredictable, browser-chosen length of time. index.html must
 // always be revalidated; the hashed bundles it points at are safe to cache
@@ -579,7 +579,7 @@ api.MapWebhookEndpoints();
 // The spec and its reader (dev-plan 8.3).
 app.MapTesriaApiDocs();
 
-// /mcp: API tokens only — a browser session is never accepted here, so a
+// /mcp: API tokens only: a browser session is never accepted here, so a
 // page in someone's tab cannot drive the assistant surface (8.4, decision 2).
 app.MapMcp("/mcp").RequireAuthorization(new Microsoft.AspNetCore.Authorization.AuthorizeAttribute
 {

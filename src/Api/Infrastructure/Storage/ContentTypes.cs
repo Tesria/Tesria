@@ -6,7 +6,7 @@ namespace Tesria.Api.Infrastructure.Storage;
 /// The client's declared type is a suggestion, not a fact. Where the bytes
 /// say what they are (a handful of common signatures) the bytes win. Where
 /// they do not, the declared type is kept unless it is something a browser
-/// might <em>execute</em> — HTML, SVG, XML, scripts — in which case the file
+/// might <em>execute</em> (HTML, SVG, XML, scripts) in which case the file
 /// is served as an opaque download. Downloads already carry
 /// <c>Content-Disposition: attachment</c> and the global <c>nosniff</c>
 /// header; this closes the remaining gap, where a same-origin HTML or SVG

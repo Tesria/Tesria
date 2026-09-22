@@ -5,7 +5,7 @@ namespace Tesria.Api.Features.Blocks.Kinds;
 
 /// <summary>
 /// Labels: this page's, the space's most-used, or the ones that co-occur
-/// with this page's. Counts are over *visible* pages only — a label whose
+/// with this page's. Counts are over *visible* pages only: a label whose
 /// only pages are restricted must not appear at all, and a count that
 /// included them would leak how many there are.
 /// </summary>

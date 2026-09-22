@@ -10,17 +10,17 @@ export type TextStyleOption = {
   onSelect: () => void
 }
 
-// Matches .toolbar-dropdown__menu--text's min-width in index.css — used only
+// Matches .toolbar-dropdown__menu--text's min-width in index.css: used only
 // to decide left- vs right-alignment before the menu has rendered.
 const MENU_WIDTH_PX = 240
 
 /**
- * The toolbar's text menu — the first of its two menus. Its trigger reads
+ * The toolbar's text menu: the first of its two menus. Its trigger reads
  * "Normal text ⌄" where there is room and "Aa ⌄" where there is not (a
  * container query on the editor's row decides, see index.css).
  *
  * It always holds the block styles. Whatever text control has left the row
- * for want of space — marks, colours, indent, alignment, lists — appears
+ * for want of space (marks, colours, indent, alignment, lists) appears
  * beneath them, grouped, so that on a phone this one menu is the whole
  * text kit and the "+" menu stays what its name says: things to insert.
  */

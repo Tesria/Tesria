@@ -10,8 +10,8 @@ public enum SecuritySeverity
 /// <summary>
 /// What a detector saw (dev-plan 3.3). Append-only: the runtime database role
 /// cannot update or delete these rows, so the record of an attack cannot be
-/// tidied away by the app. The mutable part — who looked at it, what they
-/// did — lives on <see cref="SecurityAlert"/>.
+/// tidied away by the app. The mutable part (who looked at it, what they
+/// did) lives on <see cref="SecurityAlert"/>.
 /// </summary>
 public class SecurityEvent
 {

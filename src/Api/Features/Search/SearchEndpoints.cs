@@ -56,13 +56,13 @@ public static class SearchEndpoints
             .Select(p => new { p.Id, p.SpaceId, SpaceKey = p.Space!.Key, p.Title })
             .ToListAsync();
 
-        // Space access is not enough — drop pages hidden by page restrictions.
+        // Space access is not enough: drop pages hidden by page restrictions.
         var visible = rows.ToList();
         var allowed = new List<Guid>();
         foreach (var r in visible)
             if (await perms.CanViewPageAsync(r.Id)) allowed.Add(r.Id);
 
-        // The passage that matched, not the page's opening line — computed
+        // The passage that matched, not the page's opening line: computed
         // once for the survivors (SearchSnippets).
         var matches = await SearchSnippets.ForAsync(db, allowed, term, default);
         var results = visible

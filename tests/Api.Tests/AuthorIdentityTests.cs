@@ -46,7 +46,7 @@ public class AuthorIdentityTests
             new { Body = "First", ParentCommentId = (Guid?)null, AnchorJson = (string?)null });
         created.EnsureSuccessStatusCode();
         // The create response is rendered immediately by the client, so it must
-        // carry the author too — not only the later list.
+        // carry the author too, not only the later list.
         Assert.Equal("Ada Lovelace", (await created.Content.ReadFromJsonAsync<CommentDto>())!.AuthorName);
 
         var list = await client.GetFromJsonAsync<List<CommentDto>>($"/api/pages/{pageId}/comments");
@@ -91,7 +91,7 @@ public class AuthorIdentityTests
             new { Body = "Still here", ParentCommentId = (Guid?)null, AnchorJson = (string?)null });
 
         // What dev-plan 2.2 will do: keep the row and blank the identity, so
-        // authorship survives. It cannot orphan the comment — the foreign key
+        // authorship survives. It cannot orphan the comment: the foreign key
         // forbids that, which is why the "Deleted user" fallback in the
         // projection is defensive only and not the mechanism relied on here.
         using (var scope = factory.Services.CreateScope())

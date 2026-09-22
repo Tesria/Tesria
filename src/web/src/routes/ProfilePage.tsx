@@ -17,8 +17,8 @@ type Status = { kind: 'ok' | 'error'; message: string } | null
  * Your own account: display name, email address and password.
  *
  * Each section submits on its own, rather than one form saving everything.
- * They have genuinely different requirements — email and password need the
- * current password, display name does not — and a single form would either
+ * They have genuinely different requirements (email and password need the
+ * current password, display name does not) and a single form would either
  * demand the password to rename yourself or skip the check that protects the
  * other two.
  */

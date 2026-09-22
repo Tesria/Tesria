@@ -16,7 +16,7 @@ namespace Tesria.Api.Infrastructure.Audit;
 /// <c>PrevHash</c> is the previous row's hash. Editing a row changes its hash;
 /// deleting one leaves a gap in the sequence and a successor whose
 /// <c>PrevHash</c> no longer matches. Neither can be hidden without rewriting
-/// every later row — and the same rows are streamed to stdout as they commit
+/// every later row, and the same rows are streamed to stdout as they commit
 /// (<see cref="EmitToLog"/>), so a copy exists that never touched the database.
 ///
 /// This makes tampering <em>detectable</em>. The role split in
@@ -84,7 +84,7 @@ public static class AuditChain
     /// <summary>
     /// Metadata as it will read back, not as it was written. The column is
     /// jsonb, and Postgres re-orders keys, strips whitespace and normalises
-    /// numbers on the way in — so both writing and verifying hash this form:
+    /// numbers on the way in, so both writing and verifying hash this form:
     /// keys sorted, no whitespace, numbers via <see cref="decimal"/>.
     /// </summary>
     public static string CanonicalJson(string? json)
@@ -147,8 +147,8 @@ public static class AuditChain
 
     /// <summary>
     /// Chains rows written before the chain existed, in time order, from the
-    /// current tail. Runs at startup on the owner connection — the only one
-    /// allowed to UPDATE this table — and does nothing once every row is linked.
+    /// current tail. Runs at startup on the owner connection, the only one
+    /// allowed to UPDATE this table, and does nothing once every row is linked.
     /// </summary>
     public static async Task<int> BackfillAsync(AppDbContext db, CancellationToken ct = default)
     {
@@ -242,7 +242,7 @@ public sealed class AuditChainMonitor(IServiceScopeFactory scopes, ILogger<Audit
     /// The chain proves rows were not edited or removed from the middle; it
     /// cannot prove rows were not cut off the end, because a shorter chain is
     /// still a valid one. Remembering how long it was last time closes that
-    /// gap for as long as this process lives — a restart forgets, which is
+    /// gap for as long as this process lives: a restart forgets, which is
     /// why the count is also in the log line every run.
     /// </summary>
     private long _lastChecked = -1;

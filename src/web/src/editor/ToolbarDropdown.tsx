@@ -10,13 +10,13 @@ export type ToolbarDropdownOption = {
   onSelect: () => void
 }
 
-// Matches .toolbar-dropdown__menu's min-width in index.css — used only to
+// Matches .toolbar-dropdown__menu's min-width in index.css: used only to
 // decide left- vs right-alignment before the menu has rendered, not as a
 // layout value itself.
 const MENU_WIDTH_PX = 160
 
 /**
- * A toolbar dropdown for a set of mutually exclusive choices — text style
+ * A toolbar dropdown for a set of mutually exclusive choices: text style
  * and alignment. Shown at every width since the one-row toolbar rebuild:
  * a dropdown is how Confluence presents these too, and it is what keeps the
  * row short enough never to wrap. `showLabel` renders the active choice's
@@ -35,10 +35,10 @@ export function ToolbarDropdown({ title, options, showLabel = false }: { title: 
       // A trigger positioned in the toolbar's right half would otherwise
       // open a left-anchored menu straight past the viewport edge (found on
       // the Heading/Alignment triggers, which sit near the toolbar's right
-      // side on mobile) — flip to right-anchored whenever there isn't room.
+      // side on mobile): flip to right-anchored whenever there isn't room.
       if (next && wrapperRef.current) {
         const rect = wrapperRef.current.getBoundingClientRect()
-        // clientWidth, not innerWidth — see useEdgeAlign.ts for why.
+        // clientWidth, not innerWidth: see useEdgeAlign.ts for why.
         setAlignRight(rect.left + MENU_WIDTH_PX > document.documentElement.clientWidth - 16)
       }
       return next

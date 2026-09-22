@@ -256,7 +256,7 @@ export function AdminSettingsPage() {
                 setTestResult(null)
                 try {
                   const r = await api.admin.settings.sendTestEmail()
-                  setTestResult(r.sent ? 'Sent — check your inbox.' : `Not sent: ${r.error ?? 'unknown error'}`)
+                  setTestResult(r.sent ? 'Sent: check your inbox.' : `Not sent: ${r.error ?? 'unknown error'}`)
                 } catch (err) {
                   setTestResult(err instanceof ApiError ? err.message : 'Could not send.')
                 }

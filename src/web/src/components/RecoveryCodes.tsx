@@ -3,8 +3,8 @@ import { useState } from 'react'
 /**
  * Shows a freshly-issued set of recovery codes.
  *
- * This is the only moment the codes exist in readable form — the server keeps
- * hashes — so the component is built around getting them somewhere safe before
+ * This is the only moment the codes exist in readable form, the server keeps
+ * hashes, so the component is built around getting them somewhere safe before
  * they are dismissed: a copy button, a download, and an explicit confirmation
  * rather than a close button that could be clicked past by reflex.
  */
@@ -55,7 +55,7 @@ export function RecoveryCodes({
     <div className="recovery">
       <p className="recovery__lead">
         Save these recovery codes. Each one can be used <strong>once</strong> to
-        reset your password if you are locked out — and this is the only time
+        reset your password if you are locked out, and this is the only time
         they will be shown.
       </p>
 

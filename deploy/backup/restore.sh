@@ -6,7 +6,7 @@
 #   docker compose exec backup /scripts/restore.sh db-2026....dump # specific
 #
 # For point-in-time recovery (restore to an exact moment), see Phase 3 /
-# docs/backup-recovery.md — that uses pgBackRest, not this script.
+# docs/backup-recovery.md: that uses pgBackRest, not this script.
 set -euo pipefail
 
 BACKUP_DIR="/backups"

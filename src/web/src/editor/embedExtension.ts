@@ -13,7 +13,7 @@ declare module '@tiptap/core' {
 }
 
 /**
- * A third-party page in a frame — a video, a design, a board.
+ * A third-party page in a frame: a video, a design, a board.
  *
  * The document stores only the URL an author pasted. What actually gets
  * framed is decided by the server (`/api/embeds/resolve`), which checks the
@@ -67,7 +67,7 @@ export const Embed = Node.create({
  * A link that shows what it points at: the target's own title and
  * description, fetched server-side through the SSRF guard and cached.
  *
- * Inline or card. Either way the document stores the URL and nothing else —
+ * Inline or card. Either way the document stores the URL and nothing else:
  * a cached title is a copy of someone else's page, and copies go stale.
  */
 export const SmartLink = Node.create({

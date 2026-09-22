@@ -49,7 +49,7 @@ public static class AttachmentEndpoints
             return Results.ValidationProblem(Error("file", $"File exceeds the {MaxBytes / (1024 * 1024)} MB limit."));
 
         // The type the file will be served as is decided from its bytes and
-        // its declared type together — see ContentTypes.
+        // its declared type together: see ContentTypes.
         var head = new byte[16];
         int headLength;
         await using (var peek = file.OpenReadStream())

@@ -71,7 +71,7 @@ export function AdminUsersPage() {
         <div className="admin__notice">
           <p>
             One-time reset link for <strong>{resetLink.name}</strong>, valid for one hour.
-            Give it to them directly — it is shown once.
+            Give it to them directly: it is shown once.
           </p>
           <code className="admin__link">{resetLink.url}</code>
           <div className="row-gap">

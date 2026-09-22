@@ -8,7 +8,7 @@ namespace Tesria.Api.Features.Docs;
 /// The machine-readable API description (dev-plan 8.3).
 ///
 /// The API space documents this API in prose for people; this is the same
-/// surface for tools — an HTTP client, a generated SDK, and (8.4) an MCP
+/// surface for tools: an HTTP client, a generated SDK, and (8.4) an MCP
 /// server, which is much easier to define from a spec than from reading
 /// endpoints. Generated from the routes themselves, so it cannot describe
 /// an endpoint that does not exist.
@@ -33,7 +33,7 @@ public static class OpenApiSetup
                         + "`Authorization: Bearer <token>` (mint one at *Profile → API tokens*). "
                         + "The SPA uses a session cookie instead, and cookie-authenticated "
                         + "requests that change anything must also send `X-Requested-With: Tesria` "
-                        + "— that header is the CSRF defence, and a browser cannot set it "
+                        + ": that header is the CSRF defence, and a browser cannot set it "
                         + "cross-origin.\n\n"
                         + "**Permissions.** Anything you may not see is `404`, never `403`, so "
                         + "restricted pages are not discoverable by probing.",
@@ -73,8 +73,8 @@ public static class OpenApiSetup
             //
             // Two ways an endpoint is open, and both count: an explicit
             // `.AllowAnonymous()` (a route deliberately opened to the world,
-            // dev-plan 5.2), and simply never having asked for authorization
-            // — health does that, and describing it as needing a token would
+            // dev-plan 5.2), and simply never having asked for authorization:
+            //health does that, and describing it as needing a token would
             // be a lie the generator cannot catch.
             options.AddOperationTransformer((operation, context, _) =>
             {
@@ -100,14 +100,14 @@ public static class OpenApiSetup
             options.Title = "Tesria API";
             options.OpenApiRoutePattern = "/api/openapi.json";
             // Scalar's own JS is served from this origin already. Its default
-            // web fonts are not — and this app does not fetch from anyone
+            // web fonts are not, and this app does not fetch from anyone
             // else, so they are turned off rather than silently blocked by
             // `font-src 'self' data:`.
             options.WithDefaultFonts(false);
             // Scalar's sidebar offers features backed by api.scalar.com. This
             // app's `connect-src 'self'` blocks those calls, which is the
-            // behaviour we want — a documentation page has no business
-            // phoning anywhere — so the button that leads to them is hidden
+            // behaviour we want, a documentation page has no business
+            // phoning anywhere, so the button that leads to them is hidden
             // rather than left to fail in front of the reader. The library
             // has no switch for the lookups themselves; the CSP is the
             // backstop, and it holds.

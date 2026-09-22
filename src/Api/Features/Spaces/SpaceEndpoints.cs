@@ -129,7 +129,7 @@ public static partial class SpaceEndpoints
             return Results.ValidationProblem(Error("iconColor", colorError));
 
         // The icon (dev-plan 6). An omitted kind leaves it alone; the picture
-        // case is not settable here — it needs the upload endpoint, which has
+        // case is not settable here: it needs the upload endpoint, which has
         // the bytes.
         switch (req.IconKind)
         {

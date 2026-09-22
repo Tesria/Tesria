@@ -24,7 +24,7 @@ public class Space
 
     // --- Icon (dev-plan 6). Three columns rather than one: the kind decides
     // how IconValue is read, and the colour applies to the tile behind a
-    // letter or an emoji — an uploaded image covers the tile entirely.
+    // letter or an emoji: an uploaded image covers the tile entirely.
 
     public SpaceIconKind IconKind { get; set; } = SpaceIconKind.None;
 
@@ -39,13 +39,13 @@ public class Space
     /// <summary>
     /// Index into the client's tile palette, or null to derive one from the
     /// key. An index rather than a hex value so the palette can be restyled
-    /// without rewriting every row — the same reasoning as
+    /// without rewriting every row: the same reasoning as
     /// <see cref="User.AvatarVariant"/>.
     /// </summary>
     public int? IconColor { get; set; }
 
     /// <summary>
-    /// Readable by anyone, no account needed (dev-plan 5.1) — but only while
+    /// Readable by anyone, no account needed (dev-plan 5.1), but only while
     /// the instance-wide <c>AllowPublicSpaces</c> switch is also on. Kept
     /// when that switch is off, so re-enabling restores the previous state.
     /// </summary>
@@ -64,7 +64,7 @@ public class Space
 }
 
 /// <summary>
-/// How a space's icon is drawn. <see cref="None"/> is not "no icon" — it is
+/// How a space's icon is drawn. <see cref="None"/> is not "no icon": it is
 /// the generated default (the key's first letter on a coloured tile), so
 /// every space has one from the moment it is created.
 /// </summary>

@@ -3,7 +3,7 @@ using Tesria.Api.Features.Blocks;
 namespace Tesria.Api.Features.Export;
 
 /// <summary>
-/// "This page, as this caller would see it" — the dynamic blocks resolved
+/// "This page, as this caller would see it": the dynamic blocks resolved
 /// with the caller's own permissions and handed to the renderer in document
 /// order. Shared by the export endpoint and the MCP <c>get_page</c> tool so
 /// an assistant reads exactly what the export would say (dev-plan 8.4,

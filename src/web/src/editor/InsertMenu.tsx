@@ -5,10 +5,10 @@ import { ChevronDownIcon, PlusIcon } from './icons'
 import { SLASH_ITEMS, type SlashItem } from './slash/items'
 
 /**
- * The toolbar's "+" menu — the same idea as Confluence's: block elements
+ * The toolbar's "+" menu: the same idea as Confluence's: block elements
  * live here rather than as one button each, so the toolbar stays a single
  * row whatever gets added to the editor. It is a plain "+" sitting with the
- * other icons, not a labelled button pushed to the right edge — that is
+ * other icons, not a labelled button pushed to the right edge: that is
  * where Confluence keeps it.
  *
  * Its contents come from the slash catalogue (`SLASH_ITEMS`), not a list of
@@ -23,7 +23,7 @@ export function InsertMenu({ editor }: { editor: TiptapEditor }) {
 
   // Slash items delete the "/query" range before inserting; here the range
   // is the current selection, so an empty selection deletes nothing and a
-  // real one is replaced — the same thing typing would do.
+  // real one is replaced: the same thing typing would do.
   function insert(item: SlashItem) {
     const { from, to } = editor.state.selection
     item.command(editor, { from, to })

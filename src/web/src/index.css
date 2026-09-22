@@ -6,17 +6,17 @@
    directions. `theme.ts` owns the attribute, and index.html applies it before
    first paint so there is no flash of the wrong theme.
 
-   The code block is deliberately NOT themed — it stays dark in both, the way
+   The code block is deliberately NOT themed: it stays dark in both, the way
    most editors and docs sites treat code. Its palette lives further down. */
 :root {
   color-scheme: light;
   --bg: #ffffff;
   --bg-alt: #f4f5f7;
   /* Raised surfaces: cards, the paper sheet, popovers, the topbar, inputs.
-     Identical to --bg in light mode, deliberately lighter than it in dark —
+     Identical to --bg in light mode, deliberately lighter than it in dark,
      which is the whole reason it is a separate token. */
   --surface: #ffffff;
-  /* These fifteen were `--x: var(--x)` from 2026-09-08 to 2026-09-16 — a
+  /* These fifteen were `--x: var(--x)` from 2026-09-08 to 2026-09-16: a
      token defined as itself is invalid, so in the light theme they all
      computed to nothing: no shadows, no active tints, no selected-cell or
      comment highlight, no green "Live" dot. Values restored from the literal
@@ -68,7 +68,7 @@
   --status-blue-bg: #deebff;   --status-blue-ink: #0747a6;
   --status-purple-bg: #eae6ff; --status-purple-ink: #403294;
   /* Text ink colours (textColorMark.ts), keyed by the name the mark stores.
-     The dark theme re-points the same names at lighter inks — which is the
+     The dark theme re-points the same names at lighter inks, which is the
      whole reason the mark stores a name and not a hex. */
   --text-color-grey: #42526e;   --text-color-blue: #0747a6;
   --text-color-teal: #008da6;   --text-color-green: #006644;
@@ -76,14 +76,14 @@
   --text-color-red: #bf2600;    --text-color-purple: #403294;
   --radius: 6px;
   /* Breakpoints are documented here but can't be read into @media conditions
-     directly (a CSS limitation) — each @media rule repeats the raw number
+     directly (a CSS limitation): each @media rule repeats the raw number
      with a "keep in sync" comment pointing back to these. */
   --bp-mobile: 640px;
   --bp-tablet: 1024px;
   --page-pad: 1.5rem;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   /* iOS Safari auto-boosts font size in narrow flex/table columns it deems
-     "readable text" — invisible on desktop browsers (nothing to trigger it),
+     "readable text": invisible on desktop browsers (nothing to trigger it),
      but on a real phone it silently widens exactly the rigid, non-shrinking
      rows below (.topbar, .row-between) past their measured budget. */
   -webkit-text-size-adjust: 100%;
@@ -94,12 +94,12 @@ body { margin: 0; background: var(--bg); color: var(--text); }
 a { color: var(--primary); text-decoration: none; }
 a:hover { text-decoration: underline; }
 h1 { font-size: 1.7rem; }
-/* Browsers apply their own (often OS-accent-colored — "iOS blue" on Safari)
+/* Browsers apply their own (often OS-accent-colored: "iOS blue" on Safari)
    text color to a bare <button> if nothing overrides it. Almost every
    button in this app sets its own color explicitly and is unaffected, but
    a couple of plain icon-style buttons (the toolbar, the notification
    bell) were relying on this and inheriting that system tint instead of
-   looking like a neutral icon by default — found via a design review of
+   looking like a neutral icon by default: found via a design review of
    the editor toolbar. Fixing it at the element level here means any future
    unstyled button is neutral by default too, not just these two. */
 button { font: inherit; color: inherit; }
@@ -109,11 +109,11 @@ button { font: inherit; color: inherit; }
 .small { font-size: 0.85rem; }
 /* flex, not grid: a CSS Grid item's percentage sizing (.authcard's
    max-width: 100%) resolves against its own auto-sized grid track, which
-   sizes itself to the item's intrinsic width — a circular reference that
+   sizes itself to the item's intrinsic width: a circular reference that
    makes max-width: 100% a no-op and lets a fixed-width child overflow a
    narrow viewport. Flex containers resolve child percentages against the
    actual content box, so this constrains correctly. Found via testing at
-   320px width — the "safe" behavior worked by coincidence at 375px+ only. */
+   320px width: the "safe" behavior worked by coincidence at 375px+ only. */
 .center { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
 .row-between { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .row-gap { display: flex; gap: 0.5rem; }
@@ -123,7 +123,7 @@ button { font: inherit; color: inherit; }
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   /* A title + action button (space/page header, history preview header)
      neither wraps nor shrinks by default, so at mobile widths the button
-     forces the row — and everything under it via .page-wrap — wider than
+     forces the row, and everything under it via .page-wrap, wider than
      the viewport. Stack instead of squeezing them onto one row. */
   .row-between { flex-wrap: wrap; }
 }
@@ -166,7 +166,7 @@ input, textarea {
 input:focus, textarea:focus { outline: 2px solid var(--primary); outline-offset: -1px; }
 label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.6rem; }
 /* Form controls never smaller than 16px on a phone. iOS Safari zooms the
-   page into any control it focuses that is set below 16px — and keeps that
+   page into any control it focuses that is set below 16px, and keeps that
    zoom after the field is left and the app navigates on. With the label
    above at 0.85rem and `font: inherit` on inputs, every field in a label
    was 13.6px: signing in zoomed the page, and in the editor a link dialog
@@ -179,7 +179,7 @@ label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 
 label input, label textarea { margin-top: 0.25rem; }
 /* Password fields (PasswordInput.tsx): a wrapper div takes the place of the
    bare input as the label's direct child, so it needs the same top margin
-   the label normally gives an input — reset to 0 on the input itself so
+   the label normally gives an input: reset to 0 on the input itself so
    the two margins don't stack. */
 label .password-input { margin-top: 0.25rem; }
 .password-input { position: relative; width: 100%; }
@@ -216,17 +216,17 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
   /* flex-start, not space-between: space-between splits leftover width
      evenly into every gap, which floated the nav somewhere between the brand
      and the search box. Packing left and giving .topbar__right a
-     margin-left: auto puts all the leftover in one place — before the
-     right-hand cluster — so the nav anchors to the brand at every tier. */
+     margin-left: auto puts all the leftover in one place, before the
+     right-hand cluster, so the nav anchors to the brand at every tier. */
   display: flex; align-items: center; justify-content: flex-start;
   padding: 0 1rem; height: 52px; border-bottom: 1px solid var(--border); background: var(--surface);
   position: sticky; top: 0; z-index: 10;
 }
-/* A flex item's default min-width is `auto`, not 0 — it refuses to shrink
+/* A flex item's default min-width is `auto`, not 0: it refuses to shrink
    below its own text's intrinsic width no matter how much flex-shrink says
    to. .topbar has no wrap fallback, so on a narrow phone this was the thing
    quietly pushing the whole bar (and, since nothing clips it, the whole
-   document) wider than the viewport — worse on real iOS Safari, whose
+   document) wider than the viewport: worse on real iOS Safari, whose
    -apple-system rendering of 700-weight text runs measurably wider per
    character than the sans-serif fallback this got tested against on
    desktop. Letting it shrink and ellipsis instead keeps the bar's total
@@ -242,7 +242,7 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .topbar__nav { display: flex; align-items: center; gap: 0.25rem; margin-left: 1.25rem; }
 /* inline-flex + nowrap: a squeezed "API Tokens" used to wrap to two lines,
    which made the nav row taller and left its single-line neighbours sitting
-   at the top of it — the "top-aligned links" look. Links now never wrap
+   at the top of it: the "top-aligned links" look. Links now never wrap
    (the More menu below is what absorbs the pressure instead), and centre
    within whatever height the row has. */
 .topbar__link {
@@ -275,14 +275,14 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
    (~170px) stays as the floor here; the middle tier sets its own below. */
 .topbar__search { flex: 1; margin: 0 1.5rem; }
 .topbar__search input { height: 34px; border-radius: 999px; padding: 0 0.9rem; background: var(--bg-alt); }
-/* position:relative lives here, not on .notif — .notif__dropdown's
+/* position:relative lives here, not on .notif: .notif__dropdown's
    `right: 0` needs to resolve against this whole right-hand cluster (bell +
    username + sign-out), not just the ~28px-wide bell wrapper. Anchoring to
    .notif itself put the dropdown's right edge wherever the bell happened to
    sit in the flex row, which is well left of the topbar's actual right
-   edge once the username/sign-out button follow it — found on mobile,
+   edge once the username/sign-out button follow it: found on mobile,
    where that pushed the dropdown mostly off the left of the viewport. */
-/* flex-shrink: 0 — the bell and Sign out are the controls a user actually
+/* flex-shrink: 0: the bell and Sign out are the controls a user actually
    needs; .brand gives up its width first (see .brand comment above). */
 .topbar__right { position: relative; display: flex; align-items: center; gap: 0.9rem; flex-shrink: 0; margin-left: auto; }
 
@@ -292,16 +292,16 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
   flex-shrink: 0;
 }
 /* On wider viewports this wrapper must not affect the topbar's own flex
-   layout — display: contents makes its children (.topbar__nav,
+   layout: display: contents makes its children (.topbar__nav,
    .topbar__search) lay out as if they were direct topbar children, exactly
    as before this element existed. */
 .topbar__collapsible { display: contents; }
 
 /* Middle tier: the full desktop bar never fit here (brand, four links, a
-   420px search and the right-hand cluster, with no wrap fallback) — it only
+   420px search and the right-hand cluster, with no wrap fallback): it only
    appeared to because .brand would ellipsis. The secondary links go behind
    More, search keeps a floor it can't collapse below (unpinned it shrank to
-   ~2px), and the username — the least load-bearing thing in the bar — goes. */
+   ~2px), and the username, the least load-bearing thing in the bar, goes. */
 @media (max-width: 1024px) { /* keep in sync with --bp-tablet */
   .topbar__link--secondary { display: none; }
   .topbar__more { display: inline-flex; }
@@ -366,7 +366,7 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
   .topbar__username { display: none; }
 }
 
-/* Theme toggle — same neutral-by-default, darker-on-hover treatment as
+/* Theme toggle: same neutral-by-default, darker-on-hover treatment as
    .notif__bell and .toolbar__btn, so the topbar's two icon buttons read as
    one family. */
 .theme-toggle {
@@ -422,14 +422,14 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 }
 
 /* notifications */
-/* color: var(--muted), darkening on hover — same neutral-by-default,
+/* color: var(--muted), darkening on hover: same neutral-by-default,
    darker-on-interaction treatment as .toolbar__btn, so this flat stroke
    icon reads as part of the same icon language, not a one-off. */
 .notif__bell { position: relative; display: inline-flex; background: none; border: none; cursor: pointer; padding: 0.2rem 0.3rem; line-height: 1; color: var(--muted); }
 .notif__bell:hover { color: var(--text); }
 .notif__badge { position: absolute; top: -2px; right: -4px; background: var(--danger); color: var(--on-primary); font-size: 0.65rem; font-weight: 700; border-radius: 999px; padding: 0.05rem 0.35rem; min-width: 16px; text-align: center; }
 .notif__dropdown { position: absolute; right: 0; top: calc(100% + 8px); width: min(340px, calc(100vw - 2rem)); max-height: 420px; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); z-index: 20; }
-/* Phone-only close button on the theme and notification popups — the
+/* Phone-only close button on the theme and notification popups: the
    same affordance as the hamburger's. */
 .popover__close {
   display: none; align-items: center; justify-content: center;
@@ -442,7 +442,7 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .theme-menu__panel .popover__close { position: absolute; top: 0.35rem; right: 0.35rem; }
 /* Pinned to the viewport on a phone, like the theme panel: hung off the
    bell it ran off the edge of the screen. Placed after the base rule above
-   on purpose — the same specificity, so order decides. */
+   on purpose: the same specificity, so order decides. */
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   .notif__dropdown { position: fixed; left: 1rem; right: 1rem; top: 60px; width: auto; }
 }
@@ -488,13 +488,13 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .form-inline--pair { grid-template-columns: 1fr auto; }
 /* Inside a profile card, labels carry a bottom margin for stacked forms;
    in a grid row that margin is what pushes the row's end below the input,
-   and the button — aligned to that end — with it. Zero it here, and size
+   and the button, aligned to that end, with it. Zero it here, and size
    the button to the input (34px) rather than the generic 38px. */
 .profile__section .form-inline label { margin-bottom: 0; }
 .profile__section .form-inline .btn { margin-top: 0; height: 34px; padding-top: 0; padding-bottom: 0; }
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   /* The 4-column grid (used for Groups/API Tokens/Webhooks/Spaces creation
-     forms) has no room to breathe at mobile widths — found via testing, a
+     forms) has no room to breathe at mobile widths: found via testing, a
      real overflow/clipping issue, not just visually tight. Stack instead. */
   .form-inline { grid-template-columns: 1fr; }
 }
@@ -504,7 +504,7 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 
 /* The sidebar is its own scroll container, not part of the document's.
    It is pinned below the 52px topbar and exactly as tall as what is left of
-   the viewport, so scrolling a long page moves the page and nothing else —
+   the viewport, so scrolling a long page moves the page and nothing else:
    the space's name, + New page, the PAGES heading and Space settings all
    stay where the reader left them.
    `align-self: start` matters: a grid item stretches to the row's height by
@@ -561,14 +561,14 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 /* Reorder mode only: the link itself is the drag surface, no separate
    handle. touch-action:none stops touch browsers from treating the row's
    own pointerdown as the start of a page-scroll gesture, racing dnd-kit's
-   PointerSensor for it — fine here (dragging is the point of this class),
+   PointerSensor for it: fine here (dragging is the point of this class),
    which is exactly why it's scoped to Reorder mode instead of living on
    .tree__link unconditionally: outside Reorder mode a tree full of
    touch-action:none rows is a tree you can't scroll through by swiping. */
 .tree__link--draggable { cursor: grab; touch-action: none; }
 .tree__link--draggable:active { cursor: grabbing; }
 /* The drop indicator: a thin line with a small circular "terminal" bleeding
-   past its left edge, shown in the gap where a dragged row would land —
+   past its left edge, shown in the gap where a dragged row would land:
    position (and, via margin-left, nesting depth) both come from PageTree.tsx.
    Matches Atlassian's own drag-and-drop drop-indicator spec. */
 .tree__drop-line { position: relative; height: 8px; pointer-events: none; }
@@ -581,9 +581,9 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 }
 .space-content { min-width: 0; }
 /* Hidden by default (desktop already shows the tree permanently in
-   .sidebar) — shown only under --bp-mobile, see SpaceHome.tsx. */
+   .sidebar): shown only under --bp-mobile, see SpaceHome.tsx. */
 .space-home-tree { display: none; }
-/* Here (mobile), links are the only way to reach a page — blue signals
+/* Here (mobile), links are the only way to reach a page: blue signals
    "tap to go", same as any other link. In .sidebar (desktop) the tree
    stays visible after navigating, so black-with-blue-when-active instead
    means "here's where you are", not "here's what you can tap". */
@@ -601,7 +601,7 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
    currentColor, pointing them at --primary makes them follow the theme and
    the chosen accent (data-accent) with no per-accent rules. */
 .nav-icon { flex-shrink: 0; color: var(--primary); }
-/* Except when the row is already the accent colour — then the icon joins the
+/* Except when the row is already the accent colour, then the icon joins the
    label rather than sitting a shade apart from it. */
 .sidebar__trash.is-active .nav-icon { color: inherit; }
 /* Inside a button (the mobile overflow menu) the icon needs the same gap the
@@ -609,12 +609,12 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .btn .nav-icon { margin-right: 0.1rem; }
 
 /* Mobile-only bar, replacing a previous off-canvas drawer that held the
-   page tree *and* + New/Permissions/Webhooks/Trash behind one hamburger —
+   page tree *and* + New/Permissions/Webhooks/Trash behind one hamburger:
    indistinguishable from a nav menu, and every space action besides Watch
    lived a tap deeper than it needed to. The tree itself moved to an inline
    list on the space landing page (see .space-home-tree in SpaceHome).
    Hidden (.space-actionbar--hidden-on-page below) once you're viewing or
-   editing an actual page — PageView.tsx has its own breadcrumb/Edit/+New/⋮
+   editing an actual page: PageView.tsx has its own breadcrumb/Edit/+New/⋮
    row by then, and stacking this above it would just be a second header. */
 .space-actionbar {
   display: none; position: sticky; top: 52px; z-index: 8;
@@ -633,8 +633,8 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   .space-actionbar { display: flex; }
   .space-actionbar.space-actionbar--hidden-on-page { display: none; }
   .space-home-tree { display: block; margin-top: 1rem; }
-  /* .sidebar's two jobs — browsing the tree, and reaching + New page and
-     Space settings — are covered by .space-home-tree and .space-actionbar
+  /* .sidebar's two jobs (browsing the tree, and reaching + New page and
+     Space settings) are covered by .space-home-tree and .space-actionbar
      instead at this width. */
   .sidebar { display: none; }
 }
@@ -642,7 +642,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 /* ---- paper: the "sheet of paper" surface shared by editing and viewing --- */
 .paper {
   /* A continuous page, not a boxed sheet: no border, shadow or distinct
-     background, so title and body read as one surface — Confluence's
+     background, so title and body read as one surface: Confluence's
      presentation of a page, in both the editor and the reading view. The
      name stays: this is still the element the full-width table breakout
      and --page-pad arithmetic are anchored to. */
@@ -651,14 +651,14 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   border-radius: 0;
   box-shadow: none;
   /* Must stay --page-pad, not a hardcoded value: the full-width table
-     breakout rule cancels exactly this padding via negative margins — if
+     breakout rule cancels exactly this padding via negative margins, if
      they ever drift apart, full-width tables overflow the viewport by the
      difference (found via testing at --bp-mobile before this comment). */
   padding: var(--page-pad);
 }
 
 /* ---- editor -------------------------------------------------------------- */
-/* The title is just the first line of the page — no rule under it, focused
+/* The title is just the first line of the page: no rule under it, focused
    or not, the same as the body beneath. */
 .title-input { font-size: 1.75rem; font-weight: 700; border: none; background: transparent; padding: 0.3rem 0; margin-bottom: 0.25rem; width: 100%; }
 .title-input:focus { outline: none; }
@@ -775,7 +775,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .link-menu__form { display: flex; gap: 0.4rem; align-items: center; }
 .link-menu__form input, .toolbar__link-popover input { width: min(220px, calc(100vw - 6rem)); padding: 0.3rem 0.5rem; }
 
-/* Floating menus built from .toolbar — the selection bubble, the image
+/* Floating menus built from .toolbar: the selection bubble, the image
    hover bar, the layout bar.
 
    These have to paint their own surface. Since the one-row rebuild .toolbar
@@ -845,7 +845,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 /* The inline `left` offset applied via useEdgeAlign (Toolbar.tsx/
    SelectionBubbleMenu.tsx) overrides the `left: 0` above when the anchor
    button sits somewhere a flush-left popover would spill past either
-   viewport edge — the anchor lives inside a flex-wrap toolbar, so its
+   viewport edge: the anchor lives inside a flex-wrap toolbar, so its
    position isn't fixed like a normal trailing "overflow menu" would be. */
 .toolbar__comment-popover { align-items: flex-end; }
 .toolbar__comment-popover textarea { width: 220px; padding: 0.3rem 0.5rem; resize: vertical; }
@@ -854,17 +854,17 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .editor__content .tableWrapper { overflow-x: auto; margin: 0.75rem 0; }
 .editor__content table { border-collapse: collapse; table-layout: fixed; width: 100%; margin: 0; }
 /* Custom table width/full-width: !important is required here, not optional
-   styling preference — prosemirror-tables' TableView recalculates and
+   styling preference: prosemirror-tables' TableView recalculates and
    overwrites table.style.width itself after render (see extensions.ts), so
    a plain (non-important) rule here would lose to that later inline set. */
 .editor__content table[style*="--table-target-width"] {
   width: var(--table-target-width) !important;
 }
-/* layout: 'full-width' additionally bleeds out of .paper's own padding —
+/* layout: 'full-width' additionally bleeds out of .paper's own padding:
    100% alone only fills the already-constrained content box, not the
    viewport/card width. This has to target .tableWrapper (the div TableView
    wraps every table in, for its own overflow-x scrolling), not the <table>
-   itself — negative margins on the table just overflow the wrapper's own
+   itself: negative margins on the table just overflow the wrapper's own
    box instead of escaping .paper, triggering the wrapper's scrollbar rather
    than an actual breakout. */
 /* Scoped to direct children of the content root (`.ProseMirror`): a
@@ -886,7 +886,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 /* prosemirror-tables applies this class to the ProseMirror root itself (not
    the handle) while a column border is close enough to drag. */
 .editor__content .ProseMirror.resize-cursor { cursor: col-resize; }
-/* table hover controls (TableControls.tsx) — only rendered at all while the
+/* table hover controls (TableControls.tsx): only rendered at all while the
    mouse is near the table (tracked in JS), so no extra CSS-hover reveal is
    needed; these are fixed-position, so the wrapper itself needs no styling. */
 /* Floating editor menus (BubbleMenu className) sit above the table controls
@@ -922,31 +922,31 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .editor__content ul[data-type="taskList"] li > label { flex: 0 0 auto; margin-top: 0.3em; user-select: none; }
 .editor__content ul[data-type="taskList"] li > div { flex: 1 1 auto; }
 .editor__content ul[data-type="taskList"] li[data-checked="true"] > div { color: var(--muted); text-decoration: line-through; }
-/* The formatting button group — rendered inside .page-actionbar (edit mode)
+/* The formatting button group: rendered inside .page-actionbar (edit mode)
    or floating inside a .toolbar--bubble menu; either way it's no longer
    nested inside .paper, so it needs no sticky/bleed positioning of its own.
-   Buttons sized to a real touch target (36px — the toolbar packs in ~20 of
+   Buttons sized to a real touch target (36px: the toolbar packs in ~20 of
    them, so the full 44px HIG minimum would force excessive wrapping/
    scrolling on mobile; 36px is the same tradeoff Google Docs' mobile
    toolbar makes) with real gaps between them, found via a touch-usability
    review to be too small/too tightly packed before (was effectively a
-   ~22px target with ~3px gaps). Icon color is neutral by default — the
+   ~22px target with ~3px gaps). Icon color is neutral by default, the
    `color: inherit` on `button` above stops these from showing the browser's
-   own system-accent tint — and only switches to --primary-dark once a
+   own system-accent tint, and only switches to --primary-dark once a
    format is actually active, so "what's currently applied" stays the only
    thing rendered in color. */
 /* One row, never wrapping: flex-wrap:nowrap is the guarantee, and
    useToolbarOverflow moves what does not fit into the Insert menu. Overflow
-   must stay *visible* — every dropdown and popover in this row is absolutely
+   must stay *visible*: every dropdown and popover in this row is absolutely
    positioned inside it, and overflow:hidden (tried first) clipped them all
-   into invisibility. No background or radius of its own — the bar it sits in
+   into invisibility. No background or radius of its own: the bar it sits in
    (.page-actionbar--editor) spans the full width. */
 .toolbar { display: flex; flex-wrap: nowrap; align-items: center; gap: 0.3rem; padding: 0; min-width: 0; width: 100%; }
 .tb-item { display: inline-flex; flex: 0 0 auto; }
 .tb-item--hidden { display: none; }
 .toolbar__insert { gap: 0.1rem; white-space: nowrap; }
 /* The two menus' triggers: a plain border, never the accent "active"
-   look — a menu is not a state, and the text menu always has a current
+   look: a menu is not a state, and the text menu always has a current
    style, so it was permanently blue. */
 .toolbar__btn.toolbar-dropdown__trigger--menu { border-color: var(--border); }
 .toolbar__btn.toolbar-dropdown__trigger--menu:hover { border-color: var(--muted); }
@@ -997,7 +997,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   /* Not redundant: the image button is a <label> (it wraps a hidden file
      input), so the global `label { margin-bottom: 0.6rem }` above applied to
      it and nothing else in this row. .toolbar centers its children with
-     align-items, which centers each item's *margin* box — so that 9.6px of
+     align-items, which centers each item's *margin* box, so that 9.6px of
      phantom margin below the label pushed its border box up by half of it,
      leaving the image icon sitting 4.8px above every sibling button. Zeroing
      it here fixes it for any element type used as a toolbar button, not just
@@ -1063,7 +1063,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .page-body .editor__content { padding: 0; }
 
 /* ---- breadcrumb ------------------------------------------------------------
-   Not sticky — the first thing in the normal scrolling content, right below
+   Not sticky: the first thing in the normal scrolling content, right below
    .space-actionbar (or the app topbar on desktop, where .space-actionbar is
    hidden). See SpaceBreadcrumb.tsx. */
 .breadcrumb { padding: 0.6rem 1.5rem 0; font-size: 0.85rem; color: var(--muted); }
@@ -1082,7 +1082,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 
 /* full-width action bar: replaces the old in-header button row (view mode)
    and the editor's in-paper toolbar (edit mode), so both look the same and
-   sit in the same place — sticky, spanning the full content column. */
+   sit in the same place: sticky, spanning the full content column. */
 .page-actionbar {
   position: sticky; top: 52px; z-index: 8;
   display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;
@@ -1096,7 +1096,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 /* The bar's own width decides, not the viewport's: with the sidebar open, a
    tablet-width window leaves the bar ~400px, where Style, Insert, Full width,
    Update and Close do not fit and the menus ran into Full width. Full width
-   gives up its label first, then leaves altogether — in a column that
+   gives up its label first, then leaves altogether: in a column that
    narrow it makes no visible difference, the same reasoning as on a phone. */
 @container editorbar (max-width: 720px) {
   .page-actionbar__fullwidth-label { display: none; }
@@ -1111,31 +1111,31 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
    stay, so every control keeps a visible affordance. */
 .page-actionbar--editor .page-actionbar__secondary { flex: 0 0 auto; flex-wrap: nowrap; }
 /* margin-left: auto (not just relying on .page-actionbar's space-between)
-   so __secondary still anchors right even with no __primary sibling at all
-   — PageView.tsx has nothing left of it since Edit moved in here. With a
+   so __secondary still anchors right even with no __primary sibling at all:
+  PageView.tsx has nothing left of it since Edit moved in here. With a
    sibling present (PageEditor.tsx's Toolbar), this is a no-op: space-between
    already put the same gap there. */
 .page-actionbar__secondary { margin-left: auto; }
 /* Mobile-only substitute for the desktop sidebar's persistent "+ New page"
-   (hidden along with the rest of .sidebar under --bp-mobile) — see
+   (hidden along with the rest of .sidebar under --bp-mobile): see
    PageView.tsx. Desktop already has that, so this stays hidden there. */
 .page-actionbar__new-subpage { display: none; }
 
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   /* Redefining the variable (not separate hardcoded paddings on .page-wrap/
-     .paper) keeps the full-width table breakout math in sync automatically
-     — it reads this same custom property. */
+     .paper) keeps the full-width table breakout math in sync automatically:
+    it reads this same custom property. */
   :root { --page-pad: 0.75rem; }
   .layout-section { flex-direction: column; }
   .layout-column { flex: none; }
   /* Sticky here as on desktop. The space bar (.space-actionbar, also
-     sticky at 52px) is hidden on every route that renders this bar — see
-     isPageRoute in SpacePage.tsx — so there is exactly one bar under the
+     sticky at 52px) is hidden on every route that renders this bar, see
+     isPageRoute in SpacePage.tsx, so there is exactly one bar under the
      topbar and nothing to fight over. It used to go static at this width,
      which is why Edit and the toolbar scrolled away on a phone. */
   .page-actionbar { padding: 0.5rem 0.75rem; }
   /* Full width vs. normal is a distinction without a difference at this
-     width (the reading column already fills the viewport either way) — see
+     width (the reading column already fills the viewport either way): see
      docs for the fuller reasoning. CSS-only: no JS/viewport-detection. */
   .page-actionbar__fullwidth-toggle { display: none; }
   .page-actionbar__new-subpage { display: inline-flex; }
@@ -1164,7 +1164,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .overflow-menu__dropdown .template-form { flex: none; margin-top: 0.4rem; }
 .page-body { margin: 1rem 0 2rem; }
 
-/* overflow-x: auto here (not wrapping) matches the tableWrapper pattern —
+/* overflow-x: auto here (not wrapping) matches the tableWrapper pattern:
    scrolls within its own row on narrow viewports rather than pushing the
    whole page wider; found via testing (a real ~40px page-level overflow on
    every page with this tab row, at --bp-mobile). */
@@ -1188,7 +1188,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .attachment-list { list-style: none; padding: 0; margin: 1rem 0 0; display: flex; flex-direction: column; gap: 0.5rem; }
 /* flex-wrap + overflow-wrap: a long filename/email (this class is shared by
    AttachmentsPanel and GroupsPage's member list) had no wrap and no way to
-   break its own text, so it could force this row — and the whole page —
+   break its own text, so it could force this row, and the whole page,
    wider than the viewport on narrow screens. */
 .attachment { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
 .attachment a { font-weight: 500; overflow-wrap: anywhere; }
@@ -1196,7 +1196,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 /* ---- history ------------------------------------------------------------- */
 .version-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.4rem; }
 .version { display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
-/* overflow-wrap: anywhere — these hold arbitrary user-authored content
+/* overflow-wrap: anywhere: these hold arbitrary user-authored content
    (group/page/token names, audit metadata) that .version's own flex-wrap
    can't help with: flex-wrap only breaks between items, not within one
    item's unbroken text, so a single long word here would still push past
@@ -1305,7 +1305,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .swatches__clear:hover { background: var(--bg-alt); color: var(--text); }
 
 /* ---- table cell options menu -------------------------------------------
-   position: fixed, like .table-hover — these track a cell's viewport rect
+   position: fixed, like .table-hover: these track a cell's viewport rect
    directly rather than being positioned by DOM ancestry, since the menu
    renders outside the table's own subtree. */
 .cell-menu__trigger, .cell-menu__panel { position: absolute; z-index: 7; }
@@ -1390,7 +1390,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 
   /* Author-chosen colours are stored in the document itself (a table cell's
      `backgroundColor` attr, a highlight mark's `color`) and are always light
-     tints from palette.ts — a theme cannot restyle them without discarding the
+     tints from palette.ts: a theme cannot restyle them without discarding the
      author's choice. Left alone in dark mode they would be a light patch
      carrying light --text: invisible. Pin the ink dark instead, so a
      highlighted or coloured cell reads the same in both themes. */
@@ -1407,7 +1407,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   }
 }
 
-/* An explicit choice wins in both directions — including "dark" while the OS
+/* An explicit choice wins in both directions, including "dark" while the OS
    is light, which the media query above can never cover. */
 :root[data-theme="dark"] {
   color-scheme: dark;
@@ -1472,8 +1472,8 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
    The accent drives every --primary* token. Each colour is defined twice, for
    light and dark, rather than derived from one value: a hue dark enough to
    pass 4.5:1 as link text on white is far too dark to read on a dark ground,
-   and vice versa. Both sets were checked against WCAG AA — the light values
-   against #ffffff, the dark ones against --bg (#161a1d) — and --on-primary
+   and vice versa. Both sets were checked against WCAG AA, the light values
+   against #ffffff, the dark ones against --bg (#161a1d), and --on-primary
    (text on a filled accent button) is white in light mode and dark ink in
    dark, again by measured contrast, not by eye.
 
@@ -1676,7 +1676,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   background: var(--panel-success-bg); color: var(--panel-success-icon);
 }
 /* The username in the topbar is a link now, but should not read as one until
-   hovered — it is a destination, not an action. */
+   hovered: it is a destination, not an action. */
 a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 
 /* ---- avatars ------------------------------------------------------------- */
@@ -1745,7 +1745,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 }
 .admin-table th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
 .admin-table__user { display: inline-flex; align-items: center; gap: 0.6rem; }
-/* Row actions wrap rather than widening the table past the viewport — the
+/* Row actions wrap rather than widening the table past the viewport: the
    same overflow lesson as .tabs. */
 .admin-table__actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
 .badge--danger { background: var(--danger-soft); color: var(--danger); }
@@ -1757,7 +1757,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 }
 .admin__notice p { margin: 0 0 0.5rem; font-size: 0.9rem; }
 /* A one-time link must be selectable and must not be truncated into
-   uselessness — the whole value has to be copyable. */
+   uselessness: the whole value has to be copyable. */
 .admin__link {
   display: block; margin-bottom: 0.6rem; padding: 0.5rem 0.6rem;
   background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
@@ -1779,7 +1779,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 }
 /* A sparkline needs width to be readable; a hero number does not. */
 .stat--wide { grid-column: span 2; }
-/* Text wears text tokens — never the series colour. */
+/* Text wears text tokens, never the series colour. */
 .stat__label {
   margin: 0 0 0.3rem; font-size: 0.75rem; text-transform: uppercase;
   letter-spacing: 0.03em; color: var(--muted);
@@ -1796,7 +1796,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
   /* Row actions already wrap; the table itself still needs an escape hatch. */
   .admin-table { display: block; overflow-x: auto; }
   /* At this width the table scrolls sideways, so the actions cell should
-     stay one line and be scrolled to — wrapped, six buttons stacked into a
+     stay one line and be scrolled to: wrapped, six buttons stacked into a
      narrow cell and every row grew to the height of the stack. */
   .admin-table__actions { flex-wrap: nowrap; white-space: nowrap; }
   .admin-table td, .admin-table th { white-space: nowrap; }
@@ -1807,7 +1807,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 /* ---- recovery prompt ----------------------------------------------------- */
 /* A modal, not a banner: an account with no recovery codes has no way back in,
    and a dismissible strip at the top of a page is the thing everyone scrolls
-   past. It is still dismissible — "Not now" is a real option — but it has to
+   past. It is still dismissible, "Not now" is a real option, but it has to
    be answered rather than ignored. */
 .recovery-prompt {
   position: fixed; inset: 0; z-index: 50;
@@ -1890,7 +1890,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 
 .badge--public { background: color-mix(in srgb, var(--primary) 18%, transparent); color: var(--primary); margin-left: 0.4rem; }
 
-/* Space icons (dev-plan 6). Rounded squares against the avatar's circle —
+/* Space icons (dev-plan 6). Rounded squares against the avatar's circle:
    the only cue distinguishing a place from a person at tile size. */
 .space-icon { flex: 0 0 auto; vertical-align: middle; object-fit: cover; }
 .space-icon--emoji {
@@ -2031,7 +2031,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 /* Section width, on the page's own scale. "Wide" is the full-width table's
    breakout past the page padding; "full" spans the content column
    (.page-column is an inline-size container, so 100cqw is its width),
-   less a page-pad gutter. Only at the top level — a section is never
+   less a page-pad gutter. Only at the top level: a section is never
    nested, but keep the rule honest. */
 .editor__content > .ProseMirror > .layout-section--wide {
   margin-left: calc(-1 * var(--page-pad)); margin-right: calc(-1 * var(--page-pad));
@@ -2040,9 +2040,9 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
   width: calc(100cqw - 2 * var(--page-pad));
   margin-left: calc((100% - 100cqw) / 2 + var(--page-pad));
 }
-/* The content column's size container lives on .page-column — the wrapper
+/* The content column's size container lives on .page-column (the wrapper
    PageView and PageEditor put around the breadcrumb and the page, *below*
-   the sticky action bar — rather than on .space-content itself. Same width
+   the sticky action bar) rather than on .space-content itself. Same width
    (a block child of the column), so 100cqw means the same thing; the
    difference is that the sticky bar is no longer a descendant of a size
    container, which WebKit has been seen to mishandle: on iOS the bar would
@@ -2074,7 +2074,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 
 /* ---- Phase 7 Wave C: mentions, emoji, task assignee --------------------- */
 
-/* Doubled for the same reason the panel rules are — see the note there. */
+/* Doubled for the same reason the panel rules are: see the note there. */
 .editor__content .mention, .mention {
   display: inline-block; padding: 0 0.3em; border-radius: 3px;
   background: var(--primary-soft); color: var(--primary-dark);
@@ -2126,7 +2126,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 
 /* The two static Wave D containers. Deliberately quiet: an excerpt is normal
    content that other pages may borrow, and a page-properties block is a
-   normal table that a report may read — neither should shout in the page. */
+   normal table that a report may read: neither should shout in the page. */
 .excerpt {
   margin: 0.75rem 0; padding: 0.1rem 0 0.1rem 0.8rem; border-left: 3px solid var(--primary-soft-border);
 }
@@ -2193,7 +2193,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .attachment-block__name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .attachment-block__meta { color: var(--muted); font-size: 0.85rem; flex: none; }
 
-/* The gallery is a layout over ordinary image nodes — the images keep every
+/* The gallery is a layout over ordinary image nodes: the images keep every
    affordance they already have. */
 .gallery { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.75rem 0; }
 .gallery > * { margin: 0; }

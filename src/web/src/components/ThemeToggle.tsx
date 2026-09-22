@@ -68,7 +68,7 @@ const MODE_HINTS: Record<ThemePreference, string> = {
 /**
  * Appearance menu: theme mode (system / light / dark) plus accent colour.
  *
- * `system` is the default and stays first — a new user gets whatever their OS
+ * `system` is the default and stays first: a new user gets whatever their OS
  * already asks for, and choosing it again clears the stored preference rather
  * than pinning today's resolved value.
  *

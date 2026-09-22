@@ -5,7 +5,7 @@ namespace Tesria.Api.Features.Blocks.Kinds;
 
 /// <summary>
 /// Children display: the host page's live children, to a depth. The
-/// reference kind — built together with the mechanism so the contract is
+/// reference kind: built together with the mechanism so the contract is
 /// proven against something real. It is deliberately the simplest one, and
 /// it still has to get permission filtering right: a hidden child hides its
 /// whole subtree, the same rule the page tree applies.

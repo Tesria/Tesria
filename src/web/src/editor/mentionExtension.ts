@@ -15,7 +15,7 @@ declare module '@tiptap/core' {
  * id is what the server diffs to decide who to notify
  * (`Infrastructure/Mentions`); the label is what makes the mention still
  * read as a name in an exported file, in a page version from last year, and
- * after the account is deleted — none of which can look the name up. The
+ * after the account is deleted: none of which can look the name up. The
  * live editor and reading view have the id, so they could re-resolve it, but
  * a stored document that only renders correctly while the app is running is
  * not a document.

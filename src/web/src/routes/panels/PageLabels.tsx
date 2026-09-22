@@ -40,7 +40,7 @@ export function PageLabels({ pageId, readOnly = false }: { pageId: string; readO
       await api.labels.remove(pageId, labelName)
       setLabels((prev) => prev.filter((l) => l.name !== labelName))
     } catch {
-      /* ignore — the list refreshes on next load */
+      /* ignore: the list refreshes on next load */
     }
   }
 

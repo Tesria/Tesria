@@ -3,8 +3,8 @@ import type { SVGProps } from 'react'
 /**
  * The space sidebar's icons.
  *
- * Drawn in the same language as `BrandMark` and the editor's icon set — a
- * 24×24 viewBox, 1.8px stroke, round caps and joins, `fill: none` — so the
+ * Drawn in the same language as `BrandMark` and the editor's icon set (a
+ * 24×24 viewBox, 1.8px stroke, round caps and joins, `fill: none`) so the
  * navigation reads as part of this app rather than as whatever glyphs the
  * operating system happens to ship. These were emoji (📑 ⚙ 🔒 🪝 🗑), which
  * render as small full-colour pictures: a different visual weight on every
@@ -12,7 +12,7 @@ import type { SVGProps } from 'react'
  *
  * Everything is `currentColor`, so `.nav-icon` can point them at
  * `--primary` and they follow both the theme and the chosen accent for
- * free — exactly the trick `.brand__mark` uses.
+ * free: exactly the trick `.brand__mark` uses.
  */
 function NavIcon({ children, ...props }: SVGProps<SVGSVGElement>) {
   return (
@@ -39,7 +39,7 @@ function NavIcon({ children, ...props }: SVGProps<SVGSVGElement>) {
  * Pages: a sheet of paper with a folded corner and two lines of text.
  *
  * The obvious drawing for "pages" rather than a clever one. The brand's
- * rhombus was tried here first and read as a shape, not as a document —
+ * rhombus was tried here first and read as a shape, not as a document:
  * it belongs to the logo, where the stack gives it its meaning.
  *
  * Two body lines, not three: at 16px a third crowds the fold.
@@ -56,7 +56,7 @@ export function PagesIcon() {
 
 /**
  * Settings: a cog as body, hub and eight teeth, rather than one long
- * traced outline — at 16px the traced kind turns to mush, and radial ticks
+ * traced outline: at 16px the traced kind turns to mush, and radial ticks
  * stay legible.
  */
 export function SettingsIcon() {
@@ -122,7 +122,7 @@ export function TrashIcon() {
 /**
  * Watching: an eye.
  *
- * One icon for both states — the button's own label says which way the
+ * One icon for both states: the button's own label says which way the
  * toggle is pointing ("Watching" / "Watch this page"), so a struck-through
  * variant would be describing the state in one breath and the action in the
  * next.

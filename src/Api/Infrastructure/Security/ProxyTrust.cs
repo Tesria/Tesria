@@ -11,7 +11,7 @@ namespace Tesria.Api.Infrastructure.Security;
 /// The app never sees the client directly: Caddy terminates TLS and proxies
 /// to Kestrel over plain HTTP on the compose network. Without this, every
 /// request's <c>RemoteIpAddress</c> is Caddy's container address and
-/// <c>Request.Scheme</c> is <c>http</c> — so a per-IP rate limiter would
+/// <c>Request.Scheme</c> is <c>http</c>, so a per-IP rate limiter would
 /// throttle the whole world as one caller, and a cookie marked "secure if the
 /// request was" would never be marked secure.
 ///

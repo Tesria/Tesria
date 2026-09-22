@@ -8,7 +8,7 @@ public interface ISiteSettingsService
 {
     /// <summary>
     /// The current settings, creating the single row on first use. Cached, so
-    /// call it freely — request paths like registration read it every time.
+    /// call it freely: request paths like registration read it every time.
     /// </summary>
     Task<SiteSettings> GetAsync(CancellationToken ct = default);
 
@@ -65,7 +65,7 @@ public sealed class SiteSettingsCache
 
     /// <summary>
     /// The last value loaded, however old. For synchronous callers that cannot
-    /// await a reload — the rate limiter's partitioner — where a slightly stale
+    /// await a reload, the rate limiter's partitioner, where a slightly stale
     /// limit is better than none, and null only before the first load.
     /// </summary>
     public SiteSettings? Peek()
@@ -95,7 +95,7 @@ public sealed class SiteSettingsService(
     public async Task<SiteSettings> UpdateAsync(
         Action<SiteSettings> mutate, Guid? actorId, CancellationToken ct = default)
     {
-        // Tracked (not AsNoTracking) — this instance is the one being saved.
+        // Tracked (not AsNoTracking): this instance is the one being saved.
         var settings = await db.SiteSettings.FirstOrDefaultAsync(s => s.Id == SiteSettings.SingletonId, ct);
         if (settings is null)
         {
@@ -127,7 +127,7 @@ public sealed class SiteSettingsService(
         {
             // The Data Protection keyring was lost or rotated beyond recovery
             // (e.g. restoring the uploads volume without the database). Treat it
-            // as "no password configured" rather than taking the request down —
+            // as "no password configured" rather than taking the request down:
             // the operator re-enters it, and "Send test email" reports the fault.
             return null;
         }

@@ -32,7 +32,7 @@ export function SpaceHome() {
       ) : (
         <>
           <p className="muted">Select a page from the tree, or create a new one.</p>
-          {/* Desktop already shows this permanently in the sidebar — this
+          {/* Desktop already shows this permanently in the sidebar: this
               copy exists only so mobile (where that sidebar is hidden) has
               somewhere to browse pages that isn't hidden behind a toggle. */}
           <div className="space-home-tree">

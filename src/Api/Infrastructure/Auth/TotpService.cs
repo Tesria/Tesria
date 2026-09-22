@@ -28,7 +28,7 @@ public interface ITotpService
 
 /// <summary>
 /// RFC 6238 one-time codes (dev-plan 3.5): 20-byte secrets, SHA-1, 30-second
-/// steps, six digits — the parameters every authenticator app supports.
+/// steps, six digits: the parameters every authenticator app supports.
 /// Secrets rest under Data Protection, whose keys live in the database, so a
 /// database backup restores them and a database *dump* alone does not read
 /// them.

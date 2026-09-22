@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, type AppNotification } from '../api/client'
 
-/** Same stroke-icon language as the editor toolbar (editor/icons.tsx) — flat,
- *  currentColor, 1.8px stroke — instead of the platform's own emoji bell,
+/** Same stroke-icon language as the editor toolbar (editor/icons.tsx) (flat,
+ *  currentColor, 1.8px stroke) instead of the platform's own emoji bell,
  *  which rendered in full color (yellow, browser/OS-drawn) and stood out
  *  against the rest of the app's otherwise flat, monochrome icon set. */
 function BellIcon() {
@@ -106,7 +106,7 @@ export function NotificationBell() {
         if (space) navigate(`/spaces/${space.key}`)
       }
     } catch {
-      /* the target may no longer exist or be reachable — stay put */
+      /* the target may no longer exist or be reachable: stay put */
     }
   }
 

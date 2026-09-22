@@ -7,7 +7,7 @@ import { updateSelectedNode } from './selectedNode'
 /**
  * Edits the selected status lozenge: its text and one of the six colours.
  * Opens with the text field focused, so inserting a status and typing its
- * label is one motion — the same as Confluence.
+ * label is one motion: the same as Confluence.
  */
 export function StatusMenu({ editor }: { editor: TiptapEditor }) {
   const attrs = useEditorState({
@@ -29,7 +29,7 @@ export function StatusMenu({ editor }: { editor: TiptapEditor }) {
     if (open) inputRef.current?.focus()
   }, [open])
 
-  // Written on every keystroke — the lozenge updates as you type — and the
+  // Written on every keystroke, the lozenge updates as you type, and the
   // node is re-selected afterwards so the menu stays put (see selectedNode.ts).
   function commit(next: { text?: string; color?: StatusColor }) {
     updateSelectedNode(editor, 'status', next)
@@ -46,7 +46,7 @@ export function StatusMenu({ editor }: { editor: TiptapEditor }) {
       <form
         className="chip-menu"
         onSubmit={(e) => {
-          // A popover form inside the page's own save form — see the
+          // A popover form inside the page's own save form: see the
           // architecture doc's editor gotcha. Enter returns to the text.
           e.preventDefault()
           e.stopPropagation()

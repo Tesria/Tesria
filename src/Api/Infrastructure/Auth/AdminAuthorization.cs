@@ -21,7 +21,7 @@ public sealed class OwnerRequirement : IAuthorizationRequirement;
 
 /// <summary>
 /// Satisfies <see cref="AdminRequirement"/> from the database via
-/// <see cref="CurrentUser.IsAdminAsync"/> rather than from a claim — see that
+/// <see cref="CurrentUser.IsAdminAsync"/> rather than from a claim: see that
 /// method for why the role is not carried in the cookie.
 ///
 /// When <c>RequireTotpForAdmins</c> is on (dev-plan 3.5), an administrator

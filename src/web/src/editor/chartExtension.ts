@@ -29,7 +29,7 @@ declare module '@tiptap/core' {
  *
  * `source` is the table's *ordinal* on the page (1 = the first table), not
  * an id: ProseMirror nodes have no stable identity, so an id would have to
- * be minted, stored and kept unique through copy-paste — and an author
+ * be minted, stored and kept unique through copy-paste, and an author
  * thinks in "the second table" anyway. The data is never copied into the
  * chart: editing the table redraws it, and there is only ever one set of
  * numbers on the page.

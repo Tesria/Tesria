@@ -19,7 +19,7 @@ public class PageView
 
     /// <summary>
     /// Null for an anonymous read. Nullable from the day the table is created
-    /// even though nothing anonymous can reach a page yet — public read mode
+    /// even though nothing anonymous can reach a page yet: public read mode
     /// (dev-plan Phase 5) writes into this same table, and widening the column
     /// later would be a migration on a table that is large by then.
     /// </summary>

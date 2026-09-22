@@ -77,7 +77,7 @@ public class SearchTests
         // Postgres's tsvector parser treats "word/word" (e.g. "Hocuspocus/Yjs")
         // as one compound lexeme rather than splitting it, so a search for
         // just "Hocuspocus" would otherwise find nothing. SearchText must have
-        // the slash replaced with a space so both halves tokenize normally —
+        // the slash replaced with a space so both halves tokenize normally:
         // this can only be verified against the stored text directly since the
         // SQLite test provider falls back to a plain LIKE match, which can't
         // reproduce the tsvector-specific bug.

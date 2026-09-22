@@ -1,6 +1,6 @@
 /**
  * The `:` suggestion list. Stored as the literal character, so nothing new
- * enters the schema, the export renderer or the search index — an emoji is
+ * enters the schema, the export renderer or the search index: an emoji is
  * just text that happened to be typed with a picker.
  *
  * A curated list rather than a full Unicode table: the whole set is ~1,900

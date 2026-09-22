@@ -6,7 +6,7 @@ namespace Tesria.Api.Features.Export;
 
 public interface IPdfRenderer
 {
-    /// <summary>Whether a renderer is configured at all — without one, PDF and single-file HTML are simply not offered.</summary>
+    /// <summary>Whether a renderer is configured at all, without one, PDF and single-file HTML are simply not offered.</summary>
     bool Available { get; }
 
     /// <summary>

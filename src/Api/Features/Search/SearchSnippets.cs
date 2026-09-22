@@ -7,7 +7,7 @@ namespace Tesria.Api.Features.Search;
 /// <summary>
 /// The passage of a page that actually matched, and how well it scored.
 ///
-/// The first 200 characters of a page is not a snippet — searching
+/// The first 200 characters of a page is not a snippet: searching
 /// "webhook" and being shown a page's opening sentence tells a reader (and
 /// an assistant) nothing about why it came back, so the only way to judge
 /// relevance is to open every result. Postgres has <c>ts_headline</c> for
@@ -91,7 +91,7 @@ public static class SearchSnippets
     }
 
     /// <summary>
-    /// A window around the first query word found, with that word marked —
+    /// A window around the first query word found, with that word marked:
     /// the fallback when the database cannot do it properly.
     /// </summary>
     public static string Window(string text, string term)

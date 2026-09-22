@@ -16,7 +16,7 @@ public interface ILinkPreviewService
 
 /// <summary>
 /// Fetches an external page's Open Graph tags for a smart link, through the
-/// SSRF guard (dev-plan 3.4) and never around it. Results are cached — a
+/// SSRF guard (dev-plan 3.4) and never around it. Results are cached: a
 /// successful preview for a week, a failure for an hour, so a dead link does
 /// not mean an outbound request on every page view.
 /// </summary>
@@ -115,7 +115,7 @@ public sealed partial class LinkPreviewService(AppDbContext db, EgressGuard egre
         }
     }
 
-    /// <summary>Reads at most <see cref="MaxBytes"/> — a hostile server must not be able to stream forever.</summary>
+    /// <summary>Reads at most <see cref="MaxBytes"/>: a hostile server must not be able to stream forever.</summary>
     private static async Task<string> ReadCappedAsync(HttpResponseMessage response, CancellationToken ct)
     {
         await using var stream = await response.Content.ReadAsStreamAsync(ct);
@@ -147,7 +147,7 @@ public sealed partial class LinkPreviewService(AppDbContext db, EgressGuard egre
         result.SiteName = Clamp(tags.GetValueOrDefault("og:site_name") ?? uri.Host, 200);
 
         // An image is rendered by the browser, so it must be an absolute https
-        // URL — never a data: URI from a page we do not control, and never a
+        // URL, never a data: URI from a page we do not control, and never a
         // relative path resolved against our own origin.
         var image = tags.GetValueOrDefault("og:image");
         if (image is not null

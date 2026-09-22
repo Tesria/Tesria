@@ -5,7 +5,7 @@ import { announceCommentsChanged } from '../routes/panels/commentThreads'
 /**
  * Creates a real page comment (already-supported AnchorJson/isInline on the
  * backend), then marks the given text range with the `comment` mark carrying
- * that comment's id — this is what lets the read view highlight the
+ * that comment's id: this is what lets the read view highlight the
  * commented text and is the anchor linking the mark back to the row.
  */
 export async function addInlineTextComment(
@@ -21,7 +21,7 @@ export async function addInlineTextComment(
 }
 
 /**
- * Images are atom nodes — they don't carry marks the way text does, so a
+ * Images are atom nodes: they don't carry marks the way text does, so a
  * comment on an image has no in-document highlight, just a real comment
  * (viewable in the page's Comments panel) anchored to that image's src.
  */

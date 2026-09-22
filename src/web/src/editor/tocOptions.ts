@@ -1,5 +1,5 @@
 /**
- * Table of contents options — Confluence Cloud's macro parameters
+ * Table of contents options: Confluence Cloud's macro parameters
  * (support.atlassian.com, "Insert the table of contents macro").
  *
  * Every option has a default equal to how a table of contents rendered
@@ -119,7 +119,7 @@ export function buildTocTree(headings: TocHeading[]): TocEntry[] {
   return roots
 }
 
-/** The whole tree flattened back to document order, numbers kept — the horizontal list. */
+/** The whole tree flattened back to document order, numbers kept: the horizontal list. */
 export function flattenTocTree(entries: TocEntry[]): TocEntry[] {
   return entries.flatMap((e) => [e, ...flattenTocTree(e.children)])
 }
@@ -130,7 +130,7 @@ export function flattenTocTree(entries: TocEntry[]): TocEntry[] {
  * options existed looks exactly as it did (browsers already vary the bullet
  * by depth). Mixed cycles disc, circle, square explicitly.
  *
- * Section numbers sit alongside whatever bullet was chosen — except
+ * Section numbers sit alongside whatever bullet was chosen, except
  * Numbered, which would print two numbers per line ("1." and "1.1"), so
  * there the outline numbers replace the list's own.
  */

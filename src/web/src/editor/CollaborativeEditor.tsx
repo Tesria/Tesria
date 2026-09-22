@@ -41,7 +41,7 @@ type Props = {
   getUploadPageId?: () => Promise<string>
   /** Reports an image upload failure (paste/drop/toolbar), e.g. into a form's error banner. */
   onUploadError?: (message: string) => void
-  /** Called with the live TipTap instance once it exists (and with null on unmount) — see Editor.tsx. */
+  /** Called with the live TipTap instance once it exists (and with null on unmount): see Editor.tsx. */
   onEditorReady?: (editor: TiptapEditor | null) => void
   /** The session's connection state, for the page to show above the title (CollabStatus). */
   onStatusChange?: (status: CollabConnection) => void
@@ -157,7 +157,7 @@ export function CollaborativeEditor({
   }, [editor])
 
   // The slash-command menu's Image item needs the current upload callbacks,
-  // but SlashCommand is configured once in the shared extension list — so
+  // but SlashCommand is configured once in the shared extension list, so
   // instead they're handed to it via editor.storage, kept in sync here.
   useEffect(() => {
     if (!editor) return

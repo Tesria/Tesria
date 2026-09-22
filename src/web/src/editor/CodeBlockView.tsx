@@ -62,7 +62,7 @@ export function CodeBlockView({ node, updateAttributes }: ReactNodeViewProps) {
           </button>
         </div>
       </div>
-      {/* The source is always in the document and always mounted — hiding it
+      {/* The source is always in the document and always mounted: hiding it
           with `hidden` rather than unmounting it keeps ProseMirror's view of
           the node intact, which it needs to stay editable. */}
       {isMermaid && !showSource && (

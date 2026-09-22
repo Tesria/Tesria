@@ -4,7 +4,7 @@ namespace Tesria.Api.Features.Blocks.Kinds;
 
 /// <summary>
 /// The host page's attachments. Host-anchored, so the caller's right to see
-/// them was settled by the right to see the host — no second filter.
+/// them was settled by the right to see the host: no second filter.
 /// </summary>
 public sealed class AttachmentsBlock : IDynamicBlockKind
 {

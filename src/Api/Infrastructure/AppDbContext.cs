@@ -14,7 +14,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     : DbContext(options), IDataProtectionKeyContext
 {
     /// <summary>
-    /// Every save that adds audit rows links them into the hash chain first —
+    /// Every save that adds audit rows links them into the hash chain first:
     /// see <see cref="Infrastructure.Audit.AuditChain"/>. Done here, in the
     /// one place all writes pass through, so no code path can add an audit
     /// row that is not chained.
@@ -192,7 +192,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(u => u.SecurityStamp).HasMaxLength(64);
             // Emails are stored lower-cased by the app; unique across the instance.
             e.HasIndex(u => u.Email).IsUnique();
-            // Unique only among non-null values — many local accounts share the
+            // Unique only among non-null values: many local accounts share the
             // "no external identity" null value, so a plain unique index would
             // reject the second local account outright.
             e.HasIndex(u => u.OidcSubject).IsUnique().HasFilter("\"OidcSubject\" IS NOT NULL");
@@ -221,7 +221,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(p => p.Title).HasMaxLength(500);
 
             // Trashed pages, and pages still in the invisible Draft state (created
-            // but never published — see PageEndpoints.CreateDraft), are hidden from
+            // but never published: see PageEndpoints.CreateDraft), are hidden from
             // all normal queries. Trash/restore and draft/publish operations opt
             // back in with IgnoreQueryFilters().
             e.HasQueryFilter(p => p.DeletedAt == null && p.Status != PageStatus.Draft);

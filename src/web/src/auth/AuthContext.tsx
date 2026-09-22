@@ -15,7 +15,7 @@ type AuthState = {
     inviteToken?: string,
   ) => Promise<string[]>
   logout: () => Promise<void>
-  /** Re-reads the session — after editing your own profile, so the topbar and
+  /** Re-reads the session, after editing your own profile, so the topbar and
    *  anything else reading `user` pick the change up without a reload. */
   refresh: () => Promise<void>
   /** Whether the signed-in account holds an instance right (dev-plan 11.1).

@@ -34,8 +34,8 @@ function normalise(href: string): string {
 /**
  * The one place a link is made or changed: from "+ → Link", from Cmd/Ctrl+K,
  * from the selection bubble, and from the Edit button on a link's own
- * bubble. A dialog rather than a popover because it has two fields — the
- * address and the words that carry it — and on a phone a popover anchored
+ * bubble. A dialog rather than a popover because it has two fields, the
+ * address and the words that carry it, and on a phone a popover anchored
  * to a toolbar button has nowhere sensible to be.
  */
 export function LinkDialog({ editor, open, onClose }: { editor: TiptapEditor; open: boolean; onClose: () => void }) {
@@ -63,7 +63,7 @@ export function LinkDialog({ editor, open, onClose }: { editor: TiptapEditor; op
     const label = text.trim() || target
     const chain = editor.chain().focus()
     if (existing) {
-      // Replace the whole link — words and address — in one step.
+      // Replace the whole link, words and address, in one step.
       chain.extendMarkRange('link')
         .insertContent({ type: 'text', text: label, marks: [{ type: 'link', attrs: { href: target } }] })
         .run()

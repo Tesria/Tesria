@@ -73,7 +73,7 @@ public static class PageEndpoints
     }
 
     /// <summary>
-    /// Thin over <see cref="IPageWriter"/> — the one place a page is created
+    /// Thin over <see cref="IPageWriter"/>: the one place a page is created
     /// (dev-plan 8.4). This method's whole job is turning that result into an
     /// HTTP one; the MCP tool turns the same result into a tool response.
     /// </summary>
@@ -93,7 +93,7 @@ public static class PageEndpoints
     private static async Task<IResult> CreateDraft(
         CreateDraftRequest req, AppDbContext db, CurrentUser current, IPermissionService perms)
     {
-        // Same space/parent permission checks as Create — a draft still needs
+        // Same space/parent permission checks as Create: a draft still needs
         // edit rights on the space it will live in.
         if (!await perms.CanViewSpaceAsync(req.SpaceId)) return Results.NotFound();
         if (!await perms.CanEditSpaceAsync(req.SpaceId)) return Results.Forbid();
@@ -134,7 +134,7 @@ public static class PageEndpoints
 
         await db.SaveChangesAsync();
         page.CurrentVersionId = version.Id;
-        // A draft is invisible: no audit entry, notification, or webhook — it
+        // A draft is invisible: no audit entry, notification, or webhook: it
         // isn't a real event until Publish.
         await db.SaveChangesAsync();
 
@@ -168,7 +168,7 @@ public static class PageEndpoints
             return Results.ValidationProblem(Error("contentJson", "Content must be valid JSON."));
 
         // Nothing was ever "really" saved yet, so the published page starts
-        // clean at v1 with the real content — mutate it in place rather than
+        // clean at v1 with the real content: mutate it in place rather than
         // appending a v2 that would leave a confusing empty-v1/real-v2 pair.
         var version = page.CurrentVersion;
         version.ContentJson = content;
@@ -196,8 +196,8 @@ public static class PageEndpoints
         if (page.CreatedById != userId && !await perms.CanEditSpaceAsync(page.SpaceId))
             return Results.Forbid();
 
-        // Nothing was ever really saved, so this is a hard delete, not a trash
-        // — clear the current-version pointer first (the restrict FK would
+        // Nothing was ever really saved, so this is a hard delete, not a trash:
+        //clear the current-version pointer first (the restrict FK would
         // otherwise block it), then remove the page; versions cascade.
         page.CurrentVersionId = null;
         await db.SaveChangesAsync();
@@ -240,7 +240,7 @@ public static class PageEndpoints
     /// Records a read for the usage KPIs (dev-plan 0.3), after the permission
     /// check so a refused read is never counted.
     ///
-    /// Browser sessions only. An API token is a script — a nightly export would
+    /// Browser sessions only. An API token is a script: a nightly export would
     /// otherwise dwarf every human in "most viewed pages" and make the number
     /// meaningless. The test matches the one the Smart policy scheme uses to
     /// pick its handler, so the two cannot disagree about what a token request is.
@@ -314,11 +314,11 @@ public static class PageEndpoints
         }
 
         // Index is a slot among the destination's current siblings (0 = first),
-        // not a raw Position value — the caller shouldn't have to know or
+        // not a raw Position value: the caller shouldn't have to know or
         // guess at other pages' Position ints. We insert the moving page at
         // that slot and renumber the whole sibling group, so a drag-and-drop
         // UI can just say "this landed at index 2" and never risk colliding
-        // with — or leaving a gap relative to — its new neighbors.
+        // with, or leaving a gap relative to, its new neighbors.
         var siblings = await db.Pages
             .Where(p => p.SpaceId == page.SpaceId && p.ParentPageId == req.ParentPageId && p.Id != id)
             .OrderBy(p => p.Position).ThenBy(p => p.Title)
@@ -336,11 +336,11 @@ public static class PageEndpoints
 
     /// <summary>
     /// Sets the page's reading-width preference (normal vs. full-width). Pure
-    /// display metadata, like Move — no new version, audit entry, or webhook.
+    /// display metadata, like Move: no new version, audit entry, or webhook.
     /// Unlike Move, this must also reach an unpublished draft: the editor shows
     /// the full-width toggle while composing a brand-new page, and the draft is
     /// the only id that exists until Publish. Hence IgnoreQueryFilters() with
-    /// the soft-delete half of the filter reapplied by hand — a trashed page
+    /// the soft-delete half of the filter reapplied by hand: a trashed page
     /// still has no business changing its layout.
     /// </summary>
     private static async Task<IResult> SetLayout(
@@ -477,7 +477,7 @@ public static class PageEndpoints
             .ToListAsync();
         var trashedIds = trashed.Select(p => p.Id).ToHashSet();
 
-        // List only "trash roots" — the pages actually deleted (whose parent is
+        // List only "trash roots": the pages actually deleted (whose parent is
         // not itself trashed); each stands for one restorable subtree.
         var roots = trashed
             .Where(p => p.ParentPageId is null || !trashedIds.Contains(p.ParentPageId.Value))
@@ -639,7 +639,7 @@ public static class PageEndpoints
 
     /// <summary>
     /// Tells anyone newly mentioned in the page's content that they were
-    /// (dev-plan Phase 7 Wave C) — the people already mentioned in the
+    /// (dev-plan Phase 7 Wave C): the people already mentioned in the
     /// previous version are skipped, so fixing a typo does not re-ping
     /// everyone the page names.
     ///

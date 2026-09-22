@@ -10,7 +10,7 @@ type Props = {
 }
 
 /**
- * Picks a user or group plus an operation — shared by the space-permission and
+ * Picks a user or group plus an operation: shared by the space-permission and
  * page-restriction editors so both grant flows behave identically.
  */
 export function PrincipalPicker({ operationNames, onAdd, addLabel = 'Add' }: Props) {

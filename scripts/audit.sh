@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Dependency audit — the release gate (dev-plan 3.6).
+# Dependency audit: the release gate (dev-plan 3.6).
 #
 #   scripts/audit.sh
 #
@@ -23,5 +23,5 @@ echo "$out"
 if echo "$out" | grep -q "has the following vulnerable packages"; then status=1; fi
 
 echo
-if [ "$status" -eq 0 ]; then echo "audit: clean"; else echo "audit: FINDINGS — see above" >&2; fi
+if [ "$status" -eq 0 ]; then echo "audit: clean"; else echo "audit: FINDINGS: see above" >&2; fi
 exit "$status"

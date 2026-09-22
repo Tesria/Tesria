@@ -11,7 +11,7 @@ namespace Tesria.Api.Tests;
 /// <summary>
 /// The draft/publish page lifecycle: a page created via POST /pages/draft is
 /// invisible (tree, search, trash) until POST /pages/{id}/publish fires the
-/// same "page created" side effects Create fires today — exactly once.
+/// same "page created" side effects Create fires today: exactly once.
 /// </summary>
 public class DraftPageTests
 {
@@ -144,14 +144,14 @@ public class DraftPageTests
         Assert.Equal(HttpStatusCode.NoContent,
             (await client.DeleteAsync($"/api/pages/{draft!.Id}/draft")).StatusCode);
 
-        // Gone for good — not even a trash entry, since nothing was ever really saved.
+        // Gone for good, not even a trash entry, since nothing was ever really saved.
         var trash = await client.GetFromJsonAsync<List<TrashedPage>>($"/api/pages/trash?spaceId={spaceId}");
         Assert.Empty(trash!);
         Assert.Equal(HttpStatusCode.NotFound,
             (await client.PostAsJsonAsync($"/api/pages/{draft.Id}/publish",
                 new { Title = "Too Late", ContentJson = Doc })).StatusCode);
 
-        // A published page is a real page, not a draft — delete-draft must refuse it.
+        // A published page is a real page, not a draft: delete-draft must refuse it.
         var page = await (await client.PostAsJsonAsync("/api/pages",
             new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = "Real", ContentJson = Doc }))
             .Content.ReadFromJsonAsync<PageDetail>();
@@ -184,7 +184,7 @@ public class DraftPageTests
             .Content.ReadFromJsonAsync<DraftResponse>();
 
         // The full-width toggle is available while composing a brand-new page,
-        // before it has ever been published — so layout must reach a draft.
+        // before it has ever been published, so layout must reach a draft.
         Assert.Equal(HttpStatusCode.NoContent,
             (await client.PutAsJsonAsync($"/api/pages/{draft!.Id}/layout", new { FullWidth = true })).StatusCode);
 

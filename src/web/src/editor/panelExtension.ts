@@ -6,13 +6,13 @@ import { Node, mergeAttributes } from '@tiptap/core'
  * Mirrors Atlassian Document Format's own `panel` node, whose `panelType` is
  * exactly one of info/note/warning/success/error
  * (https://developer.atlassian.com/cloud/jira/platform/apis/document/nodes/panel/).
- * Confluence's older "Info/Tip/Note/Warning" macros map onto that same set —
- * the legacy Tip macro is today's `success` panel — so those four names all
+ * Confluence's older "Info/Tip/Note/Warning" macros map onto that same set,
+ * the legacy Tip macro is today's `success` panel, so those four names all
  * have a home here without inventing a sixth type.
  *
  * The type-specific colour and icon live entirely in index.css (`.panel--*`),
  * keyed off `data-panel-type`, so the icon is a `::before` pseudo-element
- * rather than a real DOM node — ProseMirror owns the children of this node and
+ * rather than a real DOM node: ProseMirror owns the children of this node and
  * an injected element would be fighting it. That also means read-only
  * rendering (PageView, history previews) gets the icon for free, with no node
  * view to mount.
@@ -86,7 +86,7 @@ export const Panel = Node.create({
       setPanel:
         (type) =>
         ({ commands }) => {
-          // Already a panel — retype in place rather than nesting a second one.
+          // Already a panel: retype in place rather than nesting a second one.
           if (commands.updateAttributes(this.name, { panelType: type })) return true
           return commands.wrapIn(this.name, { panelType: type })
         },

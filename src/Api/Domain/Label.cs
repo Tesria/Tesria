@@ -2,7 +2,7 @@ namespace Tesria.Api.Domain;
 
 /// <summary>
 /// A tag that can be applied to pages (PLAN §4). Labels are global to the
-/// instance — the same label can be used across spaces — and their names are
+/// instance, the same label can be used across spaces, and their names are
 /// normalised to lower case so "Runbook" and "runbook" are the same label.
 /// </summary>
 public class Label

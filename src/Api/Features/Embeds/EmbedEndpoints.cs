@@ -3,7 +3,7 @@ using Tesria.Api.Infrastructure.Settings;
 namespace Tesria.Api.Features.Embeds;
 
 /// <summary>
-/// The two questions an embed or a smart link asks the server — never the
+/// The two questions an embed or a smart link asks the server, never the
 /// client, because both answers are trust decisions.
 /// </summary>
 public static class EmbedEndpoints
@@ -17,7 +17,7 @@ public static class EmbedEndpoints
         // Readable by anonymous visitors for the same reason a page's other
         // content is: an embed on a public page is part of that page.
         group.MapGet("/resolve", Resolve).AllowAnonymous();
-        // Unfurling makes an outbound request, so it needs an account — an
+        // Unfurling makes an outbound request, so it needs an account: an
         // anonymous reader gets whatever is already cached, nothing more.
         group.MapGet("/unfurl", Unfurl).RequireAuthorization();
         return routes;

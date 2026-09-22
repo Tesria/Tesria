@@ -19,7 +19,7 @@ public enum SpaceOperation
 }
 
 /// <summary>
-/// Operations restrictable on a page. Edit is implied by nothing — a View
+/// Operations restrictable on a page. Edit is implied by nothing: a View
 /// restriction also gates editing, since you cannot edit what you cannot see.
 /// </summary>
 public enum PageOperation
@@ -33,7 +33,7 @@ public enum PageOperation
 /// <para>
 /// Default-open: a space with <b>no</b> permission rows is accessible to every
 /// authenticated user. As soon as one row exists, access requires a matching
-/// grant — directly, or through a group the user belongs to.
+/// grant: directly, or through a group the user belongs to.
 /// </para>
 /// </summary>
 public class SpacePermission

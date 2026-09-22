@@ -30,7 +30,7 @@ type Props = {
 type Collapsible = { key: string; icon: ReactNode; label: string; isActive: boolean; run: () => void; group: OverflowAction['group'] }
 
 /**
- * The editing toolbar: one row, edge to edge, never wrapping — the shape of
+ * The editing toolbar: one row, edge to edge, never wrapping: the shape of
  * Confluence's. Text style and alignment are dropdowns (not runs of buttons),
  * block elements live behind "+", and whatever formatting buttons
  * still do not fit at a given width are moved into that menu by measurement
@@ -50,20 +50,20 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
   void onUploadError
 
   // Cmd/Ctrl+K, "+ → Link", the selection bubble and a link's own Edit
-  // button all open the one dialog — see linkShortcut.ts for the registry.
+  // button all open the one dialog: see linkShortcut.ts for the registry.
   useEffect(() => onLinkShortcut(editor, () => setLinkDialogOpen(true)), [editor])
 
   // The editor's last selection while it had focus. On an iPhone, tapping
   // into a toolbar menu can take focus from the editor, and a command run
   // after that acted on whatever selection ProseMirror fell back to rather
-  // than the line the person was on — which is how "Heading 1 only works
+  // than the line the person was on, which is how "Heading 1 only works
   // with text selected" presented. Commands restore it when focus was lost.
   const lastSelection = useRef<{ from: number; to: number } | null>(null)
 
   // Re-render on every transaction, selection-only ones included. The row's
   // active states and the Style menu's "current style" are read from the
   // editor at render time, and the toolbar used to re-render only when the
-  // content changed — so after moving the caret the menu still showed the
+  // content changed, so after moving the caret the menu still showed the
   // style of wherever the caret had been (on page load, the document's
   // first line), which made choosing a heading look broken.
   const [, rerender] = useReducer((n: number) => n + 1, 0)
@@ -93,7 +93,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
     return c
   }
   // Keep in sync with --bp-mobile in index.css. Below it the row is
-  // "Aa · +" beside the page buttons and nothing else — no measuring.
+  // "Aa · +" beside the page buttons and nothing else: no measuring.
   const phone = useMediaQuery('(max-width: 640px)')
 
 
@@ -101,7 +101,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
   // formatting first, then lists, then the coloured and aligned things,
   // then the common marks, bold last. On a phone everything down to
   // italic goes and the row reads "Aa · B I · link · +" beside
-  // Update/Close — the four things a thumb actually reaches for.
+  // Update/Close: the four things a thumb actually reaches for.
   const collapsible: Collapsible[] = [
     { key: 'superscript', group: 'format', icon: <span className="tb-glyph">x²</span>, label: 'Superscript', isActive: editor.isActive('superscript'), run: () => chain().toggleSuperscript().run() },
     { key: 'subscript', group: 'format', icon: <span className="tb-glyph">x₂</span>, label: 'Subscript', isActive: editor.isActive('subscript'), run: () => chain().toggleSubscript().run() },
@@ -159,7 +159,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
   const overflowActions: OverflowAction[] = collapsible
     .filter((c) => overflowed.has(c.key))
     // `collapsible` is in the order things are *lost*; the menu is read
-    // top-down, so it lists them in the order they sat on the row —
+    // top-down, so it lists them in the order they sat on the row:
     // italic first, superscript last.
     .reverse()
     .flatMap((c): OverflowAction[] => {

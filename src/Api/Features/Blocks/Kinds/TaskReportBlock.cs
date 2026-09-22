@@ -5,7 +5,7 @@ namespace Tesria.Api.Features.Blocks.Kinds;
 /// <summary>
 /// Task report: action items across a scope, optionally only the ones
 /// assigned to someone. Reads the Wave C `assigneeId` attribute, which the
-/// editor keeps in step with the mention inside each task — the reason that
+/// editor keeps in step with the mention inside each task: the reason that
 /// attribute exists at all is so this is a filter rather than a tree walk
 /// over every page's document.
 /// </summary>
@@ -23,7 +23,7 @@ public sealed class TaskReportBlock : IDynamicBlockKind
         Guid? wanted = null;
         if (assignee == "me")
         {
-            // An anonymous reader has no "me" — an empty report, not an error.
+            // An anonymous reader has no "me": an empty report, not an error.
             if (ctx.CurrentUserId is not { } me) return Empty("Sign in to see tasks assigned to you.");
             wanted = me;
         }

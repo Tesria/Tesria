@@ -8,7 +8,7 @@ import { RecoveryCodes } from './RecoveryCodes'
  * mint a fresh set.
  *
  * It also covers the accounts that predate the feature. Those have no codes at
- * all — a silent zero would leave them with no recovery path and no idea, so
+ * all: a silent zero would leave them with no recovery path and no idea, so
  * the empty case is a warning rather than a neutral count.
  */
 export function RecoveryCodesSection() {

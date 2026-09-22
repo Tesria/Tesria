@@ -32,7 +32,7 @@ declare module '@tiptap/core' {
 /**
  * Table of contents: a block with no stored content. The node view lists the
  * page's headings live (`headingAnchors.ts`), and the export renderer builds
- * the same nested list of links at export time — so the document never
+ * the same nested list of links at export time, so the document never
  * holds a stale copy of its own outline.
  */
 export const TableOfContents = Node.create({

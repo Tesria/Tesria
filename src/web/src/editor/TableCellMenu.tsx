@@ -22,7 +22,7 @@ const SCOPES: { key: Scope; label: string }[] = [
  * The <td>/<th> the cursor is currently inside, or null.
  *
  * domAtPos throws for a position it can't resolve to rendered DOM, which
- * happens transiently while a transaction is being applied — this runs on
+ * happens transiently while a transaction is being applied: this runs on
  * every transaction, so it has to tolerate that rather than throw out of
  * render and take the editor down with it.
  */
@@ -39,7 +39,7 @@ function currentCellElement(editor: TiptapEditor): HTMLTableCellElement | null {
 
 /**
  * prosemirror-tables' selectedRect throws unless the selection really is
- * inside a cell — a NodeSelection on the table itself passes findTable but
+ * inside a cell: a NodeSelection on the table itself passes findTable but
  * fails here. Same reasoning as above: never throw out of render.
  */
 function cellRect(editor: TiptapEditor): ReturnType<typeof selectedRect> | null {
@@ -57,7 +57,7 @@ function cellRect(editor: TiptapEditor): ReturnType<typeof selectedRect> | null 
  * "Background colour".
  *
  * Cursor-driven, unlike TableControls/TableWidthControls (which are
- * hover-driven via useHoveredTable) — matching Confluence, where the cell
+ * hover-driven via useHoveredTable): matching Confluence, where the cell
  * menu belongs to the cell you're actually editing, not whichever one the
  * mouse passed over. That difference is why this doesn't share that hook.
  */
@@ -93,7 +93,7 @@ export function TableCellMenu({ editor }: { editor: TiptapEditor }) {
   /**
    * Writes the attribute across every cell in scope in one transaction, rather
    * than moving the user's selection to a CellSelection and calling
-   * setCellAttribute — the cursor should stay exactly where it was after
+   * setCellAttribute: the cursor should stay exactly where it was after
    * colouring a whole row or column.
    */
   function applyBackground(color: string | null) {

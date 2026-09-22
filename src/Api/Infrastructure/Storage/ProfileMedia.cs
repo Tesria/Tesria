@@ -41,13 +41,13 @@ public interface IProfileMediaService
 /// <summary>
 /// Avatars and space icons, stored through the existing
 /// <see cref="IAttachmentStorage"/> under their own key namespaces rather than
-/// via a second storage abstraction — so the S3 implementation that interface
+/// via a second storage abstraction, so the S3 implementation that interface
 /// reserves a slot for covers these too, for free.
 ///
 /// Every upload is re-encoded rather than stored as received. That is the
 /// security control, not a convenience:
 ///
-/// * it strips EXIF, which routinely carries GPS coordinates — a real leak for
+/// * it strips EXIF, which routinely carries GPS coordinates: a real leak for
 ///   a photo someone uses as an avatar;
 /// * it defeats polyglot files (a valid PNG that is also a valid HTML or ZIP
 ///   document), because the bytes written are ones this process produced;
@@ -110,7 +110,7 @@ public sealed class ProfileMediaService(IAttachmentStorage storage) : IProfileMe
     /// <summary>
     /// Deterministic per owner, so a replacement overwrites rather than
     /// accumulating orphans. Cache busting is the content hash on the URL, not
-    /// a unique key — see the media endpoints.
+    /// a unique key: see the media endpoints.
     /// </summary>
     private static string Key(ProfileMediaKind kind, Guid ownerId) =>
         kind switch
@@ -138,7 +138,7 @@ public sealed class ProfileMediaService(IAttachmentStorage storage) : IProfileMe
 
     /// <summary>
     /// Detects SVG before decoding. Sniffs content rather than trusting the
-    /// client's declared content type, which is attacker-controlled — the
+    /// client's declared content type, which is attacker-controlled: the
     /// leading bytes may be an XML declaration, a comment, or the tag itself.
     /// </summary>
     private static bool LooksLikeSvg(byte[] bytes)

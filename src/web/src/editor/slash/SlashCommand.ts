@@ -8,7 +8,7 @@ import { filterSlashItems, type SlashItem, type SlashCommandStorage } from './it
 
 /**
  * Notion/Confluence-style "/" block-insertion menu. Built on TipTap's
- * `Suggestion` primitive (the same one `@tiptap/extension-mention` uses) —
+ * `Suggestion` primitive (the same one `@tiptap/extension-mention` uses):
  * there is no pre-built importable slash-command extension.
  */
 export const SlashCommand = Extension.create({

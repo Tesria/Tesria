@@ -10,7 +10,7 @@ type State =
 
 /**
  * Asks the server what (if anything) this URL may become, then frames
- * exactly what it was told to — never the URL as typed.
+ * exactly what it was told to, never the URL as typed.
  */
 export function EmbedView({ node, editor, selected, updateAttributes }: ReactNodeViewProps) {
   const url = String(node.attrs.url ?? '')
@@ -44,7 +44,7 @@ export function EmbedView({ node, editor, selected, updateAttributes }: ReactNod
         <form
           className="embed__form"
           onSubmit={(e) => {
-            // A popover form inside the page's own save form — see the
+            // A popover form inside the page's own save form: see the
             // architecture doc's editor gotcha.
             e.preventDefault()
             e.stopPropagation()
@@ -75,7 +75,7 @@ export function EmbedView({ node, editor, selected, updateAttributes }: ReactNod
             title={state.embed.provider ?? 'Embedded content'}
             allowFullScreen
             // The frame gets the minimum it needs to play media and go
-            // fullscreen — never same-origin, never top-level navigation.
+            // fullscreen, never same-origin, never top-level navigation.
             sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
             referrerPolicy="strict-origin-when-cross-origin"
             loading="lazy"

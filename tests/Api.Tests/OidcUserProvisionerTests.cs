@@ -10,7 +10,7 @@ namespace Tesria.Api.Tests;
 /// <summary>
 /// Exercises the OIDC account-resolution rules directly against the DB
 /// (bypassing the ASP.NET Core OIDC redirect/callback plumbing, which needs a
-/// real identity provider) — this is where an actual security bug would live.
+/// real identity provider): this is where an actual security bug would live.
 /// </summary>
 public class OidcUserProvisionerTests
 {

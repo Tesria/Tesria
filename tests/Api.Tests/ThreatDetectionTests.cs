@@ -113,7 +113,7 @@ public class ThreatDetectionTests
         var alert = Assert.Single(await AlertsAsync(admin, "login.admin_new_address"));
         Assert.Equal("198.51.100.77", alert.Ip);
 
-        // Members are not tracked this way — their blast radius is smaller
+        // Members are not tracked this way: their blast radius is smaller
         // and the false-positive rate on a mobile workforce would be high.
         await RegisterAsync(factory.CreateClient(), "member@example.com");
         await LoginAsync(From(factory, "203.0.113.1"), "member@example.com", "supersecret");
@@ -188,7 +188,7 @@ public class ThreatDetectionTests
         var admin = await AdminAsync(factory);
         await admin.CreateSpaceAsync("HOOK");
 
-        // Refused by 3.4's egress guard — and still reported, because the
+        // Refused by 3.4's egress guard, and still reported, because the
         // attempt is the interesting part.
         Assert.Equal(HttpStatusCode.BadRequest, (await admin.PostAsJsonAsync("/api/spaces/HOOK/webhooks",
             new { Url = "http://169.254.169.254/latest/meta-data/", Events = "*" })).StatusCode);

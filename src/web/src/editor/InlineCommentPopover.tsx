@@ -11,13 +11,13 @@ const WIDTH = 360
 
 /**
  * Clicking highlighted (inline-commented) text opens that comment's thread
- * right there, under the text — reply, edit and delete included, the same
+ * right there, under the text: reply, edit and delete included, the same
  * component as the Comments tab. Before this, an inline comment could only
  * be read by scrolling to the bottom of the page and working out which one
  * it was.
  *
  * Rendered into the document body, positioned in page coordinates from the
- * highlight's rectangle, so it scrolls with the text and — in the editor —
+ * highlight's rectangle, so it scrolls with the text and, in the editor,
  * is not inside the page's own <form>.
  */
 export function InlineCommentPopover({ editor, getPageId }: { editor: TiptapEditor; getPageId?: () => Promise<string> }) {

@@ -62,7 +62,7 @@ export function SpaceWebhooksPage() {
   return (
     <>
       <p className="muted small">
-        POST a signed payload to a URL when something happens in this space — e.g.{' '}
+        POST a signed payload to a URL when something happens in this space: e.g.{' '}
         <code>page.created</code>, <code>page.updated</code>, <code>comment.created</code>, or{' '}
         <code>*</code> for everything.
       </p>
@@ -71,14 +71,14 @@ export function SpaceWebhooksPage() {
       {justCreated && (
         <div className="card">
           <p style={{ marginTop: 0 }}>
-            <strong>Copy this signing secret now — it won't be shown again:</strong>
+            <strong>Copy this signing secret now, it won't be shown again:</strong>
           </p>
           <code style={{ wordBreak: 'break-all', display: 'block', marginBottom: '0.5rem' }}>
             {justCreated.secret}
           </code>
           <p className="muted small">
-            Each delivery includes an <code>X-Webhook-Signature: sha256=…</code> header — an HMAC-SHA256
-            of the request body using this secret — so you can verify it really came from here.
+            Each delivery includes an <code>X-Webhook-Signature: sha256=…</code> header, an HMAC-SHA256
+            of the request body using this secret, so you can verify it really came from here.
           </p>
           <button type="button" className="btn btn--ghost btn--sm" onClick={() => setJustCreated(null)}>
             Done

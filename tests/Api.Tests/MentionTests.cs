@@ -21,7 +21,7 @@ public class MentionExtractionTests
     [Fact]
     public void Finds_mentions_at_any_depth_and_deduplicates()
     {
-        // Nested two containers deep, and Alice twice — a mention inside a
+        // Nested two containers deep, and Alice twice: a mention inside a
         // layout column or a panel counts exactly like one in a paragraph.
         var doc =
             "{\"type\":\"doc\",\"content\":["
@@ -126,7 +126,7 @@ public class MentionNotificationTests
 
         await alice.PutAsJsonAsync($"/api/pages/{page.Id}", new { ContentJson = Mentioning(bobId) });
 
-        // Not "notified but 404 on click" — the title itself is the leak.
+        // Not "notified but 404 on click": the title itself is the leak.
         Assert.DoesNotContain(await NotificationsOf(bob), n => n.Action == "user.mentioned");
         Assert.Equal(HttpStatusCode.NotFound, (await bob.GetAsync($"/api/pages/{page.Id}")).StatusCode);
     }

@@ -6,8 +6,8 @@ namespace Tesria.Api.Features.Blocks.Kinds;
 /// <summary>
 /// Page properties report: one row per labelled page, one column per
 /// property key found on those pages. The keys come from the pages
-/// themselves — the union of every visible page's first-column keys, in the
-/// order they are first seen — so adding a property to a page adds a column
+/// themselves (the union of every visible page's first-column keys, in the
+/// order they are first seen) so adding a property to a page adds a column
 /// to the report without touching the report.
 /// </summary>
 public sealed class PagePropertiesReportBlock : IDynamicBlockKind

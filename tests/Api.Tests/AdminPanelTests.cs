@@ -115,7 +115,7 @@ public class AdminPanelTests
             .EnsureSuccessStatusCode();
 
         // A token authenticates through a different scheme, so revoking
-        // sessions deliberately leaves it working — "lock this account out"
+        // sessions deliberately leaves it working: "lock this account out"
         // needs both actions, which is why they are separate. Probed on a
         // route that stays closed to anonymous callers (dev-plan 5.2 opened
         // the spaces list to them).
@@ -144,7 +144,7 @@ public class AdminPanelTests
         Assert.Equal(0, space.StorageBytes);
         Assert.Equal("admin@example.com", space.CreatedByName);
 
-        // Metadata only — admins do not bypass space permissions, so this
+        // Metadata only: admins do not bypass space permissions, so this
         // endpoint must not become a way around that.
         var raw = await admin.GetStringAsync("/api/admin/spaces");
         Assert.DoesNotContain("contentJson", raw, StringComparison.OrdinalIgnoreCase);
@@ -173,7 +173,7 @@ public class AdminPanelTests
         Assert.Equal(1, dash.Usage.ViewsInRange);
         Assert.Equal("Read me", dash.Usage.TopPages.Single().Title);
 
-        // Every day in the range is present, including the empty ones — a
+        // Every day in the range is present, including the empty ones: a
         // sparkline built only from active days reads as steady use when the
         // truth is the opposite.
         Assert.Equal(30, dash.Usage.ViewsPerDay.Count);
@@ -187,8 +187,8 @@ public class AdminPanelTests
     {
         // Regression: the daily series used to start at now - rangeDays, so the
         // last bucket was yesterday and anything that happened today was
-        // counted but dropped. On a fresh instance — where everything is from
-        // today — every chart read flat zero. The test above only checked the
+        // counted but dropped. On a fresh instance, where everything is from
+        // today, every chart read flat zero. The test above only checked the
         // series length, which the bug never changed.
         using var factory = new TestAppFactory();
         var admin = factory.CreateClient();

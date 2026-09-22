@@ -4,7 +4,7 @@ import { Extension } from '@tiptap/core'
 export const MAX_INDENT = 4
 export const INDENT_STEP_REM = 1.75
 
-/** Blocks that can be indented — the same set TextAlign is configured for. */
+/** Blocks that can be indented: the same set TextAlign is configured for. */
 const INDENTABLE = ['paragraph', 'heading'] as const
 
 export function clampIndent(value: unknown): number {

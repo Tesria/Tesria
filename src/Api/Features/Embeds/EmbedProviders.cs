@@ -19,7 +19,7 @@ public static partial class EmbedProviders
     /// <summary>The canonical frame URL for this address, or null to frame it as given.</summary>
     public static Embed? Resolve(Uri uri)
     {
-        // Not TrimStart('w', '.') — that eats the leading letters of any host
+        // Not TrimStart('w', '.'): that eats the leading letters of any host
         // beginning with w ("wiki.example.com" would become "iki.example.com").
         // The EndsWith checks below already cover the "www." forms.
         var host = uri.Host.ToLowerInvariant().TrimEnd('.');

@@ -25,7 +25,7 @@ export function AttachmentView({ node, editor, selected, updateAttributes }: Rea
   const [current, setCurrent] = useState<Attachment | null>(null)
 
   // The page's attachments, for the picker and to resolve the chosen id.
-  // Same host-page stash the dynamic blocks use — an attachment belongs to a
+  // Same host-page stash the dynamic blocks use: an attachment belongs to a
   // page, so there is nothing to show without one.
   useEffect(() => {
     const getPageId = getDynamicBlockStorage(editor)?.getPageId
@@ -72,7 +72,7 @@ function Body({ attachment, href }: { attachment: Attachment; href: string }) {
   if (kind === 'video') return <video className="attachment-block__video" src={href} controls preload="metadata" />
   if (kind === 'audio') return <audio className="attachment-block__audio" src={href} controls preload="metadata" />
   if (kind === 'pdf') {
-    // The browser's own viewer, framed same-origin — no PDF.js in the bundle.
+    // The browser's own viewer, framed same-origin: no PDF.js in the bundle.
     // `frame-src 'self'` is what lets this through the CSP.
     return (
       <div className="attachment-block__pdf">

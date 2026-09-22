@@ -39,7 +39,7 @@ public sealed record PageWriteResult(
 ///
 /// Extracted from <see cref="PageEndpoints"/> for dev-plan 8.4 so the MCP
 /// write tools run *this* code rather than a second implementation that
-/// would drift — a page created by an assistant must be indistinguishable
+/// would drift: a page created by an assistant must be indistinguishable
 /// from one created in the browser, side effects included. 8.5's pack
 /// importer will need the same guarantee.
 /// </summary>
@@ -107,7 +107,7 @@ public sealed class PageWriter(
         db.PageVersions.Add(version);
 
         // Page.CurrentVersionId and PageVersion.PageId reference each other, so
-        // insert both first (leaving the pointer null), then set the pointer —
+        // insert both first (leaving the pointer null), then set the pointer:
         // otherwise EF cannot order the two inserts.
         //
         // Both saves are one transaction. They used not to be, and a failure
@@ -134,7 +134,7 @@ public sealed class PageWriter(
         {
             if (owned is not null) await owned.DisposeAsync();
         }
-        // Dispatched only after the create is durably committed — webhooks are
+        // Dispatched only after the create is durably committed: webhooks are
         // fire-and-forget outbound calls, not part of the unit of work.
         await webhooks.DispatchAsync(page.SpaceId, "page.created", "page", page.Id, new { page.Title });
         await NotifyCollabAsync(page.Id, content, version.VersionNumber, ct);

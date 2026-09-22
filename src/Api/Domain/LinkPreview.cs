@@ -3,7 +3,7 @@ namespace Tesria.Api.Domain;
 /// <summary>
 /// A cached Open Graph summary of an external page (dev-plan Phase 7 Wave E,
 /// "smart links"). Cached because a page with twenty links must not make
-/// twenty outbound requests every time anyone opens it — and because those
+/// twenty outbound requests every time anyone opens it, and because those
 /// requests leave the instance, which is exactly what the egress guard
 /// exists to keep rare and controlled.
 /// </summary>
@@ -11,7 +11,7 @@ public class LinkPreview
 {
     public Guid Id { get; set; }
 
-    /// <summary>SHA-256 of the normalised URL — the lookup key, and bounded unlike the URL itself.</summary>
+    /// <summary>SHA-256 of the normalised URL: the lookup key, and bounded unlike the URL itself.</summary>
     public required string UrlHash { get; set; }
 
     public required string Url { get; set; }

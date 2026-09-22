@@ -25,7 +25,7 @@ public static class WebhookEndpoints
     {
         var space = await FindSpaceAsync(db, key);
         if (space is null) return Results.NotFound();
-        // A webhook's URL and event filter are configuration, not content —
+        // A webhook's URL and event filter are configuration, not content:
         // still, only space admins should see or manage this integration.
         if (!await perms.CanAdminSpaceAsync(space.Id)) return Results.Forbid();
 

@@ -43,7 +43,7 @@ public sealed class TesriaTools
     }
 
     [McpServerTool(Name = "get_page"), Description(
-        "A page by id. Returns its content as Markdown — the same Markdown the export produces, with live " +
+        "A page by id. Returns its content as Markdown: the same Markdown the export produces, with live " +
         "blocks (children lists, recently-updated tables, task reports…) resolved as this token's owner would see " +
         "them, plus an `outline` of its headings. Pass `section` with a heading id from that outline to get just " +
         "that heading and everything under it, which is usually what you want on a long page. Ask for format " +
@@ -177,7 +177,7 @@ public sealed class TesriaTools
             visible.Add((row.Id, row.SpaceKey, row.Title));
         }
 
-        // Snippets and scores for the survivors only — one query, after the
+        // Snippets and scores for the survivors only, one query, after the
         // permission filter, so nothing is computed for a page that will not
         // be returned.
         var matches = await SearchSnippets.ForAsync(db, visible.Select(v => v.Id).ToList(), term, ct);
@@ -245,7 +245,7 @@ public sealed class TesriaTools
     // -- writes ---------------------------------------------------------------
 
     [McpServerTool(Name = "create_page"), Description(
-        "Create a page. Give `content` as Markdown (headings, lists, tables, code fences, links, bold/italic — " +
+        "Create a page. Give `content` as Markdown (headings, lists, tables, code fences, links, bold/italic: " +
         "the same Markdown get_page returns), or `contentJson` if you already hold an editor document. Needs a " +
         "token minted with write access.")]
     public static async Task<WriteResult> CreatePage(
@@ -267,7 +267,7 @@ public sealed class TesriaTools
 
     [McpServerTool(Name = "update_page"), Description(
         "Replace a page's body, and optionally its title. This creates a new version, as an edit in the browser " +
-        "does — fetch the page first if you mean to change only part of it. Needs a token minted with write access.")]
+        "does: fetch the page first if you mean to change only part of it. Needs a token minted with write access.")]
     public static async Task<WriteResult> UpdatePage(
         [Description("The page id.")] Guid pageId,
         IPageWriter writer, AppDbContext db, CurrentUser current, IHttpContextAccessor accessor,

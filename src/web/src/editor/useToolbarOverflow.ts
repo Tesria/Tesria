@@ -5,17 +5,17 @@ import { useLayoutEffect, useRef, useState } from 'react'
  * collapsible items fit and which must move into a menu.
  *
  * Every collapsible item is rendered with `data-tb-item="<key>"`. Their
- * natural widths are measured once, while all are visible, and cached — a
+ * natural widths are measured once, while all are visible, and cached: a
  * button's width does not change with the viewport, so re-measuring on every
  * resize would only risk measuring a hidden (zero-width) item. On each
  * resize the container's width, minus the room the fixed items need, is
- * filled from the *end* of `keys` — the caller lists items in the order it
- * is willing to lose them, so the last is kept longest — until the next
+ * filled from the *end* of `keys` (the caller lists items in the order it
+ * is willing to lose them, so the last is kept longest) until the next
  * item would not fit; that item and everything before it overflow.
  *
  * The container is `flex-wrap: nowrap` (never `overflow: hidden`, which
  * would clip every dropdown), so a mis-measure shows up as a cramped row
- * rather than a second line — and the caller lists items in the order it is
+ * rather than a second line, and the caller lists items in the order it is
  * willing to lose them.
  */
 export function useToolbarOverflow(keys: string[], reserveKeys: string[] = [], collapseAll = false) {
@@ -51,7 +51,7 @@ export function useToolbarOverflow(keys: string[], reserveKeys: string[] = [], c
       // Separators are not items, but they take room: each is a 1px rule
       // with margins and a gap on either side. Leaving them out is why the
       // last control on the row sat a few pixels under the buttons beside
-      // it on a wide screen — everything "fit" by measurement, and did not.
+      // it on a wide screen: everything "fit" by measurement, and did not.
       for (const el of container.querySelectorAll<HTMLElement>('.toolbar__sep')) {
         const m = getComputedStyle(el)
         available -= el.offsetWidth + (parseFloat(m.marginLeft) || 0) + (parseFloat(m.marginRight) || 0) + gap

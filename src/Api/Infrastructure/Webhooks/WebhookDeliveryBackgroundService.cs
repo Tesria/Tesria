@@ -35,7 +35,7 @@ public sealed class WebhookDeliveryBackgroundService(
         {
             try
             {
-                // Validated per hop and re-checked at connect time — a hostname
+                // Validated per hop and re-checked at connect time: a hostname
                 // that has come to resolve privately since the webhook was
                 // saved is refused here, not fetched.
                 using var response = await egress.SendAsync(client, target =>

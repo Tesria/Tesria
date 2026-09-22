@@ -5,7 +5,7 @@
 #
 # The token must belong to an administrator (Profile -> API tokens). Exit
 # status is 0 when every link holds, 1 when the chain is broken, 2 on any
-# other failure — suitable for cron. The check is also run by the app itself
+# other failure: suitable for cron. The check is also run by the app itself
 # daily and on demand from Admin -> Security.
 #
 # Honest limit: this asks the app to check itself. An attacker who controls

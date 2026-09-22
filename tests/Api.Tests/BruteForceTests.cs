@@ -68,7 +68,7 @@ public class BruteForceTests
         Assert.Equal(HttpStatusCode.TooManyRequests, (await LoginAsync(first, "admin@example.com", "nope")).StatusCode);
 
         // Before 3.0 every caller shared Caddy's address; this is the proof
-        // that they no longer do — a legitimate user next door still gets in.
+        // that they no longer do: a legitimate user next door still gets in.
         var second = From(factory, "203.0.113.2");
         (await LoginAsync(second, "admin@example.com", "supersecret")).EnsureSuccessStatusCode();
     }
