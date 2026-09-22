@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { PasswordInput } from '../components/PasswordInput'
 import { RecoveryCodes } from '../components/RecoveryCodes'
+import { AuthPage } from '../components/Brand'
 
 export function RegisterPage() {
   const { user, register } = useAuth()
@@ -25,7 +26,7 @@ export function RegisterPage() {
 
   if (codes) {
     return (
-      <div className="center">
+      <AuthPage>
         <div className="authcard authcard--wide">
           <h1>Save your recovery codes</h1>
           <RecoveryCodes
@@ -34,7 +35,7 @@ export function RegisterPage() {
             doneLabel="Continue to Tesria"
           />
         </div>
-      </div>
+      </AuthPage>
     )
   }
 
@@ -52,7 +53,7 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="center">
+    <AuthPage>
       <form className="authcard" onSubmit={onSubmit}>
         <h1>Create account</h1>
         {inviteToken && (
@@ -78,6 +79,6 @@ export function RegisterPage() {
           Already have an account? <Link to="/login">Sign in</Link>
         </p>
       </form>
-    </div>
+    </AuthPage>
   )
 }

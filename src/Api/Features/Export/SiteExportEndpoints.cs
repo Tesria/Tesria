@@ -50,7 +50,7 @@ public static class SiteExportEndpoints
         string key, string? audience, AppDbContext db, IPermissionService perms,
         Infrastructure.Export.IRenderTokens renderTokens, IPdfRenderer renderer,
         IAttachmentStorage storage, IProfileMediaService media, ISiteSettingsService settings, IConfiguration config,
-        CurrentUser current, IWebHostEnvironment env, CancellationToken ct)
+        CurrentUser current, IWebHostEnvironment env, Infrastructure.Branding.IBrandAssets brandAssets, CancellationToken ct)
     {
         var space = await db.Spaces.AsNoTracking().FirstOrDefaultAsync(s => s.Key == key.ToUpperInvariant(), ct);
         if (space is null) return Results.NotFound();
@@ -94,15 +94,16 @@ public static class SiteExportEndpoints
         var pagePaths = placed.ToDictionary(p => p.Id, p => p.Path);
         var token = renderTokens.IssueForSpace(space.Id, anonymous || !current.IsAuthenticated ? null : current.RequireId());
         var origin = ExportEndpoints.RenderOrigin(config);
-        var instanceName = (await settings.GetAsync(ct)).InstanceName;
+        var siteSettings = await settings.GetAsync(ct);
+        var instanceName = siteSettings.InstanceName;
         var footer = Footer(instanceName);
         var css = await StylesheetAsync(env, ct);
 
-        // The wordmark is the instance name, which is the half of instance
-        // branding that already exists: an administrator sets it and it
-        // defaults to "Tesria". A replaceable mark is the other half, and
-        // SiteChrome.Brand is where it will arrive.
-        var brand = new SiteChrome.Brand(instanceName);
+        // The branding as it is now, with its files under assets/ (dev-plan
+        // 13.1). The name in the bar is the brand name, or Tesria; the
+        // instance name titles the pages and signs the footer.
+        var packed = await BrandExport.PackAsync(siteSettings, brandAssets, env, inline: false, ct);
+        var brand = packed.Brand;
 
         // A space with an uploaded icon needs that file in the site: the
         // sidebar cannot reach back to the instance for it.
@@ -118,6 +119,12 @@ public static class SiteExportEndpoints
         using (var zip = new ZipArchive(buffer, ZipArchiveMode.Create, leaveOpen: true))
         {
             await WriteTextAsync(zip, "assets/site.css", css, ct);
+            foreach (var (path, bytes) in packed.Files)
+            {
+                var entry = zip.CreateEntry(path, CompressionLevel.Optimal);
+                await using var target = entry.Open();
+                await target.WriteAsync(bytes, ct);
+            }
             await WriteTextAsync(zip, "index.html",
                 SiteExport.Index(space, placed, css, brand, head, footer), ct);
             await WriteTextAsync(zip, "404.html",
@@ -145,6 +152,8 @@ public static class SiteExportEndpoints
 
                 var html = Encoding.UTF8.GetString(captured);
                 html = SiteExport.RewriteLinks(html, page.Path, pagePaths, assets.Names);
+                html = SiteChrome.ApplyToDocument(html, brand,
+                    Infrastructure.Branding.BrandTitle.Format(instanceName, space.Name, page.Title), page.Path);
                 html = InjectSiteChrome(html, placed, page, brand, head, footer);
                 await WriteTextAsync(zip, $"{page.Path}/index.html", html, ct);
             }
@@ -259,7 +268,7 @@ public static class SiteExportEndpoints
         // else. It becomes the content column of the app's own two-column
         // layout, with the bar above it and the sidebar beside it, so the
         // stylesheet the site already ships lays it out with no new rules.
-        var before = SiteChrome.Topbar(brand, SiteExport.Root(page.Path))
+        var before = SiteChrome.Topbar(brand, SiteExport.Root(page.Path), page.Path)
             + "<div class=\"space-layout space-layout--export\">"
             + SiteChrome.Sidebar(head, pages, page.Path)
             + "<section class=\"space-content\">";

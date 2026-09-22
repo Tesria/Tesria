@@ -1,4 +1,5 @@
 using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Branding;
 using Tesria.Api.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,7 +18,23 @@ namespace Tesria.Api.Features.Public;
 public static class InstanceEndpoints
 {
     public record InstanceResponse(
-        string InstanceName, bool NeedsOwner, bool PublicReading, bool AllowPublicRegistration);
+        string InstanceName, bool NeedsOwner, bool PublicReading, bool AllowPublicRegistration,
+        BrandingResponse Branding);
+
+    /// <summary>
+    /// The branding the SPA draws (dev-plan 13.1). Anonymous because the
+    /// sign-in page needs it, and harmless for the same reason: everything in
+    /// it is on every page anyone can see.
+    /// </summary>
+    public record BrandingResponse(
+        string Name, bool HasCustomName, bool HasIdentity, string Display, string SignInArrangement,
+        BrandLogo? Logo, BrandLogo? LogoDark, bool HasFavicon,
+        string ThemePolicy, string AccentPolicy, string? AccentName, string? AccentLight, string? AccentDark);
+
+    public static BrandingResponse BrandingOf(BrandView b) => new(
+        b.Name, b.HasCustomName, b.HasIdentity, b.Display, b.SignInArrangement,
+        b.Logo, b.LogoDark, b.FaviconHash is not null,
+        b.ThemePolicy, b.AccentPolicy, b.AccentName, b.AccentLight, b.AccentDark);
 
     public static IEndpointRouteBuilder MapInstanceEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -42,6 +59,7 @@ public static class InstanceEndpoints
             // accounts" is what the setup wizard will key off.
             NeedsOwner: !await db.Users.AsNoTracking().AnyAsync(),
             PublicReading: publicReading,
-            AllowPublicRegistration: s.AllowPublicRegistration));
+            AllowPublicRegistration: s.AllowPublicRegistration,
+            Branding: BrandingOf(BrandView.From(s))));
     }
 }

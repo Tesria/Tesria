@@ -8,6 +8,7 @@ import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
 import { SpaceIcon } from '../components/SpaceIcon'
 import { SettingsIcon } from '../components/NavIcons'
 import { usePublishSpaceNav } from '../components/spaceNav'
+import { useTitleSpace } from '../components/DocumentTitle'
 
 export type SpaceOutletContext = {
   space: Space
@@ -27,6 +28,7 @@ export function SpacePage() {
   const location = useLocation()
   const { key = '' } = useParams()
   const [space, setSpace] = useState<Space | null>(null)
+  useTitleSpace(space?.name)
   const [tree, setTree] = useState<PageTreeNode[]>([])
   const [error, setError] = useState<string | null>(null)
   // "+ New" is contextual, matching Confluence: creating from an open page

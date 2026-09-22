@@ -251,6 +251,88 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
    described above belongs to the word now, never to the logo. */
 .brand__mark { display: inline-flex; flex-shrink: 0; color: var(--primary); }
 .brand__word { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+/* ---- instance branding (dev-plan 13.1) ----------------------------------
+   An uploaded logo sits in the header at the bar's height, its width
+   following its shape, capped so a very wide logo cannot push the search box
+   off the bar. A dark-mode logo is a second image swapped in by the same
+   theme rules as everything else, so it never flashes. The same classes are
+   what exports emit (SiteChrome.Topbar), so an export sizes them the same. */
+.brand__logo-wrap { display: inline-flex; align-items: center; flex-shrink: 0; }
+.brand__logo { display: block; height: 26px; width: auto; max-width: 200px; object-fit: contain; }
+.brand__logo--dark { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .brand__logo--light { display: none; }
+  :root:not([data-theme="light"]) .brand__logo--dark { display: block; }
+}
+:root[data-theme="dark"] .brand__logo--light { display: none; }
+:root[data-theme="dark"] .brand__logo--dark { display: block; }
+
+/* The brand above every sign-in card (decision 16): side by side by default,
+   stacked, logo only or name only. The logo is larger when it stands alone
+   or above the name, where it has the width to itself. */
+.auth-page { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 100%; }
+.auth-brand {
+  display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+  margin-bottom: 1.5rem; max-width: 100%; text-align: center;
+}
+.auth-brand--stacked { flex-direction: column; gap: 0.6rem; }
+.auth-brand .brand__mark { color: var(--primary); }
+.auth-brand .brand__logo { height: 48px; max-width: min(320px, 100%); }
+.auth-brand--stacked .brand__logo, .auth-brand--logo .brand__logo { height: 72px; }
+.auth-brand__name { font-size: 1.6rem; font-weight: 700; line-height: 1.2; color: var(--text); overflow-wrap: anywhere; }
+
+/* Subtle on purpose (the owner's words: "I like a subtle approach"). */
+.powered-by { margin: 1.25rem 0 0; font-size: 0.75rem; color: var(--muted); }
+.powered-by a { color: inherit; text-decoration: underline; text-decoration-color: currentColor; }
+.admin-version { margin: 2rem 0 0; font-size: 0.75rem; color: var(--muted); }
+.admin-version a { color: inherit; }
+
+/* Administration → Branding. */
+.branding__field { display: grid; gap: 0.3rem; max-width: 34rem; margin-bottom: 1rem; }
+.branding__choice { border: 0; padding: 0; margin: 0 0 1rem; display: grid; gap: 0.35rem; }
+.branding__choice legend { font-weight: 600; margin-bottom: 0.35rem; }
+.branding__choice:disabled { opacity: 0.55; }
+.branding__files { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1rem; margin-top: 0.5rem; }
+.branding__file {
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem;
+  display: grid; gap: 0.5rem; align-content: start; background: var(--surface);
+}
+.branding__file-title { margin: 0; font-weight: 600; }
+.branding__file-preview {
+  min-height: 72px; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius); background: #ffffff; border: 1px solid var(--border); padding: 0.5rem;
+}
+.branding__file--dark .branding__file-preview { background: #161a1d; }
+.branding__file-logo { max-height: 56px; max-width: 100%; width: auto; }
+.branding__file-favicon { width: 48px; height: 48px; }
+.branding__swatches { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+.branding__colours { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1rem; margin-top: 0.75rem; }
+.branding__colour-inputs { display: flex; gap: 0.5rem; align-items: center; }
+.branding__colour-inputs input[type="color"] { width: 44px; height: 38px; padding: 2px; flex-shrink: 0; }
+.branding__warning {
+  border-left: 3px solid var(--warning, #b65c02); padding: 0.25rem 0 0.25rem 0.75rem; margin: 0.25rem 0;
+}
+.branding__warning p { margin: 0.25rem 0; }
+.branding__chip { display: inline-block; width: 0.9rem; height: 0.9rem; border-radius: 3px; vertical-align: -0.1rem; border: 1px solid var(--swatch-border); }
+.branding__lock { margin-top: 0.9rem; }
+.branding__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 1rem 0 0.5rem; }
+.branding__spacer { flex: 1; }
+.branding-preview { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1rem; }
+.branding-preview__panel {
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem 1rem 1.1rem;
+  display: grid; gap: 1rem; justify-items: center;
+}
+.branding-preview__label { margin: 0; justify-self: start; font-size: 0.75rem; opacity: 0.7; }
+.branding-preview__bar {
+  justify-self: stretch; display: flex; align-items: center; gap: 0.5rem;
+  padding: 0 0 0.75rem; border-bottom: 1px solid; min-width: 0;
+}
+.branding-preview__bar strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.branding-preview__link { margin-left: auto; font-size: 0.85rem; }
+.branding-preview__signin { display: flex; align-items: center; gap: 0.75rem; max-width: 100%; }
+.branding-preview__signin--stacked { flex-direction: column; gap: 0.5rem; }
+.branding-preview__button { padding: 0.4rem 1.25rem; border-radius: 4px; font-size: 0.85rem; font-weight: 600; }
 .topbar__nav { display: flex; align-items: center; gap: 0.25rem; margin-left: 1.25rem; }
 /* inline-flex + nowrap: a squeezed "API Tokens" used to wrap to two lines,
    which made the nav row taller and left its single-line neighbours sitting

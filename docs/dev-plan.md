@@ -3296,6 +3296,10 @@ survives as a worked example of the spec format, and is the place to start.
 - **Every picture is regenerable.** The spec that produced the set is
   committed; a screenshot nobody can reproduce is a screenshot that will be
   wrong after the next redesign and cannot be fixed.
+- **Shoot unbranded.** Since 13.1 an instance can carry its own name,
+  logo and colours. The manual documents Tesria, so its screenshots are
+  taken with branding reset to Tesria, and the one page about branding shows
+  it being set.
 - **Shoot against seeded content, not real content.** The old set leaked
   real space names and a real person's name into onboarding clips (10.4),
   which is exactly the failure to avoid twice.
@@ -4092,7 +4096,7 @@ carry it too.
 
 ## Phase 13: Branding
 
-### 13.1 Instance branding · `L` · Model: Opus 5.5 · **designed 2026-09-22; every decision answered, ready to build**
+### 13.1 Instance branding · `L` · Model: Opus 5.5 · ✅ **shipped 2026-09-22** (designed and implemented by Opus 5.5)
 
 **What the owner asked for (2026-09-22).** "Add branding support to the app.
 It will allow owners and admins (off by default) to edit the page branding.
@@ -4519,6 +4523,85 @@ quoted where they settled something.
     footer is added. No switch to hide it either: it is already as quiet as
     it can be while still being there, and a switch can be added later.
 
+**As built (2026-09-22), where it differs from the spec above.** All five
+steps shipped together, in one sitting, rather than as five commits.
+
+- **The page shell now goes through one endpoint.** The design said the
+  server would write into the shell "for every SPA HTML response". In the
+  code that meant replacing the static-files fallback with an endpoint
+  (`Features/Public/SpaShell.cs`), dropping `UseDefaultFiles`, and mapping
+  `/` and `/index.html` explicitly. The fallback's catch-all does not match
+  the root, and routing runs before static files, so a path rewrite alone
+  could not reach it. `PublicMetaMiddleware` is folded into the same
+  endpoint. An unknown `/api/...` route now answers 404 instead of a page of
+  HTML, which the old fallback served.
+- **The inline script changed once, in the file, and never per instance.**
+  It now reads the lock attributes, and it reads storage through a guard so
+  that a browser blocking site data still gets the locks. A test renders a
+  fully branded shell from the real `src/web/index.html` and compares the
+  script's bytes.
+- **The app image shrank from 1,070 MB to 455 MB**, with the SVG renderer
+  added. Svg.Skia brings HarfBuzz, and the framework-dependent publish had
+  been copying every package's native libraries for about fifteen platforms,
+  Windows debug symbols included, into a Linux image: 155 MB more with the
+  new package. `deploy/Dockerfile` now publishes for the image's own
+  architecture (`-r linux-arm64` or `linux-x64` from BuildKit's
+  `TARGETARCH`), which drops all of it, SkiaSharp's own included. Nothing
+  about the owner's condition changed: no new image, no new container, and
+  the renderer is only loaded while an SVG favicon is being uploaded.
+- **Exports stopped pointing at the instance for their favicon.** The
+  capture kept the page's `<link rel="icon" href="/favicon.svg">`, which
+  showed nothing once the file left the server. This was true before
+  branding and nobody had noticed. Exports now carry the brand's favicon,
+  or Tesria's, as a file or an inline URI. `SiteChrome.ApplyToDocument`
+  strips whatever branding the capture happened to carry (attributes, the
+  accent block, icon links) and writes the export's own, so there is exactly
+  one of each.
+- **One implementation slip, caught by an existing test.** The upload and
+  delete routes, written in their own file, were first mapped without the
+  right, so any signed-in account could have replaced the logo. The
+  route-rights test (`Every_administrative_route_names_a_right_the_catalogue_defines`)
+  failed on them before anything was committed. The right is now required on
+  the whole `/admin/branding` group, and a test tries each file route as an
+  administrator without it.
+- **A readability check the owner can override, and the audit says so.** A
+  failing colour is shown with its ratios and the nearest passing shade as a
+  one-click swap. Saving it anyway records `ContrastOverridden` on the
+  `branding.changed` entry.
+- **Colours and locks apply by reloading the page after Save**, because they
+  live in the shell the server sends. The name, display mode and logos
+  update the header in place.
+
+**Verified live on this instance (2026-09-22).**
+- **Unbranded:** the sign-in page shows `[Tesria mark] Tesria` side by side,
+  with no "Powered by". The stored theme still applied before paint, and
+  there were no CSP errors.
+- **Branded:** tested with an SVG logo, a dark-mode logo, an SVG favicon and
+  a custom accent (`#7a1fa2` light, `#d49cf0` dark).
+  - The sign-in page in logo-only mode, and stacked while locked to light,
+    with the operating system in dark mode. The lock held, and the light logo
+    and accent were used.
+  - The header on every Administration tab, and the Branding tab.
+  - The logo's URL returns the sandbox policy.
+- **Tab titles** on a page, a space, search, Administration and the editor.
+- **Exports:** a single-page HTML export and a whole-site export, each
+  checked for its title, logos, favicon, accent block and root attributes,
+  with no reference back to the instance. The site was then served from a
+  bare local web server: it followed the system's dark mode, showed the
+  dark-mode logo and the brand accent, and offered the brand swatch first.
+- **Reset to Tesria** put everything back and deleted the files. The
+  temporary grant of the right to the Administrator role was revoked, and
+  `.env` was byte-identical.
+
+**Trial record (the model gate, 2026-09-22).** The first item designed and
+built by Opus 5.5. Nothing that surfaced during implementation was a design
+miss of the kind the gate exists for:
+- The two traps the design named, the CSP hash and a hostile SVG, were the
+  ones that mattered.
+- The routing and image-size findings were implementation detail.
+- The unguarded upload routes were an implementation slip, and an existing
+  test caught them.
+
 **Not decided here, deliberately:**
 - Per-space branding.
 - Custom fonts.
@@ -4545,7 +4628,7 @@ quoted where they settled something.
 12. **12.1** Capture-based export and the element audit (shipped 2026-09-20) → **12.2** Publish a space as a static site (shipped 2026-09-20). 12 before 8.5 because the site export builds the walk over a space that the wiki pack will reuse, and because the owner's documentation is waiting on it.
 13. **8.6** External edits as tracked changes (steps 1–5 shipped 2026-09-21; step 6 folded into 10.5).
 13a. **8.5** Wiki packs (designed 2026-09-21 as Fable; Opus implements next). Before 10.5, because the pack is what a rebuilt manual is committed as.
-13b. **13.1** Instance branding (designed 2026-09-22 by Opus 5.5, the first item under the new model gate; every decision answered, ready to build). Before 10.5 at the owner's request, and the manual's screenshots are then taken on an unbranded instance.
+13b. **13.1** Instance branding (designed and shipped 2026-09-22 by Opus 5.5, the first item under the new model gate). Before 10.5 at the owner's request, and the manual's screenshots are then taken on an unbranded instance.
 14. **10.5** Rebuild the user manual, **after 8.5**, now that the owner has settled the wiki as its source of truth (2026-09-21). A manual whose only copy is inside the instance is how the last one was lost, so the pack that can export it is a prerequisite, not a preference.
 
 Phases 6 and 8.2 are floaters (small, no dependents) and can fill gaps.

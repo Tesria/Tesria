@@ -77,6 +77,11 @@ builder.Services.AddSingleton<Tesria.Api.Infrastructure.Backups.BackupMonitor>()
 // Whether a restore is running, held in this process (dev-plan 9.4): the one
 // fact that has to stay readable while the database is being replaced.
 builder.Services.AddSingleton<Tesria.Api.Infrastructure.Backups.RestoreState>();
+// The SPA's index.html, read once, which the shell endpoint writes the title
+// and branding into (dev-plan 13.1).
+builder.Services.AddSingleton<Tesria.Api.Features.Public.SpaShell>();
+// Logos and favicons for instance branding (dev-plan 13.1).
+builder.Services.AddScoped<Tesria.Api.Infrastructure.Branding.IBrandAssets, Tesria.Api.Infrastructure.Branding.BrandAssets>();
 // Watches a restore, restarts into the restored database, and writes the
 // lasting audit entry once it is up (dev-plan 9.4).
 builder.Services.AddHostedService<Tesria.Api.Infrastructure.Backups.RestoreCompletion>();
@@ -529,11 +534,17 @@ var spaStaticFileOptions = new StaticFileOptions
             : "public, max-age=31536000, immutable";
     },
 };
-// Public page URLs get their title and Open Graph tags injected into the
-// shell (dev-plan 5.2). Before static files, which would otherwise serve
-// the generic index.html.
-app.UseMiddleware<Tesria.Api.Features.Public.PublicMetaMiddleware>();
-app.UseDefaultFiles();
+// index.html is never served as a file (dev-plan 13.1). Every application
+// route, "/" included, goes to the SPA shell endpoint at the bottom of this
+// file, which writes the tab title, the link-preview tags and the branding
+// into it. So there is no UseDefaultFiles, and a direct request for the file
+// itself is treated as a request for "/".
+app.Use((context, next) =>
+{
+    if (string.Equals(context.Request.Path.Value, "/index.html", StringComparison.OrdinalIgnoreCase))
+        context.Request.Path = "/";
+    return next(context);
+});
 app.UseStaticFiles(spaStaticFileOptions);
 
 app.UseAuthentication();
@@ -563,6 +574,7 @@ api.MapAuthEndpoints();
 api.MapAdminEndpoints();
 api.MapSecurityEndpoints();
 api.MapBackupEndpoints();
+api.MapBrandingEndpoints();
 api.MapRoleEndpoints();
 api.MapDashboardEndpoints();
 api.MapMediaEndpoints();
@@ -601,12 +613,22 @@ app.MapMcp("/mcp").RequireAuthorization(new Microsoft.AspNetCore.Authorization.A
 // Not under /api: robots.txt and sitemap.xml live at the root (dev-plan 5.2).
 app.MapPublicEndpoints();
 app.MapInstanceEndpoints();
+// The logo and favicon files, anonymous because the sign-in page needs them.
+Tesria.Api.Features.Admin.BrandingEndpoints.MapBrandingAssetEndpoints(app);
 
-// SPA fallback: any non-API, non-file route returns index.html so client-side
-// routing works. Guarded so it never swallows /api/* requests. Reuses the same
-// options so this path also gets the no-cache header above, not just direct
-// hits on "/" or "/index.html".
-app.MapFallbackToFile("index.html", spaStaticFileOptions);
+// SPA fallback: any non-API, non-file route gets the shell, so client-side
+// routing works. The shell carries the title and the branding, written in by
+// the server (dev-plan 13.1; see SpaShell). Always no-cache, so a change to
+// the branding reaches everyone on their next load.
+app.MapFallback(Tesria.Api.Features.Public.SpaShell.Handle);
+// The fallback's catch-all does not match the root itself, which the static
+// files middleware used to answer; with no default document any more, "/"
+// is mapped to the same shell explicitly.
+app.MapGet("/", Tesria.Api.Features.Public.SpaShell.Handle).ExcludeFromDescription();
+// Routing runs before the static files middleware, so the rewrite near the
+// top of this file (which keeps static files from serving the raw file) is
+// not enough on its own: the route has to exist for the request to land here.
+app.MapGet("/index.html", Tesria.Api.Features.Public.SpaShell.Handle).ExcludeFromDescription();
 
 app.Run();
 

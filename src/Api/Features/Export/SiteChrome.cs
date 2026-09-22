@@ -33,26 +33,46 @@ namespace Tesria.Api.Features.Export;
 /// <para>PDFs get none of this. A PDF is paper: no toolbar, no sidebar, no
 /// theme, and the capture route keeps forcing it light.</para>
 /// </summary>
-public static class SiteChrome
+public static partial class SiteChrome
 {
     /// <summary>
-    /// The name and mark in the top-left of the bar.
+    /// The instance's branding as an export carries it (dev-plan 13.1,
+    /// decision 12): the name and logo in the top-left of the bar, the
+    /// favicon, the custom accent and the theme locks, as they were at the
+    /// moment of export. An export is a photograph and does not change later.
     ///
-    /// <para><b>The seam for instance branding.</b> The owner's plan is that an
-    /// instance can replace both with its own, and that an export carries
-    /// them. The name half already works: it is the instance name, which an
-    /// administrator sets in Administration → Settings and which defaults to
-    /// "Tesria". The mark is the built-in one until there is somewhere to
-    /// upload a replacement; when that lands it needs to set
-    /// <see cref="LogoPath"/> and copy the file into the export beside the
-    /// stylesheet. Nothing else here has to change.</para>
+    /// <para>Paths are either site-relative (<c>assets/brand-logo.svg</c>,
+    /// for a site) or <c>data:</c> URIs (for a single file), and a logo is only
+    /// ever referenced by <c>&lt;img&gt;</c>, never inlined as markup. An
+    /// exported file is opened from disk with no CSP at all, so that is the
+    /// whole of its defence against a hostile SVG (decision 6).</para>
     /// </summary>
-    /// <param name="Name">The wordmark. The instance name.</param>
-    /// <param name="LogoPath">
-    /// A site-relative path to an uploaded mark (e.g. <c>assets/brand.webp</c>),
-    /// or null for the built-in Tesria mark. Always null today.
-    /// </param>
-    public record Brand(string Name, string? LogoPath = null);
+    /// <param name="Name">The brand name, or Tesria.</param>
+    /// <param name="LogoPath">The logo, or null for Tesria's mark.</param>
+    public record Brand(string Name, string? LogoPath = null)
+    {
+        /// <summary><c>logo-and-name</c>, <c>logo</c> or <c>name</c>.</summary>
+        public string Display { get; init; } = "logo-and-name";
+        public string? LogoDarkPath { get; init; }
+        public int? LogoWidth { get; init; }
+        public int? LogoHeight { get; init; }
+
+        /// <summary>The instance name, which titles every exported page.</summary>
+        public string Instance { get; init; } = "Tesria";
+
+        public string? FaviconHref { get; init; }
+        public string FaviconType { get; init; } = "image/png";
+
+        /// <summary>The custom accent's stylesheet; empty when there is none.</summary>
+        public string AccentCss { get; init; } = "";
+
+        /// <summary>The <c>data-theme-lock</c> and friends, which the export's theme script reads.</summary>
+        public IReadOnlyList<(string Name, string Value)> Attributes { get; init; } = [];
+
+        public string? ThemeLock => Attributes.FirstOrDefault(a => a.Name == "data-theme-lock").Value;
+        public string? AccentLock => Attributes.FirstOrDefault(a => a.Name == "data-accent-lock").Value;
+        public bool HasBrandAccent => AccentCss.Length > 0;
+    }
 
     /// <summary>What the sidebar needs to know about the space it is showing.</summary>
     /// <param name="IconPath">
@@ -81,17 +101,101 @@ public static class SiteChrome
     /// </summary>
     public static string Topbar(Brand brand, string? homeHref, string currentPath = "")
     {
-        var mark = brand.LogoPath is null
-            ? $"<span class=\"brand__mark\">{BrandMark}</span>"
-            : $"<span class=\"brand__mark\"><img src=\"{SiteExport.Escape(SiteExport.Relative(currentPath, brand.LogoPath))}\" alt=\"\" width=\"20\" height=\"20\" /></span>";
-        var word = $"<span class=\"brand__word\">{SiteExport.Escape(brand.Name)}</span>";
-        var inner = mark + word;
+        var inner = BrandInner(brand, currentPath);
         var home = homeHref is null
             ? $"<span class=\"brand\">{inner}</span>"
             : $"<a class=\"brand\" href=\"{SiteExport.Escape(homeHref)}\">{inner}</a>";
 
-        return $"""<header class="topbar">{home}<div class="topbar__right">{WidthToggle()}{ThemeMenu()}</div></header>""";
+        return $"""<header class="topbar">{home}<div class="topbar__right">{WidthToggle()}{ThemeMenu(brand)}</div></header>""";
     }
+
+    /// <summary>
+    /// The mark and the name, in the same markup and classes as the header in
+    /// <c>Layout.tsx</c>, so the stylesheet the export ships sizes them the
+    /// same. A dark-mode logo is a second image the stylesheet swaps in.
+    /// </summary>
+    private static string BrandInner(Brand brand, string currentPath)
+    {
+        var showLogo = brand.Display != "name";
+        var showName = brand.Display != "logo" || brand.LogoPath is null;
+        var mark = !showLogo ? "" : brand.LogoPath is null
+            ? $"<span class=\"brand__mark\">{BrandMark}</span>"
+            : $"<span class=\"brand__logo-wrap\">{LogoImg(brand.LogoPath, brand, currentPath, dark: false)}"
+              + (brand.LogoDarkPath is null ? "" : LogoImg(brand.LogoDarkPath, brand, currentPath, dark: true))
+              + "</span>";
+        var word = showName ? $"<span class=\"brand__word\">{SiteExport.Escape(brand.Name)}</span>" : "";
+        return mark + word;
+    }
+
+    private static string LogoImg(string path, Brand brand, string currentPath, bool dark)
+    {
+        var size = brand.LogoWidth is { } w && brand.LogoHeight is { } h ? $" width=\"{w}\" height=\"{h}\"" : "";
+        var cls = brand.LogoDarkPath is null ? "brand__logo" : dark ? "brand__logo brand__logo--dark" : "brand__logo brand__logo--light";
+        // The name beside it already says who this is; alone, the logo is the name.
+        var alt = brand.Display == "logo" ? SiteExport.Escape(brand.Name) : "";
+        return $"<img class=\"{cls}\" src=\"{SiteExport.Escape(Href(currentPath, path))}\" alt=\"{alt}\"{size} />";
+    }
+
+    /// <summary>A site path made relative to the current page, or a data: URI left alone.</summary>
+    public static string Href(string currentPath, string path) =>
+        path.StartsWith("data:", StringComparison.Ordinal) ? path : SiteExport.Relative(currentPath, path);
+
+    /// <summary>
+    /// Everything an exported document's head needs from the branding: the
+    /// favicon and the custom accent. Everything else in the head is the
+    /// exporter's own.
+    /// </summary>
+    public static string HeadExtras(Brand brand, string currentPath)
+    {
+        var html = "";
+        if (brand.FaviconHref is { } icon)
+            html += $"<link rel=\"icon\" type=\"{brand.FaviconType}\" href=\"{SiteExport.Escape(Href(currentPath, icon))}\" />";
+        if (brand.AccentCss.Length > 0)
+            html += $"<style id=\"brand-accent\">{brand.AccentCss}</style>";
+        return html;
+    }
+
+    /// <summary>
+    /// Brings a captured document into line with the brand, whatever the
+    /// capture happened to carry: its title, its favicon, its accent and its
+    /// theme locks. The capture's page shell had the instance's attributes
+    /// and style block in it, and an icon link pointing at the instance,
+    /// which an exported file cannot reach. Those are taken out and the
+    /// export's own put in, so there is exactly one of each.
+    /// </summary>
+    public static string ApplyToDocument(string html, Brand brand, string title, string currentPath)
+    {
+        html = BrandStyle().Replace(html, "");
+        html = IconLinks().Replace(html, "");
+        html = TitleTag().Replace(html, $"<title>{SiteExport.Escape(title)}</title>", 1);
+        html = HtmlTag().Replace(html, m =>
+        {
+            var tag = BrandAttribute().Replace(m.Value, "");
+            var extra = string.Concat(brand.Attributes.Select(a => $" {a.Name}=\"{SiteExport.Escape(a.Value)}\""));
+            return tag[..^1] + extra + ">";
+        }, 1);
+        return html.Replace("</head>", HeadExtras(brand, currentPath) + "</head>");
+    }
+
+    /// <summary>The opening tag of the root element, with the attributes an export's theme script reads.</summary>
+    public static string HtmlOpen(Brand brand) =>
+        "<html lang=\"en\"" + string.Concat(brand.Attributes.Select(a => $" {a.Name}=\"{SiteExport.Escape(a.Value)}\"")) + ">";
+
+    [System.Text.RegularExpressions.GeneratedRegex("<style id=\"brand-accent\">[\\s\\S]*?</style>")]
+    private static partial System.Text.RegularExpressions.Regex BrandStyle();
+
+    [System.Text.RegularExpressions.GeneratedRegex("<link\\s+rel=\"(?:icon|apple-touch-icon)\"[^>]*>", System.Text.RegularExpressions.RegexOptions.IgnoreCase)]
+    private static partial System.Text.RegularExpressions.Regex IconLinks();
+
+    [System.Text.RegularExpressions.GeneratedRegex("<title>[^<]*</title>", System.Text.RegularExpressions.RegexOptions.IgnoreCase)]
+    private static partial System.Text.RegularExpressions.Regex TitleTag();
+
+    [System.Text.RegularExpressions.GeneratedRegex("<html\\b[^>]*>", System.Text.RegularExpressions.RegexOptions.IgnoreCase)]
+    private static partial System.Text.RegularExpressions.Regex HtmlTag();
+
+    /// <summary>What the capture's shell and the capture browser put on the root element, and nothing else.</summary>
+    [System.Text.RegularExpressions.GeneratedRegex("\\s(?:data-theme|data-accent|data-theme-lock|data-accent-lock|data-accent-default|data-brand-[a-z-]+)=\"[^\"]*\"")]
+    private static partial System.Text.RegularExpressions.Regex BrandAttribute();
 
     /// <summary>
     /// Switches the page between its normal width and full width, the same
@@ -241,8 +345,14 @@ public static class SiteChrome
     /// the theme script is stripped), so <see cref="ThemeScript"/> drives this
     /// markup instead, through the <c>data-theme-*</c> hooks.
     /// </summary>
-    private static string ThemeMenu()
+    private static string ThemeMenu(Brand brand)
     {
+        // Locked parts are not offered, and when both are locked there is no
+        // menu at all: a control that cannot change anything is noise.
+        var themeLocked = brand.ThemeLock is not null;
+        var accentLocked = brand.AccentLock is not null;
+        if (themeLocked && accentLocked) return "";
+
         var triggerIcons = string.Concat(Modes.Select(m =>
             $"<span data-theme-icon=\"{m.Mode}\" style=\"display: none\">{TriggerIcon(m.Mode)}</span>"));
 
@@ -255,19 +365,28 @@ public static class SiteChrome
             + "</span>"
             + $"<span class=\"theme-menu__check\" style=\"display: none\">{CheckIcon}</span></button>"));
 
-        var accents = string.Concat(Accents.Select(a =>
-            $"<button type=\"button\" class=\"theme-menu__accent\" data-theme-accent=\"{a.Name}\" "
-            + $"style=\"background: var(--accent-dot-{a.Name})\" title=\"{a.Label}\" aria-label=\"{a.Label}\" aria-pressed=\"false\"></button>"));
+        // The brand's own accent comes first under the brand's name, as it
+        // does in the application's menu.
+        var swatches = (brand.HasBrandAccent ? [("brand", brand.Name)] : Array.Empty<(string, string)>())
+            .Concat(Accents);
+        var accents = string.Concat(swatches.Select(a =>
+            $"<button type=\"button\" class=\"theme-menu__accent\" data-theme-accent=\"{a.Item1}\" "
+            + $"style=\"background: var(--accent-dot-{a.Item1})\" title=\"{SiteExport.Escape(a.Item2)}\" aria-label=\"{SiteExport.Escape(a.Item2)}\" aria-pressed=\"false\"></button>"));
+        var themeSection = themeLocked ? "" : $"""
+        <p class="theme-menu__heading">Theme</p>
+        <div class="theme-menu__modes">{modes}</div>
+        """;
+        var accentSection = accentLocked ? "" : $"""
+        <p class="theme-menu__heading">Accent colour</p>
+        <div class="theme-menu__accents">{accents}</div>
+        """;
 
         return $"""
         <div class="theme-menu">
         <button type="button" class="theme-toggle" data-theme-trigger aria-haspopup="true" aria-expanded="false" title="Appearance" aria-label="Appearance">{triggerIcons}</button>
         <div class="theme-menu__panel" role="dialog" aria-label="Appearance" data-theme-panel hidden>
         <button type="button" class="popover__close" aria-label="Close" data-theme-close>{CloseIcon}</button>
-        <p class="theme-menu__heading">Theme</p>
-        <div class="theme-menu__modes">{modes}</div>
-        <p class="theme-menu__heading">Accent colour</p>
-        <div class="theme-menu__accents">{accents}</div>
+        {themeSection}{accentSection}
         </div></div>
         """;
     }
@@ -307,15 +426,20 @@ public static class SiteChrome
         (function () {
           var d = document, root = d.documentElement;
           var THEME = 'tesria-theme', ACCENT = 'tesria-accent', DEFAULT_ACCENT = 'blue';
+          // The instance's branding at export time (dev-plan 13.1): a theme
+          // or accent held for everyone, and the accent a new reader gets.
+          var THEME_LOCK = root.getAttribute('data-theme-lock');
+          var ACCENT_LOCK = root.getAttribute('data-accent-lock');
+          var ACCENT_DEFAULT = root.getAttribute('data-accent-default') || DEFAULT_ACCENT;
           var WIDTH = 'tesria-export-width';
           function get(k) { try { return localStorage.getItem(k) } catch (e) { return null } }
           function set(k, v) { try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v) } catch (e) {} }
 
           // Before first paint.
-          var stored = get(THEME);
+          var stored = THEME_LOCK || get(THEME);
           if (stored === 'light' || stored === 'dark') root.setAttribute('data-theme', stored);
-          var storedAccent = get(ACCENT);
-          if (storedAccent) root.setAttribute('data-accent', storedAccent);
+          var startAccent = ACCENT_LOCK || get(ACCENT) || ACCENT_DEFAULT;
+          if (startAccent !== DEFAULT_ACCENT) root.setAttribute('data-accent', startAccent);
 
           // Width is a class on an element rather than an attribute on <html>,
           // so it cannot be applied before the body exists. It is applied in
@@ -338,8 +462,8 @@ public static class SiteChrome
           }
 
           function systemTheme() { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light' }
-          function mode() { var v = get(THEME); return (v === 'light' || v === 'dark') ? v : 'system' }
-          function accent() { return get(ACCENT) || DEFAULT_ACCENT }
+          function mode() { if (THEME_LOCK) return THEME_LOCK; var v = get(THEME); return (v === 'light' || v === 'dark') ? v : 'system' }
+          function accent() { return ACCENT_LOCK || get(ACCENT) || ACCENT_DEFAULT }
 
           function applyTheme(next) {
             if (next === 'system') root.removeAttribute('data-theme');
@@ -428,7 +552,9 @@ public static class SiteChrome
             d.querySelectorAll('[data-theme-accent]').forEach(function (b) {
               b.addEventListener('click', function () {
                 var next = b.getAttribute('data-theme-accent');
-                set(ACCENT, next === DEFAULT_ACCENT ? null : next);
+                // Stored even when it is blue: with a brand default, "blue"
+                // is a choice, not the absence of one.
+                set(ACCENT, next);
                 applyAccent(next);
                 sync();
               });

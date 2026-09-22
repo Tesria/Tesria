@@ -187,6 +187,65 @@ public class SiteSettings
     /// </summary>
     public string? KeptCopyJson { get; set; }
 
+    // --- Branding (dev-plan 13.1). Nothing here changes what anyone sees
+    // until someone sets it on purpose: every default reproduces Tesria.
+
+    /// <summary>
+    /// The name beside the logo in the header and on the sign-in card. Null
+    /// means "Tesria". Deliberately not <see cref="InstanceName"/>: the owner
+    /// wants renaming the instance to leave the header alone.
+    /// </summary>
+    public string? BrandName { get; set; }
+
+    /// <summary><c>logo-and-name</c> (default), <c>logo</c> or <c>name</c>. Header and sign-in both.</summary>
+    public string BrandDisplay { get; set; } = "logo-and-name";
+
+    /// <summary>
+    /// How the sign-in card arranges logo and name when both are shown:
+    /// <c>side-by-side</c> (default) or <c>stacked</c>. The header is always
+    /// side by side.
+    /// </summary>
+    public string SignInArrangement { get; set; } = "side-by-side";
+
+    /// <summary>Content hash of the uploaded logo; null means Tesria's mark.</summary>
+    public string? BrandLogoHash { get; set; }
+    /// <summary><c>svg</c> or <c>webp</c>.</summary>
+    public string? BrandLogoFormat { get; set; }
+    public int? BrandLogoWidth { get; set; }
+    public int? BrandLogoHeight { get; set; }
+
+    /// <summary>An optional logo for dark mode. Null means the light one is used in both.</summary>
+    public string? BrandLogoDarkHash { get; set; }
+    public string? BrandLogoDarkFormat { get; set; }
+    public int? BrandLogoDarkWidth { get; set; }
+    public int? BrandLogoDarkHeight { get; set; }
+
+    /// <summary>Content hash of the uploaded favicon set; null means the generated one.</summary>
+    public string? BrandFaviconHash { get; set; }
+    /// <summary>Whether the favicon upload was an SVG, which is then offered to browsers first.</summary>
+    public bool BrandFaviconHasSvg { get; set; }
+
+    /// <summary><c>any</c> (people choose, the default), <c>light</c> or <c>dark</c>.</summary>
+    public string ThemePolicy { get; set; } = "any";
+
+    /// <summary><c>any</c> (people choose, the default) or <c>locked</c>.</summary>
+    public string AccentPolicy { get; set; } = "any";
+
+    /// <summary>
+    /// The accent new visitors get, or everyone gets when locked: one of the
+    /// six built-in names, or <c>brand</c> for the custom colours below.
+    /// Null means Tesria's default (blue) with nothing set.
+    /// </summary>
+    public string? AccentName { get; set; }
+
+    /// <summary>The custom accent for light mode, as normalised <c>#rrggbb</c>. Never free CSS.</summary>
+    public string? BrandAccentLight { get; set; }
+    /// <summary>The custom accent for dark mode, as normalised <c>#rrggbb</c>.</summary>
+    public string? BrandAccentDark { get; set; }
+
+    public DateTimeOffset? BrandChangedAt { get; set; }
+    public Guid? BrandChangedById { get; set; }
+
     /// <summary>
     /// When the owner last reviewed the rights matrix (dev-plan 11.1). Null
     /// means nobody has looked at the defaults yet, which the Roles tab says

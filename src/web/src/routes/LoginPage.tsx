@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext'
 import { api, ApiError } from '../api/client'
 import { PasswordInput } from '../components/PasswordInput'
 import { useInstance } from '../InstanceContext'
+import { AuthPage } from '../components/Brand'
 
 export function LoginPage() {
   const { user, login, completeTotp } = useAuth()
@@ -78,7 +79,7 @@ export function LoginPage() {
 
   if (challenge) {
     return (
-      <div className="center">
+      <AuthPage>
         <form className="authcard" onSubmit={onSubmitCode}>
           <h1>One more step</h1>
           <p className="muted small">Enter the six-digit code from your authenticator app, or one of your recovery codes.</p>
@@ -94,12 +95,12 @@ export function LoginPage() {
             <button type="button" className="link-btn" onClick={() => { setChallenge(null); setCode(''); setError(null) }}>Start over</button>
           </p>
         </form>
-      </div>
+      </AuthPage>
     )
   }
 
   return (
-    <div className="center">
+    <AuthPage>
       <form className="authcard" onSubmit={onSubmit}>
         <h1>Sign in</h1>
         {error && <p className="alert alert--error">{error}</p>}
@@ -145,6 +146,6 @@ export function LoginPage() {
           </p>
         )}
       </form>
-    </div>
+    </AuthPage>
   )
 }

@@ -1,3 +1,4 @@
+import { DocumentTitleProvider } from './components/DocumentTitle'
 import { MaintenanceOverlay } from './components/MaintenanceOverlay'
 import { ScrollToTop } from './components/ScrollToTop'
 import { SetupGate } from './components/SetupGate'
@@ -13,8 +14,11 @@ export function Root() {
   return (
     <>
       <ScrollToTop />
-      {/* Wraps the outlet: as a sibling its redirect raced SessionGate's. */}
-      <SetupGate />
+      {/* Wraps the outlet: as a sibling its redirect raced SessionGate's.
+          The title provider wraps it too, so every route can name its tab. */}
+      <DocumentTitleProvider>
+        <SetupGate />
+      </DocumentTitleProvider>
       <TipHost />
       {/* A restore makes the wiki read-only (dev-plan 9.4). Above every
           route, because a save can be attempted from anywhere. */}

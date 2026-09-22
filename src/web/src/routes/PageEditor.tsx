@@ -11,6 +11,7 @@ import { useSpaceContext } from './SpacePage'
 import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
 import { LeaveEditorDialog } from './LeaveEditorDialog'
 import { clearPasted, noteEditorSession, notePastedFormatting } from '../onboarding/signals'
+import { useTitlePage } from '../components/DocumentTitle'
 
 const EMPTY_DOC = '{"type":"doc","content":[]}'
 
@@ -38,6 +39,8 @@ export function PageEditor() {
   const [collabStatus, setCollabStatus] = useState<CollabConnection | null>(null)
 
   const [title, setTitle] = useState('')
+  // The title as it is being typed, or "New page" for a page that has none yet.
+  useTitlePage(title.trim() || (pageId ? null : 'New page'))
   const [content, setContent] = useState(EMPTY_DOC)
   /**
    * The published version `content` came from (dev-plan 8.6), handed to the

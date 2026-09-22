@@ -7,6 +7,7 @@ import { PasswordInput } from '../components/PasswordInput'
 import { RecoveryCodes } from '../components/RecoveryCodes'
 import { TotpSection } from '../components/TotpSection'
 import { AdminRolesPage } from './admin/AdminRolesPage'
+import { AuthBrand } from '../components/Brand'
 
 /**
  * First-run setup (dev-plan 10.2).
@@ -123,6 +124,7 @@ export function SetupPage() {
   return (
     <div className="setup">
       <aside className="setup__rail">
+        <AuthBrand />
         <h1 className="setup__brand">Set up {instance?.instanceName ?? 'Tesria'}</h1>
         <ol>
           {STEPS.map((s, i) => (

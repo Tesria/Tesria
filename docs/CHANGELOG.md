@@ -66,6 +66,61 @@ Tests: 19 rewriter fixtures, 13 HTTP round trips (importing as a *different*
 user, which is what makes the attribution and permission assertions mean
 anything), on top of step 1's 27 format tests.
 
+### 13.1 Instance branding (2026-09-22, Opus 5.5)
+
+An owner, and anyone the owner grants the new right to, can now brand the
+instance from **Administration → Branding**. Every default is Tesria's, and
+nothing changes until someone sets it on purpose. What shipped:
+
+- **A brand name**, separate from the instance name, in the header, on
+  every sign-in card and in exports. Renaming the instance no longer touches
+  the header.
+- **Logos:** SVG, PNG, JPEG or WebP, with an optional dark-mode logo. In the
+  header the logo sits at the bar's height. On the sign-in card it shows
+  side by side with the name (the default), stacked above it, logo only or
+  name only. The Branding tab warns when a raster logo is too small to stay
+  sharp on the sign-in page.
+- **SVG is sanitised and then only ever shown as an image.** The sanitiser
+  rebuilds the file from an allowlist and refuses anything it cannot parse,
+  DTDs and entities included. The file is served under a sandboxing policy
+  and is never inlined as markup, in the app or in an export, so a bug in
+  the sanitiser still cannot run script.
+- **A favicon:** SVG, PNG, ICO, JPEG or WebP, drawn to 32, 180 and 512 pixel
+  PNGs. SVG ones are rasterised in the app process by Svg.Skia, so there is
+  no new container.
+- **Theme and accent:** light only, dark only, or people's choice; a custom
+  accent with a colour per mode, from which the other five tokens are
+  derived; and a lock that holds everyone to one accent. A colour that is
+  hard to read is shown with its contrast ratios and the nearest shade that
+  passes. The owner can keep their own colour anyway, and the audit log
+  records that choice.
+- **No flash of the wrong theme.** The server writes the title, favicon,
+  accent stylesheet and theme locks into the page before sending it. The
+  inline theme script reads them as attributes, so its CSP hash is the same
+  on every instance, and a test proves it byte for byte.
+- **Tab titles** now read `Instance Name - Space Name / Page Name` (or
+  `Instance Name - Section`). Before this the app never set a title, so
+  every tab said "Tesria".
+- **Exports carry the branding** as it was when they were made: logos and
+  favicon as files in a site, or inline in a single HTML file, plus the
+  accent, the locks and the title. They also no longer point at the
+  instance for their favicon, which they always used to.
+- **Reset to Tesria** removes all of it and deletes the files. It leaves the
+  instance name alone.
+- **Subtle attribution:** one muted "Powered by Tesria" under a branded
+  sign-in card, and a version line at the foot of Administration.
+- **The app image went from 1,070 MB to 455 MB.** The API is now published
+  for the image's own architecture instead of shipping native libraries for
+  about fifteen platforms.
+
+Tests: 59 new (787 backend, 50 frontend, all green). They cover the right,
+nothing changing until set, the title rules on both sides, the shell and
+its unchanged script, colour normalisation and the contrast checks, nine
+hostile SVGs and four malformed ones, raster sizing, GIF and
+decompression-bomb refusal, the favicon set, reset, and the export chrome.
+One slip was caught before commit by an existing test: the file upload
+routes were first mapped without the right.
+
 ### Design 13.1: instance branding (2026-09-22, Opus 5.5)
 
 At the owner's request, the owner (and anyone the owner grants the right)

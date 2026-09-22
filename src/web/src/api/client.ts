@@ -91,6 +91,7 @@ export const Permission = {
   SettingsRegistration: 'settings.registration',
   SettingsEmail: 'settings.email',
   SettingsPublicSpaces: 'settings.public_spaces',
+  SettingsBranding: 'settings.branding',
   PermissionsView: 'permissions.view',
   PermissionsEditUserTier: 'permissions.edit_user_tier',
   RolesAssignTier: 'roles.assign_tier',
@@ -205,6 +206,93 @@ export type InstanceInfo = {
   /** Anonymous reading is opt-in twice: the instance switch AND a public space. */
   publicReading: boolean
   allowPublicRegistration: boolean
+  /** The instance's branding (dev-plan 13.1). Every default is Tesria's. */
+  branding: Branding
+}
+
+export type BrandDisplay = 'logo-and-name' | 'logo' | 'name'
+export type SignInArrangement = 'side-by-side' | 'stacked'
+export type ThemePolicy = 'any' | 'light' | 'dark'
+export type AccentPolicy = 'any' | 'locked'
+
+/** One logo: where it is, and its shape, so the page can lay it out before it loads. */
+export type BrandLogo = { url: string; format: 'svg' | 'webp'; width: number | null; height: number | null }
+
+export type Branding = {
+  /** The brand name, or "Tesria". */
+  name: string
+  hasCustomName: boolean
+  /** A brand name or a logo: what "Powered by Tesria" keys off. */
+  hasIdentity: boolean
+  display: BrandDisplay
+  signInArrangement: SignInArrangement
+  logo: BrandLogo | null
+  logoDark: BrandLogo | null
+  hasFavicon: boolean
+  themePolicy: ThemePolicy
+  accentPolicy: AccentPolicy
+  accentName: string | null
+  accentLight: string | null
+  accentDark: string | null
+}
+
+/** Tesria, unbranded: what the page shows before /api/instance answers, and if it never does. */
+export const DEFAULT_BRANDING: Branding = {
+  name: 'Tesria',
+  hasCustomName: false,
+  hasIdentity: false,
+  display: 'logo-and-name',
+  signInArrangement: 'side-by-side',
+  logo: null,
+  logoDark: null,
+  hasFavicon: false,
+  themePolicy: 'any',
+  accentPolicy: 'any',
+  accentName: null,
+  accentLight: null,
+  accentDark: null,
+}
+
+/** How readable an accent is in one mode (dev-plan 13.1, decision 5). */
+export type AccentCheck = {
+  mode: 'light' | 'dark'
+  color: string
+  tokens: { primary: string; primaryDark: string; primarySoft: string; primarySofter: string; primarySoftBorder: string; onPrimary: string }
+  primaryVsBackground: number
+  onPrimaryVsPrimary: number
+  passes: boolean
+  suggested: string | null
+}
+
+/** Administration → Branding. */
+export type BrandingSettings = {
+  brandName: string | null
+  display: BrandDisplay
+  signInArrangement: SignInArrangement
+  themePolicy: ThemePolicy
+  accentPolicy: AccentPolicy
+  accentName: string | null
+  accentLight: string | null
+  accentDark: string | null
+  logo: BrandLogo | null
+  logoDark: BrandLogo | null
+  faviconHash: string | null
+  faviconHasSvg: boolean
+  isCustomized: boolean
+  changedAt: string | null
+  changedByName: string | null
+  checks: AccentCheck[]
+}
+
+export type BrandingInput = {
+  brandName: string | null
+  display: BrandDisplay
+  signInArrangement: SignInArrangement
+  themePolicy: ThemePolicy
+  accentPolicy: AccentPolicy
+  accentName: string | null
+  accentLight: string | null
+  accentDark: string | null
 }
 
 /** What the delete dialog counts up before asking (dev-plan 11.3). */
@@ -899,6 +987,29 @@ async function request<T>(method: string, path: string, body?: Body): Promise<T>
   }
 }
 
+/**
+ * A multipart upload, with the same sudo handling as `request`: branding
+ * uploads (dev-plan 13.1) need a fresh sign-in, and a file picked a minute
+ * after the sudo window closed should prompt for the password and go
+ * through, not fail.
+ */
+async function upload<T>(method: string, path: string, file: Blob, name = 'file'): Promise<T> {
+  const send = () => {
+    const body = new FormData()
+    body.append('file', file, file instanceof File ? file.name : name)
+    return fetch(path, { method, credentials: 'include', headers: CSRF_HEADER, body })
+  }
+  try {
+    return await handle<T>(await send())
+  } catch (err) {
+    if (err instanceof ApiError && err.code === 'reauth_required') {
+      await requestReauth()
+      return handle<T>(await send())
+    }
+    throw err
+  }
+}
+
 async function handle<T>(res: Response): Promise<T> {
   if (res.status === 204) return undefined as T
   const text = await res.text()
@@ -1235,6 +1346,20 @@ export const api = {
         request<{ id: string; name: string }>('PUT', `/api/admin/roles/${roleId}`, input),
       /** Sudo. Refused while anyone still holds the role. */
       remove: (roleId: string) => request<void>('DELETE', `/api/admin/roles/${roleId}`),
+    },
+    /** Instance branding (dev-plan 13.1). Every change is sudo. */
+    branding: {
+      get: () => request<BrandingSettings>('GET', '/api/admin/branding'),
+      save: (input: BrandingInput) => request<BrandingSettings>('PUT', '/api/admin/branding', input),
+      preview: (light: string | null, dark: string | null) =>
+        request<AccentCheck[]>('POST', '/api/admin/branding/accent-preview', { light, dark }),
+      reset: () => request<BrandingSettings>('POST', '/api/admin/branding/reset', {}),
+      uploadLogo: (file: File, dark = false) =>
+        upload<BrandingSettings>('PUT', `/api/admin/branding/${dark ? 'logo-dark' : 'logo'}`, file),
+      removeLogo: (dark = false) =>
+        request<BrandingSettings>('DELETE', `/api/admin/branding/${dark ? 'logo-dark' : 'logo'}`),
+      uploadFavicon: (file: File) => upload<BrandingSettings>('PUT', '/api/admin/branding/favicon', file),
+      removeFavicon: () => request<BrandingSettings>('DELETE', '/api/admin/branding/favicon'),
     },
     backups: {
       overview: (includeRemoved = false) =>
