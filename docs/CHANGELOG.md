@@ -66,6 +66,35 @@ Tests: 19 rewriter fixtures, 13 HTTP round trips (importing as a *different*
 user, which is what makes the attribution and permission assertions mean
 anything), on top of step 1's 27 format tests.
 
+### Design 13.1: instance branding (2026-09-22, Opus 5.5)
+
+At the owner's request, the owner (and anyone the owner grants the right)
+can brand the instance. That means a brand name for the header, a logo,
+including SVG, with an optional dark-mode version, a favicon, a custom
+accent colour per theme, and locking the theme or accent for everyone.
+Exports carry the branding as it was when they were made. The brand name is
+separate from the instance name, and nothing changes until someone sets it
+on purpose. A custom colour that fails the contrast check gets a better
+shade suggested, but the owner can keep theirs. Branding reaches the
+page before first paint through the server-rendered HTML shell, while the
+inline theme script stays byte-identical so its CSP hash still matches. SVG
+is sanitised by an allowlist and only ever displayed through `<img>`, so a
+sanitiser bug still cannot run script. A custom accent must pass the same
+4.5:1 contrast checks as the built-in six. The first item designed under the
+new model gate. Full design in `dev-plan.md` as 13.1, with every decision
+answered the same day. Tab titles become `Instance Name - Space Name / Page
+Name`. A Reset to Tesria button undoes all branding. Attribution stays
+subtle: one muted line under a branded sign-in form, and a version line at
+the foot of Administration.
+
+### Model gate: Opus 5.5 designs and implements (2026-09-22)
+
+The owner retired the Fable-designs, Opus-implements split, on trial, after
+Anthropic's launch page reported Opus 5.5 at Fable 5.1's level on most work
+at lower cost. New plan items are tagged `Model: Opus 5.5`. Earlier tags stay
+as history, and Fable remains an optional second opinion. The rule is
+rewritten in `CLAUDE.md` and at the top of `dev-plan.md`.
+
 ### 9.4 Restore from the admin page (2026-09-22)
 
 Any backup on the Backups page can now be restored, not just tested. Logical
