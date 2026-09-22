@@ -214,6 +214,14 @@ does unprompted): safe to remove or ignore:
   must survive needs a committed export (8.5's wiki packs) or to be written
   in the repository instead.
 
+- **A page called "RESTORE MARKER 9.4"** in the throwaway `UIWALK2` space,
+  written 2026-09-22 while verifying the restore feature. It was the canary:
+  created after the backup being restored, so it had to vanish on each
+  restore and come back on each undo. Safe to delete; left in place because
+  it is in a throwaway space and deleting is not something to do unprompted.
+- **About fifteen extra backups from 2026-09-22**, the safety backups every
+  restore and undo took. They are real backups and retention will age them
+  out on the ordinary schedule.
 - **Four throwaway spaces from verifying 8.5** (2026-09-21): `FIXTURE2`,
   `JTSCOPY`, `UIWALK` and `UIWALK2`, all imported copies of `FIXTURE` or
   `JTS` made while walking the pack export/import. Safe to delete whenever;
