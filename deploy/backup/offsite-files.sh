@@ -40,15 +40,38 @@ restic_env_for() {
       export AWS_SECRET_ACCESS_KEY="${OFFSITE_CLOUD_SECRET}"
       export AWS_DEFAULT_REGION="${OFFSITE_CLOUD_REGION:-us-east-1}"
       ;;
+    nas|removable)
+      local path passvar path_ok
+      if [ "$slot" = nas ]; then path=/mnt/nas; passvar="${OFFSITE_NAS_PASSPHRASE:-}"
+      else path=/mnt/removable; passvar="${OFFSITE_REMOVABLE_PASSPHRASE:-}"; fi
+      # No passphrase, no backup, and deliberately no falling back to
+      # another slot's: a copy nobody can decrypt is not a copy, and one
+      # encrypted with the wrong key is worse, because it looks like one.
+      [ -z "$passvar" ] && return 1
+      offsite_path_present "$path" || return 1
+      export RESTIC_REPOSITORY="${path}/restic"
+      export RESTIC_PASSWORD="$passvar"
+      ;;
     *) return 1 ;;
   esac
   return 0
 }
 
+# Whether a mounted path is really the target, rather than the empty
+# directory an absent mount leaves behind. The sentinel is written once by
+# claim-target.sh and never by the sidecar: if the sidecar created it, an
+# unmounted share would be claimed on its first pass and every backup after
+# that would go to the boot disk.
+offsite_path_present() {
+  [ -d "${1:-}" ] && [ -f "${1}/.tesria-backup-target" ]
+}
+
 # restic refuses a self-signed certificate unless told; the test harness runs
 # MinIO with one. Never set for a real provider: the backup is leaving.
 restic_tls_flag() {
-  [ "${OFFSITE_CLOUD_VERIFY_TLS:-y}" = "n" ] && echo "--insecure-tls"
+  case "${RESTIC_REPOSITORY:-}" in
+    s3:*) [ "${OFFSITE_CLOUD_VERIFY_TLS:-y}" = "n" ] && echo "--insecure-tls" ;;
+  esac
 }
 
 rst() { restic $(restic_tls_flag) "$@"; }
@@ -118,22 +141,35 @@ restic_run_for() {
 
 # What this slot holds, for the screen and the alerts.
 offsite_files_publish() {
-  local slot="$1" verified="$2" bytes="" snaps=""
+  local slot="$1" verified="$2" bytes="" snaps="" type loc bucket prefix keyfp passfp
   bytes="$(rst stats --mode raw-data --json 2>/dev/null | sed -n 's/.*"total_size":\([0-9]*\).*/\1/p')"
   snaps="$(rst snapshots --json 2>/dev/null | grep -o '"short_id"' | wc -l | tr -d ' ')"
+  case "$slot" in
+    cloud)
+      type="${OFFSITE_CLOUD_TYPE:-}"; loc="${OFFSITE_CLOUD_ENDPOINT:-}"
+      bucket="${OFFSITE_CLOUD_BUCKET:-}"; prefix="${OFFSITE_CLOUD_PATH:-/tesria}"
+      keyfp="$(offsite_fingerprint "${OFFSITE_CLOUD_KEY:-}")"
+      passfp="$(offsite_fingerprint "${OFFSITE_CLOUD_PASSPHRASE:-}")" ;;
+    nas)
+      # The host path, not the container's: /mnt/nas would mean nothing to
+      # somebody reading the screen.
+      type=path; loc="${OFFSITE_NAS_PATH:-}"; bucket=""; prefix=restic; keyfp=""
+      passfp="$(offsite_fingerprint "${OFFSITE_NAS_PASSPHRASE:-}")" ;;
+    removable)
+      type=path; loc="${OFFSITE_REMOVABLE_PATH:-}"; bucket=""; prefix=restic; keyfp=""
+      passfp="$(offsite_fingerprint "${OFFSITE_REMOVABLE_PASSPHRASE:-}")" ;;
+  esac
   q -v slot="$slot" -v verified="$verified" -v bytes="${bytes:-}" -v snaps="${snaps:-0}" \
-    -v keyfp="$(offsite_fingerprint "${OFFSITE_CLOUD_KEY:-}")" \
-    -v passfp="$(offsite_fingerprint "${OFFSITE_CLOUD_PASSPHRASE:-}")" \
-    -v type="${OFFSITE_CLOUD_TYPE:-}" -v loc="${OFFSITE_CLOUD_ENDPOINT:-}" \
-    -v bucket="${OFFSITE_CLOUD_BUCKET:-}" -v prefix="${OFFSITE_CLOUD_PATH:-/tesria}" \
+    -v keyfp="$keyfp" -v passfp="$passfp" \
+    -v type="$type" -v loc="$loc" -v bucket="$bucket" -v prefix="$prefix" \
     >/dev/null 2>&1 <<'SQL' || true
 INSERT INTO "BackupTargets" ("Slot", "Kind", "Type", "Location", "Bucket", "Prefix", "Enabled",
                              "KeyFingerprint", "PassphraseFingerprint",
-                             "LastBackupAt", "LastVerifyAt", "BytesStored", "Message", "UpdatedAt")
+                             "LastBackupAt", "LastVerifyAt", "BytesStored", "Present", "Message", "UpdatedAt")
 VALUES (:'slot', 'files', NULLIF(:'type',''), NULLIF(:'loc',''), NULLIF(:'bucket',''), NULLIF(:'prefix',''),
         true, NULLIF(:'keyfp',''), NULLIF(:'passfp',''),
         now(), CASE WHEN :'verified' = 't' THEN now() END,
-        NULLIF(:'bytes','')::bigint, NULL, now())
+        NULLIF(:'bytes','')::bigint, true, NULL, now())
 ON CONFLICT ("Slot", "Kind") DO UPDATE
    SET "Type" = EXCLUDED."Type", "Location" = EXCLUDED."Location", "Bucket" = EXCLUDED."Bucket",
        "Prefix" = EXCLUDED."Prefix", "Enabled" = true,
@@ -141,7 +177,8 @@ ON CONFLICT ("Slot", "Kind") DO UPDATE
        "PassphraseFingerprint" = EXCLUDED."PassphraseFingerprint",
        "LastBackupAt" = now(),
        "LastVerifyAt" = coalesce(EXCLUDED."LastVerifyAt", "BackupTargets"."LastVerifyAt"),
-       "BytesStored" = EXCLUDED."BytesStored", "Message" = NULL, "UpdatedAt" = now();
+       "BytesStored" = EXCLUDED."BytesStored", "Present" = true,
+       "Message" = NULL, "UpdatedAt" = now();
 SQL
 }
 
@@ -151,6 +188,20 @@ INSERT INTO "BackupTargets" ("Slot", "Kind", "Enabled", "Message", "UpdatedAt")
 VALUES (:'slot', 'files', true, left(:'msg', 2000), now())
 ON CONFLICT ("Slot", "Kind") DO UPDATE
    SET "Message" = left(:'msg', 2000), "UpdatedAt" = now();
+SQL
+}
+
+# Configured, but not there right now. Kept enabled and dated, so the screen
+# can still show what it last held and when: for a drive that is normally in
+# a drawer (step 4) that is the useful answer, and for a NAS it is what makes
+# the alert meaningful.
+offsite_files_absent() {
+  q -v slot="$1" -v msg="$2" >/dev/null 2>&1 <<'SQL' || true
+INSERT INTO "BackupTargets" ("Slot", "Kind", "Enabled", "Present", "Message", "UpdatedAt")
+VALUES (:'slot', 'files', true, false, left(:'msg', 2000), now())
+ON CONFLICT ("Slot", "Kind") DO UPDATE
+   SET "Enabled" = true, "Present" = false,
+       "Message" = left(:'msg', 2000), "UpdatedAt" = now();
 SQL
 }
 

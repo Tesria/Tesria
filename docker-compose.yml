@@ -172,6 +172,13 @@ services:
       OFFSITE_CLOUD_SECRET: ${OFFSITE_CLOUD_SECRET:-}
       OFFSITE_CLOUD_PASSPHRASE: ${OFFSITE_CLOUD_PASSPHRASE:-}
       OFFSITE_CLOUD_VERIFY_TLS: ${OFFSITE_CLOUD_VERIFY_TLS:-}
+      # Path targets (9.2 steps 3 and 4). The host path is passed through
+      # only so the screen can name it; what the sidecar writes to is the
+      # bind mount below.
+      OFFSITE_NAS_PATH: ${OFFSITE_NAS_PATH:-}
+      OFFSITE_NAS_PASSPHRASE: ${OFFSITE_NAS_PASSPHRASE:-}
+      OFFSITE_REMOVABLE_PATH: ${OFFSITE_REMOVABLE_PATH:-}
+      OFFSITE_REMOVABLE_PASSPHRASE: ${OFFSITE_REMOVABLE_PASSPHRASE:-}
     entrypoint: ["/bin/bash", "/scripts/run.sh"]
     volumes:
       - ./deploy/backup:/scripts:ro
@@ -179,6 +186,14 @@ services:
       - ./deploy/pgbackrest/offsite.sh:/opt/tesria/offsite.sh:ro
       - backups:/backups
       - uploads:/data/uploads:ro
+      # A bind mount, not a cifs/nfs volume, and that is the decision: a
+      # named network volume stops the container starting while the share is
+      # down, which would take the LOCAL backups down with it. A bind mount
+      # always starts, and the sentinel file inside decides whether anything
+      # is written. Defaults to a directory with no sentinel, so an instance
+      # with no network drive reports it absent and copies nothing.
+      - ${OFFSITE_NAS_PATH:-./deploy/backup/no-target}:/mnt/nas
+      - ${OFFSITE_REMOVABLE_PATH:-./deploy/backup/no-target}:/mnt/removable
     # The loop touches this every minute, even in the middle of a long backup.
     healthcheck:
       test: ["CMD-SHELL", "find /tmp/heartbeat -mmin -5 | grep -q ."]

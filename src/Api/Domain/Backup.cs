@@ -171,6 +171,15 @@ public class BackupTarget
     /// <summary>Why it is not usable, in words fit for the screen.</summary>
     public string? Problem { get; set; }
 
+    /// <summary>
+    /// Whether the target was actually there on the last pass. Separate from
+    /// <see cref="Enabled"/>, because for a path target the two are different
+    /// questions: a removable drive is configured and absent most of the
+    /// time, which is normal, while a network drive that is absent is a
+    /// problem. Null for a target where presence is not a question.
+    /// </summary>
+    public bool? Present { get; set; }
+
     /// <summary>SHA-256, first 16 hex, of the storage key. Never the key.</summary>
     public string? KeyFingerprint { get; set; }
 

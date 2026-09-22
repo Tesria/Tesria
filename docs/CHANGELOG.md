@@ -78,6 +78,38 @@ and estimated monthly cost instead of inventing one. The same numbers drive
 a low-space warning whose threshold is two backup sets, not a percentage.
 Full design in `dev-plan.md` as 9.3.
 
+### 9.2 step 3: backups to a network drive (2026-09-22)
+
+The uploads and the dumps can now also go to a NAS on the LAN, as an
+encrypted restic repository on a mounted path. Tesria mounts nothing: the
+share is mounted on the host, where the system already handles credentials
+and reconnects, and Tesria is given the path.
+
+- **A sentinel file decides whether anything is written.** An unmounted
+  share leaves an ordinary empty directory behind, and backing up into that
+  would not fail: it would quietly fill the boot disk while appearing to
+  work. `claim-target.sh` writes `.tesria-backup-target` once, and the
+  sidecar refuses any path without it. A mount-point check cannot do this
+  from inside a container, where a bind mount is always a mount point.
+- **A bind mount, not a cifs volume**, deliberately. A named network volume
+  stops the container starting while the share is down, which would take the
+  *local* backups down with it.
+- **`Present` is separate from `Enabled`**, because for a path target they
+  are different questions. Only the NAS raises an alert when absent; a
+  removable drive that is unplugged is in a drawer, not broken, and alerting
+  on that would train people to ignore the whole class.
+- The runbook gained the **SFTP recipe** for PITR on a NAS (a connection
+  rather than a mount, so the NAS being down is an error instead of a silent
+  local write) and the NAS-snapshot recipe for immutability.
+
+One platform note now in the runbook: on macOS, Docker Desktop has to be
+allowed to share the mounted directory, and until it is the mount **hangs**
+rather than failing, which looks exactly like a stuck backup.
+
+Verified against a real NAS over SMB: unclaimed reported absent with nothing
+written, claiming started backups, and the copy restored byte-identical with
+36 tables and no plaintext in the stored files.
+
 ### 9.2 step 2: the uploads and the dumps go offsite, encrypted (2026-09-22)
 
 restic now carries the uploads volume and the logical dumps to the

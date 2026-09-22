@@ -141,18 +141,31 @@ SQL
 # as everything else, and only after the local backup has been taken, so what
 # is copied is a cycle that exists here first: local first, then replicate.
 offsite_tick() {
-  if ! offsite_cloud_enabled; then
-    offsite_files_disable cloud
-    return 0
-  fi
-
   local line en kc kd
-  # The same policy the local retention uses, read the same way, so the two
-  # copies expire together instead of drifting apart.
+  # The same policy the local retention uses, read the same way, so every
+  # copy expires together instead of drifting apart.
   if line="$(observe_policy)"; then
     IFS='|' read -r en kc kd _ <<<"$line"
   fi
-  restic_run_for cloud "${en:-f}" "${kc:-0}" "${kd:-0}" 1
+
+  if offsite_cloud_enabled; then
+    restic_run_for cloud "${en:-f}" "${kc:-0}" "${kd:-0}" 1
+  else
+    offsite_files_disable cloud
+  fi
+
+  # The network drive (step 3). Scheduled like the cloud, and its absence is
+  # worth an alert, because a share that should always be there and is not is
+  # a problem rather than a fact of life.
+  if [ -n "${OFFSITE_NAS_PASSPHRASE:-}" ]; then
+    if offsite_path_present /mnt/nas; then
+      restic_run_for nas "${en:-f}" "${kc:-0}" "${kd:-0}" 1
+    else
+      offsite_files_absent nas "The network drive is not mounted, or has not been claimed with claim-target.sh."
+    fi
+  else
+    offsite_files_disable nas
+  fi
 }
 
 run_agent
