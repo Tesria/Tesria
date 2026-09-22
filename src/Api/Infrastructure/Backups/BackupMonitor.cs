@@ -173,6 +173,17 @@ public sealed class BackupMonitor(IServiceScopeFactory scopes, ILogger<BackupMon
                         new { target.Slot, target.Message, target.LastBackupAt, target.LastVerifyAt });
             }
 
+            // An offline copy is not a schedule (9.2, decision 8). An
+            // instance whose only configured target is a drive in a drawer
+            // has no offsite backup between the times somebody remembers to
+            // plug it in, and should be told so in those words rather than
+            // shown a reassuring green card.
+            var configured = await db.BackupTargets.AsNoTracking()
+                .Where(t => t.Enabled).Select(t => t.Slot).Distinct().ToListAsync(ct);
+            if (configured is ["removable"])
+                await Raise("backup.offsite_manual_only", SecuritySeverity.Warning, "removable",
+                    new { Configured = configured });
+
             if (raised > 0)
             {
                 await db.SaveChangesAsync(ct);

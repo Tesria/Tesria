@@ -388,6 +388,68 @@ docker compose exec backup bash -lc 'export RESTIC_REPOSITORY=/mnt/nas/restic RE
 
 Then `restic restore latest --target /tmp/restored`.
 
+## Offsite backups: a removable drive (dev-plan 9.2, step 4)
+
+The classic offline copy: a disk you plug in, copy to, and take away again.
+It uses the same mechanism as a network drive, and differs in three ways,
+each because the drive is absent most of the time.
+
+- **It is never scheduled.** Nothing is copied until somebody asks, with
+  Copy now on the backups page. Its absence raises no alert: a drive in a
+  drawer has not failed.
+- **Retention is a count with no time window.** A drive plugged in twice a
+  year would otherwise be pruned to nothing for having been in a drawer.
+- **It finishes with `check`, then `sync`, then says so**, because the next
+  thing that happens to this target is somebody pulling it out.
+
+Set `OFFSITE_REMOVABLE_PATH` and `OFFSITE_REMOVABLE_PASSPHRASE`, then claim
+the drive once, exactly as for a network drive:
+
+```bash
+docker compose exec backup /scripts/claim-target.sh removable
+```
+
+### "Safe to remove" means the data, not the eject
+
+When the copy reports safe to remove, `sync` has flushed every byte to the
+drive: pulling it out at that point cannot lose any of the backup.
+
+It is **not** a promise that the operating system will eject it cleanly. The
+backup sidecar holds a bind mount on the drive, which keeps it busy, so
+Finder or `umount` will refuse until that is released:
+
+```bash
+docker compose stop backup
+```
+
+Then eject, then `docker compose up -d backup`. If you would rather just
+unplug it, the data is already safe.
+
+### One warning that does not work everywhere
+
+A drive formatted FAT32 cannot hold a file larger than 4GB. restic's own
+files stay well under that, so it is a warning rather than a refusal, and
+you would only meet the limit restoring a large dump onto the drive by hand.
+
+The check is best effort and **is silent on macOS**: Docker Desktop passes
+the drive through its own file sharing, so the container sees a generic
+filesystem type whatever the drive really is. On Linux it reports properly.
+exFAT avoids the limit entirely and is a better choice for a backup drive.
+
+### An offline copy is not a schedule
+
+If a removable drive is the **only** offsite target configured, the backups
+page says in words that the instance has no offsite backup, and raises
+`backup.offsite_manual_only`. Between the times somebody remembers to plug
+the drive in, that is simply true, and a reassuring green card would not be.
+
+### Restoring from the drive
+
+```bash
+docker compose exec backup bash -lc 'export RESTIC_REPOSITORY=/mnt/removable/restic RESTIC_PASSWORD="$OFFSITE_REMOVABLE_PASSPHRASE"; restic snapshots'
+```
+
 ### Still to come
 
-Removable disks are step 4, and the Storage targets screen is step 5.
+The Storage targets screen is step 5, and the restore drills and the
+"the machine is gone" chapter are step 6.

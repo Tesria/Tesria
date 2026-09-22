@@ -19,6 +19,13 @@ public static class BackupNames
     public const string KindBackup = "backup";
     public const string KindRestoreTest = "restore-test";
 
+    /// <summary>
+    /// Copy the latest backups to a removable drive on demand (dev-plan 9.2
+    /// step 4). Not scheduled: a drive is absent most of the time, so this
+    /// runs when somebody has plugged one in and asked.
+    /// </summary>
+    public const string KindCopyOffsite = "copy-offsite";
+
     public const string TriggerScheduled = "scheduled";
     public const string TriggerManual = "manual";
     public const string TriggerStartup = "startup";

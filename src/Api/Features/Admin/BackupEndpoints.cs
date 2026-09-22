@@ -69,6 +69,7 @@ public static class BackupEndpoints
         group.MapPost("/policy/preview", PreviewPolicy).RequirePermission(InstancePermissions.BackupsPolicy);
         group.MapPost("/run", RequestBackup).RequirePermission(InstancePermissions.BackupsRun);
         group.MapPost("/{label}/restore-test", RequestRestoreTest).RequirePermission(InstancePermissions.BackupsRun);
+        group.MapPost("/targets/{slot}/copy", RequestCopy).RequirePermission(InstancePermissions.BackupsRun);
         group.MapGet("/jobs/{id:guid}", GetJob).RequirePermission(InstancePermissions.BackupsView);
         return routes;
     }
@@ -183,6 +184,46 @@ public static class BackupEndpoints
 
         var names = await NamesAsync(db, [actorId]);
         return Results.Ok(jobs.Select(j => ToDto(j, names, includeLog: false)));
+    }
+
+    /// <summary>
+    /// Copies the latest backups to a target that is only there sometimes
+    /// (dev-plan 9.2 step 4). Only the logical sidecar does this: it is the
+    /// one holding the uploads and the dumps, and a removable drive never
+    /// carries the pgBackRest repository.
+    /// </summary>
+    private static async Task<IResult> RequestCopy(
+        string slot, AppDbContext db, CurrentUser current, IAuditLogger audit)
+    {
+        if (slot != "removable")
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["slot"] = ["Only a removable target is copied on demand; the others are on a schedule."],
+            });
+
+        var target = await db.BackupTargets.AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Slot == slot && t.Kind == "files");
+        if (target is null || !target.Enabled)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["slot"] = ["No removable target is configured."],
+            });
+        // Present is what the sidecar saw last pass. Refusing here saves
+        // queueing a job that can only fail, and says the useful thing.
+        if (target.Present == false)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["slot"] = ["The drive is not plugged in, or has not been claimed."],
+            });
+
+        var actorId = current.RequireId();
+        var job = NewJob(BackupNames.Logical, BackupNames.KindCopyOffsite, slot, actorId);
+        db.BackupJobs.Add(job);
+        audit.Record("backup.copy_requested", "backup", job.Id, new { Slot = slot });
+        await db.SaveChangesAsync();
+
+        var names = await NamesAsync(db, [actorId]);
+        return Results.Ok(ToDto(job, names, includeLog: false));
     }
 
     private static async Task<IResult> RequestRestoreTest(

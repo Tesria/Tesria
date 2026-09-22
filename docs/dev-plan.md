@@ -2159,11 +2159,26 @@ must be operated.
    started backups, the copy on the NAS restored **byte-identical** with 36
    tables, and a scan of the NAS files (with a control) found no `PGDMP`
    header and no plaintext.
-4. The removable slot: `Copy now`, `--keep-last`, `check` then `sync` then
-   "safe to remove", the FAT32 warning, and the "no offsite backup"
-   dashboard warning. Verify with a mounted exFAT disk image (`hdiutil`
-   on this Mac), which behaves as a removable volume under `/Volumes`
-   without needing hardware, then once with a real drive.
+4. ✅ **shipped 2026-09-22.** The removable slot: `Copy now` as a queued
+   job (`copy-offsite`), `--keep-last` with no window, `check` then `sync`
+   then "safe to remove", the FAT32 warning, and the
+   `backup.offsite_manual_only` warning when a drive is the only target.
+   As built, two things the design did not anticipate, both now in the
+   runbook. **"Safe to remove" is about the data, not the eject:** `sync`
+   flushes every byte, so pulling the drive cannot lose the backup, but the
+   sidecar holds a bind mount that keeps the drive busy, so the operating
+   system refuses to eject until `docker compose stop backup`. And **the
+   FAT32 warning is silent on macOS**, because Docker Desktop passes a bind
+   mount through its own file sharing and the container sees `fuse`
+   whatever the drive is; it reports properly on Linux. A warning that is
+   sometimes silent beats one that guesses.
+   Verified with a mounted disk image behaving as a removable volume:
+   unclaimed reported absent with nothing written, claiming plus a queued
+   job copied and verified and reported safe to remove, the copy restored
+   **byte-identical** with 36 tables, a malformed job was refused, and the
+   manual-only warning fired while the drive was the only target. APFS
+   rather than exFAT, because `diskutil` will not make a blank exFAT image;
+   the filesystem is not what the mechanism depends on.
 5. The Storage targets screen: three cards from the published
    configuration, Test connection, Copy now, warnings. Live walk as admin
    and as a member (who must not see it).

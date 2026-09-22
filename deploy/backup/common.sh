@@ -353,8 +353,21 @@ SQL
 
 # Default hooks; the sidecars override what they need.
 after_backup() { echo '{}'; }
-# Offsite targets (dev-plan 9.2). Only the pgbackrest sidecar defines one.
+# Offsite targets (dev-plan 9.2). Each sidecar defines what it can do.
 offsite_tick() { :; }
+do_copy_offsite() { echo "This agent has no target to copy to."; return 1; }
+
+# Copying to a target that is only there sometimes (9.2 step 4). Reported
+# like any other job, so it shows in the same list with the same log.
+run_copy_job() {
+  local id="$1" slot="$2" log=/tmp/copy-job.log status=succeeded err=""
+  : > "$log"
+  if ! do_copy_offsite "$slot" >>"$log" 2>&1; then
+    status=failed
+    err="$(tail -n 1 "$log" | cut -c1-500)"
+  fi
+  finish_job "$id" "$status" "$err" "$log"
+}
 restore_details() { :; }
 
 # Shallow-merges two JSON objects written by these scripts (no nesting of
@@ -389,6 +402,8 @@ run_agent() {
           IFS='|' read -r id kind target <<<"$job"
           if [ "$kind" = "restore-test" ]; then
             run_restore_job "$id" "$target"
+          elif [ "$kind" = "copy-offsite" ]; then
+            run_copy_job "$id" "$target"
           else
             log "backup requested"
             run_backup_job "$id"
