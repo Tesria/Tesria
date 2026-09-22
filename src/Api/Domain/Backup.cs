@@ -130,6 +130,63 @@ public class Backup
 }
 
 /// <summary>
+/// One row per configured offsite target (dev-plan 9.2): cloud, NAS or
+/// removable. Written only by the backup sidecars, read by the app.
+///
+/// <para>The point of this table is that <b>the app never sees a secret</b>.
+/// Offsite credentials live in <c>.env</c> and are read by the sidecars
+/// alone; what reaches the database is this row, in which a key or a
+/// passphrase is a short fingerprint and nothing else. There is deliberately
+/// no code path that can return a value, because there is no value here to
+/// return.</para>
+/// </summary>
+public class BackupTarget
+{
+    /// <summary>cloud | nas | removable. One row per slot at most.</summary>
+    public required string Slot { get; set; }
+
+    /// <summary>What kind of storage: s3, b2, posix. Null when the slot is off.</summary>
+    public string? Type { get; set; }
+
+    /// <summary>Endpoint for a cloud target, mount path for the others.</summary>
+    public string? Location { get; set; }
+
+    public string? Bucket { get; set; }
+    public string? Prefix { get; set; }
+
+    /// <summary>Whether this slot is configured and usable.</summary>
+    public bool Enabled { get; set; }
+
+    /// <summary>Why it is not usable, in words fit for the screen.</summary>
+    public string? Problem { get; set; }
+
+    /// <summary>SHA-256, first 16 hex, of the storage key. Never the key.</summary>
+    public string? KeyFingerprint { get; set; }
+
+    /// <summary>SHA-256, first 16 hex, of the passphrase. Never the passphrase.</summary>
+    public string? PassphraseFingerprint { get; set; }
+
+    public DateTimeOffset? LastBackupAt { get; set; }
+    public DateTimeOffset? LastWalAt { get; set; }
+    public DateTimeOffset? LastVerifyAt { get; set; }
+    public long? BytesStored { get; set; }
+
+    /// <summary>
+    /// WAL segments waiting to be archived. The leading indicator: a
+    /// repository that has gone away shows up here long before
+    /// <c>archive-push-queue-max</c> trips, and tripping it costs
+    /// point-in-time recovery on the *local* repository too, not only this
+    /// one (see 9.2's archive-push findings).
+    /// </summary>
+    public int? WalBacklogFiles { get; set; }
+
+    /// <summary>The sidecar's last word on this target, for the status card.</summary>
+    public string? Message { get; set; }
+
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+/// <summary>
 /// The queue and the run log. The app appends <c>requested</c> rows (Back up
 /// now, Test restore); the sidecars append their own scheduled runs and own
 /// every update. Append-only for the app role.

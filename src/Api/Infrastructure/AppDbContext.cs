@@ -120,6 +120,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<BackupAgent> BackupAgents => Set<BackupAgent>();
     public DbSet<Backup> Backups => Set<Backup>();
     public DbSet<BackupJob> BackupJobs => Set<BackupJob>();
+    public DbSet<BackupTarget> BackupTargets => Set<BackupTarget>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
 
@@ -549,6 +550,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Ignore(x => x.FullLabel);
             // The sidecars upsert on this.
             e.HasIndex(x => new { x.Agent, x.Label }).IsUnique();
+        });
+        b.Entity<BackupTarget>(e =>
+        {
+            e.HasKey(x => x.Slot);
+            e.Property(x => x.Slot).HasMaxLength(20);
+            e.Property(x => x.Type).HasMaxLength(20);
+            e.Property(x => x.Location).HasMaxLength(500);
+            e.Property(x => x.Bucket).HasMaxLength(200);
+            e.Property(x => x.Prefix).HasMaxLength(200);
+            e.Property(x => x.Problem).HasMaxLength(500);
+            // 16 hex characters, the same shape as the avatar hashes. Wide
+            // enough to tell two keys apart, useless for recovering either.
+            e.Property(x => x.KeyFingerprint).HasMaxLength(16);
+            e.Property(x => x.PassphraseFingerprint).HasMaxLength(16);
+            e.Property(x => x.Message).HasMaxLength(2000);
         });
         b.Entity<BackupJob>(e =>
         {

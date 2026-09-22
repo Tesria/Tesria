@@ -78,6 +78,37 @@ and estimated monthly cost instead of inventing one. The same numbers drive
 a low-space warning whose threshold is two backup sets, not a percentage.
 Full design in `dev-plan.md` as 9.3.
 
+### 9.2 step 1: the offsite cloud repository (2026-09-22)
+
+Backups can now go to S3-compatible storage as a second pgBackRest
+repository, with WAL streaming to it continuously so point-in-time recovery
+exists off the machine. Backblaze B2 is the documented default. Configured
+in `.env` under `OFFSITE_CLOUD_*` and read only by the backup sidecars; the
+admin page will show fingerprints, never values.
+
+- **pgBackRest is pinned to 2.59.1**, and the version is a safety fix rather
+  than housekeeping. Before 2.59, `archive-push-queue-max` did not take
+  effect while archive-push was erroring (pgbackrest#2629), which is exactly
+  when it is needed.
+- **The configuration is a generated drop-in, not environment variables.**
+  pgBackRest rejects a variable that is defined but empty, and Compose
+  cannot omit one, so the obvious approach would have stopped WAL archiving
+  on every instance that has no offsite target.
+- **Three findings from testing a real outage**, now in the runbook. WAL is
+  acknowledged to Postgres only once every repository has it, so a dead
+  remote backs up `pg_wal`. The queue limit does save the disk, confirmed by
+  experiment. And the important one: **WAL dropped at the limit is lost from
+  the local repository too**, so an unattended cloud outage can cost
+  point-in-time recovery locally, not just offsite. The archive-gap alert
+  therefore fires at a backlog of three segments, long before the limit.
+- **MinIO behind a compose profile** for testing with no cloud account, with
+  a certificate, because pgBackRest has no plain-HTTP mode for S3.
+
+Verified end to end: WAL and a full backup to the repository, the offsite
+copy unreadable with the local passphrase (the separate-passphrase rule
+holding in practice), an outage raising `backup.offsite_archive_gap`, and a
+clean recovery afterwards.
+
 ### Design 9.2: offsite backups to cloud, NAS and removable media (2026-09-21, Fable)
 
 The owner answered the seven decisions 9.2 had waited on since 2026-09-17,
