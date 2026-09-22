@@ -333,6 +333,11 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .branding-preview__signin { display: flex; align-items: center; gap: 0.75rem; max-width: 100%; }
 .branding-preview__signin--stacked { flex-direction: column; gap: 0.5rem; }
 .branding-preview__button { padding: 0.4rem 1.25rem; border-radius: 4px; font-size: 0.85rem; font-weight: 600; }
+/* The preview draws each theme with its own colours, set on the panel. The
+   sign-in name reuses the real sign-in page's class for its size, and that
+   class takes the *running* theme's text colour, which put a near-white name
+   on the white panel whenever the app itself was dark. It inherits here. */
+.branding-preview .auth-brand__name { color: inherit; }
 .topbar__nav { display: flex; align-items: center; gap: 0.25rem; margin-left: 1.25rem; }
 /* inline-flex + nowrap: a squeezed "API Tokens" used to wrap to two lines,
    which made the nav row taller and left its single-line neighbours sitting

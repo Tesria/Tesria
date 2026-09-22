@@ -13,7 +13,7 @@ import {
 import { BrandMark } from '../../components/BrandMark'
 import { useConfirm } from '../../components/ConfirmDialog'
 import { useReloadInstance } from '../../InstanceContext'
-import { ACCENT_HEX, ACCENTS } from '../../theme'
+import { ACCENTS } from '../../theme'
 
 /**
  * Administration → Branding (dev-plan 13.1).
@@ -38,6 +38,20 @@ type Form = {
 }
 
 const NEUTRAL = { light: '#172b4d', dark: '#b6c2cf', bgLight: '#ffffff', bgDark: '#161a1d' }
+
+/**
+ * Each built-in accent's --primary in each theme, as index.css defines them.
+ * Not ACCENT_HEX from theme.ts: that is the favicon's palette, tuned for a
+ * tab strip, and it is close to these but not the same.
+ */
+const PRIMARY: Record<string, { light: string; dark: string }> = {
+  blue: { light: '#0c66e4', dark: '#579dff' },
+  teal: { light: '#0b6b82', dark: '#6cc3e0' },
+  green: { light: '#1a6c45', dark: '#4bce97' },
+  purple: { light: '#5b47ba', dark: '#b8acf6' },
+  orange: { light: '#9a4d00', dark: '#fea362' },
+  magenta: { light: '#a53a7f', dark: '#f797d2' },
+}
 
 function formOf(s: BrandingSettings): Form {
   return {
@@ -482,9 +496,8 @@ function BrandPreview({ mode, form, settings, light, dark }: {
   dark: string | null
 }) {
   const accent = useMemo(() => {
-    if (form.accent === 'brand') return (mode === 'light' ? light ?? dark : dark ?? light) ?? ACCENT_HEX.blue[mode]
-    const builtIn = ACCENT_HEX[form.accent as keyof typeof ACCENT_HEX] ?? ACCENT_HEX.blue
-    return builtIn[mode]
+    if (form.accent === 'brand') return (mode === 'light' ? light ?? dark : dark ?? light) ?? PRIMARY.blue[mode]
+    return (PRIMARY[form.accent] ?? PRIMARY.blue)[mode]
   }, [form.accent, mode, light, dark])
 
   const logo = mode === 'dark' ? settings.logoDark ?? settings.logo : settings.logo
