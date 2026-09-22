@@ -13,11 +13,18 @@ STANZA=main
 TARGET=/tmp/pgbackrest-verify
 SET_ARG=()
 WHAT="the latest backup"
-case "${1:-}" in
-  --set=?*) SET_ARG=("$1"); WHAT="backup ${1#--set=}" ;;
-  "") ;;
-  *) echo "usage: verify.sh [--set=LABEL]" >&2; exit 2 ;;
-esac
+# --repo=2 restores from the offsite repository instead of the local one
+# (dev-plan 9.2 step 6). That is the drill worth running: a local repository
+# that restores says nothing about the copy that would be used after the
+# machine it lives on is gone.
+for arg in "$@"; do
+  case "$arg" in
+    --set=?*)  SET_ARG+=("$arg"); WHAT="backup ${arg#--set=}" ;;
+    --repo=?*) SET_ARG+=("$arg"); WHAT="$WHAT from repo${arg#--repo=}" ;;
+    "") ;;
+    *) echo "usage: verify.sh [--set=LABEL] [--repo=N]" >&2; exit 2 ;;
+  esac
+done
 
 # The restored copy is the size of the database; do not leave it behind.
 trap 'rm -rf "$TARGET"' EXIT

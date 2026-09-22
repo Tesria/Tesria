@@ -207,6 +207,16 @@ public class BackupTarget
     /// </summary>
     public int? WalBacklogFiles { get; set; }
 
+    /// <summary>
+    /// When this target's copy was last restored for real, and whether it
+    /// worked (dev-plan 9.2 step 6). Distinct from <see cref="LastVerifyAt"/>,
+    /// which is the repository checking itself: this is a dump taken back out,
+    /// loaded into a throwaway database and counted. It is the only check that
+    /// answers the question the backups exist for.
+    /// </summary>
+    public DateTimeOffset? LastDrillAt { get; set; }
+    public bool? LastDrillOk { get; set; }
+
     /// <summary>The sidecar's last word on this target, for the status card.</summary>
     public string? Message { get; set; }
 

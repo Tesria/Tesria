@@ -1748,7 +1748,7 @@ encrypting the logical dumps (a prerequisite of 9.2, done there or as its
 own small item); downloading backups through the app; `pitr-selftest.sh`
 in the UI.
 
-### 9.2 Offsite backups: cloud, network drives and removable media · `L` · Model: Fable → Opus · designed 2026-09-21 (Fable)
+### 9.2 Offsite backups: cloud, network drives and removable media · `L` · Model: Fable → Opus · ✅ **shipped 2026-09-22** (Fable designed, Opus implemented)
 
 **Designed 2026-09-21 (Fable); ready for Opus.** Research done 2026-09-17
 (Opus, from official docs; items marked *unverified* were not confirmed).
@@ -2201,8 +2201,28 @@ must be operated.
    absent clears what was said while away.
    Walked as an administrator with all three targets live, and as a plain
    member, who is refused the overview and the copy endpoint alike.
-6. Restore drills wired into 9.1's restore-test jobs; the "machine is
-   gone" chapter in `backup-recovery.md`; `architecture.md`; CHANGELOG.
+6. ✅ **shipped 2026-09-22.** The restore drill, the "the machine is gone"
+   chapter in `backup-recovery.md`, `architecture.md`, CHANGELOG.
+   As built: the drill is its own thing rather than an extension of 9.1's
+   restore-test job, because it answers a different question. 9.1 restores
+   what is on this disk; the drill pulls the newest dump back **out of an
+   offsite target**, loads it into a throwaway database and counts the
+   tables. Monthly by default (`OFFSITE_DRILL_DAYS`), one target per pass,
+   last in the pass so that proving a copy never delays taking one.
+   A failed drill is a **critical** alert and outranks everything else on
+   the card, which is the point: a backup that fails is noticed, while a
+   copy that quietly will not restore looks healthy in every other respect
+   until the morning somebody needs it. Demonstrated rather than asserted:
+   against a repository `restic check` calls clean ("no errors were found"),
+   the drill failed.
+   `verify.sh` gained `--repo=N`, so the physical restore test can be run
+   against the offsite repository instead of the local one.
+   One bug worth recording, because it reads correctly and does nothing: a
+   `trap ... RETURN` used for cleanup fires *after* the function returns,
+   when its locals are gone, so under `set -u` the trap body dies on the
+   first variable it touches and silently skips the cleanup it exists for.
+   The drill creates a database and restores a whole dump, so that would
+   have filled the disk a drill at a time. Cleanup is explicit now.
 
 **Verify** end to end with the scratch instance: configure all three
 slots, run a backup, unplug the drive and unmount the NAS and confirm the

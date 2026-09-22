@@ -16,6 +16,8 @@ TOOL_VERSION="$(pg_dump --version 2>/dev/null)"
 . /opt/tesria/offsite.sh
 # shellcheck source=offsite-files.sh
 . /scripts/offsite-files.sh
+# shellcheck source=offsite-drill.sh
+. /scripts/offsite-drill.sh
 
 mkdir -p "$BACKUP_DIR"
 
@@ -179,6 +181,10 @@ offsite_tick() {
   else
     offsite_files_disable removable
   fi
+
+  # Last, and at most one per pass: proving a copy restores costs a full
+  # read of it, and that must never delay the backups themselves.
+  offsite_drill_tick
 }
 
 # The job the Copy now button queues (dev-plan 9.2 step 4).

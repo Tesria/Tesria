@@ -166,6 +166,14 @@ public sealed class BackupMonitor(IServiceScopeFactory scopes, ILogger<BackupMon
                     await Raise("backup.offsite_absent", SecuritySeverity.Warning, target.Slot,
                         new { target.Slot, target.Location, target.LastBackupAt });
 
+                // A copy that exists and will not restore. Critical, and
+                // deliberately louder than a failed backup: a backup that
+                // fails is noticed, while this one looks healthy in every
+                // other respect right up until somebody needs it.
+                if (target.LastDrillOk == false)
+                    await Raise("backup.offsite_drill_failed", SecuritySeverity.Critical, target.Slot,
+                        new { target.Slot, target.LastDrillAt, target.Message });
+
                 // Anything the sidecar could not do: a failed offsite backup,
                 // a failed verify, a repository it could not read.
                 if (!string.IsNullOrWhiteSpace(target.Message))

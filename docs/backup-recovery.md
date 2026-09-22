@@ -449,7 +449,125 @@ the drive in, that is simply true, and a reassuring green card would not be.
 docker compose exec backup bash -lc 'export RESTIC_REPOSITORY=/mnt/removable/restic RESTIC_PASSWORD="$OFFSITE_REMOVABLE_PASSPHRASE"; restic snapshots'
 ```
 
-### Still to come
+## The machine is gone
 
-The Storage targets screen is step 5, and the restore drills and the
-"the machine is gone" chapter are step 6.
+The chapter the rest of this document exists for. The server is destroyed,
+stolen, or simply will not boot, and all you have is an offsite copy and the
+passphrases. This is how you come back.
+
+**What you need before you start.** Nothing from the old machine, which is
+the point:
+
+1. The `.env` passphrases, from wherever you escrowed them. Without the
+   right passphrase a copy is unreadable and there is no way around it.
+   `BACKUP_ENCRYPTION_KEY` reads the pgBackRest repository;
+   `OFFSITE_CLOUD_PASSPHRASE`, `OFFSITE_NAS_PASSPHRASE` and
+   `OFFSITE_REMOVABLE_PASSPHRASE` read their restic repositories.
+2. The storage credentials for whichever target you are restoring from, or
+   physical access to the drive or share.
+3. A machine with Docker and this repository.
+
+**What you get back, and what you do not.** The database and the
+attachments, in full. Not the offsite configuration itself: `.env` is not in
+any backup, by design, since it holds the keys. You write a new one.
+
+### 1. Take stock of what the copy holds
+
+Restoring is quicker than deciding, so look first. For a restic target, the
+repository is self-contained: restic and the passphrase read it on any
+machine, with no Tesria involved.
+
+```bash
+docker run --rm -e RESTIC_PASSWORD=your-passphrase -e AWS_ACCESS_KEY_ID=key -e AWS_SECRET_ACCESS_KEY=secret restic/restic -r s3:https://endpoint/bucket/tesria/files snapshots
+```
+
+For a drive or a share, mount it and use the path:
+
+```bash
+docker run --rm -e RESTIC_PASSWORD=your-passphrase -v /Volumes/your-drive:/t restic/restic -r /t/restic snapshots
+```
+
+### 2. Bring up an empty instance
+
+Clone the repository, write a fresh `.env` from `.env.example` (new database
+password, new `BACKUP_ENCRYPTION_KEY` unless you are also restoring the
+pgBackRest repository, the same `DOMAIN` if you want the same address), then:
+
+```bash
+docker compose up -d db pgbackrest
+```
+
+Wait for `db` to be healthy before going on. Do not bring up `app` yet: let
+it create an empty schema and you will be restoring over the top of it.
+
+### 3. Restore the attachments and the dump
+
+Pull the newest snapshot out of the offsite copy into a directory on the new
+host:
+
+```bash
+docker run --rm -e RESTIC_PASSWORD=your-passphrase -v "$PWD/restored:/out" -v /Volumes/your-drive:/t restic/restic -r /t/restic restore latest --target /out
+```
+
+That gives you `restored/backups/db-<stamp>.dump` and
+`restored/data/uploads/`. Put the uploads into the volume the new instance
+will use, and load the dump:
+
+```bash
+docker compose cp restored/backups/ backup:/backups/
+```
+
+```bash
+docker compose exec backup /scripts/restore.sh db-<stamp>.dump
+```
+
+`restore.sh` is the same script Layer 2 uses, and it refuses to run against
+a database the app is using, which is why `app` is still down.
+
+### 4. Point-in-time recovery instead, if you need it
+
+If you have the cloud slot and want a moment rather than a nightly dump,
+restore the pgBackRest repository instead of the dump. Set the
+`OFFSITE_CLOUD_*` block and `BACKUP_ENCRYPTION_KEY` in the new `.env` first,
+so `repo2` is configured, then:
+
+```bash
+docker compose exec pgbackrest gosu postgres pgbackrest --stanza=main --repo=2 --type=time --target="2026-09-22 14:30:00+00" restore
+```
+
+Start Postgres afterwards and let it replay. This is the path that gets you
+to the minute before something went wrong, rather than to last night.
+
+### 5. Bring the instance up and check it
+
+```bash
+docker compose up -d
+```
+
+Then, in this order, because each one proves something different: sign in;
+open a page that has an image on it, which proves the uploads came back and
+not just the database; check Administration → Backups shows both agents
+healthy; and confirm Storage targets lists the copy you just restored from.
+
+### 6. Before you call it done
+
+Take a fresh backup immediately, and set the retention policy again if you
+changed it. Then read the Storage targets card in a week and check the
+restore drill has run on the new machine: the copy you just proved was the
+old machine's, and the new one has not proved anything yet.
+
+### The drill that means you will not read this cold
+
+Every offsite target is restored for real on a schedule, by default monthly
+(`OFFSITE_DRILL_DAYS`). The sidecar pulls the newest dump out of the target,
+loads it into a throwaway database, counts the tables and drops it again.
+Nothing live is touched.
+
+That is deliberately a different question from the integrity check that runs
+after every backup. `restic check` asks whether the repository is internally
+consistent; the drill asks whether it still turns back into a database. A
+copy can pass the first and fail the second, and a copy that fails the
+second is worth nothing, which is why the card shows **Last restore drill**
+next to the rest and why a failure raises a critical alert rather than a
+warning. A backup that fails is noticed. One that quietly will not restore
+looks healthy right up until the morning you need it.

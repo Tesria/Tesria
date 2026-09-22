@@ -50,6 +50,11 @@ function relative(iso: string | null | undefined): string {
 
 /** What the card says at a glance, and the colour it says it in. */
 function state(target: BackupTarget): { tone: 'ok' | 'warn' | 'bad'; text: string } {
+  // First, because it outranks everything else here: a copy that exists,
+  // passes its own integrity check and will not turn back into a database
+  // is the failure all of this is meant to prevent.
+  if (target.lastDrillOk === false)
+    return { tone: 'bad', text: 'The last restore drill failed' }
   if (target.problem) return { tone: 'bad', text: target.problem }
   if (target.present === false) {
     // For a drive this is the ordinary state, not a fault; for a share it is
@@ -112,6 +117,17 @@ function TargetCard({
         {rows.map((row) => (
           <RepositoryLine key={row.kind} row={row} />
         ))}
+        <dt>Last restore drill</dt>
+        <dd>
+          {primary.lastDrillAt
+            ? <>
+                {relative(primary.lastDrillAt)} ·{' '}
+                {primary.lastDrillOk
+                  ? 'restored cleanly'
+                  : <span className="backup-text--bad">did not restore</span>}
+              </>
+            : 'Never'}
+        </dd>
         <dt>Encryption</dt>
         <dd>
           {primary.passphraseFingerprint
