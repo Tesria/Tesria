@@ -1,7 +1,7 @@
 import type { Swatch } from './palette'
 
 /**
- * The swatch grid itself, with no opinion about what it colours — the
+ * The swatch grid itself, with no opinion about what it colours: the
  * highlight dropdown and the table cell-background menu both render it and
  * differ only in which tiers they pass and what `onPick` does.
  *
@@ -17,7 +17,7 @@ export function ColorPalette({
   clearLabel,
 }: {
   tiers: Swatch[][]
-  /** Currently applied value, if any — shown as a ring on the matching swatch. */
+  /** Currently applied value, if any: shown as a ring on the matching swatch. */
   current?: string | null
   onPick: (value: string) => void
   onClear: () => void

@@ -23,7 +23,7 @@ namespace Tesria.Api.Infrastructure.Migrations
             // rows here and this is a no-op; the first registration then takes
             // the role instead (AuthEndpoints.Register).
             //
-            // ORDER BY "CreatedAt", "Id" — the id breaks ties so the result is
+            // ORDER BY "CreatedAt", "Id": the id breaks ties so the result is
             // deterministic if two accounts share a timestamp.
             migrationBuilder.Sql("""
                 UPDATE "Users" SET "Role" = 1

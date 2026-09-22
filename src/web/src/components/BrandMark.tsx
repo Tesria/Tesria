@@ -2,7 +2,7 @@
  * Tesria's logo: a stack of layers, from the brand page at
  * brianintheloop.com/tesria. Drawn in the same language as the rest of the
  * app's icons (24x24 viewBox, 1.8 stroke, round caps and joins) because the
- * brand mark already used exactly that — no adaptation needed.
+ * brand mark already used exactly that: no adaptation needed.
  *
  * `currentColor`, so the colour is the caller's business. In the topbar that
  * resolves to `--primary` (see `.brand__mark`), which means the mark follows

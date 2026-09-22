@@ -12,7 +12,7 @@ type Props = {
 }
 
 /**
- * A floating bar shown while an image is selected — display options
+ * A floating bar shown while an image is selected: display options
  * (border, drop shadow) and a comment action. Replaces the text-formatting
  * bubble (Bold/Italic/etc.), which made no sense for an image.
  */

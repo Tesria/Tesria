@@ -55,7 +55,7 @@ public class TelemetryTests
         Assert.Equal(2, failures.Count);
 
         // A failure is never attributed to an account, and never records the
-        // address that was tried — the log must not become a list of addresses
+        // address that was tried: the log must not become a list of addresses
         // somebody guessed, nor confirm which of them exist.
         Assert.All(failures, f =>
         {
@@ -157,7 +157,7 @@ public class TelemetryTests
         var a = Guid.NewGuid();
         var b = Guid.NewGuid();
 
-        // First request for a user writes; the next several do not — otherwise
+        // First request for a user writes; the next several do not: otherwise
         // this would be one UPDATE per request to learn almost nothing.
         Assert.True(tracker.ShouldWrite(a));
         Assert.False(tracker.ShouldWrite(a));

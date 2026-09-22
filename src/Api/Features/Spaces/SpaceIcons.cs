@@ -8,7 +8,7 @@ namespace Tesria.Api.Features.Spaces;
 /// Validation for a space's chosen icon (dev-plan 6).
 ///
 /// The emoji case is the interesting one. "Is this an emoji" has no exact
-/// answer worth chasing — the set changes with every Unicode release, and a
+/// answer worth chasing: the set changes with every Unicode release, and a
 /// server that tries to enumerate it will be wrong within a year. What
 /// matters is that the value is a *glyph*, not prose and not markup, because
 /// it is rendered inline wherever the space appears. So the rule is shaped
@@ -35,7 +35,7 @@ public static class SpaceIcons
     {
         var value = (raw ?? "").Trim();
         if (value.Length == 0) return (null, "Pick an emoji.");
-        if (value.Length > MaxEmojiLength) return (null, "That is too long for an icon — pick a single emoji.");
+        if (value.Length > MaxEmojiLength) return (null, "That is too long for an icon: pick a single emoji.");
 
         foreach (var rune in value.EnumerateRunes())
         {
@@ -55,7 +55,7 @@ public static class SpaceIcons
 
     /// <summary>
     /// Returns the space to its generated icon, deleting a stored image if
-    /// that is what it had — otherwise switching from a picture to an emoji
+    /// that is what it had: otherwise switching from a picture to an emoji
     /// would leave the bytes behind forever.
     /// </summary>
     public static void Clear(Space space, Infrastructure.Storage.IProfileMediaService media)

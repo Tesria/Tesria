@@ -22,7 +22,7 @@ export type User = {
    *  email address and password, so the profile page renders those read-only. */
   hasPassword: boolean
   /** Chosen generated avatar, or null to derive one from the id. Ignored when
-   *  `avatarHash` is set — an uploaded image always wins. */
+   *  `avatarHash` is set: an uploaded image always wins. */
   avatarVariant: number | null
   /** Unused recovery codes. Zero means this account has no way back in if the
    *  password is lost, which is what the post-login prompt exists to fix. */
@@ -309,7 +309,7 @@ export type SiteSettings = {
   smtpHost: string | null
   smtpPort: number
   smtpUsername: string | null
-  /** The password itself is never returned — only whether one is stored. */
+  /** The password itself is never returned: only whether one is stored. */
   smtpPasswordSet: boolean
   smtpFromAddress: string | null
   smtpTls: number
@@ -612,7 +612,7 @@ export type BackupHealth = {
 
 export type BackupPolicyInput = { enabled: boolean; keepCount: number; keepDays: number }
 
-/** A dynamic block's answer — one of three neutral shapes (architecture.md, "Dynamic blocks"). */
+/** A dynamic block's answer, one of three neutral shapes (architecture.md, "Dynamic blocks"). */
 export type BlockUser = { id: string; displayName: string; avatarHash: string | null; avatarVariant: number | null }
 export type BlockCell = { text?: string | null; href?: string | null; date?: string | null; user?: BlockUser | null; checked?: boolean | null }
 export type BlockItem = { title: string; href?: string | null; subtitle?: string | null; cells?: Record<string, BlockCell> | null; children?: BlockItem[] | null }
@@ -725,7 +725,7 @@ export class ApiError extends Error {
   /** A machine-readable reason, e.g. `reauth_required`. */
   readonly code: string | null
   /** The parsed error body, for the fields that are particular to one
-   *  endpoint — setup's 409 naming the step still outstanding, say. */
+   *  endpoint: setup's 409 naming the step still outstanding, say. */
   readonly details: Record<string, unknown>
 
   constructor(
@@ -839,7 +839,7 @@ export const api = {
       disable: (input: { currentPassword?: string; code?: string }) =>
         request<User>('POST', '/api/auth/me/totp/disable', input),
     },
-    /** Returns the user plus the recovery codes — the one moment they exist. */
+    /** Returns the user plus the recovery codes: the one moment they exist. */
     register: (email: string, displayName: string, password: string, inviteToken?: string) =>
       request<User & { recoveryCodes: string[] }>('POST', '/api/auth/register', {
         email,
@@ -998,7 +998,7 @@ export const api = {
     list: () => request<Directory[]>('GET', '/api/users'),
   },
   embeds: {
-    /** What, if anything, this address may become in a frame — the server decides. */
+    /** What, if anything, this address may become in a frame: the server decides. */
     resolve: (url: string) =>
       request<EmbedResolution>('GET', `/api/embeds/resolve?url=${encodeURIComponent(url)}`),
     unfurl: (url: string) =>
@@ -1102,7 +1102,7 @@ export const api = {
   },
   avatar: {
     /** multipart upload; the server re-encodes to a 256px WebP square.
-     *  Not via `request`, which sets a JSON content type — FormData must set
+     *  Not via `request`, which sets a JSON content type: FormData must set
      *  its own multipart boundary. `handle` still parses the server's
      *  ValidationProblem body, so rejection messages surface as they do
      *  everywhere else. */

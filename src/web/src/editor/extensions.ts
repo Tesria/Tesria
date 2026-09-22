@@ -56,7 +56,7 @@ const CodeBlock = CodeBlockLowlight.extend({
   addAttributes() {
     return {
       ...this.parent?.(),
-      // Per-block visual toggle (CodeBlockView's "#" button) — not read by the
+      // Per-block visual toggle (CodeBlockView's "#" button), not read by the
       // export renderer, purely an editor display preference.
       lineNumbers: {
         default: false,
@@ -72,7 +72,7 @@ const CodeBlock = CodeBlockLowlight.extend({
 }).configure({ lowlight })
 
 // TableKit's `configure({ table: {...} })` only tweaks its built-in Table
-// node's options — it can't take a custom-extended node in its place. So,
+// node's options: it can't take a custom-extended node in its place. So,
 // same idiom as CodeBlock above: disable TableKit's own `table` and add this
 // extended one alongside it (same "table" node name, so stored content and
 // the export renderer are unaffected by which extension instance made it).
@@ -83,14 +83,14 @@ const Table = BaseTable.extend({
       // Manually dragged width (TableWidthControls' edge handle), in px.
       // null = unset, i.e. today's unchanged default-width behavior.
       //
-      // This can't just render a plain `style="width: ..."` — prosemirror-
+      // This can't just render a plain `style="width: ..."`: prosemirror-
       // tables' own TableView NodeView (installed whenever `resizable` is on,
       // which is always for this node) recalculates and overwrites
       // `table.style.width` itself via updateColumns() *after* HTMLAttributes
       // are applied, in both read-only and editable rendering. A regular
       // inline style is silently clobbered. Instead, this carries the value
       // through a custom property (which updateColumns never touches) and a
-      // stylesheet rule with !important applies it — one of the few cases
+      // stylesheet rule with !important applies it, one of the few cases
       // where a stylesheet rule can legitimately override an inline style.
       // See index.css's `--table-target-width` rule.
       width: {
@@ -99,7 +99,7 @@ const Table = BaseTable.extend({
           const w = element.style.getPropertyValue('--table-target-width')
           return w ? parseInt(w, 10) || null : null
         },
-        // Receives the whole node's attrs, not just its own — read `layout`
+        // Receives the whole node's attrs, not just its own: read `layout`
         // too so only one attribute ever emits `style` (avoids relying on
         // merge order between two attributes both wanting that key).
         renderHTML: (attributes: { width?: number | null; layout?: string }) => {
@@ -126,15 +126,15 @@ const Table = BaseTable.extend({
  * Cell background colour (TableCellMenu's "Background colour" palette), stored
  * as a hex string; null = today's unchanged default background.
  *
- * Applied to both `tableCell` and `tableHeader` via this shared mixin, and —
- * unlike the Table node's `width` above — a plain inline `style` is safe here.
+ * Applied to both `tableCell` and `tableHeader` via this shared mixin, and,
+ * unlike the Table node's `width` above, a plain inline `style` is safe here.
  * prosemirror-tables' TableView only rewrites the *table*'s own width and its
  * colgroup, and never touches cell style attributes, so there's nothing to
  * clobber it and no need for the custom-property indirection `width` needs.
  */
 /**
  * An action item can name who it is for (dev-plan Phase 7 Wave C). Stored as
- * an id plus a snapshot of the name, for the same reason a mention is — an
+ * an id plus a snapshot of the name, for the same reason a mention is: an
  * exported file and an old page version have no directory to look the name up
  * in. Wave D's Task report queries the id.
  */
@@ -193,13 +193,13 @@ const TableHeader = BaseTableHeader.extend({
  * Single source of truth for the TipTap/ProseMirror schema (node/mark types),
  * shared by the plain Editor, the Yjs-backed CollaborativeEditor, and anything
  * that renders stored content read-only. Yjs requires every collaborator to
- * agree on one exact schema, so this list must never diverge between editors
- * — new node/mark extensions get added here, not inline in either component.
+ * agree on one exact schema, so this list must never diverge between editors:
+ *new node/mark extensions get added here, not inline in either component.
  */
 export function getSharedExtensions({ collaborative = false, editable = true }: SharedExtensionOptions = {}): AnyExtension[] {
   return [
     // The plain CodeBlock is disabled in favour of the syntax-highlighted one
-    // below — both use the same "codeBlock" node type name and `language`
+    // below: both use the same "codeBlock" node type name and `language`
     // attr, so stored content and the export renderer are unaffected.
     StarterKit.configure({
       codeBlock: false,
@@ -220,7 +220,7 @@ export function getSharedExtensions({ collaborative = false, editable = true }: 
     Image,
     // multicolor: the highlight button is a colour palette (Toolbar.tsx), so
     // the mark carries a `color` attr. Highlights stored before this stay
-    // valid — no color attr renders as the plain default <mark>.
+    // valid: no color attr renders as the plain default <mark>.
     Highlight.configure({ multicolor: true }),
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
     CommentMark,
@@ -232,7 +232,7 @@ export function getSharedExtensions({ collaborative = false, editable = true }: 
     ExternalEditCommands,
     Panel,
     // Phase 7 Wave A structural blocks. Heading ids are decorations, not
-    // attributes — see headingAnchors.ts.
+    // attributes: see headingAnchors.ts.
     HeadingAnchors,
     TableOfContents,
     Expand,
@@ -264,12 +264,12 @@ export function getSharedExtensions({ collaborative = false, editable = true }: 
     SmartLink,
     AttachmentBlock,
     Gallery,
-    // Wave F. Mermaid is not a node — it is a code-block language whose view
+    // Wave F. Mermaid is not a node: it is a code-block language whose view
     // draws rather than highlights (CodeBlockView), so its source stays an
     // ordinary fenced block in every export.
     MathNode,
     Chart,
-    // Read-only rendering never needs "/" commands or a link shortcut — skip
+    // Read-only rendering never needs "/" commands or a link shortcut: skip
     // mounting the plugins entirely rather than just hiding their output.
     ...(editable ? [SlashCommand, LinkShortcut, MentionSuggestion, EmojiSuggestion] : []),
   ]

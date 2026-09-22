@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Take a single archive of the attachments (uploads) volume — backup Layer 3
+# Take a single archive of the attachments (uploads) volume: backup Layer 3
 # (PLAN §5), keeping files and database backups on the same schedule.
 # Usable on demand: docker compose exec backup /scripts/backup-files.sh
 set -euo pipefail

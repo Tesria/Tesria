@@ -17,7 +17,7 @@ public static class GroupEndpoints
     public static IEndpointRouteBuilder MapGroupEndpoints(this IEndpointRouteBuilder routes)
     {
         var groups = routes.MapGroup("/groups").WithTags("Groups").RequireAuthorization();
-        // Anyone signed in may see groups — the permission picker needs the
+        // Anyone signed in may see groups: the permission picker needs the
         // list. Shaping them is instance administration.
         groups.MapGet("/", List);
         groups.MapGet("/{id:guid}/members", Members);

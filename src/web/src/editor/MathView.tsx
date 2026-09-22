@@ -3,7 +3,7 @@ import { NodeViewWrapper, type ReactNodeViewProps } from '@tiptap/react'
 
 /**
  * KaTeX is ~280KB with its fonts, so it loads on demand and the promise is
- * shared — a page of equations pays for it once.
+ * shared: a page of equations pays for it once.
  */
 let katexPromise: Promise<typeof import('katex').default> | null = null
 

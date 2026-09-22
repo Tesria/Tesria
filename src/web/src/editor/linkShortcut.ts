@@ -2,7 +2,7 @@ import { Extension } from '@tiptap/core'
 import type { Editor } from '@tiptap/react'
 
 /**
- * Cmd/Ctrl+K — the one Confluence shortcut the schema was missing after the
+ * Cmd/Ctrl+K: the one Confluence shortcut the schema was missing after the
  * Wave B audit (everything else it lists is covered by StarterKit,
  * TextAlign, Highlight or `textFormatting.ts`).
  *
@@ -31,7 +31,7 @@ export function onLinkShortcut(editor: Editor, fn: Listener): () => void {
   }
 }
 
-/** Open whatever link UI is mounted for this editor — the same thing Cmd/Ctrl+K does. */
+/** Open whatever link UI is mounted for this editor: the same thing Cmd/Ctrl+K does. */
 export function triggerLinkDialog(editor: Editor): boolean {
   const set = listeners.get(editor)
   if (!set || set.size === 0) return false

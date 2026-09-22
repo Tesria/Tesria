@@ -48,7 +48,7 @@ public class AccountRecoveryTests
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var stored = await db.RecoveryCodes.AsNoTracking().ToListAsync();
         Assert.Equal(AccountRecoveryService.CodeCount, stored.Count);
-        // Only hashes are kept — the plaintext existed once, in that response.
+        // Only hashes are kept: the plaintext existed once, in that response.
         Assert.All(stored, c => Assert.DoesNotContain(
             registered.RecoveryCodes[0].Replace("-", ""), c.CodeHash, StringComparison.OrdinalIgnoreCase));
     }

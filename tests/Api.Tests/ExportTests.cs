@@ -310,7 +310,7 @@ public class ExportEndpointTests
         var anon = factory.CreateClient();
 
         // Export is open to anonymous readers of public pages (dev-plan 5.2);
-        // for anything else it is 404, never 401 — the masking rule.
+        // for anything else it is 404, never 401: the masking rule.
         var res = await anon.GetAsync($"/api/pages/{page.Id}/export?format=markdown");
         Assert.Equal(HttpStatusCode.NotFound, res.StatusCode);
     }

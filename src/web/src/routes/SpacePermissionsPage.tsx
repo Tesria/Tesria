@@ -50,7 +50,7 @@ export function SpacePermissionsPage() {
       {isOpen ? (
         <p className="alert" style={{ background: 'var(--bg-alt)' }}>
           <strong>This space is open.</strong> Every signed-in user can view and edit it. Adding the
-          first grant below makes the space private — you will be kept as an admin automatically.
+          first grant below makes the space private: you will be kept as an admin automatically.
         </p>
       ) : (
         <p className="muted small">

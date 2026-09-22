@@ -4,7 +4,7 @@ namespace Tesria.Api.Domain;
 /// A single-use invitation to register on a closed instance (dev-plan 1.4).
 ///
 /// The only way to add a user when <see cref="SiteSettings.AllowPublicRegistration"/>
-/// is off and there is no email server — an administrator creates one and
+/// is off and there is no email server: an administrator creates one and
 /// passes the link on however they already communicate.
 /// </summary>
 public class Invite

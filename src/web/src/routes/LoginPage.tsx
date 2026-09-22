@@ -71,7 +71,7 @@ export function LoginPage() {
   }
 
   function ssoLogin() {
-    // A full-page navigation, not a fetch — the identity provider needs to
+    // A full-page navigation, not a fetch: the identity provider needs to
     // take over the browser's own address bar for its login page.
     window.location.href = `/api/auth/oidc/login?returnUrl=${encodeURIComponent('/spaces')}`
   }

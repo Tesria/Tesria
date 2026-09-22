@@ -8,7 +8,7 @@ namespace Tesria.Api.Infrastructure.Security;
 /// carry. This is the third, explicit layer: every state-changing request
 /// authenticated by the cookie must carry <c>X-Requested-With: Tesria</c>.
 /// A browser will not add a custom header to a cross-origin request without
-/// a CORS preflight, and no cross-origin caller passes ours — so the header
+/// a CORS preflight, and no cross-origin caller passes ours, so the header
 /// can only have come from our own page. Chosen over a double-submit token
 /// because it needs no token plumbing and holds even for the multipart
 /// upload endpoints, which a form <em>could</em> otherwise target.

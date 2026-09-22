@@ -58,7 +58,7 @@ export function SelectionBubbleMenu({ editor, getPageId, onCommentError }: Props
         // block (code selections don't want inline-formatting buttons), a
         // link (LinkMenu owns that case), or an image (ImageHoverMenu does).
         // A selected block or atom (a table of contents, a status) is a
-        // non-empty NodeSelection with no text to format — its own menu applies.
+        // non-empty NodeSelection with no text to format: its own menu applies.
         editor.isFocused && from !== to && !(editor.state.selection instanceof NodeSelection)
           && !editor.isActive('codeBlock') && !editor.isActive('link') && !editor.isActive('image')
       }

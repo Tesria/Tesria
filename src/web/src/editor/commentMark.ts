@@ -2,7 +2,7 @@ import { Mark, mergeAttributes } from '@tiptap/core'
 
 /**
  * Marks a text range as having an inline comment attached (Confluence/Google
- * Docs-style "highlight and comment"). Purely a rendering/anchor concern —
+ * Docs-style "highlight and comment"). Purely a rendering/anchor concern:
  * the comment itself is a normal Comment row (already supports AnchorJson);
  * this mark is what lets the read view visually highlight the commented text
  * and is what the mark's own `commentId` attr links back to that row.

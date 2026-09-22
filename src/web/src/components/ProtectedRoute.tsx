@@ -7,8 +7,8 @@ import { useAuth } from '../auth/AuthContext'
  * The outlet context is forwarded deliberately. Since dev-plan 5.3 this sits
  * *inside* a space's route (`/spaces/:key/*`), where `SpacePage` supplies the
  * space and its page tree through `<Outlet context={…}>`. A bare `<Outlet />`
- * here starts a fresh context of `null`, so every gated child — the editor,
- * trash, permissions, webhooks, settings — would find no space and throw on
+ * here starts a fresh context of `null`, so every gated child (the editor,
+ * trash, permissions, webhooks, settings) would find no space and throw on
  * `useSpaceContext()`. Passing it through makes this component transparent,
  * which is what a gate should be.
  */

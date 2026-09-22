@@ -6,7 +6,7 @@ namespace Tesria.Api.Features.Mcp;
 /// <summary>
 /// What a tool asks before acting (architecture.md, "MCP server"). The
 /// transport is all POST, so the REST scope middleware cannot see a write
-/// tool; each one calls <see cref="RequireWrite"/> instead — first, before
+/// tool; each one calls <see cref="RequireWrite"/> instead: first, before
 /// anything changes.
 /// </summary>
 public static class McpAccess

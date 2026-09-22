@@ -37,7 +37,7 @@ public class NotificationTests
         Assert.Equal(HttpStatusCode.NoContent, (await bob.PostAsync($"/api/pages/{page.Id}/watch", null)).StatusCode);
         Assert.True((await bob.GetFromJsonAsync<WatchStatus>($"/api/pages/{page.Id}/watch"))!.Watching);
 
-        // Alice edits — Bob (a watcher) is notified, Alice (the editor) is not.
+        // Alice edits: Bob (a watcher) is notified, Alice (the editor) is not.
         await alice.PutAsJsonAsync($"/api/pages/{page.Id}",
             new { Title = "Watched", ContentJson = Doc, ChangeComment = (string?)null });
 
@@ -145,7 +145,7 @@ public class NotificationTests
         var before = await bob.GetFromJsonAsync<List<NotificationRow>>("/api/notifications");
         Assert.Contains(before!, n => n.TargetId == page.Id);
 
-        // Lock the space to Alice only — Bob's existing notification for this
+        // Lock the space to Alice only: Bob's existing notification for this
         // page must disappear rather than keep exposing its title/metadata.
         await alice.PostAsJsonAsync($"/api/spaces/{key}/permissions",
             new { PrincipalType = User, PrincipalId = aliceId, Operation = Admin });

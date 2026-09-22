@@ -6,7 +6,7 @@ import { kindOf, type ParamField } from './dynamicBlockKinds'
 
 /**
  * Edits the selected dynamic block's parameters. One form for every kind,
- * generated from the kind's declared `params` — nobody writes a menu for a
+ * generated from the kind's declared `params`: nobody writes a menu for a
  * new kind (architecture.md, "Dynamic blocks", decision 8).
  */
 export function DynamicBlockMenu({ editor }: { editor: TiptapEditor }) {

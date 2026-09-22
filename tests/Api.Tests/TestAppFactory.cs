@@ -72,9 +72,9 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
             .AddInMemoryCollection(_settings));
         builder.ConfigureServices(services =>
         {
-            // Drop the production Npgsql registration entirely — both the built
+            // Drop the production Npgsql registration entirely, both the built
             // options and the internal options-configuration action EF adds per
-            // AddDbContext call — so SQLite is the only configured provider.
+            // AddDbContext call, so SQLite is the only configured provider.
             var toRemove = services.Where(d =>
                 d.ServiceType == typeof(DbContextOptions<AppDbContext>)
                 || d.ServiceType == typeof(DbContextOptions)
@@ -88,7 +88,7 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
             services.AddDbContext<AppDbContext>(o => o.UseSqlite(_connection));
 
             // Runs before the app's pipeline, so forwarded headers behave as
-            // they do behind Caddy — see the filter for how tests use it.
+            // they do behind Caddy: see the filter for how tests use it.
             services.AddTransient<IStartupFilter, TestRemoteIpStartupFilter>();
 
             // Replace the real channel-backed sender with a recording fake, so

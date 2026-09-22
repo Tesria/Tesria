@@ -17,6 +17,6 @@ on every instance somebody runs. Please report privately.
 Please do not open a public issue for something exploitable, and please
 give a fix a reasonable head start before writing it up.
 
-What is in scope is described in `docs/security.md` — the threat model,
+What is in scope is described in `docs/security.md`: the threat model,
 what each layer defends, and the known gaps. Something on the known-gaps
 list is not news, but a way to make it worse than described is.

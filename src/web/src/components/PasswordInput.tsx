@@ -1,7 +1,7 @@
 import { useState, type ChangeEvent } from 'react'
 
 /** Same stroke-icon language as the editor toolbar, topbar bell, and page
- *  tree pencil — flat, currentColor, 1.8px stroke. */
+ *  tree pencil: flat, currentColor, 1.8px stroke. */
 function EyeIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -21,7 +21,7 @@ function EyeOffIcon() {
   )
 }
 
-/** A password `<input>` with a show/hide toggle — the one place the eye
+/** A password `<input>` with a show/hide toggle: the one place the eye
  *  icon, its positioning, and its accessibility attributes need to be
  *  right, so every password field in the app (sign in, create account, and
  *  any future one) gets the same behavior for free. */

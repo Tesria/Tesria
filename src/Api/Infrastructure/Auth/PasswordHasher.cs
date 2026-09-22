@@ -11,8 +11,8 @@ public interface IPasswordHasher
 
     /// <summary>
     /// True when a hash was made with weaker parameters than the current
-    /// ones. Checked on successful sign-in — the one moment the plaintext is
-    /// available — so raising the parameters here upgrades every account
+    /// ones. Checked on successful sign-in, the one moment the plaintext is
+    /// available, so raising the parameters here upgrades every account
     /// over time without a forced reset.
     /// </summary>
     bool NeedsRehash(string encodedHash);
@@ -20,7 +20,7 @@ public interface IPasswordHasher
 
 /// <summary>
 /// Argon2id with pinned parameters (dev-plan 3.5): 64 MiB, 3 passes, 4
-/// lanes, 32-byte output — the OWASP-recommended shape for interactive
+/// lanes, 32-byte output: the OWASP-recommended shape for interactive
 /// logins in 2026, and deliberately written down rather than left to the
 /// library's defaults, which have changed between versions. The encoded
 /// string carries salt and parameters, so old hashes keep verifying and

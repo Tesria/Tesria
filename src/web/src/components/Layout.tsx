@@ -18,9 +18,9 @@ import { SpaceNavContext, type SpaceNav } from './spaceNav'
 const navClass = ({ isActive }: { isActive: boolean }) =>
   isActive ? 'topbar__link is-active' : 'topbar__link'
 
-/* Everything but Spaces. Rendered twice, deliberately — once as flat links
+/* Everything but Spaces. Rendered twice, deliberately, once as flat links
    (desktop, and the ≤--bp-mobile column) and once inside the More menu
-   (--bp-mobile..--bp-tablet) — with CSS choosing which is visible. That is
+   (--bp-mobile..--bp-tablet), with CSS choosing which is visible. That is
    the same trick the editor toolbar uses for its heading/list/alignment
    groups (.toolbar__flat vs .toolbar-dropdown), not an accident. */
 /** Any one of these means the Administration area has something in it for you. */
@@ -98,7 +98,7 @@ export function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [query, setQuery] = useState('')
-  // Below --bp-mobile, .topbar__nav + .topbar__search collapse behind this —
+  // Below --bp-mobile, .topbar__nav + .topbar__search collapse behind this:
   // display: contents on wider viewports keeps them laid out as direct
   // topbar flex children, so nothing changes above the breakpoint.
   const [navOpen, setNavOpen] = useState(false)
@@ -195,7 +195,7 @@ export function Layout() {
                 </NavLink>
               )}
               {/* readOnly: no reorder pencil and no dragging inside a menu
-                  that closes on the first tap — navigation only. */}
+                  that closes on the first tap: navigation only. */}
               <PageTree tree={spaceNav.tree} spaceKey={spaceNav.space.key} readOnly onNavigate={closeNav} />
               {user && (
                 <NavLink to={`/spaces/${spaceNav.space.key}/settings`} className="sidebar__trash" onClick={closeNav}>

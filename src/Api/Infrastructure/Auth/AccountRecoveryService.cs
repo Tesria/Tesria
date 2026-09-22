@@ -9,7 +9,7 @@ namespace Tesria.Api.Infrastructure.Auth;
 public interface IAccountRecoveryService
 {
     /// <summary>
-    /// Replaces any existing codes with a fresh set and returns the plaintext —
+    /// Replaces any existing codes with a fresh set and returns the plaintext:
     /// the only time it exists. Callers must save the DbContext.
     /// </summary>
     IReadOnlyList<string> IssueCodes(Guid userId);
@@ -40,7 +40,7 @@ public sealed class AccountRecoveryService(AppDbContext db) : IAccountRecoverySe
 {
     public const int CodeCount = 8;
 
-    /// <summary>Reset links expire quickly — a link is a bearer credential.</summary>
+    /// <summary>Reset links expire quickly: a link is a bearer credential.</summary>
     public static readonly TimeSpan ResetTokenLifetime = TimeSpan.FromHours(1);
 
     /// <summary>
@@ -128,7 +128,7 @@ public sealed class AccountRecoveryService(AppDbContext db) : IAccountRecoverySe
 
         // Unused tokens only in SQL; expiry is compared in memory because the
         // SQLite provider used by the tests cannot translate a DateTimeOffset
-        // comparison — the same limitation AuditEndpoints already works around
+        // comparison: the same limitation AuditEndpoints already works around
         // for ordering. At most one live token exists per user, so the set this
         // materialises is tiny.
         var candidates = await db.PasswordResetTokens
@@ -158,7 +158,7 @@ public sealed class AccountRecoveryService(AppDbContext db) : IAccountRecoverySe
     }
 
     /// <summary>
-    /// Strips formatting and case so a code works however it was written down —
+    /// Strips formatting and case so a code works however it was written down,
     /// with or without dashes, in either case. The stored hash is of this
     /// canonical form.
     /// </summary>

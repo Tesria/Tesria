@@ -7,7 +7,7 @@ import { useEffect } from 'react'
  * the LAYOUT viewport; the on-screen keyboard shrinks the VISUAL one and,
  * to keep the caret in view, Safari scrolls the visual viewport within the
  * layout viewport. Anything pinned to the layout viewport's top then slides
- * out of the visible area — the top bar goes first, the editor toolbar
+ * out of the visible area: the top bar goes first, the editor toolbar
  * next. The visualViewport API reports that offset, and translating the
  * bars by it puts them back at the visible top. A class gates the
  * transform so it exists only while there is an offset: a transform, even

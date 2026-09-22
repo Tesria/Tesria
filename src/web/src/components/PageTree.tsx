@@ -14,7 +14,7 @@ import { api, type PageTreeNode } from '../api/client'
 import { PagesIcon } from './NavIcons'
 
 /** The chain of nodes from a root page down to (and including) `pageId`, or
- *  null if it isn't in this tree — e.g. a trashed page, or the tree hasn't
+ *  null if it isn't in this tree: e.g. a trashed page, or the tree hasn't
  *  loaded yet. Used to build the breadcrumb: the tree is the only place
  *  parent/child relationships live on the client, so this walks it rather
  *  than asking the server for an ancestor list. */
@@ -52,7 +52,7 @@ function descendantIdsOf(nodes: PageTreeNode[], id: string): Set<string> {
 
 /** Removes `id` (and its whole subtree, intact) from wherever it sits in
  *  the tree, then reinserts it under `parentId` at `index`. The pure,
- *  client-side counterpart of the backend's Move endpoint — used to keep a
+ *  client-side counterpart of the backend's Move endpoint: used to keep a
  *  local draft tree correct across several drags in one Reorder session,
  *  without a round trip per drag. */
 function applyMove(tree: PageTreeNode[], id: string, parentId: string | null, index: number): PageTreeNode[] {
@@ -84,7 +84,7 @@ function applyMove(tree: PageTreeNode[], id: string, parentId: string | null, in
   return removed ? insert(withoutNode, removed) : tree
 }
 
-// Horizontal drag distance (px) that shifts the projected depth by one level —
+// Horizontal drag distance (px) that shifts the projected depth by one level:
 // matches the per-depth indent below so dragging "feels" like it maps 1:1.
 const INDENT = 14
 
@@ -92,9 +92,9 @@ const INDENT = 14
  *  after (null = new first item), the depth that implies, and the parent
  *  that depth implies. Depth is projected from horizontal drag distance,
  *  then clamped between the previous row's depth+1 (can't skip a level) and
- *  the next row's depth (can't leave a gap) — the standard "sortable tree"
+ *  the next row's depth (can't leave a gap): the standard "sortable tree"
  *  projection technique. `items` must already have the dragged row (and its
- *  own former subtree) excluded — see caller. */
+ *  own former subtree) excluded: see caller. */
 function project(items: FlatNode[], activeId: string, overId: string, dragOffsetX: number) {
   const activeIndex = items.findIndex((i) => i.id === activeId)
   const overIndex = items.findIndex((i) => i.id === overId)
@@ -124,7 +124,7 @@ function project(items: FlatNode[], activeId: string, overId: string, dragOffset
   return { reordered, parentId, depth, previousId: previous?.id ?? null }
 }
 
-/** The recursive page list for a space — shared by the desktop sidebar and
+/** The recursive page list for a space: shared by the desktop sidebar and
  *  the mobile inline tree on the space landing page (SpaceHome). Reordering
  *  and reparenting only happen in "Reorder" mode (toggled via the button in
  *  the heading): outside it, rows are plain links with no drag listeners at
@@ -133,7 +133,7 @@ function project(items: FlatNode[], activeId: string, overId: string, dragOffset
  *  a local draft tree (so you can reparent something and then immediately
  *  make the follow-up adjustments that reparent usually calls for, without
  *  re-entering the mode each time) and nothing reaches the server until
- *  Save. Cancel discards the draft — no request is ever sent for it. Rows
+ *  Save. Cancel discards the draft: no request is ever sent for it. Rows
  *  aren't navigable while editing, since a stray click could otherwise
  *  discard an unsaved reorganization by navigating away from it. */
 export function PageTree({
@@ -156,7 +156,7 @@ export function PageTree({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // The draft only tracks the server's tree while not editing — once a
+  // The draft only tracks the server's tree while not editing, once a
   // Reorder session starts, further prop updates (another tab, a page
   // created elsewhere) are ignored until Save or Cancel resolves the
   // session, rather than silently rebasing a half-finished reorganization.
@@ -170,7 +170,7 @@ export function PageTree({
 
   const flat = useMemo(() => flatten(editMode ? draftTree : tree), [editMode, draftTree, tree])
 
-  // A row can't be dropped under itself or one of its own descendants — the
+  // A row can't be dropped under itself or one of its own descendants: the
   // backend rejects that as a cycle regardless, but excluding the dragged
   // subtree from the working list up front means it's never even offered as
   // a drop target, and the projection math above never has to think about it.
@@ -200,7 +200,7 @@ export function PageTree({
     const draggedId = String(event.active.id)
     // Computed straight from the event, not from `overId`/`dragOffsetX`
     // state: dnd-kit can fire drag-move and drag-end back to back in the
-    // same tick, before React has re-rendered — reading state here would
+    // same tick, before React has re-rendered: reading state here would
     // risk resolving against a stale projection from an earlier move.
     const overIdNow = event.over ? String(event.over.id) : null
     const result = overIdNow && overIdNow !== draggedId ? project(visible, draggedId, overIdNow, event.delta.x) : null
@@ -240,7 +240,7 @@ export function PageTree({
     setError(null)
     try {
       // Replayed in the order they were made, each against whatever the
-      // server now holds — every intermediate state this produces is one
+      // server now holds: every intermediate state this produces is one
       // the draft itself already passed through (and validated a parent
       // choice against) while the user was dragging, so this converges to
       // the same tree without needing to diff draft-vs-original itself.
@@ -334,7 +334,7 @@ function DropLine({ depth }: { depth: number }) {
   return <div className="tree__drop-line" style={{ marginLeft: 8 + depth * INDENT }} />
 }
 
-/** A plain navigation row — outside Reorder mode, this is all a tree row is:
+/** A plain navigation row: outside Reorder mode, this is all a tree row is:
  *  no drag listeners, no `touch-action` override, so scrolling through the
  *  tree behaves exactly like scrolling anything else. */
 function StaticRow({
@@ -358,11 +358,11 @@ function StaticRow({
   )
 }
 
-/** A draggable row while Reorder mode is active. Not a link — mid-batch,
+/** A draggable row while Reorder mode is active. Not a link: mid-batch,
  *  navigating away would abandon whatever hasn't been saved yet, so rows
  *  are inert to click and only respond to drag. */
 function DraggableRow({ node, isDimmed }: { node: FlatNode; isDimmed: boolean }) {
-  // Only `listeners` (the pointer handlers) go on the row — not `attributes`
+  // Only `listeners` (the pointer handlers) go on the row, not `attributes`
   // (mostly keyboard/ARIA metadata for dnd-kit's own sortable semantics),
   // which matters less here than when this was a real link, but there's
   // still no reason to relabel it as a generic draggable widget.
@@ -373,7 +373,7 @@ function DraggableRow({ node, isDimmed }: { node: FlatNode; isDimmed: boolean })
       ref={setNodeRef}
       className="tree__link tree__link--draggable"
       style={{ paddingLeft: 8 + node.depth * INDENT, opacity: isDragging || isDimmed ? 0.4 : 1 }}
-      title="Drag to reorder or move — Save or Cancel to browse again"
+      title="Drag to reorder or move, Save or Cancel to browse again"
       {...listeners}
     >
       {node.title}
@@ -382,8 +382,8 @@ function DraggableRow({ node, isDimmed }: { node: FlatNode; isDimmed: boolean })
 }
 
 /** Same stroke-icon language as the editor toolbar (editor/icons.tsx) and
- *  the topbar bell (NotificationBell.tsx) — flat, currentColor, 1.8px
- *  stroke — instead of the platform's own emoji pencil, which rendered in
+ *  the topbar bell (NotificationBell.tsx) (flat, currentColor, 1.8px
+ *  stroke) instead of the platform's own emoji pencil, which rendered in
  *  full color and stood out against the rest of the app's flat icon set. */
 function PencilIcon() {
   return (

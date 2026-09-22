@@ -35,7 +35,7 @@ export type SlashCommandStorage = {
   onUploadError?: (message: string) => void
 }
 
-/** editor.storage is an untyped dictionary externally — these centralize the one cast it needs. */
+/** editor.storage is an untyped dictionary externally: these centralize the one cast it needs. */
 export function setSlashCommandStorage(editor: Editor, storage: SlashCommandStorage): void {
   (editor.storage as unknown as Record<string, unknown>).slashCommand = storage
 }
@@ -82,7 +82,7 @@ const PANEL_ICONS: Record<(typeof PANEL_TYPES)[number], ComponentType> = {
 /**
  * The one catalogue of insertable things. The slash menu filters it by
  * query; the toolbar's Insert menu (Toolbar.tsx) lists its block and panel
- * groups. One list, so the two cannot drift — a new block added here
+ * groups. One list, so the two cannot drift: a new block added here
  * appears in both.
  */
 export const SLASH_ITEMS: SlashItem[] = [
@@ -139,7 +139,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     keywords: ['url', 'href', 'anchor'],
     // Not a document edit: the dialog does the inserting once it has both
     // fields. The range is the "/link" query when typed, and the SELECTION
-    // when chosen from the + menu — and a selection is exactly what the
+    // when chosen from the + menu, and a selection is exactly what the
     // dialog should turn into the link's text, not something to delete.
     // Only a slash query goes; this once removed a selected paragraph.
     command: (editor, range) => {
@@ -221,7 +221,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     title: 'Layout',
     group: 'block',
     icon: LayoutIcon,
-    description: 'Two columns — change the shape from the layout bar',
+    description: 'Two columns: change the shape from the layout bar',
     keywords: ['columns', 'section', 'grid'],
     command: (editor, range) => editor.chain().focus().insertLayout('two-equal', range).run(),
   },

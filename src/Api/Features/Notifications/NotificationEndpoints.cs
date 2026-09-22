@@ -86,7 +86,7 @@ public static class NotificationEndpoints
     /// Drops entries whose target the caller can no longer view. A watch grants
     /// no standing access of its own, so if permissions changed after a
     /// notification was generated (e.g. the space went private), it must not
-    /// keep surfacing metadata the caller can no longer see — the same leak
+    /// keep surfacing metadata the caller can no longer see: the same leak
     /// this pattern already closed for the audit log.
     /// </summary>
     private static async Task<List<Notification>> FilterViewableAsync(

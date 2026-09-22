@@ -7,13 +7,13 @@ import { useSpaceContext } from './SpacePage'
  *
  * These four were four sidebar entries once, because permissions, webhooks
  * and trash existed before there was a settings page to put them in. That
- * left the sidebar carrying two unrelated jobs — browsing a space's pages,
- * and administering the space — and the second one crowding out the first
+ * left the sidebar carrying two unrelated jobs (browsing a space's pages,
+ * and administering the space) and the second one crowding out the first
  * as the tree grew. They are one section now, reached by one sidebar entry,
  * with the same tabbed shape the admin area uses.
  *
  * The outlet context is re-published so the children still reach the space
- * through `useSpaceContext()` — a nested <Outlet> does not inherit its
+ * through `useSpaceContext()`: a nested <Outlet> does not inherit its
  * parent's context automatically.
  */
 export function SpaceSettingsLayout() {

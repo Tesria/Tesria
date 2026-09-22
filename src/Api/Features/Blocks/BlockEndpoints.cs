@@ -3,7 +3,7 @@ using Tesria.Api.Infrastructure.Auth;
 namespace Tesria.Api.Features.Blocks;
 
 /// <summary>
-/// <c>GET /api/pages/{hostId}/blocks/{kind}?param=value…</c> — the one
+/// <c>GET /api/pages/{hostId}/blocks/{kind}?param=value…</c>: the one
 /// endpoint behind every dynamic block (architecture.md, "Dynamic blocks",
 /// decision 3). Anonymous-capable: a public page's blocks are part of the
 /// page, and the anonymous principal falls out of the permission service.
@@ -21,7 +21,7 @@ public static class BlockEndpoints
     private static async Task<IResult> Render(
         Guid hostId, string kind, HttpContext http, IDynamicBlockService blocks, CurrentUser current, CancellationToken ct)
     {
-        // Unknown kind is a client error, not a missing page — but say so
+        // Unknown kind is a client error, not a missing page, but say so
         // before touching the host, so the answer does not depend on whether
         // the host exists (which would be a probe).
         if (!blocks.Kinds.Contains(kind))

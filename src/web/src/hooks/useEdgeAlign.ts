@@ -9,7 +9,7 @@ const VIEWPORT_MARGIN_PX = 16
  * a corrective pixel `left` offset as an inline style.
  *
  * Measures the real popover (not an estimate) via useLayoutEffect, which
- * runs after the DOM updates but before the browser paints — so the shift
+ * runs after the DOM updates but before the browser paints, so the shift
  * is applied in the same frame the popover first becomes visible, with no
  * flash at the wrong position. An earlier version tried to estimate the
  * popover's width from the *anchor's* position before it ever rendered;
@@ -30,7 +30,7 @@ export function useEdgeAlign<T extends HTMLElement>(open: boolean) {
     if (!el) return
     // Runs once per open, while offsetLeft is still 0 (reset above on the
     // prior close), so this rect reflects the popover's natural, unshifted
-    // position — not one already corrected by a previous open.
+    // position, not one already corrected by a previous open.
     // documentElement.clientWidth, not window.innerWidth: once something on
     // the page is already overflowing horizontally, some browser/automation
     // contexts report innerWidth as having grown to match the overflowing

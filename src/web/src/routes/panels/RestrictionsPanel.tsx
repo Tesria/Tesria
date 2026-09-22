@@ -37,7 +37,7 @@ export function RestrictionsPanel({ pageId }: { pageId: string }) {
       {unrestricted ? (
         <p className="muted small">
           This page inherits access from its space and any restricted ancestor. Adding a restriction
-          limits it to the principals listed — you will keep access automatically. Sub-pages inherit
+          limits it to the principals listed: you will keep access automatically. Sub-pages inherit
           whatever you set here.
         </p>
       ) : (

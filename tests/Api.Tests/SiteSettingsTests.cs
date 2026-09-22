@@ -159,7 +159,7 @@ public class SiteSettingsTests
             new { Email = "late@example.com", DisplayName = "Late", Password = "supersecret" });
         Assert.Equal(HttpStatusCode.Forbidden, after.StatusCode);
 
-        // Reopening restores it — proving the cache invalidates on save rather
+        // Reopening restores it: proving the cache invalidates on save rather
         // than serving the closed value until its TTL expires.
         await admin.PutAsJsonAsync("/api/admin/settings", new { AllowPublicRegistration = true });
         var reopened = await factory.CreateClient().PostAsJsonAsync("/api/auth/register",
@@ -173,7 +173,7 @@ public class SiteSettingsTests
         using var factory = new TestAppFactory();
 
         // Close registration with no users at all, the way an operator could by
-        // editing the row directly — then prove the instance can still be set up.
+        // editing the row directly, then prove the instance can still be set up.
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

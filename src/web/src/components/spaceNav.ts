@@ -10,14 +10,14 @@ import type { PageTreeNode, Space } from '../api/client'
  * On a phone the sidebar is gone, so changing page meant hamburger → Spaces →
  * the space → the page: three taps to move between two pages of the same
  * space. The shell renders the tree in the menu instead, but the tree is
- * loaded by the space route, which is a child of the shell — hence a
+ * loaded by the space route, which is a child of the shell, hence a
  * context flowing the "wrong" way, from route to shell. It carries only
  * what the menu needs.
  */
 export type SpaceNav = {
   space: Space
   tree: PageTreeNode[]
-  /** Where "+ New page" goes — under the open page when there is one. */
+  /** Where "+ New page" goes: under the open page when there is one. */
   newPageHref: string
 }
 
@@ -38,7 +38,7 @@ export function useSpaceNav(): SpaceNav | null {
 
 /**
  * The space route calls this to publish its tree, and to withdraw it when
- * the route unmounts — leaving a space must take its pages out of the menu.
+ * the route unmounts, leaving a space must take its pages out of the menu.
  */
 export function usePublishSpaceNav(nav: SpaceNav | null) {
   const { setNav } = useContext(SpaceNavContext)

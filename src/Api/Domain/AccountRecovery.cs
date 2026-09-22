@@ -21,7 +21,7 @@ public class RecoveryCode
     /// make guessing a <em>low-entropy</em> secret expensive; these codes are
     /// 60 bits of cryptographic randomness, where a fast hash is already
     /// unguessable. Using Argon2 here would instead mean up to eight
-    /// deliberately-slow verifications per attempt — bad for the user and a
+    /// deliberately-slow verifications per attempt: bad for the user and a
     /// free denial-of-service lever for an attacker. Same reasoning, and the
     /// same construction, as <see cref="ApiToken"/>.
     /// </summary>

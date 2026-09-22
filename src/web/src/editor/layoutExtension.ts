@@ -7,7 +7,7 @@ import { TextSelection, type Transaction } from '@tiptap/pm/state'
  * normal block container. Confluence's set of presets, and Confluence's
  * rule that sections stack but never nest: `layoutSection` is not in the
  * `block` group, so a column's `block+` (and a panel's, and an expand's)
- * cannot hold one — only the document itself can, via `extensions.ts`'s
+ * cannot hold one: only the document itself can, via `extensions.ts`'s
  * Document override.
  *
  * Column widths are stored per column as a percentage and applied as

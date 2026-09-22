@@ -13,7 +13,7 @@ public interface IInviteService
     /// <summary>
     /// The invite this token names, if it is unused, unexpired, and (when the
     /// invite is address-bound) issued for <paramref name="email"/>. Null
-    /// otherwise — the caller must not learn which of those it was.
+    /// otherwise: the caller must not learn which of those it was.
     /// </summary>
     Task<Invite?> FindUsableAsync(string token, string email, CancellationToken ct = default);
 }

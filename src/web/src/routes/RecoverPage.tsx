@@ -6,8 +6,8 @@ import { PasswordInput } from '../components/PasswordInput'
 /**
  * Regaining access.
  *
- * Three ways in, one page. `/recover` offers a recovery code, and — when the
- * instance sends email (dev-plan 4.2) — an emailed link instead. `/reset?token=…`
+ * Three ways in, one page. `/recover` offers a recovery code, and, when the
+ * instance sends email (dev-plan 4.2), an emailed link instead. `/reset?token=…`
  * is that link, or the one an administrator hands over out of band; arriving
  * with a token skips straight to choosing a new password, because the token
  * already is the proof of identity.

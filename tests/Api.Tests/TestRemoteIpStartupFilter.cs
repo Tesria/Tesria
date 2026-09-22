@@ -12,8 +12,8 @@ namespace Tesria.Api.Tests;
 /// null and the forwarded-headers middleware has nothing to decide trust
 /// against. This runs ahead of the app's own pipeline and sets the address
 /// from an <c>X-Test-Remote-Ip</c> header (default: loopback, which the app
-/// trusts as a proxy). A test can therefore act as the proxy — set
-/// <c>X-Forwarded-For</c> and be believed — or as an untrusted stranger by
+/// trusts as a proxy). A test can therefore act as the proxy, set
+/// <c>X-Forwarded-For</c> and be believed, or as an untrusted stranger by
 /// naming a public address here and showing its forwarded headers are ignored.
 /// </summary>
 public sealed class TestRemoteIpStartupFilter : IStartupFilter

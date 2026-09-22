@@ -13,7 +13,7 @@ declare module '@tiptap/core' {
 /**
  * Decision: a block that records something agreed, with a fixed check icon.
  * Same construction as a panel (index.css `.decision`, icon as a `::before`
- * mask), and no attributes — a decision has no type to choose.
+ * mask), and no attributes: a decision has no type to choose.
  */
 export const Decision = Node.create({
   name: 'decision',

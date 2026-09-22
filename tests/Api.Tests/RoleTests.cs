@@ -44,7 +44,7 @@ public class RoleTests
         var second = await RegisterAsync(factory.CreateClient(), "second@example.com");
         Assert.Equal(Member, second.Role);
 
-        // /auth/me reports it too — the SPA reads the role from there.
+        // /auth/me reports it too: the SPA reads the role from there.
         var client = factory.CreateClient();
         await client.PostAsJsonAsync("/api/auth/login",
             new { Email = "first@example.com", Password = "supersecret" });
@@ -114,7 +114,7 @@ public class RoleTests
             new { PrincipalType = 0, PrincipalId = memberUser.Id, Operation = 2 });
         grant.EnsureSuccessStatusCode();
 
-        // 404, not 403 — an admin they may not see gets the same masking as
+        // 404, not 403: an admin they may not see gets the same masking as
         // anyone else, so the role does not confirm the space's existence.
         Assert.Equal(HttpStatusCode.NotFound, (await admin.GetAsync($"/api/spaces/{key}")).StatusCode);
 

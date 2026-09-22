@@ -17,8 +17,8 @@ type Props<T> = {
 /**
  * The keyboard-navigable popup shared by the `@` mention and `:` emoji
  * suggestions. The slash menu predates it and keeps its own two-line layout
- * (title + description); these two are one line each, so the list behaviour —
- * arrow keys, Enter, keeping the highlight in range as the query narrows —
+ * (title + description); these two are one line each, so the list behaviour (
+ * arrow keys, Enter, keeping the highlight in range as the query narrows)
  * is the only part worth sharing.
  */
 function SuggestionListInner<T>(
@@ -27,7 +27,7 @@ function SuggestionListInner<T>(
 ) {
   const [selected, setSelected] = useState(0)
 
-  // The list changes as the query narrows — never leave the highlight
+  // The list changes as the query narrows, never leave the highlight
   // pointing at an item that has been filtered away.
   useEffect(() => {
     setSelected(0)

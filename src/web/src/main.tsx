@@ -46,7 +46,7 @@ startFaviconSync()
 
 // A data router (createBrowserRouter), not <BrowserRouter>: only a data
 // router supports useBlocker, which is what lets the editor ask before a
-// navigation leaves it — including the browser's back button and an
+// navigation leaves it, including the browser's back button and an
 // iPhone's swipe-back, which no click handler can see.
 const router = createBrowserRouter(
   createRoutesFromElements(

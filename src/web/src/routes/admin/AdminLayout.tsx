@@ -5,7 +5,7 @@ import { Permission, UserRole } from '../../api/client'
 /**
  * The admin section's shell (dev-plan 2.1).
  *
- * The role check here is convenience, not security — every `/api/admin/*`
+ * The role check here is convenience, not security: every `/api/admin/*`
  * route enforces it server-side. This exists so a member who guesses the URL
  * sees a redirect rather than a page of failed requests.
  */
@@ -22,7 +22,7 @@ export function AdminLayout() {
       <div className="page-wrap">
         <h1>Administration</h1>
         <p className="alert alert--error">
-          This area — users, groups, the audit log, security and instance settings —
+          This area (users, groups, the audit log, security and instance settings)
           is for administrators. If you need to manage groups or see the audit log,
           ask an administrator of this instance to make the change or to grant you
           the administrator role.

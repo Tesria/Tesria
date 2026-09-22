@@ -11,7 +11,7 @@ scripts/screenshots/run.sh path/to/spec.json login    # just one
 ```
 
 PNGs land in `shots/` beside the spec. `manual-space.example.json` is the
-spec that produced the manual's screenshots — page ids in it are from this
+spec that produced the manual's screenshots: page ids in it are from this
 instance, so treat it as a worked example rather than something to re-run
 unchanged.
 
@@ -33,7 +33,7 @@ unchanged.
 | Field | Does |
 |---|---|
 | `url` | Where to go. Omit to keep the current page. |
-| `anon` | Use a second, signed-out context — for what a visitor sees. |
+| `anon` | Use a second, signed-out context: for what a visitor sees. |
 | `steps` | `click`, `hover`, `type`+`selector`, `press`, `keys` (literal typing), `eval`, `wait`, `waitFor`. |
 | `clipTo` | Crop to an element, or to the union of several. |
 | `clipPad` / `clipTrim` | Breathing room; pixels to shave off the bottom. |
@@ -42,7 +42,7 @@ unchanged.
 | `annotate` | `circle`, `box`, `arrow` (with `from`: left/right/above/below), `note`. |
 
 Annotations are drawn as a **DOM overlay before the capture**, positioned
-from `getBoundingClientRect()` — not painted onto the PNG afterwards. They
+from `getBoundingClientRect()`, not painted onto the PNG afterwards. They
 come out as crisp as the UI beneath them, and they are described per shot
 rather than pushed around in pixels. An arrow needs room *outside* the
 element it points at, so leave enough `clipPad` for it or it will be cropped

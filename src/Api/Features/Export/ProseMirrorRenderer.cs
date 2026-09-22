@@ -34,8 +34,8 @@ public static class ProseMirrorRenderer
 
     /// <summary>
     /// Per-document state: the heading anchors (dev-plan Phase 7 Wave A),
-    /// handed out in document order as headings are rendered — the same
-    /// order <see cref="HeadingAnchors.Collect"/> walked — so the nth
+    /// handed out in document order as headings are rendered, the same
+    /// order <see cref="HeadingAnchors.Collect"/> walked, so the nth
     /// heading gets the nth id, and a table of contents lists them all.
     /// </summary>
     private sealed class Ctx(JsonElement root, IReadOnlyList<BlockResult?>? blocks, string? baseUrl)
@@ -60,7 +60,7 @@ public static class ProseMirrorRenderer
 
         /// <summary>
         /// Markdown gets explicit <c>&lt;a id&gt;</c> anchors only when the
-        /// document links to its own headings — GitHub's auto-generated ids
+        /// document links to its own headings: GitHub's auto-generated ids
         /// use a different rule, and the anchors are clutter otherwise.
         /// </summary>
         public bool MarkdownNeedsAnchors { get; } = LinksToHeadings(root);
@@ -196,7 +196,7 @@ public static class ProseMirrorRenderer
                 break;
             case "layoutSection":
             case "layoutColumn":
-                // Columns in order, one after the other — Markdown has no columns.
+                // Columns in order, one after the other: Markdown has no columns.
                 RenderMarkdownChildren(node, sb, listDepth, ctx);
                 break;
             case "bulletList":
@@ -222,7 +222,7 @@ public static class ProseMirrorRenderer
                 break;
             case "image":
                 // Exported Markdown references the app's own (authenticated) attachment
-                // URL, so it won't render standalone outside the app — acceptable for
+                // URL, so it won't render standalone outside the app: acceptable for
                 // internal dev docs.
                 sb.Append($"![{Attr(node, "alt") ?? ""}]({Attr(node, "src") ?? ""})\n\n");
                 break;
@@ -295,7 +295,7 @@ public static class ProseMirrorRenderer
     /// Whitelists the colour shapes the editor's palettes actually produce (a
     /// #rgb/#rrggbb hex) before it reaches a `style` attribute. Attribute
     /// values come from stored document JSON, which the API accepts as
-    /// arbitrary JSON — so an unvalidated colour would be a way to inject
+    /// arbitrary JSON, so an unvalidated colour would be a way to inject
     /// arbitrary CSS into exported HTML.
     /// </summary>
     private static bool IsSafeCssColor(string? color) =>
@@ -340,7 +340,7 @@ public static class ProseMirrorRenderer
             RenderMarkdownChildren(item, itemText, depth + 1, ctx);
             // The assignee is a denormalised copy of the mention already
             // inside the item (taskAssignee.ts), so it is deliberately not
-            // repeated here — it would read as the name twice.
+            // repeated here: it would read as the name twice.
 
             var lines = itemText.ToString().TrimEnd().Split('\n');
             for (var i = 0; i < lines.Length; i++)
@@ -453,7 +453,7 @@ public static class ProseMirrorRenderer
             {
                 sb.Append(new string(' ', depth * 2)).Append("- ");
                 sb.Append(item.Href is null ? item.Title : $"[{item.Title}]({ctx.Href(item.Href)})");
-                if (item.Subtitle is not null) sb.Append(" — ").Append(item.Subtitle);
+                if (item.Subtitle is not null) sb.Append(": ").Append(item.Subtitle);
                 sb.Append('\n');
                 if (item.Children is { Count: > 0 }) WriteList(item.Children, depth + 1);
             }
@@ -490,7 +490,7 @@ public static class ProseMirrorRenderer
     /// Light-theme ink per colour name, matching index.css's
     /// <c>--text-color-*</c>. The mark stores a name, never a colour value
     /// (see textColorMark.ts), so nothing from the document can reach a
-    /// style attribute — an unknown name falls back to grey.
+    /// style attribute: an unknown name falls back to grey.
     /// </summary>
     private static readonly Dictionary<string, string> TextColors = new()
     {
@@ -521,12 +521,12 @@ public static class ProseMirrorRenderer
     {
         public HeadingAnchors.Anchor Anchor { get; } = anchor;
         public List<TocNode> Children { get; } = [];
-        /// <summary>Outline number, "1", "1.2" — shown when section numbers are on.</summary>
+        /// <summary>Outline number, "1", "1.2", shown when section numbers are on.</summary>
         public string Number { get; set; } = "";
     }
 
     /// <summary>
-    /// A table of contents' options — Confluence Cloud's macro parameters. The
+    /// A table of contents' options: Confluence Cloud's macro parameters. The
     /// same rules as the editor's tocOptions.ts, and the same defaults: a node
     /// with no options renders exactly as it did before options existed.
     /// </summary>
@@ -579,7 +579,7 @@ public static class ProseMirrorRenderer
 
         /// <summary>The list-style for a nesting depth, or null for "leave it to the browser" (Bullet).</summary>
         /// Section numbers sit alongside the chosen bullet, except Numbered, where
-        /// two numbers per line would print — the outline numbers replace the list's.
+        /// two numbers per line would print: the outline numbers replace the list's.
         public string? ListStyle(int depth) =>
             SectionNumbers && BulletStyle == "numbered" ? "none" : BulletStyle switch
             {
@@ -664,7 +664,7 @@ public static class ProseMirrorRenderer
     /// <summary>
     /// A mention's stored display-name snapshot. The node also carries the
     /// user's id, but an export has no directory to resolve it against and a
-    /// deleted account would resolve to nothing — the snapshot is what keeps
+    /// deleted account would resolve to nothing: the snapshot is what keeps
     /// an old document readable.
     /// </summary>
     private static string MentionLabel(JsonElement node)
@@ -684,7 +684,7 @@ public static class ProseMirrorRenderer
         DateOnly.TryParseExact(Attr(node, "date"), "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture,
             System.Globalization.DateTimeStyles.None, out var d) ? d : null;
 
-    /// <summary>"10 Sep 2026" — invariant; an export has no viewer locale to honour.</summary>
+    /// <summary>"10 Sep 2026": invariant; an export has no viewer locale to honour.</summary>
     private static string DateText(DateOnly date) => date.ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
 
     // -- shared ---------------------------------------------------------------

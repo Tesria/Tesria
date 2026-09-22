@@ -14,7 +14,7 @@ const UPLOAD_SIZE = 512
  * as a PNG blob.
  *
  * `createImageBitmap` rather than an `<img>` with an object URL: it decodes off
- * the main thread, needs no load-event dance, and — the part that matters —
+ * the main thread, needs no load-event dance, and, the part that matters,
  * honours EXIF orientation, so a portrait phone photo does not arrive sideways.
  */
 async function cropToSquare(file: File): Promise<Blob> {
@@ -47,7 +47,7 @@ async function cropToSquare(file: File): Promise<Blob> {
  * The avatar section of the profile page: the current avatar, the twelve
  * generated ones to choose between, and upload/remove.
  *
- * The crop is deliberate rather than cosmetic — the server centre-crops too,
+ * The crop is deliberate rather than cosmetic: the server centre-crops too,
  * so without it the user would upload a photo and be shown a different part of
  * it than they expected. Doing it here means what they see is what is stored.
  */

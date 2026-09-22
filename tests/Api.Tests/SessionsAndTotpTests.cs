@@ -176,7 +176,7 @@ public class SessionsAndTotpTests
         await RegisterAsync(admin, "admin@example.com");
         (await admin.PutAsJsonAsync("/api/admin/settings", new { RequireTotpForAdmins = true })).EnsureSuccessStatusCode();
 
-        // Locked out of administration — but told why, and the way out is open.
+        // Locked out of administration, but told why, and the way out is open.
         Assert.Equal(HttpStatusCode.Forbidden, (await admin.GetAsync("/api/admin/users")).StatusCode);
         Assert.True((await admin.GetFromJsonAsync<UserDto>("/api/auth/me"))!.TotpRequired);
 
@@ -206,7 +206,7 @@ public class SessionsAndTotpTests
             (await admin.PostAsJsonAsync("/api/auth/reauth", new { Password = "wrong" })).StatusCode);
         (await admin.PostAsJsonAsync("/api/auth/reauth", new { Password = "supersecret" })).EnsureSuccessStatusCode();
 
-        // Re-authenticated a moment ago — but the window is zero, so this is
+        // Re-authenticated a moment ago, but the window is zero, so this is
         // refused again; what the test can show is that reauth itself works
         // and a wrong password does not. The positive path is every other
         // test in the suite, which runs inside the default five minutes.

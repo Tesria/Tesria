@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Tesria.Api.Features.Blocks.Kinds;
 
-/// <summary>The host page's version history — cheap, because versions already exist.</summary>
+/// <summary>The host page's version history: cheap, because versions already exist.</summary>
 public sealed class ChangeHistoryBlock : IDynamicBlockKind
 {
     public string Kind => "change-history";

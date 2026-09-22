@@ -4,7 +4,7 @@ import { NodeSelection } from '@tiptap/pm/state'
 /**
  * Update the attributes of the selected inline atom (a status, a date) and
  * select it again. `updateAttributes` rewrites the node's markup, and a
- * NodeSelection does not survive that — it collapses to a text cursor,
+ * NodeSelection does not survive that: it collapses to a text cursor,
  * which would close the bubble menu that is editing the node on every
  * keystroke.
  */

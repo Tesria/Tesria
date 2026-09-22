@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Tesria.Api.Features.Blocks;
 
-/// <summary>A kind of dynamic block: the URL name and the query. Nothing else — see architecture.md.</summary>
+/// <summary>A kind of dynamic block: the URL name and the query. Nothing else: see architecture.md.</summary>
 public interface IDynamicBlockKind
 {
     /// <summary>Kebab-case, as it appears in documents and URLs.</summary>
@@ -24,7 +24,7 @@ public sealed class BlockParamException(string param, string message) : Exceptio
 /// <summary>
 /// What a kind gets to work with: the host page, validated parameter access,
 /// and the one permission helper that makes the filtering rule hard to
-/// break — <see cref="VisibleAsync"/>.
+/// break: <see cref="VisibleAsync"/>.
 /// </summary>
 public sealed class BlockContext(
     Page host, IReadOnlyDictionary<string, string> parameters, AppDbContext db, IPermissionService perms, Guid? currentUserId)
@@ -73,8 +73,8 @@ public sealed class BlockContext(
     /// The two-pass filter every page-listing kind must use: candidates
     /// already narrowed in SQL, then each checked with the caller's own
     /// permissions until <paramref name="limit"/> visible ones are in hand.
-    /// Callers should over-fetch — the tenth visible page may be the
-    /// fortieth candidate — and never count what was skipped.
+    /// Callers should over-fetch, the tenth visible page may be the
+    /// fortieth candidate, and never count what was skipped.
     /// </summary>
     public async Task<List<T>> VisibleAsync<T>(IEnumerable<T> candidates, Func<T, Guid> pageId, int limit, CancellationToken ct)
     {
@@ -97,7 +97,7 @@ public interface IDynamicBlockService
 
     /// <summary>
     /// Null when the host page is not viewable by the caller or the kind is
-    /// unknown — the endpoint turns those into 404 and 400 respectively; the
+    /// unknown: the endpoint turns those into 404 and 400 respectively; the
     /// exporter turns both into a placeholder.
     /// </summary>
     Task<BlockResult?> RenderAsync(Guid hostPageId, string kind, IReadOnlyDictionary<string, string> parameters, CancellationToken ct);
@@ -118,7 +118,7 @@ public sealed class DynamicBlockService(
         // The host is the permission anchor: unviewable host, no block at all.
         if (!await perms.CanViewPageAsync(hostPageId)) return null;
         // IgnoreQueryFilters with the soft-delete half reapplied by hand (the
-        // same pattern SetLayout uses): the host may be an unpublished draft —
+        // same pattern SetLayout uses): the host may be an unpublished draft:
         // the editor renders blocks while a brand-new page is still being
         // composed, and the draft is the only id that exists until Publish.
         // A trashed page still has no business rendering anything.
@@ -129,7 +129,7 @@ public sealed class DynamicBlockService(
     }
 }
 
-/// <summary>Finds the dynamic blocks in a stored document, in document order — the order the renderer will meet them.</summary>
+/// <summary>Finds the dynamic blocks in a stored document, in document order: the order the renderer will meet them.</summary>
 public static class DynamicBlocks
 {
     public sealed record Placement(string Kind, IReadOnlyDictionary<string, string> Params);

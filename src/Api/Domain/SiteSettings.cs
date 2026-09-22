@@ -4,7 +4,7 @@ namespace Tesria.Api.Domain;
 /// Instance-wide configuration an administrator can change at runtime, as
 /// opposed to the deploy-time configuration in environment variables and
 /// appsettings (connection strings, OIDC, the collab secret) which stays
-/// where it is — those are secrets and topology, set before the app starts.
+/// where it is: those are secrets and topology, set before the app starts.
 ///
 /// Exactly one row, keyed by <see cref="SingletonId"/>. Typed columns rather
 /// than a key/value table: EF validates them, a migration records every shape
@@ -35,8 +35,8 @@ public class SiteSettings
     /// <summary>
     /// Whether anyone who can reach <c>/register</c> may create an account.
     /// Defaults to true, which is the behaviour before this setting existed.
-    /// Registration on a completely empty instance ignores this — see
-    /// AuthEndpoints.Register — so an operator cannot lock themselves out of a
+    /// Registration on a completely empty instance ignores this, see
+    /// AuthEndpoints.Register, so an operator cannot lock themselves out of a
     /// fresh install by turning it off before the first account exists.
     /// </summary>
     public bool AllowPublicRegistration { get; set; } = true;

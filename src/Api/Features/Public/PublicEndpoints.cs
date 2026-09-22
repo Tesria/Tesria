@@ -65,7 +65,7 @@ public static partial class PublicEndpoints
 
 /// <summary>
 /// Serves the SPA shell for a public page or space URL with its title,
-/// description and Open Graph tags in place of the generic ones — enough
+/// description and Open Graph tags in place of the generic ones: enough
 /// for link previews and search titles, without server-side rendering.
 /// Decides through the anonymous check, whoever is asking.
 /// </summary>

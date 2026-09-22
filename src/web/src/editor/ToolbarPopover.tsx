@@ -4,7 +4,7 @@ import { useEdgeAlign } from '../hooks/useEdgeAlign'
 import { ChevronDownIcon } from './icons'
 
 /**
- * A toolbar button that opens a panel beneath itself — the highlight palette
+ * A toolbar button that opens a panel beneath itself: the highlight palette
  * and the panel-type list.
  *
  * Distinct from ToolbarDropdown, which looks similar but exists only as the

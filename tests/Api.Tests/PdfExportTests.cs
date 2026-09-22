@@ -21,7 +21,7 @@ public class PdfExportTests
 
     private const string Plain = """{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"body"}]}]}""";
 
-    /// <summary>A 1x1 PNG — the smallest thing that is unambiguously an image.</summary>
+    /// <summary>A 1x1 PNG: the smallest thing that is unambiguously an image.</summary>
     private static readonly byte[] Png = Convert.FromBase64String(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==");
 

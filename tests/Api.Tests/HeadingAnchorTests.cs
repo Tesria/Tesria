@@ -15,7 +15,9 @@ public class HeadingAnchorTests
     [Theory]
     [InlineData("Setup", "setup")]
     [InlineData("  Getting Started!  ", "getting-started")]
-    [InlineData("C# & .NET 10 — notes", "c-net-10-notes")]
+    // The dash is written as an escape, not typed: the character is what
+    // this case exists to exercise, and the repo keeps none in prose.
+    [InlineData("C# & .NET 10 \u2014 notes", "c-net-10-notes")]
     [InlineData("Überblick über Größen", "überblick-über-größen")]
     [InlineData("日本語 の 見出し", "日本語-の-見出し")]
     [InlineData("---", "heading")]

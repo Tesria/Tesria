@@ -8,7 +8,7 @@ namespace Tesria.Api.Tests;
 /// <summary>
 /// The MCP tool surface (dev-plan 8.4). Every tool owes three: the result, a
 /// leak test (a target the token's owner cannot see is absent or "not
-/// found"), and — for writes — that a read-only token is refused before
+/// found"), and, for writes, that a read-only token is refused before
 /// anything changes.
 /// </summary>
 public class McpToolTests
@@ -251,7 +251,7 @@ public class McpToolTests
         var w = await Build(); using var _ = w.F;
         var bob = await Mcp(w.F, w.Bob);
 
-        // "Not found", never "you may not edit this" — the latter confirms it exists.
+        // "Not found", never "you may not edit this": the latter confirms it exists.
         var message = Error(await Call(bob, "update_page", new { pageId = w.Secret.Id, content = "mine now" }));
         Assert.Contains("not found", message);
         Assert.DoesNotContain("Secret", message);

@@ -263,7 +263,7 @@ public class McpRetrievalTests
         // Not the page's opening line, which is what it used to return.
         Assert.DoesNotContain("An introduction that mentions", snippet);
         // Postgres ranks and reports a score; the test provider cannot, and a
-        // null is omitted rather than sent as a fake 0 — "unranked" is not a
+        // null is omitted rather than sent as a fake 0: "unranked" is not a
         // score of zero. A client must treat it as optional.
         Assert.True(!hit.TryGetProperty("score", out var score) || score.ValueKind == JsonValueKind.Number);
     }

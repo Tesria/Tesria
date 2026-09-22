@@ -12,7 +12,7 @@ public interface INotificationService
     /// <paramref name="spaceId"/> is given, of its space too), excluding
     /// <paramref name="actorId"/>. Queued on the current unit of work, so
     /// notifications commit together with the change that triggered them (or
-    /// not at all) — the same pattern as <c>IAuditLogger</c>.
+    /// not at all): the same pattern as <c>IAuditLogger</c>.
     /// </summary>
     Task NotifyPageWatchersAsync(
         Guid pageId, Guid spaceId, string action, Guid actorId, object? metadata = null);
@@ -22,7 +22,7 @@ public interface INotificationService
 
     /// <summary>
     /// Queues a "page.created" notification, for each watcher of the space, that
-    /// points at the new page (not the space) — a brand-new page has no
+    /// points at the new page (not the space): a brand-new page has no
     /// watchers of its own yet, but the notification should still let its
     /// recipient click straight through to it.
     /// </summary>
@@ -30,7 +30,7 @@ public interface INotificationService
 
     /// <summary>
     /// Queues a notification for one named person, regardless of whether they
-    /// watch anything — used for a direct mention (dev-plan Phase 7 Wave C).
+    /// watch anything: used for a direct mention (dev-plan Phase 7 Wave C).
     /// The caller is responsible for checking that the recipient may see the
     /// target; this does not.
     /// </summary>

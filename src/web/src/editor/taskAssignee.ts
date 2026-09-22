@@ -4,7 +4,7 @@ import { Plugin, PluginKey } from '@tiptap/pm/state'
 const key = new PluginKey('taskAssignee')
 
 /**
- * An action item's assignee is the first person mentioned inside it — type
+ * An action item's assignee is the first person mentioned inside it: type
  * "@Ana" in a task and it becomes hers, which is exactly how Confluence
  * assigns action items.
  *

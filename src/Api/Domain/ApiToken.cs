@@ -26,7 +26,7 @@ public class ApiToken
     /// The token's one scope (dev-plan 8.4): a read-only token may call
     /// anything that does not change state. Enforced for REST by
     /// <c>TokenScopeMiddleware</c> and for MCP by each write tool. Existing
-    /// tokens are full-access — nothing narrows silently on upgrade.
+    /// tokens are full-access: nothing narrows silently on upgrade.
     /// </summary>
     public bool ReadOnly { get; set; }
 

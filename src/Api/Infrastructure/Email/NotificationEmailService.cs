@@ -14,7 +14,7 @@ namespace Tesria.Api.Infrastructure.Email;
 /// Three rules, in order of importance:
 /// <list type="number">
 /// <item><b>Security alerts to administrators go immediately</b>, whatever
-/// the recipient's preference — this is the "email the admin group"
+/// the recipient's preference (this is the "email the admin group"
 /// requirement, and it is deliberately the first email notification.</item>
 /// <item>People on <see cref="EmailNotificationMode.Immediate"/> get each
 /// tick's notifications in one message.</item>
@@ -22,7 +22,7 @@ namespace Tesria.Api.Infrastructure.Email;
 /// message a day, when there is something in it.</item>
 /// </list>
 /// Nothing is attempted while <c>EmailEnabled</c> is off, and nothing older
-/// than a day is ever sent — turning email on must not flood inboxes with
+/// than a day is ever sent) turning email on must not flood inboxes with
 /// last month's history.
 /// </summary>
 public sealed class NotificationEmailService(

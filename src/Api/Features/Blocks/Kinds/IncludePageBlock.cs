@@ -7,7 +7,7 @@ namespace Tesria.Api.Features.Blocks.Kinds;
 /// marked-off piece of the source rather than all of it).
 ///
 /// A page the caller cannot view is reported as "nothing to show", never as
-/// an error naming the page — an error would tell them the page exists,
+/// an error naming the page: an error would tell them the page exists,
 /// which is exactly what the 404 masking rule elsewhere prevents. The
 /// included content's own dynamic blocks are rendered as placeholders on
 /// both sides (architecture.md, decision 6), so an include of an include
@@ -26,7 +26,7 @@ public class IncludePageBlock : IDynamicBlockKind
         if (!Guid.TryParse(raw, out var pageId))
             throw new BlockParamException("page", "Choose a page to include.");
 
-        const string missing = "Nothing to show — the page is missing, or you cannot see it.";
+        const string missing = "Nothing to show: the page is missing, or you cannot see it.";
         if (pageId == ctx.Host.Id)
             return BlockResult.DocumentOf(Kind, null, "A page cannot include itself.");
         if (!await ctx.Perms.CanViewPageAsync(pageId))

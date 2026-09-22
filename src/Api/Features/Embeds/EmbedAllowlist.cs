@@ -48,7 +48,7 @@ public static class EmbedAllowlist
     /// <summary>
     /// The `frame-src` sources for the CSP, derived from the same entries.
     /// A subdomain entry becomes a wildcard origin; an exact entry becomes a
-    /// bare host. `https:` only — an http frame on an https page is blocked
+    /// bare host. `https:` only: an http frame on an https page is blocked
     /// by the browser anyway, and allowing it here would only be misleading.
     /// </summary>
     public static IEnumerable<string> CspSources(IEnumerable<string> entries) =>

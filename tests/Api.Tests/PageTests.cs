@@ -225,7 +225,7 @@ public class PageTests
         var bob = factory.CreateClient();
         var bobId = await bob.RegisterAndSignInAsync();
         // Locking the space to explicit grants also drops Alice to View unless
-        // re-granted — restore her Admin access alongside Bob's View-only.
+        // re-granted: restore her Admin access alongside Bob's View-only.
         await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
             new { PrincipalType = 0, PrincipalId = aliceId, Operation = 2 });
         await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
@@ -251,7 +251,7 @@ public class PageTests
 
         var fetched = await client.GetFromJsonAsync<PageDetail>($"/api/pages/{page.Id}");
         Assert.True(fetched!.FullWidth);
-        Assert.Equal(1, fetched.CurrentVersionNumber); // display metadata only — no new version
+        Assert.Equal(1, fetched.CurrentVersionNumber); // display metadata only: no new version
     }
 
     private record TrashedPage(Guid Id, string Title, DateTimeOffset DeletedAt, Guid? DeletedById);

@@ -8,7 +8,7 @@ namespace Tesria.Api.Tests;
 /// <summary>
 /// The eleven kinds added against the Wave D contract. Every kind owes the
 /// same three: a normal result, a **leak test** (a page the caller cannot
-/// view influences nothing — not a row, not a count, not a column), and an
+/// view influences nothing, not a row, not a count, not a column), and an
 /// export snapshot.
 /// </summary>
 public class DynamicBlockKindTests
@@ -86,7 +86,7 @@ public class DynamicBlockKindTests
     {
         var w = await Build(); using var _ = w.F;
         // Three more visible pages, so a limit of 3 could be filled entirely by
-        // pages sitting *below* Secret in the ordering — it must look further
+        // pages sitting *below* Secret in the ordering: it must look further
         // down rather than return a short list.
         for (var i = 0; i < 3; i++) await NewPage(w.Alice, w.Space.Id, $"Extra {i}", w.Home.Id);
         var r = await Block(w.Bob, w.Home.Id, "recently-updated", "limit=3");

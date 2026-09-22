@@ -37,7 +37,7 @@ public class ProfileTests
         res.EnsureSuccessStatusCode();
         Assert.Equal("New Name", (await res.Content.ReadFromJsonAsync<UserDto>())!.DisplayName); // trimmed
 
-        // The cookie carries the name, so it must be re-issued — otherwise the
+        // The cookie carries the name, so it must be re-issued: otherwise the
         // topbar would show the old one until the next sign-in.
         var me = await client.GetFromJsonAsync<UserDto>("/api/auth/me");
         Assert.Equal("New Name", me!.DisplayName);
@@ -83,7 +83,7 @@ public class ProfileTests
         var first = factory.CreateClient();
         await RegisterAsync(first, "a@example.com");
 
-        // A second, independent session for the same account — the "other
+        // A second, independent session for the same account: the "other
         // device" whose cookie a password change is supposed to kill.
         var second = factory.CreateClient();
         (await second.PostAsJsonAsync("/api/auth/login",
@@ -168,7 +168,7 @@ public class ProfileTests
         var client = factory.CreateClient();
         var user = await RegisterAsync(client, "sso@example.com");
 
-        // Sign in first, then remove the local password — the shape an
+        // Sign in first, then remove the local password: the shape an
         // OIDC-provisioned account has (PasswordHash null, the identity
         // provider owning the credentials). Driving a real OIDC callback would
         // need an identity provider; this exercises the same guard.
@@ -182,7 +182,7 @@ public class ProfileTests
         var email = await client.PutAsJsonAsync("/api/auth/me/email",
             new { CurrentPassword = "supersecret", Email = "other@example.com" });
         Assert.Equal(HttpStatusCode.BadRequest, email.StatusCode);
-        // A message the UI can show, not a bare 400 — the fields are rendered
+        // A message the UI can show, not a bare 400: the fields are rendered
         // read-only with this explanation rather than failing on submit.
         Assert.Contains("identity provider", await email.Content.ReadAsStringAsync());
 

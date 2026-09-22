@@ -9,8 +9,8 @@
     <title>Tesria</title>
     <!--
       Applies the saved theme before first paint. Without this the document
-      renders light for one frame and then flips — the classic dark-mode
-      flash — because the stylesheet cannot read localStorage and React has
+      renders light for one frame and then flips, the classic dark-mode
+      flash, because the stylesheet cannot read localStorage and React has
       not mounted yet. Deliberately inline and synchronous: a deferred or
       module script runs too late to help.
 
@@ -31,7 +31,7 @@
             root.setAttribute('data-accent', accent);
           }
         } catch (e) {
-          /* Storage blocked — fall through to the prefers-color-scheme default. */
+          /* Storage blocked: fall through to the prefers-color-scheme default. */
         }
       })();
     </script>

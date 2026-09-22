@@ -8,7 +8,7 @@ import { SPACE_ICON_COLORS, SpaceIconKind, spaceColorFor } from './spaceIconIden
  * search index and a font-support matrix behind it; for choosing a space icon
  * once, a grid of likely ones plus a box to paste anything else is the whole
  * job. Every one here is single-codepoint from the U+1F300+ block, so it has
- * emoji presentation by default on every platform — no variation selectors,
+ * emoji presentation by default on every platform: no variation selectors,
  * nothing that renders as monochrome text on some systems.
  */
 const SUGGESTED = [
@@ -26,7 +26,7 @@ const UPLOAD_SIZE = 512
  * Centre-crops to a square and scales down, so a phone photo is not uploaded
  * whole to produce a 24px tile. Identical in intent to the avatar picker's
  * crop, including `imageOrientation` so a portrait photo does not arrive
- * sideways — see AvatarPicker for the full reasoning.
+ * sideways: see AvatarPicker for the full reasoning.
  */
 async function cropToSquare(file: File): Promise<Blob> {
   const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
@@ -119,7 +119,7 @@ export function SpaceIconPicker({ space, onChanged }: { space: Space; onChanged:
               ? 'Your uploaded picture.'
               : space.iconKind === SpaceIconKind.Emoji
                 ? 'An emoji on a coloured tile.'
-                : `Generated from the key — the letter ${space.key[0]} on a tile.`}
+                : `Generated from the key: the letter ${space.key[0]} on a tile.`}
           </p>
           <div className="row-gap">
             <button type="button" className="btn btn--ghost btn--sm" disabled={busy}

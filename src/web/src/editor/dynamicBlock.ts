@@ -19,7 +19,7 @@ declare module '@tiptap/core' {
  * the slash menu's upload callbacks are: node views are built by the shared
  * schema and cannot take React props. Editor/CollaborativeEditor set it from
  * their `getPageId` prop; where nobody does (history previews, template
- * previews) the block shows a quiet placeholder — history is not live.
+ * previews) the block shows a quiet placeholder: history is not live.
  */
 export type DynamicBlockStorage = { getPageId?: () => Promise<string> }
 
@@ -48,7 +48,7 @@ function parseParams(raw: string | null): BlockParams {
 
 /**
  * A block whose content is the answer to a query, computed when the page is
- * looked at — Confluence's Children display, Recently updated, Task report
+ * looked at: Confluence's Children display, Recently updated, Task report
  * and the rest are all *kinds* of this one node (architecture.md, "Dynamic
  * blocks"). The document holds the question (`kind` + `params`); the answer
  * is fetched by the node view for whoever is looking, and is never stored.

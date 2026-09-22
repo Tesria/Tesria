@@ -1,5 +1,5 @@
 /**
- * The data behind a generated avatar — colours, variant selection and
+ * The data behind a generated avatar: colours, variant selection and
  * initials. Separate from `Avatar.tsx` so that file exports only a
  * component, which is what React Fast Refresh needs to work properly.
  */
@@ -7,7 +7,7 @@
 /**
  * The twelve generated-avatar backgrounds. Every one carries white text at
  * 4.5:1 or better (measured, not judged by eye), and all are dark enough to
- * read against both the light and dark page grounds — so a generated avatar
+ * read against both the light and dark page grounds, so a generated avatar
  * needs no per-theme treatment at all.
  *
  * Deliberately not the editor's `palette.ts`: those are content colours an
@@ -33,7 +33,7 @@ export type AvatarSubject = {
  *
  * FNV-1a rather than summing char codes: two ids that are anagrams of each
  * other would collide under a sum, and user ids are hex GUIDs, which share
- * an alphabet and a length — exactly the case where a weak hash clusters.
+ * an alphabet and a length: exactly the case where a weak hash clusters.
  *
  * Exported because space icons (dev-plan 6) pick a tile colour the same way,
  * from a space key rather than a user id.
@@ -56,7 +56,7 @@ export function avatarVariantFor(subject: AvatarSubject): number {
 
 /**
  * Up to two initials. Takes the first letter of the first and last words, so
- * "Ada Lovelace" reads as AL — and a single word gives one letter rather than
+ * "Ada Lovelace" reads as AL, and a single word gives one letter rather than
  * two consecutive ones, which look like an acronym that isn't there.
  *
  * `Intl.Segmenter` is used so an emoji or a surrogate pair counts as one

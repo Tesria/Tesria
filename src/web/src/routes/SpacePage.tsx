@@ -41,7 +41,7 @@ export function SpacePage() {
     ? `/spaces/${key}/new?parent=${currentPageId}`
     : `/spaces/${key}/new`
   // On mobile, viewing/editing a page has its own breadcrumb (acting as the
-  // title) and its own Edit/+New/⋮ row (PageView.tsx) — this bar would just
+  // title) and its own Edit/+New/⋮ row (PageView.tsx): this bar would just
   // be a second, redundant header stacked above that one. Desktop is
   // unaffected: this bar is display:none there regardless (see .sidebar).
   // Includes the new-page editor: every route that renders its own action
@@ -50,7 +50,7 @@ export function SpacePage() {
   // the same slot.
   const isPageRoute = Boolean(currentPageId) || Boolean(matchNew)
   // Any route with a page action bar puts its own breadcrumb *below* that
-  // bar — the bar is the top edge of the page surface, and the breadcrumb
+  // bar: the bar is the top edge of the page surface, and the breadcrumb
   // belongs with the content (Confluence does the same). Rendering it here
   // too would stack a second copy above the bar, so those routes opt out and
   // render it themselves: PageEditor for edit/new, PageView for reading. The
@@ -109,7 +109,7 @@ export function SpacePage() {
 
   return (
     <div className="space-layout">
-      {/* Mobile only (hidden >640px) — the sidebar below is always visible
+      {/* Mobile only (hidden >640px): the sidebar below is always visible
           on desktop, so this bar only needs to exist as a narrow-viewport
           substitute for it. Back-to-space-home navigation lives in the
           breadcrumb now, not here, so this is just a label. */}

@@ -9,7 +9,7 @@ namespace Tesria.Api.Infrastructure.Auth;
 /// <summary>
 /// Issues and validates personal access tokens. A raw token is
 /// <c>{tokenId}.{secret}</c>: the id gives an O(1) lookup, and the secret (32
-/// random bytes, base64url) is never stored — only its hash, verified in
+/// random bytes, base64url) is never stored: only its hash, verified in
 /// constant time, mirroring password handling.
 /// </summary>
 public interface IApiTokenService

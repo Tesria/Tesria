@@ -103,7 +103,7 @@ public static class PermissionEndpoints
         var row = await db.SpacePermissions.FirstOrDefaultAsync(p => p.Id == id && p.SpaceId == space.Id);
         if (row is null) return Results.NotFound();
 
-        // Refuse to remove the last admin — that would leave the space
+        // Refuse to remove the last admin: that would leave the space
         // unmanageable (it does not fall back to default-open while other
         // permission rows remain).
         if (row.Operation == SpaceOperation.Admin)

@@ -11,7 +11,7 @@ export const SlashMenu = forwardRef<SlashMenuRef, SuggestionProps<SlashItem>>((p
   const { items, command } = props
   const [selected, setSelected] = useState(0)
 
-  // The item list changes as the user types the query — keep the highlighted
+  // The item list changes as the user types the query: keep the highlighted
   // index in range rather than pointing at a since-filtered-out item.
   useEffect(() => {
     setSelected(0)

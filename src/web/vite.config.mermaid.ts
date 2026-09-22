@@ -4,7 +4,7 @@ import { defineConfig } from 'vite'
  * Builds Mermaid into ONE self-contained file, for inlining into exported
  * HTML pages that contain a diagram.
  *
- * The app's own bundle deliberately does the opposite — it lets Mermaid
+ * The app's own bundle deliberately does the opposite: it lets Mermaid
  * code-split, so a reader who opens a page with a sequence diagram
  * downloads only that diagram's renderer. An exported file has no server to
  * fetch the other chunks from, so here every dynamic import is inlined and

@@ -48,7 +48,7 @@ public static class ApiTokenEndpoints
         var (raw, entity) = await tokens.IssueAsync(current.RequireId(), name, req.ReadOnly ?? false);
         await detector.TokenMintedAsync(current.RequireId());
         await db.SaveChangesAsync();
-        // The raw token is returned exactly once — it is not retrievable again.
+        // The raw token is returned exactly once: it is not retrievable again.
         return Results.Created($"/api/api-tokens/{entity.Id}",
             new CreatedTokenResponse(entity.Id, entity.Name, entity.Prefix, entity.ReadOnly, entity.CreatedAt, raw));
     }

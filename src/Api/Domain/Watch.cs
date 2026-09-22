@@ -10,7 +10,7 @@ public class Watch
     public Guid UserId { get; set; }
     public User? User { get; set; }
 
-    /// <summary>"page" or "space" — matches <see cref="AuditLog.TargetType"/>'s convention.</summary>
+    /// <summary>"page" or "space": matches <see cref="AuditLog.TargetType"/>'s convention.</summary>
     public required string TargetType { get; set; }
 
     public Guid TargetId { get; set; }

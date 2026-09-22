@@ -189,7 +189,7 @@ public class ProfileMediaTests
         var client = factory.CreateClient();
         await client.RegisterAndSignInAsync();
 
-        // Null by default — the client derives one from the user id, so every
+        // Null by default: the client derives one from the user id, so every
         // account has an avatar with no row written and no file stored.
         Assert.Null((await client.GetFromJsonAsync<UserDto>("/api/auth/me"))!.AvatarVariant);
 

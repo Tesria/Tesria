@@ -168,7 +168,7 @@ public interface ISecurityDetector
 
 /// <summary>
 /// Writes security events and raises alerts. Queues on the caller's unit of
-/// work — the caller's SaveChanges commits event, alert and notifications
+/// work: the caller's SaveChanges commits event, alert and notifications
 /// together with whatever triggered them.
 /// </summary>
 public sealed class SecurityDetector(AppDbContext db, SecurityCounters counters, INotificationService notifications)

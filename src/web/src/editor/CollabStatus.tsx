@@ -10,10 +10,10 @@ export function CollabStatus({ status }: { status: CollabConnection }) {
     <div className="collab-status collab-status--bar" role="status">
       <span className={`collab-dot collab-dot--${status}`} />
       {status === 'connected'
-        ? 'Live — changes are shared as you type'
+        ? 'Live: changes are shared as you type'
         : status === 'connecting'
           ? 'Connecting to collaboration…'
-          : 'Offline — your changes are local until reconnected'}
+          : 'Offline: your changes are local until reconnected'}
     </div>
   )
 }

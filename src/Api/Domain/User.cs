@@ -44,7 +44,7 @@ public class User
     /// <summary>
     /// Roughly when this account last made an authenticated request. Written at
     /// most once every few minutes (see LastSeenTracker), so it is accurate to
-    /// that interval, not to the second — enough for "active in the last 7
+    /// that interval, not to the second: enough for "active in the last 7
     /// days" and deliberately not a per-request write. Null until the user's
     /// first request after this column existed.
     /// </summary>
@@ -67,7 +67,7 @@ public class User
 
     /// <summary>
     /// Which generated avatar this user picked, or null to derive one from
-    /// their id. Only consulted when <see cref="AvatarKey"/> is null — an
+    /// their id. Only consulted when <see cref="AvatarKey"/> is null: an
     /// uploaded image always wins.
     ///
     /// Stored as an index rather than a colour so the generated set can be
@@ -85,7 +85,7 @@ public class User
     /// rather than at the cookie's next expiry. That is the whole reason a
     /// stateless cookie scheme can still revoke a session.
     ///
-    /// Not a secret — it is an opaque version marker, and knowing it grants
+    /// Not a secret: it is an opaque version marker, and knowing it grants
     /// nothing without the signed cookie it lives in.
     /// </summary>
     public string SecurityStamp { get; set; } = Guid.NewGuid().ToString("N");

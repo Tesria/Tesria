@@ -1,4 +1,4 @@
-# Tesria — full self-hosted stack.
+# Tesria: full self-hosted stack.
 #
 #   cp .env.example .env      # then edit secrets
 #   docker compose up -d
@@ -81,7 +81,7 @@ services:
       # Read once, on the first start after dev-plan 9.1, to seed the backup
       # retention policy; after that the policy lives on the admin page.
       Backup__SeedRetentionDays: ${BACKUP_RETENTION_DAYS:-14}
-      # OIDC/SSO — empty OIDC_AUTHORITY disables it entirely (local accounts
+      # OIDC/SSO: empty OIDC_AUTHORITY disables it entirely (local accounts
       # only). See .env.example for the full set of variables.
       Oidc__Authority: ${OIDC_AUTHORITY}
       Oidc__ClientId: ${OIDC_CLIENT_ID}
@@ -116,7 +116,7 @@ services:
     volumes:
       # deploy/Caddyfile is the LAN/dev configuration (internal CA, catch-all
       # for LAN IPs). Set CADDYFILE=deploy/Caddyfile.public in .env when the
-      # server is reachable from the internet — see docs/security.md.
+      # server is reachable from the internet: see docs/security.md.
       - ./${CADDYFILE:-deploy/Caddyfile}:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
@@ -176,7 +176,7 @@ services:
   pdf:
     # PDF export (dev-plan 8.1). A real browser engine is the only honest way
     # to turn the print-ready HTML export into a PDF, and a ~400MB Chromium
-    # has no business inside the app image — so it is a sidecar, like collab.
+    # has no business inside the app image, so it is a sidecar, like collab.
     #
     # It is handed a self-contained document (images inlined, diagrams
     # carrying their own renderer) and runs with its network switched off,
@@ -214,7 +214,7 @@ services:
       PGUSER: ${POSTGRES_USER}
       PGDATABASE: ${POSTGRES_DB}
       # Connect as the instance superuser over the socket (there is no "postgres"
-      # role — the superuser is POSTGRES_USER). PGPASSWORD covers scram auth.
+      # role: the superuser is POSTGRES_USER). PGPASSWORD covers scram auth.
       PGBACKREST_PG1_USER: ${POSTGRES_USER}
       PGPASSWORD: ${POSTGRES_PASSWORD}
       PGBACKREST_REPO1_CIPHER_TYPE: aes-256-cbc

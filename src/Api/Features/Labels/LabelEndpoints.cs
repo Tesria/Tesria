@@ -122,7 +122,7 @@ public static partial class LabelEndpoints
         return Results.NoContent();
     }
 
-    /// <summary>Live pages carrying a label — the "browse by tag" view.</summary>
+    /// <summary>Live pages carrying a label: the "browse by tag" view.</summary>
     private static async Task<IResult> PagesForLabel(
         string name, AppDbContext db, IPermissionService perms)
     {

@@ -33,7 +33,7 @@ export function PageEditor() {
     document.addEventListener('paste', onPaste)
     return () => document.removeEventListener('paste', onPaste)
   }, [])
-  // Co-editing applies to existing pages only — a new page has no id to share.
+  // Co-editing applies to existing pages only: a new page has no id to share.
   const [collab, setCollab] = useState<CollabToken | null>(null)
   const [collabStatus, setCollabStatus] = useState<CollabConnection | null>(null)
 
@@ -51,14 +51,14 @@ export function PageEditor() {
   const [fullWidth, setFullWidth] = useState(false)
 
   // The formatting toolbar renders in the page-level top action bar (not
-  // inside the paper card), same as view mode — the Editor/CollaborativeEditor
+  // inside the paper card), same as view mode: the Editor/CollaborativeEditor
   // hand their live TipTap instance up via this callback once created.
   const [editorInstance, setEditorInstance] = useState<TiptapEditor | null>(null)
   /** Tracked changes from outside this session, waiting to be decided (dev-plan 8.6). */
   const [pendingExternal, setPendingExternal] = useState(0)
   const collabRef = useRef<CollabHandle | null>(null)
 
-  // A brand-new page has no id until the user clicks "Create page" — but
+  // A brand-new page has no id until the user clicks "Create page", but
   // attachments (and, later, other id-keyed features) need a real one right
   // away. So a hidden draft page is created the moment the editor mounts;
   // it's invisible everywhere until this form's submit "publishes" it.
@@ -146,7 +146,7 @@ export function PageEditor() {
     !leavingRef.current && currentLocation.pathname !== nextLocation.pathname)
   const [leaveError, setLeaveError] = useState<string | null>(null)
 
-  // Reloading or closing the tab gets the browser's own prompt — the only
+  // Reloading or closing the tab gets the browser's own prompt: the only
   // kind a page is allowed to show for that.
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -188,7 +188,7 @@ export function PageEditor() {
       })
     } else {
       const id = draftId ?? (await draftIdRef.current)
-      if (!id) throw new Error('Still preparing this page — try again in a moment.')
+      if (!id) throw new Error('Still preparing this page: try again in a moment.')
       saved = await api.pages.publish(id, { title, contentJson: body })
     }
     reloadTree()
@@ -268,13 +268,13 @@ export function PageEditor() {
   async function resolveUploadPageId(): Promise<string> {
     if (pageId) return pageId
     const id = draftId ?? (await draftIdRef.current)
-    if (!id) throw new Error('Still preparing this page — try again in a moment.')
+    if (!id) throw new Error('Still preparing this page: try again in a moment.')
     return id
   }
 
   async function toggleFullWidth() {
     const next = !fullWidth
-    setFullWidth(next) // optimistic — display metadata, not document content
+    setFullWidth(next) // optimistic: display metadata, not document content
     try {
       const id = await resolveUploadPageId()
       await api.pages.setLayout(id, { fullWidth: next })
@@ -318,7 +318,7 @@ export function PageEditor() {
             <span className="page-actionbar__fullwidth-label">{fullWidth ? 'Normal width' : 'Full width'}</span>
           </button>
           {/* Publish/Update and Close sit on the toolbar row, where
-              Confluence keeps them — not under the page. They are outside
+              Confluence keeps them, not under the page. They are outside
               the <form> element, so `form=` ties the submit to it. */}
           <button type="submit" form="page-editor-form" className="btn btn--primary" disabled={busy}>
             {busy ? 'Saving…' : isEdit ? 'Update' : 'Publish'}
@@ -388,7 +388,7 @@ export function PageEditor() {
           autoFocus={!isEdit}
           // Return in the title goes to the first line of the body. Without
           // this, the title being the form's only text input means Return
-          // is HTML's implicit submission — on a phone, where Return is the
+          // is HTML's implicit submission: on a phone, where Return is the
           // obvious way to leave the title, that published the page.
           onKeyDown={(e) => {
             if (e.key === 'Enter') {

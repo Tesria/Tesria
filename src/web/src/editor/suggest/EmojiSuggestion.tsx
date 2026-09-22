@@ -26,7 +26,7 @@ EmojiList.displayName = 'EmojiList'
 
 /**
  * `:name` inserts the literal character. Nothing new reaches the schema, the
- * export renderer or the search index — the document just contains text that
+ * export renderer or the search index: the document just contains text that
  * happened to be typed with a picker.
  */
 export const EmojiSuggestion = Extension.create({

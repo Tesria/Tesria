@@ -15,7 +15,7 @@ public sealed class RecentlyUpdatedBlock : IDynamicBlockKind
 
         // Candidates are already newest-first; VisibleAsync stops at `limit`
         // *visible* rows, so a run of restricted pages does not shorten the
-        // list — it just means looking further down.
+        // list: it just means looking further down.
         var candidates = await PageScope.CandidatesAsync(ctx, scope, ct);
         var visible = await ctx.VisibleAsync(candidates, c => c.Id, limit, ct);
 

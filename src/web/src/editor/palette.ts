@@ -3,7 +3,7 @@
  * table cell-background menu.
  *
  * These are Atlassian's own palette values, in the same light / medium / bold
- * tiers Confluence's cell "Background colour" picker offers — Confluence
+ * tiers Confluence's cell "Background colour" picker offers: Confluence
  * deliberately ships a fixed palette rather than a hex input, and this app's
  * theme is already built on the same colour family (see index.css's `--text:
  * #172b4d` / `--primary: #0c66e4`), so the swatches sit naturally against it.
@@ -23,7 +23,7 @@ export type Swatch = {
 }
 
 /**
- * Table cell backgrounds — three tiers of seven hues plus white, matching the
+ * Table cell backgrounds, three tiers of seven hues plus white, matching the
  * grid Confluence shows under Cell options → Background colour.
  */
 export const CELL_BACKGROUND_TIERS: Swatch[][] = [
@@ -63,7 +63,7 @@ export const CELL_BACKGROUND_TIERS: Swatch[][] = [
  * legibly enough to offer as a text background.
  */
 export const HIGHLIGHT_TIERS: Swatch[][] = [
-  CELL_BACKGROUND_TIERS[0].slice(2), // drop white/light-grey — invisible as a highlight
+  CELL_BACKGROUND_TIERS[0].slice(2), // drop white/light-grey: invisible as a highlight
   CELL_BACKGROUND_TIERS[1].slice(1),
 ]
 

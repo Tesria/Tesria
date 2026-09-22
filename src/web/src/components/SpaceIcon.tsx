@@ -8,7 +8,7 @@ import {
 } from './spaceIconIdentity'
 
 /**
- * A space's icon: an uploaded picture, a chosen emoji, or — the default —
+ * A space's icon: an uploaded picture, a chosen emoji, or, the default,
  * the key's first letter on a coloured tile. Every space therefore has one
  * from the moment it is created, with no storage and no round trip, the same
  * reasoning as generated avatars.

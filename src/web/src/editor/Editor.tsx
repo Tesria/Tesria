@@ -38,7 +38,7 @@ type Props = {
   /**
    * Called with the live TipTap instance once it exists (and with null on
    * unmount), so the host page can render the formatting Toolbar in its own
-   * top action bar instead of inside the editor — keeping view and edit mode
+   * top action bar instead of inside the editor: keeping view and edit mode
    * visually consistent.
    */
   onEditorReady?: (editor: TiptapEditor | null) => void
@@ -100,7 +100,7 @@ export function Editor({ value, editable = true, onChange, getUploadPageId, onUp
   }, [editor, editable])
 
   // The slash-command menu's Image item needs the current upload callbacks,
-  // but SlashCommand is configured once in the shared extension list — so
+  // but SlashCommand is configured once in the shared extension list, so
   // instead they're handed to it via editor.storage, kept in sync here.
   useEffect(() => {
     if (!editor) return

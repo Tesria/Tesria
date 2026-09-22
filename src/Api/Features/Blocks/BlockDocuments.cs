@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Tesria.Api.Features.Blocks;
 
 /// <summary>
-/// Reading pieces out of a stored ProseMirror document — the three
+/// Reading pieces out of a stored ProseMirror document: the three
 /// `document`- and content-driven kinds all need to, and none of them
 /// should be parsing JSON by hand.
 /// </summary>
@@ -97,7 +97,7 @@ public static class BlockDocuments
     /// <summary>
     /// The key/value pairs of the first `pageProperties` node: a two-column
     /// table, first column the key, second the value. Rows with an empty key
-    /// are skipped — an author's blank row is not a column.
+    /// are skipped: an author's blank row is not a column.
     /// </summary>
     public static List<PropertyRow> Properties(string? contentJson)
     {

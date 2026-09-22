@@ -9,7 +9,7 @@ const RANGES = [7, 30, 90] as const
 /**
  * A single-series sparkline.
  *
- * One series, so there is no legend and no categorical palette — the tile's
+ * One series, so there is no legend and no categorical palette: the tile's
  * own title names what it is. Colour is a single token: `--primary` for
  * ordinary activity, `--danger` for failed logins, which is a status signal
  * rather than "another series".
@@ -70,7 +70,7 @@ function Sparkline({
       <p className="spark__hint muted small">
         {active
           ? // A bare "2026-09-16" parses as midnight UTC, which is the previous
-            // evening anywhere west of Greenwich — the label showed the wrong
+            // evening anywhere west of Greenwich: the label showed the wrong
             // day. With a time and no offset it parses as local midnight.
             `${new Date(`${active.date}T00:00:00`).toLocaleDateString()} · ${active.count}`
           : `Last ${points.length} days`}
@@ -79,7 +79,7 @@ function Sparkline({
   )
 }
 
-/** A hero number. Not a chart — one value has no shape to plot. */
+/** A hero number. Not a chart, one value has no shape to plot. */
 function Stat({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
     <div className="stat">

@@ -9,8 +9,8 @@ namespace Tesria.Api.Features.Media;
 
 /// <summary>
 /// Serves and replaces profile media (dev-plan 0.4): user avatars and space
-/// icons (dev-plan 6). Both go through the same re-encoding pipeline — the
-/// security control described on <see cref="ProfileMediaService"/> — and are
+/// icons (dev-plan 6). Both go through the same re-encoding pipeline, the
+/// security control described on <see cref="ProfileMediaService"/>, and are
 /// served from URLs carrying a content hash, so they cache indefinitely.
 /// </summary>
 public static class MediaEndpoints
@@ -46,7 +46,7 @@ public static class MediaEndpoints
     /// permission-checked, which is the case that actually matters.
     ///
     /// Served with a long max-age because the URL carries a content hash
-    /// (<c>?v=</c>) — a new upload produces a new URL, so a stale cache is not
+    /// (<c>?v=</c>): a new upload produces a new URL, so a stale cache is not
     /// possible and revalidation is wasted work. <c>immutable</c> says exactly
     /// that to the browser.
     /// </summary>

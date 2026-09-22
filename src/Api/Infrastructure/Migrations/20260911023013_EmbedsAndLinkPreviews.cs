@@ -15,7 +15,7 @@ namespace Tesria.Api.Infrastructure.Migrations
             // property initialiser: that initialiser only runs for a *new*
             // SiteSettings object, so on an instance that already has its
             // settings row an empty default would silently turn embeds off
-            // on upgrade. Found by upgrading a running instance — a fresh
+            // on upgrade. Found by upgrading a running instance: a fresh
             // test database never takes this path.
             migrationBuilder.AddColumn<string>(
                 name: "EmbedAllowlist",

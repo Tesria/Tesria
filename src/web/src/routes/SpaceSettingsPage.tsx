@@ -13,7 +13,7 @@ import { useSpaceContext } from './SpacePage'
  * The name and description endpoint existed since Phase 2 with nothing in the
  * UI reaching it; the icon needed somewhere to live, so this page finally
  * gives both a home. It is the Details tab of `SpaceSettingsLayout`, which
- * owns the heading and the tab row — permissions, webhooks and trash are
+ * owns the heading and the tab row: permissions, webhooks and trash are
  * the other three tabs.
  */
 export function SpaceSettingsPage() {
@@ -77,7 +77,7 @@ export function SpaceSettingsPage() {
       <section className="profile__section profile__section--wide">
         <h2>Icon</h2>
         <p className="muted small">
-          Shown wherever this space appears — the spaces list, the sidebar and the
+          Shown wherever this space appears: the spaces list, the sidebar and the
           breadcrumb.
         </p>
         <SpaceIconPicker space={space} onChanged={(updated) => applied(updated, 'Icon updated.')} />

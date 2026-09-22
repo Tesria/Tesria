@@ -14,7 +14,7 @@ declare module '@tiptap/core' {
 /**
  * Excerpt: the piece of a page that other pages include (the
  * `excerpt-include` dynamic block takes the *first* one). A plain static
- * container — no query, no node view — so it costs the schema one node and
+ * container (no query, no node view) so it costs the schema one node and
  * the export renderer nothing: an exported page shows its excerpt as
  * ordinary content, because that is what it is.
  */
@@ -43,7 +43,7 @@ export const Excerpt = Node.create({
 /**
  * Page properties: a two-column table (key, value) that the
  * `page-properties-report` block reads across pages. Also a static
- * container — the table inside is a normal table, so it is edited with the
+ * container: the table inside is a normal table, so it is edited with the
  * table controls everyone already knows.
  */
 export const PageProperties = Node.create({

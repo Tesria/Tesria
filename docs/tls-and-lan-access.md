@@ -3,7 +3,7 @@
 Tesria is always served over HTTPS (Caddy handles this automatically),
 but *how* that HTTPS is trusted depends on whether you have a real domain
 pointed at the server. This doc covers both paths, and how to make the app
-reachable — without browser warnings — from every device on your network,
+reachable, without browser warnings, from every device on your network,
 including phones and tablets.
 
 ## Which path applies to you?
@@ -16,7 +16,7 @@ including phones and tablets.
   [Path 2](#path-2-no-domain-lan-and-mobile-access). Also free; takes one
   extra one-time step per device.
 
-These aren't mutually exclusive — a server with a real `DOMAIN` set still
+These aren't mutually exclusive: a server with a real `DOMAIN` set still
 answers on its LAN IP too (see [How this works](#how-this-works) below), so
 Path 2's trust step is worth doing either way if you access the server by IP
 or hostname as well as by its real domain.
@@ -46,13 +46,13 @@ briefly reachable from Let's Encrypt's servers).
 
 If you own a domain but want the server fully firewalled from the public
 internet (no inbound 80/443 from the internet at all), Caddy supports the
-ACME **DNS-01** challenge instead — it proves domain ownership by creating a
+ACME **DNS-01** challenge instead: it proves domain ownership by creating a
 TXT record via your DNS provider's API, so no inbound port needs to be
 reachable. This needs a Caddy build with your DNS provider's plugin (Caddy
 ships dozens, e.g. Cloudflare, Route53, DigitalOcean); see [Caddy's DNS
 provider list](https://caddyserver.com/docs/modules/) and [xcaddy](https://github.com/caddyserver/xcaddy)
 for building a custom image. This isn't wired into this project's default
-`deploy/Dockerfile`/`docker-compose.yml` — it's a DIY path for anyone who
+`deploy/Dockerfile`/`docker-compose.yml`: it's a DIY path for anyone who
 wants it, not a turnkey option today.
 
 ---
@@ -65,20 +65,20 @@ Caddy generates its own private certificate authority (CA) the first time it
 runs, and uses it to sign a certificate for `DOMAIN` (e.g. `localhost`). Your
 browser doesn't trust that CA by default, hence the warning.
 
-As of this setup, the server *also* answers on **any other hostname** — a
+As of this setup, the server *also* answers on **any other hostname** (a
 `.local` mDNS name, another local DNS name, whatever a device on your network
-uses to reach it — minting a certificate for that specific name on the fly
+uses to reach it) minting a certificate for that specific name on the fly
 the first time it's requested (Caddy's "On-Demand TLS"), signed by that same
 local CA. You don't need to configure or list anything, and it keeps working
 regardless of DHCP/IP changes, since it's keyed off the name, not the address.
 
 **Use a hostname, not a raw IP, to reach the server.** TLS's Server Name
-Indication (SNI) — how a server knows *which* certificate to present — only
+Indication (SNI), how a server knows *which* certificate to present, only
 works for hostnames; most clients (browsers included) send no SNI at all
 when you connect to a literal IP address like `192.168.1.50`. Without it,
 Caddy can't tell which on-demand certificate to serve and falls back to a
 fixed default, so a raw IP will keep showing a mismatch/warning even after
-you've trusted the CA. This isn't a bug to work around — it's inherent to
+you've trusted the CA. This isn't a bug to work around: it's inherent to
 how SNI-based virtual hosting works. A `.local` name (automatic via
 Bonjour/mDNS on macOS and most Linux/Android; Windows may need [Bonjour
 Print Services](https://support.apple.com/kb/DL999) installed for reliable
@@ -91,7 +91,7 @@ of your choice to the server's IP.
 That means the fix is the same regardless of which hostname you use to reach
 the server: **trust the CA once, per device**, and every hostname this
 server answers on becomes warning-free on that device, permanently (until
-the CA itself changes — see [Troubleshooting](#troubleshooting)).
+the CA itself changes: see [Troubleshooting](#troubleshooting)).
 
 ### One-time setup per device
 
@@ -107,26 +107,26 @@ the CA itself changes — see [Troubleshooting](#troubleshooting)).
 .\deploy\scripts\trust-ca.ps1 <server-hostname>
 ```
 
-`<server-hostname>` should be a name, e.g. `mymac.local` — not a raw IP, for
+`<server-hostname>` should be a name, e.g. `mymac.local`, not a raw IP, for
 the SNI reason above. The script itself works identically either way (it's
 just fetching a file over HTTP); it's the *browser's* subsequent HTTPS
 requests that need a real hostname to validate cleanly.
 
-`<server-address>` is however that device reaches the server — an IP
+`<server-address>` is however that device reaches the server: an IP
 (`192.168.1.50`), a hostname (`mymac.local`), or just omit it to default to
 `localhost` (for running the script on the same machine as the server).
 
 Both scripts:
 1. Download the CA's public root certificate from `http://<server-address>/ca.crt`
-   (deliberately plain HTTP — nothing is trusted yet, so there's no TLS to
+   (deliberately plain HTTP: nothing is trusted yet, so there's no TLS to
    speak of for this one bootstrap fetch; the file itself isn't secret, it's
    the public half of the CA).
 2. Install it into the OS's system trust store (macOS System keychain /
    Windows machine Root store), which both scripts need administrator
-   privileges for for — you'll be prompted for your password.
+   privileges for for: you'll be prompted for your password.
 3. Re-check `https://<server-address>/api/health` to confirm it worked.
 
-Re-running either script is safe — it replaces the previous copy of this
+Re-running either script is safe: it replaces the previous copy of this
 same CA instead of piling up duplicates.
 
 **This is a one-time, per-device step.** Run it once on every computer you
@@ -153,39 +153,39 @@ short:
 2. **iOS:** opening the file prompts to install a configuration profile
    (Settings → General → VPN & Device Management → install it). Then go to
    Settings → General → About → Certificate Trust Settings and enable full
-   trust for the new root — iOS requires this second step separately, or the
+   trust for the new root: iOS requires this second step separately, or the
    cert is installed but not trusted for TLS.
 3. **Android:** Settings → Security → Encryption & credentials → Install a
    certificate → CA certificate, and select the downloaded file. Some
    versions warn that a "network may be monitored" when a user-installed CA
-   is trusted — that's standard Android messaging for any manually-installed
+   is trusted: that's standard Android messaging for any manually-installed
    CA, expected here.
 
 ### Troubleshooting
 
 - **Still warned after running the script?** Fully quit and reopen the
-  browser (not just the tab/window) — certificate trust is often cached per
+  browser (not just the tab/window): certificate trust is often cached per
   process.
 - **A brand-new device/IP still warns even though others don't.** Each
   hostname/IP gets its own on-demand certificate the *first* time it's
-  requested — that's normal and one-time per address, separate from trusting
+  requested: that's normal and one-time per address, separate from trusting
   the CA itself (which is per-device, not per-address).
 - **Everyone needs to re-trust after a server rebuild.** If the `caddy_data`
   volume is ever removed (`docker compose down -v`, or a fresh volume from
   moving to new hardware), Caddy generates a **new** CA with a new private
-  key — the old trust doesn't carry over. Re-run the trust script on every
+  key: the old trust doesn't carry over. Re-run the trust script on every
   device. Normal `docker compose up -d --build` / container recreation does
   **not** touch this volume, so this should be rare.
 - **`docker compose logs caddy` shows "YOUR SERVER MAY BE VULNERABLE TO
   ABUSE: on-demand TLS is enabled, but no protections are in place".** This
-  is Caddy's generic on-demand-TLS warning, and it's expected here — the
+  is Caddy's generic on-demand-TLS warning, and it's expected here: the
   restriction it's referring to (an "ask" endpoint to approve/deny each
   hostname before issuing) exists to stop abuse of *public* ACME rate limits.
   It doesn't apply to this local CA: nothing here talks to the outside
   internet, so there's no external rate limit or reputation to abuse. The
   actual exposure is that **anyone who can reach this server on port 443 can
   make it mint a certificate for an arbitrary hostname**, which is a minor
-  resource-usage nuisance, not a trust bypass — those certs are still signed
+  resource-usage nuisance, not a trust bypass: those certs are still signed
   by your own local CA, not a publicly-trusted one. If you're only reachable
   on your LAN, this is fine. If you ever expose port 443 directly to the
   public internet without a real `DOMAIN` configured, firewall it to your
@@ -196,8 +196,8 @@ short:
 The default `deploy/Caddyfile` is built for a LAN: its catch-all `:443`
 block mints an internal-CA certificate for *any* name a client connects
 with, so phones can reach the wiki by IP. On the internet that is a
-liability — a stranger can trigger certificate minting for arbitrary
-names — and the internal CA is meaningless anyway because nobody outside
+liability, a stranger can trigger certificate minting for arbitrary
+names, and the internal CA is meaningless anyway because nobody outside
 your network has trusted it.
 
 Use the public variant instead. In `.env`:
@@ -213,7 +213,7 @@ then `docker compose up -d caddy`. `deploy/Caddyfile.public` serves only
 `includeSubDomains`, `preload`), and does not offer `/ca.crt`.
 
 **HSTS is a one-way door.** Once a browser has seen it, it will refuse plain
-HTTP to that host and will not let a user click past a certificate error —
+HTTP to that host and will not let a user click past a certificate error:
 for `max-age` seconds, even after you turn it off. That is the point on a
 real domain and a disaster on `localhost` with an untrusted internal CA,
 which is why the default file never sends it.
@@ -222,7 +222,7 @@ The app trusts `X-Forwarded-For` / `X-Forwarded-Proto` only from the
 compose network's private ranges (`Proxy:TrustedNetworks`), which is safe
 because the app's port 8080 is exposed only to that network. If you put your
 own proxy in front instead of Caddy, set `PROXY_TRUSTED_NETWORKS` to that
-proxy's address — and never publish port 8080 to the host, or any LAN
+proxy's address, and never publish port 8080 to the host, or any LAN
 client could set those headers itself.
 
 Before exposing anything, read the internet-readiness checklist in

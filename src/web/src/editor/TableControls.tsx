@@ -3,8 +3,8 @@ import { controlOrigin, useHoveredTable } from './useHoveredTable'
 
 /**
  * Hover-triggered row/column insert (+) and delete (×) controls rendered
- * directly on the table itself — matching Confluence's table editing
- * pattern — instead of a persistent toolbar strip. Column-border dragging
+ * directly on the table itself, matching Confluence's table editing
+ * pattern, instead of a persistent toolbar strip. Column-border dragging
  * (resize) is unrelated built-in prosemirror-tables behaviour, unaffected
  * by this component.
  */

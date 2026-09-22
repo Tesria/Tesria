@@ -5,7 +5,7 @@ namespace Tesria.Api.Features.Blocks;
 
 /// <summary>
 /// The candidate sets the kinds share: this page's subtree, its space, or
-/// everywhere. Candidates only — every kind still runs them through
+/// everywhere. Candidates only: every kind still runs them through
 /// <see cref="BlockContext.VisibleAsync"/>, which is where the permission
 /// rule lives (architecture.md, "Dynamic blocks", decision 4).
 /// </summary>
@@ -32,7 +32,7 @@ public static class PageScope
             .OrderByDescending(p => p.UpdatedAt)
             .ToList();
 
-        // "tree" is the host's descendants, which needs the parent links —
+        // "tree" is the host's descendants, which needs the parent links:
         // cheaper to narrow in memory than to recurse in SQL at wiki scale.
         if (scope == "tree")
         {

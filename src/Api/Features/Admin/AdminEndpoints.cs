@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Tesria.Api.Features.Admin;
 
 /// <summary>
-/// Instance-level operations, gated by the Admin role alone — they are about
+/// Instance-level operations, gated by the Admin role alone: they are about
 /// the instance, not about any space's content.
 ///
 /// Note what is deliberately absent: there is no endpoint here that returns
@@ -27,8 +27,8 @@ public static class AdminEndpoints
 
     /// <summary>
     /// The reset link, returned once. The administrator passes it to the user
-    /// out of band — in person, over chat, however they already verify identity
-    /// — which is what makes this work with no email server configured.
+    /// out of band (in person, over chat, however they already verify identity)
+    ///which is what makes this work with no email server configured.
     /// </summary>
     public record IssuedResetResponse(string Token, string Path, DateTimeOffset ExpiresAt);
 
@@ -98,8 +98,8 @@ public static class AdminEndpoints
 
     /// <summary>
     /// Every field is optional: an omitted (null) field leaves the stored value
-    /// alone, so a caller can change one setting without having to send — and
-    /// risk clobbering — the rest.
+    /// alone, so a caller can change one setting without having to send, and
+    /// risk clobbering, the rest.
     ///
     /// <paramref name="SmtpPassword"/> follows the same rule with one addition:
     /// an empty string means "clear it", which null cannot express.
@@ -166,8 +166,8 @@ public static class AdminEndpoints
     /// Grants the calling admin an explicit <see cref="SpaceOperation.Admin"/>
     /// permission on a space, so they can administer (or recover) it.
     ///
-    /// From that point the existing permission rules apply unchanged — including
-    /// the one that already lets an explicit space admin past page restrictions —
+    /// From that point the existing permission rules apply unchanged, including
+    /// the one that already lets an explicit space admin past page restrictions,
     /// rather than adding an "unless admin" branch to every check. The grant is a
     /// normal row, so it can be revoked afterwards through the usual permissions
     /// endpoint, returning the admin to ordinary access.
@@ -265,7 +265,7 @@ public static class AdminEndpoints
     /// <summary>
     /// Sends a short message to the calling administrator's own address, so
     /// the SMTP settings can be proven before anything depends on them. The
-    /// result — including the server's error text — comes back in the body.
+    /// result, including the server's error text, comes back in the body.
     /// </summary>
     private static async Task<IResult> SendTestEmail(
         Infrastructure.Email.IEmailSender email, ISiteSettingsService settings, CurrentUser current,
@@ -320,7 +320,7 @@ public static class AdminEndpoints
             });
 
         // Recorded before the mutation so the entry names what actually changed
-        // rather than the full (largely unchanged) new state — and never the
+        // rather than the full (largely unchanged) new state, and never the
         // password itself, only that it was touched.
         var changed = new List<string>();
         if (name is not null) changed.Add(nameof(req.InstanceName));
@@ -492,7 +492,7 @@ public static class AdminEndpoints
     private static async Task<IResult> ListInvites(AppDbContext db)
     {
         // Ordered in memory: SQLite (the test provider) cannot ORDER BY a
-        // DateTimeOffset — the same limitation AuditEndpoints works around.
+        // DateTimeOffset: the same limitation AuditEndpoints works around.
         // An invite list is inherently small, so there is nothing to page.
         var invites = await db.Invites.AsNoTracking()
             .Select(i => new InviteResponse(i.Id, i.Email, i.ExpiresAt, i.UsedAt, i.CreatedAt))
@@ -501,7 +501,7 @@ public static class AdminEndpoints
     }
 
     /// <summary>
-    /// Mints a single-use registration link — the only way to add someone to a
+    /// Mints a single-use registration link: the only way to add someone to a
     /// closed instance without an email server.
     ///
     /// An optional address binds the invite to one person, so a forwarded link
@@ -713,7 +713,7 @@ public static class AdminEndpoints
     /// <summary>
     /// Suspends or reactivates an account. Suspension rotates the security
     /// stamp, so existing sessions stop working on their next request rather
-    /// than lingering until the cookie expires — the thing that makes a
+    /// than lingering until the cookie expires: the thing that makes a
     /// suspension actually mean something.
     /// </summary>
     private static async Task<IResult> SetStatus(
@@ -809,7 +809,7 @@ public static class AdminEndpoints
     // ---- spaces -------------------------------------------------------------
 
     /// <summary>
-    /// Every space on the instance — metadata only, never content. Admins do
+    /// Every space on the instance: metadata only, never content. Admins do
     /// not bypass space permissions (see the roles spec), so this deliberately
     /// returns counts and ownership rather than anything readable.
     /// </summary>
@@ -862,7 +862,7 @@ public static class AdminEndpoints
         return Results.NoContent();
     }
 
-    /// <summary>The current limits and who is locked out right now — the Security page's counters.</summary>
+    /// <summary>The current limits and who is locked out right now: the Security page's counters.</summary>
     private static async Task<IResult> GetLimits(ISiteSettingsService settings, AppDbContext db)
     {
         var s = await settings.GetAsync();
@@ -900,7 +900,7 @@ public static class AdminEndpoints
         if (req.IsPublic && !(await settings.GetAsync()).AllowPublicSpaces)
             return Results.ValidationProblem(new Dictionary<string, string[]>
             {
-                ["isPublic"] = ["Turn on \"Allow public spaces\" in Settings first — and read the internet-readiness checklist it points to."],
+                ["isPublic"] = ["Turn on \"Allow public spaces\" in Settings first, and read the internet-readiness checklist it points to."],
             });
 
         var changed = space.IsPublic != req.IsPublic;

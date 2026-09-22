@@ -85,7 +85,7 @@ public class ApiTokenTests
         var script = factory.CreateClient();
         script.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", created!.Token);
 
-        // The token belongs to Alice, so it can create pages in her space —
+        // The token belongs to Alice, so it can create pages in her space:
         // proving CurrentUser/permission checks work identically for token auth.
         var res = await script.PostAsJsonAsync("/api/pages",
             new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = "Via token", ContentJson = (string?)null });

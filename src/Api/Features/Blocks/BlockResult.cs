@@ -2,8 +2,8 @@ namespace Tesria.Api.Features.Blocks;
 
 /// <summary>
 /// The one shape every dynamic-block kind answers with (architecture.md,
-/// "Dynamic blocks", decision 2). Three shapes — <c>list</c>, <c>table</c>,
-/// <c>document</c> — rendered by exactly one renderer in the SPA and one in
+/// "Dynamic blocks", decision 2). Three shapes (<c>list</c>, <c>table</c>,
+/// <c>document</c>) rendered by exactly one renderer in the SPA and one in
 /// the exporter, so a kind is only ever a query.
 /// </summary>
 public sealed record BlockResult(
@@ -11,7 +11,7 @@ public sealed record BlockResult(
     string Shape,
     IReadOnlyList<BlockItem> Items,
     string? Title = null,
-    /// <summary>Shown when <see cref="Items"/> is empty — the kind knows why nothing is there.</summary>
+    /// <summary>Shown when <see cref="Items"/> is empty: the kind knows why nothing is there.</summary>
     string? Empty = null,
     IReadOnlyList<BlockColumn>? Columns = null,
     /// <summary>ProseMirror JSON, for <c>document</c>-shaped kinds only.</summary>

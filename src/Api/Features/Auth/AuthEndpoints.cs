@@ -21,7 +21,7 @@ public static class AuthEndpoints
     public const string SecurityStampClaim = "tesria:security_stamp";
 
     /// <summary>
-    /// When this session last actually proved who it is — a sign-in, or a
+    /// When this session last actually proved who it is: a sign-in, or a
     /// password change. NOT refreshed by re-issuing the cookie for an unrelated
     /// reason (a display-name edit), or renaming yourself would silently extend
     /// the window below.
@@ -112,7 +112,7 @@ public static class AuthEndpoints
     /// moment they exist in plaintext.
     ///
     /// Flattened rather than nesting a <see cref="UserResponse"/>, so this
-    /// stays a superset of what registration returned before — every existing
+    /// stays a superset of what registration returned before: every existing
     /// caller reads the same field names and keeps working.
     /// </summary>
     public record RegisteredResponse(
@@ -153,7 +153,7 @@ public static class AuthEndpoints
         group.MapPost("/recover/token", ResetWithToken).RequireRateLimiting(RateLimits.AuthPolicy);
 
         group.MapGet("/oidc/status", OidcStatus);
-        // A full-page browser redirect, not a fetch call — the IdP needs to
+        // A full-page browser redirect, not a fetch call: the IdP needs to
         // navigate the user's own browser through its login page.
         group.MapGet("/oidc/login", OidcLogin);
 
@@ -208,7 +208,7 @@ public static class AuthEndpoints
         if (await db.Users.AnyAsync(u => u.Email == email))
             return Results.Conflict(new { message = "An account with this email already exists." });
 
-        // The first account on an empty instance owns it (dev-plan 10.1) —
+        // The first account on an empty instance owns it (dev-plan 10.1):
         // otherwise a fresh install has content and nobody able to manage it.
         var isFirstAccount = !await db.Users.AnyAsync();
 
@@ -278,7 +278,7 @@ public static class AuthEndpoints
             && hasher.Verify(req.Password ?? "", user.PasswordHash);
 
         // A locked account fails even with the right password, with the same
-        // response — the lock must not become a way to confirm the password.
+        // response: the lock must not become a way to confirm the password.
         // The right password does not reset the counter while locked, or the
         // attacker who just found it clears their own lock.
         var locked = user is not null && AuthLockout.IsLocked(user, now);
@@ -309,7 +309,7 @@ public static class AuthEndpoints
         if (user.TotpEnabledAt is not null)
         {
             // Password accepted; not signed in. The challenge proves that step
-            // to the code endpoint. The failure counter is not reset yet — a
+            // to the code endpoint. The failure counter is not reset yet: a
             // wrong code counts as a failure too.
             await db.SaveChangesAsync();
             return Results.Ok(new TotpChallengeResponse(true, totp.IssueChallenge(user.Id, ClientIp(http))));
@@ -551,7 +551,7 @@ public static class AuthEndpoints
         if (user.TotpEnabledAt is null) return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user, rights));
 
         // Turning the second factor off needs the second factor or the
-        // password — never just a live session.
+        // password, never just a live session.
         var ok = (!string.IsNullOrEmpty(req.Code) && totp.Verify(user, req.Code))
             || (!string.IsNullOrEmpty(req.CurrentPassword) && user.PasswordHash is not null && hasher.Verify(req.CurrentPassword, user.PasswordHash));
         if (!ok) return Results.ValidationProblem(Error("code", "Enter your current password or a code from your authenticator."));
@@ -569,7 +569,7 @@ public static class AuthEndpoints
 
     /// <summary>
     /// Issues the cookie. A new session row is created unless
-    /// <paramref name="sessionId"/> names an existing one — re-issues after a
+    /// <paramref name="sessionId"/> names an existing one: re-issues after a
     /// profile edit or a stamp rotation keep the session they started with.
     /// </summary>
     private static async Task SignIn(
@@ -700,7 +700,7 @@ public static class AuthEndpoints
         user.DisplayName = displayName;
         await db.SaveChangesAsync();
 
-        // The name is carried in the cookie's claims, so re-issue it — otherwise
+        // The name is carried in the cookie's claims, so re-issue it: otherwise
         // the topbar would keep showing the old name until the next sign-in.
         await SignIn(http, db, user, AuthTimeOf(http), SessionIdOf(http.User));
         return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user, rights));
@@ -728,7 +728,7 @@ public static class AuthEndpoints
 
         var previous = user.Email;
         user.Email = email;
-        // The address is an identity, so the change is worth a record — the old
+        // The address is an identity, so the change is worth a record: the old
         // value included, since "who used to be this address" is the question
         // an operator will actually be asking.
         audit.Record("user.email_changed", "user", user.Id, new { From = previous, To = email });
@@ -789,7 +789,7 @@ public static class AuthEndpoints
 
         // Two ways to prove this is really you, and the order matters.
         //
-        // If a password was supplied it must be correct — even in a fresh
+        // If a password was supplied it must be correct, even in a fresh
         // session. Accepting a wrong one because the session happens to be
         // recent would tell someone their password was right when it was not.
         //
@@ -819,7 +819,7 @@ public static class AuthEndpoints
     /// <summary>
     /// Spends a recovery code to set a new password.
     ///
-    /// Anonymous by necessity — the whole point is that the caller cannot sign
+    /// Anonymous by necessity: the whole point is that the caller cannot sign
     /// in. Every failure returns the same 400 whatever went wrong, so this
     /// cannot be used to discover which addresses have accounts.
     /// </summary>
@@ -830,7 +830,7 @@ public static class AuthEndpoints
     /// <summary>
     /// Emails a one-time reset link (dev-plan 4.2). Always 202 with the same
     /// body: whether the address has an account, whether email is even on,
-    /// whether the send succeeded — none of it is told to the caller, who
+    /// whether the send succeeded: none of it is told to the caller, who
     /// may be probing. The account holder finds out by checking their inbox.
     /// </summary>
     private static async Task<IResult> RecoverByEmail(
@@ -861,7 +861,7 @@ public static class AuthEndpoints
         await email.SendAsync(new Infrastructure.Email.EmailMessage(
             user.Email,
             $"[{s.InstanceName}] Reset your password",
-            $"Someone — probably you — asked to reset the password for {user.Email} on {s.InstanceName}.\n\n" +
+            $"Someone, probably you, asked to reset the password for {user.Email} on {s.InstanceName}.\n\n" +
             $"Choose a new password here (the link works once and expires in one hour):\n{link}\n\n" +
             "If you did not ask for this, ignore this message; your password has not changed."));
 
@@ -949,7 +949,7 @@ public static class AuthEndpoints
     /// The caller's address as the server currently sees it.
     ///
     /// Behind Caddy this is the proxy's own address, not the client's, until
-    /// forwarded-header handling lands (dev-plan 3.0) — recorded anyway so the
+    /// forwarded-header handling lands (dev-plan 3.0): recorded anyway so the
     /// history exists, and so it becomes correct the moment that ships. Do not
     /// build per-IP logic on this value before then.
     /// </summary>

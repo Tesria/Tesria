@@ -17,7 +17,7 @@ public interface IAuditLogger
     /// <summary>
     /// Records an entry attributed to <paramref name="actorId"/> rather than to
     /// the current request's principal. Needed for sign-in events, which happen
-    /// before the principal exists — without this they would all be recorded
+    /// before the principal exists, without this they would all be recorded
     /// with a null actor.
     /// </summary>
     void RecordAs(Guid? actorId, string action, string targetType, Guid? targetId, object? metadata = null);

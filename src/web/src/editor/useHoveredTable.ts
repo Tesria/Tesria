@@ -3,11 +3,11 @@ import type { Editor as TiptapEditor } from '@tiptap/react'
 import { findTable, TableMap } from '@tiptap/pm/tables'
 
 // How far outside the table's own box the hover zone (and the add/grip/edge
-// strips) extend — has to cover all three strips plus a little slack so
+// strips) extend: has to cover all three strips plus a little slack so
 // moving the mouse from the table onto a button doesn't "leave" the zone.
 const MARGIN = 34
 
-// An input-capability check, not a viewport-width one — a touchscreen laptop
+// An input-capability check, not a viewport-width one: a touchscreen laptop
 // at desktop width has the same "there is no hover" problem a phone does.
 function isCoarsePointer() {
   return window.matchMedia('(hover: none) and (pointer: coarse)').matches
@@ -22,20 +22,20 @@ function tableElementFromNodeDom(dom: Node | null): HTMLTableElement | null {
 /**
  * Tracks which table (if any) the controls should show for, shared by
  * TableControls (row/column insert/delete) and TableWidthControls (edge-drag
- * resize + full-width toggle) — both need the same "which table, and where
+ * resize + full-width toggle): both need the same "which table, and where
  * is it" answer, just render different chrome from it.
  *
  * Two entirely different reveal mechanisms, chosen once per mount by input
  * capability: mouse/trackpad hovers near a table; touch has no hover concept
  * at all, so a tap that places the cursor inside a table (already the normal
- * behavior — no special handling needed to make that happen) is what reveals
+ * behavior: no special handling needed to make that happen) is what reveals
  * the controls instead, dismissed once the selection leaves the table.
  */
 /**
  * The box the table controls are positioned in: the editor's own wrapper
  * (`.editor`, position: relative). Controls are placed in its coordinates,
  * not the viewport's, so they stay on the table however the page scrolls,
- * zooms or pans — on an iPhone, position: fixed drifted off the table
+ * zooms or pans: on an iPhone, position: fixed drifted off the table
  * whenever Safari moved the visual viewport.
  */
 export function controlOrigin(editor: TiptapEditor): { x: number; y: number } {
@@ -79,7 +79,7 @@ export function useHoveredTable(editor: TiptapEditor) {
     }
     function onMove(e: MouseEvent) {
       // A floating editor menu (a block's settings, the selection bubble) can
-      // sit over a table. Pointing at the menu is not pointing at the table —
+      // sit over a table. Pointing at the menu is not pointing at the table:
       // counting it made the table's controls draw over the menu.
       if (e.target instanceof Element && e.target.closest('.floating-menu')) {
         setTable((current) => (current === null ? current : null))

@@ -7,10 +7,10 @@ block-based editor, and one-command deployment.
 See [`PLAN.md`](./PLAN.md) for the full design and roadmap.
 
 **Status:** Phases 1–5 complete (the full original roadmap), plus a
-ground-up editor UX overhaul beyond it. A working wiki — local accounts,
+ground-up editor UX overhaul beyond it. A working wiki (local accounts,
 spaces, pages in a hierarchical tree, a TipTap block editor with version
 history and rollback, attachments, threaded footer/inline comments,
-full-text search, and soft-delete/trash — on the full Docker stack (app +
+full-text search, and soft-delete/trash) on the full Docker stack (app +
 PostgreSQL 18 + Caddy auto-HTTPS). Data safety is covered by pgBackRest
 point-in-time recovery plus logical and file backups. Phase 4 added labels,
 page export, an audit log, and groups with space permissions / page
@@ -19,7 +19,7 @@ notifications/watches, a public REST API (tokens + webhooks), and OIDC/SSO.
 The editor overhaul added syntax-highlighted code blocks, tables/task lists
 with hover-triggered controls, images (with a draft/publish page lifecycle
 so uploads work on unsaved pages), inline/anchored comments, a slash-command
-menu, and a per-page full-width layout toggle — see
+menu, and a per-page full-width layout toggle: see
 [`docs/CHANGELOG.md`](./docs/CHANGELOG.md) for the full list.
 
 ## Tech stack
@@ -27,11 +27,11 @@ menu, and a per-page full-width layout toggle — see
 - **Backend:** ASP.NET Core (C#), .NET 10 (LTS); EF Core 10
 - **Database:** PostgreSQL 18 (Npgsql); page content stored as ProseMirror JSON
 - **Frontend:** React 19 + TypeScript + Vite; TipTap v3 block editor
-- **Auth:** local accounts (Argon2id), API tokens, and optional OIDC/SSO —
+- **Auth:** local accounts (Argon2id), API tokens, and optional OIDC/SSO,
   cookie sessions, all converging on the same permission model
 - **Collaboration:** Node + Hocuspocus/Yjs sidecar for simultaneous editing
 - **PDF export:** Node + Playwright sidecar rendering the print-ready HTML export
-- **Deploy:** Docker Compose — Caddy reverse proxy with automatic HTTPS
+- **Deploy:** Docker Compose, Caddy reverse proxy with automatic HTTPS
 - **Backups:** pgBackRest continuous WAL archiving + point-in-time recovery,
   scheduled `pg_dump` + `uploads` archives, and in-app version history / trash
 
@@ -42,19 +42,19 @@ cp .env.example .env        # then edit the values below
 docker compose up -d --build
 ```
 
-Set these in `.env` before the first start — `.env.example` ships
+Set these in `.env` before the first start: `.env.example` ships
 placeholders, not blanks, so nothing fails loudly if you skip one:
 
 | Variable | |
 |---|---|
 | `POSTGRES_PASSWORD` | Any long random string. |
-| `APP_DB_PASSWORD` | Any long random string, different from the above (`openssl rand -hex 24`). The app creates a least-privilege `tesria_app` role with it at startup and runs as that role; it cannot alter or delete audit rows. Empty runs the app as the database owner — acceptable on a LAN, not on the internet. |
-| `BACKUP_ENCRYPTION_KEY` | **Required.** Encrypts the pgBackRest repository (`openssl rand -hex 32`). Backups made with it are unrecoverable without it, so keep it somewhere safe — and *don't* reuse a key from another install unless you intend to restore that install's backups. |
+| `APP_DB_PASSWORD` | Any long random string, different from the above (`openssl rand -hex 24`). The app creates a least-privilege `tesria_app` role with it at startup and runs as that role; it cannot alter or delete audit rows. Empty runs the app as the database owner: acceptable on a LAN, not on the internet. |
+| `BACKUP_ENCRYPTION_KEY` | **Required.** Encrypts the pgBackRest repository (`openssl rand -hex 32`). Backups made with it are unrecoverable without it, so keep it somewhere safe, and *don't* reuse a key from another install unless you intend to restore that install's backups. |
 | `DOMAIN`, `ACME_EMAIL` | `localhost` is fine for a laptop. |
 | `COLLAB_SHARED_SECRET` | Optional (`openssl rand -hex 32`). Empty disables real-time co-editing; the editor falls back to single-user. |
 | `PDF_SHARED_SECRET` | Optional (`openssl rand -hex 32`). Empty disables PDF export; `?format=pdf` then answers 503 telling the user to print the HTML export. |
 
-Everything else — schema included — sets itself up: the API runs EF Core
+Everything else, schema included, sets itself up: the API runs EF Core
 migrations on startup, and the pgBackRest sidecar creates its stanza on
 first boot. Then open `https://<domain>/` and the setup wizard takes it from
 there: it creates the owner account, names the instance, and walks you
@@ -73,8 +73,8 @@ the instance.
 - Local test: keep `DOMAIN=localhost` and visit `https://localhost` (Caddy uses
   a self-signed cert, so the browser will warn once).
 - The app is also reachable from other devices on your LAN (including phones)
-  by IP or hostname, no extra config needed. To make that access — and the
-  `localhost` warning above — go away for good on a given device, run
+  by IP or hostname, no extra config needed. To make that access, and the
+  `localhost` warning above, go away for good on a given device, run
   `deploy/scripts/trust-ca.sh` (macOS/Linux) or `trust-ca.ps1` (Windows) once;
   see [`docs/tls-and-lan-access.md`](./docs/tls-and-lan-access.md) for details
   and the real-domain-without-public-exposure option.
@@ -93,7 +93,7 @@ docker compose up -d db      # Postgres on localhost:5432 (per your .env)
 Then, in two terminals:
 
 ```bash
-# API  (http://localhost:5291) — reads ConnectionStrings:Default; the default
+# API  (http://localhost:5291) · reads ConnectionStrings:Default; the default
 # targets Host=localhost;Database=confluence;Username=confluence
 dotnet run --project src/Api
 
@@ -102,7 +102,7 @@ cd src/web && npm install && npm run dev
 ```
 
 Open http://localhost:5173, create an account, and start a space. Migrations run
-automatically on API startup. (Tests, by contrast, need no database — see below.)
+automatically on API startup. (Tests, by contrast, need no database: see below.)
 
 ## Tests
 

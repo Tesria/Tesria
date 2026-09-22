@@ -8,10 +8,10 @@ namespace Tesria.Api.Infrastructure.Permissions;
 /// <summary>
 /// Resolves what the current user may do (PLAN §4). Two independent layers:
 /// <list type="bullet">
-/// <item><b>Space permissions</b> — default-open: a space with no permission
+/// <item><b>Space permissions</b>: default-open: a space with no permission
 /// rows is open to all authenticated users; once any row exists a matching
 /// grant is required. Admin implies Edit implies View.</item>
-/// <item><b>Page restrictions</b> — a page is restricted if it or any ancestor
+/// <item><b>Page restrictions</b>: a page is restricted if it or any ancestor
 /// carries a restriction; the user must match one. A View restriction also
 /// gates editing. Space admins bypass page restrictions.</item>
 /// </list>
@@ -23,11 +23,11 @@ public interface IPermissionService
     Task<bool> CanAdminSpaceAsync(Guid spaceId);
     Task<bool> CanViewPageAsync(Guid pageId);
     Task<bool> CanEditPageAsync(Guid pageId);
-    /// <summary>Ids of spaces the current user may view — for filtering listings.</summary>
+    /// <summary>Ids of spaces the current user may view, for filtering listings.</summary>
     Task<HashSet<Guid>> ViewableSpaceIdsAsync();
 
     /// <summary>
-    /// Whether a page is readable with no account at all — evaluated as the
+    /// Whether a page is readable with no account at all: evaluated as the
     /// anonymous principal regardless of who is asking (dev-plan 5.1). Used
     /// where the answer must not depend on the caller: link previews, the
     /// sitemap.
@@ -37,7 +37,7 @@ public interface IPermissionService
 
     /// <summary>
     /// The same rules, evaluated as a *different* user than the one making
-    /// the request. Needed wherever the app acts on someone else's behalf —
+    /// the request. Needed wherever the app acts on someone else's behalf:
     /// today, deciding whether a mentioned user may be told about the page
     /// they were mentioned on (dev-plan Phase 7 Wave C), since a notification
     /// carries the page title and must not leak a restricted one.
@@ -81,7 +81,7 @@ public sealed class PermissionService(AppDbContext db, CurrentUser current, ISit
     // -- the anonymous principal (dev-plan 5.1) --------------------------------
     //
     // No session, no token: exactly one capability, reading a public space's
-    // unrestricted, current pages — and only while the instance switch is on.
+    // unrestricted, current pages, and only while the instance switch is on.
     // See architecture.md, "Public read mode".
 
     private bool? _publicSpacesAllowed;
@@ -156,7 +156,7 @@ public sealed class PermissionService(AppDbContext db, CurrentUser current, ISit
     }
 
     /// <summary>
-    /// True only when the user holds a real Admin grant on the space — unlike
+    /// True only when the user holds a real Admin grant on the space: unlike
     /// <see cref="CanAdminSpaceAsync"/>, this does not treat an unconfigured
     /// (default-open) space as granting admin to everyone.
     /// </summary>
@@ -217,7 +217,7 @@ public sealed class PermissionService(AppDbContext db, CurrentUser current, ISit
             : await CanViewSpaceAsync(page.SpaceId);
         if (!spaceOk) return false;
 
-        // Space admins are never blocked by page restrictions — but only ones
+        // Space admins are never blocked by page restrictions, but only ones
         // holding an *explicit* admin grant. In a default-open space everyone
         // would otherwise count as an admin, which would make page restrictions
         // meaningless exactly where they are most used.

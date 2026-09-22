@@ -27,7 +27,7 @@ function dismissedThisSession(userId: string): boolean {
  * Accounts created before recovery codes existed have no way back in if their
  * password is lost, and a banner on a settings page they may never open is not
  * a fix. Showing this right after a sign-in works because the sign-in *is* the
- * re-authentication — the server accepts the generation without a second
+ * re-authentication: the server accepts the generation without a second
  * password prompt inside a short window, the same way GitHub and Google
  * handle backup codes.
  *

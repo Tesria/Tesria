@@ -34,7 +34,7 @@ export function findThread(threads: CommentNode[], id: string): CommentNode | nu
 /**
  * Comments changed somewhere other than the Comments tab (an inline comment
  * added from the selection bubble, a reply from the popover on the
- * highlighted text) — the tab listens and reloads.
+ * highlighted text): the tab listens and reloads.
  */
 export const COMMENTS_CHANGED = 'tesria:comments-changed'
 export function announceCommentsChanged() {

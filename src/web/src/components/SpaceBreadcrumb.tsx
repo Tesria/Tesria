@@ -13,7 +13,7 @@ const SETTINGS_TAB_LABELS: Record<string, string> = {
 }
 
 /** Space Home / Page / Trash / etc. context, one level below the space
- *  action bar — not sticky, just the first thing in the scrolling content,
+ *  action bar, not sticky, just the first thing in the scrolling content,
  *  same place a page's h1 used to be the only wayfinding on offer. */
 export function SpaceBreadcrumb({ space, tree }: { space: Space; tree: PageTreeNode[] }) {
   const [searchParams] = useSearchParams()
@@ -23,7 +23,7 @@ export function SpaceBreadcrumb({ space, tree }: { space: Space; tree: PageTreeN
   // One match for the whole settings section, not one per old URL: the three
   // that used to be siblings are tabs of it now, and matching them
   // individually is what left Permissions/Webhooks/Trash with no breadcrumb
-  // at all while Details had one — so the content jumped a line every time
+  // at all while Details had one, so the content jumped a line every time
   // you changed tab.
   const matchSettings = useMatch('/spaces/:key/settings/*')
 
@@ -48,7 +48,7 @@ export function SpaceBreadcrumb({ space, tree }: { space: Space; tree: PageTreeN
     crumbs.push(tab ? { label: 'Space settings', to: `/spaces/${space.key}/settings` } : { label: 'Space settings' })
     if (tab) crumbs.push({ label: SETTINGS_TAB_LABELS[tab] ?? tab })
   } else {
-    // Space landing — the h1 there already says where we are.
+    // Space landing: the h1 there already says where we are.
     return null
   }
 
@@ -57,7 +57,7 @@ export function SpaceBreadcrumb({ space, tree }: { space: Space; tree: PageTreeN
       {crumbs.map((c, i) => (
         <span key={i} className="breadcrumb__segment">
           {i > 0 && <span className="breadcrumb__sep">/</span>}
-          {/* The space's own crumb carries its icon — the one place the icon
+          {/* The space's own crumb carries its icon: the one place the icon
               appears while reading a page, so a reader always knows where
               they are without looking at the sidebar. */}
           {i === 0 && <SpaceIcon space={space} size={16} />}

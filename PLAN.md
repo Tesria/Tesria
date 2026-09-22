@@ -1,10 +1,10 @@
-# Tesria — Project Plan
+# Tesria: Project Plan
 
 **Status:** Draft for approval
 **Date:** 2026-07-22
 **Owner:** Brian
 
-A self-hosted, Docker-deployable knowledge base / wiki modeled on Atlassian Confluence. Priorities, in order: (1) data safety — strong backup and recovery, since this is self-hosted and data loss is unacceptable; (2) a faithful block-based editing experience; (3) simple single-command deployment.
+A self-hosted, Docker-deployable knowledge base / wiki modeled on Atlassian Confluence. Priorities, in order: (1) data safety: strong backup and recovery, since this is self-hosted and data loss is unacceptable; (2) a faithful block-based editing experience; (3) simple single-command deployment.
 
 ---
 
@@ -14,7 +14,7 @@ A self-hosted, Docker-deployable knowledge base / wiki modeled on Atlassian Conf
 |------|----------|-----------|
 | Backend | ASP.NET Core (C#), **.NET 10 (LTS)** | Strongly typed, reliable, first-class Docker + data tooling; best fit for the reliability/backup emphasis. |
 | Data layer | EF Core 10 + **PostgreSQL 18** (Npgsql) | Mature, transactional, excellent backup/PITR story. |
-| Frontend | **React 19 + TypeScript + Vite** | Required regardless of backend — the editor engine is JS-only. |
+| Frontend | **React 19 + TypeScript + Vite** | Required regardless of backend: the editor engine is JS-only. |
 | Editor | **TipTap v3** (ProseMirror) block WYSIWYG, storing structured JSON | This is the defining Confluence feature. |
 | Real-time co-editing | Deferred to a later phase; when added, a small **Node + Hocuspocus/Yjs** sidecar bridges to TipTap | The only weakness of a .NET backend; isolating it keeps the main stack clean. |
 | Auth | Local accounts (email + hashed password) now, **architected for OIDC/SSO** later | Simplest for small teams; pluggable for Keycloak/Authentik/Google later. |
@@ -101,16 +101,16 @@ Tesria/
 
 Core entities (EF Core, Postgres):
 
-- **User** — id, email, display name, password hash (Argon2id), status, created_at. (OIDC subject id nullable, for later.)
-- **Group** and **UserGroup** — for group-based permissions.
-- **Space** — id, key, name, description, homepage_id, created_by, archived flag.
-- **Page** — id, space_id, parent_page_id (self-referencing → tree), title, current_version_id, position (ordering), status (draft/current/archived), created_by, timestamps.
-- **PageVersion** — id, page_id, version_number, content (ProseMirror JSON, `jsonb`), content_html (rendered cache), author_id, change_comment, created_at. **Every save creates a new version** → history + rollback.
-- **Attachment** — id, page_id, filename, content_type, size, storage_key, uploaded_by, version. Stored on the uploads volume (S3-compatible optional later).
-- **Comment** (Phase 4) — id, page_id, parent_comment_id, anchor (for inline), body, author, timestamps.
+- **User**: id, email, display name, password hash (Argon2id), status, created_at. (OIDC subject id nullable, for later.)
+- **Group** and **UserGroup**: for group-based permissions.
+- **Space**: id, key, name, description, homepage_id, created_by, archived flag.
+- **Page**: id, space_id, parent_page_id (self-referencing → tree), title, current_version_id, position (ordering), status (draft/current/archived), created_by, timestamps.
+- **PageVersion**: id, page_id, version_number, content (ProseMirror JSON, `jsonb`), content_html (rendered cache), author_id, change_comment, created_at. **Every save creates a new version** → history + rollback.
+- **Attachment**: id, page_id, filename, content_type, size, storage_key, uploaded_by, version. Stored on the uploads volume (S3-compatible optional later).
+- **Comment** (Phase 4): id, page_id, parent_comment_id, anchor (for inline), body, author, timestamps.
 - **Label** + **PageLabel** (Phase 4).
-- **SpacePermission** / **PageRestriction** (Phase 4) — principal (user/group) × operation (view/edit/admin).
-- **AuditLog** — actor, action, target, timestamp, metadata (jsonb).
+- **SpacePermission** / **PageRestriction** (Phase 4): principal (user/group) × operation (view/edit/admin).
+- **AuditLog**: actor, action, target, timestamp, metadata (jsonb).
 
 Design notes: content stored as `jsonb` (queryable, diff-able); a rendered HTML cache column avoids re-rendering on every read; full-text search via a Postgres `tsvector` generated column + GIN index for the MVP.
 
@@ -118,25 +118,25 @@ Design notes: content stored as `jsonb` (queryable, diff-able); a rendered HTML 
 
 ## 5. Backup & recovery strategy (primary requirement)
 
-Defense in depth — three independent layers so a single failure never loses data.
+Defense in depth, three independent layers so a single failure never loses data.
 
-**Layer 1 — Continuous physical backup + Point-in-Time Recovery (PITR).**
+**Layer 1: Continuous physical backup + Point-in-Time Recovery (PITR).**
 `pgBackRest` runs in a sidecar container with WAL archiving enabled on Postgres. This gives full + incremental backups and the ability to restore to *any second* in time (e.g. "just before the accidental delete at 14:32"). This is the strongest protection and the industry standard for self-hosted Postgres.
 
-**Layer 2 — Nightly logical dumps.**
-Scheduled `pg_dump` (custom format, compressed) as a portable, version-independent snapshot that can be restored onto any Postgres instance — useful for migrations and as a belt-and-suspenders alongside pgBackRest.
+**Layer 2, Nightly logical dumps.**
+Scheduled `pg_dump` (custom format, compressed) as a portable, version-independent snapshot that can be restored onto any Postgres instance, useful for migrations and as a belt-and-suspenders alongside pgBackRest.
 
-**Layer 3 — Attachment/file backups.**
+**Layer 3: Attachment/file backups.**
 The uploads volume is backed up on the same schedule (restic or rsync to the backups volume), so files and database stay consistent.
 
 **Cross-cutting requirements:**
-- **Offsite copy:** all backups optionally replicated to S3-compatible storage (Backblaze B2, MinIO, AWS S3) — configurable via `.env`. Local-only is supported too.
+- **Offsite copy:** all backups optionally replicated to S3-compatible storage (Backblaze B2, MinIO, AWS S3): configurable via `.env`. Local-only is supported too.
 - **Encryption at rest:** backups encrypted (pgBackRest native encryption / restic).
 - **Retention policy:** configurable (e.g. keep 7 daily, 4 weekly, 6 monthly).
-- **Automated verification:** a scheduled job restores the latest backup into a throwaway container and runs a sanity check, so we know backups actually work — untested backups are not backups.
+- **Automated verification:** a scheduled job restores the latest backup into a throwaway container and runs a sanity check, so we know backups actually work: untested backups are not backups.
 - **One-command operations:** `deploy/scripts/backup.sh` (on-demand full backup), `restore.sh` (guided restore, incl. PITR to a timestamp), `verify-backup.sh`.
 - **Documented runbook:** `docs/backup-recovery.md` with exact restore steps for three scenarios: (a) full disaster recovery on a new host, (b) point-in-time rollback after bad edit/delete, (c) single-page recovery from version history (in-app, no ops needed).
-- **In-app safety nets:** page version history with rollback, and soft-delete / trash with a retention window before hard delete — so most "oops" recoveries never require touching backups.
+- **In-app safety nets:** page version history with rollback, and soft-delete / trash with a retention window before hard delete, so most "oops" recoveries never require touching backups.
 
 ---
 
@@ -155,11 +155,11 @@ The uploads volume is backed up on the same schedule (restic or rsync to the bac
 
 Each phase ends in a working, committed, documented state (per project rules: document changes, commit after every feature).
 
-1. **Foundation** — repo scaffold, .NET solution, React app, Postgres, Docker compose that boots (incl. Caddy auto-HTTPS); healthcheck; test project in place.
-2. **Core content** — Users + local auth; Spaces CRUD; Pages CRUD with tree; TipTap editor wired to save/load ProseMirror JSON; page version history + rollback; attachments; **comments (footer + inline)**.
-3. **Search + backup system** — Postgres full-text search; pgBackRest PITR; nightly dumps; file backups; S3-compatible offsite support (present but disabled until credentials set); scripts; verification job; `backup-recovery.md` runbook; soft-delete/trash.
-4. **Fast-follow** — labels, space permissions + page restrictions, export (PDF/HTML/MD), audit log.
-5. **Advanced** — real-time co-editing (Hocuspocus sidecar), OIDC/SSO, templates, notifications/watches, public REST API.
+1. **Foundation**: repo scaffold, .NET solution, React app, Postgres, Docker compose that boots (incl. Caddy auto-HTTPS); healthcheck; test project in place.
+2. **Core content**: Users + local auth; Spaces CRUD; Pages CRUD with tree; TipTap editor wired to save/load ProseMirror JSON; page version history + rollback; attachments; **comments (footer + inline)**.
+3. **Search + backup system**: Postgres full-text search; pgBackRest PITR; nightly dumps; file backups; S3-compatible offsite support (present but disabled until credentials set); scripts; verification job; `backup-recovery.md` runbook; soft-delete/trash.
+4. **Fast-follow**: labels, space permissions + page restrictions, export (PDF/HTML/MD), audit log.
+5. **Advanced**: real-time co-editing (Hocuspocus sidecar), OIDC/SSO, templates, notifications/watches, public REST API.
 
 MVP = phases 1–3 (comments included).
 

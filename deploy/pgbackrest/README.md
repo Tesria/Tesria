@@ -1,4 +1,4 @@
-# pgBackRest — physical backups + point-in-time recovery
+# pgBackRest: physical backups + point-in-time recovery
 
 This is backup **Layer 1** (PLAN §5): continuous WAL archiving and the ability
 to restore the database to any moment (e.g. "just before the accidental delete
