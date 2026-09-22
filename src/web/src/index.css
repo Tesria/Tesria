@@ -1854,6 +1854,10 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
   border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg);
 }
 .recovery-prompt__card h2 { margin: 0 0 0.5rem; font-size: 1.1rem; }
+/* The restore dialog carries more to read than the others (what is in the
+   backup, what goes back, what happens to sign-ins), and at 440px that is a
+   column of two-word lines. */
+.recovery-prompt__card--roomy { width: min(34rem, 100%); }
 .recovery-prompt__card .row-gap { margin-top: 1rem; }
 
 /* Admin → Security: the limits form (dev-plan 3.2). */
@@ -2351,6 +2355,23 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
    of the page because nothing else there is irreversible. */
 .danger-zone { border-color: color-mix(in srgb, var(--danger) 35%, var(--border)); }
 .danger-zone h2 { color: var(--danger); }
+/* Restoring the wiki (dev-plan 9.4). The dialog reuses .recovery-prompt and
+   .danger-form; only the read-only overlay everyone else sees is new. It sits
+   above every dialog, because a restore outranks whatever else is on screen. */
+.maintenance {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+  background: rgba(9, 12, 16, 0.75);
+}
+.maintenance__card {
+  width: min(32rem, 100%);
+  padding: 1.5rem; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg);
+}
+.maintenance__card h2 { margin: 0 0 0.5rem; font-size: 1.1rem; }
+.maintenance__card p { margin: 0 0 0.75rem; }
+.maintenance__card p:last-child { margin-bottom: 0; }
+
 .danger-form label { display: grid; gap: 0.25rem; margin-top: 0.75rem; }
 .danger-form .confirm__body { margin-bottom: 0.25rem; }
 

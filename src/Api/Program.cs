@@ -74,6 +74,12 @@ builder.Services.AddSingleton<BlocklistCache>();
 builder.Services.AddScoped<ISecurityDetector, SecurityDetector>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<AuditChainMonitor>());
 builder.Services.AddSingleton<Tesria.Api.Infrastructure.Backups.BackupMonitor>();
+// Whether a restore is running, held in this process (dev-plan 9.4): the one
+// fact that has to stay readable while the database is being replaced.
+builder.Services.AddSingleton<Tesria.Api.Infrastructure.Backups.RestoreState>();
+// Watches a restore, restarts into the restored database, and writes the
+// lasting audit entry once it is up (dev-plan 9.4).
+builder.Services.AddHostedService<Tesria.Api.Infrastructure.Backups.RestoreCompletion>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<Tesria.Api.Infrastructure.Backups.BackupMonitor>());
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddSingleton<SiteSettingsCache>();
@@ -543,6 +549,10 @@ app.UseMiddleware<LastSeenMiddleware>();
 app.UseMiddleware<Tesria.Api.Infrastructure.Security.TokenScopeMiddleware>();
 // A render token may only read the page or space it was minted for (12.1).
 app.UseMiddleware<Tesria.Api.Infrastructure.Security.RenderScopeMiddleware>();
+// While a restore is running the wiki is read-only (dev-plan 9.4). Last, so
+// an unauthenticated or rate-limited request is still turned away as it
+// normally would be rather than being told the instance is in maintenance.
+app.UseMiddleware<Tesria.Api.Infrastructure.Security.MaintenanceMiddleware>();
 
 // API endpoints live under /api. Feature endpoints are registered via
 // extension methods to keep Program.cs thin (vertical-slice style).

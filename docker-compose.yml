@@ -188,7 +188,13 @@ services:
       # How often the offsite copies are proved restorable (9.2 step 6).
 
       - backups:/backups
-      - uploads:/data/uploads:ro
+      # Read-write since dev-plan 9.4: restoring a backup puts the attachments
+      # back, which means moving the current ones aside and extracting the
+      # archive over them. Read-only was right while this sidecar only ever
+      # took backups; it is now the one thing that can put them back, and a
+      # database restored without its attachments is a wiki full of broken
+      # links.
+      - uploads:/data/uploads
       # A bind mount, not a cifs/nfs volume, and that is the decision: a
       # named network volume stops the container starting while the share is
       # down, which would take the LOCAL backups down with it. A bind mount

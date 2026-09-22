@@ -247,6 +247,12 @@ public sealed class AuditChainMonitor(IServiceScopeFactory scopes, ILogger<Audit
     /// </summary>
     private long _lastChecked = -1;
 
+    /// <summary>
+    /// When the last verification ran, so a restore that happened since then
+    /// explains a shorter chain exactly once (dev-plan 9.4).
+    /// </summary>
+    private DateTimeOffset _lastCheckedAt = DateTimeOffset.MinValue;
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         try { await Task.Delay(InitialDelay, stoppingToken); } catch (OperationCanceledException) { return; }
@@ -264,16 +270,33 @@ public sealed class AuditChainMonitor(IServiceScopeFactory scopes, ILogger<Audit
         {
             using var scope = scopes.CreateScope();
             var report = await scope.ServiceProvider.GetRequiredService<IAuditChainVerifier>().VerifyAsync(ct);
-            if (report.Ok && report.Checked < _lastChecked)
+
+            // A restore legitimately shortens the chain: the wiki was replaced
+            // with an older copy, and the entries after the backup went with
+            // it (dev-plan 9.4). Explained rather than warned about, and only
+            // for a restore this monitor has not already seen, so the excuse
+            // covers exactly one verification and never stands in for a real
+            // truncation. The restore itself is audited and alerted on, so
+            // nothing here is being waved through unrecorded.
+            var restoredAt = (await scope.ServiceProvider
+                .GetRequiredService<Settings.ISiteSettingsService>().GetAsync(ct)).LastRestoredAt;
+            var restored = restoredAt is { } at && at > _lastCheckedAt;
+
+            if (report.Ok && report.Checked < _lastChecked && !restored)
                 report = report with
                 {
                     Ok = false,
                     Problem = $"The chain is shorter than at the last verification ({report.Checked} rows, was {_lastChecked}): rows were removed from the end.",
                 };
+            else if (report.Ok && report.Checked < _lastChecked)
+                logger.LogInformation(
+                    "Audit chain is shorter than at the last verification ({Checked} rows, was {Was}): the wiki was restored at {RestoredAt}, which removes the entries after that backup",
+                    report.Checked, _lastChecked, restoredAt);
 
             if (report.Ok)
             {
                 _lastChecked = report.Checked;
+                _lastCheckedAt = DateTimeOffset.UtcNow;
                 logger.LogInformation("Audit chain verified: {Checked} rows intact", report.Checked);
                 return;
             }

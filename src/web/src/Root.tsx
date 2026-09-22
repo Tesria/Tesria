@@ -1,3 +1,4 @@
+import { MaintenanceOverlay } from './components/MaintenanceOverlay'
 import { ScrollToTop } from './components/ScrollToTop'
 import { SetupGate } from './components/SetupGate'
 import { TipHost } from './components/TipHost'
@@ -15,6 +16,9 @@ export function Root() {
       {/* Wraps the outlet: as a sibling its redirect raced SessionGate's. */}
       <SetupGate />
       <TipHost />
+      {/* A restore makes the wiki read-only (dev-plan 9.4). Above every
+          route, because a save can be attempted from anywhere. */}
+      <MaintenanceOverlay />
     </>
   )
 }

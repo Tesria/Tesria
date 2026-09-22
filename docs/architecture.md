@@ -1562,6 +1562,88 @@ denominator.
 editor's chart node so that both draw the same thing and there is no chart
 library.
 
+## Restoring the wiki, from the page that took the backup (dev-plan 9.4)
+
+Everything above is about *taking* backups. This is the one thing that spends
+one, and it is shaped almost entirely by a single fact.
+
+**The job status lives in the thing being replaced.** `BackupJobs`,
+`BackupAgents`, `SiteSettings`, the sessions, the audit chain and the
+data-protection keys are all rows in the database a restore replaces. The old
+`restore.sh` dropped that database outright, so a restore run from the page
+would have destroyed the record of itself, and the page watching it would have
+read the restored past as the present. Three rules follow.
+
+**1. Restore beside, then swap.** The dump is restored into `<db>_restore`
+while the wiki stays up and readable, verified there, and swapped in with two
+renames inside one `psql` session. Connections are *refused* before they are
+terminated, because the application reconnects within milliseconds and
+terminating alone would race the reconnect. The database it replaces is renamed
+to `<db>_pre_restore` rather than dropped, which is the undo; the attachments
+move to `.pre-restore/` inside the same volume, so that swap is renames too and
+a crash leaves both copies rather than half of each.
+
+**2. The sidecar remembers what the database cannot.** Every restore has a
+directory on the sidecar's own volume (`/backups/restores/<jobId>/`) holding
+the request, the phases, the log and a CSV export of the tables that describe
+the *disk* rather than the wiki. Those are re-imported afterwards, because a
+dump from last week would otherwise make the page forget every backup taken
+since, including the safety one this restore just took.
+
+**3. The application restarts itself.** A restored database may predate a
+migration, carries no grants for the runtime role (`--no-privileges`), and has
+settings this process has cached. Startup already does all of that in the right
+order and is the path every deploy exercises, so `RestoreCompletion` polls the
+job and calls `StopApplication` rather than re-running those steps at runtime.
+It also writes `backup.restored` at startup, keyed on `LastRestoreJobId` and
+skipped when an entry for that job exists, so any number of restarts produce
+exactly one record, in the restored database's own chain.
+
+**Maintenance is held in two places on purpose.** `SiteSettings.RestoreJobId`
+survives the application restarting mid-restore and is what the sidecar can
+see; `RestoreState`, a singleton, is what the application can still read during
+the seconds of the swap and the minutes of a point-in-time restore, when the
+database cannot answer at all. `MaintenanceMiddleware` reads the singleton,
+refuses every unsafe method with 503 and a body the SPA turns into an overlay,
+and lets the restore's own endpoints through so they can give their precise
+refusals instead of a blanket one.
+
+**The collab sidecar has to forget.** An open editor holds its document in
+memory and writes it back on the next keystroke, which after a restore would
+put post-backup content into the restored wiki. The application posts
+`/maintenance` and the sidecar closes every connection and drops every
+document; the flag expires on its own after thirty minutes so a restore nobody
+finished cannot switch co-editing off for ever. The backstop, for a restore run
+from the runbook instead, is the existing sweep: it compares
+`SiteSettings.LastRestoredAt` with its own start time and exits, because
+restarting is the only reliable way to forget everything at once.
+
+**Point-in-time recovery inverts the ownership.** pgBackRest writes into the
+data directory with Postgres stopped, and stopping Postgres needs to happen
+inside the `db` container: a sidecar would need the Docker socket, which no
+sidecar gets. So `deploy/db/entrypoint.sh` supervises its own database. It
+starts the image's entrypoint as a child, forwards signals to it, and polls one
+directory on the `pgsocket` volume, which `db` and the `pgbackrest` sidecar
+share and nothing else does. **That volume is the authorisation model**: the
+web tier has no mount and no path to that file, so a restore can only be asked
+for by the sidecar that validated the job. Everything needing judgement stays
+in the sidecar (bounds, safety backup, WAL switch, carry-across); the
+supervisor stops, runs what it was handed, and starts again, ignoring a request
+it has already handled or one older than ten minutes so a stale file cannot
+restore twice.
+
+Interposing also let the container shut down properly: Postgres reads SIGTERM
+as a *smart* shutdown and waits for every client to disconnect, so
+`docker compose stop` used to wait out its timeout and get killed. The
+supervisor forwards SIGINT instead, which is the fast shutdown.
+
+**The gate** is in `Features/Admin/RestoreEndpoints.cs` and is the substance of
+the feature: a right only the owner holds by default, the label typed back, the
+password in the request rather than the sudo window, a safety backup that
+cannot be skipped, one at a time, and a Critical alert to every administrator
+afterwards. The kept copy ages out under the retention policy, treated as a
+backup taken at the moment of the restore.
+
 ## Wiki packs: a space that outlives its instance (dev-plan 8.5)
 
 A site export (12.2, above) is for people; a **pack** is for Tesria. It is the

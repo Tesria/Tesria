@@ -30,6 +30,23 @@ public interface ICollabNotifier
     /// must never fail the write.
     /// </summary>
     Task NotifyAsync(Guid pageId, string contentJson, WriteSource source, int version, CancellationToken ct = default);
+
+    /// <summary>
+    /// Tells the sidecar that the wiki is going read-only for a restore, or
+    /// that it is over (dev-plan 9.4).
+    ///
+    /// An open editor holds its page's document in memory and writes it back
+    /// on the next keystroke, which after a restore would put content from
+    /// after the backup straight back into the restored wiki. On
+    /// <c>true</c> the sidecar closes every connection, drops every document
+    /// and refuses new ones; the app posts <c>false</c> at every startup,
+    /// which is how a restore ends.
+    ///
+    /// Best effort like the write notification, and with a backstop that does
+    /// not depend on it: the sidecar also watches <c>LastRestoredAt</c> and
+    /// exits when it is newer than its own start.
+    /// </summary>
+    Task MaintenanceAsync(bool on, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -90,6 +107,34 @@ public sealed class CollabNotifier(
             // Deliberately swallowed. The page is saved; this only decides
             // whether an open editor finds out now or on its next load.
             log.LogWarning(ex, "Collab sidecar unreachable; page {PageId} will reconcile on next load", pageId);
+        }
+    }
+
+    public async Task MaintenanceAsync(bool on, CancellationToken ct = default)
+    {
+        if (!Available) return;
+        try
+        {
+            var client = http.CreateClient("collab");
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"{Endpoint!.TrimEnd('/')}/maintenance")
+            {
+                Content = new StringContent(
+                    JsonSerializer.Serialize(new { maintenance = on }),
+                    Encoding.UTF8, new MediaTypeHeaderValue("application/json")),
+            };
+            request.Headers.Add("X-Collab-Secret", Secret);
+
+            using var response = await client.SendAsync(request, ct);
+            if (!response.IsSuccessStatusCode)
+                log.LogWarning("Collab sidecar returned {Status} for maintenance={On}", (int)response.StatusCode, on);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
+        {
+            // Swallowed for the same reason, and with a real backstop: the
+            // sidecar's own sweep sees LastRestoredAt move and restarts
+            // itself, so an unreachable sidecar delays this rather than
+            // losing it.
+            log.LogWarning(ex, "Collab sidecar unreachable; could not set maintenance={On}", on);
         }
     }
 }

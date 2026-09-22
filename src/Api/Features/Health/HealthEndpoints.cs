@@ -1,4 +1,5 @@
 using System.Reflection;
+using Tesria.Api.Infrastructure.Backups;
 
 namespace Tesria.Api.Features.Health;
 
@@ -11,7 +12,7 @@ public static class HealthEndpoints
     public static RouteGroupBuilder MapHealthEndpoints(this RouteGroupBuilder group)
     {
         // Liveness: is the process up and serving requests?
-        group.MapGet("/health", () =>
+        group.MapGet("/health", (RestoreState restore) =>
         {
             var version = Assembly.GetExecutingAssembly()
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
@@ -22,7 +23,17 @@ public static class HealthEndpoints
                 status = "ok",
                 service = "tesria-api",
                 version,
-                utc = DateTimeOffset.UtcNow
+                utc = DateTimeOffset.UtcNow,
+                // Anonymous on purpose (dev-plan 9.4): this is what every
+                // browser showing the maintenance overlay polls to find out
+                // when the wiki is writable again, including one whose
+                // session ended because the restore rolled it back. It says
+                // that a restore is running and when it started, which is
+                // already visible to anyone who tried to write, and nothing
+                // about what is being restored.
+                maintenance = restore.Current is { } pending
+                    ? new { reason = "restore", startedAt = pending.StartedAt }
+                    : null,
             });
         })
         .WithName("Health")

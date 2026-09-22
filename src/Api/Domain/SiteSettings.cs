@@ -137,6 +137,56 @@ public class SiteSettings
 
     public Guid? BackupPolicyChangedById { get; set; }
 
+    // --- Restore from the admin page (dev-plan 9.4). Written by the app when
+    // a restore is requested and by the sidecar when it finishes. These are
+    // in the database so a restore survives the app restarting mid-way; the
+    // app also holds the pending id in memory, for the minutes when the
+    // database is being replaced and cannot be read at all.
+
+    /// <summary>
+    /// The restore that is pending or running. Non-null means the wiki is in
+    /// maintenance: reads pass, writes are refused with 503.
+    /// </summary>
+    public Guid? RestoreJobId { get; set; }
+
+    /// <summary>
+    /// When the pending restore was requested. Also the moment a
+    /// point-in-time restore undoes itself to, which is why the safety
+    /// backup and the WAL switch happen before anything else.
+    /// </summary>
+    public DateTimeOffset? RestoreStartedAt { get; set; }
+
+    /// <summary>
+    /// Somebody asked to stop the pending restore. The sidecar honours this
+    /// at its last check before the point of no return, and ignores it after.
+    /// </summary>
+    public DateTimeOffset? RestoreCancelRequestedAt { get; set; }
+
+    /// <summary>
+    /// When a restore last completed. The collab sidecar compares this with
+    /// its own start time and exits when it is newer, which is how an open
+    /// editor stops holding content from after the backup.
+    /// </summary>
+    public DateTimeOffset? LastRestoredAt { get; set; }
+
+    /// <summary>
+    /// The job that did it. At startup the app writes the audit entry and
+    /// raises the alert for this job if it has not already, which is how the
+    /// record lands in the restored database's own chain.
+    /// </summary>
+    public Guid? LastRestoreJobId { get; set; }
+
+    /// <summary>What was restored, for the page and the audit entry: a label, or a label and a time.</summary>
+    public string? LastRestoreFrom { get; set; }
+
+    /// <summary>
+    /// The copy the restore replaced, kept so the restore can be undone:
+    /// the database name and the uploads directory. Null means there is
+    /// none, either because it was removed or because a point-in-time
+    /// restore leaves none (its undo is another point-in-time restore).
+    /// </summary>
+    public string? KeptCopyJson { get; set; }
+
     /// <summary>
     /// When the owner last reviewed the rights matrix (dev-plan 11.1). Null
     /// means nobody has looked at the defaults yet, which the Roles tab says

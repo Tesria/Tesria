@@ -68,6 +68,14 @@ public static class InstancePermissions
     public const string BackupsRun = "backups.run";
     public const string BackupsPolicy = "backups.policy";
 
+    /// <summary>
+    /// Replace the wiki with an older copy (dev-plan 9.4). Off for
+    /// administrators by default, like promoting one: it is the most
+    /// destructive thing the product can do from a web request, so an owner
+    /// has to decide to allow it. Granting it is itself an alert.
+    /// </summary>
+    public const string BackupsRestore = "backups.restore";
+
     // --- Instance
     public const string DashboardView = "dashboard.view";
     public const string SettingsInstance = "settings.instance";
@@ -153,6 +161,12 @@ public static class InstancePermissions
         new(BackupsPolicy, "Backups", "Change the retention policy",
             "Decide how many backups are kept and for how long.",
             PermissionScope.Administration, UserRole.Admin),
+        // Owner by default, like users.promote_admins: restoring replaces the
+        // whole wiki with an older copy, so it is not something an
+        // administrator holds until the owner says so.
+        new(BackupsRestore, "Backups", "Restore a backup",
+            "Replace the wiki with an older copy. The previous copy is kept so the restore can be undone.",
+            PermissionScope.Administration, UserRole.Owner),
 
         new(DashboardView, "Instance", "See the dashboard",
             "Usage, content and health figures for the whole instance.",

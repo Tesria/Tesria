@@ -85,6 +85,7 @@ export const Permission = {
   BackupsView: 'backups.view',
   BackupsRun: 'backups.run',
   BackupsPolicy: 'backups.policy',
+  BackupsRestore: 'backups.restore',
   DashboardView: 'dashboard.view',
   SettingsInstance: 'settings.instance',
   SettingsRegistration: 'settings.registration',
@@ -554,8 +555,8 @@ export type Backup = {
 export type BackupJob = {
   id: string
   agent: BackupAgentName
-  kind: 'backup' | 'restore-test'
-  trigger: 'scheduled' | 'manual' | 'startup'
+  kind: 'backup' | 'restore-test' | 'copy-offsite' | 'restore' | 'restore-undo' | 'restore-discard'
+  trigger: 'scheduled' | 'manual' | 'startup' | 'retention'
   status: 'requested' | 'running' | 'succeeded' | 'failed'
   target: string | null
   requestedAt: string
@@ -566,6 +567,55 @@ export type BackupJob = {
   resultJson: string | null
   /** Only from `job(id)`. */
   logTail: string | null
+}
+
+/**
+ * What a restore would replace, and what it would cost (dev-plan 9.4).
+ * `blockedBy` is why the button is disabled; empty means it is allowed.
+ */
+export type RestorePreview = {
+  label: string
+  agent: BackupAgentName
+  mode: 'logical' | 'pitr'
+  backupAt: string
+  targetAt: string | null
+  earliestTarget: string | null
+  latestTarget: string | null
+  hasUploads: boolean
+  backupBytes: number
+  pagesCreated: number
+  versionsSaved: number
+  commentsPosted: number
+  attachmentsAdded: number
+  attachmentBytes: number
+  accountsCreated: number
+  sessionsEnding: number
+  freeBytes: number | null
+  neededBytes: number | null
+  blockedBy: string[]
+}
+
+/** The confirmation every restore action takes: the typed word and the password. */
+export type RestoreInput = {
+  confirmLabel: string
+  password?: string
+  code?: string
+  at?: string | null
+}
+
+export type RestoreQueued = { jobId: string; mode?: string; describes?: string }
+
+/** The copy a restore replaced, kept so it can be undone (dev-plan 9.4). */
+export type KeptCopy = {
+  jobId: string
+  mode: 'logical' | 'pitr'
+  restoredAt: string
+  database: string | null
+  uploads: string | null
+  restoredFrom: string | null
+  databaseBytes: number | null
+  uploadsBytes: number | null
+  removedAt: string | null
 }
 
 export type BackupAgent = {
@@ -609,6 +659,19 @@ export type BackupOverview = {
   targets: BackupTarget[]
   offsiteIsManualOnly: boolean
   disks: DiskChart[]
+  restore: RestoreStatus
+}
+
+/** Where the instance stands on restores (dev-plan 9.4). */
+export type RestoreStatus = {
+  jobId: string | null
+  startedAt: string | null
+  cancelRequested: boolean
+  lastRestoredAt: string | null
+  lastRestoreFrom: string | null
+  keptCopy: KeptCopy | null
+  /** When the retention policy will take the kept copy, if it will. */
+  keptCopyExpiresAt: string | null
 }
 
 /**
@@ -856,6 +919,13 @@ async function handle<T>(res: Response): Promise<T> {
       ? String((data as { code: unknown }).code)
       : null
     const details = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>
+    // A restore is running and the wiki is read-only (dev-plan 9.4).
+    // Announced once, here, rather than handled at every call site: every
+    // write in the product gets the same answer, and the overlay is the only
+    // honest thing to show somebody whose save just did not happen.
+    if (res.status === 503 && code === 'maintenance') {
+      window.dispatchEvent(new CustomEvent('tesria:maintenance', { detail: details.maintenance }))
+    }
     throw new ApiError(res.status, message, fieldErrors, code, details)
   }
   return data as T
@@ -1179,6 +1249,20 @@ export const api = {
       restoreTest: (label: string) =>
         request<BackupJob>('POST', `/api/admin/backups/${encodeURIComponent(label)}/restore-test`),
       job: (id: string) => request<BackupJob>('GET', `/api/admin/backups/jobs/${id}`),
+      /** Replacing the wiki with an older copy (dev-plan 9.4). */
+      restorePreview: (label: string, at?: string) =>
+        request<RestorePreview>(
+          'GET',
+          `/api/admin/backups/${encodeURIComponent(label)}/restore-preview${at ? `?at=${encodeURIComponent(at)}` : ''}`,
+        ),
+      restore: (label: string, input: RestoreInput) =>
+        request<RestoreQueued>('POST', `/api/admin/backups/${encodeURIComponent(label)}/restore`, input),
+      cancelRestore: () =>
+        request<{ cancelled: boolean; message: string }>('POST', '/api/admin/backups/restore/cancel', {}),
+      undoRestore: (input: RestoreInput) =>
+        request<RestoreQueued>('POST', '/api/admin/backups/restore/undo', input),
+      discardKept: (input: RestoreInput) =>
+        request<RestoreQueued>('POST', '/api/admin/backups/restore/discard-kept', input),
     },
     security: {
       limits: () => request<SecurityLimits>('GET', '/api/admin/security/limits'),

@@ -43,6 +43,8 @@ repository cannot be restored without it.
 - **Back up now** queues a backup on both agents; each picks it up within a
   minute. **Test restore** restores that backup somewhere throwaway (a scratch
   database, or a scratch directory for pgBackRest) and records the result.
+- **Restore** replaces the wiki with that backup. See the chapter below: it is
+  the one button on this page that spends a backup rather than taking one.
 - **Upgrading from before 9.1:** the first start seeds the policy from
   `BACKUP_RETENTION_DAYS` (days) with *N* = 3, and the agents then wait their
   24 hours before removing anything. After that the variable is not read.
@@ -63,6 +65,84 @@ Both backup agents normally share one disk and get one chart between them.
 The low-space warning is measured in backup sets rather than a percentage,
 because a percentage means the wrong thing on a small disk and on a large
 one alike.
+
+## Restoring from the admin page
+
+Every backup row has **Restore** beside Test restore. It replaces the whole
+wiki with that copy, and it is the most destructive thing this product can do
+from a web request, so it is gated accordingly.
+
+**Who can.** A right of its own, `backups.restore`, which only the **owner**
+holds out of the box. An administrator does not have it until the owner grants
+it to a role on the Roles tab, exactly like promoting administrators.
+
+**What it asks for.** The backup's label typed back, and your password in the
+same request. The five-minute sudo window is deliberately not enough: it
+answers "you signed in recently", and this needs "you mean it". An account
+without a password (provisioned through SSO) gives a one-time code instead. A
+wrong answer counts toward locking the account, as a failed sign-in does.
+
+**What happens, in order.**
+
+1. **A backup is taken first, always.** It cannot be skipped and the restore
+   does not start if it fails. This is the moment you most want a backup
+   nobody had to remember to take.
+2. The wiki goes **read-only** for everyone. Reading keeps working; writes get
+   503 and the browser shows a notice. Open editors are disconnected, because
+   an editor holds its page in memory and would write it back afterwards.
+3. The dump is restored into a **new database beside the live one** and checked
+   there: it must have tables, accounts, and no migrations this build has never
+   run. A backup from a *newer* Tesria is refused, because that is a downgrade
+   and starting the application against it would not work.
+4. **The switch**, two renames, milliseconds. The database it replaces is
+   renamed rather than dropped, and the attachments are moved aside rather than
+   deleted. That is the undo.
+5. The application **restarts itself**, which is how a restored database gets
+   its migrations, its runtime role grants and a clean connection pool. The
+   page you are on comes back on its own.
+
+**Point-in-time recovery** works the same way from a physical backup row, with
+a time field bounded by what the backups actually cover. It replaces the whole
+cluster rather than one database, so the database container stops and starts
+its own Postgres to do it. There is no kept copy afterwards: its undo is
+another point-in-time restore, to the moment the first one began, which the
+safety backup and a WAL switch make reachable. The page offers exactly that.
+
+**Cancelling** works until the switch. After it, there is no cancel, only undo,
+and the screen says so rather than pretending.
+
+**Undoing.** While a kept copy exists the page shows a **copy kept before the
+last restore** card: its size, when the retention policy will remove it, and
+two buttons. **Undo the restore** puts it back (taking a safety backup of the
+current state first). **Remove the copy** destroys the undo, and asks for the
+password to do it.
+
+**The kept copy ages out under the retention policy**, by the same rule as a
+backup: it is treated as one taken at the moment of the restore, and removed
+when the policy would remove that backup. With retention off it is kept until
+somebody removes it. It occupies real disk and shows in the space chart's wiki
+slice until then.
+
+**Sign-ins.** Sessions created after the backup are gone after the restore, so
+some people, possibly including whoever ran it, will sign in again. That is
+expected and the dialog says so.
+
+**Afterwards.** `backup.restored` is written to the audit log and raised as a
+Critical alert to every administrator, whoever did it. It is written *after*
+the restore, into the restored database, so it lands in that database's own
+chain; the record of the request survives on the other side in the safety
+backup and the kept copy. The next audit chain verification will find a
+shorter chain, which is expected once and explained rather than warned about.
+
+**By hand**, the same script does the same thing:
+
+```bash
+docker compose exec backup /scripts/restore.sh db-20260920T030000Z.dump
+```
+
+`RESTORE_DRY_RUN=1` prints every step and changes nothing.
+
+---
 
 ## Layer 1: pgBackRest (physical backups + point-in-time recovery)
 
@@ -134,10 +214,12 @@ not exist. Two things worth knowing:
 * Start `app` before `collab` after a restore (compose does: collab depends
   on app being healthy), because collab signs in as the role the app creates.
 * After any restore, run `scripts/verify-audit-chain.sh` (or Admin →
-  Security → Verify). A point-in-time restore legitimately shortens the
-  audit chain to the target time; the chain will verify, and the in-process
-  monitor's "shorter than last time" warning on the next daily run is
-  expected once. A restore should never produce a *broken* chain, if it
+  Security → Verify). A restore legitimately shortens the audit chain to the
+  backup's moment; the chain will verify. A restore run from the admin page
+  (9.4) records when it happened, and the monitor explains the shorter chain
+  instead of warning about it, once. A restore run by hand does not set that,
+  so the "shorter than last time" warning on the next daily run is expected
+  once. A restore should never produce a *broken* chain, if it
   does, the backup itself was taken from an already-tampered database.
 
 ## Recovery scenarios
@@ -213,14 +295,12 @@ Timestamps use Postgres syntax with a timezone offset (e.g. `+00` for UTC).
    ```
 4. `docker compose up -d` to bring up the whole stack.
 
-If you only have the logical dumps, restore the newest instead:
+If you only have the logical dumps, restore the newest instead. The script
+puts the attachments back too, from the archive that shares the dump's stamp:
 
 ```bash
 docker compose up -d db backup
-docker compose exec backup /scripts/restore.sh          # newest dump (destructive)
-# then restore attachments:
-docker run --rm -v tesria_uploads:/u -v tesria_backups:/b alpine \
-  sh -c 'cd /u && tar xzf /b/uploads-<timestamp>.tar.gz'
+docker compose exec backup /scripts/restore.sh          # newest cycle
 ```
 
 ---
@@ -536,8 +616,11 @@ docker compose cp restored/backups/ backup:/backups/
 docker compose exec backup /scripts/restore.sh db-<stamp>.dump
 ```
 
-`restore.sh` is the same script Layer 2 uses, and it refuses to run against
-a database the app is using, which is why `app` is still down.
+`restore.sh` is the same script the admin page's Restore uses. It restores
+into a new database beside the live one and swaps it in, so it does not need
+the application to be down, and it puts the attachments back from the
+archive that shares the dump's stamp. On a fresh host there is nothing to
+swap and it simply becomes the wiki.
 
 ### 4. Point-in-time recovery instead, if you need it
 
