@@ -288,6 +288,10 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .admin-version { margin: 2rem 0 0; font-size: 0.75rem; color: var(--muted); }
 .admin-version a { color: inherit; }
 
+/* A space's export switches (dev-plan 12.3). */
+.space-exports { display: grid; gap: 0.5rem; justify-items: start; }
+.space-exports .btn { margin-top: 0.5rem; }
+
 /* Administration → Branding. */
 .branding__field { display: grid; gap: 0.3rem; max-width: 34rem; margin-bottom: 1rem; }
 .branding__choice { border: 0; padding: 0; margin: 0 0 1rem; display: grid; gap: 0.35rem; }

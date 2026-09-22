@@ -55,6 +55,22 @@ public class Space
     /// <summary>Whether anonymous readers may see (never write) comments. Off by default.</summary>
     public bool PublicComments { get; set; }
 
+    // --- Exports (dev-plan 12.3). Each format on by default; an
+    // administrator turns them off for a space more sensitive than the rest.
+    // They bind everyone, administrators and the owner included: the people
+    // who can change them can turn them back on, and that is audited.
+
+    /// <summary>A page as Markdown.</summary>
+    public bool ExportMarkdown { get; set; } = true;
+    /// <summary>A page as a single HTML file.</summary>
+    public bool ExportHtml { get; set; } = true;
+    /// <summary>A page as a PDF.</summary>
+    public bool ExportPdf { get; set; } = true;
+    /// <summary>The whole space as a static website.</summary>
+    public bool ExportSite { get; set; } = true;
+    /// <summary>The whole space as a wiki pack, with its history.</summary>
+    public bool ExportPack { get; set; } = true;
+
     public Guid CreatedById { get; set; }
     public User? CreatedBy { get; set; }
 

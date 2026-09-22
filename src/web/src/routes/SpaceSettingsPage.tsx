@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, ApiError, Permission, type Space } from '../api/client'
+import { api, ApiError, Permission, type Space, type SpaceExports } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { SpaceIconPicker } from '../components/SpaceIconPicker'
 import { DeleteSpaceDialog } from './DeleteSpaceDialog'
@@ -27,6 +27,7 @@ export function SpaceSettingsPage() {
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [exports, setExports] = useState<SpaceExports>(space.exports)
 
   function applied(updated: Space, message: string) {
     onSpaceChanged(updated)
@@ -51,6 +52,23 @@ export function SpaceSettingsPage() {
       applied(updated, archived ? 'Space archived.' : 'Space unarchived.')
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not change the setting.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  /** Which formats this space may be exported in (dev-plan 12.3). */
+  async function saveExports(e: FormEvent) {
+    e.preventDefault()
+    setBusy(true)
+    setStatus(null)
+    setError(null)
+    try {
+      const updated = await api.spaces.setExports(space.key, exports)
+      applied(updated, 'Export settings saved.')
+      setExports(updated.exports)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not save the export settings.')
     } finally {
       setBusy(false)
     }
@@ -108,14 +126,50 @@ export function SpaceSettingsPage() {
         </form>
       </section>
 
-      {can(Permission.PagesExport) && (
+      {can(Permission.SpacesExports) && (
+        <section className="profile__section profile__section--wide" id="exports">
+          <h2>Exports</h2>
+          <p className="muted small">
+            Which ways this space can be downloaded. Turn a format off for a space that is more
+            sensitive than the rest: it stops for everyone, administrators included, until someone with
+            this setting turns it back on. People who can read a page can still copy what they read.
+          </p>
+          <form onSubmit={saveExports} className="space-exports">
+            {([
+              ['markdown', 'Markdown', 'A page as a Markdown file.'],
+              ['html', 'HTML', 'A page as a single HTML file.'],
+              ['pdf', 'PDF', 'A page as a PDF.'],
+              ['site', 'Website', 'The whole space as a static website.'],
+              ['pack', 'Wiki pack', 'The whole space with its history, for moving it to another Tesria.'],
+            ] as const).map(([key, label, hint]) => (
+              <label key={key} className="admin__toggle">
+                <input
+                  type="checkbox"
+                  checked={exports[key]}
+                  onChange={(e) => setExports((x) => ({ ...x, [key]: e.target.checked }))}
+                />
+                <span>
+                  <strong>{label}</strong>
+                  <span className="muted small"> {hint}</span>
+                </span>
+              </label>
+            ))}
+            <button type="submit" className="btn btn--primary" disabled={busy
+              || JSON.stringify(exports) === JSON.stringify(space.exports)}>
+              {busy ? 'Saving…' : 'Save'}
+            </button>
+          </form>
+        </section>
+      )}
+
+      {can(Permission.PagesExport) && space.exports.site && (
         <section className="profile__section profile__section--wide" id="export">
           <h2>Export as a site</h2>
           <SiteExportSection spaceKey={space.key} />
         </section>
       )}
 
-      {can(Permission.PagesExport) && (
+      {can(Permission.PagesExport) && space.exports.pack && (
         <section className="profile__section profile__section--wide" id="pack">
           <h2>Export as a pack</h2>
           <PackExportSection spaceKey={space.key} />

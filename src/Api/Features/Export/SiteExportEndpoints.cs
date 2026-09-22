@@ -55,6 +55,8 @@ public static class SiteExportEndpoints
         var space = await db.Spaces.AsNoTracking().FirstOrDefaultAsync(s => s.Key == key.ToUpperInvariant(), ct);
         if (space is null) return Results.NotFound();
         if (!await perms.CanViewSpaceAsync(space.Id)) return Results.NotFound();
+        // Turned off for this space (dev-plan 12.3), for everyone.
+        if (!SpaceExports.Allows(space, ExportFormat.Site)) return SpaceExports.Refused(space, ExportFormat.Site);
 
         var anonymous = !string.Equals(audience, "me", StringComparison.OrdinalIgnoreCase);
 

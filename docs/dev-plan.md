@@ -4093,6 +4093,58 @@ carry it too.
 
 ---
 
+### 12.3 Turn a space's exports off, format by format · `S` · Model: Opus 5.5 · ✅ **shipped 2026-09-22**
+
+**What the owner asked for (2026-09-22).** "Add in the space settings the
+ability to disable exports on the entire space. It should be granular so we
+can enable/disable markdown, pdf, and website." A permission administrators
+and the owner hold by default, every format on by default, "but this will
+allow admins to disable exports on a specific space if it is more sensitive
+than other spaces in their instance."
+
+**Decisions made in building it, stated so they can be reversed cheaply.**
+1. **Five switches, not three.** The product has two more exports than the
+   request names: a page as a single HTML file, and the whole space as a wiki
+   pack. Leaving them out would let a sensitive space be downloaded whole, as a
+   pack with its history, after an administrator believed exports were off.
+   So each of the five is a switch: Markdown, HTML, PDF, Website and Wiki pack.
+   Dropping two is a one-line change each if the owner wants three.
+2. **A right of its own, `spaces.exports`,** Administration scope,
+   `DefaultFrom: Admin`, so administrators and the owner hold it and any role
+   can be granted it. It is not a space permission: judging a space more
+   sensitive than the rest belongs to the instance's administrators, not to
+   whoever created the space, the same reasoning as deleting a space (11.3).
+3. **Off means off for everyone,** administrators and the owner included. The
+   people who can change the setting can turn a format back on, and that is
+   audited. Letting administrators bypass it would make the setting a
+   suggestion.
+4. **Refused with 403 and `code: export_disabled`**, naming the space and the
+   format, before any rendering starts. Not 404: the reader can see the
+   space, so pretending it does not exist would be a stranger answer than the
+   truth.
+5. **It stops downloads, not reading.** Anyone who can read a page can copy
+   it, and the API and the MCP server return page content to anyone allowed
+   to read it. The space settings text says so plainly rather than
+   overstating what the switch does.
+6. **Not carried by packs.** An imported space starts with every export on,
+   like any new space. A pack from a space whose pack export is off cannot be
+   made in the first place.
+
+**As built.**
+- Five columns on `Space`, all defaulting to true, including for existing
+  rows through the migration.
+- `SpaceExports` checks and words the refusal once, for the page, website and
+  pack endpoints.
+- `PUT /api/spaces/{key}/exports` sets all five at once, returns 404 for a
+  space the caller cannot see, and audits `space.exports_changed` with before
+  and after (nothing is recorded when nothing changed).
+- Every space response carries the five flags.
+- Space settings gain an **Exports** section for holders of the right, and
+  hide the website and pack sections when those are off.
+- The page view leaves out the downloads the space does not allow, for
+  signed-in and anonymous readers alike.
+- Tests: 11 (`SpaceExportTests`).
+
 
 ## Phase 13: Branding
 
@@ -4628,6 +4680,7 @@ miss of the kind the gate exists for:
 12. **12.1** Capture-based export and the element audit (shipped 2026-09-20) → **12.2** Publish a space as a static site (shipped 2026-09-20). 12 before 8.5 because the site export builds the walk over a space that the wiki pack will reuse, and because the owner's documentation is waiting on it.
 13. **8.6** External edits as tracked changes (steps 1–5 shipped 2026-09-21; step 6 folded into 10.5).
 13a. **8.5** Wiki packs (designed 2026-09-21 as Fable; Opus implements next). Before 10.5, because the pack is what a rebuilt manual is committed as.
+13c. **12.3** Turn a space's exports off, format by format (Opus 5.5, shipped 2026-09-22).
 13b. **13.1** Instance branding (designed and shipped 2026-09-22 by Opus 5.5, the first item under the new model gate). Before 10.5 at the owner's request, and the manual's screenshots are then taken on an unbranded instance.
 14. **10.5** Rebuild the user manual, **after 8.5**, now that the owner has settled the wiki as its source of truth (2026-09-21). A manual whose only copy is inside the instance is how the last one was lost, so the pack that can export it is a prerequisite, not a preference.
 

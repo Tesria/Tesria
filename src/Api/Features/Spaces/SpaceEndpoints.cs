@@ -24,7 +24,15 @@ public static partial class SpaceEndpoints
         Guid Id, string Key, string Name, string? Description,
         bool Archived, Guid? HomepageId, DateTimeOffset CreatedAt,
         bool IsPublic, bool PublicComments,
-        SpaceIconKind IconKind, string? IconValue, int? IconColor);
+        SpaceIconKind IconKind, string? IconValue, int? IconColor,
+        SpaceExportsDto Exports);
+
+    /// <summary>
+    /// Which exports this space allows (dev-plan 12.3). Part of every space
+    /// response, so the page view can leave out a download that would only
+    /// be refused.
+    /// </summary>
+    public record SpaceExportsDto(bool Markdown, bool Html, bool Pdf, bool Site, bool Pack);
 
     // 2–50 chars, starts with a letter, letters/digits only. Stored upper-cased.
     [GeneratedRegex("^[A-Z][A-Z0-9]{1,49}$")]
@@ -54,6 +62,13 @@ public static partial class SpaceEndpoints
             .RequirePermission(InstancePermissions.SpacesDelete);
         group.MapDelete("/{key}", Delete)
             .RequirePermission(InstancePermissions.SpacesDelete);
+
+        // Which exports a space allows (dev-plan 12.3). An instance right,
+        // like deleting: the setting exists for spaces more sensitive than
+        // the rest, and that judgement belongs to the instance's
+        // administrators rather than to whoever created the space.
+        group.MapPut("/{key}/exports", UpdateExports)
+            .RequirePermission(InstancePermissions.SpacesExports);
 
         return routes;
     }
@@ -292,7 +307,37 @@ public static partial class SpaceEndpoints
 
     private static SpaceResponse ToResponse(Space s) =>
         new(s.Id, s.Key, s.Name, s.Description, s.Archived, s.HomepageId, s.CreatedAt, s.IsPublic, s.PublicComments,
-            s.IconKind, s.IconValue, s.IconColor);
+            s.IconKind, s.IconValue, s.IconColor, ExportsOf(s));
+
+    private static SpaceExportsDto ExportsOf(Space s) =>
+        new(s.ExportMarkdown, s.ExportHtml, s.ExportPdf, s.ExportSite, s.ExportPack);
+
+    /// <summary>
+    /// Turns a space's export formats on and off. The whole set each time,
+    /// so the audit entry says exactly what was on before and after. A space
+    /// the caller cannot see is 404, as for every other right: holding the
+    /// right means "may do this to spaces", not "may reach any space".
+    /// </summary>
+    private static async Task<IResult> UpdateExports(
+        string key, SpaceExportsDto req, AppDbContext db, IAuditLogger audit, IPermissionService perms)
+    {
+        var space = await db.Spaces.FirstOrDefaultAsync(s => s.Key == key.ToUpperInvariant());
+        if (space is null) return Results.NotFound();
+        if (!await perms.CanViewSpaceAsync(space.Id)) return Results.NotFound();
+
+        var before = ExportsOf(space);
+        space.ExportMarkdown = req.Markdown;
+        space.ExportHtml = req.Html;
+        space.ExportPdf = req.Pdf;
+        space.ExportSite = req.Site;
+        space.ExportPack = req.Pack;
+        var after = ExportsOf(space);
+
+        if (before != after)
+            audit.Record("space.exports_changed", "space", space.Id, new { space.Key, Before = before, After = after });
+        await db.SaveChangesAsync();
+        return Results.Ok(ToResponse(space));
+    }
 
     private static Dictionary<string, string[]> Error(string field, string message) =>
         new() { [field] = [message] };

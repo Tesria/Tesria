@@ -50,6 +50,18 @@ public static class ExportEndpoints
         var safeName = SafeFileName(page.Title);
         var wanted = (format ?? "markdown").ToLowerInvariant();
 
+        // The space may have turned this format off (dev-plan 12.3). Checked
+        // before any work, and for everyone: see SpaceExports.
+        ExportFormat? chosen = wanted switch
+        {
+            "md" or "markdown" => ExportFormat.Markdown,
+            "html" => ExportFormat.Html,
+            "pdf" => ExportFormat.Pdf,
+            _ => null,
+        };
+        if (chosen is { } f && page.Space is { } space && !SpaceExports.Allows(space, f))
+            return SpaceExports.Refused(space, f);
+
         if (wanted is "md" or "markdown")
         {
             // Markdown keeps its attachment URLs: a data: URI is unreadable in

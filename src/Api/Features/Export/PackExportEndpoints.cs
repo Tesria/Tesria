@@ -37,6 +37,10 @@ public static class PackExportEndpoints
             .FirstOrDefaultAsync(s => s.Key == key.ToUpperInvariant(), ct);
         if (space is null) return Results.NotFound();
         if (!await perms.CanViewSpaceAsync(space.Id)) return Results.NotFound();
+        // Turned off for this space (dev-plan 12.3), for everyone. A pack is
+        // the most complete export there is, history and all, so a space
+        // sensitive enough to lock down is one where this matters most.
+        if (!SpaceExports.Allows(space, ExportFormat.Pack)) return SpaceExports.Refused(space, ExportFormat.Pack);
 
         var (model, storageKeys) = await BuildAsync(db, perms, settings, space, ct);
 

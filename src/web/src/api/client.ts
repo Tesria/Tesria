@@ -78,6 +78,7 @@ export const Permission = {
   SpacesManage: 'spaces.manage',
   SpacesPublish: 'spaces.publish',
   SpacesDelete: 'spaces.delete',
+  SpacesExports: 'spaces.exports',
   AuditView: 'audit.view',
   SecurityView: 'security.view',
   SecurityRespond: 'security.respond',
@@ -188,7 +189,11 @@ export type Space = {
   iconValue: string | null
   /** Tile colour index, or null to derive one from the key. */
   iconColor: number | null
+  /** Which exports this space allows (dev-plan 12.3). All on unless an administrator turned some off. */
+  exports: SpaceExports
 }
+
+export type SpaceExports = { markdown: boolean; html: boolean; pdf: boolean; site: boolean; pack: boolean }
 
 /** First-run setup (dev-plan 10.2). */
 export type SetupStep = { at: string; skipped: boolean }
@@ -1163,6 +1168,9 @@ export const api = {
       request<void>('DELETE', `/api/media/space-icons/${encodeURIComponent(key)}`),
     archive: (key: string) =>
       request<Space>('POST', `/api/spaces/${encodeURIComponent(key)}/archive`, {}),
+    /** Turn this space's export formats on and off (dev-plan 12.3). */
+    setExports: (key: string, exports: SpaceExports) =>
+      request<Space>('PUT', `/api/spaces/${encodeURIComponent(key)}/exports`, exports),
     unarchive: (key: string) =>
       request<Space>('POST', `/api/spaces/${encodeURIComponent(key)}/unarchive`, {}),
     /** What the delete dialog counts up before asking (dev-plan 11.3). */
