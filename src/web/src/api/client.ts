@@ -608,6 +608,24 @@ export type BackupOverview = {
   jobs: BackupJob[]
   targets: BackupTarget[]
   offsiteIsManualOnly: boolean
+  disks: DiskChart[]
+}
+
+/**
+ * The space one disk holds (dev-plan 9.3). One per filesystem rather than
+ * per agent: both backup agents normally write to the same disk, and drawing
+ * it twice would double its free space on the screen.
+ */
+export type DiskChart = {
+  filesystem: string | null
+  agents: string[]
+  backupBytes: number
+  wikiBytes: number
+  otherBytes: number
+  freeBytes: number
+  totalBytes: number
+  low: boolean
+  measuredAt: string | null
 }
 
 /**

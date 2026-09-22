@@ -2242,7 +2242,7 @@ Cloudflare R2 pricing and bucket locks.
 
 ---
 
-### 9.3 Space charts on the backups page · `M` · Model: Opus · designed 2026-09-21 (Fable)
+### 9.3 Space charts on the backups page · `M` · Model: Opus · ✅ **shipped 2026-09-22**
 
 **What the owner asked for (2026-09-21).** A pie chart on the backups page
 showing backups against overall disk usage against free space, and one such
@@ -2312,17 +2312,87 @@ NAS, removable and cloud charts depend on 9.2 steps 1 to 5, since they draw
 what 9.2's slot status publishes.
 
 **Opus implements, in this order, each step shippable alone:**
-1. The sidecar measures `VolumeBackupBytes` and the filesystem identity;
-   the migration; a test that two agents on one filesystem collapse to one
-   chart and on two do not.
-2. `PieChart.tsx` extracted from the editor (the editor's chart must render
-   identically afterwards: check a page with a pie), the local chart on the
-   backups page with its legend and caption, and the low-space warning.
-   Live walk as admin and as a member.
-3. After 9.2 step 5: the three per-slot numbers in the published status,
-   the NAS and removable charts with the last-known rule, and the cloud
-   composition-and-cost card with the optional budget denominator.
-4. `architecture.md`, the runbook sentence on Docker's disk, CHANGELOG.
+1. ✅ **shipped 2026-09-22.** The sidecar measures `VolumeBackupBytes` and
+   the filesystem identity; the migration; tests that two agents on one
+   filesystem collapse to one chart and on two do not (13).
+   As built: `du` runs on its own clock (`BACKUP_MEASURE_SECONDS`, ten
+   minutes) rather than every heartbeat, because it walks the whole backup
+   directory and the number moves slowly.
+   A test caught a real bug: when `df` and `du` disagree, which they will,
+   being two commands moments apart, clamping each number separately made
+   the slices sum to **more than the disk**. `df`'s free space is now taken
+   as authoritative and the backups are fitted into what is actually used,
+   so the three always add up.
+2. ✅ **shipped 2026-09-22.** `PieChart.tsx` extracted from the editor, the
+   local chart with its legend and caption, and the low-space warning.
+   The extraction is exact: the editor's pie still renders with the same
+   `viewBox`, the same `M60 60 ... A55 55` geometry and the same colours,
+   checked in the editor rather than assumed. It also gained a fix on the
+   way: a pie of a single slice used to draw a degenerate arc, which is
+   invisible, and is now drawn as a circle.
+   The first colours chosen were surface and border tokens, which are
+   nearly the card behind them and drew a solid disc with no readable
+   slices. They are now blue for ours, grey for everything else, green for
+   free, which stay distinct in both themes.
+3. ✅ **shipped 2026-09-22.** The per-slot numbers, and the cloud card's
+   composition chart with the total stored and an estimated monthly cost
+   carrying the date its prices were checked.
+   **Not done: the optional `OFFSITE_CLOUD_BUDGET_GB` denominator.** It
+   would give the cloud pie a free-space feel, and it is the one part of
+   this item that invents a number rather than reporting one. Worth adding
+   if anyone asks for it; left out rather than guessed at.
+   The NAS and removable cards show composition only when a slot holds two
+   repositories, which in practice is the cloud alone, since the others
+   carry files and never the pgBackRest repository.
+4. ✅ **shipped 2026-09-22.** `architecture.md`, the runbook paragraph on
+   the disk, CHANGELOG.
+
+**Corrected the same day, after the owner checked the number against macOS.**
+The chart said 1.6 TB free; his Mac said 761 GB. Both were "right": `df` on
+the container's own volume reports **Docker's virtual disk**, which under
+Docker Desktop is sparse and reports the size it may grow to rather than the
+space the host can still give it. For a warning whose whole purpose is to
+fire before backups fill the disk, that is the worst possible error, because
+it fires late or never.
+
+The fix is that a **host bind mount** is passed through the host's own
+filesystem, so `df` on one reports the host's real figures. Both sidecars
+already mount their scripts that way, so the measurement now uses that path
+(`BACKUP_HOST_REF`) and reads 706 GB free of 1.8 TB, which is what the Mac
+reports. On a Linux host the two are usually the same filesystem and nothing
+changes. This is the difference between a chart that decorates and one that
+can be trusted, and it was only found because somebody compared it to the
+operating system.
+
+Three smaller changes at the owner's request, the same day:
+
+- A **live wiki** slice, so the chart answers "how much is the wiki and how
+  much is its backups" rather than lumping the wiki in with everything else.
+  Each sidecar measures the part it can see, the attachments for one and the
+  database directory for the other, and those add up.
+- A **drop shadow** on the cards, which sit on a section of the same colour
+  and read as one flat block without it. Deepened in dark mode, where the
+  light-background alpha disappears.
+- The **administration area uses the width it is given**. It was capped at
+  the 900px measure meant for prose, so on a large display the tables
+  scrolled sideways inside a narrow column with empty space either side. The
+  cap is gone and prose inside is held to 80ch so it stays readable.
+  A first attempt also capped the card tracks, on the theory that a lone card
+  should not stretch across a 4K display. The owner was right that this was
+  worse: it stopped the two agent cards short of the edge and squeezed the
+  chart into wrapping text. The tracks are `1fr` again and the cards split
+  whatever width they are given.
+  Administration → Settings needed the same treatment separately: its forms
+  carry the 480px form width, so as one column they left most of a large
+  display empty. They are a grid now, four across at 1990px.
+
+**Colours, after the owner looked at it.** Grey for "everything else" read as
+*disabled* rather than as a slice, and the wiki and its backups were shades
+close enough to be taken for each other. The four slices are now four
+distinct hues with their own tokens (blue, magenta, orange, green), lifted
+for dark mode where the light-theme values go muddy. The pie itself also
+gained the drop shadow the cards have, so it lifts off the card the way the
+card lifts off the section.
 
 **Verify** by filling a scratch volume with a large file and watching the
 "other" slice grow and "free" shrink on the next run; delete it and watch

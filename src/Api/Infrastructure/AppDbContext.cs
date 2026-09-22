@@ -536,6 +536,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.HasKey(x => x.Name);
             e.Property(x => x.Name).HasMaxLength(20);
             e.Property(x => x.ToolVersion).HasMaxLength(200);
+            e.Property(x => x.VolumeFilesystem).HasMaxLength(200);
             e.Property(x => x.Message).HasMaxLength(2000);
         });
         b.Entity<Backup>(e =>

@@ -67,6 +67,31 @@ public class BackupAgent
     public long? VolumeFreeBytes { get; set; }
     public long? VolumeTotalBytes { get; set; }
 
+    /// <summary>
+    /// What this agent's own backups occupy on that volume (dev-plan 9.3).
+    /// The third number the space chart needs: "everything else" is total
+    /// minus free minus this, and without it the chart could only show used
+    /// against free, which says nothing about whether the backups are the
+    /// thing filling the disk.
+    /// </summary>
+    public long? VolumeBackupBytes { get; set; }
+
+    /// <summary>
+    /// What the live wiki itself occupies, as far as this agent can see it:
+    /// the attachments for the logical agent, the database directory for the
+    /// physical one (dev-plan 9.3). Shown as its own slice, because "how much
+    /// is the wiki and how much is its backups" is the question people
+    /// actually bring to this chart.
+    /// </summary>
+    public long? VolumeWikiBytes { get; set; }
+
+    /// <summary>
+    /// The filesystem the volume is on, as <c>df</c> names it. Two agents
+    /// that share one filesystem must draw one chart rather than two of the
+    /// same disk, and normally they do share one.
+    /// </summary>
+    public string? VolumeFilesystem { get; set; }
+
     /// <summary>Physical only: when Postgres last archived a WAL segment (pg_stat_archiver).</summary>
     public DateTimeOffset? WalArchivedAt { get; set; }
 

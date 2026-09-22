@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using NpgsqlTypes;
@@ -12,9 +13,11 @@ using Tesria.Api.Infrastructure;
 namespace Tesria.Api.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260922061845_BackupAgentVolumeUsage")]
+    partial class BackupAgentVolumeUsage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -303,9 +306,6 @@ namespace Tesria.Api.Infrastructure.Migrations
                         .HasColumnType("bigint");
 
                     b.Property<long?>("VolumeTotalBytes")
-                        .HasColumnType("bigint");
-
-                    b.Property<long?>("VolumeWikiBytes")
                         .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset?>("WalArchivedAt")

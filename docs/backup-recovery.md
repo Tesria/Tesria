@@ -49,6 +49,21 @@ repository cannot be restored without it.
 
 ---
 
+**The Disk space chart** shows what the machine's disk is holding: the live
+wiki, the backups of it, everything else, and what is free.
+
+The free space is the **host's**, measured through a directory bind-mounted
+from it, so it matches what your operating system reports. It deliberately
+does not use the container's own volume: under Docker Desktop that sits on a
+sparse virtual disk which reports the size it *may grow to*, so on a Mac
+with 700GB free it will claim 1.7TB, and a warning based on it would fire
+long after the disk had actually filled.
+
+Both backup agents normally share one disk and get one chart between them.
+The low-space warning is measured in backup sets rather than a percentage,
+because a percentage means the wrong thing on a small disk and on a large
+one alike.
+
 ## Layer 1: pgBackRest (physical backups + point-in-time recovery)
 
 The `db` image bundles pgBackRest and archives every WAL segment

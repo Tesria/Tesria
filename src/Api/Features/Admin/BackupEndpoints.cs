@@ -47,7 +47,18 @@ public static class BackupEndpoints
 
     public record Overview(
         PolicyDto Policy, List<AgentDto> Agents, List<BackupDto> Backups, List<BackupDto> Removed,
-        List<JobDto> Jobs, List<TargetDto> Targets, bool OffsiteIsManualOnly);
+        List<JobDto> Jobs, List<TargetDto> Targets, bool OffsiteIsManualOnly,
+        List<DiskChartDto> Disks);
+
+    /// <summary>
+    /// The space one disk holds (dev-plan 9.3): backups, everything else,
+    /// free. One per filesystem, not per agent, since both sidecars normally
+    /// share a disk and drawing it twice would double its free space.
+    /// </summary>
+    public record DiskChartDto(
+        string? Filesystem, List<string> Agents,
+        long BackupBytes, long WikiBytes, long OtherBytes, long FreeBytes, long TotalBytes,
+        bool Low, DateTimeOffset? MeasuredAt);
 
     /// <summary>
     /// One offsite target, as the sidecars published it (dev-plan 9.2). Every
@@ -116,7 +127,14 @@ public static class BackupEndpoints
             // An offline copy is not a schedule (9.2, decision 8). Said here
             // as well as raised as an alert, because the person looking at
             // this page is the one who can do something about it.
-            enabled.Count > 0 && enabled.All(t => t.Slot == "removable")));
+            enabled.Count > 0 && enabled.All(t => t.Slot == "removable"),
+            DiskUsage.Charts(snapshot.Agents)
+                .Select(c => new DiskChartDto(
+                    c.Filesystem, c.Agents.ToList(), c.BackupBytes, c.WikiBytes, c.OtherBytes,
+                    c.FreeBytes, c.TotalBytes, c.Low,
+                    snapshot.Agents.Where(a => c.Agents.Contains(a.Name))
+                        .Max(a => a.LastSeenAt)))
+                .ToList()));
     }
 
     private static async Task<IResult> UpdatePolicy(

@@ -8,6 +8,8 @@
 AGENT=logical
 VOLUME=/backups
 BACKUP_DIR=/backups
+# This sidecar's view of the live wiki: the attachments (dev-plan 9.3).
+WIKI_PATH=/data/uploads
 TOOL_VERSION="$(pg_dump --version 2>/dev/null)"
 
 # shellcheck source=common.sh
