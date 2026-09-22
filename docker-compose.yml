@@ -143,7 +143,10 @@ services:
       - caddy_config:/config
 
   backup:
-    image: postgres:18
+    # postgres:18 plus restic; see deploy/backup/Dockerfile for why restic.
+    build:
+      context: .
+      dockerfile: deploy/backup/Dockerfile
     restart: unless-stopped
     depends_on:
       db:
@@ -156,10 +159,24 @@ services:
       BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS}
       # Retention is not set here any more: it is the policy on the admin
       # page (dev-plan 9.1), which this sidecar reads from the database.
+      # Offsite (dev-plan 9.2): the same slots the pgbackrest sidecar reads,
+      # but this one carries the files rather than the database. Empty means
+      # no offsite target, and nothing is copied anywhere.
+      OFFSITE_CLOUD_TYPE: ${OFFSITE_CLOUD_TYPE:-}
+      OFFSITE_CLOUD_ENDPOINT: ${OFFSITE_CLOUD_ENDPOINT:-}
+      OFFSITE_CLOUD_BUCKET: ${OFFSITE_CLOUD_BUCKET:-}
+      OFFSITE_CLOUD_REGION: ${OFFSITE_CLOUD_REGION:-}
+      OFFSITE_CLOUD_PATH: ${OFFSITE_CLOUD_PATH:-}
+      OFFSITE_CLOUD_URI_STYLE: ${OFFSITE_CLOUD_URI_STYLE:-}
+      OFFSITE_CLOUD_KEY: ${OFFSITE_CLOUD_KEY:-}
+      OFFSITE_CLOUD_SECRET: ${OFFSITE_CLOUD_SECRET:-}
+      OFFSITE_CLOUD_PASSPHRASE: ${OFFSITE_CLOUD_PASSPHRASE:-}
+      OFFSITE_CLOUD_VERIFY_TLS: ${OFFSITE_CLOUD_VERIFY_TLS:-}
     entrypoint: ["/bin/bash", "/scripts/run.sh"]
     volumes:
       - ./deploy/backup:/scripts:ro
       - ./deploy/backup/common.sh:/opt/tesria/common.sh:ro
+      - ./deploy/pgbackrest/offsite.sh:/opt/tesria/offsite.sh:ro
       - backups:/backups
       - uploads:/data/uploads:ro
     # The loop touches this every minute, even in the middle of a long backup.

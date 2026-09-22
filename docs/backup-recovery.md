@@ -278,10 +278,32 @@ docker compose exec pgbackrest gosu postgres pgbackrest --stanza=main --repo=2 i
 Testing it without a cloud account: see `deploy/pgbackrest/README.md`, which
 runs MinIO locally behind the `offsite-test` profile.
 
+## Offsite backups: the uploads and the dumps (dev-plan 9.2, step 2)
+
+The `backup` sidecar copies the **uploads volume and the logical dumps** to
+the same slot with restic, which encrypts client-side with that slot's own
+passphrase. So the dumps, which sit in plaintext on the local volume, do not
+leave this machine in plaintext.
+
+It reads the files directly rather than shipping the nightly tarball:
+deduplication then means an unchanged attachment costs nothing on the next
+run. Retention is the admin page's policy translated into restic's
+(`--keep-last N --keep-within Dd`), so the local and offsite copies expire
+together. Every run ends with `check --read-data-subset=5%`.
+
+### Restoring files from the offsite copy
+
+Everything restic needs is in `.env`. From the backup sidecar:
+
+```bash
+docker compose exec backup bash -lc 'export RESTIC_REPOSITORY="s3:https://$OFFSITE_CLOUD_ENDPOINT/$OFFSITE_CLOUD_BUCKET$OFFSITE_CLOUD_PATH/files" RESTIC_PASSWORD="$OFFSITE_CLOUD_PASSPHRASE" AWS_ACCESS_KEY_ID="$OFFSITE_CLOUD_KEY" AWS_SECRET_ACCESS_KEY="$OFFSITE_CLOUD_SECRET"; restic snapshots'
+```
+
+Then `restic restore latest --target /tmp/restored` and take the dump or the
+attachments from there. A restic repository is self-contained: the binary
+and the passphrase are enough to read it on any machine, with no Tesria.
+
 ### Still local only
 
-The logical dumps and the uploads are **not** copied offsite yet, and the
-dumps are still plaintext: that is step 2, where restic replaces the tarball
-and encrypts client-side. Until then, copy the `backups` volume off the box
-yourself (the `docker run` line under Layer 2) and store it accordingly.
-Network drives and removable disks are steps 3 and 4.
+Network drives and removable disks are steps 3 and 4. Until then the only
+offsite copy is the cloud slot.

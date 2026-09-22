@@ -12,6 +12,10 @@ TOOL_VERSION="$(pg_dump --version 2>/dev/null)"
 
 # shellcheck source=common.sh
 . /opt/tesria/common.sh
+# shellcheck source=../pgbackrest/offsite.sh
+. /opt/tesria/offsite.sh
+# shellcheck source=offsite-files.sh
+. /scripts/offsite-files.sh
 
 mkdir -p "$BACKUP_DIR"
 
@@ -131,6 +135,24 @@ SQL
       fi
     done
   done
+}
+
+# The offsite copy of the files (dev-plan 9.2 step 2). Runs on the same pass
+# as everything else, and only after the local backup has been taken, so what
+# is copied is a cycle that exists here first: local first, then replicate.
+offsite_tick() {
+  if ! offsite_cloud_enabled; then
+    offsite_files_disable cloud
+    return 0
+  fi
+
+  local line en kc kd
+  # The same policy the local retention uses, read the same way, so the two
+  # copies expire together instead of drifting apart.
+  if line="$(observe_policy)"; then
+    IFS='|' read -r en kc kd _ <<<"$line"
+  fi
+  restic_run_for cloud "${en:-f}" "${kc:-0}" "${kd:-0}" 1
 }
 
 run_agent

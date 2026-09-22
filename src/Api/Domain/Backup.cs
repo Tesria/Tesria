@@ -142,8 +142,19 @@ public class Backup
 /// </summary>
 public class BackupTarget
 {
-    /// <summary>cloud | nas | removable. One row per slot at most.</summary>
+    /// <summary>cloud | nas | removable.</summary>
     public required string Slot { get; set; }
+
+    /// <summary>
+    /// <c>database</c> or <c>files</c>: a slot can hold both, and they are
+    /// different repositories written by different sidecars. The database
+    /// goes to a pgBackRest repository (cloud only, since a mounted path
+    /// cannot safely be one); the uploads and the logical dumps go to a
+    /// restic repository, which every slot can have. Keeping them as two
+    /// rows rather than two sets of columns is also what lets the cloud card
+    /// chart one against the other (9.3).
+    /// </summary>
+    public required string Kind { get; set; }
 
     /// <summary>What kind of storage: s3, b2, posix. Null when the slot is off.</summary>
     public string? Type { get; set; }
