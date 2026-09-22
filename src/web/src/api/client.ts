@@ -631,6 +631,8 @@ export type BackupTarget = {
   lastBackupAt: string | null
   lastWalAt: string | null
   lastVerifyAt: string | null
+  lastDrillAt: string | null
+  lastDrillOk: boolean | null
   bytesStored: number | null
   walBacklogFiles: number | null
   updatedAt: string

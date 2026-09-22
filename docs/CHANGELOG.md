@@ -78,6 +78,40 @@ and estimated monthly cost instead of inventing one. The same numbers drive
 a low-space warning whose threshold is two backup sets, not a percentage.
 Full design in `dev-plan.md` as 9.3.
 
+### 9.2 step 6: the restore drill, and how to come back (2026-09-22)
+
+The last step, and the one that makes the rest trustworthy. **9.2 is
+complete.**
+
+**The drill.** Every offsite target is now restored for real on a schedule,
+monthly by default: the newest dump is pulled back out of the target, loaded
+into a throwaway database, counted and dropped. Nothing live is touched, one
+target per pass, last in the pass so that proving a copy never delays taking
+one.
+
+It deliberately asks a different question from the integrity check that runs
+after every backup. `restic check` asks whether a repository is internally
+consistent; the drill asks whether it still turns back into a database. A
+copy can pass the first and fail the second, and this was demonstrated
+rather than assumed: against a repository restic called clean, in its words
+"no errors were found", the drill failed. That is why a failed drill is a
+**critical** alert and outranks everything else on the target card. A backup
+that fails is noticed; one that quietly will not restore looks healthy until
+the morning somebody needs it.
+
+**"The machine is gone".** `backup-recovery.md` gained the chapter the rest
+of it exists for: the server is destroyed and all you have is an offsite
+copy and the passphrases, and here is the path back, step by step, ending
+with what to check before calling it done. `architecture.md` gained the
+section on how the whole thing is put together and why.
+
+One bug worth recording. A `trap ... RETURN` used for cleanup reads tidily
+and does nothing: the trap fires after the function has returned, its locals
+are gone, and under `set -u` the body dies on the first variable it touches,
+silently skipping the cleanup it exists for. The drill creates a database
+and restores a whole dump, so it would have filled the disk a drill at a
+time. Cleanup is explicit now.
+
 ### 9.2 step 5: the Storage targets screen (2026-09-22)
 
 Administration → Backups now shows where copies of this instance are kept,

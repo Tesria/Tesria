@@ -59,6 +59,7 @@ public static class BackupEndpoints
         bool Enabled, bool? Present, string? Problem, string? Message,
         string? KeyFingerprint, string? PassphraseFingerprint,
         DateTimeOffset? LastBackupAt, DateTimeOffset? LastWalAt, DateTimeOffset? LastVerifyAt,
+        DateTimeOffset? LastDrillAt, bool? LastDrillOk,
         long? BytesStored, int? WalBacklogFiles, DateTimeOffset UpdatedAt);
 
     public record PreviewAgent(
@@ -317,7 +318,8 @@ public static class BackupEndpoints
     private static TargetDto ToDto(BackupTarget t) => new(
         t.Slot, t.Kind, t.Type, t.Location, t.Bucket, t.Prefix, t.Enabled, t.Present,
         t.Problem, t.Message, t.KeyFingerprint, t.PassphraseFingerprint,
-        t.LastBackupAt, t.LastWalAt, t.LastVerifyAt, t.BytesStored, t.WalBacklogFiles, t.UpdatedAt);
+        t.LastBackupAt, t.LastWalAt, t.LastVerifyAt, t.LastDrillAt, t.LastDrillOk,
+        t.BytesStored, t.WalBacklogFiles, t.UpdatedAt);
 
     private static BackupJob NewJob(string agent, string kind, string? target, Guid actorId) => new()
     {

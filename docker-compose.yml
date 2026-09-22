@@ -179,11 +179,14 @@ services:
       OFFSITE_NAS_PASSPHRASE: ${OFFSITE_NAS_PASSPHRASE:-}
       OFFSITE_REMOVABLE_PATH: ${OFFSITE_REMOVABLE_PATH:-}
       OFFSITE_REMOVABLE_PASSPHRASE: ${OFFSITE_REMOVABLE_PASSPHRASE:-}
+      OFFSITE_DRILL_DAYS: ${OFFSITE_DRILL_DAYS:-30}
     entrypoint: ["/bin/bash", "/scripts/run.sh"]
     volumes:
       - ./deploy/backup:/scripts:ro
       - ./deploy/backup/common.sh:/opt/tesria/common.sh:ro
       - ./deploy/pgbackrest/offsite.sh:/opt/tesria/offsite.sh:ro
+      # How often the offsite copies are proved restorable (9.2 step 6).
+
       - backups:/backups
       - uploads:/data/uploads:ro
       # A bind mount, not a cifs/nfs volume, and that is the decision: a

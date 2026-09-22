@@ -1464,6 +1464,69 @@ export is one space; the app is untouched. And the PDF footer's page
 numbering is a single flex item, because as separate items `space-between`
 spread "1 of 4" across the whole page.
 
+## Backups that leave the machine (dev-plan 9.2)
+
+Phase 9.1 made backups visible; 9.2 makes them survive the machine. Three
+target types, at most one of each, declared in `.env` as `OFFSITE_CLOUD_*`,
+`OFFSITE_NAS_*` and `OFFSITE_REMOVABLE_*`.
+
+**Why the credentials are in `.env` and not the admin page.** Data Protection
+keys live in the database, so a storage key held there would travel inside
+every backup along with the means to decrypt it: each backup would carry the
+key to delete itself. The sidecars read `.env`; the app never holds a value
+and has no code path that could return one. What reaches the database is a
+row per target with secrets reduced to a 16-character fingerprint, which is
+what the Storage targets screen renders.
+
+**Two tools, split by what each is for.** pgBackRest carries the *database*
+to the cloud slot as `repo2`, with WAL streaming continuously so
+point-in-time recovery exists off the box. restic carries the *uploads and
+the logical dumps* to every slot, encrypted client-side, which is what means
+the dumps do not leave in plaintext. A slot therefore holds up to two
+repositories, which is why `BackupTargets` is keyed on `(Slot, Kind)`.
+
+**A NAS is not a pgBackRest repository.** `archive_command` runs in the `db`
+container, where nothing can check that a share is really mounted, and an
+unmounted share is an ordinary empty directory that pgBackRest would happily
+fill on the boot disk. SFTP is the documented recipe for PITR on a NAS,
+because a connection failing is an error rather than a silent local write.
+
+**The configuration is a generated file, never environment variables.**
+pgBackRest rejects a variable that is defined but empty and Compose cannot
+omit one, so passing `PGBACKREST_REPO2_*` through would stop WAL archiving on
+every instance with no offsite target. `deploy/pgbackrest/offsite.sh` writes
+a drop-in under `config-include-path` instead, from both the `db` container
+and the sidecar. The `db` container needs an entrypoint wrapper for this,
+written so a bad backup target can never stop the database starting.
+
+**Path targets are bind mounts guarded by a sentinel.** A network share or a
+drive is mounted on the host and bind-mounted in; the sidecar refuses to
+write unless `.tesria-backup-target` is present on the far side. An unmounted
+share leaves an empty directory behind, and backing up into it would not
+fail, it would quietly fill the boot disk. A Docker `cifs` volume was
+rejected because it stops the container starting while the share is down,
+which would take the *local* backups with it. `Present` is kept separate from
+`Enabled` because for a drive they are different questions: absent is normal
+for a drawer and a fault for a NAS, and only the NAS alerts.
+
+**What a dead remote costs, which is more than it looks.** WAL is
+acknowledged to Postgres only once every repository has it, so an unreachable
+`repo2` backs up `pg_wal` until `archive-push-queue-max` trips, and the
+segments dropped then are gone from the *local* repository too. So an
+unattended cloud outage can cost point-in-time recovery locally, not just
+offsite. The archive-gap alert therefore fires on a backlog of three
+segments, long before the limit, and pgBackRest is pinned at 2.59.1 because
+before 2.59 that limit silently did not work while archive-push was erroring.
+
+**The drill is the only check that answers the real question.** `restic
+check` asks whether a repository is internally consistent. The drill
+(`deploy/backup/offsite-drill.sh`, monthly) pulls the newest dump back out,
+loads it into a throwaway database and counts the tables. A copy can pass the
+first and fail the second, and one that fails the second is worth nothing,
+which is why a failed drill is a *critical* alert and outranks everything
+else on the card: a backup that fails is noticed, while one that quietly will
+not restore looks healthy until the morning it is needed.
+
 ## Wiki packs: a space that outlives its instance (dev-plan 8.5)
 
 A site export (12.2, above) is for people; a **pack** is for Tesria. It is the
