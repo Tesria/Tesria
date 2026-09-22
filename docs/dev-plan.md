@@ -2405,6 +2405,389 @@ composition and cost.
 
 ---
 
+### 9.4 Restore from the admin page · `L` · Model: Fable → Opus · **designed 2026-09-22 (Fable), decisions answered, ready for Opus**
+
+**What the owner asked for (2026-09-22).** The backups page has Test
+restore on every row but nothing that restores one: "It appears that you
+can only restore to the most recent backup which may not be desired. What
+if the user wants to select an older backup and restore that?" Offered a
+choice between a runbook pointer and a real restore from the page, the
+owner chose the restore, gated hard, and both kinds of backup: "Let's do B
+and lets cover both."
+
+**Designed 2026-09-22 (Fable). The owner answered every decision the same
+day; the answers are recorded with the questions at the end, and the design
+reflects them. Ready for Opus.** Prerequisites, all shipped: 9.1 (the job
+contract), 9.2 (offsite copies exist, so the local disk is never the only
+copy being touched), 10.1 (the owner), 11.1 (rights), 11.3 (the
+password-in-the-request pattern).
+
+**What does not change.** The app still never touches a backup file, and
+9.1's contract stands: the app appends a `requested` job, a sidecar does
+the work and owns every update, and the sidecars alone hold the owner
+credential. What changes is the worst thing a web request can cause. Until
+now that was a backup; from here it is the wiki being replaced by an older
+one. So the gate is the centre of this design, and it is stronger than
+11.3's, which guards one space.
+
+**The problem that shapes everything: the status lives in the thing being
+replaced.** `BackupJobs`, `BackupAgents`, `BackupTargets`, `SiteSettings`,
+the sessions, the audit chain and the data-protection keys are all rows in
+the database a restore replaces. Today's `deploy/backup/restore.sh`
+terminates every connection, drops the database and rebuilds it from the
+dump: a job row recording that would be destroyed by its own job, and the
+page watching it would read the restored past as if it were the present.
+Point-in-time recovery is harder still: the whole cluster is rewritten with
+Postgres stopped, so for minutes nothing can be read at all. Three rules
+answer this:
+
+1. **Restore beside, then swap.** A logical restore goes into a *new*
+   database (`<db>_restore`) and is verified there while the wiki stays up,
+   read-only. The swap is two renames and takes milliseconds. The old
+   database is renamed, not dropped: `<db>_pre_restore`, which is the undo,
+   instant and complete.
+2. **The sidecar remembers what the database cannot.** Every restore has a
+   directory on the sidecar's own volume (`/backups/restores/<jobId>/`: the
+   request, the progress, the log, the tables carried across). After the
+   swap the sidecar writes the job's final row into the *new* database from
+   that directory. The backup history (`Backups`, `BackupJobs`,
+   `BackupTargets`) is exported before the swap and re-imported after,
+   because those tables describe the disk, not the wiki, and a restore must
+   not make the page forget which backups exist.
+3. **The app restarts itself when a restore completes.** Startup is the one
+   path that already does everything a restored database needs: migrations
+   (the dump may predate a schema change), the runtime role's grants (a
+   dump carries none; `--no-privileges`), the seeds, the settings cache, and
+   dropping every pooled connection and cached object. A runtime re-migrate
+   would be a new path with the same steps; the restart is the trodden one,
+   and compose's `restart: unless-stopped` brings the container back
+   whatever the exit code.
+
+**The gate.** Every one of these, in this order, none skippable:
+- **A right of its own, `backups.restore`** (Administration scope,
+  `DefaultFrom: Owner`, like `users.promote_admins`: off for administrators
+  until the owner grants it to a role). Admin-tier rights already require
+  two-factor.
+- **The backup's label typed back**, exactly as displayed, for the reason
+  11.3 gives: it proves the right row is on screen.
+- **The password or one-time code in the same request**, verified as
+  `VerifyPasswordOrCodeAsync` does for deleting a space, counting toward
+  lockout on failure. The sudo window is not enough here either.
+- **A safety backup first, taken by the sidecar, never optional.** A restore
+  is the one moment a person most wants a backup they did not have to
+  remember to take. Logical: a fresh cycle (dump and uploads archive)
+  through the ordinary `do_backup`, so it appears in the inventory and goes
+  offsite on the next tick. Physical: an incremental, then
+  `pg_switch_wal()`, so WAL up to the moment before the restore is in the
+  repository. If the safety backup fails, the restore does not start.
+- **One at a time.** A second request while one is pending is 409, as
+  `PendingAsync` already does for the other kinds.
+- **Audited twice and alerted once.** `backup.restore_requested` is recorded
+  before (the swap removes it from the live chain; the safety dump and the
+  pre-restore database keep it); `backup.restored` is recorded after, in
+  the new database, naming the backup, the target time, who asked and when.
+  `backup.restored` is also a Critical alert with no cooldown to the owner
+  and every administrator, by email where 4.3 is configured, whoever did
+  it. The threat this answers is an owner-level account erasing evidence by
+  restoring to before it: the safety backup keeps the evidence, the kept
+  copy keeps it again, and everyone hears.
+
+**Maintenance mode.** From the moment the request is accepted until the app
+restarts after the restore, the wiki is read-only:
+- `SiteSettings` gains `RestoreJobId`, `RestoreStartedAt` and
+  `RestoreCancelRequestedAt`. The app also holds the job id in memory: the
+  database flag is for surviving an app restart mid-restore, the memory
+  flag is for the minutes when the database cannot be read.
+- A middleware, early in the pipeline: while a restore is pending, every
+  request that is not `GET` or `HEAD` gets 503 with `Retry-After` and a
+  JSON body `{ maintenance: { reason: "restore", startedAt, jobId } }`,
+  except the restore's own status, cancel and health endpoints. Reads
+  continue while the live database is up, and fail for the seconds of the
+  swap or the minutes of a PITR, which the SPA handles below. API tokens
+  and the MCP server see the same 503.
+- The SPA: any 503 carrying that body switches the app into a full overlay,
+  "A restore is in progress. The wiki is read-only until it finishes,"
+  polling `GET /api/health` every 5 seconds and reloading when it clears.
+  For the person who asked, the backups page shows the job's phases
+  instead: safety backup, restoring, verifying, switching over, restarting,
+  done, with the elapsed time and the log tail. During a PITR the phases
+  come from the app's memory and the clock, because the database is down;
+  the detail arrives when it is back.
+- **The collab sidecar has to forget what it holds.** An open editor keeps
+  the page's document in memory and writes it back on the next keystroke,
+  which after a restore would resurrect content from after the backup. Two
+  layers: the app, on entering maintenance, posts `{ maintenance: true }`
+  to the sidecar on the internal endpoint 8.6 added, and the sidecar closes
+  every connection, drops every document and refuses new connections with
+  503 until told otherwise or thirty minutes pass (a stuck flag must not
+  brick editing); the app posts `false` at every startup. The backstop, for
+  a restore the app did not announce: the sidecar's fifteen-second sweep
+  reads `SiteSettings.LastRestoredAt`, and when it is newer than the
+  sidecar's own start the process exits and compose starts it clean. A
+  restart is the reliable way to forget.
+- **Sessions and keys.** `UserSessions` and the data-protection keys are
+  rows too. Sessions created after the backup are gone after the restore,
+  so those people sign in again, possibly including the person who asked.
+  Keys rotate every 90 days, so the key that signed today's cookies almost
+  always predates the backup; when it does not, everyone signs in again.
+  The dialog says both, and the completion screen says "if you are asked to
+  sign in, that is expected".
+
+**The logical restore, exactly** (`deploy/backup/restore.sh`, rewritten as
+the swap; the runbook uses the same script by hand):
+1. Preconditions, each a clear refusal: the dump present and readable
+   (`pg_restore --list`); the cycle's uploads archive present if the
+   inventory says it has one; free space on the host disk at least four
+   times the dump plus twice the archive (a restored database is larger
+   than its dump; the figure is conservative and the message says what was
+   needed and what is free); no cancel requested; the sidecar not already
+   restoring.
+2. The safety cycle, verified, its label recorded in the job result as
+   `safetyBackup`.
+3. The carry-across export: the three backup tables to CSV in the restore
+   directory, with a header.
+4. `CREATE DATABASE "<db>_restore"` (a leftover from an earlier failed
+   attempt is dropped first), `pg_restore --no-owner --no-privileges` into
+   it. A failure drops it and fails the job; the wiki was never touched.
+5. Verification in the new database: `Pages`, `Users` and
+   `__EFMigrationsHistory` exist and are non-empty, and the history holds
+   no migration the live database lacks. That last check refuses a dump
+   taken by a newer Tesria ("this backup was taken by a newer version;
+   upgrade first"), because a downgrade is not something a restart can
+   repair.
+6. The last cancel check.
+7. **The point of no return, one psql session:** `ALTER DATABASE live WITH
+   ALLOW_CONNECTIONS false`, terminate its backends (the app reconnects
+   within milliseconds, which is why connections are refused first, not
+   only terminated), drop an older `<db>_pre_restore` if one exists,
+   `ALTER DATABASE live RENAME TO <db>_pre_restore`, `ALTER DATABASE
+   <db>_restore RENAME TO live`. The kept copy stays with
+   `ALLOW_CONNECTIONS false`: nothing connects to it except the undo.
+8. The uploads swap: the sidecar's uploads mount becomes read-write
+   (`uploads:/data/uploads`, and the compose comment says this is why); the
+   current entries move into `/data/uploads/.pre-restore/` (an older one
+   removed first), and the archive is extracted into place. Entry moves
+   within one volume are renames, so the swap is fast and a crash leaves
+   both copies, never half of each.
+9. Reconciliation, in the new live database: clear `RestoreJobId` and
+   `RestoreCancelRequestedAt` there (a safety dump taken during maintenance
+   carries the flag, and restoring *that* dump one day must not leave the
+   wiki in maintenance forever); wait for the app to restart and migrate
+   (until `__EFMigrationsHistory` has at least as many rows as the old
+   database had, ten minutes at most, then proceed with a note); import the
+   carried tables with `ON CONFLICT DO NOTHING`; upsert the job row with
+   status `succeeded`, the phases with their times, the safety label, what
+   was restored, the counts, and the kept copy's sizes; set
+   `SiteSettings.LastRestoredAt`, `LastRestoreJobId` and `LastRestoreFrom`.
+
+The app's side while this runs: a hosted service polls the job row every
+three seconds and tolerates connection errors (the swap).
+`LastRestoreJobId` equal to the pending id, or the job row reaching
+`succeeded`, means restart (`IHostApplicationLifetime.StopApplication`);
+`failed` means leave maintenance and show the error. At startup, if
+`RestoreJobId` is set (the app died mid-restore) maintenance resumes and
+polling continues; if `LastRestoreJobId` names a job with no
+`backup.restored` audit event yet, the event and the alert are written
+then. That startup check is how the audit entry lands in the right chain,
+robust to any number of restarts, and idempotent.
+
+**The kept copy's lifetime (the owner's decision 2).** The retention policy
+governs it, by the same rule as a backup. On every retention pass the
+logical sidecar enters the kept copy into the plan as if it were a backup
+taken at the moment of the restore, and removes it when the plan would
+remove that backup: drop `<db>_pre_restore`, delete `.pre-restore`, and
+record a `restore-discard` job with trigger `retention` so the page shows
+when and why it went. Retention off keeps it until someone removes it by
+hand, as retention off keeps everything. The 24-hour grace on a stricter
+policy applies to it too, since it is the same pass. The Previous copy card
+shows the date the policy will remove it, computed by `BackupRetention.Plan`
+in C# with the kept copy included in the list, which is the code the policy
+preview already uses. After a PITR there is no kept copy: its undo is the
+safety incremental and the WAL, which the physical retention already
+governs the same way.
+
+**Point-in-time recovery, exactly.** pgBackRest restores into the data
+directory with Postgres stopped, and nothing outside the `db` container can
+stop Postgres without a Docker socket, which no sidecar gets. So the `db`
+container stops and starts its own database:
+- `deploy/db/entrypoint.sh` (which 9.2 already owns) becomes a small
+  supervisor: it starts the image's own entrypoint as a child, forwards
+  `SIGTERM` and `SIGINT` to it so `docker compose stop` behaves exactly as
+  today, and every two seconds looks for a request at
+  `/var/run/postgresql/tesria-restore/request`. That volume is shared by
+  `db` and the `pgbackrest` sidecar and nothing else, which is the
+  authorisation model: only the sidecar that validated the job can ask,
+  and the web tier has no path to that file.
+- The request names the job id, the type (`time` with a target, or
+  `immediate` with a `--set` label, meaning "the end of that backup") and
+  the repository (`1`; see the decisions). On seeing it the supervisor
+  moves it to `running`, writes a `status` file it updates at each phase,
+  stops Postgres (`pg_ctl stop -m fast`), runs today's
+  `deploy/pgbackrest/restore.sh` logic (`--delta`,
+  `--target-action=promote`), starts the entrypoint again (it skips
+  `initdb` when `PG_VERSION` exists), waits for `pg_isready`, and writes
+  `done` or `failed` with the reason. A request whose job id it has already
+  handled, or whose file is older than ten minutes, is ignored and logged:
+  a stale file after a container restart must never restore twice.
+- The `pgbackrest` sidecar's job: claim, preconditions (the target inside
+  the bounds, no cancel, the repository verified within the last day or
+  verified now), the safety incremental and the WAL switch, the
+  carry-across export, the request file, then wait on the status file
+  (hours at most), then `wait_for_db`, then the same reconciliation as the
+  logical path. The next physical backup after a PITR is a **full**, taken
+  at once: pgBackRest can continue incrementally across a timeline switch,
+  but a full is cheap here and makes the new timeline's chain stand on its
+  own.
+- Bounds on the page: from the end of the oldest present physical backup
+  to `WalArchivedAt`, in the person's local time with the offset shown.
+  pgBackRest chooses the backup set for a time target itself (2.32 and
+  later; 2.59.1 is pinned; Opus confirms it live). The default for a
+  physical row is "the end of this backup", which is `--set` plus
+  `--type=immediate`.
+- Undo for a PITR is another PITR, to the moment the restore began
+  (`RestoreStartedAt`, which the safety incremental and the WAL switch made
+  reachable). The Previous copy card offers it with that time filled in.
+- The database's healthcheck fails while it is stopped, and that is
+  correct: compose does not restart on a failed healthcheck, and the
+  supervisor is PID 1 and never exits. If the container *is* stopped
+  mid-restore, the supervisor marks the request failed and the runbook's
+  by-hand procedure applies.
+
+**The preview.** `GET /api/admin/backups/{label}/restore-preview?at=`
+returns what the dialog shows before anyone types anything: when the
+backup was taken (or the target time), and what has happened since, by
+the same method as 11.3's deletion preview: page versions saved, pages
+created, comments, attachments and their bytes, accounts created, and how
+many sessions will end. Plus the sizes involved, the free space against
+what is needed, and a `blockedBy` list (sidecar offline, a restore pending,
+no uploads archive, low disk) so the button is disabled with a reason
+rather than failing later.
+
+**Endpoints** (all `backups.restore`; the password gate on the four that
+change anything):
+- `GET /admin/backups/{label}/restore-preview?at=`.
+- `POST /admin/backups/{label}/restore`, body `{ confirmLabel, password?,
+  code?, at? }`. `at` only for a physical backup, refused outside the
+  bounds. Appends a `restore` job with `Target = label` and a new nullable
+  `OptionsJson` column (`{ "at": "...", "mode": "logical" | "pitr" }`),
+  sets the maintenance flags, tells collab, records the audit entry. 202
+  with the job id.
+- `POST /admin/backups/restore/cancel`: while `requested`, the job is
+  failed with "cancelled" and maintenance ends; while `running`, it sets
+  `RestoreCancelRequestedAt`, which the sidecar honours at its last check
+  before the point of no return, and the response says so. After that
+  point there is no cancel, only undo.
+- `POST /admin/backups/restore/undo` and
+  `POST /admin/backups/restore/discard-kept`, both jobs. `restore-undo`
+  swaps the kept database and uploads back, the same swap in reverse and
+  with the same safety cycle first; after a PITR it queues a PITR to
+  `RestoreStartedAt`. `restore-discard` drops `<db>_pre_restore` and
+  removes `.pre-restore`, gated because it is the destruction of the undo.
+- `GET /api/health` reports `maintenance` when set, anonymously, for the
+  overlay.
+
+**UI.** Every backup row gains **Restore** beside Test restore, shown only
+with the right. The dialog (a modal with a form, as 11.3): what is in this
+backup; what has happened since it (the preview counts, in words); what
+will happen (read-only now, a safety backup first, the switch, a restart,
+sign-ins possibly ending); the undo ("the previous copy is kept until you
+remove it or the retention policy does"); for a physical row a time field, bounded, defaulting to the
+backup's end; "Type **20260922T031200Z** to confirm"; the password or code;
+and **Restore now**, disabled until every field is filled and `blockedBy`
+is empty. Afterwards the backups page carries a **Previous copy** card
+while a kept copy exists: when it was kept, its sizes, the date the
+retention policy will remove it, **Undo the restore** and **Remove**. The
+kept database counts in the space chart's wiki slice, and the card says so.
+
+**Two sidecar findings to fix in step 1.** (a) The dispatch in `common.sh`
+treats any kind it does not know as a backup and runs one; a `restore` job
+reaching an older sidecar would take a backup and report success. Unknown
+kinds must fail with "this sidecar does not know how to run X". (b)
+`agent_start` fails every `running` job of its agent on restart, which is
+right for a backup and wrong for a restore whose sidecar restarted after
+the point of no return; the restore directory is the truth, and the
+sidecar reconciles from it on start before anything else.
+
+**Steps for Opus, in order; each a commit that leaves the product
+working.**
+1. *Foundations.* The right; the job kinds and `OptionsJson`; the
+   `SiteSettings` columns; the maintenance middleware, the health field,
+   the SPA overlay, the collab maintenance endpoint and the app's calls to
+   it; the preview, request and cancel endpoints with the full gate; the
+   audit events, the alert, the startup audit from `LastRestoreJobId`; the
+   `SecurityMonitor` change (a chain shorter than last time is explained,
+   not warned about, when `LastRestoredAt` is newer than its last run); the
+   two sidecar fixes. A `restore` job ends in a clean failure ("not
+   supported by this sidecar yet"), so the whole path can be walked end to
+   end before anything can be destroyed.
+2. *The logical restore.* `restore.sh` as the swap, the sidecar job, the
+   uploads swap, the carry-across, the reconciliation, the app's poller and
+   restart, the restore panel, the Previous copy card, undo and discard,
+   the runbook. Live tests below.
+3. *Point-in-time recovery.* The supervisor, the request protocol, the
+   `pgbackrest` job, the time field and its bounds, the forced full, undo
+   by PITR, the runbook.
+4. *Docs.* `docs/security.md` (a layers row: what an owner-level session
+   can now do and what answers it; the password-in-request table gains the
+   restore), `architecture.md`, the changelog, and a note for 10.5.
+
+**Tests.** Unit (SQLite): 403 without the right and 200 with it granted to
+a custom role; 400 on the wrong label; 401 on the wrong password, nothing
+queued, the failure counted toward lockout; a one-time code for an SSO
+account; 409 while one is pending; 400 for a time outside the bounds; the
+preview counts; the middleware (GET passes, POST is 503 with the body, the
+allow-list passes, health reports it); cancel in each state; the startup
+audit is written once and only once; the monitor explains rather than
+warns; the kept copy is removed by the retention plan exactly when a backup
+of its age would be, never before, and never with retention off. Bash: `RESTORE_DRY_RUN=1` prints every step and changes nothing,
+and the schema comparison is tested with a fixture history. **Live, on
+this instance** (it holds test spaces and has offsite copies, and the
+safety backup runs first regardless): create a marker page, restore an
+older logical cycle, confirm the marker is gone, the kept copy has it, and
+undo brings it back; PITR to a minute before the marker, then undo; cancel
+before the point of no return leaves the wiki untouched and no `_restore`
+database behind; kill the app container during `pg_restore` and see it
+resume; the low-disk refusal with an artificially low threshold; an editor
+open in another tab is disconnected at the start and reconnects to the
+restored page; `docker compose stop`, `start`, `restart db` and
+`down`/`up` behave exactly as before under the supervisor, with `stop`
+completing in under ten seconds; a stale request file is ignored on
+start. The `.env` is restored byte for byte after, as in 9.2.
+
+**Open decisions for the owner, all answered 2026-09-22.** The questions
+stay as the record of what was asked.
+1. Who holds `backups.restore` by default: the owner only, grantable to a
+   role (recommended), or the owner and administrators. **Answered: the
+   recommendation.**
+2. The kept copy: until removed by hand, or removed automatically. **Answered:
+   the retention policy removes it "when it reaches end of life by the
+   policy definition"**, which is the paragraph on the kept copy's lifetime
+   above: it ages like a backup taken at the moment of the restore and goes
+   when the plan would remove that backup.
+3. A logical restore always restores the cycle's uploads with the dump
+   (recommended: 9.1 made the cycle the unit), or offers a choice.
+   **Answered: the recommendation.**
+4. Restoring from an offsite copy from the page: not now (recommended).
+   The page restores what is on the local disk; when the local disk is gone
+   the app is gone with it, and that is the runbook's "The machine is
+   gone". The neat later form is "fetch this offsite backup to local",
+   after which the page restores it like any other. **Answered: the
+   recommendation.**
+5. The `db` container gains a supervisor in front of Postgres. It is the
+   riskiest change here, because it sits in the database's start path.
+   Accept it (recommended, shipped as step 3 so the logical restore lands
+   and is used first), or keep PITR by hand and ship steps 1, 2 and 4.
+   **Answered: the recommendation.**
+
+**Not decided here, deliberately:** restoring a single space or page out of
+a backup rather than the whole wiki (the swap design makes it reachable:
+the `_restore` database can be queried before it is dropped); a downgrade
+(a dump from a newer schema is refused, not handled); more than one `app`
+container (the in-memory flag assumes one, as the compose file does
+throughout).
+
+---
+
 ## Phase 10: Owner and onboarding
 
 Written 2026-09-20 by Fable 5.1 at the owner's request, from the code as
@@ -3648,7 +4031,7 @@ carry it too.
 7. **6** Space icons
 8. **7.A** → **7.B** → **7.C** → **7.D** (Fable→Opus) → **7.E** → **7.F**
 9. **8.1** PDF (after 7.A) → **8.2** Licence (any time) → **8.3** OpenAPI → **8.4** MCP (Fable→Opus) → **8.6** External edits as tracked changes (Fable→Opus) → **8.5** Wiki packs (Fable→Opus)
-10. **9.1** Backups admin section (Fable→Opus; shipped 2026-09-17) → **9.2** Offsite backups (Fable→Opus; unscheduled, waits on the owner's seven decisions listed in the item)
+10. **9.1** Backups admin section (Fable→Opus; shipped 2026-09-17) → **9.2** Offsite backups (Fable→Opus; shipped 2026-09-22) → **9.3** Space charts (shipped 2026-09-22) → **9.4** Restore from the admin page (designed 2026-09-22 as Fable, the owner's five decisions answered the same day; Opus implements next)
 11. **10.1** Owner role (shipped 2026-09-20) → **11.1** Instance rights and the Roles tab (shipped 2026-09-20) → **11.2** Custom roles (shipped 2026-09-20) → **11.3** Delete a space (shipped 2026-09-20) → **5.5** Anonymous access is opt-in twice (shipped 2026-09-20) → **10.4** Media harness (shipped 2026-09-20) → **10.2** Owner setup wizard (shipped 2026-09-20) → **10.3** Tour and tips (shipped 2026-09-20) (all specified 2026-09-20 as Fable; Opus implements). Phase 11 goes before the wizard because the wizard has a required step that reviews the matrix, and before 10.3 because the tour's screens should show the real Roles tab. 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
 12. **12.1** Capture-based export and the element audit (shipped 2026-09-20) → **12.2** Publish a space as a static site (shipped 2026-09-20). 12 before 8.5 because the site export builds the walk over a space that the wiki pack will reuse, and because the owner's documentation is waiting on it.
 13. **8.6** External edits as tracked changes (steps 1–5 shipped 2026-09-21; step 6 folded into 10.5).
@@ -3674,3 +4057,4 @@ findings don't get better by waiting.
 - MP4 alongside WebM for the clips (needs ffmpeg in an image; the poster is the fallback until someone asks).
 - Phase 11's three: invites naming a role, groups carrying instance rights (recommended no), and anonymous rights beyond export.
 - 8.5's four: matching pack authors to accounts by email, carrying restrictions by principal name for confirmation, importing into an existing space as a merge, and signed or encrypted packs.
+- 9.4's three: restoring one space or page out of a backup, restoring a dump from a newer schema, and more than one `app` container.
