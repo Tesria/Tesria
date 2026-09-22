@@ -38,9 +38,11 @@ syntax-highlighted code blocks.
 
 ## Portable space/site export ("wiki packs")
 
-> **Split 2026-09-20.** The *website* half of this idea (export a space as
-> static HTML and host it anywhere) is now dev-plan **Phase 12**, designed;
-> the *portable archive* half (import into another Tesria) remains 8.5.
+> **Split 2026-09-20, both halves shipped.** The *website* half of this idea
+> (export a space as static HTML and host it anywhere) became dev-plan
+> **Phase 12**; the *portable archive* half (import into another Tesria)
+> became **8.5**, shipped 2026-09-21 as wiki packs. What is left below is the
+> part neither covers: a whole *instance* in one file rather than a space.
 
 
 Export a single space, or the entire site, as one downloadable file that

@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthContext'
 import { SpaceIconPicker } from '../components/SpaceIconPicker'
 import { DeleteSpaceDialog } from './DeleteSpaceDialog'
 import { SiteExportSection } from '../components/SiteExportSection'
+import { PackExportSection } from '../components/PackExportSection'
 import { useSpaceContext } from './SpacePage'
 
 /**
@@ -111,6 +112,13 @@ export function SpaceSettingsPage() {
         <section className="profile__section profile__section--wide" id="export">
           <h2>Export as a site</h2>
           <SiteExportSection spaceKey={space.key} />
+        </section>
+      )}
+
+      {can(Permission.PagesExport) && (
+        <section className="profile__section profile__section--wide" id="pack">
+          <h2>Export as a pack</h2>
+          <PackExportSection spaceKey={space.key} />
         </section>
       )}
 

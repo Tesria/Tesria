@@ -206,6 +206,13 @@ does unprompted): safe to remove or ignore:
   must survive needs a committed export (8.5's wiki packs) or to be written
   in the repository instead.
 
+- **Four throwaway spaces from verifying 8.5** (2026-09-21): `FIXTURE2`,
+  `JTSCOPY`, `UIWALK` and `UIWALK2`, all imported copies of `FIXTURE` or
+  `JTS` made while walking the pack export/import. Safe to delete whenever;
+  left in place because deleting a space is irreversible and needs a password.
+  Their attachments have their own freshly minted storage keys, so removing
+  them cannot touch the originals' files.
+
 If a new session picks up UI work in the "App Design" space (the
 dogfooding space documenting Tesria's own architecture), note it's real,
 intentional content, not test data to clean up.

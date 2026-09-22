@@ -5,6 +5,67 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### 8.5 Wiki packs: export and import a space (2026-09-21)
+
+A space can now be exported as a **pack** and read back into any Tesria: the
+documents themselves, with their history, attachments, comments, labels and
+templates, in a zip the repository can hold. This is what makes the rebuilt
+manual (10.5) survivable; the last one did not, because it lived only in a
+database. The design entry below is Fable's and still describes what was
+built. What shipped:
+
+- **The format** (`Features/Export/WikiPack.cs`), version 1: a manifest, the
+  space, the authors, one JSON file per page and the attachment bytes.
+  Canonical output, so the same space always packs to the same bytes and a
+  one-word edit diffs as a one-word edit. The reader checks the format version
+  first, matches every entry name against the shapes the format defines, and
+  enforces a 20,000-entry and 500 MB uncompressed ceiling while reading.
+- **Export**: `GET /api/spaces/{key}/export/pack`, and "Export as a pack" in
+  space settings beside "Export as a site". It walks pages one at a time
+  through the exporter's own permissions, so a pack cannot carry a page its
+  author could not open, and the manifest counts what was left out without
+  naming it. No page cap: unlike a site there is no per-page render to pay for.
+- **Import**: `POST /api/spaces/import`, and "Import a pack" on the spaces
+  list. One transaction, with the bytes swept up again if it does not commit.
+  Every id re-minted, every document through `PageContent.TryNormalize`, every
+  attachment's type re-derived from its bytes, ten imports an hour per user.
+  The same key twice is a 409, never a merge.
+- **`PackRewriter`**, pure and fixture-tested: it maps ids into content and,
+  where the target has nothing to map to, keeps what a person wrote and drops
+  the machine-readable half. A mention keeps its name and loses its user id, a
+  comment mark with nothing behind it goes rather than colouring text that
+  answers nothing, and a link to a page outside the pack is left alone.
+- **What deliberately does not travel**: permissions, `IsPublic`, `Archived`,
+  drafts, the trash, watches, webhooks and authorship. An imported space is
+  private, live, and attributed to whoever imported it; the original authors
+  are kept as display names in the pack and in the audit event, and the import
+  says in words how many restrictions the source had so somebody sets them
+  again.
+
+Three findings are worth recording, because each was invisible to the layer
+above it.
+
+**The HTTP tests caught what the unit tests could not.** The export threw on
+every real call: `ZipArchive` writes synchronously and finishes on Dispose,
+and Kestrel refuses synchronous writes to a response. The unit tests write to
+a `MemoryStream`, which does not care. It is spooled to a temporary file now.
+
+**The live walk caught what the tests could not.** A pack unzipped and zipped
+back up was refused, because `zip -r` writes a directory entry per folder and
+this writer never does, so every test built its zip with the writer and they
+all agreed with each other and with nothing else. That is exactly how 10.5 is
+meant to import the manual. Directory entries are skipped now.
+
+**And one thing left as it is.** Two exports of an unchanged space differ by
+one line, `exportedAt`, and nothing else; the content is byte for byte
+identical. A pack that travels outside a repository should say when it was
+made, so the field stays, but it does mean a re-export always shows as
+changed.
+
+Tests: 19 rewriter fixtures, 13 HTTP round trips (importing as a *different*
+user, which is what makes the attribution and permission assertions mean
+anything), on top of step 1's 27 format tests.
+
 ### Design 8.5: wiki packs (2026-09-21, Fable)
 
 The owner settled that the rebuilt manual's source of truth is the wiki, which

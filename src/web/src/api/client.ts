@@ -149,6 +149,26 @@ export type Session = {
 export const avatarUrl = (userId: string, hash: string) =>
   `/api/media/avatars/${userId}?v=${hash}`
 
+/**
+ * What came back from importing a pack (dev-plan 8.5). The restriction counts
+ * and the author names are the two things the import deliberately did not
+ * carry, reported so the person who ran it knows to go and set them.
+ */
+export type ImportedPack = {
+  key: string
+  name: string
+  pages: number
+  versions: number
+  attachments: number
+  comments: number
+  templates: number
+  labels: number
+  source: string | null
+  spaceRestrictions: number
+  pageRestrictions: number
+  authors: string[]
+}
+
 export type Space = {
   id: string
   key: string
@@ -928,6 +948,34 @@ export const api = {
         `/api/spaces/${encodeURIComponent(key)}/export/site?audience=${audience}`,
         { credentials: 'include', headers: CSRF_HEADER },
       )
+      if (!res.ok) return handle<Blob>(res)
+      return res.blob()
+    },
+    /** What an import turned out to contain, and what it could not carry. */
+    importPack: async (file: File, key: string, name?: string): Promise<ImportedPack> => {
+      const body = new FormData()
+      body.append('file', file, file.name)
+      body.append('key', key)
+      if (name) body.append('name', name)
+      const res = await fetch('/api/spaces/import', {
+        method: 'POST',
+        credentials: 'include',
+        headers: CSRF_HEADER,
+        body,
+      })
+      return handle<ImportedPack>(res)
+    },
+    /**
+     * The whole space as a wiki pack, as a zip (dev-plan 8.5).
+     *
+     * No audience to choose, unlike a site: a pack is for reading back into
+     * Tesria, so it carries everything you can see and nothing you cannot.
+     */
+    exportPack: async (key: string): Promise<Blob> => {
+      const res = await fetch(`/api/spaces/${encodeURIComponent(key)}/export/pack`, {
+        credentials: 'include',
+        headers: CSRF_HEADER,
+      })
       if (!res.ok) return handle<Blob>(res)
       return res.blob()
     },

@@ -564,6 +564,8 @@ api.MapSearchEndpoints();
 api.MapLabelEndpoints();
 api.MapExportEndpoints();
 api.MapSiteExportEndpoints();
+api.MapPackExportEndpoints();
+api.MapPackImportEndpoints();
 api.MapBlockEndpoints();
 api.MapEmbedEndpoints();
 api.MapAuditEndpoints();

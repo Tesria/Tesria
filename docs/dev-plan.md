@@ -905,7 +905,7 @@ onto `roadmap.md` and are sequenced here.
   benefits).
 - Depends on 8.3 and benefits from Phase 7 stabilising the content schema.
 
-### 8.5 Wiki packs: space export and import · `XL` · Model: Fable → Opus · designed 2026-09-21 (Fable)
+### 8.5 Wiki packs: space export and import · `XL` · Model: Fable → Opus · ✅ **designed and shipped 2026-09-21** (Fable designed, Opus implemented)
 
 **What it is for.** A pack is how a wiki survives its instance. The manual
 written on 2026-09-11 was lost with the database it lived in, and the owner
@@ -1081,23 +1081,64 @@ script zips it back for import. The canonical-output rule above is what
 makes that work; it is a format requirement, not a nicety.
 
 **Opus implements, in this order, each step shippable alone:**
-1. `WikiPack.cs`: the model, a canonical writer (model to zip) and a
-   validating reader (zip to model), as pure code, with tests: a round trip
-   is byte-identical; a newer `format` is refused; zip-slip names, an oversize
-   entry and a cyclic tree are refused; output is deterministic across runs.
-2. The export endpoint and its button: build the model from a space using
-   12.2's walk with the exporter's own permissions, stream, audit.
-3. `PackRewriter`, pure, with fixture tests for every rewrite above,
-   including a link to a page that is not in the pack and a mention of a
-   user who is not on the target.
-4. The import endpoint: transaction, storage, rewriting, audit, the 409, the
-   rate limit; and the spaces-list UI.
-5. A round trip through HTTP in the test suite: export a space with every
-   kind of thing in it, import it under a new key as a *different* user,
-   and compare trees, versions, attachment bytes, labels, comment threads
-   and templates; assert attribution is the importer and the space is
-   private with no permission rows.
-6. `architecture.md` and the CHANGELOG. The manual chapter is 10.5's.
+1. ✅ **shipped 2026-09-21.** `WikiPack.cs`: the model, a canonical writer and
+   a validating reader, as pure code, with 27 tests.
+   As built: the reader's name check is an allow-list of the shapes the format
+   defines rather than a scan for `..`, so zip slip fails by not being on the
+   list. Determinism is 1980 timestamps in the zip headers plus sorted keys;
+   a test proves two writes 1.1 s apart are byte-identical.
+2. ✅ **shipped 2026-09-21.** `GET /spaces/{key}/export/pack` and "Export as a
+   pack" in space settings, walking pages through the exporter's own
+   permissions.
+   As built: the zip is spooled to a temp file opened `DeleteOnClose` rather
+   than written to the response. `ZipArchive` writes synchronously and
+   finishes its central directory on Dispose, and Kestrel refuses synchronous
+   writes to a response, so streaming straight out throws on every export.
+   The attachment storage keys the writer needs are returned alongside the
+   model and closed over, never carried in the format: they are this
+   instance's business, and an importer mints its own.
+3. ✅ **shipped 2026-09-21.** `PackRewriter`, pure, with 19 fixture tests.
+   As built: it walks every string in the document rather than an allow-list
+   of link attributes, so a node type added later is rewritten too. An image's
+   `src` was the case an allow-list would have missed. A comment mark with
+   nothing behind it is dropped rather than left dangling, and the `marks` key
+   goes with it when it was the only one, so a document that gained and lost a
+   comment is byte-identical to one that never had it.
+4. ✅ **shipped 2026-09-21.** `POST /spaces/import` with the transaction,
+   storage sweep, rewriting, audit, 409 and rate limit; "Import a pack" on the
+   spaces list.
+   As built: pages and versions need **two** saves inside the transaction,
+   because a page points at its current version and a version points at its
+   page, which EF refuses to insert as one batch. The rollback and the byte
+   sweep are one `finally` guarded by a `committed` flag, since a validation
+   failure returns from inside the transaction after rows have been added and
+   has to undo exactly what an exception would.
+5. ✅ **shipped 2026-09-21.** 12 HTTP round-trip tests, importing as a
+   different user.
+   As built: exporting ordered attachments and comments by `CreatedAt` in SQL,
+   which SQLite cannot sort, so the ordering moved into memory. The suite runs
+   on SQLite, so this would have shipped as a Postgres-only feature otherwise.
+6. ✅ **shipped 2026-09-21.** `architecture.md` and the CHANGELOG. The manual
+   chapter is 10.5's.
+
+**Two things the live walk found that no test had.**
+
+*A re-zipped pack was refused.* `zip -r` writes a directory entry for every
+folder and this writer never does, so `pages/` was "an unexpected file" and
+the reader turned down the one workflow the format exists for: 10.5 commits
+the manual's pack **unzipped** and zips it back to import it. Directory
+entries are now skipped. Every unit test had built its zip with the writer,
+which is why they all agreed with each other and with nothing else.
+
+*Two exports of an unchanged space differ by one line*, `exportedAt` in the
+manifest, and nothing else: the content is byte for byte identical. The
+determinism test passed because it builds the model once and writes it twice,
+so the timestamp was fixed. This is left as it is on purpose: a pack that
+travels outside a repository should say when it was made, and one obvious
+line is a long way from the "forty-seven rewritten files" the canonical rule
+was written against. **But it means a re-export always shows as changed**,
+so if 10.5 wants a clean `git status` when nothing has moved, dropping the
+field is a one-line change to make then rather than now.
 
 **Verify** with the FIXTURE space, which has every element: export it,
 import it as FIXTURE2, open each page and compare, including a page link

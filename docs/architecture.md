@@ -1464,6 +1464,64 @@ export is one space; the app is untouched. And the PDF footer's page
 numbering is a single flex item, because as separate items `space-between`
 spread "1 of 4" across the whole page.
 
+## Wiki packs: a space that outlives its instance (dev-plan 8.5)
+
+A site export (12.2, above) is for people; a **pack** is for Tesria. It is the
+same space as documents rather than as pages: `Features/Export/WikiPack.cs`
+holds the format, and two endpoints sit on either side of it, one exporting a
+space into one and one reading a space back out.
+
+The two properties the format is built for both come from the reason it
+exists. The manual was lost with the database it lived in, so a pack has to
+be something a repository can hold: **output is canonical**, with sorted JSON
+keys, a fixed entry order and 1980 timestamps in the zip headers, so the same
+space always packs to the same bytes and a one-word edit diffs as a one-word
+edit. And it has to be readable by an instance that has never met this one,
+so **every id in it is a join key and nothing more**: an import mints its own.
+
+What a pack does *not* carry is the part worth knowing. Neither space
+permissions nor page restrictions travel, because their principals are ids on
+another instance and carrying them by name is how a stranger with the right
+display name ends up with access; the manifest records that restrictions
+existed, as counts, and the import says so in words so somebody goes and sets
+them. `IsPublic` does not travel, because publishing is 5.5's two-step opt-in
+and a zip file does not get to take it. Authorship does not travel either:
+every row on the target belongs to the importer, and the original authors are
+kept as display names in `authors.json` and in the import's audit event.
+Display names only, no addresses, because this file gets committed.
+
+An export walks pages one at a time through `CanViewPageAsync`, the same way
+12.2 does, so a pack cannot contain a page its exporter could not open; the
+manifest counts what was left out without naming it. Unlike a site there is
+no page cap, because there is no per-page render to pay for. The zip is
+spooled to a temporary file opened `DeleteOnClose` rather than written
+straight to the response: `ZipArchive` writes synchronously and finishes on
+Dispose, and Kestrel refuses synchronous writes.
+
+An import treats the archive as hostile and the database as all-or-nothing.
+`WikiPack.Read` checks the format version before it interprets anything else,
+matches entry names against the shapes the format defines (so zip slip fails
+by not being on the list rather than by being detected), and enforces the
+entry-count and uncompressed-size ceilings while reading. Everything after
+that lands in one transaction, with attachment and icon bytes written to
+storage first and swept up again if it does not commit, because a
+half-imported space is worse than none. Page documents go through
+`PageContent.TryNormalize`, the one door every stored page passes through, and
+an attachment's content type is re-derived from its bytes exactly as an upload
+is. Pages and versions are saved in two steps inside that transaction, since a
+page points at its current version and a version points at its page.
+
+`PackRewriter` is the pure half, and has fixture tests for the same reason
+8.6's diff does: its mistakes are all quiet. It maps page, attachment and
+comment ids into the content, and where the pack refers to something the
+target does not have it keeps what a person wrote and drops the
+machine-readable half: a mention loses its `userId` and keeps its label, a
+task keeps its assignee's name, a comment mark with no comment behind it is
+removed rather than left colouring text that answers nothing. A link to a page
+that is not in the pack is left exactly as it was, which is the opposite of
+the site export's rule, because on a re-import into the same instance it still
+resolves and a link that 404s honestly beats one quietly redirected.
+
 ## Writes from outside the editor (dev-plan 8.6)
 
 A page has two stores: the published version in Postgres and the Yjs document
