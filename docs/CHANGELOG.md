@@ -78,6 +78,42 @@ and estimated monthly cost instead of inventing one. The same numbers drive
 a low-space warning whose threshold is two backup sets, not a percentage.
 Full design in `dev-plan.md` as 9.3.
 
+### 9.2 step 5: the Storage targets screen (2026-09-22)
+
+Administration → Backups now shows where copies of this instance are kept,
+one card per configured target, built entirely from what the backup sidecars
+publish. Keys and passphrases appear as fingerprints: the credentials live in
+`.env`, are read only by the sidecars, and the application never holds one.
+
+A cloud card shows its two repositories separately, the database against the
+uploads and dumps, since they are written by different sidecars. A removable
+drive gets a Copy now button. An instance whose only target is a removable
+drive is told plainly that it has no offsite backup.
+
+Test connection was dropped from the plan. The sidecars already test every
+target on every pass and publish the result, so a card is never more than a
+minute stale, and a button that re-ran what had just run would only be a
+second way of saying the same thing.
+
+Three bugs the live walk found that the shell testing could not:
+
+- **A stale restic lock wedges a repository permanently.** A sidecar killed
+  mid-run never releases its lock, and every later run then fails on a
+  repository that looks broken but is only locked. Runs now clear a stale
+  lock first, which makes a container restart during a backup survivable.
+- **`cat config` failing does not mean the repository is missing.** A lock
+  or a slow share look the same from outside, so an `init` refused for
+  already existing is now read as "there but unreadable this time" rather
+  than reported as a broken target.
+- **Absence was being stored as a message**, which then sat on the card
+  after the drive came back, reading "not plugged in" next to a green
+  Healthy. Absence is a state; the screen says it in its own words, and a
+  target coming back clears whatever it said while it was away.
+
+Walked as an administrator with cloud, network drive and removable drive all
+live, and as a plain member, who is refused both the overview and the copy
+endpoint.
+
 ### 9.2 step 4: backups to a removable drive (2026-09-22)
 
 The classic offline copy. Same path mechanism as a network drive, with three

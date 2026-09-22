@@ -46,7 +46,20 @@ public static class BackupEndpoints
         PolicyDto? AppliedPolicy, DateTimeOffset? PolicyEffectiveAt, bool PolicyPending);
 
     public record Overview(
-        PolicyDto Policy, List<AgentDto> Agents, List<BackupDto> Backups, List<BackupDto> Removed, List<JobDto> Jobs);
+        PolicyDto Policy, List<AgentDto> Agents, List<BackupDto> Backups, List<BackupDto> Removed,
+        List<JobDto> Jobs, List<TargetDto> Targets, bool OffsiteIsManualOnly);
+
+    /// <summary>
+    /// One offsite target, as the sidecars published it (dev-plan 9.2). Every
+    /// secret is a fingerprint: the app holds no credential for any of this
+    /// and has no code path that could return one.
+    /// </summary>
+    public record TargetDto(
+        string Slot, string Kind, string? Type, string? Location, string? Bucket, string? Prefix,
+        bool Enabled, bool? Present, string? Problem, string? Message,
+        string? KeyFingerprint, string? PassphraseFingerprint,
+        DateTimeOffset? LastBackupAt, DateTimeOffset? LastWalAt, DateTimeOffset? LastVerifyAt,
+        long? BytesStored, int? WalBacklogFiles, DateTimeOffset UpdatedAt);
 
     public record PreviewAgent(
         string Agent, List<BackupDto> Removed, long RemovedBytes,
@@ -90,10 +103,19 @@ public static class BackupEndpoints
         var jobs = snapshot.Jobs.OrderByDescending(j => j.RequestedAt).Take(50)
             .Select(j => ToDto(j, names, includeLog: false)).ToList();
 
+        var targets = await db.BackupTargets.AsNoTracking()
+            .OrderBy(t => t.Slot).ThenBy(t => t.Kind).ToListAsync();
+        var enabled = targets.Where(t => t.Enabled).ToList();
+
         return Results.Ok(new Overview(
             PolicyOf(s, names),
             BackupNames.Agents.Select(n => AgentOf(n, snapshot, s, names)).ToList(),
-            present, removed, jobs));
+            present, removed, jobs,
+            targets.Select(ToDto).ToList(),
+            // An offline copy is not a schedule (9.2, decision 8). Said here
+            // as well as raised as an alert, because the person looking at
+            // this page is the one who can do something about it.
+            enabled.Count > 0 && enabled.All(t => t.Slot == "removable")));
     }
 
     private static async Task<IResult> UpdatePolicy(
@@ -291,6 +313,11 @@ public static class BackupEndpoints
             .Select(j => j.Agent)
             .Distinct()
             .ToListAsync();
+
+    private static TargetDto ToDto(BackupTarget t) => new(
+        t.Slot, t.Kind, t.Type, t.Location, t.Bucket, t.Prefix, t.Enabled, t.Present,
+        t.Problem, t.Message, t.KeyFingerprint, t.PassphraseFingerprint,
+        t.LastBackupAt, t.LastWalAt, t.LastVerifyAt, t.BytesStored, t.WalBacklogFiles, t.UpdatedAt);
 
     private static BackupJob NewJob(string agent, string kind, string? target, Guid actorId) => new()
     {

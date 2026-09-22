@@ -1,4 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { StorageTargets } from './StorageTargets'
 import {
   api,
   ApiError,
@@ -307,6 +308,13 @@ export function AdminBackupsPage() {
             canRun={can('backups.run')} />
         ))}
       </div>
+
+      <StorageTargets
+        targets={data.targets}
+        manualOnly={data.offsiteIsManualOnly}
+        canRun={can('backups.run')}
+        onCopied={load}
+      />
 
       <section className="profile__section profile__section--wide">
         <h2>Retention policy</h2>
