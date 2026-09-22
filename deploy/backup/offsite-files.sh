@@ -139,6 +139,92 @@ restic_run_for() {
   offsite_files_publish "$slot" "$verified"
 }
 
+# A removable drive, on demand. Different from the scheduled targets in
+# three ways, each because the drive is absent most of the time:
+#
+#   * it is never scheduled, only asked for;
+#   * retention is a count with no time window, so a drive plugged in twice
+#     a year is not pruned to nothing for having been in a drawer;
+#   * it finishes with check, then sync, then says "safe to remove", because
+#     the next thing that happens to this target is somebody pulling it out.
+restic_run_removable() {
+  local count="$1" enabled="$2"
+  restic_env_for removable || return 1
+
+  offsite_warn_filesystem /mnt/removable
+
+  if ! restic_ensure_repo; then
+    offsite_files_status removable "The restic repository on the drive could not be opened or created."
+    return 1
+  fi
+
+  local out
+  if ! out="$(rst backup --tag tesria --tag removable \
+                 --exclude '*.tmp' --exclude 'lost+found' \
+                 "$RESTIC_UPLOADS" "$RESTIC_DUMPS" 2>&1 | tail -3 | tr '\n' ' ')"; then
+    note "removable: copy failed: $out"
+    offsite_files_status removable "The last copy to the drive failed: $out"
+    return 1
+  fi
+  note "removable: $out"
+
+  # A count and no window: see above.
+  if [ "$enabled" = t ]; then
+    # shellcheck disable=SC2086
+    rst forget --keep-last "$count" --prune >/dev/null 2>&1 \
+      || note "removable: retention pass failed; nothing removed"
+  fi
+
+  local verified=f
+  rst check --read-data-subset=5% >/dev/null 2>&1 && verified=t
+
+  # Flush the kernel's buffers before anyone unplugs it. Without this the
+  # copy can be reported finished while parts of it are still in memory, and
+  # a drive pulled at that moment holds a repository that is missing pieces.
+  sync
+  offsite_files_publish removable "$verified"
+
+  if [ "$verified" = t ]; then
+    note "removable: copy verified and flushed to the drive; safe to remove"
+    # "Safe to remove" is about the data, which sync has flushed: pulling
+    # the drive now cannot lose any of it. It is not a promise that the
+    # operating system will eject cleanly, because this container holds a
+    # bind mount on the drive and that keeps it busy until the sidecar is
+    # stopped. The runbook says which one you want.
+    offsite_files_message removable "Copy complete and verified. The data is flushed, so the drive can be removed. To eject it cleanly first: docker compose stop backup."
+  else
+    note "removable: copied and flushed, but verification did not pass"
+    offsite_files_message removable "Copied and flushed to the drive, but verification did not pass. The copy is on the drive; check it before relying on it."
+  fi
+}
+
+# FAT32 cannot hold a file over 4GB. restic's packs stay well under that by
+# default, so this is a warning rather than a refusal, but a dump restored
+# onto such a drive by hand would hit it.
+#
+# Best effort, and it will not fire on macOS. Docker Desktop passes a bind
+# mount through its own file sharing, so the container sees `fuse` whatever
+# the drive really is; only on Linux, where a bind mount keeps the
+# underlying type, does this report msdos or vfat. Better a warning that is
+# sometimes silent than one that guesses.
+offsite_warn_filesystem() {
+  local fs
+  fs="$(stat -f -c %T "${1:-}" 2>/dev/null)"
+  case "$fs" in
+    msdos|vfat)
+      note "removable: the drive is formatted $fs, which cannot hold a file larger than 4GB"
+      offsite_files_message removable "This drive is formatted $fs. restic works, but nothing larger than 4GB can be written; exFAT avoids the limit." ;;
+  esac
+}
+
+# A line for the status card that is not an error.
+offsite_files_message() {
+  q -v slot="$1" -v msg="$2" >/dev/null 2>&1 <<'SQL' || true
+UPDATE "BackupTargets" SET "Message" = left(:'msg', 2000), "UpdatedAt" = now()
+ WHERE "Slot" = :'slot' AND "Kind" = 'files';
+SQL
+}
+
 # What this slot holds, for the screen and the alerts.
 offsite_files_publish() {
   local slot="$1" verified="$2" bytes="" snaps="" type loc bucket prefix keyfp passfp
@@ -202,6 +288,17 @@ VALUES (:'slot', 'files', true, false, left(:'msg', 2000), now())
 ON CONFLICT ("Slot", "Kind") DO UPDATE
    SET "Enabled" = true, "Present" = false,
        "Message" = left(:'msg', 2000), "UpdatedAt" = now();
+SQL
+}
+
+# Present, but nothing was copied: a removable drive that is plugged in and
+# waiting to be asked. Leaves every date alone, because none of them changed.
+offsite_files_seen() {
+  q -v slot="$1" >/dev/null 2>&1 <<'SQL' || true
+INSERT INTO "BackupTargets" ("Slot", "Kind", "Enabled", "Present", "UpdatedAt")
+VALUES (:'slot', 'files', true, true, now())
+ON CONFLICT ("Slot", "Kind") DO UPDATE
+   SET "Enabled" = true, "Present" = true, "UpdatedAt" = now();
 SQL
 }
 

@@ -166,6 +166,36 @@ offsite_tick() {
   else
     offsite_files_disable nas
   fi
+
+  # The removable drive is only ever reported here, never copied to: that
+  # happens on demand, in do_copy_offsite. Its absence is normal and raises
+  # nothing, which is the difference between a drawer and a fault.
+  if [ -n "${OFFSITE_REMOVABLE_PASSPHRASE:-}" ]; then
+    if offsite_path_present /mnt/removable; then
+      offsite_files_seen removable
+    else
+      offsite_files_absent removable "The drive is not plugged in. The last copy it holds is shown above."
+    fi
+  else
+    offsite_files_disable removable
+  fi
+}
+
+# The job the Copy now button queues (dev-plan 9.2 step 4).
+do_copy_offsite() {
+  local slot="$1" line en kc kd
+  if [ "$slot" != removable ]; then
+    echo "Only a removable target is copied on demand."
+    return 1
+  fi
+  if ! offsite_path_present /mnt/removable; then
+    echo "The drive is not plugged in, or has not been claimed with claim-target.sh."
+    return 1
+  fi
+  if line="$(observe_policy)"; then
+    IFS='|' read -r en kc kd _ <<<"$line"
+  fi
+  restic_run_removable "${kc:-10}" "${en:-f}"
 }
 
 run_agent

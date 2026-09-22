@@ -78,6 +78,34 @@ and estimated monthly cost instead of inventing one. The same numbers drive
 a low-space warning whose threshold is two backup sets, not a percentage.
 Full design in `dev-plan.md` as 9.3.
 
+### 9.2 step 4: backups to a removable drive (2026-09-22)
+
+The classic offline copy. Same path mechanism as a network drive, with three
+differences, each because the drive is absent most of the time: it is never
+scheduled, only asked for; retention is a count with no time window, so a
+drive plugged in twice a year is not pruned for having been in a drawer; and
+it finishes with `check`, then `sync`, then says so.
+
+An offline copy is not a schedule, so an instance whose only offsite target
+is a drive is told in words that it has no offsite backup, rather than shown
+a reassuring green card.
+
+Two things found by running it, both now in the runbook:
+
+- **"Safe to remove" is about the data, not the eject.** `sync` flushes
+  every byte, so pulling the drive cannot lose the backup, but the sidecar
+  holds a bind mount that keeps the drive busy, so the operating system
+  refuses to eject until `docker compose stop backup`.
+- **The FAT32 warning is silent on macOS.** Docker Desktop passes a bind
+  mount through its own file sharing, so the container sees a generic
+  filesystem type whatever the drive really is. It reports properly on
+  Linux, and a warning that is sometimes silent beats one that guesses.
+
+Verified with a mounted disk image behaving as a removable volume: an
+unclaimed drive reported absent with nothing written, a queued Copy now job
+copied and verified and reported safe to remove, and the copy restored
+byte-identical with 36 tables.
+
 ### 9.2 step 3: backups to a network drive (2026-09-22)
 
 The uploads and the dumps can now also go to a NAS on the LAN, as an
