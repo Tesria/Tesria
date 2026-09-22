@@ -1,35 +1,50 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { SpaceIcon } from '../components/SpaceIcon'
 import { api, ApiError, type Space, Permission } from '../api/client'
+import { ImportPackForm } from '../components/ImportPackForm'
 
 export function SpacesPage() {
   const { user, can } = useAuth()
   const [spaces, setSpaces] = useState<Space[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
+  const [importing, setImporting] = useState(false)
   // Left behind by a deletion (dev-plan 11.3): the space it happened on is
   // gone, so the confirmation has to land somewhere else.
   const notice = (useLocation().state as { notice?: string } | null)?.notice ?? null
 
+  const reload = useCallback(
+    () =>
+      api.spaces
+        .list()
+        .then(setSpaces)
+        .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load spaces.')),
+    [],
+  )
+
   useEffect(() => {
-    api.spaces
-      .list()
-      .then(setSpaces)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load spaces.'))
-  }, [])
+    void reload()
+  }, [reload])
 
   return (
     <div className="page-wrap">
       <div className="row-between">
         <h1>Spaces</h1>
         {user && can(Permission.SpacesCreate) && (
-          <button type="button" className="btn btn--primary" onClick={() => setCreating((v) => !v)}>
-            {creating ? 'Cancel' : 'New space'}
-          </button>
+          <div className="row-gap">
+            <button type="button" className="btn" onClick={() => { setImporting((v) => !v); setCreating(false) }}>
+              {importing ? 'Cancel' : 'Import a pack'}
+            </button>
+            <button type="button" className="btn btn--primary" onClick={() => { setCreating((v) => !v); setImporting(false) }}>
+              {creating ? 'Cancel' : 'New space'}
+            </button>
+          </div>
         )}
       </div>
+
+      {importing && <ImportPackForm onImported={() => { void reload() }} />}
 
       {creating && (
         <CreateSpaceForm
