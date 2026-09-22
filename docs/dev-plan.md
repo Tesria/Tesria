@@ -2405,7 +2405,7 @@ composition and cost.
 
 ---
 
-### 9.4 Restore from the admin page · `L` · Model: Fable → Opus · **designed 2026-09-22 (Fable), decisions answered, ready for Opus**
+### 9.4 Restore from the admin page · `L` · Model: Fable → Opus · ✅ **shipped 2026-09-22** (Fable designed, Opus implemented)
 
 **What the owner asked for (2026-09-22).** The backups page has Test
 restore on every row but nothing that restores one: "It appears that you
@@ -2785,6 +2785,74 @@ the `_restore` database can be queried before it is dropped); a downgrade
 (a dump from a newer schema is refused, not handled); more than one `app`
 container (the in-memory flag assumes one, as the compose file does
 throughout).
+
+**As built (2026-09-22), where it differs from the spec above.** All four
+steps shipped together. Three bugs were found by running it against this
+instance, and none of them would have been found any other way, which is the
+argument for the live walk in one paragraph.
+
+- **The restart signal is the database's OID, not the migration count.** The
+  spec said the application restarts when the restore finishes, and left how
+  it learns that open. The obvious answer, reading `LastRestoreJobId`, cannot
+  work: a restored database is an older one and may not have that column, so
+  the application waits for a signal that cannot arrive while the sidecar
+  waits for the restart that would migrate it. A real deadlock, hit on the
+  first live run. The second attempt, comparing the row count of
+  `__EFMigrationsHistory`, failed for an independent reason: a dump restores
+  `--no-privileges`, so the runtime role has no grants on the restored
+  database and cannot read that table either. What works is
+  `SELECT oid FROM pg_database WHERE datname = current_database()`:
+  `pg_database` needs no grant and no schema, and the OID behind the name
+  changes when the swap renames one database out and another in. It says the
+  true thing directly, "I am connected to a different database than the one I
+  started with".
+- **`restore.sh` sources `common.sh`.** It is run as a child process, not
+  sourced, so the `restore_*` helpers simply did not exist inside it and the
+  carry-across, the cancel check and the completion record were all skipped
+  in silence. The wiki restored perfectly and its own bookkeeping vanished,
+  which is exactly the failure the restore directory was designed to survive,
+  and did: the phases and the log were on disk when the database had no idea
+  any of it had happened.
+- **Two smaller ones from the same run.** `common.sh` set `RESTORE_DIR=""` at
+  the top level, which clobbered the value `restore.sh` inherits from the
+  environment, so everything written "to the restore directory" went nowhere.
+  And the carry import used `CREATE TEMP TABLE ... ON COMMIT DROP` without a
+  transaction: psql commits each statement on its own, so the staging table
+  was dropped the instant it was created and every `\copy` into it failed.
+  Both are now wrapped and commented with what they cost.
+- **The maintenance middleware lets the restore's own endpoints through.**
+  The spec listed cancel and health as the exceptions. In practice a second
+  "restore this backup" while one runs should get the endpoint's own 409
+  naming the reason, not a blanket "the wiki is read-only", so the whole
+  restore subtree passes and each endpoint keeps its own gate.
+- **The preview counts in memory.** SQLite cannot translate a
+  `DateTimeOffset` comparison, the same limitation 8.5 met with ordering, so
+  the counts come from a projection of timestamps rather than `CountAsync`.
+  It keeps the endpoint identical on both providers.
+- **The completion service also checks once a minute when idle.** A restore
+  can finish after the application has already restarted and given the wiki
+  back, so the lasting audit entry would never be written by the startup path
+  alone.
+- **`docker compose stop db` is now fast.** Interposing a supervisor made the
+  shutdown signal a choice, and Postgres reads SIGTERM as a *smart* shutdown
+  that waits for every client: the container used to wait out its timeout and
+  be killed. The supervisor forwards SIGINT instead. Measured at under a
+  second against the ten it used to take.
+- **The restore dialog is wider than the other confirmations** (34rem rather
+  than 440px). It carries more to read, and at the shared width that was a
+  column of two-word lines.
+
+**Verified live on this instance (2026-09-22).** Four full restore cycles and
+four undos, the last two driven entirely through the admin page: the marker
+page written after the backup disappeared and came back each time; the
+application restarted itself on both the restore and the undo, logging the
+OID change; writes were refused with 503 while reads kept working; the health
+endpoint reported maintenance anonymously; the backup history carried across,
+including the undo job carrying its own row; exactly one `backup.restored`
+audit entry and one Critical alert; and an administrator without the right
+was refused at the endpoint and shown no Restore button. The instance ended
+with 34 pages, 8 spaces and 6 attachments, which is what it started with,
+and the `.env` byte-identical.
 
 ---
 
@@ -4031,7 +4099,7 @@ carry it too.
 7. **6** Space icons
 8. **7.A** → **7.B** → **7.C** → **7.D** (Fable→Opus) → **7.E** → **7.F**
 9. **8.1** PDF (after 7.A) → **8.2** Licence (any time) → **8.3** OpenAPI → **8.4** MCP (Fable→Opus) → **8.6** External edits as tracked changes (Fable→Opus) → **8.5** Wiki packs (Fable→Opus)
-10. **9.1** Backups admin section (Fable→Opus; shipped 2026-09-17) → **9.2** Offsite backups (Fable→Opus; shipped 2026-09-22) → **9.3** Space charts (shipped 2026-09-22) → **9.4** Restore from the admin page (designed 2026-09-22 as Fable, the owner's five decisions answered the same day; Opus implements next)
+10. **9.1** Backups admin section (Fable→Opus; shipped 2026-09-17) → **9.2** Offsite backups (Fable→Opus; shipped 2026-09-22) → **9.3** Space charts (shipped 2026-09-22) → **9.4** Restore from the admin page (Fable designed and the owner answered its five decisions 2026-09-22; Opus shipped it the same day)
 11. **10.1** Owner role (shipped 2026-09-20) → **11.1** Instance rights and the Roles tab (shipped 2026-09-20) → **11.2** Custom roles (shipped 2026-09-20) → **11.3** Delete a space (shipped 2026-09-20) → **5.5** Anonymous access is opt-in twice (shipped 2026-09-20) → **10.4** Media harness (shipped 2026-09-20) → **10.2** Owner setup wizard (shipped 2026-09-20) → **10.3** Tour and tips (shipped 2026-09-20) (all specified 2026-09-20 as Fable; Opus implements). Phase 11 goes before the wizard because the wizard has a required step that reviews the matrix, and before 10.3 because the tour's screens should show the real Roles tab. 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
 12. **12.1** Capture-based export and the element audit (shipped 2026-09-20) → **12.2** Publish a space as a static site (shipped 2026-09-20). 12 before 8.5 because the site export builds the walk over a space that the wiki pack will reuse, and because the owner's documentation is waiting on it.
 13. **8.6** External edits as tracked changes (steps 1–5 shipped 2026-09-21; step 6 folded into 10.5).

@@ -77,7 +77,14 @@ agent_start() {
 UPDATE "BackupJobs"
    SET "Status" = 'failed', "FinishedAt" = now(),
        "Error" = 'The backup agent restarted while this job was running.'
- WHERE "Agent" = :'agent' AND "Status" = 'running';
+ WHERE "Agent" = :'agent' AND "Status" = 'running'
+   -- Not a restore. A backup that was interrupted is simply a failed backup,
+   -- but a restore may have been interrupted *after* its point of no return,
+   -- in which case the wiki has already been replaced and this row is the
+   -- only thing that knows. Its truth is the restore directory on this
+   -- sidecar's own volume, which restore_reconcile_on_start reads before
+   -- anything else runs (dev-plan 9.4).
+   AND "Kind" NOT IN ('restore', 'restore-undo');
 INSERT INTO "BackupAgents" ("Name", "StartedAt", "LastSeenAt", "IntervalHours", "FullEveryDays", "ToolVersion", "Message")
 VALUES (:'agent', now(), now(), :'interval'::int, NULLIF(:'full_every', '')::int, :'version', 'Started.')
 ON CONFLICT ("Name") DO UPDATE
@@ -281,7 +288,10 @@ SQL
   [ "$due" = "t" ]
 }
 
-# Claims the oldest requested job for this agent. Prints `id|kind|target`.
+# Claims the oldest requested job for this agent. Prints
+# `id|kind|target|options`. The options are the job's OptionsJson with the
+# pipes stripped, since this is a pipe-delimited line and a restore's options
+# are a small flat object (dev-plan 9.4).
 claim_job() {
   q <<'SQL'
 UPDATE "BackupJobs" SET "Status" = 'running', "StartedAt" = now()
@@ -289,7 +299,21 @@ UPDATE "BackupJobs" SET "Status" = 'running', "StartedAt" = now()
                 WHERE "Agent" = :'agent' AND "Status" = 'requested'
                 ORDER BY "RequestedAt" LIMIT 1
                   FOR UPDATE SKIP LOCKED)
-RETURNING "Id" || '|' || "Kind" || '|' || coalesce("Target", '');
+RETURNING "Id" || '|' || "Kind" || '|' || coalesce("Target", '')
+       || '|' || translate(coalesce("OptionsJson", ''), '|', ' ');
+SQL
+}
+
+# A job this sidecar does not know how to run. Never silently ignored and
+# never treated as a backup: an unrecognised kind means the app is newer than
+# this image, and the person waiting deserves to be told exactly that.
+fail_unknown_job() {
+  q -v id="$1" -v kind="$2" >/dev/null 2>&1 <<'SQL' || true
+UPDATE "BackupJobs"
+   SET "Status" = 'failed', "FinishedAt" = now(),
+       "Error" = 'This backup agent does not know how to run a ' || :'kind'
+                 || ' job. Its image is older than the application; rebuild the backup sidecars.'
+ WHERE "Id" = :'id'::uuid;
 SQL
 }
 
@@ -406,6 +430,182 @@ SQL
   rm -f "$logf"
 }
 
+# --- Restoring the wiki (dev-plan 9.4) -------------------------------------
+#
+# The hardest fact about a restore is that the job's own status lives in the
+# database being replaced. So every restore has a directory on this sidecar's
+# own volume, and that directory is the truth: the phases, the log, the
+# carried-across backup history, and enough about the swap to finish or
+# reverse it after a restart. The database rows are written from it, not the
+# other way round.
+#
+# Each sidecar defines do_restore_wiki / do_restore_undo for its own kind; the
+# default refuses clearly rather than doing something approximate.
+RESTORE_ROOT="${BACKUP_RESTORE_ROOT:-/backups/restores}"
+# Inherited, never reset. restore.sh sources this file and is handed its
+# directory in the environment, so a bare `RESTORE_DIR=""` here silently
+# emptied it and the phases, the carried-across history and the result file
+# were all written nowhere. The restore still worked, which is what made it
+# hard to see.
+RESTORE_DIR="${RESTORE_DIR:-}"
+RESTORE_DRY_RUN="${RESTORE_DRY_RUN:-0}"
+
+do_restore_wiki() { echo "This agent cannot restore the wiki."; return 1; }
+do_restore_undo() { echo "This agent cannot undo a restore."; return 1; }
+do_restore_discard() { echo "This agent has no kept copy to remove."; return 1; }
+
+# Everything about one restore, on disk, outside the database it replaces.
+restore_dir_for() {
+  RESTORE_DIR="$RESTORE_ROOT/$1"
+  mkdir -p "$RESTORE_DIR"
+  echo "$RESTORE_DIR"
+}
+
+# The phase a person sees on the page. Written to the directory first, because
+# during the swap the database cannot be written at all; the row is a
+# best-effort mirror of the file.
+restore_phase() {
+  local phase="$1"
+  [ -n "$RESTORE_DIR" ] && printf '%s %s\n' "$(date -u +%FT%TZ)" "$phase" >>"$RESTORE_DIR/phases"
+  log "restore: $phase"
+  q -v msg="$phase" >/dev/null 2>&1 <<'SQL' || true
+UPDATE "BackupAgents" SET "Message" = left('Restore: ' || :'msg', 2000) WHERE "Name" = :'agent';
+SQL
+}
+
+# Has somebody asked to stop? Checked at every step up to the point of no
+# return and never after it, which is what makes the answer to "can I cancel"
+# honest rather than hopeful.
+restore_cancelled() {
+  local v
+  v="$(q <<'SQL' 2>/dev/null
+SELECT CASE WHEN "RestoreCancelRequestedAt" IS NOT NULL THEN 't' ELSE 'f' END FROM "SiteSettings" LIMIT 1;
+SQL
+)" || return 1
+  [ "$v" = t ]
+}
+
+# The tables that describe the disk rather than the wiki: which backups exist,
+# what ran, and what the offsite targets look like. They are carried across a
+# restore because a dump from last week would otherwise make the page forget
+# every backup taken since, including the safety backup this restore just
+# took, which is the one somebody would need next.
+RESTORE_CARRY_TABLES='Backups BackupJobs BackupTargets BackupAgents'
+
+restore_export_carry() {
+  local dir="$1" table
+  for table in $RESTORE_CARRY_TABLES; do
+    q -c "\\copy (SELECT * FROM \"$table\") TO '$dir/carry-$table.csv' WITH (FORMAT csv, HEADER)" \
+      >/dev/null 2>&1 || note "could not export $table; it will not be carried across"
+  done
+}
+
+# Imported with ON CONFLICT DO NOTHING via a staging table: the restored
+# database has its own rows for the same backups, and those are the ones a
+# person was looking at a moment ago. This adds what is missing rather than
+# overwriting what is there.
+restore_import_carry() {
+  local dir="$1" table
+  for table in $RESTORE_CARRY_TABLES; do
+    [ -f "$dir/carry-$table.csv" ] || continue
+    # BEGIN/COMMIT is not tidiness: psql runs each statement in its own
+    # transaction by default, so ON COMMIT DROP would drop the staging table
+    # the instant it was created and every \copy into it would fail with
+    # "relation does not exist". That is exactly what happened the first time
+    # this ran, silently, because the failure is only a note.
+    q >/dev/null 2>&1 <<SQL || note "could not carry $table across"
+BEGIN;
+CREATE TEMP TABLE carry_stage (LIKE "$table" INCLUDING DEFAULTS) ON COMMIT DROP;
+\copy carry_stage FROM '$dir/carry-$table.csv' WITH (FORMAT csv, HEADER)
+INSERT INTO "$table" SELECT * FROM carry_stage ON CONFLICT DO NOTHING;
+COMMIT;
+SQL
+  done
+}
+
+# Runs a restore, whatever kind. The sidecar's do_restore_wiki does the work
+# and prints a JSON object describing what it did; everything around it here
+# is the same for both kinds: the directory, the phases, the log, and the row
+# that is written afterwards from the restored database.
+run_restore_wiki_job() {
+  local id="$1" target="$2" options="${3:-}" dir logf status=succeeded err="" extra
+  dir="$(restore_dir_for "$id")"
+  logf="$dir/log"
+  : > "$logf"
+  printf '%s' "$options" > "$dir/options"
+  printf '%s' "$target" > "$dir/target"
+  date -u +%FT%TZ > "$dir/started"
+
+  log "RESTORE requested: $target ${options}"
+  if do_restore_wiki "$id" "$target" "$options" "$dir" >>"$logf" 2>&1; then
+    extra="$(cat "$dir/result" 2>/dev/null || echo '{}')"
+  else
+    status=failed
+    err="$(first_error "$logf")"
+    extra="$(cat "$dir/result" 2>/dev/null || echo '{}')"
+  fi
+  cat "$logf"
+  finish_job "$id" "$status" "$err" "$logf" "$extra"
+  if [ "$status" = succeeded ]; then
+    set_message "Restored from $target."
+  else
+    set_message "Restore from $target FAILED: $err"
+    restore_clear_maintenance
+  fi
+}
+
+run_restore_undo_job() {
+  local id="$1" target="$2" options="${3:-}" dir logf status=succeeded err="" extra
+  dir="$(restore_dir_for "$id")"
+  logf="$dir/log"
+  : > "$logf"
+  log "RESTORE UNDO requested"
+  if do_restore_undo "$id" "$target" "$options" "$dir" >>"$logf" 2>&1; then
+    extra="$(cat "$dir/result" 2>/dev/null || echo '{}')"
+  else
+    status=failed
+    err="$(first_error "$logf")"
+    extra='{}'
+    restore_clear_maintenance
+  fi
+  cat "$logf"
+  finish_job "$id" "$status" "$err" "$logf" "$extra"
+}
+
+run_restore_discard_job() {
+  local id="$1" target="$2" options="${3:-}" logf=/tmp/discard.log status=succeeded err=""
+  : > "$logf"
+  if ! do_restore_discard "$target" "$options" >>"$logf" 2>&1; then
+    status=failed
+    err="$(first_error "$logf")"
+  fi
+  cat "$logf"
+  finish_job "$id" "$status" "$err" "$logf"
+}
+
+# Gives the wiki back when a restore did not happen. The app clears this too
+# when it sees the job fail; doing it here as well means a failure that the
+# app never sees (it was restarting) still ends the read-only state.
+restore_clear_maintenance() {
+  q >/dev/null 2>&1 <<'SQL' || true
+UPDATE "SiteSettings"
+   SET "RestoreJobId" = NULL, "RestoreStartedAt" = NULL, "RestoreCancelRequestedAt" = NULL;
+SQL
+}
+
+# Records that a restore finished, in the database that now exists. This is
+# what the app polls for, and what makes it restart into the restored wiki.
+restore_record_done() {
+  local id="$1" from="$2" kept="$3"
+  q -v id="$id" -v from="$from" -v kept="$kept" >/dev/null <<'SQL'
+UPDATE "SiteSettings"
+   SET "RestoreJobId" = NULL, "RestoreStartedAt" = NULL, "RestoreCancelRequestedAt" = NULL,
+       "LastRestoredAt" = now(), "LastRestoreJobId" = :'id'::uuid,
+       "LastRestoreFrom" = :'from',
+       "KeptCopyJson" = NULLIF(:'kept', '');
+SQL
+}
+
 # Default hooks; the sidecars override what they need.
 after_backup() { echo '{}'; }
 # Offsite targets (dev-plan 9.2). Each sidecar defines what it can do.
@@ -454,15 +654,24 @@ run_agent() {
         offsite_tick || log "WARN: offsite tick failed"
 
         while job="$(claim_job)" && [ -n "$job" ]; do
-          IFS='|' read -r id kind target <<<"$job"
-          if [ "$kind" = "restore-test" ]; then
-            run_restore_job "$id" "$target"
-          elif [ "$kind" = "copy-offsite" ]; then
-            run_copy_job "$id" "$target"
-          else
-            log "backup requested"
-            run_backup_job "$id"
-          fi
+          IFS='|' read -r id kind target options <<<"$job"
+          case "$kind" in
+            backup)          log "backup requested"; run_backup_job "$id" ;;
+            restore-test)    run_restore_job "$id" "$target" ;;
+            copy-offsite)    run_copy_job "$id" "$target" ;;
+            restore)         run_restore_wiki_job "$id" "$target" "$options" ;;
+            restore-undo)    run_restore_undo_job "$id" "$target" "$options" ;;
+            restore-discard) run_restore_discard_job "$id" "$target" "$options" ;;
+            # Anything else is a kind this sidecar predates. Failing loudly is
+            # the whole point: until 9.4 an unknown kind fell through to
+            # `run_backup_job`, so an older sidecar handed a `restore` would
+            # have taken a backup and reported success, which is the most
+            # dangerous possible answer to "please restore".
+            *)
+              log "ERROR: unknown job kind '$kind'"
+              fail_unknown_job "$id" "$kind"
+              ;;
+          esac
         done
 
         if backup_due; then

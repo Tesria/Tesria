@@ -41,6 +41,43 @@ const pool = new pg.Pool({ connectionString: DATABASE_URL })
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const SWEEP_MS = Number(process.env.COLLAB_SWEEP_MS ?? 15000)
 
+// When this process started. Compared with SiteSettings.LastRestoredAt by the
+// sweep: a restore that finished after this moment means every document in
+// memory may hold content from after the backup, and the only reliable way to
+// forget all of it is to exit and let compose start this clean (dev-plan 9.4).
+const STARTED_AT = new Date()
+
+/**
+ * Restore maintenance (dev-plan 9.4). While this is on, every connection is
+ * closed, every document is dropped, and new connections are refused: an open
+ * editor writes its in-memory document back on the next keystroke, which
+ * after a restore would put content from after the backup into the restored
+ * wiki.
+ *
+ * The deadline is a safety valve, not a schedule. A restore that ends without
+ * the app saying so (it crashed, the network dropped the call) must not leave
+ * co-editing switched off for everyone until somebody notices, so the flag
+ * expires on its own; the ordinary end is the app posting `false` at startup.
+ */
+const MAINTENANCE_MAX_MS = Number(process.env.COLLAB_MAINTENANCE_MAX_MS ?? 30 * 60 * 1000)
+let maintenanceUntil = 0
+
+const inMaintenance = () => maintenanceUntil > Date.now()
+
+function setMaintenance(on) {
+  if (on) {
+    maintenanceUntil = Date.now() + MAINTENANCE_MAX_MS
+    console.warn('[collab] restore in progress: closing every document and refusing connections')
+    for (const name of [...server.hocuspocus.documents.keys()]) {
+      server.hocuspocus.closeConnections(name)
+      server.hocuspocus.documents.delete(name)
+    }
+  } else if (maintenanceUntil !== 0) {
+    maintenanceUntil = 0
+    console.log('[collab] restore finished: accepting connections again')
+  }
+}
+
 /**
  * What a page currently says, and which version that is.
  *
@@ -268,8 +305,10 @@ const server = new Server({
    * network, which is why there is no user identity here to check.
    */
   async onRequest({ request, response }) {
-    const match = /^\/pages\/([^/]+)\/reconcile$/.exec((request.url ?? '').split('?')[0])
-    if (request.method !== 'POST' || !match) return
+    const path = (request.url ?? '').split('?')[0]
+    const match = /^\/pages\/([^/]+)\/reconcile$/.exec(path)
+    const maintenance = path === '/maintenance'
+    if (request.method !== 'POST' || (!match && !maintenance)) return
 
     const provided = request.headers['x-collab-secret']
     // Constant-time, and length-checked first, as timingSafeEqual requires.
@@ -277,6 +316,19 @@ const server = new Server({
     const given = Buffer.from(typeof provided === 'string' ? provided : '')
     if (given.length !== expected.length || !crypto.timingSafeEqual(given, expected)) {
       response.writeHead(403).end('forbidden')
+      return handled()
+    }
+
+    // The app going into or out of a restore (dev-plan 9.4).
+    if (maintenance) {
+      try {
+        const body = await readJson(request)
+        setMaintenance(body.maintenance === true)
+        response.writeHead(200).end('ok')
+      } catch (err) {
+        console.error('[collab] maintenance request failed', err)
+        response.writeHead(500).end('failed')
+      }
       return handled()
     }
 
@@ -293,6 +345,13 @@ const server = new Server({
   },
 
   async onAuthenticate({ token, documentName }) {
+    // Nothing joins a document while the database underneath it is being
+    // replaced. Refused rather than queued: the editor shows its
+    // disconnected state, which is the truth.
+    if (inMaintenance()) {
+      console.warn(`[collab] refusing ${documentName}: a restore is in progress`)
+      throw new Error('Unavailable')
+    }
     const payload = verifyToken(token, documentName)
     if (!payload) throw new Error('Unauthorized')
     // A token stays valid for its lifetime, so closing a deleted page's
@@ -349,7 +408,28 @@ const server = new Server({
  * only inbound surface the websocket, and covers a page purged on its own as
  * well as a whole space deleted.
  */
+/**
+ * The backstop for a restore this sidecar was never told about (dev-plan
+ * 9.4): the app could not reach it, or the restore was run from the runbook
+ * by hand. `LastRestoredAt` moving past this process's start means the
+ * documents in memory may predate a swap, and exiting is the only way to
+ * forget all of them at once. Compose restarts this container.
+ */
+async function exitIfRestored() {
+  const result = await pool.query('SELECT "LastRestoredAt" FROM "SiteSettings" LIMIT 1')
+  const at = result.rows[0]?.LastRestoredAt
+  if (at && new Date(at) > STARTED_AT) {
+    console.warn('[collab] the wiki was restored after this process started; restarting to drop every document')
+    await server.destroy()
+    await pool.end()
+    process.exit(0)
+  }
+}
+
 async function dropDeletedDocuments() {
+  // Documents are dropped wholesale during a restore; there is nothing to
+  // sweep, and the database is very likely mid-swap.
+  if (inMaintenance()) return
   // `Server` wraps the Hocuspocus instance rather than being one; the open
   // documents and closeConnections both live on it.
   const open = [...server.hocuspocus.documents.keys()].filter((name) => UUID.test(name))
@@ -366,7 +446,10 @@ async function dropDeletedDocuments() {
 server.listen().then(() => {
   console.log(`[collab] listening on ${PORT}`)
   const sweep = setInterval(
-    () => dropDeletedDocuments().catch((err) => console.error('[collab] sweep failed', err)),
+    () =>
+      exitIfRestored()
+        .then(dropDeletedDocuments)
+        .catch((err) => console.error('[collab] sweep failed', err)),
     SWEEP_MS,
   )
   sweep.unref()

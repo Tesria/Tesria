@@ -26,9 +26,33 @@ public static class BackupNames
     /// </summary>
     public const string KindCopyOffsite = "copy-offsite";
 
+    /// <summary>
+    /// Replace the wiki with an older copy (dev-plan 9.4). The logical agent
+    /// restores a dump into a new database and swaps it in; the physical
+    /// agent asks the db container to roll the whole cluster back to a time.
+    /// </summary>
+    public const string KindRestore = "restore";
+
+    /// <summary>Swap the kept copy back, undoing a restore (dev-plan 9.4).</summary>
+    public const string KindRestoreUndo = "restore-undo";
+
+    /// <summary>
+    /// Remove the kept copy a restore left behind. Requested by a person, or
+    /// by the retention policy when the kept copy reaches the age at which a
+    /// backup would be removed (the owner's decision, 2026-09-22).
+    /// </summary>
+    public const string KindRestoreDiscard = "restore-discard";
+
+    /// <summary>Every kind a sidecar may be asked to run. An unknown kind fails loudly.</summary>
+    public static readonly string[] Kinds =
+        [KindBackup, KindRestoreTest, KindCopyOffsite, KindRestore, KindRestoreUndo, KindRestoreDiscard];
+
     public const string TriggerScheduled = "scheduled";
     public const string TriggerManual = "manual";
     public const string TriggerStartup = "startup";
+
+    /// <summary>The retention policy removed something on its own (dev-plan 9.4).</summary>
+    public const string TriggerRetention = "retention";
 
     public const string StatusRequested = "requested";
     public const string StatusRunning = "running";
@@ -261,8 +285,16 @@ public class BackupJob
     public required string Trigger { get; set; }
     public required string Status { get; set; }
 
-    /// <summary>Restore tests: the label of the backup to restore.</summary>
+    /// <summary>Restore tests and restores: the label of the backup to restore.</summary>
     public string? Target { get; set; }
+
+    /// <summary>
+    /// What this job was asked to do, beyond its target (dev-plan 9.4):
+    /// <c>{ "mode": "logical" | "pitr", "at": "2026-09-22T03:12:00Z" }</c>.
+    /// A column rather than more <see cref="Target"/> parsing, because a
+    /// point-in-time target is a time and a label is not.
+    /// </summary>
+    public string? OptionsJson { get; set; }
 
     public DateTimeOffset RequestedAt { get; set; }
     public Guid? RequestedById { get; set; }

@@ -139,6 +139,141 @@ SQL
       fi
     done
   done
+  # The copy kept by a restore ages out under the same policy (dev-plan 9.4).
+  restore_apply_kept_retention "$1" "$2"
+}
+
+# --- Restoring the wiki (dev-plan 9.4) -------------------------------------
+
+# Replace the wiki with an older copy. restore.sh does the work; this hands it
+# the job's identity so the swap can be recorded, and reports the phases.
+do_restore_wiki() {
+  local id="$1" target="$2" options="$3" dir="$4"
+  local dump="$target"
+  # The page sends a cycle label (the stamp); restore.sh takes a file name.
+  case "$dump" in
+    db-*.dump) ;;
+    "")        dump="" ;;
+    *)         dump="db-${dump}.dump" ;;
+  esac
+  RESTORE_JOB_ID="$id" RESTORE_DIR="$dir" /scripts/restore.sh "$dump"
+}
+
+# Undo: the kept database and the kept uploads go back where they were. The
+# same swap in reverse, and with its own safety backup first, because undoing
+# a restore is itself a restore and the copy it replaces may be the one
+# somebody actually wanted.
+do_restore_undo() {
+  local id="$1" target="$2" options="$3" dir="$4"
+  local live="$PGDATABASE" kept="${PGDATABASE}_pre_restore" uploads="${WIKI_PATH}/.pre-restore"
+  local aside="${PGDATABASE}_undone"
+
+  psql -X -q -t -A -v ON_ERROR_STOP=1 --dbname=postgres \
+    -c "SELECT 1 FROM pg_database WHERE datname = '${kept}';" | grep -q 1 \
+    || { echo "ERROR: there is no kept copy named ${kept} to go back to"; return 1; }
+
+  echo "[undo] taking a safety backup of the restored wiki before putting the previous one back"
+  local stamp
+  stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+  BACKUP_STAMP="$stamp" /scripts/backup.sh && BACKUP_STAMP="$stamp" /scripts/backup-files.sh \
+    || { echo "ERROR: the safety backup failed; nothing has been changed"; return 1; }
+
+  [ -n "$dir" ] && restore_export_carry "$dir"
+
+  echo "[undo] switching back"
+  psql -X -q -t -A -v ON_ERROR_STOP=1 --dbname=postgres <<SQL || { echo "ERROR: the switch back failed; the wiki is unchanged"; return 1; }
+ALTER DATABASE "${live}" WITH ALLOW_CONNECTIONS false;
+SELECT pg_terminate_backend(pid) FROM pg_stat_activity
+ WHERE datname = '${live}' AND pid <> pg_backend_pid();
+DROP DATABASE IF EXISTS "${aside}";
+ALTER DATABASE "${live}" RENAME TO "${aside}";
+ALTER DATABASE "${kept}" RENAME TO "${live}";
+ALTER DATABASE "${live}" WITH ALLOW_CONNECTIONS true;
+DROP DATABASE IF EXISTS "${aside}";
+SQL
+
+  if [ -d "$uploads" ] && [ -w "$WIKI_PATH" ]; then
+    echo "[undo] putting the previous attachments back"
+    find "$WIKI_PATH" -mindepth 1 -maxdepth 1 ! -name '.pre-restore' -exec rm -rf {} + 2>/dev/null
+    find "$uploads" -mindepth 1 -maxdepth 1 -exec mv -t "$WIKI_PATH" {} + 2>/dev/null
+    rmdir "$uploads" 2>/dev/null
+  fi
+
+  psql -X -q -t -A -v ON_ERROR_STOP=1 --dbname="$live" >/dev/null 2>&1 <<'SQL' || true
+UPDATE "SiteSettings"
+   SET "RestoreJobId" = NULL, "RestoreStartedAt" = NULL, "RestoreCancelRequestedAt" = NULL;
+SQL
+  [ -n "$dir" ] && restore_import_carry "$dir"
+  # No kept copy after an undo: the wiki is the copy that was kept.
+  restore_record_done "$id" "the copy kept before the last restore" ""
+  [ -n "$dir" ] && printf '{"undone":true,"safetyBackup":"db-%s.dump"}' "$stamp" > "$dir/result"
+  echo "[undo] done; the wiki is the copy that was kept before the restore"
+}
+
+# Remove the kept copy. The destruction of an undo, so it is only ever done
+# because somebody asked or because the retention policy reached it.
+do_restore_discard() {
+  local target="$1" kept="${PGDATABASE}_pre_restore" uploads="${WIKI_PATH}/.pre-restore"
+  echo "[discard] removing the kept copy ${kept}"
+  psql -X -q -t -A -v ON_ERROR_STOP=1 --dbname=postgres \
+    -c "DROP DATABASE IF EXISTS \"${kept}\";" >/dev/null || return 1
+  [ -d "$uploads" ] && rm -rf "$uploads"
+  q >/dev/null 2>&1 <<'SQL' || true
+UPDATE "SiteSettings"
+   SET "KeptCopyJson" = jsonb_set("KeptCopyJson"::jsonb, '{removedAt}', to_jsonb(now()))::text
+ WHERE "KeptCopyJson" IS NOT NULL;
+SQL
+  echo "[discard] removed"
+}
+
+# The kept copy ages out under the retention policy, by the same rule as a
+# backup (the owner's decision, 2026-09-22): it is entered into the plan as if
+# it were a backup taken at the moment of the restore, and removed when the
+# plan would remove that backup. Retention off keeps it, as retention off
+# keeps everything.
+#
+# Called from apply_retention, so it runs on the same pass and inherits the
+# 24-hour grace on a stricter policy without needing its own copy of it.
+restore_apply_kept_retention() {
+  local keep_count="$1" keep_days="$2" due
+  due="$(q -v kc="$keep_count" -v kd="$keep_days" 2>/dev/null <<'SQL'
+WITH kept AS (
+  SELECT ("KeptCopyJson"::jsonb ->> 'restoredAt')::timestamptz AS at,
+         "KeptCopyJson"::jsonb ->> 'removedAt' AS removed
+    FROM "SiteSettings" WHERE "KeptCopyJson" IS NOT NULL
+), rank AS (
+  -- Where a backup taken at that moment would sit in the newest-first list.
+  SELECT kept.at,
+         (SELECT count(*) FROM "Backups" b
+           WHERE b."Agent" = 'logical' AND b."RemovedAt" IS NULL AND b."Error" IS NULL
+             AND b."StartedAt" > kept.at) AS newer
+    FROM kept WHERE kept.removed IS NULL
+)
+SELECT CASE WHEN newer >= :'kc'::int AND at < now() - make_interval(days => :'kd'::int)
+            THEN 't' ELSE 'f' END
+  FROM rank;
+SQL
+)" || return 0
+  [ "$due" = t ] || return 0
+
+  if [ "$RETENTION_DRY_RUN" = 1 ]; then
+    note "retention (dry run): would remove the copy kept before the last restore"
+    return 0
+  fi
+  note "retention: removing the copy kept before the last restore"
+  local id
+  id="$(q <<'SQL'
+INSERT INTO "BackupJobs" ("Id", "Agent", "Kind", "Trigger", "Status", "RequestedAt", "StartedAt")
+VALUES (gen_random_uuid(), 'logical', 'restore-discard', 'retention', 'running', now(), now())
+RETURNING "Id";
+SQL
+)" || return 0
+  local logf=/tmp/kept-retention.log
+  if do_restore_discard "" >"$logf" 2>&1; then
+    finish_job "$id" succeeded "" "$logf"
+  else
+    finish_job "$id" failed "$(first_error "$logf")" "$logf"
+  fi
 }
 
 # The offsite copy of the files (dev-plan 9.2 step 2). Runs on the same pass

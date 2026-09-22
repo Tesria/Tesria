@@ -158,6 +158,15 @@ public interface ISecurityDetector
     Task BackupProblemAsync(string kind, SecuritySeverity severity, string agent, object? metadata);
     /// <summary>An administrator saved a backup policy that can remove more than the last one. Always an alert.</summary>
     Task BackupRetentionReducedAsync(Guid actorId, object metadata);
+
+    /// <summary>
+    /// The wiki was replaced with an older copy (dev-plan 9.4). Always an
+    /// alert, Critical, with no cooldown, and raised after the restore rather
+    /// than before, so it lands in the restored database's own chain. An
+    /// owner-level account can restore away almost anything; it cannot
+    /// restore away the record that it restored.
+    /// </summary>
+    Task BackupRestoredAsync(Guid? actorId, object metadata);
     /// <summary>The instance changed hands (dev-plan 10.1). Always an alert.</summary>
     Task OwnerTransferredAsync(Guid actorId, object metadata);
     /// <summary>A role gained rights (dev-plan 11.1). Always an alert.</summary>
@@ -288,6 +297,10 @@ public sealed class SecurityDetector(AppDbContext db, SecurityCounters counters,
 
     public Task BackupRetentionReducedAsync(Guid actorId, object metadata) =>
         RaiseAsync("backup.retention_reduced", SecuritySeverity.Critical, key: "instance", alert: true,
+            actorId: actorId, metadata: metadata, cooldown: false);
+
+    public Task BackupRestoredAsync(Guid? actorId, object metadata) =>
+        RaiseAsync("backup.restored", SecuritySeverity.Critical, key: "instance", alert: true,
             actorId: actorId, metadata: metadata, cooldown: false);
 
     public Task OwnerTransferredAsync(Guid actorId, object metadata) =>

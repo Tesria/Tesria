@@ -48,7 +48,17 @@ public static class BackupEndpoints
     public record Overview(
         PolicyDto Policy, List<AgentDto> Agents, List<BackupDto> Backups, List<BackupDto> Removed,
         List<JobDto> Jobs, List<TargetDto> Targets, bool OffsiteIsManualOnly,
-        List<DiskChartDto> Disks);
+        List<DiskChartDto> Disks, RestoreStatusDto Restore);
+
+    /// <summary>
+    /// Where the instance stands on restores (dev-plan 9.4): one running, one
+    /// that finished, and the copy kept so the last one can be undone.
+    /// </summary>
+    public record RestoreStatusDto(
+        Guid? JobId, DateTimeOffset? StartedAt, bool CancelRequested,
+        DateTimeOffset? LastRestoredAt, string? LastRestoreFrom,
+        RestoreEndpoints.KeptCopy? KeptCopy,
+        DateTimeOffset? KeptCopyExpiresAt);
 
     /// <summary>
     /// The space one disk holds (dev-plan 9.3): backups, everything else,
@@ -96,6 +106,10 @@ public static class BackupEndpoints
         group.MapPost("/{label}/restore-test", RequestRestoreTest).RequirePermission(InstancePermissions.BackupsRun);
         group.MapPost("/targets/{slot}/copy", RequestCopy).RequirePermission(InstancePermissions.BackupsRun);
         group.MapGet("/jobs/{id:guid}", GetJob).RequirePermission(InstancePermissions.BackupsView);
+        // Replacing the wiki with an older copy (dev-plan 9.4). Its own file
+        // and its own right: everything above this line is about taking
+        // backups, and this is the one thing that spends them.
+        group.MapRestoreEndpoints();
         return routes;
     }
 
@@ -134,7 +148,8 @@ public static class BackupEndpoints
                     c.FreeBytes, c.TotalBytes, c.Low,
                     snapshot.Agents.Where(a => c.Agents.Contains(a.Name))
                         .Max(a => a.LastSeenAt)))
-                .ToList()));
+                .ToList(),
+            RestoreStatusOf(s, snapshot)));
     }
 
     private static async Task<IResult> UpdatePolicy(
@@ -370,6 +385,41 @@ public static class BackupEndpoints
             PolicyPending: s.BackupPolicyChangedAt is not null
                 && BackupRetention.IsStricter(BackupPolicy.From(s), applied)
                 && !(effectiveAt <= snapshot.Now));
+    }
+
+    /// <summary>
+    /// The restore panel's data, including when the retention policy will
+    /// take the kept copy. That date is computed by the same code the policy
+    /// preview uses, with the kept copy entered into the list as a backup
+    /// taken at the moment of the restore, because that is exactly how the
+    /// sidecar decides (the owner's rule, 2026-09-22).
+    /// </summary>
+    private static RestoreStatusDto RestoreStatusOf(SiteSettings s, BackupStatus.Snapshot snapshot)
+    {
+        var kept = RestoreEndpoints.KeptCopyOf(s);
+        DateTimeOffset? expires = null;
+        if (kept is { RemovedAt: null } && s.BackupRetentionEnabled)
+        {
+            // It leaves when it is outside both limits: once KeepCount newer
+            // backups exist, and once it is older than KeepDays. Whichever
+            // comes later is when it actually goes.
+            var newer = snapshot.Backups
+                .Where(b => b.Agent == BackupNames.Logical && b.RemovedAt is null && b.Error is null
+                    && b.StartedAt > kept.RestoredAt)
+                .OrderBy(b => b.StartedAt).ToList();
+            var byAge = kept.RestoredAt.AddDays(s.BackupKeepDays);
+            expires = newer.Count >= s.BackupKeepCount
+                ? byAge
+                : (DateTimeOffset?)null;
+            // Not enough newer backups yet: the earliest it could go is when
+            // the count is reached, which is unknowable, so the honest answer
+            // is the age limit or nothing.
+            if (expires is null && byAge > snapshot.Now) expires = byAge;
+        }
+
+        return new RestoreStatusDto(
+            s.RestoreJobId, s.RestoreStartedAt, s.RestoreCancelRequestedAt is not null,
+            s.LastRestoredAt, s.LastRestoreFrom, kept, expires);
     }
 
     private static PolicyDto PolicyOf(SiteSettings s, Dictionary<Guid, string> names) => new(

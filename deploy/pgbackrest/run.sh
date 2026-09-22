@@ -76,6 +76,135 @@ do_restore_test() {
   bash /scripts/verify.sh --set="$1"
 }
 
+# --- Point-in-time recovery from the admin page (dev-plan 9.4) -------------
+
+RESTORE_ROOT=/var/run/postgresql/tesria-restore
+
+# Roll the whole cluster back to a moment, or to the end of one backup.
+#
+# This sidecar cannot do the restore itself: pgBackRest writes into the data
+# directory with Postgres stopped, and stopping Postgres from here would need
+# the Docker socket. So the work is split. Everything that needs judgement
+# happens here, where the job and the bounds are: the checks, the safety
+# backup, the WAL switch, the carry-across. Then one request file goes onto
+# the volume this container shares with `db`, and the supervisor there stops
+# its own database, runs pgBackRest and starts it again.
+do_restore_wiki() {
+  local id="$1" target="$2" options="$3" dir="$4"
+  local at args
+
+  # The options are the app's: {"mode":"pitr","at":"..."} with the pipes
+  # stripped by claim_job. A time means point-in-time; no time means the end
+  # of the named backup, which is --type=immediate against that set.
+  at="$(printf '%s' "$options" | sed -n 's/.*"at" *: *"\([^"]*\)".*/\1/p')"
+  if [ -n "$at" ]; then
+    args="--type=time --target=$at --target-action=promote --delta"
+    echo "[restore] point-in-time recovery to $at"
+  elif [ -n "$target" ]; then
+    args="--set=$target --type=immediate --target-action=promote --delta"
+    echo "[restore] restoring to the end of backup $target"
+  else
+    echo "ERROR: neither a time nor a backup was given"
+    return 1
+  fi
+
+  # The repository has to be sound before the cluster is replaced from it.
+  echo "[restore] verifying the repository first"
+  pgbr verify >/dev/null 2>&1 || { echo "ERROR: the backup repository did not verify; refusing to restore from it"; return 1; }
+
+  if restore_cancelled; then
+    echo "ERROR: cancelled before anything was changed"
+    return 1
+  fi
+
+  # The safety backup, and then a WAL switch, so that everything up to this
+  # moment is in the repository. Together they are what makes this restore
+  # undoable: the undo is another point-in-time restore, to now.
+  echo "[restore] taking a safety backup before the cluster is replaced"
+  pgbr backup --type=incr || { echo "ERROR: the safety backup failed; nothing has been changed"; return 1; }
+  q -c "SELECT pg_switch_wal();" >/dev/null 2>&1 || true
+  sleep 5
+  printf '%s' "$(date -u +%FT%TZ)" > "$dir/safety"
+
+  [ -n "$dir" ] && restore_export_carry "$dir"
+
+  if restore_cancelled; then
+    echo "ERROR: cancelled before anything was changed"
+    return 1
+  fi
+
+  # The point of no return. From here the cluster is being rewritten and the
+  # only way back is another restore.
+  date -u +%FT%TZ > "$dir/committed"
+  echo "[restore] asking the database container to restore the cluster"
+  mkdir -p "$RESTORE_ROOT"
+  rm -f "$RESTORE_ROOT/done" "$RESTORE_ROOT/status"
+  printf '%s\n%s\n' "$id" "$args" > "$RESTORE_ROOT/request.tmp"
+  mv "$RESTORE_ROOT/request.tmp" "$RESTORE_ROOT/request"
+
+  # Wait for it. Hours at most: a large cluster restores slowly, and there is
+  # nothing useful to do in the meantime except report the phase.
+  local waited=0 last=""
+  while [ ! -f "$RESTORE_ROOT/done" ]; do
+    sleep 5
+    waited=$(( waited + 5 ))
+    local now
+    now="$(tail -n 1 "$RESTORE_ROOT/status" 2>/dev/null)"
+    if [ -n "$now" ] && [ "$now" != "$last" ]; then
+      echo "[restore] $now"
+      last="$now"
+    fi
+    if [ "$waited" -gt 21600 ]; then
+      echo "ERROR: the database container did not finish within six hours"
+      return 1
+    fi
+  done
+
+  if [ "$(cat "$RESTORE_ROOT/done")" != ok ]; then
+    echo "ERROR: the database container could not restore the cluster; see its log"
+    return 1
+  fi
+
+  echo "[restore] the cluster is back; waiting for it to accept connections"
+  wait_for_db
+
+  # A restore switches the timeline. pgBackRest can carry on incrementally
+  # across one, but a full here is cheap and makes the new timeline's chain
+  # stand on its own, which is what somebody restoring from it next month
+  # actually needs.
+  echo "[restore] taking a full backup on the new timeline"
+  pgbr backup --type=full || echo "WARNING: the full backup failed; take one by hand"
+
+  q >/dev/null 2>&1 <<'SQL' || true
+UPDATE "SiteSettings"
+   SET "RestoreJobId" = NULL, "RestoreStartedAt" = NULL, "RestoreCancelRequestedAt" = NULL;
+SQL
+  [ -n "$dir" ] && restore_import_carry "$dir"
+  sync_inventory missing >/dev/null 2>&1 || true
+
+  # No kept database: a point-in-time restore replaces the cluster in place.
+  # Its undo is another point-in-time restore, to the moment this one began,
+  # which the safety backup and the WAL switch above made reachable.
+  local kept
+  kept="$(printf '{"jobId":"%s","mode":"pitr","restoredAt":"%s","database":null,"uploads":null,"restoredFrom":"%s","databaseBytes":null,"uploadsBytes":null,"removedAt":null}' \
+    "$id" "$(cat "$dir/safety")" "${at:-$target}")"
+  restore_record_done "$id" "${at:+$target at $at}${at:-$target}" "$kept"
+  printf '{"restoredFrom":"%s","mode":"pitr","safetyAt":"%s"}' "${at:-$target}" "$(cat "$dir/safety")" > "$dir/result"
+  echo "[restore] done"
+}
+
+# Undoing a point-in-time restore is another one, to the moment the first
+# began. There is no kept cluster to swap back, which is why the safety
+# backup and the WAL switch are not optional above.
+do_restore_undo() {
+  local id="$1" target="$2" options="$3" dir="$4"
+  local at
+  at="$(printf '%s' "$options" | sed -n 's/.*"at" *: *"\([^"]*\)".*/\1/p')"
+  [ -n "$at" ] || { echo "ERROR: there is no moment to go back to"; return 1; }
+  echo "[undo] rolling back to $at, the moment the restore began"
+  do_restore_wiki "$id" "" "{\"mode\":\"pitr\",\"at\":\"$at\"}" "$dir"
+}
+
 # --- The offsite repository (dev-plan 9.2) ---------------------------------
 
 OFFSITE_BACKUP_EVERY_DAYS="${OFFSITE_CLOUD_BACKUP_EVERY_DAYS:-7}"

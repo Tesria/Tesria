@@ -66,6 +66,62 @@ Tests: 19 rewriter fixtures, 13 HTTP round trips (importing as a *different*
 user, which is what makes the attribution and permission assertions mean
 anything), on top of step 1's 27 format tests.
 
+### 9.4 Restore from the admin page (2026-09-22)
+
+Any backup on the Backups page can now be restored, not just tested. Logical
+dumps and point-in-time recovery both, behind a gate stronger than deleting a
+space. What shipped:
+
+- **A right of its own**, `backups.restore`, held by the **owner** by default
+  and grantable to a role. Every restore also asks for the backup's label typed
+  back and the password in the same request, and a wrong answer counts toward
+  locking the account.
+- **A safety backup first, always.** It cannot be skipped, and the restore does
+  not start if it fails.
+- **Restore beside, then swap.** The dump goes into a new database while the
+  wiki stays up and readable, is checked there (tables, accounts, and no
+  migrations this build has never run, so a backup from a newer Tesria is
+  refused), and is swapped in with two renames. The database it replaces is
+  renamed, not dropped: that is the undo.
+- **The application restarts itself** afterwards, which is how a restored
+  database gets its migrations, its runtime role grants and a clean pool.
+- **Maintenance while it runs**: reads pass, writes get 503 with a body the SPA
+  turns into an overlay, API tokens and MCP get the same answer, and the collab
+  sidecar closes every document so an open editor cannot write post-backup
+  content back into the restored wiki.
+- **Point-in-time recovery** replaces the whole cluster, so the `db` container
+  now supervises its own Postgres and acts on a request file that only the
+  `pgbackrest` sidecar can write. It forwards signals, so `docker compose stop`
+  behaves as before and in fact shuts down faster (fast shutdown rather than
+  smart).
+- **Undo and the kept copy.** While a kept copy exists the page offers Undo and
+  Remove. It ages out under the retention policy like a backup taken at the
+  moment of the restore, which was the owner's call.
+- **The record.** `backup.restored` is audited and raised as a Critical alert
+  to every administrator, written after the restore so it lands in the restored
+  database's own chain, and exactly once however many times the app restarts.
+  The audit chain monitor explains the shorter chain instead of warning.
+- **Four bugs found by running it against a real instance**, three of them
+  invisible to any test: the application could not learn the restore had
+  finished (its signal needed a column the restored database did not have,
+  and then a table its role had no grant on; the answer is the database's
+  OID, which needs neither); `restore.sh` runs as a child process and so had
+  none of the shared helpers it was calling; `common.sh` clobbered the
+  directory every restore writes its record to; and the carry-across created
+  a temporary table outside a transaction, which Postgres dropped
+  immediately.
+- **Two sidecar bugs found and fixed on the way**: an unknown job kind fell
+  through to "take a backup", so an older sidecar handed a restore would have
+  backed up and reported success; and a sidecar restart failed every running
+  job, which is right for a backup and wrong for a restore past its point of no
+  return.
+
+Tests: 29 new (728 backend total, all green), covering the right, the typed
+label, the password and lockout, one-at-a-time, the time bounds, the preview
+counts and blocks, the maintenance middleware, cancel in each state, the
+startup paths, the kept copy's expiry under the policy, and the audit chain
+explanation.
+
 ### Design 9.4: restore from the admin page (2026-09-22, Fable)
 
 At the owner's request: the backups page could test a restore but never

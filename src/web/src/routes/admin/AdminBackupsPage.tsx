@@ -1,5 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { StorageTargets } from './StorageTargets'
+import { KeptCopyCard, RestoreDialog, RestoreProgress } from './RestorePanel'
 import { DiskSpace } from './DiskSpace'
 import {
   api,
@@ -26,6 +27,15 @@ const AGENT_SHORT: Record<BackupAgentName, string> = {
 }
 
 const POLL_MS = 5000
+
+const JOB_KIND: Record<string, string> = {
+  backup: 'backup',
+  'restore-test': 'restore test',
+  'copy-offsite': 'copy to a drive',
+  restore: 'RESTORE',
+  'restore-undo': 'undo of a restore',
+  'restore-discard': 'removal of the kept copy',
+}
 
 function when(iso: string | null): string {
   return iso ? new Date(iso).toLocaleString() : 'Unknown'
@@ -178,6 +188,8 @@ export function AdminBackupsPage() {
   const [status, setStatus] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [showRemoved, setShowRemoved] = useState(false)
+  // The backup whose Restore dialog is open (dev-plan 9.4).
+  const [restoringBackup, setRestoring] = useState<Backup | null>(null)
   const [draft, setDraft] = useState<BackupPolicyInput | null>(null)
   const [preview, setPreview] = useState<{ input: BackupPolicyInput; result: BackupPreview } | null>(null)
   const [openLog, setOpenLog] = useState<string | null>(null)
@@ -240,6 +252,15 @@ export function AdminBackupsPage() {
     load()
   }
 
+  // Replacing the wiki with an older copy (dev-plan 9.4). The dialog does the
+  // confirming; this only opens it and picks the page up afterwards.
+  async function cancelRestore() {
+    const result = await run(
+      () => api.admin.backups.cancelRestore(), '', 'Could not stop the restore.')
+    if (result) setStatus(result.message)
+    load()
+  }
+
   async function review(e: FormEvent) {
     e.preventDefault()
     if (!draft) return
@@ -274,6 +295,9 @@ export function AdminBackupsPage() {
 
   if (!data || !draft) return <p className="muted">{error ?? 'Loading…'}</p>
 
+  const mayRestore = can('backups.restore')
+  const restoring = data.restore.jobId !== null
+
   const policy = data.policy
   const mayEditPolicy = can('backups.policy')
   const dirty = draft.enabled !== policy.enabled || draft.keepCount !== policy.keepCount || draft.keepDays !== policy.keepDays
@@ -289,6 +313,8 @@ export function AdminBackupsPage() {
     <>
       {error && <p className="alert alert--error">{error}</p>}
       {status && <p className="profile__ok">{status}</p>}
+
+      {restoring && <RestoreProgress restore={data.restore} onCancel={cancelRestore} />}
 
       <div className="backup-actions">
         {can('backups.run') && (
@@ -405,6 +431,8 @@ export function AdminBackupsPage() {
         )}
       </section>
 
+      <KeptCopyCard restore={data.restore} onChanged={load} />
+
       <section className="profile__section profile__section--wide">
         <h2>Backups</h2>
         {data.backups.length === 0 ? (
@@ -435,6 +463,13 @@ export function AdminBackupsPage() {
                       onClick={() => testRestore(b.label)}>
                       Test restore
                     </button>
+                    {mayRestore && (
+                      <button type="button" className="link-btn link-btn--danger"
+                        disabled={busy || !!b.error || restoring}
+                        onClick={() => setRestoring(b)}>
+                        Restore
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -482,12 +517,20 @@ export function AdminBackupsPage() {
           </table>
         )}
       </section>
+
+      {restoringBackup && (
+        <RestoreDialog
+          backup={restoringBackup}
+          onClose={() => setRestoring(null)}
+          onQueued={() => { setRestoring(null); setStatus('The restore has started. The wiki is read-only until it finishes.'); load() }}
+        />
+      )}
     </>
   )
 }
 
 function JobRows({ job, open, detail, onToggle }: { job: BackupJob; open: boolean; detail?: BackupJob; onToggle: () => void }) {
-  const what = `${AGENT_SHORT[job.agent]} ${job.kind === 'restore-test' ? 'restore test' : 'backup'}`
+  const what = `${AGENT_SHORT[job.agent]} ${JOB_KIND[job.kind] ?? 'backup'}`
   const by = job.trigger === 'manual' ? `by ${job.requestedByName ?? 'an administrator'}` : job.trigger
   return (
     <>
