@@ -30,7 +30,7 @@ public static partial class DatabaseRoles
     /// backup sidecars own them; a compromised app must not be able to make
     /// a failed backup look healthy.
     /// </summary>
-    public static readonly string[] ReadOnlyTables = ["BackupAgents", "Backups"];
+    public static readonly string[] ReadOnlyTables = ["BackupAgents", "Backups", "BackupTargets"];
 
     /// <summary>
     /// Which connection the running app should use. The app connection wins

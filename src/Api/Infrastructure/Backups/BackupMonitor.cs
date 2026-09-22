@@ -33,6 +33,22 @@ public sealed class BackupMonitor(IServiceScopeFactory scopes, ILogger<BackupMon
     public static readonly TimeSpan SuspendedAfter = 2 * Interval;
 
     /// <summary>
+    /// WAL segments waiting before an offsite target is called broken. Three
+    /// is past any ordinary burst (the stack archives on a 60 second timeout)
+    /// and far below any sane <c>archive-push-queue-max</c>, which is the
+    /// point: this has to fire while the backlog can still be cleared, not
+    /// once segments have been dropped.
+    /// </summary>
+    public const int WalBacklogWarning = 3;
+
+    /// <summary>
+    /// How long an offsite repository may go without receiving WAL before it
+    /// is called stale. Generous, because a backlog is the sharper signal and
+    /// a quiet instance genuinely produces little WAL.
+    /// </summary>
+    public static readonly TimeSpan OffsiteWalStale = TimeSpan.FromHours(6);
+
+    /// <summary>
     /// Failed jobs finished after this are new. Starts one interval back, to
     /// cover a restart. Settable so tests can simulate a suspended host.
     /// </summary>
@@ -120,6 +136,33 @@ public sealed class BackupMonitor(IServiceScopeFactory scopes, ILogger<BackupMon
                 if (health.DiskLow)
                     await Raise("backup.disk_low", SecuritySeverity.Warning, name,
                         new { Agent = name, agent.VolumeFreeBytes, agent.VolumeTotalBytes });
+            }
+
+            // Offsite targets (dev-plan 9.2). Read from what the sidecars
+            // publish; the app has no credentials and talks to no provider.
+            foreach (var target in await db.BackupTargets.AsNoTracking().Where(t => t.Enabled).ToListAsync(ct))
+            {
+                // The gap that matters. WAL is only acknowledged to Postgres
+                // once *every* repository has it, so an offsite repository
+                // that has stopped accepting segments does not merely fall
+                // behind: the backlog grows until archive-push-queue-max
+                // trips, and what it drops then is gone from the local
+                // repository too. This fires on the backlog, long before that.
+                if (target.WalBacklogFiles is { } backlog && backlog >= WalBacklogWarning)
+                    await Raise("backup.offsite_archive_gap", SecuritySeverity.Critical, target.Slot,
+                        new { target.Slot, Backlog = backlog, target.LastWalAt, target.Location });
+
+                // The repository is reachable but stale: WAL reached it once
+                // and has not for a while.
+                else if (target.LastWalAt is { } wal && snapshot.Now - wal > OffsiteWalStale)
+                    await Raise("backup.offsite_stale", SecuritySeverity.Warning, target.Slot,
+                        new { target.Slot, target.LastWalAt, target.LastBackupAt });
+
+                // Anything the sidecar could not do: a failed offsite backup,
+                // a failed verify, a repository it could not read.
+                if (!string.IsNullOrWhiteSpace(target.Message))
+                    await Raise("backup.offsite_failed", SecuritySeverity.Warning, target.Slot,
+                        new { target.Slot, target.Message, target.LastBackupAt, target.LastVerifyAt });
             }
 
             if (raised > 0)

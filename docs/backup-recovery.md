@@ -210,16 +210,78 @@ docker run --rm -v tesria_uploads:/u -v tesria_backups:/b alpine \
 
 ---
 
-## Offsite backups (not implemented)
+## Offsite backups: the cloud repository (dev-plan 9.2, step 1)
 
-Nothing copies backups off this machine yet. `BACKUP_S3_ENABLED` and the
-`S3_*` variables were never wired to anything and have been removed from
-`.env.example` (an old `.env` that still sets them is harmless). The research,
-a recommended design (a second pgBackRest repository on S3-compatible storage
-or a NAS, and restic for dumps and uploads) and the decisions it waits on are
-in [dev-plan 9.2](./dev-plan.md).
+A second pgBackRest repository, `repo2`, on S3-compatible storage. WAL
+streams to it continuously alongside the local repository, and a full backup
+goes weekly, so point-in-time recovery exists off this machine. Backblaze B2
+is the documented default; anything with an S3 API works.
 
-Until then, copy the `backups` volume off the box yourself (the `docker run`
-line under Layer 2) and keep `BACKUP_ENCRYPTION_KEY` somewhere other than this
-machine. **The database dumps are not encrypted**: store any copy of them
-accordingly.
+**Configuration is in `.env` only**, under `OFFSITE_CLOUD_*`, and is read by
+the backup sidecars alone. It is deliberately not in the admin page: Data
+Protection keys live in the database, so a storage key held there would
+travel inside every backup along with the means to decrypt it. The admin
+page shows fingerprints, which is all the app is ever given.
+
+`OFFSITE_CLOUD_PASSPHRASE` is **separate from `BACKUP_ENCRYPTION_KEY`**, so
+a leaked remote passphrase cannot read the local repository. Escrow both off
+this machine. A lost passphrase is an unreadable copy with no way back.
+
+### What a dead remote does, and why the queue limit matters
+
+This is the part to understand before turning it on, and it was confirmed by
+experiment on pgBackRest 2.59.1 rather than assumed:
+
+- A WAL segment is acknowledged to Postgres only once **every** repository
+  has it. If the cloud goes away, WAL is not acknowledged, `.ready` files
+  pile up in `pg_wal/archive_status`, and `pg_wal` grows.
+- `archive-push-queue-max` (set from `OFFSITE_ARCHIVE_QUEUE_MAX`, default
+  16GiB) is what stops that filling the disk. Past the limit pgBackRest tells
+  Postgres the segment is archived and **drops it**.
+- **A dropped segment is lost from the local repository too**, not just the
+  offsite one. So an unattended cloud outage does not merely cost the offsite
+  copy: left long enough, it breaks point-in-time recovery locally as well.
+- Which is why the **`backup.offsite_archive_gap` alert fires on a backlog of
+  three segments**, long before the limit trips. Treat it as urgent: either
+  fix the remote or clear the slot from `.env` and restart `db`, and then
+  **take a full backup**, because recovery before the gap is broken either way.
+- pgBackRest 2.59 is the floor for this. Before it, the queue limit did not
+  take effect while archive-push was erroring (pgbackrest#2629), which is
+  precisely when it is needed. `deploy/db/Dockerfile` pins it.
+
+### Turning it on for an instance that is already running
+
+Set the `OFFSITE_CLOUD_*` block in `.env`, then restart both containers that
+speak pgBackRest:
+
+```bash
+docker compose up -d db pgbackrest
+```
+
+The sidecar runs `stanza-create`, which creates the stanza on the new
+repository; until that has happened, WAL for it is held. Then check the
+status card, or:
+
+```bash
+docker compose exec pgbackrest gosu postgres pgbackrest --stanza=main check
+```
+
+### Restoring from the cloud copy
+
+The same restore as Layer 1, with the repository chosen explicitly. The
+passphrase must be in the environment, since it is what decrypts the copy.
+
+```bash
+docker compose exec pgbackrest gosu postgres pgbackrest --stanza=main --repo=2 info
+```
+
+Testing it without a cloud account: see `deploy/pgbackrest/README.md`, which
+runs MinIO locally behind the `offsite-test` profile.
+
+### Still local only
+
+The logical dumps and the uploads are **not** copied offsite yet, and the
+dumps are still plaintext: that is step 2, where restic replaces the tarball
+and encrypts client-side. Until then, copy the `backups` volume off the box
+yourself (the `docker run` line under Layer 2) and store it accordingly.
+Network drives and removable disks are steps 3 and 4.

@@ -2035,15 +2035,80 @@ anyway). Secrets are redacted in every sidecar log line. `.env` stays mode
 600. The sidecar reports fingerprints, never values, and the app has no
 code path that can return a value because it never holds one.
 
+**What multi-repository `archive-push` actually does (confirmed 2026-09-21
+on the pinned 2.59.1, by experiment, not by reading).** Step 1 was asked to
+confirm this before relying on it, and the answer changes how the feature
+must be operated.
+
+- **A WAL segment is acknowledged to Postgres only once every configured
+  repository has it.** The documentation's "when a repository cannot be
+  reached, WAL will still be pushed to other repositories" is about the
+  *data*, not the acknowledgement. With `repo2` unreachable, `archive_count`
+  froze, `.ready` files piled up in `pg_wal/archive_status`, and `pg_wal`
+  grew. `archive-async=y` is required for even that much, and this stack
+  already has it.
+- **`archive-push-queue-max` works, and is the only thing standing between a
+  dead remote and a full disk.** With the limit at 48MB and `repo2` broken,
+  pgBackRest logged `WARN: dropped WAL file '...' because archive queue
+  exceeded 48MB` and Postgres carried on. This is why **2.59 is the floor**:
+  pgbackrest#2629 reports the limit not taking effect while archive-push was
+  erroring, fixed in 2.59. On 2.58, which this repository shipped until now,
+  the limit could be set and silently not protect anything.
+- **The worst finding: dropped WAL is lost from the local repository too.**
+  Of the four segments dropped in that test, one had reached `repo1` and
+  three had not, and they are gone. So an unreachable *offsite* repository,
+  left long enough to trip the queue, does not merely break point-in-time
+  recovery offsite; **it breaks it locally as well.** That is more severe
+  than this item's earlier risk note ("a repo2 archive gap silently breaks
+  PITR from it") and it drives three rules: the queue limit is set
+  generously (the default here is 16GiB, and `.env` says to keep it well
+  under the free space on the pgdata volume), the archive-gap alert must
+  fire on a *growing backlog* rather than only when the limit trips, and a
+  full backup is taken as soon as an outage ends, because PITR before it is
+  broken either way.
+- **A misconfigured `repo2` stops archiving immediately**, with no error from
+  Postgres: `archive_command` returns success because archiving is
+  asynchronous, and the failure is only in the sidecar's own log until the
+  backlog or the queue warning shows up. Enabling an offsite target on a
+  running instance therefore needs `stanza-create` on the new repository
+  before, or at the same time as, the configuration reaching the `db`
+  container. Step 1 does this from the sidecar and step 5's Test connection
+  is what proves it by hand.
+- **pgBackRest speaks TLS to S3 and has no plain-HTTP option.**
+  `repo-storage-verify-tls=n` turns off certificate *checking*, not TLS
+  itself: against a plain-HTTP MinIO it fails with `TLS error [1:167772427]
+  wrong version number`. A local S3 test server therefore has to be given a
+  certificate, which is what the test recipe in
+  `deploy/pgbackrest/README.md` does.
+
 **Opus implements, in this order, each step shippable alone:**
-1. The slot model and the cloud repository: `.env` schema for the three
-   slots, sidecar config publishing (fingerprints), pgBackRest 2.59.1,
-   `repo2` on the cloud slot with its own passphrase, retention, bundle,
-   queue limit, weekly backup, daily verify, and the archive-gap and
-   queue-tripped alerts. Confirm multi-repository `archive-push` semantics
-   on the pinned version and write down what was found. Test against a
-   MinIO container (S3 API, free, repeatable); one real run against B2 if
-   the owner provides a bucket.
+1. ✅ **shipped 2026-09-22.** The slot model and the cloud repository:
+   `.env` schema for the three slots, sidecar config publishing
+   (fingerprints), pgBackRest 2.59.1, `repo2` on the cloud slot with its own
+   passphrase, retention, bundle, queue limit, weekly backup, daily verify,
+   and the archive-gap alert. The findings are written up above.
+   As built: **the configuration cannot travel as environment variables.**
+   pgBackRest rejects one that is defined but empty (`environment variable
+   'repo2-type' must have a value`) and Compose cannot leave one out, so
+   passing `PGBACKREST_REPO2_*` through would have stopped WAL archiving on
+   every instance with no offsite target. It is generated instead as a
+   drop-in under `config-include-path`, by `deploy/pgbackrest/offsite.sh`,
+   which both the `db` container and the sidecar run at start. A drop-in may
+   add options but must not repeat one from `pgbackrest.conf`, which is why
+   everything generated is `repo2-*`.
+   The `db` container needed an entrypoint wrapper for this, since
+   `archive_command` runs there and must know about `repo2` from the first
+   segment; it is written so a bad backup target can never stop the database
+   from starting.
+   `LastWalAt` is **not** `pg_stat_archiver`: with async archiving Postgres
+   is told "archived" as soon as a segment is queued, so that clock keeps
+   advancing while the offsite repository is unreachable. It is derived
+   instead from whether repo2's newest segment has kept up with repo1's.
+   The queue-tripped alert folded into the archive-gap one: a backlog of
+   three segments fires first and is the signal worth acting on, since by
+   the time the queue trips the WAL is already gone.
+   Verified against MinIO (which needs TLS: pgBackRest has no plain-HTTP
+   mode for S3), including a real outage, the alert firing, and recovery.
 2. restic replaces the tarball: uploads volume and logical dumps to every
    configured target, per-target `forget` from the slot's retention,
    `check --read-data-subset`, and with it the plaintext prerequisite is

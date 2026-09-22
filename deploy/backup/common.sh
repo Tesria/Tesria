@@ -353,6 +353,8 @@ SQL
 
 # Default hooks; the sidecars override what they need.
 after_backup() { echo '{}'; }
+# Offsite targets (dev-plan 9.2). Only the pgbackrest sidecar defines one.
+offsite_tick() { :; }
 restore_details() { :; }
 
 # Shallow-merges two JSON objects written by these scripts (no nesting of
@@ -381,6 +383,7 @@ run_agent() {
       if [ "$started" = 1 ]; then
         observe_policy >/dev/null || log "WARN: could not read the retention policy"
         sync_inventory missing || log "WARN: inventory sync failed"
+        offsite_tick || log "WARN: offsite tick failed"
 
         while job="$(claim_job)" && [ -n "$job" ]; do
           IFS='|' read -r id kind target <<<"$job"
