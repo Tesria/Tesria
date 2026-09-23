@@ -1912,7 +1912,21 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .stat__value { margin: 0; font-size: 1.6rem; font-weight: 700; line-height: 1.1; color: var(--text); }
 .spark__svg { width: 100%; height: 40px; display: block; cursor: crosshair; }
 .spark__hint { margin: 0.3rem 0 0; }
-.dash__tables { display: grid; gap: 1.5rem; grid-template-columns: 1fr 1fr; margin-top: 1rem; }
+.dash__tables { display: grid; gap: 0.75rem; grid-template-columns: 1fr 1fr; margin-top: 1.5rem; align-items: start; }
+/* The two top-ten lists, raised like the tiles above them so the page reads
+   as one set of cards rather than tiles followed by loose tables. */
+.dash__panel {
+  padding: 0.85rem 1rem; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius); min-width: 0;
+}
+.dash__panel .muted { margin: 0; }
+.dash__table { margin-top: 0.25rem; }
+.dash__table tbody tr:last-child td { border-bottom: 0; }
+/* Flush with the card's title rather than indented from it. */
+.dash__table th:first-child, .dash__table td:first-child { padding-left: 0; }
+.dash__table th:last-child, .dash__table td:last-child { padding-right: 0; }
+/* The count column: narrow, right-aligned, so the numbers line up. */
+.dash__table th:last-child, .dash__table td:last-child { width: 1%; text-align: right; white-space: nowrap; }
 
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   .dash__grid { grid-template-columns: 1fr; }
@@ -2401,6 +2415,13 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
   border-radius: var(--radius); padding: 0.5rem 0.7rem; margin: 0.5rem 0;
   background: var(--panel-warning-bg); color: var(--panel-warning-icon);
 }
+/* Test connection and Copy now sit together under the card's facts. */
+.backup-card__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0; }
+.target-test { margin: 0.5rem 0; font-size: 0.88rem; }
+.target-test__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+.target-test__list li { display: flex; align-items: baseline; gap: 0.45rem; overflow-wrap: anywhere; }
+.target-test__list .backup-dot { transform: translateY(0.05rem); }
+.target-test .muted { margin: 0.3rem 0 0; }
 .backup-dot { width: 0.65rem; height: 0.65rem; border-radius: 50%; flex: 0 0 auto; background: var(--muted); }
 .backup-dot--ok { background: var(--success); }
 .backup-dot--warn { background: var(--warning); }
@@ -2735,6 +2756,7 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
 .backup-card,
 .profile__section,
 .stat,
+.dash__panel,
 .card,
 .alerts__item,
 .space-card a { box-shadow: var(--shadow-card); }

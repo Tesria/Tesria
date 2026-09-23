@@ -504,10 +504,28 @@ restore_export_carry() {
 # database has its own rows for the same backups, and those are the ones a
 # person was looking at a moment ago. This adds what is missing rather than
 # overwriting what is there.
+#
+# With one exception, for jobs. The database being swapped in is a snapshot,
+# and its jobs are frozen as they were then: the job that took a dump is
+# "running" inside that dump, and the kept copy an undo puts back holds the
+# restore it was kept by as "running". Left alone, those rows stayed running
+# for ever (five of them did, from the 9.4 walk) and kept the backups page
+# polling. Worse, a job that was "requested" in the snapshot would be picked
+# up and run again. So a job row that the carried copy shows further along
+# (requested, then running, then finished) takes the carried copy's outcome.
 restore_import_carry() {
-  local dir="$1" table
+  local dir="$1" table extra
   for table in $RESTORE_CARRY_TABLES; do
     [ -f "$dir/carry-$table.csv" ] || continue
+    extra=""
+    [ "$table" = BackupJobs ] && extra='
+UPDATE "BackupJobs" j
+   SET "Status" = c."Status", "StartedAt" = c."StartedAt", "FinishedAt" = c."FinishedAt",
+       "Error" = c."Error", "LogTail" = c."LogTail", "ResultJson" = c."ResultJson"
+  FROM carry_stage c
+ WHERE c."Id" = j."Id"
+   AND (CASE c."Status" WHEN '"'requested'"' THEN 0 WHEN '"'running'"' THEN 1 ELSE 2 END)
+     > (CASE j."Status" WHEN '"'requested'"' THEN 0 WHEN '"'running'"' THEN 1 ELSE 2 END);'
     # BEGIN/COMMIT is not tidiness: psql runs each statement in its own
     # transaction by default, so ON COMMIT DROP would drop the staging table
     # the instant it was created and every \copy into it would fail with
@@ -518,6 +536,7 @@ BEGIN;
 CREATE TEMP TABLE carry_stage (LIKE "$table" INCLUDING DEFAULTS) ON COMMIT DROP;
 \copy carry_stage FROM '$dir/carry-$table.csv' WITH (FORMAT csv, HEADER)
 INSERT INTO "$table" SELECT * FROM carry_stage ON CONFLICT DO NOTHING;
+$extra
 COMMIT;
 SQL
   done
@@ -606,6 +625,61 @@ UPDATE "SiteSettings"
 SQL
 }
 
+# Closes jobs this agent left running. An agent runs one job at a time, in
+# this loop, so at the top of a pass nothing of its own can really be
+# running: a row that says so belongs to a run that was interrupted (the
+# container stopped mid-job) or to a database that was swapped in with the
+# row frozen inside it. Either way the page would poll it for ever.
+#
+# One is left alone: the restore the database records as in progress. A
+# point-in-time restore is carried out by the db container, and this
+# sidecar restarting while it waits must not end maintenance under a
+# cluster that is still being rewritten. If that column does not exist yet
+# (a database from before 9.4), the query fails and nothing is touched.
+#
+# A restore or an undo says how it ended in its directory: a result file, or
+# "restore complete" in the log of one from before the result file existed.
+# Anything else is recorded as interrupted, which is the truth: nobody knows
+# how it ended, and the log in the directory is where to look.
+reconcile_stale_jobs() {
+  local rows line id kind dir status err extra at
+  rows="$(q 2>/dev/null <<'SQL'
+SELECT j."Id" || '|' || j."Kind"
+  FROM "BackupJobs" j
+ WHERE j."Agent" = :'agent' AND j."Status" = 'running'
+   AND j."Id" IS DISTINCT FROM (SELECT "RestoreJobId" FROM "SiteSettings" LIMIT 1);
+SQL
+)" || return 0
+  [ -z "$rows" ] && return 0
+  while IFS='|' read -r id kind; do
+    [ -n "$id" ] || continue
+    status=failed extra="" at=""
+    err="Interrupted: the backup agent stopped before this finished, so how it ended was not recorded."
+    dir="$RESTORE_ROOT/$id"
+    case "$kind" in
+      restore|restore-undo)
+        if [ -s "$dir/result" ]; then
+          status=succeeded err="" extra="$(cat "$dir/result")"
+          at="$(date -u -r "$dir/result" +%FT%TZ 2>/dev/null)"
+        elif [ -f "$dir/log" ] && grep -qE 'restore complete|\[undo\] done|\[restore\] done' "$dir/log"; then
+          status=succeeded err=""
+          at="$(date -u -r "$dir/log" +%FT%TZ 2>/dev/null)"
+        elif [ -d "$dir" ]; then
+          err="Interrupted: the backup agent stopped before this finished, so how it ended was not recorded. Its log is in $dir."
+        fi ;;
+    esac
+    log "closing $kind job $id left running: $status"
+    q -v id="$id" -v status="$status" -v err="$err" -v extra="$extra" -v at="$at" >/dev/null 2>&1 <<'SQL' || true
+UPDATE "BackupJobs"
+   SET "Status" = :'status',
+       "FinishedAt" = coalesce(NULLIF(:'at', '')::timestamptz, now()),
+       "Error" = NULLIF(:'err', ''),
+       "ResultJson" = coalesce(NULLIF(:'extra', '')::jsonb, "ResultJson")
+ WHERE "Id" = :'id'::uuid AND "Status" = 'running';
+SQL
+  done <<<"$rows"
+}
+
 # Default hooks; the sidecars override what they need.
 after_backup() { echo '{}'; }
 # Offsite targets (dev-plan 9.2). Each sidecar defines what it can do.
@@ -624,6 +698,28 @@ run_copy_job() {
   finish_job "$id" "$status" "$err" "$log"
 }
 restore_details() { :; }
+
+# Test connection (the Storage targets screen): reach a slot and open the
+# repository there, changing nothing. Each sidecar tests the repository it
+# writes; the cloud has one of each, so it is asked of both.
+do_test_target() { echo "This agent writes to no storage target."; return 1; }
+
+# The test's last line is its answer, in words for the card, and is kept as
+# the job's summary whether it passed or not.
+run_test_target_job() {
+  local id="$1" slot="$2" log=/tmp/test-target.log status=succeeded err="" summary extra
+  : > "$log"
+  if ! do_test_target "$slot" >>"$log" 2>&1; then
+    status=failed
+    err="$(tail -n 1 "$log" | cut -c1-500)"
+  fi
+  summary="$(tail -n 1 "$log")"
+  extra="$(q -v s="$summary" <<'SQL'
+SELECT jsonb_build_object('summary', left(:'s', 500))::text;
+SQL
+)" || extra=""
+  finish_job "$id" "$status" "$err" "$log" "$extra"
+}
 
 # Shallow-merges two JSON objects written by these scripts (no nesting of
 # the same key). Done in Postgres; there is no jq in either image.
@@ -652,6 +748,7 @@ run_agent() {
         observe_policy >/dev/null || log "WARN: could not read the retention policy"
         sync_inventory missing || log "WARN: inventory sync failed"
         offsite_tick || log "WARN: offsite tick failed"
+        reconcile_stale_jobs
 
         while job="$(claim_job)" && [ -n "$job" ]; do
           IFS='|' read -r id kind target options <<<"$job"
@@ -659,6 +756,7 @@ run_agent() {
             backup)          log "backup requested"; run_backup_job "$id" ;;
             restore-test)    run_restore_job "$id" "$target" ;;
             copy-offsite)    run_copy_job "$id" "$target" ;;
+            test-target)     run_test_target_job "$id" "$target" ;;
             restore)         run_restore_wiki_job "$id" "$target" "$options" ;;
             restore-undo)    run_restore_undo_job "$id" "$target" "$options" ;;
             restore-discard) run_restore_discard_job "$id" "$target" "$options" ;;

@@ -238,6 +238,31 @@ ON CONFLICT ("Slot", "Kind") DO UPDATE
        "PassphraseFingerprint" = EXCLUDED."PassphraseFingerprint",
        "UpdatedAt" = now();
 SQL
+  publish_cloud_budget
+}
+
+# OFFSITE_CLOUD_BUDGET_GB, if somebody set one: how much the cloud slot is
+# meant to hold, which is what gives its chart a "free" slice. Cloud storage
+# has no size of its own, so this is the one number on that card a person
+# chose rather than one that was measured, and it is shown as a budget, never
+# as space. Written to both of the slot's rows, since either may be the one
+# the screen reads first.
+#
+# Its own statement, so that a sidecar running ahead of the app's migration
+# loses the budget and nothing else.
+publish_cloud_budget() {
+  local gb="${OFFSITE_CLOUD_BUDGET_GB:-}"
+  if [ -n "$gb" ] && ! [[ "$gb" =~ ^[0-9]+([.][0-9]+)?$ && ! "$gb" =~ ^0+([.]0+)?$ ]]; then
+    log "WARN: OFFSITE_CLOUD_BUDGET_GB='$gb' is not a positive number of gigabytes; ignoring it"
+    gb=""
+  fi
+  [ -n "${OFFSITE_CLOUD_TYPE:-}" ] || gb=""
+  q -v gb="$gb" >/dev/null 2>&1 <<'SQL' || true
+UPDATE "BackupTargets"
+   SET "BudgetBytes" = round(NULLIF(:'gb', '')::numeric * 1073741824)::bigint
+ WHERE "Slot" = 'cloud'
+   AND "BudgetBytes" IS DISTINCT FROM round(NULLIF(:'gb', '')::numeric * 1073741824)::bigint;
+SQL
 }
 
 # What repo2 holds, from pgBackRest's own catalogue, so the screen and the
@@ -352,6 +377,75 @@ offsite_tick() {
   cloud_backup_due && run_cloud_backup
   cloud_verify_due && run_cloud_verify
   return 0
+}
+
+# Test connection for the database repository (the Storage targets screen).
+# `info` against repo2 alone: it reaches the bucket, reads the catalogue and
+# decrypts it with the passphrase, and changes nothing. `check` would test
+# more (a WAL segment actually pushed) but forces a WAL switch to do it,
+# which is not what somebody pressing a button to look expects.
+#
+# pgBackRest exits 0 whatever happened to the repository and reports it per
+# repository in the JSON, so the answer is read from there.
+do_test_target() {
+  local slot="$1" problem json line code msg backups
+  [ "$slot" = cloud ] || { echo "The database is only ever copied to the cloud target."; return 1; }
+  if problem="$(offsite_cloud_problem)"; then echo "$problem."; return 1; fi
+  [ -n "${OFFSITE_CLOUD_TYPE:-}" ] || { echo "No cloud target is configured."; return 1; }
+
+  json="$(timeout 90 gosu postgres pgbackrest --stanza="$STANZA" --log-level-console=off \
+            --output=json --repo=2 info 2>&1)" || {
+    echo "$json" | tail -n 3
+    echo "No answer from ${OFFSITE_CLOUD_ENDPOINT} within 90 seconds."
+    return 1
+  }
+  # A wrong passphrase makes pgBackRest quote the undecryptable bytes in its
+  # message, which are not UTF-8 and make the whole document unreadable to
+  # Postgres. Its own words are ASCII, so everything else goes.
+  printf '%s' "$json" | LC_ALL=C tr -d '\000-\037\177-\377' > /tmp/test-target.json
+  line="$(q 2>/dev/null <<'SQL'
+CREATE TEMP TABLE t (doc text);
+\copy t FROM '/tmp/test-target.json' WITH (FORMAT csv, DELIMITER E'\x01', QUOTE E'\x02')
+WITH s AS (SELECT (string_agg(doc, '')::jsonb) -> 0 AS j FROM t)
+SELECT (r -> 'status' ->> 'code') || '|'
+       || jsonb_array_length(coalesce(j -> 'backup', '[]'::jsonb)) || '|'
+       || translate(r -> 'status' ->> 'message', E'|\n', '  ')
+  FROM s, jsonb_array_elements(coalesce(j -> 'repo', '[]'::jsonb)) AS r
+ WHERE (r ->> 'key')::int = 2;
+SQL
+)"
+  if [ -z "$line" ]; then
+    echo "$json" | tail -n 3
+    echo "pgBackRest gave an answer that could not be read."
+    return 1
+  fi
+  IFS='|' read -r code backups msg <<<"$line"
+  echo "pgBackRest: code ${code}, ${msg:0:300}"
+
+  case "$code" in
+    0)
+      echo "Connected. The passphrase opens the database repository in bucket ${OFFSITE_CLOUD_BUCKET}, which holds ${backups} backup$([ "$backups" = 1 ] || echo s)." ;;
+    2)
+      echo "Connected. The passphrase opens the database repository in bucket ${OFFSITE_CLOUD_BUCKET}; it has no backups yet." ;;
+    1)
+      # The stanza is created when this sidecar starts with the target set.
+      echo "Reached bucket ${OFFSITE_CLOUD_BUCKET}, but there is no database repository at ${OFFSITE_CLOUD_PATH:-/tesria} yet. It is created when the pgbackrest service starts with this target configured: docker compose up -d pgbackrest."
+      return 1 ;;
+    *)
+      case "$msg" in
+        *CryptoError*|*FormatError*)
+          echo "Reached the database repository, but the passphrase does not open it. Check OFFSITE_CLOUD_PASSPHRASE against the one it was created with." ;;
+        *"403"*)
+          echo "The storage provider refused the key or the secret (403). Check OFFSITE_CLOUD_KEY and OFFSITE_CLOUD_SECRET, and that the key may use ${OFFSITE_CLOUD_BUCKET}." ;;
+        *"404"*)
+          echo "Bucket ${OFFSITE_CLOUD_BUCKET} was not found (404). Check OFFSITE_CLOUD_BUCKET; if it does exist, try the other OFFSITE_CLOUD_URI_STYLE." ;;
+        *HostConnectError*|*"unable to get address"*|*"unable to connect"*)
+          echo "Could not reach ${OFFSITE_CLOUD_ENDPOINT}: ${msg##*: }." ;;
+        *)
+          echo "Could not open the database repository: ${msg:0:300}" ;;
+      esac
+      return 1 ;;
+  esac
 }
 
 # How many segments Postgres has handed over that are not yet archived

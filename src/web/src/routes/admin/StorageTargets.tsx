@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { api, ApiError, type BackupTarget } from '../../api/client'
+import { api, ApiError, type BackupJob, type BackupTarget } from '../../api/client'
 import { PieChart } from '../../components/PieChart'
 
 /**
@@ -74,15 +74,87 @@ function Dot({ tone }: { tone: 'ok' | 'warn' | 'bad' }) {
   return <span className={`backup-dot backup-dot--${tone}`} aria-hidden="true" />
 }
 
+/** Which repository each agent tests: the cloud slot holds one of each. */
+const AGENT_REPOSITORY: Record<string, string> = {
+  physical: KIND_LABEL.database,
+  logical: KIND_LABEL.files,
+}
+
+const isPending = (j: BackupJob) => j.status === 'requested' || j.status === 'running'
+
+/** The newest connection test of this slot by each agent, newest first. */
+function latestTests(jobs: BackupJob[], slot: string): BackupJob[] {
+  const seen = new Set<string>()
+  return [...jobs]
+    .filter((j) => j.kind === 'test-target' && j.target === slot)
+    .sort((a, b) => b.requestedAt.localeCompare(a.requestedAt))
+    .filter((j) => !seen.has(j.agent) && (seen.add(j.agent), true))
+}
+
+/** The sidecar's own words for what it found; its last line either way. */
+function summaryOf(job: BackupJob): string {
+  try {
+    const summary = (JSON.parse(job.resultJson ?? '{}') as { summary?: unknown }).summary
+    if (typeof summary === 'string' && summary) return summary
+  } catch { /* fall through to the error */ }
+  return job.error ?? (job.status === 'succeeded' ? 'Connected.' : 'The test failed without saying why.')
+}
+
+/**
+ * What Test connection found. The answer comes from the backup agents, which
+ * look for work once a minute and not while they are in the middle of a
+ * backup, so a test can wait; after two minutes the card says why rather
+ * than spinning with no explanation.
+ */
+function TestResult({ tests }: { tests: BackupJob[] }) {
+  if (tests.length === 0) return null
+  const pending = tests.filter(isPending)
+  if (pending.length > 0) {
+    const oldest = Math.min(...pending.map((j) => new Date(j.requestedAt).getTime()))
+    const slow = Date.now() - oldest > 2 * 60_000
+    return (
+      <p className="muted small target-test" role="status">
+        Testing the connection…
+        {slow && ' Still waiting for the backup agent. It looks for work once a minute, and not while a backup is running.'}
+      </p>
+    )
+  }
+  const labelled = tests.length > 1
+  const finished = Math.max(...tests.map((j) => new Date(j.finishedAt ?? j.requestedAt).getTime()))
+  return (
+    <div className="target-test" role="status">
+      <ul className="target-test__list">
+        {tests.map((j) => {
+          const ok = j.status === 'succeeded'
+          return (
+            <li key={j.id} className={ok ? undefined : 'backup-text--bad'}>
+              <Dot tone={ok ? 'ok' : 'bad'} />
+              <span>
+                {labelled && <strong>{AGENT_REPOSITORY[j.agent] ?? j.agent}: </strong>}
+                {summaryOf(j)}
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+      <p className="muted small">Connection tested {relative(new Date(finished).toISOString())}</p>
+    </div>
+  )
+}
+
 function TargetCard({
-  slot, rows, canRun, onCopied,
+  slot, rows, jobs, canRun, onQueued,
 }: {
   slot: string
   rows: BackupTarget[]
+  jobs: BackupJob[]
   canRun: boolean
-  onCopied: () => void
+  onQueued: () => void
 }) {
   const [busy, setBusy] = useState(false)
+  const [asking, setAsking] = useState(false)
+  const tests = latestTests(jobs, slot)
+  const testing = asking || tests.some(isPending)
   const [error, setError] = useState<string | null>(null)
   const files = rows.find((r) => r.kind === 'files')
   const database = rows.find((r) => r.kind === 'database')
@@ -95,11 +167,26 @@ function TargetCard({
     setError(null)
     try {
       await api.admin.backups.copyToTarget(slot)
-      onCopied()
+      onQueued()
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'The copy could not be started.')
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function testNow() {
+    setAsking(true)
+    setError(null)
+    try {
+      await api.admin.backups.testTarget(slot)
+      // The reload brings the queued jobs in, and the page follows them to
+      // the end the way it follows every job.
+      onQueued()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'The test could not be started.')
+    } finally {
+      setAsking(false)
     }
   }
 
@@ -146,17 +233,25 @@ function TargetCard({
       <Composition rows={rows} />
 
       {primary.message && <p className="backup-card__pending small">{primary.message}</p>}
+      <TestResult tests={tests} />
       {error && <p className="alert alert--error small">{error}</p>}
 
-      {slot === 'removable' && (
-        <button
-          type="button"
-          className="btn btn--ghost btn--sm"
-          disabled={busy || !canRun || primary.present === false}
-          onClick={copyNow}
-        >
-          {busy ? 'Starting…' : 'Copy now'}
-        </button>
+      {canRun && (
+        <div className="backup-card__actions">
+          <button type="button" className="btn btn--ghost btn--sm" disabled={testing} onClick={testNow}>
+            {testing ? 'Testing…' : 'Test connection'}
+          </button>
+          {slot === 'removable' && (
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              disabled={busy || primary.present === false}
+              onClick={copyNow}
+            >
+              {busy ? 'Starting…' : 'Copy now'}
+            </button>
+          )}
+        </div>
       )}
       <p className="muted small">Checked {relative(primary.updatedAt)}</p>
     </section>
@@ -198,17 +293,28 @@ function cost(type: string | null | undefined, bytesStored: number): string | nu
  * one worth knowing, since the database is usually the smaller of the two
  * and grows differently. A slot with only one repository has no composition
  * to show and gets nothing.
+ *
+ * Unless somebody set OFFSITE_CLOUD_BUDGET_GB. Then there is a denominator,
+ * and it is theirs rather than invented, so the pie gains what is left of it
+ * as a slice, labelled as budget and never as free space. Going over is said
+ * plainly and in the danger colour, but nothing is refused for it: it is a
+ * number to watch, not a limit.
  */
 function Composition({ rows }: { rows: BackupTarget[] }) {
   const sized = rows.filter((r) => (r.bytesStored ?? 0) > 0)
-  if (sized.length < 2) return null
+  const budget = rows.map((r) => r.budgetBytes).find((b): b is number => b != null && b > 0) ?? null
+  if (sized.length < (budget ? 1 : 2)) return null
 
-  const slices = sized.map((r, i) => ({
+  const stored = sized.map((r, i) => ({
     label: KIND_LABEL[r.kind] ?? r.kind,
     value: r.bytesStored ?? 0,
     color: i === 0 ? 'var(--chart-wiki)' : 'var(--chart-backups)',
   }))
-  const total = slices.reduce((sum, s) => sum + s.value, 0)
+  const total = stored.reduce((sum, s) => sum + s.value, 0)
+  const left = budget ? budget - total : null
+  const slices = left != null && left > 0
+    ? [...stored, { label: 'Left in budget', value: left, color: 'var(--chart-free)' }]
+    : stored
 
   return (
     <div className="disk-chart">
@@ -231,6 +337,18 @@ function Composition({ rows }: { rows: BackupTarget[] }) {
           <span className="disk-chart__name">Stored</span>
           <span className="disk-chart__value">{bytes(total)}</span>
         </li>
+        {budget != null && (
+          <li className="disk-chart__row">
+            <span className="disk-chart__name">Budget</span>
+            <span className="disk-chart__value">{bytes(budget)}</span>
+          </li>
+        )}
+        {left != null && left < 0 && (
+          <li className="disk-chart__row backup-text--bad">
+            <span className="disk-chart__name">Over budget by</span>
+            <span className="disk-chart__value">{bytes(-left)}</span>
+          </li>
+        )}
         {cost(rows[0]?.type, total) && (
           <li className="disk-chart__row">
             <span className="disk-chart__name">Costs about</span>
@@ -259,12 +377,13 @@ function RepositoryLine({ row }: { row: BackupTarget }) {
 }
 
 export function StorageTargets({
-  targets, manualOnly, canRun, onCopied,
+  targets, jobs, manualOnly, canRun, onQueued,
 }: {
   targets: BackupTarget[]
+  jobs: BackupJob[]
   manualOnly: boolean
   canRun: boolean
-  onCopied: () => void
+  onQueued: () => void
 }) {
   const enabled = targets.filter((t) => t.enabled)
   const slots = [...new Set(enabled.map((t) => t.slot))]
@@ -276,6 +395,8 @@ export function StorageTargets({
         Where copies of this instance are kept, other than on this machine. Configured in
         the server&rsquo;s <code>.env</code> and read only by the backup agents: the keys and
         passphrases never reach the application, so what is shown here are fingerprints.
+        Test connection asks the agents to reach a target now, with the settings they are
+        running with; after editing <code>.env</code>, run <code>docker compose up -d</code> first.
       </p>
 
       {manualOnly && (
@@ -299,8 +420,9 @@ export function StorageTargets({
               key={slot}
               slot={slot}
               rows={enabled.filter((t) => t.slot === slot)}
+              jobs={jobs}
               canRun={canRun}
-              onCopied={onCopied}
+              onQueued={onQueued}
             />
           ))}
         </div>

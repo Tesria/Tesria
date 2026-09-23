@@ -50,13 +50,15 @@ export function SessionsSection() {
               </td>
               <td className="muted small">{new Date(s.lastSeenAt).toLocaleString()}</td>
               <td className="muted small">{new Date(s.createdAt).toLocaleDateString()}</td>
-              <td className="admin-table__actions">
-                {!s.revokedAt && !s.current && (
-                  <button type="button" className="link-btn" disabled={busy}
-                    onClick={() => revoke(() => api.auth.sessions.revoke(s.id))}>
-                    Sign out
-                  </button>
-                )}
+              <td>
+                <div className="admin-table__actions">
+                  {!s.revokedAt && !s.current && (
+                    <button type="button" className="link-btn" disabled={busy}
+                      onClick={() => revoke(() => api.auth.sessions.revoke(s.id))}>
+                      Sign out
+                    </button>
+                  )}
+                </div>
               </td>
             </tr>
           ))}

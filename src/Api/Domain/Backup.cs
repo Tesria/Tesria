@@ -43,9 +43,17 @@ public static class BackupNames
     /// </summary>
     public const string KindRestoreDiscard = "restore-discard";
 
+    /// <summary>
+    /// Reach a storage target and open its repository, changing nothing
+    /// (Test connection on the Storage targets screen). Asked of each agent
+    /// that writes to the slot: the cloud has two repositories, so two jobs.
+    /// </summary>
+    public const string KindTestTarget = "test-target";
+
     /// <summary>Every kind a sidecar may be asked to run. An unknown kind fails loudly.</summary>
     public static readonly string[] Kinds =
-        [KindBackup, KindRestoreTest, KindCopyOffsite, KindRestore, KindRestoreUndo, KindRestoreDiscard];
+        [KindBackup, KindRestoreTest, KindCopyOffsite, KindRestore, KindRestoreUndo, KindRestoreDiscard,
+         KindTestTarget];
 
     public const string TriggerScheduled = "scheduled";
     public const string TriggerManual = "manual";
@@ -246,6 +254,14 @@ public class BackupTarget
     public DateTimeOffset? LastWalAt { get; set; }
     public DateTimeOffset? LastVerifyAt { get; set; }
     public long? BytesStored { get; set; }
+
+    /// <summary>
+    /// How much this slot is meant to hold, from <c>OFFSITE_CLOUD_BUDGET_GB</c>
+    /// in <c>.env</c>, in bytes. A ceiling somebody chose, not a measurement:
+    /// cloud storage has no free space, and this is what gives its chart one
+    /// when a person wants it. Null without it, which is the default.
+    /// </summary>
+    public long? BudgetBytes { get; set; }
 
     /// <summary>
     /// WAL segments waiting to be archived. The leading indicator: a

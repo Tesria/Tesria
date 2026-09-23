@@ -121,18 +121,20 @@ export function AdminSpacesPage() {
               <td className="muted small">{s.createdByName}</td>
               <td>{s.pageCount}</td>
               <td>{bytes(s.storageBytes)}</td>
-              <td className="admin-table__actions">
-                <button type="button" className="link-btn" disabled={busy === s.id || (!s.isPublic && allowPublic === false)}
-                  onClick={() => setPublic(s, !s.isPublic)}>
-                  {s.isPublic ? 'Withdraw' : 'Publish'}
-                </button>
-                {s.isPublic && (
-                  <label className="small nowrap">
-                    <input type="checkbox" checked={s.publicComments} disabled={busy === s.id}
-                      onChange={(e) => setComments(s, e.target.checked)} />{' '}
-                    comments
-                  </label>
-                )}
+              <td>
+                <div className="admin-table__actions">
+                  <button type="button" className="link-btn" disabled={busy === s.id || (!s.isPublic && allowPublic === false)}
+                    onClick={() => setPublic(s, !s.isPublic)}>
+                    {s.isPublic ? 'Withdraw' : 'Publish'}
+                  </button>
+                  {s.isPublic && (
+                    <label className="small nowrap">
+                      <input type="checkbox" checked={s.publicComments} disabled={busy === s.id}
+                        onChange={(e) => setComments(s, e.target.checked)} />{' '}
+                      comments
+                    </label>
+                  )}
+                </div>
               </td>
               <td className="muted small">{new Date(s.createdAt).toLocaleDateString()}</td>
             </tr>

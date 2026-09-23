@@ -125,6 +125,10 @@ public sealed class BackupMonitor(IServiceScopeFactory scopes, ILogger<BackupMon
                 foreach (var job in snapshot.Jobs.Where(j => j.Agent == name
                              && j.Status == BackupNames.StatusFailed && j.FinishedAt > since))
                 {
+                    // A connection test that fails was asked for by someone
+                    // who is looking at the answer, and nothing was being
+                    // backed up. Calling it a failed backup would be false.
+                    if (job.Kind == BackupNames.KindTestTarget) continue;
                     if (job.Kind == BackupNames.KindRestoreTest)
                         await Raise("backup.restore_test_failed", SecuritySeverity.Critical, name,
                             new { Agent = name, JobId = job.Id, job.Target, job.Error });
