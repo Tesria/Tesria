@@ -34,8 +34,10 @@ public static class AdminEndpoints
 
     public record CreateInviteRequest(string? Email, int? ExpiresInDays);
     public record IssuedInviteResponse(string Token, string Path, string? Email, DateTimeOffset ExpiresAt);
+    /// <summary><c>UsedByName</c>: the account the invite created, so the list says who, not only when.</summary>
     public record InviteResponse(
-        Guid Id, string? Email, DateTimeOffset ExpiresAt, DateTimeOffset? UsedAt, DateTimeOffset CreatedAt);
+        Guid Id, string? Email, DateTimeOffset ExpiresAt, DateTimeOffset? UsedAt, DateTimeOffset CreatedAt,
+        string? UsedByName = null);
 
     public record AdminUserResponse(
         Guid Id, string Email, string DisplayName, UserRole Role, UserStatus Status,
@@ -503,9 +505,12 @@ public static class AdminEndpoints
         // Ordered in memory: SQLite (the test provider) cannot ORDER BY a
         // DateTimeOffset: the same limitation AuditEndpoints works around.
         // An invite list is inherently small, so there is nothing to page.
-        var invites = await db.Invites.AsNoTracking()
-            .Select(i => new InviteResponse(i.Id, i.Email, i.ExpiresAt, i.UsedAt, i.CreatedAt))
-            .ToListAsync();
+        var rows = await db.Invites.AsNoTracking().ToListAsync();
+        var userIds = rows.Where(i => i.UsedByUserId != null).Select(i => i.UsedByUserId!.Value).Distinct().ToList();
+        var names = await db.Users.AsNoTracking().Where(u => userIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.DisplayName);
+        var invites = rows.Select(i => new InviteResponse(i.Id, i.Email, i.ExpiresAt, i.UsedAt, i.CreatedAt,
+            i.UsedByUserId is { } by ? names.GetValueOrDefault(by) : null));
         return Results.Ok(invites.OrderByDescending(i => i.CreatedAt).ToList());
     }
 

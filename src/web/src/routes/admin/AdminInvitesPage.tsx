@@ -128,7 +128,12 @@ export function AdminInvitesPage() {
               <td>{i.email ?? <span className="muted">Anyone</span>}</td>
               <td>
                 {i.usedAt
-                  ? <span className="badge">used</span>
+                  ? <>
+                      <span className="badge">used</span>{' '}
+                      <span className="muted small">
+                        {i.usedByName ? `by ${i.usedByName}, ` : ''}{new Date(i.usedAt).toLocaleDateString()}
+                      </span>
+                    </>
                   : new Date(i.expiresAt) < new Date()
                     ? <span className="badge badge--danger">expired</span>
                     : 'Unused'}

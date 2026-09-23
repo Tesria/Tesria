@@ -221,10 +221,18 @@ public static class AuthEndpoints
         // Closed registration is deliberately ignored for that very first
         // account: otherwise an operator who turns it off before anyone has
         // signed up can never set the instance up at all.
+        //
+        // An invite presented is spent whether or not registration is open.
+        // It used to be looked at only when registration was closed, so with
+        // registration open an invite link created the account and the invite
+        // stayed "Unused", unlinked to the account and still usable (found by
+        // the owner, 2026-09-22). With registration open a token that does
+        // not match is simply ignored: anyone may register anyway.
         Invite? invite = null;
+        if (!isFirstAccount && !string.IsNullOrWhiteSpace(req.InviteToken))
+            invite = await invites.FindUsableAsync(req.InviteToken, email);
         if (!isFirstAccount && !(await settings.GetAsync()).AllowPublicRegistration)
         {
-            invite = await invites.FindUsableAsync(req.InviteToken ?? "", email);
             if (invite is null)
                 return Results.Problem(
                     "Registration is by invitation on this instance.",

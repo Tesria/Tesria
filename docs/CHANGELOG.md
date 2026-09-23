@@ -66,6 +66,17 @@ Tests: 19 rewriter fixtures, 13 HTTP round trips (importing as a *different*
 user, which is what makes the attribution and permission assertions mean
 anything), on top of step 1's 27 format tests.
 
+### Fix: an invite used while registration was open stayed "Unused" (2026-09-23, Opus 5.5)
+
+Registration looked an invite up only when public registration was closed,
+so with it open an invite link created the account and the invite was never
+spent: it read "Unused", named no account, and still worked for someone
+else. An invite is now spent whenever one comes with a registration, and the
+Invites tab says who each one created ("used by Alex Rivera, 9/22/2026"). With
+registration open, a token that does not match is ignored, as before.
+Invites used before this fix could not be linked after the fact. Found by
+the owner.
+
 ### 10.5 step 5: the Tesria Demo space (2026-09-23, Opus 5.5)
 
 `scripts/demo/seed-demo.sh` builds **Tesria Demo**, the space the support

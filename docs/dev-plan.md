@@ -3486,7 +3486,7 @@ are a few hundred kilobytes, so neither limit binds.
      had no style; and "Get access" on an open space would have granted the
      space's first permission, which closes it to everyone else. It now
      grants nothing there.
-   - **Reported by the owner, to fix later (2026-09-22): a used invite still
+   - ✅ **Fixed 2026-09-23.** **Reported by the owner: a used invite still
      reads "Unused".** The cause: registration looks an invite up only
      when public registration is closed, so with it open (as on this
      instance) an invite link creates the account and the invite is never
@@ -3494,6 +3494,12 @@ are a few hundred kilobytes, so neither limit binds.
      a valid invite whenever one is presented, and have the Invites tab
      say who it created (`Invite.UsedByUserId` is already stored; the list
      does not return it). Worth a test for each registration setting.
+     As fixed: a presented invite is looked up whenever one comes with a
+     registration; with registration open a token that does not match is
+     ignored, since anyone may register anyway. The Invites tab shows "used
+     by <name>, <date>". Tested with registration open and closed. Invites
+     used before the fix were never linked to their account and cannot be
+     after it; they stay usable until they expire or are revoked.
 2. ✅ **shipped 2026-09-22.** **"Play as animation"** on File or video, in
    the editor, the reading view and the exported site.
    As built: a `playback` attribute on the element (`player` or
@@ -3578,8 +3584,10 @@ are a few hundred kilobytes, so neither limit binds.
    sorted. Every page was opened in a browser and checked for error
    messages, empty live content and console errors: none.
    Not seeded, done while shooting: inline comments (they live in the
-   document as marks tied to a comment id), and the Embed page's address,
-   which needs a host on the allowlist chosen for the pictures.
+   document as marks tied to a comment id). The Embed page shows *Big Buck
+   Bunny*, the Blender Foundation's open film (CC BY 3.0, credited on the
+   page), from Blender's own channel: fine to show on a public site, and
+   YouTube is already on the default allowlist.
 6. **Write Support** in the order of the tree, shooting as each section is
    written.
 7. **Export**: the pack committed to the repository, and the static site
