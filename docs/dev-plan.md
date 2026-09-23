@@ -2138,6 +2138,35 @@ must be operated.
    checked by scanning MinIO's own data files: 20MB across 11 objects, none
    containing the `PGDMP` header or the string `Tesria`, with a control file
    proving the scan could detect them.
+   **Corrected 2026-09-22: it ran every minute.** Found during the Test
+   connection walk, when a new MinIO repository gained a snapshot a minute.
+   `offsite_tick` is called on every pass of the loop (`POLL_SECONDS`, 60),
+   and it copied to the cloud and the NAS unconditionally: a snapshot a
+   minute kept for the whole retention window, and a 5% read check a
+   minute, which against a real provider downloads about 72 times the
+   repository a day, far past B2's free egress. The comment on
+   `offsite_tick` already said the right thing ("local first, then
+   replicate"); the code did not do it. None of the step 2 to 6 walks could
+   see it, because each looked at one pass.
+   A scheduled slot is now copied **once per local cycle**
+   (`offsite_copy_due`): when a local backup has completed since the slot's
+   `LastBackupAt`, or when it has never been copied, or when `.env` now
+   points it somewhere else (another bucket, path or passphrase), so a new
+   target does not wait a day for its first copy. Persisted, so a restart
+   does not copy again.
+   A second fault under the first: **an unreachable target held the whole
+   sidecar**. restic retries a refused connection for up to about fifteen
+   minutes, and while `restic list locks` waited, so did every queued job
+   (Back up now, a restore test, a restore) and the other targets. Every
+   scheduled copy now opens the repository first with the same 30-second
+   probe Test connection uses, fails fast with the reason on the card, and
+   backs off for `OFFSITE_RETRY_MINUTES` (15) before trying again.
+   Verified against MinIO over 25 minutes: one copy per slot on start (new
+   targets), none for five minutes, exactly one each after a local backup,
+   none after a restart; with MinIO stopped, the cloud failed in 31 seconds
+   ("Could not reach minio:9000"), backed off, and the NAS copied straight
+   after; back up, one catch-up copy and the card's message cleared. Three
+   snapshots in 25 minutes, where the old loop would have taken 25.
 3. ✅ **shipped 2026-09-22.** The path mechanism: host mount plus bind
    mount plus sentinel, shared by the NAS and removable slots; the NAS slot
    scheduled with its absence an alert; the SFTP `repo3` recipe and the
@@ -2189,6 +2218,19 @@ must be operated.
    minute stale, and a button that re-ran what just ran would be a second
    way to say the same thing. If a target can be configured but not yet
    exercised, this is worth revisiting.
+   **Added back 2026-09-22, at the owner's request.** The case for it turned
+   out to be the one above: somebody has just changed `.env` (a key
+   rotated, a share remounted, a drive plugged in) and wants the answer now
+   rather than at the next pass. It queues a `test-target` job for each
+   agent that writes to the slot (both, for the cloud), and each opens its
+   repository without changing it: `restic --no-lock cat config` then
+   `snapshots`, and `pgbackrest --repo=2 info`, not `check`, because `check`
+   forces a WAL switch. The answer is the sidecar's own sentence, mapped
+   from what the tools actually print for each failure (checked against
+   MinIO: wrong key, wrong secret, missing bucket, unknown host, wrong
+   passphrase, empty path). restic retries a refused key for minutes, so the
+   test has a 30-second limit and reads the reason out of the retry lines.
+   A failed test raises no alert: nothing was being backed up.
    Three bugs the walk found, none of which the shell testing could have.
    A **stale restic lock** left by a sidecar killed mid-run wedges a
    repository permanently, and the error reads like a broken target; runs
@@ -2343,6 +2385,13 @@ what 9.2's slot status publishes.
    would give the cloud pie a free-space feel, and it is the one part of
    this item that invents a number rather than reporting one. Worth adding
    if anyone asks for it; left out rather than guessed at.
+   **Added 2026-09-22, at the owner's request.** `OFFSITE_CLOUD_BUDGET_GB`
+   is published by the pgbackrest sidecar as `BudgetBytes` on both cloud
+   rows, in a statement of its own so a sidecar ahead of the migration
+   loses only the budget. The pie gains a "Left in budget" slice, never
+   called free space, and passing it shows "Over budget by" in the danger
+   colour. It refuses and removes nothing, and raises no alert: a budget
+   somebody picked is a number to watch, not a limit.
    The NAS and removable cards show composition only when a slot holds two
    repositories, which in practice is the cloud alone, since the others
    carry files and never the pgBackRest repository.
@@ -2855,6 +2904,26 @@ audit entry and one Critical alert; and an administrator without the right
 was refused at the endpoint and shown no Restore button. The instance ended
 with 34 pages, 8 spaces and 6 attachments, which is what it started with,
 and the `.env` byte-identical.
+
+**Corrected 2026-09-22: every restore that was undone stayed "running".** The
+owner noticed five restores on Recent runs still saying Running…, and the
+page polling them every five seconds for ever. The walk above checked that
+history carried across; it did not check that it carried across *correctly*.
+The kept copy an undo puts back is a snapshot taken mid-restore, so it holds
+that restore as "running", and the carry-over added missing rows but never
+updated existing ones, so the snapshot's stale row beat the finished one.
+The same applies to any restore: an older dump holds the job that took it
+as "running", and one that was "requested" would have been run again.
+Two fixes. The carry-over now lets a job row the carried copy shows further
+along (requested, running, finished) take the carried outcome. And each
+sidecar closes, at the top of every pass, any job of its own still marked
+running, since it runs one job at a time and so cannot really be running
+one then; a restore or undo takes its outcome from its restore directory,
+anything else is recorded as interrupted. The one exception is the restore
+the database records as in progress, because a point-in-time restore is
+carried out by the db container and the sidecar restarting while it waits
+must not end maintenance under a cluster still being rewritten. The five
+closed as succeeded, with the finish times their own logs recorded.
 
 ---
 
@@ -4681,6 +4750,7 @@ miss of the kind the gate exists for:
 13. **8.6** External edits as tracked changes (steps 1–5 shipped 2026-09-21; step 6 folded into 10.5).
 13a. **8.5** Wiki packs (designed 2026-09-21 as Fable; Opus implements next). Before 10.5, because the pack is what a rebuilt manual is committed as.
 13c. **12.3** Turn a space's exports off, format by format (Opus 5.5, shipped 2026-09-22).
+13d. Three small follow-ups (Opus 5.5, shipped 2026-09-22): the dashboard's two top-ten tables as cards, **Test connection** back on Storage targets (9.2 step 5), and `OFFSITE_CLOUD_BUDGET_GB` (9.3 step 3).
 13b. **13.1** Instance branding (designed and shipped 2026-09-22 by Opus 5.5, the first item under the new model gate). Before 10.5 at the owner's request, and the manual's screenshots are then taken on an unbranded instance.
 14. **10.5** Rebuild the user manual, **after 8.5**, now that the owner has settled the wiki as its source of truth (2026-09-21). A manual whose only copy is inside the instance is how the last one was lost, so the pack that can export it is a prerequisite, not a preference.
 

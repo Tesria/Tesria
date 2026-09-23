@@ -66,6 +66,99 @@ Tests: 19 rewriter fixtures, 13 HTTP round trips (importing as a *different*
 user, which is what makes the attribution and permission assertions mean
 anything), on top of step 1's 27 format tests.
 
+### Fix: restores that were undone stayed "running" for ever (2026-09-22, Opus 5.5)
+
+Five restores from the 9.4 walk still said Running… on Recent runs, and the
+backups page polled them every five seconds for as long as it was open. Each
+had been undone. An undo puts back a copy of the wiki taken in the middle of
+the restore, which holds that restore as "running", and carrying the job
+history across added missing rows without updating existing ones, so the
+stale row won. Any restore had the same flaw in a quieter form: an older
+backup holds the job that took it as "running", and a job that was
+"requested" at the time would have been run again.
+
+Carrying job history across a swap now keeps whichever copy of a job is
+further along. Each backup agent also closes any job of its own left marked
+running, since it runs one job at a time: a restore or undo takes its
+outcome from what it recorded in its restore directory, anything else is
+marked interrupted, and the restore currently in progress is never touched.
+The five closed as succeeded with the finish times their logs recorded.
+Found by the owner.
+
+### Fix: admin table rows with actions were misaligned (2026-09-22, Opus 5.5)
+
+The last cell of a row in the admin tables (Log on Recent runs; the actions
+on Users, Spaces, Security, Sessions and the backups list) sat out of line
+with the rest of its row, its divider at a different height from the
+others. The cell itself was a flex container, which takes a `<td>` out of
+table layout, so it stopped sizing with its row. The flex layout now lives
+on a wrapper inside the cell. Found by the owner on the backups page.
+
+Recent runs also shows a connection test's answer, the same sentence as the
+Storage targets card, where it used to say only "Done."
+
+### Fix: the offsite copy of the files ran every minute (2026-09-22, Opus 5.5)
+
+The backup sidecar copied the uploads and dumps to the cloud and the network
+drive on **every pass of its loop, once a minute**, rather than after each
+local backup. Each copy kept a new snapshot for the whole retention window
+and ended with a 5% read check, which against a real cloud provider would
+have downloaded the repository about 72 times a day. No real cost was
+incurred: no instance had a live cloud target configured.
+
+A scheduled target is now copied once per local backup: when a local backup
+has finished since its last copy, or when it has never been copied, or when
+`.env` now points it somewhere new. A restart does not copy again.
+
+Fixing it exposed a second fault: **an unreachable target held the whole
+backup sidecar** for up to fifteen minutes at a time, because restic retries
+a refused connection that long, and every queued job (Back up now, restore
+tests, restores) and the other targets waited behind it. Each copy now
+checks the target first with a 30-second limit, reports why it could not
+start on the Storage targets card, and waits 15 minutes
+(`OFFSITE_RETRY_MINUTES`) before trying again.
+
+Verified against MinIO over 25 minutes, with an outage in the middle: three
+snapshots where the old loop would have taken twenty-five.
+
+### Storage targets: Test connection and a cloud budget; dashboard cards (2026-09-22, Opus 5.5)
+
+**Test connection** is back on every Storage targets card. It asks the backup
+agents to reach the target now and open its repository, changing nothing,
+and the card shows each agent's answer in plain words: connected and how
+many snapshots or backups it holds, or what is wrong and which `.env`
+setting to look at. The cloud is answered twice, once for the database
+repository and once for the uploads and dumps, because different sidecars
+write them and either can be the broken one. The app still holds no
+credential: the test runs in the sidecars, as a job, like Copy now.
+
+Each failure was produced against MinIO and its wording checked: a wrong
+key, a wrong secret, a missing bucket, an unknown host, a wrong passphrase,
+an empty path (reported as "no repository yet", which is a success for a new
+target), and an unclaimed network drive. Two things the walk found:
+
+- **restic never fails fast on a bad key.** It retries a refused key or an
+  unreachable host quietly for minutes, and its final line is only "unable
+  to open config file". The test stops at 30 seconds and reads the reason
+  out of restic's retry lines instead.
+- **A wrong pgBackRest passphrase made the answer unreadable.** pgBackRest
+  quotes the bytes it could not decrypt, which are not UTF-8, and Postgres
+  then refused the whole JSON document. Everything outside printable ASCII
+  is dropped before it is parsed.
+
+A failed test raises no alert and does not mark the agent's last run as
+failed: nothing was being backed up.
+
+**`OFFSITE_CLOUD_BUDGET_GB`** (optional, in `.env`) gives the cloud card's
+chart a denominator: what is stored against what is left of the budget, and
+"Over budget by" in red once it is passed. It is a number to watch, not a
+limit: nothing is refused, removed or alerted on for going over.
+
+**The dashboard's Most viewed and Most active editors** are now cards like
+the tiles above them, with the counts right-aligned. A page deleted since it
+was viewed now reads "Deleted page" rather than linking nowhere under an
+empty badge.
+
 ### 12.3 Turn a space's exports off, format by format (2026-09-22, Opus 5.5)
 
 An administrator can now turn a space's exports off in **Space settings →

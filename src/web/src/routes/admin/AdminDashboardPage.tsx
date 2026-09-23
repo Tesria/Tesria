@@ -212,12 +212,12 @@ export function AdminDashboardPage() {
           </div>
 
           <div className="dash__tables">
-            <div>
-              <h3 className="dash__heading">Most viewed</h3>
+            <section className="dash__panel">
+              <h3 className="stat__label">Most viewed</h3>
               {data.usage.topPages.length === 0 ? (
                 <p className="muted small">No page views recorded yet.</p>
               ) : (
-                <table className="admin-table">
+                <table className="admin-table dash__table">
                   <thead>
                     <tr><th>Page</th><th>Views</th></tr>
                   </thead>
@@ -225,8 +225,16 @@ export function AdminDashboardPage() {
                     {data.usage.topPages.map((p) => (
                       <tr key={p.pageId}>
                         <td>
-                          <Link to={`/spaces/${p.spaceKey}/pages/${p.pageId}`}>{p.title}</Link>{' '}
-                          <span className="badge">{p.spaceKey}</span>
+                          {/* A page deleted since it was viewed keeps its views
+                              but has nowhere to link to and no space to name. */}
+                          {p.spaceKey ? (
+                            <>
+                              <Link to={`/spaces/${p.spaceKey}/pages/${p.pageId}`}>{p.title}</Link>{' '}
+                              <span className="badge">{p.spaceKey}</span>
+                            </>
+                          ) : (
+                            <span className="muted">Deleted page</span>
+                          )}
                         </td>
                         <td>{p.views}</td>
                       </tr>
@@ -234,14 +242,14 @@ export function AdminDashboardPage() {
                   </tbody>
                 </table>
               )}
-            </div>
+            </section>
 
-            <div>
-              <h3 className="dash__heading">Most active editors</h3>
+            <section className="dash__panel">
+              <h3 className="stat__label">Most active editors</h3>
               {data.usage.topEditors.length === 0 ? (
                 <p className="muted small">No edits in this range.</p>
               ) : (
-                <table className="admin-table">
+                <table className="admin-table dash__table">
                   <thead>
                     <tr><th>Editor</th><th>Versions</th></tr>
                   </thead>
@@ -255,7 +263,7 @@ export function AdminDashboardPage() {
                   </tbody>
                 </table>
               )}
-            </div>
+            </section>
           </div>
         </>
       )}

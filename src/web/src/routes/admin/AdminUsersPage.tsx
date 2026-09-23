@@ -172,105 +172,107 @@ export function AdminUsersPage() {
                 <td className="muted small">
                   {u.lastSeenAt ? new Date(u.lastSeenAt).toLocaleDateString() : 'Never'}
                 </td>
-                <td className="admin-table__actions">
-                  {/* The owner's own row carries nothing that could unseat or
-                      lock out the instance's last way back in. */}
-                  {u.role !== UserRole.Owner && (
-                    <button
-                      type="button"
-                      className="link-btn"
-                      disabled={busy || (u.role === UserRole.Admin ? !iAmOwner : !mayPromote)}
-                      title={
-                        u.role === UserRole.Admin
-                          ? (iAmOwner ? undefined : 'Only the owner demotes an administrator.')
-                          : (mayPromote ? undefined : 'Your role does not allow promoting people to administrator.')
-                      }
-                      onClick={() => act(u.id, () => api.admin.users.setRole(
-                        u.id, u.role === UserRole.Admin ? UserRole.Member : UserRole.Admin,
-                      ), 'Could not change the role.')}
-                    >
-                      {u.role === UserRole.Admin ? 'Demote' : 'Make admin'}
-                    </button>
-                  )}
-                  {iAmOwner && !isSelf && u.status === UserStatus.Active && (
-                    <button
-                      type="button"
-                      className="link-btn link-btn--danger"
-                      disabled={busy}
-                      onClick={() => {
-                        void (async () => {
-                          const ok = await ask({
-                            title: `Make ${u.displayName} the owner of this instance?`,
-                            danger: true,
-                            confirmLabel: 'Transfer ownership',
-                            body: (
-                              <>
-                                <p>You become an administrator.</p>
-                                <p>
-                                  Only <strong>{u.displayName}</strong> will be able to change roles,
-                                  or hand ownership back to you.
-                                </p>
-                              </>
-                            ),
-                          })
-                          if (!ok) return
-                          await act(u.id, () => api.admin.users.transferOwnership(u.id),
-                            'Could not transfer ownership.')
-                        })()
-                      }}
-                    >
-                      Transfer ownership
-                    </button>
-                  )}
-                  {!isSelf && u.role !== UserRole.Owner && (
-                    <button
-                      type="button"
-                      className="link-btn"
-                      disabled={busy}
-                      onClick={() => act(u.id, () => api.admin.users.setStatus(
-                        u.id, u.status === UserStatus.Suspended ? UserStatus.Active : UserStatus.Suspended,
-                      ), 'Could not change the status.')}
-                    >
-                      {u.status === UserStatus.Suspended ? 'Reactivate' : 'Suspend'}
-                    </button>
-                  )}
-                  {!othersOwnerRow && (
-                    <button
-                      type="button"
-                      className="link-btn"
-                      disabled={busy}
-                      onClick={() => act(u.id, () => api.admin.users.revokeSessions(u.id),
-                        'Could not revoke sessions.')}
-                    >
-                      Sign out
-                    </button>
-                  )}
-                  {!othersOwnerRow && (
-                    <button
-                      type="button"
-                      className="link-btn"
-                      disabled={busy}
-                      onClick={() => act(u.id, () => api.admin.users.revokeTokens(u.id),
-                        'Could not revoke tokens.')}
-                    >
-                      Revoke tokens
-                    </button>
-                  )}
-                  {u.hasPassword && !othersOwnerRow && (
-                    <button type="button" className="link-btn" disabled={busy} onClick={() => issueReset(u)}>
-                      Reset password
-                    </button>
-                  )}
-                  {u.lockedUntil && new Date(u.lockedUntil) > new Date() && (
-                    <button
-                      type="button"
-                      className="link-btn"
-                      disabled={busy}
-                      onClick={() => act(u.id, () => api.admin.users.unlock(u.id), 'Could not unlock.')}
-                    >
-                      Unlock
-                    </button>
-                  )}
+                <td>
+                  <div className="admin-table__actions">
+                    {/* The owner's own row carries nothing that could unseat or
+                        lock out the instance's last way back in. */}
+                    {u.role !== UserRole.Owner && (
+                      <button
+                        type="button"
+                        className="link-btn"
+                        disabled={busy || (u.role === UserRole.Admin ? !iAmOwner : !mayPromote)}
+                        title={
+                          u.role === UserRole.Admin
+                            ? (iAmOwner ? undefined : 'Only the owner demotes an administrator.')
+                            : (mayPromote ? undefined : 'Your role does not allow promoting people to administrator.')
+                        }
+                        onClick={() => act(u.id, () => api.admin.users.setRole(
+                          u.id, u.role === UserRole.Admin ? UserRole.Member : UserRole.Admin,
+                        ), 'Could not change the role.')}
+                      >
+                        {u.role === UserRole.Admin ? 'Demote' : 'Make admin'}
+                      </button>
+                    )}
+                    {iAmOwner && !isSelf && u.status === UserStatus.Active && (
+                      <button
+                        type="button"
+                        className="link-btn link-btn--danger"
+                        disabled={busy}
+                        onClick={() => {
+                          void (async () => {
+                            const ok = await ask({
+                              title: `Make ${u.displayName} the owner of this instance?`,
+                              danger: true,
+                              confirmLabel: 'Transfer ownership',
+                              body: (
+                                <>
+                                  <p>You become an administrator.</p>
+                                  <p>
+                                    Only <strong>{u.displayName}</strong> will be able to change roles,
+                                    or hand ownership back to you.
+                                  </p>
+                                </>
+                              ),
+                            })
+                            if (!ok) return
+                            await act(u.id, () => api.admin.users.transferOwnership(u.id),
+                              'Could not transfer ownership.')
+                          })()
+                        }}
+                      >
+                        Transfer ownership
+                      </button>
+                    )}
+                    {!isSelf && u.role !== UserRole.Owner && (
+                      <button
+                        type="button"
+                        className="link-btn"
+                        disabled={busy}
+                        onClick={() => act(u.id, () => api.admin.users.setStatus(
+                          u.id, u.status === UserStatus.Suspended ? UserStatus.Active : UserStatus.Suspended,
+                        ), 'Could not change the status.')}
+                      >
+                        {u.status === UserStatus.Suspended ? 'Reactivate' : 'Suspend'}
+                      </button>
+                    )}
+                    {!othersOwnerRow && (
+                      <button
+                        type="button"
+                        className="link-btn"
+                        disabled={busy}
+                        onClick={() => act(u.id, () => api.admin.users.revokeSessions(u.id),
+                          'Could not revoke sessions.')}
+                      >
+                        Sign out
+                      </button>
+                    )}
+                    {!othersOwnerRow && (
+                      <button
+                        type="button"
+                        className="link-btn"
+                        disabled={busy}
+                        onClick={() => act(u.id, () => api.admin.users.revokeTokens(u.id),
+                          'Could not revoke tokens.')}
+                      >
+                        Revoke tokens
+                      </button>
+                    )}
+                    {u.hasPassword && !othersOwnerRow && (
+                      <button type="button" className="link-btn" disabled={busy} onClick={() => issueReset(u)}>
+                        Reset password
+                      </button>
+                    )}
+                    {u.lockedUntil && new Date(u.lockedUntil) > new Date() && (
+                      <button
+                        type="button"
+                        className="link-btn"
+                        disabled={busy}
+                        onClick={() => act(u.id, () => api.admin.users.unlock(u.id), 'Could not unlock.')}
+                      >
+                        Unlock
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             )

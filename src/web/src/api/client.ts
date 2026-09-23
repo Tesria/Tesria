@@ -648,7 +648,7 @@ export type Backup = {
 export type BackupJob = {
   id: string
   agent: BackupAgentName
-  kind: 'backup' | 'restore-test' | 'copy-offsite' | 'restore' | 'restore-undo' | 'restore-discard'
+  kind: 'backup' | 'restore-test' | 'copy-offsite' | 'restore' | 'restore-undo' | 'restore-discard' | 'test-target'
   trigger: 'scheduled' | 'manual' | 'startup' | 'retention'
   status: 'requested' | 'running' | 'succeeded' | 'failed'
   target: string | null
@@ -809,6 +809,8 @@ export type BackupTarget = {
   lastDrillOk: boolean | null
   bytesStored: number | null
   walBacklogFiles: number | null
+  /** OFFSITE_CLOUD_BUDGET_GB in bytes, when someone set it. A chosen number, not a measured one. */
+  budgetBytes: number | null
   updatedAt: string
 }
 
@@ -1379,6 +1381,9 @@ export const api = {
       /** Copies to a target that is only there sometimes (a drive, 9.2 step 4). */
       copyToTarget: (slot: string) =>
         request<BackupJob>('POST', `/api/admin/backups/targets/${encodeURIComponent(slot)}/copy`, {}),
+      /** Test connection: one job per repository the slot holds, answered by the sidecars. */
+      testTarget: (slot: string) =>
+        request<BackupJob[]>('POST', `/api/admin/backups/targets/${encodeURIComponent(slot)}/test`, {}),
       restoreTest: (label: string) =>
         request<BackupJob>('POST', `/api/admin/backups/${encodeURIComponent(label)}/restore-test`),
       job: (id: string) => request<BackupJob>('GET', `/api/admin/backups/jobs/${id}`),

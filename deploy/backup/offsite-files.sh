@@ -135,12 +135,80 @@ restic_forget_args() {
   [ "$windowed" = "1" ] && printf -- ' --keep-within %sd' "$days"
 }
 
+# When a scheduled slot (cloud, NAS) is next copied to. Once per local
+# cycle: a copy is due when a local backup has completed since this slot's
+# last copy, or when the slot has never had one. Keyed off what the tables
+# record rather than a timer in memory, so a restart does not copy again.
+#
+# This used to be every pass of the loop, which is once a minute: a snapshot
+# a minute kept for the whole retention window, and a 5% read check a minute,
+# which against a cloud provider downloads the repository several times an
+# hour. The local cycle is the unit anyway: what is copied is a cycle that
+# exists here first.
+#
+# A failed copy waits OFFSITE_RETRY_MINUTES before the next attempt, in
+# memory, because a target that is down should not be hammered every minute
+# and a restart trying once more is harmless.
+OFFSITE_RETRY_MINUTES="${OFFSITE_RETRY_MINUTES:-15}"
+declare -A OFFSITE_RETRY_AT=()
+
+offsite_copy_due() {
+  local slot="$1" due type loc bucket prefix keyfp passfp
+  [ "${OFFSITE_RETRY_AT[$slot]:-0}" -gt "$(date +%s)" ] && return 1
+  # A slot pointed somewhere new in .env (another bucket, path or passphrase)
+  # has never been copied to, whatever the row says about the old one;
+  # otherwise its first copy would wait for the next local backup.
+  IFS='|' read -r type loc bucket prefix keyfp passfp <<<"$(offsite_files_identity "$slot")"
+  due="$(q -v slot="$slot" -v loc="$loc" -v bucket="$bucket" -v prefix="$prefix" -v passfp="$passfp" <<'SQL'
+WITH t AS (
+  SELECT (SELECT CASE WHEN "Location" IS NOT DISTINCT FROM NULLIF(:'loc', '')
+                       AND "Bucket" IS NOT DISTINCT FROM NULLIF(:'bucket', '')
+                       AND "Prefix" IS NOT DISTINCT FROM NULLIF(:'prefix', '')
+                       AND "PassphraseFingerprint" IS NOT DISTINCT FROM NULLIF(:'passfp', '')
+                      THEN "LastBackupAt" END
+            FROM "BackupTargets" WHERE "Slot" = :'slot' AND "Kind" = 'files') AS copied
+)
+SELECT CASE
+         WHEN t.copied IS NULL THEN 't'
+         WHEN EXISTS (SELECT 1 FROM "Backups" b
+                       WHERE b."Agent" = 'logical' AND b."RemovedAt" IS NULL AND b."Error" IS NULL
+                         AND coalesce(b."CompletedAt", b."StartedAt") > t.copied) THEN 't'
+         ELSE 'f'
+       END
+  FROM t;
+SQL
+)" || return 1
+  [ "$due" = t ]
+}
+
+# Copies to one scheduled slot if it is due, and backs off if it fails.
+offsite_copy_slot() {
+  local slot="$1"
+  offsite_copy_due "$slot" || return 0
+  if restic_run_for "$slot" "$2" "$3" "$4" 1; then
+    unset 'OFFSITE_RETRY_AT[$slot]'
+  else
+    OFFSITE_RETRY_AT[$slot]=$(( $(date +%s) + OFFSITE_RETRY_MINUTES * 60 ))
+    note "offsite files: the $slot copy did not complete; next attempt in ${OFFSITE_RETRY_MINUTES} minutes"
+  fi
+}
+
 # One run for one slot: back up, apply retention, then a partial read check.
 # Each step reports separately, because "the backup worked but verification
 # failed" is a different thing to tell someone than "nothing was copied".
 restic_run_for() {
   local slot="$1" enabled="$2" count="$3" days="$4" windowed="${5:-1}"
   restic_env_for "$slot" || return 1
+
+  # Reach it first, with a time limit. Unreachable, restic would otherwise
+  # retry for up to fifteen minutes, holding every job queued behind it.
+  local probe
+  probe="$(restic_probe "$slot")"
+  if [ $? = 1 ]; then
+    note "offsite files: $slot: $(printf '%s\n' "$probe" | tail -n 1)"
+    offsite_files_status "$slot" "The last offsite copy could not start. $(printf '%s\n' "$probe" | tail -n 1)"
+    return 1
+  fi
 
   if ! restic_ensure_repo; then
     [ -n "${RESTIC_LAST_ERROR:-}" ] \
@@ -261,11 +329,11 @@ UPDATE "BackupTargets" SET "Message" = left(:'msg', 2000), "UpdatedAt" = now()
 SQL
 }
 
-# What this slot holds, for the screen and the alerts.
-offsite_files_publish() {
-  local slot="$1" verified="$2" bytes="" snaps="" type loc bucket prefix keyfp passfp
-  bytes="$(rst stats --mode raw-data --json 2>/dev/null | sed -n 's/.*"total_size":\([0-9]*\).*/\1/p')"
-  snaps="$(rst snapshots --json 2>/dev/null | grep -o '"short_id"' | wc -l | tr -d ' ')"
+# What a slot is, as .env describes it: type|location|bucket|prefix|key|passphrase,
+# the secrets as fingerprints. What is published, and what tells a copy to a
+# target from a copy to one that has since been replaced.
+offsite_files_identity() {
+  local slot="$1" type="" loc="" bucket="" prefix="" keyfp="" passfp=""
   case "$slot" in
     cloud)
       type="${OFFSITE_CLOUD_TYPE:-}"; loc="${OFFSITE_CLOUD_ENDPOINT:-}"
@@ -281,6 +349,15 @@ offsite_files_publish() {
       type=path; loc="${OFFSITE_REMOVABLE_PATH:-}"; bucket=""; prefix=restic; keyfp=""
       passfp="$(offsite_fingerprint "${OFFSITE_REMOVABLE_PASSPHRASE:-}")" ;;
   esac
+  printf '%s|%s|%s|%s|%s|%s\n' "$type" "$loc" "$bucket" "$prefix" "$keyfp" "$passfp"
+}
+
+# What this slot holds, for the screen and the alerts.
+offsite_files_publish() {
+  local slot="$1" verified="$2" bytes="" snaps="" type loc bucket prefix keyfp passfp
+  bytes="$(rst stats --mode raw-data --json 2>/dev/null | sed -n 's/.*"total_size":\([0-9]*\).*/\1/p')"
+  snaps="$(rst snapshots --json 2>/dev/null | grep -o '"short_id"' | wc -l | tr -d ' ')"
+  IFS='|' read -r type loc bucket prefix keyfp passfp <<<"$(offsite_files_identity "$slot")"
   q -v slot="$slot" -v verified="$verified" -v bytes="${bytes:-}" -v snaps="${snaps:-0}" \
     -v keyfp="$keyfp" -v passfp="$passfp" \
     -v type="$type" -v loc="$loc" -v bucket="$bucket" -v prefix="$prefix" \
@@ -369,4 +446,123 @@ offsite_files_disable() {
 UPDATE "BackupTargets" SET "Enabled" = false, "UpdatedAt" = now()
  WHERE "Slot" = :'slot' AND "Kind" = 'files';
 SQL
+}
+
+# How long a restic target gets to answer before it is treated as down.
+# restic retries a refused key or an unreachable host quietly for up to about
+# fifteen minutes, which is right in the middle of a backup and wrong
+# everywhere else: before a scheduled copy it held the whole sidecar (every
+# queued job, and the other targets) for as long as one target was down, and
+# on Test connection it left a person watching a button. A healthy target
+# answers in a second or two.
+RESTIC_PROBE_SECONDS="${RESTIC_PROBE_SECONDS:-30}"
+
+# How the card names the slot: "bucket X" / "in bucket X", or the drive.
+restic_where() {
+  case "$1" in
+    cloud)     printf '%s|%s\n' "bucket ${OFFSITE_CLOUD_BUCKET:-}" "in bucket ${OFFSITE_CLOUD_BUCKET:-}" ;;
+    nas)       printf '%s|%s\n' "the network drive" "on the network drive" ;;
+    removable) printf '%s|%s\n' "the drive" "on the drive" ;;
+  esac
+}
+
+# Opens the repository RESTIC_* points at, briefly and without a lock.
+# Returns 0 when it opens, 2 when the location answered but holds no
+# repository yet, 1 otherwise; on 1 and 2 the last line printed says why, in
+# words for the card. restic's own output goes before it, for the log.
+restic_probe() {
+  local slot="$1" where inside out rc reason
+  IFS='|' read -r where inside <<<"$(restic_where "$slot")"
+  out="$(timeout "$RESTIC_PROBE_SECONDS" restic $(restic_tls_flag) --no-lock cat config 2>&1)"
+  rc=$?
+  [ "$rc" = 0 ] && return 0
+  echo "$out" | tail -n 5
+
+  case "$rc" in
+    10)
+      # The location answered and is empty, which is a new target that has
+      # not had its first backup yet, or the wrong path. Only the person
+      # reading this knows which.
+      echo "Reached ${where}. There is no repository there yet: the first backup creates one. If backups have already been copied here, the path or bucket is wrong."
+      return 2 ;;
+    12)
+      echo "Reached ${where}, but the passphrase does not open the repository there. Check the passphrase in .env against the one the repository was created with."
+      return 1 ;;
+  esac
+  # restic says why only in the lines it prints while retrying; the final
+  # line is a generic "unable to open config file".
+  reason="$(printf '%s\n' "$out" | sed -n 's/.*returned error, retrying after [^:]*: //p' | head -n 1)"
+  [ -n "$reason" ] || reason="$(printf '%s\n' "$out" | grep -m1 -E 'Fatal|error' || true)"
+  reason="${reason#Stat: }"
+  case "$reason" in
+    *"Access Key Id"*|*InvalidAccessKeyId*)
+      echo "The storage provider does not recognise the key. Check OFFSITE_CLOUD_KEY." ;;
+    *"signature we calculated does not match"*|*SignatureDoesNotMatch*)
+      echo "The storage provider refused the secret for this key. Check OFFSITE_CLOUD_SECRET." ;;
+    *"Access Denied"*|*AccessDenied*|*"403"*)
+      echo "The key was refused access to the bucket. Check that it is allowed to use ${OFFSITE_CLOUD_BUCKET:-the bucket}." ;;
+    *"bucket does not exist"*|*NoSuchBucket*)
+      echo "The bucket ${OFFSITE_CLOUD_BUCKET:-} does not exist. Check OFFSITE_CLOUD_BUCKET, or create it with the provider." ;;
+    *"no such host"*|*"connection refused"*|*"i/o timeout"*|*"network is unreachable"*)
+      echo "Could not reach ${OFFSITE_CLOUD_ENDPOINT:-the target}: ${reason##*: }." ;;
+    *"permission denied"*)
+      echo "${where^} is mounted, but the backup agent is not allowed to read it: ${reason}." ;;
+    "")
+      echo "No answer from ${where} within ${RESTIC_PROBE_SECONDS} seconds." ;;
+    *)
+      echo "Could not open the repository ${inside}: ${reason}" ;;
+  esac
+  return 1
+}
+
+# Test connection for the files repository (the Storage targets screen).
+# Reaches the slot and opens its repository with this slot's passphrase,
+# which proves the location, the credentials and the passphrase together.
+# Changes nothing: no lock is taken, nothing is created, no stale lock is
+# cleared. The last line printed is the answer shown on the card.
+do_test_target() {
+  local slot="$1" path="" where inside problem rc
+  case "$slot" in
+    cloud)
+      if problem="$(offsite_cloud_problem)"; then echo "$problem."; return 1; fi
+      [ -n "${OFFSITE_CLOUD_TYPE:-}" ] || { echo "No cloud target is configured."; return 1; } ;;
+    nas)
+      [ -n "${OFFSITE_NAS_PASSPHRASE:-}" ] || { echo "No network drive is configured."; return 1; }
+      path=/mnt/nas ;;
+    removable)
+      [ -n "${OFFSITE_REMOVABLE_PASSPHRASE:-}" ] || { echo "No removable drive is configured."; return 1; }
+      path=/mnt/removable ;;
+    *) echo "There is no target called '$slot'."; return 1 ;;
+  esac
+  IFS='|' read -r where inside <<<"$(restic_where "$slot")"
+
+  if [ -n "$path" ] && ! offsite_path_present "$path"; then
+    # The sentinel is what tells a mounted target from the empty directory
+    # an absent one leaves behind, so its absence is the whole answer.
+    if [ "$slot" = removable ]; then
+      echo "The drive is not plugged in, or has not been claimed with claim-target.sh."
+    else
+      echo "Nothing is mounted at the network drive's path, or it has not been claimed with claim-target.sh."
+    fi
+    return 1
+  fi
+
+  restic_env_for "$slot" || { echo "The settings for ${where} could not be read."; return 1; }
+  restic_probe "$slot"
+  rc=$?
+  # No repository yet is a working target that has not had its first copy.
+  [ "$rc" = 2 ] && return 0
+  [ "$rc" = 0 ] || return 1
+
+  # A mounted share can be readable and not writable, which a backup finds
+  # out only when it tries. Asked of the filesystem, never by writing a file.
+  if [ -n "$path" ] && [ ! -w "$path/restic" ]; then
+    echo "Opened the repository ${inside}, but the backup agent cannot write to it. Check the share's permissions."
+    return 1
+  fi
+
+  local snaps
+  snaps="$(timeout "$RESTIC_PROBE_SECONDS" restic $(restic_tls_flag) --no-lock snapshots --json 2>/dev/null \
+             | grep -o '"short_id"' | wc -l | tr -d ' ')"
+  echo "Connected. The passphrase opens the repository ${inside}, which holds ${snaps:-0} snapshot$([ "${snaps:-0}" = 1 ] || echo s)."
 }

@@ -81,7 +81,7 @@ public static class BackupEndpoints
         string? KeyFingerprint, string? PassphraseFingerprint,
         DateTimeOffset? LastBackupAt, DateTimeOffset? LastWalAt, DateTimeOffset? LastVerifyAt,
         DateTimeOffset? LastDrillAt, bool? LastDrillOk,
-        long? BytesStored, int? WalBacklogFiles, DateTimeOffset UpdatedAt);
+        long? BytesStored, int? WalBacklogFiles, long? BudgetBytes, DateTimeOffset UpdatedAt);
 
     public record PreviewAgent(
         string Agent, List<BackupDto> Removed, long RemovedBytes,
@@ -105,6 +105,7 @@ public static class BackupEndpoints
         group.MapPost("/run", RequestBackup).RequirePermission(InstancePermissions.BackupsRun);
         group.MapPost("/{label}/restore-test", RequestRestoreTest).RequirePermission(InstancePermissions.BackupsRun);
         group.MapPost("/targets/{slot}/copy", RequestCopy).RequirePermission(InstancePermissions.BackupsRun);
+        group.MapPost("/targets/{slot}/test", RequestTest).RequirePermission(InstancePermissions.BackupsRun);
         group.MapGet("/jobs/{id:guid}", GetJob).RequirePermission(InstancePermissions.BackupsView);
         // Replacing the wiki with an older copy (dev-plan 9.4). Its own file
         // and its own right: everything above this line is about taking
@@ -282,6 +283,67 @@ public static class BackupEndpoints
         return Results.Ok(ToDto(job, names, includeLog: false));
     }
 
+    /// <summary>
+    /// Test connection: asks each agent that writes to this slot to reach it
+    /// and open its repository, changing nothing. The app cannot do this
+    /// itself, and must not be able to: the credentials are in .env and only
+    /// the sidecars read them. So it queues a job per repository, and the
+    /// page waits for the answers. The cloud has two (the database's and the
+    /// files'), written by different sidecars, and either can be the broken
+    /// one, so both are asked.
+    ///
+    /// The sidecars already try every target on every pass, so this is not
+    /// the only way a fault is found. It is for the moment right after
+    /// somebody has changed something (a key rotated, a share remounted, a
+    /// drive plugged in) and wants to know now rather than at the next pass.
+    /// </summary>
+    private static async Task<IResult> RequestTest(
+        string slot, AppDbContext db, CurrentUser current, IAuditLogger audit)
+    {
+        if (slot is not ("cloud" or "nas" or "removable")) return Results.NotFound();
+
+        var rows = await db.BackupTargets.AsNoTracking()
+            .Where(t => t.Slot == slot && t.Enabled).ToListAsync();
+        if (rows.Count == 0)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["slot"] = ["This target is not configured, so there is nothing to test."],
+            });
+
+        var agents = rows
+            .Select(r => r.Kind == "database" ? BackupNames.Physical : BackupNames.Logical)
+            .Distinct().Order().ToList();
+
+        // A test already waiting for an agent is the answer to this request
+        // too. Queueing another would only make the page wait twice.
+        var waiting = await db.BackupJobs
+            .Where(j => j.Kind == BackupNames.KindTestTarget && j.Target == slot && agents.Contains(j.Agent)
+                && (j.Status == BackupNames.StatusRequested || j.Status == BackupNames.StatusRunning))
+            .ToListAsync();
+
+        var actorId = current.RequireId();
+        var jobs = new List<BackupJob>();
+        foreach (var agent in agents)
+        {
+            if (waiting.FirstOrDefault(j => j.Agent == agent) is { } existing)
+            {
+                jobs.Add(existing);
+                continue;
+            }
+            var job = NewJob(agent, BackupNames.KindTestTarget, slot, actorId);
+            db.BackupJobs.Add(job);
+            jobs.Add(job);
+        }
+        if (jobs.Any(j => !waiting.Contains(j)))
+        {
+            audit.Record("backup.target_test_requested", "backup", jobs[0].Id, new { Slot = slot });
+            await db.SaveChangesAsync();
+        }
+
+        var names = await NamesAsync(db, jobs.Select(j => j.RequestedById).Append(actorId));
+        return Results.Ok(jobs.Select(j => ToDto(j, names, includeLog: false)).ToList());
+    }
+
     private static async Task<IResult> RequestRestoreTest(
         string label, AppDbContext db, CurrentUser current, IAuditLogger audit)
     {
@@ -352,7 +414,7 @@ public static class BackupEndpoints
         t.Slot, t.Kind, t.Type, t.Location, t.Bucket, t.Prefix, t.Enabled, t.Present,
         t.Problem, t.Message, t.KeyFingerprint, t.PassphraseFingerprint,
         t.LastBackupAt, t.LastWalAt, t.LastVerifyAt, t.LastDrillAt, t.LastDrillOk,
-        t.BytesStored, t.WalBacklogFiles, t.UpdatedAt);
+        t.BytesStored, t.WalBacklogFiles, t.BudgetBytes, t.UpdatedAt);
 
     private static BackupJob NewJob(string agent, string kind, string? target, Guid actorId) => new()
     {

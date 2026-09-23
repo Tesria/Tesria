@@ -176,6 +176,8 @@ services:
       # only so the screen can name it; what the sidecar writes to is the
       # bind mount below.
       OFFSITE_NAS_PATH: ${OFFSITE_NAS_PATH:-}
+      # How long a scheduled copy waits after a target could not be reached.
+      OFFSITE_RETRY_MINUTES: ${OFFSITE_RETRY_MINUTES:-15}
       OFFSITE_NAS_PASSPHRASE: ${OFFSITE_NAS_PASSPHRASE:-}
       OFFSITE_REMOVABLE_PATH: ${OFFSITE_REMOVABLE_PATH:-}
       OFFSITE_REMOVABLE_PASSPHRASE: ${OFFSITE_REMOVABLE_PASSPHRASE:-}
@@ -282,6 +284,8 @@ services:
       PGBACKREST_REPO1_CIPHER_TYPE: aes-256-cbc
       PGBACKREST_REPO1_CIPHER_PASS: ${BACKUP_ENCRYPTION_KEY}
       OFFSITE_CLOUD_BACKUP_EVERY_DAYS: ${OFFSITE_CLOUD_BACKUP_EVERY_DAYS:-7}
+      # Optional: gives the cloud card's chart a "free" slice (dev-plan 9.3).
+      OFFSITE_CLOUD_BUDGET_GB: ${OFFSITE_CLOUD_BUDGET_GB:-}
       # Offsite backups (dev-plan 9.2). Read by deploy/pgbackrest/offsite.sh,
       # never by pgBackRest directly: an empty PGBACKREST_REPO2_* variable is a
       # hard error, and Compose cannot leave one out. Empty here simply means

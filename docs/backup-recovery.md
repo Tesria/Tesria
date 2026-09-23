@@ -386,6 +386,14 @@ run. Retention is the admin page's policy translated into restic's
 (`--keep-last N --keep-within Dd`), so the local and offsite copies expire
 together. Every run ends with `check --read-data-subset=5%`.
 
+A run happens **once per local backup**, on the pass after it completes, not
+on every pass of the sidecar's loop. A target that has never been copied to,
+or that `.env` now points somewhere new, is copied on the next pass. Before
+copying, the sidecar opens the repository with a 30-second limit; a target it
+cannot reach is reported on its card and tried again after 15 minutes
+(`OFFSITE_RETRY_MINUTES`), so an outage at the provider cannot hold up the
+local backups and restores queued behind it.
+
 ### Restoring files from the offsite copy
 
 Everything restic needs is in `.env`. From the backup sidecar:
@@ -543,6 +551,20 @@ the drive in, that is simply true, and a reassuring green card would not be.
 ```bash
 docker compose exec backup bash -lc 'export RESTIC_REPOSITORY=/mnt/removable/restic RESTIC_PASSWORD="$OFFSITE_REMOVABLE_PASSPHRASE"; restic snapshots'
 ```
+
+## Testing a target, and the cloud budget
+
+**Test connection** on a Storage targets card asks the backup agents to reach
+that target and open its repository, without changing anything. Use it
+after editing `.env`, and recreate the sidecars first (`docker compose up
+-d`): the test uses the settings the agents are running with, not the file.
+The answer usually takes under a minute, because the agents look for work
+once a minute; while one is in the middle of a backup, it waits for that.
+
+`OFFSITE_CLOUD_BUDGET_GB` is optional. Cloud storage has no free space to
+measure, so without it the cloud card shows only what is stored. With it,
+the chart shows what is left of the budget, and the card says when the
+budget has been passed. Nothing is refused or removed for going over.
 
 ## The machine is gone
 

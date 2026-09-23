@@ -35,6 +35,7 @@ const JOB_KIND: Record<string, string> = {
   restore: 'RESTORE',
   'restore-undo': 'undo of a restore',
   'restore-discard': 'removal of the kept copy',
+  'test-target': 'connection test',
 }
 
 function when(iso: string | null): string {
@@ -61,6 +62,11 @@ function summary(job: BackupJob): string {
     if (job.status === 'failed') return job.error ?? 'The restore failed.'
     const tables = typeof r.tablesRestored === 'number' ? `, ${r.tablesRestored} tables` : ''
     return `Restored ${job.target ?? 'the newest backup'} cleanly${tables}.`
+  }
+  if (job.kind === 'test-target') {
+    // The sidecar's own sentence, the same one the Storage targets card shows.
+    if (typeof r.summary === 'string' && r.summary) return r.summary
+    return job.error ?? (job.status === 'failed' ? 'The test failed.' : 'Connected.')
   }
   if (job.status === 'failed') return job.error ?? 'The backup failed.'
   const parts: string[] = []
@@ -340,9 +346,10 @@ export function AdminBackupsPage() {
 
       <StorageTargets
         targets={data.targets}
+        jobs={data.jobs}
         manualOnly={data.offsiteIsManualOnly}
         canRun={can('backups.run')}
-        onCopied={load}
+        onQueued={load}
       />
 
       <section className="profile__section profile__section--wide">
@@ -458,18 +465,20 @@ export function AdminBackupsPage() {
                       ? <>{b.lastVerifyOk ? 'Passed' : <span className="backup-text--bad">Failed</span>} <span className="muted small">{relative(b.lastVerifiedAt)}</span></>
                       : <span className="muted">Never</span>}
                   </td>
-                  <td className="admin-table__actions">
-                    <button type="button" className="link-btn" disabled={busy || !!b.error || !can('backups.run')}
-                      onClick={() => testRestore(b.label)}>
-                      Test restore
-                    </button>
-                    {mayRestore && (
-                      <button type="button" className="link-btn link-btn--danger"
-                        disabled={busy || !!b.error || restoring}
-                        onClick={() => setRestoring(b)}>
-                        Restore
+                  <td>
+                    <div className="admin-table__actions">
+                      <button type="button" className="link-btn" disabled={busy || !!b.error || !can('backups.run')}
+                        onClick={() => testRestore(b.label)}>
+                        Test restore
                       </button>
-                    )}
+                      {mayRestore && (
+                        <button type="button" className="link-btn link-btn--danger"
+                          disabled={busy || !!b.error || restoring}
+                          onClick={() => setRestoring(b)}>
+                          Restore
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -540,10 +549,12 @@ function JobRows({ job, open, detail, onToggle }: { job: BackupJob; open: boolea
         <td><StatusBadge status={job.status} /></td>
         <td className="nowrap">{duration(job.startedAt, job.finishedAt)}</td>
         <td className="backup-result">{summary(job)}</td>
-        <td className="admin-table__actions">
-          {(job.status === 'succeeded' || job.status === 'failed') && (
-            <button type="button" className="link-btn" onClick={onToggle}>{open ? 'Hide log' : 'Log'}</button>
-          )}
+        <td>
+          <div className="admin-table__actions">
+            {(job.status === 'succeeded' || job.status === 'failed') && (
+              <button type="button" className="link-btn" onClick={onToggle}>{open ? 'Hide log' : 'Log'}</button>
+            )}
+          </div>
         </td>
       </tr>
       {open && (

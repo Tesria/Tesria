@@ -276,9 +276,10 @@ SQL
   fi
 }
 
-# The offsite copy of the files (dev-plan 9.2 step 2). Runs on the same pass
-# as everything else, and only after the local backup has been taken, so what
-# is copied is a cycle that exists here first: local first, then replicate.
+# The offsite copy of the files (dev-plan 9.2 step 2). Checked on every pass,
+# but a scheduled slot is only copied to once per local cycle (see
+# offsite_copy_due), so what is copied is a cycle that exists here first:
+# local first, then replicate.
 offsite_tick() {
   local line en kc kd
   # The same policy the local retention uses, read the same way, so every
@@ -288,7 +289,7 @@ offsite_tick() {
   fi
 
   if offsite_cloud_enabled; then
-    restic_run_for cloud "${en:-f}" "${kc:-0}" "${kd:-0}" 1
+    offsite_copy_slot cloud "${en:-f}" "${kc:-0}" "${kd:-0}"
   else
     offsite_files_disable cloud
   fi
@@ -298,7 +299,7 @@ offsite_tick() {
   # a problem rather than a fact of life.
   if [ -n "${OFFSITE_NAS_PASSPHRASE:-}" ]; then
     if offsite_path_present /mnt/nas; then
-      restic_run_for nas "${en:-f}" "${kc:-0}" "${kd:-0}" 1
+      offsite_copy_slot nas "${en:-f}" "${kc:-0}" "${kd:-0}"
     else
       offsite_files_absent nas "The network drive is not mounted, or has not been claimed with claim-target.sh."
     fi

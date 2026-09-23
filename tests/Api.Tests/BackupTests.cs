@@ -340,6 +340,117 @@ public class BackupTests
         Assert.Contains("Backups", DatabaseRoles.ReadOnlyTables);
     }
 
+    // --- Storage targets: Test connection and the cloud budget.
+
+    private record TargetDto(string Slot, string Kind, bool Enabled, long? BudgetBytes);
+    private record TargetsOverviewDto(List<TargetDto> Targets);
+
+    private static BackupTarget Target(string slot, string kind, bool enabled = true) => new()
+    {
+        Slot = slot, Kind = kind, Enabled = enabled, UpdatedAt = DateTimeOffset.UtcNow,
+    };
+
+    [Fact]
+    public async Task Test_connection_asks_each_agent_that_writes_to_the_slot()
+    {
+        using var factory = new TestAppFactory();
+        var admin = await AdminAsync(factory);
+        await SeedAsync(factory, db => db.BackupTargets.AddRange(
+            Target("cloud", "database"), Target("cloud", "files"),
+            Target("nas", "files"), Target("removable", "files", enabled: false)));
+
+        // The cloud holds two repositories written by different sidecars,
+        // and either can be the broken one, so both are asked.
+        var cloud = await (await admin.PostAsJsonAsync("/api/admin/backups/targets/cloud/test", new { }))
+            .Content.ReadFromJsonAsync<List<JobDto>>();
+        Assert.Equal([BackupNames.Logical, BackupNames.Physical], cloud!.Select(j => j.Agent).Order());
+        Assert.All(cloud, j =>
+        {
+            Assert.Equal(BackupNames.KindTestTarget, j.Kind);
+            Assert.Equal("cloud", j.Target);
+            Assert.Equal("requested", j.Status);
+        });
+
+        // Asked again before they answer: the same jobs, not two more.
+        var again = await (await admin.PostAsJsonAsync("/api/admin/backups/targets/cloud/test", new { }))
+            .Content.ReadFromJsonAsync<List<JobDto>>();
+        Assert.Equal(cloud.Select(j => j.Id).Order(), again!.Select(j => j.Id).Order());
+
+        var nas = await (await admin.PostAsJsonAsync("/api/admin/backups/targets/nas/test", new { }))
+            .Content.ReadFromJsonAsync<List<JobDto>>();
+        Assert.Equal(BackupNames.Logical, Assert.Single(nas!).Agent);
+
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await admin.PostAsJsonAsync("/api/admin/backups/targets/removable/test", new { })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await admin.PostAsJsonAsync("/api/admin/backups/targets/tape/test", new { })).StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        Assert.Equal(3, await db.BackupJobs.CountAsync(j => j.Kind == BackupNames.KindTestTarget));
+        Assert.Equal(2, await db.AuditLogs.CountAsync(a => a.Action == "backup.target_test_requested"));
+    }
+
+    [Fact]
+    public async Task Members_cannot_test_a_target()
+    {
+        using var factory = new TestAppFactory();
+        await AdminAsync(factory);
+        await SeedAsync(factory, db => db.BackupTargets.Add(Target("nas", "files")));
+        var member = factory.CreateClient();
+        await member.RegisterAndSignInAsync();
+
+        Assert.Equal(HttpStatusCode.Forbidden,
+            (await member.PostAsJsonAsync("/api/admin/backups/targets/nas/test", new { })).StatusCode);
+    }
+
+    [Fact]
+    public async Task A_failed_connection_test_is_not_reported_as_a_failed_backup()
+    {
+        using var factory = new TestAppFactory();
+        var admin = await AdminAsync(factory);
+        var now = DateTimeOffset.UtcNow;
+        await SeedAsync(factory, db =>
+        {
+            foreach (var name in BackupNames.Agents)
+                db.BackupAgents.Add(new BackupAgent
+                {
+                    Name = name, StartedAt = now.AddDays(-5), LastSeenAt = now, IntervalHours = 24,
+                    VolumeFreeBytes = 900_000, VolumeTotalBytes = 1_000_000,
+                });
+            db.Backups.AddRange(Logical(0.2, 100, now), Full(0.2, now));
+            var test = Job(BackupNames.Logical, "failed", now.AddMinutes(-1));
+            test.Kind = BackupNames.KindTestTarget;
+            test.Target = "nas";
+            db.BackupJobs.Add(test);
+        });
+
+        await RunMonitorAsync(factory, processAge: TimeSpan.FromHours(1));
+        Assert.DoesNotContain(await AlertsAsync(admin), a => a.Kind.StartsWith("backup."));
+
+        // The last backup run is what the health reads, and it did not fail.
+        var overview = await admin.GetFromJsonAsync<OverviewDto>("/api/admin/backups");
+        Assert.False(overview!.Agents.Single(a => a.Name == BackupNames.Logical).LastRunFailed);
+    }
+
+    [Fact]
+    public async Task The_cloud_budget_reaches_the_screen_as_published()
+    {
+        using var factory = new TestAppFactory();
+        var admin = await AdminAsync(factory);
+        const long hundredGb = 100L * 1024 * 1024 * 1024;
+        await SeedAsync(factory, db =>
+        {
+            var database = Target("cloud", "database"); database.BudgetBytes = hundredGb;
+            var files = Target("cloud", "files"); files.BudgetBytes = hundredGb;
+            db.BackupTargets.AddRange(database, files, Target("nas", "files"));
+        });
+
+        var targets = (await admin.GetFromJsonAsync<TargetsOverviewDto>("/api/admin/backups"))!.Targets;
+        Assert.All(targets.Where(t => t.Slot == "cloud"), t => Assert.Equal(hundredGb, t.BudgetBytes));
+        Assert.Null(targets.Single(t => t.Slot == "nas").BudgetBytes);
+    }
+
     // --- Status.
 
     [Fact]

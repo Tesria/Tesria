@@ -337,11 +337,13 @@ export function AdminSecurityPage() {
                   <td>{b.reason ?? <span className="muted">–</span>}</td>
                   <td>{b.expiresAt ? new Date(b.expiresAt).toLocaleString() : 'Never'}</td>
                   <td className="muted small">{b.createdByName ?? 'system'} · {new Date(b.createdAt).toLocaleDateString()}</td>
-                  <td className="admin-table__actions">
-                    <button type="button" className="link-btn" disabled={busy}
-                      onClick={() => act(() => api.admin.security.blocks.remove(b.id), 'Unblocked.', 'Could not unblock.')}>
-                      Remove
-                    </button>
+                  <td>
+                    <div className="admin-table__actions">
+                      <button type="button" className="link-btn" disabled={busy}
+                        onClick={() => act(() => api.admin.security.blocks.remove(b.id), 'Unblocked.', 'Could not unblock.')}>
+                        Remove
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -401,10 +403,12 @@ export function AdminSecurityPage() {
                   <td><strong>{l.displayName}</strong><br /><span className="muted small">{l.email}</span></td>
                   <td>{l.failedLoginCount}</td>
                   <td>{new Date(l.lockedUntil).toLocaleTimeString()}</td>
-                  <td className="admin-table__actions">
-                    <button type="button" className="link-btn" disabled={busy} onClick={() => unlock(l.userId)}>
-                      Unlock
-                    </button>
+                  <td>
+                    <div className="admin-table__actions">
+                      <button type="button" className="link-btn" disabled={busy} onClick={() => unlock(l.userId)}>
+                        Unlock
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
