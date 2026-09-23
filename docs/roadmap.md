@@ -77,7 +77,7 @@ uploaded icon is copied today. Nothing else in the exporter changes.
 Worth deciding when it is scheduled: whether the favicon follows the uploaded
 mark (today it is generated from the accent in `theme.ts`), whether the mark
 gets a separate dark-theme variant, and whether removing Tesria's own name
-from an instance is something the licence should have an opinion about.
+from an instance is something the license should have an opinion about.
 
 ## Semantic search over the wiki (hybrid retrieval)
 
@@ -138,7 +138,7 @@ relevance score is exposed.
 
 ## Roadmap planner (timeline macro)
 
-A visual timeline block for the editor, modelled on Confluence's
+A visual timeline block for the editor, modeled on Confluence's
 [Roadmap Planner macro](https://confluence.atlassian.com/doc/roadmap-planner-macro-704578202.html):
 the thing people reach for when a wiki has to show *when*, not just *what*.
 
@@ -146,7 +146,7 @@ Its four elements, in Confluence's terms:
 
 - **Timeline**: the date axis, shown in days, weeks or months.
 - **Lanes**: horizontal rows separating teams, products or workstreams.
-- **Bars**: a phase or block of work in a lane, with text, colour, start
+- **Bars**: a phase or block of work in a lane, with text, color, start
   and end dates, an optional description, and an optional link to a page.
 - **Markers**: vertical lines calling out a significant date.
 

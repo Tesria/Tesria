@@ -91,7 +91,7 @@ services:
       # (dev-plan 3.1). It cannot alter or delete audit rows. An empty
       # APP_DB_PASSWORD falls back to the owner with a warning.
       ConnectionStrings__App: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${APP_DB_USER:-tesria_app};Password=${APP_DB_PASSWORD:-}"
-      # Shared with the collab sidecar; signs the tokens that authorise a user
+      # Shared with the collab sidecar; signs the tokens that authorize a user
       # to join a page's live editing session. Empty disables co-editing.
       Collab__Secret: ${COLLAB_SHARED_SECRET}
       # Where the app tells the sidecar that a page has been written, so an

@@ -399,7 +399,7 @@ public class RestoreTests
     private record MaintenanceReason(string Reason, DateTimeOffset StartedAt);
 
     [Fact]
-    public async Task Cancelling_is_still_allowed_while_everything_else_is_refused()
+    public async Task Canceling_is_still_allowed_while_everything_else_is_refused()
     {
         using var factory = new TestAppFactory();
         var owner = await InstanceAsync(factory);
@@ -410,10 +410,10 @@ public class RestoreTests
         Assert.Equal(HttpStatusCode.OK, res.StatusCode);
     }
 
-    // --- Cancelling ---------------------------------------------------------
+    // --- Canceling ---------------------------------------------------------
 
     [Fact]
-    public async Task Cancelling_a_queued_restore_ends_it_and_changes_nothing()
+    public async Task Canceling_a_queued_restore_ends_it_and_changes_nothing()
     {
         using var factory = new TestAppFactory();
         var owner = await InstanceAsync(factory);
@@ -432,7 +432,7 @@ public class RestoreTests
     }
 
     [Fact]
-    public async Task Cancelling_a_running_restore_only_asks()
+    public async Task Canceling_a_running_restore_only_asks()
     {
         using var factory = new TestAppFactory();
         var owner = await InstanceAsync(factory);
@@ -443,17 +443,17 @@ public class RestoreTests
         var res = await owner.PostAsJsonAsync("/api/admin/backups/restore/cancel", new { });
         var body = await res.Content.ReadFromJsonAsync<CancelBody>();
 
-        Assert.False(body!.Cancelled);
+        Assert.False(body!.Canceled);
         // Still in maintenance: the sidecar decides, and it may already be
         // past the point of no return.
         Assert.Equal(BackupNames.StatusRunning, (await ReadAsync(factory, db => db.BackupJobs.SingleAsync())).Status);
         Assert.NotNull((await ReadAsync(factory, db => db.SiteSettings.FirstAsync())).RestoreCancelRequestedAt);
     }
 
-    private record CancelBody(bool Cancelled, string Message);
+    private record CancelBody(bool Canceled, string Message);
 
     [Fact]
-    public async Task Cancelling_when_nothing_is_running_is_a_conflict()
+    public async Task Canceling_when_nothing_is_running_is_a_conflict()
     {
         using var factory = new TestAppFactory();
         var owner = await InstanceAsync(factory);

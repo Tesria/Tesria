@@ -263,7 +263,7 @@ public class OwnerTests
             (await ownerClient.GetAsync(route)).EnsureSuccessStatusCode();
 
         // Requiring two-factor for administrators binds the owner as well, and
-        // says so on /auth/me so the SPA can send them to enrol.
+        // says so on /auth/me so the SPA can send them to enroll.
         (await ownerClient.PutAsJsonAsync("/api/admin/settings", new { RequireTotpForAdmins = true }))
             .EnsureSuccessStatusCode();
         var me = await ownerClient.GetFromJsonAsync<MeDto>("/api/auth/me");

@@ -64,7 +64,7 @@ type Block = JSONContent
  * nothing else.
  *
  * Object keys are sorted so two blocks that differ only in attribute order
- * are one block. ProseMirror JSON round-trips through several serialisers
+ * are one block. ProseMirror JSON round-trips through several serializers
  * here (Postgres, Yjs, the API) and none of them promises key order.
  */
 export function blockKey(block: Block): string {
@@ -251,7 +251,7 @@ export function needsReconcile(draft: Block, published: Block): boolean {
  * "leave the draft alone": refusing to reconcile loses nothing, while writing
  * a half-understood document over somebody's draft loses their work.
  */
-export function normalise(schema: Schema, document: Block): Block {
+export function normalize(schema: Schema, document: Block): Block {
   return schema.nodeFromJSON(document).toJSON() as Block
 }
 
@@ -291,8 +291,8 @@ export function reconcileYDoc(
   // attrs at all. Comparing those two directly marks every block in the
   // document as changed, every time. (Found by running it, not by reading
   // it: the canonicaliser already forgives a null, and 0 is not a null.)
-  const draft = normalise(schema, yXmlFragmentToProsemirrorJSON(fragment) as Block)
-  const page = normalise(schema, published)
+  const draft = normalize(schema, yXmlFragmentToProsemirrorJSON(fragment) as Block)
+  const page = normalize(schema, published)
 
   // An empty fragment means nobody has opened this page since it was last
   // published, so there is no draft to reconcile against and nothing to mark:

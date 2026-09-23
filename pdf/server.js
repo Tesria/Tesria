@@ -5,7 +5,7 @@
 // looked nothing like the page: it was a hand-written copy of the editor's
 // styling, fifteen lines of CSS against the app's two thousand. So this now
 // loads the *real* page instead, from a chrome-free route of the SPA, and
-// either prints it or serialises its DOM. One renderer, and an export cannot
+// either prints it or serializes its DOM. One renderer, and an export cannot
 // drift from the page without the page breaking too.
 //
 // That is a deliberate change of posture. The service used to run with the
@@ -254,7 +254,7 @@ const server = createServer(async (req, res) => {
     return
   }
   // The service is only reachable inside the compose network, but a shared
-  // secret means a compromised neighbour still cannot drive the renderer.
+  // secret means a compromised neighbor still cannot drive the renderer.
   if (!SECRET || req.headers['x-pdf-secret'] !== SECRET) {
     res.writeHead(401).end()
     return

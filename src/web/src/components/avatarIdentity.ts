@@ -1,5 +1,5 @@
 /**
- * The data behind a generated avatar: colours, variant selection and
+ * The data behind a generated avatar: colors, variant selection and
  * initials. Separate from `Avatar.tsx` so that file exports only a
  * component, which is what React Fast Refresh needs to work properly.
  */
@@ -10,7 +10,7 @@
  * read against both the light and dark page grounds, so a generated avatar
  * needs no per-theme treatment at all.
  *
- * Deliberately not the editor's `palette.ts`: those are content colours an
+ * Deliberately not the editor's `palette.ts`: those are content colors an
  * author picks for a table cell or a highlight, and they are light tints
  * chosen to sit *behind* dark body text. These are the opposite job.
  */
@@ -35,7 +35,7 @@ export type AvatarSubject = {
  * other would collide under a sum, and user ids are hex GUIDs, which share
  * an alphabet and a length: exactly the case where a weak hash clusters.
  *
- * Exported because space icons (dev-plan 6) pick a tile colour the same way,
+ * Exported because space icons (dev-plan 6) pick a tile color the same way,
  * from a space key rather than a user id.
  */
 export function stableIndex(value: string, modulo: number): number {

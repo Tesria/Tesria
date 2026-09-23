@@ -170,10 +170,10 @@ public static partial class PackImportEndpoints
                     ParentPageId = maps.Page(packed.Parent),
                     Title = Clip(packed.Title, 500),
                     FullWidth = packed.FullWidth,
-                    // Renormalised rather than carried: the pack is in tree
+                    // Renormalized rather than carried: the pack is in tree
                     // order, so counting is more trustworthy than a number
                     // that was only ever relative to pages that may not have
-                    // travelled.
+                    // traveled.
                     Position = position++,
                     Status = PageStatus.Current,
                     CreatedById = user,
@@ -297,7 +297,7 @@ public static partial class PackImportEndpoints
         finally
         {
             // Everything that is not a commit ends here: a thrown exception, a
-            // cancelled request, and the validation failures that return from
+            // canceled request, and the validation failures that return from
             // inside the transaction once rows have already been added. All
             // three have to undo the same two things, so they say so once.
             if (!committed)

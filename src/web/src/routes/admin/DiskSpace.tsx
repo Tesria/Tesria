@@ -46,7 +46,7 @@ function relative(iso: string | null): string {
 }
 
 function DiskCard({ disk }: { disk: DiskChart }) {
-  // Four separate hues rather than shades of one. Grey read as "disabled"
+  // Four separate hues rather than shades of one. Gray read as "disabled"
   // rather than as a slice, and two blues for the wiki and its backups were
   // taken for the same thing.
   const slices = [

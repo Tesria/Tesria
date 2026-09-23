@@ -14,7 +14,7 @@ namespace Tesria.Api.Features.Export;
 ///
 /// It used to render HTML as well, and that was the reason exports looked
 /// nothing like the page: a second renderer, in another language, against a
-/// fifteen-line stylesheet, copying colours out of index.css by hand. Since
+/// fifteen-line stylesheet, copying colors out of index.css by hand. Since
 /// dev-plan 12.1 HTML and PDF are captured from the page itself, and only
 /// Markdown is rendered here, because Markdown is a genuinely different
 /// document rather than a picture of this one.
@@ -279,7 +279,7 @@ public static class ProseMirrorRenderer
     private static string EscapeTablePipes(string text) => text.Replace("|", "\\|");
 
     /// <summary>
-    /// A highlight mark, carrying its colour when the editor set one
+    /// A highlight mark, carrying its color when the editor set one
     /// (extensions.ts configures Highlight with multicolor). Marks stored
     /// before that predate the attribute and render as a plain &lt;mark&gt;.
     /// </summary>
@@ -292,10 +292,10 @@ public static class ProseMirrorRenderer
     }
 
     /// <summary>
-    /// Whitelists the colour shapes the editor's palettes actually produce (a
+    /// Whitelists the color shapes the editor's palettes actually produce (a
     /// #rgb/#rrggbb hex) before it reaches a `style` attribute. Attribute
     /// values come from stored document JSON, which the API accepts as
-    /// arbitrary JSON, so an unvalidated colour would be a way to inject
+    /// arbitrary JSON, so an unvalidated color would be a way to inject
     /// arbitrary CSS into exported HTML.
     /// </summary>
     private static bool IsSafeCssColor(string? color) =>
@@ -323,7 +323,7 @@ public static class ProseMirrorRenderer
         ["error"] = ("#ffedeb", "#f87168", "#ae2e24"),
     };
 
-    /// <summary>The node's panelType, defaulted to "info" if absent or unrecognised.</summary>
+    /// <summary>The node's panelType, defaulted to "info" if absent or unrecognized.</summary>
     private static string PanelTypeOf(JsonElement node)
     {
         var type = Attr(node, "panelType");
@@ -338,7 +338,7 @@ public static class ProseMirrorRenderer
             var marker = BoolAttr(item, "checked") ? "- [x] " : "- [ ] ";
             var itemText = new StringBuilder();
             RenderMarkdownChildren(item, itemText, depth + 1, ctx);
-            // The assignee is a denormalised copy of the mention already
+            // The assignee is a denormalized copy of the mention already
             // inside the item (taskAssignee.ts), so it is deliberately not
             // repeated here: it would read as the name twice.
 
@@ -394,7 +394,7 @@ public static class ProseMirrorRenderer
                 "textColor" => $"<span style=\"color: {TextColors[TextColorOf(mark)]}\">{text}</span>",
                 "subscript" => $"<sub>{text}</sub>",
                 "superscript" => $"<sup>{text}</sup>",
-                // Sanitised, not passed through: a Markdown file gets rendered
+                // Sanitized, not passed through: a Markdown file gets rendered
                 // by something eventually, and a javascript: url that survives
                 // into a permissive renderer is a live link. The HTML path
                 // checked this and Markdown did not, which 12.1's cleanup
@@ -487,10 +487,10 @@ public static class ProseMirrorRenderer
     // -- Phase 7 Wave B formatting ----------------------------------------------
 
     /// <summary>
-    /// Light-theme ink per colour name, matching index.css's
-    /// <c>--text-color-*</c>. The mark stores a name, never a colour value
+    /// Light-theme ink per color name, matching index.css's
+    /// <c>--text-color-*</c>. The mark stores a name, never a color value
     /// (see textColorMark.ts), so nothing from the document can reach a
-    /// style attribute: an unknown name falls back to grey.
+    /// style attribute: an unknown name falls back to gray.
     /// </summary>
     private static readonly Dictionary<string, string> TextColors = new()
     {
@@ -684,7 +684,7 @@ public static class ProseMirrorRenderer
         DateOnly.TryParseExact(Attr(node, "date"), "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture,
             System.Globalization.DateTimeStyles.None, out var d) ? d : null;
 
-    /// <summary>"10 Sep 2026": invariant; an export has no viewer locale to honour.</summary>
+    /// <summary>"10 Sep 2026": invariant; an export has no viewer locale to honor.</summary>
     private static string DateText(DateOnly date) => date.ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
 
     // -- shared ---------------------------------------------------------------

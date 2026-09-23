@@ -82,7 +82,7 @@ public static class RoleSeed
     }
 
     /// <summary>
-    /// Hands out rights the catalogue has gained since the last start, to the
+    /// Hands out rights the catalog has gained since the last start, to the
     /// built-in roles whose defaults include them.
     ///
     /// Without this a right added in a later release would arrive switched
@@ -109,7 +109,7 @@ public static class RoleSeed
 
         // Only when there is a record to compare against. The first run after
         // this record existed finds every key "new" although none is: the
-        // roles were built from the same catalogue, and an owner may already
+        // roles were built from the same catalog, and an owner may already
         // have taken rights away. Recording them without granting anything is
         // the only reading that cannot undo a decision.
         var builtIns = await db.Roles.Include(r => r.Permissions).Where(r => r.Key != null).ToListAsync(ct);

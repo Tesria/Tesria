@@ -74,7 +74,7 @@ public class InviteTests
 
         var issued = await (await admin.PostAsJsonAsync("/api/admin/invites",
             new { Email = "Wanted@Example.com" })).Content.ReadFromJsonAsync<InviteDto>();
-        Assert.Equal("wanted@example.com", issued!.Email); // normalised
+        Assert.Equal("wanted@example.com", issued!.Email); // normalized
 
         // A forwarded link must not become a registration for whoever received it.
         Assert.Equal(HttpStatusCode.Forbidden,
@@ -106,7 +106,7 @@ public class InviteTests
         var admin = factory.CreateClient();
         (await RegisterAsync(admin, "admin@example.com")).EnsureSuccessStatusCode();
 
-        // Default is open, so this is the unchanged behaviour.
+        // Default is open, so this is the unchanged behavior.
         (await RegisterAsync(factory.CreateClient(), "anyone@example.com")).EnsureSuccessStatusCode();
     }
 

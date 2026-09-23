@@ -65,7 +65,7 @@ public static partial class SpaceEndpoints
 
         // Which exports a space allows (dev-plan 12.3). An instance right,
         // like deleting: the setting exists for spaces more sensitive than
-        // the rest, and that judgement belongs to the instance's
+        // the rest, and that judgment belongs to the instance's
         // administrators rather than to whoever created the space.
         group.MapPut("/{key}/exports", UpdateExports)
             .RequirePermission(InstancePermissions.SpacesExports);

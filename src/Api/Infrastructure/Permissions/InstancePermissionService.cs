@@ -78,7 +78,7 @@ public sealed class InstancePermissionService(AppDbContext db, CurrentUser curre
                     .Select(r => (Guid?)r.Id)
                     .FirstOrDefaultAsync(ct));
             // No roles at all yet (a fresh database mid-startup): fall back to
-            // the catalogue's defaults rather than refusing everything.
+            // the catalog's defaults rather than refusing everything.
             if (roleId is null) return new HashSet<string>(InstancePermissions.DefaultsFor(tier));
         }
 
@@ -88,7 +88,7 @@ public sealed class InstancePermissionService(AppDbContext db, CurrentUser curre
                 .Where(p => p.RoleId == roleId)
                 .Select(p => p.Key)
                 .ToListAsync(ct);
-            // Keys the catalogue has since dropped mean nothing.
+            // Keys the catalog has since dropped mean nothing.
             return new HashSet<string>(keys.Where(InstancePermissions.IsAssignable));
         });
     }

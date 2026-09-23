@@ -59,7 +59,7 @@ public class AuditTests
     }
 
     [Fact]
-    public async Task Newest_entries_come_first_and_take_is_honoured()
+    public async Task Newest_entries_come_first_and_take_is_honored()
     {
         using var factory = new TestAppFactory();
         var client = factory.CreateClient();

@@ -33,7 +33,7 @@ public static class OpenApiSetup
                         + "`Authorization: Bearer <token>` (mint one at *Profile → API tokens*). "
                         + "The SPA uses a session cookie instead, and cookie-authenticated "
                         + "requests that change anything must also send `X-Requested-With: Tesria` "
-                        + ": that header is the CSRF defence, and a browser cannot set it "
+                        + ": that header is the CSRF defense, and a browser cannot set it "
                         + "cross-origin.\n\n"
                         + "**Permissions.** Anything you may not see is `404`, never `403`, so "
                         + "restricted pages are not discoverable by probing.",
@@ -106,7 +106,7 @@ public static class OpenApiSetup
             options.WithDefaultFonts(false);
             // Scalar's sidebar offers features backed by api.scalar.com. This
             // app's `connect-src 'self'` blocks those calls, which is the
-            // behaviour we want, a documentation page has no business
+            // behavior we want, a documentation page has no business
             // phoning anywhere, so the button that leads to them is hidden
             // rather than left to fail in front of the reader. The library
             // has no switch for the lookups themselves; the CSP is the

@@ -128,7 +128,7 @@ the item's CHANGELOG entry, so the owner has evidence either way.
   panel access and are the reliable half.
   Switching `xcode-select` to Xcode also routes `git` and `python3` through
   Xcode's tools, and both refuse to run until `sudo xcodebuild -license
-  accept`: a patch script then prints the licence notice instead of
+  accept`: a patch script then prints the license notice instead of
   running, and looks like success unless its output is read. Do not use the
   simulator on this machine at all unless asked: it is an 8 GB Mac.
 
@@ -207,7 +207,7 @@ does unprompted): safe to remove or ignore:
 - A **"Trash Test Page"** sitting in the real **"App Design"** space's
   Trash, from an earlier trash/restore verification pass.
 - ~~An **"API Docs Bot"** account and the **"API"** space it authored,
-  created 2026-09-08 (23 pages, 8 labels, panels, coloured tables, a saved
+  created 2026-09-08 (23 pages, 8 labels, panels, colored tables, a saved
   template).~~ **Also gone** (noticed 2026-09-21), the same way the manual
   was. The API's own reference still exists where it always did, as OpenAPI
   plus `docs/` (8.3), which is the reason this one is a smaller loss.

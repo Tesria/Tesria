@@ -38,16 +38,16 @@ export function SearchPage() {
       setResults([])
       return
     }
-    let cancelled = false
+    let canceled = false
     noteSearch()
     setResults(null)
     setError(null)
     api
       .search(query)
-      .then((r) => !cancelled && setResults(r))
-      .catch((err: unknown) => !cancelled && setError(err instanceof Error ? err.message : 'Search failed.'))
+      .then((r) => !canceled && setResults(r))
+      .catch((err: unknown) => !canceled && setError(err instanceof Error ? err.message : 'Search failed.'))
     return () => {
-      cancelled = true
+      canceled = true
     }
   }, [query])
 

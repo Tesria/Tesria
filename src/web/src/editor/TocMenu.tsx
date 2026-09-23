@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { BubbleMenu } from '@tiptap/react/menus'
 import { useEditorState, type Editor as TiptapEditor } from '@tiptap/react'
 import { NodeSelection } from '@tiptap/pm/state'
-import { normaliseTocOptions, TOC_BULLET_LABELS, TOC_BULLET_STYLES, type TocOptions } from './tocOptions'
+import { normalizeTocOptions, TOC_BULLET_LABELS, TOC_BULLET_STYLES, type TocOptions } from './tocOptions'
 
 const LEVELS = [1, 2, 3, 4, 5, 6]
 
@@ -16,7 +16,7 @@ export function TocMenu({ editor }: { editor: TiptapEditor }) {
     selector: ({ editor }) => {
       const { selection } = editor.state
       if (!(selection instanceof NodeSelection) || selection.node.type.name !== 'tableOfContents') return null
-      return { pos: selection.from, options: normaliseTocOptions(selection.node.attrs) }
+      return { pos: selection.from, options: normalizeTocOptions(selection.node.attrs) }
     },
     equalityFn: (a, b) => b !== null && JSON.stringify(a) === JSON.stringify(b),
   })

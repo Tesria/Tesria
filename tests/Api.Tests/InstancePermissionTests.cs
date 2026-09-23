@@ -12,7 +12,7 @@ using Xunit;
 namespace Tesria.Api.Tests;
 
 /// <summary>
-/// Instance rights (dev-plan 11.1): the catalogue's defaults, the routes that
+/// Instance rights (dev-plan 11.1): the catalog's defaults, the routes that
 /// name a right, and what happens when a role loses one. The refusals matter
 /// more than the grants: each is something an administrator could otherwise do.
 /// </summary>
@@ -22,7 +22,7 @@ public class InstancePermissionTests
     private record RoleDto(Guid Id, string? Key, string Name, string? Description, int Tier, bool BuiltIn,
         string[] Permissions, int Members, bool Editable);
     private record PermissionDto(string Key, string Area, string Label, string Description, string Scope);
-    private record MatrixDto(List<PermissionDto> Catalogue, List<PermissionDto> Reserved, List<RoleDto> Roles,
+    private record MatrixDto(List<PermissionDto> Catalog, List<PermissionDto> Reserved, List<RoleDto> Roles,
         DateTimeOffset? ReviewedAt, string? ReviewedByName);
     private record AlertDto(Guid Id, string Kind, int Severity, string Key);
     private record SpaceDto(Guid Id, string Key, string Name);
@@ -75,7 +75,7 @@ public class InstancePermissionTests
         scope.ServiceProvider.GetRequiredService<PermissionCache>().Invalidate();
     }
 
-    // --- The catalogue and the seed.
+    // --- The catalog and the seed.
 
     [Fact]
     public void The_defaults_are_what_the_plan_says()
@@ -103,7 +103,7 @@ public class InstancePermissionTests
     }
 
     [Fact]
-    public async Task Every_administrative_route_names_a_right_the_catalogue_defines()
+    public async Task Every_administrative_route_names_a_right_the_catalog_defines()
     {
         using var factory = new TestAppFactory();
         _ = factory.CreateClient(); // builds the host, and with it the routes
@@ -138,7 +138,7 @@ public class InstancePermissionTests
                 continue;
             }
             Assert.True(InstancePermissions.IsAssignable(key) || InstancePermissions.IsReserved(key),
-                $"{endpoint.RoutePattern.RawText} names '{key}', which is not in the catalogue.");
+                $"{endpoint.RoutePattern.RawText} names '{key}', which is not in the catalog.");
         }
         Assert.Empty(unnamed);
     }
@@ -253,7 +253,7 @@ public class InstancePermissionTests
     // --- What the owner sees and may change.
 
     [Fact]
-    public async Task The_matrix_reports_the_catalogue_the_roles_and_who_may_edit_them()
+    public async Task The_matrix_reports_the_catalog_the_roles_and_who_may_edit_them()
     {
         using var factory = new TestAppFactory();
         var ownerClient = factory.CreateClient();
@@ -264,7 +264,7 @@ public class InstancePermissionTests
             .EnsureSuccessStatusCode();
 
         var asOwner = await MatrixAsync(ownerClient);
-        Assert.Equal(InstancePermissions.All.Count, asOwner.Catalogue.Count);
+        Assert.Equal(InstancePermissions.All.Count, asOwner.Catalog.Count);
         Assert.Equal(3, asOwner.Reserved.Count);
         Assert.All(asOwner.Roles, r => Assert.True(r.Editable));
         Assert.Null(asOwner.ReviewedAt);

@@ -58,7 +58,7 @@ public class Role
 
 /// <summary>
 /// One right held by one role. A row is a grant; absence is not. Keys the
-/// catalogue no longer defines are ignored on read and dropped on the next
+/// catalog no longer defines are ignored on read and dropped on the next
 /// write, so removing a right from the code does not need a migration.
 /// </summary>
 public class RolePermission

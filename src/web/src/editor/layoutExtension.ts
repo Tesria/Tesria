@@ -25,11 +25,11 @@ export const LAYOUT_PRESETS = {
 export type LayoutPreset = keyof typeof LAYOUT_PRESETS
 export const LAYOUT_PRESET_KEYS = Object.keys(LAYOUT_PRESETS) as LayoutPreset[]
 
-/** Section width, on the page's own centred / wide / full scale (index.css `.layout-section--*`). */
+/** Section width, on the page's own centered / wide / full scale (index.css `.layout-section--*`). */
 export const LAYOUT_WIDTHS = ['default', 'wide', 'full'] as const
 export type LayoutWidth = (typeof LAYOUT_WIDTHS)[number]
 export const LAYOUT_WIDTH_LABELS: Record<LayoutWidth, string> = {
-  default: 'Centred',
+  default: 'Centered',
   wide: 'Wide',
   full: 'Full width',
 }

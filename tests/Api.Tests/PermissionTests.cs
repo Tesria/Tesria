@@ -5,7 +5,7 @@ using Xunit;
 namespace Tesria.Api.Tests;
 
 /// <summary>
-/// Security-critical behaviour: these assert that access is actually *denied*,
+/// Security-critical behavior: these assert that access is actually *denied*,
 /// not merely that the happy path works.
 /// </summary>
 public class PermissionTests

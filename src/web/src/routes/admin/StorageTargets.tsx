@@ -49,7 +49,7 @@ function relative(iso: string | null | undefined): string {
   return `${value} ${unit}${value === 1 ? '' : 's'} ago`
 }
 
-/** What the card says at a glance, and the colour it says it in. */
+/** What the card says at a glance, and the color it says it in. */
 function state(target: BackupTarget): { tone: 'ok' | 'warn' | 'bad'; text: string } {
   // First, because it outranks everything else here: a copy that exists,
   // passes its own integrity check and will not turn back into a database
@@ -119,7 +119,7 @@ function TestResult({ tests }: { tests: BackupJob[] }) {
       </p>
     )
   }
-  const labelled = tests.length > 1
+  const labeled = tests.length > 1
   const finished = Math.max(...tests.map((j) => new Date(j.finishedAt ?? j.requestedAt).getTime()))
   return (
     <div className="target-test" role="status">
@@ -130,7 +130,7 @@ function TestResult({ tests }: { tests: BackupJob[] }) {
             <li key={j.id} className={ok ? undefined : 'backup-text--bad'}>
               <Dot tone={ok ? 'ok' : 'bad'} />
               <span>
-                {labelled && <strong>{AGENT_REPOSITORY[j.agent] ?? j.agent}: </strong>}
+                {labeled && <strong>{AGENT_REPOSITORY[j.agent] ?? j.agent}: </strong>}
                 {summaryOf(j)}
               </span>
             </li>
@@ -296,8 +296,8 @@ function cost(type: string | null | undefined, bytesStored: number): string | nu
  *
  * Unless somebody set OFFSITE_CLOUD_BUDGET_GB. Then there is a denominator,
  * and it is theirs rather than invented, so the pie gains what is left of it
- * as a slice, labelled as budget and never as free space. Going over is said
- * plainly and in the danger colour, but nothing is refused for it: it is a
+ * as a slice, labeled as budget and never as free space. Going over is said
+ * plainly and in the danger color, but nothing is refused for it: it is a
  * number to watch, not a limit.
  */
 function Composition({ rows }: { rows: BackupTarget[] }) {

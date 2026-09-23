@@ -14,7 +14,7 @@ public sealed class PermissionRequirement(string key) : IAuthorizationRequiremen
 /// <summary>
 /// Turns <c>perm:&lt;key&gt;</c> into a policy on demand (dev-plan 11.1), so a
 /// route can name its right without every key being registered at startup and
-/// without a second list to keep in step with the catalogue.
+/// without a second list to keep in step with the catalog.
 /// </summary>
 public sealed class PermissionPolicyProvider(IOptions<AuthorizationOptions> options)
     : DefaultAuthorizationPolicyProvider(options)
@@ -65,11 +65,11 @@ public static class PermissionEndpointExtensions
         where TBuilder : IEndpointConventionBuilder
     {
         if (!InstancePermissions.IsAssignable(key) && !InstancePermissions.IsReserved(key))
-            throw new ArgumentException($"'{key}' is not in the permission catalogue.", nameof(key));
+            throw new ArgumentException($"'{key}' is not in the permission catalog.", nameof(key));
 
         builder.RequireAuthorization(PermissionPolicyProvider.Prefix + key);
         // Recorded so a test can walk the endpoints and prove every
-        // administrative route names a right the catalogue defines.
+        // administrative route names a right the catalog defines.
         builder.WithMetadata(new PermissionRequirement(key));
         return builder;
     }

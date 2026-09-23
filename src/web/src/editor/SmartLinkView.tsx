@@ -30,13 +30,13 @@ export function SmartLinkView({ node, editor, selected, updateAttributes }: Reac
   useEffect(() => {
     setPreview(null)
     if (!url) return
-    let cancelled = false
+    let canceled = false
     setLoading(true)
     api.embeds.unfurl(url)
-      .then((p) => !cancelled && setPreview(p))
+      .then((p) => !canceled && setPreview(p))
       .catch(() => {})
-      .finally(() => !cancelled && setLoading(false))
-    return () => { cancelled = true }
+      .finally(() => !canceled && setLoading(false))
+    return () => { canceled = true }
   }, [url])
 
   const editing = editor.isEditable && (selected || !url)

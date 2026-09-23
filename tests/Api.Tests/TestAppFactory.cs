@@ -12,7 +12,7 @@ namespace Tesria.Api.Tests;
 
 /// <summary>
 /// Boots the real API in-process but swaps PostgreSQL for a private SQLite
-/// in-memory database, so endpoint and data-access behaviour is exercised
+/// in-memory database, so endpoint and data-access behavior is exercised
 /// end-to-end without Docker. Each instance owns a fresh, isolated database;
 /// create one per test for isolation.
 /// </summary>

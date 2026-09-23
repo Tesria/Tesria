@@ -5,7 +5,7 @@ import { useAuth } from '../auth/AuthContext'
 import { PasswordInput } from './PasswordInput'
 
 /**
- * Profile → Two-factor sign-in (dev-plan 3.5). Enrolment is scan → type a
+ * Profile → Two-factor sign-in (dev-plan 3.5). Enrollment is scan → type a
  * code → on; the recovery codes from registration are the backup, so nothing
  * new to save.
  */
@@ -99,7 +99,7 @@ export function TotpSection() {
           )}
         </form>
       ) : setup ? (
-        <form onSubmit={enable} className="totp-enrol">
+        <form onSubmit={enable} className="totp-enroll">
           {qr ? <img src={qr} alt="QR code for your authenticator app" width={192} height={192} /> : null}
           <p className="muted small">
             Can&rsquo;t scan? Enter this key by hand: <code className="totp-secret">{setup.secret}</code>

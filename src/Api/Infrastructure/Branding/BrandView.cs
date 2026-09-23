@@ -47,7 +47,7 @@ public sealed record BrandView(
     public static readonly string[] ThemePolicies = [Any, Light, Dark];
     public static readonly string[] AccentPolicies = [Any, Locked];
 
-    /// <summary>The accent that means "the custom colours".</summary>
+    /// <summary>The accent that means "the custom colors".</summary>
     public const string BrandAccent = "brand";
     public static readonly string[] BuiltInAccents = ["blue", "teal", "green", "purple", "orange", "magenta"];
 
@@ -77,7 +77,7 @@ public sealed record BrandView(
         var light = AccentColors.Normalize(s.BrandAccentLight);
         var dark = AccentColors.Normalize(s.BrandAccentDark);
 
-        // A policy asking for the brand accent with no brand colour to show
+        // A policy asking for the brand accent with no brand color to show
         // falls back to Tesria's, rather than rendering an accent that does
         // not exist.
         var accent = s.AccentName;

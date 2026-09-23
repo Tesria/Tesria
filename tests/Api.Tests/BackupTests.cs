@@ -112,7 +112,7 @@ public class BackupTests
     }
 
     [Fact]
-    public void Failed_and_already_removed_backups_do_not_count_towards_the_newest_N()
+    public void Failed_and_already_removed_backups_do_not_count_toward_the_newest_N()
     {
         var failed = Logical(1); failed.Error = "boom";
         var gone = Logical(2); gone.RemovedAt = Now;

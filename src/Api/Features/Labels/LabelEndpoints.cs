@@ -12,7 +12,7 @@ public static partial class LabelEndpoints
     public record AddLabelRequest(string Name);
     public record LabelResponse(Guid Id, string Name);
     public record LabelUsageResponse(Guid Id, string Name, int PageCount);
-    public record LabelledPageResponse(Guid PageId, Guid SpaceId, string SpaceKey, string Title);
+    public record LabeledPageResponse(Guid PageId, Guid SpaceId, string SpaceKey, string Title);
 
     // 1–50 chars: letters, digits, dash, underscore, dot. Stored lower-cased.
     [GeneratedRegex("^[a-z0-9][a-z0-9._-]{0,49}$")]
@@ -131,11 +131,11 @@ public static partial class LabelEndpoints
             .Where(pl => pl.Label!.Name == normalized)
             // Join through Pages so the soft-delete filter excludes trashed pages.
             .Join(db.Pages, pl => pl.PageId, p => p.Id, (pl, p) => p)
-            .Select(p => new LabelledPageResponse(p.Id, p.SpaceId, p.Space!.Key, p.Title))
+            .Select(p => new LabeledPageResponse(p.Id, p.SpaceId, p.Space!.Key, p.Title))
             .ToListAsync();
 
         var viewableSpaces = await perms.ViewableSpaceIdsAsync();
-        var visible = new List<LabelledPageResponse>();
+        var visible = new List<LabeledPageResponse>();
         foreach (var p in pages)
         {
             if (!viewableSpaces.Contains(p.SpaceId)) continue;

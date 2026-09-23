@@ -32,7 +32,7 @@ public static class ProxyTrust
     {
         options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
 
-        // Only the nearest proxy's entry is honoured. Caddy appends the real
+        // Only the nearest proxy's entry is honored. Caddy appends the real
         // client address as the last X-Forwarded-For value; anything a client
         // put in the header itself sits earlier and is ignored, so a caller
         // cannot pick its own address to dodge a rate limit.

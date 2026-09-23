@@ -7,8 +7,8 @@ import type { SVGProps } from 'react'
  * 24×24 viewBox, 1.8px stroke, round caps and joins, `fill: none`) so the
  * navigation reads as part of this app rather than as whatever glyphs the
  * operating system happens to ship. These were emoji (📑 ⚙ 🔒 🪝 🗑), which
- * render as small full-colour pictures: a different visual weight on every
- * platform, and nothing to do with the accent colour.
+ * render as small full-color pictures: a different visual weight on every
+ * platform, and nothing to do with the accent color.
  *
  * Everything is `currentColor`, so `.nav-icon` can point them at
  * `--primary` and they follow both the theme and the chosen accent for

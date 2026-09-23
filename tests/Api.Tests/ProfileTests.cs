@@ -130,7 +130,7 @@ public class ProfileTests
         var user = await RegisterAsync(client, "a@example.com");
         (await client.GetAsync("/api/auth/me")).EnsureSuccessStatusCode();
 
-        // Exactly what suspension, force-logout and 2FA enrolment will do.
+        // Exactly what suspension, force-logout and 2FA enrollment will do.
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

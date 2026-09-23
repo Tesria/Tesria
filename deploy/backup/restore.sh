@@ -172,9 +172,9 @@ log "restored copy looks sound: ${R_PAGES} pages, ${R_USERS} accounts, ${R_MIGRA
 
 # --- 4. The last moment anyone can call this off ---------------------------
 
-if declare -f restore_cancelled >/dev/null && restore_cancelled; then
+if declare -f restore_canceled >/dev/null && restore_canceled; then
   adm -c "DROP DATABASE \"${NEW_DB}\";" >/dev/null
-  die "cancelled before the wiki was changed; nothing was replaced"
+  die "canceled before the wiki was changed; nothing was replaced"
 fi
 
 # --- 5. The point of no return ---------------------------------------------

@@ -228,7 +228,7 @@ public static class WikiPack
     ///
     /// <para>Everything here treats the archive as hostile: the format is
     /// checked before anything else is parsed, entry names are matched
-    /// against the shapes this format defines rather than sanitised, and the
+    /// against the shapes this format defines rather than sanitized, and the
     /// size and count ceilings are enforced while reading rather than after.
     /// The model it returns is still *untrusted content* (page documents
     /// still have to go through <c>PageContent.TryNormalize</c>); what it
@@ -249,7 +249,7 @@ public static class WikiPack
             // unpacked pack back up is exactly how 10.5 is meant to work, so
             // refusing them would break the workflow the format exists for.
             // Skipped rather than allowed through IsAllowedName, which is
-            // about files and is also what the import's zip-slip defence is.
+            // about files and is also what the import's zip-slip defense is.
             if (IsDirectory(entry)) continue;
 
             // A zip declares each entry's uncompressed length, so the total is

@@ -53,7 +53,7 @@ public static partial class PackRewriter
 
     /// <summary>
     /// Rewrites a plain-text body: comments, where someone may well have
-    /// pasted a link to a page that is travelling with this one.
+    /// pasted a link to a page that is traveling with this one.
     /// </summary>
     public static string RewriteText(string text, Maps maps) => Urls(text, maps);
 
@@ -79,7 +79,7 @@ public static partial class PackRewriter
                     if (pair.Value is JsonValue value && value.TryGetValue<string>(out var text))
                     {
                         // Any string anywhere: an href, an image src, a
-                        // dynamic block's serialised params. Walking every
+                        // dynamic block's serialized params. Walking every
                         // string rather than an allow-list of attributes means
                         // a node type added later is rewritten too, which is
                         // the failure this would otherwise have every time
@@ -137,7 +137,7 @@ public static partial class PackRewriter
                     && Guid.TryParse(text, out var parsed) ? parsed : (Guid?)null;
 
                 // A highlight with nothing behind it is worse than no
-                // highlight: it colours the text and then says nothing when
+                // highlight: it colors the text and then says nothing when
                 // it is clicked. The words stay; only the mark goes.
                 if (id is null || !maps.Comments.TryGetValue(id.Value, out var comment)) continue;
                 obj["attrs"]!["commentId"] = comment.ToString();

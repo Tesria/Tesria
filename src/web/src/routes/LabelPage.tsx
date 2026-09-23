@@ -1,23 +1,23 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { api, type LabelledPage } from '../api/client'
+import { api, type LabeledPage } from '../api/client'
 
 /** Browse every page carrying a given label. */
 export function LabelPage() {
   const { name = '' } = useParams()
-  const [pages, setPages] = useState<LabelledPage[] | null>(null)
+  const [pages, setPages] = useState<LabeledPage[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    let cancelled = false
+    let canceled = false
     setPages(null)
     setError(null)
     api.labels
       .pages(name)
-      .then((p) => !cancelled && setPages(p))
-      .catch((err: unknown) => !cancelled && setError(err instanceof Error ? err.message : 'Failed to load.'))
+      .then((p) => !canceled && setPages(p))
+      .catch((err: unknown) => !canceled && setError(err instanceof Error ? err.message : 'Failed to load.'))
     return () => {
-      cancelled = true
+      canceled = true
     }
   }, [name])
 

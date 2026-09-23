@@ -97,11 +97,11 @@ function PagePicker({ value, onChange }: { value: string | undefined; onChange: 
   useEffect(() => {
     setTitle(null)
     if (!value) return
-    let cancelled = false
+    let canceled = false
     api.pages.get(value)
-      .then((p) => !cancelled && setTitle(p.title))
-      .catch(() => !cancelled && setTitle(''))
-    return () => { cancelled = true }
+      .then((p) => !canceled && setTitle(p.title))
+      .catch(() => !canceled && setTitle(''))
+    return () => { canceled = true }
   }, [value])
 
   useEffect(() => {
@@ -113,13 +113,13 @@ function PagePicker({ value, onChange }: { value: string | undefined; onChange: 
       return
     }
     if (q.length < 2) { setResults([]); return }
-    let cancelled = false
+    let canceled = false
     const timer = window.setTimeout(() => {
       api.search(q)
-        .then((r) => !cancelled && setResults(r.slice(0, 8)))
-        .catch(() => !cancelled && setResults([]))
+        .then((r) => !canceled && setResults(r.slice(0, 8)))
+        .catch(() => !canceled && setResults([]))
     }, 250)
-    return () => { cancelled = true; window.clearTimeout(timer) }
+    return () => { canceled = true; window.clearTimeout(timer) }
     // onChange is a fresh function each render; the query is what matters.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query])

@@ -389,7 +389,7 @@ public static class AdminEndpoints
             if (req.SmtpFromAddress is not null) s.SmtpFromAddress = Blank(req.SmtpFromAddress);
             if (req.SmtpTls is { } tls) s.SmtpTls = tls;
             if (req.RequireTotpForAdmins is { } totp) s.RequireTotpForAdmins = totp;
-            // Normalised on the way in, so the stored value is exactly what
+            // Normalized on the way in, so the stored value is exactly what
             // both the resolve endpoint and the CSP will read back.
             if (req.EmbedAllowlist is not null)
                 s.EmbedAllowlist = string.Join('\n', Embeds.EmbedAllowlist.Parse(req.EmbedAllowlist));

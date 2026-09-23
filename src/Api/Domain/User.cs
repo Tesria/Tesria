@@ -70,7 +70,7 @@ public class User
     /// their id. Only consulted when <see cref="AvatarKey"/> is null: an
     /// uploaded image always wins.
     ///
-    /// Stored as an index rather than a colour so the generated set can be
+    /// Stored as an index rather than a color so the generated set can be
     /// restyled later without rewriting every row.
     /// </summary>
     public int? AvatarVariant { get; set; }
@@ -78,7 +78,7 @@ public class User
     /// <summary>
     /// Rotated whenever every existing session for this account must stop
     /// working: a password change, and later suspension (dev-plan 2.2), an
-    /// admin force-logout (3.3) and 2FA enrolment (3.5).
+    /// admin force-logout (3.3) and 2FA enrollment (3.5).
     ///
     /// The value is carried as a claim in the auth cookie and compared against
     /// this column on each request, so a rotation takes effect immediately
@@ -138,7 +138,7 @@ public class User
     /// "tips": { "slash-menu": "…" } }</c>.
     ///
     /// JSON rather than columns because it is a record of what one person has
-    /// already been shown: it grows with the tip catalogue, nothing queries
+    /// already been shown: it grows with the tip catalog, nothing queries
     /// across it, and a tip that is retired should leave no column behind.
     /// Null means a brand-new account, which is what makes the tour due.
     /// </summary>

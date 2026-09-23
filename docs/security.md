@@ -1,4 +1,4 @@
-# Security: threat model, defences, and the internet-readiness checklist
+# Security: threat model, defenses, and the internet-readiness checklist
 
 Written at the close of dev-plan Phase 3 (2026-09-09). This is the page
 the "Allow public spaces" switch will link to (Phase 5). Read the
@@ -9,25 +9,25 @@ the rest to understand what you are relying on.
 
 - **Opportunistic scanners** hit every public address looking for known
   software and default credentials. They are automated, high-volume and
-  indifferent to what the wiki contains. Defences: rate limits, the
+  indifferent to what the wiki contains. Defenses: rate limits, the
   blocklist, no version-specific fingerprints beyond `/api/health`.
 - **Credential attackers** try passwords: against one account they want,
-  or lists of leaked email/password pairs against every account. Defences:
+  or lists of leaked email/password pairs against every account. Defenses:
   per-address limits, per-account lockout, two-factor, the stuffing
   detector, notification to administrators.
 - **A malicious or compromised editor** is someone with a legitimate
   account. The wiki is designed for them to write; the risk is what else
-  they can reach through it. Defences: the egress guard (webhooks cannot
+  they can reach through it. Defenses: the egress guard (webhooks cannot
   reach the network the server sits on), attachment types (an uploaded
   page cannot run script on the site's origin), the mass-removal detector,
   the audit log they cannot edit.
 - **Someone who obtains the database credentials**: through a backup
-  left somewhere, a misconfigured volume, a compromised app. Defences: the
+  left somewhere, a misconfigured volume, a compromised app. Defenses: the
   app itself runs as a role that cannot alter the audit log; the hash
   chain makes alteration detectable even by the owner; every audit row is
   also written to stdout; two-factor secrets and the SMTP password are
   encrypted under keys that only a full database restore recovers.
-- **Someone at the keyboard of an unlocked, signed-in browser.** Defences:
+- **Someone at the keyboard of an unlocked, signed-in browser.** Defenses:
   sudo mode for destructive administration, per-session sign-out, idle and
   absolute session lifetimes, the fresh-login window for minting recovery
   codes.
@@ -40,7 +40,7 @@ service by sheer volume, which is the network's job, not the app's.
 
 | Layer (plan item) | Defends against | Does not defend against |
 |---|---|---|
-| Proxy trust + secure cookie (3.0) | Per-address limits keying on Caddy's address; the session cookie ever travelling over plain HTTP | A proxy on a *public* address that the operator has not named in `PROXY_TRUSTED_NETWORKS`; publishing port 8080 to a LAN, where any client could then set forwarded headers |
+| Proxy trust + secure cookie (3.0) | Per-address limits keying on Caddy's address; the session cookie ever traveling over plain HTTP | A proxy on a *public* address that the operator has not named in `PROXY_TRUSTED_NETWORKS`; publishing port 8080 to a LAN, where any client could then set forwarded headers |
 | Security headers + CSP (3.0) | Clickjacking, MIME sniffing, injected inline script, the site being framed or embedded | Injected inline *styles* (allowed, the editor needs them); images loaded from arbitrary `https:` hosts (allowed, authors paste image URLs; a tracking pixel can learn a reader's address) |
 | The owner role (10.1) | An administrator, or a stolen admin session, promoting itself or anyone else, unseating the owner, or getting at the owner's account through a password reset or a session revoke | An attacker who takes the *owner's* session within the sudo window; the owner's own mistakes, which is why the transfer is confirmed, audited and alerted |
 | Instance rights (11.1) | An administrator doing something this instance has decided administrators should not do (changing retention, opening registration, reading the audit log); a user deleting other people's pages; automation through a token whose owner has lost the right | An administrator with `permissions.edit_user_tier` widening *user* roles, which is theirs to do; the owner, who holds everything; anything the space permissions allow (rights are additive over them, never a bypass) |
@@ -59,7 +59,7 @@ service by sheer volume, which is the network's job, not the app's.
 | Sudo mode (3.5) | An unattended signed-in browser being used for destructive administration | The same browser within five minutes of sign-in |
 | Anonymous reading opt-in twice (5.5) | An instance-wide switch left on with nothing published still presenting a public face; a deep link to a page on an instance that publishes nothing rendering the public shell | Anything about a space that *is* published: that is the point of publishing it. `/api/instance` is anonymous by design and says the instance name, whether it needs an owner, whether anything is public, and whether sign-up is open |
 | Password inside the request (11.3, 9.4) | An unattended browser deleting a space or restoring a backup, which the sudo window alone would allow; acting on the wrong one, which the key or label typed back catches | Someone who knows the password and means it. The point is deliberateness, not a second factor (an account without a password answers with a one-time code instead) |
-| Instance branding (13.1) | An administrator changing what every visitor sees first (`settings.branding` is the owner's by default); script in an uploaded SVG, which is rebuilt from an allowlist, only ever shown through `<img>`, and served sandboxed; CSS injection through a colour, which is stored and emitted only as `#rrggbb`; the CSP being weakened to fit the branding, which it is not, since the inline script's text is identical on every instance | Someone holding the right making the sign-in page look like another organisation's, which the audit log records but nothing prevents; a colour chosen to be unreadable, which the owner may keep on purpose |
+| Instance branding (13.1) | An administrator changing what every visitor sees first (`settings.branding` is the owner's by default); script in an uploaded SVG, which is rebuilt from an allowlist, only ever shown through `<img>`, and served sandboxed; CSS injection through a color, which is stored and emitted only as `#rrggbb`; the CSP being weakened to fit the branding, which it is not, since the inline script's text is identical on every instance | Someone holding the right making the sign-in page look like another organization's, which the audit log records but nothing prevents; a color chosen to be unreadable, which the owner may keep on purpose |
 | Restore from the admin page (9.4) | An administrator replacing the wiki with an older copy at all (`backups.restore` is the owner's by default and has to be granted); doing it to the wrong backup (the label is typed back) or by accident (the password is in the request); losing what was there (a safety backup is taken first and cannot be skipped, and the replaced copy is kept as the undo); doing it unnoticed (`backup.restored` is a Critical alert with no cooldown to every administrator, written *after* the restore so it lands in the restored database's own chain) | The owner, who can grant themselves the right and holds the password: this is deliberateness and a record, not a barrier. An owner-level account restoring to before something it wants hidden still leaves the safety backup, the kept copy and the alert, which is what makes it visible rather than impossible |
 | Pinned Argon2id (3.5) | Offline cracking of a leaked hash | A weak password against a determined offline attacker with time: length still matters |
 | Dependency audit (3.6) | Known vulnerabilities in what ships | Unknown ones; a compromised upstream package (Dependabot + lockfiles narrow the window) |

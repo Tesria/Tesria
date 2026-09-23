@@ -50,7 +50,7 @@ public static class BlockDocuments
     /// <summary>
     /// Every `taskItem` in a document, with the Wave C assignee attributes.
     /// Walked in process: at wiki scale the candidate set is already small
-    /// after the visibility filter. If it ever is not, the first optimisation
+    /// after the visibility filter. If it ever is not, the first optimization
     /// is a jsonb containment prefilter (<c>@&gt; '{"type":"taskItem"}'</c>)
     /// to skip pages with no tasks before loading their content at all.
     /// </summary>

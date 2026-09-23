@@ -287,7 +287,7 @@ public class BrandingTests
     [InlineData("red", null)]
     [InlineData("#0c66e4;} body{display:none", null)]
     [InlineData("url(x)", null)]
-    public void Colours_are_normalised_or_refused(string input, string? expected) =>
+    public void Colors_are_normalized_or_refused(string input, string? expected) =>
         Assert.Equal(expected, AccentColors.Normalize(input));
 
     [Fact]
@@ -309,16 +309,16 @@ public class BrandingTests
     [Theory]
     [InlineData("#ffd400", false)] // yellow on white
     [InlineData("#5a6b80", true)]  // slate on the dark background
-    public void A_hard_to_read_colour_gets_a_shade_that_passes(string colour, bool dark)
+    public void A_hard_to_read_color_gets_a_shade_that_passes(string color, bool dark)
     {
-        var check = AccentColors.Check(colour, dark);
+        var check = AccentColors.Check(color, dark);
         Assert.False(check.Passes);
         Assert.NotNull(check.Suggested);
         Assert.True(AccentColors.Check(check.Suggested!, dark).Passes);
     }
 
     [Fact]
-    public async Task A_hard_to_read_colour_can_still_be_kept_and_is_recorded()
+    public async Task A_hard_to_read_color_can_still_be_kept_and_is_recorded()
     {
         using var factory = new TestAppFactory();
         var owner = await OwnerAsync(factory);
@@ -338,21 +338,21 @@ public class BrandingTests
     }
 
     [Fact]
-    public async Task A_custom_accent_needs_a_colour_for_each_mode_people_can_be_in()
+    public async Task A_custom_accent_needs_a_color_for_each_mode_people_can_be_in()
     {
         using var factory = new TestAppFactory();
         var owner = await OwnerAsync(factory);
 
-        // Both themes allowed, only a light colour: refused.
+        // Both themes allowed, only a light color: refused.
         Assert.Equal(HttpStatusCode.BadRequest, (await owner.PutAsJsonAsync("/api/admin/branding",
             Form(accent: "brand", light: "#7a1fa2"))).StatusCode);
-        // Light only: the light colour is enough.
+        // Light only: the light color is enough.
         (await owner.PutAsJsonAsync("/api/admin/branding",
             Form(accent: "brand", theme: "light", light: "#7a1fa2"))).EnsureSuccessStatusCode();
     }
 
     [Fact]
-    public async Task A_colour_that_is_not_a_colour_is_refused()
+    public async Task A_color_that_is_not_a_color_is_refused()
     {
         using var factory = new TestAppFactory();
         var owner = await OwnerAsync(factory);
@@ -361,7 +361,7 @@ public class BrandingTests
     }
 
     [Fact]
-    public void The_accent_stylesheet_contains_only_colours()
+    public void The_accent_stylesheet_contains_only_colors()
     {
         var css = AccentColors.Stylesheet("#7a1fa2", "#d49cf0");
         var values = Regex.Matches(css, ":(#[0-9a-f]{6});").Count;
@@ -513,7 +513,7 @@ public class BrandingTests
             var png = await (await anonymous.GetAsync($"/api/branding/favicon-{size}.png")).Content.ReadAsByteArrayAsync();
             using var decoded = SKBitmap.Decode(png);
             Assert.Equal(size, decoded.Width);
-            // Drawn, not blank: the centre is the circle's colour.
+            // Drawn, not blank: the center is the circle's color.
             Assert.NotEqual(0, decoded.GetPixel(size / 2, size / 2).Alpha);
         }
     }

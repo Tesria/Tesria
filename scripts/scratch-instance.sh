@@ -1,6 +1,6 @@
 #!/bin/sh
 # A throwaway Tesria on http://localhost:8099, for testing first-run
-# behaviour that cannot be reached on an instance that already has accounts
+# behavior that cannot be reached on an instance that already has accounts
 # (dev-plan 10.2).
 #
 #   scripts/scratch-instance.sh up      build and start, empty database

@@ -10,12 +10,12 @@ import { AVATAR_COLORS, avatarVariantFor } from './avatarIdentity'
 const UPLOAD_SIZE = 512
 
 /**
- * Centre-crops an image file to a square and scales it to {@link UPLOAD_SIZE},
+ * Center-crops an image file to a square and scales it to {@link UPLOAD_SIZE},
  * as a PNG blob.
  *
  * `createImageBitmap` rather than an `<img>` with an object URL: it decodes off
  * the main thread, needs no load-event dance, and, the part that matters,
- * honours EXIF orientation, so a portrait phone photo does not arrive sideways.
+ * honors EXIF orientation, so a portrait phone photo does not arrive sideways.
  */
 async function cropToSquare(file: File): Promise<Blob> {
   const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
@@ -47,7 +47,7 @@ async function cropToSquare(file: File): Promise<Blob> {
  * The avatar section of the profile page: the current avatar, the twelve
  * generated ones to choose between, and upload/remove.
  *
- * The crop is deliberate rather than cosmetic: the server centre-crops too,
+ * The crop is deliberate rather than cosmetic: the server center-crops too,
  * so without it the user would upload a photo and be shown a different part of
  * it than they expected. Doing it here means what they see is what is stored.
  */
@@ -94,7 +94,7 @@ export function AvatarPicker() {
           <p className="muted small">
             {hasUpload
               ? 'Your uploaded picture.'
-              : 'Generated from your name. Pick a colour, or upload a picture.'}
+              : 'Generated from your name. Pick a color, or upload a picture.'}
           </p>
           <div className="row-gap">
             <button
@@ -140,7 +140,7 @@ export function AvatarPicker() {
               type="button"
               className={selected ? 'avatar-picker__swatch is-active' : 'avatar-picker__swatch'}
               style={{ background: color }}
-              aria-label={`Avatar colour ${index + 1}`}
+              aria-label={`Avatar color ${index + 1}`}
               aria-pressed={selected}
               onClick={() => withBusy(() => api.avatar.setVariant(index), 'Could not change your avatar.')}
             />

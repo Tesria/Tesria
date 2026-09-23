@@ -10,13 +10,13 @@ export function PageLabels({ pageId, readOnly = false }: { pageId: string; readO
   const [adding, setAdding] = useState(false)
 
   useEffect(() => {
-    let cancelled = false
+    let canceled = false
     api.labels
       .forPage(pageId)
-      .then((l) => !cancelled && setLabels(l))
+      .then((l) => !canceled && setLabels(l))
       .catch(() => {})
     return () => {
-      cancelled = true
+      canceled = true
     }
   }, [pageId])
 

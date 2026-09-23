@@ -17,7 +17,7 @@ type Props<T> = {
 /**
  * The keyboard-navigable popup shared by the `@` mention and `:` emoji
  * suggestions. The slash menu predates it and keeps its own two-line layout
- * (title + description); these two are one line each, so the list behaviour (
+ * (title + description); these two are one line each, so the list behavior (
  * arrow keys, Enter, keeping the highlight in range as the query narrows)
  * is the only part worth sharing.
  */

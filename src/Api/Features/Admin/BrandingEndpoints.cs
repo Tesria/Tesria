@@ -90,35 +90,35 @@ public static partial class BrandingEndpoints
         if (accentName is not null && accentName != BrandView.BrandAccent && !BrandView.BuiltInAccents.Contains(accentName))
             errors["accentName"] = ["That is not one of the accents."];
 
-        // Colours arrive as text and are stored only as normalised #rrggbb.
+        // Colors arrive as text and are stored only as normalized #rrggbb.
         // Anything else is refused rather than guessed at: this value is
         // written into a stylesheet on every page (decision 4).
         string? light = null, dark = null;
         if (!string.IsNullOrWhiteSpace(req.AccentLight))
         {
             light = AccentColors.Normalize(req.AccentLight);
-            if (light is null) errors["accentLight"] = ["Enter a colour as #rrggbb."];
+            if (light is null) errors["accentLight"] = ["Enter a color as #rrggbb."];
         }
         if (!string.IsNullOrWhiteSpace(req.AccentDark))
         {
             dark = AccentColors.Normalize(req.AccentDark);
-            if (dark is null) errors["accentDark"] = ["Enter a colour as #rrggbb."];
+            if (dark is null) errors["accentDark"] = ["Enter a color as #rrggbb."];
         }
 
-        // A custom accent needs a colour for each mode people can be in.
+        // A custom accent needs a color for each mode people can be in.
         if (accentName == BrandView.BrandAccent && !errors.ContainsKey("accentLight") && !errors.ContainsKey("accentDark"))
         {
             if (theme != BrandView.Dark && light is null)
-                errors["accentLight"] = ["A custom accent needs a light-mode colour while the light theme is allowed."];
+                errors["accentLight"] = ["A custom accent needs a light-mode color while the light theme is allowed."];
             if (theme != BrandView.Light && dark is null)
-                errors["accentDark"] = ["A custom accent needs a dark-mode colour while the dark theme is allowed."];
+                errors["accentDark"] = ["A custom accent needs a dark-mode color while the dark theme is allowed."];
         }
         if (errors.Count > 0) return Results.ValidationProblem(errors);
 
         var before = BrandView.From(await settings.GetAsync());
         var actorId = current.RequireId();
 
-        // The owner decided a colour that fails the contrast check may still
+        // The owner decided a color that fails the contrast check may still
         // be kept (decision C). It is recorded, so "why are the links hard to
         // read" has an answer in the audit log.
         var overridden = new List<string>();
@@ -151,7 +151,7 @@ public static partial class BrandingEndpoints
     }
 
     /// <summary>
-    /// What a colour would become: the derived tokens, the two contrast
+    /// What a color would become: the derived tokens, the two contrast
     /// ratios per mode, and a shade that passes when it does not. Nothing is
     /// saved; the tab calls this as someone types.
     /// </summary>
@@ -162,19 +162,19 @@ public static partial class BrandingEndpoints
         if (!string.IsNullOrWhiteSpace(req.Light))
         {
             if (AccentColors.Normalize(req.Light) is { } l) checks.Add(AccentColors.Check(l, dark: false));
-            else errors["light"] = ["Enter a colour as #rrggbb."];
+            else errors["light"] = ["Enter a color as #rrggbb."];
         }
         if (!string.IsNullOrWhiteSpace(req.Dark))
         {
             if (AccentColors.Normalize(req.Dark) is { } d) checks.Add(AccentColors.Check(d, dark: true));
-            else errors["dark"] = ["Enter a colour as #rrggbb."];
+            else errors["dark"] = ["Enter a color as #rrggbb."];
         }
         return errors.Count > 0 ? Results.ValidationProblem(errors) : Results.Ok(checks);
     }
 
     /// <summary>
     /// Reset to Tesria (decision 14): the brand name, every uploaded file,
-    /// the colours and the locks. The instance name is untouched, because it
+    /// the colors and the locks. The instance name is untouched, because it
     /// was never branding.
     /// </summary>
     private static async Task<IResult> Reset(

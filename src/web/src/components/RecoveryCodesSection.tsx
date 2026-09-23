@@ -20,13 +20,13 @@ export function RecoveryCodesSection() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    let cancelled = false
+    let canceled = false
     api.auth
       .recoveryStatus()
-      .then((s) => !cancelled && setRemaining(s.remaining))
-      .catch(() => !cancelled && setRemaining(null))
+      .then((s) => !canceled && setRemaining(s.remaining))
+      .catch(() => !canceled && setRemaining(null))
     return () => {
-      cancelled = true
+      canceled = true
     }
   }, [])
 

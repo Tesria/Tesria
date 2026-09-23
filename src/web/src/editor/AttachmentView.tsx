@@ -31,12 +31,12 @@ export function AttachmentView({ node, editor, selected, updateAttributes }: Rea
   useEffect(() => {
     const getPageId = getDynamicBlockStorage(editor)?.getPageId
     if (!getPageId) return
-    let cancelled = false
+    let canceled = false
     getPageId()
       .then((pageId) => api.attachments.listForPage(pageId))
-      .then((list) => !cancelled && setOptions(list))
-      .catch(() => !cancelled && setOptions([]))
-    return () => { cancelled = true }
+      .then((list) => !canceled && setOptions(list))
+      .catch(() => !canceled && setOptions([]))
+    return () => { canceled = true }
   }, [editor])
 
   useEffect(() => {
@@ -116,7 +116,7 @@ function Body({ attachment, href, animation }: { attachment: Attachment; href: s
  * none of this component survives an export.
  *
  * `muted` is set as an attribute by hand: React sets only the property, so
- * the serialised page an export captures would lose it, and browsers refuse
+ * the serialized page an export captures would lose it, and browsers refuse
  * to start a video with sound by itself. `#t=0.1` makes Safari show the
  * first frame of a paused one instead of a black box.
  */

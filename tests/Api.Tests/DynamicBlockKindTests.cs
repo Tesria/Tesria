@@ -42,7 +42,7 @@ public class DynamicBlockKindTests
     private static async Task Label(HttpClient c, Guid pageId, string name) =>
         (await c.PostAsJsonAsync($"/api/pages/{pageId}/labels", new { Name = name })).EnsureSuccessStatusCode();
 
-    /// <summary>Home → [Open, Secret]; Secret is restricted to Alice and labelled like Open.</summary>
+    /// <summary>Home → [Open, Secret]; Secret is restricted to Alice and labeled like Open.</summary>
     private sealed record World(TestAppFactory F, HttpClient Alice, HttpClient Bob, Guid AliceId, SpaceDto Space, PageDetail Home, PageDetail Open, PageDetail Secret);
 
     private static async Task<World> Build(string? homeContent = null)

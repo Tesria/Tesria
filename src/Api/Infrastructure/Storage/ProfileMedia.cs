@@ -150,7 +150,7 @@ public sealed class ProfileMediaService(IAttachmentStorage storage) : IProfileMe
     }
 
     /// <summary>
-    /// Decodes, centre-crops to a square, scales to <see cref="OutputSize"/> and
+    /// Decodes, center-crops to a square, scales to <see cref="OutputSize"/> and
     /// re-encodes as WebP. The output format is fixed rather than mirroring the
     /// input, so exactly one content type is ever served.
     /// </summary>
@@ -163,7 +163,7 @@ public sealed class ProfileMediaService(IAttachmentStorage storage) : IProfileMe
         using (var codec = SKCodec.Create(data))
         {
             if (codec is null)
-                throw new ProfileMediaException("Unrecognised image format. Use PNG, JPEG or WebP.");
+                throw new ProfileMediaException("Unrecognized image format. Use PNG, JPEG or WebP.");
             var info = codec.Info;
             if ((long)info.Width * info.Height > MaxDecodedPixels)
                 throw new ProfileMediaException("Image dimensions are too large.");
@@ -172,7 +172,7 @@ public sealed class ProfileMediaService(IAttachmentStorage storage) : IProfileMe
         using var source = SKBitmap.Decode(data)
             ?? throw new ProfileMediaException("Image could not be decoded. Use PNG, JPEG or WebP.");
 
-        // Centre crop to a square so the scale never distorts the aspect ratio.
+        // Center crop to a square so the scale never distorts the aspect ratio.
         var edge = Math.Min(source.Width, source.Height);
         var cropRect = SKRectI.Create(
             (source.Width - edge) / 2, (source.Height - edge) / 2, edge, edge);

@@ -5,7 +5,7 @@
  * When the server answers a request with 403 `reauth_required`, the client
  * calls `requestReauth()` and waits. The dialog, subscribed here, opens and
  * asks for the password; on success it calls `completeReauth()` and the
- * client retries the original request. Cancelling rejects it. One pending
+ * client retries the original request. Canceling rejects it. One pending
  * prompt at a time: several requests failing together share it.
  */
 type Pending = { resolve: () => void; reject: (err: unknown) => void; promise: Promise<void> }

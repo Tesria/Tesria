@@ -46,10 +46,10 @@ export function ExportPage() {
   }, [chrome])
 
   useEffect(() => {
-    let cancelled = false
+    let canceled = false
     api.pages.get(id)
       .then(async (p) => {
-        if (cancelled) return
+        if (canceled) return
         setPage(p)
         // The space is only needed for the site chrome's breadcrumb.
         if (chrome === 'site') {
@@ -57,14 +57,14 @@ export function ExportPage() {
         }
       })
       .catch((err: unknown) => {
-        if (cancelled) return
+        if (canceled) return
         // A capture of a page the token may not see must end, not hang: the
         // sidecar is waiting on the ready attribute either way.
         setFailed(err instanceof ApiError && err.status === 404
           ? 'That page does not exist, or this export may not see it.'
           : 'That page could not be loaded.')
       })
-    return () => { cancelled = true }
+    return () => { canceled = true }
   }, [id, chrome])
 
   // The signal the sidecar waits for. Published exactly once, whatever
@@ -72,11 +72,11 @@ export function ExportPage() {
   useEffect(() => {
     if (failed) { publishReady('error'); return }
     if (!page || !root.current) return
-    let cancelled = false
+    let canceled = false
     void waitForSettled(root.current).then((state) => {
-      if (!cancelled) publishReady(state)
+      if (!canceled) publishReady(state)
     })
-    return () => { cancelled = true }
+    return () => { canceled = true }
   }, [page, failed])
 
   if (failed) {

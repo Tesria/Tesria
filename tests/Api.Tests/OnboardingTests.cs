@@ -10,7 +10,7 @@ namespace Tesria.Api.Tests;
 
 /// <summary>
 /// The welcome tour and the tips (dev-plan 10.3). None of this is
-/// authorisation: it is one person's record of what they have been shown, so
+/// authorization: it is one person's record of what they have been shown, so
 /// what matters is that it is theirs alone and that it survives a round trip.
 /// </summary>
 public class OnboardingTests

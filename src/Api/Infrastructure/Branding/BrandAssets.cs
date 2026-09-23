@@ -39,7 +39,7 @@ public interface IBrandAssets
 /// Nothing is stored as it arrived. For a raster image that strips metadata
 /// (EXIF can carry a location), defeats polyglot files, and bounds decoded
 /// size before a pixel is allocated, the same reasons as
-/// <see cref="ProfileMediaService"/>. For an SVG it is the sanitiser's
+/// <see cref="ProfileMediaService"/>. For an SVG it is the sanitizer's
 /// rebuild. Unlike avatars the aspect ratio is kept: a logo is rarely
 /// square.</para>
 ///
@@ -116,7 +116,7 @@ public sealed class BrandAssets(IAttachmentStorage storage) : IBrandAssets
             catch (SvgRejectedException ex) { throw new BrandAssetException(ex.Message); }
             svgBytes = Encoding.UTF8.GetBytes(svg.Svg);
 
-            // Drawn from the *sanitised* document, never the upload, so the
+            // Drawn from the *sanitized* document, never the upload, so the
             // renderer only ever sees markup that has already been rebuilt.
             using var renderer = new SKSvg();
             using var picture = renderer.FromSvg(svg.Svg)
@@ -189,8 +189,8 @@ public sealed class BrandAssets(IAttachmentStorage storage) : IBrandAssets
         {
             if (codec is null)
                 throw new BrandAssetException(allowIco
-                    ? "Unrecognised image. Use SVG, PNG, ICO, JPEG or WebP."
-                    : "Unrecognised image. Use SVG, PNG, JPEG or WebP.");
+                    ? "Unrecognized image. Use SVG, PNG, ICO, JPEG or WebP."
+                    : "Unrecognized image. Use SVG, PNG, JPEG or WebP.");
             if (codec.EncodedFormat == SKEncodedImageFormat.Gif)
                 throw new BrandAssetException("GIF is not accepted. Use SVG, PNG or WebP.");
             if (codec.EncodedFormat == SKEncodedImageFormat.Ico && !allowIco)
@@ -210,7 +210,7 @@ public sealed class BrandAssets(IAttachmentStorage storage) : IBrandAssets
         return data.ToArray();
     }
 
-    /// <summary>A raster image centred on a transparent square, fitted without distortion.</summary>
+    /// <summary>A raster image centered on a transparent square, fitted without distortion.</summary>
     private static byte[] RenderSquare(SKBitmap source, int size) =>
         Square(size, canvas =>
         {
@@ -222,7 +222,7 @@ public sealed class BrandAssets(IAttachmentStorage storage) : IBrandAssets
                 new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear));
         });
 
-    /// <summary>A vector picture centred on a transparent square, fitted without distortion.</summary>
+    /// <summary>A vector picture centered on a transparent square, fitted without distortion.</summary>
     private static byte[] RenderSquare(SKPicture picture, int size) =>
         Square(size, canvas =>
         {

@@ -88,8 +88,8 @@ public sealed partial class SecurityHeadersMiddleware
             // theme bootstrap in index.html, allowed by hash rather than by
             // 'unsafe-inline' so that an injected <script> still cannot run.
             $"script-src 'self'{(scripts.Length > 0 ? " " + scripts : "")}{{nonce}}",
-            // The editor writes inline style attributes (text colour, cell
-            // colours, alignment) into content it renders, and React sets
+            // The editor writes inline style attributes (text color, cell
+            // colors, alignment) into content it renders, and React sets
             // style attributes directly. Inline *styles* are the accepted
             // trade-off; inline *scripts* are not.
             "style-src 'self' 'unsafe-inline'",

@@ -9,7 +9,7 @@ namespace Tesria.Api.Infrastructure.Security;
 /// gives: a rule enforced per endpoint is a rule that is forgotten on the
 /// next endpoint. Reads pass, so people can keep reading the wiki right up
 /// to the moment the database is swapped; writes are refused with 503 and a
-/// body the SPA recognises, so nothing is written to a database that is
+/// body the SPA recognizes, so nothing is written to a database that is
 /// about to be replaced and silently lost.
 ///
 /// The exceptions are the restore's own endpoints: the page that started

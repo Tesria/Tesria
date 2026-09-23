@@ -8,7 +8,7 @@ namespace Tesria.Api.Infrastructure.Auth;
 public interface ITotpService
 {
     /// <summary>A fresh secret, stored on the user as pending until <see cref="Verify"/> confirms it.</summary>
-    (string Base32Secret, string OtpauthUri) BeginEnrolment(User user, string issuer);
+    (string Base32Secret, string OtpauthUri) BeginEnrollment(User user, string issuer);
 
     /// <summary>
     /// Checks a code against the user's pending or enabled secret. A code
@@ -42,7 +42,7 @@ public sealed class TotpService(IDataProtectionProvider dataProtection) : ITotpS
 
     private sealed record Challenge(Guid UserId, string? Ip, DateTimeOffset ExpiresAt);
 
-    public (string Base32Secret, string OtpauthUri) BeginEnrolment(User user, string issuer)
+    public (string Base32Secret, string OtpauthUri) BeginEnrollment(User user, string issuer)
     {
         var secret = KeyGeneration.GenerateRandomKey(20);
         var base32 = Base32Encoding.ToString(secret);

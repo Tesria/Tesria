@@ -1,5 +1,5 @@
 /* ---- theming --------------------------------------------------------------
-   Every colour in this file resolves through a token below. Three states, the
+   Every color in this file resolves through a token below. Three states, the
    standard pattern: :root carries the light palette; a `prefers-color-scheme:
    dark` block applies the dark palette unless the user has explicitly chosen
    light; and a [data-theme="dark"] block lets an explicit choice win in both
@@ -20,7 +20,7 @@
      token defined as itself is invalid, so in the light theme they all
      computed to nothing: no shadows, no active tints, no selected-cell or
      comment highlight, no green "Live" dot. Values restored from the literal
-     colours the rules used before they were tokenised. Keep them literal. */
+     colors the rules used before they were tokenized. Keep them literal. */
   --surface-sunken: #f4f5f7;
   --border: #e4e6eb;
   --hover: #e9ebef;
@@ -41,7 +41,7 @@
   --comment-border: #d9a000;
   /* Tracked changes from outside this editing session (dev-plan 8.6). Green
      for what a write added, red for what it removed, which is the convention
-     every diff uses; the source only changes the label, not the colour, so
+     every diff uses; the source only changes the label, not the color, so
      the two questions a reader has ("what changed" and "who did it") do not
      compete for the same channel. */
   --external-insert-bg: #dcfff1;
@@ -79,7 +79,7 @@
   --chart-backups: #ae4787;  /* magenta */
   --chart-other: #a54800;    /* orange */
   --chart-free: #00875a;     /* green */
-  /* Text ink colours (textColorMark.ts), keyed by the name the mark stores.
+  /* Text ink colors (textColorMark.ts), keyed by the name the mark stores.
      The dark theme re-points the same names at lighter inks, which is the
      whole reason the mark stores a name and not a hex. */
   --text-color-grey: #42526e;   --text-color-blue: #0747a6;
@@ -173,7 +173,7 @@ button { font: inherit; color: inherit; }
 .alert { border-radius: var(--radius); padding: 0.6rem 0.8rem; font-size: 0.9rem; margin: 0.5rem 0; }
 .alert--error { background: var(--danger-soft); color: var(--danger); }
 /* Used by the no-offsite-backup, low-disk and pack-import warnings, which
-   rendered colourless until 2026-09-22 because this rule did not exist. */
+   rendered colorless until 2026-09-22 because this rule did not exist. */
 .alert--warning { background: var(--panel-warning-bg); color: var(--text); border-left: 3px solid var(--panel-warning-border); }
 
 .badge {
@@ -257,8 +257,8 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .brand { display: inline-flex; align-items: center; gap: 0.45rem; font-weight: 700; color: var(--text); min-width: 0; flex-shrink: 1; }
 .brand:hover { text-decoration: none; }
 /* The mark carries --primary, so it follows both the theme and the chosen
-   accent; the wordmark stays --text. Same split the brand page uses: coloured
-   mark, neutral wordmark. flex-shrink: 0 - the shrink-and-ellipsis behaviour
+   accent; the wordmark stays --text. Same split the brand page uses: colored
+   mark, neutral wordmark. flex-shrink: 0 - the shrink-and-ellipsis behavior
    described above belongs to the word now, never to the logo. */
 .brand__mark { display: inline-flex; flex-shrink: 0; color: var(--primary); }
 .brand__word { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -326,9 +326,9 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .branding__file-logo { max-height: 56px; max-width: 100%; width: auto; }
 .branding__file-favicon { width: 48px; height: 48px; }
 .branding__swatches { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
-.branding__colours { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1rem; margin-top: 0.75rem; }
-.branding__colour-inputs { display: flex; gap: 0.5rem; align-items: center; }
-.branding__colour-inputs input[type="color"] { width: 44px; height: 38px; padding: 2px; flex-shrink: 0; }
+.branding__colors { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1rem; margin-top: 0.75rem; }
+.branding__color-inputs { display: flex; gap: 0.5rem; align-items: center; }
+.branding__color-inputs input[type="color"] { width: 44px; height: 38px; padding: 2px; flex-shrink: 0; }
 .branding__warning {
   border-left: 3px solid var(--warning, #b65c02); padding: 0.25rem 0 0.25rem 0.75rem; margin: 0.25rem 0;
 }
@@ -352,16 +352,16 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .branding-preview__signin { display: flex; align-items: center; gap: 0.75rem; max-width: 100%; }
 .branding-preview__signin--stacked { flex-direction: column; gap: 0.5rem; }
 .branding-preview__button { padding: 0.4rem 1.25rem; border-radius: 4px; font-size: 0.85rem; font-weight: 600; }
-/* The preview draws each theme with its own colours, set on the panel. The
+/* The preview draws each theme with its own colors, set on the panel. The
    sign-in name reuses the real sign-in page's class for its size, and that
-   class takes the *running* theme's text colour, which put a near-white name
+   class takes the *running* theme's text color, which put a near-white name
    on the white panel whenever the app itself was dark. It inherits here. */
 .branding-preview .auth-brand__name { color: inherit; }
 .topbar__nav { display: flex; align-items: center; gap: 0.25rem; margin-left: 1.25rem; }
 /* inline-flex + nowrap: a squeezed "API Tokens" used to wrap to two lines,
-   which made the nav row taller and left its single-line neighbours sitting
+   which made the nav row taller and left its single-line neighbors sitting
    at the top of it: the "top-aligned links" look. Links now never wrap
-   (the More menu below is what absorbs the pressure instead), and centre
+   (the More menu below is what absorbs the pressure instead), and center
    within whatever height the row has. */
 .topbar__link {
   display: inline-flex; align-items: center; gap: 0.25rem; white-space: nowrap;
@@ -521,7 +521,7 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .theme-menu__mode.is-active { background: var(--primary-soft); color: var(--primary-dark); }
 .theme-menu__mode-text { display: flex; flex-direction: column; gap: 0.05rem; min-width: 0; flex: 1; }
 .theme-menu__mode-name { font-size: 0.88rem; font-weight: 600; }
-/* The hint is secondary even on the active row, where the row's own colour
+/* The hint is secondary even on the active row, where the row's own color
    would otherwise make it compete with the name. */
 .theme-menu__mode-hint { font-size: 0.72rem; color: var(--muted); }
 .theme-menu__check { display: inline-flex; color: var(--primary); }
@@ -529,11 +529,11 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .theme-menu__accent {
   width: 26px; height: 26px; border-radius: 50%; cursor: pointer; padding: 0;
   /* Same reasoning as .swatch: a visible ring keeps a swatch that happens to
-     sit close to the surface colour from disappearing into it. */
+     sit close to the surface color from disappearing into it. */
   border: 1px solid var(--swatch-border);
 }
 .theme-menu__accent:hover { transform: scale(1.1); }
-/* Ring drawn in the surface colour then the accent, so it reads as a halo on
+/* Ring drawn in the surface color then the accent, so it reads as a halo on
    both themes rather than a heavier border. */
 .theme-menu__accent.is-active {
   box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary);
@@ -744,7 +744,7 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
    currentColor, pointing them at --primary makes them follow the theme and
    the chosen accent (data-accent) with no per-accent rules. */
 .nav-icon { flex-shrink: 0; color: var(--primary); }
-/* Except when the row is already the accent colour, then the icon joins the
+/* Except when the row is already the accent color, then the icon joins the
    label rather than sitting a shade apart from it. */
 .sidebar__trash.is-active .nav-icon { color: inherit; }
 /* Inside a button (the mobile overflow menu) the icon needs the same gap the
@@ -968,7 +968,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   .leave-dialog__actions .btn { width: 100%; }
 }
 /* The link dialog (LinkDialog.tsx): the reauth prompt's overlay and card,
-   with two labelled fields and the heading picker beneath them. */
+   with two labeled fields and the heading picker beneath them. */
 .link-dialog__card label { display: block; margin-bottom: 0.6rem; font-size: 0.85rem; color: var(--muted); }
 .link-dialog__card label input { display: block; width: 100%; margin-top: 0.25rem; padding: 0.45rem 0.6rem; font-size: 0.95rem; }
 .link-dialog__headings { margin: 0.25rem 0 0.75rem; max-height: 180px; overflow-y: auto; }
@@ -1374,7 +1374,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 
 
 /* ---- panels (Confluence-style callouts) ---------------------------------
-   One block per panelExtension.ts's PANEL_TYPES. The type-specific colour and
+   One block per panelExtension.ts's PANEL_TYPES. The type-specific color and
    icon are keyed off the `data-panel-type` attribute the node emits, which
    keeps the icon a ::before pseudo-element instead of a real child node
    (ProseMirror owns this node's children and would fight an injected
@@ -1382,8 +1382,8 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
    to mount.
 
    The icon is a MASK, not a background-image: the SVG supplies only the
-   shape and `--panel-icon` supplies the colour, so a theme change re-tints
-   all five icons by redefining one token each. Baking the colour into the
+   shape and `--panel-icon` supplies the color, so a theme change re-tints
+   all five icons by redefining one token each. Baking the color into the
    data URI instead would mean carrying a second full set of URIs for dark
    mode. Rules are doubled (`.editor__content .panel--x` and a bare
    `.panel--x`) because .editor__content's own descendant rules would
@@ -1441,11 +1441,11 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 }
 .panel-option--error svg { color: var(--panel-error-icon); }
 
-/* Panel picker rows: the icon carries the type's colour, the label stays
-   neutral, matching how .toolbar__btn keeps colour for "what's applied". */
+/* Panel picker rows: the icon carries the type's color, the label stays
+   neutral, matching how .toolbar__btn keeps color for "what's applied". */
 .panel-option { gap: 0.55rem; }
 
-/* ---- colour palettes (highlight + table cell background) ---------------- */
+/* ---- color palettes (highlight + table cell background) ---------------- */
 .toolbar__popover-anchor { position: relative; display: inline-flex; }
 .toolbar__popover {
   position: absolute; top: 100%; left: 0; margin-top: 0.3rem; z-index: 6;
@@ -1458,7 +1458,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .swatches__row { display: flex; gap: 0.3rem; }
 .swatch {
   width: 22px; height: 22px; border-radius: 4px; cursor: pointer; padding: 0;
-  /* A visible border matters for the palest swatches (white, light grey),
+  /* A visible border matters for the palest swatches (white, light gray),
      which would otherwise be invisible against the popover's own background. */
   border: 1px solid var(--swatch-border);
 }
@@ -1561,12 +1561,12 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   --text-color-red: #fd9891;    --text-color-purple: #b8acf6;
   }
 
-  /* Author-chosen colours are stored in the document itself (a table cell's
+  /* Author-chosen colors are stored in the document itself (a table cell's
      `backgroundColor` attr, a highlight mark's `color`) and are always light
      tints from palette.ts: a theme cannot restyle them without discarding the
      author's choice. Left alone in dark mode they would be a light patch
      carrying light --text: invisible. Pin the ink dark instead, so a
-     highlighted or coloured cell reads the same in both themes. */
+     highlighted or colored cell reads the same in both themes. */
   :root:not([data-theme="light"]) .editor__content [data-background-color],
   :root:not([data-theme="light"]) .editor__content mark[style*="background-color"] {
     color: #172b4d;
@@ -1648,8 +1648,8 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 :root[data-theme="dark"] .editor__content [data-background-color] code { background: rgba(23, 43, 77, 0.1); }
 
 
-/* ---- accent colours -------------------------------------------------------
-   The accent drives every --primary* token. Each colour is defined twice, for
+/* ---- accent colors -------------------------------------------------------
+   The accent drives every --primary* token. Each color is defined twice, for
    light and dark, rather than derived from one value: a hue dark enough to
    pass 4.5:1 as link text on white is far too dark to read on a dark ground,
    and vice versa. Both sets were checked against WCAG AA, the light values
@@ -1664,7 +1664,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
    an accent explicitly would drag the light palette into dark mode. With no
    data-accent attribute at all, none of these apply and the base tokens
    stand. --accent-dot-* are the picker's own swatches, themed so each dot
-   shows the colour it will actually produce right now. */
+   shows the color it will actually produce right now. */
 :root {
   --accent-dot-blue: #0c66e4;
   --accent-dot-teal: #0b6b82;
@@ -1960,7 +1960,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 }
 /* A sparkline needs width to be readable; a hero number does not. */
 .stat--wide { grid-column: span 2; }
-/* Text wears text tokens, never the series colour. */
+/* Text wears text tokens, never the series color. */
 .stat__label {
   margin: 0 0 0.3rem; font-size: 0.75rem; text-transform: uppercase;
   letter-spacing: 0.03em; color: var(--muted);
@@ -2045,7 +2045,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .alerts__resolve input { flex: 1 1 16rem; margin: 0; }
 
 /* Profile → Two-factor (dev-plan 3.5). */
-.totp-enrol img { display: block; border-radius: 6px; background: #fff; padding: 0.25rem; margin-bottom: 0.5rem; }
+.totp-enroll img { display: block; border-radius: 6px; background: #fff; padding: 0.25rem; margin-bottom: 0.5rem; }
 .totp-secret { user-select: all; letter-spacing: 0.08em; }
 
 /* Cards on data-dense admin pages (Security) take the panel's full width;
@@ -2084,7 +2084,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 
 /* Public spaces (dev-plan 5.3): the badge everyone sees. */
 /* The instance's owner (dev-plan 10.1): a standing fact about the account,
-   not a warning, so it wears the accent rather than the danger colour. */
+   not a warning, so it wears the accent rather than the danger color. */
 .badge--owner { background: color-mix(in srgb, var(--primary) 18%, transparent); color: var(--primary); }
 
 .badge--public { background: color-mix(in srgb, var(--primary) 18%, transparent); color: var(--primary); margin-left: 0.4rem; }
@@ -2123,7 +2123,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 
 /* ---- Phase 7 Wave A: structural blocks ---------------------------------- */
 
-/* Status lozenge (statusExtension.ts). Colour by name → token, in the
+/* Status lozenge (statusExtension.ts). Color by name → token, in the
    document and in the StatusMenu's swatches alike. */
 .status {
   display: inline-block; padding: 0 0.4em; border-radius: 3px; font-size: 0.72em; font-weight: 700;
@@ -2254,7 +2254,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
    sometimes scroll away with the page. */
 .page-column { container-type: inline-size; }
 
-/* ---- Phase 7 Wave B: text colour, sub/superscript, indent --------------- */
+/* ---- Phase 7 Wave B: text color, sub/superscript, indent --------------- */
 
 /* Doubled (.editor__content descendant + bare) for the same reason the panel
    rules are: .editor__content's own rules would otherwise out-specify a bare
@@ -2268,7 +2268,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .editor__content [data-text-color="orange"], [data-text-color="orange"] { --text-color-ink: var(--text-color-orange); }
 .editor__content [data-text-color="red"], [data-text-color="red"] { --text-color-ink: var(--text-color-red); }
 .editor__content [data-text-color="purple"], [data-text-color="purple"] { --text-color-ink: var(--text-color-purple); }
-/* The bar under the "A" shows the colour currently applied, like Confluence's. */
+/* The bar under the "A" shows the color currently applied, like Confluence's. */
 .text-color-icon__bar { color: var(--text-color-ink, currentColor); }
 .toolbar__btn.is-active .text-color-icon__bar { color: currentColor; }
 
@@ -2430,7 +2430,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .gallery img { width: 100%; border-radius: var(--radius); }
 .editor--editable .gallery { padding: 0.4rem; border: 1px dashed var(--border); border-radius: var(--radius); }
 
-/* ---- Phase 7 Wave F: diagrams, maths, charts ---------------------------- */
+/* ---- Phase 7 Wave F: diagrams, math, charts ---------------------------- */
 
 .mermaid { padding: 0.5rem; text-align: center; overflow-x: auto; }
 .mermaid__svg svg { max-width: 100%; height: auto; }
@@ -2482,7 +2482,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .chart__legend li { display: flex; align-items: center; gap: 0.3rem; }
 .chart__swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; }
 
-/* Admin → Backups (dev-plan 9.1). The status dot uses the danger colour for
+/* Admin → Backups (dev-plan 9.1). The status dot uses the danger color for
    failure only; "no backup yet" is idle grey, not red. */
 .backup-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
 /* 1fr tracks, so the cards split whatever width they are given rather than
@@ -2699,7 +2699,7 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
   .dynamic-block__refresh, .expand__toggle-hint { display: none !important; }
 
   /* The language stays: it says what the code is. The control around it does
-     not, so it prints as a label rather than a dropdown. Its colour is left
+     not, so it prints as a label rather than a dropdown. Its color is left
      alone: the header is dark, and inheriting would put dark text on it. */
   .code-block__lang {
     appearance: none; border: 0 !important; background: none !important;
@@ -2718,7 +2718,7 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
   h1, h2, h3, h4, p, li { orphans: 3; widows: 3; }
 
   /* A full-width table has no viewport to be wide against; the page is the
-     width. Without this the breakout maths pushes it off the paper. */
+     width. Without this the breakout math pushes it off the paper. */
   .editor__content > .ProseMirror > .tableWrapper:has(table[data-layout="full-width"]) {
     margin-left: 0; margin-right: 0; width: auto;
   }

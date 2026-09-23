@@ -15,7 +15,7 @@ public interface IAttachmentStorage
 /// <summary>
 /// Local-filesystem attachment storage. Files live under a configured root
 /// (<c>Storage:UploadsPath</c>, mounted as the <c>uploads</c> volume in Docker).
-/// Keys are opaque and sanitised so they cannot escape the root directory.
+/// Keys are opaque and sanitized so they cannot escape the root directory.
 /// </summary>
 public sealed class LocalAttachmentStorage : IAttachmentStorage
 {

@@ -10,7 +10,7 @@ const RANGES = [7, 30, 90] as const
  * A single-series sparkline.
  *
  * One series, so there is no legend and no categorical palette: the tile's
- * own title names what it is. Colour is a single token: `--primary` for
+ * own title names what it is. Color is a single token: `--primary` for
  * ordinary activity, `--danger` for failed logins, which is a status signal
  * rather than "another series".
  *
@@ -97,7 +97,7 @@ const BACKUP_TILE: Record<string, string> = {
 
 /**
  * One backup agent's health (dev-plan 2.5's Health row, which needed 9.1).
- * Failure is the only thing drawn in the danger colour; "no backup yet" on
+ * Failure is the only thing drawn in the danger color; "no backup yet" on
  * a fresh instance is not a failure.
  */
 function BackupTile({ health }: { health: BackupHealth }) {
@@ -124,15 +124,15 @@ export function AdminDashboardPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    let cancelled = false
+    let canceled = false
     setData(null)
     api.admin
       .dashboard(range)
-      .then((d) => !cancelled && setData(d))
+      .then((d) => !canceled && setData(d))
       .catch((err: unknown) =>
-        !cancelled && setError(err instanceof ApiError ? err.message : 'Could not load the dashboard.'))
+        !canceled && setError(err instanceof ApiError ? err.message : 'Could not load the dashboard.'))
     return () => {
-      cancelled = true
+      canceled = true
     }
   }, [range])
 

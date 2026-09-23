@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace Tesria.Api.Infrastructure.Collab;
 
 /// <summary>
-/// Issues short-lived, HMAC-signed tokens that authorise a user to join the
+/// Issues short-lived, HMAC-signed tokens that authorize a user to join the
 /// real-time editing session for one specific page.
 /// <para>
 /// The collaboration server is a separate Node process and cannot evaluate our

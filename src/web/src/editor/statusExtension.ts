@@ -1,16 +1,16 @@
 import { Node, mergeAttributes } from '@tiptap/core'
 
 /**
- * Status lozenge: Confluence's six colours, by name. Stored as a name and
+ * Status lozenge: Confluence's six colors, by name. Stored as a name and
  * mapped to the palette in index.css (`.status--*`) and in the export
- * renderer, so a theme change re-tints every status and no colour value
+ * renderer, so a theme change re-tints every status and no color value
  * from the document ever reaches a style attribute.
  */
 export const STATUS_COLORS = ['grey', 'red', 'yellow', 'green', 'blue', 'purple'] as const
 export type StatusColor = (typeof STATUS_COLORS)[number]
 
 export const STATUS_LABELS: Record<StatusColor, string> = {
-  grey: 'Grey',
+  grey: 'Gray',
   red: 'Red',
   yellow: 'Yellow',
   green: 'Green',

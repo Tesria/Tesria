@@ -210,7 +210,7 @@ public class SiteExportTests
     public void A_generated_tile_is_drawn_in_the_theme_accent()
     {
         // Owner's request, 2026-09-20, and export-only: the app's twelve
-        // per-space colours exist to tell spaces apart in a list, and an
+        // per-space colors exist to tell spaces apart in a list, and an
         // export is one space. Tokens rather than the hex they resolve to, so
         // the tile follows the reader's accent and light/dark with the rest
         // of the page.

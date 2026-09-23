@@ -5,7 +5,7 @@ import { controlOrigin, useHoveredTable } from './useHoveredTable'
  * Hover-triggered row/column insert (+) and delete (×) controls rendered
  * directly on the table itself, matching Confluence's table editing
  * pattern, instead of a persistent toolbar strip. Column-border dragging
- * (resize) is unrelated built-in prosemirror-tables behaviour, unaffected
+ * (resize) is unrelated built-in prosemirror-tables behavior, unaffected
  * by this component.
  */
 export function TableControls({ editor }: { editor: TiptapEditor }) {
@@ -50,7 +50,7 @@ export function TableControls({ editor }: { editor: TiptapEditor }) {
   // The row controls normally sit in two strips left of the table (grips at
   // -16px, add buttons at -30px). A phone's page gutter is ~24px, so the add
   // buttons went off the left edge; there they move onto the grip strip,
-  // centred on each row boundary, above the grips.
+  // centered on each row boundary, above the grips.
   const compactRows = tableRect.left < 34
   const rowAddLeft = compactRows ? tableRect.left - 17 : tableRect.left - 30
 

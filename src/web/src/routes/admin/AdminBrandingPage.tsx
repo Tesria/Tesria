@@ -21,7 +21,7 @@ import { ACCENTS } from '../../theme'
  * Nothing here changes what anyone sees until it is saved, and every default
  * is Tesria's. Files are saved the moment they are chosen, because a file
  * picked and then forgotten about is a worse surprise than one that applied;
- * everything else waits for Save, because a colour half-typed should not be
+ * everything else waits for Save, because a color half-typed should not be
  * on everyone's screen.
  */
 
@@ -31,7 +31,7 @@ type Form = {
   signInArrangement: SignInArrangement
   themePolicy: ThemePolicy
   accentPolicy: AccentPolicy
-  /** One of the six, or "brand" for the custom colours. */
+  /** One of the six, or "brand" for the custom colors. */
   accent: string
   accentLight: string
   accentDark: string
@@ -66,7 +66,7 @@ function formOf(s: BrandingSettings): Form {
   }
 }
 
-/** A text field's colour as #rrggbb, or null while it is not one yet. */
+/** A text field's color as #rrggbb, or null while it is not one yet. */
 function hex(value: string): string | null {
   let v = value.trim()
   if (!v) return null
@@ -105,7 +105,7 @@ export function AdminBrandingPage() {
   const light = form ? hex(form.accentLight) : null
   const dark = form ? hex(form.accentDark) : null
 
-  // The readability check follows the colours as they are typed, a moment
+  // The readability check follows the colors as they are typed, a moment
   // after the typing stops (decision 5).
   useEffect(() => {
     if (!custom) { setChecks([]); return }
@@ -161,7 +161,7 @@ export function AdminBrandingPage() {
         accentLight: custom && needsLight ? light : null,
         accentDark: custom && needsDark ? dark : null,
       })
-      // Colours and locks live in the page the server sends (so that nobody
+      // Colors and locks live in the page the server sends (so that nobody
       // sees a flash of the wrong theme), which means a reload to show them.
       const lookChanged = next.themePolicy !== settings.themePolicy || next.accentPolicy !== settings.accentPolicy
         || next.accentName !== settings.accentName || next.accentLight !== settings.accentLight
@@ -184,7 +184,7 @@ export function AdminBrandingPage() {
       title: 'Reset to Tesria?',
       body: (
         <>
-          <p>This removes the brand name, the logos and the favicon, and puts back Tesria&rsquo;s colours with nobody held to a theme or accent.</p>
+          <p>This removes the brand name, the logos and the favicon, and puts back Tesria&rsquo;s colors with nobody held to a theme or accent.</p>
           <p>The uploaded files are deleted and cannot be brought back. The instance name is not changed.</p>
         </>
       ),
@@ -304,7 +304,7 @@ export function AdminBrandingPage() {
       </section>
 
       <section className="profile__section profile__section--wide">
-        <h2>Theme and colour</h2>
+        <h2>Theme and color</h2>
         <fieldset className="branding__choice">
           <legend>Theme</legend>
           {([
@@ -320,7 +320,7 @@ export function AdminBrandingPage() {
         </fieldset>
 
         <fieldset className="branding__choice">
-          <legend>Accent colour</legend>
+          <legend>Accent color</legend>
           <div className="branding__swatches">
             {ACCENTS.map((a) => (
               <button
@@ -345,13 +345,13 @@ export function AdminBrandingPage() {
           </div>
 
           {custom && (
-            <div className="branding__colours">
+            <div className="branding__colors">
               {needsLight && (
-                <ColourField label="Light mode" value={form.accentLight} onChange={(v) => set('accentLight', v)}
+                <ColorField label="Light mode" value={form.accentLight} onChange={(v) => set('accentLight', v)}
                   check={checks.find((c) => c.mode === 'light')} />
               )}
               {needsDark && (
-                <ColourField label="Dark mode" value={form.accentDark} onChange={(v) => set('accentDark', v)}
+                <ColorField label="Dark mode" value={form.accentDark} onChange={(v) => set('accentDark', v)}
                   check={checks.find((c) => c.mode === 'dark')} />
               )}
             </div>
@@ -388,24 +388,24 @@ export function AdminBrandingPage() {
   )
 }
 
-/** A colour, its readability, and the better shade when it needs one (decision 5). */
-function ColourField({ label, value, onChange, check }: {
+/** A color, its readability, and the better shade when it needs one (decision 5). */
+function ColorField({ label, value, onChange, check }: {
   label: string
   value: string
   onChange: (value: string) => void
   check: AccentCheck | undefined
 }) {
-  const colour = hex(value)
+  const color = hex(value)
   return (
-    <div className="branding__colour">
+    <div className="branding__color">
       <label className="branding__field">
         <span>{label}</span>
-        <span className="branding__colour-inputs">
-          <input type="color" value={colour ?? '#000000'} onChange={(e) => onChange(e.target.value)} aria-label={`${label} colour picker`} />
+        <span className="branding__color-inputs">
+          <input type="color" value={color ?? '#000000'} onChange={(e) => onChange(e.target.value)} aria-label={`${label} color picker`} />
           <input value={value} placeholder="#0c66e4" onChange={(e) => onChange(e.target.value)} spellCheck={false} />
         </span>
       </label>
-      {value && !colour && <p className="alert alert--error small">Enter a colour as #rrggbb.</p>}
+      {value && !color && <p className="alert alert--error small">Enter a color as #rrggbb.</p>}
       {check && (
         check.passes ? (
           <p className="muted small">
@@ -415,7 +415,7 @@ function ColourField({ label, value, onChange, check }: {
           <div className="branding__warning">
             <p className="small">
               Hard to read: {check.primaryVsBackground}:1 as link text and {check.onPrimaryVsPrimary}:1 on buttons,
-              where 4.5:1 is the usual minimum. Some people will struggle with links and buttons in this colour.
+              where 4.5:1 is the usual minimum. Some people will struggle with links and buttons in this color.
             </p>
             {check.suggested && (
               <p className="small">
@@ -486,7 +486,7 @@ function FileSlot({ title, hint, logo, dark, favicon, accept, busy, onPick, onRe
 /**
  * The header bar and sign-in block as they will look in one theme, drawn
  * from the unsaved form. The page's own theme cannot show both at once, so
- * this sets its colours directly rather than through the theme tokens.
+ * this sets its colors directly rather than through the theme tokens.
  */
 function BrandPreview({ mode, form, settings, light, dark }: {
   mode: 'light' | 'dark'

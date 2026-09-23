@@ -84,7 +84,7 @@ RESTORE_ROOT=/var/run/postgresql/tesria-restore
 #
 # This sidecar cannot do the restore itself: pgBackRest writes into the data
 # directory with Postgres stopped, and stopping Postgres from here would need
-# the Docker socket. So the work is split. Everything that needs judgement
+# the Docker socket. So the work is split. Everything that needs judgment
 # happens here, where the job and the bounds are: the checks, the safety
 # backup, the WAL switch, the carry-across. Then one request file goes onto
 # the volume this container shares with `db`, and the supervisor there stops
@@ -112,8 +112,8 @@ do_restore_wiki() {
   echo "[restore] verifying the repository first"
   pgbr verify >/dev/null 2>&1 || { echo "ERROR: the backup repository did not verify; refusing to restore from it"; return 1; }
 
-  if restore_cancelled; then
-    echo "ERROR: cancelled before anything was changed"
+  if restore_canceled; then
+    echo "ERROR: canceled before anything was changed"
     return 1
   fi
 
@@ -128,8 +128,8 @@ do_restore_wiki() {
 
   [ -n "$dir" ] && restore_export_carry "$dir"
 
-  if restore_cancelled; then
-    echo "ERROR: cancelled before anything was changed"
+  if restore_canceled; then
+    echo "ERROR: canceled before anything was changed"
     return 1
   fi
 
@@ -265,7 +265,7 @@ UPDATE "BackupTargets"
 SQL
 }
 
-# What repo2 holds, from pgBackRest's own catalogue, so the screen and the
+# What repo2 holds, from pgBackRest's own catalog, so the screen and the
 # alerts read one source rather than guessing.
 sync_cloud_status() {
   offsite_cloud_enabled || return 0
@@ -292,7 +292,7 @@ WITH s AS (SELECT (string_agg(doc, '')::jsonb) -> 0 AS j FROM repo2),
 UPDATE "BackupTargets" t
    SET "LastBackupAt" = (SELECT max(to_timestamp((x -> 'timestamp' ->> 'stop')::bigint)) FROM b),
        "BytesStored"  = (SELECT sum((x -> 'info' -> 'repository' ->> 'delta')::bigint) FROM b),
-       -- Not a timestamp out of the catalogue: pgBackRest does not record
+       -- Not a timestamp out of the catalog: pgBackRest does not record
        -- when a segment arrived, and pg_stat_archiver is no use because
        -- async archiving tells Postgres "archived" as soon as the segment is
        -- queued, whatever the repository did with it. So: WAL is current
@@ -380,7 +380,7 @@ offsite_tick() {
 }
 
 # Test connection for the database repository (the Storage targets screen).
-# `info` against repo2 alone: it reaches the bucket, reads the catalogue and
+# `info` against repo2 alone: it reaches the bucket, reads the catalog and
 # decrypts it with the passphrase, and changes nothing. `check` would test
 # more (a WAL segment actually pushed) but forces a WAL switch to do it,
 # which is not what somebody pressing a button to look expects.
@@ -459,7 +459,7 @@ UPDATE "BackupTargets" SET "WalBacklogFiles" = :'n'::int, "UpdatedAt" = now() WH
 SQL
 }
 
-# Mirrors pgBackRest's own catalogue into "Backups". The JSON goes through a
+# Mirrors pgBackRest's own catalog into "Backups". The JSON goes through a
 # file and \copy: kept forever, it outgrows a command-line argument.
 sync_inventory() {
   if ! pgbr --log-level-console=off --output=json info >/tmp/inventory.json 2>/dev/null \

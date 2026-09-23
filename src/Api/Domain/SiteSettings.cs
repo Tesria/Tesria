@@ -34,7 +34,7 @@ public class SiteSettings
 
     /// <summary>
     /// Whether anyone who can reach <c>/register</c> may create an account.
-    /// Defaults to true, which is the behaviour before this setting existed.
+    /// Defaults to true, which is the behavior before this setting existed.
     /// Registration on a completely empty instance ignores this, see
     /// AuthEndpoints.Register, so an operator cannot lock themselves out of a
     /// fresh install by turning it off before the first account exists.
@@ -157,7 +157,7 @@ public class SiteSettings
     public DateTimeOffset? RestoreStartedAt { get; set; }
 
     /// <summary>
-    /// Somebody asked to stop the pending restore. The sidecar honours this
+    /// Somebody asked to stop the pending restore. The sidecar honors this
     /// at its last check before the point of no return, and ignores it after.
     /// </summary>
     public DateTimeOffset? RestoreCancelRequestedAt { get; set; }
@@ -233,14 +233,14 @@ public class SiteSettings
 
     /// <summary>
     /// The accent new visitors get, or everyone gets when locked: one of the
-    /// six built-in names, or <c>brand</c> for the custom colours below.
+    /// six built-in names, or <c>brand</c> for the custom colors below.
     /// Null means Tesria's default (blue) with nothing set.
     /// </summary>
     public string? AccentName { get; set; }
 
-    /// <summary>The custom accent for light mode, as normalised <c>#rrggbb</c>. Never free CSS.</summary>
+    /// <summary>The custom accent for light mode, as normalized <c>#rrggbb</c>. Never free CSS.</summary>
     public string? BrandAccentLight { get; set; }
-    /// <summary>The custom accent for dark mode, as normalised <c>#rrggbb</c>.</summary>
+    /// <summary>The custom accent for dark mode, as normalized <c>#rrggbb</c>.</summary>
     public string? BrandAccentDark { get; set; }
 
     public DateTimeOffset? BrandChangedAt { get; set; }

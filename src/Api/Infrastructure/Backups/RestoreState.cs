@@ -27,7 +27,7 @@ public sealed class RestoreState
 
     /// <summary>
     /// Used when a restore ends without this process restarting: it was
-    /// cancelled before it began, or the sidecar failed it.
+    /// canceled before it began, or the sidecar failed it.
     /// </summary>
     public void Clear() => _pending = null;
 

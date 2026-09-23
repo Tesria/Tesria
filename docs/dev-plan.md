@@ -68,7 +68,7 @@ Conventions that apply to every item, from `CLAUDE.md`:
 | First user | Plain registration; nothing special about the first account. |
 | Registration | **Open to anyone** who can reach `/register`. No toggle, no invites. |
 | User model | `Email`, `DisplayName`, `PasswordHash`, `OidcSubject`, `Status`, `CreatedAt`. No avatar, no profile fields, no `LastSeenAt`. |
-| Suspension | `UserStatus.Suspended` exists in the enum and login honours it, **but nothing in the codebase can set it.** |
+| Suspension | `UserStatus.Suspended` exists in the enum and login honors it, **but nothing in the codebase can set it.** |
 | Site settings | No table, no concept. Config is env/appsettings only. |
 | Email | **Nothing.** No SMTP, no sender abstraction, no MailKit package. |
 | Password reset | None, of any kind. |
@@ -79,9 +79,9 @@ Conventions that apply to every item, from `CLAUDE.md`:
 | Telemetry | **None.** No page views, no login events, no last-seen. `AuditLogs` records mutations only. |
 | KPI-able data | `Users.CreatedAt`, `Pages/PageVersions/Comments.CreatedAt`, `Attachment.Size` + `ContentType`, `AuditLogs.Action/CreatedAt`. Enough for *content* growth, not for *usage*. |
 | Export | Markdown and print-ready HTML. **Not PDF** (the brand page says PDF: see Phase 8). |
-| Editor nodes | paragraph, heading, bullet/ordered list, taskList, blockquote, codeBlock (lowlight), horizontalRule, image, table (+cell colours), panel. Marks: bold, italic, underline, strike, code, link, highlight (colours), comment. textAlign on heading/paragraph. |
+| Editor nodes | paragraph, heading, bullet/ordered list, taskList, blockquote, codeBlock (lowlight), horizontalRule, image, table (+cell colors), panel. Marks: bold, italic, underline, strike, code, link, highlight (colors), comment. textAlign on heading/paragraph. |
 | Notifications | In-app only, via `INotificationService`; the natural hook for email and for admin alerts. |
-| Licence | **No `LICENSE` or `NOTICE` file in the repo.** The brand page claims Apache 2.0: see 8.2. |
+| License | **No `LICENSE` or `NOTICE` file in the repo.** The brand page claims Apache 2.0: see 8.2. |
 
 ### Security baseline (audited 2026-09-08, the findings Phase 3 exists to fix)
 
@@ -92,7 +92,7 @@ Conventions that apply to every item, from `CLAUDE.md`:
 | App runs as the Postgres **superuser** | `ConnectionStrings__Default` uses `POSTGRES_USER`, which is the instance superuser | **High.** App compromise = full DB, including deleting audit rows. |
 | Audit log is append-only in *application code* only | no `AuditLogs.Remove/Update` in code; nothing at the DB layer | Medium alone; **High** combined with the superuser role. |
 | No security headers anywhere | nothing in `Program.cs` or `deploy/Caddyfile` | Medium. No HSTS, CSP, `nosniff`, frame-ancestors. |
-| No CSRF token; SameSite=Lax is the only defence | no `AddAntiforgery`; one `DisableAntiforgery()` on upload | Low–Medium. Lax blocks cross-site POST from top-level navigations, not everything. |
+| No CSRF token; SameSite=Lax is the only defense | no `AddAntiforgery`; one `DisableAntiforgery()` on upload | Low–Medium. Lax blocks cross-site POST from top-level navigations, not everything. |
 | Webhooks can target any URL | no private-range check in `Infrastructure/Webhooks` | Medium. SSRF: an editor can make the server hit `169.254.169.254`, the DB, the collab sidecar. |
 | Attachment content type trusted from the client and echoed on download | `ContentType = file.ContentType` → `Results.File(stream, a.ContentType, …)` | Low–Medium. `Content-Disposition: attachment` is set (good); no `nosniff`, no allowlist. |
 | Caddy on-demand TLS catch-all on `:443` | `tls internal { on_demand }` | Medium on the internet: anyone can trigger cert minting for arbitrary SNI. A LAN feature, wrong for public hosting. |
@@ -186,7 +186,7 @@ undetectable without a login history.
   fields read-only with a note, don't just 400.
 - **`SecurityStamp` on `User`**, embedded as a claim at sign-in and checked
   in `OnValidatePrincipal`; changing the password rotates it. Suspension
-  (2.2), force-logout (3.3) and 2FA enrolment (3.5) all reuse this: build
+  (2.2), force-logout (3.3) and 2FA enrollment (3.5) all reuse this: build
   it here once.
 - Frontend: `/profile` route, reachable from the username in the topbar.
 
@@ -196,7 +196,7 @@ undetectable without a login history.
   id: initials on one of twelve backgrounds. (Shipped with its own palette
   in `avatarIdentity.ts` rather than the editor's `palette.ts`: those are
   light tints meant to sit *behind* dark body text, which is the opposite of
-  what a coloured avatar with white initials needs.) The deterministic one is
+  what a colored avatar with white initials needs.) The deterministic one is
   the default, so every user has an avatar from day one with zero storage.
 - **Upload:** client-side square crop (a small canvas crop, no library); the
   server endpoint and re-encode already shipped in 0.4.
@@ -227,7 +227,7 @@ undetectable without a login history.
   `HistoryPanel`, which completes the render list 1.2 could not finish.
 - Slotted here rather than folded into 1.2 because it needs an API change on
   two endpoints in a different feature slice, and because "show author names"
-  is a user-visible behaviour change worth its own CHANGELOG entry.
+  is a user-visible behavior change worth its own CHANGELOG entry.
 
 ### 1.3 Password recovery: offline (recovery codes) · `M` · Model: Opus · ✅ **shipped 2026-09-09**
 - **Generated at registration**, as asked: 8 single-use codes
@@ -462,8 +462,8 @@ email in 4.3; do not block this phase on email.
 - Idle timeout (e.g. 14 days) and an absolute lifetime (e.g. 90 days) on
   top of `SecurityStamp`; a "sessions" list on `/profile` with revoke.
 - **TOTP 2FA** (`Otp.NET`): opt-in per user, enforceable for admins via
-  `RequireTotpForAdmins`. Enrol with QR + the 1.3 recovery codes as backup
-  codes. Verify at login; rotate stamp on enrol/disable.
+  `RequireTotpForAdmins`. Enroll with QR + the 1.3 recovery codes as backup
+  codes. Verify at login; rotate stamp on enroll/disable.
 - **Sudo mode:** destructive admin actions (purge space, demote admin,
   disable public spaces, DB role rotation) re-prompt for password (or TOTP)
   within a 5-minute window.
@@ -642,7 +642,7 @@ publishes nothing should look like one: a sign-in page.
 switch (`AllowPublicSpaces`) is on **and** at least one non-archived space
 is public. The server already enforces this per space
 (`PermissionService.IsPubliclyViewableSpaceAsync`); this item makes the
-SPA's landing behaviour match it.
+SPA's landing behavior match it.
 
 - `GET /api/instance` (anonymous, rate-limited with the anonymous policy;
   10.2's `GET /api/setup` folds into it): `{ instanceName, needsOwner,
@@ -662,7 +662,7 @@ SPA's landing behaviour match it.
 - The login page, when `publicReading` is true, offers "Browse what is
   public" under the form, so a visitor who arrived at `/login` by habit
   is not stranded.
-- Signed-in behaviour does not change. The "Nothing is published" copy
+- Signed-in behavior does not change. The "Nothing is published" copy
   stays for the one case it still describes: a signed-in user with no
   spaces visible to them.
 
@@ -679,7 +679,7 @@ two-switch rule; `architecture.md`'s Phase 5 section too. Tests
 with it on and no public space, false with only an archived public space,
 true otherwise; `needsOwner` flips on the first account;
 `allowPublicRegistration` follows the setting. The redirect is SPA
-behaviour, so it is walked live: signed out with the switch off (login),
+behavior, so it is walked live: signed out with the switch off (login),
 with it on and no public space (login), with a public space (the shell);
 a public page's deep link in each state; and then the full walk, since
 `SessionGate` changes.
@@ -735,10 +735,10 @@ a public page's deep link in each state; and then the full walk, since
 > **Scope added 2026-09-10 (done first):** editor chrome to match
 > Confluence: a borderless, continuous page and title; a single-row,
 > edge-to-edge toolbar; block elements behind a **+ Insert** menu that
-> shares the slash catalogue; measured overflow into that menu instead of
+> shares the slash catalog; measured overflow into that menu instead of
 > wrapping. See the CHANGELOG entry.
 
-The catalogue below is from Atlassian's own Confluence Cloud documentation
+The catalog below is from Atlassian's own Confluence Cloud documentation
 ("Add elements to a page", the macro index, the formatting guide and the
 layouts doc), checked against `extensions.ts`. Each wave is independently
 shippable; the order is by value-per-effort and by what later waves build on.
@@ -763,7 +763,7 @@ eight times the schema, renderer and export work.
 | **Decision** | ❌ | A |
 | **Anchor** / link to heading | ❌ | A |
 | **Layouts** (columns) | ❌ | A |
-| Text colour | ❌ | B |
+| Text color | ❌ | B |
 | Subscript / superscript | ❌ | B |
 | Indent / outdent | ❌ | B |
 | Clear formatting | ❌ | B |
@@ -805,14 +805,14 @@ eight times the schema, renderer and export work.
   computes from headings live; export renders a real nested list of links.
 - **Expand**: `expand` node, `title` attr, `block+` content, open state not
   persisted. Export: `<details>`; Markdown: bold title + indented body.
-- **Status**: inline atom, `text` + `color` (grey/red/yellow/green/blue/
+- **Status**: inline atom, `text` + `color` (gray/red/yellow/green/blue/
   purple: Confluence's set, mapped to the palette). Export: styled span.
 - **Date**: inline atom, ISO `date` attr, rendered in the viewer's locale.
 - **Decision**: block like panel with a fixed icon; Markdown `**Decision:**`.
 - **Layouts**: `layoutSection` containing 2–3 `layoutColumn` nodes; presets
   two equal, three equal, left sidebar, right sidebar, three with sidebars.
   Not nestable (Confluence doesn't), but sections stack. Each section
-  carries a width, centred / wide / full, mapped onto the existing
+  carries a width, centered / wide / full, mapped onto the existing
   page-level full-width mechanism (`.page-wrap--full`, the `--page-pad`
   breakout); reuse it per section. **Full-width tables inside a column must
   not break out**: scope the breakout rule to direct children of the
@@ -821,7 +821,7 @@ eight times the schema, renderer and export work.
   constants so the two can't drift.
 
 ### Wave B: formatting marks and input rules · `M` · Model: Opus · ✅ **shipped 2026-09-10**
-- Text colour mark (palette-limited, reusing `ColorPalette` and the
+- Text color mark (palette-limited, reusing `ColorPalette` and the
   dark-mode ink-pinning approach). Subscript/superscript. Paragraph indent
   (`textIndent` attr, capped at ~4). Clear formatting. Shortcut audit
   against Confluence's list; verify StarterKit's `**`, `__`, `` ` `` rules.
@@ -849,7 +849,7 @@ eight times the schema, renderer and export work.
   Page properties report, Labels list, Task report, Page tree. The contract,
   the per-kind params and the three tests each kind owes are in
   `architecture.md`, "Dynamic blocks": adding a thirteenth is one class,
-  one DI line, one catalogue entry and three tests.
+  one DI line, one catalog entry and three tests.
 
 ### Wave E: media and embeds · `M` · Model: Opus · ✅ **shipped 2026-09-10**
 - Embed node with a **server-enforced allowlist** of hosts (editable in
@@ -881,12 +881,12 @@ onto `roadmap.md` and are sequenced here.
   export to PDF on request; keep the HTML export too. **After Wave A**,
   since layouts and TOC change what "print-ready" means.
 
-### 8.2 Licence · `S` · Model: Opus · ✅ **shipped 2026-09-10**
+### 8.2 License · `S` · Model: Opus · ✅ **shipped 2026-09-10**
 - The page says Apache 2.0 and open source. **The repo has no `LICENSE`
   file** (verified 2026-09-08), and `CLAUDE.md` says it is private pending
   an audit, which is now Phase 3.7. Add the Apache 2.0 text as `LICENSE`
   and a `NOTICE`; SPDX identifiers in `package.json` and the `.csproj`.
-  Public visibility is the user's call, but the licence file should exist
+  Public visibility is the user's call, but the license file should exist
   before it flips, not after.
 
 ### 8.3 API: OpenAPI + documentation · `M` · Model: Opus · ✅ **shipped 2026-09-10**
@@ -905,7 +905,7 @@ onto `roadmap.md` and are sequenced here.
   token, **which is where token scopes finally land**: add a `ReadOnly`
   flag to `ApiToken` (it has no scopes today; 3.3's "revoke tokens" also
   benefits).
-- Depends on 8.3 and benefits from Phase 7 stabilising the content schema.
+- Depends on 8.3 and benefits from Phase 7 stabilizing the content schema.
 
 ### 8.5 Wiki packs: space export and import · `XL` · Model: Fable → Opus · ✅ **designed and shipped 2026-09-21** (Fable designed, Opus implemented)
 
@@ -984,7 +984,7 @@ guessing.
    what actually ties an inline comment to text is the `commentId` on the
    comment mark inside the document, and that is rewritten with the rest of
    the content (below).
-7. **The space icon travels**: emoji and colour as values, an uploaded icon as
+7. **The space icon travels**: emoji and color as values, an uploaded icon as
    a file, re-keyed on import through the same media service.
 8. **`IsPublic`, `PublicComments`, `PublicSince` do not travel.** An imported
    space is private, and publishing it is 5.5's two-step opt-in, which a zip
@@ -1059,8 +1059,8 @@ does, and a full (not read-only) token if it comes through the API.
   the upload cap. Every page document goes through `TryNormalize`; every
   attachment's type is re-derived from its bytes. The page tree is checked
   for cycles and dangling parents (a dangling parent lifts the page to the
-  root, as 12.2 does). Positions are renormalised, and version numbers are
-  renormalised to 1..n in `createdAt` order. `source` in the manifest is
+  root, as 12.2 does). Positions are renormalized, and version numbers are
+  renormalized to 1..n in `createdAt` order. `source` in the manifest is
   shown to the importer and used for nothing else.
 - Rate limited per user, like token minting (ten imports an hour is plenty
   for anyone who is not a script).
@@ -1200,7 +1200,7 @@ decides what to do with it. Concretely:
    marked `externalDelete`, struck through. Both marks carry
    `{ source: 'api' | 'mcp' | 'page', actor, at }`, so the highlight can
    say *Added by MCP · Brian's laptop token, 2 minutes ago* on hover and
-   colour by source.
+   color by source.
 2. **Publishing accepts.** Before the editor sends its content, it runs
    `acceptExternalEdits`: `externalDelete` ranges are removed,
    `externalInsert` marks are unwrapped, and the result is what gets
@@ -1283,7 +1283,7 @@ JSON walk, one test.
    strip with a test. Nothing produces the marks yet, so this is inert.
    As built: the marks live in `editor/externalEditMarks.ts` and are
    registered in the *shared* schema, not the editor's alone, because the Yjs
-   document carries them and every peer has to be able to read one. Colour is
+   document carries them and every peer has to be able to read one. Color is
    by insert/delete rather than by source (green added, struck red removed),
    with the source in the hover label: two questions, two channels. The
    strip is in `PageContent.TryNormalize`, the single door every page write
@@ -1326,7 +1326,7 @@ JSON walk, one test.
    unpublished edits are not an assistant's changes; marking them all up on
    the first load after deploying would be noise in the one feature whose
    job is to be believed. The cost is that a genuinely stale pre-existing
-   draft is not caught, which is the behaviour those drafts already had.
+   draft is not caught, which is the behavior those drafts already had.
    **Two bugs only running it could find.** First: ProseMirror materialises
    every attribute a node declares, so a paragraph out of the CRDT carries
    `textIndent: 0` where the same paragraph as the API stored it carries no
@@ -1593,7 +1593,7 @@ share the same loop shape, in a sourced `common.sh`:
    restarted"); upsert the agent row with `StartedAt`, versions and the
    interval. `NextRunAt` is read from the row: if it is null or in the
    past, a backup is due now; otherwise the schedule survived the restart.
-   This is what removes the restart-takes-a-full behaviour.
+   This is what removes the restart-takes-a-full behavior.
 3. Every `POLL_SECONDS` (60): heartbeat (`LastSeenAt`, disk from
    `df -B1`, `WalArchivedAt` on the physical side); sync the inventory
    from disk or `info` (new rows, `LastSeenAt` on present ones,
@@ -1808,7 +1808,7 @@ remote-only, because a remote outage would then fill `pg_wal`.
   deliberately the opposite of the NAS choice: the container must start
   whether or not the drive is there. That reopens the silent-write trap (an
   absent drive leaves an ordinary directory on the boot disk, and a copy
-  into it fills the boot disk), and the defence is a **sentinel file on the
+  into it fills the boot disk), and the defense is a **sentinel file on the
   drive itself**: `.tesria-backup-target`, written once when the target is
   set up and carrying the target's id. No sentinel, no write, and the
   screen says "drive not present" rather than "done". A mount-point check
@@ -2325,7 +2325,7 @@ time, taken once per run and on Test connection. **NAS:** `df` on the mount
 gives the share's total and free (SMB reports them), and backups are the
 restic repository's size on it. **Removable:** the same, but only while the
 drive is present; when it is absent the card shows the **last-known** chart
-labelled "as of <date>, drive not present", because the question the chart
+labeled "as of <date>, drive not present", because the question the chart
 answers ("is my drive filling up") is still worth answering from the last
 copy. **Cloud:** there is no disk and no free space, and a pie that invents
 one would be a lie. The cloud card instead charts **composition**, the
@@ -2370,13 +2370,13 @@ what 9.2's slot status publishes.
 2. ✅ **shipped 2026-09-22.** `PieChart.tsx` extracted from the editor, the
    local chart with its legend and caption, and the low-space warning.
    The extraction is exact: the editor's pie still renders with the same
-   `viewBox`, the same `M60 60 ... A55 55` geometry and the same colours,
+   `viewBox`, the same `M60 60 ... A55 55` geometry and the same colors,
    checked in the editor rather than assumed. It also gained a fix on the
    way: a pie of a single slice used to draw a degenerate arc, which is
    invisible, and is now drawn as a circle.
-   The first colours chosen were surface and border tokens, which are
+   The first colors chosen were surface and border tokens, which are
    nearly the card behind them and drew a solid disc with no readable
-   slices. They are now blue for ours, grey for everything else, green for
+   slices. They are now blue for ours, gray for everything else, green for
    free, which stay distinct in both themes.
 3. ✅ **shipped 2026-09-22.** The per-slot numbers, and the cloud card's
    composition chart with the total stored and an estimated monthly cost
@@ -2390,7 +2390,7 @@ what 9.2's slot status publishes.
    rows, in a statement of its own so a sidecar ahead of the migration
    loses only the budget. The pie gains a "Left in budget" slice, never
    called free space, and passing it shows "Over budget by" in the danger
-   colour. It refuses and removes nothing, and raises no alert: a budget
+   color. It refuses and removes nothing, and raises no alert: a budget
    somebody picked is a number to watch, not a limit.
    The NAS and removable cards show composition only when a slot holds two
    repositories, which in practice is the cloud alone, since the others
@@ -2421,7 +2421,7 @@ Three smaller changes at the owner's request, the same day:
   much is its backups" rather than lumping the wiki in with everything else.
   Each sidecar measures the part it can see, the attachments for one and the
   database directory for the other, and those add up.
-- A **drop shadow** on the cards, which sit on a section of the same colour
+- A **drop shadow** on the cards, which sit on a section of the same color
   and read as one flat block without it. Deepened in dark mode, where the
   light-background alpha disappears.
 - The **administration area uses the width it is given**. It was capped at
@@ -2437,7 +2437,7 @@ Three smaller changes at the owner's request, the same day:
   carry the 480px form width, so as one column they left most of a large
   display empty. They are a grid now, four across at 1990px.
 
-**Colours, after the owner looked at it.** Grey for "everything else" read as
+**Colors, after the owner looked at it.** Gray for "everything else" read as
 *disabled* rather than as a slice, and the wiki and its backups were shades
 close enough to be taken for each other. The four slices are now four
 distinct hues with their own tokens (blue, magenta, orange, green), lifted
@@ -2478,7 +2478,7 @@ password-in-the-request pattern).
 the work and owns every update, and the sidecars alone hold the owner
 credential. What changes is the worst thing a web request can cause. Until
 now that was a backup; from here it is the wiki being replaced by an older
-one. So the gate is the centre of this design, and it is stronger than
+one. So the gate is the center of this design, and it is stronger than
 11.3's, which guards one space.
 
 **The problem that shapes everything: the status lives in the thing being
@@ -2667,7 +2667,7 @@ container stops and starts its own database:
   today, and every two seconds looks for a request at
   `/var/run/postgresql/tesria-restore/request`. That volume is shared by
   `db` and the `pgbackrest` sidecar and nothing else, which is the
-  authorisation model: only the sidecar that validated the job can ask,
+  authorization model: only the sidecar that validated the job can ask,
   and the web tier has no path to that file.
 - The request names the job id, the type (`time` with a target, or
   `immediate` with a `--set` label, meaning "the end of that backup") and
@@ -2724,8 +2724,8 @@ change anything):
   sets the maintenance flags, tells collab, records the audit entry. 202
   with the job id.
 - `POST /admin/backups/restore/cancel`: while `requested`, the job is
-  failed with "cancelled" and maintenance ends; while `running`, it sets
-  `RestoreCancelRequestedAt`, which the sidecar honours at its last check
+  failed with "canceled" and maintenance ends; while `running`, it sets
+  `RestoreCancelRequestedAt`, which the sidecar honors at its last check
   before the point of no return, and the response says so. After that
   point there is no cancel, only undo.
 - `POST /admin/backups/restore/undo` and
@@ -2972,7 +2972,7 @@ onboarding skipped; the critical first-time owner setup cannot be.
   recording; the PDF image has no ffmpeg, so no MP4 or GIF). A poster is
   what shows where WebM will not play or when the viewer prefers reduced
   motion. GIF was the request; a video loop is smaller, sharper and pauses.
-- **Tips live in code, state lives on the user.** The catalogue of tips is
+- **Tips live in code, state lives on the user.** The catalog of tips is
   a TypeScript file; which ones a person has dismissed, and whether they
   want tips at all, is on their account so it follows them across devices.
 - **Existing accounts get tips, not the tour.** Accounts created before
@@ -3097,7 +3097,7 @@ dashboard), `admin-backups` (the Backups tab), for 10.2's Done screen.
   inside the 6-to-10-second window, so resolution was the only lever with
   give in it. Posters stay at the full 1280×800. The set is 7.6 MB.
 - **`page-tree-drag` reorders rather than nests.** Dropping on a sibling's
-  centre is a reorder to dnd-kit; nesting needs a horizontal offset that
+  center is a reorder to dnd-kit; nesting needs a horizontal offset that
   would take several fourteen-minute runs to tune blind. The clip shows a
   page being moved in the tree and saved, which is the tip either way.
 - **Two leaks had to be closed** once the first recordings were looked at,
@@ -3152,7 +3152,7 @@ The server refuses to record a required step as skipped.
 | 4 | `permissions` | yes | *(Added 2026-09-20 for Phase 11.)* The rights matrix from 11.1 as it stands, the Owner column included, with one sentence on what a tier is. **Keep these defaults** or edit and **Save**; either records the step and sets `PermissionsReviewedAt`. Only the owner can be here, so every column is editable | `POST /admin/roles/review` or `PUT /admin/roles/{id}/permissions` |
 | 5 | `backups` | yes | The retention policy as 9.1's form, prefilled with the seeded values, plus one sentence on what the two backup systems are and that `BACKUP_ENCRYPTION_KEY` in `.env` must be kept off this machine. **Keep these settings** or **Save changes**; either records the step. Saving needs sudo: the owner signed in a minute ago, so the client will not prompt; if the wizard sat idle past the window, `ReauthDialog` asks, which is correct | `PUT /admin/backups/policy` |
 | 6 | `email` | | SMTP host, port, username, password, from, TLS; **Send test email** to the owner's address; Continue is enabled after a successful test or a Skip | `PUT /admin/settings`, `POST /admin/settings/email/test` |
-| 7 | `two-factor` | | The profile's TOTP enrolment inline, with "recommended for the account that owns this instance" | the existing `/auth/me/totp/*` |
+| 7 | `two-factor` | | The profile's TOTP enrollment inline, with "recommended for the account that owns this instance" | the existing `/auth/me/totp/*` |
 | 8 | `first-space` | | Name and key for a first space, or Skip | `POST /spaces` |
 | 9 | `done` | | What was set, what was skipped with a link to finish each in Administration, the `admin-overview` still, and two buttons: **Invite people** (Administration → Invites) and **Take the tour** (10.3) | `POST /api/setup/complete` |
 
@@ -3248,7 +3248,7 @@ mid-way marks it skipped, and the profile can reopen it.
 5. *You* (`profile`): avatar, two-factor, email notifications; where tips
    can be turned off.
 
-**Tips.** A catalogue in `src/web/src/onboarding/tips.ts`: `key`,
+**Tips.** A catalog in `src/web/src/onboarding/tips.ts`: `key`,
 `context` (where it may appear), `trigger` (a predicate over the page's
 state), `title`, `body`, optional `clip`, `priority`. The `TipHost`
 component (in `Root`) shows **at most one tip at a time, at most three per
@@ -3311,7 +3311,7 @@ again**, **Reset dismissed tips**. The owner sees the same section.
 - **Dismissals do go to the server**, so retiring a tip holds across
   devices, which a `localStorage` counter would not.
 
-**Docs and tests.** `docs/onboarding.md` gains the catalogue with each
+**Docs and tests.** `docs/onboarding.md` gains the catalog with each
 tip's trigger. Tests (`OnboardingTests.cs`): `tourDue` is true for a new
 account and false for one created before the migration (seed the
 `CreatedAt`); each `PUT /auth/me/onboarding` field; a member can only
@@ -3372,14 +3372,14 @@ is written in Tesria and exported, not written as Markdown and imported.
   - Pages: creating (and templates) · drafts, Publish and Update · the page
     tree and reordering · page actions · labels · attachments · history and
     restoring · restrictions · trash
-  - The editor: tour · the slash menu · text formatting · colours ·
+  - The editor: tour · the slash menu · text formatting · colors ·
     alignment and indentation · Markdown shortcuts · keyboard shortcuts ·
     floating menus
     - **Elements, one page each**, with its slash command, every other way
       to insert it, every option, how to use it, and its limits: Normal
       text, Headings, Blockquote, Divider, Bullet list, Ordered list, Task
       list, Link, Panels (all five), Expand, Decision, Layout, Table, Code
-      block, Diagram (Mermaid), Maths, Chart, Image, Gallery, File or video
+      block, Diagram (Mermaid), Math, Chart, Image, Gallery, File or video
       (and animation), Embed, Smart link, Status, Date, Mention, Emoji,
       Table of contents, Excerpt, Page properties
     - Live content: how it works, then one page per block: Children
@@ -3410,7 +3410,7 @@ is written in Tesria and exported, not written as Markdown and imported.
   one page per tool (the ten in `TesriaTools.cs`) · how assistant edits
   appear to people editing
 - Troubleshooting · FAQ · Glossary · Release notes (from the changelog) ·
-  Security · Licence and credits
+  Security · License and credits
 
 **Media rules** (the owner's, and 10.5's original ones).
 **Every element page shows the element on a desktop and on a phone**, side
@@ -3457,7 +3457,7 @@ are a few hundred kilobytes, so neither limit binds.
      card/inline switch its `display` attribute already supports.
    - Panels, Expand, Decision and Excerpt can be removed, keeping their
      content; a panel's type can be changed from the panel itself.
-   - Maths can be inline as well as on its own line, as its description
+   - Math can be inline as well as on its own line, as its description
      already claims.
    - Include page and Excerpt include pick a page by title, not a raw id.
    - Headings 4 to 6 in the Style menu and the slash menu; Justify in the
@@ -3563,8 +3563,23 @@ are a few hundred kilobytes, so neither limit binds.
    Before the spaces go: **App Design is real content** (CLAUDE.md), so it
    is exported as a pack first. FIXTURE is re-seeded by the harness from
    `tests/` whenever it is needed, so it can go.
-5. **Seed Tesria Demo**, reproducibly (the spec or a pack in the
-   repository).
+5. ✅ **seeded 2026-09-23.** **Tesria Demo**, from
+   `scripts/demo/seed-demo.sh`, which signs in as Alex (SHOT) and Sam
+   (SHOT2) from the gitignored `.debug-credentials` and trusts the local
+   certificate from the running stack. 58 pages: the Kestrel Sync 2 launch
+   wiki (plan, three meetings, checklist, architecture, FAQ, with page
+   properties, tasks with assignees, decisions, labels, Sam's edits and
+   comments), a Reports page of live content, and an Element gallery with
+   one page per element. Images and a PDF are drawn by the script; the clip
+   is the onboarding recording. Re-running changes nothing: pages are found
+   by title and compared by content. That comparison first compared the
+   JSON text and rewrote every page on every run, because the server stores
+   documents as jsonb, which reorders keys; it now compares with keys
+   sorted. Every page was opened in a browser and checked for error
+   messages, empty live content and console errors: none.
+   Not seeded, done while shooting: inline comments (they live in the
+   document as marks tied to a comment id), and the Embed page's address,
+   which needs a host on the allowlist chosen for the pictures.
 6. **Write Support** in the order of the tree, shooting as each section is
    written.
 7. **Export**: the pack committed to the repository, and the static site
@@ -3613,7 +3628,7 @@ retention policy.
   owner alone can do. A *role* is a named set of rights that belongs to a
   tier. Three built-in roles exist, one per tier, and custom roles (11.2)
   are extra roles within the User or Admin tier. Nothing in 10.1 changes.
-- **Defaults preserve today's behaviour, with exactly two exceptions**:
+- **Defaults preserve today's behavior, with exactly two exceptions**:
   users lose "delete pages created by others" (the owner's decision), and
   gain nothing they did not have. An upgraded instance therefore changes
   in one visible way, stated in the CHANGELOG and shown on the new Roles
@@ -3626,7 +3641,7 @@ retention policy.
   changing a user's tier, transferring ownership, and editing admin-tier
   or owner rows of the matrix. That is what makes "the owner can never
   lock themselves out" true without a special case.
-- **The catalogue is code; the grants are data.** Which rights exist, their
+- **The catalog is code; the grants are data.** Which rights exist, their
   wording, grouping and defaults live in one C# file, so a new right is a
   code change with a test. Which roles hold which rights is rows in the
   database, cached like site settings.
@@ -3637,7 +3652,7 @@ retention policy.
 
 ### 11.1 Permission model, matrix and enforcement · `L` · Model: Fable → Opus · ✅ **shipped 2026-09-20** (spec as Fable, implementation as Opus)
 
-**The catalogue** (`Infrastructure/Permissions/InstancePermissions.cs`):
+**The catalog** (`Infrastructure/Permissions/InstancePermissions.cs`):
 a static list of `(Key, Area, Label, Description, Scope, Defaults)`, where
 `Scope` is `Content` (meaningful for users) or `Administration`, and
 `Defaults` names which built-in roles hold it. Keys are stable strings and
@@ -3693,7 +3708,7 @@ are what the database stores.
   re-tiered.
 - `RolePermissions`: `RoleId`, `Key` (100), primary key on both. A row is
   a grant; absence is not. Unknown keys (a right removed from the
-  catalogue) are ignored on read and dropped on the next write.
+  catalog) are ignored on read and dropped on the next write.
 - `Users.RoleId` (nullable FK, restrict delete). Null means "the built-in
   role of my tier", which is also what `RoleSeed` fills in and what every
   write from now on sets explicitly. The tier column stays authoritative
@@ -3704,7 +3719,7 @@ are what the database stores.
   is the record.
 
 **`RoleSeed`, a startup step beside `OwnerSeed`:** creates any missing
-built-in role with the catalogue defaults; gives every user with a null
+built-in role with the catalog defaults; gives every user with a null
 `RoleId` the built-in of their tier; on an instance that already has
 users and no `PermissionsReviewedAt`, leaves it null (10.2's wizard is
 skipped on upgraded instances anyway, because `SetupCompletedAt` is set;
@@ -3771,7 +3786,7 @@ route names its key:
   MCP goes through tokens, so this covers it.
 
 **Endpoints** (`Features/Admin/RoleEndpoints.cs`, group `/admin/roles`):
-- `GET /` (`permissions.view`): the catalogue (keys, areas, labels,
+- `GET /` (`permissions.view`): the catalog (keys, areas, labels,
   descriptions, scope), every role with its tier and grants, the reserved
   keys, and `editable: string[]` (which role ids this caller may edit).
 - `PUT /{roleId}/permissions` (**sudo**, audited `permissions.changed`
@@ -3783,7 +3798,7 @@ route names its key:
   owner row gains a key, and (Warning) when a user-tier row gains an
   Administration-scope key.
 - `POST /{roleId}/reset` (same guards, sudo, audited): back to the
-  catalogue defaults for that role.
+  catalog defaults for that role.
 - `POST /review` (**Owner**, audited `permissions.reviewed`): sets
   `PermissionsReviewedAt`. 10.2's wizard calls it for **Keep these
   defaults**; a save through `PUT` also sets it.
@@ -3816,10 +3831,10 @@ route names its key:
 **Docs and tests.** `docs/security.md`: a layers row ("Instance rights
 (11.1)") and an update to the owner row; `docs/architecture.md`: a section
 "Instance rights" after "Roles and administrators" (tier versus role, the
-catalogue, additive over space permissions, the reserved powers, caching,
+catalog, additive over space permissions, the reserved powers, caching,
 the per-field settings check); README's admin paragraph; CHANGELOG with the
-upgrade note. Tests (`InstancePermissionTests.cs`): the catalogue's defaults
-match the table above and every route's key is in the catalogue (a test
+upgrade note. Tests (`InstancePermissionTests.cs`): the catalog's defaults
+match the table above and every route's key is in the catalog (a test
 that walks the endpoint metadata); the seed creates built-ins, fills
 `RoleId`, and is idempotent; each enforcement bullet above (one test per
 route family, including the per-field settings refusal naming the key);
@@ -4017,13 +4032,13 @@ table bug.
    thousand lines of `index.css`. There is no table rule in the export at
    all, so every table is a browser-default table.
 2. `ProseMirrorRenderer.cs` is a hand-written *second* renderer of
-   thirty-five node types that copies colours out of `index.css` by hand
+   thirty-five node types that copies colors out of `index.css` by hand
    (its own comments say "matching index.css"). The plan already pays the
    tax: every editor change needs "a matching case in
    `ProseMirrorRenderer`" (7.D). Two renderers drift; that is what
    renderers do.
 3. Eight node types are React node views: charts (inline SVG), Mermaid,
-   maths, embeds, dynamic blocks with live data, expand, table of
+   math, embeds, dynamic blocks with live data, expand, table of
    contents, media. Anything that is not the browser reproduces those a
    third way, and a headless `generateHTML` pass would leave them hollow.
 
@@ -4031,7 +4046,7 @@ table bug.
 regenerated.** The PDF sidecar already runs Chromium. Instead of being
 handed hand-made HTML, it loads a chrome-free export route of the SPA,
 waits for the page's own ready signal, and then prints (PDF) or
-serialises the DOM (HTML, and the site). One renderer. What you see is
+serializes the DOM (HTML, and the site). One renderer. What you see is
 what you export, by construction, and the fidelity problem cannot come
 back without also breaking the page view. `ProseMirrorRenderer` keeps
 Markdown, which is a genuinely different target and which it does well;
@@ -4088,7 +4103,7 @@ unchanged in shape. `pdf` and `html` now go through the sidecar:
 - `pdf`: A4, `printBackground`, 16/18 mm margins as today, and a footer
   template with the page title and "n of N", because a document with
   page numbers is one somebody can cite.
-- `html`: the serialised DOM of the render route, with the compiled
+- `html`: the serialized DOM of the render route, with the compiled
   stylesheet inlined, images and file links inlined as data URIs through
   the existing `InlineAssets`, every `contenteditable` stripped, and
   every `<script>` stripped except the theme script and toggle described
@@ -4100,11 +4115,11 @@ unchanged in shape. `pdf` and `html` now go through the sidecar:
 
 **The fixture: one page with everything on it.** `tests/fixtures/
 every-element.json` is a page containing each insertable element once
-(the slash catalogue: headings, lists, task list, link, blockquote, code
+(the slash catalog: headings, lists, task list, link, blockquote, code
 block, table, image, divider, table of contents, expand, layout,
-decision, status, date, excerpt, page properties, Mermaid, maths, chart,
+decision, status, date, excerpt, page properties, Mermaid, math, chart,
 embed, smart link, file, gallery) plus every mark (bold, italic,
-underline, strike, inline code, highlight, text colour, sub, sup, link),
+underline, strike, inline code, highlight, text color, sub, sup, link),
 alignment, indent, a mention, an emoji, a table with column widths, cell
 backgrounds and a header row, a full-width table, a full-width page, and
 one of each dynamic block kind. It is loaded by the export tests, seeded
@@ -4123,7 +4138,7 @@ element that does not work in the editor. Each fix gets its own CHANGELOG
 line.
 
 **What is removed.** The HTML half of `ProseMirrorRenderer` and its
-inlined stylesheet, `IPdfRenderer.RenderAsync(html)` in favour of
+inlined stylesheet, `IPdfRenderer.RenderAsync(html)` in favor of
 `RenderAsync(url, token, format)`, and the Mermaid bundle in exports.
 The Markdown half stays, and so do its tests.
 
@@ -4155,7 +4170,7 @@ which is deliberate; 375 px for the view.
 - **Assets are inlined in the browser, not by `InlineAssets`.** The
   captured DOM's image sources still point at the instance, so the page
   fetches its own images and file links and rewrites them to data URIs
-  before serialising. The site export turns that off and ships real files
+  before serializing. The site export turns that off and ships real files
   under `assets/` instead, which keeps pages small and lets a browser
   cache an image once rather than once per page.
 - **`GET`, not `POST`, for the site export.** Building a site reads pages
@@ -4183,7 +4198,7 @@ which is deliberate; 375 px for the view.
 - **The removal script over-reached and was caught by counting.** Deleting
   "the HTML tests" by pattern took fifteen Markdown tests with them, for
   code that is still live: pipe escaping, GFM checkboxes, panel
-  blockquotes, mention labels, the anchors-only-when-linked rule, maths
+  blockquotes, mention labels, the anchors-only-when-linked rule, math
   delimiters, the chart reference, the neutral dynamic-block shapes and
   the `javascript:` guard on embeds. The suite total dropping by 44 when
   about 13 were meant to go is what surfaced it, and the arithmetic had to
@@ -4194,7 +4209,7 @@ which is deliberate; 375 px for the view.
   an id with no account 500'd the save; a half-committed create left a
   page that was invisible and permanently unupdatable; version numbers
   came from the current-version pointer rather than the versions; and the
-  Markdown export did not sanitise link hrefs, so a stored
+  Markdown export did not sanitize link hrefs, so a stored
   `javascript:` URL came out of it as a working link.
 
 ### 12.2 Publish a space as a static site · `L` · Model: Fable → Opus · ✅ **shipped 2026-09-20**
@@ -4230,7 +4245,7 @@ index.html                    the space: name, description, the tree
 getting-started/index.html    one directory per page, clean URLs
 getting-started/install/      nested to mirror the tree
 assets/site.css               the app's compiled stylesheet, verbatim
-assets/fonts/…                KaTeX's fonts, when a page uses maths
+assets/fonts/…                KaTeX's fonts, when a page uses math
 assets/<attachment id>-<name> images and files, real files not data URIs
 404.html
 ```
@@ -4247,7 +4262,7 @@ Attachment URLs are rewritten to `assets/`. Embeds keep their iframe, the
 site is online.
 
 **Themes survive the export.** *(Owner's request, 2026-09-20.)* The app's
-light, dark and system themes and its accent colours are a `data-theme`
+light, dark and system themes and its accent colors are a `data-theme`
 and `data-accent` attribute on `<html>`, set from `localStorage` by a
 small inline script before first paint (`theme.ts`, and the same logic
 in `index.html`). The site ships that script verbatim in every page and
@@ -4335,9 +4350,9 @@ carry it too.
   page numbering was four flex items under `space-between`, so it read
   "Every element    1    of    4"; it is one item now, right-justified. And
   the space tile in an export is the theme accent rather than one of the
-  app's twelve per-space colours: those tell spaces apart in a list and an
-  export is one space, so the colour says nothing there. Export only, the
-  app keeps its own colours, and `SiteChrome.SpaceHead` deliberately does
+  app's twelve per-space colors: those tell spaces apart in a list and an
+  export is one space, so the color says nothing there. Export only, the
+  app keeps its own colors, and `SiteChrome.SpaceHead` deliberately does
   not carry `IconColor` so nothing can quietly start using it.
 - **Branding is half done by accident.** The wordmark is the instance name,
   which an administrator already sets, so it already travels. The replaceable
@@ -4409,8 +4424,8 @@ It will allow owners and admins (off by default) to edit the page branding.
 They can set a new logo for Tesria and replace the word Tesria on the header
 bar with their own brand name. They can also set the favicon." Logos in
 several formats (SVG, PNG and so on). Theme options can be restricted for
-users: only light, only dark, and a fixed accent colour. The accent can be a
-custom colour, not only one of the six built in, and "if they allow both dark
+users: only light, only dark, and a fixed accent color. The accent can be a
+custom color, not only one of the six built in, and "if they allow both dark
 and light themes they can set both a light and dark accent color". And:
 "The branding should also be reflected in the web export. If someone exports
 a page or site the branding they set should be visible in their exported
@@ -4447,9 +4462,9 @@ mistake in either is a security hole or a visible flash on every load.
   control (EXIF stripped, polyglots defeated, decompression bombs bounded),
   and **SVG is rejected outright** (`ProfileMediaService`). Output is a 256px
   WebP square: right for an avatar, wrong for a logo.
-- **The licence is Apache 2.0.** It asks for a NOTICE file in
+- **The license is Apache 2.0.** It asks for a NOTICE file in
   redistributions and nothing in the running product's UI, so the product can
-  be fully white-labelled without a "Powered by" line.
+  be fully white-labeled without a "Powered by" line.
 
 **Decisions made in this design, with the reasons.**
 
@@ -4464,7 +4479,7 @@ mistake in either is a security hole or a visible flash on every load.
      rather than decorate it: the browser tab title (decision 15), link
      previews' `og:site_name`, email subjects, the authenticator app's entry,
      and the static site's "Exported from" footer.
-   - **One behaviour changes for existing instances.** The name beside the
+   - **One behavior changes for existing instances.** The name beside the
      logo in the top bar of an exported HTML page or site (the export's copy
      of the app header) shows the instance name today, while the app itself
      says "Tesria". After 13.1 both say the same thing: the brand name, or
@@ -4474,7 +4489,7 @@ mistake in either is a security hole or a visible flash on every load.
    `DefaultFrom: Owner`, grantable to a role on the Roles tab. This is what
    "owners and admins (off by default)" means in the rights model 11.1
    built, and it is the same shape as `users.promote_admins` and
-   `backups.restore`. It covers the brand name, logos, favicon, colours and
+   `backups.restore`. It covers the brand name, logos, favicon, colors and
    locks. The instance name stays under `settings.instance`, which
    administrators keep, because the two are separate things.
 
@@ -4495,32 +4510,32 @@ mistake in either is a security hole or a visible flash on every load.
    load. The SPA also receives the same branding from `/api/instance`, for
    the header and to react to a change without a reload.
 
-4. **A custom accent is one colour per mode, and everything else is
-   derived.** The owner picks a light-mode colour and, when both themes are
+4. **A custom accent is one color per mode, and everything else is
+   derived.** The owner picks a light-mode color and, when both themes are
    allowed, a dark-mode one. The server derives the other five tokens with a
    fixed algorithm in OKLCH (a darker hover, two soft tints, a border tint,
    and `--on-primary` chosen by measured contrast, white or dark ink). The
    algorithm lives once, in C#, and the preview endpoint returns its output,
    so the admin page shows exactly what the server will emit. **Stored as
-   normalised `#rrggbb` and validated as such, never as free CSS text**,
-   because a colour field rendered into a `<style>` block is a CSS injection
+   normalized `#rrggbb` and validated as such, never as free CSS text**,
+   because a color field rendered into a `<style>` block is a CSS injection
    point otherwise.
 
 5. **The custom accent is checked for readability, and the owner has the
    last word** (decision C). `--primary` is link text, so the check is
    **4.5:1 against the page background** in its mode (`#ffffff` light,
    `--bg` dark), and `--on-primary` at 4.5:1 against `--primary`: the same
-   checks the built-in six pass. A colour that fails is shown with its
+   checks the built-in six pass. A color that fails is shown with its
    ratio, and the nearest passing shade (same hue, lightness adjusted, computed
    by the server) is offered beside it as a one-click swap. The owner can
    still save the original. It is then saved with a plain warning that links
    and buttons will be hard for some people to read, and the audit entry
    records that the check was overridden.
 
-6. **SVG logos are accepted, with two independent defences.** SVG is a
+6. **SVG logos are accepted, with two independent defenses.** SVG is a
    document format that can carry script, which is why avatars refuse it.
    A logo is where people actually have SVG, so here it is accepted, but:
-   - **Sanitised on upload by an allowlist, not a blocklist.** Elements:
+   - **Sanitized on upload by an allowlist, not a blocklist.** Elements:
      `svg g path rect circle ellipse line polyline polygon text tspan defs
      linearGradient radialGradient stop clipPath mask use symbol title desc`.
      Attributes: geometry, presentation and transform attributes, `id`,
@@ -4532,13 +4547,13 @@ mistake in either is a security hole or a visible flash on every load.
      "cleaned as far as possible". Capped at 256 KB.
    - **Only ever displayed through `<img>`, never inlined as markup**, in
      the SPA and in every export. An SVG inside an `<img>` cannot run script
-     or load anything, whatever it contains, so a sanitiser bug is not an
+     or load anything, whatever it contains, so a sanitizer bug is not an
      XSS. It is served with `Content-Security-Policy: default-src 'none';
      style-src 'unsafe-inline'; sandbox` and `X-Content-Type-Options:
      nosniff`, so opening the file's URL directly is inert too.
    Raster logos (PNG, JPEG, WebP) are re-encoded by SkiaSharp like every
    other upload, with **the aspect ratio kept**: fitted within 1024×256,
-   stored as lossless WebP (logos are flat colour and need their
+   stored as lossless WebP (logos are flat color and need their
    transparency). GIF is refused: an animated logo in the header is not a
    feature. 2 MB upload cap before decoding, the existing decoded-pixel cap
    after.
@@ -4557,31 +4572,31 @@ mistake in either is a security hole or a visible flash on every load.
 
 9. **The favicon is separate from the logo.** A wide logo makes a useless
    16px icon, so reusing it would be a trap rather than a convenience.
-   Accepted: SVG, PNG, ICO, JPEG, WebP. Stored: the sanitised SVG when one
+   Accepted: SVG, PNG, ICO, JPEG, WebP. Stored: the sanitized SVG when one
    was given, plus PNG at 32px (tabs), 180px (`apple-touch-icon`) and 512px.
    Rasterising an SVG favicon needs an SVG renderer: `Svg.Skia`, a NuGet
    library on the SkiaSharp already in the app (decision E, answered). **It
    is not a new image or container.** It runs inside the existing `app`
    process and does work only while an SVG favicon is being uploaded, so its
    steady-state memory cost is nothing. **Unverified until Opus checks:** its
-   licence, that it fetches nothing and runs nothing, and how much it adds to
+   license, that it fetches nothing and runs nothing, and how much it adds to
    the app image. Opus records the size difference in the changelog, and if
    it proves heavy, falls back to requiring a PNG alongside an SVG favicon. When a favicon is set, the
    runtime accent favicon stops. With no custom favicon, a custom accent
-   paints the built-in mark in the brand colour, as the six do now.
+   paints the built-in mark in the brand color, as the six do now.
 
 10. **Theme and accent policy.**
     - Theme: *users choose* (today), *light only*, or *dark only*.
     - Accent: *users choose*, with the brand accent as the default for anyone
       who has not picked and shown first in the picker under the brand name;
       or *locked* to the brand accent, which removes the picker.
-    - Only the modes in use need an accent colour: light only needs the light
+    - Only the modes in use need an accent color: light only needs the light
       value, dark only the dark one, both themes need both.
     - A lock overrides a person's stored preference without deleting it, so
       lifting the lock gives everyone back what they had chosen.
     - The appearance menu hides what is locked, and disappears when both are.
-    - Locking the accent to one of the six built-in colours is allowed too.
-      A custom colour is not required to lock.
+    - Locking the accent to one of the six built-in colors is allowed too.
+      A custom color is not required to lock.
 
 11. **Where the branding appears:** the header, the tab title and favicon,
     the sign-in, registration, reset and setup pages (which today show no
@@ -4601,9 +4616,9 @@ mistake in either is a security hole or a visible flash on every load.
     - A single-page HTML export inlines them as `data:` URIs.
     - Both reference them only through `<img>` and `<link rel=icon>`, never as
       inline SVG markup. An exported file is opened from disk with no CSP at
-      all, so `<img>` is its only defence.
+      all, so `<img>` is its only defense.
     - The custom accent's `<style>` block goes into the export's `<head>`.
-    - The export's own theme script honours the same two lock attributes.
+    - The export's own theme script honors the same two lock attributes.
     - Its appearance menu hides locked parts, and shows the brand accent as a
       swatch when the accent is free.
     - The fixed 20×20 logo size in `SiteChrome.Topbar` is replaced by a
@@ -4645,7 +4660,7 @@ mistake in either is a security hole or a visible flash on every load.
     one of four arrangements (the owner's refinement, the same day):
     - **Logo and name side by side, the default.** Unbranded, that is
       `[Tesria mark] Tesria`, the header's own arrangement at a larger size:
-      the logo up to 48px tall, the name at heading size, centred on each
+      the logo up to 48px tall, the name at heading size, centered on each
       other.
     - **Logo above name, stacked.** The logo up to 72px tall, the name
       beneath it.
@@ -4701,7 +4716,7 @@ interface reserves covers them. The content hash is the cache buster.
   Tesria), display mode, logo URLs, policies, accent name and the derived
   tokens.
 - `GET /api/admin/branding`, and `PUT /api/admin/branding` for the brand
-  name, display mode, policies and colours (`settings.branding`, sudo,
+  name, display mode, policies and colors (`settings.branding`, sudo,
   audited).
 - `POST /api/admin/branding/logo`, `/logo-dark` and `/favicon`, as multipart
   uploads, each with a `DELETE`.
@@ -4722,9 +4737,9 @@ interface reserves covers them. The content hash is the cache buster.
   shown, how the sign-in page arranges them (side by side, or stacked). The
   live preview includes the sign-in block.
 - The theme policy.
-- The accent: the six built-in swatches plus "Custom", which opens two colour
+- The accent: the six built-in swatches plus "Custom", which opens two color
   fields with their contrast readouts, the nearest passing shade offered as a
-  one-click swap, and the warning when a failing colour is kept.
+  one-click swap, and the warning when a failing color is kept.
 - The accent policy.
 - Save, and **Reset to Tesria**, which confirms first.
 - At the foot of the tab, as on every Administration tab, the version line
@@ -4739,14 +4754,14 @@ interface reserves covers them. The content hash is the cache buster.
    decision F. No uploads yet.
 2. **Theme and accent.** Policies, custom accents with the derivation and
    contrast checks, the lock attributes, the bootstrap script reading them
-   (unchanged text, hash test), the appearance menu honouring them, the
+   (unchanged text, hash test), the appearance menu honoring them, the
    preview endpoint, and the tab's accent and policy sections.
-3. **Logos and favicon.** The sanitiser, raster re-encoding, storage, the
+3. **Logos and favicon.** The sanitizer, raster re-encoding, storage, the
    serving endpoints with their headers, the dark logo, display modes, the
    brand block on the sign-in card (decision 16), the favicon set, and the
    tab's upload sections.
 4. **Exports.** `SiteChrome`, the site export's assets, the single-page
-   export's data URIs, and the export theme script honouring the locks.
+   export's data URIs, and the export theme script honoring the locks.
 5. **Docs.** `architecture.md`, `security.md` (a layers row for SVG uploads),
    the changelog, and a note for 10.5 so the manual's screenshots are taken
    unbranded.
@@ -4754,7 +4769,7 @@ interface reserves covers them. The content hash is the cache buster.
 **Tests.**
 - **Unit:**
   - The right is the owner's by default and grantable.
-  - A wrong colour format is refused.
+  - A wrong color format is refused.
   - The derivation is stable, and each built-in accent put through it passes
     its own contrast checks.
   - Renaming the instance leaves the header saying Tesria. Setting a brand
@@ -4766,16 +4781,16 @@ interface reserves covers them. The content hash is the cache buster.
     page title.
   - "Powered by Tesria" is absent from an unbranded sign-in page and present
     on a branded one.
-  - A colour below 4.5:1 gets the warning and a suggested shade that passes.
+  - A color below 4.5:1 gets the warning and a suggested shade that passes.
     Saving it anyway works, and the audit entry records the override.
   - The shell carries the title, favicon, style block and lock attributes.
   - **The inline script's hash is the same on a branded and an unbranded
     shell.**
-  - Locks: light only needs no dark colour.
+  - Locks: light only needs no dark color.
   - Reset to Tesria clears the brand name and every file, and leaves the
     instance name alone.
   - Audit entries are written.
-- **The sanitiser gets its own suite of hostile SVGs:** `<script>`, `onload`,
+- **The sanitizer gets its own suite of hostile SVGs:** `<script>`, `onload`,
   `<foreignObject>` with HTML, `javascript:` and external `href`,
   `url(https:…)` in a style attribute, `@import` in a `<style>` element, an
   XXE entity, a billion-laughs DOCTYPE, `<use>` pointing at another file, and
@@ -4866,15 +4881,15 @@ steps shipped together, in one sitting, rather than as five commits.
 - **One implementation slip, caught by an existing test.** The upload and
   delete routes, written in their own file, were first mapped without the
   right, so any signed-in account could have replaced the logo. The
-  route-rights test (`Every_administrative_route_names_a_right_the_catalogue_defines`)
+  route-rights test (`Every_administrative_route_names_a_right_the_catalog_defines`)
   failed on them before anything was committed. The right is now required on
   the whole `/admin/branding` group, and a test tries each file route as an
   administrator without it.
 - **A readability check the owner can override, and the audit says so.** A
-  failing colour is shown with its ratios and the nearest passing shade as a
+  failing color is shown with its ratios and the nearest passing shade as a
   one-click swap. Saving it anyway records `ContrastOverridden` on the
   `branding.changed` entry.
-- **Colours and locks apply by reloading the page after Save**, because they
+- **Colors and locks apply by reloading the page after Save**, because they
   live in the shell the server sends. The name, display mode and logos
   update the header in place.
 
@@ -4928,7 +4943,7 @@ miss of the kind the gate exists for:
 6. **5.1** Anonymous permission model + leak matrix (Fable) → **5.2** Server → **5.3** SPA → **5.4** Operator controls
 7. **6** Space icons
 8. **7.A** → **7.B** → **7.C** → **7.D** (Fable→Opus) → **7.E** → **7.F**
-9. **8.1** PDF (after 7.A) → **8.2** Licence (any time) → **8.3** OpenAPI → **8.4** MCP (Fable→Opus) → **8.6** External edits as tracked changes (Fable→Opus) → **8.5** Wiki packs (Fable→Opus)
+9. **8.1** PDF (after 7.A) → **8.2** License (any time) → **8.3** OpenAPI → **8.4** MCP (Fable→Opus) → **8.6** External edits as tracked changes (Fable→Opus) → **8.5** Wiki packs (Fable→Opus)
 10. **9.1** Backups admin section (Fable→Opus; shipped 2026-09-17) → **9.2** Offsite backups (Fable→Opus; shipped 2026-09-22) → **9.3** Space charts (shipped 2026-09-22) → **9.4** Restore from the admin page (Fable designed and the owner answered its five decisions 2026-09-22; Opus shipped it the same day)
 11. **10.1** Owner role (shipped 2026-09-20) → **11.1** Instance rights and the Roles tab (shipped 2026-09-20) → **11.2** Custom roles (shipped 2026-09-20) → **11.3** Delete a space (shipped 2026-09-20) → **5.5** Anonymous access is opt-in twice (shipped 2026-09-20) → **10.4** Media harness (shipped 2026-09-20) → **10.2** Owner setup wizard (shipped 2026-09-20) → **10.3** Tour and tips (shipped 2026-09-20) (all specified 2026-09-20 as Fable; Opus implements). Phase 11 goes before the wizard because the wizard has a required step that reviews the matrix, and before 10.3 because the tour's screens should show the real Roles tab. 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
 12. **12.1** Capture-based export and the element audit (shipped 2026-09-20) → **12.2** Publish a space as a static site (shipped 2026-09-20). 12 before 8.5 because the site export builds the walk over a space that the wiki pack will reuse, and because the owner's documentation is waiting on it.

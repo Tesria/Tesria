@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace Tesria.Api.Infrastructure.Branding;
 
-/// <summary>The six colour tokens one accent sets for one mode (see the accent block in <c>index.css</c>).</summary>
+/// <summary>The six color tokens one accent sets for one mode (see the accent block in <c>index.css</c>).</summary>
 public sealed record AccentTokens(
     string Primary, string PrimaryDark, string PrimarySoft, string PrimarySofter,
     string PrimarySoftBorder, string OnPrimary);
@@ -14,19 +14,19 @@ public sealed record AccentCheck(
     double PrimaryVsBackground, double OnPrimaryVsPrimary, bool Passes, string? Suggested);
 
 /// <summary>
-/// A custom accent (dev-plan 13.1, decisions 4 and 5): one colour per mode
+/// A custom accent (dev-plan 13.1, decisions 4 and 5): one color per mode
 /// from the owner, the other five tokens derived here.
 ///
 /// <para><b>Why derived and not asked for.</b> The six built-in accents were
-/// each tuned by hand, twelve colours at a time, and checked for contrast.
+/// each tuned by hand, twelve colors at a time, and checked for contrast.
 /// Nobody configuring a brand wants to pick a hover shade and three tints;
-/// they have one colour. The derivation works in OKLCH, where "the same hue,
+/// they have one color. The derivation works in OKLCH, where "the same hue,
 /// lighter" is a straight line, which is not true of HSL. The shapes of the
 /// built-in pairs set the offsets.</para>
 ///
 /// <para><b>Why the check exists, and why it does not refuse.</b>
 /// <c>--primary</c> is link text, so it needs 4.5:1 against the page, and
-/// the text on a filled button needs 4.5:1 against <c>--primary</c>. A colour
+/// the text on a filled button needs 4.5:1 against <c>--primary</c>. A color
 /// that fails gets the nearest shade that passes suggested beside it. The
 /// owner decided (2026-09-22) that the suggestion is an offer, not a rule:
 /// "Suggest a better shade, but allow users to override it if they like."</para>
@@ -46,7 +46,7 @@ public static partial class AccentColors
     /// <summary>
     /// <c>#rgb</c> or <c>#rrggbb</c>, any case, with or without the hash, to
     /// lower-case <c>#rrggbb</c>; null for anything else. Nothing that is not
-    /// exactly a colour ever reaches a stylesheet.
+    /// exactly a color ever reaches a stylesheet.
     /// </summary>
     public static string? Normalize(string? value)
     {
@@ -82,7 +82,7 @@ public static partial class AccentColors
                 OnPrimary(primary, preferWhite: true));
     }
 
-    /// <summary>The check the admin page shows beside a colour, with a better shade when it fails.</summary>
+    /// <summary>The check the admin page shows beside a color, with a better shade when it fails.</summary>
     public static AccentCheck Check(string hex, bool dark)
     {
         var tokens = Derive(hex, dark);
@@ -99,7 +99,7 @@ public static partial class AccentColors
     /// <summary>
     /// The nearest shade that passes: the same hue, lightness moved away from
     /// the background a little at a time until both checks pass. Null only if
-    /// no shade of that hue can, which does not happen for a real colour.
+    /// no shade of that hue can, which does not happen for a real color.
     /// </summary>
     public static string? Suggest(string hex, bool dark)
     {
@@ -148,7 +148,7 @@ public static partial class AccentColors
         return css;
     }
 
-    /// <summary>WCAG 2 contrast ratio between two colours, 1 to 21.</summary>
+    /// <summary>WCAG 2 contrast ratio between two colors, 1 to 21.</summary>
     public static double Contrast(string a, string b)
     {
         var la = Luminance(Parse(a));
@@ -170,11 +170,11 @@ public static partial class AccentColors
         return white >= ink ? White : Ink;
     }
 
-    /* ---- colour space ---------------------------------------------------- */
+    /* ---- color space ---------------------------------------------------- */
 
     private static (double R, double G, double B) Parse(string hex)
     {
-        var v = Normalize(hex) ?? throw new ArgumentException($"Not a colour: {hex}", nameof(hex));
+        var v = Normalize(hex) ?? throw new ArgumentException($"Not a color: {hex}", nameof(hex));
         double Channel(int i) => int.Parse(v.AsSpan(1 + i * 2, 2), NumberStyles.HexNumber) / 255.0;
         return (Channel(0), Channel(1), Channel(2));
     }
@@ -205,7 +205,7 @@ public static partial class AccentColors
     }
 
     /// <summary>
-    /// OKLCH to sRGB, reducing chroma until the colour exists on a screen. A
+    /// OKLCH to sRGB, reducing chroma until the color exists on a screen. A
     /// light tint of a saturated hue is often outside sRGB, and clamping each
     /// channel instead would shift its hue.
     /// </summary>

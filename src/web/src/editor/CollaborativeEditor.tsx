@@ -80,8 +80,8 @@ function parseDoc(value: string): object | undefined {
   }
 }
 
-/** A colour per user, so remote carets are distinguishable. */
-function colourFor(name: string): string {
+/** A color per user, so remote carets are distinguishable. */
+function colorFor(name: string): string {
   const palette = ['#0c66e4', '#ae4787', '#216e4e', '#a54800', '#5e4db2', '#206a83']
   let hash = 0
   for (const ch of name) hash = (hash + ch.charCodeAt(0)) % palette.length
@@ -138,7 +138,7 @@ export function CollaborativeEditor({
       Collaboration.configure({ document: ydoc }),
       CollaborationCaret.configure({
         provider,
-        user: { name: displayName, color: colourFor(displayName) },
+        user: { name: displayName, color: colorFor(displayName) },
       }),
     ],
     onUpdate: ({ editor }) => onChange(JSON.stringify(editor.getJSON())),

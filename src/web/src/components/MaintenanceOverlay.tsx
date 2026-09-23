@@ -29,21 +29,21 @@ export function MaintenanceOverlay() {
 
   useEffect(() => {
     if (!state) return
-    let cancelled = false
+    let canceled = false
     const tick = async () => {
       try {
         const res = await fetch('/api/health', { credentials: 'include' })
         const body = (await res.json()) as { maintenance?: Maintenance | null }
         // Over. Reload rather than clear: the wiki behind this overlay is a
         // different database now, and every page in memory is the old one.
-        if (!cancelled && !body.maintenance) window.location.reload()
+        if (!canceled && !body.maintenance) window.location.reload()
       } catch {
         // The app is restarting into the restored database. Keep polling.
       }
     }
     const timer = window.setInterval(tick, 5000)
     return () => {
-      cancelled = true
+      canceled = true
       window.clearInterval(timer)
     }
   }, [state])

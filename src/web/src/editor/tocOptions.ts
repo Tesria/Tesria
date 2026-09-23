@@ -60,8 +60,8 @@ function clampLevel(value: unknown, fallback: number): number {
   return Number.isFinite(n) ? Math.min(6, Math.max(1, Math.trunc(n))) : fallback
 }
 
-/** Node attributes → options, with anything unrecognised replaced by its default. */
-export function normaliseTocOptions(attrs: Record<string, unknown> | null | undefined): TocOptions {
+/** Node attributes → options, with anything unrecognized replaced by its default. */
+export function normalizeTocOptions(attrs: Record<string, unknown> | null | undefined): TocOptions {
   const a = attrs ?? {}
   const minLevel = clampLevel(a.minLevel, TOC_DEFAULTS.minLevel)
   const maxLevel = clampLevel(a.maxLevel, TOC_DEFAULTS.maxLevel)

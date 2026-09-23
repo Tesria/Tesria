@@ -1,7 +1,7 @@
 import { NodeViewWrapper, useEditorState, type ReactNodeViewProps } from '@tiptap/react'
 import { collectHeadingAnchors, scrollToAnchor } from './headingAnchors'
 import {
-  buildTocTree, filterTocHeadings, flattenTocTree, normaliseTocOptions, tocListStyle, type TocEntry,
+  buildTocTree, filterTocHeadings, flattenTocTree, normalizeTocOptions, tocListStyle, type TocEntry,
 } from './tocOptions'
 
 /**
@@ -15,7 +15,7 @@ export function TocView({ editor, node }: ReactNodeViewProps) {
     selector: ({ editor }) => collectHeadingAnchors(editor.state.doc).map(({ level, text, id }) => ({ level, text, id })),
     equalityFn: (a, b) => b !== null && JSON.stringify(a) === JSON.stringify(b),
   })
-  const options = normaliseTocOptions(node.attrs)
+  const options = normalizeTocOptions(node.attrs)
   const tree = buildTocTree(filterTocHeadings(headings, options))
 
   const link = (e: TocEntry) => (

@@ -31,7 +31,7 @@ public static class BackupStatus
     /// <summary>An agent that has not checked in for this long is offline.</summary>
     public static readonly TimeSpan OnlineWindow = TimeSpan.FromMinutes(5);
 
-    /// <summary>The monitor alerts after this much silence (the page greys out sooner).</summary>
+    /// <summary>The monitor alerts after this much silence (the page grays out sooner).</summary>
     public static readonly TimeSpan OfflineAlertAfter = TimeSpan.FromMinutes(15);
 
     public static readonly TimeSpan JobHistory = TimeSpan.FromDays(30);

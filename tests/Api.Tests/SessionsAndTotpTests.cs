@@ -33,8 +33,8 @@ public class SessionsAndTotpTests
     private static string CodeFor(string base32, int stepOffset = 0) =>
         new Totp(Base32Encoding.ToBytes(base32)).ComputeTotp(DateTime.UtcNow.AddSeconds(30 * stepOffset));
 
-    /// <summary>Enrols the client's account and returns the secret so the test can act as the authenticator.</summary>
-    private static async Task<string> EnrolAsync(HttpClient client)
+    /// <summary>Enrolls the client's account and returns the secret so the test can act as the authenticator.</summary>
+    private static async Task<string> EnrollAsync(HttpClient client)
     {
         var setup = await (await client.PostAsJsonAsync("/api/auth/me/totp/setup", new { }))
             .Content.ReadFromJsonAsync<SetupDto>();
@@ -93,7 +93,7 @@ public class SessionsAndTotpTests
         using var factory = new TestAppFactory();
         var client = factory.CreateClient();
         await RegisterAsync(client, "a@example.com");
-        var secret = await EnrolAsync(client);
+        var secret = await EnrollAsync(client);
 
         var fresh = factory.CreateClient();
         var first = await LoginAsync(fresh, "a@example.com");
@@ -106,7 +106,7 @@ public class SessionsAndTotpTests
         Assert.Equal(HttpStatusCode.Unauthorized, (await fresh.PostAsJsonAsync("/api/auth/login/totp",
             new { challenge.Challenge, Code = "000000" })).StatusCode);
 
-        var code = CodeFor(secret, stepOffset: 1); // a step not yet used by enrolment
+        var code = CodeFor(secret, stepOffset: 1); // a step not yet used by enrollment
         (await fresh.PostAsJsonAsync("/api/auth/login/totp", new { challenge.Challenge, Code = code }))
             .EnsureSuccessStatusCode();
         (await fresh.GetAsync("/api/auth/me")).EnsureSuccessStatusCode();
@@ -124,7 +124,7 @@ public class SessionsAndTotpTests
         using var factory = new TestAppFactory();
         var client = factory.CreateClient();
         var registered = await RegisterAsync(client, "a@example.com");
-        await EnrolAsync(client);
+        await EnrollAsync(client);
 
         var fresh = factory.CreateClient();
         var challenge = await (await LoginAsync(fresh, "a@example.com")).Content.ReadFromJsonAsync<ChallengeDto>();
@@ -147,7 +147,7 @@ public class SessionsAndTotpTests
         var phone = factory.CreateClient();
         (await LoginAsync(phone, "a@example.com")).EnsureSuccessStatusCode();
 
-        await EnrolAsync(laptop);
+        await EnrollAsync(laptop);
 
         (await laptop.GetAsync("/api/auth/me")).EnsureSuccessStatusCode();
         Assert.Equal(HttpStatusCode.Unauthorized, (await phone.GetAsync("/api/auth/me")).StatusCode);
@@ -159,7 +159,7 @@ public class SessionsAndTotpTests
         using var factory = new TestAppFactory();
         var client = factory.CreateClient();
         await RegisterAsync(client, "a@example.com");
-        await EnrolAsync(client);
+        await EnrollAsync(client);
 
         Assert.Equal(HttpStatusCode.BadRequest,
             (await client.PostAsJsonAsync("/api/auth/me/totp/disable", new { })).StatusCode);
@@ -169,7 +169,7 @@ public class SessionsAndTotpTests
     }
 
     [Fact]
-    public async Task Administrators_can_be_required_to_enrol_before_administering()
+    public async Task Administrators_can_be_required_to_enroll_before_administering()
     {
         using var factory = new TestAppFactory();
         var admin = factory.CreateClient();
@@ -180,7 +180,7 @@ public class SessionsAndTotpTests
         Assert.Equal(HttpStatusCode.Forbidden, (await admin.GetAsync("/api/admin/users")).StatusCode);
         Assert.True((await admin.GetFromJsonAsync<UserDto>("/api/auth/me"))!.TotpRequired);
 
-        await EnrolAsync(admin);
+        await EnrollAsync(admin);
         (await admin.GetAsync("/api/admin/users")).EnsureSuccessStatusCode();
         Assert.False((await admin.GetFromJsonAsync<UserDto>("/api/auth/me"))!.TotpRequired);
 

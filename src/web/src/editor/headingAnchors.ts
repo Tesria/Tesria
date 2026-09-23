@@ -68,7 +68,7 @@ const key = new PluginKey('headingAnchors')
 /**
  * Puts the derived ids on the rendered headings as node decorations rather
  * than attributes: a decoration is recomputed from the document on every
- * change and never serialised, which is exactly the "derived, not stored"
+ * change and never serialized, which is exactly the "derived, not stored"
  * rule above. Works in the read-only view too, which uses the same
  * extension list.
  */

@@ -17,7 +17,7 @@
 # it so `docker compose stop` behaves exactly as before, and watches one
 # directory for a request.
 #
-# **The request is the authorisation.** The directory lives on the `pgsocket`
+# **The request is the authorization.** The directory lives on the `pgsocket`
 # volume, which is shared by `db` and the `pgbackrest` sidecar and by nothing
 # else. The web tier has no mount, no socket and no path to that file, so a
 # restore can only be asked for by the sidecar that validated the job.
@@ -176,7 +176,7 @@ while true; do
   if [ -n "$PG_PID" ] && ! kill -0 "$PG_PID" 2>/dev/null; then
     # Postgres exited on its own: a crash, or an administrator stopping it
     # from inside. Exiting lets compose restart the container, which is the
-    # behaviour this container had before it was supervised.
+    # behavior this container had before it was supervised.
     wait "$PG_PID" 2>/dev/null
     log "postgres exited; stopping the container so it is restarted"
     exit 1

@@ -24,7 +24,7 @@ function initialState(editor: TiptapEditor): { href: string; text: string; exist
 }
 
 /** "example.com/path" is what people type; the link needs a scheme. */
-function normalise(href: string): string {
+function normalize(href: string): string {
   const h = href.trim()
   if (!h) return h
   if (/^(https?:|mailto:|tel:|#|\/)/i.test(h)) return h
@@ -58,7 +58,7 @@ export function LinkDialog({ editor, open, onClose }: { editor: TiptapEditor; op
     // submitting too (see the architecture doc's editor gotcha).
     e.preventDefault()
     e.stopPropagation()
-    const target = normalise(href)
+    const target = normalize(href)
     if (!target) return
     const label = text.trim() || target
     const chain = editor.chain().focus()
@@ -109,7 +109,7 @@ export function LinkDialog({ editor, open, onClose }: { editor: TiptapEditor; op
             type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={href.trim() ? normalise(href) : 'The words that carry the link'}
+            placeholder={href.trim() ? normalize(href) : 'The words that carry the link'}
             onKeyDown={(e) => { if (e.key === 'Escape') onClose() }}
           />
         </label>

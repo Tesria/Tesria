@@ -180,7 +180,7 @@ need to be: every step is a page in Administration.
 
 ### Testing it
 
-First-run behaviour cannot be reached on an instance that already has
+First-run behavior cannot be reached on an instance that already has
 accounts, and faking it by editing the database is not worth the risk.
 `scripts/scratch-instance.sh` brings up a throwaway Tesria on
 `http://localhost:8099` under its own compose project and its own volumes,
@@ -256,7 +256,7 @@ tips**.
 
 ### Adding one
 
-`src/web/src/onboarding/tips.ts` is the catalogue: a key, the context it
+`src/web/src/onboarding/tips.ts` is the catalog: a key, the context it
 belongs to, a CSS anchor, the words, an optional clip, a priority, and a
 predicate over `TipState`. If the predicate needs a fact nothing records yet,
 add a signal in `onboarding/signals.ts` and call it where the thing actually

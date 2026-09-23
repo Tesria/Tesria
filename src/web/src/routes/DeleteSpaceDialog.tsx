@@ -42,11 +42,11 @@ export function DeleteSpaceDialog({
   const byCode = user !== null && user !== undefined && !user.hasPassword
 
   useEffect(() => {
-    let cancelled = false
+    let canceled = false
     api.spaces.deletionPreview(space.key)
-      .then((p) => !cancelled && setPreview(p))
-      .catch(() => !cancelled && setError('Could not count what is in this space.'))
-    return () => { cancelled = true }
+      .then((p) => !canceled && setPreview(p))
+      .catch(() => !canceled && setError('Could not count what is in this space.'))
+    return () => { canceled = true }
   }, [space.key])
 
   useEffect(() => {

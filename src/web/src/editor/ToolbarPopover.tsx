@@ -10,7 +10,7 @@ import { ChevronDownIcon } from './icons'
  * Distinct from ToolbarDropdown, which looks similar but exists only as the
  * *mobile* collapsed form of a run of buttons and is `display: none` above
  * --bp-mobile. This one is visible at every width, because its contents (a
- * colour grid, a list of panel types) have no flat equivalent to collapse
+ * color grid, a list of panel types) have no flat equivalent to collapse
  * from.
  *
  * Reuses the link popover's edge-alignment: the trigger sits in a flex-wrap

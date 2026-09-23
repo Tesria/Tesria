@@ -9,7 +9,7 @@ const key = new PluginKey('taskAssignee')
  * assigns action items.
  *
  * The mention is the source of truth; `assigneeId`/`assigneeName` on the
- * `taskItem` are a denormalised copy kept in step by this plugin. Wave D's
+ * `taskItem` are a denormalized copy kept in step by this plugin. Wave D's
  * Task report wants to query "tasks assigned to me" without walking every
  * page's document tree looking for mention nodes inside task items, and a
  * stored attribute is the difference between an indexable query and a full

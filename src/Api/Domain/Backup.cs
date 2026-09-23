@@ -145,7 +145,7 @@ public class BackupAgent
 
 /// <summary>
 /// The inventory: one row per backup that exists or once existed. The disk
-/// (or pgBackRest's own catalogue) is the truth; the sidecar mirrors it here
+/// (or pgBackRest's own catalog) is the truth; the sidecar mirrors it here
 /// every minute. Rows are never deleted, so a removed backup stays as history.
 /// </summary>
 public class Backup

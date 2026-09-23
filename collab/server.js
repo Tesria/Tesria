@@ -4,7 +4,7 @@
 //
 // Responsibilities:
 //   - accept Yjs/Hocuspocus websocket connections from the TipTap editor
-//   - authorise them using short-lived HMAC tokens issued by the .NET API
+//   - authorize them using short-lived HMAC tokens issued by the .NET API
 //   - persist document state into the main Postgres database, so live edits
 //     survive restarts and are covered by the existing backups
 import crypto from 'node:crypto'
