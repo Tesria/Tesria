@@ -50,7 +50,8 @@ export function RecoveryCodesSection() {
   if (codes) {
     return (
       <>
-        <RecoveryCodes codes={codes} onDone={() => setCodes(null)} doneLabel="Done" />
+        <RecoveryCodes codes={codes} doneLabel="Done"
+          onDone={() => { setCodes(null); void api.auth.acknowledgeRecoveryCodes().catch(() => {}) }} />
       </>
     )
   }

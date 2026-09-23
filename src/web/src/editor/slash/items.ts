@@ -360,6 +360,16 @@ export const SLASH_ITEMS: SlashItem[] = [
     command: (editor, range) => editor.chain().focus().deleteRange(range).insertAttachmentBlock().run(),
   },
   {
+    // The same element as File or video, already set to play as an
+    // animation: people looking for "a GIF" look for this word.
+    title: 'Animation',
+    group: 'block',
+    icon: PaperclipIcon,
+    description: 'A short video that loops silently, like a GIF',
+    keywords: ['gif', 'clip', 'loop', 'animated', 'video', 'recording'],
+    command: (editor, range) => editor.chain().focus().deleteRange(range).insertAnimation().run(),
+  },
+  {
     title: 'Gallery',
     group: 'block',
     icon: GalleryIcon,

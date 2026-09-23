@@ -167,7 +167,13 @@ export function AdminUsersPage() {
                       otherwise have no recovery path and no warning. */}
                   {u.recoveryCodesRemaining === 0 && u.hasPassword
                     ? <span className="badge badge--danger">none</span>
-                    : u.recoveryCodesRemaining}
+                    : <>
+                        {u.recoveryCodesRemaining}
+                        {/* Codes nobody confirmed saving are not a way back in. */}
+                        {u.hasPassword && !u.recoveryCodesSaved && (
+                          <> <span className="badge badge--warning" title="Never confirmed saved">not saved</span></>
+                        )}
+                      </>}
                 </td>
                 <td className="muted small">
                   {u.lastSeenAt ? new Date(u.lastSeenAt).toLocaleDateString() : 'Never'}

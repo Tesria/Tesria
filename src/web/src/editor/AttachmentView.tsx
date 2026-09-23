@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { NodeViewWrapper, type ReactNodeViewProps } from '@tiptap/react'
 import { api, attachmentDownloadUrl, type Attachment } from '../api/client'
 import { getDynamicBlockStorage } from './dynamicBlock'
@@ -21,6 +21,7 @@ function humanSize(bytes: number): string {
 
 export function AttachmentView({ node, editor, selected, updateAttributes }: ReactNodeViewProps) {
   const attachmentId = (node.attrs.attachmentId as string | null) ?? null
+  const animation = node.attrs.playback === 'animation'
   const [options, setOptions] = useState<Attachment[] | null>(null)
   const [current, setCurrent] = useState<Attachment | null>(null)
 
@@ -58,18 +59,31 @@ export function AttachmentView({ node, editor, selected, updateAttributes }: Rea
           </select>
         </label>
       )}
+      {editor.isEditable && (!current || kindOf(current.contentType) === 'video') && (
+        <label className="attachment-block__picker">
+          <span>Show as</span>
+          <select value={animation ? 'animation' : 'player'}
+            onChange={(e) => updateAttributes({ playback: e.target.value })}>
+            <option value="player">A video with controls</option>
+            <option value="animation">An animation: silent, looping, no controls</option>
+          </select>
+        </label>
+      )}
       {!attachmentId && <p className="attachment-block__note">No file chosen.</p>}
       {attachmentId && !current && options !== null && (
         <p className="attachment-block__note">That file is no longer attached to this page.</p>
       )}
-      {current && href && <Body attachment={current} href={href} />}
+      {current && href && <Body attachment={current} href={href} animation={animation} />}
     </NodeViewWrapper>
   )
 }
 
-function Body({ attachment, href }: { attachment: Attachment; href: string }) {
+function Body({ attachment, href, animation }: { attachment: Attachment; href: string; animation: boolean }) {
   const kind = kindOf(attachment.contentType)
-  if (kind === 'video') return <video className="attachment-block__video" src={href} controls preload="metadata" />
+  if (kind === 'video' && animation) return <Animation href={href} label={attachment.filename} />
+  // #t=0.1: Safari on iOS draws a paused video as a black box until played;
+  // a start time makes it load and show that frame instead.
+  if (kind === 'video') return <video className="attachment-block__video" src={`${href}#t=0.1`} controls preload="metadata" />
   if (kind === 'audio') return <audio className="attachment-block__audio" src={href} controls preload="metadata" />
   if (kind === 'pdf') {
     // The browser's own viewer, framed same-origin: no PDF.js in the bundle.
@@ -86,5 +100,70 @@ function Body({ attachment, href }: { attachment: Attachment; href: string }) {
       <span className="attachment-block__name">{attachment.filename}</span>
       <span className="attachment-block__meta">{humanSize(attachment.size)}</span>
     </a>
+  )
+}
+
+/**
+ * A video shown as an animation (dev-plan 10.5 step 2): silent, looping,
+ * starting by itself, no player controls, the way a GIF behaves but at a
+ * fraction of a GIF's size.
+ *
+ * Two rules it keeps. Anything that moves for more than five seconds needs
+ * a way to stop it (WCAG 2.2.2), hence the pause button. And a reader whose
+ * system asks for reduced motion gets it paused on its first frame, to start
+ * if they choose. An exported page does the same through the one script it
+ * keeps (SiteChrome.ThemeScript), driven by the same data attributes, since
+ * none of this component survives an export.
+ *
+ * `muted` is set as an attribute by hand: React sets only the property, so
+ * the serialised page an export captures would lose it, and browsers refuse
+ * to start a video with sound by itself. `#t=0.1` makes Safari show the
+ * first frame of a paused one instead of a black box.
+ */
+function Animation({ href, label }: { href: string; label: string }) {
+  const ref = useRef<HTMLVideoElement>(null)
+  const [paused, setPaused] = useState(false)
+
+  useEffect(() => {
+    const video = ref.current
+    if (!video) return
+    video.muted = true
+    video.setAttribute('muted', '')
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      video.removeAttribute('autoplay')
+      video.pause()
+      setPaused(true)
+    }
+  }, [href])
+
+  function toggle() {
+    const video = ref.current
+    if (!video) return
+    if (video.paused) { void video.play(); setPaused(false) } else { video.pause(); setPaused(true) }
+  }
+
+  return (
+    <div className="animation" data-animation>
+      <video
+        ref={ref}
+        className="attachment-block__video animation__video"
+        src={`${href}#t=0.1`}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        disablePictureInPicture
+        aria-label={label}
+        data-animation-video
+      />
+      <button type="button" className="animation__toggle" data-animation-toggle
+        onMouseDown={(e) => e.preventDefault()} onClick={toggle}
+        aria-label={paused ? 'Play the animation' : 'Pause the animation'} aria-pressed={paused}>
+        {paused
+          ? <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5v14l12-7z" fill="currentColor" /></svg>
+          : <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor" /></svg>}
+      </button>
+    </div>
   )
 }

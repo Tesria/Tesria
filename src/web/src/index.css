@@ -1929,6 +1929,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
    same overflow lesson as .tabs. */
 .admin-table__actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
 .badge--danger { background: var(--danger-soft); color: var(--danger); }
+.badge--warning { background: var(--panel-warning-bg); color: var(--panel-warning-icon); }
 
 .admin__notice {
   margin: 1rem 0; padding: 0.85rem 1rem;
@@ -2395,6 +2396,19 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .attachment-block__note { margin: 0; color: var(--muted); font-size: 0.9rem; }
 .attachment-block__video, .attachment-block__audio { width: 100%; border-radius: var(--radius); background: #000; }
 .attachment-block__audio { background: none; }
+/* An animation (dev-plan 10.5 step 2): no player chrome, so it reads as part
+   of the page, with one small pause button that shows on hover and focus,
+   and always on a touch screen, where there is no hover. */
+.animation { position: relative; }
+.animation__video { display: block; background: transparent; }
+.animation__toggle {
+  position: absolute; right: 0.5rem; bottom: 0.5rem; width: 30px; height: 30px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 50%; background: rgba(0, 0, 0, 0.55); color: #fff; cursor: pointer;
+  opacity: 0; transition: opacity 0.15s;
+}
+.animation:hover .animation__toggle, .animation__toggle:focus-visible, .animation__toggle[aria-pressed="true"] { opacity: 1; }
+@media (hover: none) { .animation__toggle { opacity: 1; } }
 .attachment-block__pdf iframe {
   width: 100%; height: min(70vh, 640px); border: 1px solid var(--border); border-radius: var(--radius);
 }

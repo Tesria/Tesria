@@ -27,6 +27,9 @@ export type User = {
   /** Unused recovery codes. Zero means this account has no way back in if the
    *  password is lost, which is what the post-login prompt exists to fix. */
   recoveryCodesRemaining: number
+  /** Whether the codes were ever confirmed saved. Registration creates them,
+   *  so a count alone cannot tell codes someone has from codes never shown. */
+  recoveryCodesSaved: boolean
   /** Two-factor sign-in (dev-plan 3.5). */
   totpEnabled: boolean
   /** An administrator who must enrol before administering. */
@@ -464,6 +467,7 @@ export type AdminUser = {
   hasPassword: boolean
   isSso: boolean
   recoveryCodesRemaining: number
+  recoveryCodesSaved: boolean
   lastSeenAt: string | null
   createdAt: string
   failedLoginCount: number

@@ -81,7 +81,13 @@ public static class AuthEndpoints
         /// <summary>The owner of an instance whose first-run setup is unfinished (dev-plan 10.2).</summary>
         bool SetupRequired,
         /// <summary>The tour and tips this person has or has not seen (dev-plan 10.3).</summary>
-        Onboarding.Summary Onboarding);
+        Onboarding.Summary Onboarding,
+        /// <summary>
+        /// Whether this person ever confirmed saving their recovery codes.
+        /// Codes exist from registration, so a count alone cannot tell codes
+        /// someone has from codes nobody was ever shown (2026-09-22).
+        /// </summary>
+        bool RecoveryCodesSaved);
     public record NotificationPreferenceRequest(EmailNotificationMode EmailNotifications);
 
     /// <summary>The password was right; a one-time code is still needed.</summary>
@@ -682,7 +688,7 @@ public static class AuthEndpoints
         var setupRequired = await Features.Setup.SetupEndpoints.RequiredForAsync(user, siteSettings);
         return new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.AvatarVariant,
             user.PasswordHash != null, remaining, enabled, required, user.EmailNotifications, held, roleName,
-            setupRequired, Onboarding.SummaryFor(user));
+            setupRequired, Onboarding.SummaryFor(user), user.RecoveryCodesAcknowledgedAt != null);
     }
 
     private static async Task<IResult> UpdateProfile(
