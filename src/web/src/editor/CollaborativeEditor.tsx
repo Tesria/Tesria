@@ -13,6 +13,7 @@ import { ImageHoverMenu } from './ImageHoverMenu'
 import { StatusMenu } from './StatusMenu'
 import { DateMenu } from './DateMenu'
 import { LayoutMenu } from './LayoutMenu'
+import { WrapperMenu } from './WrapperMenu'
 import { getSharedExtensions } from './extensions'
 import { countPendingExternalEdits } from './externalEditMarks'
 import { reconcileYDoc } from './externalEdits'
@@ -247,6 +248,7 @@ export function CollaborativeEditor({
       {editor && <StatusMenu editor={editor} />}
       {editor && <DateMenu editor={editor} />}
       {editor && <LayoutMenu editor={editor} />}
+      {editor && <WrapperMenu editor={editor} />}
       {editor && <DynamicBlockMenu editor={editor} />}
       {editor && <TocMenu editor={editor} />}
       {editor && <InlineCommentPopover editor={editor} getPageId={getUploadPageId} />}

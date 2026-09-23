@@ -135,3 +135,13 @@ export function WatchIcon() {
     </NavIcon>
   )
 }
+
+/** A panel with its left side marked: hide or show the sidebar. */
+export function SidebarIcon() {
+  return (
+    <NavIcon>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+      <path d="M9 4.5v15" />
+    </NavIcon>
+  )
+}

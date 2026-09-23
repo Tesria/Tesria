@@ -93,6 +93,13 @@
   --bp-mobile: 640px;
   --bp-tablet: 1024px;
   --page-pad: 1.5rem;
+  /* The notch and the rounded corners on a phone held sideways. The page
+     asks for the whole screen (viewport-fit=cover in index.html), which is
+     what lets its bars and sidebar reach the edges instead of sitting between
+     two empty bands; these keep the controls out from under the notch. Zero
+     everywhere else. */
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   /* iOS Safari auto-boosts font size in narrow flex/table columns it deems
      "readable text": invisible on desktop browsers (nothing to trigger it),
@@ -165,6 +172,9 @@ button { font: inherit; color: inherit; }
 
 .alert { border-radius: var(--radius); padding: 0.6rem 0.8rem; font-size: 0.9rem; margin: 0.5rem 0; }
 .alert--error { background: var(--danger-soft); color: var(--danger); }
+/* Used by the no-offsite-backup, low-disk and pack-import warnings, which
+   rendered colourless until 2026-09-22 because this rule did not exist. */
+.alert--warning { background: var(--panel-warning-bg); color: var(--text); border-left: 3px solid var(--panel-warning-border); }
 
 .badge {
   display: inline-block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
@@ -231,7 +241,8 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
      margin-left: auto puts all the leftover in one place, before the
      right-hand cluster, so the nav anchors to the brand at every tier. */
   display: flex; align-items: center; justify-content: flex-start;
-  padding: 0 1rem; height: 52px; border-bottom: 1px solid var(--border); background: var(--surface);
+  padding: 0 calc(1rem + var(--safe-right)) 0 calc(1rem + var(--safe-left));
+  height: 52px; border-bottom: 1px solid var(--border); background: var(--surface);
   position: sticky; top: 0; z-index: 10;
 }
 /* A flex item's default min-width is `auto`, not 0: it refuses to shrink
@@ -289,6 +300,10 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .admin-version a { color: inherit; }
 
 /* A space's export switches (dev-plan 12.3). */
+/* A heading inside a settings tab (Templates: "This space", "Instance-wide"). */
+.settings-subhead { font-size: 0.95rem; margin: 1.25rem 0 0.4rem; }
+/* Renaming a group or a template in place, in its list row. */
+.version .group-edit { flex: 1 1 100%; margin: 0; grid-template-columns: 1fr 1fr auto auto; }
 .space-exports { display: grid; gap: 0.5rem; justify-items: start; }
 .space-exports .btn { margin-top: 0.5rem; }
 
@@ -608,6 +623,7 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
      forms) has no room to breathe at mobile widths: found via testing, a
      real overflow/clipping issue, not just visually tight. Stack instead. */
   .form-inline { grid-template-columns: 1fr; }
+  .version .group-edit { grid-template-columns: 1fr; }
 }
 
 /* ---- space layout (sidebar + content) ------------------------------------ */
@@ -622,7 +638,8 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
    default, which here is the height of the *content*, and a sticky element
    as tall as its container has nothing to stick within. */
 .sidebar {
-  border-right: 1px solid var(--border); background: var(--bg-alt); padding: 1rem;
+  border-right: 1px solid var(--border); background: var(--bg-alt);
+  padding: 1rem 1rem 1rem calc(1rem + var(--safe-left));
   position: sticky; top: 52px; align-self: start; height: calc(100vh - 52px);
   display: flex; flex-direction: column; min-height: 0;
 }
@@ -632,8 +649,8 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
   flex: 0 0 auto; margin-top: auto; padding-top: 0.6rem;
   /* A rule, and the full padding back, so the foot reads as a separate band
      rather than as the last row of the tree. */
-  border-top: 1px solid var(--border); margin-left: -1rem; margin-right: -1rem;
-  padding-left: 1rem; padding-right: 1rem;
+  border-top: 1px solid var(--border); margin-left: calc(-1rem - var(--safe-left)); margin-right: -1rem;
+  padding-left: calc(1rem + var(--safe-left)); padding-right: 1rem;
 }
 /* Inside the sidebar the tree is the band that scrolls: the section fills the
    gap, its heading stays put, and only the rows move. min-height: 0 is what
@@ -646,6 +663,21 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
   padding-right: 0.15rem; margin-right: -0.15rem;
 }
 .sidebar__head { margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.55rem; }
+/* Hiding the sidebar (dev-plan 10.5 step 1). Collapsed, the grid keeps a
+   narrow rail with the button that brings it back, so it is never lost. */
+.sidebar__toggle {
+  display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex: none;
+  border: 1px solid transparent; border-radius: var(--radius); background: none; color: var(--muted); cursor: pointer;
+}
+.sidebar__toggle:hover { border-color: var(--border); color: var(--text); background: var(--surface); }
+.sidebar__toggle--hide { margin-left: auto; align-self: flex-start; }
+.space-layout--collapsed { grid-template-columns: calc(40px + var(--safe-left)) 1fr; }
+.sidebar-rail {
+  position: sticky; top: 52px; align-self: start; height: calc(100vh - 52px);
+  border-right: 1px solid var(--border); background: var(--bg-alt);
+  padding: 0.6rem 0 0 var(--safe-left); display: flex; justify-content: center;
+}
+.sidebar[hidden] { display: none; }
 .sidebar__key { font-size: 0.72rem; font-weight: 700; color: var(--primary); }
 .sidebar__name { font-weight: 600; }
 .tree-section { margin-top: 0.75rem; }
@@ -748,6 +780,9 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
      Space settings) are covered by .space-home-tree and .space-actionbar
      instead at this width. */
   .sidebar { display: none; }
+  /* A phone held upright has no sidebar to hide. */
+  .sidebar-rail { display: none; }
+  .space-layout--collapsed { grid-template-columns: 1fr; }
 }
 
 /* ---- paper: the "sheet of paper" surface shared by editing and viewing --- */
@@ -990,6 +1025,22 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   border: 1px solid var(--border); padding: 0.4rem 0.6rem; vertical-align: top; position: relative;
 }
 .editor__content table th { background: var(--bg-alt); font-weight: 600; text-align: left; }
+/* On a phone held upright a table used to be squeezed to the column's width,
+   every column shrinking with it until each held a word a line (the owner,
+   2026-09-22). Here columns keep a readable minimum and the table scrolls
+   sideways inside .tableWrapper, which already scrolls. !important for the
+   same reason as the width rule above: TableView writes widths inline. */
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .editor__content table,
+  .editor__content table[style*="--table-target-width"] {
+    table-layout: auto; width: max-content !important; min-width: 100%;
+  }
+  /* On what is inside the cell, not the cell: browsers ignore min-width on
+     a table cell, but a block's own min and max widths are what an auto
+     table measures its columns by. So each column is at least 7rem, wraps
+     at 16rem, and the table is as wide as that makes it. */
+  .editor__content table td > *, .editor__content table th > * { min-width: 7rem; max-width: 16rem; }
+}
 .editor__content table .selectedCell { background: var(--selected-cell); }
 .editor__content table .column-resize-handle {
   background-color: var(--primary); bottom: -2px; position: absolute; right: -2px; top: 0; width: 4px; pointer-events: none;
@@ -1065,6 +1116,9 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .toolbar-dropdown__style--h1 { font-size: 1.25rem; font-weight: 700; }
 .toolbar-dropdown__style--h2 { font-size: 1.1rem; font-weight: 700; }
 .toolbar-dropdown__style--h3 { font-size: 1rem; font-weight: 700; }
+.toolbar-dropdown__style--h4 { font-size: 0.95rem; font-weight: 700; }
+.toolbar-dropdown__style--h5 { font-size: 0.88rem; font-weight: 700; }
+.toolbar-dropdown__style--h6 { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
 .toolbar-dropdown__label { font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
 /* "Aa" in place of "Normal text" when the editor's row is narrow. The query
    is on the action bar's primary slot (an inline-size container, see
@@ -1197,13 +1251,14 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .page-actionbar {
   position: sticky; top: 52px; z-index: 8;
   display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;
-  padding: 0.5rem 1.5rem; background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 0.5rem calc(1.5rem + var(--safe-right)) 0.5rem 1.5rem;
+  background: var(--surface); border-bottom: 1px solid var(--border);
 }
 .page-actionbar__primary, .page-actionbar__secondary { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 /* The editor's bar: toolbar edge to edge, no inner box, the width toggle at
    the far right of the same row. min-width:0 lets the toolbar shrink and
    overflow instead of forcing the row wider. */
-.page-actionbar--editor { flex-wrap: nowrap; padding: 0.3rem 0.75rem; gap: 0.5rem; container: editorbar / inline-size; }
+.page-actionbar--editor { flex-wrap: nowrap; padding: 0.3rem calc(0.75rem + var(--safe-right)) 0.3rem 0.75rem; gap: 0.5rem; container: editorbar / inline-size; }
 /* The bar's own width decides, not the viewport's: with the sidebar open, a
    tablet-width window leaves the bar ~400px, where Style, Insert, Full width,
    Update and Close do not fit and the menus ran into Full width. Full width
@@ -2094,6 +2149,12 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
   border-radius: var(--radius); box-shadow: var(--shadow-md); padding: 0.5rem 0.6rem; margin: 0;
 }
 .chip-menu input { padding: 0.3rem 0.5rem; }
+/* iOS draws a date field at its own minimum width and ignores the popup's,
+   so the field spilled out of it. A plain appearance and a width of its own. */
+.chip-menu input[type="date"] {
+  -webkit-appearance: none; appearance: none; width: 11.5rem; max-width: 100%; min-height: 2.2rem; text-align: left;
+}
+.chip-menu input[type="date"]::-webkit-date-and-time-value { text-align: left; }
 .chip-menu__colors { display: flex; gap: 0.3rem; flex-wrap: wrap; }
 .chip-menu__colors .status { cursor: pointer; font-size: 0.68rem; }
 .chip-menu__colors .status.is-active { border-color: var(--text); }
@@ -2265,6 +2326,13 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .dynamic-block-menu { min-width: 220px; }
 .dynamic-block-menu__title { margin: 0 0 0.2rem; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
 .dynamic-block-menu__field { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin: 0; font-size: 0.85rem; }
+.page-picker { display: grid; gap: 0.3rem; min-width: 16rem; }
+.dynamic-block-menu__field:has(.page-picker) { align-items: flex-start; }
+.dynamic-block-menu__field .page-picker input { width: 100%; }
+.page-picker__current { margin: 0; font-size: 0.9rem; }
+.page-picker__results { list-style: none; margin: 0; padding: 0; max-height: 14rem; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+.page-picker__results button { display: block; width: 100%; text-align: left; padding: 0.35rem 0.5rem; background: none; border: 0; color: var(--text); font: inherit; cursor: pointer; }
+.page-picker__results button:hover, .page-picker__results button:focus-visible { background: var(--bg-alt); }
 .dynamic-block-menu__field select, .dynamic-block-menu__field input { width: 140px; padding: 0.25rem 0.4rem; }
 
 /* The two static Wave D containers. Deliberately quiet: an excerpt is normal
@@ -2301,6 +2369,10 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .embed__frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 
 .smart-link { margin: 0.75rem 0; }
+/* The address and Card/Inline, while an empty or selected one is edited. */
+.smart-link__display { display: inline-flex; gap: 0.35rem; margin-left: 0.25rem; }
+.smart-link__display .is-active { font-weight: 700; text-decoration: underline; }
+.smart-link--inline .smart-link__form { display: flex; }
 .smart-link__body {
   display: flex; gap: 0.75rem; align-items: center; padding: 0.6rem 0.8rem; text-decoration: none;
   border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text);
@@ -2356,6 +2428,9 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .math--display { display: block; margin: 0.75rem 0; text-align: center; }
 .math.is-selected { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 3px; }
 .math__input { font-family: var(--mono, monospace); font-size: 0.9em; padding: 0.15rem 0.35rem; min-width: 12rem; }
+.math__editor { display: inline-flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.math__display { display: inline-flex; gap: 0.35rem; font-size: 0.85rem; }
+.math__display .is-active { font-weight: 700; text-decoration: underline; }
 .math__rendered { cursor: default; }
 .editor--editable .math__rendered { cursor: text; }
 .math__empty { color: var(--muted); font-style: italic; font-size: 0.9em; }
@@ -2691,6 +2766,10 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   [data-export-width-toggle] { display: none; }
 }
+
+/* An exported site is captured from the real page, so the hide button comes
+   with it; a static site cannot remember the choice, so it goes. */
+.space-layout--export .sidebar__toggle { display: none; }
 
 /* On a phone the application hides .sidebar, because .space-actionbar and
    .space-home-tree do its two jobs instead. An export has neither, so hiding

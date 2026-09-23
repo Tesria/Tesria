@@ -16,6 +16,7 @@ import { LinkDialog } from './LinkDialog'
 import {
   InlineCodeIcon, HighlightIcon, BulletListIcon, OrderedListIcon, TaskListIcon,
   AlignLeftIcon, AlignCenterIcon, AlignRightIcon,
+  AlignJustifyIcon,
   TextColorIcon, IndentIcon, OutdentIcon, ClearFormattingIcon,
 } from './icons'
 
@@ -129,9 +130,11 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
   const show = (key: string) => !overflowed.has(key)
 
   const alignOptions = [
-    { key: 'left', label: 'Align left', icon: <AlignLeftIcon />, isActive: editor.isActive({ textAlign: 'left' }) || !editor.isActive({ textAlign: 'center' }) && !editor.isActive({ textAlign: 'right' }), onSelect: () => chain().setTextAlign('left').run() },
+    { key: 'left', label: 'Align left', icon: <AlignLeftIcon />, isActive: editor.isActive({ textAlign: 'left' }) || !editor.isActive({ textAlign: 'center' }) && !editor.isActive({ textAlign: 'right' }) && !editor.isActive({ textAlign: 'justify' }), onSelect: () => chain().setTextAlign('left').run() },
     { key: 'center', label: 'Align center', icon: <AlignCenterIcon />, isActive: editor.isActive({ textAlign: 'center' }), onSelect: () => chain().setTextAlign('center').run() },
     { key: 'right', label: 'Align right', icon: <AlignRightIcon />, isActive: editor.isActive({ textAlign: 'right' }), onSelect: () => chain().setTextAlign('right').run() },
+    // Was reachable only by Mod-Shift-J.
+    { key: 'justify', label: 'Justify', icon: <AlignJustifyIcon />, isActive: editor.isActive({ textAlign: 'justify' }), onSelect: () => chain().setTextAlign('justify').run() },
   ]
   const highlightPalette = (close: () => void) => (
     <ColorPalette
@@ -183,7 +186,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
   const sep = (key: string, after: string[]) =>
     after.some(show) ? <span key={key} className="toolbar__sep" /> : null
 
-  const headingLevel = [1, 2, 3].find((l) => editor.isActive('heading', { level: l }))
+  const headingLevel = [1, 2, 3, 4, 5, 6].find((l) => editor.isActive('heading', { level: l }))
 
   return (
     <div className="toolbar" ref={containerRef}>
@@ -198,6 +201,11 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
             { key: 'h1', label: 'Heading 1', isActive: headingLevel === 1, onSelect: () => chain().setHeading({ level: 1 }).run() },
             { key: 'h2', label: 'Heading 2', isActive: headingLevel === 2, onSelect: () => chain().setHeading({ level: 2 }).run() },
             { key: 'h3', label: 'Heading 3', isActive: headingLevel === 3, onSelect: () => chain().setHeading({ level: 3 }).run() },
+            // 4 to 6 were reachable only by Markdown and shortcut, and the
+            // menu read "Normal text" while the cursor sat in one.
+            { key: 'h4', label: 'Heading 4', isActive: headingLevel === 4, onSelect: () => chain().setHeading({ level: 4 }).run() },
+            { key: 'h5', label: 'Heading 5', isActive: headingLevel === 5, onSelect: () => chain().setHeading({ level: 5 }).run() },
+            { key: 'h6', label: 'Heading 6', isActive: headingLevel === 6, onSelect: () => chain().setHeading({ level: 6 }).run() },
           ]}
         />
       </span>

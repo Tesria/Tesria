@@ -9,6 +9,7 @@ import { ImageHoverMenu } from './ImageHoverMenu'
 import { StatusMenu } from './StatusMenu'
 import { DateMenu } from './DateMenu'
 import { LayoutMenu } from './LayoutMenu'
+import { WrapperMenu } from './WrapperMenu'
 import { scrollToAnchor } from './headingAnchors'
 import { getSharedExtensions } from './extensions'
 import { handleImageDrop, handleImagePaste } from './imageUpload'
@@ -115,7 +116,10 @@ export function Editor({ value, editable = true, onChange, getUploadPageId, onUp
   // Keep the editor in sync when the source changes externally (e.g. switching
   // which version is previewed). Guarded so it never clobbers active typing.
   useEffect(() => {
-    if (!editor || editable) return
+    // Not before it is mounted: an editor nested in another (Include page)
+    // mounts late, and its commands throw until then. It was created with
+    // this content, so there is nothing to catch up on.
+    if (!editor || editable || editor.isDestroyed) return
     editor.commands.setContent(parseDoc(value) ?? { type: 'doc', content: [] })
   }, [editor, editable, value])
 
@@ -138,6 +142,7 @@ export function Editor({ value, editable = true, onChange, getUploadPageId, onUp
       {editable && editor && <StatusMenu editor={editor} />}
       {editable && editor && <DateMenu editor={editor} />}
       {editable && editor && <LayoutMenu editor={editor} />}
+      {editable && editor && <WrapperMenu editor={editor} />}
       {editable && editor && <DynamicBlockMenu editor={editor} />}
       {editable && editor && <TocMenu editor={editor} />}
       {/* Reading view and editor both: clicking commented text opens its thread. */}

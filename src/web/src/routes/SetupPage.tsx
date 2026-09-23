@@ -372,7 +372,7 @@ function AccountStep({
       <label>
         <span>Password</span>
         <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)}
-          autoComplete="new-password" required minLength={12} />
+          autoComplete="new-password" required minLength={8} />
       </label>
       <div className="row-gap setup__actions">
         <button type="submit" className="btn btn--primary" disabled={busy}>

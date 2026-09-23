@@ -9,6 +9,8 @@ export function GroupsPage() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [selected, setSelected] = useState<Group | null>(null)
+  // The group being renamed, with its draft name and description.
+  const [editing, setEditing] = useState<{ id: string; name: string; description: string } | null>(null)
 
   function load() {
     api.groups
@@ -30,6 +32,19 @@ export function GroupsPage() {
       load()
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not create the group.')
+    }
+  }
+
+  async function saveEdit(e: FormEvent) {
+    e.preventDefault()
+    if (!editing || !editing.name.trim()) return
+    setError(null)
+    try {
+      await api.groups.update(editing.id, { name: editing.name.trim(), description: editing.description.trim() || null })
+      setEditing(null)
+      load()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not rename the group.')
     }
   }
 
@@ -74,7 +89,22 @@ export function GroupsPage() {
 
       {groups && groups.length === 0 && <p className="muted">No groups yet.</p>}
       <ul className="version-list">
-        {groups?.map((g) => (
+        {groups?.map((g) => editing?.id === g.id ? (
+          <li key={g.id} className="version">
+            <form className="form-inline group-edit" onSubmit={saveEdit}>
+              <label>
+                Name
+                <input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} required autoFocus />
+              </label>
+              <label>
+                Description
+                <input value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} placeholder="Optional" />
+              </label>
+              <button type="submit" className="btn btn--primary btn--sm">Save</button>
+              <button type="button" className="btn btn--ghost btn--sm" onClick={() => setEditing(null)}>Cancel</button>
+            </form>
+          </li>
+        ) : (
           <li key={g.id} className="version">
             <span className="version__num">{g.name}</span>
             <span className="muted small">{g.memberCount} member{g.memberCount === 1 ? '' : 's'}</span>
@@ -83,6 +113,10 @@ export function GroupsPage() {
               <button type="button" className="link-btn"
                 onClick={() => setSelected(selected?.id === g.id ? null : g)}>
                 {selected?.id === g.id ? 'Close' : 'Members'}
+              </button>
+              <button type="button" className="link-btn"
+                onClick={() => setEditing({ id: g.id, name: g.name, description: g.description ?? '' })}>
+                Edit
               </button>
               <button type="button" className="link-btn link-btn--danger" onClick={() => remove(g)}>
                 Delete

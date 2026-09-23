@@ -12,31 +12,9 @@ import {
   type SecurityOverview,
   UserStatus,
 } from '../../api/client'
+import { ALERT_KIND_LABEL } from './alertKinds'
 
 const SEVERITY_LABEL: Record<SecuritySeverity, string> = { 0: 'info', 1: 'warning', 2: 'critical' }
-const KIND_LABEL: Record<string, string> = {
-  'login.failed_burst_ip': 'Failed sign-in burst from one address',
-  'login.credential_stuffing': 'Credential stuffing: many accounts from one address',
-  'account.locked': 'Account locked',
-  'account.repeated_lockouts': 'Account locked repeatedly',
-  'login.admin_new_address': 'Administrator signed in from a new address',
-  'http.denied_spike': 'Spike of denied requests from one address',
-  'content.mass_removal': 'Many pages removed quickly',
-  'token.minting_burst': 'Many API tokens minted quickly',
-  'registration.burst': 'Registration burst',
-  'admin.promoted': 'Administrator promoted',
-  'settings.public_spaces_toggled': 'Public spaces switch changed',
-  'webhook.private_target': 'Webhook aimed at a private address',
-  'audit.chain_broken': 'Audit log chain broken',
-  'backup.failed': 'A backup failed',
-  'backup.overdue': 'Backups are overdue',
-  'backup.agent_offline': 'A backup agent is not reporting',
-  'backup.restore_test_failed': 'A restore test failed',
-  'backup.disk_low': 'Backup disk nearly full',
-  'backup.retention_reduced': 'Backup retention policy made stricter',
-  'owner.transferred': 'Ownership of this instance was transferred',
-  'permissions.expanded': 'A role was given more rights',
-}
 
 function meta(json: string | null): Record<string, unknown> {
   try {
@@ -230,7 +208,7 @@ export function AdminSecurityPage() {
               <li key={a.id} className={`alerts__item alerts__item--${SEVERITY_LABEL[a.severity]}`}>
                 <div className="alerts__head">
                   <Severity level={a.severity} />
-                  <strong>{KIND_LABEL[a.kind] ?? a.kind}</strong>
+                  <strong>{ALERT_KIND_LABEL[a.kind] ?? a.kind}</strong>
                   <span className="muted small">{new Date(a.createdAt).toLocaleString()}</span>
                   {a.status !== AlertStatus.Open && (
                     <span className="badge">{a.status === AlertStatus.Resolved ? 'resolved' : 'acknowledged'}</span>
@@ -313,7 +291,7 @@ export function AdminSecurityPage() {
             onChange={(e) => act(() => api.admin.settings.update({ requireTotpForAdmins: e.target.checked } as never),
               e.target.checked ? 'Administrators must use two-factor sign-in.' : 'Two-factor no longer required.', 'Could not change the setting.')} />
           <span><strong>Require two-factor for administrators</strong><br />
-            <span className="muted small">Enforced once two-factor sign-in ships (dev-plan 3.5).</span></span>
+            <span className="muted small">An administrator without two-factor sign-in sees the setup page instead of the admin tabs until they turn it on.</span></span>
         </label>
       </section>
 
@@ -364,7 +342,7 @@ export function AdminSecurityPage() {
                 <tr key={e.id}>
                   <td className="muted small nowrap">{new Date(e.createdAt).toLocaleString()}</td>
                   <td><Severity level={e.severity} /></td>
-                  <td>{KIND_LABEL[e.kind] ?? e.kind}</td>
+                  <td>{ALERT_KIND_LABEL[e.kind] ?? e.kind}</td>
                   <td className="nowrap">{e.ip ? <code>{e.ip}</code> : <span className="muted">–</span>}</td>
                   <td>{e.actorName ?? <span className="muted">–</span>}</td>
                 </tr>

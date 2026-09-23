@@ -3321,69 +3321,181 @@ on a fresh member account in both themes and at 375 px, reduced motion
 (the poster), three tips firing and the daily cap, Turn off tips and its
 undo, the profile section, and every route touched by `Root`.
 
-### 10.5 Rebuild the user manual · `L` · Model: Opus
+### 10.5 The Support site and the Demo space · `XL` · Model: Opus 5.5
 
-**Why it is here.** A manual was written on 2026-09-11 (47 pages, 86
-screenshots) as content inside the instance, and it is gone: this database
-has four spaces and none of them is it, the oldest retained logical backup
-(2026-09-17) already lacks it, and the API space went the same way. Nothing
-in the repository held a copy, because the manual was a wiki, not a file.
+**Rescoped by the owner, 2026-09-22.** What began as "rebuild the user
+manual" is now the product's support site. The owner owns tesria.com and
+will host it there: the **Support** space is exported as a static site
+(12.2) and served from Cloudflare. A second space, **Tesria Demo**, holds
+the pages the screenshots and clips are taken from. The tree below was
+approved by the owner on 2026-09-22.
 
-Two things follow, and the second is the more important one.
+**Why it was here in the first place still stands.** A manual written on
+2026-09-11 (47 pages, 86 screenshots) lived only inside the instance and is
+gone; nothing in the repository held a copy. So the Support space is
+exported as a wiki pack and **committed to the repository** (the owner's
+decision), which also means anyone can pull it and run the support site
+locally. The wiki stays the source of truth (decided 2026-09-21): the site
+is written in Tesria and exported, not written as Markdown and imported.
 
-1. It has to be written again, and that is no loss: it documented a product
-   that has since gained the owner role, instance rights and custom roles
-   (11.1–11.3), the setup wizard and the tour (10.2–10.3), capture-based
-   export and static sites (12.1–12.2), and tracked changes from assistants
-   (8.6). A manual describing the 2026-09-11 build would be wrong on every
-   one of those.
-2. **Content that only lives in the instance is content one reset deletes.**
-   That is a fact about this system, not an accident of this manual, and it
-   is worth stating in the item that rebuilds it: whatever is written must
-   be reproducible, which is what the harness below is for.
+**The two spaces.**
 
-**Scope.** The pages a person who has never seen Tesria needs, in the order
-they need them: signing in and finding their way about; spaces and pages;
-writing (the editor, the slash menu, panels, tables, diagrams, maths, live
-blocks); working together (comments, mentions, watching, co-editing, and
-**what an assistant's write looks like while you are mid-edit**, which is
-8.6 step 6 folded in here); finding things; exporting and publishing a
-space; the profile; and the administration area, including roles and
-backups. Retire nothing silently: a page that described something now
-removed is deleted rather than left to rot.
+- **Support** (`SUPPORT`): public, published, exported to tesria.com. It
+  links to nothing in Demo.
+- **Tesria Demo** (`DEMO`): private, never exported. One clean page per
+  editor element so every screenshot shows one element alone; a believable
+  fictional team wiki (a product launch: projects, meeting notes,
+  decisions, labels, tasks with assignees, page properties) so the live
+  content blocks have something real to report; pages with history,
+  comments and inline comments; a small published space and a sample
+  exported site for the publishing pages. Fictional names only.
 
-**How the media is made.** `scripts/screenshots/` already does this, and the
-defaults are already right: **light theme, blue accent**, which is the
-owner's instruction and happens to be what `shot.mjs` seeds before first
-paint (`SHOT_THEME` / `SHOT_ACCENT` override). It draws annotations as a DOM
-overlay before the capture, so circles, boxes, arrows and labels come out as
-crisp as the interface under them, and it records clips (10.4) for the few
-things a still cannot show: dragging a page in the tree, the slash menu
-opening, a comment being made on a selection. `manual-space.example.json`
-survives as a worked example of the spec format, and is the place to start.
+**The approved tree** (about 150 pages).
 
-- **Every picture is regenerable.** The spec that produced the set is
-  committed; a screenshot nobody can reproduce is a screenshot that will be
-  wrong after the next redesign and cannot be fixed.
-- **Shoot unbranded.** Since 13.1 an instance can carry its own name,
-  logo and colours. The manual documents Tesria, so its screenshots are
-  taken with branding reset to Tesria, and the one page about branding shows
-  it being set.
-- **Shoot against seeded content, not real content.** The old set leaked
-  real space names and a real person's name into onboarding clips (10.4),
-  which is exactly the failure to avoid twice.
-- **The manual space is public** so it can be read without an account, and
-  so 12.2 can publish it as a static site, which is the other half of why it
-  is worth writing well.
+- Welcome to Tesria (space home)
+- Getting started: What is Tesria · Prerequisites · System requirements
+  (including the phones, tablets and browsers supported) ·
+  Quick start · First-run setup wizard · Your first space and page
+- Installation and operations: Installing with Docker Compose ·
+  Configuration reference (every `.env` setting) · HTTPS and domains ·
+  Trusting the local certificate · Single sign-on (OIDC) · Email (SMTP) ·
+  Upgrading · Health checks and monitoring · Backups and recovery (how
+  backups work, retention, restoring and undo, offsite copies, testing a
+  target and the cloud budget, restore drills, when the machine is gone) ·
+  Security hardening · Uninstalling and moving
+- User manual
+  - Basics: signing in, accounts and invites · two-factor and recovery
+    codes · resetting a password · finding your way around · the tour and
+    tips · theme and accent
+  - Spaces: what a space is · creating one · the space home and watching ·
+    who can see a space · archiving and deleting
+  - Pages: creating (and templates) · drafts, Publish and Update · the page
+    tree and reordering · page actions · labels · attachments · history and
+    restoring · restrictions · trash
+  - The editor: tour · the slash menu · text formatting · colours ·
+    alignment and indentation · Markdown shortcuts · keyboard shortcuts ·
+    floating menus
+    - **Elements, one page each**, with its slash command, every other way
+      to insert it, every option, how to use it, and its limits: Normal
+      text, Headings, Blockquote, Divider, Bullet list, Ordered list, Task
+      list, Link, Panels (all five), Expand, Decision, Layout, Table, Code
+      block, Diagram (Mermaid), Maths, Chart, Image, Gallery, File or video
+      (and animation), Embed, Smart link, Status, Date, Mention, Emoji,
+      Table of contents, Excerpt, Page properties
+    - Live content: how it works, then one page per block: Children
+      display, Recently updated, Content by label, Attachments, Change
+      history, Contributors, Include page, Excerpt include, Page properties
+      report, Labels list, Task report, Page tree
+  - Working together: editing at once · comments · mentions and
+    notifications · watching · changes from assistants and the API
+  - Finding things: search · labels
+  - Exporting and publishing: a page · a space as a website · hosting an
+    exported site · wiki packs · public reading · turning exports off
+  - Your profile: avatar, name, email · sessions · email notifications ·
+    API tokens · password
+  - **Tesria on phones and tablets** (added by the owner, 2026-09-22): the
+    phone top bar and menu · moving between spaces and pages · the
+    editor's phone toolbar and Insert button · tables by touch · the
+    keyboard and the sticky bars · what a phone does not offer (reordering
+    the tree, for one) · tablets
+- Administration: owners, administrators and users · one page per admin
+  tab (Dashboard, Users, Spaces, Invites, Security, Backups, Roles, Groups,
+  Audit log, Branding, Settings) · Space settings (Details, Exports, site
+  and pack export, Archive and danger zone, Permissions, Webhooks, Trash)
+- REST API: overview and the interactive reference · authentication ·
+  errors and why missing looks like 404 · rate limits · webhooks · a
+  reference page per endpoint group, **generated from the OpenAPI spec** so
+  it cannot drift · curl examples
+- MCP: what it is · connecting clients · permissions and read-only tokens ·
+  one page per tool (the ten in `TesriaTools.cs`) · how assistant edits
+  appear to people editing
+- Troubleshooting · FAQ · Glossary · Release notes (from the changelog) ·
+  Security · Licence and credits
 
-**Decided by the owner, 2026-09-21: the wiki is the source of truth.** The
-manual is written in Tesria and exported, not written as Markdown and
-imported. It is the dogfooding answer and it is what was done before.
+**Media rules** (the owner's, and 10.5's original ones).
+**Every element page shows the element on a desktop and on a phone**, side
+by side (the owner, 2026-09-22: mobile support took a great deal of work
+and the first tree left it out). The harness already shoots at phone width
+with touch on (`SHOT_MOBILE=1`), so each shot is taken twice. Light theme,
+blue accent, unbranded (branding reset to Tesria; only the
+Branding page shows it set). Seeded fictional content only. Every
+screenshot and clip comes from a committed spec in `scripts/screenshots/`,
+so each can be regenerated after a redesign. Cloudflare Workers static
+assets allow **25 MiB per file** and 20,000 files on the free plan
+(checked 2026-09-22; the owner had understood 50 MB); the harness's clips
+are a few hundred kilobytes, so neither limit binds.
 
-That makes **8.5 a prerequisite rather than a preference.** A manual whose
-only copy lives in the instance is how the last one was lost, so the
-rebuild waits until a wiki pack can give it a committed export to come back
-from. 12.2 already publishes it for readers; 8.5 is what preserves it.
+**Decisions (the owner, 2026-09-22).**
+
+1. **Animations are a mode of the existing "File or video" element**, not a
+   new element: "Play as animation" shows a video attachment silent,
+   looping, starting by itself, with no player controls, and shows its
+   still frame instead to anyone whose system asks for reduced motion. The
+   site export already copies attachments beside each page, so exported
+   pages carry the clips with no new mechanism. To check: that Safari on
+   iPhone plays the harness's WebM; if not, the harness also writes MP4.
+2. **Every product gap the inventory found is fixed before anything is
+   shot** (step 1), so nothing is documented broken and nothing is
+   recorded twice.
+3. **System requirements are measured**, not guessed: the running stack's
+   memory, CPU at rest and under a PDF export, and disk, published with
+   stated headroom.
+4. **The owner creates the Demo accounts** (fictional people for mentions,
+   co-editing, the Users tab and contributors) from a list this item
+   provides. **The existing spaces are all build leftovers and are deleted
+   by the owner after step 1**, before Demo is seeded.
+5. **A pack of the Support space is committed to the repository.**
+6. **One password rule.** The setup wizard asked for 12 characters in the
+   browser while the server, and every other form, require 8; nothing
+   recorded 12 as a decision. The wizard now follows the server's rule. The
+   owner can ask for a stronger owner rule instead, enforced by the server.
+
+**Steps, each shippable alone.**
+
+1. **Fix the gaps first.** From the 2026-09-22 inventory:
+   - Smart link: an address field when empty, a way to change it, and the
+     card/inline switch its `display` attribute already supports.
+   - Panels, Expand, Decision and Excerpt can be removed, keeping their
+     content; a panel's type can be changed from the panel itself.
+   - Maths can be inline as well as on its own line, as its description
+     already claims.
+   - Include page and Excerpt include pick a page by title, not a raw id.
+   - Headings 4 to 6 in the Style menu and the slash menu; Justify in the
+     Alignment menu.
+   - A mention notification reads as a sentence, not `user.mentioned`.
+   - The mention tip stops claiming mentions work in comments.
+   - The "Require two-factor for administrators" switch stops saying
+     two-factor has not shipped.
+   - The setup wizard's password rule matches the server's (decision 6).
+   - Templates can be listed, renamed and deleted from a screen.
+   - Groups can be renamed from the Groups tab.
+   - An administrator can regain access to a space from the Spaces tab (the
+     endpoint exists; the button does not).
+   - The "Create invite links" right gets a screen, or its holders a way to
+     use it.
+   - The "Create spaces" right's description stops saying the creator
+     administers the space, which the permission model does not do.
+   - Added by the owner while this step was under way (2026-09-22): a
+     phone held sideways fills the screen instead of sitting between two
+     empty bands; the space sidebar can be hidden, on any screen wide
+     enough to have one; the date popup's field fits its box on iOS; and on
+     a phone held upright a table keeps readable columns and scrolls
+     sideways instead of squeezing.
+   - Found on the way: the bell and emails showed a mention as
+     `user.mentioned` and an alert by its internal name; warning notices
+     had no style; and "Get access" on an open space would have granted the
+     space's first permission, which closes it to everyone else. It now
+     grants nothing there.
+2. **"Play as animation"** on File or video, in the editor, the reading
+   view and the exported site.
+3. **Measure the system requirements.**
+4. **The owner creates the Demo accounts and deletes the old spaces.**
+5. **Seed Tesria Demo**, reproducibly (the spec or a pack in the
+   repository).
+6. **Write Support** in the order of the tree, shooting as each section is
+   written.
+7. **Export**: the pack committed to the repository, and the static site
+   checked against Cloudflare's limits and walked as a reader.
 
 ---
 
@@ -4752,7 +4864,7 @@ miss of the kind the gate exists for:
 13c. **12.3** Turn a space's exports off, format by format (Opus 5.5, shipped 2026-09-22).
 13d. Three small follow-ups (Opus 5.5, shipped 2026-09-22): the dashboard's two top-ten tables as cards, **Test connection** back on Storage targets (9.2 step 5), and `OFFSITE_CLOUD_BUDGET_GB` (9.3 step 3).
 13b. **13.1** Instance branding (designed and shipped 2026-09-22 by Opus 5.5, the first item under the new model gate). Before 10.5 at the owner's request, and the manual's screenshots are then taken on an unbranded instance.
-14. **10.5** Rebuild the user manual, **after 8.5**, now that the owner has settled the wiki as its source of truth (2026-09-21). A manual whose only copy is inside the instance is how the last one was lost, so the pack that can export it is a prerequisite, not a preference.
+14. **10.5** The Support site and the Demo space (rescoped from "rebuild the user manual" by the owner, 2026-09-22), **after 8.5**, now that the owner has settled the wiki as its source of truth (2026-09-21). A manual whose only copy is inside the instance is how the last one was lost, so the pack that can export it is a prerequisite, not a preference.
 
 Phases 6 and 8.2 are floaters (small, no dependents) and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm

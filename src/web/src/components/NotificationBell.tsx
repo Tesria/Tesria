@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, type AppNotification } from '../api/client'
+import { ALERT_KIND_LABEL } from '../routes/admin/alertKinds'
 
 /** Same stroke-icon language as the editor toolbar (editor/icons.tsx) (flat,
  *  currentColor, 1.8px stroke) instead of the platform's own emoji bell,
@@ -19,6 +20,7 @@ const ACTION_LABEL: Record<string, string> = {
   'page.created': 'created a page',
   'page.updated': 'updated a page',
   'comment.created': 'commented on a page',
+  'user.mentioned': 'mentioned you on a page',
 }
 
 function describe(n: AppNotification): string {
@@ -26,7 +28,8 @@ function describe(n: AppNotification): string {
   if (n.action === 'security.alert') {
     try {
       const meta = JSON.parse(n.metadataJson ?? '{}') as { Kind?: string; Severity?: string }
-      return `Security ${meta.Severity?.toLowerCase() ?? 'alert'}: ${meta.Kind ?? 'see Security page'}`
+      const kind = meta.Kind ? ALERT_KIND_LABEL[meta.Kind] ?? meta.Kind : 'see the Security page'
+      return `Security ${meta.Severity?.toLowerCase() ?? 'alert'}: ${kind}`
     } catch {
       return 'Security alert'
     }

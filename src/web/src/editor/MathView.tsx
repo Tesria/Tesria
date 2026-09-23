@@ -63,6 +63,7 @@ export function MathView({ node, editor, selected, updateAttributes }: ReactNode
   return (
     <NodeViewWrapper as={display ? 'div' : 'span'} className={className} contentEditable={false}>
       {editing && editor.isEditable ? (
+        <span className="math__editor">
         <input
           ref={inputRef}
           className="math__input"
@@ -76,6 +77,17 @@ export function MathView({ node, editor, selected, updateAttributes }: ReactNode
           placeholder="e = mc^2"
           aria-label="LaTeX"
         />
+        {/* Inline or on its own line. mousedown is cancelled so the input
+            keeps focus: its blur is what saves and closes the editor. */}
+        <span className="math__display" role="group" aria-label="Show">
+          <button type="button" className={display ? 'link-btn' : 'link-btn is-active'} aria-pressed={!display}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => updateAttributes({ display: false, latex: draft })}>Inline</button>
+          <button type="button" className={display ? 'link-btn is-active' : 'link-btn'} aria-pressed={display}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => updateAttributes({ display: true, latex: draft })}>Own line</button>
+        </span>
+        </span>
       ) : (
         <span
           className="math__rendered"

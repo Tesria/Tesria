@@ -22,6 +22,7 @@ export function AdminSpacesPage() {
   const [spaces, setSpaces] = useState<AdminSpace[] | null>(null)
   const [allowPublic, setAllowPublic] = useState<boolean | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const { ask, dialog } = useConfirm()
 
@@ -72,6 +73,39 @@ export function AdminSpacesPage() {
     }
   }
 
+  /**
+   * Administrators do not bypass space permissions, so reaching a private
+   * space they hold no grant for is a deliberate, audited act that leaves an
+   * ordinary grant behind, which anyone with the space's admin can revoke.
+   */
+  async function recoverAccess(s: AdminSpace) {
+    const ok = await ask({
+      title: `Give yourself access to "${s.name}"?`,
+      confirmLabel: 'Give me access',
+      body: (
+        <>
+          <p>You will be added to the space as an administrator, so you can read it and manage its permissions.</p>
+          <p>This is recorded in the audit log. The grant is an ordinary one: remove it from the space's Permissions tab when you are done.</p>
+          <p>A space that is open to everyone already lets you in, and is left exactly as it is.</p>
+        </>
+      ),
+    })
+    if (!ok) return
+    setBusy(s.id)
+    setError(null)
+    setNotice(null)
+    try {
+      const r = await api.admin.spaces.recoverAccess(s.key)
+      setNotice(r.alreadyHadAccess
+        ? `You already have access to ${s.name}; nothing was changed.`
+        : `You now administer ${s.name}. The grant is recorded in the audit log.`)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not give you access.')
+    } finally {
+      setBusy(null)
+    }
+  }
+
   async function setComments(s: AdminSpace, publicComments: boolean) {
     setBusy(s.id)
     try {
@@ -90,6 +124,7 @@ export function AdminSpacesPage() {
   return (
     <>
       {error && <p className="alert alert--error">{error}</p>}
+      {notice && <p className="profile__ok" role="status">{notice}</p>}
       {allowPublic === false && (
         <p className="muted small">
           Public reading is switched off for the whole instance (Settings → Allow public spaces).
@@ -105,6 +140,7 @@ export function AdminSpacesPage() {
             <th>Storage</th>
             <th>Public</th>
             <th>Created</th>
+            <th>Access</th>
           </tr>
         </thead>
         <tbody>
@@ -137,6 +173,13 @@ export function AdminSpacesPage() {
                 </div>
               </td>
               <td className="muted small">{new Date(s.createdAt).toLocaleDateString()}</td>
+              <td>
+                <div className="admin-table__actions">
+                  <button type="button" className="link-btn" disabled={busy === s.id} onClick={() => recoverAccess(s)}>
+                    Get access
+                  </button>
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>

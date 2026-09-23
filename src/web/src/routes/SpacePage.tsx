@@ -6,9 +6,26 @@ import { OverflowMenu } from '../components/OverflowMenu'
 import { PageTree } from '../components/PageTree'
 import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
 import { SpaceIcon } from '../components/SpaceIcon'
-import { SettingsIcon } from '../components/NavIcons'
+import { SettingsIcon, SidebarIcon } from '../components/NavIcons'
 import { usePublishSpaceNav } from '../components/spaceNav'
 import { useTitleSpace } from '../components/DocumentTitle'
+
+/**
+ * Whether the space sidebar is hidden (dev-plan 10.5 step 1, the owner's
+ * request: more room for the page on phones in landscape, tablets and
+ * desktops). A per-device preference, so browser storage, which can be
+ * missing or refuse: then the sidebar is simply shown.
+ */
+const SIDEBAR_KEY = 'tesria-sidebar-collapsed'
+function readCollapsed(): boolean {
+  try { return localStorage.getItem(SIDEBAR_KEY) === '1' } catch { return false }
+}
+function writeCollapsed(value: boolean) {
+  try {
+    if (value) localStorage.setItem(SIDEBAR_KEY, '1')
+    else localStorage.removeItem(SIDEBAR_KEY)
+  } catch { /* the choice lasts until the page is reloaded */ }
+}
 
 export type SpaceOutletContext = {
   space: Space
@@ -31,6 +48,7 @@ export function SpacePage() {
   useTitleSpace(space?.name)
   const [tree, setTree] = useState<PageTreeNode[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [collapsed, setCollapsed] = useState(readCollapsed)
   // "+ New" is contextual, matching Confluence: creating from an open page
   // makes a subpage of it, creating from anywhere else (the space landing,
   // Permissions, Trash, ...) makes a top-level page. Same rule for both the
@@ -108,9 +126,12 @@ export function SpacePage() {
   if (!space) return <p className="muted page-wrap">Loading…</p>
 
   const context: SpaceOutletContext = { space, tree, reloadTree, onSpaceChanged: setSpace }
+  const toggleSidebar = () => {
+    setCollapsed((c) => { writeCollapsed(!c); return !c })
+  }
 
   return (
-    <div className="space-layout">
+    <div className={collapsed ? 'space-layout space-layout--collapsed' : 'space-layout'}>
       {/* Mobile only (hidden >640px): the sidebar below is always visible
           on desktop, so this bar only needs to exist as a narrow-viewport
           substitute for it. Back-to-space-home navigation lives in the
@@ -138,7 +159,15 @@ export function SpacePage() {
           (see .sidebar in index.css) rather than part of the document's, so
           reading a long page no longer carries the space's name, its
           + New page button and its settings off the top of the screen. */}
-      <aside className="sidebar">
+      {collapsed && (
+        <div className="sidebar-rail">
+          <button type="button" className="sidebar__toggle" onClick={toggleSidebar}
+            title="Show the sidebar" aria-label="Show the sidebar" aria-expanded="false">
+            <SidebarIcon />
+          </button>
+        </div>
+      )}
+      <aside className="sidebar" hidden={collapsed}>
         <div className="sidebar__top">
           <div className="sidebar__head">
             <SpaceIcon space={space} size={32} />
@@ -150,6 +179,10 @@ export function SpacePage() {
               </div>
               <div className="sidebar__name">{space.name}</div>
             </div>
+            <button type="button" className="sidebar__toggle sidebar__toggle--hide" onClick={toggleSidebar}
+              title="Hide the sidebar" aria-label="Hide the sidebar" aria-expanded="true">
+              <SidebarIcon />
+            </button>
           </div>
           {user && (
             <NavLink to={newPageHref} className="btn btn--primary btn--block">
