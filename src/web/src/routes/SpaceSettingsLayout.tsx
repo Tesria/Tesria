@@ -3,7 +3,7 @@ import { useSpaceContext } from './SpacePage'
 
 /**
  * The shell for a space's own administration: details and icon, permissions,
- * webhooks, trash.
+ * templates, webhooks, trash.
  *
  * These four were four sidebar entries once, because permissions, webhooks
  * and trash existed before there was a settings page to put them in. That
@@ -28,6 +28,7 @@ export function SpaceSettingsLayout() {
       <nav className="tabs">
         <NavLink to={base} end className={tab}>Details</NavLink>
         <NavLink to={`${base}/permissions`} className={tab}>Permissions</NavLink>
+        <NavLink to={`${base}/templates`} className={tab}>Templates</NavLink>
         <NavLink to={`${base}/webhooks`} className={tab}>Webhooks</NavLink>
         <NavLink to={`${base}/trash`} className={tab}>Trash</NavLink>
       </nav>

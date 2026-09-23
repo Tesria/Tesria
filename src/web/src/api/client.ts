@@ -364,6 +364,9 @@ export type PageTemplate = {
   contentJson: string
   createdById: string
   createdAt: string
+  createdByName: string | null
+  /** Whether the caller may rename or delete it. */
+  canManage: boolean
 }
 
 /** The authenticated download URL for an attachment, for src/href attributes. */
@@ -1329,6 +1332,10 @@ export const api = {
     },
     spaces: {
       list: () => request<AdminSpace[]>('GET', '/api/admin/spaces'),
+      /** Admin access to a space they hold no grant for; audited, and a no-op on an open space. */
+      recoverAccess: (key: string) =>
+        request<{ spaceId: string; key: string; name: string; alreadyHadAccess: boolean }>(
+          'POST', `/api/admin/spaces/${encodeURIComponent(key)}/recover-access`, {}),
       setPublic: (key: string, input: { isPublic: boolean; publicComments?: boolean }) =>
         request<AdminSpace>('PUT', `/api/admin/spaces/${key}/public`, input),
     },
@@ -1477,6 +1484,8 @@ export const api = {
       request<PageTemplate[]>('GET', `/api/templates${spaceId ? `?spaceId=${spaceId}` : ''}`),
     create: (input: { spaceId?: string | null; name: string; description?: string | null; contentJson: string }) =>
       request<PageTemplate>('POST', '/api/templates', input),
+    update: (id: string, input: { name: string; description?: string | null }) =>
+      request<PageTemplate>('PUT', `/api/templates/${id}`, input),
     remove: (id: string) => request<void>('DELETE', `/api/templates/${id}`),
   },
   groups: {

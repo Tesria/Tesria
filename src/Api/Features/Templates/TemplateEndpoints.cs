@@ -10,15 +10,22 @@ namespace Tesria.Api.Features.Templates;
 public static class TemplateEndpoints
 {
     public record CreateTemplateRequest(Guid? SpaceId, string Name, string? Description, string ContentJson);
+    public record UpdateTemplateRequest(string Name, string? Description);
+
+    /// <summary>
+    /// <c>CanManage</c> is whether the caller may rename or delete it, so the
+    /// Templates tab offers only what will work (dev-plan 10.5 step 1).
+    /// </summary>
     public record TemplateResponse(
         Guid Id, Guid? SpaceId, string Name, string? Description, string ContentJson,
-        Guid CreatedById, DateTimeOffset CreatedAt);
+        Guid CreatedById, DateTimeOffset CreatedAt, string? CreatedByName = null, bool CanManage = false);
 
     public static IEndpointRouteBuilder MapTemplateEndpoints(this IEndpointRouteBuilder routes)
     {
         var group = routes.MapGroup("/templates").WithTags("Templates").RequireAuthorization();
         group.MapGet("/", List);
         group.MapPost("/", Create);
+        group.MapPut("/{id:guid}", Update);
         group.MapDelete("/{id:guid}", Delete);
         return routes;
     }
@@ -27,7 +34,8 @@ public static class TemplateEndpoints
     /// Instance-wide templates, plus (when <paramref name="spaceId"/> is given
     /// and viewable) templates scoped to that space.
     /// </summary>
-    private static async Task<IResult> List(AppDbContext db, IPermissionService perms, Guid? spaceId)
+    private static async Task<IResult> List(
+        AppDbContext db, IPermissionService perms, IInstancePermissions rights, CurrentUser current, Guid? spaceId)
     {
         var query = db.PageTemplates.AsNoTracking().Where(t => t.SpaceId == null);
         if (spaceId is { } sid)
@@ -37,7 +45,49 @@ public static class TemplateEndpoints
         }
 
         var templates = await query.OrderBy(t => t.Name).ToListAsync();
-        return Results.Ok(templates.Select(ToResponse));
+        var authorIds = templates.Select(t => t.CreatedById).Distinct().ToList();
+        var names = await db.Users.AsNoTracking().Where(u => authorIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.DisplayName);
+
+        var result = new List<TemplateResponse>();
+        foreach (var t in templates)
+            result.Add(ToResponse(t) with
+            {
+                CreatedByName = names.GetValueOrDefault(t.CreatedById),
+                CanManage = await CanManageAsync(t, current, perms, rights),
+            });
+        return Results.Ok(result);
+    }
+
+    /// <summary>
+    /// Who may rename or delete a template. A space's templates are part of
+    /// that space's shared setup, so anyone who can edit the space. An
+    /// instance-wide one, its author, and since 2026-09-22 also anyone holding
+    /// "Manage spaces": before, only the author could, so an instance-wide
+    /// template left by somebody who had gone could never be removed.
+    /// </summary>
+    private static async Task<bool> CanManageAsync(
+        PageTemplate t, CurrentUser current, IPermissionService perms, IInstancePermissions rights) =>
+        t.SpaceId is { } spaceId
+            ? await perms.CanEditSpaceAsync(spaceId)
+            : t.CreatedById == current.RequireId() || await rights.HasAsync(InstancePermissions.SpacesManage);
+
+    private static async Task<IResult> Update(
+        Guid id, UpdateTemplateRequest req, AppDbContext db, CurrentUser current,
+        IPermissionService perms, IInstancePermissions rights)
+    {
+        var template = await db.PageTemplates.FirstOrDefaultAsync(t => t.Id == id);
+        if (template is null) return Results.NotFound();
+        if (template.SpaceId is { } sid && !await perms.CanViewSpaceAsync(sid)) return Results.NotFound();
+        if (!await CanManageAsync(template, current, perms, rights)) return Results.Forbid();
+
+        var name = (req.Name ?? "").Trim();
+        if (name.Length == 0)
+            return Results.ValidationProblem(Error("name", "Name is required."));
+        template.Name = name;
+        template.Description = string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim();
+        await db.SaveChangesAsync();
+        return Results.Ok(ToResponse(template) with { CanManage = true });
     }
 
     private static async Task<IResult> Create(
@@ -75,18 +125,12 @@ public static class TemplateEndpoints
     }
 
     private static async Task<IResult> Delete(
-        Guid id, AppDbContext db, CurrentUser current, IPermissionService perms)
+        Guid id, AppDbContext db, CurrentUser current, IPermissionService perms, IInstancePermissions rights)
     {
         var template = await db.PageTemplates.FirstOrDefaultAsync(t => t.Id == id);
         if (template is null) return Results.NotFound();
 
-        // Space-scoped: anyone who can edit the space may remove it (it's part
-        // of that space's shared configuration). Instance-wide: only its author,
-        // mirroring how comments restrict edit/delete to the author.
-        var allowed = template.SpaceId is { } spaceId
-            ? await perms.CanEditSpaceAsync(spaceId)
-            : template.CreatedById == current.RequireId();
-        if (!allowed) return Results.Forbid();
+        if (!await CanManageAsync(template, current, perms, rights)) return Results.Forbid();
 
         db.PageTemplates.Remove(template);
         await db.SaveChangesAsync();

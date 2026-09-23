@@ -32,10 +32,15 @@ const ADMIN_ENTRY_RIGHTS = [
   Permission.PermissionsEditAdminTier,
 ]
 
-const SECONDARY_NAV: { to: string; label: string; adminOnly?: boolean }[] = [
+const SECONDARY_NAV: { to: string; label: string; adminOnly?: boolean; nonAdminOnly?: boolean; permission?: string }[] = [
   // Groups and the audit log live under Admin; API tokens under the profile.
   // Server-enforced too; hiding it just spares members a page of 403s.
   { to: '/admin', label: 'Admin', adminOnly: true },
+  // "Create invite links" can be given to people who are not administrators,
+  // and the admin area turns those away, so the right has its own page.
+  // Administrators reach the same form from the Invites tab, so only those
+  // who cannot see the admin area get the link.
+  { to: '/invite', label: 'Invite people', permission: Permission.InvitesCreate, nonAdminOnly: true },
 ]
 
 function ChevronIcon() {
@@ -108,7 +113,8 @@ export function Layout() {
   // Anyone holding an administration right has somewhere to go under /admin
   // (dev-plan 11.1), which is no longer the same as "is an administrator".
   const administers = ADMIN_ENTRY_RIGHTS.some((p) => can(p))
-  const secondaryNav = SECONDARY_NAV.filter((i) => !i.adminOnly || administers)
+  const secondaryNav = SECONDARY_NAV.filter((i) =>
+    (!i.adminOnly || administers) && (!i.nonAdminOnly || !administers) && (!i.permission || can(i.permission)))
   // The open space's tree, published by SpacePage (see spaceNav.ts). Only the
   // phone menu renders it; wider viewports have the sidebar.
   const [spaceNav, setSpaceNavState] = useState<SpaceNav | null>(null)

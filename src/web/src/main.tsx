@@ -27,6 +27,7 @@ import { LabelPage } from './routes/LabelPage'
 import { AuditPage } from './routes/AuditPage'
 import { GroupsPage } from './routes/GroupsPage'
 import { SpacePermissionsPage } from './routes/SpacePermissionsPage'
+import { SpaceTemplatesPage } from './routes/SpaceTemplatesPage'
 import { SpaceWebhooksPage } from './routes/SpaceWebhooksPage'
 import { ProfilePage } from './routes/ProfilePage'
 import { RecoverPage } from './routes/RecoverPage'
@@ -35,6 +36,7 @@ import { AdminDashboardPage } from './routes/admin/AdminDashboardPage'
 import { AdminUsersPage } from './routes/admin/AdminUsersPage'
 import { AdminSpacesPage } from './routes/admin/AdminSpacesPage'
 import { AdminInvitesPage } from './routes/admin/AdminInvitesPage'
+import { InvitePage } from './routes/InvitePage'
 import { AdminSettingsPage } from './routes/admin/AdminSettingsPage'
 import { AdminSecurityPage } from './routes/admin/AdminSecurityPage'
 import { AdminBackupsPage } from './routes/admin/AdminBackupsPage'
@@ -85,6 +87,7 @@ const router = createBrowserRouter(
                   <Route path="settings" element={<SpaceSettingsLayout />}>
                     <Route index element={<SpaceSettingsPage />} />
                     <Route path="permissions" element={<SpacePermissionsPage />} />
+                    <Route path="templates" element={<SpaceTemplatesPage />} />
                     <Route path="webhooks" element={<SpaceWebhooksPage />} />
                     <Route path="trash" element={<TrashPage />} />
                   </Route>
@@ -104,6 +107,7 @@ const router = createBrowserRouter(
                 <Route path="groups" element={<Navigate to="/admin/groups" replace />} />
                 <Route path="api-tokens" element={<Navigate to="/profile#api-tokens" replace />} />
                 <Route path="profile" element={<ProfilePage />} />
+                <Route path="invite" element={<InvitePage />} />
                 <Route path="admin" element={<AdminLayout />}>
                   <Route index element={<AdminDashboardPage />} />
                   <Route path="users" element={<AdminUsersPage />} />

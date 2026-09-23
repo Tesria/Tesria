@@ -1,8 +1,20 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { api, ApiError, type Invite } from '../../api/client'
+import { api, ApiError, Permission, type Invite } from '../../api/client'
+import { useAuth } from '../../auth/AuthContext'
 
-/** Admin → Invites (dev-plan 1.4's management surface). */
+/**
+ * Admin → Invites (dev-plan 1.4's management surface), and the "Invite
+ * people" page for anyone else holding "Create invite links".
+ *
+ * Two rights, and the page shows what each allows: creating a link needs
+ * invites.create, seeing and revoking the existing ones needs
+ * invites.manage. Someone with only the first can hand out links but cannot
+ * see anybody else's.
+ */
 export function AdminInvitesPage() {
+  const { can } = useAuth()
+  const canCreate = can(Permission.InvitesCreate)
+  const canManage = can(Permission.InvitesManage)
   const [invites, setInvites] = useState<Invite[] | null>(null)
   const [email, setEmail] = useState('')
   const [days, setDays] = useState(7)
@@ -11,12 +23,13 @@ export function AdminInvitesPage() {
   const [busy, setBusy] = useState(false)
 
   async function load() {
-    setInvites(await api.admin.invites.list())
+    if (canManage) setInvites(await api.admin.invites.list())
   }
 
   useEffect(() => {
     load().catch(() => setError('Could not load invites.'))
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canManage])
 
   async function create(e: FormEvent) {
     e.preventDefault()
@@ -46,7 +59,7 @@ export function AdminInvitesPage() {
         registration is closed and no email server is configured.
       </p>
 
-      <form className="form-inline" onSubmit={create}>
+      {canCreate && <form className="form-inline" onSubmit={create}>
         <label>
           Email (optional)
           <input
@@ -70,7 +83,7 @@ export function AdminInvitesPage() {
         <button type="submit" className="btn btn--primary" disabled={busy}>
           {busy ? 'Creating…' : 'Create invite'}
         </button>
-      </form>
+      </form>}
 
       {error && <p className="alert alert--error">{error}</p>}
 
@@ -93,7 +106,14 @@ export function AdminInvitesPage() {
         </div>
       )}
 
-      <table className="admin-table">
+      {!canManage && (
+        <p className="muted small">
+          Your role can create invite links but not list or revoke them, so copy each link when it
+          is shown. An administrator can revoke one from Administration → Invites.
+        </p>
+      )}
+
+      {canManage && <table className="admin-table">
         <thead>
           <tr>
             <th>For</th>
@@ -132,7 +152,7 @@ export function AdminInvitesPage() {
             <tr><td colSpan={4} className="muted">No invites yet.</td></tr>
           )}
         </tbody>
-      </table>
+      </table>}
     </>
   )
 }

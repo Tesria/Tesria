@@ -108,6 +108,27 @@ export const SLASH_ITEMS: SlashItem[] = [
     command: (editor, range) => editor.chain().focus().deleteRange(range).toggleHeading({ level: 3 }).run(),
   },
   {
+    title: 'Heading 4',
+    group: 'text',
+    icon: HeadingIcon,
+    description: 'A heading within a small section',
+    command: (editor, range) => editor.chain().focus().deleteRange(range).toggleHeading({ level: 4 }).run(),
+  },
+  {
+    title: 'Heading 5',
+    group: 'text',
+    icon: HeadingIcon,
+    description: 'A minor heading',
+    command: (editor, range) => editor.chain().focus().deleteRange(range).toggleHeading({ level: 5 }).run(),
+  },
+  {
+    title: 'Heading 6',
+    group: 'text',
+    icon: HeadingIcon,
+    description: 'The smallest heading',
+    command: (editor, range) => editor.chain().focus().deleteRange(range).toggleHeading({ level: 6 }).run(),
+  },
+  {
     title: 'Bullet list',
     group: 'list',
     icon: BulletListIcon,
@@ -290,9 +311,19 @@ export const SLASH_ITEMS: SlashItem[] = [
     title: 'Maths',
     group: 'block',
     icon: MathIcon,
-    description: 'A LaTeX expression, inline or on its own line',
+    description: 'A LaTeX equation on its own line',
     keywords: ['math', 'latex', 'katex', 'equation', 'formula'],
     command: (editor, range) => editor.chain().focus().deleteRange(range).insertMath(true, 'e = mc^2').run(),
+  },
+  {
+    // The node always could be inline; nothing offered it until 2026-09-22,
+    // though the Maths item's description said it could.
+    title: 'Inline maths',
+    group: 'block',
+    icon: MathIcon,
+    description: 'A LaTeX expression within a line of text',
+    keywords: ['math', 'latex', 'katex', 'inline', 'formula'],
+    command: (editor, range) => editor.chain().focus().deleteRange(range).insertMath(false, 'x^2').run(),
   },
   {
     title: 'Chart',

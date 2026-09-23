@@ -153,6 +153,29 @@ public class RoleTests
     }
 
     [Fact]
+    public async Task Recovering_access_to_an_open_space_grants_nothing_and_keeps_it_open()
+    {
+        using var factory = new TestAppFactory();
+        var admin = factory.CreateClient();
+        await RegisterAsync(admin, "admin@example.com");
+        var member = factory.CreateClient();
+        await RegisterAsync(member, "member@example.com");
+        var spaceId = await member.CreateSpaceAsync();
+        var key = (await member.GetFromJsonAsync<List<SpaceDto>>("/api/spaces"))!.Single(s => s.Id == spaceId).Key;
+
+        // The first grant would have made the space private to the admin.
+        var res = await admin.PostAsync($"/api/admin/spaces/{key}/recover-access", null);
+        res.EnsureSuccessStatusCode();
+        Assert.True((await res.Content.ReadFromJsonAsync<RecoverDto>())!.AlreadyHadAccess);
+
+        Assert.Equal(HttpStatusCode.OK, (await member.GetAsync($"/api/spaces/{key}")).StatusCode);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        Assert.False(await db.SpacePermissions.AnyAsync(p => p.SpaceId == spaceId));
+        Assert.False(await db.AuditLogs.AnyAsync(a => a.Action == "space.access_recovered"));
+    }
+
+    [Fact]
     public async Task Revoking_the_recovered_grant_returns_the_admin_to_no_access()
     {
         using var factory = new TestAppFactory();

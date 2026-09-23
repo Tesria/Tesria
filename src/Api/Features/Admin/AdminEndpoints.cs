@@ -179,6 +179,13 @@ public static class AdminEndpoints
         var space = await db.Spaces.FirstOrDefaultAsync(s => s.Key == normalizedKey);
         if (space is null) return Results.NotFound();
 
+        // An open space (no grants at all) already lets every signed-in user
+        // administer it. A grant here would be the space's first, and the
+        // first grant is what makes a space private: the administrator would
+        // gain nothing and lock everybody else out. So it grants nothing.
+        if (!await db.SpacePermissions.AnyAsync(p => p.SpaceId == space.Id))
+            return Results.Ok(new RecoverAccessResponse(space.Id, space.Key, space.Name, true));
+
         var userId = current.RequireId();
         var alreadyHadAccess = await db.SpacePermissions.AnyAsync(p =>
             p.SpaceId == space.Id

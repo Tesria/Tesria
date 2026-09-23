@@ -149,6 +149,7 @@ public sealed class NotificationEmailService(
         "page.created" => "A page was created",
         "page.updated" => "A page was updated",
         "comment.created" => "New comment",
+        "user.mentioned" => "You were mentioned",
         _ => n.Action,
     };
 
@@ -173,6 +174,7 @@ public sealed class NotificationEmailService(
                     "page.created" => "created",
                     "page.updated" => "updated",
                     "comment.created" => "commented on",
+                    "user.mentioned" => "mentioned you on",
                     _ => n.Action,
                 };
                 lines.Add($"- {who} {what} \"{page.Title}\"");

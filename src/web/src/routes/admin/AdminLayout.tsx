@@ -51,11 +51,11 @@ export function AdminLayout() {
 
   // Only the tabs this person can actually open (dev-plan 11.1). Every one is
   // refused server-side too; this keeps the shell honest about what is there.
-  const tabs: { to: string; label: string; end?: boolean; permission: string }[] = [
+  const tabs: { to: string; label: string; end?: boolean; permission: string; or?: string }[] = [
     { to: '/admin', label: 'Dashboard', end: true, permission: Permission.DashboardView },
     { to: '/admin/users', label: 'Users', permission: Permission.UsersView },
     { to: '/admin/spaces', label: 'Spaces', permission: Permission.SpacesManage },
-    { to: '/admin/invites', label: 'Invites', permission: Permission.InvitesManage },
+    { to: '/admin/invites', label: 'Invites', permission: Permission.InvitesManage, or: Permission.InvitesCreate },
     { to: '/admin/security', label: 'Security', permission: Permission.SecurityView },
     { to: '/admin/backups', label: 'Backups', permission: Permission.BackupsView },
     { to: '/admin/roles', label: 'Roles', permission: Permission.PermissionsView },
@@ -63,7 +63,7 @@ export function AdminLayout() {
     { to: '/admin/audit', label: 'Audit', permission: Permission.AuditView },
     { to: '/admin/branding', label: 'Branding', permission: Permission.SettingsBranding },
   ]
-  const visible = tabs.filter((t) => can(t.permission))
+  const visible = tabs.filter((t) => can(t.permission) || (t.or !== undefined && can(t.or)))
   // The owner always reaches the matrix, even having taken permissions.view
   // from their own role: it is how they would undo that.
   if (!visible.some((t) => t.to === '/admin/roles') && can(Permission.PermissionsEditAdminTier))

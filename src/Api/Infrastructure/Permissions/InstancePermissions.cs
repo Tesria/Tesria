@@ -109,7 +109,7 @@ public static class InstancePermissions
     public static readonly IReadOnlyList<InstancePermission> All =
     [
         new(SpacesCreate, "Content", "Create spaces",
-            "Start a new space. The creator administers it.", PermissionScope.Content, UserRole.Member),
+            "Start a new space. A new space is open to every signed-in user until someone grants access to particular people.", PermissionScope.Content, UserRole.Member),
         new(PagesDeleteOwn, "Content", "Delete pages you created",
             "Move your own pages to the trash, where a space administrator can restore them.",
             PermissionScope.Content, UserRole.Member),

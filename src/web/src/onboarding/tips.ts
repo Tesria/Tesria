@@ -102,7 +102,7 @@ export const TIPS: Tip[] = [
     context: 'editor',
     anchor: '.ProseMirror',
     title: 'Type @ to bring someone in',
-    body: 'They are told, and they get a link straight to the page. It works in comments too.',
+    body: 'They are told, and they get a link straight to the page.',
     clip: 'mention',
     priority: 4,
     trigger: (s) => s.hasCollaborators,

@@ -66,6 +66,83 @@ Tests: 19 rewriter fixtures, 13 HTTP round trips (importing as a *different*
 user, which is what makes the attribution and permission assertions mean
 anything), on top of step 1's 27 format tests.
 
+### 10.5 step 1: the fixes before the support site (2026-09-22, Opus 5.5)
+
+The owner rescoped 10.5 from "rebuild the manual" into a support site for
+tesria.com (a public **Support** space exported as a static site, and a
+private **Tesria Demo** space to shoot it from) and asked for every gap the
+inventory found to be fixed first, so nothing is documented broken or
+recorded twice.
+
+**The editor**
+- **Smart link** can be given an address (it was inserted empty, with no
+  way to fill it) and switched between Card and Inline.
+- Panels, expands, decisions, excerpts and page properties get a bar with
+  **Remove**, which keeps everything inside; the old unset commands lifted
+  only the block under the cursor and split a longer panel in two. A panel's
+  type changes from the same bar.
+- **Inline maths** in the slash and Insert menus, and an Inline / Own line
+  switch while editing an equation.
+- **Include page and Excerpt include pick a page by searching**, not a raw
+  id. A pasted id still works.
+- Headings 4 to 6 in the Style and slash menus; Justify in Alignment.
+
+**Include page crashed the whole editor** whenever it showed a page, found
+the moment the picker made it easy to reach. An editor nested in another
+mounts late, and two things touched it before it had: the reading view's
+content sync and the inline-comment popover. Both now wait for it.
+
+**Spaces and administration**
+- **Space settings → Templates**: every template offered in the space,
+  with rename and delete where the viewer may. Anyone holding "Manage
+  spaces" can now remove an instance-wide template, which before only its
+  author could, so one left by somebody who had gone stayed for ever.
+- Groups can be renamed.
+- **Get access** on the Spaces tab, for the audited endpoint that had no
+  button. On an open space it grants nothing: the endpoint used to add the
+  space's first grant there, and the first grant closes a space to
+  everyone else.
+- **Invite people**, a page for anyone holding "Create invite links"
+  without the admin area, where that right did nothing.
+
+**Mobile, added by the owner while this was under way**
+- A phone held sideways fills the screen: the page asks for the whole
+  display (`viewport-fit=cover`) and pads its bars and sidebar clear of the
+  notch, instead of sitting between two empty bands.
+- The **space sidebar can be hidden**, on any screen wide enough to have
+  one, and stays hidden on that device until shown again.
+- The **date popup** fits its box on iOS, which drew the field at its own
+  minimum width.
+- On a phone held upright, **tables keep readable columns and scroll
+  sideways** instead of squeezing to a letter a line. The minimum and
+  maximum are set on what is inside each cell, because browsers ignore
+  `min-width` on a cell (Chromium honoured it, Safari did not, which is how
+  the first attempt passed in one and failed in the other).
+
+**Smaller**
+- Mentions and security alerts read in words in the bell and in emails
+  (a mention showed as `user.mentioned`).
+- The mention tip stops claiming mentions work in comments; the
+  two-factor switch stops saying two-factor has not shipped; the setup
+  wizard follows the server's 8-character rule; the "Create spaces" right
+  stops saying the creator administers the space.
+- Warning notices, such as "This instance has no offsite backup", had no
+  style at all and now look like warnings.
+
+**Verified** in a browser, reading each result back from the page (heading
+4, the panel bar and type change, removal keeping the text, Smart link's
+address, inline maths, the page picker, the Style and Alignment menus,
+the draft discarded on Close, the sidebar hidden, remembered and shown
+again), and on an iPhone 18 Pro simulator for the date popup and phone
+tables. Landscape could not be rotated from here; the layout was checked
+with the notch's insets set by hand at the phone's landscape size.
+
+**A slip, recorded for the Opus 5.5 trial.** Writing the new template
+tests overwrote an existing `TemplateTests.cs`, deleting five tests: the
+search for existing template tests missed it. The full suite's count
+falling from 802 to 801, when it should have risen, is what gave it away;
+the five are restored beside the new three.
+
 ### Fix: restores that were undone stayed "running" for ever (2026-09-22, Opus 5.5)
 
 Five restores from the 9.4 walk still said Running… on Recent runs, and the

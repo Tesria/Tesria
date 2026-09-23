@@ -91,7 +91,9 @@ public class TemplateTests
     }
 
     [Fact]
-    public async Task Only_the_author_can_delete_an_instance_wide_template()
+    // Since 2026-09-22 anyone holding "Manage spaces" may remove one too (see
+    // below); a member who is neither the author nor a manager still cannot.
+    public async Task A_member_who_did_not_write_an_instance_wide_template_cannot_delete_it()
     {
         using var factory = new TestAppFactory();
         var alice = factory.CreateClient();
@@ -107,4 +109,84 @@ public class TemplateTests
     }
 
     private record SpaceDto(Guid Id, string Key, string Name);
+
+    // --- Managing templates (dev-plan 10.5 step 1): rename, delete, and who may.
+
+    private record TemplateDto(Guid Id, Guid? SpaceId, string Name, string? Description,
+        string? CreatedByName, bool CanManage);
+
+
+    private static async Task<TemplateDto> CreateAsync(HttpClient client, Guid? spaceId, string name)
+    {
+        var res = await client.PostAsJsonAsync("/api/templates",
+            new { SpaceId = spaceId, Name = name, Description = (string?)null, ContentJson = Doc });
+        res.EnsureSuccessStatusCode();
+        return (await res.Content.ReadFromJsonAsync<TemplateDto>())!;
+    }
+
+    [Fact]
+    public async Task The_author_can_rename_an_instance_wide_template_and_another_member_cannot()
+    {
+        using var factory = new TestAppFactory();
+        var owner = factory.CreateClient();
+        await owner.RegisterAndSignInAsync();
+        var author = factory.CreateClient();
+        await author.RegisterAndSignInAsync();
+        var other = factory.CreateClient();
+        await other.RegisterAndSignInAsync();
+
+        var t = await CreateAsync(author, null, "Meeting notes");
+
+        var renamed = await author.PutAsJsonAsync($"/api/templates/{t.Id}", new { Name = "  Weekly meeting  ", Description = "Agenda first" });
+        renamed.EnsureSuccessStatusCode();
+        var body = (await renamed.Content.ReadFromJsonAsync<TemplateDto>())!;
+        Assert.Equal("Weekly meeting", body.Name);
+        Assert.Equal("Agenda first", body.Description);
+
+        Assert.Equal(HttpStatusCode.Forbidden,
+            (await other.PutAsJsonAsync($"/api/templates/{t.Id}", new { Name = "Mine now" })).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await other.DeleteAsync($"/api/templates/{t.Id}")).StatusCode);
+
+        // And the list says so, per viewer, so the screen offers only what works.
+        var seenByOther = await other.GetFromJsonAsync<List<TemplateDto>>("/api/templates");
+        Assert.False(seenByOther!.Single(x => x.Id == t.Id).CanManage);
+        var seenByAuthor = await author.GetFromJsonAsync<List<TemplateDto>>("/api/templates");
+        Assert.True(seenByAuthor!.Single(x => x.Id == t.Id).CanManage);
+        Assert.NotNull(seenByAuthor!.Single(x => x.Id == t.Id).CreatedByName);
+    }
+
+    [Fact]
+    public async Task Someone_who_manages_spaces_can_remove_an_instance_wide_template_they_did_not_write()
+    {
+        using var factory = new TestAppFactory();
+        var owner = factory.CreateClient();
+        await owner.RegisterAndSignInAsync();
+        var author = factory.CreateClient();
+        await author.RegisterAndSignInAsync();
+
+        var t = await CreateAsync(author, null, "Left behind");
+        Assert.True((await owner.GetFromJsonAsync<List<TemplateDto>>("/api/templates"))!.Single(x => x.Id == t.Id).CanManage);
+        Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/api/templates/{t.Id}")).StatusCode);
+        Assert.DoesNotContain(await owner.GetFromJsonAsync<List<TemplateDto>>("/api/templates") ?? [], x => x.Id == t.Id);
+    }
+
+    [Fact]
+    public async Task A_spaces_templates_are_managed_by_anyone_who_can_edit_it()
+    {
+        using var factory = new TestAppFactory();
+        var owner = factory.CreateClient();
+        await owner.RegisterAndSignInAsync();
+        var member = factory.CreateClient();
+        await member.RegisterAndSignInAsync();
+        var spaceId = await owner.CreateSpaceAsync("TPL");
+
+        var t = await CreateAsync(owner, spaceId, "Runbook");
+        // An open space: every signed-in user may edit it, so may manage its templates.
+        var res = await member.PutAsJsonAsync($"/api/templates/{t.Id}", new { Name = "Runbook v2" });
+        res.EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await member.PutAsJsonAsync($"/api/templates/{t.Id}", new { Name = "   " })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await member.PutAsJsonAsync($"/api/templates/{Guid.NewGuid()}", new { Name = "x" })).StatusCode);
+    }
 }

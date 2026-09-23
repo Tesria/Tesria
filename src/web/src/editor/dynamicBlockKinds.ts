@@ -123,7 +123,7 @@ export const DYNAMIC_KINDS: DynamicKind[] = [
     description: 'Show another page\'s content here',
     icon: IncludeIcon,
     keywords: ['include', 'embed', 'transclude'],
-    params: [{ key: 'page', label: 'Page id', type: 'page' }],
+    params: [{ key: 'page', label: 'Page', type: 'page' }],
   },
   {
     kind: 'excerpt-include',
@@ -131,7 +131,7 @@ export const DYNAMIC_KINDS: DynamicKind[] = [
     description: 'Show the excerpt marked on another page',
     icon: ExcerptIcon,
     keywords: ['excerpt', 'summary', 'include'],
-    params: [{ key: 'page', label: 'Page id', type: 'page' }],
+    params: [{ key: 'page', label: 'Page', type: 'page' }],
   },
   {
     kind: 'page-properties-report',

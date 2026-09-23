@@ -33,14 +33,26 @@ export function InlineCommentPopover({ editor, getPageId }: { editor: TiptapEdit
   // Open on a click on highlighted text: the innermost comment mark wins
   // when marks overlap.
   useEffect(() => {
-    const dom = editor.view.dom
+    // An editor nested inside another (Include page shows a page in one) is
+    // not mounted yet when this first runs, and reading its view then throws
+    // and took the whole editor down with it. So wait for it to mount.
+    let dom: HTMLElement | null = null
     function onClick(e: MouseEvent) {
       const el = e.target instanceof Element ? e.target.closest('[data-comment-id]') : null
-      if (!el || !dom.contains(el)) return
+      if (!el || !dom?.contains(el)) return
       setCommentId(el.getAttribute('data-comment-id'))
     }
-    dom.addEventListener('click', onClick)
-    return () => dom.removeEventListener('click', onClick)
+    const attach = () => {
+      if (dom || editor.isDestroyed) return
+      dom = editor.view.dom
+      dom.addEventListener('click', onClick)
+    }
+    attach()
+    editor.on('mount', attach)
+    return () => {
+      editor.off('mount', attach)
+      dom?.removeEventListener('click', onClick)
+    }
   }, [editor])
 
   const load = useCallback(async () => {
