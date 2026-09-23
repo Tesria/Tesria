@@ -12,7 +12,9 @@ const markTourOffered = () => {
 }
 
 /** Paths the gate never redirects away from. */
-const ALLOWED = ['/setup', '/welcome', '/export', '/logout']
+// /register because a new account is signed in before its recovery codes are
+// shown, and redirecting it to the tour then skipped them for good.
+const ALLOWED = ['/setup', '/welcome', '/export', '/logout', '/register']
 
 /**
  * Sends first-run traffic to the wizard (dev-plan 10.2).

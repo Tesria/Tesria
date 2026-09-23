@@ -43,7 +43,9 @@ public static class AdminEndpoints
         int RecoveryCodesRemaining, DateTimeOffset? LastSeenAt, DateTimeOffset CreatedAt,
         int FailedLoginCount, DateTimeOffset? LockedUntil,
         /// <summary>Which role, not just which tier (dev-plan 11.2).</summary>
-        Guid? RoleId, string RoleName);
+        Guid? RoleId, string RoleName,
+        /// <summary>Whether the codes were ever confirmed saved; a count of 8 nobody saw is not recovery.</summary>
+        bool RecoveryCodesSaved);
 
     public record LockoutRow(Guid UserId, string Email, string DisplayName, int FailedLoginCount, DateTimeOffset LockedUntil);
     public record SecurityLimitsResponse(
@@ -562,7 +564,8 @@ public static class AdminEndpoints
                 u.PasswordHash != null, u.OidcSubject != null,
                 db.RecoveryCodes.Count(c => c.UserId == u.Id && c.UsedAt == null),
                 u.LastSeenAt, u.CreatedAt, u.FailedLoginCount, u.LockedUntil,
-                u.RoleId, u.InstanceRole == null ? "" : u.InstanceRole.Name))
+                u.RoleId, u.InstanceRole == null ? "" : u.InstanceRole.Name,
+                u.RecoveryCodesAcknowledgedAt != null))
             .ToListAsync();
 
         // Ordered in memory: SQLite cannot ORDER BY a DateTimeOffset, and this
@@ -810,7 +813,8 @@ public static class AdminEndpoints
                 u.PasswordHash != null, u.OidcSubject != null,
                 db.RecoveryCodes.Count(c => c.UserId == u.Id && c.UsedAt == null),
                 u.LastSeenAt, u.CreatedAt, u.FailedLoginCount, u.LockedUntil,
-                u.RoleId, u.InstanceRole == null ? "" : u.InstanceRole.Name))
+                u.RoleId, u.InstanceRole == null ? "" : u.InstanceRole.Name,
+                u.RecoveryCodesAcknowledgedAt != null))
             .FirstOrDefaultAsync();
 
     // ---- spaces -------------------------------------------------------------

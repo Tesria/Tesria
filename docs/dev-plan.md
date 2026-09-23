@@ -3486,10 +3486,83 @@ are a few hundred kilobytes, so neither limit binds.
      had no style; and "Get access" on an open space would have granted the
      space's first permission, which closes it to everyone else. It now
      grants nothing there.
-2. **"Play as animation"** on File or video, in the editor, the reading
-   view and the exported site.
-3. **Measure the system requirements.**
+   - **Reported by the owner, to fix later (2026-09-22): a used invite still
+     reads "Unused".** The cause: registration looks an invite up only
+     when public registration is closed, so with it open (as on this
+     instance) an invite link creates the account and the invite is never
+     spent, never linked to the account, and stays usable. The fix: spend
+     a valid invite whenever one is presented, and have the Invites tab
+     say who it created (`Invite.UsedByUserId` is already stored; the list
+     does not return it). Worth a test for each registration setting.
+2. ✅ **shipped 2026-09-22.** **"Play as animation"** on File or video, in
+   the editor, the reading view and the exported site.
+   As built: a `playback` attribute on the element (`player` or
+   `animation`), a "Show as" choice beside the file picker, and an
+   **Animation** item in the slash and Insert menus that inserts the
+   element already set, because "GIF" is what people look for. Silent,
+   looping, starting by itself, no player chrome, and a small pause button
+   (WCAG 2.2.2: anything moving longer than five seconds must be
+   stoppable) that shows on hover and focus, and always on a touch screen.
+   Reduced motion starts it paused on its first frame. An export carries it
+   through the one script it keeps (`SiteChrome.ThemeScript`), driven by the
+   same data attributes, with `muted` written as an attribute by hand
+   because React sets only the property and a capture would have lost it.
+   **Safari on iOS plays the harness's WebM** (checked on an iPhone 18 Pro
+   simulator, iOS 27), so no MP4 is needed. A paused video's first frame
+   is shown with `#t=0.1`, which also fixed the ordinary player showing a
+   black box on iOS until played. Checked in the editor, the reading view,
+   on the iPhone, and in an exported site served as static files, where it
+   played muted by itself and the pause button worked. Not checked: the
+   reduced-motion start, since nothing here can turn that setting on; it is
+   one short branch in each of the two places.
+3. ✅ **measured 2026-09-22.** **The system requirements**, for the
+   Getting started page. Measured on this instance (Docker 29.8,
+   Compose 5.5.1, linux/arm64, the Docker VM given 12 CPUs and 7.7 GiB):
+   - **Memory at rest: about 550 MiB for the whole stack.** App 254,
+     PDF renderer 126, collab 54, database 53, Caddy 52, the two backup
+     agents 5 to 6 each.
+   - **At peak: 665 MiB**, sampled every two seconds through two PDF
+     exports of the every-element page and a site export. The PDF renderer
+     reached 235 MiB and 86% of a core, the app 258 MiB and 41%. Samples
+     that far apart can miss a spike, which is what the headroom below is
+     for.
+   - **Disk for the images: about 5.2 GB**, counting shared layers once.
+     The PDF renderer's Chromium is 3.5 GB of it; the four Postgres-based
+     images share one 668 MB base. The first install also builds the app
+     and pulls the .NET and Node build images, so it needs room beyond that
+     while it runs. Data here is under 1 GB, most of it backups, which
+     grow with the retention policy.
+   - **Browsers**: the floor is set by CSS the app relies on (`:has()`,
+     container queries, `color-mix()`): Chrome and Edge 111, Firefox 121,
+     Safari 16.2, so iOS 16.2. The application's own JavaScript uses
+     nothing newer than its build target. Only current versions were
+     actually run: Chromium (the harness) and Safari on iOS 27.
+   **What the page will say**, with the headroom stated as headroom:
+   **2 CPU cores and 2 GB of memory** to run it (three times what was
+   measured at peak), **4 GB if the machine also builds the images**, since
+   that compiles .NET and the web app (not measured, and said so), and
+   **20 GB of disk** to start, more as backups accumulate. Any host that
+   runs Docker with Compose v2: Linux on x86-64 or ARM64, macOS or Windows
+   with Docker Desktop.
 4. **The owner creates the Demo accounts and deletes the old spaces.**
+   The accounts, all fictional, on `example.com` (reserved for examples, so
+   no mail can reach a real person): **Alex Rivera** (administrator, for
+   the admin screens), **Priya Natarajan**, **Sam Okafor**, **Mei Chen**
+   (users, for mentions, co-editing, contributors, task assignees and the
+   Users tab), and optionally **Jordan Brooks**, a fifth ordinary user.
+   (First written as "a user without two-factor, for the Users tab's
+   warning badge": wrong twice over. Two-factor is off for every account
+   until its owner turns it on, and the badge means *no recovery codes
+   left*, which registration makes impossible for a new account, since it
+   issues them. Not faked; the badge is shown on its own page if at all.)
+   Created by the owner 2026-09-22: Alex Rivera (administrator), Priya
+   Natarajan, Sam Okafor and Mei Chen. Two of
+   them co-editing need the harness to sign in as a second person: their
+   sign-ins go in the gitignored `.debug-credentials` beside the existing
+   one, never in the repository.
+   Before the spaces go: **App Design is real content** (CLAUDE.md), so it
+   is exported as a pack first. FIXTURE is re-seeded by the harness from
+   `tests/` whenever it is needed, so it can go.
 5. **Seed Tesria Demo**, reproducibly (the spec or a pack in the
    repository).
 6. **Write Support** in the order of the tree, shooting as each section is

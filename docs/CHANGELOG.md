@@ -66,6 +66,55 @@ Tests: 19 rewriter fixtures, 13 HTTP round trips (importing as a *different*
 user, which is what makes the attribution and permission assertions mean
 anything), on top of step 1's 27 format tests.
 
+### Fix: new accounts could skip their recovery codes (2026-09-22, Opus 5.5)
+
+Found by the owner creating the Demo accounts: three of four went straight
+to the welcome tour and never saw their recovery codes, though the Users
+tab said each had 8. Registration signed the account in before handing the
+codes to the page, and two redirects fired in between: the tour gate
+(once per tab, which is why one of the four got through) and the register
+page's own "already signed in" guard. The codes existed on the server and
+were never shown.
+
+The page now has the codes before the session changes, and the tour gate
+leaves `/register` alone, so the tour follows "Continue". Continuing also
+records the codes as saved, which the register page had never done (only
+the setup wizard did). Because of that, every account created through the
+page had codes never confirmed saved, so the reminder that asked only
+accounts with *no* codes now also asks those, once per sign-in: "I have my
+codes" takes the person's word, "Make new codes" replaces them. The Users
+tab marks such accounts **not saved** beside the count.
+
+Not walked live, because that means creating an account; covered by a
+test of the saved flag, and the owner's next registration is the check.
+
+### 10.5 step 3: system requirements, measured (2026-09-22, Opus 5.5)
+
+Nothing in the repository said what Tesria needs to run, so it was
+measured rather than guessed: about 550 MiB of memory at rest for the whole
+stack and 665 MiB at the peak of a run of PDF and site exports; about
+5.2 GB of disk for the images, 3.5 GB of it the PDF renderer's Chromium; and
+a browser floor of Chrome and Edge 111, Firefox 121 and Safari 16.2, set by
+the CSS the app relies on. The support site will ask for 2 cores, 2 GB (4 GB
+to build the images on the same machine) and 20 GB of disk, with the
+measurements behind it. The figures and the method are in the plan.
+
+### 10.5 step 2: videos that play as animations (2026-09-22, Opus 5.5)
+
+**File or video** can show a video as an **animation**: silent, looping,
+starting by itself, with no player controls, the way a GIF behaves at a
+fraction of a GIF's size. Choose "Show as: An animation" beside the file,
+or insert **Animation** from the slash or Insert menu. A small pause button
+shows on hover (always, on a touch screen), and anyone whose system asks for
+reduced motion sees it paused. Exported sites carry all of it, with the clip
+copied beside the page.
+
+Checked in the editor, the reading view, an iPhone simulator and an
+exported site opened from plain files. Safari on iOS plays the WebM clips
+the screenshot harness records, so there is no second format to make. The
+ordinary video player also stops showing a black box on iOS before it is
+played.
+
 ### 10.5 step 1: the fixes before the support site (2026-09-22, Opus 5.5)
 
 The owner rescoped 10.5 from "rebuild the manual" into a support site for

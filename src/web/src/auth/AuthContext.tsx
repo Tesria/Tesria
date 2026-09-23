@@ -7,12 +7,18 @@ type AuthState = {
   /** Resolves with a challenge when a one-time code is still needed. */
   login: (email: string, password: string) => Promise<TotpChallenge | null>
   completeTotp: (challenge: string, code: string) => Promise<void>
-  /** Resolves with the new account's recovery codes, shown once. */
+  /**
+   * Resolves with the new account's recovery codes, shown once. `onCodes`
+   * receives them *before* the session is set: setting the session first let
+   * the tour gate and the register page's own guard redirect away before the
+   * codes were ever drawn (found 2026-09-22, three accounts out of four).
+   */
   register: (
     email: string,
     displayName: string,
     password: string,
     inviteToken?: string,
+    onCodes?: (codes: string[]) => void,
   ) => Promise<string[]>
   logout: () => Promise<void>
   /** Re-reads the session, after editing your own profile, so the topbar and
@@ -57,8 +63,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(async (
     email: string, displayName: string, password: string, inviteToken?: string,
+    onCodes?: (codes: string[]) => void,
   ) => {
     const registered = await api.auth.register(email, displayName, password, inviteToken)
+    onCodes?.(registered.recoveryCodes)
     // The register response is a *partial* user: it carries the recovery codes
     // but no permissions, role name or setupRequired. Setting it as the
     // session would leave the app thinking this account may do nothing, which

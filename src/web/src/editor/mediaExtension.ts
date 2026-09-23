@@ -7,6 +7,8 @@ declare module '@tiptap/core' {
     attachmentBlock: {
       /** Insert a block for an already-uploaded attachment. */
       insertAttachmentBlock: (attachmentId?: string) => ReturnType
+      /** File or video, set to play its video as an animation (dev-plan 10.5 step 2). */
+      insertAnimation: () => ReturnType
       insertGallery: () => ReturnType
     }
   }
@@ -35,6 +37,19 @@ export const AttachmentBlock = Node.create({
         renderHTML: (attributes: { attachmentId?: string | null }) =>
           attributes.attachmentId ? { 'data-attachment-id': attributes.attachmentId } : {},
       },
+      /**
+       * How a video plays: with the player's controls, or as an animation,
+       * silent, looping, starting by itself (dev-plan 10.5 step 2). Not the
+       * mode the comment above rules out: that was *what to draw*, which only
+       * the file can say. This is how to play a video when it is one, a
+       * choice only the author can make, and it is ignored for anything else.
+       */
+      playback: {
+        default: 'player' as 'player' | 'animation',
+        parseHTML: (element: HTMLElement) => (element.getAttribute('data-playback') === 'animation' ? 'animation' : 'player'),
+        renderHTML: (attributes: { playback?: string }) =>
+          attributes.playback === 'animation' ? { 'data-playback': 'animation' } : {},
+      },
     }
   },
 
@@ -56,6 +71,10 @@ export const AttachmentBlock = Node.create({
         (attachmentId = undefined) =>
         ({ commands }) =>
           commands.insertContent({ type: this.name, attrs: { attachmentId: attachmentId ?? null } }),
+      insertAnimation:
+        () =>
+        ({ commands }) =>
+          commands.insertContent({ type: this.name, attrs: { attachmentId: null, playback: 'animation' } }),
       insertGallery:
         () =>
         ({ commands }) =>

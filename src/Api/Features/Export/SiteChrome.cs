@@ -564,6 +564,35 @@ public static partial class SiteChrome
             matchMedia('(prefers-color-scheme: dark)').addEventListener('change', sync);
             sync();
             syncWidth();
+            wireAnimations();
+          }
+
+          // Videos shown as animations (dev-plan 10.5 step 2): the pause
+          // button, and paused from the start for a reader whose system asks
+          // for reduced motion. The application's component does this in the
+          // wiki; none of it survives a capture, so this does it here, from
+          // the same data attributes.
+          var PLAY = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5v14l12-7z" fill="currentColor"/></svg>';
+          var PAUSE = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor"/></svg>';
+          function wireAnimations() {
+            var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+            d.querySelectorAll('[data-animation]').forEach(function (box) {
+              var v = box.querySelector('video'), b = box.querySelector('[data-animation-toggle]');
+              if (!v) return;
+              v.muted = true;
+              function show() {
+                if (!b) return;
+                b.setAttribute('aria-pressed', v.paused ? 'true' : 'false');
+                b.setAttribute('aria-label', v.paused ? 'Play the animation' : 'Pause the animation');
+                b.innerHTML = v.paused ? PLAY : PAUSE;
+              }
+              if (reduce) { v.removeAttribute('autoplay'); v.pause(); }
+              else { var started = v.play(); if (started && started.catch) started.catch(function () {}); }
+              if (b) b.addEventListener('click', function () { if (v.paused) v.play(); else v.pause(); });
+              v.addEventListener('play', show);
+              v.addEventListener('pause', show);
+              show();
+            });
           }
 
           if (d.readyState === 'loading') d.addEventListener('DOMContentLoaded', wire);

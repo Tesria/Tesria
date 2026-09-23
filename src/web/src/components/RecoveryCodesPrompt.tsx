@@ -44,7 +44,12 @@ export function RecoveryCodesPrompt() {
   const [error, setError] = useState<string | null>(null)
 
   // SSO accounts have no local password, so recovery codes would reset nothing.
-  const needed = user && user.hasPassword && user.recoveryCodesRemaining === 0
+  const none = !!user && user.hasPassword && user.recoveryCodesRemaining === 0
+  // Codes that exist but were never confirmed saved: registration creates
+  // them, and until 2026-09-22 a race could skip the screen that shows them,
+  // so an account can hold eight codes its owner has never seen.
+  const unsaved = !!user && user.hasPassword && user.recoveryCodesRemaining > 0 && !user.recoveryCodesSaved
+  const needed = none || unsaved
   const dismissed = user != null && (dismissedFor === user.id || dismissedThisSession(user.id))
 
   // Codes, once generated, keep the dialog open no matter what: refreshing the
@@ -76,6 +81,25 @@ export function RecoveryCodesPrompt() {
     }
   }
 
+  /** "I have my codes": the person saved them at the time; take their word. */
+  async function confirmSaved() {
+    setBusy(true)
+    try {
+      await api.auth.acknowledgeRecoveryCodes()
+      await refresh()
+    } catch {
+      setError('Could not record that. Try again, or choose Not now.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  /** Done on freshly generated codes: they are saved now. */
+  function doneWithCodes() {
+    void api.auth.acknowledgeRecoveryCodes().catch(() => {}).then(() => refresh()).catch(() => {})
+    dismiss()
+  }
+
   function dismiss() {
     if (!user) return
     try {
@@ -93,16 +117,29 @@ export function RecoveryCodesPrompt() {
         {codes ? (
           <>
             <h2>Save your recovery codes</h2>
-            <RecoveryCodes codes={codes} onDone={dismiss} doneLabel="Done" />
+            <RecoveryCodes codes={codes} onDone={doneWithCodes} doneLabel="Done" />
           </>
         ) : (
           <form onSubmit={generate}>
-            <h2>Set up account recovery</h2>
-            <p className="muted small">
-              This account has no recovery codes. Without them, losing your
-              password means an administrator has to let you back in. Generating
-              a set takes a moment and needs no email.
-            </p>
+            {unsaved ? (
+              <>
+                <h2>Do you have your recovery codes?</h2>
+                <p className="muted small">
+                  This account has recovery codes, but they were never confirmed as saved,
+                  so they may never have been shown to you. If you have them somewhere safe,
+                  say so. If not, make a new set: it replaces the old one, and takes a moment.
+                </p>
+              </>
+            ) : (
+              <>
+                <h2>Set up account recovery</h2>
+                <p className="muted small">
+                  This account has no recovery codes. Without them, losing your
+                  password means an administrator has to let you back in. Generating
+                  a set takes a moment and needs no email.
+                </p>
+              </>
+            )}
             {error && <p className="alert alert--error">{error}</p>}
             {password !== null && (
               <label>
@@ -118,8 +155,13 @@ export function RecoveryCodesPrompt() {
             )}
             <div className="row-gap">
               <button type="submit" className="btn btn--primary" disabled={busy}>
-                {busy ? 'Generating…' : 'Generate codes'}
+                {busy ? 'Generating…' : unsaved ? 'Make new codes' : 'Generate codes'}
               </button>
+              {unsaved && (
+                <button type="button" className="btn btn--ghost" disabled={busy} onClick={() => void confirmSaved()}>
+                  I have my codes
+                </button>
+              )}
               <button type="button" className="btn btn--ghost" onClick={dismiss}>
                 Not now
               </button>

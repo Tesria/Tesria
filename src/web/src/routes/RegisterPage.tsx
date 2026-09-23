@@ -1,12 +1,13 @@
 import { type FormEvent, useState } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
+import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { PasswordInput } from '../components/PasswordInput'
 import { RecoveryCodes } from '../components/RecoveryCodes'
 import { AuthPage } from '../components/Brand'
 
 export function RegisterPage() {
-  const { user, register } = useAuth()
+  const { user, register, refresh } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   // An invite link carries its token in the query string, so the person
@@ -31,7 +32,12 @@ export function RegisterPage() {
           <h1>Save your recovery codes</h1>
           <RecoveryCodes
             codes={codes}
-            onDone={() => navigate('/spaces')}
+            onDone={() => {
+              // Recorded, so the account is not asked again whether it has
+              // codes. Best effort: the codes are saved either way.
+              void api.auth.acknowledgeRecoveryCodes().catch(() => {}).then(() => refresh()).catch(() => {})
+              navigate('/spaces')
+            }}
             doneLabel="Continue to Tesria"
           />
         </div>
@@ -44,7 +50,7 @@ export function RegisterPage() {
     setBusy(true)
     setError(null)
     try {
-      setCodes(await register(email, displayName, password, inviteToken))
+      await register(email, displayName, password, inviteToken, setCodes)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed.')
     } finally {
