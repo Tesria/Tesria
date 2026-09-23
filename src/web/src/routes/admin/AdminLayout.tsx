@@ -33,7 +33,7 @@ export function AdminLayout() {
     )
   }
 
-  // The server refuses every admin route until enrolment (dev-plan 3.5);
+  // The server refuses every admin route until enrollment (dev-plan 3.5);
   // say so instead of rendering a page of failed requests.
   if (user.totpRequired) {
     return (
@@ -97,12 +97,12 @@ export function AdminLayout() {
 function VersionLine() {
   const [version, setVersion] = useState<string | null>(null)
   useEffect(() => {
-    let cancelled = false
+    let canceled = false
     fetch('/api/health', { credentials: 'include' })
       .then((r) => r.json() as Promise<{ version?: string }>)
-      .then((h) => { if (!cancelled && h.version) setVersion(h.version) })
+      .then((h) => { if (!canceled && h.version) setVersion(h.version) })
       .catch(() => { /* the line simply shows no number */ })
-    return () => { cancelled = true }
+    return () => { canceled = true }
   }, [])
   return (
     <p className="admin-version">

@@ -21,7 +21,7 @@ export function LoginPage() {
   const [busy, setBusy] = useState(false)
   const [oidc, setOidc] = useState<{ enabled: boolean; displayName: string } | null>(null)
   const instance = useInstance()
-  // An invite link is its own authorisation, so it shows the sign-up route
+  // An invite link is its own authorization, so it shows the sign-up route
   // even on an instance that has closed public registration.
   const invited = searchParams.get('invite') !== null
   const mayRegister = invited || (instance?.allowPublicRegistration ?? false)

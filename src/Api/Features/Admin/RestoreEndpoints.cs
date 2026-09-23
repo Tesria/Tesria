@@ -253,7 +253,7 @@ public static class RestoreEndpoints
         {
             job.Status = BackupNames.StatusFailed;
             job.FinishedAt = DateTimeOffset.UtcNow;
-            job.Error = "Cancelled before it started.";
+            job.Error = "Canceled before it started.";
             audit.Record("backup.restore_cancelled", "backup", job.Id, new { job.Target, Phase = "queued" });
             await db.SaveChangesAsync();
             await settings.UpdateAsync(x =>
@@ -264,7 +264,7 @@ public static class RestoreEndpoints
             }, actorId);
             state.Clear();
             await collab.MaintenanceAsync(false);
-            return Results.Ok(new { cancelled = true, message = "The restore was cancelled. Nothing was changed." });
+            return Results.Ok(new { canceled = true, message = "The restore was canceled. Nothing was changed." });
         }
 
         // Running: the sidecar decides. It checks this flag once more just
@@ -275,7 +275,7 @@ public static class RestoreEndpoints
         await db.SaveChangesAsync();
         return Results.Ok(new
         {
-            cancelled = false,
+            canceled = false,
             message = "Asked the backup agent to stop. If it has already begun replacing the wiki it will finish, and Undo is then the way back.",
         });
     }

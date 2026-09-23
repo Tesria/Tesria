@@ -37,7 +37,7 @@ public class EmbedAllowlistTests
         Assert.False(EmbedAllowlist.IsAllowed(host, Entries));
 
     [Fact]
-    public void Parsing_accepts_lines_or_commas_and_normalises()
+    public void Parsing_accepts_lines_or_commas_and_normalizes()
     {
         var entries = EmbedAllowlist.Parse(" .YouTube.com. ,vimeo.com\n\n , .youtube.com ");
         Assert.Equal([".youtube.com", "vimeo.com"], entries);

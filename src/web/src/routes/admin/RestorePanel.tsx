@@ -67,11 +67,11 @@ export function RestoreDialog({
   const byCode = user !== null && user !== undefined && !user.hasPassword
 
   useEffect(() => {
-    let cancelled = false
+    let canceled = false
     api.admin.backups.restorePreview(backup.label, at ? new Date(at).toISOString() : undefined)
-      .then((p) => !cancelled && setPreview(p))
-      .catch(() => !cancelled && setError('Could not read this backup.'))
-    return () => { cancelled = true }
+      .then((p) => !canceled && setPreview(p))
+      .catch(() => !canceled && setError('Could not read this backup.'))
+    return () => { canceled = true }
   }, [backup.label, at])
 
   useEffect(() => {
@@ -318,7 +318,7 @@ export function KeptCopyCard({ restore, onChanged }: {
           <dd>{restore.keptCopyExpiresAt ? when(restore.keptCopyExpiresAt) : 'Not while retention is off'}</dd>
         </div>
       </dl>
-      <p className="muted small">It counts towards the wiki's space on the charts above until it goes.</p>
+      <p className="muted small">It counts toward the wiki's space on the charts above until it goes.</p>
 
       {action === null ? (
         <div className="row-gap">

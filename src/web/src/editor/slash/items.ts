@@ -80,7 +80,7 @@ const PANEL_ICONS: Record<(typeof PANEL_TYPES)[number], ComponentType> = {
 }
 
 /**
- * The one catalogue of insertable things. The slash menu filters it by
+ * The one catalog of insertable things. The slash menu filters it by
  * query; the toolbar's Insert menu (Toolbar.tsx) lists its block and panel
  * groups. One list, so the two cannot drift: a new block added here
  * appears in both.
@@ -258,7 +258,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     title: 'Status',
     group: 'block',
     icon: StatusIcon,
-    description: 'Coloured lozenge, e.g. IN PROGRESS',
+    description: 'Colored lozenge, e.g. IN PROGRESS',
     keywords: ['lozenge', 'badge', 'tag', 'label'],
     command: (editor, range) => editor.chain().focus().insertStatus(range).run(),
   },
@@ -308,21 +308,23 @@ export const SLASH_ITEMS: SlashItem[] = [
         .run(),
   },
   {
-    title: 'Maths',
+    // "Math", the owner's American English (2026-09-23). "maths" stays a
+    // keyword so a British reader typing it still finds the element.
+    title: 'Math',
     group: 'block',
     icon: MathIcon,
     description: 'A LaTeX equation on its own line',
-    keywords: ['math', 'latex', 'katex', 'equation', 'formula'],
+    keywords: ['maths', 'latex', 'katex', 'equation', 'formula'],
     command: (editor, range) => editor.chain().focus().deleteRange(range).insertMath(true, 'e = mc^2').run(),
   },
   {
     // The node always could be inline; nothing offered it until 2026-09-22,
-    // though the Maths item's description said it could.
-    title: 'Inline maths',
+    // though the Math item's description said it could.
+    title: 'Inline math',
     group: 'block',
     icon: MathIcon,
     description: 'A LaTeX expression within a line of text',
-    keywords: ['math', 'latex', 'katex', 'inline', 'formula'],
+    keywords: ['maths', 'latex', 'katex', 'inline', 'formula'],
     command: (editor, range) => editor.chain().focus().deleteRange(range).insertMath(false, 'x^2').run(),
   },
   {
@@ -378,7 +380,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     command: (editor, range) => editor.chain().focus().deleteRange(range).insertGallery().run(),
   },
   // Dynamic blocks (dev-plan Phase 7 Wave D): generated from the kind
-  // catalogue, so a kind added there appears here and in the + menu.
+  // catalog, so a kind added there appears here and in the + menu.
   ...DYNAMIC_KINDS.map((kind) => ({
     title: kind.title,
     group: 'dynamic' as const,

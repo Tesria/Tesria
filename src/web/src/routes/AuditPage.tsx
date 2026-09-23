@@ -7,13 +7,13 @@ export function AuditPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    let cancelled = false
+    let canceled = false
     api
       .audit()
-      .then((e) => !cancelled && setEntries(e))
-      .catch((err: unknown) => !cancelled && setError(err instanceof Error ? err.message : 'Failed to load.'))
+      .then((e) => !canceled && setEntries(e))
+      .catch((err: unknown) => !canceled && setError(err instanceof Error ? err.message : 'Failed to load.'))
     return () => {
-      cancelled = true
+      canceled = true
     }
   }, [])
 

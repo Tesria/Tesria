@@ -159,7 +159,7 @@ public class DynamicBlockTests
         Assert.Equal(["children", "labels", ""], found.Select(p => p.Kind));
         Assert.Equal("2", found[0].Params["depth"]);
         Assert.Equal("title", found[0].Params["sort"]);
-        Assert.Empty(found[1].Params); // a non-scalar value is dropped, not serialised
+        Assert.Empty(found[1].Params); // a non-scalar value is dropped, not serialized
         Assert.Empty(DynamicBlocks.Collect("not json"));
     }
 

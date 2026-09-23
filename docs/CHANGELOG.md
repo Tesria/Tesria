@@ -33,7 +33,7 @@ built. What shipped:
 - **`PackRewriter`**, pure and fixture-tested: it maps ids into content and,
   where the target has nothing to map to, keeps what a person wrote and drops
   the machine-readable half. A mention keeps its name and loses its user id, a
-  comment mark with nothing behind it goes rather than colouring text that
+  comment mark with nothing behind it goes rather than coloring text that
   answers nothing, and a link to a page outside the pack is left alone.
 - **What deliberately does not travel**: permissions, `IsPublic`, `Archived`,
   drafts, the trash, watches, webhooks and authorship. An imported space is
@@ -65,6 +65,40 @@ changed.
 Tests: 19 rewriter fixtures, 13 HTTP round trips (importing as a *different*
 user, which is what makes the attribution and permission assertions mean
 anything), on top of step 1's 27 format tests.
+
+### 10.5 step 5: the Tesria Demo space (2026-09-23, Opus 5.5)
+
+`scripts/demo/seed-demo.sh` builds **Tesria Demo**, the space the support
+site's pictures are taken from: a fictional team wiki (Kestrel Labs
+launching Kestrel Sync 2) with a plan, meeting notes, a checklist, an
+architecture page and an FAQ; a Reports page of live content reading it;
+and an Element gallery with one page per editor element. It signs in as two
+of the fictional people, so history, comments and contributors show two,
+and it can be run again safely: it changes only what differs. Images and a
+PDF are drawn by the script rather than committed as files.
+
+**The interface is in US English**, at the owner's request: Math (typing
+"maths" still finds it), color, gray, centered, labeled, canceled, defense,
+catalog and toward, in every label, tooltip, screen-reader label and API
+message people read. Stored values keep their spelling, because pages
+already hold them (a status or text color is still stored as `grey`), and so
+do identifiers and CSS class names, which nobody reads and which would break
+for nothing. The support site is written in US English from the start.
+
+Then **everything else, at the owner's request**, so the repository reads
+one way throughout: every document (this changelog and the plan included),
+the README and project notes, `.env.example`, code comments, test names,
+internal names (`normalizeTocOptions`, `LabeledPage`, `BeginEnrollment`,
+the `branding__color` CSS classes) and two public API fields: the roles
+matrix's `catalogue` is now `catalog`, and the restore-cancel response's
+`cancelled` is now `canceled`, changed on both sides before anything
+outside depends on them. Kept on purpose: the stored color value `grey`
+and the CSS names built from it, because existing pages hold it; the audit
+action `backup.restore_cancelled`, which existing audit entries hold under
+the hash chain; HTML's own `aria-labelledby`; and "maths" and "favourite"
+as search synonyms. Done by a script with protected terms, then checked by
+a scan for anything left, which found two names inside longer ones and
+nothing else. All 808 backend tests and the frontend's 50 pass.
 
 ### Fix: new accounts could skip their recovery codes (2026-09-22, Opus 5.5)
 
@@ -165,7 +199,7 @@ content sync and the inline-comment popover. Both now wait for it.
 - On a phone held upright, **tables keep readable columns and scroll
   sideways** instead of squeezing to a letter a line. The minimum and
   maximum are set on what is inside each cell, because browsers ignore
-  `min-width` on a cell (Chromium honoured it, Safari did not, which is how
+  `min-width` on a cell (Chromium honored it, Safari did not, which is how
   the first attempt passed in one and failed in the other).
 
 **Smaller**
@@ -320,19 +354,19 @@ nothing changes until someone sets it on purpose. What shipped:
   side by side with the name (the default), stacked above it, logo only or
   name only. The Branding tab warns when a raster logo is too small to stay
   sharp on the sign-in page.
-- **SVG is sanitised and then only ever shown as an image.** The sanitiser
+- **SVG is sanitized and then only ever shown as an image.** The sanitizer
   rebuilds the file from an allowlist and refuses anything it cannot parse,
   DTDs and entities included. The file is served under a sandboxing policy
   and is never inlined as markup, in the app or in an export, so a bug in
-  the sanitiser still cannot run script.
+  the sanitizer still cannot run script.
 - **A favicon:** SVG, PNG, ICO, JPEG or WebP, drawn to 32, 180 and 512 pixel
   PNGs. SVG ones are rasterised in the app process by Svg.Skia, so there is
   no new container.
 - **Theme and accent:** light only, dark only, or people's choice; a custom
-  accent with a colour per mode, from which the other five tokens are
-  derived; and a lock that holds everyone to one accent. A colour that is
+  accent with a color per mode, from which the other five tokens are
+  derived; and a lock that holds everyone to one accent. A color that is
   hard to read is shown with its contrast ratios and the nearest shade that
-  passes. The owner can keep their own colour anyway, and the audit log
+  passes. The owner can keep their own color anyway, and the audit log
   records that choice.
 - **No flash of the wrong theme.** The server writes the title, favicon,
   accent stylesheet and theme locks into the page before sending it. The
@@ -355,7 +389,7 @@ nothing changes until someone sets it on purpose. What shipped:
 
 Tests: 59 new (787 backend, 50 frontend, all green). They cover the right,
 nothing changing until set, the title rules on both sides, the shell and
-its unchanged script, colour normalisation and the contrast checks, nine
+its unchanged script, color normalization and the contrast checks, nine
 hostile SVGs and four malformed ones, raster sizing, GIF and
 decompression-bomb refusal, the favicon set, reset, and the export chrome.
 One slip was caught before commit by an existing test: the file upload
@@ -366,15 +400,15 @@ routes were first mapped without the right.
 At the owner's request, the owner (and anyone the owner grants the right)
 can brand the instance. That means a brand name for the header, a logo,
 including SVG, with an optional dark-mode version, a favicon, a custom
-accent colour per theme, and locking the theme or accent for everyone.
+accent color per theme, and locking the theme or accent for everyone.
 Exports carry the branding as it was when they were made. The brand name is
 separate from the instance name, and nothing changes until someone sets it
-on purpose. A custom colour that fails the contrast check gets a better
+on purpose. A custom color that fails the contrast check gets a better
 shade suggested, but the owner can keep theirs. Branding reaches the
 page before first paint through the server-rendered HTML shell, while the
 inline theme script stays byte-identical so its CSP hash still matches. SVG
-is sanitised by an allowlist and only ever displayed through `<img>`, so a
-sanitiser bug still cannot run script. A custom accent must pass the same
+is sanitized by an allowlist and only ever displayed through `<img>`, so a
+sanitizer bug still cannot run script. A custom accent must pass the same
 4.5:1 contrast checks as the built-in six. The first item designed under the
 new model gate. Full design in `dev-plan.md` as 13.1, with every decision
 answered the same day. Tab titles become `Instance Name - Space Name / Page
@@ -454,7 +488,7 @@ backup on the page can be restored, logical or point-in-time, behind a
 gate stronger than deleting a space: a right of its own that only the owner
 holds by default, the label typed back, the password in the request, a
 safety backup that cannot be skipped, an audit entry on each side of the
-restore and a Critical alert to every administrator. The design's centre is
+restore and a Critical alert to every administrator. The design's center is
 that the job status lives in the database being replaced, so a logical
 restore goes into a new database and is swapped in by rename (the old one
 is kept as the undo), the sidecar carries the backup history across from
@@ -498,7 +532,7 @@ with a rough monthly cost.
   lie on a card whose job is to be trusted.
 - **One pie in the product.** The editor's SVG pie was extracted and shared
   rather than adding a chart library; the editor still renders the same
-  geometry and colours, checked rather than assumed. It gained a fix on the
+  geometry and colors, checked rather than assumed. It gained a fix on the
   way: a pie of one slice used to draw a degenerate arc, which is invisible.
 
 **Corrected the same day, after the owner checked it against macOS.** The
@@ -516,7 +550,7 @@ prose, which was making tables scroll sideways on a large display. The
 Settings tab needed that separately, since its forms carry a 480px form
 width and left most of a wide display empty; they are a grid now.
 
-The slice colours were wrong on the first pass and the owner said so: grey
+The slice colors were wrong on the first pass and the owner said so: gray
 read as *disabled* rather than as a slice, and the wiki and its backups were
 near enough in shade to be taken for each other. Four distinct hues now,
 with their own tokens and dark-mode values, and the pie has the same drop
@@ -726,7 +760,7 @@ added removable media to its scope, and offered his NAS for testing. The
 full design is in `dev-plan.md`; the decisions that shape it are these.
 
 **Every offsite secret stays in `.env` and is read only by the backup
-sidecar.** The admin-page alternative was analysed and put to the owner,
+sidecar.** The admin-page alternative was analyzed and put to the owner,
 and it turns on one fact from the code: Data Protection keys live in the
 database, so a UI-stored key would travel inside every backup along with
 the means to decrypt it, and a key that can delete is the fatal case. The
@@ -886,7 +920,7 @@ closed.
 last brought up to date with, and compares it with the page's current
 version when it loads. If the page has moved on, the difference arrives as
 tracked changes: what the write removed struck through, what it added
-highlighted, labelled with who and how long ago. Nothing is discarded and
+highlighted, labeled with who and how long ago. Nothing is discarded and
 nothing is silently kept as if it were newer.
 
 **The schema is built, not copied.** The sidecar needs the editor's schema to
@@ -973,7 +1007,7 @@ assistant-written change is one browser edit away from being lost.
 `externalDelete`, carrying the source, the actor and the time, so a highlight
 can say *Added by MCP · Docs Bot* on hover. Green for added, struck red for
 removed, the convention every diff uses; the source changes the label, not
-the colour, so "what changed" and "who did it" do not compete for the same
+the color, so "what changed" and "who did it" do not compete for the same
 channel. Both are non-inclusive, so typing at the edge of a highlighted run
 produces your own ordinary text rather than more text attributed to a bot.
 
@@ -1041,13 +1075,13 @@ numbering is one item now, so it reads "1 of 4" at the right margin with the
 title still on the left.
 
 **The space tile in an export** is drawn in the theme's accent instead of one
-of the app's twelve per-space colours. Those colours exist to tell spaces
-apart in a list, and an export is one space by definition, so the colour
+of the app's twelve per-space colors. Those colors exist to tell spaces
+apart in a list, and an export is one space by definition, so the color
 carries no information there and may as well match the rest of the page. It
 follows the reader's accent and light/dark with everything else, and the
 letter uses the same token a filled accent button does, so the contrast is
 the one already tuned per theme. **Inside the app nothing changes**: spaces
-keep their own colours, where they still do their job.
+keep their own colors, where they still do their job.
 
 ### An exported page looks like the product it came from (2026-09-20)
 
@@ -1090,15 +1124,15 @@ Reported by the owner: exports flatten elements and look nothing like the
 rendered page, tables worst of all. Three causes, and none of them was a
 table bug. The exported stylesheet was fifteen lines with no table rule in
 it. `ProseMirrorRenderer.cs` rendered thirty-five node types a second time in
-C#, copying colours out of `index.css` by hand. And eight node types are
+C#, copying colors out of `index.css` by hand. And eight node types are
 React node views whose output only a browser can produce.
 
 **PDF and HTML are now captured from the real page.** The sidecar loads a
 chrome-free route rendering the same read-only editor, in the same `.paper`,
 under the same stylesheet as the reading view; waits for that page to signal
-it has finished drawing; and prints it or serialises its DOM. Tables keep
-their column widths, header styling, cell colours and spans. Panels keep
-their colours and icons. Diagrams are diagrams, maths is typeset, charts are
+it has finished drawing; and prints it or serializes its DOM. Tables keep
+their column widths, header styling, cell colors and spans. Panels keep
+their colors and icons. Diagrams are diagrams, maths is typeset, charts are
 charts, live blocks carry their data. Markdown is still rendered from the
 document, because it is a genuinely different target.
 
@@ -1128,7 +1162,7 @@ real bugs, all fixed and covered: a mention of a user id with no account
 returned 500 on save; a half-committed page create left a page that was
 invisible and could never be edited again; version numbers came from the
 current-version pointer, so a page missing it collided with itself forever;
-and the Markdown export did not sanitise link hrefs, so a stored
+and the Markdown export did not sanitize link hrefs, so a stored
 `javascript:` URL came out of an exported file as a working link.
 
 **The second C# renderer is gone.** With nothing reaching it, `ToHtml` and
@@ -1265,9 +1299,9 @@ sign-up is open. Four fields, with a test that asserts it is exactly those
 four and leaks no space key or address. The login page uses the last two:
 "Browse what is public" appears only when there is something to browse,
 and "Create one" only when registration is open, unless the URL carries an
-invite token, which is its own authorisation.
+invite token, which is its own authorization.
 
-Signed-in behaviour is unchanged. The "Nothing is published" copy stays
+Signed-in behavior is unchanged. The "Nothing is published" copy stays
 for the case it still describes: a signed-in user who can see no spaces.
 
 ### Fix: eight more confirmations that did nothing (2026-09-20)
@@ -1364,7 +1398,7 @@ They now use an in-page confirmation (`components/ConfirmDialog.tsx`),
 which also lets the question carry more than a line of plain text: the
 delete dialog says whether anyone still holds the role, and publishing
 names the page and attachment counts that are about to become readable by
-anyone. Escape cancels, and a cancelled question resolves rather than
+anyone. Escape cancels, and a canceled question resolves rather than
 leaving its promise hanging.
 
 ### Fix: Resolve did nothing on a security alert (2026-09-20)
@@ -1423,7 +1457,7 @@ Dev-plan 11.1, implemented by Opus 5 against the spec Fable 5.1 wrote the
 same day. The instance role enum becomes the **tier**; what a person may do
 is their **role**, a named set of rights.
 
-- **A catalogue of 28 rights in code**, from `spaces.create` to
+- **A catalog of 28 rights in code**, from `spaces.create` to
   `backups.policy`, each with a label and a description, grouped by area.
   Three more are reserved to the owner and never stored: changing tiers,
   transferring ownership, and editing administrator or owner rows.
@@ -1439,7 +1473,7 @@ is their **role**, a named set of rights.
   the right.
 - **Content rights too:** creating spaces, exporting, API tokens, and two
   delete rights. **Users can no longer delete pages other people created**,
-  only their own. That is the one behaviour this changes on upgrade, and
+  only their own. That is the one behavior this changes on upgrade, and
   the Roles tab says so until the owner reviews it.
 - **Rights are additive over space permissions, never a bypass.**
 - **Anonymous readers** get what the built-in User role holds, so a visitor
@@ -1489,7 +1523,7 @@ the owner is subject to the matrix except for roles, ownership and the
 matrix itself; users get "delete pages you created" by default but not
 "delete pages created by others".
 
-- **11.1 Instance rights:** a catalogue of 28 assignable rights and 3 reserved to the owner, in code; grants in the
+- **11.1 Instance rights:** a catalog of 28 assignable rights and 3 reserved to the owner, in code; grants in the
   database, one built-in role per tier (the existing enum becomes the
   tier), every administrative route named by its right, settings checked
   per field, delete rights layered over space permissions, tokens going
@@ -1808,7 +1842,7 @@ changed together; two tests added.
   detection ignores the pointer while it is over one, and they stack above
   the table controls.
 
-### Table of contents options, and fifteen light-theme colours that were never set (2026-09-16)
+### Table of contents options, and fifteen light-theme colors that were never set (2026-09-16)
 
 - **Table of contents options, as Confluence Cloud documents them.** Select
   a table of contents in the editor and a settings panel opens:
@@ -1826,7 +1860,7 @@ changed together; two tests added.
   "Exclude in PDF export" is a print rule on the exported HTML, which is
   what the PDF is printed from, so it also drops out of a paper print.
 - **The green "Live" dot was missing in the light theme, and so were
-  fourteen other colours.** Since 2026-09-08 the light palette defined
+  fourteen other colors.** Since 2026-09-08 the light palette defined
   `--success`, `--danger-soft`, `--primary-soft`, `--primary-softer`,
   `--primary-soft-border`, `--surface-sunken`, `--mark-bg`,
   `--comment-bg`, `--selected-cell`, `--resize-hover`, `--swatch-border`,
@@ -1836,8 +1870,8 @@ changed together; two tests added.
   rows under the default blue accent, no selected-cell, comment or mark
   highlight, no soft red behind errors. The dark palette was fine, and the
   non-blue accents masked the tints, which is how it went unseen. Values
-  restored from the literal colours those rules used before they were
-  tokenised; the green is the palette's own.
+  restored from the literal colors those rules used before they were
+  tokenized; the green is the palette's own.
 
 ### Leaving the editor asks first; tables and headings on a phone (2026-09-16)
 
@@ -2003,7 +2037,7 @@ harness at 390px (and the toolbar change at 1440px, where it is inert).
   so both bars stay docked under the top bar, as on desktop.
 - **The toolbar has two menus, and they mean different things.**
   Everything that has left the row for want of space now goes into the
-  **Aa** menu, grouped as Style, Format, Colour and Paragraph (the colour
+  **Aa** menu, grouped as Style, Format, Color and Paragraph (the color
   palettes unfold in place); the **+** menu holds only things to insert.
   On a wide screen the Aa menu is just the block styles, because nothing
   has overflowed. The previous pass had put overflow under **+**, which
@@ -2019,7 +2053,7 @@ harness at 390px (and the toolbar change at 1440px, where it is inert).
 The stale-collaborative-document gap found on 2026-09-13 has a design now,
 as dev-plan **8.6** (Fable half done; Opus implements). An API or MCP write
 lands in an open draft the way a second person's typing does (added text
-highlighted, removed text struck through, both labelled with their
+highlighted, removed text struck through, both labeled with their
 source) and publishing accepts it. A document nobody has open is
 reconciled the same way when it is next loaded, and publish carries the
 version it was reconciled to so a missed notification cannot overwrite.
@@ -2034,11 +2068,11 @@ width, found by shooting every route at 390, 640, 700, 768, 900, 1100,
 
 - **The editor toolbar overlapped Update and Close on a phone and a
   tablet.** Only the thirteen formatting buttons could leave the row; the
-  text-style dropdown, the two colour palettes, alignment, link and the
+  text-style dropdown, the two color palettes, alignment, link and the
   `+` menu were fixed, and together they were already wider than a phone.
-  Alignment, text colour and highlight are collapsible now (alignment
+  Alignment, text color and highlight are collapsible now (alignment
   becomes three items in the `+` menu; each palette unfolds in place
-  under its item, so a phone still has every colour), and the text-style
+  under its item, so a phone still has every color), and the text-style
   trigger shrinks to **Aa** under a container query on the editor's own
   row: a narrow reading column on a wide screen counts too. At 390px the
   row reads `Aa · B · link · +` beside Update and Close; at 640px the
@@ -2078,8 +2112,8 @@ script). See the note in `docs/architecture.md`.
 accent**, and the count taken from 27 to **86** so that each feature has a
 picture of itself. The gap was the authoring UI: the manual could render a
 panel or a status lozenge live on the page, but a reader could not see the
-menu that produces one. Now they can: the insert catalogue, the slash
-menu, the colour palettes, the cell options, the status and date pickers,
+menu that produces one. Now they can: the insert catalog, the slash
+menu, the color palettes, the cell options, the status and date pickers,
 the live-block settings panel, the image hover menu, the link popover.
 
 **The admin section is complete**, with all eight tabs photographed and
@@ -2117,7 +2151,7 @@ matched nothing and rendered no crumb at all, and the page jumped a line
 every time you changed tab. One match for the whole settings section now,
 and a two-part crumb: **Space settings / Permissions**.
 
-### Space sidebar: three bands, and settings absorbs its three neighbours (2026-09-11)
+### Space sidebar: three bands, and settings absorbs its three neighbors (2026-09-11)
 
 Two problems, one shape.
 
@@ -2145,7 +2179,7 @@ Walked as a signed-in member and signed out, at desktop and phone widths,
 across every space route plus search, labels, profile and the admin
 refusal: no uncaught errors on any of them. A real page was created,
 edited, deleted and purged through the moved Trash tab; the purge stops
-at the sudo-mode password prompt, which is the intended behaviour for an
+at the sudo-mode password prompt, which is the intended behavior for an
 irreversible action.
 
 **Not** walked as an instance administrator: that needs an administrator's
@@ -2161,10 +2195,10 @@ documents a layout the product no longer has is worse than no manual.
 ### A user manual, written in Tesria (2026-09-11)
 
 A new **Tesria User Manual** space (`MANUAL`): 47 pages covering getting
-started, every block in the editor, organising a wiki, working together,
+started, every block in the editor, organizing a wiki, working together,
 sharing and exporting, accounts, administration, and the two integration
 doors (REST and MCP). Written as real pages rather than as Markdown in
-`docs/`, so it is searchable, labelled, exportable and editable in the
+`docs/`, so it is searchable, labeled, exportable and editable in the
 product it documents, and so it dogfoods the features it describes: the
 section index pages use children displays, the labels page ends with a
 labels list, the live-blocks page demonstrates a content-by-label block.
@@ -2218,7 +2252,7 @@ sentence was.
 ### The space sidebar's emoji are now drawn icons (2026-09-11)
 
 `📑 ⚙ 🔒 🪝 🗑` were the only pictures in the app the app did not draw
-itself: full-colour glyphs, a different weight and shape on every
+itself: full-color glyphs, a different weight and shape on every
 platform, and no relationship to the chosen accent.
 
 `NavIcons.tsx` replaces them with five outline SVGs in the same language
@@ -2270,7 +2304,7 @@ decisions it cannot dodge, and the size at which it becomes worth doing.
 The wiki is 58 pages and 31 KB of text today, which is why it is not worth
 doing yet.
 
-Also added to `roadmap.md`: a **roadmap planner** timeline block modelled
+Also added to `roadmap.md`: a **roadmap planner** timeline block modeled
 on Confluence's macro, with its data model and the four design questions
 it raises.
 
@@ -2364,7 +2398,7 @@ Two things the generator could not know, both now in the document:
 
 - **Both ways of authenticating.** A token (`Authorization: Bearer`) and the
   SPA's session cookie, the latter noting that unsafe requests also need
-  `X-Requested-With: Tesria`, the CSRF defence, and that everything you
+  `X-Requested-With: Tesria`, the CSRF defense, and that everything you
   may not see answers 404 rather than 403.
 - **Which endpoints actually need one.** An endpoint is open two ways here:
   an explicit `.AllowAnonymous()` (Phase 5's public routes) *and* simply
@@ -2382,7 +2416,7 @@ exists. Tests pin that the nonce appears only on that path and differs every
 request.
 
 Some of its sidebar features call the vendor's hosted service. This app's
-`connect-src 'self'` blocks them, which is the behaviour we want from a
+`connect-src 'self'` blocks them, which is the behavior we want from a
 documentation page: the button leading to them is hidden so nothing broken
 is put in front of a reader, and the CSP remains the backstop.
 
@@ -2390,7 +2424,7 @@ The API space gained a page describing the spec, the reference, both auth
 schemes and how to generate a client, so the prose documentation and the
 machine-readable one stay in step.
 
-### PDF export, and a licence (dev-plan 8.1, 8.2) (2026-09-10)
+### PDF export, and a license (dev-plan 8.1, 8.2) (2026-09-10)
 
 **PDF export (8.1)**: the one claim on the brand page that was not true.
 A Playwright sidecar renders the *same* print-ready HTML the html format
@@ -2418,10 +2452,10 @@ every render failed with "Executable doesn't exist". The library version
 and the image tag must be the *same* version; both are now pinned exactly,
 with a comment saying to bump them together or not at all.
 
-**Licence (8.2)**: the brand page says Apache 2.0 and the repo had no
+**License (8.2)**: the brand page says Apache 2.0 and the repo had no
 `LICENSE` file. Added, with a `NOTICE` listing the third-party components,
 and SPDX identifiers in both `package.json`s and the `.csproj`. Public
-visibility is still the user's call; the licence file existing is a
+visibility is still the user's call; the license file existing is a
 precondition for that, not a consequence.
 
 Verified end to end: a real PDF of a page carrying dynamic blocks, an
@@ -2488,7 +2522,7 @@ asserts it.
 **Found by upgrading a running instance, which no test could catch:** the
 new `EmbedAllowlist` column defaulted to empty on an instance that already
 had a settings row, silently turning embeds off on upgrade. The C# property
-initialiser only runs for a *new* settings object; the default now lives on
+initializer only runs for a *new* settings object; the default now lives on
 the migration's column too. Every test creates a fresh database and so
 never took that path.
 
@@ -2575,8 +2609,8 @@ The decisions, each with its reason in the spec:
   stash the slash menu's upload callbacks use; history and template
   previews, where nobody sets it, show "Shown on the page".
 - **Params are edited by one generic form** generated from each kind's
-  declared schema in the client catalogue; the slash and + menus list that
-  same catalogue.
+  declared schema in the client catalog; the slash and + menus list that
+  same catalog.
 
 `children` (Confluence's Children display) is the reference kind: depth
 1–3, three sort orders, a hidden parent hiding its subtree. Eight tests
@@ -2615,7 +2649,7 @@ per-kind params and queries are tabulated in the spec.
   time would pop a menu.
 - **Action-item assignees.** Typing `@name` in a task assigns it, exactly as
   Confluence does. The mention is the source of truth; `assigneeId` /
-  `assigneeName` on the `taskItem` are a denormalised copy kept in step by a
+  `assigneeName` on the `taskItem` are a denormalized copy kept in step by a
   plugin, so Wave D's Task report can query "assigned to me" instead of
   walking every page's document tree. Neither the app nor the export draws
   the name a second time: the mention it came from is already in the item's
@@ -2630,13 +2664,13 @@ Verified live: the `@` popup with avatars, insertion by click and by Enter,
 it. The notification path is covered by tests, including one asserting that
 a mention on a restricted page tells the recipient nothing at all.
 
-### Editor parity Wave B: text colour, scripts, indent (dev-plan 7, Wave B) (2026-09-10)
+### Editor parity Wave B: text color, scripts, indent (dev-plan 7, Wave B) (2026-09-10)
 
-- **Text colour**, stored as a colour *name* out of eight, not a hex.
+- **Text color**, stored as a color *name* out of eight, not a hex.
   Highlight can afford a hex because it is a background and the ink on top
-  is pinned per theme; coloured *text* has no such escape: a hex dark
+  is pinned per theme; colored *text* has no such escape: a hex dark
   enough to read on white is invisible on this app's dark background, and no
-  CSS rule can lighten a colour it cannot see. A name can be re-pointed per
+  CSS rule can lighten a color it cannot see. A name can be re-pointed per
   theme (`--text-color-*`), which is what makes the feature work in dark
   mode at all, and it also means nothing from the document can reach a
   `style` attribute. The export renderer inlines the light-theme ink.
@@ -2664,9 +2698,9 @@ a mention on a restricted page tells the recipient nothing at all.
   get a React re-render (`linkShortcut.ts`).
 - `@tiptap/extension-subscript` and `-superscript` added;
   `@tiptap/extension-text-style` was installed and then removed once text
-  colour became a name-keyed mark of its own. `scripts/audit.sh` clean.
+  color became a name-keyed mark of its own. `scripts/audit.sh` clean.
 
-Verified live in both themes: every colour legible on each, indent clamping
+Verified live in both themes: every color legible on each, indent clamping
 at four levels under repeated presses, clear formatting leaving status and
 date atoms and the paragraph itself intact, and `Cmd+K` opening the link
 popover with the heading list.
@@ -2685,7 +2719,7 @@ Opus (the plan tags the wave Opus).
   twice, in `headingAnchors.ts` and `Features/Export/HeadingAnchors.cs`,
   pinned together by `HeadingAnchorTests`. In the editor the ids are
   ProseMirror *decorations*, so they are recomputed from the document on
-  every change and never serialised. `#slug` links scroll rather than
+  every change and never serialized. `#slug` links scroll rather than
   navigate, both in the reading view and when a page is opened at
   `…/pages/{id}#slug`, and the link popover lists the page's headings to
   pick from.
@@ -2694,14 +2728,14 @@ Opus (the plan tags the wave Opus).
   time. Nothing ever holds a stale copy of the page's own outline.
 - **Expand**: collapsible section, title stored, open state not (it starts
   open while editing and closed for readers). Exports as `<details>`.
-- **Status**: inline lozenge, one of Confluence's six colour *names*; the
-  colour value never comes from the document, so a hostile `color` cannot
+- **Status**: inline lozenge, one of Confluence's six color *names*; the
+  color value never comes from the document, so a hostile `color` cannot
   reach a style attribute. **Decision**: a panel-shaped block with a fixed
   check icon. **Date**: an ISO calendar date rendered in the reader's own
   locale (parsed by hand: `new Date('2026-09-10')` is UTC midnight and shows
   the day before to anyone west of Greenwich).
 - **Layouts**: `layoutSection` of two or three `layoutColumn`s, with
-  Confluence's five presets and a per-section width (centred / wide / full)
+  Confluence's five presets and a per-section width (centered / wide / full)
   reusing the page's own `--page-pad` breakout. Sections stack but never
   nest: `layoutSection` is not in the `block` group and only the document
   admits it (`Document.extend({ content: '(block | layoutSection)+' })`),
@@ -2710,12 +2744,12 @@ Opus (the plan tags the wave Opus).
   time, so a full-width table inside a column fills the column instead of
   bleeding out of it.
 - All seven appear in the slash menu and the **+** menu from the one
-  `SLASH_ITEMS` catalogue, so neither can drift.
+  `SLASH_ITEMS` catalog, so neither can drift.
 
 Also in this pass, from live review:
 
 - The **+** insert trigger is a plain "+" sitting with the other toolbar
-  icons rather than a labelled button pushed to the right edge, and the
+  icons rather than a labeled button pushed to the right edge, and the
   text-style dropdown reads "Normal text" with no icon: both matching a
   Confluence screenshot the user supplied.
 - **Publish/Update and Close moved onto the toolbar row**, out of the bottom
@@ -2742,7 +2776,7 @@ pass.
 
 ### Editor chrome: one-row toolbar with an Insert menu, borderless page (2026-09-10)
 
-*Scope added by the user at the start of Phase 7, modelled on Confluence's
+*Scope added by the user at the start of Phase 7, modeled on Confluence's
 editor.*
 
 The page is a continuous surface: no box, border or shadow around the
@@ -2751,7 +2785,7 @@ editor and the reading view alike. The toolbar runs edge to edge in a
 single row and **never wraps**. Text style ("Normal text", "Heading 1"…)
 and alignment are dropdowns; block elements (table, image, code block,
 quote, divider, the five panels) live behind **+ Insert**, and that menu
-is generated from the same catalogue the slash menu uses, so a block added
+is generated from the same catalog the slash menu uses, so a block added
 to one appears in both. When the toolbar's own width (a container query,
 not the viewport's) runs short, the "Insert" and text-style labels drop
 first, then formatting buttons move into the Insert menu's *Formatting*
@@ -2782,7 +2816,7 @@ page, which failed the same way. All five pages verified live after the fix.
 ### Feature: space icons (dev-plan 6) (2026-09-10)
 
 Every space now has an icon: an uploaded picture, an emoji, or, the
-default, its key's first letter on a tile coloured by a stable hash of the
+default, its key's first letter on a tile colored by a stable hash of the
 key, so nothing is ever iconless. Rounded squares, where avatars are
 circles: at tile size that shape is the only thing distinguishing a place
 from a person. Rendered in the spaces list (including the public listing),
@@ -3024,7 +3058,7 @@ weaker hash is upgraded in place at the next successful sign-in.
 Tests (eleven): per-session revoke, sign-out kills the cookie, absolute
 lifetime, two-step sign-in with reuse refused, recovery code in place of
 the authenticator, enabling signs others out, disabling needs a
-credential, admins forced to enrol, sudo refusal and re-auth, re-auth
+credential, admins forced to enroll, sudo refusal and re-auth, re-auth
 extends the window, hash upgrade on sign-in. Full suite: 262 passing.
 
 ### Security: SSRF guard, attachment types, CSRF header (dev-plan 3.4) (2026-09-09)
@@ -3155,7 +3189,7 @@ than last time. Every row is also written to stdout as JSON under the
 cannot reach.
 
 Two round-trip hazards found by verifying against the real database: jsonb
-re-orders keys and normalises numbers, and `timestamptz` keeps microseconds
+re-orders keys and normalizes numbers, and `timestamptz` keeps microseconds
 where .NET keeps ticks. Hashing is over a canonical form that survives
 both, and all 36 stored hashes were recomputed independently in Python
 from a `psql` dump to prove it. Live: `UPDATE "AuditLogs"` as `tesria_app`
@@ -3192,7 +3226,7 @@ recorded in the architecture doc.
 the on-demand-TLS catch-all gone. Selected with `CADDYFILE=` in `.env`.
 
 Tests (six) act as the proxy and as a stranger through a startup filter
-that sets the connection address: forwarded address honoured from loopback,
+that sets the connection address: forwarded address honored from loopback,
 ignored from a public address, only the last hop believed, the cookie
 turns `Secure` when the proxy says HTTPS, and the headers are on every
 response. Verified live: headers present, collaboration websocket connects
@@ -3270,10 +3304,10 @@ assembled from twelve different instants. Range is clamped to 1–365 days.
 
 Charts are hand-rolled SVG sparklines: no charting dependency added, since
 the bundle is already 1.1 MB. Written against the `dataviz` skill: one series
-means no legend and no categorical palette, colour is a single token
+means no legend and no categorical palette, color is a single token
 (`--primary`, or `--danger` for failed sign-ins, which is a status signal
 rather than another series), text wears text tokens rather than the series
-colour, marks are 2px with a surface ring on the hover marker, and every
+color, marks are 2px with a surface ring on the hover marker, and every
 sparkline has a hover crosshair reading out the exact day and value.
 
 **Empty days are included in every series.** A sparkline built only from days
@@ -3367,7 +3401,7 @@ caller. Keying on the supplied email bounds guesses against any one account,
 which is the actual threat, and is immune to the proxy problem. Dev-plan 3.2
 adds real per-IP limiting once 3.0 makes client addresses real.
 
-Codes normalise on redemption, dashes and case are stripped, because they get
+Codes normalize on redemption, dashes and case are stripped, because they get
 written on paper and typed back months later. The alphabet omits O/0, I/1/L and
 U for the same reason. Every failure returns an identical response whether the
 account exists, the code is wrong, or the account is SSO-only, so this cannot
@@ -3402,14 +3436,14 @@ twelve carry white text at 4.5:1 or better (measured, not judged), and all are
 dark enough to read on both page grounds, so no per-theme treatment is needed.
 
 `User.AvatarVariant` records an explicit pick; null derives one from the id.
-Stored as an index rather than a colour so the set can be restyled without
+Stored as an index rather than a color so the set can be restyled without
 rewriting rows, and kept when a picture is uploaded, so removing the picture
-returns to the colour the user chose, not to the derived one.
+returns to the color the user chose, not to the derived one.
 
 Uploads are cropped square in the browser before sending, via
-`createImageBitmap`, which decodes off the main thread and honours EXIF
+`createImageBitmap`, which decodes off the main thread and honors EXIF
 orientation, without it a portrait phone photo arrives sideways. The crop is
-not cosmetic: the server centre-crops too, so doing it here is what makes the
+not cosmetic: the server center-crops too, so doing it here is what makes the
 stored result match what the user was shown. Downscaled to 512px first, so a
 12MP photo is not uploaded whole to produce a 256px thumbnail.
 
@@ -3445,7 +3479,7 @@ request, so rotating it invalidates every outstanding cookie for that account
 on its next request. Changing a password rotates it, and the session that made
 the change is re-issued with the new value so that person is not signed out
 along with everyone else. Suspension (2.2), admin force-logout (3.3) and 2FA
-enrolment (3.5) all reuse this rather than adding their own mechanism: the
+enrollment (3.5) all reuse this rather than adding their own mechanism: the
 same validation already rejects a cookie whose account has become suspended,
 with a test proving it.
 
@@ -3481,11 +3515,11 @@ this process produced: EXIF (often GPS) is stripped, polyglot files stop being
 polyglot, and decoded dimensions are bounded: checked from the codec header
 before any pixel buffer is allocated, so a decompression bomb is refused
 rather than decoded first. **SVG is rejected by sniffing the bytes**, not by
-trusting the declared content type, so an SVG labelled `image/png` does not
+trusting the declared content type, so an SVG labeled `image/png` does not
 get through; there is a test for each of those framings.
 
 **SkiaSharp (MIT) rather than ImageSharp**, because ImageSharp 3.x moved to
-the Six Labors Split Licence and dev-plan 8.2 intends an Apache 2.0 release.
+the Six Labors Split License and dev-plan 8.2 intends an Apache 2.0 release.
 Verified in the runtime container and not only on the build host, since the
 native-asset variant is exactly the thing that differs between them: the
 container is glibc 2.39 and the package ships a matching `linux-arm64` build.
@@ -3560,7 +3594,7 @@ stored value, so changing one setting cannot clobber the rest) with one
 addition for the password, where an empty string means "clear it", which
 `null` cannot express.
 
-Registration now honours `AllowPublicRegistration`, **except for the very
+Registration now honors `AllowPublicRegistration`, **except for the very
 first account on an empty instance**. Otherwise an operator who closes
 registration before anyone has signed up could never set the instance up.
 There is a test for each half of that.
@@ -3625,8 +3659,8 @@ tipped into real horizontal overflow, with "API Tokens" wrapping onto two
 lines.
 
 That wrap is also what made the links look top-aligned: a two-line link makes
-the nav row taller, and its single-line neighbours then sit at the top of
-it. `.topbar__link` is `inline-flex`, centred, and `white-space: nowrap` now,
+the nav row taller, and its single-line neighbors then sit at the top of
+it. `.topbar__link` is `inline-flex`, centered, and `white-space: nowrap` now,
 so it cannot recur, but the real fix is giving the pressure somewhere to go.
 
 **641–1024px is a proper middle tier.** Spaces stays visible; Groups, Audit
@@ -3647,7 +3681,7 @@ one 27px height, and search at 175px in the worst case (641px). The bar also pac
 `margin-left: auto` on the right-hand cluster) instead of `space-between`.
 Space-between split leftover width evenly into every gap, which floated the
 nav somewhere between the brand and the search box on desktop and, with the
-collapsible out of flow on mobile, parked the brand dead centre. One rule
+collapsible out of flow on mobile, parked the brand dead center. One rule
 fixes both: the nav anchors to the brand, the brand to the hamburger, and all
 the leftover sits in a single gap before the right-hand cluster, and the
 search box, which had a 420px cap (260px in the middle tier), now has none,
@@ -3675,10 +3709,10 @@ pixel and the middle layer lines start to drop out.
 
 In the topbar the mark sits left of the wordmark and takes `--primary`, so it
 follows both the light/dark theme *and* the chosen accent, while the wordmark
-stays `--text`. That is the same split the brand page uses: coloured mark,
+stays `--text`. That is the same split the brand page uses: colored mark,
 neutral wordmark.
 
-One detail worth keeping: `.brand`'s shrink-and-ellipsis behaviour (added for
+One detail worth keeping: `.brand`'s shrink-and-ellipsis behavior (added for
 narrow phones, where the topbar has no wrap fallback) moved from the link to
 the new `.brand__word` span, and the mark is `flex-shrink: 0`. Otherwise the
 logo would have been the first thing squeezed out on a small screen.
@@ -3688,7 +3722,7 @@ so mobile browser chrome tracks the app.
 
 **The favicon tracks the accent too.** A favicon is a separate document that
 can never read the page's custom properties, so a single themeable SVG is not
-possible: the colour has to be baked in per variant. Rather than shipping six
+possible: the color has to be baked in per variant. Rather than shipping six
 files that would drift from the palette the first time an accent is retuned,
 `applyFavicon()` renders the mark to a data URI from `ACCENT_HEX` in theme.ts
 and swaps the `<link rel="icon">` href. `public/favicon.svg` stays as the
@@ -3708,11 +3742,11 @@ leaving the mark alone, which gives back more than the mark costs, and reads
 as a deliberate logo-only brand rather than the half-word truncation that
 appeared first.
 
-### Feature: appearance menu · theme popup + accent colours (2026-09-08)
+### Feature: appearance menu · theme popup + accent colors (2026-09-08)
 
 The theme control is a popup now rather than a cycling button, with two
 sections: **Theme** (System / Light / Dark, each with a one-line hint, System
-showing what it currently resolves to) and **Accent colour** (blue, teal,
+showing what it currently resolves to) and **Accent color** (blue, teal,
 green, purple, orange, magenta).
 
 System remains the default for new users: nothing is written to storage until
@@ -3734,11 +3768,11 @@ default blue, so a higher-specificity dark block always exists to win, without
 it, choosing an accent explicitly would drag the light palette into dark mode.
 
 The picker's own swatches read themed `--accent-dot-*` tokens, so each dot
-previews the colour that accent will actually produce right now, and the whole
+previews the color that accent will actually produce right now, and the whole
 row changes when the theme does.
 
-The accent deliberately drives only the chrome. Panel colours are semantic
-(a warning is yellow regardless), and table cell / highlight colours belong to
+The accent deliberately drives only the chrome. Panel colors are semantic
+(a warning is yellow regardless), and table cell / highlight colors belong to
 the document's author: neither follows the accent.
 
 Known limitation: in light mode, orange is necessarily a deep rust (`#9a4d00`).
@@ -3761,23 +3795,23 @@ localStorage; `index.html` re-applies the stored value in an inline,
 synchronous script before first paint, without which the page renders light
 for one frame and then flips.
 
-Getting there meant tokenising the stylesheet: every colour now resolves
+Getting there meant tokenizing the stylesheet: every color now resolves
 through a custom property. `--surface` is new and carries the weight: it is
 identical to `--bg` in light mode and deliberately lighter in dark, which is
 what separates a card, the paper sheet or a popover from the page behind it.
 
 Two things that needed more than a token swap:
 
-- **Panel icons** were `background-image` data URIs with the stroke colour
+- **Panel icons** were `background-image` data URIs with the stroke color
   baked in, which would have meant carrying a second full set for dark mode.
   They are `mask-image` now: the SVG supplies the shape, `--panel-icon`
-  supplies the colour, so one token per type re-tints all five.
-- **Author-chosen colours** (a table cell's `backgroundColor`, a highlight
+  supplies the color, so one token per type re-tints all five.
+- **Author-chosen colors** (a table cell's `backgroundColor`, a highlight
   mark's `color`) are stored *in the document* and are always light tints from
   `palette.ts`. A theme cannot restyle them without discarding the author's
   choice, but left alone in dark mode they are a light patch carrying light
   `--text`, i.e. invisible. Dark mode pins the ink dark on exactly those
-  elements instead, so a coloured cell reads identically in both themes.
+  elements instead, so a colored cell reads identically in both themes.
   Verified against the API space's status-code table, where tinted and
   untinted cells sit side by side in one row.
 
@@ -3788,45 +3822,45 @@ Known gap: the toggle lives in the authenticated topbar, so it is not reachable
 from the sign-in and registration pages. The *theme* still applies there (the
 pre-paint script is route-independent); only the control is missing.
 
-### Feature: panels, colour palettes, and a toolbar alignment fix (2026-09-08)
+### Feature: panels, color palettes, and a toolbar alignment fix (2026-09-08)
 
 Four editor gaps against Confluence, closed together.
 
-**Panels** (`panelExtension.ts`): coloured callouts, with `panelType` taken
+**Panels** (`panelExtension.ts`): colored callouts, with `panelType` taken
 from ADF's own set: info, note, warning, success, error. Confluence's legacy
 Info/Tip/Note/Warning macros all map onto that set (the old Tip macro is
 today's `success` panel), so all four names the request asked for have a home
 without inventing a sixth type. Available from a toolbar picker and from the
 slash menu, both generated from one exported `PANEL_TYPES`/`PANEL_LABELS` so
-they can't drift. Colour and icon live in `index.css` keyed off the rendered
+they can't drift. Color and icon live in `index.css` keyed off the rendered
 `data-panel-type`, which keeps the icon a `::before` pseudo-element rather
 than a child node ProseMirror would fight over, and gets read-only rendering
 the icon for free.
 
 **Table cell / row / column backgrounds** (`TableCellMenu.tsx`): Confluence's
 per-cell chevron in the top-right of the cell holding the cursor, opening a
-"Background colour" palette. Cursor-driven, so deliberately not sharing
+"Background color" palette. Cursor-driven, so deliberately not sharing
 `useHoveredTable` with the hover-driven row/column and width controls. The
 Cell/Row/Column scope buttons widen the written rect via
 `TableMap.cellsInRect()` and apply the whole scope in one transaction, rather
 than replacing the user's selection with a `CellSelection`: the cursor stays
-put after colouring a row.
+put after coloring a row.
 
-**Highlight colours**: `Highlight` is now `multicolor`, and the toolbar
+**Highlight colors**: `Highlight` is now `multicolor`, and the toolbar
 button is a palette instead of an on/off toggle. Highlights stored before
 this have no `color` attr and still render as a plain `<mark>`.
 
 Both palettes are Atlassian's own light/medium/bold values, matching the
 fixed palette Confluence offers rather than a hex input, and are stored *in
 the document* so they survive export. The export renderer now whitelists a
-colour to plain hex before it reaches a `style` attribute: document JSON is
-stored as given, so an unvalidated colour was a CSS-injection route into
+color to plain hex before it reaches a `style` attribute: document JSON is
+stored as given, so an unvalidated color was a CSS-injection route into
 exported HTML.
 
 **Fix: the insert-image icon sat 4.8px above every other toolbar button.**
 That button is a `<label>` (it wraps a hidden file input), so the global
 `label { margin-bottom: 0.6rem }` applied to it and to nothing else in the
-row. `.toolbar` centres its children with `align-items`, which centres each
+row. `.toolbar` centers its children with `align-items`, which centers each
 item's *margin* box, so 9.6px of phantom margin below the label lifted its
 border box by exactly half. Measured before and after against the real
 stylesheet: 4.80px of spread, now 0.00px. Fixed with `margin: 0` on
@@ -3834,8 +3868,8 @@ stylesheet: 4.80px of spread, now 0.00px. Fixed with `margin: 0` on
 toolbar button is immune.
 
 Export coverage for all of it (panels in HTML and Markdown, cell backgrounds
-on both cell kinds, highlight colour plus the legacy no-colour case, and the
-hostile-colour rejection) is in `ProseMirrorRendererTests`.
+on both cell kinds, highlight color plus the legacy no-color case, and the
+hostile-color rejection) is in `ProseMirrorRendererTests`.
 
 ### Fix: the full-width toggle did nothing on a brand-new page (2026-09-08)
 
@@ -4557,7 +4591,7 @@ Added:
   (`collab/`) lets several people edit a page simultaneously, with live remote
   carets showing who is where. The editor engine is JS-only, so this is isolated
   in a small sidecar rather than reshaping the .NET stack (PLAN §1).
-  - **Authorisation:** the sidecar cannot evaluate our permission model, so the
+  - **Authorization:** the sidecar cannot evaluate our permission model, so the
     API is the gatekeeper: it issues a short-lived HMAC-signed token only to
     users who may *edit* that page, and binds the token to that page id. The
     sidecar verifies signature, expiry, and document match.
@@ -4628,7 +4662,7 @@ Added:
 ### Phase 4: Fast-follow (2026-07-23)
 
 Added:
-- Labels/tags: instance-wide labels (names normalised to lower case) applied to
+- Labels/tags: instance-wide labels (names normalized to lower case) applied to
   pages, with add/remove per page, browse-by-label, and usage counts. Trashed
   pages drop out of label listings. SPA shows label chips on a page and a
   browse-by-label view.

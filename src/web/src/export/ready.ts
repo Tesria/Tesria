@@ -26,7 +26,7 @@ type Options = {
   timeoutMs?: number
 }
 
-/** Work this file knows how to recognise as outstanding. */
+/** Work this file knows how to recognize as outstanding. */
 function outstanding(root: ParentNode): string | null {
   // A diagram that has neither drawn nor failed still says this.
   if (root.querySelector('.mermaid__note')) return 'mermaid'
@@ -34,7 +34,7 @@ function outstanding(root: ParentNode): string | null {
   const loading = [...root.querySelectorAll('.dynamic-block__note')]
     .some((n) => /^loading/i.test(n.textContent?.trim() ?? ''))
   if (loading) return 'dynamic-block'
-  // Maths that has not typeset. An empty marker is the editing placeholder,
+  // Math that has not typeset. An empty marker is the editing placeholder,
   // which read-only mode renders blank, so only a missing render counts.
   const mathPending = [...root.querySelectorAll('.math__rendered')]
     .some((n) => !n.querySelector('.katex') && !n.querySelector('.math__error'))

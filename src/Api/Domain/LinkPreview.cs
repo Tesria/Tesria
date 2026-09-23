@@ -11,7 +11,7 @@ public class LinkPreview
 {
     public Guid Id { get; set; }
 
-    /// <summary>SHA-256 of the normalised URL: the lookup key, and bounded unlike the URL itself.</summary>
+    /// <summary>SHA-256 of the normalized URL: the lookup key, and bounded unlike the URL itself.</summary>
     public required string UrlHash { get; set; }
 
     public required string Url { get; set; }

@@ -1,15 +1,15 @@
 import { Mark, mergeAttributes } from '@tiptap/core'
 
 /**
- * Text colour, stored as a colour *name* out of a fixed set rather than a
+ * Text color, stored as a color *name* out of a fixed set rather than a
  * hex value.
  *
  * The highlight mark stores a hex because a highlight is a background: the
  * text on top of it stays legible in dark mode by pinning the ink (see
  * index.css's `[data-theme="dark"] … mark[style*="background-color"]`).
- * Coloured *text* has no such escape: a hex dark enough to read on white
+ * Colored *text* has no such escape: a hex dark enough to read on white
  * is invisible on this app's dark background, and no CSS rule can lighten a
- * colour it cannot see. A name can be re-pointed per theme, so that is what
+ * color it cannot see. A name can be re-pointed per theme, so that is what
  * the document carries; `index.css` maps it (`--text-color-*`) and the
  * export renderer inlines the light-theme hex for a standalone file.
  *
@@ -21,7 +21,7 @@ export const TEXT_COLORS = ['grey', 'blue', 'teal', 'green', 'yellow', 'orange',
 export type TextColor = (typeof TEXT_COLORS)[number]
 
 export const TEXT_COLOR_LABELS: Record<TextColor, string> = {
-  grey: 'Grey',
+  grey: 'Gray',
   blue: 'Blue',
   teal: 'Teal',
   green: 'Green',

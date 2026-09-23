@@ -77,7 +77,7 @@ public class SpaceIconTests
     }
 
     [Fact]
-    public async Task An_emoji_and_a_colour_are_stored_and_returned()
+    public async Task An_emoji_and_a_color_are_stored_and_returned()
     {
         using var factory = new TestAppFactory();
         var client = await SpaceOwnerAsync(factory);

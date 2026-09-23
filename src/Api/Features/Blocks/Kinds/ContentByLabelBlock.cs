@@ -42,6 +42,6 @@ public sealed class ContentByLabelBlock : IDynamicBlockKind
             .ToList();
 
         return BlockResult.List(Kind, items,
-            empty: $"No pages are labelled {string.Join(match == "all" ? " and " : " or ", wanted)}.");
+            empty: $"No pages are labeled {string.Join(match == "all" ? " and " : " or ", wanted)}.");
     }
 }

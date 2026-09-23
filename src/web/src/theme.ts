@@ -12,7 +12,7 @@
  *   light   → data-theme="light"
  *   dark    → data-theme="dark"
  *
- * The accent colour is a second, independent axis, expressed the same way as
+ * The accent color is a second, independent axis, expressed the same way as
  * a `data-accent` attribute. Absent means the default blue.
  *
  * index.html applies both stored values in a tiny inline script before first
@@ -59,7 +59,7 @@ export function themeLock(): 'light' | 'dark' | null {
   return v === 'light' || v === 'dark' ? v : null
 }
 
-/** Whether the instance has its own accent colour, offered as "brand". */
+/** Whether the instance has its own accent color, offered as "brand". */
 export function hasBrandAccent(): boolean {
   return Boolean(brandAttr('data-brand-accent-light') || brandAttr('data-brand-accent-dark'))
 }
@@ -113,7 +113,7 @@ export function systemTheme(): 'light' | 'dark' {
 }
 
 
-/* ---- accent colour ------------------------------------------------------ */
+/* ---- accent color ------------------------------------------------------ */
 
 export type AccentName = 'blue' | 'teal' | 'green' | 'purple' | 'orange' | 'magenta' | 'brand'
 
@@ -131,7 +131,7 @@ export const ACCENTS: { name: AccentName; label: string }[] = [
   { name: 'magenta', label: 'Magenta' },
 ]
 
-/** "brand" only counts while the instance actually has a brand colour to show. */
+/** "brand" only counts while the instance actually has a brand color to show. */
 function isAccent(value: unknown): value is AccentName {
   if (value === 'brand') return hasBrandAccent()
   return ACCENTS.some((a) => a.name === value)
@@ -174,7 +174,7 @@ export function applyAccent(accent: AccentName): void {
  * favicon renders from; index.css declares the same pairs for the DOM. They
  * are duplicated because a favicon is a separate document that can never read
  * the page's custom properties, which is also why a single themeable SVG
- * favicon is not possible, and the colour has to be baked in per variant.
+ * favicon is not possible, and the color has to be baked in per variant.
  */
 export const ACCENT_HEX: Record<Exclude<AccentName, 'brand'>, { light: string; dark: string }> = {
   blue: { light: '#2496ed', dark: '#6cb6f7' },
@@ -186,7 +186,7 @@ export const ACCENT_HEX: Record<Exclude<AccentName, 'brand'>, { light: string; d
 }
 
 /**
- * Tesria's mark, stroked in one colour. Kept in step with BrandMark.tsx and
+ * Tesria's mark, stroked in one color. Kept in step with BrandMark.tsx and
  * public/favicon.svg by hand, three copies of two path strings is cheaper
  * than a build step to share them, but they do have to move together.
  *
@@ -211,7 +211,7 @@ function faviconSvg(color: string): string {
  * match that chrome rather than the page. Someone running the app in forced
  * light on a dark-themed desktop wants the light-on-dark mark in their tabs.
  *
- * Generated at runtime rather than shipping six files: the colours then have
+ * Generated at runtime rather than shipping six files: the colors then have
  * exactly one definition per theme in this file, six static files would drift
  * from the palette the first time an accent is retuned, and a data URI costs
  * no request. public/favicon.svg stays as the pre-JS default.

@@ -94,7 +94,7 @@ public static partial class SiteExport
                 return Relative(fromPath, target) + anchor;
             // Nothing to point at. The href is emptied rather than removed so
             // the surrounding markup stays valid; the class is what the
-            // stylesheet uses to grey it out and the title says why.
+            // stylesheet uses to gray it out and the title says why.
             return "#";
         });
 

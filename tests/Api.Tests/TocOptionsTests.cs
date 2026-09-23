@@ -20,7 +20,7 @@ namespace Tesria.Api.Tests;
 /// (`docs/export-fidelity.md`).
 ///
 /// The same is true of `indent`, `cssClass` and `excludeInPdf`, which used
-/// to be sanitised here against hostile attribute values. They are sanitised
+/// to be sanitized here against hostile attribute values. They are sanitized
 /// in `tocOptions.ts` instead (`LENGTH` and `CLASS_TOKEN`), which is the
 /// right place now that the browser is the renderer, but this repo has no
 /// frontend tests: if that filtering is ever loosened, nothing fails.

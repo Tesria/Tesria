@@ -4,7 +4,7 @@ import { SpaceIcon } from './SpaceIcon'
 import { SPACE_ICON_COLORS, SpaceIconKind, spaceColorFor } from './spaceIconIdentity'
 
 /**
- * A starting set, not a catalogue. A full emoji picker is a component with a
+ * A starting set, not a catalog. A full emoji picker is a component with a
  * search index and a font-support matrix behind it; for choosing a space icon
  * once, a grid of likely ones plus a box to paste anything else is the whole
  * job. Every one here is single-codepoint from the U+1F300+ block, so it has
@@ -23,7 +23,7 @@ const SUGGESTED = [
 const UPLOAD_SIZE = 512
 
 /**
- * Centre-crops to a square and scales down, so a phone photo is not uploaded
+ * Center-crops to a square and scales down, so a phone photo is not uploaded
  * whole to produce a 24px tile. Identical in intent to the avatar picker's
  * crop, including `imageOrientation` so a portrait photo does not arrive
  * sideways: see AvatarPicker for the full reasoning.
@@ -118,7 +118,7 @@ export function SpaceIconPicker({ space, onChanged }: { space: Space; onChanged:
             {isImage
               ? 'Your uploaded picture.'
               : space.iconKind === SpaceIconKind.Emoji
-                ? 'An emoji on a coloured tile.'
+                ? 'An emoji on a colored tile.'
                 : `Generated from the key: the letter ${space.key[0]} on a tile.`}
           </p>
           <div className="row-gap">
@@ -173,7 +173,7 @@ export function SpaceIconPicker({ space, onChanged }: { space: Space; onChanged:
 
       <fieldset className="icon-picker__colors" disabled={busy || isImage}>
         <legend className="muted small">
-          {isImage ? 'Remove the picture to choose a tile colour' : 'Tile colour'}
+          {isImage ? 'Remove the picture to choose a tile color' : 'Tile color'}
         </legend>
         {SPACE_ICON_COLORS.map((color, index) => {
           const selected = !isImage && index === activeColor
@@ -183,7 +183,7 @@ export function SpaceIconPicker({ space, onChanged }: { space: Space; onChanged:
               type="button"
               className={selected ? 'avatar-picker__swatch is-active' : 'avatar-picker__swatch'}
               style={{ background: color, borderRadius: 6 }}
-              aria-label={`Tile colour ${index + 1}`}
+              aria-label={`Tile color ${index + 1}`}
               aria-pressed={selected}
               onClick={() => setIcon(space.iconKind, space.iconValue, index)}
             />

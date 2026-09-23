@@ -10,7 +10,7 @@ export const SpaceIconKind = { None: 0, Emoji: 1, Image: 2 } as const
 export type SpaceIconKind = (typeof SpaceIconKind)[keyof typeof SpaceIconKind]
 
 /**
- * The tile colours. Deliberately the same twelve as generated avatars: the
+ * The tile colors. Deliberately the same twelve as generated avatars: the
  * job is identical (a white glyph on a dark tile, legible against both page
  * grounds) and two palettes doing one job would drift apart.
  */
@@ -23,7 +23,7 @@ export type SpaceIconSubject = {
   iconColor: number | null
 }
 
-/** The chosen tile colour, or a stable one derived from the key. */
+/** The chosen tile color, or a stable one derived from the key. */
 export function spaceColorFor(space: SpaceIconSubject): number {
   const chosen = space.iconColor
   if (chosen != null && chosen >= 0 && chosen < SPACE_ICON_COLORS.length) return chosen

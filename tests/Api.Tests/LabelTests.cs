@@ -9,7 +9,7 @@ public class LabelTests
     private record PageDetail(Guid Id, Guid SpaceId, string Title);
     private record LabelResponse(Guid Id, string Name);
     private record LabelUsage(Guid Id, string Name, int PageCount);
-    private record LabelledPage(Guid PageId, Guid SpaceId, string SpaceKey, string Title);
+    private record LabeledPage(Guid PageId, Guid SpaceId, string SpaceKey, string Title);
 
     private const string Doc = """{"type":"doc","content":[]}""";
 
@@ -87,7 +87,7 @@ public class LabelTests
         await client.PostAsJsonAsync($"/api/pages/{a.Id}/labels", new { Name = "shared" });
         await client.PostAsJsonAsync($"/api/pages/{b.Id}/labels", new { Name = "shared" });
 
-        var pages = await client.GetFromJsonAsync<List<LabelledPage>>("/api/labels/shared/pages");
+        var pages = await client.GetFromJsonAsync<List<LabeledPage>>("/api/labels/shared/pages");
         Assert.Equal(2, pages!.Count);
 
         var usage = await client.GetFromJsonAsync<List<LabelUsage>>("/api/labels");
@@ -101,11 +101,11 @@ public class LabelTests
         using var _ = factory;
         var page = await NewPage(client, spaceId, "Doomed");
         await client.PostAsJsonAsync($"/api/pages/{page.Id}/labels", new { Name = "temp" });
-        Assert.Single((await client.GetFromJsonAsync<List<LabelledPage>>("/api/labels/temp/pages"))!);
+        Assert.Single((await client.GetFromJsonAsync<List<LabeledPage>>("/api/labels/temp/pages"))!);
 
         await client.DeleteAsync($"/api/pages/{page.Id}");
 
-        Assert.Empty((await client.GetFromJsonAsync<List<LabelledPage>>("/api/labels/temp/pages"))!);
+        Assert.Empty((await client.GetFromJsonAsync<List<LabeledPage>>("/api/labels/temp/pages"))!);
         var usage = await client.GetFromJsonAsync<List<LabelUsage>>("/api/labels");
         Assert.DoesNotContain(usage!, u => u.Name == "temp");
     }

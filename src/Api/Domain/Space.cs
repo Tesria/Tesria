@@ -23,7 +23,7 @@ public class Space
     public bool Archived { get; set; }
 
     // --- Icon (dev-plan 6). Three columns rather than one: the kind decides
-    // how IconValue is read, and the colour applies to the tile behind a
+    // how IconValue is read, and the color applies to the tile behind a
     // letter or an emoji: an uploaded image covers the tile entirely.
 
     public SpaceIconKind IconKind { get; set; } = SpaceIconKind.None;
@@ -81,7 +81,7 @@ public class Space
 
 /// <summary>
 /// How a space's icon is drawn. <see cref="None"/> is not "no icon": it is
-/// the generated default (the key's first letter on a coloured tile), so
+/// the generated default (the key's first letter on a colored tile), so
 /// every space has one from the moment it is created.
 /// </summary>
 public enum SpaceIconKind

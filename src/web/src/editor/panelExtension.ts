@@ -1,7 +1,7 @@
 import { Node, mergeAttributes } from '@tiptap/core'
 
 /**
- * Confluence-style panels: a coloured block that calls out a piece of content.
+ * Confluence-style panels: a colored block that calls out a piece of content.
  *
  * Mirrors Atlassian Document Format's own `panel` node, whose `panelType` is
  * exactly one of info/note/warning/success/error
@@ -10,7 +10,7 @@ import { Node, mergeAttributes } from '@tiptap/core'
  * the legacy Tip macro is today's `success` panel, so those four names all
  * have a home here without inventing a sixth type.
  *
- * The type-specific colour and icon live entirely in index.css (`.panel--*`),
+ * The type-specific color and icon live entirely in index.css (`.panel--*`),
  * keyed off `data-panel-type`, so the icon is a `::before` pseudo-element
  * rather than a real DOM node: ProseMirror owns the children of this node and
  * an injected element would be fighting it. That also means read-only

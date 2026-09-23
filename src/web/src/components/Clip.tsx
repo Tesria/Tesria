@@ -49,9 +49,9 @@ export function Clip({ name, className }: { name: string; className?: string }) 
     if (reduced || failed) return
     const el = video.current
     if (!el) return
-    let cancelled = false
-    el.play().catch(() => { if (!cancelled) setFailed(true) })
-    return () => { cancelled = true }
+    let canceled = false
+    el.play().catch(() => { if (!canceled) setFailed(true) })
+    return () => { canceled = true }
   }, [clip, reduced, failed])
 
   if (reduced || failed) {

@@ -30,7 +30,7 @@ public static class AuditChain
     public const string GenesisHash = "0000000000000000000000000000000000000000000000000000000000000000";
 
     /// <summary>
-    /// A transaction-scoped advisory lock serialising appenders. The number is
+    /// A transaction-scoped advisory lock serializing appenders. The number is
     /// arbitrary and only has to be unique among advisory locks this app takes.
     /// </summary>
     public const string LockSql = "SELECT pg_advisory_xact_lock(731129)";
@@ -83,7 +83,7 @@ public static class AuditChain
 
     /// <summary>
     /// Metadata as it will read back, not as it was written. The column is
-    /// jsonb, and Postgres re-orders keys, strips whitespace and normalises
+    /// jsonb, and Postgres re-orders keys, strips whitespace and normalizes
     /// numbers on the way in, so both writing and verifying hash this form:
     /// keys sorted, no whitespace, numbers via <see cref="decimal"/>.
     /// </summary>

@@ -7,7 +7,7 @@ import { ChevronDownIcon } from './icons'
 import { ColorPalette } from './ColorPalette'
 import { CELL_BACKGROUND_TIERS } from './palette'
 
-/** Which cells a colour applies to. Confluence gets row/column by selecting
+/** Which cells a color applies to. Confluence gets row/column by selecting
  *  them first; offering the scope explicitly means one click either way, and
  *  a drag-selected block of cells still works as "Cell". */
 type Scope = 'cell' | 'row' | 'column'
@@ -54,7 +54,7 @@ function cellRect(editor: TiptapEditor): ReturnType<typeof selectedRect> | null 
 /**
  * Confluence's per-cell options control: a chevron in the top-right corner of
  * the cell holding the cursor, opening a menu whose one option today is
- * "Background colour".
+ * "Background color".
  *
  * Cursor-driven, unlike TableControls/TableWidthControls (which are
  * hover-driven via useHoveredTable): matching Confluence, where the cell
@@ -70,7 +70,7 @@ export function TableCellMenu({ editor }: { editor: TiptapEditor }) {
   useEffect(() => {
     const rerender = () => tick((n) => n + 1)
     // Closing on every selection move would fight the palette itself (applying
-    // a colour moves the selection); the dismissable-outside-click handler
+    // a color moves the selection); the dismissable-outside-click handler
     // owns closing instead.
     editor.on('selectionUpdate', rerender)
     editor.on('transaction', rerender)
@@ -94,7 +94,7 @@ export function TableCellMenu({ editor }: { editor: TiptapEditor }) {
    * Writes the attribute across every cell in scope in one transaction, rather
    * than moving the user's selection to a CellSelection and calling
    * setCellAttribute: the cursor should stay exactly where it was after
-   * colouring a whole row or column.
+   * coloring a whole row or column.
    */
   function applyBackground(color: string | null) {
     const { state, view } = editor
@@ -116,7 +116,7 @@ export function TableCellMenu({ editor }: { editor: TiptapEditor }) {
     setOpen(false)
   }
 
-  // The anchor cell's own colour, so the palette can ring the active swatch.
+  // The anchor cell's own color, so the palette can ring the active swatch.
   let current: string | null = null
   const found = findTable(editor.state.selection.$from)
   const anchorRect = cellRect(editor)
@@ -141,7 +141,7 @@ export function TableCellMenu({ editor }: { editor: TiptapEditor }) {
       </button>
       {open && (
         <div className="cell-menu__panel" style={{ left: rect.right - 20 - o.x, top: rect.bottom + 4 - o.y }}>
-          <p className="cell-menu__heading">Background colour</p>
+          <p className="cell-menu__heading">Background color</p>
           <div className="cell-menu__scopes">
             {SCOPES.map((s) => (
               <button
@@ -160,7 +160,7 @@ export function TableCellMenu({ editor }: { editor: TiptapEditor }) {
             current={current}
             onPick={(v) => applyBackground(v)}
             onClear={() => applyBackground(null)}
-            clearLabel="No colour"
+            clearLabel="No color"
           />
         </div>
       )}

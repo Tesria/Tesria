@@ -51,9 +51,9 @@ public sealed class LabelsBlock : IDynamicBlockKind
         else
         {
             var own = links.Where(l => l.PageId == ctx.Host.Id).Select(l => l.Name).ToHashSet();
-            var neighbours = links.Where(l => own.Contains(l.Name)).Select(l => l.PageId).ToHashSet();
+            var neighbors = links.Where(l => own.Contains(l.Name)).Select(l => l.PageId).ToHashSet();
             // Labels sharing a page with one of ours, minus our own.
-            groups = links.Where(l => neighbours.Contains(l.PageId) && !own.Contains(l.Name))
+            groups = links.Where(l => neighbors.Contains(l.PageId) && !own.Contains(l.Name))
                 .GroupBy(l => l.Name, l => l.Name);
             empty = own.Count == 0 ? "This page has no labels to relate to." : "No related labels yet.";
         }

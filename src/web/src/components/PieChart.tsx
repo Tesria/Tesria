@@ -3,7 +3,7 @@
  *
  * Extracted from the editor's chart node (dev-plan 9.3) so that the backups
  * page can draw a disk without a second implementation or a chart library.
- * A slice is a path from the centre; the whole thing is one small themed
+ * A slice is a path from the center; the whole thing is one small themed
  * SVG, which is also what lets it survive a capture-based export.
  *
  * The aria label is the numbers, not "pie chart": a chart nobody can see is
@@ -12,7 +12,7 @@
 export type PieSlice = {
   label: string
   value: number
-  /** A CSS colour, usually a theme token, so the slice follows the theme. */
+  /** A CSS color, usually a theme token, so the slice follows the theme. */
   color: string
 }
 

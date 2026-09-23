@@ -31,7 +31,7 @@ export type DynamicKind = {
 }
 
 /**
- * The client catalogue of kinds (architecture.md, "Dynamic blocks",
+ * The client catalog of kinds (architecture.md, "Dynamic blocks",
  * decision 8). The slash menu and the + menu list it; `DynamicBlockMenu`
  * renders any kind's form from its `params`. Adding a kind here is the whole
  * client-side cost of adding one.
@@ -136,7 +136,7 @@ export const DYNAMIC_KINDS: DynamicKind[] = [
   {
     kind: 'page-properties-report',
     title: 'Page properties report',
-    description: 'A table of the properties on every labelled page',
+    description: 'A table of the properties on every labeled page',
     icon: PropertiesIcon,
     keywords: ['properties', 'report', 'metadata'],
     params: [

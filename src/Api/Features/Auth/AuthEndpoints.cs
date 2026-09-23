@@ -522,7 +522,7 @@ public static class AuthEndpoints
             return Results.ValidationProblem(Error("currentPassword", "Enter your password to set up two-factor sign-in."));
         }
 
-        var (secret, uri) = totp.BeginEnrolment(user, (await siteSettings.GetAsync()).InstanceName);
+        var (secret, uri) = totp.BeginEnrollment(user, (await siteSettings.GetAsync()).InstanceName);
         await db.SaveChangesAsync();
         return Results.Ok(new TotpSetupResponse(secret, uri));
     }

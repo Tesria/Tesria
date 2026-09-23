@@ -22,7 +22,7 @@ public class SearchSnippetTests
     public void A_snippet_is_the_matching_passage_not_the_start_of_the_page()
     {
         var snippet = SearchSnippets.Window(Page, "webhooks");
-        // The old behaviour returned the page's opening line, which says
+        // The old behavior returned the page's opening line, which says
         // nothing about why the page matched.
         Assert.Contains("**Webhooks**", snippet);
         Assert.Contains("without polling", snippet);

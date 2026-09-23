@@ -305,7 +305,7 @@ SQL
 }
 
 # A job this sidecar does not know how to run. Never silently ignored and
-# never treated as a backup: an unrecognised kind means the app is newer than
+# never treated as a backup: an unrecognized kind means the app is newer than
 # this image, and the person waiting deserves to be told exactly that.
 fail_unknown_job() {
   q -v id="$1" -v kind="$2" >/dev/null 2>&1 <<'SQL' || true
@@ -476,7 +476,7 @@ SQL
 # Has somebody asked to stop? Checked at every step up to the point of no
 # return and never after it, which is what makes the answer to "can I cancel"
 # honest rather than hopeful.
-restore_cancelled() {
+restore_canceled() {
   local v
   v="$(q <<'SQL' 2>/dev/null
 SELECT CASE WHEN "RestoreCancelRequestedAt" IS NOT NULL THEN 't' ELSE 'f' END FROM "SiteSettings" LIMIT 1;

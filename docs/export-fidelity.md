@@ -12,9 +12,9 @@ Three causes, and none of them was a table bug.
    and nothing else. The page renders through about two thousand lines of
    `index.css`. There was no table rule in the export at all, so every
    exported table was a browser-default table: no column widths, no header
-   styling, no cell colours.
+   styling, no cell colors.
 2. **There were two renderers.** `ProseMirrorRenderer.cs` rendered
-   thirty-five node types a second time, in C#, copying colours out of
+   thirty-five node types a second time, in C#, copying colors out of
    `index.css` by hand (its own comments said "matching index.css"). Two
    renderers drift; that is what renderers do, and the plan was already
    paying for it: every editor change needed "a matching case in
@@ -29,7 +29,7 @@ PDF and HTML are **captured from the real page**. The sidecar loads
 `/export/pages/{id}`, a chrome-free route rendering the same
 `<Editor editable={false}>` in the same `.paper` under the same stylesheet
 the reading view uses, waits for that page to signal it has finished
-rendering, and then prints it or serialises its DOM. There is one renderer.
+rendering, and then prints it or serializes its DOM. There is one renderer.
 An export cannot drift from the page without the page breaking too.
 
 Markdown is still rendered from the document by `ProseMirrorRenderer`,
@@ -56,7 +56,7 @@ what the application's own sidebar uses.
 | Strikethrough | 1 | ✓ | ✓ | ✓ |
 | Inline code | 3 | ✓ | ✓ | ✓ |
 | Highlight | 1 | ✓ | ✓ | ✓ |
-| Text colour | 3 | ✓ | ✓ | ✓ |
+| Text color | 3 | ✓ | ✓ | ✓ |
 | Sub / superscript | 2 | ✓ | ✓ | ✓ |
 | Link | 3 | ✓ | ✓ | ✓ |
 | Text alignment | 11 | ✓ | ✓ | ✓ |
@@ -87,7 +87,7 @@ what the application's own sidebar uses.
 | Embed | 1 | ✓ | ✓ | ✓ |
 
 **Editor**: every element above round-trips through the editor's schema
-unchanged (stored, reloaded, re-serialised with no node or attribute lost),
+unchanged (stored, reloaded, re-serialized with no node or attribute lost),
 which is checked by seeding the fixture and comparing the document back. The
 fixture is the page to open when asking whether an element still works.
 
@@ -133,7 +133,7 @@ Building the fixture turned up four real ones, all fixed:
    missing that pointer numbered its next version from zero and collided
    forever. They come from the versions themselves now, which makes such a
    page repair itself on its next save.
-4. **The Markdown export did not sanitise link hrefs.** A stored
+4. **The Markdown export did not sanitize link hrefs.** A stored
    `javascript:` URL came out of an exported file as a working link. Found
    when deleting the HTML renderer left the Markdown path as the only link
    handling to look at.

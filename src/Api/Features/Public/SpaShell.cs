@@ -134,7 +134,7 @@ public sealed partial class SpaShell(IWebHostEnvironment env)
             html = HtmlTag().Replace(html, match => match.Value[..^1] + extra + ">", 1);
         }
 
-        // The stylesheet is built only from normalised #rrggbb values, so
+        // The stylesheet is built only from normalized #rrggbb values, so
         // nothing a person typed reaches it as text (decision 4).
         var css = brand.AccentStylesheet();
         if (css.Length > 0)

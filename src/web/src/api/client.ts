@@ -32,7 +32,7 @@ export type User = {
   recoveryCodesSaved: boolean
   /** Two-factor sign-in (dev-plan 3.5). */
   totpEnabled: boolean
-  /** An administrator who must enrol before administering. */
+  /** An administrator who must enroll before administering. */
   totpRequired: boolean
   /** 0 off, 1 immediate, 2 daily digest (dev-plan 4.3). */
   emailNotifications: EmailNotificationMode
@@ -126,7 +126,7 @@ export type InstanceRole = {
 }
 
 export type PermissionMatrix = {
-  catalogue: InstancePermissionDto[]
+  catalog: InstancePermissionDto[]
   /** The owner's three, shown without checkboxes. */
   reserved: InstancePermissionDto[]
   roles: InstanceRole[]
@@ -190,7 +190,7 @@ export type Space = {
   iconKind: SpaceIconKind
   /** The emoji, or an uploaded picture's content hash; null when generated. */
   iconValue: string | null
-  /** Tile colour index, or null to derive one from the key. */
+  /** Tile color index, or null to derive one from the key. */
   iconColor: number | null
   /** Which exports this space allows (dev-plan 12.3). All on unless an administrator turned some off. */
   exports: SpaceExports
@@ -925,7 +925,7 @@ export type AuditEntry = {
 
 export type Label = { id: string; name: string }
 export type LabelUsage = { id: string; name: string; pageCount: number }
-export type LabelledPage = { pageId: string; spaceId: string; spaceKey: string; title: string }
+export type LabeledPage = { pageId: string; spaceId: string; spaceKey: string; title: string }
 
 export type SearchResult = {
   pageId: string
@@ -1263,7 +1263,7 @@ export const api = {
     trash: (spaceId: string) => request<TrashedPage[]>('GET', `/api/pages/trash?spaceId=${spaceId}`),
     untrash: (id: string) => request<void>('POST', `/api/pages/${id}/restore`),
     purge: (id: string) => request<void>('DELETE', `/api/pages/${id}/purge`),
-    /** Short-lived token authorising this user to join the page's live session. */
+    /** Short-lived token authorizing this user to join the page's live session. */
     collabToken: (id: string) => request<CollabToken>('GET', `/api/pages/${id}/collab-token`),
     versions: (id: string) => request<VersionMeta[]>('GET', `/api/pages/${id}/versions`),
     version: (id: string, n: number) =>
@@ -1407,7 +1407,7 @@ export const api = {
       restore: (label: string, input: RestoreInput) =>
         request<RestoreQueued>('POST', `/api/admin/backups/${encodeURIComponent(label)}/restore`, input),
       cancelRestore: () =>
-        request<{ cancelled: boolean; message: string }>('POST', '/api/admin/backups/restore/cancel', {}),
+        request<{ canceled: boolean; message: string }>('POST', '/api/admin/backups/restore/cancel', {}),
       undoRestore: (input: RestoreInput) =>
         request<RestoreQueued>('POST', '/api/admin/backups/restore/undo', input),
       discardKept: (input: RestoreInput) =>
@@ -1536,7 +1536,7 @@ export const api = {
     remove: (pageId: string, name: string) =>
       request<void>('DELETE', `/api/pages/${pageId}/labels/${encodeURIComponent(name)}`),
     pages: (name: string) =>
-      request<LabelledPage[]>('GET', `/api/labels/${encodeURIComponent(name)}/pages`),
+      request<LabeledPage[]>('GET', `/api/labels/${encodeURIComponent(name)}/pages`),
   },
   search: (q: string, spaceId?: string) =>
     request<SearchResult[]>(

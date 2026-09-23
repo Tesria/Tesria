@@ -12,7 +12,7 @@ declare module '@tiptap/core' {
 }
 
 /**
- * LaTeX maths, inline or display.
+ * LaTeX math, inline or display.
  *
  * One node type with a `display` flag rather than two: the content, the
  * editing affordance and the export are identical, and only the rendering

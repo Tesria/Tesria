@@ -34,7 +34,7 @@ export function MermaidDiagram({ source }: { source: string }) {
   const id = useRef(`mermaid-${++counter}`)
 
   useEffect(() => {
-    let cancelled = false
+    let canceled = false
     const text = source.trim()
     if (!text) {
       setSvg(null)
@@ -44,22 +44,22 @@ export function MermaidDiagram({ source }: { source: string }) {
     loadMermaid()
       .then((mermaid) => mermaid.render(id.current, text))
       .then(({ svg }) => {
-        if (cancelled) return
+        if (canceled) return
         setSvg(svg)
         setError(null)
       })
       .catch((err: unknown) => {
-        if (cancelled) return
+        if (canceled) return
         setSvg(null)
         // Mermaid's own parse errors name the line, which is the useful part.
         setError(err instanceof Error ? err.message : 'That diagram could not be drawn.')
       })
-    return () => { cancelled = true }
+    return () => { canceled = true }
   }, [source])
 
   if (error) return <p className="mermaid__error">{error}</p>
   if (!svg) return <p className="mermaid__note">Diagram will appear here.</p>
-  // Mermaid is initialised with securityLevel 'strict', which strips scripts
+  // Mermaid is initialized with securityLevel 'strict', which strips scripts
   // and event handlers from the SVG it produces.
   return <div className="mermaid__svg" dangerouslySetInnerHTML={{ __html: svg }} />
 }

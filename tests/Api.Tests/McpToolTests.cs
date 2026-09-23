@@ -235,7 +235,7 @@ public class McpToolTests
             Assert.Contains("read-only", Error(await Call(readOnly, tool, args)));
         }
 
-        // Refused before anything ran: still one version, still labelled.
+        // Refused before anything ran: still one version, still labeled.
         var detail = await w.Alice.GetFromJsonAsync<JsonElement>($"/api/pages/{w.Open.Id}");
         Assert.Equal(1, detail.GetProperty("currentVersionNumber").GetInt32());
         var labels = await w.Alice.GetFromJsonAsync<JsonElement>($"/api/pages/{w.Open.Id}/labels");

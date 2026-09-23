@@ -51,7 +51,7 @@ public class SiteSettingsTests
         var settings = await admin.GetFromJsonAsync<SettingsDto>("/api/admin/settings");
 
         Assert.Equal("Tesria", settings!.InstanceName);
-        // Preserves the behaviour that existed before the setting did.
+        // Preserves the behavior that existed before the setting did.
         Assert.True(settings.AllowPublicRegistration);
         // Exposing content to the internet must be a deliberate act.
         Assert.False(settings.AllowPublicSpaces);

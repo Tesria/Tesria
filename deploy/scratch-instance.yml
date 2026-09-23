@@ -1,4 +1,4 @@
-# A throwaway instance for testing first-run behaviour (dev-plan 10.2).
+# A throwaway instance for testing first-run behavior (dev-plan 10.2).
 #
 #   scripts/scratch-instance.sh up      # build and start, on http://localhost:8099
 #   scripts/scratch-instance.sh down    # stop and destroy, volumes included

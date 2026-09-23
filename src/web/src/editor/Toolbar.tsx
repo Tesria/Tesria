@@ -38,13 +38,13 @@ type Collapsible = { key: string; icon: ReactNode; label: string; isActive: bool
  * (`useToolbarOverflow`) rather than pushed onto a second line.
  *
  * Shared by the single-user and collaborative editors. The upload plumbing
- * is passed through to the slash catalogue's Image item, which is what the
+ * is passed through to the slash catalog's Image item, which is what the
  * Insert menu calls.
  */
 export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
   const [linkDialogOpen, setLinkDialogOpen] = useState(false)
 
-  // The slash catalogue's Image item reads these from editor.storage; the
+  // The slash catalog's Image item reads these from editor.storage; the
   // Editor components set them, so nothing to do here beyond noting that
   // getUploadPageId/onUploadError are consumed there.
   void getUploadPageId
@@ -99,7 +99,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
 
 
   // In the order they leave the row when space runs out: the rarest
-  // formatting first, then lists, then the coloured and aligned things,
+  // formatting first, then lists, then the colored and aligned things,
   // then the common marks, bold last. On a phone everything down to
   // italic goes and the row reads "Aa · B I · link · +" beside
   // Update/Close: the four things a thumb actually reaches for.
@@ -112,12 +112,12 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
     { key: 'task', group: 'paragraph', icon: <TaskListIcon />, label: 'Task list', isActive: editor.isActive('taskList'), run: () => chain().toggleTaskList().run() },
     { key: 'ordered', group: 'paragraph', icon: <OrderedListIcon />, label: 'Ordered list', isActive: editor.isActive('orderedList'), run: () => chain().toggleOrderedList().run() },
     { key: 'bullet', group: 'paragraph', icon: <BulletListIcon />, label: 'Bullet list', isActive: editor.isActive('bulletList'), run: () => chain().toggleBulletList().run() },
-    // Alignment, colour and highlight are dropdowns on the row; in the menu
+    // Alignment, color and highlight are dropdowns on the row; in the menu
     // they become three alignment items and two inline palettes (see
     // overflowActions below). Their keys are measured like any other item.
     { key: 'align', group: 'paragraph', icon: <AlignLeftIcon />, label: 'Alignment', isActive: false, run: () => {} },
-    { key: 'textcolor', group: 'colour', icon: <TextColorIcon />, label: 'Text colour', isActive: editor.isActive('textColor'), run: () => {} },
-    { key: 'highlight', group: 'colour', icon: <HighlightIcon />, label: 'Highlight', isActive: editor.isActive('highlight'), run: () => {} },
+    { key: 'textcolor', group: 'color', icon: <TextColorIcon />, label: 'Text color', isActive: editor.isActive('textColor'), run: () => {} },
+    { key: 'highlight', group: 'color', icon: <HighlightIcon />, label: 'Highlight', isActive: editor.isActive('highlight'), run: () => {} },
     { key: 'code', group: 'format', icon: <InlineCodeIcon />, label: 'Inline code', isActive: editor.isActive('code'), run: () => chain().toggleCode().run() },
     { key: 'strike', group: 'format', icon: <span className="tb-glyph tb-strike">S</span>, label: 'Strikethrough', isActive: editor.isActive('strike'), run: () => chain().toggleStrike().run() },
     { key: 'underline', group: 'format', icon: <span className="tb-glyph tb-underline">U</span>, label: 'Underline', isActive: editor.isActive('underline'), run: () => chain().toggleUnderline().run() },
@@ -151,13 +151,13 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
       current={isTextColor(editor.getAttributes('textColor').color) ? editor.getAttributes('textColor').color : null}
       onPick={(color) => { if (isTextColor(color)) chain().setTextColor(color).run(); close() }}
       onClear={() => { chain().unsetTextColor().run(); close() }}
-      clearLabel="Default colour"
+      clearLabel="Default color"
     />
   )
 
   // What the text menu shows beneath the block styles for whatever left the
-  // row. Alignment expands to its three choices; the two colour controls
-  // carry their palette with them so a phone still has every colour. The
+  // row. Alignment expands to its three choices; the two color controls
+  // carry their palette with them so a phone still has every color. The
   // "+" menu never receives any of this: it is for things to insert.
   const overflowActions: OverflowAction[] = collapsible
     .filter((c) => overflowed.has(c.key))
@@ -212,12 +212,12 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
       {sep('sep-marks', ['bold', 'italic', 'underline', 'strike', 'code', 'highlight', 'textcolor'])}
       {['bold', 'italic', 'underline', 'strike', 'code'].map(item)}
       <span data-tb-item="highlight" className={show('highlight') ? 'tb-item' : 'tb-item tb-item--hidden'}>
-        <ToolbarPopover icon={<HighlightIcon />} title="Highlight colour" isActive={editor.isActive('highlight')}>
+        <ToolbarPopover icon={<HighlightIcon />} title="Highlight color" isActive={editor.isActive('highlight')}>
           {highlightPalette}
         </ToolbarPopover>
       </span>
       <span data-tb-item="textcolor" className={show('textcolor') ? 'tb-item' : 'tb-item tb-item--hidden'}>
-        <ToolbarPopover icon={<TextColorIcon />} title="Text colour" isActive={editor.isActive('textColor')}>
+        <ToolbarPopover icon={<TextColorIcon />} title="Text color" isActive={editor.isActive('textColor')}>
           {textColorPalette}
         </ToolbarPopover>
       </span>

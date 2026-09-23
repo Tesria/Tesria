@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Tesria.Api.Features.Blocks.Kinds;
 
 /// <summary>
-/// Page properties report: one row per labelled page, one column per
+/// Page properties report: one row per labeled page, one column per
 /// property key found on those pages. The keys come from the pages
 /// themselves (the union of every visible page's first-column keys, in the
 /// order they are first seen) so adding a property to a page adds a column
@@ -24,7 +24,7 @@ public sealed class PagePropertiesReportBlock : IDynamicBlockKind
         if (wanted.Count == 0) throw new BlockParamException("labels", "Name at least one label.");
         var limit = ctx.Int("limit", 25, 1, 100);
 
-        var labelled = await ctx.Db.PageLabels.AsNoTracking()
+        var labeled = await ctx.Db.PageLabels.AsNoTracking()
             .Where(pl => wanted.Contains(pl.Label!.Name))
             .Join(ctx.Db.Pages, pl => pl.PageId, p => p.Id, (pl, p) => p)
             .Where(p => p.Status == PageStatus.Current)
@@ -33,7 +33,7 @@ public sealed class PagePropertiesReportBlock : IDynamicBlockKind
             .OrderBy(p => p.Title)
             .ToListAsync(ct);
 
-        var visible = await ctx.VisibleAsync(labelled, p => p.Id, limit, ct);
+        var visible = await ctx.VisibleAsync(labeled, p => p.Id, limit, ct);
 
         var columns = new List<BlockColumn> { new("page", "Page") };
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -56,6 +56,6 @@ public sealed class PagePropertiesReportBlock : IDynamicBlockKind
         }
 
         return BlockResult.Table(Kind, columns, items,
-            empty: "No labelled page has a page-properties table yet.");
+            empty: "No labeled page has a page-properties table yet.");
     }
 }

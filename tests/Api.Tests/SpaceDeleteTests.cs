@@ -238,7 +238,7 @@ public class SpaceDeleteTests
         using var _f = factory;
         await CreateSpaceAsync(owner, "SSO");
 
-        // Enrol two-factor through the real endpoints, then take the password
+        // Enroll two-factor through the real endpoints, then take the password
         // away: what is left is the shape OIDC provisioning leaves an account
         // in, where a code is the only answer available.
         var setup = await (await admin.PostAsJsonAsync("/api/auth/me/totp/setup", new { }))
@@ -252,7 +252,7 @@ public class SpaceDeleteTests
             return await db.SaveChangesAsync();
         });
 
-        // The next step, not the one enrolment just consumed: a code that
+        // The next step, not the one enrollment just consumed: a code that
         // matches a time step already used is refused, which is the point of it.
         var res = await DeleteAsync(admin, "SSO", password: null, code: CodeFor(setup.Secret, 1));
         Assert.Equal(HttpStatusCode.NoContent, res.StatusCode);

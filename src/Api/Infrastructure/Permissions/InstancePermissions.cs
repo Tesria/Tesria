@@ -22,7 +22,7 @@ public sealed record InstancePermission(
     PermissionScope Scope, UserRole DefaultFrom);
 
 /// <summary>
-/// The catalogue of instance rights (dev-plan 11.1).
+/// The catalog of instance rights (dev-plan 11.1).
 ///
 /// Code, not data: which rights exist and what they are called is a decision
 /// with a test beside it, while which role holds which right is configuration
@@ -91,7 +91,7 @@ public static class InstancePermissions
 
     /// <summary>
     /// The instance's look (dev-plan 13.1): brand name, logos, favicon,
-    /// colours and theme locks. Owner by default, grantable. Separate from
+    /// colors and theme locks. Owner by default, grantable. Separate from
     /// <see cref="SettingsInstance"/> on the owner's instruction: the
     /// instance name and the branding are two different things.
     /// </summary>
@@ -192,7 +192,7 @@ public static class InstancePermissions
             "What this instance is called, and the address links in email use.",
             PermissionScope.Administration, UserRole.Admin),
         new(SettingsBranding, "Instance", "Change the branding",
-            "The brand name, logo, favicon and colours everyone sees, and whether people may choose their own theme.",
+            "The brand name, logo, favicon and colors everyone sees, and whether people may choose their own theme.",
             PermissionScope.Administration, UserRole.Owner),
         new(SettingsRegistration, "Instance", "Change registration",
             "Whether anyone may create an account, or only invited people.",
@@ -231,7 +231,7 @@ public static class InstancePermissions
     private static readonly HashSet<string> Known = [.. All.Select(p => p.Key)];
     private static readonly HashSet<string> ReservedKeys = [.. Reserved.Select(p => p.Key)];
 
-    /// <summary>A key the catalogue still defines. Rows for anything else are ignored.</summary>
+    /// <summary>A key the catalog still defines. Rows for anything else are ignored.</summary>
     public static bool IsAssignable(string key) => Known.Contains(key);
 
     public static bool IsReserved(string key) => ReservedKeys.Contains(key);

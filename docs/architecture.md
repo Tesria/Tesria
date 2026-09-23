@@ -91,7 +91,7 @@ script in `index.html`, computed at startup from the `wwwroot/index.html`
 this process serves, so a rebuild that changes the script changes the hash
 with it, and `'unsafe-inline'` is never needed for scripts. `style-src`
 does allow `'unsafe-inline'`: the editor writes inline `style` attributes
-(cell colours, alignment) and React sets them directly; blocking inline
+(cell colors, alignment) and React sets them directly; blocking inline
 styles would break content, and style injection is a far smaller hazard
 than script injection. `connect-src` names the collaboration websocket
 origin explicitly per request (`wss://<host>`) rather than relying on every
@@ -135,12 +135,12 @@ not stop a page purge.
 `PrevHash` and `Hash = SHA-256(PrevHash ‖ canonical row)`. Linking happens
 in `AppDbContext.SaveChanges[Async]` (the one place every write passes
 through, so no code path can add an unchained row) under a
-transaction-scoped Postgres advisory lock so concurrent appenders serialise
+transaction-scoped Postgres advisory lock so concurrent appenders serialize
 on the tail. A unique index on `Sequence` makes any race that got past the
 lock fail rather than fork.
 
 Two round-trip hazards shaped the canonical form. `MetadataJson` is `jsonb`,
-and Postgres re-orders keys, strips whitespace and normalises numbers on
+and Postgres re-orders keys, strips whitespace and normalizes numbers on
 the way in, so the hash is over a canonical form (keys sorted, compact,
 numbers via `decimal`) computed identically at write and at verify.
 `CreatedAt` is truncated to milliseconds before hashing because Postgres
@@ -303,7 +303,7 @@ down: that is a monitoring concern, outside the app.
 user's behalf (webhooks now, link previews later) goes through
 `EgressGuard`. The attack is an editor pointing a webhook at
 `http://169.254.169.254/` or `http://db:5432/`, which the server can reach
-and the editor cannot. The defence holds at two moments, because a
+and the editor cannot. The defense holds at two moments, because a
 hostname can resolve publicly when saved and privately when delivered
 (DNS rebinding): `ValidateAsync` checks the URL (http/https only, no
 credentials, no `localhost`/`.local`/`.internal`) and *every* address it
@@ -316,7 +316,7 @@ server); the 3.3 detector still records the attempt. A refused delivery is
 logged and not retried: it is not transient.
 
 **Attachments.** The declared content type is a suggestion. `ContentTypes.
-Resolve` lets the bytes win where a signature is recognised (PNG, JPEG,
+Resolve` lets the bytes win where a signature is recognized (PNG, JPEG,
 GIF, WebP, PDF), otherwise keeps the declared type unless it is something
 a browser might *execute* (HTML, XHTML, SVG, XML, scripts) or the bytes
 look like markup, in which case the file is stored and served as
@@ -364,7 +364,7 @@ direction, as with the stamp.
 **Two-factor (TOTP).** RFC 6238 with the parameters every authenticator
 supports: 20-byte secret, SHA-1, 30-second steps, six digits. Secrets rest
 under Data Protection (keys in the database, so a backup restores them
-and a dump alone does not read them). Enrolment is scan → type a code →
+and a dump alone does not read them). Enrollment is scan → type a code →
 on; the pending secret is not live until a code proves the device has it.
 Enabling rotates the security stamp so every *other* session must pass
 the new factor; the enrolling one is re-issued in place. Disabling needs
@@ -383,7 +383,7 @@ shoulder is worthless once typed.
 `RequireTotpForAdmins` is enforced in `AdminRequirementHandler`: an
 un-enrolled administrator gets 403 on every admin route at once, `me`
 reports `totpRequired`, the admin shell says why and links to the
-profile; the enrolment endpoints live under `/auth/me`, outside the
+profile; the enrollment endpoints live under `/auth/me`, outside the
 policy, so the way out is always open. Such an admin cannot turn TOTP
 back off while the rule stands.
 
@@ -392,7 +392,7 @@ flipping the public-spaces switch, purging a page, removing a block)
 calls `AuthEndpoints.RequireSudo`, which passes only if the session
 authenticated within `Auth:SudoMinutes` (5; shorter than the fresh-login
 window on purpose). Otherwise the endpoint returns 403 with
-`code: reauth_required`. The SPA's `request()` recognises that code, opens
+`code: reauth_required`. The SPA's `request()` recognizes that code, opens
 the re-authentication dialog (password, or a code for enrolled accounts),
 calls `/auth/reauth`, which re-issues the cookie with a fresh `auth_time`
 on the *same* session, and retries the original request once. Several
@@ -484,7 +484,7 @@ therefore lands on sign-in, which is the truthful answer: nothing is
 public. The login page offers "Browse what is public" only when there is
 something to browse, and hides the sign-up link when registration is
 closed (an `?invite=` token shows it regardless, because the invite is its
-own authorisation).
+own authorization).
 
 This is also the one endpoint that tells an anonymous caller anything
 about the instance, which is why it is four fields and a test asserts that
@@ -535,10 +535,10 @@ matters later, that is the option.
 
 Three columns on `Space`: `IconKind` (`None | Emoji | Image`), `IconValue`
 and `IconColor`. `None` is not "no icon": it is the generated default, the
-key's first letter on a tile coloured by a stable hash of the key, so every
+key's first letter on a tile colored by a stable hash of the key, so every
 space has an icon from the moment it is created with no storage and no
 round trip. That is the same reasoning as generated avatars, and it reuses
-their twelve colours: identical job, and two palettes doing one job would
+their twelve colors: identical job, and two palettes doing one job would
 drift apart.
 
 `IconValue` carries the emoji for `Emoji` and the stored picture's content
@@ -602,21 +602,21 @@ and popups; never top-level navigation.
 
 **Link previews** (`LinkPreviewService`) fetch Open Graph tags through the
 3.4 egress guard and never around it, cap the response at 256KB, and cache
-per normalised URL: a week for a success, an hour for a failure, so a dead
+per normalized URL: a week for a success, an hour for a failure, so a dead
 link is not an outbound request on every page view. An `og:image` is used
 only when it is an absolute https URL. Unfurling needs an account (it makes
 an outbound request); resolving does not (an embed on a public page is part
 of the page).
 
 **Gotcha: a new settings column needs its default on the migration, not
-just on the property.** `SiteSettings.EmbedAllowlist`'s C# initialiser only
+just on the property.** `SiteSettings.EmbedAllowlist`'s C# initializer only
 runs when a *new* settings object is constructed. On an instance that
 already has its singleton row, an `AddColumn` with `defaultValue: ""`
 silently turned embeds off on upgrade. Every test builds a fresh database
 and so never takes that path; it was found by upgrading a running instance.
 The same trap applies to every future setting.
 
-### Technical content: diagrams, maths, charts (dev-plan Phase 7 Wave F)
+### Technical content: diagrams, math, charts (dev-plan Phase 7 Wave F)
 
 - **Mermaid is a code-block language, not a node.** Choosing it switches
   `CodeBlockView` from highlighting to drawing. The source therefore stays
@@ -643,7 +643,7 @@ The same trap applies to every future setting.
 - **Exports stay readable outside the app, and reach nothing.** An embed
   and a smart link become plain links (never an iframe; a `javascript:` URL
   becomes no link at all: document JSON is stored as the client sent it).
-  Maths exports as `$…$`. A chart names the table it charts.
+  Math exports as `$…$`. A chart names the table it charts.
   A page with a Mermaid diagram carries the renderer **inlined**: the web
   build produces a single-file bundle (`npm run build:mermaid` →
   `wwwroot/export/mermaid-standalone.js`, gitignored, ~3MB) and
@@ -698,7 +698,7 @@ exactly what that person can do, and nothing more.
    under `/api` gets `403 { code: "read_only_token" }`) **and checked by
    each MCP write tool** (the transport is all POST, so the middleware
    excludes `/mcp` and the tools ask `McpAccess.RequireWrite`). A scope
-   only the MCP server honoured would not be a scope.
+   only the MCP server honored would not be a scope.
 
 4. **Markdown is the content contract.** Reads return the page as
    Markdown (the *same* Markdown the export produces, with dynamic blocks
@@ -830,7 +830,7 @@ did: a query.
 
 1. **One node: `dynamicBlock { kind, params }`.** An atom block with no
    content (`Node.create({ atom: true })`, `src/web/src/editor/dynamicBlock.ts`).
-   `kind` is a string from the catalogue; `params` is a flat
+   `kind` is a string from the catalog; `params` is a flat
    `Record<string, string>`: flat because it travels as a query string,
    strings because the server, not the document, decides what a value
    means. **Nothing the query returns is ever written into the document.**
@@ -915,12 +915,12 @@ did: a query.
    the block renders a quiet placeholder, which is right: history is not
    live.
 
-8. **Params are edited by one generic form.** The client catalogue
+8. **Params are edited by one generic form.** The client catalog
    (`dynamicBlockKinds.ts`) declares each kind's params as a schema (
    `{ key, label, type: 'select' | 'number' | 'text' | 'labels' | 'page', options?, default }`)
   and `DynamicBlockMenu` renders whichever kind is selected from that
    schema. A new kind gets a form by declaring its params; nobody writes a
-   menu. The slash menu and the **+** menu list the catalogue, so a kind
+   menu. The slash menu and the **+** menu list the catalog, so a kind
    added there appears in both. Client defaults mirror server defaults;
    the server is authoritative and validates.
 
@@ -958,11 +958,11 @@ content. `BlockDocuments` holds the three content readers they share.
 | `excerpt-include` | document | `page` (required) | The content of the first `excerpt` node on that page (a static `block+` container node, added with this kind, rendered as a subtle frame in the editor and as nothing in export). Same visibility rule as include-page. |
 | `page-properties-report` | table | `labels` (required), `limit=25` | Pages with the label whose content has a `pageProperties` node (a static container around a two-column table, added with this kind); columns are the union of first-column keys, cells the second column's text. |
 | `labels` | list | `mode=page` (page\|popular\|related), `limit=20` | `page`: the host's labels; `popular`: labels by visible-page count in the space; `related`: labels co-occurring with the host's. Counts over visible pages only. |
-| `task-report` | table | `scope=tree` (tree\|space\|all), `assignee=any` (any\|me\|user id), `status=open` (open\|done\|all), `limit=25` | `taskItem` nodes with the Wave C `assigneeId` attr, walked from candidate pages' current content in-process after the visibility filter. Fine at wiki scale; note in the kind that a jsonb containment prefilter (`@> '{"type":"taskItem"}'`) is the first optimisation if it ever is not. |
+| `task-report` | table | `scope=tree` (tree\|space\|all), `assignee=any` (any\|me\|user id), `status=open` (open\|done\|all), `limit=25` | `taskItem` nodes with the Wave C `assigneeId` attr, walked from candidate pages' current content in-process after the visibility filter. Fine at wiki scale; note in the kind that a jsonb containment prefilter (`@> '{"type":"taskItem"}'`) is the first optimization if it ever is not. |
 | `page-tree` | list | `root=host` (host\|space), `depth=3` (1–6) | The visible tree under the host or the space, same filtering as `/api/pages/tree`. |
 
 **Naming.** Kinds are kebab-case in URLs and documents; the client
-catalogue's display titles are Confluence's ("Children display",
+catalog's display titles are Confluence's ("Children display",
 "Recently updated"…) so a Confluence user finds what they expect.
 
 ### Roles and administrators (spec, dev-plan 0.1, designed 2026-09-08)
@@ -984,7 +984,7 @@ migration of a bool.
 arrives via `/register` or via OIDC provisioning, is created as `Admin`.
 Registration runs the "is the table empty" check and the insert inside one
 serializable transaction so two racing first registrations cannot both win
-(SQLite, used by tests, serialises writes anyway). The migration that adds
+(SQLite, used by tests, serializes writes anyway). The migration that adds
 the column also **promotes the earliest-created user** on existing installs,
 so no instance is left with content and nobody able to administer it. On
 this dev instance that is the owner's account, not the docs bot.
@@ -1025,7 +1025,7 @@ The tier above is the ordering. What a person may actually *do* is their
 user and administrator tiers (11.2), and `User.RoleId` points at one whose
 tier always matches `User.Role`.
 
-- **The catalogue is code** (`Infrastructure/Permissions/InstancePermissions.cs`):
+- **The catalog is code** (`Infrastructure/Permissions/InstancePermissions.cs`):
   29 assignable rights, each with a key, an area, a label, a description and
   the lowest tier that holds it by default. Three more are **reserved to the
   owner** and never stored as grants: changing tiers, transferring
@@ -1170,25 +1170,25 @@ Every user has an avatar from the moment they register, with nothing stored:
 `Avatar` renders an inline SVG of their initials on one of twelve backgrounds,
 chosen by an FNV-1a hash of their id. Not a sum of char codes: user ids are
 hex GUIDs, which share an alphabet and a length, exactly the case where a weak
-hash clusters. The twelve colours all carry white text at 4.5:1 or better
+hash clusters. The twelve colors all carry white text at 4.5:1 or better
 (measured), and all are dark enough to read on both the light and dark page
 grounds, so a generated avatar needs no per-theme treatment.
 
 `User.AvatarVariant` records an explicit pick from the twelve; null means
-"derive it from the id". It is stored as an index rather than a colour so the
+"derive it from the id". It is stored as an index rather than a color so the
 set can be restyled later without rewriting rows, and it survives an upload,
-so removing a picture returns to the colour the user chose rather than to the
+so removing a picture returns to the color the user chose rather than to the
 derived one.
 
 An uploaded picture always wins over a variant. Uploads are cropped to a
 square in the browser before being sent, using `createImageBitmap`, which
-decodes off the main thread and honours EXIF orientation, without it a
+decodes off the main thread and honors EXIF orientation, without it a
 portrait phone photo arrives sideways. The crop is not cosmetic: the server
-centre-crops too (0.4), so cropping here is what makes the stored result match
+center-crops too (0.4), so cropping here is what makes the stored result match
 what the user was shown. It is also downscaled to 512px first, so a 12MP phone
 photo is not uploaded whole to produce a 256px thumbnail.
 
-`avatarIdentity.ts` holds the colours and helpers, separate from `Avatar.tsx`,
+`avatarIdentity.ts` holds the colors and helpers, separate from `Avatar.tsx`,
 which exports only the component: React Fast Refresh needs component-only
 modules, and the linter enforces it.
 
@@ -1212,7 +1212,7 @@ cookie's next expiry.
 Changing a password rotates it, which is the point of changing a password you
 believe someone else has. The session that made the change is re-issued with
 the new stamp, so the person doing it is not signed out along with everyone
-else. Suspension (dev-plan 2.2), admin force-logout (3.3) and 2FA enrolment
+else. Suspension (dev-plan 2.2), admin force-logout (3.3) and 2FA enrollment
 (3.5) all reuse this one mechanism rather than adding their own.
 
 The same validation also rejects a cookie whose account has become
@@ -1336,13 +1336,13 @@ ever served.
 
 **SVG is rejected outright**, by sniffing the leading bytes rather than
 trusting the declared content type, which is attacker-controlled, so an SVG
-labelled `image/png` must not get through. It is a script-bearing document
+labeled `image/png` must not get through. It is a script-bearing document
 format and there is no reason to accept one for a 256px square. The prebuilt
 avatars in dev-plan 1.2 are SVG, but this application generates those; it
 never accepts one.
 
 **Library choice: SkiaSharp (MIT).** ImageSharp 3.x and later moved to the Six
-Labors Split Licence, which would complicate the Apache 2.0 release dev-plan
+Labors Split License, which would complicate the Apache 2.0 release dev-plan
 8.2 intends; SkiaSharp and its Linux native assets are both MIT. The runtime
 container is glibc (Ubuntu 24.04, glibc 2.39) and the package ships a matching
 `linux-arm64` build: verified in the container, not just on the build host,
@@ -1372,13 +1372,13 @@ browser can produce at all.
 `/export/pages/{id}`, a route rendering the same `<Editor editable={false}>`
 in the same `.paper` under the same `index.css` as the reading view, with no
 topbar, sidebar or comments. It waits for the page's own ready signal, and
-then prints it or serialises its DOM. There is one renderer, and an export cannot
+then prints it or serializes its DOM. There is one renderer, and an export cannot
 drift from the page without the page breaking too. Markdown is still rendered
 by `ProseMirrorRenderer`, because it is a genuinely different target.
 
 **The ready signal** (`web/src/export/ready.ts`) is two conditions, both
 required: nothing known to be outstanding (a Mermaid diagram that has neither
-drawn nor failed, a dynamic block still loading, maths not yet typeset, an
+drawn nor failed, a dynamic block still loading, math not yet typeset, an
 image in flight, a font not loaded), and then a quiet period with no DOM
 mutations at all. The second condition covers work this file has never heard
 of, so a node view added later is handled without anyone remembering to teach
@@ -1445,7 +1445,7 @@ page. A PDF gets none of this: it is paper.
 The only JavaScript in the output is the theme script, which applies the
 stored theme and accent before first paint and then drives the appearance
 menu (three modes, six accents) through `data-theme-*` hooks, because the
-React component's own behaviour cannot survive a capture that strips scripts.
+React component's own behavior cannot survive a capture that strips scripts.
 The wordmark is the instance name, which is the half of instance branding
 that already exists; a replaceable mark is the other half, and
 `SiteChrome.Brand` is where it will arrive.
@@ -1459,7 +1459,7 @@ cap, because the sheet is the width.
 
 Two more things the export draws differently from the app, both on purpose. The
 space's generated tile is the theme accent rather than one of the twelve
-per-space colours, because those exist to tell spaces apart in a list and an
+per-space colors, because those exist to tell spaces apart in a list and an
 export is one space; the app is untouched. And the PDF footer's page
 numbering is a single flex item, because as separate items `space-between`
 spread "1 of 4" across the whole page.
@@ -1564,13 +1564,13 @@ library.
 
 ## Instance branding (dev-plan 13.1)
 
-An owner can give the instance its own name, logo, favicon and colours.
+An owner can give the instance its own name, logo, favicon and colors.
 Every default reproduces Tesria, and one projection, `BrandView.From`, is
 what the SPA, the page shell and the exports all read, so they cannot
 disagree about what "branded" means.
 
 **The branding arrives before any script runs.** A forced theme that arrived
-with the JavaScript bundle would be a flash of the wrong colours on every
+with the JavaScript bundle would be a flash of the wrong colors on every
 load, so the server writes the branding into the page it sends. Every
 application route, `/` included, is served by one endpoint
 (`Features/Public/SpaShell.cs`), which replaced the static-files fallback.
@@ -1580,21 +1580,21 @@ block and attributes on `<html>`: `data-theme-lock`, `data-accent-lock`,
 
 **The inline script never changes per instance.** The CSP allows the theme
 bootstrap in `index.html` by its SHA-256, computed at startup from the file
-on disk. Writing a colour or a lock into that script would change its hash
+on disk. Writing a color or a lock into that script would change its hash
 and silently stop it running. So the script reads the attributes instead,
 and a test renders a fully branded shell from the real `index.html` and
 compares the script byte for byte.
 
-**A custom accent is two colours and a derivation.** `AccentColors` works in
+**A custom accent is two colors and a derivation.** `AccentColors` works in
 OKLCH, where "the same hue, lighter" is a straight line. It derives the hover
-colour, two tints, a border tint, and the text colour on buttons (chosen by
-measured contrast) from one colour per mode, and checks the WCAG 4.5:1 rule
-the six built-in accents meet. Colours are stored only as normalised
+color, two tints, a border tint, and the text color on buttons (chosen by
+measured contrast) from one color per mode, and checks the WCAG 4.5:1 rule
+the six built-in accents meet. Colors are stored only as normalized
 `#rrggbb`, because they are written into a stylesheet on every page. The
-owner may keep a colour that fails the check. The admin page offers the
+owner may keep a color that fails the check. The admin page offers the
 nearest passing shade, and the audit entry records the override.
 
-**An uploaded SVG has two defences, and either would do alone.**
+**An uploaded SVG has two defenses, and either would do alone.**
 `SvgSanitizer` rebuilds the file from the parse, keeping only allowlisted
 elements and attributes, and `url()` only when it points inside the file. It
 refuses DTDs, entities and anything unparseable. Independently, a branding
@@ -1604,7 +1604,7 @@ opening its URL directly is inert too. Exported files, which have no CSP at
 all, rely on the `<img>` rule, which is why `SiteChrome` never inlines a
 logo. Raster images are re-encoded by SkiaSharp, keeping their shape within
 1024×256, as lossless WebP. Favicons become 32, 180 and 512 pixel PNGs, drawn
-from a sanitised SVG by Svg.Skia in this process.
+from a sanitized SVG by Svg.Skia in this process.
 
 **Names.** The brand name is its own field. The instance name keeps the
 places that identify the installation: the tab title (`Instance - Space /
@@ -1680,9 +1680,9 @@ inside the `db` container: a sidecar would need the Docker socket, which no
 sidecar gets. So `deploy/db/entrypoint.sh` supervises its own database. It
 starts the image's entrypoint as a child, forwards signals to it, and polls one
 directory on the `pgsocket` volume, which `db` and the `pgbackrest` sidecar
-share and nothing else does. **That volume is the authorisation model**: the
+share and nothing else does. **That volume is the authorization model**: the
 web tier has no mount and no path to that file, so a restore can only be asked
-for by the sidecar that validated the job. Everything needing judgement stays
+for by the sidecar that validated the job. Everything needing judgment stays
 in the sidecar (bounds, safety backup, WAL switch, carry-across); the
 supervisor stops, runs what it was handed, and starts again, ignoring a request
 it has already handled or one older than ten minutes so a stale file cannot
@@ -1753,7 +1753,7 @@ comment ids into the content, and where the pack refers to something the
 target does not have it keeps what a person wrote and drops the
 machine-readable half: a mention loses its `userId` and keeps its label, a
 task keeps its assignee's name, a comment mark with no comment behind it is
-removed rather than left colouring text that answers nothing. A link to a page
+removed rather than left coloring text that answers nothing. A link to a page
 that is not in the pack is left exactly as it was, which is the opposite of
 the site export's rule, because on a re-import into the same instance it still
 resolves and a link that 404s honestly beats one quietly redirected.
@@ -1894,7 +1894,7 @@ dark)` guarded by `:root:not([data-theme="light"])`, once under
 `:root[data-theme="dark"]`, which is what lets an explicit choice win in
 both directions.
 
-The accent colour is a second, independent axis on the same mechanism: a
+The accent color is a second, independent axis on the same mechanism: a
 `data-accent` attribute driving every `--primary*` token. Each accent is
 defined twice (light and dark), never derived: the contrast requirement pulls
 the two in opposite directions. Note that `:root[data-accent="x"]` ties on
@@ -1908,11 +1908,11 @@ stored preference before first paint; a deferred or module script runs too
 late and the page visibly flips. **The storage key and attribute logic are
 duplicated between that script and `theme.ts`: change them together.**
 
-Every colour resolves through a custom property. `--surface` (raised: cards,
+Every color resolves through a custom property. `--surface` (raised: cards,
 `.paper`, popovers, the topbar, inputs) is separate from `--bg` specifically
 because they are identical in light mode and must differ in dark. Two
 deliberate exceptions: the code block keeps its own dark palette in both
-themes, and content colours the *author* chose (a `tableCell`'s
+themes, and content colors the *author* chose (a `tableCell`'s
 `backgroundColor` attr, a `highlight` mark's `color`) are stored in the
 document and cannot be re-themed without discarding that choice, so dark mode
 pins dark ink on those elements rather than restyling them. Panel icons are
@@ -1973,10 +1973,10 @@ ProseMirror JSON in `PageVersion.ContentJson`.
   the natural touch equivalent.
 - **Table cell backgrounds** (`TableCellMenu.tsx`): Confluence's per-cell
   chevron, in the top-right of whichever cell holds the cursor, opening a
-  "Background colour" palette. Cursor-driven rather than hover-driven, so
+  "Background color" palette. Cursor-driven rather than hover-driven, so
   deliberately *not* sharing `useHoveredTable` with the two controls above:
   the menu belongs to the cell being edited, not whichever one the mouse
-  passed over. The colour is a `backgroundColor` attr on both `tableCell` and
+  passed over. The color is a `backgroundColor` attr on both `tableCell` and
   `tableHeader` (`extensions.ts`, via a shared mixin, same
   `.extend()`-and-disable-the-stock-one pattern as `Table`), and unlike the
   `table` node's `width` a plain inline `style` is safe here: `TableView`
@@ -1989,7 +1989,7 @@ ProseMirror JSON in `PageVersion.ContentJson`.
   is exactly ADF's own set (`info`/`note`/`warning`/`success`/`error`);
   Confluence's legacy Info/Tip/Note/Warning macros map onto it, with the old
   Tip macro being today's `success`, so no sixth type is needed. The
-  type-specific colour and icon live in `index.css` (`.panel--*`) keyed off
+  type-specific color and icon live in `index.css` (`.panel--*`) keyed off
   the rendered `data-panel-type`, which keeps the icon a `::before`
   pseudo-element, ProseMirror owns this node's children and would fight an
   injected element, and means read-only rendering gets the icon with no node
@@ -2002,7 +2002,7 @@ ProseMirror JSON in `PageVersion.ContentJson`.
     heading's text (lower-case, non-alphanumerics collapsed to hyphens,
     duplicates suffixed `-2`) and applies the result as a ProseMirror *node
     decoration*, so it is recomputed from the document on every change and
-    never serialised into the saved JSON. Storing ids instead would survive
+    never serialized into the saved JSON. Storing ids instead would survive
     a rewording but would also duplicate on paste, drift between Yjs
     collaborators and need a migration for every existing page. The price of
     deriving is that the rule exists twice: here and in
@@ -2021,13 +2021,13 @@ ProseMirror JSON in `PageVersion.ContentJson`.
     expand or another column, with no per-node guards anywhere. Column
     widths are percentages applied as flex-grow weights (`--column-width`),
     so the browser shares out the gap and the numbers need not total 100.
-    **Gotcha:** a section's own width (centred/wide/full) reuses the page's
+    **Gotcha:** a section's own width (centered/wide/full) reuses the page's
     `--page-pad` breakout, which is also what a full-width *table* uses, so
     that table rule is scoped to direct children of the content root
     (`.editor__content > .ProseMirror > …`), or a full-width table inside a
     column would bleed out of the column instead of filling it.
   - **Status and date never let document data reach a style attribute.** A
-    status stores a colour *name* out of a fixed set (the palette lives in
+    status stores a color *name* out of a fixed set (the palette lives in
     `index.css` and, inlined, in the renderer); a date stores an ISO
     calendar date and is formatted per reader. Dates are parsed by hand
     rather than with `new Date(iso)`, which reads a bare date as UTC
@@ -2063,14 +2063,14 @@ ProseMirror JSON in `PageVersion.ContentJson`.
   Everything else about them is shared (`editor/suggest/`): positioning,
   scroll tracking and outside-click dismissal all come from Suggestion's own
   managed `mount()` API.
-- **Text colour stores a name, highlight stores a hex** (dev-plan Phase 7
+- **Text color stores a name, highlight stores a hex** (dev-plan Phase 7
   Wave B). The asymmetry is deliberate. A highlight is a *background*: dark
   mode keeps the text on it readable by pinning the ink (`[data-theme="dark"]
   … mark[style*="background-color"]` in `index.css`), so the background
-  itself can be any hex and survive export with no stylesheet. Coloured
+  itself can be any hex and survive export with no stylesheet. Colored
   *text* has no equivalent escape: a hex dark enough to read on white is
-  invisible on the dark background, and CSS cannot lighten a colour it
-  cannot see. So `textColorMark.ts` stores one of eight colour *names*,
+  invisible on the dark background, and CSS cannot lighten a color it
+  cannot see. So `textColorMark.ts` stores one of eight color *names*,
   `index.css` re-points them per theme (`--text-color-*`), and the export
   renderer inlines the light-theme value. The same property that makes it
   theme-aware also makes it injection-proof: no value from the document ever
@@ -2090,7 +2090,7 @@ ProseMirror JSON in `PageVersion.ContentJson`.
   therefore needs its own background, border and padding, and has to undo
   `.toolbar`'s `nowrap`/`width: 100%`. Shipping one without that makes a
   menu you can see the page through.
-- **Colour palettes** (`palette.ts`, `ColorPalette.tsx`): the swatch grid is
+- **Color palettes** (`palette.ts`, `ColorPalette.tsx`): the swatch grid is
   shared by the highlight dropdown and the cell-background menu; only the
   tiers differ (highlight drops the bold tier, which doesn't hold `--text`
   legibly). Values are Atlassian's own light/medium/bold palette, matching
@@ -2100,7 +2100,7 @@ ProseMirror JSON in `PageVersion.ContentJson`.
   survive export and read-only rendering with no stylesheet. The export
   renderer whitelists them to plain hex before they reach a `style`
   attribute (`ProseMirrorRenderer.IsSafeCssColor`), since document JSON is
-  stored as given and an unvalidated colour would be CSS injection into
+  stored as given and an unvalidated color would be CSS injection into
   exported HTML.
 - **`ToolbarPopover.tsx`** is the always-visible popover trigger (highlight
   palette, panel picker). Not to be confused with `ToolbarDropdown.tsx`,
@@ -2215,7 +2215,7 @@ A small **Node + Hocuspocus/Yjs** sidecar provides simultaneous editing. The
 editor engine is JS-only, so this is the one piece deliberately kept outside the
 .NET app (PLAN §1) rather than reshaping the main stack.
 
-- **Authorisation.** The sidecar cannot evaluate the permission model, so the API
+- **Authorization.** The sidecar cannot evaluate the permission model, so the API
   is the gatekeeper: `GET /api/pages/{id}/collab-token` checks the caller may
   *edit* the page and returns a short-lived HMAC-signed token bound to that page
   id. The sidecar only verifies signature, expiry, and that the document being

@@ -11,7 +11,7 @@ public sealed class SvgRejectedException(string message) : Exception(message);
 /// <summary>
 /// Makes an uploaded SVG safe to keep (dev-plan 13.1, decision 6).
 ///
-/// <para><b>This is the first of two defences, not the only one.</b> The
+/// <para><b>This is the first of two defenses, not the only one.</b> The
 /// second is that a branding SVG is only ever displayed through
 /// <c>&lt;img&gt;</c> and served with a sandboxing CSP, where it cannot run
 /// script or fetch anything whatever it contains. So a gap in this class is a
@@ -56,7 +56,7 @@ public static partial class SvgSanitizer
     };
 
     /// <summary>
-    /// The sanitised document and its intrinsic size (from the viewBox, or
+    /// The sanitized document and its intrinsic size (from the viewBox, or
     /// width and height), which the page needs to lay a logo out before it
     /// has loaded.
     /// </summary>

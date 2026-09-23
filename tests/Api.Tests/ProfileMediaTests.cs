@@ -106,7 +106,7 @@ public class ProfileMediaTests
     }
 
     [Fact]
-    public async Task Svg_is_rejected_however_it_is_labelled()
+    public async Task Svg_is_rejected_however_it_is_labeled()
     {
         using var factory = new TestAppFactory();
         var client = factory.CreateClient();
@@ -218,7 +218,7 @@ public class ProfileMediaTests
 
         var me = await client.GetFromJsonAsync<UserDto>("/api/auth/me");
         // Both are reported; the client prefers the hash, and the variant is
-        // kept so removing the picture returns to the colour they picked.
+        // kept so removing the picture returns to the color they picked.
         Assert.NotNull(me!.AvatarHash);
         Assert.Equal(3, me.AvatarVariant);
 

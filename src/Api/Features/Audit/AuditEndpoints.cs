@@ -51,7 +51,7 @@ public static class AuditEndpoints
 
         // Entry metadata embeds page titles and space keys, so drop anything
         // whose target the caller cannot see. A page target that no longer
-        // exists (purged) can't be authorised, so it is hidden too.
+        // exists (purged) can't be authorized, so it is hidden too.
         var visible = new List<AuditLog>();
         foreach (var a in rows)
         {

@@ -27,7 +27,7 @@ public static class RoleEndpoints
         string[] Permissions, int Members, bool Editable);
 
     public record MatrixResponse(
-        IReadOnlyList<PermissionDto> Catalogue,
+        IReadOnlyList<PermissionDto> Catalog,
         IReadOnlyList<PermissionDto> Reserved,
         IReadOnlyList<RoleDto> Roles,
         DateTimeOffset? ReviewedAt,
@@ -245,7 +245,7 @@ public static class RoleEndpoints
         if (AuthEndpointsSudo(http, config) is { } denied) return denied;
 
         // Unknown and reserved keys are ignored rather than refused: a client
-        // echoing back a catalogue it half understands should not fail.
+        // echoing back a catalog it half understands should not fail.
         var wanted = req.Permissions.Where(InstancePermissions.IsAssignable).ToHashSet();
         var current_ = role.Permissions.Select(p => p.Key).ToHashSet();
         var added = wanted.Except(current_).Order().ToArray();

@@ -626,7 +626,7 @@ public static class PageEndpoints
     private static async Task<bool> WouldCreateCycleAsync(AppDbContext db, Guid movingPageId, Guid newParentId)
     {
         // Walk up from the proposed parent; a cycle exists if we reach the page
-        // being moved. Guarded by a hop limit as defence against a corrupt tree.
+        // being moved. Guarded by a hop limit as defense against a corrupt tree.
         Guid? cursor = newParentId;
         for (var hops = 0; cursor is { } id && hops < 10_000; hops++)
         {

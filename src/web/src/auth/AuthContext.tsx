@@ -35,18 +35,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null | undefined>(undefined)
 
   useEffect(() => {
-    let cancelled = false
+    let canceled = false
     api.auth
       .me()
-      .then((u) => !cancelled && setUser(u))
+      .then((u) => !canceled && setUser(u))
       .catch((err: unknown) => {
         // 401 simply means "not signed in"; anything else we also treat as
         // logged-out for the purposes of routing.
-        if (!cancelled) setUser(null)
+        if (!canceled) setUser(null)
         if (!(err instanceof ApiError && err.status === 401)) console.error(err)
       })
     return () => {
-      cancelled = true
+      canceled = true
     }
   }, [])
 

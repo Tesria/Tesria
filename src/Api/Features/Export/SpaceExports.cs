@@ -43,7 +43,7 @@ public static class SpaceExports
     };
 
     /// <summary>
-    /// 403 with a code the SPA can recognise and a sentence a person can
+    /// 403 with a code the SPA can recognize and a sentence a person can
     /// act on. Not 404: the space exists and the reader can see it, so
     /// pretending otherwise would be a stranger answer than the truth.
     /// </summary>

@@ -6,7 +6,7 @@ export type ConfirmRequest = {
   body: ReactNode
   /** The affirmative button's label. Name the action: "Delete the role". */
   confirmLabel?: string
-  /** Colours the affirmative button as destructive. */
+  /** Colors the affirmative button as destructive. */
   danger?: boolean
 }
 
@@ -50,7 +50,7 @@ export function useConfirm(): { ask: (req: ConfirmRequest) => Promise<boolean>; 
     return () => document.removeEventListener('keydown', onKey)
   }, [request, close])
 
-  // A cancelled promise is better than one that never settles, so a caller
+  // A canceled promise is better than one that never settles, so a caller
   // unmounting mid-question gets its answer.
   useEffect(() => () => decide.current?.(false), [])
 

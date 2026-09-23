@@ -50,7 +50,7 @@ public interface IPageWriter
     /// The page version the caller believes it is editing (dev-plan 8.6).
     /// When given and the page has moved past it, the write is refused as a
     /// <see cref="PageWriteStatus.Conflict"/> instead of overwriting. Null
-    /// keeps the last-write-wins behaviour API and MCP callers have always
+    /// keeps the last-write-wins behavior API and MCP callers have always
     /// had: they do not hold a draft that could be stale.
     /// </param>
     Task<PageWriteResult> UpdateAsync(

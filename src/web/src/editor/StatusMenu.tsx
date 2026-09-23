@@ -5,7 +5,7 @@ import { STATUS_COLORS, STATUS_LABELS, isStatusColor, type StatusColor } from '.
 import { updateSelectedNode } from './selectedNode'
 
 /**
- * Edits the selected status lozenge: its text and one of the six colours.
+ * Edits the selected status lozenge: its text and one of the six colors.
  * Opens with the text field focused, so inserting a status and typing its
  * label is one motion: the same as Confluence.
  */
@@ -66,7 +66,7 @@ export function StatusMenu({ editor }: { editor: TiptapEditor }) {
             if (e.key === 'Escape') editor.commands.focus()
           }}
         />
-        <div className="chip-menu__colors" role="group" aria-label="Colour">
+        <div className="chip-menu__colors" role="group" aria-label="Color">
           {STATUS_COLORS.map((c) => (
             <button
               key={c}

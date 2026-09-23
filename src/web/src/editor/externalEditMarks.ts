@@ -21,7 +21,7 @@ import { Extension, Mark, mergeAttributes, type Range } from '@tiptap/core'
  * an assistant.
  */
 
-/** Who made the change, which decides the highlight's colour and its label. */
+/** Who made the change, which decides the highlight's color and its label. */
 export type ExternalEditSource = 'api' | 'mcp' | 'page'
 
 export type ExternalEditAttrs = {

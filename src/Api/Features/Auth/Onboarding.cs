@@ -9,7 +9,7 @@ namespace Tesria.Api.Features.Auth;
 /// and as the SPA sees them.
 ///
 /// Everything here is one person's record of what they have already been
-/// shown. It is deliberately not authorisation: nothing is withheld because
+/// shown. It is deliberately not authorization: nothing is withheld because
 /// of it, so a stale or lost value costs at most one repeated tip.
 /// </summary>
 public static class Onboarding

@@ -28,7 +28,7 @@ public static class SpaceIcons
     public const int MaxColorIndex = 63;
 
     /// <summary>
-    /// Normalises and checks an emoji. Returns the value to store, or an
+    /// Normalizes and checks an emoji. Returns the value to store, or an
     /// error message written to be shown to the person who typed it.
     /// </summary>
     public static (string? Value, string? Error) NormalizeEmoji(string? raw)
@@ -51,7 +51,7 @@ public static class SpaceIcons
     }
 
     public static string? ValidateColor(int? color) =>
-        color is { } c && (c < 0 || c > MaxColorIndex) ? "Not a valid colour." : null;
+        color is { } c && (c < 0 || c > MaxColorIndex) ? "Not a valid color." : null;
 
     /// <summary>
     /// Returns the space to its generated icon, deleting a stored image if

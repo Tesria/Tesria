@@ -8,10 +8,10 @@ import { SLASH_ITEMS, type SlashItem } from './slash/items'
  * The toolbar's "+" menu: the same idea as Confluence's: block elements
  * live here rather than as one button each, so the toolbar stays a single
  * row whatever gets added to the editor. It is a plain "+" sitting with the
- * other icons, not a labelled button pushed to the right edge: that is
+ * other icons, not a labeled button pushed to the right edge: that is
  * where Confluence keeps it.
  *
- * Its contents come from the slash catalogue (`SLASH_ITEMS`), not a list of
+ * Its contents come from the slash catalog (`SLASH_ITEMS`), not a list of
  * their own: a block added there appears here without a second edit, and
  * the two can never disagree about what can be inserted. Nothing else lives
  * here: text controls that leave a narrow toolbar go into the text menu

@@ -45,7 +45,7 @@ public static partial class SiteChrome
     /// for a site) or <c>data:</c> URIs (for a single file), and a logo is only
     /// ever referenced by <c>&lt;img&gt;</c>, never inlined as markup. An
     /// exported file is opened from disk with no CSP at all, so that is the
-    /// whole of its defence against a hostile SVG (decision 6).</para>
+    /// whole of its defense against a hostile SVG (decision 6).</para>
     /// </summary>
     /// <param name="Name">The brand name, or Tesria.</param>
     /// <param name="LogoPath">The logo, or null for Tesria's mark.</param>
@@ -80,8 +80,8 @@ public static partial class SiteChrome
     /// none and the tile is drawn from its key.
     /// </param>
     /// <summary>
-    /// No tile colour: the application's per-space colour is deliberately not
-    /// carried into an export, because an export is one space and the colour
+    /// No tile color: the application's per-space color is deliberately not
+    /// carried into an export, because an export is one space and the color
     /// only means something in a list of them. See <see cref="SpaceIcon"/>.
     /// </summary>
     public record SpaceHead(
@@ -267,7 +267,7 @@ public static partial class SiteChrome
 
     /// <summary>
     /// A space's icon: an uploaded picture, a chosen emoji, or the key's first
-    /// letter on a coloured tile. Mirrors <c>SpaceIcon.tsx</c>, including its
+    /// letter on a colored tile. Mirrors <c>SpaceIcon.tsx</c>, including its
     /// rounded-square radius, so the sidebar shows the same tile the
     /// application does.
     /// </summary>
@@ -287,13 +287,13 @@ public static partial class SiteChrome
                  + $"{SiteExport.Escape(space.IconValue)}</span>";
 
         // In an export the generated tile is the theme's accent, where in the
-        // application it is one of twelve colours picked per space. The owner's
-        // reasoning (2026-09-20): those colours exist to tell spaces apart in a
-        // list, and an export is one space by definition, so the colour carries
+        // application it is one of twelve colors picked per space. The owner's
+        // reasoning (2026-09-20): those colors exist to tell spaces apart in a
+        // list, and an export is one space by definition, so the color carries
         // no information there and may as well look like the rest of the
         // product. It follows the reader's accent and light/dark with it, which
         // is why these are the tokens rather than the hex they resolve to;
-        // --on-primary is the letter's colour for the same reason a filled
+        // --on-primary is the letter's color for the same reason a filled
         // button uses it, being the one already tuned for contrast on --primary
         // in each theme.
         var initial = char.ToUpperInvariant(space.Key.Length > 0 ? space.Key[0] : '?');
@@ -341,7 +341,7 @@ public static partial class SiteChrome
 
     /// <summary>
     /// The appearance menu, markup-identical to <c>ThemeToggle.tsx</c>. The
-    /// React component's behaviour cannot survive a capture (every script but
+    /// React component's behavior cannot survive a capture (every script but
     /// the theme script is stripped), so <see cref="ThemeScript"/> drives this
     /// markup instead, through the <c>data-theme-*</c> hooks.
     /// </summary>
@@ -377,7 +377,7 @@ public static partial class SiteChrome
         <div class="theme-menu__modes">{modes}</div>
         """;
         var accentSection = accentLocked ? "" : $"""
-        <p class="theme-menu__heading">Accent colour</p>
+        <p class="theme-menu__heading">Accent color</p>
         <div class="theme-menu__accents">{accents}</div>
         """;
 

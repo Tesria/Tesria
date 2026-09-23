@@ -169,7 +169,7 @@ public class ProseMirrorRendererTests
     }
 
     [Fact]
-    public void Renders_a_panel_as_a_labelled_blockquote_in_markdown()
+    public void Renders_a_panel_as_a_labeled_blockquote_in_markdown()
     {
         var md = ProseMirrorRenderer.ToMarkdown(PanelDoc);
         Assert.Contains("> **Warning**", md);
@@ -210,7 +210,7 @@ public class ProseMirrorRendererTests
     }
 
     [Fact]
-    public void Renders_text_colour_and_scripts_as_raw_html_in_markdown_and_drops_indent()
+    public void Renders_text_color_and_scripts_as_raw_html_in_markdown_and_drops_indent()
     {
         var md = ProseMirrorRenderer.ToMarkdown(InkAndIndentDoc);
         Assert.Contains("<span style=\"color: #bf2600\">warning</span>", md);

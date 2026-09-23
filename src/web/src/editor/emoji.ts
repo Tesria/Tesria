@@ -45,7 +45,7 @@ export const EMOJI: Emoji[] = [
   { char: '😅', name: 'sweat_smile', keywords: ['phew'] },
   { char: '😬', name: 'grimace', keywords: ['awkward', 'yikes'] },
   { char: '🎯', name: 'target', keywords: ['goal', 'objective'] },
-  { char: '⭐', name: 'star', keywords: ['favourite', 'favorite'] },
+  { char: '⭐', name: 'star', keywords: ['favorite', 'favourite'] },
   { char: '❤️', name: 'heart', keywords: ['love'] },
   { char: '☕', name: 'coffee', keywords: ['break'] },
   { char: '🏗️', name: 'construction', keywords: ['wip', 'building'] },

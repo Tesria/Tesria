@@ -3,13 +3,13 @@ namespace Tesria.Api.Domain;
 /// <summary>
 /// A tag that can be applied to pages (PLAN §4). Labels are global to the
 /// instance, the same label can be used across spaces, and their names are
-/// normalised to lower case so "Runbook" and "runbook" are the same label.
+/// normalized to lower case so "Runbook" and "runbook" are the same label.
 /// </summary>
 public class Label
 {
     public Guid Id { get; set; }
 
-    /// <summary>Normalised (lower-case) label name; unique across the instance.</summary>
+    /// <summary>Normalized (lower-case) label name; unique across the instance.</summary>
     public required string Name { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }

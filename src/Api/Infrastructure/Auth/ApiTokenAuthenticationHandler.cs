@@ -39,7 +39,7 @@ public sealed class ApiTokenAuthenticationHandler(
         var rawToken = value["Bearer ".Length..].Trim();
 
         // An export's render token (dev-plan 12.1): no database row, so it is
-        // recognised by its prefix and verified by recomputing its signature.
+        // recognized by its prefix and verified by recomputing its signature.
         if (rawToken.StartsWith(Export.RenderTokens.Prefix, StringComparison.Ordinal))
             return await RenderTokenResultAsync(rawToken);
 

@@ -43,7 +43,7 @@ export function ReauthDialog() {
     setPassword('')
     setCode('')
     setError(null)
-    cancelReauth(new ApiError(403, 'Cancelled.'))
+    cancelReauth(new ApiError(403, 'Canceled.'))
   }
 
   return (

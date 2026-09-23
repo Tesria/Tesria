@@ -12,7 +12,7 @@ import { ExternalInsert } from './externalEditMarks'
 /**
  * The block diff behind dev-plan 8.6.
  *
- * What these pin is the behaviour a human sees when an assistant writes to a
+ * What these pin is the behavior a human sees when an assistant writes to a
  * page they have open: which blocks are treated as the same block, what a
  * replacement looks like, and the two cases the plan calls out by name, a
  * draft that already carries pending marks and a block with nothing a mark
@@ -111,7 +111,7 @@ describe('the diff', () => {
     expect(kinds(diffBlocks([p('old')], [p('new')]))).toEqual(['removed', 'added'])
   })
 
-  it('finds an insertion in the middle without disturbing its neighbours', () => {
+  it('finds an insertion in the middle without disturbing its neighbors', () => {
     const steps = diffBlocks([p('a'), p('c')], [p('a'), p('b'), p('c')])
 
     expect(kinds(steps)).toEqual(['keep', 'added', 'keep'])
@@ -201,7 +201,7 @@ describe('blocks with nothing a mark can sit on', () => {
   const image: JSONContent = { type: 'image', attrs: { src: '/api/attachments/x/download', alt: 'a diagram' } }
   const rule: JSONContent = { type: 'horizontalRule' }
 
-  it('are recognised as having no text', () => {
+  it('are recognized as having no text', () => {
     expect(hasInlineText(image)).toBe(false)
     expect(hasInlineText(rule)).toBe(false)
     expect(hasInlineText(p('words'))).toBe(true)

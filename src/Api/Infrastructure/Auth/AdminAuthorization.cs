@@ -26,7 +26,7 @@ public sealed class OwnerRequirement : IAuthorizationRequirement;
 ///
 /// When <c>RequireTotpForAdmins</c> is on (dev-plan 3.5), an administrator
 /// who has not enrolled is refused here, on every admin route at once: the
-/// role is not usable until two-factor is set up. The enrolment endpoints
+/// role is not usable until two-factor is set up. The enrollment endpoints
 /// live under /auth/me, outside this policy, so the way out is always open.
 ///
 /// Failing simply doesn't call <c>Succeed</c>: the cookie handler's
@@ -47,8 +47,8 @@ public sealed class AdminRequirementHandler(CurrentUser current, ISiteSettingsSe
 
     /// <summary>
     /// The two-factor rule both administrative policies share: when the
-    /// instance requires it, the role is not usable until enrolment. The
-    /// enrolment endpoints live under /auth/me, outside both policies, so the
+    /// instance requires it, the role is not usable until enrollment. The
+    /// enrollment endpoints live under /auth/me, outside both policies, so the
     /// way out is always open.
     /// </summary>
     internal static async Task<bool> TwoFactorSatisfied(

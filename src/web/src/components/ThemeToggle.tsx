@@ -67,7 +67,7 @@ const MODE_HINTS: Record<ThemePreference, string> = {
 }
 
 /**
- * Appearance menu: theme mode (system / light / dark) plus accent colour.
+ * Appearance menu: theme mode (system / light / dark) plus accent color.
  *
  * `system` is the default and stays first: a new user gets whatever their OS
  * already asks for, and choosing it again clears the stored preference rather
@@ -115,7 +115,7 @@ export function ThemeToggle() {
   // choose, so there is no menu.
   const themeLocked = themeLock() !== null
   const accentLocked = accentLock() !== null
-  // The brand's own colour comes first, under the brand's name.
+  // The brand's own color comes first, under the brand's name.
   const swatches: { name: AccentName; label: string }[] = hasBrandAccent()
     ? [{ name: 'brand', label: instance?.branding.name ?? 'Brand' }, ...ACCENTS]
     : ACCENTS
@@ -178,7 +178,7 @@ export function ThemeToggle() {
           </>)}
 
           {!accentLocked && (<>
-          <p className="theme-menu__heading">Accent colour</p>
+          <p className="theme-menu__heading">Accent color</p>
           <div className="theme-menu__accents">
             {swatches.map((a) => (
               <button
@@ -186,7 +186,7 @@ export function ThemeToggle() {
                 type="button"
                 className={accent === a.name ? 'theme-menu__accent is-active' : 'theme-menu__accent'}
                 // The dot reads a themed token, so each swatch previews the
-                // colour that accent actually produces in the current theme.
+                // color that accent actually produces in the current theme.
                 style={{ background: `var(--accent-dot-${a.name})` }}
                 onClick={() => chooseAccent(a.name)}
                 title={a.label}

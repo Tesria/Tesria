@@ -92,19 +92,19 @@ export function SpacePage() {
   ))
 
   useEffect(() => {
-    let cancelled = false
+    let canceled = false
     setSpace(null)
     setError(null)
     api.spaces
       .get(key)
       .then((s) => {
-        if (cancelled) return
+        if (canceled) return
         setSpace(s)
-        return api.pages.tree(s.id).then((t) => !cancelled && setTree(t))
+        return api.pages.tree(s.id).then((t) => !canceled && setTree(t))
       })
-      .catch((err: unknown) => !cancelled && setError(err instanceof Error ? err.message : 'Failed to load space.'))
+      .catch((err: unknown) => !canceled && setError(err instanceof Error ? err.message : 'Failed to load space.'))
     return () => {
-      cancelled = true
+      canceled = true
     }
   }, [key])
 

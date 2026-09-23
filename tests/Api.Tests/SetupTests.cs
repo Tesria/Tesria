@@ -10,7 +10,7 @@ using Xunit;
 namespace Tesria.Api.Tests;
 
 /// <summary>
-/// First-run setup (dev-plan 10.2). The wizard itself is SPA behaviour; what
+/// First-run setup (dev-plan 10.2). The wizard itself is SPA behavior; what
 /// is worth pinning down here is that the server decides when an instance is
 /// actually set up, and does not take the client's word for it.
 /// </summary>

@@ -13,7 +13,7 @@ public sealed class EgressBlockedException(string message) : Exception(message);
 ///
 /// Server-side request forgery is the attack: an editor points a webhook at
 /// <c>http://169.254.169.254/</c> or <c>http://db:5432/</c> and the server,
-/// which can reach those, fetches them. The defence has to hold at two
+/// which can reach those, fetches them. The defense has to hold at two
 /// moments (when the URL is saved, and when the connection is made)
 /// because a hostname can resolve to a public address at save time and a
 /// private one at delivery time (DNS rebinding). So <see cref="ValidateAsync"/>

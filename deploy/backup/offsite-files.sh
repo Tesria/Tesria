@@ -105,7 +105,7 @@ restic_ensure_repo() {
   # repository that already exists is *not* a failure; it means the read
   # failed for some other reason, and the next pass will try again rather
   # than this one reporting a broken target.
-  note "offsite files: initialising the restic repository"
+  note "offsite files: initializing the restic repository"
   local out
   if out="$(rst init 2>&1 | tail -2 | tr '\n' ' ')"; then return 0; fi
   case "$out" in
@@ -496,7 +496,7 @@ restic_probe() {
   reason="${reason#Stat: }"
   case "$reason" in
     *"Access Key Id"*|*InvalidAccessKeyId*)
-      echo "The storage provider does not recognise the key. Check OFFSITE_CLOUD_KEY." ;;
+      echo "The storage provider does not recognize the key. Check OFFSITE_CLOUD_KEY." ;;
     *"signature we calculated does not match"*|*SignatureDoesNotMatch*)
       echo "The storage provider refused the secret for this key. Check OFFSITE_CLOUD_SECRET." ;;
     *"Access Denied"*|*AccessDenied*|*"403"*)

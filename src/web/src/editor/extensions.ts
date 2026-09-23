@@ -47,7 +47,7 @@ type SharedExtensionOptions = {
    * False only for read-only rendering (PageView, HistoryPanel previews).
    * Controls whether links navigate on click: in editable mode a click
    * should place the cursor, not hijack navigation; the read-only view keeps
-   * the default click-to-open behaviour so viewers can click through.
+   * the default click-to-open behavior so viewers can click through.
    */
   editable?: boolean
 }
@@ -123,7 +123,7 @@ const Table = BaseTable.extend({
 }).configure({ resizable: true })
 
 /**
- * Cell background colour (TableCellMenu's "Background colour" palette), stored
+ * Cell background color (TableCellMenu's "Background color" palette), stored
  * as a hex string; null = today's unchanged default background.
  *
  * Applied to both `tableCell` and `tableHeader` via this shared mixin, and,
@@ -173,7 +173,7 @@ const cellBackgroundAttribute = {
   },
 }
 
-// Same idiom as the extended Table above: TableKit can't take a customised
+// Same idiom as the extended Table above: TableKit can't take a customized
 // node in place of its built-in one, so its `tableCell`/`tableHeader` are
 // disabled and these extended equivalents registered alongside. Identical node
 // names, so stored documents and the export renderer are unaffected.
@@ -198,7 +198,7 @@ const TableHeader = BaseTableHeader.extend({
  */
 export function getSharedExtensions({ collaborative = false, editable = true }: SharedExtensionOptions = {}): AnyExtension[] {
   return [
-    // The plain CodeBlock is disabled in favour of the syntax-highlighted one
+    // The plain CodeBlock is disabled in favor of the syntax-highlighted one
     // below: both use the same "codeBlock" node type name and `language`
     // attr, so stored content and the export renderer are unaffected.
     StarterKit.configure({
@@ -218,7 +218,7 @@ export function getSharedExtensions({ collaborative = false, editable = true }: 
     TaskList,
     TaskItemWithAssignee,
     Image,
-    // multicolor: the highlight button is a colour palette (Toolbar.tsx), so
+    // multicolor: the highlight button is a color palette (Toolbar.tsx), so
     // the mark carries a `color` attr. Highlights stored before this stay
     // valid: no color attr renders as the plain default <mark>.
     Highlight.configure({ multicolor: true }),

@@ -108,7 +108,7 @@ its own Postgres to do it. There is no kept copy afterwards: its undo is
 another point-in-time restore, to the moment the first one began, which the
 safety backup and a WAL switch make reachable. The page offers exactly that.
 
-**Cancelling** works until the switch. After it, there is no cancel, only undo,
+**Canceling** works until the switch. After it, there is no cancel, only undo,
 and the screen says so rather than pretending.
 
 **Undoing.** While a kept copy exists the page shows a **copy kept before the

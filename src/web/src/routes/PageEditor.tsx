@@ -87,16 +87,16 @@ export function PageEditor() {
   // must fire exactly once per visit to the "new page" form.
   useEffect(() => {
     if (isEdit) return
-    let cancelled = false
+    let canceled = false
     const promise = api.pages
       .createDraft({ spaceId: space.id, parentPageId })
       .then((d) => {
-        if (!cancelled) setDraftId(d.id)
+        if (!canceled) setDraftId(d.id)
         return d.id
       })
     draftIdRef.current = promise
     return () => {
-      cancelled = true
+      canceled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEdit])
@@ -109,21 +109,21 @@ export function PageEditor() {
 
   useEffect(() => {
     if (!pageId) return
-    let cancelled = false
+    let canceled = false
     setLoading(true)
     api.pages
       .get(pageId)
       .then((p) => {
-        if (cancelled) return
+        if (canceled) return
         setTitle(p.title)
         setContent(p.contentJson)
         setLoadedVersion(p.currentVersionNumber)
         setFullWidth(p.fullWidth)
       })
-      .catch((err: unknown) => !cancelled && setError(err instanceof Error ? err.message : 'Failed to load page.'))
-      .finally(() => !cancelled && setLoading(false))
+      .catch((err: unknown) => !canceled && setError(err instanceof Error ? err.message : 'Failed to load page.'))
+      .finally(() => !canceled && setLoading(false))
     return () => {
-      cancelled = true
+      canceled = true
     }
   }, [pageId])
 
@@ -131,13 +131,13 @@ export function PageEditor() {
   // no shared secret configured, we simply stay on the single-user editor.
   useEffect(() => {
     if (!pageId) return
-    let cancelled = false
+    let canceled = false
     api.pages
       .collabToken(pageId)
-      .then((t) => !cancelled && setCollab(t.enabled && t.token ? t : null))
-      .catch(() => !cancelled && setCollab(null))
+      .then((t) => !canceled && setCollab(t.enabled && t.token ? t : null))
+      .catch(() => !canceled && setCollab(null))
     return () => {
-      cancelled = true
+      canceled = true
     }
   }, [pageId])
 

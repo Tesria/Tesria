@@ -28,21 +28,21 @@ export function MathView({ node, editor, selected, updateAttributes }: ReactNode
       setError(null)
       return
     }
-    let cancelled = false
+    let canceled = false
     loadKatex()
       .then((katex) => {
-        if (cancelled) return
+        if (canceled) return
         // throwOnError: false would render its own error markup; catching it
         // here keeps the message in this app's voice and styling.
         setHtml(katex.renderToString(latex, { displayMode: display, throwOnError: true, strict: false }))
         setError(null)
       })
       .catch((err: unknown) => {
-        if (cancelled) return
+        if (canceled) return
         setHtml(null)
         setError(err instanceof Error ? err.message : 'That expression could not be rendered.')
       })
-    return () => { cancelled = true }
+    return () => { canceled = true }
   }, [latex, display])
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export function MathView({ node, editor, selected, updateAttributes }: ReactNode
           placeholder="e = mc^2"
           aria-label="LaTeX"
         />
-        {/* Inline or on its own line. mousedown is cancelled so the input
+        {/* Inline or on its own line. mousedown is canceled so the input
             keeps focus: its blur is what saves and closes the editor. */}
         <span className="math__display" role="group" aria-label="Show">
           <button type="button" className={display ? 'link-btn' : 'link-btn is-active'} aria-pressed={!display}
@@ -96,7 +96,7 @@ export function MathView({ node, editor, selected, updateAttributes }: ReactNode
         >
           {error && <span className="math__error">{error}</span>}
           {!error && html && <span dangerouslySetInnerHTML={{ __html: html }} />}
-          {!error && !html && <span className="math__empty">{editor.isEditable ? 'Double-click to add maths' : ''}</span>}
+          {!error && !html && <span className="math__empty">{editor.isEditable ? 'Double-click to add math' : ''}</span>}
         </span>
       )}
     </NodeViewWrapper>

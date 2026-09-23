@@ -8,21 +8,21 @@ export type OverflowAction = {
   isActive: boolean
   run: () => void
   /** Which heading it sits under in the menu. */
-  group: 'format' | 'colour' | 'paragraph'
+  group: 'format' | 'color' | 'paragraph'
   /** A control that is a palette rather than a click: tapping the item unfolds this in place. */
   panel?: (close: () => void) => ReactNode
 }
 
 const GROUPS: { key: OverflowAction['group']; label: string }[] = [
   { key: 'format', label: 'Format' },
-  { key: 'colour', label: 'Colour' },
+  { key: 'color', label: 'Color' },
   { key: 'paragraph', label: 'Paragraph' },
 ]
 
 /**
  * The overflowed text controls, grouped under headings, inside the text
- * menu. Colour palettes unfold under their own item so a phone still has
- * every colour; everything else is a tap.
+ * menu. Color palettes unfold under their own item so a phone still has
+ * every color; everything else is a tap.
  */
 export function OverflowItems({ items, onDone }: { items: OverflowAction[]; onDone: () => void }) {
   const [openPanel, setOpenPanel] = useState<string | null>(null)

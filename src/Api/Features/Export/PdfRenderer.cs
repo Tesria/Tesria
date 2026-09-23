@@ -23,7 +23,7 @@ public interface IPdfRenderer
 /// <summary>
 /// Calls the export sidecar (see <c>pdf/server.js</c>), which loads one of
 /// this app's own render routes in a real browser and either prints it or
-/// serialises its DOM (dev-plan 12.1).
+/// serializes its DOM (dev-plan 12.1).
 ///
 /// The app tells it which url to load rather than handing it a document,
 /// which is what lets an export be the same rendering a reader sees. The

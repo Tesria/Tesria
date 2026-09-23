@@ -17,11 +17,11 @@ export function WatchToggle({ watchKey, fetchStatus, watch, unwatch, label = 'pa
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    let cancelled = false
+    let canceled = false
     setWatching(null)
-    fetchStatus().then((s) => !cancelled && setWatching(s.watching)).catch(() => {})
+    fetchStatus().then((s) => !canceled && setWatching(s.watching)).catch(() => {})
     return () => {
-      cancelled = true
+      canceled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchKey])

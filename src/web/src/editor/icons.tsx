@@ -348,7 +348,7 @@ export function LayoutPresetIcon({ widths }: { widths: readonly number[] }) {
 }
 
 
-/** The "A" with a colour bar under it: the standard text-colour affordance. */
+/** The "A" with a color bar under it: the standard text-color affordance. */
 export function TextColorIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

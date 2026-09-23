@@ -145,7 +145,7 @@ export function RecoverPage() {
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 placeholder="XXXX-XXXX-XXXX"
-                // Dashes and case are normalised server-side, so no need to
+                // Dashes and case are normalized server-side, so no need to
                 // fight the user about how they type it.
                 autoComplete="one-time-code"
                 required

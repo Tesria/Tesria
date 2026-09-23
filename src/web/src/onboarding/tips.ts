@@ -1,5 +1,5 @@
 /**
- * The tips catalogue (dev-plan 10.3).
+ * The tips catalog (dev-plan 10.3).
  *
  * A tip teaches one thing the product will not otherwise tell you, at the
  * moment it would have helped. The rules that keep it from being a nuisance

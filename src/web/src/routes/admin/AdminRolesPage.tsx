@@ -25,8 +25,8 @@ function changes(role: InstanceRole, draft: Set<string>): { added: string[]; rem
   }
 }
 
-function label(catalogue: InstancePermissionDto[], key: string): string {
-  return catalogue.find((p) => p.key === key)?.label ?? key
+function label(catalog: InstancePermissionDto[], key: string): string {
+  return catalog.find((p) => p.key === key)?.label ?? key
 }
 
 /** Admin → Roles (dev-plan 11.1): what each role on this instance may do. */
@@ -148,7 +148,7 @@ export function AdminRolesPage() {
 
   if (!matrix) return <p className="muted">{error ?? 'Loading…'}</p>
 
-  const areas = [...new Set(matrix.catalogue.map((p) => p.area))]
+  const areas = [...new Set(matrix.catalog.map((p) => p.area))]
   const neverReviewed = matrix.reviewedAt === null
 
   return (
@@ -269,7 +269,7 @@ export function AdminRolesPage() {
               <RoleArea
                 key={area}
                 area={area}
-                permissions={matrix.catalogue.filter((p) => p.area === area)}
+                permissions={matrix.catalog.filter((p) => p.area === area)}
                 roles={matrix.roles}
                 draft={draft}
                 busy={busy}
@@ -333,10 +333,10 @@ export function AdminRolesPage() {
             <div key={role.id} className="backup-preview__agent">
               <p><strong>{role.name}</strong> ({role.members} {role.members === 1 ? 'account' : 'accounts'})</p>
               {added.length > 0 && (
-                <p className="small">Gains: {added.map((k) => label(matrix.catalogue, k)).join(', ')}</p>
+                <p className="small">Gains: {added.map((k) => label(matrix.catalog, k)).join(', ')}</p>
               )}
               {removed.length > 0 && (
-                <p className="small">Loses: {removed.map((k) => label(matrix.catalogue, k)).join(', ')}</p>
+                <p className="small">Loses: {removed.map((k) => label(matrix.catalog, k)).join(', ')}</p>
               )}
             </div>
           ))}

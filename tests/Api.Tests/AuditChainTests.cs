@@ -146,7 +146,7 @@ public class AuditChainTests
     [Fact]
     public void Canonical_json_ignores_key_order_whitespace_and_number_spelling()
     {
-        // jsonb re-orders keys, strips whitespace and normalises numbers; the
+        // jsonb re-orders keys, strips whitespace and normalizes numbers; the
         // hash must be over what reads back, not what was written.
         var written = AuditChain.CanonicalJson("""{ "z": 1e2, "a": { "y": [1.50, "é"], "x": true } }""");
         var readBack = AuditChain.CanonicalJson("""{"a":{"x":true,"y":[1.50,"é"]},"z":100}""");
