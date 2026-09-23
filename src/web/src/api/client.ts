@@ -584,6 +584,8 @@ export type Invite = {
   expiresAt: string
   usedAt: string | null
   createdAt: string
+  /** The account the invite created. */
+  usedByName: string | null
 }
 
 export type DailyPoint = { date: string; count: number }

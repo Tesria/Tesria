@@ -185,7 +185,7 @@ function handoutPdf() {
   const lines = [
     ['F2', 20, 'Kestrel Sync 2: launch handout'],
     ['F1', 12, 'What is new: offline editing, shared folders and a faster first sync.'],
-    ['F1', 12, 'Available to every customer on 14 October 2026.'],
+    ['F1', 12, 'Available to every customer on October 14, 2026.'],
     ['F1', 12, 'Questions go to the support team, not to engineering.'],
   ]
   const stream = lines.map(([f, size, s], i) => `BT /${f} ${size} Tf 72 ${720 - i * 34} Td (${s.replace(/[()\\]/g, '\\$&')}) Tj ET`).join('\n')
@@ -335,7 +335,7 @@ async function main() {
 
   const planDraft = doc(
     pageProperties([['Property', 'Value'], ['Status', p(status('Planning', 'blue'))], ['Owner', p(person('Priya Natarajan'))], ['Launch date', p(date('2026-10-14'))]]),
-    excerpt(p('Kestrel Sync 2 ships on 14 October 2026 with offline editing, shared folders and a first sync three times faster than today.')),
+    excerpt(p('Kestrel Sync 2 ships on October 14, 2026, with offline editing, shared folders and a first sync three times faster than today.')),
     toc(),
     h(2, 'Goals'),
     ul('Offline editing that merges cleanly when a laptop comes back online.', 'Shared folders a whole team can see without a separate invitation each.', 'A first sync three times faster on a typical account.'),
@@ -377,17 +377,17 @@ async function main() {
     tasks(...actions.map(([done, who, what]) => task(done, person(who), ` ${what}`))),
   ), { labels: ['meeting-notes', 'launch'] })
 
-  await meeting('Kickoff, 2 September', '2026-09-02', ['Alex Rivera', 'Priya Natarajan', 'Sam Okafor', 'Mei Chen'],
+  await meeting('Kickoff, September 2', '2026-09-02', ['Alex Rivera', 'Priya Natarajan', 'Sam Okafor', 'Mei Chen'],
     ['Scope agreed: offline editing, shared folders, faster first sync.', 'Mobile apps follow in November and are not part of this launch.'],
-    ['Launch on 14 October, with a release candidate by 2 October.'],
+    ['Launch on October 14, with a release candidate by October 2.'],
     [[true, 'Priya Natarajan', 'write the launch plan'], [true, 'Sam Okafor', 'size the migration work']])
-  await meeting('Design review, 9 September', '2026-09-09', ['Priya Natarajan', 'Mei Chen', 'Sam Okafor'],
+  await meeting('Design review, September 9', '2026-09-09', ['Priya Natarajan', 'Mei Chen', 'Sam Okafor'],
     ['The conflict screen shows both versions side by side rather than asking a question.', 'Shared folders get their own icon in the sidebar.'],
     ['Conflicts are resolved by showing both versions, never by guessing.'],
     [[false, 'Mei Chen', 'update the conflict screen mock-ups'], [true, 'Sam Okafor', 'prototype the shared folder sidebar']])
-  await meeting('Go or no-go, 16 September', '2026-09-16', ['Alex Rivera', 'Priya Natarajan', 'Sam Okafor'],
+  await meeting('Go or no-go, September 16', '2026-09-16', ['Alex Rivera', 'Priya Natarajan', 'Sam Okafor'],
     ['Crash rate on the beta is below the target for the second week running.', 'Support has the FAQ draft.'],
-    ['Go, provided the migration dry run on 30 September passes.'],
+    ['Go, provided the migration dry run on September 30 passes.'],
     [[false, 'Alex Rivera', 'schedule the migration dry run'], [false, 'Priya Natarajan', 'brief the support team']])
 
   const checklistDraft = doc(
@@ -464,7 +464,7 @@ async function main() {
     panel('warning', p('A warning panel, for something to be careful of.')),
     panel('error', p('An error panel, for something that has gone wrong.')))
   await el('Expand', expand('What is in Kestrel Sync 2?', p('Offline editing, shared folders and a first sync three times faster.')))
-  await el('Decision', decision('Launch on 14 October, with a release candidate by 2 October.'))
+  await el('Decision', decision('Launch on October 14, with a release candidate by October 2.'))
   await el('Layout', layout([33.33, 66.67],
     [h(3, 'Sidebar'), p('A narrow column for a summary or links.')],
     [h(3, 'Main column'), p('The wider column holds the content. Columns sit side by side on a wide screen and stack on a phone.')]))
@@ -481,7 +481,12 @@ async function main() {
   await el('Excerpt', excerpt(p('This paragraph is the excerpt: the part other pages can include.')), p('This paragraph is not.'))
   await el('Page properties', pageProperties([['Property', 'Value'], ['Status', p(status('In review', 'blue'))], ['Owner', p(person('Mei Chen'))]]))
   await el('Smart link', smartLink('https://example.com', 'card'))
-  await el('Embed', embed(''))
+  // An open film, so it can appear on a public support site: Big Buck Bunny,
+  // (c) Blender Foundation, CC BY 3.0, from Blender's own channel. YouTube is
+  // on the default embed allowlist, so no setting changes for it.
+  await el('Embed',
+    embed('https://www.youtube.com/watch?v=aqz-KE-bpKQ'),
+    p(text('Big Buck Bunny', italic), ' \u00a9 Blender Foundation, ', text('CC BY 3.0', link('https://creativecommons.org/licenses/by/3.0/')), '.'))
 
   // Pages whose element holds a file: the file goes on the page first.
   const imagePage = await ensure('Image', gallerySpace)
@@ -496,7 +501,7 @@ async function main() {
   await el('Gallery', gallery(...shots))
 
   const filePage = await ensure('File or video', gallerySpace)
-  const pdfId = await attach(filePage, 'launch-handout.pdf', handoutPdf(), 'application/pdf')
+  const pdfId = await attach(filePage, 'kestrel-launch-handout.pdf', handoutPdf(), 'application/pdf')
   const clip = readFileSync(new URL('../../src/web/public/onboarding/editor-slash.light.webm', import.meta.url))
   const clipOnFile = await attach(filePage, 'slash-menu.webm', clip, 'video/webm')
   await el('File or video', fileBlock(pdfId), fileBlock(clipOnFile, 'player'))
@@ -516,7 +521,7 @@ async function main() {
   await el('Content by label', live('content-by-label', { labels: 'meeting-notes', match: 'any', scope: 'space', limit: '25' }))
   // Attachments lists its own page's files, so it gets two.
   const attachmentsPage = await ensure('Attachments', gallerySpace)
-  await attach(attachmentsPage, 'launch-handout.pdf', handoutPdf(), 'application/pdf')
+  await attach(attachmentsPage, 'kestrel-launch-handout.pdf', handoutPdf(), 'application/pdf')
   await attach(attachmentsPage, 'mountains-at-day.png', landscape('day'), 'image/png')
   await el('Attachments', p('Everything attached to this page:'), live('attachments', {}))
   await el('Change history', live('change-history', { limit: '10' }))

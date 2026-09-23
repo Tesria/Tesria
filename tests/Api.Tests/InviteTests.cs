@@ -13,7 +13,8 @@ public class InviteTests
     private record RegisteredDto(Guid Id, string Email, string DisplayName, int Role,
         string? AvatarHash, int? AvatarVariant, bool HasPassword, List<string> RecoveryCodes);
     private record InviteDto(string Token, string Path, string? Email, DateTimeOffset ExpiresAt);
-    private record InviteRow(Guid Id, string? Email, DateTimeOffset ExpiresAt, DateTimeOffset? UsedAt, DateTimeOffset CreatedAt);
+    private record InviteRow(Guid Id, string? Email, DateTimeOffset ExpiresAt, DateTimeOffset? UsedAt, DateTimeOffset CreatedAt,
+        string? UsedByName = null);
 
     private static Task<HttpResponseMessage> RegisterAsync(
         HttpClient client, string email, string? invite = null) =>
@@ -139,5 +140,35 @@ public class InviteTests
         // Pointless and confusing: the address already has an account.
         Assert.Equal(HttpStatusCode.Conflict,
             (await admin.PostAsJsonAsync("/api/admin/invites", new { Email = "admin@example.com" })).StatusCode);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task An_invite_is_spent_and_names_its_account_whether_or_not_registration_is_open(bool open)
+    {
+        // Found by the owner, 2026-09-22: with registration open the invite
+        // was never looked at, so it stayed "Unused" and could be used again.
+        using var factory = new TestAppFactory();
+        var admin = open ? factory.CreateClient() : await ClosedInstanceAsync(factory);
+        if (open) (await RegisterAsync(admin, "admin@example.com")).EnsureSuccessStatusCode();
+        var issued = await (await admin.PostAsJsonAsync("/api/admin/invites", new { }))
+            .Content.ReadFromJsonAsync<InviteDto>();
+
+        (await RegisterAsync(factory.CreateClient(), "invited@example.com", issued!.Token)).EnsureSuccessStatusCode();
+
+        var row = Assert.Single(await admin.GetFromJsonAsync<List<InviteRow>>("/api/admin/invites") ?? []);
+        Assert.NotNull(row.UsedAt);
+        Assert.Equal("invited@example.com", row.UsedByName);
+    }
+
+    [Fact]
+    public async Task With_registration_open_a_bad_invite_token_does_not_stop_anyone()
+    {
+        using var factory = new TestAppFactory();
+        var admin = factory.CreateClient();
+        (await RegisterAsync(admin, "admin@example.com")).EnsureSuccessStatusCode();
+
+        (await RegisterAsync(factory.CreateClient(), "someone@example.com", "not-a-real-token")).EnsureSuccessStatusCode();
     }
 }
