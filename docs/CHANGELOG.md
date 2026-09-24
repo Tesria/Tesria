@@ -8,6 +8,18 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.6.0-dev**: 0.5.0 is released, so what comes
 after it is the next minor version.
 
+### 14.1 Pre-release audit complete, not released (2026-09-24, Opus 5.5)
+
+- **History rewritten** before an outside review: every commit and the
+  `v0.5.0` tag carry the owner's GitHub no-reply address; a personal
+  address and a NAS path were scrubbed from old versions of documents; old
+  versions of the Support pack were removed from history (a clone is 33 MB
+  of history instead of about 200). A fresh clone was scanned for personal
+  details, credential values and secret-shaped strings: none outside test
+  fixtures. Anyone with an older clone must clone again.
+- `CLAUDE.md` split: conventions stay, owner-specific notes move to a
+  gitignored `CLAUDE.local.md`.
+
 ### 14.1 The second security review, fixed (2026-09-24, Opus 5.5)
 
 Three reviews of everything built since the 2026-09-09 review, run in

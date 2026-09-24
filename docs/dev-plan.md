@@ -4994,8 +4994,29 @@ Before the repo or any image is public:
 
 **Fixed 2026-09-24** (all of the list below, with four worse findings the
 review of it turned up; see the CHANGELOG's "14.1 The security findings,
-fixed"). Steps 1 to 4 above (history, what the repo says about its owner,
-a full security pass, dependencies) are still to do, with the owner.
+fixed").
+
+**Steps 1 to 5 done 2026-09-24, not released** (the owner's instruction:
+audit fully, then hand a fresh clone to an outside reviewer first):
+1. History rewritten: every commit and the `v0.5.0` tag carry the owner's
+   GitHub no-reply identity; a personal address and a NAS path were
+   scrubbed from old document versions; old versions of the Support pack
+   (screenshots that could not be checked) were removed. Verified on a
+   fresh clone: no personal address, machine name, tailnet, NAS path or
+   credential value in any file version or commit, and no secret-shaped
+   string outside tests. The pre-rewrite repository is kept as a bundle
+   outside the repository.
+2. `CLAUDE.md` keeps the conventions; the owner-specific notes moved to a
+   gitignored `CLAUDE.local.md`. The dev plan and CHANGELOG were trimmed.
+   Old versions of some files still name the owner's public site, which is
+   not a secret.
+3. A second security review in three parts: seventeen findings, the two
+   high ones and most others fixed (CHANGELOG, "14.1 The second security
+   review, fixed"), the rest recorded in `security.md`'s known gaps.
+4. `scripts/audit.sh` clean.
+5. `SECURITY.md` has the project's address.
+
+What is left before release: the outside review, then 14.2.
 
 **Found by the 10.5 fact-finding, 2026-09-23 (all fixed 2026-09-24):**
 
