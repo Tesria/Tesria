@@ -26,6 +26,10 @@
 
 {
 	email {$ACME_EMAIL}
+	# Tailscale visitors: see the same setting in deploy/Caddyfile.
+	servers {
+		trusted_proxies static {$TESRIA_TAILSCALE_ADDRESS:10.203.0.250}
+	}
 }
 
 {$DOMAIN} {
@@ -44,7 +48,9 @@
 	}
 
 	handle {
-		reverse_proxy app:8080
+		reverse_proxy app:8080 {
+			header_up X-Forwarded-For {client_ip}
+		}
 	}
 
 	# Uploads: 100 MB, except a wiki pack import, which the format allows to

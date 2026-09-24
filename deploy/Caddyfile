@@ -46,6 +46,12 @@
 	# connects from, so without deploy/docker-desktop this changes nothing. The
 	# address then reaches the app as X-Forwarded-For, as before.
 	servers {
+		# Visitors through Tailscale (deploy/tailscale) arrive from the
+		# Tailscale container, which names the real tailnet visitor in
+		# X-Forwarded-For. That header is believed from that one fixed address
+		# only (TESRIA_TAILSCALE_ADDRESS, docker-compose.yml); from anyone
+		# else Caddy ignores it, so nobody can claim an address.
+		trusted_proxies static {$TESRIA_TAILSCALE_ADDRESS:10.203.0.250}
 		listener_wrappers {
 			proxy_protocol {
 				allow {$PROXY_PROTOCOL_FROM:127.0.0.1/32}
@@ -85,7 +91,11 @@
 	# Everything else is proxied to the app container, which serves both the API
 	# (/api/*) and the React SPA.
 	handle {
-		reverse_proxy app:8080
+		reverse_proxy app:8080 {
+			# One address for the app: the visitor Caddy worked out (the
+			# PROXY line, a trusted Tailscale header, or the connection).
+			header_up X-Forwarded-For {client_ip}
+		}
 	}
 
 	# Uploads: 100 MB, except a wiki pack import, which the format allows to
@@ -131,7 +141,11 @@
 	# Plain HTTP for the same reason as /ca.crt: nothing is trusted yet.
 	@trust path /trust /trust/*
 	handle @trust {
-		reverse_proxy app:8080
+		reverse_proxy app:8080 {
+			# One address for the app: the visitor Caddy worked out (the
+			# PROXY line, a trusted Tailscale header, or the connection).
+			header_up X-Forwarded-For {client_ip}
+		}
 	}
 	handle {
 		redir https://{host}{uri} permanent

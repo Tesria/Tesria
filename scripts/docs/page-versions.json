@@ -615,7 +615,7 @@
     "appliesTo": "0.5",
     "updated": "2026-09-24",
     "note": "Revised.",
-    "hash": "a0d2df8eaad211a3"
+    "hash": "49dbe9f61c2c149c"
   },
   "Installation and operations / Email (SMTP)": {
     "appliesTo": "0.5",
@@ -651,7 +651,7 @@
     "appliesTo": "0.5",
     "updated": "2026-09-24",
     "note": "0.6: inviting someone who is not on your network.",
-    "hash": "ef8099ce7ad0a5e6"
+    "hash": "4bb0d7998f1e49f3"
   },
   "Installation and operations / Real visitor addresses with Docker Desktop": {
     "appliesTo": "0.6",

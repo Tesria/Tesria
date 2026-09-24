@@ -8,6 +8,20 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.6.0-dev**: 0.5.0 is released, so what comes
 after it is the next minor version.
 
+### Real addresses for Tailscale visitors (2026-09-24, Opus 5.5)
+
+Everyone who came in through the Tailscale sidecar was recorded as the
+sidecar's own address. Tailscale's Serve names the tailnet visitor in
+X-Forwarded-For (replacing whatever the visitor sent), but Caddy believed
+that header from nobody. The sidecar now has a fixed address on the
+stack's network (`TESRIA_TAILSCALE_ADDRESS`, default 10.203.0.250), Caddy
+trusts X-Forwarded-For from that address only, and Caddy passes the app a
+single address, the visitor it worked out (`header_up X-Forwarded-For
+{client_ip}`), so the app's one-hop trust is unchanged. Verified live: a
+visit over the tailnet was recorded with the visitor's tailnet address, a
+visit through the network with its own address, and a forged
+X-Forwarded-For was ignored on both paths.
+
 ### Refused-request alerts explain themselves; real addresses behind Docker Desktop (2026-09-24, Opus 5.5)
 
 A "spike of denied requests" alert from 192.168.65.1 could not be

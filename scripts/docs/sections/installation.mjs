@@ -311,6 +311,7 @@ export async function build({
       setting('PROXY_TRUSTED_NETWORKS', 'only if you put a proxy of your own in front of Tesria: that proxy’s address, such as ', c('10.0.0.5/32'), '. Tesria then believes the visitor addresses it passes on.'),
       setting('COMPOSE_FILE', 'set by the Docker Desktop setup in ', pageLink('Real visitor addresses with Docker Desktop'), ', which adds its own file to the list. Leave it alone otherwise.'),
       setting('PROXY_PROTOCOL_FROM', 'optional, and set by that same setup: which addresses Tesria’s web server believes when they attach a visitor’s real address. Left out, nothing is believed, which is right for every other install.'),
+      setting('TESRIA_TAILSCALE_ADDRESS', 'optional. The fixed address of the Tailscale container, ', c('10.203.0.250'), ' unless you set another; Tesria believes the visitor address Tailscale passes on only from there. Change it only together with ', c('TESRIA_SUBNET'), ', to an address inside it.'),
       setting('TESRIA_SUBNET', 'optional. The private network Tesria’s own services talk to each other on, ', c('10.203.0.0/24'), ' unless you set another. Change it only if that range is already used by a VPN or your own network. After changing it, run ', c('docker compose down'), ' and then ', c('docker compose up -d'), '.'),
     ),
 
@@ -707,6 +708,8 @@ export async function build({
       li(p(b('The card says it is not reporting.'), ' The Tailscale container has stopped. Run step 4 again; ', c('docker compose logs tailscale'), ' says why it stopped.')),
       li(p(b('The address does not open.'), ' Check that the device you are using is signed in to Tailscale on the same tailnet, and that HTTPS is on (step 1). The first visit after starting can take a few seconds while the certificate arrives.')),
     ),
+
+    panel('info', p(b('Visitors keep their own address.'), ' Tesria records someone who comes in through Tailscale by their tailnet address, such as ', c('100.101.102.103'), ', the same one the Tailscale app shows for their device, so sign-in limits, alerts and the audit log tell them apart.')),
 
     h(2, 'Already using an app connector or a subnet router?'),
     p('If your tailnet already has a device that routes to your home or office network (Tailscale calls these ', b('subnet routers'), ' and ', b('app connectors'), '), you can reach Tesria through it without anything above: add Tesria’s usual address to it in the admin console. Nothing changes in Tesria. The difference is the certificate: through a router you reach Tesria at its usual address, with its usual certificate, so each device still needs to trust it once. The Tailscale service above gives it a certificate every device already trusts.'),

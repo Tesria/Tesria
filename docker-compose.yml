@@ -161,6 +161,9 @@ services:
     environment:
       DOMAIN: ${DOMAIN}
       ACME_EMAIL: ${ACME_EMAIL}
+      # The Tailscale container's fixed address, whose X-Forwarded-For Caddy
+      # believes (real addresses for tailnet visitors, 2026-09-24).
+      TESRIA_TAILSCALE_ADDRESS: ${TESRIA_TAILSCALE_ADDRESS:-10.203.0.250}
     ports:
       - "80:80"
       - "443:443"
@@ -366,6 +369,12 @@ services:
     depends_on:
       - caddy
     hostname: ${TS_HOSTNAME:-tesria}
+    # A fixed address, the one Caddy believes X-Forwarded-For from, so a
+    # tailnet visitor is recorded by their own tailnet address. Inside
+    # TESRIA_SUBNET: change both together.
+    networks:
+      default:
+        ipv4_address: ${TESRIA_TAILSCALE_ADDRESS:-10.203.0.250}
     environment:
       TS_AUTHKEY: ${TS_AUTHKEY:-}
       TS_HOSTNAME: ${TS_HOSTNAME:-tesria}
