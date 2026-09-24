@@ -433,6 +433,25 @@ are retired unsent so turning email on never replays history. With
 `EmailEnabled` off the pass does nothing and marks nothing. Links are
 built from `SiteUrl.Resolve` and the page's space key.
 
+**Mail providers and signing in to them (dev-plan Phase 18).**
+`MailProviders` is the one table of presets (host, port, encryption, what
+goes in the username and password, the Support page); the settings form,
+the setup wizard and the Support site's tables all read it, the last
+through `GET /api/admin/settings/email/providers` when the pages are
+written. `SiteSettings.SmtpSignIn` is `Password`, `Microsoft` or `Google`.
+For the last two, `MailOAuthService` runs the authorization code flow with
+PKCE against the administrator's own app registration: `start` (sudo)
+remembers the verifier in `MailOAuthState` under a random state for ten
+minutes; the provider returns to the anonymous callback, or, for Google on
+a non-public domain, the administrator pastes the loopback address back
+(`/oauth/complete`); the code is traded for a refresh token, stored with
+its own Data Protection purpose, and the mailbox from the ID token becomes
+the username and From address. `SmtpEmailSender` asks the service for an
+access token before connecting (cached until two minutes before it
+expires; Microsoft's rotated refresh tokens are kept) and authenticates
+with SASL XOAUTH2. A refused renewal is stored on the settings, raised as
+`mail.signin_failed`, and returned as the send's error in words.
+
 ### Public read mode: the anonymous principal (spec, dev-plan 5.1, designed 2026-09-09)
 
 **What it is for.** A space can be published so that anyone (no account,

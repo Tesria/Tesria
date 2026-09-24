@@ -5461,8 +5461,6 @@ its item is built):
 - **Google** (Gmail, Google Workspace): OAuth, scope `https://mail.google.com/`
   (the only one that allows SMTP), through `smtp.gmail.com:587`. App
   passwords keep working and stay the simple option.
-- **Yahoo and AOL**: OAuth exists but is closed to new applications, so app
-  passwords only. Not a sign-in candidate.
 - **Apple iCloud Mail, Fastmail, Zoho Mail**: app passwords
   (app-specific passwords at Apple). Work today; documented 2026-09-24.
   Fastmail needs a plan above Basic, and Zoho a paid plan for new accounts.
@@ -5473,11 +5471,10 @@ its item is built):
   Resend, SMTP2GO): SMTP credentials they generate. Work today; the right
   answer for a larger team, and free or cheap at a small team's volume.
 
-### 18.1 Provider presets in the email settings · `S` · Model: Opus 5.5
+### 18.1 Provider presets in the email settings · `S` · Model: Opus 5.5 · ✅ **shipped 2026-09-24**
 
 A **Provider** choice at the top of Settings → Email and the setup wizard's
-Email step: Gmail, Outlook or Microsoft 365, iCloud Mail, Yahoo or AOL,
-Zoho Mail (with its region), Fastmail, Proton Mail, Amazon SES (with its region),
+Email step: Gmail, Outlook or Microsoft 365, iCloud Mail, Zoho Mail (with its region), Fastmail, Proton Mail, Amazon SES (with its region),
 Postmark, Mailgun, SendGrid, Brevo, or Other. Choosing one fills the host,
 port and encryption, says in one line what to use as the password ("an app
 password, not your Gmail password"), and links to that provider's Support
@@ -5485,7 +5482,7 @@ page. The fields stay editable, and Other is today's form. The table of
 presets lives in one place (server side, so the wizard and settings agree)
 and is tested against the Support pages' values.
 
-### 18.2 Sign in with Microsoft · `M` · Model: Opus 5.5
+### 18.2 Sign in with Microsoft · `M` · Model: Opus 5.5 · ✅ **shipped 2026-09-24**
 
 For Outlook.com and Microsoft 365: a **Sign in with Microsoft** button in
 the email settings, in place of the username and password when the
@@ -5518,7 +5515,7 @@ Microsoft preset is chosen.
 - **Tests**: the token exchange and refresh against a fake token endpoint;
   the XOAUTH2 send against a fake SMTP server; revocation raising the alert.
 
-### 18.3 Sign in with Google · `M` · Model: Opus 5.5 · after 18.2
+### 18.3 Sign in with Google · `M` · Model: Opus 5.5 · ✅ **shipped 2026-09-24**
 
 The same flow and storage as 18.2, for Gmail and Google Workspace.
 
@@ -5540,21 +5537,103 @@ The same flow and storage as 18.2, for Gmail and Google Workspace.
   silently dropping the oldest: reconnecting replaces the stored token
   rather than adding one.
 
-### 18.4 Support pages for every provider · `S` · Model: Opus 5.5 · partly shipped 2026-09-24
+### 18.4 Support pages for every provider · `S` · Model: Opus 5.5 · ✅ **shipped 2026-09-24**
 
 Under Email (SMTP). **Written 2026-09-24**, each checked that day against
 the provider's own help pages: Sending with Gmail, Sending with Outlook or
 Microsoft 365, **Apple iCloud Mail**, **Zoho Mail**, **Fastmail** and
-**Proton Mail**. **Still to write**: **Yahoo and AOL Mail** (app passwords)
-and **Sending services** (the ones in the list above: what each is, the
-free tier, and where its SMTP credentials are). The Gmail and Outlook pages
-gain the sign-in once 18.2 and 18.3 ship, keeping the app password as the
-alternative for Gmail.
+**Proton Mail**, then **Sending services** (Amazon SES, Postmark, Mailgun,
+SendGrid, Brevo, Resend, SMTP2GO: what each is, its free tier as
+documented, where its SMTP credentials are, what it verifies first). The
+Gmail and Outlook pages walk through signing in (the Google Cloud project,
+the Microsoft Entra registration), with the app password kept as Gmail's
+quick way. Every settings table on these pages is built from 18.1's
+presets, fetched from the app when the pages are written.
 
-**Not planned**: OAuth for Yahoo and AOL (closed to new applications), and
-a Tesria-run relay that would let instances skip registering their own app
+**As built, where it differs from the design above:**
+- A personal Microsoft account sends through `smtp-mail.outlook.com`, not
+  Microsoft 365's `smtp.office365.com`; Tesria picks by the tenant in the ID
+  token (the research for 18.4 found it).
+- The paste-back is Google's only, as designed: Microsoft accepts any https
+  address, so it always returns to the callback. Google's loopback address
+  is `http://127.0.0.1`; its current docs make the client secret optional
+  for desktop clients, and Tesria sends it anyway.
+- An expiring Entra secret is not warned about ahead of time (Microsoft
+  does not report it); the refusal when it has expired is explained in
+  words, and a new secret for the same client keeps the sign-in.
+- The setup wizard's Email step gains the presets, the encryption and the
+  password; signing in with a provider stays in Administration, since the
+  wizard has no sudo prompt.
+
+**Not planned**: Yahoo and AOL Mail, at all (the owner, 2026-09-24; their
+OAuth is closed to new applications anyway), and a Tesria-run relay that would let instances skip registering their own app
 (it would put every instance's mail through a service the project runs,
 which is exactly what a self-hosted wiki is for avoiding).
+
+## Phase 19: Reaching Tesria from anywhere with Tailscale
+
+Asked for by the owner, 2026-09-24: people who already run Tailscale should
+be able to reach their Tesria from anywhere, without opening it to the
+internet.
+
+**Which Tailscale feature, checked against Tailscale's docs that day.** The
+owner asked for an "app connector". In Tailscale's terms an app connector
+routes tailnet traffic to applications by domain name through a dedicated
+Linux device ("App connectors let you route your self-hosted applications and
+software as a service (SaaS) applications through dedicated devices in your
+Tailscale network", tailscale.com/kb/1281/app-connectors). That works for
+Tesria today, with no change to Tesria, for anyone who already runs one: they
+add Tesria's LAN name to it. What Tesria can ship itself is the other
+documented pattern, a **Tailscale container beside the app with Tailscale
+Serve** (tailscale.com/kb/1282/docker, docs/features/tailscale-serve): Tesria
+joins the tailnet as its own device, reachable at
+`https://tesria.<tailnet>.ts.net` with a certificate Tailscale provisions, so
+tailnet devices need no "trust this device" step at all. Both get a Support
+page; the sidecar is what gets built.
+
+### 19.1 A Tailscale sidecar, off unless asked for · `M` · Model: Opus 5.5
+
+- A `tailscale` service in `docker-compose.yml` under a Compose **profile**,
+  so nobody runs it without choosing to: the official Tailscale image,
+  `TS_AUTHKEY` from `.env` (an auth key, or an OAuth client secret with its
+  tag), `TS_HOSTNAME` (default `tesria`), `TS_STATE_DIR` on its own volume so
+  the device keeps its identity across restarts, and `TS_SERVE_CONFIG`
+  pointing at a committed JSON that serves HTTPS on 443 to the stack.
+- **Where Serve forwards to**, to decide when building: to Caddy, so `/collab`
+  and everything else is routed exactly as on the LAN, or to the app with
+  the collab sidecar reached separately. Caddy is the likely answer; check
+  that its redirects and headers behave with a second hostname in front.
+- **Serve only, never Funnel.** Funnel publishes to the whole internet; the
+  point here is the opposite. The committed config has no Funnel entry, and
+  the Support page says why.
+- **Tesria with two addresses.** Links in email use one base address, so the
+  settings need a clear answer for "reachable on the LAN and on the
+  tailnet": probably keep the LAN or public address as the base and accept
+  the ts.net name as another origin. Check cookies (per host), the CSRF and
+  origin checks, the collab WebSocket and the OAuth callbacks of Phase 18
+  against the ts.net name.
+- **Health and status**: the Health checks page and `/api/health` mention
+  whether the sidecar is connected, if that can be read without giving the
+  app access to Tailscale's socket (to decide; leaving it out is acceptable).
+- **Security decisions to name for the owner**: the auth key in `.env` can
+  add a device to the tailnet until it expires or is revoked (recommend a
+  tagged, non-reusable key or an OAuth client, and say how to revoke); who
+  on the tailnet may reach Tesria is Tailscale's access policy, not Tesria's,
+  and Tesria's own sign-in still applies to everyone.
+- **Tests**: the compose file validates with and without the profile; a
+  live check on the owner's tailnet, since it cannot be faked honestly.
+
+### 19.2 Support pages · `S` · Model: Opus 5.5 · with 19.1
+
+Under Installation and operations, next to Opening Tesria by name:
+**Reaching Tesria from anywhere with Tailscale**, written for someone new
+(what a tailnet is, why it beats opening a port, what it costs: free for
+personal use at the time of writing, to recheck), with numbered steps: make
+an auth key, add it to `.env`, start the profile, enable HTTPS in the
+tailnet, open the ts.net address. A second section for people who already
+run an **app connector or subnet router**: add Tesria's address to it, and
+what changes (nothing in Tesria). Pictures only of Tesria; Tailscale's own
+screens are described in words, since they change.
 
 ## Order of execution, flattened
 
@@ -5583,6 +5662,7 @@ which is exactly what a self-hosted wiki is for avoiding).
 17. **16.1** One version number → **16.2** Versioned docs → **16.3** Pack migrations (asked for 2026-09-24). 16.1 alongside 14.2, since both are the same GitHub Actions release pipeline; 16.2 before the Support site is published at tesria.com; 16.3 before the first release that changes the pack format.
 18. **17** Developer docs on the Support site (asked for 2026-09-24), after Phase 16 so every page carries its version table from the start.
 19. **18.1** Provider presets and **18.4** the app-password and sending-service pages (asked for 2026-09-24): small and independent, so any time; best before 14, since they are what a new owner meets in the setup wizard. Then **18.2** Sign in with Microsoft → **18.3** Sign in with Google, before 14 if the owner wants the public release to work with a personal Outlook.com account.
+20. **19.1** Tailscale sidecar → **19.2** its Support pages (asked for 2026-09-24). Independent of everything else; best after 14.2, so the compose file it extends is the published one.
 
 Phases 6 and 8.2 are floaters (small, no dependents) and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm

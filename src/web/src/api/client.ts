@@ -390,6 +390,15 @@ export function attachmentDownloadUrl(id: string): string {
   return `/api/attachments/${id}/download`
 }
 
+/**
+ * A PDF shown inline, for framing in the page's own viewer. The download URL
+ * says "attachment" and cannot be framed, so a frame pointed at it downloaded
+ * the file instead (found 2026-09-24).
+ */
+export function attachmentViewUrl(id: string): string {
+  return `/api/attachments/${id}/view`
+}
+
 export type EmbedResolution = {
   allowed: boolean
   url: string | null
@@ -460,11 +469,64 @@ export type SiteSettings = {
   lockoutBaseSeconds: number
   lockoutMaxSeconds: number
   updatedAt: string
+  /** The mail provider and its sign-in (dev-plan Phase 18). */
+  mail: MailSignInInfo
+}
+
+/** How Tesria signs in to the mail server. */
+export const MailSignIn = { Password: 0, Microsoft: 1, Google: 2 } as const
+export type MailSignIn = (typeof MailSignIn)[keyof typeof MailSignIn]
+
+/** Secrets and the stored sign-in are write-only: only whether each is set. */
+export type MailSignInInfo = {
+  provider: string | null
+  signIn: MailSignIn
+  microsoftClientId: string | null
+  microsoftClientSecretSet: boolean
+  microsoftTenant: string | null
+  googleClientId: string | null
+  googleClientSecretSet: boolean
+  /** The mailbox that signed in, which is also who mail comes from. */
+  account: string | null
+  connectedAt: string | null
+  /** Why the provider last refused to renew the sign-in. */
+  error: string | null
+  /** What to register with each provider as the redirect address. */
+  microsoftRedirectUri: string
+  googleRedirectUri: string
+  /** Google cannot return to this address, so the sign-in ends with a paste. */
+  googlePasteBack: boolean
+}
+
+/** One mail provider preset (dev-plan 18.1). */
+export type MailProvider = {
+  id: string
+  name: string
+  /** `mail` for an email account, `service` for a sending service. */
+  group: 'mail' | 'service'
+  host: string
+  port: number
+  tls: number
+  /** What goes in the username and password, in words. */
+  username: string
+  password: string
+  /** The Support page that walks through it, by title. */
+  supportPage: string
+  signIn: MailSignIn | null
+  note: string | null
 }
 
 /** Every field optional: an omitted field keeps its stored value. */
-export type SiteSettingsUpdate = Omit<SiteSettings, 'smtpPasswordSet' | 'updatedAt' | 'effectiveBaseUrl'> & {
+export type SiteSettingsUpdate = Omit<SiteSettings, 'smtpPasswordSet' | 'updatedAt' | 'effectiveBaseUrl' | 'mail'> & {
   smtpPassword: string
+  /** A preset's id, or '' for Other. */
+  smtpProvider: string
+  microsoftClientId: string
+  /** Write-only; '' clears it. */
+  microsoftClientSecret: string
+  microsoftTenant: string
+  googleClientId: string
+  googleClientSecret: string
 }
 
 export type AdminUser = {
@@ -1348,6 +1410,16 @@ export const api = {
         request<SiteSettings>('PUT', '/api/admin/settings', input),
       sendTestEmail: () =>
         request<{ sent: boolean; error: string | null }>('POST', '/api/admin/settings/email/test'),
+      /** The provider presets (dev-plan 18.1). */
+      mailProviders: () => request<MailProvider[]>('GET', '/api/admin/settings/email/providers'),
+      /** Starts signing in with Microsoft or Google; needs a recent password. */
+      mailSignInStart: (provider: 'microsoft' | 'google') =>
+        request<{ url: string; redirectUri: string; pasteBack: boolean }>(
+          'POST', `/api/admin/settings/email/oauth/${provider}/start`),
+      /** Finishes a paste-back sign-in with the address the browser was sent to. */
+      mailSignInComplete: (address: string) =>
+        request<MailSignInInfo>('POST', '/api/admin/settings/email/oauth/complete', { address }),
+      mailSignOut: () => request<MailSignInInfo>('POST', '/api/admin/settings/email/oauth/disconnect'),
     },
     users: {
       list: () => request<AdminUser[]>('GET', '/api/admin/users'),

@@ -25,8 +25,9 @@ the rest to understand what you are relying on.
   left somewhere, a misconfigured volume, a compromised app. Defenses: the
   app itself runs as a role that cannot alter the audit log; the hash
   chain makes alteration detectable even by the owner; every audit row is
-  also written to stdout; two-factor secrets and the SMTP password are
-  encrypted under keys that only a full database restore recovers.
+  also written to stdout; two-factor secrets, the SMTP password, and the
+  mail providers' client secrets and stored sign-in (dev-plan Phase 18)
+  are encrypted under keys that only a full database restore recovers.
 - **Someone at the keyboard of an unlocked, signed-in browser.** Defenses:
   sudo mode for destructive administration, per-session sign-out, idle and
   absolute session lifetimes, the fresh-login window for minting recovery
@@ -170,6 +171,14 @@ confirmed: every `/api` route requires authorization except health,
 register, both sign-in steps, recovery, and OIDC status/login (all
 rate-limited where they take a credential); the OIDC `returnUrl` accepts
 only same-origin paths; invite and reset tokens are returned once and
-never listed; the SMTP password is never returned. The findings that
+never listed; the SMTP password is never returned. (Since 2026-09-24 one
+more route is anonymous: the mail sign-in callback,
+`/api/email/oauth/callback`, because Microsoft's or
+Google's redirect may arrive without the session cookie. It acts only on a
+`state` that is random, single-use, ten minutes long and bound to the
+administrator who started the sign-in, and it checks that account still
+holds the email right before storing anything. Starting a sign-in needs
+sudo; the stored refresh token can send mail as that mailbox until
+revoked, and is never returned.) The findings that
 survived the pass are the "Known gaps" list. If you find something not on
 it, see `SECURITY.md` at the repository root.

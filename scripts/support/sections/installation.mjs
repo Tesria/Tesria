@@ -49,6 +49,22 @@ const TAG_EMAIL = `(() => {
   }
 })()`
 
+// The Email section's Provider list, set the way a person would (React
+// listens for the change event).
+const PICK_PROVIDER = (id) => `(() => {
+  const s = document.querySelector('#email label select')
+  if (!s) return
+  Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(s, ${JSON.stringify(id)})
+  s.dispatchEvent(new Event('change', { bubbles: true }))
+})()`
+// The redirect address names this instance; the pictures show an example.
+// Only the Email section, so nothing scrolls: on a scrolled Settings page the
+// full-page capture moved the section after its boxes were drawn, leaving
+// them about 15 pixels high (2026-09-24).
+const ONLY_EMAIL = { css: '.profile__section:not(#email), .tabs, .admin h1 { display: none !important; }' }
+const EXAMPLE_REDIRECT = "document.querySelectorAll('#email .mail-signin__redirect code').forEach((c) => { c.textContent = 'https://wiki.example.com/api/email/oauth/callback' })"
+const TAG_SIGNIN = "[...document.querySelectorAll('#email .mail-signin button')].find((b) => b.textContent.trim().startsWith('Sign in with'))?.setAttribute('data-shot', 'signin')"
+
 // "Last changed ... by" names a real account on the instance the pictures
 // come from, so it is hidden.
 const HIDE_POLICY_AUTHOR = "[...document.querySelectorAll('.backup-policy p')].filter((p) => p.textContent.trim().startsWith('Last changed')).forEach((p) => { p.style.display = 'none' })"
@@ -97,7 +113,9 @@ export const shots = () => [
   {
     name: 'email-steps', url: '/admin/settings', viewport: NARROW, phone: false, settle: 800,
     steps: [
-      { wait: 2500 },
+      { wait: 2500 }, ONLY_EMAIL,
+      { eval: PICK_PROVIDER('') },
+      { wait: 300 },
       { type: 'smtp.example.com', selector: 'input[name="smtpHost"]' },
       { type: 'wiki@example.com', selector: 'input[name="smtpUsername"]' },
       { type: 'wiki@example.com', selector: 'input[name="smtpFromAddress"]' },
@@ -107,15 +125,48 @@ export const shots = () => [
     clipTo: section('Email'), clipPad: 0,
     annotate: [
       { type: 'box', target: '[data-shot="send-email"]', pad: 4 },
+      { type: 'box', target: '#email label:has(> select) select', pad: 4 },
       { type: 'box', target: '[data-shot="save-mail"]', pad: 4 },
       { type: 'box', target: '[data-shot="send-test"]', pad: 4 },
     ],
   },
+  // Gmail chosen, with App password: the hint and the choice.
+  {
+    name: 'email-provider-gmail', url: '/admin/settings', viewport: NARROW, phone: false, settle: 800,
+    steps: [
+      { wait: 2500 }, ONLY_EMAIL, { eval: PICK_PROVIDER('gmail') }, { wait: 400 },
+      { click: '#email .mail-choice label:nth-of-type(2) input' }, { wait: 300 },
+      { eval: 'document.activeElement && document.activeElement.blur()' },
+    ],
+    clipTo: ['#email label:has(> select)', '#email .mail-hint', '#email .mail-choice'], clipPad: 10,
+    annotate: [
+      { type: 'box', target: '#email label:has(> select) select', pad: 4 },
+      { type: 'box', target: '#email .mail-choice label:nth-of-type(2)', pad: 4 },
+    ],
+  },
+  // Sign in with Google and with Microsoft: the registration fields. The
+  // redirect address is this instance's own, so an example stands in for it.
+  ...['google', 'microsoft'].map((which) => ({
+    name: `email-${which}-signin`, url: '/admin/settings', viewport: NARROW, phone: false, settle: 800,
+    steps: [
+      { wait: 2500 }, ONLY_EMAIL, { eval: PICK_PROVIDER(which === 'google' ? 'gmail' : 'microsoft') }, { wait: 400 },
+      { eval: EXAMPLE_REDIRECT },
+      // This instance is on a local name, so its Google note says to use a
+      // Desktop app; the example address is a public one, which needs none.
+      { eval: "document.querySelectorAll('#email .mail-signin p').forEach((p) => { if (p.textContent.includes('Desktop app')) p.remove() })" },
+      { eval: TAG_SIGNIN },
+    ],
+    clipTo: ['#email .mail-choice', '#email .mail-signin'], clipPad: 10,
+    annotate: [
+      { type: 'box', target: '#email .mail-signin__redirect', pad: 4 },
+      { type: 'box', target: '[data-shot="signin"]', pad: 4 },
+    ],
+  })),
 ]
 
 export async function build({
   top, page, ensure, attachCurrent, doc, p, h, text, bold, italic, code, ul, ol, li, panel, table, codeBlock,
-  fileBlock, live, tasks, task, picture, pageLink,
+  fileBlock, live, tasks, task, picture, pageLink, mailProviders,
 }) {
   const root = top['Installation and operations']
   const b = (t) => text(t, bold)
@@ -591,26 +642,66 @@ export async function build({
 
   // ============================================================ Email
   const email = await ensure('Email (SMTP)', root)
+  // Named in links before its own page is written below.
+  await ensure('Sending services', email)
 
   // Providers for people with no mail server of their own (the owner,
-  // 2026-09-24). Checked against the providers' own pages that day: Google's
-  // app passwords (support.google.com/mail/answer/185833), Microsoft's
-  // Outlook.com modern-authentication notice, and the Exchange Online SMTP
-  // AUTH timeline (off by default at the end of December 2026). Tesria signs
-  // in with a username and password only, so an OAuth-only provider cannot
-  // be used; say so rather than leave someone stuck.
+  // 2026-09-24), and signing in with Google or Microsoft instead of a
+  // password (dev-plan 18.2, 18.3). Checked against the providers' own pages
+  // that day: Google's app passwords (support.google.com/mail/answer/185833),
+  // OAuth for web and desktop clients (developers.google.com/identity/
+  // protocols/oauth2), unverified apps (support.google.com/cloud/answer/
+  // 7454865); Microsoft's redirect rules (learn.microsoft.com/entra/
+  // identity-platform/reply-url), client secrets (how-to-add-credentials),
+  // OAuth for SMTP (exchange/client-developer/legacy-protocols/how-to-
+  // authenticate-an-imap-pop-smtp-application-by-using-oauth) and
+  // Authenticated SMTP (exchange/clients-and-mobile-in-exchange-online/
+  // authenticated-client-smtp-submission).
+
+  // The settings tables come from the app's own presets (dev-plan 18.1),
+  // fetched in prepare(), so a page and the Provider list cannot disagree.
+  const TLS = ['None', 'STARTTLS', 'SSL on connect']
+  const preset = (id) => {
+    const found = (mailProviders ?? []).find((x) => x.id === id)
+    if (!found) throw new Error(`no mail provider preset ${id}`)
+    return found
+  }
+  const presetTable = (id, { username, password, from, host } = {}) => {
+    const x = preset(id)
+    return table([
+      ['Setting', 'Value'],
+      ['Provider', x.name],
+      ['SMTP host', p(c(host ?? x.host))],
+      ['Port', p(c(String(x.port)))],
+      ['Encryption', TLS[x.tls]],
+      ['Username', username ?? x.username],
+      ['Password', password ?? x.password],
+      ['From address', from ?? 'The same address'],
+    ], [140, 300])
+  }
+  const fillIn = () => p('Choose ', b('Admin'), ', then ', b('Settings'), '. In the ', b('Email'), ' section, choose your provider under ', b('Provider'), ': that fills in the server for you. Then fill in the rest:')
+  const testIt = () => [
+    p('Choose ', b('Save mail settings'), ', turn on ', b('Send email'), ', then choose ', b('Send test email to me'), ' and check that it arrived, including in the spam folder. The full walk-through is on ', pageLink('Email (SMTP)'), '.'),
+  ]
+  const signInTest = () => p('Turn on ', b('Send email'), ' at the top of the section if it is off, choose ', b('Send test email to me'), ', and check that the message arrived, including in the spam folder.')
+
   await page('Sending with Gmail', email, doc(
-    p('No mail server of your own? A Gmail account can send Tesria’s email. It suits a small team: a handful of password resets, invitations and notifications a day. Setting it up takes about five minutes.'),
-    p('Gmail will not let a program like Tesria sign in with your everyday password. Instead you make an ', b('app password'), ': a separate, 16-letter password that works only for the program you give it to. If it ever leaks, you delete it, and your real password and the rest of your account stay safe.'),
+    p('No mail server of your own? A Gmail account can send Tesria’s email. It suits a small team: a handful of password resets, invitations and notifications a day.'),
+    p('Gmail will not let a program like Tesria use your everyday password. There are two other ways, and you can switch between them at any time:'),
+    ul(
+      li(p(b('An app password'), ': a separate, 16-letter password that works only for the program you give it to. About five minutes, and the quickest start. If it ever leaks, you delete it and nothing else is affected.')),
+      li(p(b('Sign in with Google'), ': you sign in once, on Google’s own page, and Tesria never holds a password at all. It needs a small Google Cloud project, about fifteen minutes the first time, and it keeps working when the Gmail password changes, which ends every app password.')),
+    ),
     panel('success', p(b('Use an account made for the wiki.'), ' A new Gmail address such as ', c('ourteam.wiki@gmail.com'), ' keeps the wiki’s email out of your own inbox and sent folder, and means nobody’s personal account is tied to it. The emails people receive come from this address.')),
 
     h(2, 'Before you start'),
     ul(
       li(p(b('A Gmail account'), ' you can sign in to.')),
-      li(p(b('2-Step Verification turned on'), ' for that account. Google only offers app passwords when it is. If it is off, turn it on at ', c('myaccount.google.com/security'), ', under ', b('How you sign in to Google'), '.')),
+      li(p(b('For an app password: 2-Step Verification turned on'), ' for that account. Google only offers app passwords when it is. If it is off, turn it on at ', c('myaccount.google.com/security'), ', under ', b('How you sign in to Google'), '.')),
     ),
-    panel('note', p(b('A work or school Google account'), ' (Google Workspace) may not offer app passwords, because the organization’s administrator decides. If you cannot find the option, ask them, or use a personal Gmail account made for the wiki.')),
+    panel('note', p(b('A work or school Google account'), ' (Google Workspace) may not offer app passwords, because the organization’s administrator decides. Sign in with Google works there, or ask the administrator.')),
 
+    h(2, 'The quick way: an app password'),
     step(1, 'Make an app password'),
     ol(
       li(p('Go to ', c('myaccount.google.com/apppasswords'), ' and sign in to the Gmail account the wiki will send from.')),
@@ -619,101 +710,130 @@ export async function build({
     ),
 
     step(2, 'Fill in Tesria’s email settings'),
-    p('Choose ', b('Admin'), ', then ', b('Settings'), ', and fill in the ', b('Email'), ' section with these values:'),
-    table([
-      ['Setting', 'Value'],
-      ['SMTP host', p(c('smtp.gmail.com'))],
-      ['Port', p(c('587'))],
-      ['Username', 'The full Gmail address'],
-      ['Password', 'The app password, without the spaces'],
-      ['From address', 'The same Gmail address'],
-      ['Encryption', 'STARTTLS'],
-    ], [140, 300]),
-    p('Then choose ', b('Save mail settings'), '.'),
+    fillIn(),
+    ...(await picture(email, 'email-provider-gmail', 'The Provider list set to Gmail, with what goes in the username and password, and App password chosen',
+      'Choosing Gmail fills in the server. Choose App password, then fill in the fields below it.')),
+    presetTable('gmail', { username: 'The full Gmail address', password: 'The app password, without the spaces', from: 'The same Gmail address' }),
+    p('Under ', b('How Tesria signs in'), ', choose ', b('App password'), '. Then choose ', b('Save mail settings'), '.'),
 
     step(3, 'Turn it on and send a test'),
     p('Turn on ', b('Send email'), ' at the top of the section, then choose ', b('Send test email to me'), '. The test goes to the email address on your own Tesria account. Check that it arrived, including in the spam folder.'),
-    p('The full walk-through of these settings, with a picture, is on ', pageLink('Email (SMTP)'), '.'),
+
+    h(2, 'The lasting way: sign in with Google'),
+    p('Here you make a small “app” of your own in Google Cloud, tell Google that Tesria is allowed to come back to it, and then sign in once. It is your own because every Tesria has its own address, and Google only sends a sign-in back to addresses the app has registered. It costs nothing.'),
+    step(1, 'Create a Google Cloud project'),
+    ol(
+      li(p('Go to ', c('console.cloud.google.com'), ' and sign in. Any Google account you will keep works; it does not have to be the one that sends.')),
+      li(p('Open the project list at the top, choose ', b('New project'), ', name it ', c('Tesria'), ', and choose ', b('Create'), '.')),
+    ),
+    step(2, 'Describe the app to Google'),
+    ol(
+      li(p('With the new project selected, open ', b('Google Auth Platform'), ' (search for it at the top) and choose ', b('Get started'), '.')),
+      li(p('Give the app a name, such as ', c('Tesria'), ', and a support email address (your own).')),
+      li(p('For who may use it, choose ', b('External'), '. A Google Workspace organization can choose ', b('Internal'), ' instead, and then only its own accounts can sign in, with no warning screens.')),
+      li(p('Add a contact email and finish.')),
+    ),
+    step(3, 'Publish it, so the sign-in lasts'),
+    p('Under ', b('Audience'), ', choose ', b('Publish app'), ' and confirm, so its status reads ', b('In production'), '. This matters: an External app left in ', b('Testing'), ' has its sign-ins ended by Google after seven days, and email would stop a week later. (An Internal app has no such status; skip this step.)'),
+    panel('info', p(b('No review from Google is needed.'), ' Google reviews apps that the public signs in to. One that only you use, such as a mail plugin for your own site, is exempt; Google shows you a warning instead, once, in step 6.')),
+    step(4, 'Create the client'),
+    ol(
+      li(p('Under ', b('Clients'), ', choose ', b('Create client'), '.')),
+      li(p('For the application type, choose ', b('Web application'), ' and name it ', c('Tesria'), '.')),
+      li(p('Under ', b('Authorized redirect URIs'), ', choose ', b('Add URI'), ' and paste the address Tesria shows in its email settings, under ', b('Redirect address to register with Google'), ' (step 5 shows where).')),
+      li(p('Choose ', b('Create'), ', then copy the ', b('Client ID'), ' and the ', b('Client secret'), '.')),
+    ),
+    panel('note', p(b('Tesria on a local name,'), ' such as ', c('wiki.local'), ' or ', c('192.168.1.50'), '? Google only returns to addresses on public domains, so Tesria’s settings say to choose ', b('Desktop app'), ' as the type instead. That needs no redirect address; step 7 is the extra step it takes.')),
+    step(5, 'Sign in from Tesria'),
+    p('In ', b('Admin'), ', ', b('Settings'), ', ', b('Email'), ', choose ', b('Gmail or Google Workspace'), ' under ', b('Provider'), ' and leave ', b('Sign in with Google'), ' chosen. Paste the client ID and secret, then choose ', b('Sign in with Google'), '.'),
+    ...(await picture(email, 'email-google-signin', 'Sign in with Google chosen, with the redirect address to register, the client ID and secret, and the sign-in button',
+      'The redirect address to register in step 4, the client ID and secret from it, and Sign in with Google.')),
+    step(6, 'Allow it on Google’s page'),
+    ol(
+      li(p('Choose the Gmail account the wiki will send from.')),
+      li(p('Google says ', i('Google hasn’t verified this app'), '. That is expected: the app is the one you made a few minutes ago. Choose ', b('Advanced'), ', then ', b('Go to Tesria'), '.')),
+      li(p('Google asks to let the app read, compose, send and delete your email. That is how Google describes the only permission that allows sending from another program, which is one more reason to use an account made for the wiki. Tesria only sends. Choose ', b('Continue'), ' or ', b('Allow'), '.')),
+    ),
+    p('Google returns you to Tesria, which says ', i('Signed in. Email now goes out from'), ' and the address. Tesria has filled in the server, the username and the From address itself.'),
+    step(7, 'Only on a local name: paste the address back'),
+    p('With a ', b('Desktop app'), ' client, Google cannot return to Tesria, so after you allow it your browser opens a page that does not load, at an address starting with ', c('http://127.0.0.1'), '. That is expected. Copy the whole address from the address bar, go back to Tesria’s tab, paste it into ', b('Paste the address of the page that did not load'), ', and choose ', b('Finish signing in'), '.'),
+    step(8, 'Send a test'),
+    signInTest(),
 
     h(2, 'If the test fails'),
     ul(
-      li(p(b('“Username and Password not accepted”'), ' means Gmail refused the sign-in. Check that the username is the whole address, and paste the app password again. Your everyday Gmail password does not work here.')),
-      li(p(b('The email arrives from a different address'), ' than the one you typed as the From address. Gmail sends only as the account you signed in with, so use that address.')),
-      li(p(b('It worked, then stopped.'), ' Changing the Gmail account’s password deletes all of its app passwords. Make a new one and enter it in the ', b('Password'), ' box.')),
+      li(p(b('“Username and Password not accepted”'), ' with an app password means Gmail refused it. Check that the username is the whole address, and paste the app password again. Your everyday Gmail password does not work here.')),
+      li(p(b('The email arrives from a different address'), ' than the From address. Gmail sends only as the account that signs in, so use that address.')),
+      li(p(b('An app password worked, then stopped.'), ' Changing the Gmail account’s password deletes all of its app passwords. Make a new one and enter it in the ', b('Password'), ' box.')),
+      li(p(b('A signed-in Tesria stopped sending after a week.'), ' The app was still in ', b('Testing'), ' (step 3). Publish it, then choose ', b('Sign in again with Google'), '.')),
+      li(p(b('Administrators get the alert'), ' ', i('Email stopped: the mail sign-in was refused'), '. Google ended the sign-in, for example because someone removed Tesria’s access in the Google account. The email settings show Google’s reason; choose ', b('Sign in again with Google'), '.')),
     ),
 
     h(2, 'Good to know'),
     ul(
-      li(p(b('Gmail limits how much one account sends in a day.'), ' A small team never reaches it. If your wiki has hundreds of people who all want email notifications, use a sending service instead, such as Amazon SES, Postmark or Mailgun.')),
-      li(p(b('You can switch off the app password at any time'), ' from the same page where you made it. Tesria stops sending until you give it a new one.')),
+      li(p(b('Gmail limits how much one account sends in a day.'), ' A small team never reaches it. If your wiki has hundreds of people who all want email notifications, use one of the ', pageLink('Sending services'), ' instead.')),
+      li(p(b('You can switch off either way at any time.'), ' Delete the app password, or remove Tesria under your Google account’s third-party connections. Tesria stops sending until you set it up again.')),
     ),
   ))
 
   await page('Sending with Outlook or Microsoft 365', email, doc(
-    p('Whether Microsoft can send Tesria’s email depends on which kind of Microsoft account you have. Microsoft is moving every program that sends email away from signing in with a password, toward a sign-in method called OAuth, and Tesria signs in to a mail server with a username and password. This page tells you where that leaves each kind of account, so you do not spend an evening on settings that cannot work.'),
+    p('Tesria sends through Microsoft by ', b('signing in with Microsoft'), ': you sign in once, on Microsoft’s own page, and Tesria never holds a password. It works for both kinds of Microsoft account, and it is the only way that keeps working, because Microsoft no longer accepts passwords from other programs for personal accounts, and turns them off by default for Microsoft 365 at the end of December 2026.'),
+    p('It takes one piece of setup the first time: registering Tesria with Microsoft, about fifteen minutes. It is your own registration because every Tesria has its own address, and Microsoft only sends a sign-in back to addresses the registration names.'),
 
     h(2, 'Which account do you have?'),
     ul(
       li(p(b('A personal account'), ': an address ending in ', c('@outlook.com'), ', ', c('@hotmail.com'), ', ', c('@live.com'), ' or ', c('@msn.com'), ', which you signed up for yourself.')),
       li(p(b('A work or school account'), ' (Microsoft 365): an address at your organization’s own domain, such as ', c('you@example.com'), ', which your IT department gave you.')),
     ),
+    p('Both use the steps below. Tesria sends a personal account’s email through Outlook.com’s server and a Microsoft 365 account’s through Microsoft 365’s, and picks the right one when you sign in.'),
 
-    h(2, 'A personal Outlook.com account'),
-    p(b('This does not work with Tesria.'), ' Since September 2024, Microsoft only lets programs send through personal Outlook.com, Hotmail and Live accounts after an OAuth sign-in, and no longer accepts a password, not even an app password. Tesria cannot do an OAuth sign-in to a mail server.'),
-    p('What to do instead:'),
+    h(2, 'Before you start'),
     ul(
-      li(p(b('Use a Gmail account made for the wiki.'), ' It takes about five minutes. See ', pageLink('Sending with Gmail'), '.')),
-      li(p(b('Use a sending service'), ' such as Amazon SES, Postmark or Mailgun. They are made for programs that send email and have free or low-cost plans for a small team.')),
+      li(p(b('Somewhere to register Tesria.'), ' Registrations live in a Microsoft Entra directory. Every Microsoft 365 organization has one; its administrator may need to do step 1, or allow you to. With only a personal account, creating a free Azure account gives you a directory of your own.')),
+      li(p(b('For Microsoft 365: Authenticated SMTP allowed for the mailbox.'), ' Microsoft 365 turns it off in many organizations, and signing in does not get around it. An administrator turns it on in the Microsoft 365 admin center: ', b('Users'), ', ', b('Active users'), ', the mailbox, ', b('Mail'), ', ', b('Manage email apps'), ', ', b('Authenticated SMTP'), '. If the organization uses Microsoft’s ', b('Security defaults'), ', those keep it off.')),
     ),
+    panel('success', p(b('Use a mailbox made for the wiki.'), ' A mailbox such as ', c('wiki@example.com'), ' keeps nobody’s personal mailbox tied to the wiki. The emails people receive come from it.')),
 
-    h(2, 'A Microsoft 365 work or school account'),
-    p('This works today, as long as your organization’s Microsoft 365 administrator allows it. The setting they need is called ', b('Authenticated SMTP'), ' (SMTP AUTH), and it is turned off in many organizations. Ask your IT department to turn it on for the mailbox Tesria will send from, and tell them it is for an internal wiki that sends password resets and notifications.'),
-    panel('warning', p(b('Microsoft is phasing this out.'), ' At the end of December 2026, Microsoft turns password sign-in for sending off by default in existing organizations. Your administrator can turn it back on for now. Organizations created from 2027 cannot use it at all, and Microsoft plans to remove it completely later. For a setup that keeps working, use a sending service or Gmail.')),
-
-    step(1, 'Ask for a mailbox to send from'),
-    p('A mailbox made for the wiki, such as ', c('wiki@example.com'), ', is best, so nobody’s personal mailbox is tied to it. It needs to be an ordinary mailbox that can sign in with a password; a Microsoft 365 “shared mailbox” has no password of its own. You need its address and password, and Authenticated SMTP turned on for it.'),
-
-    step(2, 'Fill in Tesria’s email settings'),
-    p('Choose ', b('Admin'), ', then ', b('Settings'), ', and fill in the ', b('Email'), ' section with these values:'),
-    table([
-      ['Setting', 'Value'],
-      ['SMTP host', p(c('smtp.office365.com'))],
-      ['Port', p(c('587'))],
-      ['Username', 'The mailbox’s full address'],
-      ['Password', 'The mailbox’s password'],
-      ['From address', 'The same address'],
-      ['Encryption', 'STARTTLS'],
-    ], [140, 300]),
-    p('Then choose ', b('Save mail settings'), '.'),
-
-    step(3, 'Turn it on and send a test'),
-    p('Turn on ', b('Send email'), ' at the top of the section, then choose ', b('Send test email to me'), '. Check that the email arrived, including in the junk folder. The full walk-through is on ', pageLink('Email (SMTP)'), '.'),
+    step(1, 'Register Tesria with Microsoft'),
+    ol(
+      li(p('Go to ', c('entra.microsoft.com'), ' and sign in. Open ', b('App registrations'), ' (search for it at the top) and choose ', b('New registration'), '.')),
+      li(p('Name it ', c('Tesria'), '.')),
+      li(p('Under ', b('Supported account types'), ', choose the one that includes personal Microsoft accounts to send from an Outlook.com address (or from either kind). To allow only your organization’s mailboxes, choose ', b('this organizational directory only'), '.')),
+      li(p('Under ', b('Redirect URI'), ', choose ', b('Web'), ' and paste the address Tesria shows in its email settings, under ', b('Redirect address to register with Microsoft'), ' (step 5 shows where). Choose ', b('Register'), '.')),
+    ),
+    panel('note', p(b('Microsoft only returns to https addresses.'), ' Tesria always has one, but the address in its settings must be the https address people use: see ', b('Instance'), ' in ', pageLink('Settings (administration)', 'Settings'), '.')),
+    step(2, 'Copy its IDs'),
+    p('On the registration’s ', b('Overview'), ', copy the ', b('Application (client) ID'), '. If you chose ', b('this organizational directory only'), ', copy the ', b('Directory (tenant) ID'), ' too.'),
+    step(3, 'Make a client secret'),
+    ol(
+      li(p('Open ', b('Certificates & secrets'), ', then ', b('Client secrets'), ', then ', b('New client secret'), '.')),
+      li(p('Describe it as ', c('Tesria'), ' and pick when it expires. The longest is 24 months; Microsoft suggests less. Put a reminder in your calendar a week before.')),
+      li(p('Copy the secret’s ', b('Value'), ' now. Microsoft shows it only once, and the ', b('Secret ID'), ' beside it is not what Tesria needs.')),
+    ),
+    step(4, 'Allow it to send email'),
+    p('Open ', b('API permissions'), ', choose ', b('Add a permission'), ', then ', b('Microsoft Graph'), ', then ', b('Delegated permissions'), '. Tick ', b('SMTP.Send'), ', and under OpenId permissions ', b('email'), ', ', b('offline_access'), ' and ', b('openid'), '. Choose ', b('Add permissions'), '. In an organization, an administrator may also need to choose ', b('Grant admin consent'), '.'),
+    step(5, 'Sign in from Tesria'),
+    p('In ', b('Admin'), ', ', b('Settings'), ', ', b('Email'), ', choose ', b('Outlook or Microsoft 365'), ' under ', b('Provider'), ' and leave ', b('Sign in with Microsoft'), ' chosen. Paste the client ID and the secret’s value, and the directory ID if you copied one. Then choose ', b('Sign in with Microsoft'), '.'),
+    ...(await picture(email, 'email-microsoft-signin', 'Sign in with Microsoft chosen, with the redirect address to register, the application ID, secret and directory ID, and the sign-in button',
+      'The redirect address to register in step 1, the IDs and secret from steps 2 and 3, and Sign in with Microsoft.')),
+    p('Microsoft asks which account to use and whether to allow Tesria to send email as it. Choose the mailbox the wiki will send from, and allow it. You come back to Tesria, which says ', i('Signed in. Email now goes out from'), ' and the address. Tesria has filled in the server, the username and the From address itself.'),
+    step(6, 'Send a test'),
+    signInTest(),
 
     h(2, 'If the test fails'),
     ul(
-      li(p(b('“Authentication unsuccessful”'), ' that mentions ', c('SmtpClientAuthentication'), ' means Authenticated SMTP is still off, for the mailbox or for the whole organization. Your administrator needs to turn it on.')),
-      li(p(b('“Authentication unsuccessful”'), ' on its own usually means a wrong password, or that the mailbox needs a second sign-in step (such as a code on a phone). Tesria cannot answer that step. Ask your administrator whether a mailbox without it can be used for sending, or use a sending service instead.')),
+      li(p(b('“Authentication unsuccessful”'), ' that mentions ', c('SmtpClientAuthentication'), ' means Authenticated SMTP is off, for the mailbox or the whole organization (see Before you start). An administrator needs to turn it on.')),
+      li(p(b('Tesria says the client secret has expired.'), ' Make a new secret (step 3), paste its value in Tesria’s email settings and choose ', b('Sign in again with Microsoft'), '.')),
+      li(p(b('Administrators get the alert'), ' ', i('Email stopped: the mail sign-in was refused'), '. Microsoft ended the sign-in, for example because the account’s password changed or someone removed Tesria’s access. The email settings show Microsoft’s reason; sign in again.')),
+      li(p(b('Microsoft says the redirect address does not match.'), ' The address registered in step 1 must be exactly the one Tesria shows, including ', c('https://'), '.')),
     ),
+
+    h(2, 'Microsoft 365 with a password, for now'),
+    p('A Microsoft 365 mailbox can still send with its password while its organization allows Authenticated SMTP with a password. Choose ', b('Password'), ' under ', b('How Tesria signs in'), ' and fill in:'),
+    presetTable('microsoft', { username: 'The mailbox’s full address', password: 'The mailbox’s password' }),
+    panel('warning', p(b('Microsoft is phasing this out.'), ' At the end of December 2026, Microsoft turns password sign-in for sending off by default in existing organizations; the administrator can turn it back on for now. Organizations created from 2027 cannot use it, and Microsoft plans to remove it completely later. Signing in with Microsoft is the way that lasts.')),
+    p('A Microsoft 365 “shared mailbox” has no password of its own, so it cannot send this way. A personal Outlook.com account cannot send with a password at all.'),
   ))
-  // More providers with app passwords (the owner, 2026-09-24). Each checked
-  // that day against the provider's own help: Apple (support.apple.com
-  // 102525 and 102654), Fastmail (fastmail.help, server names and ports; app
-  // passwords), Zoho (zoho.com/mail/help/zoho-smtp.html; app passwords; its
-  // free plan no longer includes other apps for new accounts) and Proton
-  // (proton.me/support/smtp-submission).
-  const settingsTable = (host, port, security, user, password, from) => table([
-    ['Setting', 'Value'],
-    ['SMTP host', p(c(host))],
-    ['Port', p(c(port))],
-    ['Username', user],
-    ['Password', password],
-    ['From address', from],
-    ['Encryption', security],
-  ], [140, 300])
-  const fillIn = () => p('Choose ', b('Admin'), ', then ', b('Settings'), ', and fill in the ', b('Email'), ' section with these values:')
-  const testIt = () => [
-    p('Choose ', b('Save mail settings'), ', turn on ', b('Send email'), ', then choose ', b('Send test email to me'), ' and check that it arrived, including in the spam folder. The full walk-through is on ', pageLink('Email (SMTP)'), '.'),
-  ]
 
   await page('Sending with Apple iCloud Mail', email, doc(
     p('If you use an iPhone or a Mac, you may already have an iCloud Mail address ending in ', c('@icloud.com'), ' (or ', c('@me.com'), ' or ', c('@mac.com'), '). Tesria can send its email through it. Like Gmail, Apple does not let other programs use your Apple Account password: you make an ', b('app-specific password'), ', a separate password for Tesria alone, which you can delete at any time without touching your account.'),
@@ -734,7 +854,7 @@ export async function build({
 
     step(2, 'Fill in Tesria’s email settings'),
     fillIn(),
-    settingsTable('smtp.mail.me.com', '587', 'STARTTLS', 'Your full iCloud address, such as name@icloud.com', 'The app-specific password', 'The same iCloud address'),
+    presetTable('icloud', { password: 'The app-specific password', from: 'The same iCloud address' }),
 
     step(3, 'Turn it on and send a test'),
     ...testIt(),
@@ -765,7 +885,7 @@ export async function build({
 
     step(2, 'Fill in Tesria’s email settings'),
     fillIn(),
-    settingsTable('smtppro.zoho.com', '465', 'SSL on connect', 'Your full Zoho email address', 'The application-specific password', 'The same address, or one of its aliases'),
+    presetTable('zoho', { password: 'The application-specific password', from: 'The same address, or one of its aliases' }),
     p('Use your own server’s address from Zoho’s settings in place of ', c('smtppro.zoho.com'), ' if it differs. Port 587 with STARTTLS works too.'),
 
     step(3, 'Turn it on and send a test'),
@@ -793,7 +913,7 @@ export async function build({
 
     step(2, 'Fill in Tesria’s email settings'),
     fillIn(),
-    settingsTable('smtp.fastmail.com', '465', 'SSL on connect', 'Your full Fastmail address', 'The app password', 'Your Fastmail address, or another address on your account'),
+    presetTable('fastmail', { password: 'The app password', from: 'Your Fastmail address, or another address on your account' }),
     p('Port 587 with STARTTLS works too.'),
 
     step(3, 'Turn it on and send a test'),
@@ -825,7 +945,7 @@ export async function build({
 
     step(2, 'Fill in Tesria’s email settings'),
     fillIn(),
-    settingsTable('smtp.protonmail.ch', '587', 'STARTTLS', 'The address the token is for', 'The SMTP token', 'The same address'),
+    presetTable('proton', { username: 'The address the token is for', password: 'The SMTP token' }),
 
     step(3, 'Turn it on and send a test'),
     ...testIt(),
@@ -837,45 +957,105 @@ export async function build({
   ))
 
   await page('Email (SMTP)', root, doc(
-    p('Tesria sends a few kinds of email: password reset links, invitations, security alerts to administrators, and notifications to people who ask for them. To send them it needs an ', b('SMTP server'), ', the kind of mail server programs send through. Your organization’s mail server works, and so do sending services such as Amazon SES, Postmark or Mailgun.'),
+    p('Tesria sends a few kinds of email: password reset links, invitations, security alerts to administrators, and notifications to people who ask for them. To send them it needs an ', b('SMTP server'), ', the kind of mail server programs send through. The email account you already have usually has one: Gmail, Outlook, iCloud Mail and others. So does your organization’s mail server, and so do sending services made for programs.'),
     p('Email is optional. Without it, an administrator resets a forgotten password by giving the person a one-time link (see ', pageLink('Resetting a password'), '), and alerts wait in the bell for an administrator to see.'),
-    panel('info', p(b('No mail server of your own?'), ' The email you already have may do. A Gmail account made for the wiki works well for a small team: see ', pageLink('Sending with Gmail'), '. For Microsoft accounts, see ', pageLink('Sending with Outlook or Microsoft 365'), ' first, because a personal Outlook.com account cannot be used. There are also pages for ', pageLink('Sending with Apple iCloud Mail', 'iCloud Mail'), ', ', pageLink('Sending with Zoho Mail', 'Zoho Mail'), ', ', pageLink('Sending with Fastmail', 'Fastmail'), ' and ', pageLink('Sending with Proton Mail', 'Proton Mail'), '.')),
 
-    h(2, 'Before you start'),
-    p('Have these from your email provider or IT department. They are usually on a help page about “SMTP” or “sending from an app”:'),
+    h(2, 'Pick the way that suits you'),
     ul(
-      li(p(b('The SMTP host and port,'), ' such as ', c('smtp.example.com'), ' and 587.')),
-      li(p(b('A username and password'), ' for sending.')),
-      li(p(b('The address to send from,'), ' such as ', c('wiki@example.com'), '. Most services only allow an address on a domain you have verified with them.')),
+      li(p(b('An email account you already have,'), ' for a small team. Each has its own page, because each wants something different instead of your everyday password: ', pageLink('Sending with Gmail', 'Gmail'), ', ', pageLink('Sending with Outlook or Microsoft 365', 'Outlook or Microsoft 365'), ', ', pageLink('Sending with Apple iCloud Mail', 'iCloud Mail'), ', ', pageLink('Sending with Zoho Mail', 'Zoho Mail'), ', ', pageLink('Sending with Fastmail', 'Fastmail'), ' and ', pageLink('Sending with Proton Mail', 'Proton Mail'), '.')),
+      li(p(b('A sending service,'), ' for a larger team, or email from your own domain without running a mail server: see ', pageLink('Sending services'), '.')),
+      li(p(b('Your organization’s mail server,'), ' if it has one. Ask its administrators for the details below.')),
     ),
+    p('For Gmail and Microsoft, Tesria can also ', b('sign in'), ' on the provider’s own page instead of using any password. Their pages explain both ways.'),
 
     step(1, 'Open the email settings'),
     p('Choose ', b('Admin'), ' at the top of any page, then the ', b('Settings'), ' tab. The ', b('Email'), ' section has everything, and the steps below use the boxed controls in order.'),
-    ...(await picture(email, 'email-steps', 'The Email settings, filled in with example values', 'Send email, Save mail settings and Send test email to me are boxed.')),
+    ...(await picture(email, 'email-steps', 'The Email settings, filled in with example values', 'Provider, Save mail settings, Send email and Send test email to me are boxed.')),
 
-    step(2, 'Fill in the mail server'),
+    step(2, 'Choose your provider'),
+    p('The ', b('Provider'), ' list names the common email accounts and sending services. Choosing one fills in the server, the port and the encryption, and says in a line what goes in the username and password, which is often not the password you sign in with. For anything else, leave it on ', b('Other'), ' and fill the server in yourself.'),
+
+    step(3, 'Fill in the rest'),
     ul(
-      li(p(b('SMTP host'), ' and ', b('Port'), ': your mail server. Port 587 with STARTTLS is the usual choice; port 465 goes with SSL on connect.')),
-      li(p(b('Username'), ' and ', b('Password'), ': the account Tesria signs in to the mail server with. The password is stored encrypted and never shown again; to keep it when you change something else, leave the field empty.')),
-      li(p(b('From address'), ': who the email appears to come from.')),
+      li(p(b('SMTP host'), ' and ', b('Port'), ': the mail server. Port 587 with STARTTLS is the usual choice; port 465 goes with SSL on connect.')),
       li(p(b('Encryption'), ': STARTTLS, SSL on connect, or None. Use None only for a mail server on the same private network.')),
+      li(p(b('Username'), ' and ', b('Password'), ': the account Tesria signs in to the mail server with. The password is stored encrypted and never shown again; to keep it when you change something else, leave the field empty.')),
+      li(p(b('From address'), ': who the email appears to come from. Most providers only send from the account that signs in, and sending services only from a domain you have verified with them.')),
     ),
 
-    step(3, 'Choose Save mail settings'),
+    step(4, 'Choose Save mail settings'),
 
-    step(4, 'Turn on Send email'),
+    step(5, 'Turn on Send email'),
     p('The switch at the top of the section. It takes effect straight away. While it is off, Tesria does not try to send anything.'),
 
-    step(5, 'Send yourself a test'),
+    step(6, 'Send yourself a test'),
     p('Choose ', b('Send test email to me'), '. Tesria answers straight away: ', i('Sent: check your inbox'), ', or ', i('Not sent'), ' with the mail server’s reason. Then check that the message arrived, including in your spam folder.'),
 
     h(2, 'If the test fails'),
     ul(
       li(p(b('Check the port and encryption together.'), ' 587 goes with STARTTLS and 465 with SSL on connect; a mismatch usually fails without a clear reason.')),
-      li(p(b('Check the username and password.'), ' Many providers want a password made for apps rather than your everyday one.')),
+      li(p(b('Check the username and password.'), ' Many providers want a password made for apps rather than your everyday one. The provider’s page says which.')),
       li(p(b('Check the from address.'), ' A sending service refuses an address on a domain you have not verified with it.')),
     ),
-    p('The setup wizard’s Email step fills in the same settings. Changing them needs the ', b('Change the email server'), ' right, which administrators have unless the owner takes it away (see ', pageLink('Roles'), ').'),
+    p('The setup wizard’s Email step fills in the same settings, with the same provider list. Changing them needs the ', b('Change the email server'), ' right, which administrators have unless the owner takes it away (see ', pageLink('Roles'), ').'),
+  ))
+
+  // Sending services (dev-plan 18.4), each checked 2026-09-24 against its own
+  // documentation and pricing page: aws.amazon.com/ses/pricing and
+  // docs.aws.amazon.com/ses (smtp-credentials, request-production-access),
+  // postmarkapp.com (pricing, send-email-with-smtp), mailgun.com/pricing and
+  // documentation.mailgun.com, twilio.com/en-us/products/email-api/pricing and
+  // twilio.com/docs/sendgrid, brevo.com/pricing and help.brevo.com,
+  // resend.com/pricing and resend.com/docs/send-with-smtp, smtp2go.com/pricing
+  // and developers.smtp2go.com. Free tiers change: the page says so.
+  const service = (id, what, free, credentials, verify) => [
+    h(2, preset(id).name),
+    p(what),
+    ul(
+      li(p(b('Free to start: '), free)),
+      li(p(b('Credentials: '), credentials)),
+      li(p(b('Before it sends: '), verify)),
+    ),
+    presetTable(id, { from: 'An address on your verified domain' }),
+  ]
+  await page('Sending services', email, doc(
+    p('A ', b('sending service'), ' is a company whose whole job is delivering email that programs send: password resets, receipts, notifications. You give Tesria the service’s SMTP details, and the service does the delivering, from an address on your own domain, such as ', c('wiki@yourcompany.com'), '.'),
+    p('Why use one instead of a Gmail or Outlook account? They are built for it, so they do not have a person’s daily sending limits, their mail is less likely to land in spam, and nobody’s own mailbox is tied to the wiki. Most are free, or cost a few dollars a month, at a small team’s volume.'),
+    h(2, 'What they all have in common'),
+    ol(
+      li(p(b('You prove the domain is yours.'), ' The service gives you a few records to add to your domain’s DNS, where your domain is registered. Until they check out, it sends little or nothing. Some let you verify a single address instead, by clicking a link sent to it.')),
+      li(p(b('You make SMTP credentials,'), ' a username and password (or key) for sending, separate from your account’s password. Most show the password only once.')),
+      li(p(b('You fill them in Tesria.'), ' In ', b('Admin'), ', ', b('Settings'), ', ', b('Email'), ', choose the service under ', b('Provider'), ', which fills in the server, then add the credentials and a From address on your domain. See ', pageLink('Email (SMTP)'), '.')),
+    ),
+    panel('note', p(b('Free tiers change.'), ' What each offers for free was checked on September 24, 2026. Look at the service’s pricing page before you decide.')),
+    ...service('ses', 'Amazon’s service, and the cheapest at volume. It suits you if you already use AWS; its setup is the most involved.',
+      'no free sending of its own; new AWS accounts get credits that cover it for a while. A new account starts in a “sandbox” that sends only to addresses you have verified, up to 200 a day, until you ask AWS for production access.',
+      'in the SES console, under SMTP settings, choose Create SMTP credentials. They are not your AWS access keys, they belong to one AWS region, and the password is shown once.',
+      'verify your domain (three DNS records) or single addresses, in the same region.'),
+    ...service('postmark', 'Known for fast, reliable delivery of exactly this kind of email.',
+      '100 emails a month on its developer plan, which does not expire. Until Postmark approves the account, it sends only to addresses on your own verified domain.',
+      'the server’s API token works as both username and password; or make an SMTP token under the message stream’s settings.',
+      'verify your domain, or a sender signature for one address.'),
+    ...service('mailgun', 'A long-standing service with a free plan and US and EU regions.',
+      'a small free plan; check Mailgun’s pricing page for its current limits. Its test (“sandbox”) domain sends only to up to five addresses you authorize.',
+      'under Send, Sending, Domain settings, the SMTP credentials tab, for each domain. A new password is shown once.',
+      'verify your domain with its DNS records. A domain in the EU region uses the EU server, smtp.eu.mailgun.org.'),
+    ...service('sendgrid', 'Twilio’s service, widely used.',
+      'a trial of 100 emails a day for 60 days; after that it is paid.',
+      'the username is the word apikey, exactly, and the password is an API key with Mail Send permission, made under Settings, API Keys. The key is shown once.',
+      'verify a single sender address, or authenticate your domain.'),
+    ...service('brevo', 'A European service that also does newsletters.',
+      'up to 300 emails a day, once Brevo has approved the account for sending.',
+      'on the SMTP tab of its SMTP and API settings: your SMTP login, and an SMTP key (not an API key).',
+      'add and verify a sender, or authenticate your domain.'),
+    ...service('resend', 'A newer service with a generous free plan.',
+      '3,000 emails a month, up to 100 a day.',
+      'the username is the word resend, exactly, and the password is an API key from its API Keys page, shown once.',
+      'verify your domain; until then it sends only to your own address.'),
+    ...service('smtp2go', 'A simple relay with a free plan that does not run out.',
+      '1,000 emails a month, up to 200 a day. It asks for a work email address to sign up.',
+      'under Sending, SMTP Users.',
+      'add a verified sender domain (or a single address) under Sending, Verified Senders.'),
   ))
 
   // ============================================================ Upgrading
@@ -975,6 +1155,25 @@ export async function build({
 
   await page('How backups work', backups, doc(
     p('Two backup services run beside Tesria. Each keeps its own kind of copy, for a different kind of trouble, and both report to the ', b('Backups'), ' tab under ', b('Admin'), '.'),
+    // The owner asked for a picture of the design (2026-09-24); a diagram
+    // drawn from text, so it stays true when edited.
+    codeBlock('mermaid', [
+      'flowchart LR',
+      '  subgraph server["The computer Tesria runs on"]',
+      '    app["Tesria"] --> db[("Database")]',
+      '    app --> files["Attachments"]',
+      '    db -->|"every change, as it happens"| pgb["pgbackrest service"]',
+      '    pgb -->|"full copy weekly, changes daily"| pgv[("pgbackrest volume, encrypted")]',
+      '    db -->|"daily dump"| bk["backup service"]',
+      '    files -->|"daily archive"| bk',
+      '    bk --> bkv[("backups volume")]',
+      '  end',
+      '  pgb -.->|"reports"| tab["Backups tab"]',
+      '  bk -.->|"reports"| tab',
+      '  bkv -.->|"copied after each backup"| off["Offsite copies"]',
+      '  pgb -.->|"streams to the cloud"| off',
+    ].join('\n')),
+    p('Read it from the left: Tesria writes to its database and its attachments. The ', b('pgbackrest service'), ' records every change to the database as it happens and keeps full copies; the ', b('backup service'), ' takes a daily dump of the database and an archive of the attachments. Both report to the Backups tab, and both can send copies away from this computer, which the dotted lines show (see ', pageLink('Offsite copies'), ').'),
 
     h(2, 'Database dumps and uploads'),
     p('The ', c('backup'), ' service. Once every 24 hours (', c('BACKUP_INTERVAL_HOURS'), '), it takes a ', b('dump'), ' of the database, a complete copy in one file, and an archive of every attachment, both at the same moment.'),
@@ -1111,7 +1310,19 @@ export async function build({
     p('An ', b('offsite copy'), ' is a copy of your backups somewhere other than the computer Tesria runs on, so that losing that computer, to a dead disk, a fire or a theft, does not lose the wiki. It is the most important thing to add after installing, because it is the one thing Tesria cannot do without you.'),
 
     h(2, 'The three kinds'),
-    p('Use any of them, or all three together.'),
+    p('Use any of them, or all three together. What goes where:'),
+    codeBlock('mermaid', [
+      'flowchart LR',
+      '  subgraph server["Encrypted here, before it leaves"]',
+      '    bkv[("Dumps and attachment archives")]',
+      '    pgb["Database changes and full copies"]',
+      '  end',
+      '  bkv -->|"after every backup"| cloud["Cloud storage"]',
+      '  pgb -->|"continuously"| cloud',
+      '  bkv -->|"after every backup"| nas["A network drive"]',
+      '  bkv -->|"when someone chooses Copy now"| usb["A removable drive"]',
+    ].join('\n')),
+    p('Everything is encrypted on this computer before it leaves, so none of the three can read what it holds. Only cloud storage receives the database’s changes as they happen, which is what lets it restore to any moment; the network and removable drives hold the daily dumps and the attachments.'),
     ul(
       li(p(b('Cloud storage.'), ' Any storage that speaks the S3 protocol; Backblaze B2 is the documented choice. Copied to after every backup, and database changes stream there continuously in between. It holds everything, including restoring to any moment. The best single choice.')),
       li(p(b('A network drive.'), ' A shared folder on a NAS on your network. Copied to after every backup. It holds the dumps and the attachments.')),
@@ -1331,6 +1542,11 @@ const RETIRED = {
   'Offsite copies': ['storage-targets.png', 'storage-targets.phone.png'],
   'Email (SMTP)': ['email-settings.png', 'email-settings.phone.png'],
   'Security hardening': ['kill-switches.png', 'kill-switches.phone.png'],
+}
+
+/** The mail provider presets, from the app itself, so the settings tables match its Provider list. */
+export async function prepare({ author }) {
+  return { mailProviders: await author.call('GET', '/api/admin/settings/email/providers') }
 }
 
 export async function cleanup({ author }) {

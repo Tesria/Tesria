@@ -65,6 +65,45 @@ public class SiteSettings
     public string? SmtpFromAddress { get; set; }
     public SmtpTlsMode SmtpTls { get; set; } = SmtpTlsMode.StartTls;
 
+    // --- Mail providers (dev-plan Phase 18).
+
+    /// <summary>
+    /// The preset last chosen in the email settings, such as <c>gmail</c>
+    /// (<see cref="Infrastructure.Email.MailProviders"/>); null for Other.
+    /// Only what the form shows: the host, port and encryption above are
+    /// what is used.
+    /// </summary>
+    public string? SmtpProvider { get; set; }
+
+    /// <summary>How Tesria signs in to the mail server: a password, or a provider's sign-in (18.2, 18.3).</summary>
+    public MailSignIn SmtpSignIn { get; set; } = MailSignIn.Password;
+
+    /// <summary>
+    /// The administrator's own app registration with Microsoft (18.2). Every
+    /// instance has its own address, so there is no shared one. The secret is
+    /// protected like the SMTP password and never leaves the server.
+    /// </summary>
+    public string? MicrosoftClientId { get; set; }
+    public string? MicrosoftClientSecretProtected { get; set; }
+    /// <summary>The directory (tenant) the app is registered in; null is <c>common</c>, any account.</summary>
+    public string? MicrosoftTenant { get; set; }
+
+    /// <summary>The administrator's own Google Cloud OAuth client (18.3).</summary>
+    public string? GoogleClientId { get; set; }
+    public string? GoogleClientSecretProtected { get; set; }
+
+    /// <summary>
+    /// The refresh token from the provider's sign-in: it can send mail as
+    /// <see cref="MailOAuthAccount"/> until it is revoked, so it is protected
+    /// like the SMTP password and never leaves the server.
+    /// </summary>
+    public string? MailOAuthRefreshTokenProtected { get; set; }
+    /// <summary>The mailbox that signed in, which is also who the mail comes from.</summary>
+    public string? MailOAuthAccount { get; set; }
+    public DateTimeOffset? MailOAuthConnectedAt { get; set; }
+    /// <summary>Why the provider last refused to renew the sign-in; cleared when it next succeeds.</summary>
+    public string? MailOAuthError { get; set; }
+
     /// <summary>Reserved for dev-plan 3.5; stored here so the admin UI has one home.</summary>
     /// <summary>
     /// Hosts whose pages may be framed by an <c>embed</c> block, one per
@@ -281,6 +320,13 @@ public class SiteSettings
 
     public DateTimeOffset UpdatedAt { get; set; }
     public Guid? UpdatedById { get; set; }
+}
+
+public enum MailSignIn
+{
+    Password = 0,
+    Microsoft = 1,
+    Google = 2,
 }
 
 public enum SmtpTlsMode

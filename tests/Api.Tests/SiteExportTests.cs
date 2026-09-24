@@ -140,6 +140,19 @@ public class SiteExportTests
     }
 
     [Fact]
+    public void A_framed_PDF_becomes_the_file_beside_the_page()
+    {
+        // The file block frames a PDF at its view address, not its download.
+        var file = Guid.NewGuid();
+        var assets = new Dictionary<Guid, string> { [file] = $"{file:N}-plan.pdf" };
+        var html = $"""<iframe src="/api/attachments/{file}/view" title="plan.pdf"></iframe>""";
+
+        var rewritten = SiteExport.RewriteLinks(html, "guides", new Dictionary<Guid, string>(), assets);
+
+        Assert.Contains($"src=\"../assets/{file:N}-plan.pdf\"", rewritten);
+    }
+
+    [Fact]
     public void No_link_in_a_site_ends_at_a_directory()
     {
         // Reported by the owner, 2026-09-20: unzipped and opened from the

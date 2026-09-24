@@ -31,6 +31,7 @@ public static class AttachmentEndpoints
             .WithTags("Attachments").RequireAuthorization();
         byId.MapGet("/", GetMetadata).AllowAnonymous();
         byId.MapGet("/download", Download).AllowAnonymous();
+        byId.MapGet("/view", View).AllowAnonymous();
         byId.MapDelete("/", Delete);
 
         return routes;
@@ -107,6 +108,38 @@ public static class AttachmentEndpoints
         var stream = storage.OpenRead(a.StorageKey);
         if (stream is null) return Results.NotFound();
         return Results.File(stream, a.ContentType, a.Filename);
+    }
+
+    /// <summary>
+    /// A PDF for the page's own viewer (the file block frames it). The
+    /// download above says "attachment", and every response refuses to be
+    /// framed at all, so the viewer used to download the PDF the moment its
+    /// page opened, for every reader (found 2026-09-24). This one says
+    /// "inline" and may be framed by this site's own pages, and it serves PDFs
+    /// only: a PDF's scripts run in the browser's PDF viewer, not with this
+    /// origin, which is not true of everything a browser might show.
+    /// </summary>
+    private static async Task<IResult> View(
+        Guid id, AppDbContext db, IAttachmentStorage storage, IPermissionService perms, HttpContext http)
+    {
+        var a = await db.Attachments.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id);
+        if (a is null || !string.Equals(a.ContentType, "application/pdf", StringComparison.OrdinalIgnoreCase))
+            return Results.NotFound();
+        if (!await perms.CanViewPageAsync(a.PageId)) return Results.NotFound();
+        var stream = storage.OpenRead(a.StorageKey);
+        if (stream is null) return Results.NotFound();
+
+        var headers = http.Response.Headers;
+        headers["X-Frame-Options"] = "SAMEORIGIN";
+        // The site's policy would forbid framing and restrict what the PDF
+        // viewer loads; a PDF needs neither, only who may frame it.
+        headers.Remove("Content-Security-Policy-Report-Only");
+        headers["Content-Security-Policy"] = "frame-ancestors 'self'";
+        headers.ContentDisposition = new Microsoft.Net.Http.Headers.ContentDispositionHeaderValue("inline")
+        {
+            FileNameStar = a.Filename,
+        }.ToString();
+        return Results.File(stream, a.ContentType, enableRangeProcessing: true);
     }
 
     private static async Task<IResult> Delete(

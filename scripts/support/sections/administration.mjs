@@ -44,6 +44,35 @@ const ONLY_BUILT_IN_GROUPS = "document.querySelectorAll('ul.version-list > li').
 const TAG_SECTIONS = "document.querySelectorAll('section.profile__section').forEach((s) => { const h = s.querySelector(':scope > h2'); if (h) s.setAttribute('data-shot', h.textContent.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')) })"
 const BLUR = 'document.activeElement && document.activeElement.blur()'
 
+// Example security activity for the Security pictures: documentation
+// addresses (RFC 5737) and Tesria Demo's people only.
+const at = (minutesAgo) => new Date(Date.now() - minutesAgo * 60_000).toISOString()
+const SAM = '5a3c9f10-4d2e-4b8a-9c1d-000000000002'
+const EXAMPLE_ALERTS = [
+  { id: 'a1', eventId: 'e1', kind: 'login.failed_burst_ip', severity: 1, key: '203.0.113.7', ip: '203.0.113.7',
+    actorId: null, actorName: null, status: 0, createdAt: at(12), acknowledgedAt: null, acknowledgedByName: null,
+    resolvedAt: null, resolvedByName: null, note: null, metadataJson: JSON.stringify({ Failures: 25, Minutes: 5 }) },
+  { id: 'a2', eventId: 'e2', kind: 'login.admin_new_address', severity: 1, key: SAM, ip: '198.51.100.23',
+    actorId: SAM, actorName: 'Sam Okafor', status: 1, createdAt: at(95), acknowledgedAt: at(80), acknowledgedByName: 'Alex Rivera',
+    resolvedAt: null, resolvedByName: null, note: null, metadataJson: null },
+  { id: 'a3', eventId: 'e3', kind: 'mail.signin_failed', severity: 1, key: 'Google', ip: null,
+    actorId: null, actorName: null, status: 0, createdAt: at(240), acknowledgedAt: null, acknowledgedByName: null,
+    resolvedAt: null, resolvedByName: null, note: null, metadataJson: JSON.stringify({ Provider: 'Google' }) },
+]
+const SECURITY_EXAMPLE = [
+  { url: '**/api/admin/security/overview', json: {
+    openAlerts: 3, criticalOpen: 0, eventsLast24h: 41, blockedNetworks: 1, blockedHits: 37,
+    allowPublicSpaces: false, allowPublicRegistration: false, requireTotpForAdmins: true } },
+  { url: '**/api/admin/security/alerts?*', json: EXAMPLE_ALERTS },
+  { url: '**/api/admin/security/events?*', json: [] },
+  { url: '**/api/admin/security/blocks', json: [] },
+  { url: '**/api/notifications/unread-count', json: { count: 3 } },
+  { url: '**/api/notifications', json: EXAMPLE_ALERTS.map((a, n) => ({
+    id: `n${n}`, action: 'security.alert', targetType: 'security', targetId: a.id, actorId: null, actorName: null,
+    metadataJson: JSON.stringify({ Kind: a.kind, Severity: 'Warning', Key: a.key }), createdAt: a.createdAt, readAt: null,
+  })) },
+]
+
 export const shots = () => [
   // ---- Administration: where the Admin link is. A desktop window, where
   // the link sits in the bar itself rather than under More.
@@ -99,6 +128,26 @@ export const shots = () => [
       { type: 'box', target: 'form.form-inline .invite-email', pad: 5 },
       { type: 'box', target: 'form.form-inline button[type="submit"]', pad: 5 },
     ],
+  },
+
+  // ---- Security: the dashboard and the bell, with example alerts. The real
+  // ones name real accounts and addresses, so the page's own API answers are
+  // replaced by these (the harness's `mock`); the screens are the real ones.
+  {
+    name: 'security-dashboard', url: '/admin/security', viewport: MEDIUM, phone: false, settle: 1500,
+    mock: SECURITY_EXAMPLE,
+    steps: [{ wait: 3000 }, { css: '.tabs { visibility: hidden !important; }' }],
+    clipTo: ['.dash__grid', `section.profile__section:has(> h2:text-is("Alerts"))`], clipPad: 10,
+    annotate: [
+      { type: 'box', target: '.alerts__item:first-child .alerts__actions', pad: 4 },
+    ],
+  },
+  {
+    name: 'security-bell', url: '/spaces', viewport: MEDIUM, phone: false, settle: 1000,
+    mock: SECURITY_EXAMPLE,
+    steps: [{ wait: 2500 }, { click: '.notif__bell' }, { wait: 800 }],
+    clipTo: ['.notif__bell', '.notif__dropdown'], clipPad: 4,
+    annotate: [{ type: 'box', target: '.notif__bell', pad: 4 }],
   },
 
   // ---- Security: the three kill switches, and the block form filled in
@@ -426,7 +475,11 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Four figures sit at the top: open alerts (and how many are critical), events in the last 24 hours, blocked networks (and how many requests they have refused), and ', b('Exposure'), ', which says whether public spaces are allowed and whether registration is open or by invite.'),
 
     h(2, 'Alerts'),
-    p('An alert is something that needs a person to look at it. Every administrator sees alerts in the notification bell, and by email when email is set up. Among the things that raise one:'),
+    p('An ', b('event'), ' is anything Tesria noticed; most are routine and are only listed under ', b('Recent events'), '. An ', b('alert'), ' is an event that needs a person to look at it, such as twenty-five wrong passwords from one address in five minutes. Alerts wait on this tab until someone deals with them.'),
+    ...(await picture(security, 'security-dashboard', 'The Security tab: four figures, then the alerts, each with its buttons',
+      'The figures at the top, then each alert: what happened, when, the address or account, and what you can do about it.')),
+    p('Each alert shows what happened and when, the address it came from or the account it is about, and the details Tesria recorded. Its color says how serious it is: yellow for a warning, red for critical. An alert someone has already picked up says ', b('acknowledged'), '.'),
+    p('Among the things that raise one:'),
     ul(
       li(p('a burst of failed sign-ins from one address, or many different accounts tried from one address;')),
       li(p('an account locked repeatedly, or an administrator signing in from a new address;')),
@@ -434,14 +487,31 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p('someone promoted to administrator, a role given more rights, or ownership transferred;')),
       li(p('a space published, withdrawn or deleted, or the public spaces switch changed;')),
       li(p('a backup failing or overdue, a restore test failing, or the backup disk nearly full;')),
-      li(p('the audit log’s chain broken (see ', b('Audit log integrity'), ' below).')),
+      li(p('the audit log’s chain broken (see ', b('Audit log integrity'), ' below);')),
+      li(p('email stopping because Microsoft or Google refused Tesria’s mail sign-in.')),
     ),
+
+    h(2, 'How administrators hear about an alert'),
+    p('Every administrator is told, straight away, in two places:'),
+    ul(
+      li(p(b('The notification bell,'), ' at the top of every page. The alert shows as ', i('Security warning'), ' or ', i('Security critical'), ' with what happened; choosing it opens this tab.')),
+      li(p(b('Email,'), ' when email is set up (see ', pageLink('Email (SMTP)'), '). Security alerts are always emailed at once, whatever someone chose for their other notifications, with the subject ', i('Security alert'), '. Several at once arrive together in one email.')),
+    ),
+    ...(await picture(security, 'security-bell', 'The notification bell open, with three security alerts in it',
+      'Alerts in the bell: each opens the Security tab.')),
+    panel('note', p(b('Only administrators get them.'), ' People without administration rights never see security alerts, in the bell or by email.')),
+
+    h(2, 'Dealing with an alert'),
+    p('Most alerts are harmless once you look: someone forgot a password, or signed in from a new café. The steps make sure one person looks, and that what they found is written down.'),
     step(1, 'Acknowledge it'),
-    p(b('Acknowledge'), ' tells the other administrators that someone is looking, so two people do not chase the same thing.'),
-    step(2, 'Act on it, if it needs it'),
+    p(b('Acknowledge'), ' tells the other administrators that someone is looking, so two people do not chase the same thing. The alert then says ', b('acknowledged'), ' and by whom.'),
+    step(2, 'Find out what happened'),
+    p('The alert’s details, and ', b('Recent events'), ' lower on the tab, say what was seen and from where. For an account, ask its owner: was it them? For an address, is it one of yours, such as the office?'),
+    step(3, 'Act on it, if it needs it'),
     p('An alert about an address has a ', b('Block'), ' button that blocks it for 24 hours. An alert about an account offers ', b('Sign out everywhere'), ', ', b('Revoke tokens'), ' and ', b('Suspend'), '. Each asks before it does anything.'),
-    step(3, 'Resolve it'),
-    p(b('Resolve'), ' closes the alert, with an optional note of what you found, such as “Sam mistyped after changing his password”. Resolved alerts are hidden unless you tick ', b('Show resolved'), '.'),
+    step(4, 'Resolve it'),
+    p(b('Resolve'), ' closes the alert, with an optional note of what you found, such as ', i('“Sam mistyped a new password; nothing to do.”'), ' Resolved alerts are hidden unless you tick ', b('Show resolved'), ', and the note stays with them for the next person who wonders.'),
+    panel('success', p(b('A good habit:'), ' resolve alerts once you know they are harmless. An empty list means anything new stands out.')),
 
     h(2, 'Kill switches'),
     p('Three switches that change the whole instance at once. They are here so that in a hurry you do not have to go looking for them; the same switches are in ', pageLink('Settings (administration)', 'Settings'), '.'),

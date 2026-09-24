@@ -129,7 +129,7 @@ public static partial class SiteExport
     [GeneratedRegex(@"/spaces/[A-Za-z0-9]+/pages/(?<id>[0-9a-fA-F-]{36})(?<anchor>#[^""'\s]*)?")]
     private static partial Regex PageLink();
 
-    [GeneratedRegex(@"/api/attachments/(?<id>[0-9a-fA-F-]{36})/download")]
+    [GeneratedRegex(@"/api/attachments/(?<id>[0-9a-fA-F-]{36})/(?:download|view)")]
     private static partial Regex AttachmentLink();
 
     /// <summary>

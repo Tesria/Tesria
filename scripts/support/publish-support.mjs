@@ -236,7 +236,7 @@ async function main() {
       return lib.text(label ?? title, { type: 'link', attrs: { href: `/spaces/${SPACE.key}/pages/${id}` } })
     }
 
-    await section.build({ ...lib, ...s, top, figure, phoneFigure, picture, phonePicture, animation, pageLink })
+    await section.build({ ...lib, ...s, top, figure, phoneFigure, picture, phonePicture, animation, pageLink, ...prepared })
     if (section.cleanup) await section.cleanup({ lib, author, ...prepared })
   }
   // The tree is numbered (dev-plan 15.8, the owner's choice over emoji):
