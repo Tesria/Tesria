@@ -5,6 +5,63 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### 15.6 The Support site, rewritten (2026-09-24, Opus 5.5)
+
+- Every Support page rewritten to the rules the owner set reviewing the
+  first version (`scripts/support/WRITING.md`): written for someone new, with
+  what a thing is and why they would want it before any steps; numbered
+  steps with the control boxed; one picture per row with a shadow, taken in a
+  narrow window so it reads on a phone, and none of text the page already
+  says; lists rather than tables for explanations.
+- Every element page has the same shape: the slash commands first, then
+  every variant live on the page (all four chart types, every panel type,
+  list styles, status colors) with when to use it.
+- A **Features** page, second at the top level, grouped by what people do,
+  each feature with a picture or a short animation.
+- New pages: Setting up a phone or tablet, Page emoji, Moving and copying
+  pages, How live content works, Opening Tesria by name, and, under
+  Email (SMTP), **Sending with Gmail** and **Sending with Outlook or
+  Microsoft 365** (the owner's request, for people without a mail server of
+  their own). The Microsoft page says plainly that a personal Outlook.com
+  account cannot be used: since September 2024 Microsoft accepts only an
+  OAuth sign-in there, and Tesria signs in to a mail server with a password.
+  A Microsoft 365 account works while its administrator allows
+  Authenticated SMTP, which Microsoft turns off by default at the end of
+  December 2026. Both checked against the providers' own pages on
+  2026-09-24.
+- The pilot pages the owner approved moved into the sections they belong
+  to, and every reference to another page is a link (`pageLink`).
+
+### Fixes the rewrite turned up (2026-09-24, Opus 5.5)
+
+- **Mentions in comment notifications** showed as the raw
+  `@[Name](user:id)` in the bell and its email; they read "@Name" now, in
+  new notifications and old ones. Webhooks keep the token, for the id.
+- **The page properties report** showed a status or a date as an empty
+  cell, because both keep their value in attributes; the task report had
+  the same blind spot for dates in a task. Both read them now.
+- **`/chart` offered Diagram first**, because "flowchart" contains "chart".
+  The slash menu ranks exact matches first, then words that start with what
+  was typed (`editor/slash/match.ts`, tested).
+- **Wrong tips:** Ctrl or Cmd with ] indents text but does not nest a list
+  item (Tab does), and search reads titles and text, not labels.
+- **Admin → Roles** warned that any role gaining rights is announced to
+  every administrator; only an administrator role is, so the warning shows
+  only then.
+- **Admin dashboard:** a page an administrator may not see showed as
+  "Deleted page" among the most viewed; it says "A restricted page" now.
+- **Backup runbook** (`docs/backup-recovery.md`, `deploy/backup/restore.sh`):
+  restoring on a new machine now starts the stack first (the script compares
+  migrations with the live database, so an unstarted one refused every
+  dump) and restarts the app afterwards; the `docker compose cp` copied the
+  folder into itself; the dry run set its variable on the host instead of
+  in the container, so it restored for real; and the pgBackRest restore from
+  the offsite copy ran against a running database in a read-only mount. The
+  offsite restore onto a new host is marked untested.
+- `NOTICE` lists Svg.Skia, Markdig, Scalar and the MCP SDK;
+  `docs/architecture.md` no longer calls the collaborative-document gap open
+  (8.6 closed it).
+
 ### 15.9 Filter the page tree (2026-09-23, Opus 5.5)
 
 - A **Filter pages** box at the top of every space's page tree, and of an
@@ -48,6 +105,11 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   template form has labels and a real Save button, and a drop-down under a
   label (such as Start from a template) sits on its own line and matches
   the text boxes. Support gains a **Templates** page.
+- Support gains a **Features** page, second in the tree: everything
+  Tesria does, grouped by what you are trying to do (writing, organizing,
+  working together, sharing, security, running it, developers, phones),
+  each with why you would want it and a link to the page that explains it.
+  No other products named and nothing unbuilt, at the owner's choice.
 - Support gains **Opening Tesria by name**: why a name rather than a
   number, finding it, why a `.local` name can take a few tries, and how to
   make it instant (awake and wired, router settings, a fixed address, the
@@ -222,6 +284,10 @@ fixed before any of it was photographed.
 - Scalar's API reference tried to reach api.scalar.com on every load. It no
   longer does, and its developer toolbar is hidden.
 - Wording across many screens, including `NOTICE`'s British "licences".
+- The setup wizard's first space: the key follows the name as you type
+  until you edit it yourself, and never starts with a digit. It filled in
+  only while empty, so after the name's first letter it stuck ("Team
+  handbook" gave T).
 - Typing in a text box no longer zooms the page on an iPhone or iPad. The
   16px rule that prevents it lost to any box styled smaller by its own class
   (the new page filter), and did not apply to iPads at all; it now wins, on

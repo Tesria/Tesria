@@ -261,6 +261,28 @@ public class DynamicBlockKindTests
     }
 
     [Fact]
+    public async Task Page_properties_report_reads_a_status_and_a_date_as_their_values()
+    {
+        // Both keep their value in attributes, not text; a report showed them empty.
+        var w = await Build(); using var _ = w.F;
+        var a = await NewPage(w.Alice, w.Space.Id, "Alpha", content: """
+            {"type":"doc","content":[{"type":"pageProperties","content":[{"type":"table","content":[
+              {"type":"tableRow","content":[
+                {"type":"tableCell","content":[{"type":"paragraph","content":[{"type":"text","text":"Status"}]}]},
+                {"type":"tableCell","content":[{"type":"paragraph","content":[{"type":"status","attrs":{"text":"IN REVIEW","color":"blue"}}]}]}]},
+              {"type":"tableRow","content":[
+                {"type":"tableCell","content":[{"type":"paragraph","content":[{"type":"text","text":"Due"}]}]},
+                {"type":"tableCell","content":[{"type":"paragraph","content":[{"type":"date","attrs":{"date":"2026-10-05"}}]}]}]}
+            ]}]}]}
+            """);
+        await Label(w.Alice, a.Id, "project");
+
+        var r = await Block(w.Alice, w.Home.Id, "page-properties-report", "labels=project");
+        Assert.Equal("IN REVIEW", r!.Items[0].Cells!["Status"].Text);
+        Assert.Equal("Oct 5, 2026", r.Items[0].Cells!["Due"].Text);
+    }
+
+    [Fact]
     public async Task Page_properties_report_leaks_neither_a_restricted_pages_row_nor_its_columns()
     {
         var w = await Build(); using var _ = w.F;

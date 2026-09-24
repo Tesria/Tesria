@@ -155,6 +155,18 @@ public static class BlockDocuments
             if (TypeOf(n) == "mention" && n.TryGetProperty("attrs", out var a)
                 && a.TryGetProperty("label", out var l) && l.ValueKind == JsonValueKind.String)
                 sb.Append('@').Append(l.GetString());
+            // A status and a date keep their value in attributes, not text, and
+            // a report showed them empty: a property row's Status column is
+            // usually one of these.
+            if (TypeOf(n) == "status" && n.TryGetProperty("attrs", out var sa)
+                && sa.TryGetProperty("text", out var st) && st.ValueKind == JsonValueKind.String)
+                sb.Append(st.GetString());
+            if (TypeOf(n) == "date" && n.TryGetProperty("attrs", out var da)
+                && da.TryGetProperty("date", out var dt) && dt.ValueKind == JsonValueKind.String)
+                sb.Append(DateOnly.TryParseExact(dt.GetString(), "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None, out var day)
+                    ? day.ToString("MMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture)
+                    : dt.GetString());
             foreach (var c in Children(n)) Walk(c);
         }
     }

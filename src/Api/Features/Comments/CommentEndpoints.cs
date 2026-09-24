@@ -112,7 +112,7 @@ public static partial class CommentEndpoints
         };
         db.Comments.Add(comment);
         await notifications.NotifyPageWatchersAsync(
-            pageId, spaceId.Value, "comment.created", authorId, new { Body = Truncate(body) });
+            pageId, spaceId.Value, "comment.created", authorId, new { Body = Truncate(Readable(body)) });
         await NotifyMentionsAsync(pageId, body, previous: null, authorId, db, perms, notifications);
         await db.SaveChangesAsync();
         await webhooks.DispatchAsync(
@@ -167,6 +167,13 @@ public static partial class CommentEndpoints
     /// </summary>
     [System.Text.RegularExpressions.GeneratedRegex(@"@\[[^\]\n]{1,200}\]\(user:(?<id>[0-9a-fA-F-]{36})\)")]
     private static partial System.Text.RegularExpressions.Regex MentionToken();
+
+    /// <summary>
+    /// The comment as a person reads it, each mention as "@Name": what a
+    /// notification or its email shows. Webhooks keep the tokens, for the ids.
+    /// </summary>
+    internal static string Readable(string body) =>
+        MentionToken().Replace(body, m => "@" + m.Value[2..m.Value.IndexOf(']')]);
 
     private static HashSet<Guid> MentionedIn(string? body) =>
         body is null ? [] : MentionToken().Matches(body)

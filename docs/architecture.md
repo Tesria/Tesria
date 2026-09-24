@@ -752,19 +752,17 @@ person to do them.
 and an `instructions` string telling the client what the wiki is, that
 content is Markdown, and that "not found" may mean "not permitted".
 
-**Known gap: the collaborative document is never reconciled with the
-page (found 2026-09-13).** Hocuspocus loads a page's Yjs state from
-`CollabDocuments` by name and the editor seeds it from the page only when
-it is empty (`CollaborativeEditor.tsx`). Nothing on the write side (
-`PageWriter`, the REST update, the MCP `update_page` tool) touches that
-row. So once a page has been opened in the editor, a write from anywhere
-else is invisible to the next editor session, and Update from that
-session overwrites it. The fix needs a decision: invalidate the document
-when a page is written outside the editor (simple, loses a live session's
-unsaved edits if the two collide), or carry the page version in the
-document and re-seed on mismatch (keeps both, more moving parts). Until
-then, do not rely on API or MCP writes to a page that people also edit in
-the browser.
+**Writes from outside the editor are reconciled (dev-plan 8.6).** This was
+a known gap when MCP landed (found 2026-09-13): `PageWriter`, the REST
+update and the MCP `update_page` tool write the page and never the Yjs
+document in `CollabDocuments`, so an outside write was invisible to the next
+editor session and the next Update overwrote it. It is closed now. The
+document carries the page version it was seeded from, and on a mismatch the
+difference between the draft and what was published lands in the draft as
+block-level tracked changes for the person to accept or reject
+(`editor/externalEdits.ts`); the collab sidecar does the same for a stale
+document before anyone opens it. See the CHANGELOG's 8.6 entry for the
+details.
 
 **Retrieval quality** (2026-09-11). Three things make the tools usable as
 a context source rather than merely correct:

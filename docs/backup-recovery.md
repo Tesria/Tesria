@@ -134,13 +134,32 @@ chain; the record of the request survives on the other side in the safety
 backup and the kept copy. The next audit chain verification will find a
 shorter chain, which is expected once and explained rather than warned about.
 
-**By hand**, the same script does the same thing:
+**By hand**, the same script does the same thing, with the stack running:
 
 ```bash
 docker compose exec backup /scripts/restore.sh db-20260920T030000Z.dump
 ```
 
-`RESTORE_DRY_RUN=1` prints every step and changes nothing.
+To see what it would do without changing anything, pass `RESTORE_DRY_RUN=1`
+into the container with `-e` (set in front of `docker compose`, it stays in
+your shell and the restore runs for real):
+
+```bash
+docker compose exec -e RESTORE_DRY_RUN=1 backup /scripts/restore.sh db-20260920T030000Z.dump
+```
+
+One difference from the admin page: nothing restarts the application for
+you. Restart it afterwards, so it migrates the restored database, grants its
+runtime role again and drops its old connections:
+
+```bash
+docker compose restart app
+docker compose restart collab
+```
+
+If the script says it is waiting for the application to bring the schema up
+to date, run those from another terminal rather than letting it wait out its
+ten minutes.
 
 ---
 
@@ -296,11 +315,16 @@ Timestamps use Postgres syntax with a timezone offset (e.g. `+00` for UTC).
 4. `docker compose up -d` to bring up the whole stack.
 
 If you only have the logical dumps, restore the newest instead. The script
-puts the attachments back too, from the archive that shares the dump's stamp:
+puts the attachments back too, from the archive that shares the dump's stamp.
+Bring the whole stack up first and wait until `docker compose ps` shows `app`
+healthy: `restore.sh` refuses a dump with more migrations than the live
+database has, and a database the app has never started against has none.
 
 ```bash
-docker compose up -d db backup
+docker compose up -d
 docker compose exec backup /scripts/restore.sh          # newest cycle
+docker compose restart app
+docker compose restart collab
 ```
 
 ---
@@ -611,11 +635,14 @@ password, new `BACKUP_ENCRYPTION_KEY` unless you are also restoring the
 pgBackRest repository, the same `DOMAIN` if you want the same address), then:
 
 ```bash
-docker compose up -d db pgbackrest
+docker compose up -d
 ```
 
-Wait for `db` to be healthy before going on. Do not bring up `app` yet: let
-it create an empty schema and you will be restoring over the top of it.
+Wait until `docker compose ps` shows `app` healthy before going on, and do
+not go through the setup wizard. The app has to have started once: its
+migrations are what `restore.sh` checks a dump against, and against a
+database with none it refuses every dump as coming from a newer Tesria. The
+empty wiki it creates is what the restore swaps out.
 
 ### 3. Restore the attachments and the dump
 
@@ -626,48 +653,75 @@ host:
 docker run --rm -e RESTIC_PASSWORD=your-passphrase -v "$PWD/restored:/out" -v /Volumes/your-drive:/t restic/restic -r /t/restic restore latest --target /out
 ```
 
-That gives you `restored/backups/db-<stamp>.dump` and
-`restored/data/uploads/`. Put the uploads into the volume the new instance
-will use, and load the dump:
+That gives you `restored/backups/`, holding the `db-<stamp>.dump` files and
+the `uploads-<stamp>.tar.gz` archives beside them, and `restored/data/uploads/`.
+Copy the *contents* of `restored/backups/` onto the `backups` volume (the
+trailing `/.` matters: without it the directory itself is copied, and the
+dumps land in `/backups/backups/`, where `restore.sh` does not look), then
+load the dump:
 
 ```bash
-docker compose cp restored/backups/ backup:/backups/
+docker compose cp restored/backups/. backup:/backups/
+docker compose exec backup ls /backups
 ```
 
 ```bash
 docker compose exec backup /scripts/restore.sh db-<stamp>.dump
+docker compose restart app
+docker compose restart collab
 ```
 
 `restore.sh` is the same script the admin page's Restore uses. It restores
 into a new database beside the live one and swaps it in, so it does not need
 the application to be down, and it puts the attachments back from the
-archive that shares the dump's stamp. On a fresh host there is nothing to
-swap and it simply becomes the wiki.
+archive that shares the dump's stamp, so `restored/data/uploads/` is only
+needed if that archive is missing (then copy it in with
+`docker compose cp restored/data/uploads/. backup:/data/uploads/`). On a
+fresh host the empty wiki from step 2 is what gets swapped out, and it is
+kept as `<db>_pre_restore` like any other. Run by hand, it does not restart
+the application, hence the restarts (see **By hand** above).
 
 ### 4. Point-in-time recovery instead, if you need it
 
 If you have the cloud slot and want a moment rather than a nightly dump,
 restore the pgBackRest repository instead of the dump. Set the
 `OFFSITE_CLOUD_*` block and `BACKUP_ENCRYPTION_KEY` in the new `.env` first,
-so `repo2` is configured, then:
+so `repo2` is configured.
+
+pgBackRest writes into the data directory, which only the `db` service
+mounts read-write (the `pgbackrest` sidecar has it read-only), and Postgres
+must be stopped while it does. So, as in scenario B, it runs in a one-off
+`db` container with everything stopped:
 
 ```bash
-docker compose exec pgbackrest gosu postgres pgbackrest --stanza=main --repo=2 --type=time --target="2026-09-22 14:30:00+00" restore
-```
-
-Start Postgres afterwards and let it replay. This is the path that gets you
-to the minute before something went wrong, rather than to last night.
-
-### 5. Bring the instance up and check it
-
-```bash
+docker compose stop
+docker compose run --rm --no-deps --entrypoint bash db -c \
+  '. /scripts/offsite.sh && offsite_write_conf && gosu postgres pgbackrest --stanza=main --repo=2 --type=time --target="2026-09-22 14:30:00+00" --target-action=promote --delta restore'
 docker compose up -d
 ```
 
-Then, in this order, because each one proves something different: sign in;
-open a page that has an image on it, which proves the uploads came back and
-not just the database; check Administration → Backups shows both agents
-healthy; and confirm Storage targets lists the copy you just restored from.
+The one-off container skips the `db` entrypoint, which is what normally
+writes the `repo2` settings, so the command writes them first. `--delta` is
+there because step 2 left an empty cluster in the data directory, and
+`--target-action=promote` opens the database at the target instead of
+pausing there; both match `deploy/pgbackrest/restore.sh`. Postgres replays
+WAL when `db` starts. This is the path that gets you to the minute before
+something went wrong, rather than to last night.
+
+**This step is untested.** Nothing in this repository has run a restore
+from `repo2` onto a new host, so rehearse it before you rely on it. One thing
+to expect: the local repository the `pgbackrest` sidecar created in step 2
+belongs to the empty cluster, not the restored one, so watch
+`docker compose logs db pgbackrest` for `archive-push` and stanza errors
+afterwards.
+
+### 5. Check it
+
+Either path leaves the stack up. Check it in this order, because each one
+proves something different: sign in; open a page that has an image on it,
+which proves the uploads came back and not just the database; check
+Administration → Backups shows both agents healthy; and confirm Storage
+targets lists the copy you just restored from.
 
 ### 6. Before you call it done
 
