@@ -52,10 +52,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Data layer: EF Core over PostgreSQL. Two connections (dev-plan 3.1):
 // ConnectionStrings:Default is the owner, used at startup for migrations and
 // to provision the least-privilege role; ConnectionStrings:App is that role,
-// used by the running app. With no app role configured the owner is used for
-// both, with a warning: see DatabaseRoles.
+// used by the running app. Under Compose only the `migrate` service has the
+// owner (14.3). The fallback is for `dotnet run` against a local database.
 var ownerConnectionString = builder.Configuration.GetConnectionString("Default")
-    ?? "Host=localhost;Port=5432;Database=confluence;Username=confluence;Password=confluence";
+    ?? "Host=localhost;Port=5432;Database=tesria;Username=tesria;Password=tesria";
 var appConnectionString = builder.Configuration.GetConnectionString("App");
 
 // The `migrate` service (dev-plan 14.3): the same image, run with --migrate,

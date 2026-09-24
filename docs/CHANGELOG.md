@@ -8,6 +8,17 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.6.0-dev**: 0.5.0 is released, so what comes
 after it is the next minor version.
 
+### The last "confluence" database names (2026-09-24, Opus 5.5)
+
+`.env.example` now suggests `tesria` for the database owner and name
+(new installs only: an existing install keeps what its `.env` has, and the
+file now says so). The point-in-time-recovery self-test read
+`POSTGRES_USER`/`POSTGRES_DB`, which its container never has, and fell back
+to `confluence`: it worked only on instances that kept the old names. It
+now reads `PGUSER`/`PGDATABASE`, which Compose gives it, and fails clearly
+without them; verified with a passing run. The development fallback
+connection string uses `tesria`.
+
 ### Single sign-on is labeled beta (2026-09-24, Opus 5.5)
 
 The owner has no identity provider to test against, so single sign-on

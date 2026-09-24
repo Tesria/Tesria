@@ -10,8 +10,11 @@
 set -euo pipefail
 
 STANZA=main
-DB="${POSTGRES_DB:-confluence}"
-USER_="${POSTGRES_USER:-confluence}"
+# The pgbackrest service is given the database's owner and name as PGUSER and
+# PGDATABASE (docker-compose.yml); POSTGRES_* is accepted too, for running this
+# elsewhere. No guessed default: a wrong name would fail halfway through.
+DB="${PGDATABASE:-${POSTGRES_DB:?set PGDATABASE or POSTGRES_DB to the database name}}"
+USER_="${PGUSER:-${POSTGRES_USER:?set PGUSER or POSTGRES_USER to the database owner}}"
 SOCK=/var/run/postgresql
 TARGET=/tmp/pitr-selftest
 PORT=5599
