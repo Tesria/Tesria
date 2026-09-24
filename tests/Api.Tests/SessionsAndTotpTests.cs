@@ -96,6 +96,27 @@ public class SessionsAndTotpTests
     }
 
     [Fact]
+    public async Task The_list_keeps_every_live_session_but_only_a_few_ended_ones()
+    {
+        // A script that signs in often ends many sessions; the list showed them
+        // all, hundreds deep.
+        using var factory = new TestAppFactory();
+        var laptop = factory.CreateClient();
+        await RegisterAsync(laptop, "a@example.com");
+        for (var n = 0; n < Tesria.Api.Features.Auth.AuthEndpoints.RecentlyEndedShown + 3; n++)
+            (await LoginAsync(factory.CreateClient(), "a@example.com")).EnsureSuccessStatusCode();
+        (await laptop.DeleteAsync("/api/auth/me/sessions/others")).EnsureSuccessStatusCode();
+        var phone = factory.CreateClient();
+        (await LoginAsync(phone, "a@example.com")).EnsureSuccessStatusCode();
+
+        var sessions = await laptop.GetFromJsonAsync<List<SessionDto>>("/api/auth/me/sessions");
+        Assert.Equal(2, sessions!.Count(s => s.RevokedAt == null));
+        Assert.Equal(Tesria.Api.Features.Auth.AuthEndpoints.RecentlyEndedShown, sessions.Count(s => s.RevokedAt != null));
+        // Live ones first.
+        Assert.All(sessions.Take(2), s => Assert.Null(s.RevokedAt));
+    }
+
+    [Fact]
     public async Task Signing_out_kills_a_copied_cookie()
     {
         using var factory = new TestAppFactory();

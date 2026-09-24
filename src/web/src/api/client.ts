@@ -1385,9 +1385,11 @@ export const api = {
     },
     invites: {
       list: () => request<Invite[]>('GET', '/api/admin/invites'),
-      create: (input: { email?: string; expiresInDays?: number }) =>
-        request<{ token: string; path: string; email: string | null; expiresAt: string }>(
+      create: (input: { email?: string; expiresInDays?: number; sendEmail?: boolean; message?: string }) =>
+        request<{ token: string; path: string; email: string | null; expiresAt: string; emailed: boolean; emailError: string | null }>(
           'POST', '/api/admin/invites', input),
+      /** Whether the server sends email, and the invite message to start from. */
+      email: () => request<{ enabled: boolean; subject: string; message: string }>('GET', '/api/admin/invites/email'),
       revoke: (id: string) => request<void>('DELETE', `/api/admin/invites/${id}`),
     },
     dashboard: (rangeDays: number) =>

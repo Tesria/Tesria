@@ -96,6 +96,7 @@ export const shots = () => [
     annotate: [
       { type: 'box', target: 'form.form-inline label:nth-of-type(1)', pad: 5 },
       { type: 'box', target: 'form.form-inline label:nth-of-type(2)', pad: 5 },
+      { type: 'box', target: 'form.form-inline .invite-email', pad: 5 },
       { type: 'box', target: 'form.form-inline button[type="submit"]', pad: 5 },
     ],
   },
@@ -393,17 +394,24 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
   // ============================================================= Invites
   await page('Invites', root, doc(
-    p('An invite is a link that lets one person create an account. It is how you add people when anyone-can-join is off, which is what most teams want for a wiki that can be reached from the internet. It needs no email server: you copy the link and send it however you like, and it stops working once it has been used.'),
+    p('An invite is a link that lets one person create an account. It is how you add people when anyone-can-join is off, which is what most teams want for a wiki that can be reached from the internet. The link stops working once it has been used.'),
+    p('If your Tesria sends email, it can email the invite for you, with a note in your own words, so there is nothing to copy and paste into a chat. Without email, you copy the link and send it however you like. See ', pageLink('Email (SMTP)'), ' to set email up.'),
 
     h(2, 'Creating an invite'),
-    ...(await picture(invites, 'invites', 'The invite form, filled in', 'The address, how long the link lasts, and Create invite.')),
+    ...(await picture(invites, 'invites', 'The invite form, filled in, with the email option showing', 'The address, how long the link lasts, the email and its message, and Create and email invite.')),
     step(1, 'Enter their email address, if you know it'),
-    p('This is optional. With an address, only someone registering with that address can use the link, so a forwarded link is no use to anyone else. Leave it empty for a link that works for whoever has it. Tesria refuses an address that already has an account.'),
+    p('With an address, only someone registering with that address can use the link, so a forwarded link is no use to anyone else. Leave it empty for a link that works for whoever has it. Tesria refuses an address that already has an account.'),
     step(2, 'Choose how long it lasts'),
     p('From 1 to 90 days; 7 unless you change it.'),
-    step(3, 'Choose Create invite, and copy the link'),
-    p('The link appears once, above the list. Choose ', b('Copy'), ' and send it. If you lose it, revoke the invite and make a new one.'),
-    panel('note', p(b('The link starts with the address you are using.'), ' Make invites from Tesria opened at the address everyone uses, not at ', c('localhost'), ' on the server, or the link will not work for the person you send it to.')),
+    step(3, 'Write a note, if Tesria is emailing it'),
+    p('Once you type an address, and your Tesria sends email, ', b('Email the invite to'), ' appears, already ticked, with a ', b('Message'), ' box. The message starts as a short, friendly note saying who invited them and to what. Change it to anything you like: a welcome, what the wiki is for, where to start reading.'),
+    p('You do not need to add the link. Tesria puts it below your message, with the address it works for and the date it expires, so it cannot be left out or mistyped. Leave the message empty to send the usual one. The subject line names you and your Tesria, so the email is easy to recognize.'),
+    panel('success', p(b('Why a note helps.'), ' An email from a wiki someone has never heard of looks like spam. A line such as ', i('“This is where we keep the onboarding checklist, start with the Welcome page”'), ' tells them it is real and what to do first.')),
+    p('Untick it to make the invite without emailing it, for example to send the link in a chat instead.'),
+    step(4, 'Create the invite'),
+    p('Choose ', b('Create and email invite'), ' (or ', b('Create invite'), ' without the email). The link appears once, above the list, whichever you chose. If it was emailed, a green note says so. Otherwise choose ', b('Copy'), ' and send it yourself. If you lose it, revoke the invite and make a new one.'),
+    panel('note', p(b('If the email could not be sent,'), ' the invite is still made, and a red note gives the mail server’s reason. Copy the link and send it another way, then see ', pageLink('Email (SMTP)'), ' to find out why.')),
+    panel('note', p(b('The copied link starts with the address you are using.'), ' Make invites from Tesria opened at the address everyone uses, not at ', c('localhost'), ' on the server, or the link will not work for the person you send it to. An emailed link uses the address set in ', b('Settings'), ' instead.')),
 
     h(2, 'Keeping track'),
     p('The list below the form shows every invite: who it is for (or ', b('Anyone'), '), whether it is ', b('Unused'), ', ', b('used'), ' and by whom, or ', b('expired'), ', and when it expires. ', b('Revoke'), ' cancels an unused one after asking; whoever you sent it to will need a new one.'),

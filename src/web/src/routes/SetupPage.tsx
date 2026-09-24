@@ -209,7 +209,7 @@ export function SetupPage() {
               column here is yours to edit, and Administration keeps this page.
             </p>
             <div className="setup__embed">
-              <AdminRolesPage />
+              <AdminRolesPage inSetup />
             </div>
           </Panel>
         )}

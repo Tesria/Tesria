@@ -29,7 +29,9 @@ export const shots = () => [
     name: 'token-form', url: '/profile', viewport: NARROW, phone: false,
     steps: [
       { wait: 2500 },
-      { scrollTo: '#api-tokens form' },
+      // The other sections hidden, so nothing scrolls: scrolled, the boxes
+      // were measured before the page moved and landed beside their targets.
+      { css: '.profile__section:not(#api-tokens) { display: none !important; }' },
       { type: 'Weekly report script', selector: '#api-tokens form label:first-of-type input' },
       { eval: 'document.activeElement && document.activeElement.blur()' },
       { css: '#api-tokens form ~ * { visibility: hidden !important; }' },

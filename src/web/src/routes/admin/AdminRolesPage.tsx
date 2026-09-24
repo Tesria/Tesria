@@ -30,7 +30,12 @@ function label(catalog: InstancePermissionDto[], key: string): string {
 }
 
 /** Admin → Roles (dev-plan 11.1): what each role on this instance may do. */
-export function AdminRolesPage() {
+/**
+ * `inSetup`: shown inside the setup wizard, which has its own Keep these
+ * defaults. There the upgrade notice is both a duplicate and untrue: a new
+ * instance has not upgraded from anything (found 2026-09-24).
+ */
+export function AdminRolesPage({ inSetup = false }: { inSetup?: boolean } = {}) {
   const { can, refresh } = useAuth()
   const [matrix, setMatrix] = useState<PermissionMatrix | null>(null)
   const [draft, setDraft] = useState<Draft>({})
@@ -149,7 +154,7 @@ export function AdminRolesPage() {
   if (!matrix) return <p className="muted">{error ?? 'Loading…'}</p>
 
   const areas = [...new Set(matrix.catalog.map((p) => p.area))]
-  const neverReviewed = matrix.reviewedAt === null
+  const neverReviewed = matrix.reviewedAt === null && !inSetup
 
   return (
     <>

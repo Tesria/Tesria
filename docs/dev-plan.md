@@ -4979,7 +4979,10 @@ Before the repo or any image is public:
    addresses, anything from `.env`, `.nas-credentials` or
    `.debug-credentials`. A finding in history means rewriting history
    before the first public push, which is the one hard-to-reverse decision
-   here, so it goes to the owner first.
+   here, so it goes to the owner first. Known already (2026-09-24): the
+   owner's personal address is in commits `586b045` and `41b4a2a` (the
+   CHANGELOG and `SECURITY.md` as they were then). The tree no longer has
+   it: `SECURITY.md` now gives the project's security address.
 2. **What the repo says about its owner.** `CLAUDE.md`, the CHANGELOG and
    the plan are written for this project's sessions and name the owner's
    machines and habits. Decide what a public reader should see: keep,
@@ -5043,7 +5046,9 @@ the clear bugs it found were fixed then and are in the CHANGELOG):
 - **Support site**: the Quick start leads with pulling the images, and
   building from source becomes the alternative. Rewritten as part of this
   item, once the commands can be tried against real images; until then it
-  says to clone and build, which is true today.
+  says to clone and build, which is true today. (The owner confirmed on
+  2026-09-24: the `git clone` stays until the public release and the
+  Docker Hub rollout.)
 
 **Not decided here, deliberately:** the Docker-Sponsored Open Source
 program (it lifts the pull limit and allows an organization namespace, but
@@ -5225,6 +5230,15 @@ to have them reviewed):
   with hostile input.
 - **The page's script is a separate same-origin file**, so the Content
   Security Policy is unchanged: no inline script, no nonce.
+
+### 15.10 Email an invite · `S` · Model: Opus 5.5 · ✅ **shipped 2026-09-24**
+
+Asked for by the owner: with email set up, the invite form emails the link
+with a message the inviter can edit, so nobody copies a code into a chat.
+Tesria appends the link, the address it works for and its expiry, so they
+cannot be edited out. Sent when the invite is made, the only moment the
+token exists in plain text; a failed send keeps the invite and says why.
+See the CHANGELOG.
 
 ### 15.9 Filter the page tree · `S` · Model: Opus 5.5 · ✅ **shipped 2026-09-23**
 
@@ -5422,6 +5436,126 @@ table.
 
 ---
 
+## Phase 18: Email through the providers people already have
+
+Asked for by the owner, 2026-09-24, after the Support site's Gmail and
+Outlook pages showed the gap: Tesria signs in to a mail server with a
+username and password only, so a personal Outlook.com account cannot send
+its email at all (Microsoft has required an OAuth sign-in there since
+September 2024), Microsoft 365 turns password sign-in for sending off by
+default at the end of December 2026, and Gmail works only through an app
+password. Most small teams have no mail server of their own; the email they
+have is one of these.
+
+**No new container.** MailKit, already in the app, speaks the SASL
+`XOAUTH2` mechanism both providers use, so this is code in the app and a
+settings screen.
+
+**What each popular provider allows, checked 2026-09-24** (recheck each when
+its item is built):
+
+- **Microsoft** (Outlook.com, Hotmail, Live, Microsoft 365): OAuth, scope
+  `https://outlook.office.com/SMTP.Send` plus `offline_access`, through
+  `smtp.office365.com:587`. Microsoft 365 still needs Authenticated SMTP
+  allowed for the mailbox by its administrator, OAuth or not.
+- **Google** (Gmail, Google Workspace): OAuth, scope `https://mail.google.com/`
+  (the only one that allows SMTP), through `smtp.gmail.com:587`. App
+  passwords keep working and stay the simple option.
+- **Yahoo and AOL**: OAuth exists but is closed to new applications, so app
+  passwords only. Not a sign-in candidate.
+- **Apple iCloud Mail, Fastmail, Zoho Mail**: app passwords
+  (app-specific passwords at Apple). Work today; documented 2026-09-24.
+  Fastmail needs a plan above Basic, and Zoho a paid plan for new accounts.
+- **Proton Mail**: an SMTP token, on paid plans and only for an address on
+  your own domain (`smtp.protonmail.ch:587`). Works today; documented
+  2026-09-24.
+- **Sending services** (Amazon SES, Postmark, Mailgun, SendGrid, Brevo,
+  Resend, SMTP2GO): SMTP credentials they generate. Work today; the right
+  answer for a larger team, and free or cheap at a small team's volume.
+
+### 18.1 Provider presets in the email settings · `S` · Model: Opus 5.5
+
+A **Provider** choice at the top of Settings → Email and the setup wizard's
+Email step: Gmail, Outlook or Microsoft 365, iCloud Mail, Yahoo or AOL,
+Zoho Mail (with its region), Fastmail, Proton Mail, Amazon SES (with its region),
+Postmark, Mailgun, SendGrid, Brevo, or Other. Choosing one fills the host,
+port and encryption, says in one line what to use as the password ("an app
+password, not your Gmail password"), and links to that provider's Support
+page. The fields stay editable, and Other is today's form. The table of
+presets lives in one place (server side, so the wizard and settings agree)
+and is tested against the Support pages' values.
+
+### 18.2 Sign in with Microsoft · `M` · Model: Opus 5.5
+
+For Outlook.com and Microsoft 365: a **Sign in with Microsoft** button in
+the email settings, in place of the username and password when the
+Microsoft preset is chosen.
+
+- **The administrator registers Tesria with Microsoft once** (Microsoft
+  Entra, free, about ten minutes; the Support page walks through it with
+  pictures): an app registration for "personal and work accounts", a
+  redirect address of `https://your-server/api/admin/mail/oauth/callback`,
+  the SMTP.Send permission, and a client secret. There cannot be one shared
+  Tesria registration, because every instance has its own address. The
+  client ID and secret go in the settings, the secret encrypted like the
+  SMTP password is.
+- **The sign-in**: authorization code flow with PKCE and a `state` bound to
+  the session; the refresh token is stored encrypted (Data Protection, as
+  the SMTP password is) and never shown. Each send uses a fresh access
+  token, refreshed as needed. The signed-in mailbox's address becomes the
+  From address, since Microsoft refuses any other.
+- **When it stops working** (the user revoked it, the password changed, the
+  secret expired, which Entra secrets do within two years): the send fails
+  with Microsoft's reason, administrators get a security-style alert, and
+  the settings say "Reconnect". An expiring client secret is warned about
+  ahead of its date when Microsoft reports it.
+- **Security decisions to name for the owner** (a stored refresh token can
+  send mail as that mailbox until revoked): connecting needs a recent
+  password (sudo), like other credential changes; connect, disconnect and
+  every refresh failure are audited; the token never leaves the server,
+  and a pack or site export never contains it. Fable review offered, since
+  this is a credential store.
+- **Tests**: the token exchange and refresh against a fake token endpoint;
+  the XOAUTH2 send against a fake SMTP server; revocation raising the alert.
+
+### 18.3 Sign in with Google · `M` · Model: Opus 5.5 · after 18.2
+
+The same flow and storage as 18.2, for Gmail and Google Workspace.
+
+- **The administrator makes a Google Cloud project once**, with an OAuth
+  client and a consent screen. Two things the Support page must get right,
+  from Google's own pages: an **External** app left in **Testing** has its
+  refresh tokens expire after seven days, so it is published **In
+  production**. It needs no Google review: Google exempts OAuth plugins
+  "such as SMTP for WordPress", and the only user is the administrator,
+  who sees "Google hasn't verified this app" once and continues. A Workspace
+  organization can choose **Internal** instead, which shows no warning.
+- **Redirect addresses**: Google accepts only addresses on public domains,
+  not raw IP addresses (to confirm when building: `.local` names). For an
+  instance on a LAN name, the fallback is a paste-back: a desktop-type
+  client redirects to `http://127.0.0.1`, the page fails to load, and the
+  administrator pastes its address into Tesria, which reads the code from
+  it. Design it once in 18.2 so either provider can use it.
+- Google also keeps at most 100 refresh tokens per account per client,
+  silently dropping the oldest: reconnecting replaces the stored token
+  rather than adding one.
+
+### 18.4 Support pages for every provider · `S` · Model: Opus 5.5 · partly shipped 2026-09-24
+
+Under Email (SMTP). **Written 2026-09-24**, each checked that day against
+the provider's own help pages: Sending with Gmail, Sending with Outlook or
+Microsoft 365, **Apple iCloud Mail**, **Zoho Mail**, **Fastmail** and
+**Proton Mail**. **Still to write**: **Yahoo and AOL Mail** (app passwords)
+and **Sending services** (the ones in the list above: what each is, the
+free tier, and where its SMTP credentials are). The Gmail and Outlook pages
+gain the sign-in once 18.2 and 18.3 ship, keeping the app password as the
+alternative for Gmail.
+
+**Not planned**: OAuth for Yahoo and AOL (closed to new applications), and
+a Tesria-run relay that would let instances skip registering their own app
+(it would put every instance's mail through a service the project runs,
+which is exactly what a self-hosted wiki is for avoiding).
+
 ## Order of execution, flattened
 
 1. **0.1** Roles (Fable→Opus) → **0.2** Settings → **0.3** Telemetry → **0.4** Media storage
@@ -5448,6 +5582,7 @@ table.
 16. **14.1** Pre-release audit → **14.2** Images on Docker Hub (asked for 2026-09-23). After 10.5, so the Support site and the images go public together.
 17. **16.1** One version number → **16.2** Versioned docs → **16.3** Pack migrations (asked for 2026-09-24). 16.1 alongside 14.2, since both are the same GitHub Actions release pipeline; 16.2 before the Support site is published at tesria.com; 16.3 before the first release that changes the pack format.
 18. **17** Developer docs on the Support site (asked for 2026-09-24), after Phase 16 so every page carries its version table from the start.
+19. **18.1** Provider presets and **18.4** the app-password and sending-service pages (asked for 2026-09-24): small and independent, so any time; best before 14, since they are what a new owner meets in the setup wizard. Then **18.2** Sign in with Microsoft → **18.3** Sign in with Google, before 14 if the owner wants the public release to work with a personal Outlook.com account.
 
 Phases 6 and 8.2 are floaters (small, no dependents) and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm

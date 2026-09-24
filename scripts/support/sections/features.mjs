@@ -118,7 +118,10 @@ export const shots = ({ demo }) => [
 
   // ---- For developers
   // Where a token is made, rather than the reference, which is a page of text.
-  { name: 'feat-api', url: '/profile', viewport: NARROW, phone: false, steps: [{ wait: 2500 }], clipTo: section('API tokens'), clipPad: 8 },
+  // Only this section is shown: it is the last on the profile, and when the
+  // Sessions list above it listed every ended session (fixed 2026-09-24) it sat
+  // past the 16,000 pixels Chromium can capture, and came out blank.
+  { name: 'feat-api', url: '/profile', viewport: NARROW, phone: false, steps: [{ wait: 2500 }, { css: '.profile__section:not(#api-tokens) { display: none !important; }' }, { wait: 500 }], clipTo: section('API tokens'), clipPad: 8 },
   { name: 'feat-webhooks', url: '/spaces/DEMO/settings/webhooks', viewport: NARROW, phone: false, steps: [{ wait: 2500 }], clip: { x: 0, y: 52, width: 480, height: 560 } },
 
   // ---- On a phone: the one picture taken on a phone.
