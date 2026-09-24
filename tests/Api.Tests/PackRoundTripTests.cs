@@ -38,7 +38,7 @@ public class PackRoundTripTests
     private record ImportDto(
         string Key, string Name, int Pages, int Versions, int Attachments, int Comments,
         int Templates, int Labels, string? Source, int SpaceRestrictions, int PageRestrictions,
-        string[] Authors);
+        string[] Authors, string? MadeWith = null);
 
     /// <summary>
     /// A space with one of everything the format claims to carry, so the
@@ -345,7 +345,38 @@ public class PackRoundTripTests
         var res = await ImportAsync(author, pack, "DEST");
 
         Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
-        Assert.Contains("newer version", await res.Content.ReadAsStringAsync());
+        var body = await res.Content.ReadAsStringAsync();
+        Assert.Contains("pack format 2", body);
+        Assert.Contains("Upgrade Tesria to import it", body);
+    }
+
+    /// <summary>
+    /// The compatibility promise (dev-plan 16.3): every pack under
+    /// <c>Packs/</c> was made by a real release, and each must still import.
+    /// A release that raises the pack format commits one made by the release
+    /// before it.
+    /// </summary>
+    [Fact]
+    public async Task Every_pack_a_release_has_made_still_imports()
+    {
+        var dir = Path.Combine(AppContext.BaseDirectory, "Packs");
+        var packs = Directory.GetFiles(dir, "*.zip");
+        Assert.NotEmpty(packs);
+
+        await using var app = new TestAppFactory();
+        var client = app.CreateClient();
+        await client.RegisterAndSignInAsync();
+
+        var n = 0;
+        foreach (var path in packs.Order(StringComparer.Ordinal))
+        {
+            var res = await ImportAsync(client, await File.ReadAllBytesAsync(path), $"OLD{++n}");
+            Assert.True(res.StatusCode == HttpStatusCode.Created,
+                $"{Path.GetFileName(path)}: {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+            var result = (await res.Content.ReadFromJsonAsync<ImportDto>())!;
+            Assert.True(result.Pages > 0, $"{Path.GetFileName(path)} imported no pages");
+            Assert.StartsWith("Tesria ", result.MadeWith);
+        }
     }
 
     [Fact]

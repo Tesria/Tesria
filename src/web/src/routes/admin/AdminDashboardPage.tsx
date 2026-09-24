@@ -208,6 +208,18 @@ export function AdminDashboardPage() {
 
           <h2 className="dash__heading">Health</h2>
           <div className="dash__grid">
+            {data.version && (
+              <div className="stat">
+                <p className="stat__label">Tesria version</p>
+                <p className="stat__value">{data.version.current}</p>
+                {data.version.previous && data.version.changedAt && (
+                  <p className="muted small">
+                    Upgraded from {data.version.previous} on{' '}
+                    {new Date(data.version.changedAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </p>
+                )}
+              </div>
+            )}
             {data.health.backups.map((h) => <BackupTile key={h.agent} health={h} />)}
           </div>
 

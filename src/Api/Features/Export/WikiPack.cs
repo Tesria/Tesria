@@ -238,7 +238,14 @@ public static class WikiPack
     /// still have to go through <c>PageContent.TryNormalize</c>); what it
     /// guarantees is that the archive itself is what it claims to be.</para>
     /// </summary>
-    public static Model Read(Stream source)
+    public static Model Read(Stream source) => Read(source, PackUpgrades.All, Format);
+
+    /// <summary>
+    /// The reader, with the upgrade steps and the current format as
+    /// parameters so tests can prove the path a future format will take
+    /// (dev-plan 16.3).
+    /// </summary>
+    public static Model Read(Stream source, IReadOnlyList<PackUpgrade> upgrades, int currentFormat)
     {
         using var zip = new ZipArchive(source, ZipArchiveMode.Read, leaveOpen: true);
 
@@ -266,29 +273,49 @@ public static class WikiPack
                 throw new PackException($"This pack contains an unexpected file: {Describe(entry.FullName)}");
         }
 
-        var manifest = ReadJson<Manifest>(zip, ManifestEntry)
+        var manifestNode = ReadNode(zip, ManifestEntry) as JsonObject
             ?? throw new PackException("This file is not a Tesria pack: it has no manifest.");
 
         // First, and before anything else is interpreted.
-        if (manifest.Format > Format)
+        var format = manifestNode["format"] is JsonValue fv && fv.TryGetValue<int>(out var f) ? f : 0;
+        var generator = manifestNode["generator"] is JsonValue gv && gv.TryGetValue<string>(out var g) ? g : null;
+        if (format > currentFormat)
             throw new PackException(
-                $"This pack was made by a newer version of Tesria (format {manifest.Format}; this one reads {Format}).");
-        if (manifest.Format < 1)
+                $"This pack was made by {(string.IsNullOrWhiteSpace(generator) || generator == "Tesria" ? "a newer version of Tesria" : generator)} "
+                + $"(pack format {format}); this Tesria ({Infrastructure.Versioning.AppVersion.Current}) reads format {currentFormat} and older. "
+                + "Upgrade Tesria to import it.");
+        if (format < 1)
             throw new PackException("This pack's format version is not valid.");
 
-        var space = ReadJson<PackSpace>(zip, SpaceEntry)
+        var spaceNode = ReadNode(zip, SpaceEntry) as JsonObject
             ?? throw new PackException("This pack has no space in it.");
-        var authors = ReadJson<Dictionary<string, Author>>(zip, AuthorsEntry) ?? [];
-
-        var pages = new List<PackPage>();
+        var authorsNode = ReadNode(zip, AuthorsEntry) as JsonObject;
+        var pageNodes = new List<(string Name, JsonObject Node)>();
         foreach (var entry in zip.Entries
                      .Where(e => e.FullName.StartsWith(PagePrefix, StringComparison.Ordinal) && !IsDirectory(e))
                      .OrderBy(e => e.FullName, StringComparer.Ordinal))
         {
-            var page = ReadJson<PackPage>(zip, entry.FullName)
+            var node = ReadNode(zip, entry.FullName) as JsonObject
                 ?? throw new PackException($"A page in this pack could not be read: {Describe(entry.FullName)}");
-            pages.Add(page);
+            pageNodes.Add((entry.FullName, node));
         }
+
+        // An older format is brought up to date step by step before it is
+        // read, so everything below only ever reads the current format
+        // (dev-plan 16.3).
+        if (format < currentFormat)
+            PackUpgrades.Apply(new PackDocument(manifestNode, spaceNode, authorsNode, pageNodes.Select(p => p.Node).ToList()),
+                format, currentFormat, upgrades);
+
+        var manifest = As<Manifest>(manifestNode, ManifestEntry)
+            ?? throw new PackException("This file is not a Tesria pack: it has no manifest.");
+        var space = As<PackSpace>(spaceNode, SpaceEntry)
+            ?? throw new PackException("This pack has no space in it.");
+        var authors = authorsNode is null ? [] : As<Dictionary<string, Author>>(authorsNode, AuthorsEntry) ?? [];
+        var pages = new List<PackPage>();
+        foreach (var (name, node) in pageNodes)
+            pages.Add(As<PackPage>(node, name)
+                ?? throw new PackException($"A page in this pack could not be read: {Describe(name)}"));
 
         foreach (var attachment in pages.SelectMany(p => p.Attachments))
         {
@@ -342,18 +369,27 @@ public static class WikiPack
         return false;
     }
 
-    private static T? ReadJson<T>(ZipArchive zip, string name)
+    private static JsonNode? ReadNode(ZipArchive zip, string name)
     {
         var entry = zip.GetEntry(name);
-        if (entry is null) return default;
+        if (entry is null) return null;
         try
         {
             using var stream = entry.Open();
-            return JsonSerializer.Deserialize<T>(stream, Json);
+            return JsonNode.Parse(stream);
         }
         catch (JsonException ex)
         {
             throw new PackException($"{Describe(name)} in this pack is not valid JSON: {ex.Message}");
+        }
+    }
+
+    private static T? As<T>(JsonNode node, string name)
+    {
+        try { return node.Deserialize<T>(Json); }
+        catch (JsonException ex)
+        {
+            throw new PackException($"{Describe(name)} in this pack is not valid: {ex.Message}");
         }
     }
 

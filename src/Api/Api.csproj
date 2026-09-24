@@ -7,8 +7,12 @@
     <RootNamespace>Tesria.Api</RootNamespace>
     <AssemblyName>Tesria.Api</AssemblyName>
     <InvariantGlobalization>true</InvariantGlobalization>
-    <Version>0.2.0</Version>
-    <InformationalVersion>0.2.0</InformationalVersion>
+    <!-- One version, set by the release (dev-plan 16.1): a pushed tag vX.Y.Z
+         builds as X.Y.Z (GitHub Actions passes TESRIA_VERSION to the Docker
+         build, which sets InformationalVersion). A build without one is the
+         next release with -dev, so it can never pass for a release. -->
+    <Version>0.5.0</Version>
+    <InformationalVersion>0.5.0-dev</InformationalVersion>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <Authors>Brian Rodriguez</Authors>
     <Product>Tesria</Product>

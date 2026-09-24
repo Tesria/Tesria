@@ -57,7 +57,9 @@ public static partial class PackImportEndpoints
     public sealed record ImportResponse(
         string Key, string Name, int Pages, int Versions, int Attachments,
         int Comments, int Templates, int Labels, string? Source,
-        int SpaceRestrictions, int PageRestrictions, IReadOnlyList<string> Authors);
+        int SpaceRestrictions, int PageRestrictions, IReadOnlyList<string> Authors,
+        /// <summary>Which Tesria made the pack, such as "Tesria 0.5.0" (dev-plan 16.3).</summary>
+        string? MadeWith = null);
 
     private static async Task<IResult> Import(
         HttpRequest request, AppDbContext db, CurrentUser current, IAttachmentStorage storage,
@@ -311,7 +313,7 @@ public static partial class PackImportEndpoints
                 attachmentIds.Count, commentIds.Count, (model.Space.Templates ?? []).Count, labels,
                 model.Manifest.Source,
                 model.Manifest.Restrictions.Space, model.Manifest.Restrictions.Pages,
-                authors));
+                authors, model.Manifest.Generator));
         }
         finally
         {

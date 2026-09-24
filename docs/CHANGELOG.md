@@ -5,6 +5,101 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-24
+
+The first numbered release: everything built since the project began on
+2026-07-22. Builds before it reported 0.2.0 and were never released. The
+entries below are the full record; these are the highlights.
+
+**Upgrading from a preview build**
+
+- API tokens now expire. Tokens made before 0.5 expire 90 days after the
+  upgrade; their owners are told a week ahead. New tokens choose 30 days,
+  90, a year or never.
+- A token can no longer manage its account (its tokens, password, sessions
+  or two-factor), and a page's render token reaches only that page.
+- Where two-factor is required for administrators, an administrator without
+  it has no administration rights until they turn it on.
+- Two new rights: resetting another administrator (Owner only, unless the
+  owner grants it) and instance-wide templates (Administrators).
+
+**What 0.5 brings**
+
+- Writing: a block editor with panels, layouts, tables, code, diagrams
+  (Mermaid), math, charts, galleries, video, animations, embeds and twelve
+  kinds of live content; templates; page emoji.
+- Working together: live co-editing, tracked changes from scripts and AI
+  assistants, comments, mentions, watching, notifications, full history.
+- Organizing and sharing: spaces, permissions, page restrictions, labels,
+  trash, search, a numbered or bulleted page tree with a filter; exports as
+  Markdown, HTML, PDF, a whole website or a wiki pack; opt-in public reading.
+- Integrations: a REST API with expiring tokens, webhooks, OpenAPI, and a
+  built-in MCP server.
+- Running it: one Compose file with automatic HTTPS, a setup wizard,
+  backups with point-in-time recovery, restore and undo from the browser,
+  offsite copies (cloud, network drive, removable drive) and restore drills;
+  email through your own server or by signing in to Gmail, Outlook and
+  others; invites by email; optional access from anywhere with Tailscale.
+- Security: roles with assignable rights, an Owner role, two-factor sign-in,
+  single sign-on, rate limits and lockouts, security alerts, a
+  tamper-evident audit log, and a Trust this device page for servers on
+  your own network.
+- Versions: one version number shown everywhere, recorded in every pack and
+  audit-logged on upgrade; packs from 0.5 on keep importing into later
+  releases; every Support page says which version it applies to.
+
+### Fix: an exported site's footer and sidebar (2026-09-24, Opus 5.5)
+
+Reported by the owner from a site opened from disk: the footer only
+appeared after scrolling to the end of a page, and at the end of a long
+page the sidebar slid up under the top bar.
+
+- **One cause for both.** A captured page's own closing tags end the
+  two-column layout early, so the footer landed after it, and the sidebar's
+  sticky container stopped 113 pixels short of the end of the page.
+- **The footer is now a band pinned to the bottom of the window**, like the
+  top bar, and the layout leaves room for it; the sidebar is exactly the
+  height between the two bars, so it has nowhere to slide. Checked on a
+  long page, the index and a phone width.
+- The footer no longer names Tesria twice: "Exported on September 24, 2026
+  from Tesria 0.5.0", or "Exported from Acme Wiki on ..., with Tesria
+  0.5.0" for an instance with its own name.
+
+### Phase 16: versions and releases (2026-09-24, Opus 5.5)
+
+- **One version number** (16.1): semantic versioning from 0.5.0, set in
+  `src/Api/Api.csproj` and stamped by the release tag
+  (`TESRIA_VERSION` → `InformationalVersion` in the Docker build; a local
+  build says `0.5.0-dev`). `AppVersion` is the one place it is read:
+  `/api/health`, `/api/instance`, the OpenAPI spec, a "Tesria version" card
+  on the admin dashboard, the footer of an exported site, and a pack's
+  `generator`.
+- **Upgrades are recorded**: the running version is kept in site settings
+  (migration `InstanceVersion`), and a start on a different version writes
+  `instance.upgraded` to the audit log with where it came from. The first
+  start with versioning records nothing, since there is nothing to compare.
+- **Packs that keep working** (16.3): `PackUpgrades`, steps from one pack
+  format to the next that run on the pack's JSON before it is read, the way
+  migrations run on a database. Empty today (format 1 is the only one); the
+  path is proven with a pretend format 2. A pack from a newer format is
+  refused naming what made it ("made by Tesria 0.9.0 (pack format 2)").
+  `tests/Api.Tests/Packs/` holds a pack made by 0.5.0, and every pack there
+  must import; a release that raises the format adds one made by the
+  release before it. The import result says which Tesria made the pack.
+- **Docs that say which version they describe** (16.2): the Support
+  publisher ends every page with a small table (Applies to, Updated,
+  Changes), kept in the committed `scripts/support/page-versions.json`.
+  "Applies to" moves only when a section says so (`since`), so a typo fix
+  does not make a page look newer than the feature. The Release notes page
+  has a full entry for 0.5.
+- **Releases from a tag**: `.github/workflows/ci.yml` runs the backend and
+  frontend checks on every push and pull request; `release.yml` runs them
+  on a `v*` tag, builds the image with the tag's version, and publishes a
+  GitHub release with this file's section for it (the highlights, when a
+  section is too long for a release).
+- Tests: `VersioningTests` (4), five pack-upgrade tests in `WikiPackTests`,
+  and `Every_pack_a_release_has_made_still_imports`.
+
 ### Phase 19: reaching Tesria from anywhere with Tailscale (2026-09-24, Opus 5.5)
 
 - **An optional `tailscale` service** (Compose profile `tailscale`, off

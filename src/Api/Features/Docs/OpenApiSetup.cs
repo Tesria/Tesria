@@ -26,7 +26,8 @@ public static class OpenApiSetup
                 document.Info = new OpenApiInfo
                 {
                     Title = "Tesria API",
-                    Version = "v1",
+                    // The release this document describes (dev-plan 16.1).
+                    Version = Infrastructure.Versioning.AppVersion.Current,
                     Description =
                         "The REST API behind Tesria, a self-hosted wiki.\n\n"
                         + "**Authentication.** Scripts and integrations send an API token as "

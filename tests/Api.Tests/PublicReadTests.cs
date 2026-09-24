@@ -412,7 +412,7 @@ public class PublicReadTests
         var fields = System.Text.Json.JsonDocument.Parse(body).RootElement
             .EnumerateObject().Select(p => p.Name).Order().ToArray();
         Assert.Equal(
-            ["allowPublicRegistration", "branding", "instanceName", "needsOwner", "ownCertificate", "publicReading"],
+            ["allowPublicRegistration", "branding", "instanceName", "needsOwner", "ownCertificate", "publicReading", "version"],
             fields);
         Assert.DoesNotContain("PUB", body);
         Assert.DoesNotContain("admin@example.com", body);

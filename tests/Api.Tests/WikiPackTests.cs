@@ -351,4 +351,73 @@ public class WikiPackTests
         }
         return buffer.ToArray();
     }
+
+    /* ---- upgrading an older format (dev-plan 16.3) ----------------------- */
+
+    // Format 1 is the only format there has been, so these pretend the
+    // current one is 2 and prove the path a real second format will take.
+
+    private static JsonNode Shout(JsonNode doc) =>
+        JsonNode.Parse(doc.ToJsonString().Replace("\"text\":\"home\"", "\"text\":\"HOME\"")
+            .Replace("\"text\":\"template\"", "\"text\":\"TEMPLATE\""))!;
+
+    [Fact]
+    public async Task An_older_format_is_upgraded_step_by_step_before_it_is_read()
+    {
+        var steps = new List<PackUpgrade> { new(1, "shout", pack => pack.ForEachDocument(Shout)) };
+
+        var read = WikiPack.Read(new MemoryStream(await Write(Sample())), steps, currentFormat: 2);
+
+        Assert.Equal(2, read.Manifest.Format);
+        var home = read.Pages.Single(p => p.Id == PageOne);
+        Assert.Contains("HOME", home.Versions.Single().Content.ToJsonString());
+        Assert.Contains("TEMPLATE", read.Space.Templates.Single().Content);
+        // A page the step had nothing to change in comes through as it was.
+        Assert.Contains("child", read.Pages.Single(p => p.Id == PageTwo).Versions.Single().Content.ToJsonString());
+    }
+
+    [Fact]
+    public async Task A_missing_step_is_refused_in_words()
+    {
+        var bytes = await Write(Sample());
+
+        var ex = Assert.Throws<WikiPack.PackException>(() =>
+            WikiPack.Read(new MemoryStream(bytes), [], currentFormat: 2));
+        Assert.Contains("no way to upgrade a pack from format 1", ex.Message);
+    }
+
+    [Fact]
+    public async Task A_step_that_fails_says_which_step_and_why()
+    {
+        var steps = new List<PackUpgrade>
+        {
+            new(1, "renames the callout node", _ => throw new InvalidOperationException("no content")),
+        };
+        var bytes = await Write(Sample());
+
+        var ex = Assert.Throws<WikiPack.PackException>(() =>
+            WikiPack.Read(new MemoryStream(bytes), steps, currentFormat: 2));
+        Assert.Contains("from format 1 to 2 (renames the callout node) failed: no content", ex.Message);
+    }
+
+    [Fact]
+    public async Task A_pack_from_a_newer_format_names_what_made_it()
+    {
+        var model = Sample();
+        var bytes = await Write(model with { Manifest = model.Manifest with { Generator = "Tesria 0.9.0" } });
+
+        var ex = Assert.Throws<WikiPack.PackException>(() =>
+            WikiPack.Read(new MemoryStream(bytes), [], currentFormat: 0));
+        Assert.Contains("made by Tesria 0.9.0 (pack format 1)", ex.Message);
+        Assert.Contains("Upgrade Tesria to import it", ex.Message);
+    }
+
+    [Fact]
+    public void Every_step_there_is_starts_from_a_format_before_this_one_and_none_is_missing()
+    {
+        // Guards the list itself: when format 2 arrives, the step from 1
+        // must be there too, or every 0.5 pack stops importing.
+        var froms = PackUpgrades.All.Select(s => s.From).OrderBy(f => f).ToList();
+        Assert.Equal(Enumerable.Range(1, WikiPack.Format - 1), froms);
+    }
 }

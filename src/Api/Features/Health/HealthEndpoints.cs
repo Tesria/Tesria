@@ -14,9 +14,7 @@ public static class HealthEndpoints
         // Liveness: is the process up and serving requests?
         group.MapGet("/health", (RestoreState restore) =>
         {
-            var version = Assembly.GetExecutingAssembly()
-                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
-                ?? "0.1.0";
+            var version = Infrastructure.Versioning.AppVersion.Full;
 
             return Results.Ok(new
             {

@@ -36,9 +36,13 @@ public static class DashboardEndpoints
     /// <summary>The Health tiles 2.5 promised; they needed dev-plan 9.1 to have anything to read.</summary>
     public record HealthStats(IReadOnlyList<BackupEndpoints.Health> Backups);
 
+    /// <summary>Which Tesria is running, and what it replaced (dev-plan 16.1).</summary>
+    public record VersionStats(string Current, string? Previous, DateTimeOffset? ChangedAt);
+
     public record DashboardResponse(
         int RangeDays, DateTimeOffset GeneratedAt,
-        PeopleStats People, ContentStats Content, UsageStats Usage, HealthStats Health);
+        PeopleStats People, ContentStats Content, UsageStats Usage, HealthStats Health,
+        VersionStats? Version = null);
 
     public static IEndpointRouteBuilder MapDashboardEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -49,7 +53,8 @@ public static class DashboardEndpoints
         return routes;
     }
 
-    private static async Task<IResult> GetDashboard(AppDbContext db, int? rangeDays, Infrastructure.Permissions.IPermissionService perms)
+    private static async Task<IResult> GetDashboard(AppDbContext db, int? rangeDays, Infrastructure.Permissions.IPermissionService perms,
+        Infrastructure.Settings.ISiteSettingsService settings)
     {
         var days = Math.Clamp(rangeDays ?? 30, 1, 365);
         var now = DateTimeOffset.UtcNow;
@@ -155,7 +160,10 @@ public static class DashboardEndpoints
 
         var health = new HealthStats(await BackupEndpoints.HealthAsync(db));
 
-        return Results.Ok(new DashboardResponse(days, now, people, content, usage, health));
+        var site = await settings.GetAsync();
+        var version = new VersionStats(Infrastructure.Versioning.AppVersion.Current, site.PreviousVersion,
+            site.PreviousVersion is null ? null : site.VersionChangedAt);
+        return Results.Ok(new DashboardResponse(days, now, people, content, usage, health, version));
     }
 
     /// <summary>

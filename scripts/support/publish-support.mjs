@@ -12,6 +12,7 @@
 // its pages were written, kept so they can be rewritten after a redesign. The
 // committed copy is the space exported as a wiki pack at the end of 10.5.
 
+import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -28,6 +29,56 @@ const TOP = [
   'REST API', 'MCP', 'Troubleshooting', 'FAQ', 'Glossary', 'Release notes', 'Security', 'License and credits',
 ]
 const SECTIONS = ['welcome', 'features', 'getting-started', 'installation', 'manual-basics', 'manual-spaces', 'manual-editor', 'editor-elements-1', 'editor-elements-2', 'editor-live', 'manual-together', 'manual-mobile', 'administration', 'api', 'reference']
+
+/**
+ * Which version each page describes (dev-plan 16.2), committed so it
+ * survives a reset: `appliesTo` (the release the page was last written
+ * for), `updated` (the day its words last changed), `note` (what changed)
+ * and `hash` (of the words, without the table, pictures' ids aside).
+ * "Applies to" moves only when a section says so with `since`, because a
+ * page fixed for a typo in 0.9 still describes 0.5 and later.
+ */
+const VERSIONS_FILE = join(HERE, 'page-versions.json')
+const versions = existsSync(VERSIONS_FILE) ? JSON.parse(readFileSync(VERSIONS_FILE, 'utf8')) : {}
+const RELEASE = JSON.parse(readFileSync(join(ROOT, 'src/web/package.json'), 'utf8')).version.split('.').slice(0, 2).join('.')
+const saveVersions = () => writeFileSync(VERSIONS_FILE,
+  JSON.stringify(Object.fromEntries(Object.entries(versions).sort(([a], [b]) => a.localeCompare(b))), null, 2) + '\n')
+
+/** The words of a page, as a hash: a retaken picture gets a new id, which is not a change to the page. */
+function wordsHash(content) {
+  const json = JSON.stringify(lib.canonical(content), (key, value) =>
+    key === 'attachmentId' || (key === 'src' && typeof value === 'string' && value.startsWith('/api/attachments/')) ? undefined : value)
+  return createHash('sha256').update(json).digest('hex').slice(0, 16)
+}
+
+const firstCellText = (node) => node?.content?.[0]?.content?.[0]?.content?.[0]?.content?.[0]?.text
+const isVersionTable = (node) => node?.type === 'table' && firstCellText(node) === 'Applies to'
+
+/** A page's content without the version table the publisher added. */
+function withoutVersionTable(content) {
+  const nodes = [...(content?.content ?? [])]
+  if (!isVersionTable(nodes.at(-1))) return content
+  nodes.pop()
+  if (nodes.at(-1)?.type === 'horizontalRule') nodes.pop()
+  return { ...content, content: nodes }
+}
+
+const usDate = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
+
+/** The small table at the end of every page. */
+function versionTable(entry) {
+  const row = (label, value) => ({ type: 'tableRow', content: [lib.cell(true, label, 110), lib.cell(false, value)] })
+  return [lib.hr(), {
+    type: 'table',
+    content: [
+      row('Applies to', `Tesria ${entry.appliesTo} and later`),
+      // Short labels, so the first column stays at the 7rem a phone gives
+      // every table column (index.css) and the values have the rest.
+      row('Updated', usDate(entry.updated)),
+      row('Changes', entry.note),
+    ],
+  }]
+}
 
 const args = process.argv.slice(2)
 const shoot = !args.includes('--no-shoot')
@@ -76,6 +127,46 @@ async function main() {
 
   const s = await lib.site(author, SPACE)
 
+  // Every page a section writes ends with its version table (dev-plan 16.2).
+  // A section may pass `since` for a page about something newer than the
+  // release it was first written for, and `changed` to say what changed.
+  const writePage = s.page
+  s.page = async (title, parentId, content, options = {}) => {
+    const { since, changed, ...rest } = options
+    const parentTitle = parentId ? (function find(nodes) {
+      for (const n of nodes) {
+        if (n.id === parentId) return n.title
+        const hit = find(n.children ?? [])
+        if (hit) return hit
+      }
+      return null
+    })(s.tree()) : null
+    const key = parentTitle ? `${parentTitle} / ${title}` : title
+    const hash = wordsHash(content)
+    const before = versions[key]
+    if (!before || before.hash !== hash || (since && since !== before.appliesTo) || (changed && changed !== before.note)) {
+      let updated = new Date().toISOString().slice(0, 10)
+      // A page seen for the first time keeps the day its words were last
+      // published, if they are these words.
+      if (!before) {
+        const existing = lib.findChild(s.tree(), parentId, title)
+        if (existing) {
+          const current = await author.call('GET', `/api/pages/${existing.id}`)
+          if (lib.same(withoutVersionTable(JSON.parse(current.contentJson || 'null')), content)) updated = current.updatedAt.slice(0, 10)
+        }
+      }
+      const appliesTo = since ?? before?.appliesTo ?? RELEASE
+      versions[key] = {
+        appliesTo,
+        updated: before?.hash === hash ? before.updated : updated,
+        note: changed ?? (before ? (before.hash === hash ? before.note : 'Revised.') : `Written for Tesria ${appliesTo}.`),
+        hash,
+      }
+      saveVersions()
+    }
+    return writePage(title, parentId, { ...content, content: [...content.content, ...versionTable(versions[key])] }, rest)
+  }
+
   // Shots point at Tesria Demo pages, which are addressed by id: a section
   // names them by title and this finds them.
   const demoSpace = await author.call('GET', '/api/spaces/DEMO')
@@ -108,6 +199,9 @@ async function main() {
     // A section may set the stage before its pictures are taken: activity
     // that has to exist for a screen to show anything, such as notifications.
     const prepared = section.prepare ? (await section.prepare({ lib, author, demo, demoId })) ?? {} : {}
+    // A prepare step may rename or move a Support page (reference.mjs did,
+    // and the stale tree made a second page beside the renamed one).
+    if (section.prepare) await s.refresh()
     const shots = typeof section.shots === 'function' ? section.shots({ demo, ...prepared }) : section.shots ?? []
     const specOf = Object.fromEntries(shots.map((x) => [x.name, x]))
     if (shoot && shots.length) takeShots(name, shots)

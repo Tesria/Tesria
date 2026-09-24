@@ -220,7 +220,9 @@ public static class PackExportEndpoints
         return (new WikiPack.Model(
             new WikiPack.Manifest(
                 WikiPack.Format,
-                "Tesria",
+                // Which release made it (dev-plan 16.3), so an import can say
+                // so and a refusal can say which Tesria it needs.
+                $"Tesria {Infrastructure.Versioning.AppVersion.Current}",
                 DateTimeOffset.UtcNow,
                 instance,
                 new WikiPack.ManifestSpace(space.Key, space.Name),

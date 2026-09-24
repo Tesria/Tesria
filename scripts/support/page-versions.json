@@ -1,0 +1,1070 @@
+{
+  "Administration": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "acf1555a4c2711d2"
+  },
+  "Administration / Audit": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "3ae45fb011f3081c"
+  },
+  "Administration / Backups (administration)": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "634b2759c2b7651a"
+  },
+  "Administration / Branding": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "95d0e56cef83a6ee"
+  },
+  "Administration / Dashboard": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "16268192118f8acf"
+  },
+  "Administration / Groups": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "814c2693a83286b4"
+  },
+  "Administration / Invites": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "f995854a3d2c8828"
+  },
+  "Administration / Owner, administrators and users": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "1070305b3696860f"
+  },
+  "Administration / Roles": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "0edf2d470535296c"
+  },
+  "Administration / Security (administration)": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "89ad51b5b558c52f"
+  },
+  "Administration / Settings (administration)": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "cd7f8d54bbf03114"
+  },
+  "Administration / Spaces (administration)": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "d7f347d819c2adc4"
+  },
+  "Administration / Users": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "0b98126d09f8edc7"
+  },
+  "Backups and recovery / How backups work": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "a6d4cbb227b358ae"
+  },
+  "Backups and recovery / Offsite copies": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "fb719cc631262bd7"
+  },
+  "Backups and recovery / Restore drills": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "ce22d8887e59e66e"
+  },
+  "Backups and recovery / Restoring and undo": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "bfc716c5203c8d0c"
+  },
+  "Backups and recovery / Retention": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "b911a90ac0746edb"
+  },
+  "Backups and recovery / Testing a target and the cloud budget": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "87f88a60aecfc32a"
+  },
+  "Backups and recovery / When the machine is gone": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "68af70753b1fddb3"
+  },
+  "Basics / Accounts and invites": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "b1b2cb503f0085fb"
+  },
+  "Basics / Finding your way around": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "1c461c65a6e8c524"
+  },
+  "Basics / Resetting a password": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "1a7819c2428b98f5"
+  },
+  "Basics / Signing in": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "da74e21dd3e447d4"
+  },
+  "Basics / The tour and tips": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "149d468cd35f628d"
+  },
+  "Basics / Theme and accent": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "0620b693d7390b79"
+  },
+  "Basics / Two-factor and recovery codes": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "faf8c9ec46032213"
+  },
+  "Elements / Animation": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "4a85c9a9be192175"
+  },
+  "Elements / Blockquote": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "08bf6c5e74723bbe"
+  },
+  "Elements / Bullet list": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "50e1284994dd17b7"
+  },
+  "Elements / Chart": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "33d7beb90c9cc533"
+  },
+  "Elements / Code block": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "070d9352a5289782"
+  },
+  "Elements / Date": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "3a1339d9a110b9ae"
+  },
+  "Elements / Decision": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "6fd57774e68842bf"
+  },
+  "Elements / Diagram (Mermaid)": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "dc60baedc761b820"
+  },
+  "Elements / Divider": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "3e97211c677870ee"
+  },
+  "Elements / Embed": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "e13f3e8b28daeea0"
+  },
+  "Elements / Emoji": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "d8dc99988d270767"
+  },
+  "Elements / Excerpt": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "08b50a9e883be611"
+  },
+  "Elements / Expand": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "ccd3b09e9cc43695"
+  },
+  "Elements / File or video": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "ab5093888bf8143b"
+  },
+  "Elements / Gallery": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "c89b5fb6e9175fd3"
+  },
+  "Elements / Headings": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "9b1b57c2998933b4"
+  },
+  "Elements / Image": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "ca8a4502b49fc213"
+  },
+  "Elements / Layout": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "9c81fff76734fe02"
+  },
+  "Elements / Link": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "08358cd694134bb5"
+  },
+  "Elements / Math": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "8d9ec4b4d1a84e56"
+  },
+  "Elements / Mention": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "52424b6c324e3b3a"
+  },
+  "Elements / Normal text": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "a46591934a1508ad"
+  },
+  "Elements / Ordered list": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "607424ece7e27d09"
+  },
+  "Elements / Page properties": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "f77036a3014f1129"
+  },
+  "Elements / Panels": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "8813a1fb3ba15b0f"
+  },
+  "Elements / Smart link": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "b1c26a7f6f47e2ed"
+  },
+  "Elements / Status": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "97611c51d7a970c3"
+  },
+  "Elements / Table": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "dec3e2ce974140bd"
+  },
+  "Elements / Table of contents": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "4c3f4651613d0777"
+  },
+  "Elements / Task list": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "898cd1e40d81cde1"
+  },
+  "Email (SMTP) / Sending services": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "733147c2a2a4f8ba"
+  },
+  "Email (SMTP) / Sending with Apple iCloud Mail": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "bdadfcbafc6cdf6d"
+  },
+  "Email (SMTP) / Sending with Fastmail": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "9b4ce3997c55e207"
+  },
+  "Email (SMTP) / Sending with Gmail": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "aef701032b23d126"
+  },
+  "Email (SMTP) / Sending with Outlook or Microsoft 365": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "f8a8950625213ee1"
+  },
+  "Email (SMTP) / Sending with Proton Mail": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "d37ae6674f6c5af5"
+  },
+  "Email (SMTP) / Sending with Zoho Mail": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "a970adc82ecde832"
+  },
+  "Exporting and publishing / A space as a website": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "c1f30ee58ead3588"
+  },
+  "Exporting and publishing / Exporting a page": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "389cb8cc890a25cd"
+  },
+  "Exporting and publishing / Hosting an exported site": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "59f96cb95c85b5e7"
+  },
+  "Exporting and publishing / Public reading": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "e8ae09ee55e0af25"
+  },
+  "Exporting and publishing / Turning exports off": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "6fc3ffb1c73ffaee"
+  },
+  "Exporting and publishing / Wiki packs": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "0fd8ef603419c1a9"
+  },
+  "FAQ": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "49f7d955ab8bcd33"
+  },
+  "Features": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "e226efe249317f28"
+  },
+  "Finding things / Label pages": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "9314a3bb59a7aed0"
+  },
+  "Finding things / Search": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "871f8185edd92941"
+  },
+  "Getting started": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "19d057cf24f4846a"
+  },
+  "Getting started / First-run setup wizard": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "9f79b92f034faad2"
+  },
+  "Getting started / Prerequisites": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "613c2310dd2afc35"
+  },
+  "Getting started / Quick start": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "59dfd2ce0454e681"
+  },
+  "Getting started / System requirements": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "e4282aedadd1ff90"
+  },
+  "Getting started / What is Tesria": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "882fba389cd3afbe"
+  },
+  "Getting started / Your first space and page": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "5d08f2d8104ad08a"
+  },
+  "Glossary": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "9c3c94b5ca530d63"
+  },
+  "Installation and operations": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "7f9d2106be3bfc7e"
+  },
+  "Installation and operations / Backups and recovery": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "ae3a4e0bde0ad11d"
+  },
+  "Installation and operations / Configuration reference": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "5db722535cf8cf50"
+  },
+  "Installation and operations / Email (SMTP)": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "8263898e87f87562"
+  },
+  "Installation and operations / Health checks and monitoring": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "580280530ff8c4e5"
+  },
+  "Installation and operations / HTTPS and domains": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "dc6f6f242628358c"
+  },
+  "Installation and operations / Installing with Docker Compose": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "3e87240753c2beb2"
+  },
+  "Installation and operations / Opening Tesria by name": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "d45da9281a7b64d1"
+  },
+  "Installation and operations / Reaching Tesria from anywhere with Tailscale": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "d4bc7012882e935c"
+  },
+  "Installation and operations / Security hardening": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "3ecfb4d30da81b90"
+  },
+  "Installation and operations / Single sign-on (OIDC)": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "f6564752ba6831a1"
+  },
+  "Installation and operations / Trusting the local certificate": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "2bbbe6b457086d99"
+  },
+  "Installation and operations / Uninstalling and moving": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "03a2d3bc84c01423"
+  },
+  "Installation and operations / Upgrading": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "89e236a14671d2ac"
+  },
+  "License and credits": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "7a6ba89d84829d44"
+  },
+  "Live content / Attachments (live content)": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "db676d64cd41111a"
+  },
+  "Live content / Change history": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "b87faeb4da09b7ac"
+  },
+  "Live content / Children display": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "8a45ab3369ab9f8f"
+  },
+  "Live content / Content by label": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "1a25f8fee767e12e"
+  },
+  "Live content / Contributors": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "085966f0cf3beba8"
+  },
+  "Live content / Excerpt include": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "25088e8a94f295b6"
+  },
+  "Live content / How live content works": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "e571a6bc0f1aaeec"
+  },
+  "Live content / Include page": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "73e24091745a906d"
+  },
+  "Live content / Labels list": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "a05717bd69e7c415"
+  },
+  "Live content / Page properties report": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "67162f2c1e87e43f"
+  },
+  "Live content / Page tree": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "b6456280956b9bfb"
+  },
+  "Live content / Recently updated": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "5e8efe86f27381f9"
+  },
+  "Live content / Task report": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "4f7826283f6b4baa"
+  },
+  "MCP": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "378225cd97ed3de1"
+  },
+  "MCP / Connecting an assistant": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "0e1e5965c75bf236"
+  },
+  "MCP / What an assistant can do": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "510552959337552f"
+  },
+  "Pages / Attachments": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "07b12ef1ac08ff9c"
+  },
+  "Pages / Creating a page": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "246f94d29282908e"
+  },
+  "Pages / Drafts, Publish and Update": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "099acf3207d615e6"
+  },
+  "Pages / History and restoring": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "c7b5427de132f187"
+  },
+  "Pages / Labels": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "a57b00c583d239a0"
+  },
+  "Pages / Moving and copying pages": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "10f8d9541ac3458f"
+  },
+  "Pages / Page actions": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "46a8d3795db00b4b"
+  },
+  "Pages / Page emoji": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "067bd8e1b734c8a5"
+  },
+  "Pages / Restrictions": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "131d5c738cf5306a"
+  },
+  "Pages / Templates": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "39d119b92055d160"
+  },
+  "Pages / The page tree and reordering": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "54e17ada6bca70ba"
+  },
+  "Pages / Trash": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "8eba6db526fbf3b4"
+  },
+  "Release notes": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "56b58674fb2ac293"
+  },
+  "Release notes / Tesria 0.5": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "41fbbec16551a54f"
+  },
+  "REST API": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "b529e31bc93df28b"
+  },
+  "REST API / Getting started with the API": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "2f62c3081d6df76b"
+  },
+  "REST API / Requests and responses": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "35562951fc0e0f8b"
+  },
+  "REST API / Webhooks": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "fbefcc2fc90eb9b3"
+  },
+  "REST API / What the API covers": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "3f58bb6c9e873cf4"
+  },
+  "Security": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "656e3b1104e7459c"
+  },
+  "Spaces / Archiving and deleting a space": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "2170e34b179d74b9"
+  },
+  "Spaces / Creating a space": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "b6e2697c23090655"
+  },
+  "Spaces / Space icons": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "3f94dcdcc0bfbe55"
+  },
+  "Spaces / The space home and watching": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "79f72ea0aefe007e"
+  },
+  "Spaces / What a space is": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "08389a1c9c50d4c0"
+  },
+  "Spaces / Who can see a space": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "a0adf1820d3551e5"
+  },
+  "Tesria on phones and tablets / Moving between spaces and pages": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "78d8e059bf75095a"
+  },
+  "Tesria on phones and tablets / Setting up a phone or tablet": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "0b0eb474cfe05678"
+  },
+  "Tesria on phones and tablets / Tables by touch": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "7d7cfeba1a3bfc47"
+  },
+  "Tesria on phones and tablets / The editor on a phone": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "312f8e7b340aa72a"
+  },
+  "Tesria on phones and tablets / The keyboard and the sticky bars": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "e41e5c3af3d19f5d"
+  },
+  "Tesria on phones and tablets / The phone top bar and menu": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "c525565d886be07a"
+  },
+  "Tesria on phones and tablets / What a phone does not offer": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "515e299732c20343"
+  },
+  "The editor / Alignment and indentation": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "6e6ce0347dd69ad0"
+  },
+  "The editor / Colors": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "3a9284c208cc31af"
+  },
+  "The editor / Editor tour": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "ca53367bd864f4ed"
+  },
+  "The editor / Elements": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "21bd7f01e7a6a354"
+  },
+  "The editor / Floating menus": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "4cee3f6658cb445e"
+  },
+  "The editor / Keyboard shortcuts": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "93c960ed3d74c3d4"
+  },
+  "The editor / Live content": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "d5a37ed4d8cc76d3"
+  },
+  "The editor / Markdown shortcuts": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "aaec3dd2e845796f"
+  },
+  "The editor / Text formatting": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "483e89bac673ff62"
+  },
+  "The editor / The slash menu": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "c9783eb2ca72f74c"
+  },
+  "Troubleshooting": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "8e11076e05025527"
+  },
+  "User manual": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "32c9df492f45b262"
+  },
+  "User manual / Basics": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "8b2259ef17d5aec7"
+  },
+  "User manual / Exporting and publishing": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "4bd7d3544a4e062f"
+  },
+  "User manual / Finding things": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "8ff6b0db23de5ff3"
+  },
+  "User manual / Pages": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "5e36759b8c1a5588"
+  },
+  "User manual / Spaces": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "0035246b0bd622b3"
+  },
+  "User manual / Tesria on phones and tablets": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "6398be91a395865c"
+  },
+  "User manual / The editor": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "a88c48dfec280524"
+  },
+  "User manual / Working together": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "1afd35dc136b3813"
+  },
+  "User manual / Your profile": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "f852caea1ce9624a"
+  },
+  "Welcome to Tesria": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "f3abfd6ce362fb44"
+  },
+  "Working together / Changes from assistants and the API": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "1945353d85e5c315"
+  },
+  "Working together / Comments": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "82f1fa152d84cfce"
+  },
+  "Working together / Editing at the same time": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "17bab0cf5d115c52"
+  },
+  "Working together / Mentions and notifications": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "783f19fa399c3c13"
+  },
+  "Working together / Watching": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "f2672bea00300e92"
+  },
+  "Your profile / API tokens": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "5616bbe4b95f8a9f"
+  },
+  "Your profile / Avatar, name and email": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "4ae6e2adb3d359f6"
+  },
+  "Your profile / Email notifications": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "c22dd52654ba9b6a"
+  },
+  "Your profile / Password": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "1b144f9659ea41d2"
+  },
+  "Your profile / Sessions": {
+    "appliesTo": "0.5",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.5.",
+    "hash": "255b2fb64435743c"
+  }
+}

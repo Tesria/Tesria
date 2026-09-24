@@ -80,7 +80,12 @@ export function ImportPackForm({ onImported }: { onImported: () => void }) {
           That record is kept in the audit log rather than asserted against accounts on this
           instance, because a name is not an account.
         </p>
-        {result.source && <p className="muted small">Exported from {result.source}.</p>}
+        {result.source && (
+          <p className="muted small">
+            Exported from {result.source}
+            {result.madeWith && result.madeWith !== 'Tesria' ? `, made with ${result.madeWith}` : ''}.
+          </p>
+        )}
         {/* Straight on to access (dev-plan 15.1): the space starts private to
             whoever imported it, and this is the moment to say who else. */}
         <h2 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>Who should have access?</h2>
