@@ -11,6 +11,7 @@ export function AdminSettingsPage() {
   const [instanceName, setInstanceName] = useState('')
   const [baseUrl, setBaseUrl] = useState('')
   const [embedAllowlist, setEmbedAllowlist] = useState('')
+  const [imageAllowlist, setImageAllowlist] = useState('')
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -23,6 +24,7 @@ export function AdminSettingsPage() {
         setInstanceName(s.instanceName)
         setBaseUrl(s.baseUrl ?? '')
         setEmbedAllowlist(s.embedAllowlist ?? '')
+        setImageAllowlist(s.imageAllowlist ?? '')
       })
       .catch(() => setError('Could not load settings.'))
   }, [])
@@ -114,6 +116,54 @@ export function AdminSettingsPage() {
           className="btn btn--primary"
           disabled={busy}
           onClick={() => patch({ embedAllowlist }, 'Embed allowlist saved.')}
+        >
+          Save
+        </button>
+      </section>
+      )}
+
+      {can(Permission.SecuritySettings) && (
+      <section className="profile__section">
+        <h2>Images</h2>
+        <p className="muted small">
+          A page can show a picture from any web address, and whoever runs that
+          address sees each reader's IP address and when they read the page. To
+          stop that, allow pictures only from this wiki and the hosts listed
+          here. Uploaded pictures always show. Exported sites carry the same rule.
+        </p>
+        <label className="admin__toggle">
+          <input
+            type="checkbox"
+            checked={settings.restrictImageHosts}
+            disabled={busy}
+            onChange={(e) => patch(
+              { restrictImageHosts: e.target.checked, imageAllowlist },
+              e.target.checked ? 'Pictures now show only from this wiki and the listed hosts.' : 'Pictures from any https address now show.',
+            )}
+          />
+          <span>
+            <strong>Only show pictures from this wiki and the listed hosts</strong>
+          </span>
+        </label>
+        <label>
+          Allowed image hosts
+          <textarea
+            rows={4}
+            value={imageAllowlist}
+            onChange={(e) => setImageAllowlist(e.target.value)}
+            spellCheck={false}
+            placeholder=".imgur.com"
+          />
+          <span className="muted small">
+            One host per line; a leading dot (<code>.imgur.com</code>) also matches its subdomains.
+            Leave it empty to allow uploaded pictures only.
+          </span>
+        </label>
+        <button
+          type="button"
+          className="btn btn--primary"
+          disabled={busy}
+          onClick={() => patch({ imageAllowlist }, 'Allowed image hosts saved.')}
         >
           Save
         </button>

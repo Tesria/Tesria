@@ -143,4 +143,40 @@ public class HardeningTests
         Assert.Empty(await After(async () =>
             (await owner.PutAsJsonAsync($"/api/pages/{page}", new { Title = "Plan", ContentJson = """{"type":"doc","content":[{"type":"paragraph"}]}""" })).EnsureSuccessStatusCode()));
     }
+
+    [Fact]
+    public async Task Pictures_can_be_limited_to_listed_hosts_everywhere_the_rule_applies()
+    {
+        using var f = new TestAppFactory();
+        var admin = f.CreateClient();
+        await admin.RegisterAndSignInAsync();
+
+        static string ImgSrc(HttpResponseMessage res) =>
+            res.Headers.GetValues("Content-Security-Policy").Single()
+                .Split("; ").Single(d => d.StartsWith("img-src "));
+
+        // Off by default: any https host, and the editor is told nothing is restricted.
+        var before = await admin.GetAsync("/api/instance");
+        Assert.Equal("img-src 'self' data: blob: https:", ImgSrc(before));
+        Assert.Equal(JsonValueKind.Null, (await before.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("imageHosts").ValueKind);
+
+        (await admin.PutAsJsonAsync("/api/admin/settings", new { RestrictImageHosts = true, ImageAllowlist = " .Imgur.com \ncdn.example.org" }))
+            .EnsureSuccessStatusCode();
+
+        var after = await f.CreateClient().GetAsync("/api/instance");
+        Assert.Equal("img-src 'self' data: blob: https://*.imgur.com https://cdn.example.org", ImgSrc(after));
+        var hosts = (await after.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("imageHosts").EnumerateArray().Select(h => h.GetString()).ToList();
+        Assert.Equal([".imgur.com", "cdn.example.org"], hosts);
+
+        // An exported page carries the same rule, since no header of ours reaches it.
+        using var scope = f.Services.CreateScope();
+        var settings = await scope.ServiceProvider.GetRequiredService<Tesria.Api.Infrastructure.Settings.ISiteSettingsService>().GetAsync();
+        Assert.Equal(
+            "<meta http-equiv=\"Content-Security-Policy\" content=\"img-src 'self' data: blob: https://*.imgur.com https://cdn.example.org\" />",
+            Tesria.Api.Infrastructure.Security.ImagePolicy.ExportMeta(settings));
+
+        // Restricted with nothing listed: uploads only.
+        (await admin.PutAsJsonAsync("/api/admin/settings", new { ImageAllowlist = "" })).EnsureSuccessStatusCode();
+        Assert.Equal("img-src 'self' data: blob:", ImgSrc(await admin.GetAsync("/api/instance")));
+    }
 }

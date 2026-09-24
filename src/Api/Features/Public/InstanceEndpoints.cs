@@ -26,7 +26,8 @@ public static class InstanceEndpoints
         /// </summary>
         bool OwnCertificate = false,
         /// <summary>Which Tesria this is (dev-plan 16.1), as /api/health says too.</summary>
-        string? Version = null);
+        string? Version = null,
+        string[]? ImageHosts = null);
 
     /// <summary>
     /// The branding the SPA draws (dev-plan 13.1). Anonymous because the
@@ -70,6 +71,10 @@ public static class InstanceEndpoints
             Branding: BrandingOf(BrandView.From(s)),
             OwnCertificate: Trust.TrustEndpoints.OwnCertificate(config),
             // Signed-in callers only (dev-plan 14.3), as /api/health.
-            Version: http.User.Identity?.IsAuthenticated == true ? Infrastructure.Versioning.AppVersion.Current : null));
+            Version: http.User.Identity?.IsAuthenticated == true ? Infrastructure.Versioning.AppVersion.Current : null,
+            // Where pictures may come from, when an administrator restricted
+            // it (14.3), so the editor can say why one does not show. Not a
+            // secret: every page's CSP header says the same to anyone.
+            ImageHosts: Infrastructure.Security.ImagePolicy.Hosts(s)));
     }
 }

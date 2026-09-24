@@ -117,7 +117,9 @@ public static class AdminEndpoints
         DateTimeOffset UpdatedAt,
         /// <summary>Which parts of this the caller may change (dev-plan 11.1).</summary>
         string[] Permissions,
-        MailSignInInfo? Mail = null);
+        MailSignInInfo? Mail = null,
+        bool RestrictImageHosts = false,
+        string ImageAllowlist = "");
 
     /// <summary>
     /// The mail provider and its sign-in (dev-plan Phase 18). Like the SMTP
@@ -165,7 +167,9 @@ public static class AdminEndpoints
         string? MicrosoftClientSecret = null,
         string? MicrosoftTenant = null,
         string? GoogleClientId = null,
-        string? GoogleClientSecret = null);
+        string? GoogleClientSecret = null,
+        bool? RestrictImageHosts = null,
+        string? ImageAllowlist = null);
 
     public static IEndpointRouteBuilder MapAdminEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -311,6 +315,8 @@ public static class AdminEndpoints
             if (r.GoogleClientSecret is not null) yield return (nameof(r.GoogleClientSecret), InstancePermissions.SettingsEmail);
             if (r.RequireTotpForAdmins is not null) yield return (nameof(r.RequireTotpForAdmins), InstancePermissions.SecuritySettings);
             if (r.EmbedAllowlist is not null) yield return (nameof(r.EmbedAllowlist), InstancePermissions.SecuritySettings);
+            if (r.RestrictImageHosts is not null) yield return (nameof(r.RestrictImageHosts), InstancePermissions.SecuritySettings);
+            if (r.ImageAllowlist is not null) yield return (nameof(r.ImageAllowlist), InstancePermissions.SecuritySettings);
             if (r.LoginRateLimitPerMinute is not null) yield return (nameof(r.LoginRateLimitPerMinute), InstancePermissions.SecuritySettings);
             if (r.AnonymousRateLimitPerMinute is not null) yield return (nameof(r.AnonymousRateLimitPerMinute), InstancePermissions.SecuritySettings);
             if (r.TokenMintLimitPerHour is not null) yield return (nameof(r.TokenMintLimitPerHour), InstancePermissions.SecuritySettings);
@@ -435,6 +441,8 @@ public static class AdminEndpoints
         if (req.GoogleClientSecret is not null) changed.Add(nameof(req.GoogleClientSecret));
         if (req.RequireTotpForAdmins is not null) changed.Add(nameof(req.RequireTotpForAdmins));
         if (req.EmbedAllowlist is not null) changed.Add(nameof(req.EmbedAllowlist));
+        if (req.RestrictImageHosts is not null) changed.Add(nameof(req.RestrictImageHosts));
+        if (req.ImageAllowlist is not null) changed.Add(nameof(req.ImageAllowlist));
 
         foreach (var (field, value, min, max) in new[]
         {
@@ -516,6 +524,9 @@ public static class AdminEndpoints
             // both the resolve endpoint and the CSP will read back.
             if (req.EmbedAllowlist is not null)
                 s.EmbedAllowlist = string.Join('\n', Embeds.EmbedAllowlist.Parse(req.EmbedAllowlist));
+            if (req.RestrictImageHosts is { } restrict) s.RestrictImageHosts = restrict;
+            if (req.ImageAllowlist is not null)
+                s.ImageAllowlist = string.Join('\n', Embeds.EmbedAllowlist.Parse(req.ImageAllowlist));
             if (req.LoginRateLimitPerMinute is { } l1) s.LoginRateLimitPerMinute = l1;
             if (req.AnonymousRateLimitPerMinute is { } l2) s.AnonymousRateLimitPerMinute = l2;
             if (req.TokenMintLimitPerHour is { } l3) s.TokenMintLimitPerHour = l3;
@@ -568,7 +579,9 @@ public static class AdminEndpoints
         s.UpdatedAt,
         // Filled in by GetSettings, which knows who is asking.
         Permissions: [],
-        Mail: MailInfo(s, config));
+        Mail: MailInfo(s, config),
+        RestrictImageHosts: s.RestrictImageHosts,
+        ImageAllowlist: s.ImageAllowlist);
 
     internal static MailSignInInfo MailInfo(SiteSettings s, IConfiguration config)
     {

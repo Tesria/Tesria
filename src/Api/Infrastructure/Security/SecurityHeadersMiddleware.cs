@@ -67,12 +67,14 @@ public sealed partial class SecurityHeadersMiddleware
         // reach the DOM: the allowlist is enforced here *and* at the resolve
         // endpoint, and a change to it takes effect on the next request.
         // 'self' is for the PDF viewer, which frames an attachment.
+        var site = await settings.GetAsync(context.RequestAborted);
         var frames = Features.Embeds.EmbedAllowlist.CspSources(
-            Features.Embeds.EmbedAllowlist.Parse((await settings.GetAsync(context.RequestAborted)).EmbedAllowlist));
+            Features.Embeds.EmbedAllowlist.Parse(site.EmbedAllowlist));
 
         headers[_cspHeaderName] = _cspTemplate
             .Replace("{socket}", $"{socketScheme}://{context.Request.Host}")
             .Replace("{frames}", string.Join(' ', frames))
+            .Replace("{images}", ImagePolicy.CspSources(site) is { Length: > 0 } images ? " " + images : "")
             .Replace("{nonce}", nonce is null ? "" : $" 'nonce-{nonce}'");
 
         await _next(context);
@@ -95,8 +97,9 @@ public sealed partial class SecurityHeadersMiddleware
             "style-src 'self' 'unsafe-inline'",
             // Authors may paste an image by URL; data:/blob: cover pasted and
             // in-progress uploads. Plain http images are not allowed on an
-            // https page anyway.
-            "img-src 'self' data: blob: https:",
+            // https page anyway. {images} is `https:` (any host) unless an
+            // administrator restricted images to listed hosts (14.3).
+            "img-src 'self' data: blob:{images}",
             "font-src 'self' data:",
             "connect-src 'self' {socket}",
             "media-src 'self' blob:",

@@ -1,5 +1,7 @@
 import { useRef } from 'react'
 import { NodeViewWrapper, type ReactNodeViewProps } from '@tiptap/react'
+import { useInstance } from '../InstanceContext'
+import { blockedImageHost } from './imagePolicy'
 
 /**
  * A picture with a size, an alignment and a caption (dev-plan 15.2).
@@ -21,6 +23,10 @@ export function ImageView({ node, updateAttributes, editor, selected }: ReactNod
   const align = attrs.align ?? 'center'
   const width = align === 'full' ? 100 : attrs.width ?? null
   const editable = editor.isEditable
+  // When an administrator limits where pictures may come from (14.3), the
+  // browser refuses the rest and shows nothing; the author is told why.
+  const imageHosts = useInstance()?.imageHosts
+  const blockedHost = editable ? blockedImageHost(attrs.src, imageHosts, location.href) : null
 
   // Dragging the corner: the new width is where the pointer is, as a share
   // of the column the figure sits in. Pointer events, so a finger works too.
@@ -58,6 +64,13 @@ export function ImageView({ node, updateAttributes, editor, selected }: ReactNod
     >
       <img src={attrs.src} alt={attrs.alt ?? ''} title={attrs.title ?? undefined} className={imgClass || undefined} draggable={false} />
       {attrs.caption && <figcaption className="image-figure__caption">{attrs.caption}</figcaption>}
+      {blockedHost && (
+        <p className="image-figure__blocked" contentEditable={false}>
+          This wiki does not show pictures from {blockedHost}, so readers will not see this one.
+          Upload the picture instead, or ask an administrator to add {blockedHost} to the allowed
+          image hosts (Administration, Settings, Images).
+        </p>
+      )}
       {editable && selected && (
         <span
           className="image-figure__resize"

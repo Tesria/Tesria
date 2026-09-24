@@ -63,6 +63,9 @@ public static partial class SiteChrome
         public string? FaviconHref { get; init; }
         public string FaviconType { get; init; } = "image/png";
 
+        /// <summary>The image rule as a <c>&lt;meta&gt;</c> CSP (dev-plan 14.3); empty when images are not restricted.</summary>
+        public string ImagePolicyMeta { get; init; } = "";
+
         /// <summary>The custom accent's stylesheet; empty when there is none.</summary>
         public string AccentCss { get; init; } = "";
 
@@ -142,13 +145,13 @@ public static partial class SiteChrome
         path.StartsWith("data:", StringComparison.Ordinal) ? path : SiteExport.Relative(currentPath, path);
 
     /// <summary>
-    /// Everything an exported document's head needs from the branding: the
-    /// favicon and the custom accent. Everything else in the head is the
-    /// exporter's own.
+    /// Everything an exported document's head needs from the instance: the
+    /// image rule, the favicon and the custom accent. Everything else in the
+    /// head is the exporter's own.
     /// </summary>
     public static string HeadExtras(Brand brand, string currentPath)
     {
-        var html = "";
+        var html = brand.ImagePolicyMeta;
         if (brand.FaviconHref is { } icon)
             html += $"<link rel=\"icon\" type=\"{brand.FaviconType}\" href=\"{SiteExport.Escape(Href(currentPath, icon))}\" />";
         if (brand.AccentCss.Length > 0)

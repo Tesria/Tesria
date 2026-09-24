@@ -66,6 +66,7 @@ public static class BrandExport
             FaviconHref = favicon.Href,
             FaviconType = favicon.Href is null ? "image/png" : favicon.Type,
             AccentCss = view.AccentStylesheet(),
+            ImagePolicyMeta = Infrastructure.Security.ImagePolicy.ExportMeta(settings),
             Attributes = view.HtmlAttributes().Where(a => ExportAttributes.Contains(a.Name)).ToList(),
         };
         return new Packed(brand, files);

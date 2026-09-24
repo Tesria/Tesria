@@ -264,6 +264,8 @@ export type InstanceInfo = {
   branding: Branding
   /** The server makes its own certificate, so each device trusts it at /trust (15.5). */
   ownCertificate?: boolean
+  /** Hosts pictures may come from besides this instance, or null when any https host may (14.3). */
+  imageHosts?: string[] | null
 }
 
 export type BrandDisplay = 'logo-and-name' | 'logo' | 'name'
@@ -503,6 +505,9 @@ export type SiteSettings = {
   permissions: string[]
   /** Hosts an embed block may frame, one per line (dev-plan Phase 7 Wave E). */
   embedAllowlist: string
+  /** Pictures only from this instance and imageAllowlist (dev-plan 14.3). */
+  restrictImageHosts: boolean
+  imageAllowlist: string
   /** Brute-force protection (dev-plan 3.2). Every limiter is tunable. */
   loginRateLimitPerMinute: number
   anonymousRateLimitPerMinute: number

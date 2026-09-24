@@ -911,6 +911,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .image-figure--right { margin-left: auto; margin-right: 0; }
 .image-figure--full { width: 100%; }
 .image-figure--full img { width: 100%; }
+.image-figure__blocked { margin: 0.4rem 0 0; padding: 0.4rem 0.6rem; font-size: 0.85rem; border-radius: 6px; background: color-mix(in srgb, var(--warning) 14%, transparent); color: var(--text); }
 .image-figure__caption { margin-top: 0.4rem; font-size: 0.85rem; color: var(--muted); text-align: center; font-style: italic; }
 .editor--editable .image-figure.is-selected img { outline: 2px solid var(--primary); outline-offset: 2px; }
 .image-figure__resize {

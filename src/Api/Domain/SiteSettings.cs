@@ -127,6 +127,19 @@ public class SiteSettings
         "docs.google.com", "drive.google.com",
     ];
 
+    /// <summary>
+    /// Whether pages may show images only from this instance and
+    /// <see cref="ImageAllowlist"/> (dev-plan 14.3, security gap 2). Off by
+    /// default: an author may then show a picture from any https address,
+    /// which lets that address see who reads the page (their IP address and
+    /// when). On, the CSP's <c>img-src</c> names only the listed hosts, and
+    /// exported sites carry the same rule.
+    /// </summary>
+    public bool RestrictImageHosts { get; set; }
+
+    /// <summary>Hosts images may come from when <see cref="RestrictImageHosts"/> is on; the embed allowlist's format.</summary>
+    public string ImageAllowlist { get; set; } = "";
+
     public bool RequireTotpForAdmins { get; set; }
 
     // --- Brute-force protection (dev-plan 3.2). Every limiter is tunable
