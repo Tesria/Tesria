@@ -40,6 +40,7 @@ import { AdminInvitesPage } from './routes/admin/AdminInvitesPage'
 import { InvitePage } from './routes/InvitePage'
 import { AdminSettingsPage } from './routes/admin/AdminSettingsPage'
 import { AdminSecurityPage } from './routes/admin/AdminSecurityPage'
+import { AdminApiTokensPage } from './routes/admin/AdminApiTokensPage'
 import { AdminBackupsPage } from './routes/admin/AdminBackupsPage'
 import { AdminRolesPage } from './routes/admin/AdminRolesPage'
 import { AdminBrandingPage } from './routes/admin/AdminBrandingPage'
@@ -115,6 +116,7 @@ const router = createBrowserRouter(
                   <Route path="users" element={<AdminUsersPage />} />
                   <Route path="spaces" element={<AdminSpacesPage />} />
                   <Route path="invites" element={<AdminInvitesPage />} />
+                  <Route path="api-tokens" element={<AdminApiTokensPage />} />
                   <Route path="security" element={<AdminSecurityPage />} />
                   <Route path="backups" element={<AdminBackupsPage />} />
                   <Route path="roles" element={<AdminRolesPage />} />

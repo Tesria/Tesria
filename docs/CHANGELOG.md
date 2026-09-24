@@ -8,6 +8,50 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.6.0-dev**: 0.5.0 is released, so what comes
 after it is the next minor version.
 
+### Administration: an API tokens tab (2026-09-24, Opus 5.5)
+
+Asked for by the owner: "I have no idea who has created tokens and how
+often they are in use", then "keep an eye on what agents are doing", then
+that it deserves its own tab.
+
+- **Administration, API tokens**: every token on the instance with its
+  owner, name, first characters, read-only or full access, last use (when
+  and from which address), requests in all, the last 7 days split into API
+  requests and assistant tool calls with how many changed something, and
+  expiry. Cards for the week and two 30-day charts above it; a filter by
+  person or token. Needs `users.view`; **Revoke** one token needs
+  `users.manage`, with the same protection as the Users tab (the owner's
+  tokens only by the owner, another administrator's only with the right the
+  owner gives). The owner of a revoked token is told in the bell and by
+  email; the audit log records `token.revoked_by_admin`.
+- **What assistants did**: every MCP tool call, logged by a filter around the
+  tools (`McpActivity`): tool, whose token, page or space, success or the
+  error. Search text is not kept. A page is named only to an administrator
+  who may read it. Kept 90 days, and kept after a token is revoked.
+- Counting: a day row per token (`ApiTokenDays`, upserted in one statement),
+  REST counted after the response so a refused change is a request and not
+  a change; `ApiToken.UseCount` and `LastUsedFrom`. Pruned hourly after 90
+  days. Migration `TokenActivity`. People see their own tokens' request
+  counts on their profile too. Five tests.
+- Support: a page for the tab, with pictures made from example data (the
+  harness's `mock`), so no real account appears.
+
+### Support: every page says how to get where it sends you (2026-09-24, Opus 5.5)
+
+The owner: pages assumed the reader knew where the screens were.
+
+- The API tokens page starts with **Where to find them** (your picture at
+  the top right, then the API tokens card, with a picture of each) and has
+  **Revoking a token** step by step with a picture.
+- Two helpers for every section: `adminAt('Users')` ("Admin, Users (Admin
+  is in the top bar; in a narrower window it is under More, and on a phone
+  in the ☰ menu)") and `profileAt('Sessions')`. Every page that named an
+  Administration tab or a profile card uses them, every Administration page
+  starts with how to open its tab, and every profile page with how to reach
+  its card.
+- REST API and MCP moved under a new **Developers** section at the end of
+  the site (dev-plan 17), with the same page ids, so links still work.
+
 ### Invites carry the Tailscale address too (2026-09-24, Opus 5.5)
 
 Asked for by the owner, to invite family in another state through the

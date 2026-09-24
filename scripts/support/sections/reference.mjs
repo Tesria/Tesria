@@ -42,7 +42,7 @@ export async function prepare({ author }) {
   return {}
 }
 
-export async function build({ top, page, doc, p, h, text, bold, italic, code, ul, ol, li, panel, codeBlock, live, expand, toc, pageLink }) {
+export async function build({ top, page, doc, p, h, text, bold, italic, code, ul, ol, li, panel, codeBlock, live, expand, toc, pageLink, adminAt }) {
   const b = (t) => text(t, bold)
   const c = (t) => text(t, code)
   const i = (t) => text(t, italic)
@@ -101,15 +101,15 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
 
     h(3, '“Incorrect email or password”, with the right password'),
     p('After 5 wrong passwords in a row, the account is locked for a minute, and each wrong try after that doubles the wait, up to 15 minutes. While it is locked, even the right password is refused with the same message, so that nobody can use the message to find out whether they guessed right. Wait, and try once, carefully.'),
-    p('An administrator can end it sooner: ', b('Unlock'), ' next to the account in ', b('Administration, Users'), '. If you have simply forgotten the password, see ', pageLink('Resetting a password'), '.'),
+    p('An administrator can end it sooner: ', b('Unlock'), ' next to the account in ', ...adminAt('Users'), '. If you have simply forgotten the password, see ', pageLink('Resetting a password'), '.'),
 
     h(3, '“Too many attempts. Wait a minute and try again.”'),
-    p('Too many sign-in attempts came from your address in the last minute: 10, by default, counting everyone who shares that address. Wait a minute. If many people sign in from one office connection, an administrator can raise the limit in ', b('Administration, Security'), ', under ', b('Brute-force protection'), '.'),
+    p('Too many sign-in attempts came from your address in the last minute: 10, by default, counting everyone who shares that address. Wait a minute. If many people sign in from one office connection, an administrator can raise the limit in ', ...adminAt('Security'), ', under ', b('Brute-force protection'), '.'),
 
     h(3, 'You lost the phone with your authenticator app'),
     ul(
       li(p(b('Use a recovery code.'), ' When Tesria asks for the six-digit code, enter one of the recovery codes you saved when you turned two-factor on. Each works once. Then set two-factor up again on your profile with your new phone. See ', pageLink('Two-factor and recovery codes'), '.')),
-      li(p(b('No recovery codes?'), ' Ask an administrator to choose ', b('Turn off two-factor'), ' for your account in ', b('Administration, Users'), '. Sign in with your password, then set it up again. Only the owner can do this for an administrator, and nobody can do it for the owner, which is why the owner’s recovery codes matter most.')),
+      li(p(b('No recovery codes?'), ' Ask an administrator to choose ', b('Turn off two-factor'), ' for your account in ', ...adminAt('Users'), '. Sign in with your password, then set it up again. Only the owner can do this for an administrator, and nobody can do it for the owner, which is why the owner’s recovery codes matter most.')),
     ),
 
     h(3, 'Signed out after a restore'),
@@ -131,7 +131,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     p('Each attachment can be up to 25 MB. For a larger video or file, share a link to it instead, or embed it from a site such as YouTube.'),
 
     h(3, 'An embed says the site is not allowed'),
-    p('Only sites on your Tesria’s allowed list can be shown inside a page. An administrator can add one in ', b('Administration, Settings'), ', under ', b('Embeds'), '. Meanwhile the embed shows a link that opens it.'),
+    p('Only sites on your Tesria’s allowed list can be shown inside a page. An administrator can add one in ', ...adminAt('Settings'), ', under ', b('Embeds'), '. Meanwhile the embed shows a link that opens it.'),
 
     // ----------------------------------------------------------------- email
     h(2, 'Email'),
@@ -139,7 +139,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     h(3, 'Email never arrives'),
     p('Password resets, invitations, alerts and notifications all need Tesria to be able to send email. Work down this list:'),
     ol(
-      li(p(b('Is sending switched on?'), ' In ', b('Administration, Settings'), ', under ', b('Email'), ', ', b('Send email'), ' must be ticked. When it is off, no email is even attempted.')),
+      li(p(b('Is sending switched on?'), ' In ', ...adminAt('Settings'), ', under ', b('Email'), ', ', b('Send email'), ' must be ticked. When it is off, no email is even attempted.')),
       li(p(b('Send a test.'), ' Choose ', b('Send test email to me'), '. It says straight away either ', i('Sent: check your inbox'), ', or ', i('Not sent'), ' with the mail server’s own reason, such as a wrong password.')),
       li(p(b('Check the port and encryption together.'), ' Port 587 goes with ', b('STARTTLS'), ', and port 465 with ', b('SSL on connect'), '. A mismatch usually fails with a timeout.')),
       li(p(b('Check the From address.'), ' Most mail services only send from an address or domain you have verified with them, and refuse or quietly drop anything else.')),
@@ -154,7 +154,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     h(2, 'Backups and exports'),
 
     h(3, 'A backup shows “Last run failed”, “Overdue” or “Agent offline”'),
-    p(b('Administration, Backups'), ' shows a card for each of Tesria’s two backup services, with a colored dot and a word for how it is doing:'),
+    p(...adminAt('Backups'), ' shows a card for each of Tesria’s two backup services, with a colored dot and a word for how it is doing:'),
     ul(
       li(p(b('Last run failed:'), ' the last backup did not complete. The card shows the error. Tesria tries again after 15 minutes, then waits twice as long after each further failure, up to 6 hours.')),
       li(p(b('Overdue:'), ' no backup has succeeded for longer than the schedule allows.')),
@@ -175,7 +175,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     p('The message ', i('This instance has no export renderer configured'), ' means the service that turns pages into PDF and HTML files is not set up on this server. It runs only when ', c('PDF_SHARED_SECRET'), ' is set in the ', c('.env'), ' file. Meanwhile, Markdown exports work. See ', pageLink('Configuration reference'), '.'),
 
     h(3, 'An export option is missing'),
-    p('Either your role may not export (an administrator can change that in ', b('Administration, Roles'), '), or this space has turned that kind of export off. See ', pageLink('Turning exports off'), '.'),
+    p('Either your role may not export (an administrator can change that in ', ...adminAt('Roles'), '), or this space has turned that kind of export off. See ', pageLink('Turning exports off'), '.'),
 
     h(2, 'Still stuck?'),
     p('Look through the ', pageLink('FAQ'), ', and ', pageLink('Health checks and monitoring'), ' for how to see what Tesria is doing. When you ask someone for help, include what you did, what you expected, what happened instead (the exact words of any message), and the version from ', c('https://your-server/api/health'), '.'),
@@ -283,7 +283,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     h(2, 'K'),
     ul(
       term('Key', 'a space’s short code, such as ENG or TEAM, used in the address of every page in it. It cannot be changed after the space is made.'),
-      term('Kill switches', 'three switches in ', b('Administration, Security'), ' that take effect at once for the whole wiki: public spaces, public registration, and two-factor for administrators.'),
+      term('Kill switches', 'three switches in ', ...adminAt('Security'), ' that take effect at once for the whole wiki: public spaces, public registration, and two-factor for administrators.'),
     ),
     h(2, 'L'),
     ul(
@@ -312,7 +312,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
       term('Page tree', 'the outline of a space’s pages in its sidebar, showing which page sits under which. See ', pageLink('The page tree and reordering'), '.'),
       term('Panel', 'a colored box that makes a paragraph stand out: Info, Note, Tip, Warning or Error. See ', pageLink('Panels'), '.'),
       term('Point-in-time recovery', 'bringing the wiki back to any moment you choose, to the second, not only to when a backup was taken.'),
-      term('Public address', 'the address people use to open your Tesria, set in ', b('Administration, Settings'), '. Links in emails use it.'),
+      term('Public address', 'the address people use to open your Tesria, set in ', ...adminAt('Settings'), '. Links in emails use it.'),
       term('Public reading', 'letting people without an account read chosen spaces. It needs two switches: one for the wiki and one for the space. See ', pageLink('Public reading'), '.'),
       term('Publish', 'to make a draft a real page that others can see. Later changes are published with ', b('Update'), '.'),
     ),
@@ -501,7 +501,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     h(2, 'Watching for trouble'),
     ul(
       li(p(b('Alerts.'), ' Every administrator is told, in the bell and by email once email is set up, about bursts of failed sign-ins, many accounts tried from one address, many pages removed quickly, a new administrator, a failed or overdue backup, and more. See ', pageLink('Security (administration)'), '.')),
-      li(p(b('Blocking.'), ' An administrator can block an address straight from an alert, or a whole range of addresses, in ', b('Administration, Security'), '.')),
+      li(p(b('Blocking.'), ' An administrator can block an address straight from an alert, or a whole range of addresses, in ', ...adminAt('Security'), '.')),
       li(p(b('An audit log that cannot be quietly changed.'), ' Every administrative change is recorded, and each entry is chained to the one before, so editing or deleting one breaks the chain and is detected. Tesria itself runs with database access that cannot change the log, and every entry is also written to the server’s own log.')),
     ),
 

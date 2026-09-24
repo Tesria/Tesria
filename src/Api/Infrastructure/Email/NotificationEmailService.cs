@@ -151,6 +151,7 @@ public sealed class NotificationEmailService(
         "comment.created" => "New comment",
         "user.mentioned" => "You were mentioned",
         "token.expiring" => "An API token expires soon",
+        "token.revoked" => "An administrator revoked an API token",
         _ => n.Action,
     };
 
@@ -173,6 +174,11 @@ public sealed class NotificationEmailService(
                 var when = DateTimeOffset.TryParse(meta.GetValueOrDefault("ExpiresAt"), out var at)
                     ? at.ToString("MMMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture) : "soon";
                 lines.Add($"- Your API token \"{meta.GetValueOrDefault("Name", "")}\" expires on {when}. Make a new one before then, or scripts using it stop working.");
+                lines.Add($"  {baseUrl}/profile#api-tokens");
+            }
+            else if (n.Action == "token.revoked")
+            {
+                lines.Add($"- An administrator revoked your API token \"{meta.GetValueOrDefault("Name", "")}\". Anything using it has stopped working; make a new one if you still need it.");
                 lines.Add($"  {baseUrl}/profile#api-tokens");
             }
             else if (n.TargetType == "page" && pages.TryGetValue(n.TargetId, out var page))

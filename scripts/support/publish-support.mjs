@@ -28,9 +28,11 @@ const SPACE = { key: 'SUPPORT', name: 'Support', description: 'How to install, u
 /** The top of the tree, in this order: the approved outline (dev-plan 10.5). */
 const TOP = [
   'Welcome to Tesria', 'Features', 'Getting started', 'Installation and operations', 'User manual', 'Administration',
-  'REST API', 'MCP', 'Troubleshooting', 'FAQ', 'Glossary', 'Release notes', 'Security', 'License and credits',
+  'Troubleshooting', 'FAQ', 'Glossary', 'Release notes', 'Security', 'License and credits',
+  // Below the user sections (dev-plan 17): REST API and MCP live under it.
+  'Developers',
 ]
-const SECTIONS = ['welcome', 'features', 'getting-started', 'installation', 'manual-basics', 'manual-spaces', 'manual-editor', 'editor-elements-1', 'editor-elements-2', 'editor-live', 'manual-together', 'manual-mobile', 'administration', 'api', 'reference']
+const SECTIONS = ['welcome', 'features', 'getting-started', 'installation', 'manual-basics', 'manual-spaces', 'manual-editor', 'editor-elements-1', 'editor-elements-2', 'editor-live', 'manual-together', 'manual-mobile', 'administration', 'reference', 'api', 'developers']
 
 /**
  * Which version each page describes (dev-plan 16.2), committed so it
@@ -342,7 +344,15 @@ async function main() {
       return lib.text(label ?? title, { type: 'link', attrs: { href: `/spaces/${SPACE.key}/pages/${id}` } })
     }
 
-    await section.build({ ...lib, ...s, top, figure, phoneFigure, picture, phonePicture, animation, pageLink, ...prepared })
+    // How to get somewhere, said in full every time (the owner, 2026-09-24:
+    // pages named a screen and assumed the reader knew where it was).
+    // Spread into a paragraph: p('Grant it in ', ...adminAt('Roles'), '.').
+    const strong = (t) => lib.text(t, lib.bold)
+    const adminAt = (tab) => [strong('Admin'), ', ', strong(tab), ' (', strong('Admin'), ' is in the top bar; in a narrower window it is under ', strong('More'), ', and on a phone in the ', strong('☰'), ' menu)']
+    const profileAt = (card) => ['your profile (your picture or initials at the top right of any page)',
+      ...(card ? [' and scroll to its ', strong(card), ' card'] : [])]
+
+    await section.build({ ...lib, ...s, top, figure, phoneFigure, picture, phonePicture, animation, pageLink, adminAt, profileAt, ...prepared })
     if (section.cleanup) await section.cleanup({ lib, author, ...prepared })
   }
   // The tree is numbered (dev-plan 15.8, the owner's choice over emoji):

@@ -181,8 +181,7 @@ export const shots = () => [
 
 export async function build({
   top, page, ensure, attachCurrent, doc, p, h, text, bold, italic, code, ul, ol, li, panel, table, codeBlock,
-  fileBlock, live, tasks, task, picture, pageLink, mailProviders, image,
-}) {
+  fileBlock, live, tasks, task, picture, pageLink, mailProviders, image, profileAt }) {
   const root = top['Installation and operations']
   const b = (t) => text(t, bold)
   const c = (t) => text(t, code)
@@ -457,7 +456,7 @@ export async function build({
     h(2, 'The easy way: the Trust this device guide'),
     p('Tesria has a guide built in that asks which device you are on, fills your server’s address into a small script, and tells you exactly what to click. There are three ways to open it:'),
     ul(
-      li(p(b('From your profile.'), ' Once you are signed in, open your profile (your initials at the top right) and choose ', b('Set up this device'), ' under ', b('Trust this device'), '.')),
+      li(p(b('From your profile.'), ' Once you are signed in, open ', ...profileAt(), ' and choose ', b('Set up this device'), ' under ', b('Trust this device'), '.')),
       li(p(b('From the sign-in page.'), ' Choose ', b('Trust this device'), ' under ', i('Did your browser warn that this site is not secure?'), '.')),
       li(p(b('By its address.'), ' Type ', c('http://your-server/trust'), ' into the browser. Note ', c('http'), ', not ', c('https'), ': the guide is served without encryption on purpose, so a device that does not trust the server yet can open it with no warning. This is the easiest way on a phone.')),
     ),

@@ -109,6 +109,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<LinkPreview> LinkPreviews => Set<LinkPreview>();
     public DbSet<ApiToken> ApiTokens => Set<ApiToken>();
+    public DbSet<ApiTokenDay> ApiTokenDays => Set<ApiTokenDay>();
+    public DbSet<McpToolCall> McpToolCalls => Set<McpToolCall>();
     public DbSet<Webhook> Webhooks => Set<Webhook>();
     public DbSet<SpacePermission> SpacePermissions => Set<SpacePermission>();
     public DbSet<PageRestriction> PageRestrictions => Set<PageRestriction>();
@@ -314,6 +316,26 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                 .OnDelete(DeleteBehavior.Cascade);
 
             e.HasIndex(t => t.TokenHash).IsUnique();
+            e.Property(t => t.LastUsedFrom).HasMaxLength(64);
+        });
+
+        // Token use (the admin API tokens tab): a day row per token, removed
+        // with it; the MCP log outlives the token on purpose.
+        b.Entity<ApiTokenDay>(e =>
+        {
+            e.HasKey(d => new { d.TokenId, d.Day });
+            e.HasOne<ApiToken>().WithMany().HasForeignKey(d => d.TokenId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(d => d.Day);
+        });
+        b.Entity<McpToolCall>(e =>
+        {
+            e.Property(c => c.TokenName).HasMaxLength(200);
+            e.Property(c => c.TokenPrefix).HasMaxLength(20);
+            e.Property(c => c.Tool).HasMaxLength(64);
+            e.Property(c => c.SpaceKey).HasMaxLength(64);
+            e.Property(c => c.Error).HasMaxLength(500);
+            e.HasIndex(c => c.At);
+            e.HasIndex(c => new { c.TokenId, c.At });
         });
 
         b.Entity<Webhook>(e =>

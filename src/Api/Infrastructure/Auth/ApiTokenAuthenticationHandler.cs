@@ -43,7 +43,9 @@ public sealed class ApiTokenAuthenticationHandler(
         if (rawToken.StartsWith(Export.RenderTokens.Prefix, StringComparison.Ordinal))
             return await RenderTokenResultAsync(rawToken);
 
-        var token = await tokens.ValidateAsync(rawToken);
+        // The address after the proxy-trust middleware has read the forwarded
+        // headers: the caller's, not Caddy's.
+        var token = await tokens.ValidateAsync(rawToken, Context.Connection.RemoteIpAddress?.ToString());
         if (token is null) return AuthenticateResult.Fail("Invalid or expired API token.");
 
         var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == token.UserId);
@@ -59,6 +61,7 @@ public sealed class ApiTokenAuthenticationHandler(
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new(TokenUsage.TokenIdClaim, token.Id.ToString()),
             new(ClaimTypes.Email, user.Email),
             new(ClaimTypes.Name, user.DisplayName),
             // The scope rides on the principal so one middleware (REST) and

@@ -162,7 +162,7 @@ export const shots = ({ demo }) => [
   },
 ]
 
-export async function build({ top, page, ensure, doc, p, h, text, bold, italic, code, ul, ol, li, panel, live, picture, pageLink }) {
+export async function build({ top, page, ensure, doc, p, h, text, bold, italic, code, ul, ol, li, panel, live, picture, pageLink, adminAt }) {
   const b = (t) => text(t, bold)
   const c = (t) => text(t, code)
   const i = (t) => text(t, italic)
@@ -244,7 +244,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p('Each wrong try after that locks it again, for twice as long each time, up to 15 minutes.')),
       li(p('While it is locked, even the right password is refused, with the same message. Wait, then try again.')),
     ),
-    p('The lock ends by itself. Signing in successfully or resetting your password clears the count, and an administrator can unlock the account straight away in ', b('Administration, Users'), '.'),
+    p('The lock ends by itself. Signing in successfully or resetting your password clears the count, and an administrator can unlock the account straight away in ', ...adminAt('Users'), '.'),
     p('Separately, too many sign-in attempts from one place in a short time gets ', b('Too many attempts. Wait a minute and try again.'), ' Waiting a minute is all it takes.'),
 
     h(2, 'How long you stay signed in'),
@@ -283,7 +283,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Each email address can have only one account. ', b('An account with this email already exists.'), ' means you, or someone, already signed up with it: sign in instead, or reset the password.'),
 
     h(2, 'Inviting other people'),
-    p('Administrators make invites in ', b('Administration, Invites'), '. Other people whose role allows it have an ', b('Invite people'), ' link in the top bar, with the same form. It is how you add someone when your Tesria is not open to everyone.'),
+    p('Administrators make invites in ', ...adminAt('Invites'), '. Other people whose role allows it have an ', b('Invite people'), ' link in the top bar, with the same form. It is how you add someone when your Tesria is not open to everyone.'),
     step(1, 'Say who it is for, if you like'),
     p('Type their address in ', b('Email (optional)'), ' and the invite works for that address only, so it is no use to anyone it is forwarded to. Leave it empty and whoever has the link can use it.'),
     step(2, 'Choose how long it lasts'),
@@ -347,11 +347,11 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Choose ', b('Set up two-factor'), ' and follow the steps above with the new phone. While you are there, make a new set of recovery codes if you have used several.'),
     p('Moving to a new phone you already have in hand works the same way: turn two-factor off, then set it up again with the new phone.'),
     h(3, 'Lost the phone and every recovery code?'),
-    p('Ask an administrator. They can choose ', b('Turn off two-factor'), ' for your account in ', b('Administration, Users'), '. You are signed out everywhere, every administrator is told, and you sign in with your password alone until you set two-factor up again. They should make sure they are really talking to you before they do it.'),
+    p('Ask an administrator. They can choose ', b('Turn off two-factor'), ' for your account in ', ...adminAt('Users'), '. You are signed out everywhere, every administrator is told, and you sign in with your password alone until you set two-factor up again. They should make sure they are really talking to you before they do it.'),
     panel('note', p(b('Nobody can do this for the owner.'), ' The owner’s two-factor can only be turned off from their own profile, and only the owner can turn off another administrator’s. If you own your Tesria, keep your recovery codes especially safe.')),
 
     h(2, 'When two-factor is required'),
-    p('An administrator can require two-factor for everyone with administrator rights. If that applies to you, the administration pages ask you to set it up before they open, and your profile does not offer to turn it off: it says ', i('Administrators on this instance must keep two-factor sign-in on'), '. To move to a new phone, sign in with a recovery code and ask the owner to turn your two-factor off in ', b('Administration, Users'), ', then set it up again straight away.'),
+    p('An administrator can require two-factor for everyone with administrator rights. If that applies to you, the administration pages ask you to set it up before they open, and your profile does not offer to turn it off: it says ', i('Administrators on this instance must keep two-factor sign-in on'), '. To move to a new phone, sign in with a recovery code and ask the owner to turn your two-factor off in ', ...adminAt('Users'), ', then set it up again straight away.'),
   ))
 
   // =================================================== Resetting a password
@@ -385,7 +385,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'From an administrator'),
     p('No email and no recovery codes? The page says ', i('Lost your codes? Ask an administrator to issue a reset link.')),
-    p('An administrator chooses ', b('Reset password'), ' beside your name in ', b('Administration, Users'), ' and gets a one-time link. It works once, for an hour, and opens straight on ', b('Choose a new password'), '.'),
+    p('An administrator chooses ', b('Reset password'), ' beside your name in ', ...adminAt('Users'), ' and gets a one-time link. It works once, for an hour, and opens straight on ', b('Choose a new password'), '.'),
     panel('warning', p(b('The link is as good as a password for that hour.'), ' Administrators: hand it over in person, or by a message you know only that person can read. Everyone else: if someone you do not know sends you a reset link, do not use it; ask your administrator.')),
 
     h(2, 'Afterwards'),
@@ -540,7 +540,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Your choice is kept in this browser, not in your account, so your phone and your laptop can look different, and it works even when you are not signed in. If you clear the browser’s data for your Tesria, it goes back to the start: System and your organization’s usual accent.'),
 
     h(2, 'When the choice is made for you'),
-    p('An administrator can decide some of this for everyone, in ', b('Administration, Branding'), ':'),
+    p('An administrator can decide some of this for everyone, in ', ...adminAt('Branding'), ':'),
     ul(
       li(p(b('The theme'), ' can be fixed to light only or dark only. Then the menu offers no theme.')),
       li(p(b('The accent'), ' can be used for everyone. Then the menu offers no accent. Or the administrator can simply choose the one people start with, which you can still change.')),

@@ -1031,8 +1031,57 @@ export type ApiTokenSummary = {
   readOnly: boolean
   /** When it stops working; null never expires (dev-plan 14.1). */
   expiresAt: string | null
+  /** Requests it has made (counted from 0.6), and where the last came from. */
+  useCount?: number
+  lastUsedFrom?: string | null
 }
 export type CreatedApiToken = ApiTokenSummary & { token: string }
+
+/** REST requests (reads, changes) and MCP tool calls (reads, changes). */
+export type TokenUsageCounts = { reads: number; writes: number; mcpReads: number; mcpWrites: number }
+
+/** A token as the administrators' API tokens tab lists it. */
+export type AdminApiToken = {
+  id: string
+  name: string
+  prefix: string
+  readOnly: boolean
+  createdAt: string
+  lastUsedAt: string | null
+  lastUsedFrom: string | null
+  useCount: number
+  expiresAt: string | null
+  expired: boolean
+  owner: { id: string; displayName: string; email: string; suspended: boolean }
+  last7Days: TokenUsageCounts
+}
+
+export type AdminTokenSummary = {
+  tokens: number
+  activeLast7Days: number
+  neverUsed: number
+  expiringWithinWeek: number
+  last7Days: TokenUsageCounts
+  apiPerDay: DailyPoint[]
+  mcpPerDay: DailyPoint[]
+}
+
+/** One tool an assistant called through MCP. A page it cannot show you has no title. */
+export type AssistantActivity = {
+  id: string
+  at: string
+  tool: string
+  write: boolean
+  ok: boolean
+  error: string | null
+  tokenId: string
+  tokenName: string
+  tokenPrefix: string
+  userId: string
+  userName: string | null
+  page: { id: string; title: string | null; spaceKey: string | null; hidden: boolean } | null
+  spaceKey: string | null
+}
 
 export type Webhook = { id: string; url: string; events: string; enabled: boolean; createdAt: string }
 export type CreatedWebhook = Webhook & { secret: string }
@@ -1520,6 +1569,13 @@ export const api = {
           'POST', `/api/admin/spaces/${encodeURIComponent(key)}/recover-access`, {}),
       setPublic: (key: string, input: { isPublic: boolean; publicComments?: boolean }) =>
         request<AdminSpace>('PUT', `/api/admin/spaces/${key}/public`, input),
+    },
+    apiTokens: {
+      list: () => request<AdminApiToken[]>('GET', '/api/admin/api-tokens'),
+      summary: (days = 30) => request<AdminTokenSummary>('GET', `/api/admin/api-tokens/summary?days=${days}`),
+      activity: (tokenId?: string, take = 50) =>
+        request<AssistantActivity[]>('GET', `/api/admin/api-tokens/activity?take=${take}${tokenId ? `&tokenId=${tokenId}` : ''}`),
+      revoke: (id: string) => request<void>('DELETE', `/api/admin/api-tokens/${id}`),
     },
     invites: {
       list: () => request<Invite[]>('GET', '/api/admin/invites'),

@@ -66,7 +66,28 @@ export const shots = () => [
   { name: 'api-docs', url: '/api/docs', anon: true, settle: 2500, steps: [{ wait: 4000 }], phone: false },
 ]
 
-export async function build({ top, page, ensure, doc, p, h, text, bold, italic, code, ul, ol, li, panel, codeBlock, live, picture, pageLink }) {
+/**
+ * REST API and MCP were top-level pages until the Developers section
+ * (dev-plan 17) was made to hold them. Moved rather than rewritten, so their
+ * ids, and every link to them, stay the same.
+ */
+export async function prepare({ author }) {
+  const space = await author.call('GET', '/api/spaces/SUPPORT')
+  const tree = await author.call('GET', `/api/pages/tree?spaceId=${space.id}`)
+  const developers = tree.find((n) => n.title === 'Developers')
+  if (!developers) return {}
+  for (const title of ['REST API', 'MCP']) {
+    const node = tree.find((n) => n.title === title)
+    if (!node) continue
+    const index = developers.children.length
+    await author.call('PUT', `/api/pages/${node.id}/move`, { parentPageId: developers.id, index })
+    developers.children.push(node)
+    console.log(`  moved ${title} under Developers`)
+  }
+  return {}
+}
+
+export async function build({ top, page, ensure, doc, p, h, text, bold, italic, code, ul, ol, li, panel, codeBlock, live, picture, pageLink, adminAt, profileAt }) {
   const b = (t) => text(t, bold)
   const c = (t) => text(t, code)
   const i = (t) => text(t, italic)
@@ -77,8 +98,9 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p(b('Throughout this page, '), c('your-server'), b(' stands for your server’s address:'), ' whatever you type into the browser to open Tesria, without ', c('https://'), '. For example, if you open Tesria at ', c('https://wiki-server.local'), ', then ', c('https://your-server/api/spaces'), ' means ', c('https://wiki-server.local/api/spaces'), '.'))
 
   // ================================================================ REST API
-  const api = top['REST API']
-  await page('REST API', null, doc(
+  const developers = top['Developers']
+  const api = await ensure('REST API', developers)
+  await page('REST API', developers, doc(
     p('Everything you do in Tesria, from opening a page to adding a label, the app does by sending a request to your server and reading the answer. That set of requests is the ', b('REST API'), ', and you can use it too: from a script, a scheduled job, or another program, with no browser involved.'),
     p('You do not need it to use Tesria. It is for the moment you think “I wish this happened by itself”. Some things people use it for:'),
     ul(
@@ -102,12 +124,12 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'Before you start'),
     ul(
-      li(p(b('An account that may use API tokens.'), ' Everyone may by default. If your profile says ', i('Your role does not allow API tokens'), ', an administrator can turn on ', b('Use API tokens'), ' for your role in ', b('Administration, Roles'), '.')),
+      li(p(b('An account that may use API tokens.'), ' Everyone may by default. If your profile says ', i('Your role does not allow API tokens'), ', an administrator can turn on ', b('Use API tokens'), ' for your role in ', ...adminAt('Roles'), '.')),
       li(p(b('A terminal.'), ' Terminal on a Mac, PowerShell on Windows, or any Linux terminal.')),
     ),
 
     step(1, 'Create a token'),
-    p('Open your profile (your initials at the top right) and scroll to ', b('API tokens'), '.'),
+    p('Open ', ...profileAt('API tokens'), '.'),
     ol(
       li(p('Give the token a name that says what will use it, such as ', i('Weekly report script'), '. You will see the name in the list later, next to when the token was last used.')),
       li(p('Under ', b('Expires'), ', choose how long it lasts: 90 days unless you have a reason. You are told a week before it runs out, so the script does not stop by surprise.')),
@@ -314,8 +336,8 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   ))
 
   // ===================================================================== MCP
-  const mcp = top['MCP']
-  await page('MCP', null, doc(
+  const mcp = await ensure('MCP', developers)
+  await page('MCP', developers, doc(
     p('An AI assistant, such as Claude, is far more useful when it can look things up in your own wiki: “What did we decide about the launch date?”, “Summarize the onboarding checklist”, “Draft release notes from the pages labeled ', i('v2'), '”. Tesria lets it, through ', b('MCP'), '.'),
     p(b('MCP'), ', the Model Context Protocol, is a common way for AI assistants to use other software. Tesria has an MCP server built in: an assistant that supports MCP connects to it, and can then search your wiki, read pages, and, if you allow it, write them.'),
     h(2, 'Safe by design'),
@@ -337,7 +359,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     yourServer(),
 
     step(1, 'Make a token for the assistant'),
-    p('Open your profile (your initials at the top right) and scroll to ', b('API tokens'), '.'),
+    p('Open ', ...profileAt('API tokens'), '.'),
     ol(
       li(p('Name the token after the assistant, such as ', i('Claude Code on my laptop'), ', so you know which one to revoke later.')),
       li(p('Decide whether it may write (see ', b('Read-only or not'), ' below). Tick ', b('Read-only'), ' if it only needs to look things up.')),

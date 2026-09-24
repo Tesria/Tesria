@@ -567,7 +567,7 @@ public static class AdminEndpoints
     /// an account takeover, so administrators do not reach each other by
     /// default. A user's: anyone who reached the endpoint at all.
     /// </summary>
-    private static async Task<IResult?> RefuseIfProtectedAccountAsync(User target, CurrentUser current, IInstancePermissions rights)
+    internal static async Task<IResult?> RefuseIfProtectedAccountAsync(User target, CurrentUser current, IInstancePermissions rights)
     {
         if (target.Id == current.Id || target.Role < UserRole.Admin) return null;
         if (await current.IsOwnerAsync()) return null;

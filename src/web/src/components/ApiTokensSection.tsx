@@ -108,6 +108,7 @@ export function ApiTokensSection() {
             <code className="muted small">{t.prefix}</code>
             <span className="muted small">
               {t.lastUsedAt ? `last used ${new Date(t.lastUsedAt).toLocaleString()}` : 'never used'}
+              {t.useCount ? ` · ${t.useCount} ${t.useCount === 1 ? 'request' : 'requests'}` : ''}
               {' · '}
               <Expiry at={t.expiresAt} />
             </span>

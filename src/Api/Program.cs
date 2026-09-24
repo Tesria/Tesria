@@ -142,7 +142,9 @@ builder.Services.AddMcpServer(o =>
             "Write tools need a token minted with write access.";
     })
     .WithHttpTransport(o => o.Stateless = true)
-    .WithTools<Tesria.Api.Features.Mcp.TesriaTools>();
+    .WithTools<Tesria.Api.Features.Mcp.TesriaTools>()
+    // Every tool call counted and logged for the admin API tokens tab.
+    .WithRequestFilters(f => f.AddCallToolFilter(Tesria.Api.Features.Mcp.McpActivity.Filter));
 builder.Services.AddScoped<Tesria.Api.Features.Blocks.IDynamicBlockKind, Tesria.Api.Features.Blocks.Kinds.ChildrenBlock>();
 builder.Services.AddScoped<Tesria.Api.Features.Blocks.IDynamicBlockKind, Tesria.Api.Features.Blocks.Kinds.RecentlyUpdatedBlock>();
 builder.Services.AddScoped<Tesria.Api.Features.Blocks.IDynamicBlockKind, Tesria.Api.Features.Blocks.Kinds.ContentByLabelBlock>();
@@ -579,6 +581,9 @@ app.UseRateLimiter();
 app.UseAuthorization();
 // After authorization so it only ever stamps callers who got through it.
 app.UseMiddleware<LastSeenMiddleware>();
+// Counts token requests once answered (the admin API tokens tab); outside the
+// scope checks, so a refused change is counted as a request, not a change.
+app.UseMiddleware<Tesria.Api.Infrastructure.Auth.TokenUsageMiddleware>();
 // Read-only API tokens may not change anything over REST (dev-plan 8.4).
 app.UseMiddleware<Tesria.Api.Infrastructure.Security.TokenScopeMiddleware>();
 app.UseMiddleware<Tesria.Api.Infrastructure.Security.TokenAccountGuardMiddleware>();
@@ -598,6 +603,7 @@ api.MapAuthEndpoints();
 api.MapAdminEndpoints();
 api.MapMailSignInEndpoints();
 api.MapTailscaleEndpoints();
+api.MapAdminTokenEndpoints();
 api.MapSecurityEndpoints();
 api.MapBackupEndpoints();
 api.MapBrandingEndpoints();

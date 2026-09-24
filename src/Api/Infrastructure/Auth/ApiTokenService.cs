@@ -15,7 +15,7 @@ namespace Tesria.Api.Infrastructure.Auth;
 public interface IApiTokenService
 {
     Task<(string RawToken, ApiToken Entity)> IssueAsync(Guid userId, string name, bool readOnly = false, DateTimeOffset? expiresAt = null);
-    Task<ApiToken?> ValidateAsync(string rawToken);
+    Task<ApiToken?> ValidateAsync(string rawToken, string? from = null);
 }
 
 public sealed class ApiTokenService(AppDbContext db) : IApiTokenService
@@ -45,7 +45,8 @@ public sealed class ApiTokenService(AppDbContext db) : IApiTokenService
         return (rawToken, entity);
     }
 
-    public async Task<ApiToken?> ValidateAsync(string rawToken)
+    /// <param name="from">The address the request came from, recorded as the token's last use.</param>
+    public async Task<ApiToken?> ValidateAsync(string rawToken, string? from = null)
     {
         if (!rawToken.StartsWith(Prefix, StringComparison.Ordinal)) return null;
         var withoutPrefix = rawToken[Prefix.Length..];
@@ -63,6 +64,8 @@ public sealed class ApiTokenService(AppDbContext db) : IApiTokenService
         if (!CryptographicOperations.FixedTimeEquals(expected, actual)) return null;
 
         token.LastUsedAt = DateTimeOffset.UtcNow;
+        token.UseCount++;
+        token.LastUsedFrom = from is { Length: > 64 } ? from[..64] : from;
         await db.SaveChangesAsync();
         return token;
     }

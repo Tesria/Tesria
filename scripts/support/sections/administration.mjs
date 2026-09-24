@@ -73,9 +73,63 @@ const SECURITY_EXAMPLE = [
   })) },
 ]
 
+// The API tokens tab, with example tokens and assistant activity: the real
+// tab lists real people's tokens, and a picture needs a busy one. Addresses
+// are from the ranges reserved for documentation (RFC 5737).
+const ago = (minutes) => new Date(Date.now() - minutes * 60_000).toISOString()
+const ahead = (days) => new Date(Date.now() + days * 86_400_000).toISOString()
+const series = (shape) => Array.from({ length: 30 }, (_, i) => ({
+  date: new Date(Date.now() - (29 - i) * 86_400_000).toISOString().slice(0, 10), count: shape(i),
+}))
+const person = (name, id) => ({ id, displayName: name, email: `${name.split(' ')[0].toLowerCase()}@example.com`, suspended: false })
+const T_SAM = person('Sam Okafor', '00000000-0000-4000-8000-000000000001')
+const T_PRIYA = person('Priya Natarajan', '00000000-0000-4000-8000-000000000002')
+const T_MEI = person('Mei Chen', '00000000-0000-4000-8000-000000000003')
+const T_ALEX = person('Alex Rivera', '00000000-0000-4000-8000-000000000004')
+const T_JORDAN = person('Jordan Brooks', '00000000-0000-4000-8000-000000000005')
+const token = (n, owner, name, prefix, readOnly, lastUsed, from, uses, week, expires) => ({
+  id: `00000000-0000-4000-9000-00000000000${n}`, name, prefix, readOnly, createdAt: ago(60 * 24 * 40),
+  lastUsedAt: lastUsed === null ? null : ago(lastUsed), lastUsedFrom: from, useCount: uses,
+  expiresAt: expires === null ? null : ahead(expires), expired: false, owner,
+  last7Days: { reads: week[0], writes: week[1], mcpReads: week[2], mcpWrites: week[3] },
+})
+const TOKENS_EXAMPLE = [
+  token(1, T_PRIYA, 'Claude (research)', 'cct_7c1e04b9…', true, 20, '203.0.113.23', 642, [0, 0, 110, 0], 80),
+  token(2, T_SAM, 'Release notes pipeline', 'cct_2f9a61d0…', false, 125, '198.51.100.12', 1834, [120, 30, 0, 0], 60),
+  token(3, T_MEI, 'Claude (drafting)', 'cct_91b3c77e…', false, 60 * 26, '203.0.113.40', 215, [0, 0, 18, 9], 5),
+  token(4, T_ALEX, 'Weekly report script', 'cct_4d08e2aa…', true, 60 * 72, '198.51.100.5', 88, [292, 0, 0, 0], null),
+  token(5, T_JORDAN, 'Old kiosk', 'cct_e5a7190c…', true, null, null, 0, [0, 0, 0, 0], 20),
+]
+const call = (n, minutes, who, tokenName, tool, write, ok, page, error = null) => ({
+  id: `00000000-0000-4000-a000-00000000000${n}`, at: ago(minutes), tool, write, ok, error,
+  tokenId: '00000000-0000-4000-9000-000000000001', tokenName, tokenPrefix: 'cct_', userId: who.id, userName: who.displayName,
+  page, spaceKey: null,
+})
+const demoPage = (title, id) => ({ id: `00000000-0000-4000-b000-00000000000${id}`, title, spaceKey: 'DEMO', hidden: false })
+const ACTIVITY_EXAMPLE = [
+  call(1, 20, T_PRIYA, 'Claude (research)', 'get_page', false, true, demoPage('Launch plan', 1)),
+  call(2, 21, T_PRIYA, 'Claude (research)', 'search_pages', false, true, null),
+  call(3, 60 * 26, T_MEI, 'Claude (drafting)', 'update_page', true, true, demoPage('Support FAQ', 2)),
+  call(4, 60 * 26 + 2, T_MEI, 'Claude (drafting)', 'add_page_label', true, true, demoPage('Support FAQ', 2)),
+  call(5, 60 * 26 + 5, T_MEI, 'Claude (drafting)', 'update_page', true, false, { id: '00000000-0000-4000-b000-000000000009', title: null, spaceKey: null, hidden: true }, 'Page not found.'),
+  call(6, 60 * 26 + 6, T_MEI, 'Claude (drafting)', 'get_page', false, true, demoPage('Support FAQ', 2)),
+]
+const TOKENS_MOCK = [
+  { url: '**/api/admin/api-tokens/summary*', json: {
+    tokens: 5, activeLast7Days: 4, neverUsed: 1, expiringWithinWeek: 1,
+    last7Days: { reads: 412, writes: 30, mcpReads: 128, mcpWrites: 9 },
+    apiPerDay: series((i) => [40, 12, 55, 60, 48, 9, 7][i % 7] + (i % 5)),
+    mcpPerDay: series((i) => (i < 18 ? 0 : [14, 22, 9, 31, 18, 3, 0][i % 7])),
+  } },
+  { url: '**/api/admin/api-tokens/activity*', json: ACTIVITY_EXAMPLE },
+  { url: '**/api/admin/api-tokens', json: TOKENS_EXAMPLE },
+]
+
 /** What changed on these pages for a new version (dev-plan 16.2). */
 export const changes = {
   'Invites': '0.6: with Tailscale, a second link for people on your tailnet.',
+  'API tokens (administration)': 'New in 0.6.',
+  'Administration': '0.6: the API tokens tab, and how to open each tab.',
 }
 
 export const shots = () => [
@@ -244,9 +298,21 @@ export const shots = () => [
     clipTo: '[data-shot="instance"]', clipPad: 6,
     annotate: [{ type: 'box', target: '[data-shot="instance"] label:nth-of-type(2)', pad: 4 }],
   },
+  // Administration → API tokens, with example data (TOKENS_MOCK).
+  {
+    name: 'admin-api-tokens', url: '/admin/api-tokens', viewport: { width: 1280, height: 900 }, phone: false, settle: 1200,
+    mock: TOKENS_MOCK, steps: [{ wait: 2500 }],
+    clipTo: ['.tabs', 'table.admin-tokens'], clipPad: 12,
+    annotate: [{ type: 'box', target: 'table.admin-tokens tbody tr:nth-child(3) .link-btn--danger', pad: 4 }],
+  },
+  {
+    name: 'admin-assistant-activity', url: '/admin/api-tokens', viewport: { width: 1280, height: 900 }, phone: false, settle: 1200,
+    mock: TOKENS_MOCK, steps: [{ wait: 2500 }, { css: '.dash__grid, table.admin-tokens, .admin-tokens__filter, .page-wrap--admin > p { display: none !important; }' }],
+    clipTo: ['#assistant-activity', 'table.admin-activity'], clipPad: 12,
+  }
 ]
 
-export async function build({ top, page, ensure, doc, p, h, text, bold, italic, code, ul, ol, li, panel, table, picture, pageLink }) {
+export async function build({ top, page, ensure, doc, p, h, text, bold, italic, code, ul, ol, li, panel, table, picture, pageLink, adminAt }) {
   const b = (t) => text(t, bold)
   const c = (t) => text(t, code)
   const i = (t) => text(t, italic)
@@ -260,6 +326,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   const users = await ensure('Users', root)
   const spaces = await ensure('Spaces (administration)', root)
   const invites = await ensure('Invites', root)
+  const tokenTab = await ensure('API tokens (administration)', root)
   const security = await ensure('Security (administration)', root)
   const backups = await ensure('Backups (administration)', root)
   const roles = await ensure('Roles', root)
@@ -284,6 +351,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(pageLink('Users'), ': every account. Help someone who forgot their password, lost their phone or is leaving the team.')),
       li(p(pageLink('Spaces (administration)', 'Spaces'), ': every space, including private ones. Publish a space to the internet, or get into one nobody can manage any more.')),
       li(p(pageLink('Invites'), ': links that let one person create an account, for when anyone-can-join is off.')),
+      li(p(pageLink('API tokens (administration)', 'API tokens'), ': every API token, whose it is and how much it is used, what AI assistants did with theirs, and revoking one.')),
       li(p(pageLink('Security (administration)', 'Security'), ': what Tesria has noticed, such as repeated wrong passwords, and the switches and limits that protect the instance.')),
       li(p(pageLink('Backups (administration)', 'Backups'), ': whether the backups work, and backing up or testing a restore now.')),
       li(p(pageLink('Roles'), ': what each role may do, as a grid you can change.')),
@@ -334,7 +402,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     h(2, 'Handing the instance to someone else'),
     p('When the owner is leaving, or set Tesria up on someone else’s behalf, ownership can move to another account. Only the owner can do this, so this part is described in words rather than pictured.'),
     step(1, 'Find the new owner'),
-    p('In ', b('Admin → Users'), ', find the person. Their account has to be active: a suspended account cannot own the instance.'),
+    p('In ', ...adminAt('Users'), ', find the person. Their account has to be active: a suspended account cannot own the instance.'),
     step(2, 'Choose Transfer ownership'),
     p('It is in their row, and only the owner sees it. A box explains that you become an administrator, and that only the new owner can change roles or hand ownership back.'),
     step(3, 'Confirm'),
@@ -345,6 +413,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   // =========================================================== Dashboard
   await page('Dashboard', root, doc(
     p('The dashboard answers two questions on one screen: is everything all right, and is anyone using this? It shows how many people have accounts and how many are active, how much has been written and read, and whether the backups are running. It is the first thing you see when you open Administration.'),
+    p('To open it, choose ', ...adminAt('Dashboard'), '.'),
     p('A glance once a week is plenty. Look more closely when something changes: a sudden climb in failed sign-ins, or a backup tile in red, is your cue to open ', pageLink('Security (administration)', 'Security'), ' or ', pageLink('Backups (administration)', 'Backups'), '.'),
 
     h(2, 'Choosing the period'),
@@ -366,6 +435,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   // =============================================================== Users
   await page('Users', root, doc(
     p('The Users tab lists every account on the instance, the owner first, then administrators, then everyone else. It is where you help people: the colleague who forgot their password, the one who lost the phone with their authenticator app, the one who is locked out, and the one who is leaving.'),
+    p('To open it, choose ', ...adminAt('Users'), '.'),
     ...(await picture(users, 'users', 'The Users tab, with one account’s actions marked', 'Each row ends with what you can do to that account.')),
 
     h(2, 'Reading the list'),
@@ -420,6 +490,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   // ==================================================== Spaces (administration)
   await page('Spaces (administration)', root, doc(
     p('This tab lists every space on the instance, including private and archived ones: who created it (the ', b('Owner'), ' column), how many pages it has, how much its attachments take, whether it is public, and when it was made. It shows facts about spaces, never what is in them. Being an administrator does not let you read a private space.'),
+    p('To open it, choose ', ...adminAt('Spaces'), '.'),
     p('You will come here for two things: publishing a space so people can read it without an account, and getting into a private space that nobody is left to manage.'),
     ...(await picture(spaces, 'admin-spaces', 'A space’s row, with Publish and Get access marked', 'Publish, and Get access, in a space’s row.')),
 
@@ -449,6 +520,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   // ============================================================= Invites
   await page('Invites', root, doc(
     p('An invite is a link that lets one person create an account. It is how you add people when anyone-can-join is off, which is what most teams want for a wiki that can be reached from the internet. The link stops working once it has been used.'),
+    p('To open it, choose ', ...adminAt('Invites'), '.'),
     p('If your Tesria sends email, it can email the invite for you, with a note in your own words, so there is nothing to copy and paste into a chat. Without email, you copy the link and send it however you like. See ', pageLink('Email (SMTP)'), ' to set email up.'),
 
     h(2, 'Creating an invite'),
@@ -476,8 +548,60 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   ))
 
   // ================================================== Security (administration)
+  await page('API tokens (administration)', root, doc(
+    p('An API token lets a script or an AI assistant use Tesria as the person who made it, without a browser. People make and revoke their own on their profile (see ', pageLink('API tokens'), '). This tab is where an administrator sees all of them at once: whose each one is, how much it is used and from where, what assistants did with theirs, and, when something looks wrong, revokes one.'),
+    p('To open it, choose ', ...adminAt('API tokens'), '. You need the right to see the user list; revoking also needs the right to manage users. Both come with the Administrator role.'),
+    panel('info', p(b('The tokens themselves are never shown,'), ' only the first few characters their owner also sees. Nobody, administrators included, can read a token back and use it.')),
+
+    h(2, 'At a glance'),
+    p('The cards at the top count the last 7 days: how many tokens there are (and how many were never used), how many were used, how many requests came through the REST API, how many tools assistants called through MCP, and how many tokens expire within a week. The two charts below them show requests and tool calls per day for the last 30 days, so a sudden jump stands out.'),
+    ...(await picture(tokenTab, 'admin-api-tokens', 'The API tokens tab: the summary cards, the charts and the list of tokens, with one Revoke boxed', 'The cards and charts, then every token with its owner, last use and the last 7 days.')),
+
+    h(2, 'The list of tokens'),
+    p('Each row is one token, the most recently used first. Type in ', b('Filter by person or token'), ' to find one by the person’s name or email, or the token’s name.'),
+    ul(
+      li(p(b('Person:'), ' whose token it is, with their email, and ', b('suspended'), ' if their account is. A suspended account’s tokens do not work.')),
+      li(p(b('Token:'), ' the name its owner gave it, its first characters, and whether it is ', b('read-only'), ' or has ', b('full access'), '.')),
+      li(p(b('Last used:'), ' when, from which address, and how many requests it has made in all (counted from Tesria 0.6).')),
+      li(p(b('Last 7 days:'), ' requests through the API and tool calls by an assistant, each with how many changed something. A change that was refused, for example by a read-only token, is counted as a request but not as a change.')),
+      li(p(b('Expires:'), ' the date it stops working, ', b('Never'), ', or ', b('expired'), '.')),
+    ),
+
+    h(2, 'What assistants did'),
+    p('Below the list, every tool an assistant called through MCP, newest first: when, whose token, what it did (read a page, searched, changed a page, added a label, and so on), which page, and whether it worked. Choose ', b('Activity'), ' on a token’s row to see only that token’s; ', b('Show every token'), ' goes back.'),
+    ...(await picture(tokenTab, 'admin-assistant-activity', 'What assistants did: a list of tool calls with who, what and on which page', 'Each tool an assistant called. Changes are marked, and so are calls that failed.')),
+    ul(
+      li(p(b('Kept for 90 days,'), ' and kept after a token is revoked, so you can still see what it did.')),
+      li(p(b('What an assistant searched for is not recorded,'), ' only that it searched.')),
+      li(p(b('A page you may not open yourself is not named.'), ' It shows as ', i('a page you cannot open'), '. Being able to see tokens is not a way into a private space.')),
+    ),
+    p('The API’s own requests are counted, not listed one by one. To see what a script changed, look at the page’s history, or at ', pageLink('Audit'), '.'),
+
+    h(2, 'Revoking a token'),
+    step(1, 'Find the token'),
+    p('Use the filter, or look down the list.'),
+    step(2, 'Choose Revoke'),
+    p(b('Revoke'), ' is at the end of the row, beside ', b('Activity'), '.'),
+    step(3, 'Confirm'),
+    p('Tesria asks first, naming whose token it is. Choose ', b('Revoke the token'), '. Whatever used it stops working at once. The person’s other tokens keep working, and they are told in the bell (and by email, if they get notifications by email) which token was revoked. The audit log records it.'),
+    ul(
+      li(p(b('The owner’s tokens are the owner’s.'), ' Only the owner can revoke them. Another administrator’s need the right to manage administrators’ accounts, which the owner can give (see ', pageLink('Roles'), ').')),
+      li(p(b('To stop all of one person’s tokens at once,'), ' use ', b('Revoke tokens'), ' beside them in ', pageLink('Users'), ', or suspend the account.')),
+    ),
+
+    h(2, 'What to look for'),
+    ul(
+      li(p(b('A token used from an address you do not recognize.'), ' Ask its owner. If they do not know either, revoke it.')),
+      li(p(b('Full access used only for reading.'), ' If a token never changes anything, suggest its owner replaces it with a read-only one.')),
+      li(p(b('Tokens never used,'), ' or not for months. Ask whether they are still needed.')),
+      li(p(b('An assistant making many changes,'), ' or many failed calls. The first is worth a look at the pages it changed; the second usually means a misconfigured assistant.')),
+      li(p(b('Tokens of people who have left.'), ' Suspending their account stops every token they made.')),
+    ),
+  ))
+
   await page('Security (administration)', root, doc(
     p('Tesria keeps an eye out for signs of trouble: many wrong passwords from one address, a flood of requests, an administrator signing in from somewhere new, lots of pages removed at once. The Security tab shows what it has noticed, lets you act on it, and holds the switches and limits that protect the instance.'),
+    p('To open it, choose ', ...adminAt('Security'), '.'),
     p('Four figures sit at the top: open alerts (and how many are critical), events in the last 24 hours, blocked networks (and how many requests they have refused), and ', b('Exposure'), ', which says whether public spaces are allowed and whether registration is open or by invite.'),
 
     h(2, 'Alerts'),
@@ -567,6 +691,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   // =================================================== Backups (administration)
   await page('Backups (administration)', root, doc(
     p('Tesria backs itself up from the moment it starts, with nothing to set up. The Backups tab is where you check that it is working: whether each backup service is healthy, when the last backup was, and whether a backup has ever been restored to prove it works. How backups work in depth is in ', pageLink('Backups and recovery'), '; this page is a tour of the tab.'),
+    p('To open it, choose ', ...adminAt('Backups'), '.'),
     p('Look at it once after installing, and now and then after that. A backup that fails raises an alert, so you will usually hear about trouble. But only a test restore proves a backup comes back.'),
     ...(await picture(backups, 'backups', 'Back up now and a backup service’s card', 'Back up now, and a service’s card with Test restore of newest.')),
 
@@ -605,6 +730,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   // =============================================================== Roles
   await page('Roles', root, doc(
     p('A role is a named set of rights: what someone may do on the instance at all, such as create spaces, export pages or read the audit log. Every account has exactly one role. The Roles tab shows them as a grid, with a row for each right, a column for each role, and a tick where the role holds the right.'),
+    p('To open it, choose ', ...adminAt('Roles'), '.'),
     p('You might come here to stop people exporting, to let only administrators create spaces, to let team leads send invites, or to make a narrower kind of administrator, say one who looks after accounts but not backups. Many teams never change anything.'),
     ...(await picture(roles, 'roles', 'The top of the roles grid', 'A dash in a user role’s column marks a right only administrator roles can hold.')),
 
@@ -656,6 +782,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   // ============================================================== Groups
   await page('Groups', root, doc(
     p('A group is a named set of people, such as Marketing or the Berlin office. Instead of sharing a space or restricting a page person by person, you give access to the group. When someone joins the team, you add them to the group once, and they can reach everything it opens.'),
+    p('To open it, choose ', ...adminAt('Groups'), '.'),
 
     h(2, 'Creating a group'),
     ...(await picture(groups, 'groups', 'The new group form, and the built-in groups', 'The form for a new group, and the three built-in groups below it.')),
@@ -679,6 +806,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   // =============================================================== Audit
   await page('Audit', root, doc(
     p('The audit log is Tesria’s record of who changed what, and when: roles and rights, settings, invites, publishing, deleted spaces, backups and restores, sign-ins, and more. Come here to answer “who turned this on?”, or after an alert, to see what else an account did.'),
+    p('To open it, choose ', ...adminAt('Audit'), '.'),
     p('It is not pictured here, because every entry names real people.'),
 
     h(2, 'Reading it'),
@@ -700,6 +828,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   // ================================================== Settings (administration)
   await page('Settings (administration)', root, doc(
     p('Settings holds the choices that apply to the whole instance: its name and address, which sites pages may embed, who can join, and the email server. Each is its own card with its own save button, and each needs its own right, so a role can be allowed to fix the email server without being able to open registration. Every change is recorded in the audit log.'),
+    p('To open it, choose ', ...adminAt('Settings'), '.'),
 
     h(2, 'Instance'),
     ...(await picture(settings, 'settings-instance', 'The Instance settings, with an example address', 'The name, and the public address.')),
@@ -735,6 +864,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   // ============================================================= Branding
   await page('Branding', root, doc(
     p('Branding makes Tesria look like your organization’s own: your name and logo in the top bar and on the sign-in page, your icon in the browser tab, and your colors. Only the owner can change it, unless the owner gives ', b('Change the branding'), ' to an administrator role, so this page describes it in words.'),
+    p('To open it, choose ', ...adminAt('Branding'), '.'),
 
     h(2, 'Changing it'),
     step(1, 'Open Admin → Branding'),
@@ -780,6 +910,15 @@ export async function cleanup({ author }) {
   const tree = await author.call('GET', `/api/pages/tree?spaceId=${space.id}`)
   const admin = tree.find((n) => n.title === 'Administration')
   if (!admin) return
+  // The API tokens page (0.6) goes after Invites, as its tab does.
+  const kids = admin.children ?? []
+  const invitesAt = kids.findIndex((n) => n.title === 'Invites')
+  const tokensAt = kids.findIndex((n) => n.title === 'API tokens (administration)')
+  if (invitesAt >= 0 && tokensAt >= 0 && tokensAt !== invitesAt + 1) {
+    await author.call('PUT', `/api/pages/${kids[tokensAt].id}/move`,
+      { parentPageId: admin.id, index: tokensAt > invitesAt ? invitesAt + 1 : invitesAt })
+    console.log('  moved API tokens (administration) after Invites')
+  }
   for (const [title, files] of Object.entries(RETIRED)) {
     const node = (admin.children ?? []).find((n) => n.title === title)
     if (!node) continue

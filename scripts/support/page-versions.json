@@ -2,80 +2,86 @@
   "Administration": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "acf1555a4c2711d2"
+    "note": "0.6: the API tokens tab, and how to open each tab.",
+    "hash": "b0f5527d33edadb1"
+  },
+  "Administration / API tokens (administration)": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "New in 0.6.",
+    "hash": "6a39c93ef72af647"
   },
   "Administration / Audit": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "3ae45fb011f3081c"
+    "note": "Revised.",
+    "hash": "11d19037378a3505"
   },
   "Administration / Backups (administration)": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "634b2759c2b7651a"
+    "note": "Revised.",
+    "hash": "b40dd8de0714d871"
   },
   "Administration / Branding": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "95d0e56cef83a6ee"
+    "note": "Revised.",
+    "hash": "1247b600e1fac60d"
   },
   "Administration / Dashboard": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "16268192118f8acf"
+    "note": "Revised.",
+    "hash": "9c9026e8554aee92"
   },
   "Administration / Groups": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "814c2693a83286b4"
+    "note": "Revised.",
+    "hash": "2fd3ccb17fc2bfa5"
   },
   "Administration / Invites": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
     "note": "0.6: with Tailscale, a second link for people on your tailnet.",
-    "hash": "92c573ccf2790278"
+    "hash": "cc43be1b977c01c4"
   },
   "Administration / Owner, administrators and users": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "1070305b3696860f"
+    "note": "Revised.",
+    "hash": "60f5de648fffea9c"
   },
   "Administration / Roles": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "0edf2d470535296c"
+    "note": "Revised.",
+    "hash": "bb8a3e0b87762036"
   },
   "Administration / Security (administration)": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "89ad51b5b558c52f"
+    "note": "Revised.",
+    "hash": "dfca0d23626d8e81"
   },
   "Administration / Settings (administration)": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "cd7f8d54bbf03114"
+    "note": "Revised.",
+    "hash": "7c0f331cade7044e"
   },
   "Administration / Spaces (administration)": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "d7f347d819c2adc4"
+    "note": "Revised.",
+    "hash": "a44fbd6393b3223f"
   },
   "Administration / Users": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "0b98126d09f8edc7"
+    "note": "Revised.",
+    "hash": "c1dd512349289331"
   },
   "Backups and recovery / How backups work": {
     "appliesTo": "0.5",
@@ -122,8 +128,8 @@
   "Basics / Accounts and invites": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "b1b2cb503f0085fb"
+    "note": "Revised.",
+    "hash": "06a9cbc0219aeb1e"
   },
   "Basics / Finding your way around": {
     "appliesTo": "0.5",
@@ -134,14 +140,14 @@
   "Basics / Resetting a password": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "1a7819c2428b98f5"
+    "note": "Revised.",
+    "hash": "e09c8f37cb950179"
   },
   "Basics / Signing in": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "da74e21dd3e447d4"
+    "note": "Revised.",
+    "hash": "8b2ed11c94f06b6d"
   },
   "Basics / The tour and tips": {
     "appliesTo": "0.5",
@@ -152,14 +158,32 @@
   "Basics / Theme and accent": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "0620b693d7390b79"
+    "note": "Revised.",
+    "hash": "3a93bb4d310586ec"
   },
   "Basics / Two-factor and recovery codes": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "faf8c9ec46032213"
+    "note": "Revised.",
+    "hash": "fa13304f5772c871"
+  },
+  "Developers": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "8d9ae3320961fe15"
+  },
+  "Developers / MCP": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "378225cd97ed3de1"
+  },
+  "Developers / REST API": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "b529e31bc93df28b"
   },
   "Elements / Animation": {
     "appliesTo": "0.5",
@@ -404,8 +428,8 @@
   "Exporting and publishing / Public reading": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "e8ae09ee55e0af25"
+    "note": "Revised.",
+    "hash": "f696c812ec7d0cc0"
   },
   "Exporting and publishing / Turning exports off": {
     "appliesTo": "0.5",
@@ -488,8 +512,8 @@
   "Glossary": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "9c3c94b5ca530d63"
+    "note": "Revised.",
+    "hash": "737506a23e3a60ca"
   },
   "Installation and operations": {
     "appliesTo": "0.5",
@@ -560,8 +584,8 @@
   "Installation and operations / Trusting the local certificate": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "2bbbe6b457086d99"
+    "note": "Revised.",
+    "hash": "e5de3afd3764e2aa"
   },
   "Installation and operations / Uninstalling and moving": {
     "appliesTo": "0.5",
@@ -668,8 +692,8 @@
   "MCP / Connecting an assistant": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "0e1e5965c75bf236"
+    "note": "Revised.",
+    "hash": "f5268ae5e26b228d"
   },
   "MCP / What an assistant can do": {
     "appliesTo": "0.5",
@@ -770,8 +794,8 @@
   "REST API / Getting started with the API": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "2f62c3081d6df76b"
+    "note": "Revised.",
+    "hash": "25a4f9392722aeec"
   },
   "REST API / Requests and responses": {
     "appliesTo": "0.5",
@@ -794,14 +818,14 @@
   "Security": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "656e3b1104e7459c"
+    "note": "Revised.",
+    "hash": "bc04c7c45357d06b"
   },
   "Spaces / Archiving and deleting a space": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "2170e34b179d74b9"
+    "note": "Revised.",
+    "hash": "353d22f9dbebdbdc"
   },
   "Spaces / Creating a space": {
     "appliesTo": "0.5",
@@ -830,8 +854,8 @@
   "Spaces / Who can see a space": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "a0adf1820d3551e5"
+    "note": "Revised.",
+    "hash": "d19fec103e7cb538"
   },
   "Tesria on phones and tablets / Moving between spaces and pages": {
     "appliesTo": "0.5",
@@ -938,8 +962,8 @@
   "Troubleshooting": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "8e11076e05025527"
+    "note": "Revised.",
+    "hash": "5f74729a1939198c"
   },
   "User manual": {
     "appliesTo": "0.5",
@@ -1040,31 +1064,31 @@
   "Your profile / API tokens": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "5616bbe4b95f8a9f"
+    "note": "0.6: where to find them, revoking one step by step, and how many requests each has made.",
+    "hash": "c9e79fa734e29b28"
   },
   "Your profile / Avatar, name and email": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "4ae6e2adb3d359f6"
+    "note": "Revised.",
+    "hash": "2b513285f1530098"
   },
   "Your profile / Email notifications": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "c22dd52654ba9b6a"
+    "note": "Revised.",
+    "hash": "fdaf0e69877fd29b"
   },
   "Your profile / Password": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "1b144f9659ea41d2"
+    "note": "Revised.",
+    "hash": "3456e4efb51096ec"
   },
   "Your profile / Sessions": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "255b2fb64435743c"
+    "note": "Revised.",
+    "hash": "3c634091e3ee57ba"
   }
 }

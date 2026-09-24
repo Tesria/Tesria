@@ -323,7 +323,7 @@ export const shots = ({ demo }) => [
   },
 ]
 
-export async function build({ top, page, ensure, doc, p, h, text, bold, italic, code, ul, ol, li, panel, live, picture, pageLink }) {
+export async function build({ top, page, ensure, doc, p, h, text, bold, italic, code, ul, ol, li, panel, live, picture, pageLink, adminAt }) {
   const manual = top['User manual']
   const b = (t) => text(t, bold)
   const c = (t) => text(t, code)
@@ -523,7 +523,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Every grant is removed at once, and everyone signed in can view, edit and administer the space again. Restrictions on single pages stay as they are. Because this opens everything in the space to everyone, Tesria’s administrators are alerted each time it is done.'),
 
     h(2, 'Administrators and private spaces'),
-    p('Being an administrator of Tesria does not let you into every private space. If a private space has lost all its administrators, a Tesria administrator can give themselves access with ', b('Get access'), ' in ', b('Administration, Spaces'), ', and that is recorded in the audit log. See ', pageLink('Spaces (administration)'), '.'),
+    p('Being an administrator of Tesria does not let you into every private space. If a private space has lost all its administrators, a Tesria administrator can give themselves access with ', b('Get access'), ' in ', ...adminAt('Spaces'), ', and that is recorded in the audit log. See ', pageLink('Spaces (administration)'), '.'),
     p('To keep one page, rather than a whole space, to a few people, see ', pageLink('Restrictions'), '.'),
   ))
 
@@ -555,7 +555,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ...(await picture(archive, 'space-archive', 'Archive this space and Delete this space in Space settings', 'Archive this space, and Delete this space in the Danger zone below it.')),
 
     h(2, 'Archiving a space'),
-    p('An archived space is hidden from the Spaces page, and from public reading if it was published. Nothing in it is changed or removed: people with access can still open it at its address or from a bookmark, and ', b('Administration, Spaces'), ' lists it with an ', i('archived'), ' badge.'),
+    p('An archived space is hidden from the Spaces page, and from public reading if it was published. Nothing in it is changed or removed: people with access can still open it at its address or from a bookmark, and ', ...adminAt('Spaces'), ' lists it with an ', i('archived'), ' badge.'),
     step(1, 'Open Space settings'),
     p('Choose ', b('Space settings'), ' at the bottom of the space’s sidebar, and scroll to ', b('Archive'), '.'),
     step(2, 'Choose Archive this space'),

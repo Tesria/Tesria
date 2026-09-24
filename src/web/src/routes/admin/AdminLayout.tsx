@@ -56,6 +56,7 @@ export function AdminLayout() {
     { to: '/admin/users', label: 'Users', permission: Permission.UsersView },
     { to: '/admin/spaces', label: 'Spaces', permission: Permission.SpacesManage },
     { to: '/admin/invites', label: 'Invites', permission: Permission.InvitesManage, or: Permission.InvitesCreate },
+    { to: '/admin/api-tokens', label: 'API tokens', permission: Permission.UsersView },
     { to: '/admin/security', label: 'Security', permission: Permission.SecurityView },
     { to: '/admin/backups', label: 'Backups', permission: Permission.BackupsView },
     { to: '/admin/roles', label: 'Roles', permission: Permission.PermissionsView },
@@ -66,8 +67,11 @@ export function AdminLayout() {
   const visible = tabs.filter((t) => can(t.permission) || (t.or !== undefined && can(t.or)))
   // The owner always reaches the matrix, even having taken permissions.view
   // from their own role: it is how they would undo that.
-  if (!visible.some((t) => t.to === '/admin/roles') && can(Permission.PermissionsEditAdminTier))
-    visible.splice(6, 0, { to: '/admin/roles', label: 'Roles', permission: Permission.PermissionsEditAdminTier })
+  if (!visible.some((t) => t.to === '/admin/roles') && can(Permission.PermissionsEditAdminTier)) {
+    // Where it would have been: before Groups, or last.
+    const at = visible.findIndex((t) => t.to === '/admin/groups')
+    visible.splice(at < 0 ? visible.length : at, 0, { to: '/admin/roles', label: 'Roles', permission: Permission.PermissionsEditAdminTier })
+  }
   const settingsVisible = can(Permission.SettingsInstance) || can(Permission.SettingsRegistration)
     || can(Permission.SettingsEmail) || can(Permission.SettingsPublicSpaces) || can(Permission.SecuritySettings)
 

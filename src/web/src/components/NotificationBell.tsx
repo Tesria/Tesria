@@ -46,6 +46,15 @@ function describe(n: AppNotification): string {
       return 'One of your API tokens expires soon'
     }
   }
+  // An administrator revoked one of your tokens (the admin API tokens tab).
+  if (n.action === 'token.revoked') {
+    try {
+      const meta = JSON.parse(n.metadataJson ?? '{}') as { Name?: string }
+      return `An administrator revoked your API token “${meta.Name ?? ''}”`
+    } catch {
+      return 'An administrator revoked one of your API tokens'
+    }
+  }
   const who = n.actorName ?? 'Someone'
   const what = ACTION_LABEL[n.action] ?? n.action
   let title = ''

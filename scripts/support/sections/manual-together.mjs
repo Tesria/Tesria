@@ -63,7 +63,12 @@ const EXAMPLE_SESSIONS = `[...document.querySelectorAll('#sessions tbody tr, .pr
  * resolved. No mention tokens in these comments: the bell shows a comment's
  * raw text, token and all.
  */
+/** The token the API tokens pictures show, made for them and revoked after. */
+const EXAMPLE_TOKEN = 'Nightly report'
+
 export async function prepare({ lib, author, demoId }) {
+  if (!(await author.call('GET', '/api/api-tokens')).some((t) => t.name === EXAMPLE_TOKEN))
+    await author.call('POST', '/api/api-tokens', { name: EXAMPLE_TOKEN, readOnly: true, expiresInDays: 1 })
   let sam = null
   const samSession = async () => (sam ??= await lib.signIn(lib.need('SHOT2_EMAIL'), lib.need('SHOT2_PASSWORD')))
 
@@ -98,6 +103,7 @@ export async function prepare({ lib, author, demoId }) {
 export const changes = {
   'A space as a website': '0.6: a progress bar and Cancel while it builds.',
   'Wiki packs': '0.6: a progress bar and Cancel while it packs.',
+  'API tokens': '0.6: where to find them, revoking one step by step, and how many requests each has made.',
 }
 
 export const shots = ({ demo }) => [
@@ -213,6 +219,21 @@ export const shots = ({ demo }) => [
   {
     // The other sections hidden, so nothing scrolls: scrolled, the boxes
     // were measured before the page moved and landed beside their targets.
+    // Where your profile is: the top bar, with your picture and name boxed.
+    name: 'profile-link', url: '/spaces', viewport: { width: 1024, height: 640 }, phone: false, settle: 1000,
+    steps: [{ wait: 2500 }],
+    clipTo: '.topbar__right', clipPad: 10,
+    annotate: [{ type: 'box', target: '.topbar__me', pad: 4 }],
+  },
+  {
+    // The list under the form, with a token in it (made by prepare, revoked
+    // by cleanup) and its Revoke boxed.
+    name: 'api-tokens-list', url: '/profile', viewport: NARROW, phone: false, settle: 1000,
+    steps: [{ wait: 2500 }, { css: '.profile__section:not(#api-tokens) { display: none !important; }' }],
+    clipTo: '#api-tokens .version-list', clipPad: 12,
+    annotate: [{ type: 'box', target: '#api-tokens .version-list .link-btn--danger', pad: 4 }],
+  },
+  {
     name: 'api-tokens', url: '/profile', viewport: NARROW, phone: false, settle: 1000,
     steps: [{ wait: 2500 }, { css: '.profile__section:not(#api-tokens) { display: none !important; }' }, { type: 'Nightly report', selector: '#api-tokens form input[placeholder="CI pipeline"]' }, { eval: 'document.activeElement && document.activeElement.blur()' }],
     clipTo: '#api-tokens form', clipPad: 12,
@@ -224,7 +245,7 @@ export const shots = ({ demo }) => [
   },
 ]
 
-export async function build({ top, page, ensure, doc, p, h, text, bold, italic, code, ul, ol, li, panel, table, live, picture, pageLink }) {
+export async function build({ top, page, ensure, doc, p, h, text, bold, italic, code, ul, ol, li, panel, table, live, picture, pageLink, adminAt, profileAt }) {
   const manual = top['User manual']
   const b = (t) => text(t, bold)
   const c = (t) => text(t, code)
@@ -624,9 +645,9 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Because it puts pages on the internet, it takes two separate switches, both in Administration, so nothing becomes public by accident. They are for administrators, unless your Tesria’s roles give them to someone else.'),
 
     step(1, 'Allow public spaces for your Tesria'),
-    p('In ', b('Administration, Settings'), ', turn on ', b('Allow public spaces'), '. This alone publishes nothing: it allows spaces to be published. If your Tesria can be reached from the internet, go through the readiness checklist in ', c('docs/security.md'), ' first. See ', pageLink('Settings (administration)'), '.'),
+    p('In ', ...adminAt('Settings'), ', turn on ', b('Allow public spaces'), '. This alone publishes nothing: it allows spaces to be published. If your Tesria can be reached from the internet, go through the readiness checklist in ', c('docs/security.md'), ' first. See ', pageLink('Settings (administration)'), '.'),
     step(2, 'Publish the space'),
-    p('In ', b('Administration, Spaces'), ', choose ', b('Publish'), ' beside the space. Tesria says exactly how many pages and attachments will become readable before it asks you to confirm.'),
+    p('In ', ...adminAt('Spaces'), ', choose ', b('Publish'), ' beside the space. Tesria says exactly how many pages and attachments will become readable before it asks you to confirm.'),
     ...(await picture(pub, 'admin-spaces', 'Publish beside a space in Administration, Spaces', 'Publish is in the Public column. A public space shows Withdraw and a comments box there instead.')),
     p('Both steps may ask for your password again, if you have not signed in recently. Every administrator gets a security alert whenever a space is published or withdrawn, so nobody can do it unnoticed.'),
 
@@ -635,14 +656,14 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('The public spaces,'), ' each with a read-only page tree, and every published page in them that has no restriction.')),
       li(p(b('Export buttons'), ' for PDF, HTML and Markdown, where the space allows them.')),
       li(p(b('Search,'), ' over the public spaces only.')),
-      li(p(b('Comments, only if you allow them:'), ' tick ', b('comments'), ' beside the space in Administration, Spaces. Readers can then read the comments but not add any.')),
+      li(p(b('Comments, only if you allow them:'), ' tick ', b('comments'), ' beside the space in ', ...adminAt('Spaces'), '. Readers can then read the comments but not add any.')),
       li(p(b('A Sign in button,'), ' for people who do have an account.')),
     ),
     p('Restricted pages, drafts, the trash and page history are never public. Search engines find the public pages through the sitemap Tesria keeps for them.'),
 
     h(2, 'Taking it back'),
     ul(
-      li(p(b('Withdraw'), ' beside a space in Administration, Spaces makes it private again. Readers without an account lose access within a minute.')),
+      li(p(b('Withdraw'), ' beside a space in ', ...adminAt('Spaces'), ' makes it private again. Readers without an account lose access within a minute.')),
       li(p(b('Turning off Allow public spaces'), ' hides every public space at once, and remembers which ones they were, for when it is turned on again.')),
     ),
     p('See ', pageLink('Spaces (administration)'), ' for the rest of that page.'),
@@ -686,6 +707,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
   await page('Avatar, name and email', profile, doc(
     p('These three decide how you appear to everyone else: your avatar and name are beside everything you write, from pages to comments to the history of a page.'),
+    p('To get there, open ', ...profileAt(), '. The ', b('Avatar'), ', ', b('Display name'), ' and ', b('Email address'), ' cards are at the top.'),
     h(2, 'Avatar'),
     p('Until you upload a picture, your avatar is your initials on a colored circle. Pick any of the twelve colors under ', b('Generated avatar'), ' to change it.'),
     ...(await picture(avatar, 'profile-avatar', 'The Avatar card', 'Your initials on the color you pick, or a picture you upload.')),
@@ -699,6 +721,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
   await page('Sessions', profile, doc(
     p('A session is one browser, on one device, that is signed in to your account. The Sessions card lists every one, so you can see where you are signed in and sign out anywhere you should not be: a phone you lost, or a shared computer you forgot to sign out of.'),
+    p('To get there, open ', ...profileAt('Sessions'), '.'),
     ...(await picture(sessions, 'sessions', 'The Sessions card', 'Each browser signed in to your account. The one you are using is marked this browser.')),
     p('Each row shows the network address it signed in from, the browser and system (such as ', i('Safari on iOS'), '), when it was last active, and when it signed in. The one you are using is marked ', b('this browser'), '.'),
     ul(
@@ -715,6 +738,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
   await page('Email notifications', profile, doc(
     p('Everything that arrives in the bell can come by email as well, so you hear about a comment or a mention without having Tesria open. Choose how in the ', b('Email notifications'), ' card on your profile.'),
+    p('To get there, open ', ...profileAt('Email notifications'), '.'),
     table([
       ['Setting', 'What you get'],
       ['Off', 'Only the bell. Everyone starts here.'],
@@ -730,6 +754,15 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
   await page('API tokens', profile, doc(
     p('An API token is a key that lets a script, another program or an AI assistant use Tesria as you, without a browser: a nightly job that updates a status page, say, or an assistant that looks up answers in your wiki.'),
+    p('You make and revoke your tokens yourself, on your profile. Nobody else sees them there, although administrators can see that a token exists, how much it is used, and revoke it (see ', pageLink('API tokens (administration)'), ').'),
+
+    h(2, 'Where to find them'),
+    step(1, 'Open your profile'),
+    p('At the top right of every page, beside the bell and ', b('Sign out'), ', is your picture, or your initials in a colored circle if you have not added a picture. In a wide window your name is beside it. Choose it.'),
+    ...(await picture(tokens, 'profile-link', 'The top bar, with the initials AR boxed', 'Your picture, here the initials of Alex Rivera, opens your profile.')),
+    step(2, 'Scroll to API tokens'),
+    p('Your profile is a column of cards. ', b('API tokens'), ' is near the bottom, below ', b('Sessions'), '. It has the form for a new token at the top and your tokens listed under it.'),
+
     h(2, 'Making a token'),
     step(1, 'Name it after what will use it'),
     p('In the ', b('API tokens'), ' card, type a name such as ', i('Nightly report'), ' or ', i('CI pipeline'), '. You will be glad of it when you come to revoke one.'),
@@ -740,18 +773,29 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     step(4, 'Choose Create token, and copy it'),
     p('The token is shown once, right there. It is never shown again, so copy it into the program that will use it before you choose ', b('Done'), '. The list below keeps only its first few characters, to tell tokens apart.'),
     ...(await picture(tokens, 'api-tokens', 'Making an API token', 'A name, when it expires, Read-only if it only reads, then Create token.')),
-    h(2, 'Using and revoking tokens'),
+
+    h(2, 'Revoking a token'),
+    p('Revoke a token when whatever used it is retired, when you are not sure where it has been, or when you simply do not recognize it any more.'),
+    step(1, 'Find it in the list'),
+    p('Under the form, each of your tokens shows its name, its first few characters, when it was last used, how many requests it has made, and when it expires.'),
+    step(2, 'Choose Revoke'),
+    ...(await picture(tokens, 'api-tokens-list', 'A token in the list, with Revoke boxed', 'Revoke is at the end of the token’s row.')),
+    step(3, 'Confirm'),
+    p('Tesria asks first. Choose ', b('Revoke the token'), '. Anything using it stops working at once, and a revoked token cannot be brought back: make a new one if you need it again.'),
+
+    h(2, 'Good to know'),
     ul(
       li(p('The program sends the token with each request, as ', c('Authorization: Bearer <token>'), '. See ', pageLink('Getting started with the API'), '.')),
       li(p(b('A token can do almost anything you can,'), ' unless it is read-only. It cannot manage your account: making or revoking tokens, your sessions, your password, two-factor and your profile all need you signed in to a browser, so a token that leaks cannot lock you out or make more of itself. It stops working if your role loses the right to use tokens.')),
       li(p(b('Expiring tokens warn you first.'), ' A week before a token expires, the bell (and your email, if you get notifications by email) says so, with its name. Make a new one, put it in the program, and let the old one lapse. The list shows each token’s expiry date, in bold in its last week.')),
-      li(p(b('Revoke'), ' a token you no longer need. The list shows when each was last used. Anything using a revoked token stops working at once.')),
+      li(p(b('If an administrator revokes one of your tokens,'), ' the bell tells you which, and your email too if you get notifications by email.')),
     ),
-    p('If the card says your role does not allow API tokens, an administrator can grant it in ', b('Administration, Roles'), '.'),
+    p('If the card says your role does not allow API tokens, an administrator can grant it in ', ...adminAt('Roles'), '.'),
   ))
 
   await page('Password', profile, doc(
     p('Change your password whenever you think someone else might know it, or if it is one you use elsewhere.'),
+    p('To get there, open ', ...profileAt('Password'), '.'),
     ol(
       li(p('In the ', b('Password'), ' card, enter your current password.')),
       li(p('Enter the new one twice. It must be at least 8 characters; a few unrelated words make a long password that is still easy to type.')),
@@ -783,6 +827,8 @@ const RETIRED = {
 const PROFILE_ORDER = ['Avatar, name and email', 'Password', 'Email notifications', 'Sessions', 'API tokens']
 
 export async function cleanup({ author }) {
+  for (const t of await author.call('GET', '/api/api-tokens'))
+    if (t.name === EXAMPLE_TOKEN) await author.call('DELETE', `/api/api-tokens/${t.id}`)
   const space = await author.call('GET', '/api/spaces/SUPPORT')
   const treeNow = () => author.call('GET', `/api/pages/tree?spaceId=${space.id}`)
   const find = (nodes, title) => {

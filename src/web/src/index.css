@@ -2999,6 +2999,12 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
      the result is unreadable. The HTML export keeps them clickable instead. */
 }
 
+/* Administration → API tokens: a filter above the list, and the two action
+   links side by side. */
+.admin-tokens__filter input { width: 100%; max-width: 22rem; margin-bottom: 0.75rem; }
+.admin-tokens__actions { white-space: nowrap; text-align: right; }
+.admin-tokens__actions .link-btn + .link-btn { margin-left: 0.75rem; }
+
 /* An invite's links: one, or the usual one and the tailnet one, each with
    its own Copy. */
 .invite-link { margin-bottom: 0.75rem; }

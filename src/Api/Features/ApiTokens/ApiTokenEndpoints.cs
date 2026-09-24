@@ -17,7 +17,7 @@ public static class ApiTokenEndpoints
         Guid Id, string Name, string Prefix, bool ReadOnly, DateTimeOffset CreatedAt, string Token, DateTimeOffset? ExpiresAt);
     public record TokenResponse(
         Guid Id, string Name, string Prefix, bool ReadOnly, DateTimeOffset CreatedAt, DateTimeOffset? LastUsedAt,
-        DateTimeOffset? ExpiresAt);
+        DateTimeOffset? ExpiresAt, long UseCount = 0, string? LastUsedFrom = null);
 
     public const int DefaultLifetimeDays = 90;
 
@@ -39,7 +39,7 @@ public static class ApiTokenEndpoints
         // provider cannot ORDER BY DateTimeOffset.
         return Results.Ok(tokens
             .OrderByDescending(t => t.CreatedAt)
-            .Select(t => new TokenResponse(t.Id, t.Name, t.Prefix, t.ReadOnly, t.CreatedAt, t.LastUsedAt, t.ExpiresAt)));
+            .Select(t => new TokenResponse(t.Id, t.Name, t.Prefix, t.ReadOnly, t.CreatedAt, t.LastUsedAt, t.ExpiresAt, t.UseCount, t.LastUsedFrom)));
     }
 
     private static async Task<IResult> Create(
