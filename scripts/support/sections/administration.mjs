@@ -129,7 +129,9 @@ const TOKENS_MOCK = [
 export const changes = {
   'Invites': '0.6: with Tailscale, a second link for people on your tailnet.',
   'API tokens (administration)': 'New in 0.6.',
-  'Administration': '0.6: the API tokens tab, and how to open each tab.',
+  'Administration': '0.6: the API tokens and About tabs, and how to open each tab.',
+  'About (administration)': 'New in 0.6.',
+  'Users': '0.6: a Tailscale reset link, when Tesria is on a tailnet.',
 }
 
 export const shots = () => [
@@ -334,6 +336,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   await ensure('Audit', root)
   const settings = await ensure('Settings (administration)', root)
   await ensure('Branding', root)
+  await ensure('About (administration)', root)
 
   // ============================================================ Overview
   await page('Administration', null, doc(
@@ -359,6 +362,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(pageLink('Audit'), ': the record of who changed what, and when.')),
       li(p(pageLink('Settings (administration)', 'Settings'), ': the instance’s name and address, which sites may be embedded, who can join, and the email server.')),
       li(p(pageLink('Branding'), ': your organization’s name, logo and colors. The owner’s, unless they share it.')),
+      li(p(pageLink('About (administration)', 'About'), ': this version of Tesria, supporting it, everything it is built from, and a check for known vulnerabilities.')),
     ),
 
     h(2, 'Your first week as administrator'),
@@ -454,6 +458,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('In their row. A box appears above the list with a one-time link. It works once, for one hour, and is shown only this once.'),
     step(2, 'Copy the link and hand it over'),
     p('Choose ', b('Copy'), ' and give it to them yourself, in person or through a channel you trust. They open it and choose a new password.'),
+    p('If your Tesria is also on a tailnet, the box shows two links, ', b('At this address'), ' and ', b('Through Tailscale'), ': give them the one they can reach. The same goes for the email ', b('Forgot your password?'), ' sends.'),
     panel('note', p(b('The link starts with the address you are using.'), ' If you opened Tesria as ', c('localhost'), ' on the server, the link will too, and it will not work on anyone else’s computer. Open Tesria by the address everyone uses first.')),
     p('Accounts that sign in through single sign-on have no password in Tesria, so they have no Reset password. A new password does not turn off two-factor; that is the next job.'),
 
@@ -889,6 +894,37 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'Going back'),
     p(b('Reset to Tesria'), ', after asking, removes the brand name, the logos and the favicon, and puts back Tesria’s colors with nobody held to a theme or accent. The uploaded files are deleted and cannot be brought back. The instance name is not changed.'),
+  ))
+
+  await page('About (administration)', root, doc(
+    p('The About tab says which Tesria this is, and lists everything it is built from, with each license. Its main job is for the day a security problem is announced in something widely used: it tells you, in one click, whether your Tesria includes it.'),
+    p('To open it, choose ', ...adminAt('About'), '. Anyone who can see the Dashboard can open it; checking for vulnerabilities needs the right to see security alerts.'),
+
+    h(2, 'Which Tesria this is'),
+    p('The version at the top is the one to quote when you ask for help, and the one to compare with the ', pageLink('Release notes'), '. After an upgrade it also says what you upgraded from, and when. Links go to tesria.com, the source code, and the licenses of everything Tesria includes.'),
+
+    h(2, 'Checking for known vulnerabilities'),
+    p('When a vulnerability is announced in a package many programs use, the first question is: am I affected?'),
+    step(1, 'Choose Check for known vulnerabilities'),
+    p('Tesria asks OSV.dev, the open database of vulnerabilities behind GitHub’s and npm’s security advisories, about every package it includes. The answer takes a few seconds.'),
+    step(2, 'Read the result'),
+    ul(
+      li(p(b('No known vulnerabilities'), ', with the date and who checked: nothing Tesria includes has a published vulnerability as of that moment.')),
+      li(p(b('A list of packages'), ': each with the vulnerabilities found (their ids, the CVE number when there is one, how severe, and a sentence on what it is), linked to the full advisory. The advisory says which version of the package fixes it; the fix reaches you when a Tesria release updates the package, so upgrade when one does. Until then, the advisory usually says what the problem needs to be exploited, which tells you how worried to be.')),
+    ),
+    panel('note', p(b('What the check sends.'), ' The names and versions of the packages, and, like any request, your server’s address. Nothing about your wiki, its pages or its people. It happens only when someone chooses the button, never on its own. A server that cannot reach the internet says so, and still shows the list.')),
+    p('The last result stays on the page, with when it was made, until someone checks again.'),
+    p('The check covers the packages. The container images have their own section, next.'),
+
+    h(2, 'Container images'),
+    p('The operating systems and runtimes Tesria runs on: one image for the app, one for the database and backups, and so on, each with a line saying what it is for. Images marked as building the app, as optional, or as for testing only are not running on an ordinary Tesria. OSV.dev does not cover images, so each has a command to check it with Docker’s own tools on the server; choose ', b('Copy'), ' beside it and run it in a terminal there. ', c('docker scout cves'), ' comes with Docker Desktop, and ', c('trivy image'), ' works the same way.'),
+    p('Images get security updates of their own between Tesria releases. To pick them up, on the server run ', c('docker compose pull'), ' and ', c('docker compose build --pull'), ', then ', c('docker compose up -d'), '.'),
+
+    h(2, 'Packages'),
+    p('Every other package this version ships, for each part of Tesria: the server, the web app, the collaboration service and the PDF service. Filter by name or license, or choose one part. ', b('Third-party licenses'), ', at the top, has the full license text of each.'),
+
+    h(2, 'Supporting Tesria'),
+    p('Tesria is free. If it is useful to you and you would like to say thanks, the ', b('Support Tesria on Patreon'), ' button is there for that. It is never required, and nothing in Tesria depends on it.'),
   ))
 }
 

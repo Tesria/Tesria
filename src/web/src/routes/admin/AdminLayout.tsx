@@ -64,6 +64,7 @@ export function AdminLayout() {
     { to: '/admin/groups', label: 'Groups', permission: Permission.GroupsManage },
     { to: '/admin/audit', label: 'Audit', permission: Permission.AuditView },
     { to: '/admin/branding', label: 'Branding', permission: Permission.SettingsBranding },
+    { to: '/admin/about', label: 'About', permission: Permission.DashboardView },
   ]
   const visible = tabs.filter((t) => can(t.permission) || (t.or !== undefined && can(t.or)))
   // The owner always reaches the matrix, even having taken permissions.view

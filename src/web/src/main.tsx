@@ -41,6 +41,7 @@ import { InvitePage } from './routes/InvitePage'
 import { AdminSettingsPage } from './routes/admin/AdminSettingsPage'
 import { AdminSecurityPage } from './routes/admin/AdminSecurityPage'
 import { AdminApiTokensPage } from './routes/admin/AdminApiTokensPage'
+import { AdminAboutPage } from './routes/admin/AdminAboutPage'
 import { AdminBackupsPage } from './routes/admin/AdminBackupsPage'
 import { AdminRolesPage } from './routes/admin/AdminRolesPage'
 import { AdminBrandingPage } from './routes/admin/AdminBrandingPage'
@@ -124,6 +125,7 @@ const router = createBrowserRouter(
                   <Route path="audit" element={<AuditPage />} />
                   <Route path="settings" element={<AdminSettingsPage />} />
                   <Route path="branding" element={<AdminBrandingPage />} />
+                  <Route path="about" element={<AdminAboutPage />} />
                 </Route>
               </Route>
             </Route>

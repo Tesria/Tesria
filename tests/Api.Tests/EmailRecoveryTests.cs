@@ -114,4 +114,29 @@ public class EmailRecoveryTests
             last = (await factory.CreateClient().PostAsJsonAsync("/api/auth/recover/email", new { Email = "admin@example.com" })).StatusCode;
         Assert.Equal(HttpStatusCode.TooManyRequests, last);
     }
+
+    [Fact]
+    public async Task With_Tailscale_a_reset_carries_the_tailnet_link_too()
+    {
+        var status = Path.Combine(Path.GetTempPath(), $"ts-{Guid.NewGuid():N}.json");
+        File.WriteAllText(status, """{"BackendState":"Running","Self":{"DNSName":"tesria.example-tailnet.ts.net.","Online":true}}""");
+        using var factory = new TestAppFactory(new Dictionary<string, string?> { ["Tailscale:StatusFile"] = status });
+        var admin = await InstanceWithEmailAsync(factory);
+        var outbox = factory.Services.GetRequiredService<RecordingEmailSender>();
+
+        (await factory.CreateClient().PostAsJsonAsync("/api/auth/recover/email", new { Email = "admin@example.com" }))
+            .EnsureSuccessStatusCode();
+        var mail = Assert.Single(outbox.Sent);
+        var token = TokenFrom(mail);
+        Assert.Contains($"https://wiki.example.com/reset?token={token}", mail.Text);
+        Assert.Contains($"https://tesria.example-tailnet.ts.net/reset?token={token}", mail.Text);
+
+        // The link an administrator makes for someone has it as well.
+        await RegisterAsync(factory.CreateClient(), "sam@example.com");
+        var users = await admin.GetFromJsonAsync<List<System.Text.Json.JsonElement>>("/api/admin/users");
+        var sam = users!.Single(u => u.GetProperty("email").GetString() == "sam@example.com").GetProperty("id").GetString();
+        var issued = await (await admin.PostAsync($"/api/admin/users/{sam}/reset-password", null))
+            .Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        Assert.StartsWith("https://tesria.example-tailnet.ts.net/reset?token=", issued.GetProperty("tailnetUrl").GetString());
+    }
 }

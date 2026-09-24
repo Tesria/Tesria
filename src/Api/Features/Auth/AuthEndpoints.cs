@@ -917,12 +917,20 @@ public static class AuthEndpoints
         audit.RecordAs(user.Id, "user.recovery_email_requested", "user", user.Id, new { Ip = ClientIp(http) });
         await db.SaveChangesAsync();
 
-        var link = $"{Infrastructure.Email.SiteUrl.Resolve(s, config)}/reset?token={token}";
+        var path = $"/reset?token={token}";
+        var link = Infrastructure.Email.SiteUrl.Resolve(s, config) + path;
+        // Both addresses when Tesria is also on a tailnet, as invites have:
+        // someone who reaches it only through Tailscale can reset too.
+        var tailnet = Admin.TailscaleEndpoints.AddressOf(config) is { } tailnetAddress ? tailnetAddress + path : null;
+        var alsoTailnet = tailnet is not null && tailnet != link
+            ? $"If you reach {s.InstanceName} through Tailscale, use this address instead:\n{tailnet}\n\n"
+            : "";
         await email.SendAsync(new Infrastructure.Email.EmailMessage(
             user.Email,
             $"[{s.InstanceName}] Reset your password",
             $"Someone, probably you, asked to reset the password for {user.Email} on {s.InstanceName}.\n\n" +
             $"Choose a new password here (the link works once and expires in one hour):\n{link}\n\n" +
+            alsoTailnet +
             "If you did not ask for this, ignore this message; your password has not changed."));
 
         return accepted;

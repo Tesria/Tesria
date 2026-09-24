@@ -67,37 +67,58 @@ service by sheer volume, which is the network's job, not the app's.
 
 ## Known gaps and accepted trade-offs
 
-Recorded so nobody rediscovers them as surprises:
+Recorded so nobody rediscovers them as surprises. Each ends with a verdict
+from the enterprise-readiness review of 2026-09-24: **Acceptable** (a
+reasoned trade-off, documented), **Should fix** (worth doing before a 1.0),
+or **Must fix** (before Tesria is offered for enterprise use). The fixes
+are scheduled as dev-plan 14.3.
 
 1. **`/api/health` reports the version.** Useful for operators and
    monitoring; a scanner learns which release you run. Acceptable while
    the audit gate keeps releases clean.
+   *Should fix:* answer the version only to signed-in callers (`/api/health`
+   and `/api/instance`), and a bare `ok` to anyone else. Monitoring needs
+   liveness, not the release number.
 2. **`img-src https:` in the CSP.** Authors paste image URLs. A remote
    image can log the reader's address. Restricting it would break content;
    Phase 7's media work may add an image proxy.
+   *Should fix:* an administrator setting that limits images to this
+   instance and a list of hosts, off by default. Organizations that treat
+   reader privacy strictly need it; most wikis do not.
 3. **Registration is not an audit entry.** The registration-burst detector
    sees it; the audit log does not list `user.registered`. Follow-up.
+   *Must fix:* an audit log that misses accounts being created is
+   incomplete for any compliance use. A one-line change.
 4. **Threat-detection counters and cooldowns are in-process.** A restart
    resets them. Written events are never lost.
+   *Acceptable* for a single server, the supported topology.
 5. **`SecurityAlerts` is mutable** (it has to be: acknowledging is an
    update). An attacker with the app role could mark alerts resolved. The
    underlying `SecurityEvents` cannot be touched, and the notifications
    were already sent.
+   *Acceptable:* the evidence is immutable; the alert list is a to-do list.
 6. **The TOTP challenge is not single-use** within its five minutes. It is
    bound to the client address and needs a code, and codes are single-use;
    replaying the challenge buys nothing.
+   *Should fix:* making it single-use is small and removes a question every
+   security reviewer will ask.
 7. **Trust by private range.** The default `Proxy:TrustedNetworks` trusts
    RFC 1918: safe only because port 8080 is never published. Fronting the
    app with a different proxy, or publishing the port, changes that.
+   *Should fix:* give the Compose network a fixed subnet and trust only
+   that, so the default is right even if someone publishes the port.
 8. **Alerts need email set up to reach anyone who is not signed in.**
    Without an email server, alerts reach administrators only through the
    in-app bell. Set up email (Administration, Settings), or forward
    `docker compose logs app` (the `Tesria.Audit` category and any `crit:`
    line) to something that pages you.
+   *Acceptable:* documented, and the setup wizard offers email.
 9. **Recovery codes are a second factor's backup and a password reset.**
    One set, two roles, by design (one set is one thing to keep safe). A
    stolen set is therefore a full account takeover; treat them like a
    password.
+   *Acceptable*, and common (GitHub works the same way). An organization
+   with single sign-on can have its own provider handle recovery instead.
 10. **The database owner's password is in the app's environment** (found by
     the second pre-release review, 2026-09-24). The app needs it at startup
     to migrate the schema and create its least-privilege role, and the
@@ -106,22 +127,35 @@ Recorded so nobody rediscovers them as surprises:
     database-owner access, which the least-privilege role otherwise stops.
     The fix is a separate one-shot service that migrates and then exits;
     not done yet.
+    *Must fix:* the least-privilege role is a headline defense, and this
+    quietly undoes it. A `migrate` service holding the owner credentials,
+    and the app and collaboration service given only the app role.
 11. **An open live-editing connection outlives a change of permission.**
     The collaboration service checks its token when a browser connects,
     not afterwards. Someone suspended, or restricted from a page, keeps
     receiving and sending edits on a connection already open until it
     closes (a reload, a network change, the tab closed). New connections
     are refused at once.
+    *Must fix:* offboarding has to cut access immediately. The
+    collaboration service should re-check each connection when its token
+    expires (30 minutes) and when the app tells it a user was suspended,
+    signed out or restricted, and close it.
 12. **Asking for a password reset takes longer for an address that has an
     account,** because the email is sent before the answer. The answer
     itself is the same either way. Sending it in the background would
     close this; not done yet.
+    *Should fix:* small, and it closes the last account-enumeration channel.
 13. **Some state assumes a single app instance:** render tokens are signed
     with a key the app makes when it starts, and export progress, rate
     limits and settings are cached in memory. Running more than one app
     container is not supported.
+    *Acceptable* for now, as a stated limit: one app container per
+    instance. Enterprise high availability (several app containers behind
+    a load balancer) would need shared state (a distributed cache and a
+    shared token key) and is a feature, not a fix.
 14. **IPv6 NAT64 addresses** (`64:ff9b::/96`) are not in the egress guard's
     private list. It matters only on an IPv6-only host with NAT64.
+    *Should fix:* one line in the guard's list.
 
 ## Internet-readiness checklist
 

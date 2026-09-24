@@ -2,8 +2,14 @@
   "Administration": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "0.6: the API tokens tab, and how to open each tab.",
-    "hash": "b0f5527d33edadb1"
+    "note": "0.6: the API tokens and About tabs, and how to open each tab.",
+    "hash": "d357828bfc1a0cdf"
+  },
+  "Administration / About (administration)": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "New in 0.6.",
+    "hash": "761382948c07bd4a"
   },
   "Administration / API tokens (administration)": {
     "appliesTo": "0.6",
@@ -80,8 +86,8 @@
   "Administration / Users": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Revised.",
-    "hash": "c1dd512349289331"
+    "note": "0.6: a Tailscale reset link, when Tesria is on a tailnet.",
+    "hash": "80055bb4a0126408"
   },
   "Backups and recovery / How backups work": {
     "appliesTo": "0.5",

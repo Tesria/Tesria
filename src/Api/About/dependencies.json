@@ -1,0 +1,3145 @@
+{
+  "format": 1,
+  "dependencies": [
+    {
+      "ecosystem": "npm",
+      "name": "@hocuspocus/common",
+      "version": "3.4.4",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@hocuspocus/common/v/3.4.4"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@hocuspocus/extension-database",
+      "version": "3.4.4",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@hocuspocus/extension-database/v/3.4.4"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@hocuspocus/server",
+      "version": "3.4.4",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@hocuspocus/server/v/3.4.4"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "async-lock",
+      "version": "1.4.1",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/async-lock/v/1.4.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "async-mutex",
+      "version": "0.5.0",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/async-mutex/v/0.5.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "isomorphic.js",
+      "version": "0.2.5",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/isomorphic.js/v/0.2.5"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "kleur",
+      "version": "4.1.5",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/kleur/v/4.1.5"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "lib0",
+      "version": "0.2.117",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/lib0/v/0.2.117"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "orderedmap",
+      "version": "2.1.1",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/orderedmap/v/2.1.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "pg",
+      "version": "8.23.0",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/pg/v/8.23.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "pg-cloudflare",
+      "version": "1.4.0",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/pg-cloudflare/v/1.4.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "pg-connection-string",
+      "version": "2.14.0",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/pg-connection-string/v/2.14.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "pg-int8",
+      "version": "1.0.1",
+      "license": "ISC",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/pg-int8/v/1.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "pg-pool",
+      "version": "3.14.0",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/pg-pool/v/3.14.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "pg-protocol",
+      "version": "1.16.0",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/pg-protocol/v/1.16.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "pg-types",
+      "version": "2.2.0",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/pg-types/v/2.2.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "pgpass",
+      "version": "1.0.5",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/pgpass/v/1.0.5"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "postgres-array",
+      "version": "2.0.0",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/postgres-array/v/2.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "postgres-bytea",
+      "version": "1.0.1",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/postgres-bytea/v/1.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "postgres-date",
+      "version": "1.0.7",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/postgres-date/v/1.0.7"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "postgres-interval",
+      "version": "1.2.0",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/postgres-interval/v/1.2.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "prosemirror-model",
+      "version": "1.25.11",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/prosemirror-model/v/1.25.11"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "prosemirror-state",
+      "version": "1.4.4",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/prosemirror-state/v/1.4.4"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "prosemirror-transform",
+      "version": "1.12.1",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/prosemirror-transform/v/1.12.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "prosemirror-view",
+      "version": "1.42.4",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/prosemirror-view/v/1.42.4"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "split2",
+      "version": "4.2.0",
+      "license": "ISC",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/split2/v/4.2.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "tslib",
+      "version": "2.8.1",
+      "license": "0BSD",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/tslib/v/2.8.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "ws",
+      "version": "8.21.3",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/ws/v/8.21.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "xtend",
+      "version": "4.0.2",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/xtend/v/4.0.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "y-prosemirror",
+      "version": "1.3.7",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/y-prosemirror/v/1.3.7"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "y-protocols",
+      "version": "1.0.7",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/y-protocols/v/1.0.7"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "yjs",
+      "version": "13.6.32",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/yjs/v/13.6.32"
+    },
+    {
+      "ecosystem": "Container",
+      "name": "caddy",
+      "version": "2",
+      "license": "See the image",
+      "component": "Container image",
+      "direct": true,
+      "url": null,
+      "note": "Runs Caddy, which answers HTTPS in front of everything."
+    },
+    {
+      "ecosystem": "Container",
+      "name": "mcr.microsoft.com/dotnet/aspnet",
+      "version": "10.0",
+      "license": "See the image",
+      "component": "Container image",
+      "direct": true,
+      "url": null,
+      "note": "Runs the app: the server and the web pages."
+    },
+    {
+      "ecosystem": "Container",
+      "name": "mcr.microsoft.com/dotnet/sdk",
+      "version": "10.0",
+      "license": "See the image",
+      "component": "Container image",
+      "direct": true,
+      "url": null,
+      "note": "Builds the app. Not part of what runs."
+    },
+    {
+      "ecosystem": "Container",
+      "name": "mcr.microsoft.com/playwright",
+      "version": "v1.63.0-noble",
+      "license": "See the image",
+      "component": "Container image",
+      "direct": true,
+      "url": null,
+      "note": "Runs the PDF service (exports)."
+    },
+    {
+      "ecosystem": "Container",
+      "name": "node",
+      "version": "22-slim",
+      "license": "See the image",
+      "component": "Container image",
+      "direct": true,
+      "url": null,
+      "note": "Runs the collaboration service, and builds the web app."
+    },
+    {
+      "ecosystem": "Container",
+      "name": "postgres",
+      "version": "18",
+      "license": "See the image",
+      "component": "Container image",
+      "direct": true,
+      "url": null,
+      "note": "Runs the database and both backup services."
+    },
+    {
+      "ecosystem": "Container",
+      "name": "quay.io/minio/minio",
+      "version": "latest",
+      "license": "See the image",
+      "component": "Container image",
+      "direct": true,
+      "url": null,
+      "note": "Testing only: offsite backup tests (--profile offsite-test)."
+    },
+    {
+      "ecosystem": "Container",
+      "name": "tailscale/tailscale",
+      "version": "stable",
+      "license": "See the image",
+      "component": "Container image",
+      "direct": true,
+      "url": null,
+      "note": "Optional: only when started with --profile tailscale."
+    },
+    {
+      "ecosystem": "npm",
+      "name": "playwright-core",
+      "version": "1.63.0",
+      "license": "Apache-2.0",
+      "component": "PDF service",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/playwright-core/v/1.63.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "BouncyCastle.Cryptography",
+      "version": "2.6.2",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/BouncyCastle.Cryptography/2.6.2"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "ExCSS",
+      "version": "4.3.1",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/ExCSS/4.3.1"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "HarfBuzzSharp",
+      "version": "14.2.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/HarfBuzzSharp/14.2.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "HarfBuzzSharp.NativeAssets.Linux",
+      "version": "14.2.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/HarfBuzzSharp.NativeAssets.Linux/14.2.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "HarfBuzzSharp.NativeAssets.macOS",
+      "version": "14.2.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/HarfBuzzSharp.NativeAssets.macOS/14.2.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "HarfBuzzSharp.NativeAssets.Win32",
+      "version": "14.2.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/HarfBuzzSharp.NativeAssets.Win32/14.2.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Humanizer.Core",
+      "version": "2.14.1",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Humanizer.Core/2.14.1"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Isopoh.Cryptography.Argon2",
+      "version": "2.0.0",
+      "license": "See LICENSE",
+      "component": "Server",
+      "direct": true,
+      "url": "https://www.nuget.org/packages/Isopoh.Cryptography.Argon2/2.0.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Isopoh.Cryptography.Blake2b",
+      "version": "2.0.0",
+      "license": "See LICENSE",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Isopoh.Cryptography.Blake2b/2.0.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Isopoh.Cryptography.SecureArray",
+      "version": "2.0.0",
+      "license": "See LICENSE",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Isopoh.Cryptography.SecureArray/2.0.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "MailKit",
+      "version": "4.17.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": true,
+      "url": "https://www.nuget.org/packages/MailKit/4.17.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Markdig",
+      "version": "1.3.2",
+      "license": "BSD-2-Clause",
+      "component": "Server",
+      "direct": true,
+      "url": "https://www.nuget.org/packages/Markdig/1.3.2"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.AspNetCore.Authentication.OpenIdConnect",
+      "version": "10.0.10",
+      "license": "MIT",
+      "component": "Server",
+      "direct": true,
+      "url": "https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.OpenIdConnect/10.0.10"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.AspNetCore.DataProtection.EntityFrameworkCore",
+      "version": "10.0.10",
+      "license": "MIT",
+      "component": "Server",
+      "direct": true,
+      "url": "https://www.nuget.org/packages/Microsoft.AspNetCore.DataProtection.EntityFrameworkCore/10.0.10"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.AspNetCore.OpenApi",
+      "version": "10.0.12",
+      "license": "MIT",
+      "component": "Server",
+      "direct": true,
+      "url": "https://www.nuget.org/packages/Microsoft.AspNetCore.OpenApi/10.0.12"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.Bcl.Cryptography",
+      "version": "10.0.2",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.Bcl.Cryptography/10.0.2"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.Build.Framework",
+      "version": "18.0.2",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.Build.Framework/18.0.2"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.CodeAnalysis.Analyzers",
+      "version": "3.11.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.CodeAnalysis.Analyzers/3.11.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.CodeAnalysis.Common",
+      "version": "5.0.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.CodeAnalysis.Common/5.0.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.CodeAnalysis.CSharp",
+      "version": "5.0.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.CodeAnalysis.CSharp/5.0.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.CodeAnalysis.CSharp.Workspaces",
+      "version": "5.0.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.CodeAnalysis.CSharp.Workspaces/5.0.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.CodeAnalysis.Workspaces.Common",
+      "version": "5.0.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.CodeAnalysis.Workspaces.Common/5.0.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.CodeAnalysis.Workspaces.MSBuild",
+      "version": "5.0.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.CodeAnalysis.Workspaces.MSBuild/5.0.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.EntityFrameworkCore",
+      "version": "10.0.10",
+      "license": "MIT",
+      "component": "Server",
+      "direct": true,
+      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore/10.0.10"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.EntityFrameworkCore.Abstractions",
+      "version": "10.0.10",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Abstractions/10.0.10"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.EntityFrameworkCore.Analyzers",
+      "version": "10.0.10",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Analyzers/10.0.10"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.EntityFrameworkCore.Design",
+      "version": "10.0.10",
+      "license": "MIT",
+      "component": "Server",
+      "direct": true,
+      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Design/10.0.10"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.EntityFrameworkCore.Relational",
+      "version": "10.0.10",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Relational/10.0.10"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.Extensions.AI.Abstractions",
+      "version": "10.8.3",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.Extensions.AI.Abstractions/10.8.3"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.Extensions.DependencyModel",
+      "version": "10.0.10",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.Extensions.DependencyModel/10.0.10"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore",
+      "version": "10.0.10",
+      "license": "MIT",
+      "component": "Server",
+      "direct": true,
+      "url": "https://www.nuget.org/packages/Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore/10.0.10"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.IdentityModel.Abstractions",
+      "version": "8.19.2",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.IdentityModel.Abstractions/8.19.2"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.IdentityModel.JsonWebTokens",
+      "version": "8.19.2",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.IdentityModel.JsonWebTokens/8.19.2"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.IdentityModel.Logging",
+      "version": "8.19.2",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.IdentityModel.Logging/8.19.2"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.IdentityModel.Protocols",
+      "version": "8.19.2",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.IdentityModel.Protocols/8.19.2"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.IdentityModel.Protocols.OpenIdConnect",
+      "version": "8.19.2",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.IdentityModel.Protocols.OpenIdConnect/8.19.2"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.IdentityModel.Tokens",
+      "version": "8.19.2",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.IdentityModel.Tokens/8.19.2"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.OpenApi",
+      "version": "2.12.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.OpenApi/2.12.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Microsoft.VisualStudio.SolutionPersistence",
+      "version": "1.0.52",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Microsoft.VisualStudio.SolutionPersistence/1.0.52"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "MimeKit",
+      "version": "4.17.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/MimeKit/4.17.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "ModelContextProtocol",
+      "version": "2.2.0",
+      "license": "Apache-2.0",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/ModelContextProtocol/2.2.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "ModelContextProtocol.AspNetCore",
+      "version": "2.2.0",
+      "license": "Apache-2.0",
+      "component": "Server",
+      "direct": true,
+      "url": "https://www.nuget.org/packages/ModelContextProtocol.AspNetCore/2.2.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "ModelContextProtocol.Core",
+      "version": "2.2.0",
+      "license": "Apache-2.0",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/ModelContextProtocol.Core/2.2.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Mono.TextTemplating",
+      "version": "3.0.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Mono.TextTemplating/3.0.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Newtonsoft.Json",
+      "version": "13.0.3",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Newtonsoft.Json/13.0.3"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Npgsql",
+      "version": "10.0.3",
+      "license": "PostgreSQL",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Npgsql/10.0.3"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Npgsql.EntityFrameworkCore.PostgreSQL",
+      "version": "10.0.3",
+      "license": "PostgreSQL",
+      "component": "Server",
+      "direct": true,
+      "url": "https://www.nuget.org/packages/Npgsql.EntityFrameworkCore.PostgreSQL/10.0.3"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Otp.NET",
+      "version": "1.4.1",
+      "license": "See LICENSE.txt",
+      "component": "Server",
+      "direct": true,
+      "url": "https://www.nuget.org/packages/Otp.NET/1.4.1"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Scalar.AspNetCore",
+      "version": "2.17.3",
+      "license": "MIT",
+      "component": "Server",
+      "direct": true,
+      "url": "https://www.nuget.org/packages/Scalar.AspNetCore/2.17.3"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "ShimSkiaSharp",
+      "version": "5.2.3",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/ShimSkiaSharp/5.2.3"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "SkiaSharp",
+      "version": "4.152.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": true,
+      "url": "https://www.nuget.org/packages/SkiaSharp/4.152.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "SkiaSharp.NativeAssets.Linux.NoDependencies",
+      "version": "4.152.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": true,
+      "url": "https://www.nuget.org/packages/SkiaSharp.NativeAssets.Linux.NoDependencies/4.152.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "SkiaSharp.NativeAssets.macOS",
+      "version": "4.152.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/SkiaSharp.NativeAssets.macOS/4.152.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "SkiaSharp.NativeAssets.Win32",
+      "version": "4.152.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/SkiaSharp.NativeAssets.Win32/4.152.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Svg.Animation",
+      "version": "5.2.3",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Svg.Animation/5.2.3"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Svg.Custom",
+      "version": "5.2.3",
+      "license": "MS-PL",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Svg.Custom/5.2.3"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Svg.Model",
+      "version": "5.2.3",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Svg.Model/5.2.3"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Svg.SceneGraph",
+      "version": "5.2.3",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/Svg.SceneGraph/5.2.3"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "Svg.Skia",
+      "version": "5.2.3",
+      "license": "MIT",
+      "component": "Server",
+      "direct": true,
+      "url": "https://www.nuget.org/packages/Svg.Skia/5.2.3"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "System.CodeDom",
+      "version": "6.0.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/System.CodeDom/6.0.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "System.Composition",
+      "version": "9.0.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/System.Composition/9.0.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "System.Composition.AttributedModel",
+      "version": "9.0.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/System.Composition.AttributedModel/9.0.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "System.Composition.Convention",
+      "version": "9.0.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/System.Composition.Convention/9.0.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "System.Composition.Hosting",
+      "version": "9.0.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/System.Composition.Hosting/9.0.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "System.Composition.Runtime",
+      "version": "9.0.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/System.Composition.Runtime/9.0.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "System.Composition.TypedParts",
+      "version": "9.0.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/System.Composition.TypedParts/9.0.0"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "System.IdentityModel.Tokens.Jwt",
+      "version": "8.19.2",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/System.IdentityModel.Tokens.Jwt/8.19.2"
+    },
+    {
+      "ecosystem": "NuGet",
+      "name": "System.Security.Cryptography.Pkcs",
+      "version": "10.0.0",
+      "license": "MIT",
+      "component": "Server",
+      "direct": false,
+      "url": "https://www.nuget.org/packages/System.Security.Cryptography.Pkcs/10.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@antfu/install-pkg",
+      "version": "2.0.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@antfu/install-pkg/v/2.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@braintree/sanitize-url",
+      "version": "7.1.2",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@braintree/sanitize-url/v/7.1.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@chevrotain/types",
+      "version": "11.1.2",
+      "license": "Apache-2.0",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@chevrotain/types/v/11.1.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@dnd-kit/accessibility",
+      "version": "3.1.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@dnd-kit/accessibility/v/3.1.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@dnd-kit/core",
+      "version": "6.3.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@dnd-kit/core/v/6.3.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@dnd-kit/sortable",
+      "version": "9.0.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@dnd-kit/sortable/v/9.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@dnd-kit/utilities",
+      "version": "3.2.2",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@dnd-kit/utilities/v/3.2.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@floating-ui/core",
+      "version": "1.8.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@floating-ui/core/v/1.8.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@floating-ui/dom",
+      "version": "1.8.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@floating-ui/dom/v/1.8.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@floating-ui/utils",
+      "version": "0.2.12",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@floating-ui/utils/v/0.2.12"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@hocuspocus/common",
+      "version": "4.4.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@hocuspocus/common/v/4.4.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@hocuspocus/provider",
+      "version": "4.4.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@hocuspocus/provider/v/4.4.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@iconify/types",
+      "version": "2.0.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@iconify/types/v/2.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@iconify/utils",
+      "version": "3.1.7",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@iconify/utils/v/3.1.7"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@lifeomic/attempt",
+      "version": "3.1.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@lifeomic/attempt/v/3.1.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@mermaid-js/parser",
+      "version": "1.2.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@mermaid-js/parser/v/1.2.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/core",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/core/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-blockquote",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-blockquote/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-bold",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-bold/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-bubble-menu",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-bubble-menu/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-bullet-list",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-bullet-list/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-code",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-code/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-code-block",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-code-block/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-code-block-lowlight",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-code-block-lowlight/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-collaboration",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-collaboration/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-collaboration-caret",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-collaboration-caret/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-document",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-document/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-dropcursor",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-dropcursor/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-floating-menu",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-floating-menu/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-gapcursor",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-gapcursor/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-hard-break",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-hard-break/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-heading",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-heading/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-highlight",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-highlight/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-horizontal-rule",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-horizontal-rule/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-image",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-image/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-italic",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-italic/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-link",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-link/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-list",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-list/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-list-item",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-list-item/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-list-keymap",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-list-keymap/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-ordered-list",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-ordered-list/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-paragraph",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-paragraph/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-strike",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-strike/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-subscript",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-subscript/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-superscript",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-superscript/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-table",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-table/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-task-item",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-task-item/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-task-list",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-task-list/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-text",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-text/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-text-align",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-text-align/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extension-underline",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extension-underline/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/extensions",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/extensions/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/pm",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@tiptap/pm/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/react",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@tiptap/react/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/starter-kit",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@tiptap/starter-kit/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/suggestion",
+      "version": "3.31.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@tiptap/suggestion/v/3.31.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tiptap/y-tiptap",
+      "version": "3.0.7",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@tiptap/y-tiptap/v/3.0.7"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3",
+      "version": "7.4.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3/v/7.4.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-array",
+      "version": "3.2.2",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-array/v/3.2.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-axis",
+      "version": "3.0.6",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-axis/v/3.0.6"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-brush",
+      "version": "3.0.6",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-brush/v/3.0.6"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-chord",
+      "version": "3.0.6",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-chord/v/3.0.6"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-color",
+      "version": "3.1.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-color/v/3.1.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-contour",
+      "version": "3.0.6",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-contour/v/3.0.6"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-delaunay",
+      "version": "6.0.4",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-delaunay/v/6.0.4"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-dispatch",
+      "version": "3.0.7",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-dispatch/v/3.0.7"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-drag",
+      "version": "3.0.7",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-drag/v/3.0.7"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-dsv",
+      "version": "3.0.7",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-dsv/v/3.0.7"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-ease",
+      "version": "3.0.2",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-ease/v/3.0.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-fetch",
+      "version": "3.0.7",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-fetch/v/3.0.7"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-force",
+      "version": "3.0.10",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-force/v/3.0.10"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-format",
+      "version": "3.0.4",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-format/v/3.0.4"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-geo",
+      "version": "3.1.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-geo/v/3.1.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-hierarchy",
+      "version": "3.1.7",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-hierarchy/v/3.1.7"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-interpolate",
+      "version": "3.0.4",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-interpolate/v/3.0.4"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-path",
+      "version": "3.1.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-path/v/3.1.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-polygon",
+      "version": "3.0.2",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-polygon/v/3.0.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-quadtree",
+      "version": "3.0.6",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-quadtree/v/3.0.6"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-random",
+      "version": "3.0.4",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-random/v/3.0.4"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-scale",
+      "version": "4.0.9",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-scale/v/4.0.9"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-scale-chromatic",
+      "version": "3.1.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-scale-chromatic/v/3.1.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-selection",
+      "version": "3.0.11",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-selection/v/3.0.11"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-shape",
+      "version": "3.2.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-shape/v/3.2.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-time",
+      "version": "3.0.4",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-time/v/3.0.4"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-time-format",
+      "version": "4.0.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-time-format/v/4.0.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-timer",
+      "version": "3.0.2",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-timer/v/3.0.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-transition",
+      "version": "3.0.9",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-transition/v/3.0.9"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/d3-zoom",
+      "version": "3.0.8",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/d3-zoom/v/3.0.8"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/geojson",
+      "version": "7946.0.16",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/geojson/v/7946.0.16"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/hast/v/3.0.5"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/katex",
+      "version": "0.16.8",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@types/katex/v/0.16.8"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/node",
+      "version": "24.13.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/node/v/24.13.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/qrcode",
+      "version": "1.5.6",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/@types/qrcode/v/1.5.6"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/react",
+      "version": "19.2.17",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/react/v/19.2.17"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/react-dom",
+      "version": "19.2.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/react-dom/v/19.2.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/trusted-types",
+      "version": "2.0.7",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/trusted-types/v/2.0.7"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/unist/v/3.0.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/use-sync-external-store",
+      "version": "0.0.6",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@types/use-sync-external-store/v/0.0.6"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@upsetjs/venn.js",
+      "version": "2.0.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@upsetjs/venn.js/v/2.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "ansi-regex",
+      "version": "5.0.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/ansi-regex/v/5.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "ansi-styles",
+      "version": "4.3.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/ansi-styles/v/4.3.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "camelcase",
+      "version": "5.3.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/camelcase/v/5.3.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "cliui",
+      "version": "6.0.0",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/cliui/v/6.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "color-convert",
+      "version": "2.0.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/color-convert/v/2.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "color-name",
+      "version": "1.1.4",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/color-name/v/1.1.4"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "commander",
+      "version": "7.2.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/commander/v/7.2.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "commander",
+      "version": "8.3.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/commander/v/8.3.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "cookie",
+      "version": "1.1.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/cookie/v/1.1.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "cose-base",
+      "version": "1.0.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/cose-base/v/1.0.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "cose-base",
+      "version": "2.2.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/cose-base/v/2.2.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "csstype",
+      "version": "3.2.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/csstype/v/3.2.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "cytoscape",
+      "version": "3.34.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/cytoscape/v/3.34.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "cytoscape-cose-bilkent",
+      "version": "4.1.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/cytoscape-cose-bilkent/v/4.1.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "cytoscape-fcose",
+      "version": "2.2.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/cytoscape-fcose/v/2.2.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3",
+      "version": "7.9.0",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3/v/7.9.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-array",
+      "version": "2.12.1",
+      "license": "BSD-3-Clause",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-array/v/2.12.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-array",
+      "version": "3.2.4",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-array/v/3.2.4"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-axis",
+      "version": "3.0.0",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-axis/v/3.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-brush",
+      "version": "3.0.0",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-brush/v/3.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-chord",
+      "version": "3.0.1",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-chord/v/3.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-color",
+      "version": "3.1.0",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-color/v/3.1.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-contour",
+      "version": "4.0.2",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-contour/v/4.0.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-delaunay",
+      "version": "6.0.4",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-delaunay/v/6.0.4"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-dispatch",
+      "version": "3.0.1",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-dispatch/v/3.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-drag",
+      "version": "3.0.0",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-drag/v/3.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-dsv",
+      "version": "3.0.1",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-dsv/v/3.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-ease",
+      "version": "3.0.1",
+      "license": "BSD-3-Clause",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-ease/v/3.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-fetch",
+      "version": "3.0.1",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-fetch/v/3.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-force",
+      "version": "3.0.0",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-force/v/3.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-format",
+      "version": "3.1.2",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-format/v/3.1.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-geo",
+      "version": "3.1.1",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-geo/v/3.1.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-hierarchy",
+      "version": "3.1.2",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-hierarchy/v/3.1.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-interpolate",
+      "version": "3.0.1",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-interpolate/v/3.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-path",
+      "version": "1.0.9",
+      "license": "BSD-3-Clause",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-path/v/1.0.9"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-path",
+      "version": "3.1.0",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-path/v/3.1.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-polygon",
+      "version": "3.0.1",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-polygon/v/3.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-quadtree",
+      "version": "3.0.1",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-quadtree/v/3.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-random",
+      "version": "3.0.1",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-random/v/3.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-sankey",
+      "version": "0.12.3",
+      "license": "BSD-3-Clause",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-sankey/v/0.12.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-scale",
+      "version": "4.0.2",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-scale/v/4.0.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-scale-chromatic",
+      "version": "3.1.0",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-scale-chromatic/v/3.1.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-selection",
+      "version": "3.0.0",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-selection/v/3.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-shape",
+      "version": "1.3.7",
+      "license": "BSD-3-Clause",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-shape/v/1.3.7"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-shape",
+      "version": "3.2.0",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-shape/v/3.2.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-time",
+      "version": "3.1.0",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-time/v/3.1.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-time-format",
+      "version": "4.1.0",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-time-format/v/4.1.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-timer",
+      "version": "3.0.1",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-timer/v/3.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-transition",
+      "version": "3.0.1",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-transition/v/3.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "d3-zoom",
+      "version": "3.0.0",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/d3-zoom/v/3.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "dagre-d3-es",
+      "version": "7.0.14",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/dagre-d3-es/v/7.0.14"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "dayjs",
+      "version": "1.11.23",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/dayjs/v/1.11.23"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "decamelize",
+      "version": "1.2.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/decamelize/v/1.2.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "delaunator",
+      "version": "5.1.0",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/delaunator/v/5.1.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "dequal",
+      "version": "2.0.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/dequal/v/2.0.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "devlop",
+      "version": "1.1.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/devlop/v/1.1.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "dijkstrajs",
+      "version": "1.0.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/dijkstrajs/v/1.0.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "dompurify",
+      "version": "3.4.15",
+      "license": "(MPL-2.0 OR Apache-2.0)",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/dompurify/v/3.4.15"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "emoji-regex",
+      "version": "8.0.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/emoji-regex/v/8.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "es-toolkit",
+      "version": "1.52.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/es-toolkit/v/1.52.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "fast-equals",
+      "version": "5.4.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/fast-equals/v/5.4.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "fastdom",
+      "version": "1.0.12",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/fastdom/v/1.0.12"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "find-up",
+      "version": "4.1.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/find-up/v/4.1.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "get-caller-file",
+      "version": "2.0.5",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/get-caller-file/v/2.0.5"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "hachure-fill",
+      "version": "0.5.2",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/hachure-fill/v/0.5.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "highlight.js",
+      "version": "11.11.1",
+      "license": "BSD-3-Clause",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/highlight.js/v/11.11.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "iconv-lite",
+      "version": "0.6.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/iconv-lite/v/0.6.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "import-meta-resolve",
+      "version": "4.2.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/import-meta-resolve/v/4.2.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "internmap",
+      "version": "1.0.1",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/internmap/v/1.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "internmap",
+      "version": "2.0.3",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/internmap/v/2.0.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "is-fullwidth-code-point",
+      "version": "3.0.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/is-fullwidth-code-point/v/3.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "isomorphic.js",
+      "version": "0.2.5",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/isomorphic.js/v/0.2.5"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "katex",
+      "version": "0.16.47",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/katex/v/0.16.47"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "khroma",
+      "version": "2.1.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/khroma/v/2.1.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "layout-base",
+      "version": "1.0.2",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/layout-base/v/1.0.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "layout-base",
+      "version": "2.0.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/layout-base/v/2.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "lib0",
+      "version": "0.2.117",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/lib0/v/0.2.117"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "linkifyjs",
+      "version": "4.3.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/linkifyjs/v/4.3.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "locate-path",
+      "version": "5.0.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/locate-path/v/5.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "lodash-es",
+      "version": "4.18.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/lodash-es/v/4.18.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "lowlight",
+      "version": "3.3.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/lowlight/v/3.3.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "marked",
+      "version": "16.4.2",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/marked/v/16.4.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "mermaid",
+      "version": "11.17.2",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/mermaid/v/11.17.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "orderedmap",
+      "version": "2.1.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/orderedmap/v/2.1.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "p-limit",
+      "version": "2.3.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/p-limit/v/2.3.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "p-locate",
+      "version": "4.1.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/p-locate/v/4.1.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "p-try",
+      "version": "2.2.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/p-try/v/2.2.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "package-manager-detector",
+      "version": "1.8.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/package-manager-detector/v/1.8.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "path-data-parser",
+      "version": "0.1.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/path-data-parser/v/0.1.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "path-exists",
+      "version": "4.0.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/path-exists/v/4.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "pngjs",
+      "version": "5.0.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/pngjs/v/5.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "points-on-curve",
+      "version": "0.2.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/points-on-curve/v/0.2.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "points-on-path",
+      "version": "0.2.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/points-on-path/v/0.2.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "prosemirror-changeset",
+      "version": "2.4.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/prosemirror-changeset/v/2.4.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "prosemirror-commands",
+      "version": "1.7.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/prosemirror-commands/v/1.7.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "prosemirror-dropcursor",
+      "version": "1.8.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/prosemirror-dropcursor/v/1.8.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "prosemirror-gapcursor",
+      "version": "1.4.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/prosemirror-gapcursor/v/1.4.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "prosemirror-history",
+      "version": "1.5.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/prosemirror-history/v/1.5.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "prosemirror-inputrules",
+      "version": "1.5.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/prosemirror-inputrules/v/1.5.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "prosemirror-keymap",
+      "version": "1.2.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/prosemirror-keymap/v/1.2.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "prosemirror-model",
+      "version": "1.25.11",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/prosemirror-model/v/1.25.11"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "prosemirror-schema-list",
+      "version": "1.5.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/prosemirror-schema-list/v/1.5.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "prosemirror-state",
+      "version": "1.4.4",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/prosemirror-state/v/1.4.4"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "prosemirror-tables",
+      "version": "1.8.5",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/prosemirror-tables/v/1.8.5"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "prosemirror-transform",
+      "version": "1.12.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/prosemirror-transform/v/1.12.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "prosemirror-view",
+      "version": "1.42.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/prosemirror-view/v/1.42.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "qrcode",
+      "version": "1.5.4",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/qrcode/v/1.5.4"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "react",
+      "version": "19.2.8",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/react/v/19.2.8"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "react-dom",
+      "version": "19.2.8",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/react-dom/v/19.2.8"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "react-router",
+      "version": "7.18.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/react-router/v/7.18.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "react-router-dom",
+      "version": "7.18.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/react-router-dom/v/7.18.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "require-directory",
+      "version": "2.1.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/require-directory/v/2.1.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "require-main-filename",
+      "version": "2.0.0",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/require-main-filename/v/2.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "robust-predicates",
+      "version": "3.0.3",
+      "license": "Unlicense",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/robust-predicates/v/3.0.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "rope-sequence",
+      "version": "1.3.4",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/rope-sequence/v/1.3.4"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "roughjs",
+      "version": "4.6.6",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/roughjs/v/4.6.6"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "rw",
+      "version": "1.3.3",
+      "license": "BSD-3-Clause",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/rw/v/1.3.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "safer-buffer",
+      "version": "2.1.2",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/safer-buffer/v/2.1.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "scheduler",
+      "version": "0.27.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/scheduler/v/0.27.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "set-blocking",
+      "version": "2.0.0",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/set-blocking/v/2.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "set-cookie-parser",
+      "version": "2.7.2",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/set-cookie-parser/v/2.7.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "strictdom",
+      "version": "1.0.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/strictdom/v/1.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "string-width",
+      "version": "4.2.3",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/string-width/v/4.2.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "strip-ansi",
+      "version": "6.0.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/strip-ansi/v/6.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "stylis",
+      "version": "4.4.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/stylis/v/4.4.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "tinyexec",
+      "version": "1.3.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/tinyexec/v/1.3.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "ts-dedent",
+      "version": "2.3.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/ts-dedent/v/2.3.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "tslib",
+      "version": "2.8.1",
+      "license": "0BSD",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/tslib/v/2.8.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "undici-types",
+      "version": "7.18.2",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/undici-types/v/7.18.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "use-sync-external-store",
+      "version": "1.6.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/use-sync-external-store/v/1.6.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "uuid",
+      "version": "14.0.2",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/uuid/v/14.0.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "w3c-keyname",
+      "version": "2.2.8",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/w3c-keyname/v/2.2.8"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "which-module",
+      "version": "2.0.1",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/which-module/v/2.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "wrap-ansi",
+      "version": "6.2.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/wrap-ansi/v/6.2.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "y-prosemirror",
+      "version": "1.3.7",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/y-prosemirror/v/1.3.7"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "y-protocols",
+      "version": "1.0.7",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/y-protocols/v/1.0.7"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "y18n",
+      "version": "4.0.3",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/y18n/v/4.0.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "yargs",
+      "version": "15.4.1",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/yargs/v/15.4.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "yargs-parser",
+      "version": "18.1.3",
+      "license": "ISC",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/yargs-parser/v/18.1.3"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "yjs",
+      "version": "13.6.31",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/yjs/v/13.6.31"
+    }
+  ]
+}

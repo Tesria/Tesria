@@ -70,6 +70,13 @@ builder.Services.AddScoped<IAuditLogger, AuditLogger>();
 builder.Services.AddScoped<IAuditChainVerifier, AuditChainVerifier>();
 builder.Services.AddSingleton<AuditChainMonitor>();
 builder.Services.AddSingleton<SecurityCounters>();
+// Administration, About: OSV.dev, asked only when an administrator presses Check.
+builder.Services.AddHttpClient(Tesria.Api.Features.Admin.OsvClient.HttpClientName, c =>
+{
+    c.BaseAddress = new Uri("https://api.osv.dev/");
+    c.Timeout = TimeSpan.FromSeconds(60);
+});
+builder.Services.AddSingleton<Tesria.Api.Features.Admin.IOsvClient, Tesria.Api.Features.Admin.OsvClient>();
 // Export progress (dev-plan 20.1): in memory, like the counters above.
 builder.Services.AddSingleton(new Tesria.Api.Features.Export.ExportProgress(TimeProvider.System));
 builder.Services.AddSingleton<BlocklistCache>();
@@ -599,6 +606,7 @@ api.MapAdminEndpoints();
 api.MapMailSignInEndpoints();
 api.MapTailscaleEndpoints();
 api.MapAdminTokenEndpoints();
+api.MapAboutEndpoints();
 api.MapSecurityEndpoints();
 api.MapBackupEndpoints();
 api.MapBrandingEndpoints();

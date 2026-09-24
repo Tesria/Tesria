@@ -5076,6 +5076,33 @@ program (it lifts the pull limit and allows an organization namespace, but
 needs an established public project to apply), signing images, and
 publishing to GitHub's own registry as well.
 
+### 14.3 Enterprise hardening: the known gaps worth closing · `M` · Model: Opus 5.5
+
+Asked for by the owner, 2026-09-24: "I want this to be enterprise grade
+software." Each known gap in `docs/security.md` now carries a verdict; this
+item is the ones marked Must fix and Should fix, in the order worth doing.
+
+**Must fix**
+1. **A `migrate` service** holds the database owner's credentials, runs the
+   migrations and creates the least-privilege role, then exits; the app and
+   the collaboration service start after it with the app role only (gap 10).
+2. **Live-editing connections end when access does** (gap 11): the
+   collaboration service closes a connection when its token expires and when
+   the app tells it (over its existing authenticated channel) that a user was
+   suspended, signed out everywhere, or restricted from the page.
+3. **Registration is audited** (`user.registered`, with how: invite, open
+   registration, single sign-on) (gap 3).
+
+**Should fix**
+4. The version is answered to signed-in callers only (gap 1).
+5. The password-reset email is sent in the background (gap 12).
+6. The TOTP challenge is single-use (gap 6).
+7. The Compose network gets a fixed subnet, and only it is trusted (gap 7).
+8. NAT64 in the egress guard's private list (gap 14).
+9. An optional image-host allowlist for pages (gap 2).
+
+**Acceptable, documented:** gaps 4, 5, 8, 9 and 13 (single server).
+
 ---
 
 ## Phase 15: What the Support site found missing

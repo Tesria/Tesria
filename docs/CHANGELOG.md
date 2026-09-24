@@ -133,6 +133,40 @@ The owner: pages assumed the reader knew where the screens were.
 - REST API and MCP moved under a new **Developers** section at the end of
   the site (dev-plan 17), with the same page ids, so links still work.
 
+### Administration: an About tab (2026-09-24, Opus 5.5)
+
+Asked for by the owner: the version, "a full dependency list with
+attribution", a way to see whether any dependency has an active CVE ("if a
+new zero day hits they can easily go to the about and see if they are
+exposed"), and a Patreon link.
+
+- **About**: Tesria's version (and what it was upgraded from), links to
+  tesria.com, the source and the third-party licenses; a thank-you message
+  with **Support Tesria on Patreon**; and every dependency that ships (348:
+  the server's NuGet packages, the web app's, the collaboration and PDF
+  services' npm packages, and 8 container images), each with its license.
+  The container images have their own section (the owner's request), each
+  with what it is for (runs the app, builds it, optional, testing only) and
+  a `docker scout cves` command to copy; the packages are filtered
+  separately. Needs `dashboard.view`.
+- **Check for known vulnerabilities** (needs `security.view`) asks OSV.dev
+  about each of the 332 packages in one batch, then fetches each advisory
+  it names (id, CVE aliases, severity, summary, link). Only on the button:
+  it sends package names and versions to an outside service. The result is
+  kept with its date and who checked; offline says so and keeps the last
+  result. Audited (`dependencies.checked`). Verified live: no known
+  vulnerabilities on 2026-09-24. Container images are pointed at
+  `docker scout cves` or Trivy.
+- `scripts/deps/build-manifest.mjs` writes `src/Api/About/dependencies.json`
+  (from lockfiles and `dotnet list package`) and `THIRD-PARTY-NOTICES.txt`
+  (each package's own license file: 278 of 332 have one; the rest are
+  credited by license and link). Both are embedded in the app. CI fails
+  when the manifest is stale. Migration `DependencyCheck`. Three tests.
+- Password resets carry the **Through Tailscale** link too, in the email
+  and in the link an administrator makes, as invites do. One test.
+- `docs/security.md`: every known gap has a verdict (acceptable, should
+  fix, must fix); the fixes are dev-plan 14.3.
+
 ### Invites carry the Tailscale address too (2026-09-24, Opus 5.5)
 
 Asked for by the owner, to invite family in another state through the

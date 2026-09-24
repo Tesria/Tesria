@@ -1040,6 +1040,37 @@ export type CreatedApiToken = ApiTokenSummary & { token: string }
 /** REST requests (reads, changes) and MCP tool calls (reads, changes). */
 export type TokenUsageCounts = { reads: number; writes: number; mcpReads: number; mcpWrites: number }
 
+/** One thing Tesria is built from (Administration, About). */
+export type AboutDependency = {
+  ecosystem: 'npm' | 'NuGet' | 'Container'
+  name: string
+  version: string
+  license: string
+  component: string
+  direct: boolean
+  url: string | null
+  /** For a container image: what it is for. */
+  note?: string | null
+}
+
+export type KnownVulnerability = { id: string; summary: string | null; severity: string | null; aliases: string[]; url: string }
+
+export type DependencyCheck = {
+  at: string
+  byName: string | null
+  checked: number
+  affected: { ecosystem: string; name: string; version: string; components: string[]; vulnerabilities: KnownVulnerability[] }[]
+  error: string | null
+}
+
+export type AboutTesria = {
+  version: string
+  previousVersion: string | null
+  versionChangedAt: string | null
+  dependencies: AboutDependency[]
+  lastCheck: DependencyCheck | null
+}
+
 /** A token as the administrators' API tokens tab lists it. */
 export type AdminApiToken = {
   id: string
@@ -1558,7 +1589,7 @@ export const api = {
       disableTwoFactor: (id: string) =>
         request<void>('POST', `/api/admin/users/${id}/disable-two-factor`),
       issueReset: (id: string) =>
-        request<{ token: string; path: string; expiresAt: string }>(
+        request<{ token: string; path: string; expiresAt: string; tailnetUrl: string | null }>(
           'POST', `/api/admin/users/${id}/reset-password`),
     },
     spaces: {
@@ -1569,6 +1600,11 @@ export const api = {
           'POST', `/api/admin/spaces/${encodeURIComponent(key)}/recover-access`, {}),
       setPublic: (key: string, input: { isPublic: boolean; publicComments?: boolean }) =>
         request<AdminSpace>('PUT', `/api/admin/spaces/${key}/public`, input),
+    },
+    about: {
+      get: () => request<AboutTesria>('GET', '/api/admin/about'),
+      /** Asks OSV.dev about every package; sends their names and versions. */
+      check: () => request<DependencyCheck>('POST', '/api/admin/about/check', {}),
     },
     apiTokens: {
       list: () => request<AdminApiToken[]>('GET', '/api/admin/api-tokens'),

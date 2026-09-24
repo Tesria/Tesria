@@ -31,7 +31,8 @@ public static class AdminEndpoints
     /// out of band (in person, over chat, however they already verify identity)
     ///which is what makes this work with no email server configured.
     /// </summary>
-    public record IssuedResetResponse(string Token, string Path, DateTimeOffset ExpiresAt);
+    /// <summary><c>TailnetUrl</c>: the same link on the Tailscale address, when Tesria has one.</summary>
+    public record IssuedResetResponse(string Token, string Path, DateTimeOffset ExpiresAt, string? TailnetUrl = null);
 
     /// <summary>
     /// <c>SendEmail</c> emails the link to <c>Email</c>, with <c>Message</c>
@@ -638,7 +639,7 @@ public static class AdminEndpoints
 
     private static async Task<IResult> IssuePasswordReset(
         Guid userId, AppDbContext db, CurrentUser current,
-        IAuditLogger audit, IAccountRecoveryService recovery, IInstancePermissions rights)
+        IAuditLogger audit, IAccountRecoveryService recovery, IInstancePermissions rights, IConfiguration config)
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Results.NotFound();
@@ -658,7 +659,9 @@ public static class AdminEndpoints
         // A path rather than an absolute URL: the server does not reliably know
         // its own public origin (it sits behind a proxy and sees plain HTTP),
         // so the client builds the link from the address the admin is already on.
-        return Results.Ok(new IssuedResetResponse(token, $"/reset?token={token}", expiresAt));
+        var path = $"/reset?token={token}";
+        return Results.Ok(new IssuedResetResponse(token, path, expiresAt,
+            TailscaleEndpoints.AddressOf(config) is { } tailnet ? tailnet + path : null));
     }
 
     private static async Task<IResult> ListInvites(AppDbContext db)

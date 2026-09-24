@@ -30,6 +30,9 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - run: dotnet test tests/Api.Tests --nologo
+      # The About tab's dependency list must match what ships.
+      - name: Dependency manifest is current
+        run: node scripts/deps/build-manifest.mjs --check
 
   web:
     name: Web build, lint and tests

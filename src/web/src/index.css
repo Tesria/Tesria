@@ -2999,6 +2999,23 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
      the result is unreadable. The HTML export keeps them clickable instead. */
 }
 
+/* Administration → About: three cards (Tesria, supporting it, known
+   vulnerabilities), then the dependency list. */
+.about-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem 1.25rem; margin-bottom: 1rem; max-width: 48rem; }
+.about-card h2 { margin: 0 0 0.5rem; font-size: 1.1rem; }
+.about-card__links { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 0; }
+.about-card--support { border-color: var(--primary); }
+.about-vulns { padding-left: 1.1rem; }
+.about-vulns > li { margin-bottom: 0.6rem; }
+.about-vulns ul { padding-left: 1.1rem; margin: 0.25rem 0 0; }
+.about-filter { margin-bottom: 0.75rem; }
+.about-images { list-style: none; padding: 0; margin: 0 0 1.25rem; max-width: 48rem; }
+.about-images > li { padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
+.about-images__ref { font-weight: 600; }
+.about-images__command { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.3rem; flex-wrap: wrap; }
+.about-images__command code { overflow-wrap: anywhere; }
+.about-filter input { flex: 1 1 16rem; max-width: 22rem; }
+
 /* Administration → API tokens: a filter above the list, and the two action
    links side by side. */
 .admin-tokens__filter input { width: 100%; max-width: 22rem; margin-bottom: 0.75rem; }

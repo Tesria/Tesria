@@ -325,6 +325,11 @@ public class SiteSettings
     public string? PreviousVersion { get; set; }
     public DateTimeOffset? VersionChangedAt { get; set; }
 
+    // --- The last check of the dependencies for known vulnerabilities
+    // (Administration, About). JSON, as the About tab shows it: what was
+    // asked, when, by whom, and what came back.
+    public string? DependencyCheckJson { get; set; }
+
     public DateTimeOffset UpdatedAt { get; set; }
     public Guid? UpdatedById { get; set; }
 }

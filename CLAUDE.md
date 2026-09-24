@@ -108,6 +108,10 @@ Read first, in this order:
   --include-transitive`; it must exit 0 before a release or after touching
   any package manifest. Note `npm audit fix --omit=dev` prunes
   devDependencies: follow it with a plain `npm install`.
+- **Dependency manifest**: after touching any package manifest or base
+  image, run `node scripts/deps/build-manifest.mjs` (after `npm ci` in
+  `src/web`, `collab` and `pdf`, so license texts are found) and commit
+  `src/Api/About/`. CI fails when it is stale.
 - **EF Core migrations**: `dotnet-ef` is installed as a global tool. Add one
   with `dotnet ef migrations add <Name> --output-dir Infrastructure/Migrations`
   from `src/Api/`. Migrations run automatically on API startup.

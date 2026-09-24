@@ -43,6 +43,9 @@ logic; for a change you can see, also try it in a browser.
   Infrastructure/Migrations`, from `src/Api`).
 - Editor blocks are defined once, in `src/web/src/editor/extensions.ts`.
 - Something the caller may not see answers `404`, never `403`.
+- After changing a dependency (a package list or a base image), run
+  `node scripts/deps/build-manifest.mjs` and commit what it writes: the
+  About tab in Administration lists it, and CI checks it is current.
 - Every change gets an entry in `docs/CHANGELOG.md`, and
   `docs/architecture.md` is updated when how something works changes.
 - Words people read are in US English, plain, without em dashes.

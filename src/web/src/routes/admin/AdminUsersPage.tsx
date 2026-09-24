@@ -16,7 +16,8 @@ export function AdminUsersPage() {
   const [error, setError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
   const { ask, dialog } = useConfirm()
-  const [resetLink, setResetLink] = useState<{ name: string; url: string } | null>(null)
+  // One link, or two when Tesria is also on a tailnet (as invites have).
+  const [resetLink, setResetLink] = useState<{ name: string; links: { label: string | null; url: string }[] } | null>(null)
   // The roles a person could be moved to, when the viewer may see them.
   const [roles, setRoles] = useState<InstanceRole[]>([])
 
@@ -68,7 +69,13 @@ export function AdminUsersPage() {
       const issued = await api.admin.users.issueReset(u.id)
       // Built from the address the admin is already on: the server sits behind
       // a proxy and does not reliably know its own public origin.
-      setResetLink({ name: u.displayName, url: `${window.location.origin}${issued.path}` })
+      const here = `${window.location.origin}${issued.path}`
+      setResetLink({
+        name: u.displayName,
+        links: issued.tailnetUrl && issued.tailnetUrl !== here
+          ? [{ label: 'At this address', url: here }, { label: 'Through Tailscale', url: issued.tailnetUrl }]
+          : [{ label: null, url: here }],
+      })
     }, 'Could not issue a reset link.')
   }
 
@@ -84,15 +91,20 @@ export function AdminUsersPage() {
             One-time reset link for <strong>{resetLink.name}</strong>, valid for one hour.
             Give it to them directly: it is shown once.
           </p>
-          <code className="admin__link">{resetLink.url}</code>
+          {resetLink.links.map((link) => (
+            <div key={link.url} className="invite-link">
+              {link.label && <p className="invite-link__label">{link.label}</p>}
+              <code className="admin__link">{link.url}</code>
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() => navigator.clipboard.writeText(link.url).catch(() => {})}
+              >
+                Copy{link.label ? ` the ${link.label === 'Through Tailscale' ? 'Tailscale' : 'usual'} link` : ''}
+              </button>
+            </div>
+          ))}
           <div className="row-gap">
-            <button
-              type="button"
-              className="btn btn--ghost btn--sm"
-              onClick={() => navigator.clipboard.writeText(resetLink.url).catch(() => {})}
-            >
-              Copy
-            </button>
             <button type="button" className="btn btn--ghost btn--sm" onClick={() => setResetLink(null)}>
               Dismiss
             </button>
