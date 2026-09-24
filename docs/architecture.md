@@ -111,9 +111,13 @@ with the audit log **hard**, the hash chain makes it **detectable**, and
 point-in-time recovery (already shipped) makes it **recoverable**.
 
 **Two connections.** `ConnectionStrings:Default` is the owner (the
-`POSTGRES_USER` superuser). It is used once, at startup, unpooled: apply
-migrations, backfill the chain, provision the runtime role. Then it is
-gone. `ConnectionStrings:App` is `tesria_app` (`APP_DB_PASSWORD`), which
+`POSTGRES_USER` superuser). Since 14.3 only the one-shot `migrate` service
+has it (`MigrateCommand`: the app image run with `--migrate`): unpooled, it
+applies migrations, backfills the chain and provisions the runtime role,
+then exits, and the app starts only after it succeeds. The app and the
+collaboration sidecar never see the owner password, and a production app
+refuses to start with migrations pending. Outside production (tests,
+`dotnet run`) the app runs the same steps itself at startup. `ConnectionStrings:App` is `tesria_app` (`APP_DB_PASSWORD`), which
 the running app and the collab sidecar use for everything else. It has
 `SELECT/INSERT/UPDATE/DELETE` on every table and sequence **except**
 `UPDATE/DELETE/TRUNCATE` on the append-only tables
@@ -121,14 +125,14 @@ the running app and the collab sidecar use for everything else. It has
 `SecurityEvents`). Verified live: `UPDATE "AuditLogs"` as `tesria_app` →
 `permission denied`.
 
-The app provisions the role itself, on every start, rather than a database
-init script: init scripts run only on a fresh volume, which would have left
+The role is provisioned by the migrate step on every start, rather than by
+a database init script: init scripts run only on a fresh volume, which would have left
 every existing install on the superuser, and re-running the grants after
 `Migrate()` means tables added by later migrations are covered without
-anyone remembering to. Rotation is "change `APP_DB_PASSWORD`, restart app
-and collab". An empty `APP_DB_PASSWORD` falls back to the owner connection
-with a startup warning: a half-configured split must not brick an install
-that worked yesterday. Postgres referential actions (cascades, `SET NULL`)
+anyone remembering to. Rotation is "change `APP_DB_PASSWORD`, then
+`docker compose up -d`". `APP_DB_PASSWORD` is required (14.3): Compose
+refuses to start without it, and a production app refuses to run as the
+owner. Postgres referential actions (cascades, `SET NULL`)
 run as the table owner, so the role's lack of `DELETE` on `PageViews` does
 not stop a page purge.
 
@@ -2238,7 +2242,19 @@ editor engine is JS-only, so this is the one piece deliberately kept outside the
   *edit* the page and returns a short-lived HMAC-signed token bound to that page
   id. The sidecar only verifies signature, expiry, and that the document being
   opened matches, so a forged token, or a valid token replayed against another
-  page, is rejected.
+  page, is rejected. Tokens last ten minutes; the editor's provider takes the
+  token as a function, so every reconnect asks the API for a fresh one.
+- **Revocation (14.3).** `CollabRevocationInterceptor`, a `SaveChanges`
+  interceptor, notices saves that can take editing away (a user's status,
+  security stamp or role; a revoked session; group membership; space
+  permissions; page restrictions; a deleted group or changed role rights)
+  and, after the save commits, posts to the sidecar's `/revoke` behind the
+  shared secret. The sidecar never decides who lost access: it closes the
+  matching connections, socket and all (Hocuspocus's own close leaves the
+  socket open and the provider silently unauthenticated), and the reconnect
+  is re-authorized by `/collab-token`. A refused token puts the editor in a
+  final `denied` or `gone` state. The sweep also closes connections whose
+  token has expired.
 - **Persistence.** Yjs state is written to the `CollabDocuments` table in the
   main database, so live edits survive a sidecar restart and fall under the
   existing backups. Saving a page still creates a regular `PageVersion`, so
@@ -2251,7 +2267,7 @@ editor engine is JS-only, so this is the one piece deliberately kept outside the
 ## Data & persistence
 
 - **PostgreSQL 18** is the system of record, via EF Core migrations applied
-  automatically on startup. Page bodies are stored as ProseMirror JSON in
+  by the `migrate` service before the app starts. Page bodies are stored as ProseMirror JSON in
   `jsonb` columns. Every page save creates a new immutable `PageVersion`
   (history + rollback); comments carry an optional `jsonb` inline anchor.
 - Docker named volumes hold all state: `pgdata` (database), `uploads`

@@ -10,7 +10,7 @@ the rest to understand what you are relying on.
 - **Opportunistic scanners** hit every public address looking for known
   software and default credentials. They are automated, high-volume and
   indifferent to what the wiki contains. Defenses: rate limits, the
-  blocklist, no version-specific fingerprints beyond `/api/health`.
+  blocklist, and no version number in anything a stranger can fetch.
 - **Credential attackers** try passwords: against one account they want,
   or lists of leaked email/password pairs against every account. Defenses:
   per-address limits, per-account lockout, two-factor, the stuffing
@@ -70,25 +70,26 @@ service by sheer volume, which is the network's job, not the app's.
 Recorded so nobody rediscovers them as surprises. Each ends with a verdict
 from the enterprise-readiness review of 2026-09-24: **Acceptable** (a
 reasoned trade-off, documented), **Should fix** (worth doing before a 1.0),
-or **Must fix** (before Tesria is offered for enterprise use). The fixes
-are scheduled as dev-plan 14.3.
+or **Must fix** (before Tesria is offered for enterprise use). Every Must
+fix and Should fix was done in dev-plan 14.3 (2026-09-24, reviewed by
+Fable 5.1 before it was built); each says how. The numbers are kept so
+older references still point at the right item.
 
-1. **`/api/health` reports the version.** Useful for operators and
-   monitoring; a scanner learns which release you run. Acceptable while
-   the audit gate keeps releases clean.
-   *Should fix:* answer the version only to signed-in callers (`/api/health`
-   and `/api/instance`), and a bare `ok` to anyone else. Monitoring needs
-   liveness, not the release number.
-2. **`img-src https:` in the CSP.** Authors paste image URLs. A remote
-   image can log the reader's address. Restricting it would break content;
-   Phase 7's media work may add an image proxy.
-   *Should fix:* an administrator setting that limits images to this
-   instance and a list of hosts, off by default. Organizations that treat
-   reader privacy strictly need it; most wikis do not.
-3. **Registration is not an audit entry.** The registration-burst detector
-   sees it; the audit log does not list `user.registered`. Follow-up.
-   *Must fix:* an audit log that misses accounts being created is
-   incomplete for any compliance use. A one-line change.
+1. ~~`/api/health` reports the version.~~ **Fixed.** The version is given
+   only to signed-in callers: `/api/health`, `/api/instance` and the
+   OpenAPI document all leave it out for anyone else. Monitoring needs
+   liveness, not the release number. Administrators find the version in
+   Administration, About.
+2. ~~`img-src https:` in the CSP.~~ **Fixed, as a choice.** A remote image
+   can log each reader's address. Administration, Settings, **Images**
+   (off by default) limits pictures to this instance and a list of hosts:
+   the CSP's `img-src` follows it, exported pages carry it as a
+   `<meta>` CSP, and the editor tells an author when a picture's host is
+   not allowed. Off, any https picture shows, as before.
+3. ~~Registration is not an audit entry.~~ **Fixed.** Every new account is
+   recorded as `user.registered`, with how it was made (first account,
+   invite, open registration or single sign-on) and the address it came
+   from.
 4. **Threat-detection counters and cooldowns are in-process.** A restart
    resets them. Written events are never lost.
    *Acceptable* for a single server, the supported topology.
@@ -97,16 +98,13 @@ are scheduled as dev-plan 14.3.
    underlying `SecurityEvents` cannot be touched, and the notifications
    were already sent.
    *Acceptable:* the evidence is immutable; the alert list is a to-do list.
-6. **The TOTP challenge is not single-use** within its five minutes. It is
-   bound to the client address and needs a code, and codes are single-use;
-   replaying the challenge buys nothing.
-   *Should fix:* making it single-use is small and removes a question every
-   security reviewer will ask.
-7. **Trust by private range.** The default `Proxy:TrustedNetworks` trusts
-   RFC 1918: safe only because port 8080 is never published. Fronting the
-   app with a different proxy, or publishing the port, changes that.
-   *Should fix:* give the Compose network a fixed subnet and trust only
-   that, so the default is right even if someone publishes the port.
+6. ~~The TOTP challenge is not single-use.~~ **Fixed.** Each challenge
+   carries a nonce also stored on the account; signing in clears it, and a
+   newer challenge replaces it, so a challenge works once.
+7. ~~Trust by private range.~~ **Fixed.** The Compose network has a fixed
+   subnet (`TESRIA_SUBNET`, default `10.203.0.0/24`), and under Compose the
+   app trusts forwarded headers only from loopback and that subnet. An
+   explicit `Proxy:TrustedNetworks` still wins.
 8. **Alerts need email set up to reach anyone who is not signed in.**
    Without an email server, alerts reach administrators only through the
    in-app bell. Set up email (Administration, Settings), or forward
@@ -119,32 +117,31 @@ are scheduled as dev-plan 14.3.
    password.
    *Acceptable*, and common (GitHub works the same way). An organization
    with single sign-on can have its own provider handle recovery instead.
-10. **The database owner's password is in the app's environment** (found by
-    the second pre-release review, 2026-09-24). The app needs it at startup
-    to migrate the schema and create its least-privilege role, and the
-    collaboration service is given it as a fallback. It stays in their
-    environment afterwards, so code execution in either container is
-    database-owner access, which the least-privilege role otherwise stops.
-    The fix is a separate one-shot service that migrates and then exits;
-    not done yet.
-    *Must fix:* the least-privilege role is a headline defense, and this
-    quietly undoes it. A `migrate` service holding the owner credentials,
-    and the app and collaboration service given only the app role.
-11. **An open live-editing connection outlives a change of permission.**
-    The collaboration service checks its token when a browser connects,
-    not afterwards. Someone suspended, or restricted from a page, keeps
-    receiving and sending edits on a connection already open until it
-    closes (a reload, a network change, the tab closed). New connections
-    are refused at once.
-    *Must fix:* offboarding has to cut access immediately. The
-    collaboration service should re-check each connection when its token
-    expires (30 minutes) and when the app tells it a user was suspended,
-    signed out or restricted, and close it.
-12. **Asking for a password reset takes longer for an address that has an
-    account,** because the email is sent before the answer. The answer
-    itself is the same either way. Sending it in the background would
-    close this; not done yet.
-    *Should fix:* small, and it closes the last account-enumeration channel.
+10. ~~The database owner's password is in the app's environment.~~
+    **Fixed.** A one-shot `migrate` service holds the owner credentials: it
+    applies migrations, fills in the audit chain and provisions the
+    least-privilege role, then exits. The app and the collaboration service
+    are given only the app role (`APP_DB_PASSWORD`, now required), and in
+    production the app refuses to start with migrations pending rather than
+    applying them. The two backup services still hold the owner password:
+    a backup has to read everything, and pgBackRest needs the owner. They
+    run no code that answers the network.
+11. ~~An open live-editing connection outlives a change of permission.~~
+    **Fixed.** When a save changes something that can take editing away
+    (a suspension, a sign-out or password change, a role, a group
+    membership, a space permission or a page restriction), the app asks
+    the collaboration service to close the connections it touches. The
+    browser reconnects and asks the app for a new token, which is refused
+    to anyone no longer allowed, and the editor says so. Tokens last ten
+    minutes, and connections whose token has expired are closed on the same
+    sweep. A change to a page restriction closes the connections to every
+    page in that space, since restrictions are inherited; the reconnect
+    costs the others a moment.
+12. ~~Asking for a password reset takes longer for an address that has an
+    account.~~ **Fixed.** The email is queued and sent in the background,
+    so both answers take the same order of time. Not exactly the same: a
+    database lookup still differs slightly, which is far below what can be
+    measured over a network.
 13. **Some state assumes a single app instance:** render tokens are signed
     with a key the app makes when it starts, and export progress, rate
     limits and settings are cached in memory. Running more than one app
@@ -153,9 +150,11 @@ are scheduled as dev-plan 14.3.
     instance. Enterprise high availability (several app containers behind
     a load balancer) would need shared state (a distributed cache and a
     shared token key) and is a feature, not a fix.
-14. **IPv6 NAT64 addresses** (`64:ff9b::/96`) are not in the egress guard's
-    private list. It matters only on an IPv6-only host with NAT64.
-    *Should fix:* one line in the guard's list.
+14. ~~IPv6 NAT64 addresses are not in the egress guard's private list.~~
+    **Fixed.** The guard reads the IPv4 address inside NAT64
+    (`64:ff9b::/96`) and 6to4 (`2002::/16`) addresses and judges that, and
+    also refuses `192.0.0.0/24`, `198.18.0.0/15` and the IPv6 discard
+    range.
 
 ## Internet-readiness checklist
 
@@ -168,13 +167,16 @@ before DNS points at the box.
       catch-all gone. (`docs/tls-and-lan-access.md`, Path 3.)
 - [ ] `POSTGRES_PASSWORD`, `APP_DB_PASSWORD`, `BACKUP_ENCRYPTION_KEY`,
       `COLLAB_SHARED_SECRET` are all long, random, and different from
-      each other. `APP_DB_PASSWORD` is **not** empty: an empty value runs
-      the app as the database owner, and the startup log warns you.
+      each other. `APP_DB_PASSWORD` is required: Compose refuses to start
+      without it, and the app refuses to run in production as the owner.
 - [ ] Port 8080 (app), 5432 (db), 8090 (collab) are **not** published to
       the host. Only Caddy's 80 and 443 are. `docker compose config` shows
       `expose`, not `ports`, for the three.
 - [ ] If anything other than this stack's Caddy fronts the app,
       `PROXY_TRUSTED_NETWORKS` names exactly that proxy.
+- [ ] Decide whether pages may show pictures from anywhere
+      (Administration, Settings, Images). If readers' privacy matters,
+      limit pictures to this wiki and the hosts you trust.
 - [ ] `OIDC_REQUIRE_HTTPS_METADATA` is `true` (the default) if SSO is on.
 
 **Accounts**

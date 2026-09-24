@@ -363,7 +363,7 @@ export async function build(helpers) {
       ['/image', 'Your computer’s file picker, to choose a picture'],
     ], [200, 500]),
     insertNote('Image', 'If you had text selected, the picture takes its place.'),
-    p('Two quicker ways: ', b('paste'), ' a picture you have copied, or ', b('drag'), ' one or more picture files onto the page. Each is uploaded and appears where the cursor is. And typing ', c('![description](https://…)'), ' shows a picture from a web address without uploading it.'),
+    p('Two quicker ways: ', b('paste'), ' a picture you have copied, or ', b('drag'), ' one or more picture files onto the page. Each is uploaded and appears where the cursor is. And typing ', c('![description](https://…)'), ' shows a picture from a web address without uploading it. Your administrator may allow pictures only from certain sites; if so, a note under a picture from anywhere else says it will not show.'),
 
     h(2, 'Sizes'),
     h(3, 'Its own size'),

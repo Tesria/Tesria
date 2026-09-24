@@ -5163,6 +5163,23 @@ recreate).** Corrections, folded in before building:
 
 **Acceptable, documented:** gaps 4, 5, 8, 9 and 13 (single server).
 
+**As built (2026-09-24).** All nine, as corrected above. Where the build
+differs from the plan:
+- The image setting is in Administration, **Settings** (an **Images** card
+  beside Embeds, under the `settings.security` right), not a Security tab.
+  `/api/instance` gives the allowed hosts to the editor; the CSP header
+  already tells anyone the same.
+- Hocuspocus's `connection.close()` closes only the document, over a
+  socket that stays open, and the provider then neither reconnects nor asks
+  for a token while still reporting "connected". The collaboration service
+  closes the socket as well (`endConnection` in `collab/server.js`). Found
+  by the live check, not by the tests, which stub the sidecar.
+- A page-restriction change closes the connections to every page in that
+  space (restrictions are inherited, and the sidecar has no tree), which
+  costs the others a quick reconnect.
+- The editor's refused states are `denied` (a 401 or 403 for a new token)
+  and `gone` (a 404); both are final until the page is reloaded.
+
 ---
 
 ## Phase 15: What the Support site found missing
@@ -5855,7 +5872,7 @@ would move them away from the permissions and render token they run with.
 19. **18.1** Provider presets and **18.4** the app-password and sending-service pages (asked for 2026-09-24): small and independent, so any time; best before 14, since they are what a new owner meets in the setup wizard. Then **18.2** Sign in with Microsoft → **18.3** Sign in with Google, before 14 if the owner wants the public release to work with a personal Outlook.com account.
 20. **19.1** Tailscale sidecar → **19.2** its Support pages (asked for 2026-09-24). Independent of everything else; best after 14.2, so the compose file it extends is the published one.
 21. **20.1** Export progress bars (asked for 2026-09-24; shipped 2026-09-24).
-22. **14.3** Enterprise hardening (asked for 2026-09-24): the known gaps marked Must fix and Should fix, before the public release.
+22. **14.3** Enterprise hardening (asked for 2026-09-24; shipped 2026-09-24): the known gaps marked Must fix and Should fix, before the public release.
 
 3.6 (dependency updates) can be pulled forward at any time: Dependabot
 opens them weekly, and `scripts/audit.sh` is the gate. (Phases 6 and 8.2,

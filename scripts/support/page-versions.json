@@ -9,7 +9,7 @@
     "appliesTo": "0.6",
     "updated": "2026-09-24",
     "note": "New in 0.6.",
-    "hash": "761382948c07bd4a"
+    "hash": "697d511ac1abdc99"
   },
   "Administration / API tokens (administration)": {
     "appliesTo": "0.6",
@@ -75,7 +75,7 @@
     "appliesTo": "0.5",
     "updated": "2026-09-24",
     "note": "Revised.",
-    "hash": "7c0f331cade7044e"
+    "hash": "09d0a443e38c422d"
   },
   "Administration / Spaces (administration)": {
     "appliesTo": "0.5",
@@ -182,8 +182,8 @@
   "Contributing / How the code is organized": {
     "appliesTo": "0.6",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.6.",
-    "hash": "7b4b589e0cb0a982"
+    "note": "Revised.",
+    "hash": "1767ec06920eb44b"
   },
   "Contributing / Making a release": {
     "appliesTo": "0.6",
@@ -338,8 +338,8 @@
   "Elements / Image": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "ca8a4502b49fc213"
+    "note": "Revised.",
+    "hash": "6bddcffc10808241"
   },
   "Elements / Layout": {
     "appliesTo": "0.5",
@@ -614,8 +614,8 @@
   "Installation and operations / Configuration reference": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "5db722535cf8cf50"
+    "note": "Revised.",
+    "hash": "d35cfbab511949f1"
   },
   "Installation and operations / Email (SMTP)": {
     "appliesTo": "0.5",
@@ -626,8 +626,8 @@
   "Installation and operations / Health checks and monitoring": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "580280530ff8c4e5"
+    "note": "Revised.",
+    "hash": "be07ae4986883892"
   },
   "Installation and operations / HTTPS and domains": {
     "appliesTo": "0.5",
@@ -656,8 +656,8 @@
   "Installation and operations / Security hardening": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "3ecfb4d30da81b90"
+    "note": "Revised.",
+    "hash": "37c63eefd3e62de0"
   },
   "Installation and operations / Single sign-on (OIDC)": {
     "appliesTo": "0.5",
@@ -680,8 +680,8 @@
   "Installation and operations / Upgrading": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "89e236a14671d2ac"
+    "note": "Revised.",
+    "hash": "e245456bf203fe40"
   },
   "License and credits": {
     "appliesTo": "0.5",
@@ -896,8 +896,8 @@
   "REST API / API reference": {
     "appliesTo": "0.6",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.6.",
-    "hash": "4f72040a9ec8b626"
+    "note": "Revised.",
+    "hash": "305677c27868d831"
   },
   "REST API / Code examples": {
     "appliesTo": "0.6",
@@ -1160,8 +1160,8 @@
   "Working together / Editing at the same time": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "17bab0cf5d115c52"
+    "note": "Revised.",
+    "hash": "2614bfc7f8d98e35"
   },
   "Working together / Mentions and notifications": {
     "appliesTo": "0.5",

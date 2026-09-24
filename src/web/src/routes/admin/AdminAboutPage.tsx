@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api, ApiError, Permission, type AboutTesria, type DependencyCheck } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
-import { TESRIA_DONATE, TESRIA_SITE, TESRIA_SOURCE } from '../../links'
+import { TESRIA_SITE, TESRIA_SOURCE, TESRIA_SUPPORT } from '../../links'
 
 /**
  * Administration → About (the owner, 2026-09-24): which Tesria this is, a way
@@ -90,11 +90,11 @@ export function AdminAboutPage() {
         <p>
           Tesria is completely free. It exists because I wanted a great wiki to be available to the
           open-source community. If it is useful to you and you would like to buy me a coffee or a beer,
-          or just show your appreciation, you can support it on Patreon. Thank you.
+          or just show your appreciation, you can support it through GitHub Sponsors or Ko-fi. Thank you.
         </p>
         <p className="muted small">Brian, who makes Tesria</p>
-        <a className="btn btn--primary" href={TESRIA_DONATE} target="_blank" rel="noopener noreferrer">
-          Support Tesria on Patreon
+        <a className="btn btn--primary" href={TESRIA_SUPPORT} target="_blank" rel="noopener noreferrer">
+          Ways to support Tesria
         </a>
       </section>
 

@@ -8,6 +8,68 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.6.0-dev**: 0.5.0 is released, so what comes
 after it is the next minor version.
 
+### 14.3 Enterprise hardening (2026-09-24, Opus 5.5, reviewed by Fable 5.1)
+
+Every Must fix and Should fix from the known gaps in `docs/security.md`:
+
+- **The database owner's password left the app** (gap 10). A one-shot
+  `migrate` service applies migrations, fills in the audit chain and
+  provisions the least-privilege role, then exits; the app and the
+  collaboration service start after it and hold only the app role. In
+  production the app refuses to start with migrations pending, and refuses
+  to run as the owner.
+- **Live editing ends when access does** (gap 11). A save that changes
+  someone's access (suspension, sign-out, password change, role, group,
+  space permission, page restriction) asks the collaboration service to
+  close the connections it touches. The editor reconnects with a new token,
+  and if the app refuses one it says why: signed out or no longer allowed,
+  or the page is gone. Tokens last ten minutes (were 30) and expired
+  connections are closed.
+- **Pictures can be limited to listed hosts** (gap 2): Administration,
+  Settings, Images, off by default. The CSP, exported pages (as a `<meta>`
+  CSP) and the editor all follow it.
+- **Every new account is audited** as `user.registered`, with how it was
+  made (gap 3).
+- **The two-factor challenge works once** (gap 6).
+- **Forwarded headers are trusted only from this stack's own subnet**
+  (gap 7): the Compose network has a fixed subnet, `TESRIA_SUBNET`.
+- **Password reset emails are sent in the background** (gap 12), so the
+  answer takes the same order of time whether or not the address has an
+  account.
+- **The version is shown only to signed-in callers** (gap 1): health,
+  instance info and the OpenAPI document.
+- **The egress guard reads IPv4 inside NAT64 and 6to4 addresses** (gap 14),
+  and refuses a few more reserved ranges.
+- Administration, About: the support card now points to
+  [tesria.com/support](https://tesria.com/support) (GitHub Sponsors and
+  Ko-fi) instead of Patreon.
+
+**Upgrading.** `APP_DB_PASSWORD` is now required in `.env`; Compose will not
+start without it. The network change needs the stack recreated once:
+`docker compose down`, then `docker compose up -d`. **Never `down -v`**,
+which deletes the database. If `10.203.0.0/24` clashes with a VPN or your
+LAN, set `TESRIA_SUBNET` first.
+
+**Found while verifying.** Hocuspocus's own way of closing a connection only
+closes the document over a socket that stays open. The browser then stops
+being accepted but still shows "Live" and never asks for a new token. The
+collaboration service now closes the socket too, which makes the editor
+reconnect.
+
+**Model trial record.** Opus 5.5 designed this item; Fable 5.1 reviewed the
+design before it was built, at the owner's request, and caught things the
+Opus design had missed or got wrong. The plan moved the seeds into the
+migrate step and did not make the app refuse to start with migrations
+pending. It named a trigger that does not exist ("tokens revoked") and
+missed group, role, password and space-permission changes, and it gave the
+editor no way to tell "reconnecting" from "refused". It hid the version in
+two places and left it in the OpenAPI document, and claimed the reset timing
+would be identical. It kept used two-factor challenges in memory, where a
+restart would reopen them. It did not warn against `down -v`, nor check
+carrier NAT and other reserved ranges beside NAT64, and it left exports
+out of the image rule. Every correction was folded in before building;
+they are in `docs/dev-plan.md` under 14.3.
+
 ### 14.1 Pre-release audit complete, not released (2026-09-24, Opus 5.5)
 
 - **History rewritten** before an outside review: every commit and the

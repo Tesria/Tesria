@@ -35,7 +35,7 @@ public class AuditChainTests
         using var factory = new TestAppFactory();
         var admin = factory.CreateClient();
         await RegisterAsync(admin, "admin@example.com");
-        // Registration is not audited; space creation is, once per space.
+        // Registration is audited (14.3), and space creation once per space.
         await admin.CreateSpaceAsync();
         await admin.CreateSpaceAsync();
         await admin.CreateSpaceAsync();
@@ -44,7 +44,7 @@ public class AuditChainTests
         using (scope)
         {
             var rows = (await db.AuditLogs.AsNoTracking().ToListAsync()).OrderBy(a => a.Sequence).ToList();
-            Assert.Equal(3, rows.Count);
+            Assert.Equal(4, rows.Count);
             Assert.Equal(Enumerable.Range(1, rows.Count).Select(i => (long?)i), rows.Select(r => r.Sequence));
             Assert.Equal(AuditChain.GenesisHash, rows[0].PrevHash);
             for (var i = 1; i < rows.Count; i++) Assert.Equal(rows[i - 1].Hash, rows[i].PrevHash);

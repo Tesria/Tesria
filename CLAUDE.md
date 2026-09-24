@@ -114,7 +114,10 @@ Read first, in this order:
   `src/Api/About/`. CI fails when it is stale.
 - **EF Core migrations**: `dotnet-ef` is installed as a global tool. Add one
   with `dotnet ef migrations add <Name> --output-dir Infrastructure/Migrations`
-  from `src/Api/`. Migrations run automatically on API startup.
+  from `src/Api/`. Under Compose the one-shot `migrate` service applies
+  them before the app starts (14.3; `docker compose logs migrate`), and a
+  production app refuses to start with any pending. Outside production
+  (tests, `dotnet run`) the app applies them itself.
 - **Editor schema changes** (new TipTap node/mark type) go in
   `src/web/src/editor/extensions.ts`, never declared inline in `Editor.tsx` or
   `CollaborativeEditor.tsx` separately: see the architecture doc's editor

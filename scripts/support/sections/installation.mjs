@@ -296,9 +296,9 @@ export async function build({
 
     h(2, 'Database'),
     ul(
-      setting('POSTGRES_PASSWORD', b('Required.'), ' The password of the database’s owner account. Tesria uses that account only to set the database up, and the backup services use it for backups and restores.'),
+      setting('POSTGRES_PASSWORD', b('Required.'), ' The password of the database’s owner account. Only two things hold it: a short setup step that updates the database each time Tesria starts and then stops, and the backup services, which use it for backups and restores. Tesria itself never has it.'),
       setting('POSTGRES_USER', 'the owner account’s name, and ', c('POSTGRES_DB'), ', the database’s name. The example’s values work. The database is created with them on the first start; changing them later renames nothing.'),
-      setting('APP_DB_PASSWORD', 'the password of the restricted account Tesria runs as day to day, which cannot change or delete the audit log. Tesria creates that account itself. Left empty, Tesria runs as the database owner, which is acceptable on a private network and not on the internet. To change it later, change the value and run ', c('docker compose up -d app collab'), '.'),
+      setting('APP_DB_PASSWORD', b('Required.'), ' The password of the restricted account Tesria runs as day to day, which cannot change or delete the audit log. Tesria creates that account itself. Tesria will not start without it. To change it later, change the value and run ', c('docker compose up -d'), '.'),
       setting('APP_DB_USER', 'optional. That account’s name, ', c('tesria_app'), ' unless you set another.'),
     ),
 
@@ -309,6 +309,7 @@ export async function build({
       setting('ACME_EMAIL', 'an email address Let’s Encrypt can write to about your certificate.'),
       setting('CADDYFILE', 'which web server configuration to use. Leave it out on a private network. Set it to ', c('deploy/Caddyfile.public'), ' when the server can be reached from the internet.'),
       setting('PROXY_TRUSTED_NETWORKS', 'only if you put a proxy of your own in front of Tesria: that proxy’s address, such as ', c('10.0.0.5/32'), '. Tesria then believes the visitor addresses it passes on.'),
+      setting('TESRIA_SUBNET', 'optional. The private network Tesria’s own services talk to each other on, ', c('10.203.0.0/24'), ' unless you set another. Change it only if that range is already used by a VPN or your own network. After changing it, run ', c('docker compose down'), ' and then ', c('docker compose up -d'), '.'),
     ),
 
     h(2, 'Optional features'),
@@ -1168,7 +1169,7 @@ export async function build({
 
   // ============================================================ Upgrading
   await page('Upgrading', root, doc(
-    p('An ', b('upgrade'), ' swaps Tesria’s software for a newer version and keeps everything you have written. Tesria updates its own database when the new version starts, so there is nothing to convert by hand. It takes a few minutes, most of them while the old version keeps running.'),
+    p('An ', b('upgrade'), ' swaps Tesria’s software for a newer version and keeps everything you have written. A short setup step updates the database before the new version starts, so there is nothing to convert by hand. It takes a few minutes, most of them while the old version keeps running.'),
 
     h(2, 'Before you start'),
     ul(
@@ -1185,14 +1186,15 @@ export async function build({
 
     step(3, 'Rebuild and restart'),
     codeBlock('bash', 'docker compose up -d --build'),
-    p('Building takes a few minutes while the old version keeps running. Then each container is replaced, Tesria updates its database, and it is back.'),
+    p('Building takes a few minutes while the old version keeps running. Then the setup step updates the database and stops, each container is replaced, and Tesria is back.'),
+    panel('warning', p(b('Some upgrades ask for one more step.'), ' The ', pageLink('Release notes'), ' say when, for example to run ', c('docker compose down'), ' and then ', c('docker compose up -d'), ' once. Never add ', c('-v'), ' to ', c('down'), ': that deletes the wiki and its backups.')),
 
     step(4, 'Check it'),
     p('Open ', ...adminAt('About'), ': it names the version now running (so does ', c('/api/health'), ', while you are signed in). ', c('docker compose ps'), ' should show every service ', c('Up'), '.'),
 
     h(2, 'If something goes wrong'),
-    p('Tesria’s log usually says why:'),
-    codeBlock('bash', 'docker compose logs app'),
+    p('The logs usually say why. The first shows the setup step that updates the database, the second Tesria itself:'),
+    codeBlock('bash', 'docker compose logs migrate\ndocker compose logs app'),
     p('Going back means restoring the backup you took in step 1 with the version you had before. A backup made by a newer Tesria cannot be restored into an older one: it is refused, because the older version would not understand the updated database. See ', pageLink('Restoring and undo'), '.'),
   ))
 
@@ -1203,10 +1205,10 @@ export async function build({
 
     h(2, 'Is it running?'),
     p('Open ', c('https://your-server/api/health'), ' in a browser. It needs no sign-in, and answers like this:'),
-    codeBlock('json', '{"status":"ok","service":"tesria-api","version":"0.2.0","utc":"2026-09-23T05:26:02Z","maintenance":null}'),
+    codeBlock('json', '{"status":"ok","service":"tesria-api","version":null,"utc":"2026-09-23T05:26:02Z","maintenance":null}'),
     ul(
       li(p(c('status'), ': an answer at all means Tesria is running and taking requests.')),
-      li(p(c('version'), ': which version of Tesria is running.')),
+      li(p(c('version'), ': which version of Tesria is running, but only while you are signed in. To anyone else it is empty, so the version is not advertised to strangers.')),
       li(p(c('maintenance'), ': empty, except while a backup is being restored, when the wiki can be read but not changed.')),
     ),
     p('On the server itself, the same check from a terminal:'),
@@ -1595,9 +1597,10 @@ export async function build({
     tasks(
       task(false, c('DOMAIN'), ' is a real name you control, and ', c('ACME_EMAIL'), ' is an address someone reads. See ', pageLink('HTTPS and domains'), '.'),
       task(false, c('CADDYFILE=deploy/Caddyfile.public'), ' is set. The standard configuration makes a certificate for any name a stranger connects with.'),
-      task(false, c('POSTGRES_PASSWORD'), ', ', c('APP_DB_PASSWORD'), ', ', c('BACKUP_ENCRYPTION_KEY'), ' and ', c('COLLAB_SHARED_SECRET'), ' are long, random and all different. ', c('APP_DB_PASSWORD'), ' is not empty: empty, Tesria runs as the database owner.'),
+      task(false, c('POSTGRES_PASSWORD'), ', ', c('APP_DB_PASSWORD'), ', ', c('BACKUP_ENCRYPTION_KEY'), ' and ', c('COLLAB_SHARED_SECRET'), ' are long, random and all different. ', c('APP_DB_PASSWORD'), ' is set; Tesria will not start without it.'),
       task(false, 'Only ports 80 and 443 are open to the outside. Nothing publishes Tesria’s own port (8080), the database (5432) or the live editing service (8090).'),
       task(false, 'If a proxy of your own sits in front, ', c('PROXY_TRUSTED_NETWORKS'), ' names exactly that proxy.'),
+      task(false, 'You have decided whether pages may show pictures from any website. If what your readers read is private, limit pictures in ', ...adminAt('Settings'), ', under ', b('Images'), '.'),
       task(false, 'If single sign-on is on, ', c('OIDC_REQUIRE_HTTPS_METADATA'), ' is left out or true.'),
     ),
 

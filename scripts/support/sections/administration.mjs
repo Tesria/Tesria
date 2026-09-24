@@ -847,6 +847,10 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Which sites a page may show inside itself, such as a YouTube video or a Figma design. One site per line; a leading dot, as in ', c('.youtube.com'), ', also allows everything under it. An address on no line is refused when the page is saved and blocked by the browser. Leave the box empty to turn embeds off.'),
     p('It starts with YouTube, Vimeo, Loom, Figma, Miro, CodePen, Google Docs and Google Drive. Choose ', b('Save'), ' after changing it. It needs the ', b('Change security settings'), ' right.'),
 
+    h(2, 'Images'),
+    p('A page can show a picture straight from another website. Whoever runs that website then sees each reader’s address and when they read the page. If that matters to you, turn on ', b('Only show pictures from this wiki and the listed hosts'), ': pictures uploaded to Tesria always show, and others show only from the sites you list, one per line, written the same way as for embeds. Leave the list empty to allow uploaded pictures only.'),
+    p('Pictures from any other site are blocked by the browser, in Tesria and in exported sites. Someone editing a page sees a note under such a picture saying why. It is off for a new instance and needs the ', b('Change security settings'), ' right.'),
+
     h(2, 'Access'),
     ul(
       li(p(b('Allow public registration:'), ' on for a new instance, so anyone who can reach it can make an account. Off, new people need an ', pageLink('Invites', 'invite'), '. The very first account on an empty instance can always register, so this cannot lock you out.')),
@@ -924,7 +928,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Every other package this version ships, for each part of Tesria: the server, the web app, the collaboration service and the PDF service. Filter by name or license, or choose one part. ', b('Third-party licenses'), ', at the top, has the full license text of each.'),
 
     h(2, 'Supporting Tesria'),
-    p('Tesria is free. If it is useful to you and you would like to say thanks, the ', b('Support Tesria on Patreon'), ' button is there for that. It is never required, and nothing in Tesria depends on it.'),
+    p('Tesria is free. If it is useful to you and you would like to say thanks, ', b('Ways to support Tesria'), ' opens tesria.com/support, which lists how: GitHub Sponsors or Ko-fi. It is never required, and nothing in Tesria depends on it.'),
   ))
 }
 

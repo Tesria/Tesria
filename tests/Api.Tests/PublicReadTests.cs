@@ -408,11 +408,12 @@ public class PublicReadTests
         // count, no addresses, no settings beyond these. "branding" (dev-plan
         // 13.1) is what every page, the sign-in page included, already shows.
         // "ownCertificate" (15.5) says what the certificate itself tells
-        // anyone who connects.
+        // anyone who connects. "imageHosts" (14.3) says what every page's CSP
+        // header already tells anyone, and is null unless images are limited.
         var fields = System.Text.Json.JsonDocument.Parse(body).RootElement
             .EnumerateObject().Select(p => p.Name).Order().ToArray();
         Assert.Equal(
-            ["allowPublicRegistration", "branding", "instanceName", "needsOwner", "ownCertificate", "publicReading", "version"],
+            ["allowPublicRegistration", "branding", "imageHosts", "instanceName", "needsOwner", "ownCertificate", "publicReading", "version"],
             fields);
         Assert.DoesNotContain("PUB", body);
         Assert.DoesNotContain("admin@example.com", body);

@@ -344,7 +344,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ),
     h(2, 'Conventions'),
     ul(
-      li(p(b('Database changes are migrations.'), ' Change the model, then from ', c('src/Api'), ' run ', c('dotnet ef migrations add <Name> --output-dir Infrastructure/Migrations'), '. Migrations run by themselves when the app starts.')),
+      li(p(b('Database changes are migrations.'), ' Change the model, then from ', c('src/Api'), ' run ', c('dotnet ef migrations add <Name> --output-dir Infrastructure/Migrations'), '. Under Docker Compose a short ', c('migrate'), ' service applies them before the app starts; running the app on its own outside production applies them itself.')),
       li(p(b('A new kind of block'), ' is defined once, in the web app’s ', c('editor/extensions.ts'), ', never in one editor alone: the collaboration service and the exports rely on the same definition.')),
       li(p(b('What you may not see does not exist.'), ' A request for something the caller may not see answers ', c('404'), ', never ', c('403'), '.')),
       li(p(b('Every change is written down.'), ' An entry in ', c('docs/CHANGELOG.md'), ' saying what changed and why, and ', c('docs/architecture.md'), ' updated if how something works has changed.')),

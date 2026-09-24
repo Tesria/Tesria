@@ -690,12 +690,12 @@ public class RestoreTests
         // First pass: the chain is however long it is.
         await monitor.RunOnceAsync(CancellationToken.None);
 
-        // A restore happens, and takes entries with it.
-        await SeedAsync(factory, db =>
-        {
-            db.AuditLogs.RemoveRange(db.AuditLogs.OrderByDescending(a => a.Sequence).Take(2));
-            db.SiteSettings.First().LastRestoredAt = DateTimeOffset.UtcNow;
-        });
+        // A restore happens, and takes entries with it. The chain has to be
+        // non-empty for "shorter" to mean anything: until registration was
+        // audited (14.3) it was empty here, and this passed without testing.
+        Assert.True(await ReadAsync(factory, db => db.AuditLogs.AnyAsync()));
+        await SeedAsync(factory, db => db.AuditLogs.RemoveRange(db.AuditLogs.OrderByDescending(a => a.Sequence).Take(2)));
+        await SettingsAsync(factory, s => s.LastRestoredAt = DateTimeOffset.UtcNow);
 
         var raised = false;
         monitor.OnBroken = (_, _) => { raised = true; return Task.CompletedTask; };
