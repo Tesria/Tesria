@@ -79,9 +79,11 @@ export const Permission = {
   UsersManage: 'users.manage',
   UsersAssignRoles: 'users.assign_roles',
   UsersPromoteAdmins: 'users.promote_admins',
+  UsersManageAdmins: 'users.manage_admins',
   InvitesManage: 'invites.manage',
   GroupsManage: 'groups.manage',
   SpacesManage: 'spaces.manage',
+  TemplatesInstance: 'templates.instance',
   SpacesPublish: 'spaces.publish',
   SpacesDelete: 'spaces.delete',
   SpacesExports: 'spaces.exports',
@@ -436,7 +438,8 @@ export const pageOperationName = ['View', 'Edit']
 
 /** builtIn: Owner, Admins or Users, whose members follow each account's role (dev-plan 15.1). */
 export type Group = { id: string; name: string; description: string | null; memberCount: number; builtIn?: boolean }
-export type GroupMember = { userId: string; email: string; displayName: string }
+/** `email` only for people who may see the user list, and for yourself (dev-plan 14.1). */
+export type GroupMember = { userId: string; email: string | null; displayName: string }
 export const UserStatus = { Active: 0, Suspended: 1 } as const
 export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus]
 
@@ -942,7 +945,8 @@ export type BlockResult = {
 
 export type Directory = {
   id: string
-  email: string
+  /** Only for people who may see the user list, and for yourself (dev-plan 14.1). */
+  email: string | null
   displayName: string
   avatarHash: string | null
   avatarVariant: number | null
@@ -972,6 +976,8 @@ export type ApiTokenSummary = {
   lastUsedAt: string | null
   /** A read-only token cannot change anything (dev-plan 8.4). */
   readOnly: boolean
+  /** When it stops working; null never expires (dev-plan 14.1). */
+  expiresAt: string | null
 }
 export type CreatedApiToken = ApiTokenSummary & { token: string }
 
@@ -983,7 +989,7 @@ export type WatchStatus = { watching: boolean }
 export type AppNotification = {
   id: string
   action: string
-  targetType: 'page' | 'space' | 'security'
+  targetType: 'page' | 'space' | 'security' | 'token'
   targetId: string
   actorId: string | null
   actorName: string | null
@@ -1569,8 +1575,9 @@ export const api = {
   },
   apiTokens: {
     list: () => request<ApiTokenSummary[]>('GET', '/api/api-tokens'),
-    create: (name: string, readOnly = false) =>
-      request<CreatedApiToken>('POST', '/api/api-tokens', { name, readOnly }),
+    /** `expiresInDays`: 0 for no expiry; omitted is the server's default, 90 days. */
+    create: (name: string, readOnly = false, expiresInDays?: number) =>
+      request<CreatedApiToken>('POST', '/api/api-tokens', { name, readOnly, expiresInDays }),
     revoke: (id: string) => request<void>('DELETE', `/api/api-tokens/${id}`),
   },
   webhooks: {

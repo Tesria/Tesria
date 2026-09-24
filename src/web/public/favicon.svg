@@ -1,7 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="Tesria">
   <!--
-    Tesria's mark: a stack of layers, taken from the brand page at
-    brianintheloop.com/tesria. Same drawing language as the app's own icon set
+    Tesria's mark: a stack of layers. Same drawing language as the app's own icon set
     (24x24, round caps/joins): the stroke is widened from the brand's 1.8 to 2
     here because a favicon renders at 16px, where 1.8 on a 24 viewBox thins out
     to roughly a single pixel and the middle layer lines start to disappear.

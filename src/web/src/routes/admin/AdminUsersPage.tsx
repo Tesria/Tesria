@@ -117,7 +117,11 @@ export function AdminUsersPage() {
             // Signing the owner out, revoking their tokens or resetting their
             // password are all ways for an administrator to take the instance
             // or keep its owner out of it; the server refuses them too.
-            const othersOwnerRow = u.role === UserRole.Owner && !isSelf
+            // Another administrator's account is the owner's, or reachable
+            // with "Manage administrators' accounts" (dev-plan 14.1).
+            const protectedRow = !isSelf && (u.role === UserRole.Owner
+              || (u.role === UserRole.Admin && !iAmOwner && !can(Permission.UsersManageAdmins)))
+            const othersOwnerRow = protectedRow
             const busy = busyId === u.id
             return (
               <tr key={u.id}>
@@ -240,7 +244,7 @@ export function AdminUsersPage() {
                         Transfer ownership
                       </button>
                     )}
-                    {!isSelf && u.role !== UserRole.Owner && (
+                    {!isSelf && !protectedRow && (
                       <button
                         type="button"
                         className="link-btn"
@@ -284,7 +288,7 @@ export function AdminUsersPage() {
                       </button>
                     )}
                     {u.totpEnabled && u.role !== UserRole.Owner && u.id !== me?.id
-                      && (u.role === UserRole.Member || iAmOwner) && (
+                      && !protectedRow && (
                       <button
                         type="button"
                         className="link-btn"

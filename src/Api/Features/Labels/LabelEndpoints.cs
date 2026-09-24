@@ -62,7 +62,7 @@ public static partial class LabelEndpoints
     private static async Task<IResult> ListForPage(
         Guid pageId, AppDbContext db, IPermissionService perms)
     {
-        if (!await perms.CanViewPageAsync(pageId)) return Results.NotFound();
+        if (!await perms.CanReadPageAsync(pageId)) return Results.NotFound();
         var labels = await db.PageLabels
             .Where(pl => pl.PageId == pageId)
             .Select(pl => new LabelResponse(pl.LabelId, pl.Label!.Name))
@@ -74,7 +74,7 @@ public static partial class LabelEndpoints
         Guid pageId, AddLabelRequest req, AppDbContext db, CurrentUser current,
         IPermissionService perms)
     {
-        if (!await perms.CanViewPageAsync(pageId)) return Results.NotFound();
+        if (!await perms.CanReadPageAsync(pageId)) return Results.NotFound();
         if (!await perms.CanEditPageAsync(pageId)) return Results.Forbid();
 
         var name = (req.Name ?? "").Trim().ToLowerInvariant();
@@ -109,7 +109,7 @@ public static partial class LabelEndpoints
     private static async Task<IResult> RemoveFromPage(
         Guid pageId, string name, AppDbContext db, IPermissionService perms)
     {
-        if (!await perms.CanViewPageAsync(pageId)) return Results.NotFound();
+        if (!await perms.CanReadPageAsync(pageId)) return Results.NotFound();
         if (!await perms.CanEditPageAsync(pageId)) return Results.Forbid();
 
         var normalized = (name ?? "").Trim().ToLowerInvariant();

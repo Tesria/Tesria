@@ -1,6 +1,7 @@
 using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Audit;
+using Tesria.Api.Infrastructure.Auth;
 using Tesria.Api.Infrastructure.Permissions;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,9 +12,15 @@ public static class GroupEndpoints
     public record SaveGroupRequest(string Name, string? Description);
     public record AddMemberRequest(Guid UserId);
     public record GroupResponse(Guid Id, string Name, string? Description, int MemberCount, bool BuiltIn = false);
-    public record MemberResponse(Guid UserId, string Email, string DisplayName);
+    /// <summary>
+    /// <c>Email</c> is filled only for callers who may see the user list, and
+    /// for the caller's own row (dev-plan 14.1): everyone else gets names and
+    /// avatars, which is all mentions, pickers and member lists need. Before,
+    /// every signed-in account could collect every address.
+    /// </summary>
+    public record MemberResponse(Guid UserId, string? Email, string DisplayName);
     public record UserResponse(
-        Guid Id, string Email, string DisplayName, string? AvatarHash, int? AvatarVariant);
+        Guid Id, string? Email, string DisplayName, string? AvatarHash, int? AvatarVariant);
 
     public static IEndpointRouteBuilder MapGroupEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -37,13 +44,18 @@ public static class GroupEndpoints
         return routes;
     }
 
-    private static async Task<IResult> ListUsers(AppDbContext db)
+    private static async Task<IResult> ListUsers(AppDbContext db, CurrentUser current, IInstancePermissions rights)
     {
+        var showEmail = await rights.HasAsync(InstancePermissions.UsersView);
+        var me = current.RequireId();
         var users = await db.Users.AsNoTracking()
             .OrderBy(u => u.DisplayName)
-            .Select(u => new UserResponse(u.Id, u.Email, u.DisplayName, u.AvatarHash, u.AvatarVariant))
+            .Select(u => new { u.Id, u.Email, u.DisplayName, u.AvatarKey, u.AvatarHash, u.AvatarVariant })
             .ToListAsync();
-        return Results.Ok(users);
+        return Results.Ok(users.Select(u => new UserResponse(
+            u.Id, showEmail || u.Id == me ? u.Email : null, u.DisplayName,
+            // Only an uploaded picture has a hash worth fetching.
+            u.AvatarKey is null ? null : u.AvatarHash, u.AvatarVariant)));
     }
 
     private static async Task<IResult> List(AppDbContext db)
@@ -168,19 +180,22 @@ public static class GroupEndpoints
         return Results.NoContent();
     }
 
-    private static async Task<IResult> Members(Guid id, AppDbContext db)
+    private static async Task<IResult> Members(Guid id, AppDbContext db, CurrentUser current, IInstancePermissions rights)
     {
         if (!await db.Groups.AnyAsync(g => g.Id == id)) return Results.NotFound();
+        var showEmail = await rights.HasAsync(InstancePermissions.UsersView);
+        var me = current.RequireId();
+        MemberResponse Shown(MemberResponse m) => showEmail || m.UserId == me ? m : m with { Email = null };
         if (BuiltInGroups.IsBuiltIn(id))
-            return Results.Ok(await BuiltInGroups.Members(db, id).AsNoTracking()
+            return Results.Ok((await BuiltInGroups.Members(db, id).AsNoTracking()
                 .OrderBy(u => u.DisplayName)
                 .Select(u => new MemberResponse(u.Id, u.Email, u.DisplayName))
-                .ToListAsync());
+                .ToListAsync()).Select(Shown));
         var members = await db.UserGroups.AsNoTracking()
             .Where(ug => ug.GroupId == id)
             .Select(ug => new MemberResponse(ug.UserId, ug.User!.Email, ug.User.DisplayName))
             .ToListAsync();
-        return Results.Ok(members.OrderBy(m => m.DisplayName));
+        return Results.Ok(members.OrderBy(m => m.DisplayName).Select(Shown));
     }
 
     private static async Task<IResult> AddMember(

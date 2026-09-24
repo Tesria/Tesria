@@ -8,10 +8,18 @@ namespace Tesria.Api.Features.ApiTokens;
 public static class ApiTokenEndpoints
 {
     /// <param name="ReadOnly">Mint a read-only token (dev-plan 8.4). Omitted means full access, as every token was before scopes existed.</param>
-    public record CreateTokenRequest(string Name, bool? ReadOnly);
-    public record CreatedTokenResponse(Guid Id, string Name, string Prefix, bool ReadOnly, DateTimeOffset CreatedAt, string Token);
+    /// <param name="ExpiresInDays">
+    /// How long the token lasts (dev-plan 14.1): 1 to 3650 days, or 0 for no
+    /// expiry, which has to be asked for. Omitted is the default, 90 days.
+    /// </param>
+    public record CreateTokenRequest(string Name, bool? ReadOnly, int? ExpiresInDays = null);
+    public record CreatedTokenResponse(
+        Guid Id, string Name, string Prefix, bool ReadOnly, DateTimeOffset CreatedAt, string Token, DateTimeOffset? ExpiresAt);
     public record TokenResponse(
-        Guid Id, string Name, string Prefix, bool ReadOnly, DateTimeOffset CreatedAt, DateTimeOffset? LastUsedAt);
+        Guid Id, string Name, string Prefix, bool ReadOnly, DateTimeOffset CreatedAt, DateTimeOffset? LastUsedAt,
+        DateTimeOffset? ExpiresAt);
+
+    public const int DefaultLifetimeDays = 90;
 
     public static IEndpointRouteBuilder MapApiTokenEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -31,7 +39,7 @@ public static class ApiTokenEndpoints
         // provider cannot ORDER BY DateTimeOffset.
         return Results.Ok(tokens
             .OrderByDescending(t => t.CreatedAt)
-            .Select(t => new TokenResponse(t.Id, t.Name, t.Prefix, t.ReadOnly, t.CreatedAt, t.LastUsedAt)));
+            .Select(t => new TokenResponse(t.Id, t.Name, t.Prefix, t.ReadOnly, t.CreatedAt, t.LastUsedAt, t.ExpiresAt)));
     }
 
     private static async Task<IResult> Create(
@@ -45,12 +53,20 @@ public static class ApiTokenEndpoints
                 ["name"] = ["A name is required so you can tell your tokens apart."],
             });
 
-        var (raw, entity) = await tokens.IssueAsync(current.RequireId(), name, req.ReadOnly ?? false);
+        var days = req.ExpiresInDays ?? DefaultLifetimeDays;
+        if (days is < 0 or > 3650)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["expiresInDays"] = ["A token lasts from 1 to 3650 days, or 0 for no expiry."],
+            });
+        DateTimeOffset? expiresAt = days == 0 ? null : DateTimeOffset.UtcNow.AddDays(days);
+
+        var (raw, entity) = await tokens.IssueAsync(current.RequireId(), name, req.ReadOnly ?? false, expiresAt);
         await detector.TokenMintedAsync(current.RequireId());
         await db.SaveChangesAsync();
         // The raw token is returned exactly once: it is not retrievable again.
         return Results.Created($"/api/api-tokens/{entity.Id}",
-            new CreatedTokenResponse(entity.Id, entity.Name, entity.Prefix, entity.ReadOnly, entity.CreatedAt, raw));
+            new CreatedTokenResponse(entity.Id, entity.Name, entity.Prefix, entity.ReadOnly, entity.CreatedAt, raw, entity.ExpiresAt));
     }
 
     private static async Task<IResult> Revoke(Guid id, AppDbContext db, CurrentUser current)

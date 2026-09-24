@@ -80,7 +80,7 @@ public static class AttachmentEndpoints
     private static async Task<IResult> ListForPage(
         Guid pageId, AppDbContext db, IPermissionService perms)
     {
-        if (!await perms.CanViewPageAsync(pageId)) return Results.NotFound();
+        if (!await perms.CanReadPageAsync(pageId)) return Results.NotFound();
         var items = await db.Attachments.AsNoTracking()
             .Where(a => a.PageId == pageId)
             .ToListAsync();
@@ -93,7 +93,7 @@ public static class AttachmentEndpoints
     {
         var a = await db.Attachments.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id);
         if (a is null) return Results.NotFound();
-        if (!await perms.CanViewPageAsync(a.PageId)) return Results.NotFound();
+        if (!await perms.CanReadPageAsync(a.PageId)) return Results.NotFound();
         return Results.Ok(ToResponse(a));
     }
 
@@ -104,7 +104,7 @@ public static class AttachmentEndpoints
         if (a is null) return Results.NotFound();
         // Attachments are addressed by their own id, so the page's view rules
         // must be re-checked here or restricted files would leak.
-        if (!await perms.CanViewPageAsync(a.PageId)) return Results.NotFound();
+        if (!await perms.CanReadPageAsync(a.PageId)) return Results.NotFound();
         var stream = storage.OpenRead(a.StorageKey);
         if (stream is null) return Results.NotFound();
         return Results.File(stream, a.ContentType, a.Filename);
@@ -125,7 +125,7 @@ public static class AttachmentEndpoints
         var a = await db.Attachments.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id);
         if (a is null || !string.Equals(a.ContentType, "application/pdf", StringComparison.OrdinalIgnoreCase))
             return Results.NotFound();
-        if (!await perms.CanViewPageAsync(a.PageId)) return Results.NotFound();
+        if (!await perms.CanReadPageAsync(a.PageId)) return Results.NotFound();
         var stream = storage.OpenRead(a.StorageKey);
         if (stream is null) return Results.NotFound();
 
@@ -147,7 +147,7 @@ public static class AttachmentEndpoints
     {
         var a = await db.Attachments.FirstOrDefaultAsync(a => a.Id == id);
         if (a is null) return Results.NotFound();
-        if (!await perms.CanViewPageAsync(a.PageId)) return Results.NotFound();
+        if (!await perms.CanReadPageAsync(a.PageId)) return Results.NotFound();
         if (!await perms.CanEditPageAsync(a.PageId)) return Results.Forbid();
         db.Attachments.Remove(a);
         await db.SaveChangesAsync();

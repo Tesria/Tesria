@@ -49,11 +49,15 @@ public static class InstancePermissions
     public const string UsersManage = "users.manage";
     public const string UsersAssignRoles = "users.assign_roles";
     public const string UsersPromoteAdmins = "users.promote_admins";
+    /// <summary>Act on other administrators' accounts (dev-plan 14.1); the owner's own is never reachable.</summary>
+    public const string UsersManageAdmins = "users.manage_admins";
     public const string InvitesManage = "invites.manage";
     public const string GroupsManage = "groups.manage";
 
     // --- Spaces
     public const string SpacesManage = "spaces.manage";
+    /// <summary>Create, change and delete templates offered in every space (dev-plan 14.1).</summary>
+    public const string TemplatesInstance = "templates.instance";
     public const string SpacesPublish = "spaces.publish";
     public const string SpacesDelete = "spaces.delete";
 
@@ -127,8 +131,15 @@ public static class InstancePermissions
             "The accounts on this instance, with their roles and status.",
             PermissionScope.Administration, UserRole.Admin),
         new(UsersManage, "People", "Manage accounts",
-            "Suspend, unlock, sign out, revoke tokens and issue password resets. Never on the owner.",
+            "Suspend, unlock, sign out, revoke tokens and issue password resets for users. Never on the owner, and on administrators only with the next right.",
             PermissionScope.Administration, UserRole.Admin),
+        // Off for administrators by default (dev-plan 14.1): a reset link is
+        // an account takeover, so administrators acting on each other is the
+        // owner's decision. An owner who steps back can grant it so that
+        // administrators can recover each other. Never the owner's account.
+        new(UsersManageAdmins, "People", "Manage administrators' accounts",
+            "Suspend, sign out, revoke tokens, turn off two-factor and issue password resets for other administrators. Never the owner.",
+            PermissionScope.Administration, UserRole.Owner),
         new(UsersAssignRoles, "People", "Assign roles",
             "Give someone a different role within their own tier.",
             PermissionScope.Administration, UserRole.Admin),
@@ -147,6 +158,9 @@ public static class InstancePermissions
 
         new(SpacesManage, "Spaces", "Manage spaces",
             "See every space in Administration, and grant yourself access to administer it.",
+            PermissionScope.Administration, UserRole.Admin),
+        new(TemplatesInstance, "Spaces", "Manage instance-wide templates",
+            "Create, change and delete the templates offered in every space. Space templates stay with each space's editors.",
             PermissionScope.Administration, UserRole.Admin),
         new(SpacesPublish, "Spaces", "Publish spaces",
             "Make a space readable without an account, or withdraw it.",

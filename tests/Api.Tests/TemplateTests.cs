@@ -125,19 +125,20 @@ public class TemplateTests
     }
 
     [Fact]
-    public async Task The_author_can_rename_an_instance_wide_template_and_another_member_cannot()
+    public async Task Instance_wide_templates_are_managed_by_those_with_the_right_and_nobody_else()
     {
+        // Since 14.1 an instance-wide template takes "Manage instance-wide
+        // templates", held by administrators; before, any user could make
+        // one and its author could always change it.
         using var factory = new TestAppFactory();
         var owner = factory.CreateClient();
         await owner.RegisterAndSignInAsync();
-        var author = factory.CreateClient();
-        await author.RegisterAndSignInAsync();
         var other = factory.CreateClient();
         await other.RegisterAndSignInAsync();
 
-        var t = await CreateAsync(author, null, "Meeting notes");
+        var t = await CreateAsync(owner, null, "Meeting notes");
 
-        var renamed = await author.PutAsJsonAsync($"/api/templates/{t.Id}", new { Name = "  Weekly meeting  ", Description = "Agenda first" });
+        var renamed = await owner.PutAsJsonAsync($"/api/templates/{t.Id}", new { Name = "  Weekly meeting  ", Description = "Agenda first" });
         renamed.EnsureSuccessStatusCode();
         var body = (await renamed.Content.ReadFromJsonAsync<TemplateDto>())!;
         Assert.Equal("Weekly meeting", body.Name);
@@ -150,24 +151,25 @@ public class TemplateTests
         // And the list says so, per viewer, so the screen offers only what works.
         var seenByOther = await other.GetFromJsonAsync<List<TemplateDto>>("/api/templates");
         Assert.False(seenByOther!.Single(x => x.Id == t.Id).CanManage);
-        var seenByAuthor = await author.GetFromJsonAsync<List<TemplateDto>>("/api/templates");
-        Assert.True(seenByAuthor!.Single(x => x.Id == t.Id).CanManage);
-        Assert.NotNull(seenByAuthor!.Single(x => x.Id == t.Id).CreatedByName);
+        var seenByOwner = await owner.GetFromJsonAsync<List<TemplateDto>>("/api/templates");
+        Assert.True(seenByOwner!.Single(x => x.Id == t.Id).CanManage);
+        Assert.NotNull(seenByOwner!.Single(x => x.Id == t.Id).CreatedByName);
     }
 
     [Fact]
-    public async Task Someone_who_manages_spaces_can_remove_an_instance_wide_template_they_did_not_write()
+    public async Task An_administrator_can_remove_an_instance_wide_template_someone_else_wrote()
     {
         using var factory = new TestAppFactory();
         var owner = factory.CreateClient();
         await owner.RegisterAndSignInAsync();
-        var author = factory.CreateClient();
-        await author.RegisterAndSignInAsync();
+        var admin = factory.CreateClient();
+        var adminId = await admin.RegisterAndSignInAsync();
+        (await owner.PutAsJsonAsync($"/api/admin/users/{adminId}/role", new { Role = 1 })).EnsureSuccessStatusCode();
 
-        var t = await CreateAsync(author, null, "Left behind");
-        Assert.True((await owner.GetFromJsonAsync<List<TemplateDto>>("/api/templates"))!.Single(x => x.Id == t.Id).CanManage);
-        Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/api/templates/{t.Id}")).StatusCode);
-        Assert.DoesNotContain(await owner.GetFromJsonAsync<List<TemplateDto>>("/api/templates") ?? [], x => x.Id == t.Id);
+        var t = await CreateAsync(owner, null, "Left behind");
+        Assert.True((await admin.GetFromJsonAsync<List<TemplateDto>>("/api/templates"))!.Single(x => x.Id == t.Id).CanManage);
+        Assert.Equal(HttpStatusCode.NoContent, (await admin.DeleteAsync($"/api/templates/{t.Id}")).StatusCode);
+        Assert.DoesNotContain(await admin.GetFromJsonAsync<List<TemplateDto>>("/api/templates") ?? [], x => x.Id == t.Id);
     }
 
     [Fact]

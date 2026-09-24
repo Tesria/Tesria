@@ -31,7 +31,7 @@ export function MentionTextarea({ value, onValueChange, ...rest }: {
 
   const q = (query ?? '').toLowerCase()
   const matches = query === null ? [] : (people ?? [])
-    .filter((p) => p.displayName.toLowerCase().includes(q) || p.email.split('@')[0].toLowerCase().startsWith(q))
+    .filter((p) => p.displayName.toLowerCase().includes(q) || (p.email ?? '').split('@')[0].toLowerCase().startsWith(q))
     .slice(0, 8)
 
   function pick(person: Directory) {

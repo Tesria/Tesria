@@ -554,25 +554,42 @@ public static class AdminEndpoints
     /// the owner a password-reset link and walk in, or sign them out of every
     /// device on a loop. The owner acting on their own account is fine.
     /// </summary>
-    private static async Task<IResult?> RefuseIfOwnersAccountAsync(User target, CurrentUser current)
+    /// <summary>
+    /// Whose account an administrator may act on (dev-plan 10.1, 14.1). The
+    /// owner's: only the owner. Another administrator's: the owner, or someone
+    /// the owner has given "Manage administrators' accounts"; a reset link is
+    /// an account takeover, so administrators do not reach each other by
+    /// default. A user's: anyone who reached the endpoint at all.
+    /// </summary>
+    private static async Task<IResult?> RefuseIfProtectedAccountAsync(User target, CurrentUser current, IInstancePermissions rights)
     {
-        if (target.Role != UserRole.Owner) return null;
-        if (target.Id == current.Id || await current.IsOwnerAsync()) return null;
+        if (target.Id == current.Id || target.Role < UserRole.Admin) return null;
+        if (await current.IsOwnerAsync()) return null;
+        if (target.Role == UserRole.Owner)
+            return Results.Json(new
+            {
+                title = "Forbidden",
+                status = 403,
+                message = "Only the owner can act on the owner's account.",
+            }, statusCode: StatusCodes.Status403Forbidden);
+        if (await rights.HasAsync(InstancePermissions.UsersManageAdmins)) return null;
         return Results.Json(new
         {
             title = "Forbidden",
             status = 403,
-            message = "Only the owner can act on the owner's account.",
+            code = "permission_required",
+            permission = InstancePermissions.UsersManageAdmins,
+            message = "Acting on another administrator's account needs the right to manage administrators' accounts, which the owner gives on the Roles tab.",
         }, statusCode: StatusCodes.Status403Forbidden);
     }
 
     private static async Task<IResult> IssuePasswordReset(
         Guid userId, AppDbContext db, CurrentUser current,
-        IAuditLogger audit, IAccountRecoveryService recovery)
+        IAuditLogger audit, IAccountRecoveryService recovery, IInstancePermissions rights)
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Results.NotFound();
-        if (await RefuseIfOwnersAccountAsync(user, current) is { } refused) return refused;
+        if (await RefuseIfProtectedAccountAsync(user, current, rights) is { } refused) return refused;
 
         if (user.PasswordHash is null)
             return Results.ValidationProblem(new Dictionary<string, string[]>
@@ -871,10 +888,14 @@ public static class AdminEndpoints
     /// suspension actually mean something.
     /// </summary>
     private static async Task<IResult> SetStatus(
-        Guid userId, SetStatusRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit)
+        Guid userId, SetStatusRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit,
+        IInstancePermissions rights)
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Results.NotFound();
+        if (req.Status != UserStatus.Active && user.Role == UserRole.Admin
+            && await RefuseIfProtectedAccountAsync(user, current, rights) is { } refused)
+            return refused;
 
         // Suspending yourself locks you out with no way back in.
         if (userId == current.RequireId() && req.Status != UserStatus.Active)
@@ -912,11 +933,11 @@ public static class AdminEndpoints
 
     /// <summary>Signs every device out of an account without changing its password.</summary>
     private static async Task<IResult> RevokeSessions(
-        Guid userId, AppDbContext db, IAuditLogger audit, CurrentUser current)
+        Guid userId, AppDbContext db, IAuditLogger audit, CurrentUser current, IInstancePermissions rights)
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Results.NotFound();
-        if (await RefuseIfOwnersAccountAsync(user, current) is { } refused) return refused;
+        if (await RefuseIfProtectedAccountAsync(user, current, rights) is { } refused) return refused;
 
         user.SecurityStamp = Guid.NewGuid().ToString("N");
         // The stamp rotation is what kills the cookies; the rows are marked
@@ -935,11 +956,11 @@ public static class AdminEndpoints
     /// revocation does not touch them, so "lock this account out" needs both.
     /// </summary>
     private static async Task<IResult> RevokeTokens(
-        Guid userId, AppDbContext db, IAuditLogger audit, CurrentUser current)
+        Guid userId, AppDbContext db, IAuditLogger audit, CurrentUser current, IInstancePermissions rights)
     {
         var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Results.NotFound();
-        if (await RefuseIfOwnersAccountAsync(user, current) is { } refused) return refused;
+        if (await RefuseIfProtectedAccountAsync(user, current, rights) is { } refused) return refused;
 
         var tokens = await db.ApiTokens.Where(t => t.UserId == userId).ToListAsync();
         db.ApiTokens.RemoveRange(tokens);
@@ -958,7 +979,7 @@ public static class AdminEndpoints
     /// </summary>
     private static async Task<IResult> DisableTwoFactor(
         Guid userId, AppDbContext db, IAuditLogger audit, CurrentUser current, ITotpService totp,
-        ISecurityDetector detector, HttpContext http, IConfiguration config)
+        ISecurityDetector detector, HttpContext http, IConfiguration config, IInstancePermissions rights)
     {
         if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
@@ -969,10 +990,7 @@ public static class AdminEndpoints
                 message = "The owner turns two-factor off from their own profile." }, statusCode: StatusCodes.Status403Forbidden);
         if (userId == callerId)
             return Results.Conflict(new { message = "Turn your own two-factor off from your profile." });
-        var caller = await db.Users.AsNoTracking().FirstAsync(u => u.Id == callerId);
-        if (user.Role >= UserRole.Admin && caller.Role != UserRole.Owner)
-            return Results.Json(new { title = "Forbidden", status = 403,
-                message = "Only the owner can turn off an administrator's two-factor." }, statusCode: StatusCodes.Status403Forbidden);
+        if (await RefuseIfProtectedAccountAsync(user, current, rights) is { } refused) return refused;
         if (user.TotpEnabledAt is null)
             return Results.Conflict(new { message = "Two-factor is not on for this account." });
 

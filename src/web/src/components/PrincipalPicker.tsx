@@ -35,7 +35,7 @@ export function PrincipalPicker({ operationNames, onAdd, addLabel = 'Add' }: Pro
   useEffect(() => setPrincipalId(''), [type])
 
   const options = type === PrincipalType.User
-    ? users.map((u) => ({ id: u.id, label: `${u.displayName} (${u.email})` }))
+    ? users.map((u) => ({ id: u.id, label: u.email ? `${u.displayName} (${u.email})` : u.displayName }))
     : groups.map((g) => ({ id: g.id, label: g.name }))
 
   async function submit(e: FormEvent) {

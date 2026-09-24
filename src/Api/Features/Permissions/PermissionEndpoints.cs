@@ -41,7 +41,8 @@ public static class PermissionEndpoints
         string key, AppDbContext db, IPermissionService perms)
     {
         var space = await FindSpaceAsync(db, key);
-        if (space is null) return Results.NotFound();
+        // A space the caller cannot see is not found, not forbidden (dev-plan 14.1).
+        if (space is null || !await perms.CanViewSpaceAsync(space.Id)) return Results.NotFound();
         if (!await perms.CanAdminSpaceAsync(space.Id)) return Results.Forbid();
 
         var rows = await db.SpacePermissions.AsNoTracking()
@@ -59,7 +60,8 @@ public static class PermissionEndpoints
         IPermissionService perms, CurrentUser current, IAuditLogger audit)
     {
         var space = await FindSpaceAsync(db, key);
-        if (space is null) return Results.NotFound();
+        // A space the caller cannot see is not found, not forbidden (dev-plan 14.1).
+        if (space is null || !await perms.CanViewSpaceAsync(space.Id)) return Results.NotFound();
         if (!await perms.CanAdminSpaceAsync(space.Id)) return Results.Forbid();
         if (!await PrincipalExistsAsync(db, req.PrincipalType, req.PrincipalId))
             return Results.ValidationProblem(Error("principalId", "Principal not found."));
@@ -106,7 +108,8 @@ public static class PermissionEndpoints
         Infrastructure.Security.ISecurityDetector detector, HttpContext http, IConfiguration config)
     {
         var space = await FindSpaceAsync(db, key);
-        if (space is null) return Results.NotFound();
+        // A space the caller cannot see is not found, not forbidden (dev-plan 14.1).
+        if (space is null || !await perms.CanViewSpaceAsync(space.Id)) return Results.NotFound();
         if (!await perms.CanAdminSpaceAsync(space.Id)) return Results.Forbid();
         if (Features.Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
 
@@ -123,7 +126,8 @@ public static class PermissionEndpoints
         string key, Guid id, AppDbContext db, IPermissionService perms, IAuditLogger audit)
     {
         var space = await FindSpaceAsync(db, key);
-        if (space is null) return Results.NotFound();
+        // A space the caller cannot see is not found, not forbidden (dev-plan 14.1).
+        if (space is null || !await perms.CanViewSpaceAsync(space.Id)) return Results.NotFound();
         if (!await perms.CanAdminSpaceAsync(space.Id)) return Results.Forbid();
 
         var row = await db.SpacePermissions.FirstOrDefaultAsync(p => p.Id == id && p.SpaceId == space.Id);
@@ -215,6 +219,7 @@ public static class PermissionEndpoints
     private static async Task<IResult> RemovePageRestriction(
         Guid pageId, Guid id, AppDbContext db, IPermissionService perms, IAuditLogger audit)
     {
+        if (!await perms.CanViewPageAsync(pageId)) return Results.NotFound();
         if (!await perms.CanEditPageAsync(pageId)) return Results.Forbid();
 
         var row = await db.PageRestrictions.FirstOrDefaultAsync(r => r.Id == id && r.PageId == pageId);

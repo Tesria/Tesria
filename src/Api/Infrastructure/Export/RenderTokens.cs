@@ -22,7 +22,7 @@ namespace Tesria.Api.Infrastructure.Export;
 ///   also does not count against the twenty-an-hour API token mint limit,
 ///   which a fifty-page site export would exhaust on its own.
 /// * **Read only, and scoped.** A token says "this user, this page" or "this
-///   user, this space", for five minutes. It cannot write, and it cannot be
+///   user, this space", for fifteen minutes. It cannot write, and it cannot be
 ///   pointed at a different page.
 /// * **It grants nothing new.** The principal it yields is the user who asked
 ///   for the export, or the anonymous principal for an anonymous export, so

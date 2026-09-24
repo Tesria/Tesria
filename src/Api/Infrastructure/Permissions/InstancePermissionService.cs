@@ -29,16 +29,40 @@ public interface IInstancePermissions
 /// The three reserved keys are added for an owner rather than stored, so no
 /// configuration can take them away.
 /// </summary>
-public sealed class InstancePermissionService(AppDbContext db, CurrentUser current, PermissionCache cache)
+public sealed class InstancePermissionService(
+    AppDbContext db, CurrentUser current, PermissionCache cache, Settings.ISiteSettingsService settings)
     : IInstancePermissions
 {
     private IReadOnlySet<string>? _mine;
 
+    /// <summary>
+    /// The caller's rights, as every endpoint checks them. When the instance
+    /// requires two-factor for administrators and this one has not set it up,
+    /// the administration rights are held back (dev-plan 14.1): the routes
+    /// that name a right already refused them, but a handler that checked a
+    /// right itself (the settings form, role changes, the Roles tab) did not.
+    /// The profile's report of what someone holds (<see cref="ForUserAsync"/>)
+    /// is unchanged, so the admin screens can still show the setup step.
+    /// </summary>
     public async Task<IReadOnlySet<string>> ForCurrentUserAsync(CancellationToken ct = default)
     {
         if (_mine is { } cached) return cached;
         if (current.Id is not { } id) return _mine = new HashSet<string>();
-        return _mine = await ForUserAsync(id, ct);
+        var held = await ForUserAsync(id, ct);
+        if (held.Count > 0 && (await settings.GetAsync(ct)).RequireTotpForAdmins)
+        {
+            var account = await db.Users.AsNoTracking().Where(u => u.Id == id)
+                .Select(u => new { u.Role, Enrolled = u.TotpEnabledAt != null }).FirstOrDefaultAsync(ct);
+            if (account is { Role: >= UserRole.Admin, Enrolled: false })
+            {
+                var administration = InstancePermissions.All
+                    .Where(p => p.Scope == PermissionScope.Administration).Select(p => p.Key)
+                    .Concat(InstancePermissions.Reserved.Select(r => r.Key))
+                    .ToHashSet();
+                held = held.Where(k => !administration.Contains(k)).ToHashSet();
+            }
+        }
+        return _mine = held;
     }
 
     public async Task<bool> HasAsync(string key, CancellationToken ct = default) =>

@@ -34,3 +34,35 @@ public sealed class TokenScopeMiddleware(RequestDelegate next)
         return next(context);
     }
 }
+
+/// <summary>
+/// Keeps API tokens away from the account itself (dev-plan 14.1): a token
+/// may say who it belongs to (<c>GET /api/auth/me</c>) and nothing else
+/// under <c>/api/auth</c> or <c>/api/api-tokens</c>. Before this, a token could
+/// mint more tokens, revoke every session including the owner's, and, by
+/// saving the profile, be handed a fresh browser session that passed every
+/// "confirm your password" check (found in the 14.1 review). Managing
+/// tokens, sessions, passwords, two-factor and the profile needs a person
+/// signed in to a browser.
+/// </summary>
+public sealed class TokenAccountGuardMiddleware(RequestDelegate next)
+{
+    public Task InvokeAsync(HttpContext context)
+    {
+        var path = context.Request.Path;
+        var byToken = context.User.Identity is { IsAuthenticated: true, AuthenticationType: Auth.ApiTokenAuthenticationDefaults.AuthenticationScheme };
+        if (byToken
+            && (path.StartsWithSegments("/api/api-tokens")
+                || (path.StartsWithSegments("/api/auth")
+                    && !(HttpMethods.IsGet(context.Request.Method) && path.Equals("/api/auth/me", StringComparison.OrdinalIgnoreCase)))))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return context.Response.WriteAsJsonAsync(new
+            {
+                code = "token_not_allowed",
+                message = "API tokens cannot manage tokens, sessions, passwords, two-factor or the profile. Sign in in a browser to do this.",
+            });
+        }
+        return next(context);
+    }
+}

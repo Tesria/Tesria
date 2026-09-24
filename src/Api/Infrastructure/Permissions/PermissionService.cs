@@ -23,6 +23,17 @@ public interface IPermissionService
     Task<bool> CanAdminSpaceAsync(Guid spaceId);
     Task<bool> CanViewPageAsync(Guid pageId);
     Task<bool> CanEditPageAsync(Guid pageId);
+
+    /// <summary>
+    /// Whether the caller may read what hangs off a page: its versions,
+    /// attachments, labels and comments (dev-plan 14.1). Stricter than
+    /// <see cref="CanViewPageAsync"/>, which deliberately resolves drafts and
+    /// trashed pages for the trash, restore and draft-upload paths: a trashed
+    /// page reads as not found, the way the page itself does, and a draft is
+    /// readable by its author and by those who may edit its space, the same
+    /// people who may publish or discard it.
+    /// </summary>
+    Task<bool> CanReadPageAsync(Guid pageId);
     /// <summary>Ids of spaces the current user may view, for filtering listings.</summary>
     Task<HashSet<Guid>> ViewableSpaceIdsAsync();
 
@@ -203,6 +214,20 @@ public sealed class PermissionService(AppDbContext db, CurrentUser current, ISit
 
     public Task<bool> CanViewPageAsync(Guid pageId) => HasPageAsync(pageId, PageOperation.View);
     public Task<bool> CanEditPageAsync(Guid pageId) => HasPageAsync(pageId, PageOperation.Edit);
+
+    public async Task<bool> CanReadPageAsync(Guid pageId)
+    {
+        var page = await db.Pages.AsNoTracking().IgnoreQueryFilters()
+            .Where(p => p.Id == pageId)
+            .Select(p => new { p.SpaceId, p.Status, p.DeletedAt, p.CreatedById })
+            .FirstOrDefaultAsync();
+        if (page is null || page.DeletedAt is not null) return false;
+        if (page.Status == Domain.PageStatus.Draft
+            && page.CreatedById != UserId
+            && !await CanEditSpaceAsync(page.SpaceId))
+            return false;
+        return await CanViewPageAsync(pageId);
+    }
 
     private async Task<bool> HasPageAsync(Guid pageId, PageOperation required)
     {

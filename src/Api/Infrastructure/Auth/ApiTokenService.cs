@@ -14,7 +14,7 @@ namespace Tesria.Api.Infrastructure.Auth;
 /// </summary>
 public interface IApiTokenService
 {
-    Task<(string RawToken, ApiToken Entity)> IssueAsync(Guid userId, string name, bool readOnly = false);
+    Task<(string RawToken, ApiToken Entity)> IssueAsync(Guid userId, string name, bool readOnly = false, DateTimeOffset? expiresAt = null);
     Task<ApiToken?> ValidateAsync(string rawToken);
 }
 
@@ -22,7 +22,7 @@ public sealed class ApiTokenService(AppDbContext db) : IApiTokenService
 {
     private const string Prefix = "cct_"; // "Tesria token"
 
-    public async Task<(string RawToken, ApiToken Entity)> IssueAsync(Guid userId, string name, bool readOnly = false)
+    public async Task<(string RawToken, ApiToken Entity)> IssueAsync(Guid userId, string name, bool readOnly = false, DateTimeOffset? expiresAt = null)
     {
         var id = Guid.NewGuid();
         var secret = Base64Url(RandomNumberGenerator.GetBytes(32));
@@ -37,6 +37,7 @@ public sealed class ApiTokenService(AppDbContext db) : IApiTokenService
             TokenHash = Hash(rawToken),
             Prefix = rawToken[..(Prefix.Length + 8)] + "…",
             CreatedAt = DateTimeOffset.UtcNow,
+            ExpiresAt = expiresAt,
         };
         db.ApiTokens.Add(entity);
         await db.SaveChangesAsync();
@@ -53,6 +54,8 @@ public sealed class ApiTokenService(AppDbContext db) : IApiTokenService
 
         var token = await db.ApiTokens.FirstOrDefaultAsync(t => t.Id == id);
         if (token is null) return null;
+        // Expired is the same answer as unknown (dev-plan 14.1).
+        if (token.ExpiresAt is { } expires && expires <= DateTimeOffset.UtcNow) return null;
 
         // Constant-time compare against the stored hash of the full raw token.
         var expected = Convert.FromHexString(token.TokenHash);

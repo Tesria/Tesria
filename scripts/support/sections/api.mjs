@@ -38,6 +38,7 @@ export const shots = () => [
     ],
     clipTo: '#api-tokens form', clipPad: 12,
     annotate: [
+      { type: 'box', target: '#api-tokens .api-tokens__expiry', pad: 4 },
       { type: 'box', target: '#api-tokens .api-tokens__scope', pad: 4 },
       { type: 'box', target: '#api-tokens form button[type="submit"]', pad: 4 },
     ],
@@ -109,12 +110,13 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Open your profile (your initials at the top right) and scroll to ', b('API tokens'), '.'),
     ol(
       li(p('Give the token a name that says what will use it, such as ', i('Weekly report script'), '. You will see the name in the list later, next to when the token was last used.')),
+      li(p('Under ', b('Expires'), ', choose how long it lasts: 90 days unless you have a reason. You are told a week before it runs out, so the script does not stop by surprise.')),
       li(p('Tick ', b('Read-only'), ' if the script only needs to look things up. A read-only token can read pages and search, and is refused anything that changes something. For this page’s last step, leave it unticked.')),
       li(p('Choose ', b('Create token'), '.')),
     ),
-    ...(await picture(start, 'token-form', 'The API tokens form on the profile', 'Name the token, decide whether it is read-only, and choose Create token.')),
+    ...(await picture(start, 'token-form', 'The API tokens form on the profile', 'Name the token, choose when it expires and whether it is read-only, then Create token.')),
     p('Tesria shows the token once, in a box that says ', i('Copy this token now, it won’t be shown again'), '. Copy it, then choose ', b('Done'), '. It starts with ', c('cct_'), '. Tesria keeps only a fingerprint of it, which is why it cannot show it to you again: if you lose it, revoke it and make a new one.'),
-    panel('warning', p(b('Treat a token like a password.'), ' Anyone who has it can do what you can do, from anywhere that reaches your server. Do not paste it into chat, email or a file you share.')),
+    panel('warning', p(b('Treat a token like a password.'), ' Anyone who has it can do what you can do, from anywhere that reaches your server, until it expires or you revoke it. Do not paste it into chat, email or a file you share. The one thing a token can never do is manage your account (tokens, sessions, password, two-factor, profile): those answer ', c('token_not_allowed'), '.')),
 
     step(2, 'Keep the token handy in your terminal'),
     p('Rather than pasting the token into every command, put it in a variable for this terminal window. It is forgotten when you close the window.'),
