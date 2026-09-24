@@ -56,7 +56,7 @@ const AREAS = [
   ['Setup', 'The first-run setup wizard.'],
   ['Admin', 'Administration: people, roles, invites, spaces, security, backups, settings, branding, API tokens and the dashboard. Each needs its own right.'],
   ['Audit', 'The audit log.'],
-  ['Tesria.Api', 'Whether this Tesria is running, and its version (/api/health).'],
+  ['Tesria.Api', 'Whether this Tesria is running (/api/health); the version too, to a signed-in caller.'],
 ]
 
 export async function build({ top, page, ensure, doc, p, h, text, bold, italic, code, ul, ol, li, panel, codeBlock, live, toc, pageLink, adminAt, profileAt, openapi }) {

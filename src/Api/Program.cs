@@ -70,6 +70,10 @@ builder.Services.AddScoped<IAuditLogger, AuditLogger>();
 builder.Services.AddScoped<IAuditChainVerifier, AuditChainVerifier>();
 builder.Services.AddSingleton<AuditChainMonitor>();
 builder.Services.AddSingleton<SecurityCounters>();
+// Email sent after its request is answered (dev-plan 14.3).
+builder.Services.AddSingleton<Tesria.Api.Infrastructure.Email.EmailQueue>();
+builder.Services.AddSingleton<Tesria.Api.Infrastructure.Email.IEmailQueue>(sp => sp.GetRequiredService<Tesria.Api.Infrastructure.Email.EmailQueue>());
+builder.Services.AddHostedService(sp => sp.GetRequiredService<Tesria.Api.Infrastructure.Email.EmailQueue>());
 // Administration, About: OSV.dev, asked only when an administrator presses Check.
 builder.Services.AddHttpClient(Tesria.Api.Features.Admin.OsvClient.HttpClientName, c =>
 {

@@ -21,13 +21,17 @@ public static class OpenApiSetup
     public static IServiceCollection AddTesriaOpenApi(this IServiceCollection services) =>
         services.AddOpenApi("v1", options =>
         {
-            options.AddDocumentTransformer((document, _, _) =>
+            options.AddDocumentTransformer((document, context, _) =>
             {
+                // The release this document describes (dev-plan 16.1), to
+                // signed-in readers only (dev-plan 14.3); anyone else sees the
+                // API's own version, which has not changed since there was one.
+                var signedIn = context.ApplicationServices.GetService<IHttpContextAccessor>()?
+                    .HttpContext?.User.Identity?.IsAuthenticated == true;
                 document.Info = new OpenApiInfo
                 {
                     Title = "Tesria API",
-                    // The release this document describes (dev-plan 16.1).
-                    Version = Infrastructure.Versioning.AppVersion.Current,
+                    Version = signedIn ? Infrastructure.Versioning.AppVersion.Current : "1",
                     Description =
                         "The REST API behind Tesria, a self-hosted wiki.\n\n"
                         + "**Authentication.** Scripts and integrations send an API token as "

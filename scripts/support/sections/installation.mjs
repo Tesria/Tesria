@@ -181,7 +181,7 @@ export const shots = () => [
 
 export async function build({
   top, page, ensure, attachCurrent, doc, p, h, text, bold, italic, code, ul, ol, li, panel, table, codeBlock,
-  fileBlock, live, tasks, task, picture, pageLink, mailProviders, image, profileAt }) {
+  fileBlock, live, tasks, task, picture, pageLink, mailProviders, image, profileAt, adminAt }) {
   const root = top['Installation and operations']
   const b = (t) => text(t, bold)
   const c = (t) => text(t, code)
@@ -1188,7 +1188,7 @@ export async function build({
     p('Building takes a few minutes while the old version keeps running. Then each container is replaced, Tesria updates its database, and it is back.'),
 
     step(4, 'Check it'),
-    p('Open ', c('/api/health'), ' on your Tesria’s address. It names the version now running. ', c('docker compose ps'), ' should show every service ', c('Up'), '.'),
+    p('Open ', ...adminAt('About'), ': it names the version now running (so does ', c('/api/health'), ', while you are signed in). ', c('docker compose ps'), ' should show every service ', c('Up'), '.'),
 
     h(2, 'If something goes wrong'),
     p('Tesria’s log usually says why:'),

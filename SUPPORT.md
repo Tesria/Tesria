@@ -4,7 +4,7 @@
 2. **Your administrator,** if someone else runs your Tesria: account
    problems and access to a space are theirs to solve.
 3. **An issue on GitHub,** for a bug or a question the site does not
-   answer. Say which version you run (`/api/health` reports it), what you
+   answer. Say which version you run (Administration, About shows it), what you
    did, what you expected, and what happened instead.
 
 Security problems are never reported in an issue: see [SECURITY.md](SECURITY.md).

@@ -99,6 +99,11 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
             services.AddSingleton<RecordingEmailSender>();
             services.AddSingleton<Tesria.Api.Infrastructure.Email.IEmailSender>(sp => sp.GetRequiredService<RecordingEmailSender>());
 
+            // Queued email is sent at once in tests, so a test can read it
+            // back as soon as the request returns (dev-plan 14.3).
+            services.RemoveAll<Tesria.Api.Infrastructure.Email.IEmailQueue>();
+            services.AddSingleton<Tesria.Api.Infrastructure.Email.IEmailQueue, ImmediateEmailQueue>();
+
             services.RemoveAll<IWebhookSender>();
             services.AddSingleton<RecordingWebhookSender>();
             services.AddSingleton<IWebhookSender>(sp => sp.GetRequiredService<RecordingWebhookSender>());
@@ -115,4 +120,11 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
             catch (IOException) { /* best-effort cleanup */ }
         }
     }
+}
+
+/// <summary>The email queue, sending at once through the recording sender.</summary>
+public sealed class ImmediateEmailQueue(RecordingEmailSender sender) : Tesria.Api.Infrastructure.Email.IEmailQueue
+{
+    public void Enqueue(Tesria.Api.Infrastructure.Email.EmailMessage message) =>
+        sender.SendAsync(message).GetAwaiter().GetResult();
 }

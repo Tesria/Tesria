@@ -270,7 +270,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('Live content:'), ' what a live content block on a page shows, worked out for whoever asks.')),
       li(p(b('Your account:'), ' profile, picture, email, password, sessions, two-factor, recovery codes and API tokens.')),
       li(p(b('Administration:'), ' settings, users, spaces, invites, security, roles, backups, branding, the audit log and the dashboard. Each needs the right for it, the same as in the browser.')),
-      li(p(b('Health:'), ' ', c('/api/health'), ' says whether Tesria is running and which version, without signing in.')),
+      li(p(b('Health:'), ' ', c('/api/health'), ' says whether Tesria is running, without signing in; with a token or signed in, it also names the version.')),
     ),
     panel('info', p(b('What a token cannot reach.'), ' A few administrative actions ask for your password in the browser and always refuse a token. See ', pageLink('Getting started with the API'), ', under ', i('What a token can and cannot do'), '.')),
   ))

@@ -917,7 +917,7 @@ public static class AuthEndpoints
     private static async Task<IResult> RecoverByEmail(
         RecoverByEmailRequest req, AppDbContext db, IAccountRecoveryService recovery,
         RecoveryAttemptLimiter limiter, ISiteSettingsService settings, IConfiguration config,
-        Infrastructure.Email.IEmailSender email, IAuditLogger audit, HttpContext http)
+        Infrastructure.Email.IEmailQueue emailQueue, IAuditLogger audit, HttpContext http)
     {
         var address = (req.Email ?? "").Trim().ToLowerInvariant();
         if (!limiter.TryAttempt(address))
@@ -946,7 +946,10 @@ public static class AuthEndpoints
         var alsoTailnet = tailnet is not null && tailnet != link
             ? $"If you reach {s.InstanceName} through Tailscale, use this address instead:\n{tailnet}\n\n"
             : "";
-        await email.SendAsync(new Infrastructure.Email.EmailMessage(
+        // Queued, not awaited: sending took long enough to tell an address
+        // with an account from one without by the time the answer took
+        // (dev-plan 14.3). The answer is the same order of magnitude either way.
+        emailQueue.Enqueue(new Infrastructure.Email.EmailMessage(
             user.Email,
             $"[{s.InstanceName}] Reset your password",
             $"Someone, probably you, asked to reset the password for {user.Email} on {s.InstanceName}.\n\n" +

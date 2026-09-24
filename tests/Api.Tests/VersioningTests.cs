@@ -68,18 +68,30 @@ public class VersioningTests
     }
 
     [Fact]
-    public async Task The_instance_the_health_check_and_the_API_spec_agree_on_the_version()
+    public async Task Signed_in_callers_see_the_version_everywhere_and_strangers_nowhere()
     {
+        // dev-plan 16.1 put the version in three places; 14.3 keeps it from
+        // anyone who is not signed in, in all three.
         await using var app = new TestAppFactory();
-        var client = app.CreateClient();
+        var stranger = app.CreateClient();
+        var member = app.CreateClient();
+        await member.RegisterAndSignInAsync();
 
-        var instance = await client.GetFromJsonAsync<JsonElement>("/api/instance");
-        Assert.Equal(AppVersion.Current, instance.GetProperty("version").GetString());
+        foreach (var (client, expected, specVersion) in new[]
+                 {
+                     (member, AppVersion.Current, AppVersion.Current),
+                     (stranger, (string?)null, "1"),
+                 })
+        {
+            var instance = await client.GetFromJsonAsync<JsonElement>("/api/instance");
+            var health = await client.GetFromJsonAsync<JsonElement>("/api/health");
+            var spec = await client.GetFromJsonAsync<JsonElement>("/api/openapi.json");
 
-        var spec = await client.GetFromJsonAsync<JsonElement>("/api/openapi.json");
-        Assert.Equal(AppVersion.Current, spec.GetProperty("info").GetProperty("version").GetString());
-
-        var health = await client.GetFromJsonAsync<JsonElement>("/api/health");
-        Assert.StartsWith(AppVersion.Current, health.GetProperty("version").GetString());
+            Assert.Equal(expected, instance.GetProperty("version").GetString());
+            if (expected is null) Assert.Equal(JsonValueKind.Null, health.GetProperty("version").ValueKind);
+            else Assert.StartsWith(expected, health.GetProperty("version").GetString());
+            Assert.Equal("ok", health.GetProperty("status").GetString());
+            Assert.Equal(specVersion, spec.GetProperty("info").GetProperty("version").GetString());
+        }
     }
 }

@@ -178,7 +178,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     p('Either your role may not export (an administrator can change that in ', ...adminAt('Roles'), '), or this space has turned that kind of export off. See ', pageLink('Turning exports off'), '.'),
 
     h(2, 'Still stuck?'),
-    p('Look through the ', pageLink('FAQ'), ', and ', pageLink('Health checks and monitoring'), ' for how to see what Tesria is doing. When you ask someone for help, include what you did, what you expected, what happened instead (the exact words of any message), and the version from ', c('https://your-server/api/health'), '.'),
+    p('Look through the ', pageLink('FAQ'), ', and ', pageLink('Health checks and monitoring'), ' for how to see what Tesria is doing. When you ask someone for help, include what you did, what you expected, what happened instead (the exact words of any message), and the version, from ', b('Administration'), ', ', b('About'), ' (or ', c('https://your-server/api/health'), ' while signed in).'),
   ))
 
   // =================================================================== FAQ
@@ -363,7 +363,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
   const notes = top['Release notes']
   await page('Release notes', null, doc(
     p('What each version of Tesria brought. Read these before you upgrade, to know what will be different afterwards; ', pageLink('Upgrading'), ' explains the upgrade itself.'),
-    p('To see which version you are running, open ', b('Administration'), ', then ', b('Dashboard'), ': the ', b('Tesria version'), ' card shows it, with the version you upgraded from. Without an account, open ', c('https://your-server/api/health'), ' (', c('your-server'), ' being your Tesria’s address); the answer includes ', c('"version"'), '.'),
+    p('To see which version you are running, open ', b('Administration'), ', then ', b('Dashboard'), ': the ', b('Tesria version'), ' card shows it, with the version you upgraded from, and so does ', b('About'), '. Signed in, ', c('https://your-server/api/health'), ' (', c('your-server'), ' being your Tesria’s address) includes it too, as ', c('"version"'), '; to anyone not signed in it says only that Tesria is running, so the version is not advertised.'),
     p('Versions are numbered like ', c('0.5.0'), ': the last number changes for fixes, the middle one for new features. Every page on this site ends with a table saying which version it applies to.'),
     live('children', { depth: '1', sort: 'position' }),
   ))
@@ -518,7 +518,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     p('If you find a way around any of the above, please tell us privately first, so it can be fixed before anyone else learns of it. A weakness in Tesria is a weakness in every Tesria someone runs.'),
     ol(
       li(p(b('Report it privately,'), ' never in a public issue or post. Use GitHub’s private vulnerability reporting on the Tesria repository, or the contact in its ', c('SECURITY.md'), ' file.')),
-      li(p(b('Include'), ' what you found, how to reproduce it, the version (', c('/api/health'), ' shows it), and what you think the impact is.')),
+      li(p(b('Include'), ' what you found, how to reproduce it, the version (', b('Administration'), ', ', b('About'), ' shows it), and what you think the impact is.')),
       li(p(b('Test only on your own Tesria.'), ' A proof of concept against your own instance is welcome; against anyone else’s it is not.')),
     ),
     p('You can expect an acknowledgement within a few days, a fix or a way to avoid the problem as fast as its severity warrants, and credit in the changelog unless you would rather not. Please give a fix a reasonable head start before writing about it.'),

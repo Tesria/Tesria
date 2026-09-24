@@ -7,7 +7,7 @@ on every instance somebody runs. Please report privately.
   subject. If the repository is public by the time you read this, GitHub's
   private vulnerability reporting on the repository is equally good.
 - **Include:** what you found, how to reproduce it, which version
-  (`/api/health` reports it), and what you think the impact is. A proof of
+  (Administration, About shows it), and what you think the impact is. A proof of
   concept against your *own* instance is welcome; against anyone else's is
   not.
 - **Expect:** an acknowledgement within a few days, a fix or a mitigation

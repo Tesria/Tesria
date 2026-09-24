@@ -47,4 +47,23 @@ public class HardeningTests
     [InlineData("2606:4700::1111", false)]
     public void Addresses_that_carry_a_private_address_are_private(string ip, bool expected) =>
         Assert.Equal(expected, Tesria.Api.Infrastructure.Security.PrivateNetworks.IsPrivateOrLocal(IPAddress.Parse(ip)));
+
+    [Fact]
+    public async Task Queued_email_is_sent_in_the_background()
+    {
+        var recorder = new RecordingEmailSender();
+        var services = new ServiceCollection()
+            .AddSingleton<Tesria.Api.Infrastructure.Email.IEmailSender>(recorder)
+            .BuildServiceProvider();
+        var queue = new Tesria.Api.Infrastructure.Email.EmailQueue(
+            services.GetRequiredService<IServiceScopeFactory>(),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<Tesria.Api.Infrastructure.Email.EmailQueue>.Instance);
+        await queue.StartAsync(CancellationToken.None);
+
+        queue.Enqueue(new Tesria.Api.Infrastructure.Email.EmailMessage("a@example.com", "Subject", "Body"));
+        for (var i = 0; i < 50 && recorder.Sent.Count == 0; i++) await Task.Delay(20);
+
+        Assert.Equal("a@example.com", Assert.Single(recorder.Sent).To);
+        await queue.StopAsync(CancellationToken.None);
+    }
 }

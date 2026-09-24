@@ -12,9 +12,15 @@ public static class HealthEndpoints
     public static RouteGroupBuilder MapHealthEndpoints(this RouteGroupBuilder group)
     {
         // Liveness: is the process up and serving requests?
-        group.MapGet("/health", (RestoreState restore) =>
+        group.MapGet("/health", (RestoreState restore, HttpContext http) =>
         {
-            var version = Infrastructure.Versioning.AppVersion.Full;
+            // The release number to signed-in callers only (dev-plan 14.3): a
+            // monitor needs liveness, and a scanner learning which release is
+            // running learns which advisories apply. Administration, About
+            // shows it to people who look after the instance.
+            var version = http.User.Identity?.IsAuthenticated == true
+                ? Infrastructure.Versioning.AppVersion.Full
+                : null;
 
             return Results.Ok(new
             {

@@ -49,7 +49,7 @@ public static class InstanceEndpoints
         return routes;
     }
 
-    private static async Task<IResult> Get(AppDbContext db, ISiteSettingsService settings, IConfiguration config)
+    private static async Task<IResult> Get(AppDbContext db, ISiteSettingsService settings, IConfiguration config, HttpContext http)
     {
         var s = await settings.GetAsync();
 
@@ -69,6 +69,7 @@ public static class InstanceEndpoints
             AllowPublicRegistration: s.AllowPublicRegistration,
             Branding: BrandingOf(BrandView.From(s)),
             OwnCertificate: Trust.TrustEndpoints.OwnCertificate(config),
-            Version: Infrastructure.Versioning.AppVersion.Current));
+            // Signed-in callers only (dev-plan 14.3), as /api/health.
+            Version: http.User.Identity?.IsAuthenticated == true ? Infrastructure.Versioning.AppVersion.Current : null));
     }
 }

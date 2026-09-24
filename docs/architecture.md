@@ -33,7 +33,8 @@ Browser ──HTTPS──► Caddy (auto-TLS) ──► app (ASP.NET Core .NET 1
 
 ### Health
 
-`GET /api/health` returns `{ status, service, version, utc }` and includes a
+`GET /api/health` returns `{ status, service, version, utc }` (the version
+only to a signed-in caller, dev-plan 14.3) and includes a
 database readiness probe (EF Core `DbContext` check). Used by the container
 `HEALTHCHECK`.
 
