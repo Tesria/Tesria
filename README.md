@@ -4,23 +4,45 @@ A self-hosted, Docker-deployable knowledge base / wiki modeled on Atlassian
 Confluence. Priorities: **data safety** (strong backup & recovery), a faithful
 block-based editor, and one-command deployment.
 
-See [`PLAN.md`](./PLAN.md) for the full design and roadmap.
+**Status:** 0.5.0 is the latest release; `main` is working toward 0.6.
+Tesria is a complete, working wiki, not yet announced publicly. What it does
+today:
 
-**Status:** Phases 1–5 complete (the full original roadmap), plus a
-ground-up editor UX overhaul beyond it. A working wiki (local accounts,
-spaces, pages in a hierarchical tree, a TipTap block editor with version
-history and rollback, attachments, threaded footer/inline comments,
-full-text search, and soft-delete/trash) on the full Docker stack (app +
-PostgreSQL 18 + Caddy auto-HTTPS). Data safety is covered by pgBackRest
-point-in-time recovery plus logical and file backups. Phase 4 added labels,
-page export, an audit log, and groups with space permissions / page
-restrictions. Phase 5 added real-time collaborative editing, page templates,
-notifications/watches, a public REST API (tokens + webhooks), and OIDC/SSO (beta).
-The editor overhaul added syntax-highlighted code blocks, tables/task lists
-with hover-triggered controls, images (with a draft/publish page lifecycle
-so uploads work on unsaved pages), inline/anchored comments, a slash-command
-menu, and a per-page full-width layout toggle: see
-[`docs/CHANGELOG.md`](./docs/CHANGELOG.md) for the full list.
+- **Writing:** spaces of pages in a tree, a block editor (tables, panels,
+  code, diagrams, math, charts, layouts, live blocks that list pages and
+  tasks), templates, labels, and real-time co-editing with drafts, history
+  and rollback.
+- **Working together:** threaded and inline comments, mentions, watches and
+  notifications, full-text search.
+- **Sharing:** export a page as Markdown, HTML or PDF, a whole space as a
+  static website, or a space as a portable wiki pack that another Tesria can
+  import. Spaces can be published for anonymous reading.
+- **Running it:** a setup wizard, roles and rights, groups, space
+  permissions and page restrictions, invitations, two-factor sign-in,
+  single sign-on (OIDC, beta), branding, email through SMTP, Gmail or
+  Microsoft 365, and optional Tailscale for private access from anywhere.
+- **Keeping it safe:** backups with point-in-time recovery, offsite copies,
+  and restore and undo from the admin page; a tamper-evident audit log,
+  security alerts, rate limits, a least-privilege database role, and a
+  dependency list with a vulnerability check.
+- **Connecting to it:** a REST API with tokens and webhooks, and MCP for AI
+  assistants.
+
+What changed in each version is in [`docs/CHANGELOG.md`](./docs/CHANGELOG.md);
+what comes next is in [`docs/roadmap.md`](./docs/roadmap.md) and
+[`docs/dev-plan.md`](./docs/dev-plan.md). [`PLAN.md`](./PLAN.md) is the
+original design the project started from.
+
+## Documentation
+
+- **Using and running Tesria:** the docs, to be published at
+  tesria.com/docs. Until then, download `docs-pack.zip` from the
+  repository's **docs** release and import it into your Tesria (Spaces,
+  then **Import a pack**), or open `docs-site.zip` from the same release in
+  a browser.
+- **How it is built:** [`docs/architecture.md`](./docs/architecture.md),
+  and the threat model and known gaps in [`docs/security.md`](./docs/security.md).
+- **Backups and disaster recovery:** [`docs/backup-recovery.md`](./docs/backup-recovery.md).
 
 ## Tech stack
 
@@ -54,9 +76,9 @@ placeholders, not blanks, so nothing fails loudly if you skip one:
 | `COLLAB_SHARED_SECRET` | Optional (`openssl rand -hex 32`). Empty disables real-time co-editing; the editor falls back to single-user. |
 | `PDF_SHARED_SECRET` | Optional (`openssl rand -hex 32`). Empty disables PDF export; `?format=pdf` then answers 503 telling the user to print the HTML export. |
 
-Everything else, schema included, sets itself up: the API runs EF Core
-migrations on startup, and the pgBackRest sidecar creates its stanza on
-first boot. Then open `https://<domain>/` and the setup wizard takes it from
+Everything else, schema included, sets itself up: a one-shot `migrate`
+service updates the database before the app starts, and the pgBackRest
+sidecar creates its stanza on first boot. Then open `https://<domain>/` and the setup wizard takes it from
 there: it creates the owner account, names the instance, and walks you
 through who can join, what each role may do, and how much backup history to
 keep. A fresh database has no users, so the first account to be created owns
@@ -75,11 +97,13 @@ the instance.
 - The app is also reachable from other devices on your LAN (including phones)
   by IP or hostname, no extra config needed. To make that access, and the
   `localhost` warning above, go away for good on a given device, run
-  `deploy/scripts/trust-ca.sh` (macOS/Linux) or `trust-ca.ps1` (Windows) once;
+  `deploy/scripts/trust-ca.sh` (macOS/Linux) or `trust-ca.ps1` (Windows) once,
+  or open `http://<server>/trust` on that device for a guided version;
   see [`docs/tls-and-lan-access.md`](./docs/tls-and-lan-access.md) for details
   and the real-domain-without-public-exposure option.
 
-Check health directly: `curl -k https://localhost/api/health`.
+Check health directly: `curl -k https://localhost/api/health` (it gives the
+version only to a signed-in caller).
 
 ## Development
 
@@ -114,7 +138,9 @@ Two sidecars back the instance up every `BACKUP_INTERVAL_HOURS`: `backup`
 recovery). **Administration → Backups** shows both, runs a backup or a restore
 test on demand, and sets the retention policy (keep the newest *N* and the last
 *D* days, or keep everything). `BACKUP_RETENTION_DAYS` only seeds that policy
-on the first start after upgrading.
+on the first start after upgrading. The same page restores a backup (with an
+undo), and can send copies offsite to cloud storage, a network drive or a
+removable drive.
 
 ```bash
 docker compose exec backup /scripts/backup.sh          # backup now
@@ -153,6 +179,16 @@ collab/         Real-time collaboration sidecar (Node + Hocuspocus/Yjs)
 pdf/            PDF rendering sidecar (Node + Playwright/Chromium)
 tests/          API integration tests (in-process, SQLite in-memory)
 deploy/         Dockerfile, Caddyfile, backup scripts, pgBackRest (Phase 3)
-docs/           architecture, backup-recovery runbook, CHANGELOG
+docs/           architecture, security, backup-recovery runbook, CHANGELOG, plans
+scripts/        the docs' publisher (scripts/docs), demo data, screenshots,
+                the dependency manifest, the audit gate
 docker-compose.yml   full stack
 ```
+
+## Project
+
+Tesria is free and open source under the [Apache License 2.0](./LICENSE)
+([`NOTICE`](./NOTICE) has the attributions). How to take part:
+[`CONTRIBUTING.md`](./CONTRIBUTING.md), [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md)
+and [`GOVERNANCE.md`](./GOVERNANCE.md). Getting help: [`SUPPORT.md`](./SUPPORT.md).
+Reporting a vulnerability: [`SECURITY.md`](./SECURITY.md).
