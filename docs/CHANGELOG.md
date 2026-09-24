@@ -8,6 +8,56 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.6.0-dev**: 0.5.0 is released, so what comes
 after it is the next minor version.
 
+### 14.1 The second security review, fixed (2026-09-24, Opus 5.5)
+
+Three reviews of everything built since the 2026-09-09 review, run in
+parallel (accounts and administration; exports, packs and public reading;
+MCP, collaboration, backups, egress and deployment). Fixed:
+
+- **Mail credentials followed the server** (high). Changing the SMTP host,
+  port or encryption kept the saved password and the Gmail or Microsoft
+  sign-in, so a stolen administrator session could point mail at its own
+  server and receive them. A move now forgets both.
+- **A token could reset its own account through Administration** (high):
+  the account guard covered `/api/auth` but not the admin actions on
+  oneself. Refused with `token_not_allowed`.
+- Only the owner can change the public address that emailed links, reset
+  links included, are built from (`owner_only`).
+- Reactivating a suspended administrator, and clearing the owner's lockout,
+  follow the same protection as suspending.
+- Login checks a password against something even for an unknown address, so
+  it no longer answers faster for one; a closed instance says "by
+  invitation" before it says an address is taken; invites are limited to 30
+  an hour per person, a malformed address is refused before the invite is
+  made, and only people who may see the user list learn that an address
+  already has an account.
+- **Single sign-on did not last past the first page**: its cookie lacked the
+  session and security-stamp claims every request checks. It now signs in
+  exactly as a password does. (Not exercised against a real provider.)
+- Pack exports leave out the words of deleted comments; pack imports refuse
+  a JSON file over 32 MB and one file named by two attachments.
+- Site exports spool to a temporary file instead of memory; the PDF service
+  captures at most three pages at once (`PDF_MAX_CONCURRENT`).
+- Render tokens are signed with a key only the app holds, made at startup,
+  instead of the secret the PDF service also has; verified export captures
+  no longer share the anonymous rate limit.
+- Live content and the MCP label tools check that a page is readable (not
+  someone else's draft, not in the trash), as REST does. The admin activity
+  list hides a tool's error text along with the title of a page the viewer
+  may not read.
+- The backup service refuses a restore time or backup label that is not
+  exactly the shape the app writes before it reaches pgBackRest's command
+  line.
+- Token usage is kept after a token is revoked (reported by the owner: the
+  tab read zero once the test tokens were gone). Migration
+  `TokenUsageOutlivesToken`.
+
+Recorded in `docs/security.md` as known gaps instead: the database owner's
+password in the app's environment, live-editing connections that outlive a
+permission change, reset-email timing, single-instance state, and NAT64.
+Dependencies: `scripts/audit.sh` clean. Tests: `SecondReviewTests` (7) and
+additions to `AdminTokenTests`.
+
 ### Phase 17: developer docs on the Support site (2026-09-24, Opus 5.5)
 
 - **Developers**, a section at the end of the Support site, holding REST API

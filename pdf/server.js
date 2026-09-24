@@ -82,7 +82,33 @@ function getBrowser() {
  * waiting for a guess: a page of prose is ready in well under a second and a
  * page of diagrams takes as long as it takes.
  */
+// How many pages are captured at once. Each capture is a browser context
+// with its own memory, and nothing else bounded how many could run: a burst
+// of exports (anonymous PDF exports on a public instance, say) could exhaust
+// the container (the 14.1 review). The rest wait their turn.
+const MAX_CONCURRENT = Math.max(1, Number(process.env.PDF_MAX_CONCURRENT) || 3)
+let running = 0
+const waiting = []
+async function slot() {
+  if (running < MAX_CONCURRENT) { running++; return }
+  await new Promise((resolve) => waiting.push(resolve))
+}
+function release() {
+  const next = waiting.shift()
+  if (next) next()
+  else running--
+}
+
 async function withCapturedPage(url, token, fn) {
+  await slot()
+  try {
+    return await capture(url, token, fn)
+  } finally {
+    release()
+  }
+}
+
+async function capture(url, token, fn) {
   // Checked against the configured origin, which is what the app was told to
   // use; the address substitution below is a navigation detail and must not
   // be a way to widen what may be loaded.

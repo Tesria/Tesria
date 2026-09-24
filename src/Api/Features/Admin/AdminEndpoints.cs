@@ -195,7 +195,8 @@ public static class AdminEndpoints
         group.MapGet("/spaces", ListSpaces).RequirePermission(InstancePermissions.SpacesManage);
         group.MapPut("/spaces/{key}/public", SetSpacePublic).RequirePermission(InstancePermissions.SpacesPublish);
         group.MapGet("/invites", ListInvites).RequirePermission(InstancePermissions.InvitesManage);
-        group.MapPost("/invites", CreateInvite).RequirePermission(InstancePermissions.InvitesCreate);
+        group.MapPost("/invites", CreateInvite).RequirePermission(InstancePermissions.InvitesCreate)
+            .RequireRateLimiting(Infrastructure.Security.RateLimits.InvitePolicy);
         group.MapGet("/invites/email", InviteEmail).RequirePermission(InstancePermissions.InvitesCreate);
         group.MapDelete("/invites/{id:guid}", RevokeInvite).RequirePermission(InstancePermissions.InvitesManage);
         group.MapPost("/audit/verify", VerifyAuditChain).RequirePermission(InstancePermissions.AuditView);
@@ -392,6 +393,20 @@ public static class AdminEndpoints
                 {
                     ["baseUrl"] = ["Enter the full address, e.g. https://wiki.example.com, or leave it blank."],
                 });
+            // The public address is where emailed links point, a password
+            // reset link included: an administrator who could move it could
+            // send the owner a genuine reset email whose link goes to their
+            // own server (the 14.1 review). So changing it is the owner's.
+            var before = (await settings.GetAsync()).BaseUrl;
+            var after = trimmed.Length == 0 ? null : trimmed.TrimEnd('/');
+            if (after != before && !await current.IsOwnerAsync())
+                return Results.Json(new
+                {
+                    title = "Forbidden",
+                    status = 403,
+                    code = "owner_only",
+                    message = "Only the owner can change the public address, because emailed links, password resets included, are built from it.",
+                }, statusCode: StatusCodes.Status403Forbidden);
             changed.Add(nameof(req.BaseUrl));
         }
         if (req.AllowPublicRegistration is not null) changed.Add(nameof(req.AllowPublicRegistration));
@@ -447,6 +462,26 @@ public static class AdminEndpoints
             if (req.AllowPublicRegistration is { } reg) s.AllowPublicRegistration = reg;
             if (req.AllowPublicSpaces is { } pub) s.AllowPublicSpaces = pub;
             if (req.EmailEnabled is { } mail) s.EmailEnabled = mail;
+            // A saved password or provider sign-in belongs to the server it
+            // was saved for. Moving the host, port or encryption without
+            // dropping it would hand it to whatever server is named next, a
+            // stolen administrator session included (the 14.1 review), so a
+            // move forgets both: enter the password again, or sign in again.
+            var serverMoved = (req.SmtpHost is not null && Blank(req.SmtpHost) != s.SmtpHost)
+                || (req.SmtpPort is { } np && np != s.SmtpPort)
+                || (req.SmtpTls is { } nt && nt != s.SmtpTls);
+            if (serverMoved)
+            {
+                if (req.SmtpPassword is null) s.SmtpPasswordProtected = null;
+                if (s.SmtpSignIn != MailSignIn.Password)
+                {
+                    s.SmtpSignIn = MailSignIn.Password;
+                    s.MailOAuthRefreshTokenProtected = null;
+                    s.MailOAuthAccount = null;
+                    s.MailOAuthConnectedAt = null;
+                    s.MailOAuthError = null;
+                }
+            }
             if (req.SmtpHost is not null) s.SmtpHost = Blank(req.SmtpHost);
             if (req.SmtpPort is { } p) s.SmtpPort = p;
             if (req.SmtpUsername is not null) s.SmtpUsername = Blank(req.SmtpUsername);
@@ -569,6 +604,18 @@ public static class AdminEndpoints
     /// </summary>
     internal static async Task<IResult?> RefuseIfProtectedAccountAsync(User target, CurrentUser current, IInstancePermissions rights)
     {
+        // An API token may not do to its own account through these routes what
+        // it may not do through /api/auth (dev-plan 14.1): an administrator's
+        // token could otherwise issue itself a reset link and set a new
+        // password, or end its owner's sessions (the 14.1 review).
+        if (target.Id == current.Id && current.ViaToken)
+            return Results.Json(new
+            {
+                title = "Forbidden",
+                status = 403,
+                code = "token_not_allowed",
+                message = "An API token cannot act on its own account. Do this signed in to a browser.",
+            }, statusCode: StatusCodes.Status403Forbidden);
         if (target.Id == current.Id || target.Role < UserRole.Admin) return null;
         if (await current.IsOwnerAsync()) return null;
         if (target.Role == UserRole.Owner)
@@ -640,7 +687,7 @@ public static class AdminEndpoints
     private static async Task<IResult> CreateInvite(
         CreateInviteRequest req, AppDbContext db, CurrentUser current,
         IAuditLogger audit, IInviteService invites, ISiteSettingsService settings,
-        IEmailSender sender, IConfiguration config, CancellationToken ct)
+        IEmailSender sender, IConfiguration config, IInstancePermissions rights, CancellationToken ct)
     {
         var days = req.ExpiresInDays ?? (int)InviteService.DefaultLifetime.TotalDays;
         if (days < 1 || days > 90)
@@ -662,7 +709,19 @@ public static class AdminEndpoints
             {
                 ["message"] = [$"Keep the message under {MaxInviteMessage} characters."],
             });
-        if (email is not null && await db.Users.AnyAsync(u => u.Email == email, ct))
+        // A malformed address used to be saved and then fail inside the mail
+        // sender with a 500 (the 14.1 review): refused here instead.
+        if (email is not null && !System.Net.Mail.MailAddress.TryCreate(email, out _))
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["email"] = ["That is not an email address."],
+            });
+        // Whether an address already has an account is for people who may
+        // see the user list; anyone else who may invite gets an invite that
+        // registration will refuse anyway (the 14.1 review: a user-tier role
+        // with the invite right could otherwise test addresses one by one).
+        if (email is not null && await rights.HasAsync(InstancePermissions.UsersView)
+            && await db.Users.AnyAsync(u => u.Email == email, ct))
             return Results.Conflict(new { message = "An account with this email already exists." });
 
         var token = invites.Issue(current.RequireId(), email, TimeSpan.FromDays(days));
@@ -907,7 +966,9 @@ public static class AdminEndpoints
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Results.NotFound();
-        if (req.Status != UserStatus.Active && user.Role == UserRole.Admin
+        // Either way: reactivating an administrator the owner suspended is as
+        // much acting on their account as suspending them (the 14.1 review).
+        if (user.Role >= UserRole.Admin
             && await RefuseIfProtectedAccountAsync(user, current, rights) is { } refused)
             return refused;
 
@@ -1077,10 +1138,15 @@ public static class AdminEndpoints
     }
 
     /// <summary>Clears a lockout early. Audited: unlocking is an act, not a state.</summary>
-    private static async Task<IResult> Unlock(Guid userId, AppDbContext db, IAuditLogger audit)
+    private static async Task<IResult> Unlock(
+        Guid userId, AppDbContext db, IAuditLogger audit, CurrentUser current, IInstancePermissions rights)
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Results.NotFound();
+        // Clearing the owner's lockout over and over would undo it during a
+        // password-guessing attack (the 14.1 review): the same rule as the
+        // other actions on someone else's account.
+        if (await RefuseIfProtectedAccountAsync(user, current, rights) is { } refused) return refused;
 
         AuthLockout.Reset(user);
         audit.Record("user.unlocked", "user", user.Id);

@@ -89,8 +89,14 @@ public class AdminTokenTests
         var rogue = await TokenClientAsync(f, member, "rogue");
         var fine = await TokenClientAsync(f, member, "fine");
 
+        (await rogue.GetAsync("/api/spaces")).EnsureSuccessStatusCode();
         var rows = await owner.GetFromJsonAsync<List<TokenRow>>("/api/admin/api-tokens");
         (await owner.DeleteAsync($"/api/admin/api-tokens/{rows!.Single(r => r.Name == "rogue").Id}")).EnsureSuccessStatusCode();
+
+        // What it did stays counted after it is gone (the owner, 2026-09-24).
+        var summary = await owner.GetFromJsonAsync<Summary>("/api/admin/api-tokens/summary");
+        Assert.Equal(1, summary!.Last7Days.Reads);
+        Assert.Equal(1, summary.Tokens);
 
         Assert.Equal(HttpStatusCode.Unauthorized, (await rogue.GetAsync("/api/notifications")).StatusCode);
         (await fine.GetAsync("/api/notifications")).EnsureSuccessStatusCode();

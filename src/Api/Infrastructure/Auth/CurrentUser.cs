@@ -16,6 +16,9 @@ public sealed class CurrentUser(IHttpContextAccessor accessor, AppDbContext db)
 
     public bool IsAuthenticated => Principal?.Identity?.IsAuthenticated ?? false;
 
+    /// <summary>Whether this request came with an API token (or a render token) rather than a session.</summary>
+    public bool ViaToken => Principal?.FindFirst(TokenScope.ClaimType) is not null;
+
     /// <summary>The signed-in user's id, or null if the request is anonymous.</summary>
     public Guid? Id
     {

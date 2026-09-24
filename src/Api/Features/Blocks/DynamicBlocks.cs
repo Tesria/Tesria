@@ -121,8 +121,11 @@ public sealed class DynamicBlockService(
         Guid hostPageId, string kind, IReadOnlyDictionary<string, string> parameters, CancellationToken ct)
     {
         if (!_kinds.TryGetValue(kind, out var impl)) return null;
-        // The host is the permission anchor: unviewable host, no block at all.
-        if (!await perms.CanViewPageAsync(hostPageId)) return null;
+        // The host is the permission anchor: unreadable host, no block at all.
+        // CanReadPage rather than CanViewPage: someone else's draft, or a page
+        // in the trash, is not readable even to a space viewer who knows its
+        // id (the 14.1 review), the same rule REST applies.
+        if (!await perms.CanReadPageAsync(hostPageId)) return null;
         // IgnoreQueryFilters with the soft-delete half reapplied by hand (the
         // same pattern SetLayout uses): the host may be an unpublished draft:
         // the editor renders blocks while a brand-new page is still being

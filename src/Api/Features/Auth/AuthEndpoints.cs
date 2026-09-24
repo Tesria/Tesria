@@ -132,6 +132,11 @@ public static class AuthEndpoints
         string? AvatarHash, int? AvatarVariant, bool HasPassword,
         IReadOnlyList<string> RecoveryCodes);
 
+    /// <summary>A hash to verify against when there is no account, so the answer takes as long either way.</summary>
+    private static string? _noAccountHash;
+    private static string NoAccountHash(IPasswordHasher hasher) =>
+        _noAccountHash ??= hasher.Hash(Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16)));
+
     public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder routes)
     {
         var group = routes.MapGroup("/auth").WithTags("Auth");
@@ -229,9 +234,6 @@ public static class AuthEndpoints
         // empty table and both be created as admin.
         await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
 
-        if (await db.Users.AnyAsync(u => u.Email == email))
-            return Results.Conflict(new { message = "An account with this email already exists." });
-
         // The first account on an empty instance owns it (dev-plan 10.1):
         // otherwise a fresh install has content and nobody able to manage it.
         var isFirstAccount = !await db.Users.AnyAsync();
@@ -256,6 +258,12 @@ public static class AuthEndpoints
                     "Registration is by invitation on this instance.",
                     statusCode: StatusCodes.Status403Forbidden);
         }
+
+        // After the invitation check, not before: on an instance that only
+        // takes invited people, "this email already has an account" told
+        // anyone which addresses had one (the 14.1 review).
+        if (await db.Users.AnyAsync(u => u.Email == email))
+            return Results.Conflict(new { message = "An account with this email already exists." });
 
         var user = new User
         {
@@ -305,9 +313,13 @@ public static class AuthEndpoints
         var now = DateTimeOffset.UtcNow;
 
         // Verify even when the user is missing to keep timing uniform, and return
-        // the same generic error for "no such user" and "wrong password".
+        // the same generic error for "no such user" and "wrong password". The
+        // code used to skip Argon2 for an unknown address, so it answered
+        // measurably faster and told anyone which addresses had accounts (the
+        // 14.1 review); a password is now always checked against something.
         var ok = user?.PasswordHash is not null
-            && hasher.Verify(req.Password ?? "", user.PasswordHash);
+            ? hasher.Verify(req.Password ?? "", user.PasswordHash)
+            : hasher.Verify(req.Password ?? "", NoAccountHash(hasher)) && false;
 
         // A locked account fails even with the right password, with the same
         // response: the lock must not become a way to confirm the password.
@@ -610,6 +622,20 @@ public static class AuthEndpoints
     /// profile edit or a stamp rotation keep the session they started with.
     /// </summary>
     private static async Task SignIn(
+        HttpContext http, AppDbContext db, User user, DateTimeOffset? authTime = null, Guid? sessionId = null) =>
+        await http.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            await SessionPrincipalAsync(http, db, user, authTime, sessionId),
+            new AuthenticationProperties { IsPersistent = true });
+
+    /// <summary>
+    /// The cookie's principal, with its session row: what every request after
+    /// sign-in checks (the security stamp, when it was signed in, and the
+    /// session). Single sign-on uses it too; it used to build a principal of
+    /// its own without these, which the next request rejected, so signing in
+    /// with SSO never lasted past the first page (found by the 14.1 review).
+    /// </summary>
+    internal static async Task<ClaimsPrincipal> SessionPrincipalAsync(
         HttpContext http, AppDbContext db, User user, DateTimeOffset? authTime = null, Guid? sessionId = null)
     {
         var authenticatedAt = authTime ?? DateTimeOffset.UtcNow;
@@ -642,11 +668,7 @@ public static class AuthEndpoints
             new(AuthTimeClaim, authenticatedAt.ToUnixTimeSeconds().ToString()),
             new(SessionClaim, sessionId.Value.ToString()),
         };
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        await http.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            new ClaimsPrincipal(identity),
-            new AuthenticationProperties { IsPersistent = true });
+        return new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
     }
 
     private static string? Truncate(string value, int max) =>

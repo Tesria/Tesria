@@ -202,8 +202,11 @@ public static class PackExportEndpoints
                 [.. labels.Where(l => l.PageId == row.Id).Select(l => l.Name).Order(StringComparer.Ordinal)],
                 [.. attachments.Where(a => a.PageId == row.Id).Select(a => new WikiPack.PackAttachment(
                     a.Id, a.Filename, a.ContentType, a.Size, WikiPack.AttachmentEntry(a.Id)))],
+                // A deleted comment keeps its place in its thread but not its
+                // words: the app never shows them again, and a pack must not
+                // either (the 14.1 review).
                 [.. comments.Where(c => c.PageId == row.Id).Select(c => new WikiPack.PackComment(
-                    c.Id, c.ParentCommentId, c.AuthorId, c.Body, c.AnchorJson,
+                    c.Id, c.ParentCommentId, c.AuthorId, c.DeletedAt is null ? c.Body : "", c.DeletedAt is null ? c.AnchorJson : null,
                     c.CreatedAt, c.UpdatedAt, c.DeletedAt))],
                 row.Emoji));
         }

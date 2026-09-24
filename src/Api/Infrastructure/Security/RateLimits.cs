@@ -26,6 +26,7 @@ public static class RateLimits
     public const string AuthPolicy = "auth";
     public const string TokenMintPolicy = "token-mint";
     public const string ImportPolicy = "import";
+    public const string InvitePolicy = "invite";
 
     /// <summary>Default when settings have not loaded yet: the same defaults <see cref="SiteSettings"/> declares.</summary>
     private static readonly SiteSettings Defaults = new();
@@ -69,6 +70,22 @@ public static class RateLimits
             });
         });
 
+        // Invites (the 14.1 review): an emailed invite carries a message the
+        // inviter writes, to any address, so without a limit the instance
+        // could relay mail for whoever may invite. Thirty an hour is more
+        // than a team lead onboarding a department sends by hand.
+        options.AddPolicy(InvitePolicy, http =>
+        {
+            var user = http.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Address(http);
+            return RateLimitPartition.GetSlidingWindowLimiter($"invite|{user}", _ => new()
+            {
+                PermitLimit = 30,
+                Window = TimeSpan.FromHours(1),
+                SegmentsPerWindow = 12,
+                QueueLimit = 0,
+            });
+        });
+
         // Importing a pack (dev-plan 8.5) is expensive and nobody does it
         // often. Ten an hour is past anything a person does by hand and short
         // of anything a script would find worth writing, and unlike the limits
@@ -89,6 +106,14 @@ public static class RateLimits
         {
             if (http.User.Identity?.IsAuthenticated == true)
                 return RateLimitPartition.GetNoLimiter("authenticated");
+            // The export browser, reading a page for an anonymous export with
+            // a verified render token. Every such capture comes from the one
+            // sidecar address, so counting them as strangers made every
+            // anonymous export share one budget, and a large public site came
+            // out with pages missing (the 14.1 review). The token is minted by
+            // the app for that export and dies in fifteen minutes.
+            if (RenderScope.Of(http) is not null)
+                return RateLimitPartition.GetNoLimiter("render");
 
             var limit = Math.Max(1, Settings(cache).AnonymousRateLimitPerMinute);
             return RateLimitPartition.GetSlidingWindowLimiter($"anon|{Address(http)}|{limit}", _ => new()

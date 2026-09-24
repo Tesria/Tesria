@@ -70,11 +70,20 @@ public class RenderTokenTests
     }
 
     [Fact]
-    public void A_token_signed_with_another_secret_is_refused()
+    public void A_token_forged_with_the_pdf_services_secret_is_refused()
     {
-        var issued = With("one-secret").IssueForPage(Guid.NewGuid(), null);
+        // What a compromised PDF sidecar could do if tokens were still signed
+        // with the secret it holds (the 14.1 review): take a real payload,
+        // make it the owner's, and sign it with Pdf:SharedSecret.
+        var tokens = With("one-secret");
+        var issued = tokens.IssueForPage(Guid.NewGuid(), null);
+        var payload = issued[RenderTokens.Prefix.Length..].Split('.')[0];
+        static string B64(byte[] b) => Convert.ToBase64String(b).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        var forged = RenderTokens.Prefix + payload + "." + B64(System.Security.Cryptography.HMACSHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes("one-secret"), System.Text.Encoding.UTF8.GetBytes(payload)));
 
-        Assert.Null(With("another-secret").Verify(issued));
+        Assert.NotNull(tokens.Verify(issued));
+        Assert.Null(tokens.Verify(forged));
     }
 
     [Fact]
@@ -90,27 +99,24 @@ public class RenderTokenTests
         Assert.Null(tokens.Verify(tampered));
     }
 
+    private sealed class PastClock(TimeSpan ago) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => DateTimeOffset.UtcNow - ago;
+    }
+
     [Fact]
     public void An_expired_token_is_refused()
     {
-        // Built by hand at a time in the past, because the lifetime is not
-        // something a caller gets to choose.
-        var tokens = With();
-        var payload = System.Text.Json.JsonSerializer.Serialize(new
-        {
-            sub = (string?)null,
-            scope = "page",
-            id = Guid.NewGuid().ToString(),
-            exp = DateTimeOffset.UtcNow.AddMinutes(-1).ToUnixTimeSeconds(),
-        });
-        var encoded = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(payload))
-            .TrimEnd('=').Replace('+', '-').Replace('/', '_');
-        var signature = Convert.ToBase64String(System.Security.Cryptography.HMACSHA256.HashData(
-                System.Text.Encoding.UTF8.GetBytes("a-shared-secret"),
-                System.Text.Encoding.UTF8.GetBytes(encoded)))
-            .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        // Issued twenty minutes ago with the real key (the lifetime is
+        // fifteen), then checked now.
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Pdf:SharedSecret"] = "a-shared-secret" })
+            .Build();
+        var old = new RenderTokens(config, new PastClock(TimeSpan.FromMinutes(20))).IssueForPage(Guid.NewGuid(), null);
+        var fresh = new RenderTokens(config, new PastClock(TimeSpan.FromMinutes(10))).IssueForPage(Guid.NewGuid(), null);
 
-        Assert.Null(tokens.Verify($"{RenderTokens.Prefix}{encoded}.{signature}"));
+        Assert.Null(With().Verify(old));
+        Assert.NotNull(With().Verify(fresh));
     }
 
     [Fact]

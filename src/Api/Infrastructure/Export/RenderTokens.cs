@@ -29,8 +29,15 @@ namespace Tesria.Api.Infrastructure.Export;
 ///   every permission check downstream is the one that would have run for
 ///   that reader anyway. Masking is inherited rather than reimplemented.
 ///
-/// Signed with <c>Pdf:SharedSecret</c>, which the app and the sidecar already
-/// share, so there is no new secret to configure or rotate.
+/// Signed with a key the app makes for itself when it starts and never
+/// writes anywhere. It used to be <c>Pdf:SharedSecret</c>, which the sidecar
+/// also holds: a sidecar compromised through the browser it runs (it renders
+/// content authors control) could then have minted a token for any user and
+/// read the whole instance (the 14.1 review). Only the app issues and checks
+/// these tokens, so only the app needs the key. A restart ends any export in
+/// flight, which the fifteen-minute lifetime makes rare; like other
+/// in-memory state here, it assumes a single app instance.
+/// <c>Pdf:SharedSecret</c> still says whether the sidecar is there at all.
 /// </summary>
 public interface IRenderTokens
 {
@@ -55,8 +62,11 @@ public record RenderTokenClaims(Guid? UserId, string Scope, Guid ScopeId)
         Scope == RenderTokens.PageScope ? ScopeId == pageId : ScopeId == spaceId;
 }
 
-public sealed class RenderTokens(IConfiguration config) : IRenderTokens
+/// <param name="clock">For tests, which need a token issued in the past; the system clock otherwise.</param>
+public sealed class RenderTokens(IConfiguration config, TimeProvider? clock = null) : IRenderTokens
 {
+    private readonly TimeProvider _clock = clock ?? TimeProvider.System;
+
     public const string Prefix = "trx_";
     public const string PageScope = "page";
     public const string SpaceScope = "space";
@@ -68,6 +78,9 @@ public sealed class RenderTokens(IConfiguration config) : IRenderTokens
     private static readonly TimeSpan Lifetime = TimeSpan.FromMinutes(15);
 
     private string? Secret => config["Pdf:SharedSecret"];
+
+    /// <summary>The signing key: random, per process, never stored.</summary>
+    private static readonly byte[] SigningKey = RandomNumberGenerator.GetBytes(32);
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(Secret);
 
@@ -81,11 +94,10 @@ public sealed class RenderTokens(IConfiguration config) : IRenderTokens
 
         var payload = JsonSerializer.SerializeToUtf8Bytes(new Payload(
             userId?.ToString(), scope, scopeId.ToString(),
-            DateTimeOffset.UtcNow.Add(Lifetime).ToUnixTimeSeconds()));
+            _clock.GetUtcNow().Add(Lifetime).ToUnixTimeSeconds()));
 
         var encoded = Base64Url(payload);
-        var signature = Base64Url(HMACSHA256.HashData(
-            Encoding.UTF8.GetBytes(secret), Encoding.UTF8.GetBytes(encoded)));
+        var signature = Base64Url(HMACSHA256.HashData(SigningKey, Encoding.UTF8.GetBytes(encoded)));
         return $"{Prefix}{encoded}.{signature}";
     }
 
@@ -97,8 +109,7 @@ public sealed class RenderTokens(IConfiguration config) : IRenderTokens
         var parts = token[Prefix.Length..].Split('.');
         if (parts.Length != 2) return null;
 
-        var expected = Base64Url(HMACSHA256.HashData(
-            Encoding.UTF8.GetBytes(secret), Encoding.UTF8.GetBytes(parts[0])));
+        var expected = Base64Url(HMACSHA256.HashData(SigningKey, Encoding.UTF8.GetBytes(parts[0])));
         // Fixed-time: the comparison is against a signature an attacker
         // controls, which is exactly where a timing leak would be usable.
         if (!CryptographicOperations.FixedTimeEquals(
@@ -110,7 +121,7 @@ public sealed class RenderTokens(IConfiguration config) : IRenderTokens
         catch (JsonException) { return null; }
         if (payload is null) return null;
 
-        if (DateTimeOffset.FromUnixTimeSeconds(payload.Exp) < DateTimeOffset.UtcNow) return null;
+        if (DateTimeOffset.FromUnixTimeSeconds(payload.Exp) < _clock.GetUtcNow()) return null;
         if (payload.Scope is not (PageScope or SpaceScope)) return null;
         if (!Guid.TryParse(payload.ScopeId, out var scopeId)) return null;
 

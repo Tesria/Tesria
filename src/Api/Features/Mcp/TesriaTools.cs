@@ -332,7 +332,8 @@ public sealed class TesriaTools
         CurrentUser current, IHttpContextAccessor accessor, CancellationToken ct)
     {
         McpAccess.RequireWrite(current, accessor);
-        if (!await perms.CanViewPageAsync(pageId)) throw McpAccess.NotFound("Page");
+        // Readable, not merely viewable: not a draft of someone else's, not in the trash (the 14.1 review).
+        if (!await perms.CanReadPageAsync(pageId)) throw McpAccess.NotFound("Page");
         if (!await perms.CanEditPageAsync(pageId)) throw new McpException("You do not have edit rights on that page.");
 
         var name = (label ?? "").Trim().ToLowerInvariant();

@@ -89,15 +89,39 @@ Recorded so nobody rediscovers them as surprises:
 7. **Trust by private range.** The default `Proxy:TrustedNetworks` trusts
    RFC 1918: safe only because port 8080 is never published. Fronting the
    app with a different proxy, or publishing the port, changes that.
-8. **No email yet.** Alerts reach administrators through the in-app bell.
-   Until Phase 4 ships, an administrator who does not sign in does not
-   know. Check the Security page, or forward `docker compose logs app`
-   (the `Tesria.Audit` category and any `crit:` line) to something that
-   pages you.
+8. **Alerts need email set up to reach anyone who is not signed in.**
+   Without an email server, alerts reach administrators only through the
+   in-app bell. Set up email (Administration, Settings), or forward
+   `docker compose logs app` (the `Tesria.Audit` category and any `crit:`
+   line) to something that pages you.
 9. **Recovery codes are a second factor's backup and a password reset.**
    One set, two roles, by design (one set is one thing to keep safe). A
    stolen set is therefore a full account takeover; treat them like a
    password.
+10. **The database owner's password is in the app's environment** (found by
+    the second pre-release review, 2026-09-24). The app needs it at startup
+    to migrate the schema and create its least-privilege role, and the
+    collaboration service is given it as a fallback. It stays in their
+    environment afterwards, so code execution in either container is
+    database-owner access, which the least-privilege role otherwise stops.
+    The fix is a separate one-shot service that migrates and then exits;
+    not done yet.
+11. **An open live-editing connection outlives a change of permission.**
+    The collaboration service checks its token when a browser connects,
+    not afterwards. Someone suspended, or restricted from a page, keeps
+    receiving and sending edits on a connection already open until it
+    closes (a reload, a network change, the tab closed). New connections
+    are refused at once.
+12. **Asking for a password reset takes longer for an address that has an
+    account,** because the email is sent before the answer. The answer
+    itself is the same either way. Sending it in the background would
+    close this; not done yet.
+13. **Some state assumes a single app instance:** render tokens are signed
+    with a key the app makes when it starts, and export progress, rate
+    limits and settings are cached in memory. Running more than one app
+    container is not supported.
+14. **IPv6 NAT64 addresses** (`64:ff9b::/96`) are not in the egress guard's
+    private list. It matters only on an IPv6-only host with NAT64.
 
 ## Internet-readiness checklist
 

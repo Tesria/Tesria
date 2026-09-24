@@ -376,16 +376,11 @@ if (!string.IsNullOrWhiteSpace(oidcAuthority))
                 }
 
                 // Replace the provider's claims with our own internal shape,
-                // the same one local login produces, before the handler signs
-                // into the cookie scheme.
-                var claims = new List<Claim>
-                {
-                    new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                    new(ClaimTypes.Email, user.Email),
-                    new(ClaimTypes.Name, user.DisplayName),
-                };
-                ctx.Principal = new ClaimsPrincipal(
-                    new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
+                // exactly what local login produces (security stamp, sign-in
+                // time and a session row), before the handler signs into the
+                // cookie scheme. Anything less is rejected on the next request.
+                ctx.Principal = await AuthEndpoints.SessionPrincipalAsync(
+                    ctx.HttpContext, ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>(), user);
             },
             // Land back on the login page with a readable error instead of an
             // unhandled-exception page if the provider or provisioning fails.

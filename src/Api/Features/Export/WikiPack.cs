@@ -43,6 +43,8 @@ public static class WikiPack
     public const int MaxEntries = 20_000;
     /// <summary>The same limit an ordinary upload has (AttachmentEndpoints).</summary>
     public const long MaxAttachmentBytes = 25L * 1024 * 1024;
+    /// <summary>The largest single JSON file a reader parses: a page with a long history fits many times over.</summary>
+    public const long MaxJsonEntryBytes = 32L * 1024 * 1024;
 
     /* ---- the model ------------------------------------------------------ */
 
@@ -327,6 +329,15 @@ public static class WikiPack
             pages.Add(As<PackPage>(node, name)
                 ?? throw new PackException($"A page in this pack could not be read: {Describe(name)}"));
 
+        // Each file in the pack is one attachment. Several attachments naming
+        // the same small file would each be written out in full on import:
+        // one 25 MB entry of zeros named a hundred thousand times fills the
+        // disk from a pack a few megabytes long (the 14.1 review).
+        var named = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var attachment in pages.SelectMany(p => p.Attachments))
+            if (!named.Add(attachment.File))
+                throw new PackException($"This pack names the file {Describe(attachment.File)} for more than one attachment.");
+
         foreach (var attachment in pages.SelectMany(p => p.Attachments))
         {
             var entry = zip.GetEntry(attachment.File);
@@ -383,6 +394,11 @@ public static class WikiPack
     {
         var entry = zip.GetEntry(name);
         if (entry is null) return null;
+        // One JSON file is a page with its history, not a book: parsing a
+        // few hundred megabytes of it would take gigabytes of memory, which
+        // one import could use to stop the app (the 14.1 review).
+        if (entry.Length > MaxJsonEntryBytes)
+            throw new PackException($"{Describe(name)} in this pack is larger than {MaxJsonEntryBytes / (1024 * 1024)} MB.");
         try
         {
             using var stream = entry.Open();

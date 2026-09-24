@@ -97,6 +97,20 @@ do_restore_wiki() {
   # stripped by claim_job. A time means point-in-time; no time means the end
   # of the named backup, which is --type=immediate against that set.
   at="$(printf '%s' "$options" | sed -n 's/.*"at" *: *"\([^"]*\)".*/\1/p')"
+
+  # Both values end up on pgBackRest's command line, and the job row they
+  # come from is one the app's database role may write. So each must be
+  # exactly the shape the app writes, a timestamp or a backup label, and
+  # nothing that could become an extra option (the 14.1 review).
+  if [ -n "$at" ] && ! printf '%s' "$at" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,7})?([+-][0-9]{2}:[0-9]{2}|Z)$'; then
+    echo "ERROR: the restore time is not a timestamp; refusing it"
+    return 1
+  fi
+  if [ -n "$target" ] && ! printf '%s' "$target" | grep -Eq '^[0-9]{8}-[0-9]{6}F(_[0-9]{8}-[0-9]{6}[DI])?$'; then
+    echo "ERROR: the backup to restore is not a backup label; refusing it"
+    return 1
+  fi
+
   if [ -n "$at" ]; then
     args="--type=time --target=$at --target-action=promote --delta"
     echo "[restore] point-in-time recovery to $at"

@@ -5,7 +5,8 @@ namespace Tesria.Api.Domain;
 /// (the owner, 2026-09-24: "I have no idea who has created tokens and how
 /// often they are in use", and "keep an eye on what agents are doing").
 /// REST requests are split into reads and changes by method; MCP tool calls
-/// are counted apart, by whether the tool writes. Kept 90 days.
+/// are counted apart, by whether the tool writes. Kept 90 days, including
+/// after the token is revoked.
 /// </summary>
 public class ApiTokenDay
 {

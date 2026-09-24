@@ -125,64 +125,80 @@ public static class SiteExportEndpoints
             // Attachments referenced by the pages that are actually in the site.
             var assets = await AssetsAsync(db, placed.Select(p => p.Id).ToList(), ct);
 
-            var buffer = new MemoryStream();
-            using (var zip = new ZipArchive(buffer, ZipArchiveMode.Create, leaveOpen: true))
+            // Spooled to a temporary file, as the pack export is, not built in
+            // memory: a space with many large attachments made a zip that
+            // several exports at once could use to exhaust the app's memory
+            // (the 14.1 review). DeleteOnClose ties the file to the response.
+            var buffer = new FileStream(
+                Path.Combine(Path.GetTempPath(), $"tesria-site-{Guid.NewGuid():N}.zip"),
+                FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None,
+                bufferSize: 64 * 1024, FileOptions.DeleteOnClose | FileOptions.Asynchronous);
+            try
             {
-                await WriteTextAsync(zip, "assets/site.css", css, ct);
-                foreach (var (path, bytes) in packed.Files)
+                using (var zip = new ZipArchive(buffer, ZipArchiveMode.Create, leaveOpen: true))
                 {
-                    var entry = zip.CreateEntry(path, CompressionLevel.Optimal);
-                    await using var target = entry.Open();
-                    await target.WriteAsync(bytes, ct);
-                }
-                await WriteTextAsync(zip, "index.html",
-                    SiteExport.Index(space, placed, css, brand, head, footer), ct);
-                await WriteTextAsync(zip, "404.html",
-                    SiteExport.NotFound(space, css, brand, head, placed, footer), ct);
-
-                if (icon is not null)
-                {
-                    await using (icon)
+                    await WriteTextAsync(zip, "assets/site.css", css, ct);
+                    foreach (var (path, bytes) in packed.Files)
                     {
-                        var entry = zip.CreateEntry(SpaceIconAsset, CompressionLevel.Optimal);
+                        var entry = zip.CreateEntry(path, CompressionLevel.Optimal);
                         await using var target = entry.Open();
-                        await icon.CopyToAsync(target, ct);
+                        await target.WriteAsync(bytes, ct);
+                    }
+                    await WriteTextAsync(zip, "index.html",
+                        SiteExport.Index(space, placed, css, brand, head, footer), ct);
+                    await WriteTextAsync(zip, "404.html",
+                        SiteExport.NotFound(space, css, brand, head, placed, footer), ct);
+
+                    if (icon is not null)
+                    {
+                        await using (icon)
+                        {
+                            var entry = zip.CreateEntry(SpaceIconAsset, CompressionLevel.Optimal);
+                            await using var target = entry.Open();
+                            await icon.CopyToAsync(target, ct);
+                        }
+                    }
+
+                    report.Stage("Capturing pages", placed.Count);
+                    foreach (var page in placed)
+                    {
+                        report.Working(page.Title);
+                        var url = $"{origin}/export/pages/{page.Id}?chrome=site";
+                        // Not inlined: the site ships real files under assets/, which
+                        // keeps each page small and lets a browser cache an image once
+                        // rather than once per page that shows it.
+                        var captured = await renderer.CaptureAsync(
+                            url, token, "html", page.Title, ct, inlineAssets: false);
+                        report.Step();
+                        if (captured is null) continue; // one page failing must not lose the rest
+
+                        var html = Encoding.UTF8.GetString(captured);
+                        html = SiteExport.RewriteLinks(html, page.Path, pagePaths, assets.Names);
+                        html = SiteChrome.ApplyToDocument(html, brand,
+                            Infrastructure.Branding.BrandTitle.Format(instanceName, space.Name, page.Title), page.Path);
+                        html = InjectSiteChrome(html, placed, page, brand, head, footer);
+                        await WriteTextAsync(zip, $"{page.Path}/index.html", html, ct);
+                    }
+
+                    report.Stage("Copying files", assets.Names.Count);
+                    foreach (var (id, name) in assets.Names)
+                    {
+                        report.Working(name[33..]);
+                        report.Step();
+                        if (!assets.Keys.TryGetValue(id, out var storageKey)) continue;
+                        await using var bytes = storage.OpenRead(storageKey);
+                        if (bytes is null) continue;
+                        var entry = zip.CreateEntry($"assets/{name}", CompressionLevel.Optimal);
+                        await using var target = entry.Open();
+                        await bytes.CopyToAsync(target, ct);
                     }
                 }
-
-                report.Stage("Capturing pages", placed.Count);
-                foreach (var page in placed)
-                {
-                    report.Working(page.Title);
-                    var url = $"{origin}/export/pages/{page.Id}?chrome=site";
-                    // Not inlined: the site ships real files under assets/, which
-                    // keeps each page small and lets a browser cache an image once
-                    // rather than once per page that shows it.
-                    var captured = await renderer.CaptureAsync(
-                        url, token, "html", page.Title, ct, inlineAssets: false);
-                    report.Step();
-                    if (captured is null) continue; // one page failing must not lose the rest
-
-                    var html = Encoding.UTF8.GetString(captured);
-                    html = SiteExport.RewriteLinks(html, page.Path, pagePaths, assets.Names);
-                    html = SiteChrome.ApplyToDocument(html, brand,
-                        Infrastructure.Branding.BrandTitle.Format(instanceName, space.Name, page.Title), page.Path);
-                    html = InjectSiteChrome(html, placed, page, brand, head, footer);
-                    await WriteTextAsync(zip, $"{page.Path}/index.html", html, ct);
-                }
-
-                report.Stage("Copying files", assets.Names.Count);
-                foreach (var (id, name) in assets.Names)
-                {
-                    report.Working(name[33..]);
-                    report.Step();
-                    if (!assets.Keys.TryGetValue(id, out var storageKey)) continue;
-                    await using var bytes = storage.OpenRead(storageKey);
-                    if (bytes is null) continue;
-                    var entry = zip.CreateEntry($"assets/{name}", CompressionLevel.Optimal);
-                    await using var target = entry.Open();
-                    await bytes.CopyToAsync(target, ct);
-                }
+            }
+            catch
+            {
+                // A failed or canceled export takes its temporary file with it.
+                await buffer.DisposeAsync();
+                throw;
             }
 
             buffer.Position = 0;

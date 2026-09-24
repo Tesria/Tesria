@@ -554,7 +554,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     panel('info', p(b('The tokens themselves are never shown,'), ' only the first few characters their owner also sees. Nobody, administrators included, can read a token back and use it.')),
 
     h(2, 'At a glance'),
-    p('The cards at the top count the last 7 days: how many tokens there are (and how many were never used), how many were used, how many requests came through the REST API, how many tools assistants called through MCP, and how many tokens expire within a week. The two charts below them show requests and tool calls per day for the last 30 days, so a sudden jump stands out.'),
+    p('The cards at the top count the last 7 days: how many tokens there are (and how many were never used), how many were used, how many requests came through the REST API, how many tools assistants called through MCP, and how many tokens expire within a week. The two charts below them show requests and tool calls per day for the last 30 days, so a sudden jump stands out. Both include tokens revoked since, so removing a token does not erase what it did.'),
     ...(await picture(tokenTab, 'admin-api-tokens', 'The API tokens tab: the summary cards, the charts and the list of tokens, with one Revoke boxed', 'The cards and charts, then every token with its owner, last use and the last 7 days.')),
 
     h(2, 'The list of tokens'),

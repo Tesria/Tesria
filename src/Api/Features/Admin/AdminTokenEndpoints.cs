@@ -143,7 +143,11 @@ public static class AdminTokenEndpoints
                 page = visible.GetValueOrDefault(pid) && pages.TryGetValue(pid, out var p)
                     ? new ActivityPage(pid, p.Title, p.SpaceKey, false)
                     : new ActivityPage(pid, null, null, true);
-            return new ActivityResponse(c.Id, c.At, c.Tool, c.Write, c.Ok, c.Error,
+            // A tool's error can quote the page (get_page lists its section
+            // headings), so a page the viewer may not read keeps its error
+            // to itself as well as its title (the 14.1 review).
+            var error = page is { Hidden: true } ? (c.Error is null ? null : "Failed.") : c.Error;
+            return new ActivityResponse(c.Id, c.At, c.Tool, c.Write, c.Ok, error,
                 c.TokenId, c.TokenName, c.TokenPrefix, c.UserId, names.GetValueOrDefault(c.UserId), page, c.SpaceKey);
         }).ToList());
     }

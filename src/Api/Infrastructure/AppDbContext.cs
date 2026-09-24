@@ -319,12 +319,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(t => t.LastUsedFrom).HasMaxLength(64);
         });
 
-        // Token use (the admin API tokens tab): a day row per token, removed
-        // with it; the MCP log outlives the token on purpose.
+        // Token use (the admin API tokens tab): a day row per token. Like the
+        // MCP log, it outlives the token, so revoking one does not erase what
+        // it did (the owner, 2026-09-24: the charts read zero once the token
+        // was gone); both are pruned after 90 days.
         b.Entity<ApiTokenDay>(e =>
         {
             e.HasKey(d => new { d.TokenId, d.Day });
-            e.HasOne<ApiToken>().WithMany().HasForeignKey(d => d.TokenId).OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(d => d.Day);
         });
         b.Entity<McpToolCall>(e =>
