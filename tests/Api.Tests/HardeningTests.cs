@@ -3,7 +3,9 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Tesria.Api.Infrastructure;
 using Xunit;
 
@@ -84,5 +86,61 @@ public class HardeningTests
         var networks = Tesria.Api.Infrastructure.Security.ProxyTrust.ParseNetworks(ts(Config(("Proxy:ComposeSubnet", "10.203.0.0/24")))).ToList();
         Assert.Contains(networks, n => n.Contains(IPAddress.Parse("10.203.0.7")));
         Assert.DoesNotContain(networks, n => n.Contains(IPAddress.Parse("192.168.1.20")));
+    }
+
+    /// <summary>Remembers what the collaboration service would have been told to close.</summary>
+    private sealed class RecordingCollab : Tesria.Api.Infrastructure.Collab.ICollabNotifier
+    {
+        public System.Collections.Concurrent.ConcurrentQueue<Tesria.Api.Infrastructure.Collab.CollabRevocation> Revoked = new();
+        public Task NotifyAsync(Guid pageId, string contentJson, Tesria.Api.Infrastructure.Collab.WriteSource source, int version, CancellationToken ct = default) => Task.CompletedTask;
+        public Task MaintenanceAsync(bool on, CancellationToken ct = default) => Task.CompletedTask;
+        public Task RevokeAsync(Tesria.Api.Infrastructure.Collab.CollabRevocation revocation, CancellationToken ct = default)
+        {
+            Revoked.Enqueue(revocation);
+            return Task.CompletedTask;
+        }
+    }
+
+    [Fact]
+    public async Task Changes_to_access_close_the_live_editing_connections_they_touch()
+    {
+        var collab = new RecordingCollab();
+        using var factory = new TestAppFactory();
+        using var app = factory.WithWebHostBuilder(b => b.ConfigureServices(s =>
+        {
+            s.RemoveAll<Tesria.Api.Infrastructure.Collab.ICollabNotifier>();
+            s.AddSingleton<Tesria.Api.Infrastructure.Collab.ICollabNotifier>(collab);
+        }));
+        var owner = app.CreateClient();
+        (await owner.PostAsJsonAsync("/api/auth/register", new { Email = "owner@example.com", DisplayName = "Owner", Password = "supersecret" })).EnsureSuccessStatusCode();
+        var member = app.CreateClient();
+        var sam = (await (await member.PostAsJsonAsync("/api/auth/register", new { Email = "sam@example.com", DisplayName = "Sam", Password = "supersecret" }))
+            .Content.ReadFromJsonAsync<UserDto>())!.Id;
+        var spaceId = await owner.CreateSpaceAsync("LIVE");
+        var page = (await (await owner.PostAsJsonAsync("/api/pages", new { SpaceId = spaceId, Title = "Plan",
+            ContentJson = """{"type":"doc","content":[{"type":"paragraph"}]}""" })).Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+
+        async Task<List<Tesria.Api.Infrastructure.Collab.CollabRevocation>> After(Func<Task> act)
+        {
+            collab.Revoked.Clear();
+            await act();
+            return [.. collab.Revoked];
+        }
+
+        Assert.Contains(new(SpaceId: spaceId), await After(async () =>
+            (await owner.PostAsJsonAsync("/api/spaces/LIVE/permissions", new { PrincipalType = 0, PrincipalId = sam, Operation = 0 })).EnsureSuccessStatusCode()));
+        Assert.Contains(new(PageId: page), await After(async () =>
+            (await owner.PostAsJsonAsync($"/api/pages/{page}/restrictions", new { PrincipalType = 0, PrincipalId = sam, Operation = 1 })).EnsureSuccessStatusCode()));
+        var group = (await (await owner.PostAsJsonAsync("/api/groups", new { Name = "Team", Description = (string?)null }))
+            .Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+        Assert.Contains(new(UserId: sam), await After(async () =>
+            (await owner.PostAsJsonAsync($"/api/groups/{group}/members", new { UserId = sam })).EnsureSuccessStatusCode()));
+        Assert.Contains(new(All: true), await After(async () =>
+            (await owner.DeleteAsync($"/api/groups/{group}")).EnsureSuccessStatusCode()));
+        Assert.Contains(new(UserId: sam), await After(async () =>
+            (await owner.PutAsJsonAsync($"/api/admin/users/{sam}/status", new { Status = 1 })).EnsureSuccessStatusCode()));
+        // Nothing to do with access: nothing closed.
+        Assert.Empty(await After(async () =>
+            (await owner.PutAsJsonAsync($"/api/pages/{page}", new { Title = "Plan", ContentJson = """{"type":"doc","content":[{"type":"paragraph"}]}""" })).EnsureSuccessStatusCode()));
     }
 }

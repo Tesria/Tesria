@@ -47,7 +47,19 @@ public interface ICollabNotifier
     /// exits when it is newer than its own start.
     /// </summary>
     Task MaintenanceAsync(bool on, CancellationToken ct = default);
+
+    /// <summary>
+    /// Tells the sidecar to close the live-editing connections someone's
+    /// access may no longer cover (dev-plan 14.3): a user's, a space's, a
+    /// page's space's, or everyone's. The editors reconnect with a fresh
+    /// token, which the app only issues to people who may still edit.
+    /// Best effort; the token's ten-minute expiry is the backstop.
+    /// </summary>
+    Task RevokeAsync(CollabRevocation revocation, CancellationToken ct = default);
 }
+
+/// <summary>Whose live-editing connections to close. Exactly one is set.</summary>
+public sealed record CollabRevocation(Guid? UserId = null, Guid? SpaceId = null, Guid? PageId = null, bool All = false);
 
 /// <summary>
 /// Posts to the collaboration sidecar after a page write (dev-plan 8.6).
@@ -107,6 +119,36 @@ public sealed class CollabNotifier(
             // Deliberately swallowed. The page is saved; this only decides
             // whether an open editor finds out now or on its next load.
             log.LogWarning(ex, "Collab sidecar unreachable; page {PageId} will reconcile on next load", pageId);
+        }
+    }
+
+    public async Task RevokeAsync(CollabRevocation revocation, CancellationToken ct = default)
+    {
+        if (!Available) return;
+        try
+        {
+            var client = http.CreateClient("collab");
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"{Endpoint!.TrimEnd('/')}/revoke")
+            {
+                Content = new StringContent(
+                    JsonSerializer.Serialize(new
+                    {
+                        userId = revocation.UserId,
+                        spaceId = revocation.SpaceId,
+                        pageId = revocation.PageId,
+                        all = revocation.All,
+                    }),
+                    Encoding.UTF8, new MediaTypeHeaderValue("application/json")),
+            };
+            request.Headers.Add("X-Collab-Secret", Secret);
+            using var response = await client.SendAsync(request, ct);
+            if (!response.IsSuccessStatusCode)
+                log.LogWarning("Collab sidecar returned {Status} for a revocation", (int)response.StatusCode);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
+        {
+            // The connections end anyway when their ten-minute tokens do.
+            log.LogWarning(ex, "Collab sidecar unreachable; open connections end when their tokens expire");
         }
     }
 

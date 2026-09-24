@@ -85,7 +85,8 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
                 .ToList();
             foreach (var d in toRemove) services.Remove(d);
 
-            services.AddDbContext<AppDbContext>(o => o.UseSqlite(_connection));
+            services.AddDbContext<AppDbContext>((sp, o) => o.UseSqlite(_connection)
+                .AddInterceptors(sp.GetRequiredService<Tesria.Api.Infrastructure.Collab.CollabRevocationInterceptor>()));
 
             // Runs before the app's pipeline, so forwarded headers behave as
             // they do behind Caddy: see the filter for how tests use it.

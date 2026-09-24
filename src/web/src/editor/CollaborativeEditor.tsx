@@ -24,6 +24,7 @@ import { DynamicBlockMenu } from './DynamicBlockMenu'
 import { TocMenu } from './TocMenu'
 import { InlineCommentPopover } from './InlineCommentPopover'
 import type { CollabConnection } from './CollabStatus'
+import { api, ApiError } from '../api/client'
 
 type Props = {
   pageId: string
@@ -107,19 +108,52 @@ export function CollaborativeEditor({
   // previous page's state.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const ydoc = useMemo(() => new Y.Doc(), [pageId])
+  // A token for each connection (dev-plan 14.3): the first is the one the
+  // page was opened with, every reconnect asks the app again. Tokens now last
+  // ten minutes, and the sidecar closes connections when they expire or when
+  // someone's access changes, so asking again is how a long session carries
+  // on, and how a person who lost access is turned away with a reason.
+  const firstToken = useRef<string | null>(token)
+  const finalRef = useRef<'denied' | 'gone' | null>(null)
+  const providerRef = useRef<HocuspocusProvider | null>(null)
   const provider = useMemo(() => {
     const url = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/collab`
-    return new HocuspocusProvider({ url, name: pageId, document: ydoc, token })
+    firstToken.current = token
+    finalRef.current = null
+    const fetchToken = async () => {
+      const first = firstToken.current
+      if (first) {
+        firstToken.current = null
+        return first
+      }
+      try {
+        const fresh = await api.pages.collabToken(pageId)
+        if (fresh.enabled && fresh.token) return fresh.token
+      } catch (err) {
+        if (err instanceof ApiError && (err.status === 401 || err.status === 403 || err.status === 404)) {
+          finalRef.current = err.status === 404 ? 'gone' : 'denied'
+          setStatus(finalRef.current)
+          providerRef.current?.disconnect()
+        }
+      }
+      return ''
+    }
+    const created = new HocuspocusProvider({ url, name: pageId, document: ydoc, token: fetchToken })
+    providerRef.current = created
+    return created
   }, [pageId, token, ydoc])
 
   useEffect(() => {
-    const onStatus = ({ status }: { status: string }) =>
-      setStatus(status === 'connected' ? 'connected' : 'disconnected')
+    const onStatus = ({ status }: { status: string }) => {
+      // Once the app has said no, the bar keeps saying why.
+      if (finalRef.current) return
+      setStatus(status === 'connected' ? 'connected' : status === 'connecting' ? 'connecting' : 'disconnected')
+    }
     // `status` does not fire again when the server refuses the *re*-connection,
     // which is what happens once a page is gone (dev-plan 11.3): the sidecar
     // closes the session and then turns the retry away. Without this the bar
     // would sit on "Live" for a page that no longer exists.
-    const onRefused = () => setStatus('disconnected')
+    const onRefused = () => { if (!finalRef.current) setStatus('disconnected') }
     provider.on('status', onStatus)
     provider.on('authenticationFailed', onRefused)
     provider.on('disconnect', onRefused)

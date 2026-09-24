@@ -306,7 +306,8 @@ const server = new Server({
     const path = (request.url ?? '').split('?')[0]
     const match = /^\/pages\/([^/]+)\/reconcile$/.exec(path)
     const maintenance = path === '/maintenance'
-    if (request.method !== 'POST' || (!match && !maintenance)) return
+    const revoke = path === '/revoke'
+    if (request.method !== 'POST' || (!match && !maintenance && !revoke)) return
 
     const provided = request.headers['x-collab-secret']
     // Constant-time, and length-checked first, as timingSafeEqual requires.
@@ -314,6 +315,18 @@ const server = new Server({
     const given = Buffer.from(typeof provided === 'string' ? provided : '')
     if (given.length !== expected.length || !crypto.timingSafeEqual(given, expected)) {
       response.writeHead(403).end('forbidden')
+      return handled()
+    }
+
+    // The app saying someone's access changed (dev-plan 14.3).
+    if (revoke) {
+      try {
+        const closed = await closeFor(await readJson(request, 64 * 1024))
+        response.writeHead(200).end(String(closed))
+      } catch (err) {
+        console.error('[collab] revoke request failed', err)
+        response.writeHead(500).end('failed')
+      }
       return handled()
     }
 
@@ -360,8 +373,9 @@ const server = new Server({
       console.warn(`[collab] refusing ${documentName}: no such page`)
       throw new Error('Unauthorized')
     }
-    // Surfaced to other clients as the collaborator's identity.
-    return { user: { id: payload.userId, name: payload.displayName } }
+    // Surfaced to other clients as the collaborator's identity; the expiry is
+    // kept so the sweep can end the connection when the token does.
+    return { user: { id: payload.userId, name: payload.displayName }, exp: payload.exp }
   },
 
   extensions: [
@@ -441,12 +455,71 @@ async function dropDeletedDocuments() {
   }
 }
 
+/**
+ * Ends connections when access to them may have changed (dev-plan 14.3). The
+ * app says whose, or which space's, or everyone's; this sidecar never decides
+ * who lost access. It closes the connections, the editors reconnect with a
+ * fresh token, and the app's /collab-token check lets back in exactly the
+ * people who may still edit. Returns how many were closed.
+ */
+async function closeFor({ userId, spaceId, pageId, all }) {
+  const open = [...server.hocuspocus.documents.entries()]
+  let inScope = null
+  if (spaceId || pageId) {
+    const names = open.map(([name]) => name).filter((name) => UUID.test(name))
+    if (names.length === 0) return 0
+    const result = spaceId
+      ? await pool.query('SELECT "Id"::text FROM "Pages" WHERE "Id" = ANY($1::uuid[]) AND "SpaceId" = $2::uuid', [names, spaceId])
+      : await pool.query(
+          'SELECT "Id"::text FROM "Pages" WHERE "Id" = ANY($1::uuid[]) AND "SpaceId" = (SELECT "SpaceId" FROM "Pages" WHERE "Id" = $2::uuid)',
+          [names, pageId])
+    inScope = new Set(result.rows.map((r) => r.Id))
+  }
+  let closed = 0
+  for (const [name, document] of open) {
+    if (inScope && !inScope.has(name)) continue
+    for (const connection of document.getConnections()) {
+      if (!all && !inScope && connection.context?.user?.id !== userId) continue
+      endConnection(connection, 4403, 'access-changed')
+      closed++
+    }
+  }
+  if (closed) console.log(`[collab] closed ${closed} connection(s): access changed`)
+  return closed
+}
+
+/**
+ * Hocuspocus's own close only tells the browser this one document is closed,
+ * over a socket that stays open: the provider then marks itself signed out
+ * but neither reconnects nor asks for a token again, and the editor goes on
+ * saying "Live" while nothing it sends is accepted (found verifying 14.3).
+ * Closing the socket as well makes the provider reconnect, which calls the
+ * editor's token function and so asks the app again. The editor opens one
+ * socket per page, so this ends nothing else.
+ */
+function endConnection(connection, code, reason) {
+  connection.close({ code, reason })
+  try { connection.webSocket.close(code, reason) } catch { /* already closing */ }
+}
+
+/** Ends connections whose token has expired; the editor reconnects with a fresh one (dev-plan 14.3). */
+function closeExpired() {
+  const now = Date.now() / 1000
+  for (const [, document] of server.hocuspocus.documents) {
+    for (const connection of document.getConnections()) {
+      const exp = connection.context?.exp
+      if (typeof exp === 'number' && exp < now) endConnection(connection, 4401, 'token-expired')
+    }
+  }
+}
+
 server.listen().then(() => {
   console.log(`[collab] listening on ${PORT}`)
   const sweep = setInterval(
     () =>
       exitIfRestored()
         .then(dropDeletedDocuments)
+        .then(closeExpired)
         .catch((err) => console.error('[collab] sweep failed', err)),
     SWEEP_MS,
   )

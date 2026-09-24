@@ -80,7 +80,11 @@ if (builder.Environment.IsProduction() && !DatabaseRoles.TryParseApp(appConnecti
 var runtimeConnectionString = DatabaseRoles.ChooseRuntimeConnection(
     ownerConnectionString, appConnectionString,
     LoggerFactory.Create(l => l.AddConsole()).CreateLogger("Startup"));
-builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(runtimeConnectionString));
+// Live-editing connections end when access changes (dev-plan 14.3).
+builder.Services.AddSingleton<Tesria.Api.Infrastructure.Collab.CollabRevocationInterceptor>();
+builder.Services.AddDbContext<AppDbContext>((sp, options) => options
+    .UseNpgsql(runtimeConnectionString)
+    .AddInterceptors(sp.GetRequiredService<Tesria.Api.Infrastructure.Collab.CollabRevocationInterceptor>()));
 
 // Auth: cookie-based sessions for the same-origin SPA. Argon2id hashing.
 builder.Services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();

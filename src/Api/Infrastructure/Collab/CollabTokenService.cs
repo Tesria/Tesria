@@ -23,7 +23,13 @@ public interface ICollabTokenService
 
 public sealed class CollabTokenService(IConfiguration config) : ICollabTokenService
 {
-    private static readonly TimeSpan Lifetime = TimeSpan.FromMinutes(30);
+    /// <summary>
+    /// Ten minutes (dev-plan 14.3; it was thirty): the sidecar ends a
+    /// connection when its token expires, and the editor reconnects with a
+    /// fresh one, so this is how long someone who lost access could stay
+    /// connected if the app could not reach the sidecar to say so.
+    /// </summary>
+    public static readonly TimeSpan Lifetime = TimeSpan.FromMinutes(10);
 
     private string? Secret => config["Collab:Secret"];
 
