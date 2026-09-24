@@ -1,10 +1,12 @@
 // Exports the Docs space (dev-plan 10.5 step 7). Run it through
 // export-docs.sh.
 //
-//   docs/site/docs-pack.zip   the wiki pack, committed: the copy of the
-//                              site that survives a reset of the instance
-//   <out>/docs-site.zip         the static site, for tesria.com/docs; not
-//                              committed, because it is rebuilt from the pack
+//   docs/site/docs-pack.zip   the wiki pack: the copy of the docs that
+//                              survives a reset of the instance
+//   <out>/docs-site.zip         the static site, for tesria.com/docs
+//
+// Neither is committed: scripts/docs/release-docs.sh publishes both as
+// downloads on a GitHub release.
 //
 // The site is also checked against Cloudflare's limits for static assets on
 // the free plan: 25 MiB per file and 20,000 files (checked 2026-09-22).

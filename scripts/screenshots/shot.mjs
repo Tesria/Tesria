@@ -405,6 +405,8 @@ async function record(s) {
 }
 
 for (const s of spec.shots) {
+  /** The window size before a cropped shot grew it to the page's height; restored after. */
+  let grownFrom = null
   if (only && s.name !== only) continue
   current = s.name
   if (s.record) {
@@ -443,6 +445,21 @@ for (const s of spec.shots) {
     if (s.clipTo && await pg.evaluate(() => window.scrollY > 0)) {
       await pg.addStyleTag({ content: '.topbar, .page-actionbar, .space-actionbar { position: static !important; }' })
       await pg.waitForTimeout(100)
+    }
+    // A full-page capture makes the window as tall as the page, and a page
+    // that lays out by the window's height then moves: the boxes and the crop,
+    // measured before, came out about 50 pixels off (the Google and Microsoft
+    // sign-in pictures, 2026-09-24). So a cropped shot whose page is taller
+    // than the window gets that height first, and is measured as captured.
+    if (s.clipTo) {
+      grownFrom = grownFrom || pg.viewportSize()
+      for (let i = 0; i < 3; i++) {
+        const vp = pg.viewportSize()
+        const h = await pg.evaluate(() => document.documentElement.scrollHeight)
+        if (!vp || h <= vp.height) break
+        await pg.setViewportSize({ width: vp.width, height: h })
+        await pg.waitForTimeout(150)
+      }
     }
     if (s.annotate) await pg.evaluate(`(${ANNOTATE})(${JSON.stringify(s.annotate)})`)
 
@@ -497,6 +514,7 @@ for (const s of spec.shots) {
   }
   if (s.mock) await pg.unrouteAll({ behavior: 'ignoreErrors' })
   if (s.viewport) await pg.setViewportSize({ width: 1440, height: 900 })
+  else if (grownFrom) await pg.setViewportSize(grownFrom)
 }
 
 if (problems.length) {

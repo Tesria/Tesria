@@ -11,8 +11,9 @@
 //   build     writes the section's pages, given the helpers below.
 //
 // The wiki is the source of truth (the owner, 2026-09-21); this script is how
-// its pages were written, kept so they can be rewritten after a redesign. The
-// committed copy is the space exported as a wiki pack at the end of 10.5.
+// its pages were written, kept so they can be rewritten after a redesign. Its
+// safe copy is the space exported as a wiki pack (export-docs.sh), published
+// as a release download (release-docs.sh).
 
 import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'

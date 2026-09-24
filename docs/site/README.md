@@ -1,22 +1,24 @@
 # Tesria's docs
 
-`docs-pack.zip` is Tesria's docs, published at tesria.com/docs: the Docs
-space (called Support until 2026-09-24), exported as a wiki pack (dev-plan
-10.5). The wiki is the source of truth. This copy is here so the docs
-survive anything that happens to an instance, and so anyone can read them
-locally.
+The Docs space (called Support until 2026-09-24), published at tesria.com/docs,
+is written into a Tesria instance by `scripts/docs/publish-docs.sh`. The wiki
+is the source of truth. This folder is where its exports land; they are not
+committed.
 
-**To read it in your own instance:** Spaces → **Import a pack**, and choose
-this file. The imported space is private to you until you give others
-access.
-
-**To regenerate it** after the pages change, from the repository root:
+**To export and publish them**, from the repository root:
 
 ```bash
 scripts/docs/export-docs.sh
+scripts/docs/release-docs.sh
 ```
 
-That writes this file again and also exports the static site for
-tesria.com/docs (`docs-site.zip`, here, never committed), checked against
-Cloudflare's limits. The pages themselves are
-written by `scripts/docs/publish-docs.sh`.
+The first writes `docs-pack.zip` (the space as a wiki pack) and `docs-site.zip`
+(the static site for tesria.com/docs) here, checked against Cloudflare's
+limits. The second uploads both to the standing **docs** release on GitHub,
+replacing the last upload; `scripts/docs/release-docs.sh v0.6.0` attaches them
+to a version's release instead, once that release is published.
+
+**To read the docs in your own instance:** download `docs-pack.zip` from the
+repository's releases, then in Tesria choose Spaces, then **Import a pack**,
+and choose the file. The imported space is private to you until you give
+others access.

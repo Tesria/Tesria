@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Exports the Docs space (dev-plan 10.5 step 7): the wiki pack into
-# docs/site/docs-pack.zip, which is committed, and the static site into the
+# docs/site/docs-pack.zip and the static site into the
 # directory given (default docs/site/), checked against Cloudflare's limits.
 #
 #   scripts/docs/export-docs.sh [site-directory]

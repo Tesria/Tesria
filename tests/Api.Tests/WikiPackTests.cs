@@ -11,8 +11,8 @@ namespace Tesria.Api.Tests;
 /// The pack format itself (dev-plan 8.5, step 1).
 ///
 /// Two jobs, and they pull in opposite directions. Writing must be
-/// deterministic, because the manual's pack is committed and a one-word edit
-/// has to diff as one word. Reading must be suspicious, because a pack
+/// deterministic, because a pack kept under version control (as the docs'
+/// pack was until 2026-09-24) must diff a one-word edit as one word. Reading must be suspicious, because a pack
 /// arrives as an upload from somewhere else entirely.
 /// </summary>
 public class WikiPackTests

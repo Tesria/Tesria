@@ -8,6 +8,23 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.6.0-dev**: 0.5.0 is released, so what comes
 after it is the next minor version.
 
+### The docs pack is a release download, not a committed file (2026-09-24, Opus 5.5)
+
+Every export of the docs added a 17 MB zip to every clone (six in a day).
+At the owner's request the pack leaves the repository: `docs/site/*.zip` is
+ignored, and the new `scripts/docs/release-docs.sh` uploads the pack and the
+static site to a GitHub release. With no argument it refreshes the standing
+**docs** pre-release, which always holds the latest export; with a version
+(`release-docs.sh v0.6.0`) it attaches them to that release, now step 4 of
+Making a release.
+
+Also: the screenshot harness measured a cropped shot's boxes before the
+full-page capture made the window as tall as the page, so on a page that
+lays out by window height the marks and the crop landed about 50 pixels off
+(the Google and Microsoft sign-in pictures, whose button was cut off). A
+cropped shot now takes the page's height first, and the window is put back
+after.
+
 ### The last "confluence" database names (2026-09-24, Opus 5.5)
 
 `.env.example` now suggests `tesria` for the database owner and name

@@ -514,9 +514,9 @@ public class PackRoundTripTests
     [Fact]
     public async Task A_pack_unzipped_and_zipped_up_again_still_imports()
     {
-        // This is 10.5's actual workflow: the manual's pack is committed
-        // unzipped so a page edit diffs as a page edit, and a script zips it
-        // back to import it. Every zip tool writes a directory entry for each
+        // A workflow the format supports: a pack kept unzipped under version
+        // control, so a page edit diffs as a page edit, and zipped back up to
+        // import it (10.5 planned the docs' pack that way). Every zip tool writes a directory entry for each
         // folder, which this writer never does, so nothing else here produces
         // one and the format refused the workflow it exists for.
         await using var app = new TestAppFactory();
