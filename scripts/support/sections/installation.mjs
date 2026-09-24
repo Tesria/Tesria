@@ -694,7 +694,7 @@ export async function build({
 
     h(2, 'Already using an app connector or a subnet router?'),
     p('If your tailnet already has a device that routes to your home or office network (Tailscale calls these ', b('subnet routers'), ' and ', b('app connectors'), '), you can reach Tesria through it without anything above: add Tesria’s usual address to it in the admin console. Nothing changes in Tesria. The difference is the certificate: through a router you reach Tesria at its usual address, with its usual certificate, so each device still needs to trust it once. The Tailscale service above gives it a certificate every device already trusts.'),
-    p('Tailscale and the Tailscale logo are trademarks of Tailscale Inc. Tesria is not affiliated with Tailscale.'),
+    p('Tailscale and the Tailscale logo are trademarks of Tailscale Inc. Tesria is not affiliated with or endorsed by Tailscale.'),
   ))
 
   // ============================================================ Single sign-on

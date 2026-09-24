@@ -542,8 +542,8 @@
   "Installation and operations / Reaching Tesria from anywhere with Tailscale": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "d4bc7012882e935c"
+    "note": "Revised.",
+    "hash": "b1f81814b791f0ac"
   },
   "Installation and operations / Security hardening": {
     "appliesTo": "0.5",

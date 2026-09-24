@@ -2210,7 +2210,10 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 
 /* Tailscale (dev-plan 19.1): its own wordmark as the heading, swapped for
    the white one in dark mode by the same rules as the brand logo. */
-.tailscale-card__title { margin: 0 0 0.75rem; line-height: 0; }
+/* Clear space around Tailscale's logo, which its guidelines ask for: at
+   least half the logo's height below it. The section's own h2 rule used to
+   win and left 4px (2026-09-24). */
+.profile__section .tailscale-card__title { margin: 0 0 0.9rem; line-height: 0; }
 .tailscale-card__logo { height: 22px; width: auto; }
 .tailscale-card__logo--dark { display: none; }
 @media (prefers-color-scheme: dark) {

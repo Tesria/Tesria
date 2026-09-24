@@ -76,7 +76,7 @@ export function TailscaleCard() {
         </>
       )}
       <p className="muted small tailscale-card__trademark">
-        Tailscale and the Tailscale logo are trademarks of Tailscale Inc. Tesria is not affiliated with Tailscale.
+        Tailscale and the Tailscale logo are trademarks of Tailscale Inc. Tesria is not affiliated with or endorsed by Tailscale.
       </p>
     </section>
   )

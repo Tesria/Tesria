@@ -1,6 +1,8 @@
 // Writes the Support space (dev-plan 10.5 step 6), the pages of Tesria's
 // support site. Run it through publish-support.sh.
 //
+// SUPPORT_SHOTS=name,name retakes only the named pictures.
+//
 // Each section lives in scripts/support/sections/<name>.mjs and exports:
 //
 //   shots     harness shots (scripts/screenshots, see shot.mjs), taken from
@@ -85,7 +87,11 @@ const shoot = !args.includes('--no-shoot')
 const wanted = args.filter((a) => !a.startsWith('--'))
 
 /** Runs the harness over a section's shots, once for a desktop and once for a phone. */
-function takeShots(section, shots) {
+function takeShots(section, all) {
+  // SUPPORT_SHOTS=name,name retakes only those pictures; the rest are kept
+  // as they were, so one changed screen does not mean a whole section.
+  const only = process.env.SUPPORT_SHOTS?.split(',').map((n) => n.trim()).filter(Boolean)
+  const shots = only ? all.filter((s) => only.includes(s.name)) : all
   const dir = join(HERE, 'shots', section)
   mkdirSync(dir, { recursive: true })
   // Windows sized for the page, not for a monitor: a full-height phone

@@ -5,6 +5,20 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Tailscale's logo, checked against its guidelines (2026-09-24, Opus 5.5)
+
+- The owner checked Tailscale's logo rules: naming an integration in a
+  dashboard or documentation is allowed; never as Tesria's own branding,
+  never suggesting Tailscale made or endorses Tesria, with clear space and
+  the logo's own colors and proportions. Recorded in
+  `src/web/public/brands/tailscale/README.md`.
+- The card's heading gave the logo 4px of room (a more specific heading
+  rule won); it now has 14px, more than half the logo's height.
+- The notice on the card and the Support page says "not affiliated with
+  or endorsed by Tailscale". The Support picture is retaken.
+- `SUPPORT_SHOTS=name,name` retakes only the named Support pictures, so
+  one changed screen does not mean reshooting a whole section.
+
 ## [0.5.0] - 2026-09-24
 
 The first numbered release: everything built since the project began on

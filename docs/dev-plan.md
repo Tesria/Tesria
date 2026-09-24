@@ -5420,8 +5420,9 @@ Differences from the plan above:
   nothing reads it except the Support publisher (for "Applies to").
 - **Shown on** the admin dashboard (a "Tesria version" card with the
   version upgraded from), `/api/health`, `/api/instance`, the OpenAPI
-  document, exported sites' footers and packs' `generator`. Not in a footer
-  of Admin: the dashboard card is one click away and says more.
+  document, exported sites' footers and packs' `generator`, and the foot
+  of every Administration tab, which already showed `/api/health`'s
+  version and now shows the real one.
 - **The release workflow builds the image but publishes none**: that is
   14.2. Its release notes are the CHANGELOG's section, cut to the
   highlights when longer than GitHub allows (0.5.0 is the whole history).
