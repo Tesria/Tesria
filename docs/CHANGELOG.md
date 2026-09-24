@@ -36,8 +36,11 @@ shares when Tesria runs under Docker Desktop.
   the override trusts `TESRIA_SUBNET` as well.
 - **One command turns it on or off:** `install-macos.sh` (a launchd login
   item) and `install-windows.ps1` (a Task Scheduler task and a firewall
-  rule), each with an undo. Installed on the owner's Mac; the Windows script
-  is untested until the owner runs it on a PC. The forwarder's "am I being
+  rule), each with an undo. Installed on the owner's Mac, and verified on
+  the owner's Windows PC: a sign-in attempt from the Mac was recorded with
+  the Mac's own address. The first Windows version ran in a visible console
+  window that closing would have stopped; the task now runs hidden from
+  startup. The forwarder's "am I being
   run" check split its path on `/` and would have done nothing on Windows;
   it now compares resolved paths. Docs: *Real visitor addresses with Docker
   Desktop*, and the two settings in the configuration reference.
