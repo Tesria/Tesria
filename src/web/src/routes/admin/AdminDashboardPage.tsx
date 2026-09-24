@@ -225,15 +225,17 @@ export function AdminDashboardPage() {
                     {data.usage.topPages.map((p) => (
                       <tr key={p.pageId}>
                         <td>
-                          {/* A page deleted since it was viewed keeps its views
-                              but has nowhere to link to and no space to name. */}
+                          {/* A page deleted since it was viewed, or one this
+                              administrator may not see, keeps its views but has
+                              nowhere to link to and no space to name; the
+                              server's title says which. */}
                           {p.spaceKey ? (
                             <>
                               <Link to={`/spaces/${p.spaceKey}/pages/${p.pageId}`}>{p.title}</Link>{' '}
                               <span className="badge">{p.spaceKey}</span>
                             </>
                           ) : (
-                            <span className="muted">Deleted page</span>
+                            <span className="muted">{p.title === '(deleted)' ? 'Deleted page' : p.title}</span>
                           )}
                         </td>
                         <td>{p.views}</td>

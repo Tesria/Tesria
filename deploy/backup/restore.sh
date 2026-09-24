@@ -3,7 +3,11 @@
 #
 #   docker compose exec backup /scripts/restore.sh                # newest cycle
 #   docker compose exec backup /scripts/restore.sh db-2026....dump # one cycle
-#   RESTORE_DRY_RUN=1 docker compose exec backup /scripts/restore.sh …
+#   docker compose exec -e RESTORE_DRY_RUN=1 backup /scripts/restore.sh …
+#
+# The variable has to go through `exec -e`: set in front of `docker compose`
+# it lands in the host's shell, never reaches the container, and the restore
+# runs for real.
 #
 # **This restores beside, then swaps.** It does not drop the live database,
 # which is what it used to do and what made a restore from the admin page

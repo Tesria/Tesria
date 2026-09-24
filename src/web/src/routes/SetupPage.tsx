@@ -540,6 +540,10 @@ function FirstSpaceStep({
 }) {
   const [name, setName] = useState('')
   const [key, setKey] = useState('')
+  // The key follows the name until someone types in it. It used to fill in
+  // only while empty, so after the first letter of the name it stuck: "Team
+  // handbook" gave the key T (found writing the Support site, 2026-09-24).
+  const [keyEdited, setKeyEdited] = useState(false)
   return (
     <Panel
       title="A first space"
@@ -556,12 +560,13 @@ function FirstSpaceStep({
         <span>Name</span>
         <input value={name} autoFocus onChange={(e) => {
           setName(e.target.value)
-          if (!key) setKey(e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase())
+          // A key starts with a letter (the server's rule), so leading digits are dropped.
+          if (!keyEdited) setKey(e.target.value.replace(/[^a-zA-Z0-9]/g, '').replace(/^[0-9]+/, '').slice(0, 6).toUpperCase())
         }} />
       </label>
       <label>
         <span>Key</span>
-        <input value={key} onChange={(e) => setKey(e.target.value.toUpperCase())} />
+        <input value={key} onChange={(e) => { setKeyEdited(true); setKey(e.target.value.toUpperCase()) }} />
         <span className="muted small">Part of every page address in it, and it cannot change later.</span>
       </label>
     </Panel>

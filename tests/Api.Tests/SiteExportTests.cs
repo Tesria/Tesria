@@ -112,6 +112,21 @@ public class SiteExportTests
     }
 
     [Fact]
+    public void A_link_into_the_app_itself_stops_being_a_link()
+    {
+        // A Labels list block links each label to its page in the app, which a
+        // static site does not have. External and relative links are untouched.
+        var html = """<a href="/labels/how-to">how-to</a> <a href="https://example.com/x">out</a> <a href="//cdn.example.com/y">cdn</a> <a href="../other/index.html">rel</a>""";
+
+        var rewritten = SiteExport.RewriteLinks(html, "guides", new Dictionary<Guid, string>(), new Dictionary<Guid, string>());
+
+        Assert.Contains("""href="#" title="This is part of the Tesria app, not this export." aria-disabled="true">how-to""", rewritten);
+        Assert.Contains("""href="https://example.com/x">""", rewritten);
+        Assert.Contains("""href="//cdn.example.com/y">""", rewritten);
+        Assert.Contains("""href="../other/index.html">""", rewritten);
+    }
+
+    [Fact]
     public void An_attachment_url_becomes_the_file_beside_the_page()
     {
         var file = Guid.NewGuid();

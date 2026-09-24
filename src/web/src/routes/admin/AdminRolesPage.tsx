@@ -340,9 +340,11 @@ export function AdminRolesPage() {
               )}
             </div>
           ))}
-          {pending.some((c) => c.added.length > 0) && (
+          {/* The server alerts only for these: a user-tier role cannot gain
+              administration rights at all (it is promoted instead). */}
+          {pending.some((c) => c.added.length > 0 && c.role.tier >= UserRole.Admin) && (
             <p className="alert alert--error small">
-              A role that gains rights is announced to every administrator.
+              An administrator role that gains rights is announced to every administrator as a security alert.
             </p>
           )}
           <div className="backup-preview__actions">

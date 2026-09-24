@@ -105,7 +105,7 @@ public class CommentTests
     }
 
     private record Resolved(Guid Id, DateTimeOffset? ResolvedAt, string? ResolvedByName);
-    private record NotificationRow(Guid Id, string Action, string TargetType, Guid TargetId);
+    private record NotificationRow(Guid Id, string Action, string TargetType, Guid TargetId, string? MetadataJson = null);
 
     [Fact]
     public async Task A_thread_is_resolved_and_reopened_by_those_who_may()
@@ -149,5 +149,25 @@ public class CommentTests
 
         var notes = await sam.GetFromJsonAsync<List<NotificationRow>>("/api/notifications");
         Assert.Contains(notes!, n => n.Action == "user.mentioned" && n.TargetId == pageId);
+    }
+
+    [Fact]
+    public async Task A_comment_notification_shows_a_mention_as_the_name()
+    {
+        // The bell and its email read "@Sam", not the token that carries the id.
+        var (factory, author, pageId) = await NewClientWithPage();
+        using var _ = factory;
+        (await author.PostAsync($"/api/pages/{pageId}/watch", null)).EnsureSuccessStatusCode();
+        var sam = factory.CreateClient();
+        var samId = await sam.RegisterAndSignInAsync();
+
+        (await sam.PostAsJsonAsync($"/api/pages/{pageId}/comments",
+            new { Body = $"Thanks, @[Sam](user:{samId})!", ParentCommentId = (Guid?)null, AnchorJson = (string?)null }))
+            .EnsureSuccessStatusCode();
+
+        var notes = await author.GetFromJsonAsync<List<NotificationRow>>("/api/notifications");
+        var note = notes!.Single(n => n.Action == "comment.created");
+        Assert.Contains("Thanks, @Sam!", note.MetadataJson);
+        Assert.DoesNotContain("user:", note.MetadataJson);
     }
 }

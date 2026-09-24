@@ -24,10 +24,10 @@ const SPACE = { key: 'SUPPORT', name: 'Support', description: 'How to install, u
 
 /** The top of the tree, in this order: the approved outline (dev-plan 10.5). */
 const TOP = [
-  'Welcome to Tesria', 'Getting started', 'Installation and operations', 'User manual', 'Administration',
+  'Welcome to Tesria', 'Features', 'Getting started', 'Installation and operations', 'User manual', 'Administration',
   'REST API', 'MCP', 'Troubleshooting', 'FAQ', 'Glossary', 'Release notes', 'Security', 'License and credits',
 ]
-const SECTIONS = ['welcome', 'getting-started', 'installation', 'manual-basics', 'manual-spaces', 'manual-editor', 'manual-together', 'manual-mobile', 'administration', 'api', 'reference']
+const SECTIONS = ['welcome', 'features', 'getting-started', 'installation', 'manual-basics', 'manual-spaces', 'manual-editor', 'editor-elements-1', 'editor-elements-2', 'editor-live', 'manual-together', 'manual-mobile', 'administration', 'api', 'reference']
 
 const args = process.argv.slice(2)
 const shoot = !args.includes('--no-shoot')
@@ -95,7 +95,7 @@ async function main() {
   for (const title of TOP) top[title] = await s.ensure(title, null)
 
   // Named sections run in the order given; a section outside the default
-  // list, such as the 15.6 pilot, runs only when it is named.
+  // list runs only when it is named.
   for (const name of wanted.length ? wanted : SECTIONS) {
     if (!existsSync(join(HERE, 'sections', `${name}.mjs`))) throw new Error(`no section called ${name}`)
     const section = await import(`./sections/${name}.mjs`)
@@ -208,7 +208,30 @@ async function main() {
       return [lib.fileBlock(id, 'animation'), ...(caption ? [lib.p(lib.text(caption, lib.italic))] : [])]
     }
 
-    await section.build({ ...lib, ...s, top, figure, phoneFigure, picture, phonePicture, animation })
+    /**
+     * A link to another Support page, by its title, with the title (or
+     * `label`) as its text. An exported site turns it into a link between
+     * its own files. A page that does not exist yet, on a first run before
+     * its section has been written, is bold text instead, with a warning.
+     */
+    function pageLink(title, label) {
+      const walk = (nodes) => {
+        for (const n of nodes) {
+          if (n.title === title) return n.id
+          const hit = walk(n.children ?? [])
+          if (hit) return hit
+        }
+        return null
+      }
+      const id = walk(s.tree())
+      if (!id) {
+        console.warn(`  (no page "${title}" to link to yet; bold text instead)`)
+        return lib.text(label ?? title, lib.bold)
+      }
+      return lib.text(label ?? title, { type: 'link', attrs: { href: `/spaces/${SPACE.key}/pages/${id}` } })
+    }
+
+    await section.build({ ...lib, ...s, top, figure, phoneFigure, picture, phonePicture, animation, pageLink })
     if (section.cleanup) await section.cleanup({ lib, author, ...prepared })
   }
   // The tree is numbered (dev-plan 15.8, the owner's choice over emoji):

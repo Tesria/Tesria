@@ -27,6 +27,10 @@ and the `PackageReference` entries in `src/Api/Api.csproj`; the notable ones are
   - Isopoh.Cryptography.Argon2                            CC0-1.0
   - Otp.NET                                               MIT
   - SkiaSharp                                             MIT
+  - Svg.Skia                                              MIT
+  - Markdig                                               BSD-2-Clause
+  - Scalar.AspNetCore (API reference page)                MIT
+  - ModelContextProtocol.AspNetCore (MCP server)          Apache-2.0
   - React, React DOM                                      MIT
   - TipTap and ProseMirror                                MIT
   - Yjs, Hocuspocus                                       MIT

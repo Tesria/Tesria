@@ -113,8 +113,18 @@ public static partial class SiteExport
                 : match.Value;
         });
 
+        // Anything still pointing at the app itself (a label's page, search, a
+        // profile) has nothing behind it in a static site. A Labels list block
+        // links every label to /labels/…, and those 404ed on the exported
+        // Support site (2026-09-24).
+        html = AppLink().Replace(html,
+            "href=\"#\" title=\"This is part of the Tesria app, not this export.\" aria-disabled=\"true\"");
+
         return html;
     }
+
+    [GeneratedRegex(@"href=""/(?!/)[^""]*""")]
+    private static partial Regex AppLink();
 
     [GeneratedRegex(@"/spaces/[A-Za-z0-9]+/pages/(?<id>[0-9a-fA-F-]{36})(?<anchor>#[^""'\s]*)?")]
     private static partial Regex PageLink();

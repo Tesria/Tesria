@@ -1,227 +1,429 @@
-// Getting started: from nothing to a first page (dev-plan 10.5).
+// Getting started: from nothing to a first page (dev-plan 10.5), rewritten to
+// the owner's rules of 2026-09-23 (scripts/support/WRITING.md) for someone
+// new to wikis and to running software.
 //
-// The system requirements are the ones measured on 2026-09-22 (dev-plan 10.5
-// step 3), with the headroom said to be headroom.
+//   What is Tesria               the idea of a wiki, and why run your own
+//                                (Features, second in the tree, is the tour)
+//   Prerequisites                what to have and decide before installing
+//   System requirements          measured 2026-09-22 (dev-plan 10.5 step 3),
+//                                with the headroom said to be headroom
+//   Quick start                  README's Quick start, for a newcomer
+//   First-run setup wizard       src/web/src/routes/SetupPage.tsx, in its
+//                                own numbering
+//   Your first space and page    a short path that links to Creating a space
+//                                and Templates rather than repeating them
+//
+// The setup wizard's pictures come from the scratch instance, not the Demo
+// space: scripts/support/shoot-setup.sh takes them (files named setup-*), and
+// publish-support.sh finds them here by name. They are whole 1024-pixel
+// windows, so only the two that show a layout are used.
+//
+// Run it on its own: scripts/support/publish-support.sh getting-started
 
-export const shots = ({ demo }) => [
-  { name: 'what-is-tesria', url: demo('Kestrel Sync 2 launch'), settle: 2500, steps: [{ wait: 2500 }] },
-  { name: 'spaces-list', url: '/spaces', settle: 2000, steps: [{ wait: 2500 }] },
+export const shots = () => [
+  // Your first space and page: writing a first page, as an animation, in a
+  // narrow window so it reads on a phone. It opens a new page in Tesria
+  // Demo; the harness discards the draft afterwards.
   {
-    name: 'new-space',
-    url: '/spaces',
-    settle: 800,
+    name: 'first-page', url: '/spaces/DEMO/new', phone: false,
+    viewport: { width: 480, height: 400 }, record: { size: { width: 480, height: 400 } },
+    waitFor: '.ProseMirror', lead: 900, tail: 1600,
+    css: '.tip, .onboarding-tip { display: none !important; }',
     steps: [
-      { wait: 2500 },
-      { click: 'button:has-text("New space")' },
-      { wait: 400 },
-      { type: 'TEAM', selector: 'form.card input[placeholder="ENG"]' },
-      { type: 'Team handbook', selector: 'form.card input[placeholder="Engineering"]' },
-      { type: 'How we work, in one place', selector: 'form.card input[placeholder="Optional"]' },
-    ],
-    clipTo: 'form.card',
-    clipPad: 16,
-  },
-  { name: 'space-home', url: '/spaces/DEMO', settle: 2500, steps: [{ wait: 2500 }] },
-  {
-    name: 'new-page',
-    url: '/spaces/DEMO/new',
-    settle: 800,
-    steps: [
-      { wait: 3500 },
-      { type: 'Team handbook', selector: 'input[placeholder="Page title"]' },
-      { click: '.ProseMirror' },
-      { keys: 'Welcome to the team. ' },
-      { press: 'Enter', selector: '.ProseMirror' },
-      { keys: '/' },
-      { wait: 600 },
+      { click: 'input.title-input' }, { wait: 300 },
+      { typeSlowly: 'How we work', delay: 80 }, { wait: 500 },
+      { press: 'Enter', selector: 'input.title-input' }, { wait: 400 },
+      { typeSlowly: 'Everything a new teammate needs in their first week.', delay: 40 }, { wait: 700 },
+      { press: 'Enter', selector: '.ProseMirror' }, { wait: 300 },
+      { typeSlowly: '/tip', delay: 110 }, { wait: 900 },
+      { press: 'Enter', selector: '.ProseMirror' }, { wait: 300 },
+      { typeSlowly: 'Stuck? Ask in the team chat.', delay: 45 }, { wait: 600 },
     ],
   },
-  // Not a picture for the page: closes the editor so the draft above is
-  // thrown away rather than left behind in the Demo space.
-  { name: 'new-page-discarded', settle: 300, steps: [{ press: 'Escape', selector: '.ProseMirror' }, { click: '.page-actionbar button:has-text("Close")' }, { wait: 1200 }] },
-  { name: 'published-page', url: demo('Launch plan'), settle: 2500, steps: [{ wait: 2500 }] },
 ]
 
 export async function build({
-  top, page, ensure, figure, doc, p, h, text, bold, code, italic, ul, ol, li, link, panel, table, codeBlock, live,
+  top, page, ensure, doc, p, h, text, bold, code, italic, ul, ol, li, panel, table, codeBlock, picture, phonePicture, animation, pageLink,
 }) {
+  const b = (t) => text(t, bold)
+  const c = (t) => text(t, code)
+  const i = (t) => text(t, italic)
+  /** A numbered step: a heading that says what to do, then how. */
+  const step = (n, title) => h(3, `Step ${n}: ${title}`)
   const root = top['Getting started']
+
+  // Every page exists before any links to it, so a first run links rather
+  // than printing bold titles.
+  for (const title of ['What is Tesria', 'Prerequisites', 'System requirements', 'Quick start', 'First-run setup wizard', 'Your first space and page']) {
+    await ensure(title, root)
+  }
+
+  // ============================================================ Getting started
   await page('Getting started', null, doc(
-    p('Everything you need to go from nothing to a working Tesria with its first page. If you only read one page, read the ', text('Quick start', bold), '.'),
-    live('children', { depth: '1', sort: 'position' }),
+    p('This section takes you from “what is this?” to a Tesria of your own with its first page written. Nothing here assumes you have run a server before: each page explains what a thing is before asking you to do it.'),
+    p('Read the pages in order the first time:'),
+    ol(
+      li(p(pageLink('What is Tesria'), ': what a wiki is, and why a team would run its own.')),
+      li(p(pageLink('Prerequisites'), ': what to have ready, and the few decisions to think about.')),
+      li(p(pageLink('System requirements'), ': how big a computer Tesria needs, and which browsers it works in.')),
+      li(p(pageLink('Quick start'), ': installing Tesria and starting it for the first time.')),
+      li(p(pageLink('First-run setup wizard'), ': the guided setup that creates your account and asks the important questions.')),
+      li(p(pageLink('Your first space and page'), ': writing something, and inviting the people who will read it.')),
+    ),
+    panel('success', p(b('Just want to see what Tesria can do?'), ' ', pageLink('Features'), ' is a tour of everything it does, with a link to the full story of each.')),
   ))
 
-  // ------------------------------------------------------------ What is Tesria
-  const what = await ensure('What is Tesria', root)
+  // ============================================================= What is Tesria
   await page('What is Tesria', root, doc(
-    p('Tesria is a wiki for teams that you host yourself. It runs on your own server with Docker, keeps its data in PostgreSQL, and is reached in a browser on a computer, tablet or phone.'),
-    ...(await figure(what, 'what-is-tesria', 'A space in Tesria',
-      'A space holds a tree of pages. This one is a fictional team’s product launch.')),
-    h(2, 'What you get'),
+    p('Tesria is a wiki that you run yourself. This page explains both halves of that: what a wiki is and why teams keep one, and what it means to run it on your own machine rather than paying someone else to. For a tour of what Tesria can actually do, see ', pageLink('Features'), '.'),
+
+    h(2, 'What a wiki is'),
+    p('A wiki is a website that the people who read it also write. Everyone on a team can add a page, fix a mistake they spot, or bring an old page up to date, straight from the browser. Nothing has to be emailed around or saved as a file.'),
+    p('It sounds simple, and that is the point. Think of the knowledge every group of people builds up: how to set up a new laptop, who to call when the heating breaks, why the team chose one supplier over another, what the rules are for booking the meeting room. Without a wiki it ends up scattered across chat threads, email, documents on someone’s computer, and people’s heads. When someone leaves or goes on vacation, some of it goes with them.'),
+    p('A wiki gives all of that one home:'),
     ul(
-      li(p(text('Spaces and pages.', bold), ' A space holds a tree of pages for a team, a project or a topic. Pages nest, and you can drag them into a new order.')),
-      li(p(text('A full editor.', bold), ' Headings, lists, tables, panels, layouts, code, diagrams, math, charts, images, video, and live content that updates itself, all from a slash menu.')),
-      li(p(text('Writing together.', bold), ' Several people can edit a page at once, comment on it, mention each other and watch for changes.')),
-      li(p(text('Finding things.', bold), ' Full-text search across everything you are allowed to see, and labels to group pages.')),
-      li(p(text('Control over who sees what.', bold), ' Spaces are open to everyone signed in until you restrict them, and pages can be restricted further. Roles decide what each person may do across the instance.')),
-      li(p(text('Getting it out.', bold), ' Export a page as Markdown, HTML or PDF, publish a whole space as a static website, or move a space between instances as a wiki pack.')),
-      li(p(text('Looking after it.', bold), ' Automatic backups with point-in-time recovery, restores from the admin area, and optional copies to the cloud, a network drive or a removable drive.')),
-      li(p(text('Connections.', bold), ' A REST API with API tokens, webhooks, and an MCP server so AI assistants can read and write pages.')),
+      li(p(b('One current version.'), ' There is one page about the heating, not five copies of a document with different dates. When something changes, whoever notices updates the page, and everyone sees the new version.')),
+      li(p(b('Easy to find.'), ' Pages are organized into ', b('spaces'), ' (one for each team or project, say), nest under each other like chapters and sections, link to each other, and can all be searched at once.')),
+      li(p(b('Nothing is lost.'), ' Every change is kept. You can see who changed a page and when, compare versions, and put an old one back.')),
+      li(p(b('Written together.'), ' People comment on pages, mention each other, and can even edit the same page at the same time.')),
     ),
-    h(2, 'What it is not'),
-    p('Tesria is not a hosted service: you run it, and your pages never leave your server unless you export them. It is not a file-sync tool or a chat app. It is built to be a team’s written memory.'),
-    p('Next: ', text('Prerequisites', bold), '.'),
+    panel('success', p(b('A good first page'), ' is the one people ask you about most often. Write down the answer once, send the link next time, and the wiki starts earning its keep on day one.')),
+
+    h(2, 'Why run your own'),
+    p('Many wikis are rented as an online service: you sign up, pay per person each month, and your pages live on the provider’s computers. Tesria is different. You install it on a computer you choose, and it runs there. That is what ', b('self-hosted'), ' means. It suits you if:'),
+    ul(
+      li(p(b('Your information should stay with you.'), ' Your pages, files and backups are stored on your own machine, not on another company’s. For many organizations that is a requirement, not a preference.')),
+      li(p(b('You want it on your own network.'), ' Tesria can run on a home or office network and be reached only from there, by every computer, tablet and phone on it.')),
+      li(p(b('You would rather not pay per person.'), ' Tesria is free and open source, under the Apache License 2.0. Adding the twentieth person costs the same as the second: nothing.')),
+      li(p(b('You like to be in control.'), ' You decide when to upgrade, who can sign up, and how long backups are kept.')),
+    ),
+
+    h(2, 'What running it involves'),
+    p('Running your own software means someone looks after it. Tesria is built to keep that small, but it is fair to know what it means before you start:'),
+    ul(
+      li(p(b('A computer that stays on.'), ' Tesria runs on it, so if it is switched off or asleep, nobody can reach the wiki. See ', pageLink('System requirements'), ' for how big it needs to be.')),
+      li(p(b('An install, once.'), ' Tesria runs in Docker, a free program that runs software in self-contained packages. The ', pageLink('Quick start'), ' walks you through it, and a guided setup asks the rest in the browser.')),
+      li(p(b('Backups, which are mostly automatic.'), ' Tesria backs itself up every day on its own machine. For real safety you also keep a copy somewhere else, such as a cloud bucket or a network drive. See ', pageLink('Backups and recovery'), '.')),
+      li(p(b('Upgrades, now and then.'), ' Installing a new version takes two commands, and your pages are kept. See ', pageLink('Upgrading'), '.')),
+      li(p(b('On a home or office network, trusting the server once per device.'), ' Browsers are wary of servers that are not on the public internet, so each device is told once to trust yours. See ', pageLink('Trusting the local certificate'), '.')),
+    ),
+
+    h(2, 'A few words you will see'),
+    ul(
+      li(p(b('Instance:'), ' one installed Tesria, with its own people and pages. Yours might be at ', c('wiki.example.com'), ' or ', c('studio.local'), '.')),
+      li(p(b('Space:'), ' a home for a set of pages that belong together, with its own page tree and its own list of who can see it.')),
+      li(p(b('Owner, administrator and user:'), ' the owner is the person who set Tesria up and holds the keys; administrators help run it; users read and write.')),
+      li(p(b('Draft:'), ' a page that is still being written and that only its writer can see, until they choose ', b('Publish'), '.')),
+    ),
+    p('The ', pageLink('Glossary'), ' has the rest. When you are ready, go on to ', pageLink('Prerequisites'), '.'),
   ))
 
-  // ------------------------------------------------------------ Prerequisites
+  // ============================================================== Prerequisites
   await page('Prerequisites', root, doc(
-    p('What to have, and what to decide, before you install Tesria.'),
+    p('Before you install Tesria, it helps to have a few things ready and to have thought about a few questions. None of it takes long, and knowing it up front means the install itself is just typing a few commands and waiting.'),
+
     h(2, 'What you need'),
+    h(3, 'A computer to run it on'),
+    p('Tesria runs on a computer that stays switched on, because everyone else reaches the wiki through it. It can be a Linux server, a small cloud machine, or a Mac or Windows computer that does not go to sleep. It does not need to be powerful: ', pageLink('System requirements'), ' has the figures.'),
+    p('If you only want to try Tesria, your own laptop is fine. You can move it to a permanent home later.'),
+
+    h(3, 'Docker, with Compose'),
+    p(b('Docker'), ' is a free program that runs software in sealed, self-contained packages called ', b('containers'), '. Tesria is made of several parts (the wiki itself, its database, a web server, and the backup services), and each runs in its own container. ', b('Docker Compose'), ' is the part of Docker that starts them all together with one command, so you never have to install or wire up any of them yourself.'),
     ul(
-      li(p(text('A machine that runs Docker', bold), ': a Linux server, or a Mac or Windows computer with Docker Desktop. See ', text('System requirements', bold), ' for the size.')),
-      li(p(text('Docker with Compose', bold), '. Tesria runs as a set of containers started together by ', text('docker compose', code), '.')),
-      li(p(text('A way to reach it', bold), '. Either a domain name pointing at the machine, which gets a free HTTPS certificate automatically, or just the machine’s own address on your network, which uses a certificate Tesria makes itself.')),
+      li(p(b('On a Mac or Windows,'), ' install ', b('Docker Desktop'), ' from docker.com. Compose comes with it.')),
+      li(p(b('On Linux,'), ' install Docker Engine and its Compose plugin from your distribution or from docker.com.')),
     ),
+    p('To check it is ready, open a terminal (Terminal on a Mac, PowerShell on Windows) and run:'),
+    codeBlock('bash', 'docker compose version'),
+    p('If it prints a version number, you are set. Note the space: it is ', c('docker compose'), ', not the older ', c('docker-compose'), '.'),
+
+    h(3, 'Git, to download Tesria'),
+    p('Tesria is downloaded with ', b('git'), ', the tool most software projects are shared with. Linux usually has it already; on a Mac, typing ', c('git'), ' in Terminal offers to install it; on Windows, install Git for Windows.'),
+
+    h(3, 'Ports 80 and 443 free'),
+    p('Tesria’s web server answers on ports 80 and 443, the standard ports for web pages. If another web server is already running on the same computer, one of them has to move before Tesria can start.'),
+
+    h(3, 'A safe place for secrets'),
+    p('During the install you make up a few long passwords, and the setup wizard gives you recovery codes for your account. A password manager is the ideal place for them. One matters more than the rest:'),
+    panel('warning', p(b('Keep the backup encryption key somewhere safe, away from the server.'), ' Tesria encrypts its backups with ', c('BACKUP_ENCRYPTION_KEY'), ', which you set during the install. Without it, the backups cannot be restored. If the server is lost and the key with it, so are the backups.')),
+
+    h(2, 'How people will reach it'),
+    p('Every Tesria has an address that people type into their browser. There are two kinds, and it is worth deciding which you want before you start:'),
+    ul(
+      li(p(b('A web address you own,'), ' such as ', c('wiki.example.com'), '. Tesria gets a free certificate for it automatically, so every browser shows a padlock with no extra steps. The name has to point at your server, and the server has to be reachable from the internet while the certificate is issued. Before opening Tesria to the internet, read ', pageLink('HTTPS and domains'), '.')),
+      li(p(b('Your computer’s name on your network,'), ' such as ', c('studio.local'), '. No domain and no internet exposure needed: everyone on the same network reaches it by that name. Tesria makes its own certificate, and each device is told once to trust it; see ', pageLink('Trusting the local certificate'), ' and ', pageLink('Opening Tesria by name'), '.')),
+    ),
+    p('If you are not sure, start with the second. You can add a web address later.'),
+
+    h(2, 'Questions the setup wizard will ask'),
+    p('The first time you open Tesria, a guided setup asks these. Every answer can be changed later, so a best guess is fine:'),
+    ul(
+      li(p(b('Who can join?'), ' Only people you invite, or anyone who can reach the address. For most teams, invite only is the right start.')),
+      li(p(b('Can people read without signing in?'), ' Only matters if some spaces should be public, like a help site. Nothing becomes public until you mark a space.')),
+      li(p(b('How much backup history to keep?'), ' More history means more disk space. The suggested setting is a sensible start.')),
+    ),
+    p('See ', pageLink('First-run setup wizard'), ' for every step.'),
+
     h(2, 'Optional, and easy to add later'),
     ul(
-      li(p(text('An email server', bold), ' (SMTP), for password reset emails and notifications. Without one, an administrator resets a password by handing the person a one-time link.')),
-      li(p(text('Somewhere else to keep backups', bold), ': an S3-compatible cloud bucket, a network drive, or a removable drive. Tesria backs itself up on the same machine regardless; these keep a copy somewhere else.')),
-      li(p(text('Single sign-on', bold), ' through an OpenID Connect provider, if your organization already has one.')),
+      li(p(b('An email server'), ' (SMTP), so Tesria can send password resets, invitations and notifications. Without one, Tesria still works: an administrator gives anyone who forgets their password a one-time reset link, and invitations are links you pass on yourself. See ', pageLink('Email (SMTP)'), '.')),
+      li(p(b('Somewhere else to keep backups:'), ' a cloud storage bucket, a network drive, or a removable drive. See ', pageLink('Offsite copies'), '.')),
+      li(p(b('Single sign-on,'), ' if your organization already signs people in with an OpenID Connect provider. See ', pageLink('Single sign-on (OIDC)'), '.')),
     ),
-    h(2, 'Decisions the setup wizard will ask you'),
-    ul(
-      li(p(text('Who can join', bold), ': anyone who finds the address, or only people you invite.')),
-      li(p(text('Who can read', bold), ': whether spaces can be published for people who are not signed in.')),
-      li(p(text('How much backup history to keep', bold), '.')),
-    ),
-    p('Every one of these can be changed later in Administration.'),
-    panel('warning', p(text('Keep the backup encryption key somewhere safe.', bold), ' It is set once in the ', text('.env', code), ' file, and backups made with it cannot be restored without it.')),
+    p('Ready? Check the ', pageLink('System requirements'), ', then go to the ', pageLink('Quick start'), '.'),
   ))
 
-  // ------------------------------------------------------- System requirements
+  // ======================================================== System requirements
   await page('System requirements', root, doc(
-    p('These figures come from measuring a running Tesria, not from guesses, and leave room to spare.'),
+    p('Tesria is light for what it does. These figures come from measuring a running Tesria, not from guesswork, and they leave plenty of room to spare. A small cloud server or a spare computer is usually enough.'),
+
     h(2, 'The server'),
     table([
-      ['', 'To run Tesria', 'Notes'],
-      ['Processor', '2 cores', 'x86-64 or ARM64. A PDF export uses most of one core for about a second.'],
-      ['Memory', '2 GB', '4 GB if the same machine also builds the images, which happens on the first install and each upgrade.'],
-      ['Disk', '20 GB to start', 'About 5.2 GB is the software itself. Your pages, files and, above all, backups use the rest, and backups grow with the history you keep.'],
-      ['Software', 'Docker with Compose', 'Linux, or macOS or Windows with Docker Desktop.'],
-    ], [140, 180, 420]),
-    h(3, 'What was measured'),
+      ['', 'At least'],
+      ['Processor', '2 cores'],
+      ['Memory', '2 GB (4 GB to build)'],
+      ['Disk', '20 GB to start'],
+      ['System', 'Linux, macOS or Windows'],
+    ], [200, 400]),
     ul(
-      'About 550 MB of memory at rest for the whole of Tesria, and 665 MB at the busiest moment of a run of PDF and website exports.',
-      'About 5.2 GB of disk for the software. The PDF renderer, which includes its own browser, is 3.5 GB of that.',
+      li(p(b('Processor:'), ' x86-64 or ARM64, so Apple silicon Macs and ARM servers work as well as ordinary PCs. Most of the time Tesria is idle; exporting a page as a PDF keeps one core busy for about a second.')),
+      li(p(b('Memory:'), ' 2 GB to run Tesria. The machine needs 4 GB when it also builds Tesria’s software, which happens on the first install and each upgrade.')),
+      li(p(b('Disk:'), ' about 5 GB of it is the software itself. The rest holds your pages, files and, above all, backups, which grow with the history you choose to keep. More disk is never wasted here.')),
+      li(p(b('System:'), ' anything that runs Docker with Compose: Linux, or a Mac or Windows computer with Docker Desktop.')),
     ),
+    panel('note', p(b('On a Mac or Windows,'), ' Docker Desktop runs Tesria inside its own small virtual machine, and the memory and disk that machine may use are set in Docker Desktop’s settings, under ', b('Resources'), '. Make sure it is given at least the figures above.')),
+
+    h(3, 'What was measured'),
+    p('For the curious, and for anyone sizing a server:'),
+    ul(
+      li(p(b('About 550 MB of memory at rest,'), ' for every part of Tesria together.')),
+      li(p(b('665 MB at the busiest moment'), ' of a run of PDF and website exports. The 2 GB above is three times that.')),
+      li(p(b('About 5.2 GB of disk'), ' for the software. The PDF renderer, which includes a web browser of its own, is 3.5 GB of that.')),
+    ),
+
     h(2, 'Browsers'),
-    p('Tesria works in current versions of every major browser. It needs at least:'),
+    p('Tesria works in current versions of every major browser, on computers, tablets and phones. The oldest versions it supports are:'),
     table([
       ['Browser', 'Version'],
       ['Chrome and Edge', '111 or later'],
       ['Firefox', '121 or later'],
-      ['Safari, on a Mac, iPhone or iPad', '16.2 or later'],
+      ['Safari (Mac, iPhone, iPad)', '16.2 or later'],
     ], [300, 200]),
+    p('If your browser keeps itself up to date, as most do, you do not need to think about this.'),
+
     h(2, 'Phones and tablets'),
-    p('Every page works on a phone or tablet, in portrait and landscape, and so does the editor, with a toolbar made for a small screen. See ', text('Tesria on phones and tablets', bold), ' in the User manual for what changes on a small screen.'),
+    p('Every page works on a phone or tablet, in portrait and landscape, and so does writing: the editor has a toolbar made for a small screen. There is nothing to install; open Tesria’s address in the browser. See ', pageLink('Tesria on phones and tablets'), ' for what changes on a small screen.'),
   ))
 
-  // --------------------------------------------------------------- Quick start
+  // ================================================================ Quick start
   await page('Quick start', root, doc(
-    p('From a machine with Docker to a signed-in owner account in about ten minutes.'),
-    h(2, '1. Get Tesria'),
+    p('This page takes you from a computer with Docker to your own Tesria, open in your browser and ready for its guided setup. You type a handful of commands and fill in one settings file; the rest is waiting while Tesria builds itself.'),
+    p('If you have not yet, read ', pageLink('Prerequisites'), ' first: it explains Docker, and what to have ready.'),
+    panel('note', p(b('Throughout this page, '), c('your-server'), b(' stands for your server’s address:'), ' the name people will type to reach Tesria, such as ', c('studio.local'), ' or ', c('wiki.example.com'), '. On the computer Tesria runs on, ', c('localhost'), ' works too.')),
+
+    step(1, 'Download Tesria'),
+    p('Open a terminal (Terminal on a Mac, PowerShell on Windows) on the computer Tesria will run on, go to the folder you want Tesria in, and run:'),
     codeBlock('bash', 'git clone https://github.com/Tesria/Tesria.git\ncd Tesria'),
-    h(2, '2. Configure it'),
-    p('Copy the example settings, then set the values below in ', text('.env', code), ' before the first start. The example file holds placeholders rather than blanks, so a value you skip does not fail loudly.'),
+    p('That makes a folder called ', c('Tesria'), ' with everything in it, and moves into it. Run the rest of the commands on this page from there.'),
+
+    step(2, 'Make your settings file'),
+    p('Tesria reads its settings from a plain text file called ', c('.env'), ' in that folder. It comes with an example to copy:'),
     codeBlock('bash', 'cp .env.example .env'),
-    table([
-      ['Setting', 'What to put there'],
-      [p(text('POSTGRES_PASSWORD', code)), 'Any long random string.'],
-      [p(text('APP_DB_PASSWORD', code)), 'Another long random string, different from the one above. Tesria runs with it as a database user that cannot change or delete the audit log.'],
-      [p(text('BACKUP_ENCRYPTION_KEY', code)), 'Required. Encrypts your backups, which cannot be restored without it. Keep a copy somewhere safe.'],
-      [p(text('DOMAIN', code), ' and ', text('ACME_EMAIL', code)), 'Your domain name and an email address for its certificate. Leave the domain as localhost to try Tesria on your own computer.'],
-      [p(text('COLLAB_SHARED_SECRET', code)), 'Optional. Turns on editing a page with several people at once.'],
-      [p(text('PDF_SHARED_SECRET', code)), 'Optional. Turns on PDF export.'],
-    ], [240, 460]),
-    p('A long random string can be made with ', text('openssl rand -hex 32', code), '.'),
-    h(2, '3. Start it'),
+    p('Open ', c('.env'), ' in a plain text editor (', c('nano .env'), ' in a Mac or Linux terminal, ', c('notepad .env'), ' on Windows). Each line is a setting, in the form ', c('NAME=value'), '. Change these before the first start:'),
+    ul(
+      li(p(c('POSTGRES_PASSWORD'), ': the password for Tesria’s database. Any long random string.')),
+      li(p(c('APP_DB_PASSWORD'), ': a second long random string, different from the first. Tesria creates a restricted database account with it and runs as that account, which cannot alter or delete the audit log.')),
+      li(p(c('BACKUP_ENCRYPTION_KEY'), ': required. Another long random string, which encrypts your backups. ', b('Save a copy in your password manager now:'), ' backups cannot be restored without it.')),
+      li(p(c('DOMAIN'), ': your web address, such as ', c('wiki.example.com'), ', if you have one pointed at this computer. Otherwise leave it as ', c('localhost'), '. Tesria is still reachable from other devices on your network, by the computer’s name.')),
+      li(p(c('ACME_EMAIL'), ': your email address, if you set a web address above. The certificate service writes to it about your certificate.')),
+      li(p(c('COLLAB_SHARED_SECRET'), ': optional, but worth setting. Any long random string turns on editing a page with several people at the same time.')),
+      li(p(c('PDF_SHARED_SECRET'), ': optional, but worth setting. Any long random string turns on exporting pages as PDFs.')),
+    ),
+    p('On a Mac or Linux, this makes a good long random string each time you run it:'),
+    codeBlock('bash', 'openssl rand -hex 32'),
+    p('A password manager’s generator works just as well, on any computer.'),
+    panel('warning', p(b('Do not skip a setting.'), ' The example file is filled with placeholder values rather than left blank, so a setting you forget does not stop Tesria starting: it quietly uses the placeholder, which is not a secret.')),
+    panel('success', p(b('Cannot see .env in the Mac Finder?'), ' Files whose names start with a dot are hidden. Press ', b('⌘ Shift .'), ' in a Finder window to show them.')),
+
+    step(3, 'Start Tesria'),
     codeBlock('bash', 'docker compose up -d --build'),
-    p('The first start builds the software and sets up the database, which takes a few minutes.'),
-    panel('warning', p(text('Start everything together.', bold), ' Starting the database on its own with ', text('docker compose up -d db', code), ' on a fresh install makes it restart over and over, because its backups need the backup service that starts with it.')),
-    h(2, '4. Open it'),
-    p('Go to ', text('https://', code), ' and your domain, or ', text('https://localhost', code), ' on your own computer, where the browser warns once about the certificate. The ', text('setup wizard', bold), ' takes it from there: it creates your owner account, names the instance, and asks the questions in ', text('Prerequisites', bold), '.'),
-    p('To check that everything is up, open ', text('/api/health', code), ' on the same address.'),
+    p('This builds Tesria’s software and starts every part of it. ', c('--build'), ' builds it first, and ', c('-d'), ' lets it carry on in the background, so you get your terminal back. The first time takes several minutes; later starts are much quicker.'),
+    p('While it starts, Tesria sets up its database and backups by itself. There is nothing else to install.'),
+    panel('warning', p(b('Always start everything together.'), ' On a new install, starting only the database with ', c('docker compose up -d db'), ' makes it restart over and over, because its backups wait for the backup service that starts alongside it.')),
+
+    step(4, 'Open Tesria in your browser'),
+    p('Go to ', c('https://your-server'), ', or ', c('https://localhost'), ' on the computer Tesria runs on.'),
+    ul(
+      li(p(b('With a web address of your own,'), ' you see a padlock and Tesria straight away.')),
+      li(p(b('With localhost or your computer’s name,'), ' the browser warns that the connection is not private the first time. Your server is fine: it has made its own certificate, which the browser does not know yet. ', pageLink('Trusting the local certificate'), ' explains why and makes the warning go away for good, one device at a time.')),
+    ),
+    p('To check that Tesria is up, open ', c('https://your-server/api/health'), '. It answers with a short line of text that includes ', c('"status":"ok"'), '.'),
+
+    step(5, 'Follow the setup wizard'),
+    p('Tesria opens its ', b('setup wizard'), ', which creates your account as the ', b('owner'), ' and asks a few questions about who can join and how much backup history to keep. It takes a few minutes; ', pageLink('First-run setup wizard'), ' goes through every step.'),
+    panel('warning', p(b('Do the setup straight away.'), ' Until it is done, the first person to open the address and create an account becomes the owner. Finish the wizard before you share the address with anyone.')),
+
+    h(2, 'Next'),
+    p('Once the wizard is done, ', pageLink('Your first space and page'), ' walks you through writing something. When other devices on your network need to reach Tesria, see ', pageLink('Opening Tesria by name'), '. And ', pageLink('Installing with Docker Compose'), ' explains what each part of Tesria does and where it keeps your data.'),
   ))
 
-  // ---------------------------------------------------------- The setup wizard
-  // Its pictures come from the scratch instance, not the Demo space: see
-  // scripts/support/shoot-setup.sh.
+  // ===================================================== First-run setup wizard
   const wizard = await ensure('First-run setup wizard', root)
-  const step = async (title, shot, alt, ...body) => [
-    h(2, title), ...body, ...(await figure(wizard, shot, alt)),
-  ]
   await page('First-run setup wizard', root, doc(
-    p('The first time anyone opens a new Tesria, the setup wizard walks through everything an instance needs. It runs once, for the owner, and every answer can be changed later in Administration.'),
-    table([
-      ['Step', 'What it does'],
-      ['Welcome', 'Says what the wizard covers.'],
-      ['Your account', 'Required. Creates the owner account and shows its recovery codes to save.'],
-      ['This instance', 'Required. Its name, and the address people use to reach it.'],
-      ['Who can join', 'Required. Invitation only or open registration, and whether spaces can be read without signing in.'],
-      ['What roles may do', 'Required. The rights each role holds, with the defaults to review.'],
-      ['Backups', 'Required. How much backup history to keep.'],
-      ['Email', 'Optional. The server Tesria sends email through.'],
-      ['Two-factor', 'Recommended. A second step at sign-in for the owner account.'],
-      ['A first space', 'Optional. Creates a space to start writing in.'],
-      ['Done', 'Lists what you skipped, and finishes setup.'],
-    ], [180, 520]),
-    p('The list of steps stays on the left, or at the top on a phone. A finished step shows a check mark and a skipped one a dash, and you can go back to either. If you close the browser partway, what you finished is kept: sign in as the owner and the wizard opens again.'),
-    ...(await step('Welcome', 'setup-welcome', 'The setup wizard’s welcome step',
-      p('Says what the wizard covers and how long it takes. Choose ', text('Start', bold), '.'))),
-    ...(await step('Your account', 'setup-account', 'Creating the owner account',
-      p('The first account becomes the ', text('owner', bold), ': the one account that can transfer the instance to someone else, and the one nobody else can suspend or reset. Enter your email address, your name and a password of at least 8 characters, then choose ', text('Create the owner account', bold), '.'),
-      p('Tesria then shows your ', text('recovery codes', bold), '. Each one signs you in once if you lose your password. Save them somewhere other than this computer, tick ', text('I have saved these somewhere safe', bold), ' and continue. Because nobody can reset the owner, losing both the password and the codes means losing the instance.'))),
-    ...(await step('This instance', 'setup-instance', 'Naming the instance and setting its address',
-      p('The name appears at the top of every page and on the sign-in page. The address is the one people type to reach Tesria; links in emails use it, so it has to be the real one, such as ', text('https://wiki.example.com', code), '.'))),
-    ...(await step('Who can join', 'setup-registration', 'Choosing who can join',
-      p(text('Invite only', bold), ' means nobody can sign up unless you send them an invite link. ', text('Open', bold), ' lets anyone who can reach the address create an account. You have to pick one to continue.'),
-      p(text('Allow anonymous reading', bold), ' lets people read spaces you mark public without signing in. Turning it on publishes nothing by itself: every space stays private until you mark it.'))),
-    ...(await step('What roles may do', 'setup-permissions', 'Reviewing what each role may do',
-      p('Each column is a role and each row a right, such as creating spaces or deleting other people’s pages. The defaults suit most teams; change any box now, or choose ', text('Keep these defaults', bold), '. The same page is in Administration under ', text('Roles', bold), '.'))),
-    ...(await step('Backups', 'setup-backups', 'Choosing how much backup history to keep',
-      p('Backups are already running: a nightly copy of the database and files, and a continuous backup you can rewind to any moment. This step sets how many nightly copies to keep and for how many days.'),
-      panel('warning', p('The backups are encrypted with ', text('BACKUP_ENCRYPTION_KEY', code), ' from your ', text('.env', code), ' file. Keep a copy of it somewhere other than the server, or the backups cannot be restored.')))),
-    ...(await step('Email', 'setup-email', 'The optional email step',
-      p('Tesria sends password resets, invitations and notifications by email. Enter your mail server’s details, or choose ', text('Skip for now', bold), '. Without email, you reset forgotten passwords yourself from Administration. The password and a test send are in ', text('Administration', bold), ' under ', text('Settings', bold), '.'))),
-    ...(await step('Two-factor', 'setup-two-factor', 'Turning on two-factor for the owner',
-      p('Recommended for the owner, since nobody can reset that account. Choose ', text('Set up two-factor', bold), ' and scan the code with an authenticator app such as 1Password, Google Authenticator or Authy. You can also do this later from your profile.'))),
-    ...(await step('A first space', 'setup-first-space', 'Creating a first space',
-      p('A space holds pages for a team, a project or a topic. Give it a name, and Tesria suggests a short key from it. The key is part of every page address in the space and cannot change later. Skip this if you would rather start from ', text('Spaces', bold), '.'))),
-    ...(await step('Done', 'setup-done', 'The last step of the setup wizard',
-      p('Lists anything you skipped, each of which is waiting in Administration. Choose ', text('Finish', bold), ' to open the wiki, or ', text('Invite people', bold), ' to send the first invite links.'))),
+    p('The first time anyone opens a new Tesria, it shows the ', b('setup wizard'), ': a guided tour of the settings every instance needs, one question at a time. It creates your account, names your Tesria, and asks who can join and how long to keep backups. The five required steps take about two minutes, and every answer can be changed later in Administration.'),
+    p('Only the owner sees the wizard. Anyone else who signs in meanwhile carries on as normal.'),
+    panel('warning', p(b('Run it as soon as Tesria starts.'), ' Whoever creates the first account becomes the owner of the whole instance. Finish the wizard before you tell anyone the address.')),
+
+    h(2, 'Before you start'),
+    ul(
+      li(p(b('The email address and password'), ' you want to sign in with. The password needs at least 8 characters.')),
+      li(p(b('Somewhere safe to keep recovery codes,'), ' such as a password manager. The wizard shows them once.')),
+      li(p(b('Tesria’s address,'), ' the one people will type to reach it, such as ', c('https://wiki.example.com'), '.')),
+      li(p(b('An authenticator app on your phone,'), ' if you want to turn on two-factor sign-in now (recommended).')),
+    ),
+
+    h(2, 'How the wizard works'),
+    p('The steps are listed on the left, and the one you are on fills the rest of the screen. Each is marked ', b('Required'), ', ', b('Optional'), ' or ', b('Recommended'), '. A finished step gets a check mark, and one you skipped gets a dash; you can click either to go back to it.'),
+    ...(await picture(wizard, 'setup-welcome', 'The setup wizard, with its ten steps listed on the left',
+      'The setup wizard. Its ten steps are listed on the left; the one you are on fills the rest.')),
+    p('The steps below have the same numbers as the list, so you can follow along.'),
+
+    step(1, 'Welcome'),
+    p('A short summary of what is ahead. Choose ', b('Start'), '.'),
+
+    step(2, 'Your account'),
+    p('This makes the first account, which becomes the ', b('owner'), ': the one account that can hand the instance over to someone else, and the one that nobody else can suspend or reset. Enter your ', b('Email'), ', ', b('Your name'), ' (as others will see it) and a ', b('Password'), ', then choose ', b('Create the owner account'), '.'),
+    p('Tesria then shows your ', b('recovery codes'), '. Each one signs you in once if you ever lose your password. Save them somewhere other than this computer, tick ', b('I have saved these somewhere safe'), ', and choose ', b('Continue'), '.'),
+    panel('error', p(b('Do not skip saving the codes.'), ' Nobody can reset the owner’s password, not even an administrator. Losing both the password and the recovery codes means losing the instance.')),
+
+    step(3, 'This instance'),
+    ul(
+      li(p(b('What is it called:'), ' the name of your Tesria, such as ', i('Acme wiki'), '. It appears in the browser tab, in emails Tesria sends, and in your authenticator app.')),
+      li(p(b('Its address:'), ' the address people reach Tesria at. It starts as the one you are using now. Links in emails use it, so if people will reach Tesria by a different name, such as ', c('https://wiki.example.com'), ' or ', c('https://studio.local'), ', put that here.')),
+    ),
+    p('Choose ', b('Continue'), '.'),
+
+    step(4, 'Who can join'),
+    p('Pick one of the two cards; you cannot continue until you do.'),
+    ul(
+      li(p(b('Invite only:'), ' nobody can sign up on their own. You create an invite link for each person and send it to them however you like. The safer choice, and right for most teams.')),
+      li(p(b('Open:'), ' anyone who can reach the address can create an account. Only choose this if everyone who can reach it should be able to join, for example on a private home network.')),
+    ),
+    p(b('Allow anonymous reading'), ' decides whether people can read without signing in. Off, every visitor has to sign in. On, spaces you mark as public can be read by anyone, which suits a help site or public documentation. Turning it on publishes nothing by itself: nothing is public until you mark a space. See ', pageLink('Public reading'), '.'),
+
+    step(5, 'What roles may do'),
+    p('Every account has a ', b('role'), ': owner, administrator or user. This step shows what each role is allowed to do, one right per row, such as creating spaces or deleting other people’s pages, with a column for each role.'),
+    ...(await picture(wizard, 'setup-permissions', 'The table of what each role may do',
+      'Each row is a right, and each column a role. A tick means the role has that right.')),
+    p('The defaults suit most teams, so the easiest answer is ', b('Keep these defaults'), '. If something should be different, such as users not being allowed to create spaces, untick it here first. The same table is always in Administration, under ', b('Roles'), '; see ', pageLink('Roles'), '.'),
+
+    step(6, 'Backups'),
+    p('Tesria is already backing itself up: a daily copy of the database and every uploaded file, plus a continuous backup that can rewind the database to any moment. This step decides how much of that history to keep.'),
+    p('The suggestion is to keep the newest 3 backups, and everything from the last 14 days. Keeping more uses more disk space. ', b('Keep every backup forever'), ' never removes any, which is only wise with plenty of disk to spare. Choose ', b('Keep these settings'), '.'),
+    panel('warning', p(b('The backups are encrypted with BACKUP_ENCRYPTION_KEY'), ' from your ', c('.env'), ' file. If you have not already, save a copy of it somewhere other than this server. Without it, the backups cannot be read.')),
+    p('To keep a copy of your backups somewhere else, which is what saves you if the server itself is lost, see ', pageLink('Offsite copies'), '.'),
+
+    step(7, 'Email'),
+    p('Tesria sends password resets, invitations and notifications by email, through an email server (SMTP) such as your email provider’s. If you have its details, fill in the ', b('SMTP host'), ', ', b('Port'), ' (587 is the usual one), ', b('Username'), ' and ', b('From address'), ', and choose ', b('Continue'), '. The password and a test email are in Administration, under ', b('Settings'), '.'),
+    p('No email server? Choose ', b('Skip for now'), '. Tesria works fine without one: when someone forgets their password, you give them a one-time reset link from Administration instead. See ', pageLink('Email (SMTP)'), ' when you are ready.'),
+
+    step(8, 'Two-factor'),
+    p(b('Two-factor sign-in'), ' means signing in takes your password ', i('and'), ' a six-digit code from an app on your phone, so a stolen password alone is not enough. It is recommended for the owner in particular, because nobody can reset that account.'),
+    ol(
+      li(p('If you signed in more than a few minutes ago, enter your ', b('Current password'), ' first. Then choose ', b('Set up two-factor'), '.')),
+      li(p('Scan the code it shows with an authenticator app, such as Aegis, 1Password, Google Authenticator or Authy.')),
+      li(p('Enter the six digits the app shows, and choose ', b('Turn on'), '.')),
+    ),
+    p('Then choose ', b('Continue'), '. Or choose ', b('Skip for now'), ' and do it later from your profile; see ', pageLink('Two-factor and recovery codes'), '.'),
+
+    step(9, 'A first space'),
+    p('A ', b('space'), ' holds the pages for one team, project or topic. Type a ', b('Name'), ', such as ', i('Team handbook'), ', and a short ', b('Key'), ', such as ', c('TEAM'), '. Tesria starts the key for you from the name; check it and make it what you want, at least two letters and digits. The key is part of the address of every page in the space and cannot be changed later. Choose ', b('Continue'), ', or ', b('Skip for now'), ' to make spaces later. ', pageLink('Creating a space'), ' helps you decide what deserves a space of its own.'),
+
+    step(10, 'Done'),
+    p('The last step says your instance is ready and lists any steps you skipped; each one is waiting in Administration. Choose ', b('Finish'), '.'),
+    p('Before finishing, Tesria checks that the required steps really are done. If one is not, it takes you back to that step.'),
+    p('Tesria then offers a short welcome tour of five screens, on spaces, writing, working together, finding things and your profile. Take it or leave it: you can open it again later from your profile. See ', pageLink('The tour and tips'), '.'),
+
+    h(2, 'Stopping partway'),
+    p('You do not have to finish in one go. What you have answered is saved as you go. Close the browser, and the next time you sign in as the owner the wizard opens again, with your finished steps ticked.'),
+
+    h(2, 'On a phone'),
+    p('The wizard works on a phone too. The list of steps sits above the question instead of beside it, two to a row, so scroll down past it to the step you are on.'),
+    ...(await phonePicture(wizard, 'setup-welcome', 'The setup wizard on a phone, with the steps above the first question',
+      'On a phone, the steps come first and the question below them.')),
+
+    h(2, 'Next'),
+    p('Your Tesria is ready. ', pageLink('Your first space and page'), ' walks you through writing something and inviting people to read it.'),
   ))
 
-  // --------------------------------------------------- Your first space and page
+  // ================================================== Your first space and page
   const first = await ensure('Your first space and page', root)
   await page('Your first space and page', root, doc(
-    p('With Tesria set up, this is how you start writing.'),
-    h(2, '1. Create a space'),
-    p('Open ', text('Spaces', bold), ' at the top of the screen. It lists every space you can see.'),
-    ...(await figure(first, 'spaces-list', 'The Spaces page')),
-    p('Choose ', text('New space', bold), ', then give it a short key, a name and, if you like, a description. The key appears in the space’s address and cannot be changed later, so keep it short: ', text('TEAM', code), ' or ', text('ENG', code), '.'),
-    ...(await figure(first, 'new-space', 'Creating a space')),
-    p('The new space opens on its home page, with its pages listed on the left.'),
-    ...(await figure(first, 'space-home', 'A space’s home page')),
-    h(2, '2. Write a page'),
-    p('Choose ', text('+ New page', bold), '. Give the page a title, then start typing. To add anything other than text, type ', text('/', code), ' on a new line and pick from the menu.'),
-    ...(await figure(first, 'new-page', 'Writing a new page, with the slash menu open')),
-    p('Nobody else sees the page until you choose ', text('Publish', bold), '. After that, ', text('Edit', bold), ' opens it again, and ', text('Update', bold), ' saves each new version.'),
-    ...(await figure(first, 'published-page', 'A published page')),
-    h(2, 'Next'),
+    p('With the setup done, your Tesria is an empty wiki waiting for its first page. This page walks you through the short path from here to a page other people can read: a space to put it in, the page itself, and the people to share it with. Each step links to the page in the ', pageLink('User manual'), ' that tells the whole story.'),
+
+    step(1, 'Make a space'),
+    p('Pages live in ', b('spaces'), ': one for each team, project or audience. If you made one in the setup wizard, it is waiting under ', b('Spaces'), ' at the top of the screen, and you can go straight to step 2.'),
+    p('If not, choose ', b('Spaces'), ', then ', b('New space'), '. Give it a short key, such as ', c('TEAM'), ', and a name, such as ', i('Team handbook'), ', and choose ', b('Create'), '. ', pageLink('Creating a space'), ' walks through it with pictures and helps you decide how to divide things up.'),
+
+    step(2, 'Start a page'),
+    p('Open the space. In a new, empty space, choose ', b('Create the first one'), '. Once it has pages, choose ', b('+ New page'), ' at the top of the space’s sidebar (on a phone, ', b('+ New'), '). Choosing it while a page is open makes the new page a sub-page of that one.'),
+    p('A good first page says what the space is for and who looks after it. If your space already has templates, a menu above the title offers to start from one; see ', pageLink('Templates'), '.'),
+
+    step(3, 'Write'),
+    p('Type a title, and press ', b('Enter'), ' to move down to the page itself. Then just type: it works like a word processor. To add anything other than text, such as a heading, a table, a checklist or a colored panel, type ', c('/'), ' at the start of a new line and pick from the menu.'),
+    ...(await animation(first, 'first-page', 'A title, a line of text, and a Tip panel made by typing /tip.')),
+    p('The editor’s toolbar has everything else. ', pageLink('The slash menu'), ' lists everything you can insert.'),
+
+    step(4, 'Publish'),
+    p('Until you publish it, the page is a ', b('draft'), ' that only you can see. When it is ready, choose ', b('Publish'), ' at the top right. The page appears in the space’s tree, and anyone watching the space hears about it.'),
+    panel('warning', p(b('Close on a new page throws it away.'), ' It does not ask first. To keep what you have written, choose ', b('Publish'), '.')),
+    p('To change the page later, open it and choose ', b('Edit'), '; when you are done, choose ', b('Update'), '. Every update is kept in the page’s history, so nothing is ever lost. See ', pageLink('Drafts, Publish and Update'), '.'),
+
+    step(5, 'Invite people'),
+    p('A wiki gets useful once other people read it and write in it. If you chose ', b('Invite only'), ' in the setup wizard, invite each person with a link:'),
+    ol(
+      li(p('Choose ', b('Admin'), ' at the top of the screen, then the ', b('Invites'), ' tab. In a narrower window, Admin is under ', b('More'), '; on a phone, it is in the menu.')),
+      li(p('Optionally enter the person’s email address, so only they can use the link, and choose how many days it lasts.')),
+      li(p('Choose ', b('Create invite'), ', then ', b('Copy'), ', and send the link to them however you like. It is shown only once, and works once.')),
+    ),
+    p('See ', pageLink('Invites'), ' for more. A new space can be read and edited by everyone who is signed in; to keep one to some people only, see ', pageLink('Who can see a space'), '.'),
+
+    h(2, 'Where to go from here'),
     ul(
-      li(p('Invite people: ', text('Administration', bold), ' then ', text('Invites', bold), '.')),
-      li(p('Learn the editor: the ', text('User manual', bold), ' has a page for every element.')),
-      li(p('Decide who sees the space: ', text('Space settings', bold), ' then ', text('Permissions', bold), '.')),
+      li(p(b('Make pages look alike'), ' with ', pageLink('Templates'), ', for meeting notes, project briefs and anything else your team writes again and again.')),
+      li(p(b('Make the important thing stand out'), ' with a colored ', pageLink('Panels', 'panel'), ', like the Tip in the animation above.')),
+      li(p(b('Learn the rest of the editor'), ' in ', pageLink('The editor'), '.')),
+      li(p(b('Get a feel for everything else'), ' in ', pageLink('Features'), '.')),
     ),
   ))
+}
+
+// Pictures these pages no longer use, taken down so they do not linger in the
+// pages' attachments or in the exported pack. The first version put a phone
+// copy of every picture beside it, and a whole-window picture on most steps.
+const RETIRED = {
+  'What is Tesria': ['what-is-tesria.png', 'what-is-tesria.phone.png'],
+  'First-run setup wizard': [
+    'setup-account', 'setup-instance', 'setup-registration', 'setup-backups',
+    'setup-email', 'setup-two-factor', 'setup-first-space', 'setup-done',
+  ].flatMap((s) => [`${s}.png`, `${s}.phone.png`]).concat(['setup-permissions.phone.png']),
+  'Your first space and page': ['spaces-list', 'new-space', 'space-home', 'new-page', 'published-page']
+    .flatMap((s) => [`${s}.png`, `${s}.phone.png`]),
+}
+
+export async function cleanup({ author }) {
+  const space = await author.call('GET', '/api/spaces/SUPPORT')
+  const tree = await author.call('GET', `/api/pages/tree?spaceId=${space.id}`)
+  const section = tree.find((n) => n.title === 'Getting started')
+  if (!section) return
+  for (const [title, files] of Object.entries(RETIRED)) {
+    const node = (section.children ?? []).find((n) => n.title === title)
+    if (!node) continue
+    for (const a of await author.call('GET', `/api/pages/${node.id}/attachments`)) {
+      if (files.includes(a.filename)) {
+        await author.call('DELETE', `/api/attachments/${a.id}`)
+        console.log(`  - ${title}: ${a.filename}`)
+      }
+    }
+  }
 }

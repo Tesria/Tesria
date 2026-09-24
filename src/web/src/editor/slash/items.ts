@@ -2,6 +2,7 @@ import type { ComponentType } from 'react'
 import type { Editor } from '@tiptap/react'
 import { uploadAndInsertImage } from '../imageUpload'
 import { PANEL_TYPES, PANEL_LABELS } from '../panelExtension'
+import { rankMatches } from './match'
 import { DYNAMIC_KINDS, defaultParams } from '../dynamicBlockKinds'
 import { insertPageProperties } from '../excerptExtension'
 import { triggerLinkDialog } from '../linkShortcut'
@@ -427,9 +428,5 @@ export const SLASH_ITEMS: SlashItem[] = [
 ]
 
 export function filterSlashItems(query: string): SlashItem[] {
-  if (!query) return SLASH_ITEMS
-  const q = query.toLowerCase()
-  return SLASH_ITEMS.filter(
-    (item) => item.title.toLowerCase().includes(q) || item.keywords?.some((k) => k.includes(q)),
-  )
+  return rankMatches(SLASH_ITEMS, query)
 }

@@ -40,7 +40,9 @@ function describe(n: AppNotification): string {
   if (n.metadataJson) {
     try {
       const meta = JSON.parse(n.metadataJson) as { Title?: string; Body?: string }
-      title = meta.Title ? `: "${meta.Title}"` : meta.Body ? `: "${meta.Body}"` : ''
+      // Older comment notifications stored mentions as tokens; show "@Name".
+      const body = meta.Body?.replace(/@\[([^\]\n]{1,200})\]\(user:[0-9a-fA-F-]{36}\)/g, '@$1')
+      title = meta.Title ? `: "${meta.Title}"` : body ? `: "${body}"` : ''
     } catch {
       /* ignore malformed metadata */
     }
