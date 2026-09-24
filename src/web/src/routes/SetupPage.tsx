@@ -1,6 +1,7 @@
 import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { api, ApiError, type SetupStatus } from '../api/client'
+import { api, ApiError, MailSignIn, type MailProvider, type SetupStatus } from '../api/client'
+import { MailProviderHint, MailProviderPicker } from '../components/MailProviderPicker'
 import { useAuth } from '../auth/AuthContext'
 import { useInstance } from '../InstanceContext'
 import { PasswordInput } from '../components/PasswordInput'
@@ -496,13 +497,24 @@ function EmailStep({
   busy, onNext, onSkip,
 }: {
   busy: boolean
-  onNext: (input: { smtpHost: string; smtpPort: number; smtpUsername: string; smtpFromAddress: string; emailEnabled: boolean }) => void
+  onNext: (input: {
+    smtpProvider: string; smtpHost: string; smtpPort: number; smtpTls: number; smtpUsername: string
+    smtpPassword?: string; smtpFromAddress: string; emailEnabled: boolean
+  }) => void
   onSkip: () => void
 }) {
+  const [providers, setProviders] = useState<MailProvider[]>([])
+  const [providerId, setProviderId] = useState('')
   const [host, setHost] = useState('')
   const [port, setPort] = useState(587)
+  const [tls, setTls] = useState(1)
   const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
   const [from, setFrom] = useState('')
+  useEffect(() => {
+    api.admin.settings.mailProviders().then(setProviders).catch(() => setProviders([]))
+  }, [])
+  const provider = providers.find((p) => p.id === providerId) ?? null
   return (
     <Panel
       title="Email"
@@ -510,7 +522,8 @@ function EmailStep({
       onSkip={onSkip}
       nextDisabled={!host || !from}
       onNext={() => onNext({
-        smtpHost: host, smtpPort: port, smtpUsername: username,
+        smtpProvider: providerId, smtpHost: host, smtpPort: port, smtpTls: tls, smtpUsername: username,
+        ...(password ? { smtpPassword: password } : {}),
         smtpFromAddress: from, emailEnabled: true,
       })}
     >
@@ -519,13 +532,40 @@ function EmailStep({
         people who forget a password need you to reset it for them. You can
         finish this later in Administration.
       </p>
+      <MailProviderPicker
+        providers={providers}
+        value={providerId}
+        disabled={busy}
+        onChange={(p) => {
+          setProviderId(p?.id ?? '')
+          if (p) { setHost(p.host); setPort(p.port); setTls(p.tls) }
+        }}
+      />
+      {provider && <MailProviderHint provider={provider} />}
+      {provider?.signIn != null && (
+        <p className="muted small">
+          To sign in with {provider.signIn === MailSignIn.Microsoft ? 'Microsoft' : 'Google'} instead of a
+          password, skip this step and use Administration &rarr; Settings &rarr; Email once the wizard is done.
+        </p>
+      )}
       <label><span>SMTP host</span><input value={host} onChange={(e) => setHost(e.target.value)} /></label>
       <label><span>Port</span><input type="number" value={port} onChange={(e) => setPort(Number(e.target.value))} /></label>
-      <label><span>Username</span><input value={username} onChange={(e) => setUsername(e.target.value)} /></label>
+      <label>
+        <span>Encryption</span>
+        <select value={tls} onChange={(e) => setTls(Number(e.target.value))}>
+          <option value={0}>None</option>
+          <option value={1}>STARTTLS</option>
+          <option value={2}>SSL on connect</option>
+        </select>
+      </label>
+      <label><span>Username</span><input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="off" /></label>
+      <label>
+        <span>Password</span>
+        <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="off" />
+      </label>
       <label><span>From address</span><input type="email" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
       <p className="muted small">
-        The password and a test send are on Administration &rarr; Settings, which
-        has the whole form.
+        A test send is on Administration &rarr; Settings, once the wizard is done.
       </p>
     </Panel>
   )

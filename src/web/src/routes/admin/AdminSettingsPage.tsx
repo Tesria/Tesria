@@ -1,7 +1,7 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api, ApiError, type SiteSettings, Permission } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
-import { PasswordInput } from '../../components/PasswordInput'
+import { EmailSettingsSection } from './EmailSettingsSection'
 
 /** Admin → Settings (dev-plan 2.3), the UI over the SiteSettings row. */
 export function AdminSettingsPage() {
@@ -10,8 +10,6 @@ export function AdminSettingsPage() {
   const [instanceName, setInstanceName] = useState('')
   const [baseUrl, setBaseUrl] = useState('')
   const [embedAllowlist, setEmbedAllowlist] = useState('')
-  const [testResult, setTestResult] = useState<string | null>(null)
-  const [smtpPassword, setSmtpPassword] = useState('')
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -42,25 +40,6 @@ export function AdminSettingsPage() {
     } finally {
       setBusy(false)
     }
-  }
-
-  async function saveSmtp(e: FormEvent) {
-    e.preventDefault()
-    const form = new FormData(e.currentTarget as HTMLFormElement)
-    await patch(
-      {
-        smtpHost: String(form.get('smtpHost') ?? ''),
-        smtpPort: Number(form.get('smtpPort') ?? 587),
-        smtpUsername: String(form.get('smtpUsername') ?? ''),
-        smtpFromAddress: String(form.get('smtpFromAddress') ?? ''),
-        smtpTls: Number(form.get('smtpTls') ?? 1),
-        // Only sent when typed: an empty string would clear the stored one,
-        // and null (omitted) means "leave it alone".
-        ...(smtpPassword ? { smtpPassword } : {}),
-      },
-      'Mail settings saved.',
-    )
-    setSmtpPassword('')
   }
 
   if (!settings) return <p className="muted">{error ?? 'Loading…'}</p>
@@ -189,89 +168,7 @@ export function AdminSettingsPage() {
       )}
 
       {can(Permission.SettingsEmail) && (
-      <section className="profile__section">
-        <h2>Email</h2>
-        <label className="admin__toggle">
-          <input
-            type="checkbox"
-            checked={settings.emailEnabled}
-            disabled={busy}
-            onChange={(e) => patch(
-              { emailEnabled: e.target.checked },
-              e.target.checked ? 'Outbound email is on.' : 'Outbound email is off.',
-            )}
-          />
-          <span>
-            <strong>Send email</strong>
-            <br />
-            <span className="muted small">
-              Password-reset links, security alerts to administrators, and
-              notifications for people who opt in. Off means none are attempted.
-            </span>
-          </span>
-        </label>
-        <form onSubmit={saveSmtp}>
-          <label>
-            SMTP host
-            <input name="smtpHost" defaultValue={settings.smtpHost ?? ''} />
-          </label>
-          <label>
-            Port
-            <input name="smtpPort" type="number" min={1} max={65535} defaultValue={settings.smtpPort} />
-          </label>
-          <label>
-            Username
-            <input name="smtpUsername" defaultValue={settings.smtpUsername ?? ''} />
-          </label>
-          <label>
-            Password
-            <PasswordInput
-              value={smtpPassword}
-              onChange={(e) => setSmtpPassword(e.target.value)}
-              autoComplete="off"
-            />
-          </label>
-          <p className="muted small">
-            {settings.smtpPasswordSet
-              ? 'A password is stored. Leave blank to keep it.'
-              : 'No password stored.'}
-          </p>
-          <label>
-            From address
-            <input name="smtpFromAddress" type="email" defaultValue={settings.smtpFromAddress ?? ''} />
-          </label>
-          <label>
-            Encryption
-            <select name="smtpTls" defaultValue={settings.smtpTls}>
-              <option value={0}>None</option>
-              <option value={1}>STARTTLS</option>
-              <option value={2}>SSL on connect</option>
-            </select>
-          </label>
-          <div className="row-gap">
-            <button type="submit" className="btn btn--primary" disabled={busy}>
-              Save mail settings
-            </button>
-            <button
-              type="button"
-              className="btn btn--ghost"
-              disabled={busy || !settings.emailEnabled}
-              onClick={async () => {
-                setTestResult(null)
-                try {
-                  const r = await api.admin.settings.sendTestEmail()
-                  setTestResult(r.sent ? 'Sent: check your inbox.' : `Not sent: ${r.error ?? 'unknown error'}`)
-                } catch (err) {
-                  setTestResult(err instanceof ApiError ? err.message : 'Could not send.')
-                }
-              }}
-            >
-              Send test email to me
-            </button>
-          </div>
-          {testResult && <p className={testResult.startsWith('Sent') ? 'profile__ok' : 'alert alert--error'}>{testResult}</p>}
-        </form>
-      </section>
+        <EmailSettingsSection settings={settings} onSaved={setSettings} />
       )}
       </div>
     </>

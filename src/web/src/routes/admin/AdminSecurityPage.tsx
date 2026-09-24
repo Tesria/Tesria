@@ -221,10 +221,14 @@ export function AdminSecurityPage() {
                   )}
                 </div>
                 <p className="muted small">
-                  {a.ip && <>address <code>{a.ip}</code> · </>}
-                  {a.actorName && <>by {a.actorName} · </>}
-                  {Object.entries(meta(a.metadataJson)).map(([k, v]) => `${k}: ${String(v)}`).join(' · ')}
-                  {a.note && <> · note: “{a.note}”</>}
+                  {/* Joined, so an alert with no details does not end in a
+                      separator ("by Sam Okafor ·", found 2026-09-24). */}
+                  {[
+                    a.ip && <>address <code>{a.ip}</code></>,
+                    a.actorName && <>by {a.actorName}</>,
+                    ...Object.entries(meta(a.metadataJson)).map(([k, v]) => `${k}: ${String(v)}`),
+                    a.note && <>note: “{a.note}”</>,
+                  ].filter(Boolean).map((part, i) => <span key={i}>{i > 0 && ' · '}{part}</span>)}
                 </p>
                 {a.status !== AlertStatus.Resolved && (
                   <div className="alerts__actions">

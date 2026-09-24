@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { NodeViewWrapper, type ReactNodeViewProps } from '@tiptap/react'
-import { api, attachmentDownloadUrl, type Attachment } from '../api/client'
+import { api, attachmentDownloadUrl, attachmentViewUrl, type Attachment } from '../api/client'
 import { getDynamicBlockStorage } from './dynamicBlock'
 
 /** What to draw, decided from the file's own content type. */
@@ -125,7 +125,7 @@ function Body({ attachment, href, animation }: { attachment: Attachment; href: s
     // `frame-src 'self'` is what lets this through the CSP.
     return (
       <div className="attachment-block__pdf">
-        <iframe src={href} title={attachment.filename} />
+        <iframe src={attachmentViewUrl(attachment.id)} title={attachment.filename} />
         <a href={href} className="attachment-block__download">↓ {attachment.filename}</a>
       </div>
     )

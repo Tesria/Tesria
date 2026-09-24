@@ -93,6 +93,10 @@ builder.Services.AddSingleton<RecoveryAttemptLimiter>();
 builder.Services.AddScoped<IAccountRecoveryService, AccountRecoveryService>();
 builder.Services.AddScoped<ITotpService, TotpService>();
 builder.Services.AddScoped<Tesria.Api.Infrastructure.Email.IEmailSender, Tesria.Api.Infrastructure.Email.SmtpEmailSender>();
+// Signing in to the mail server with Microsoft or Google (dev-plan 18.2, 18.3).
+builder.Services.AddSingleton<Tesria.Api.Infrastructure.Email.MailOAuthState>();
+builder.Services.AddScoped<Tesria.Api.Infrastructure.Email.MailOAuthService>();
+builder.Services.AddHttpClient(Tesria.Api.Infrastructure.Email.MailOAuthService.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(20));
 builder.Services.AddSingleton<Tesria.Api.Infrastructure.Email.NotificationEmailService>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<Tesria.Api.Infrastructure.Email.NotificationEmailService>());
 builder.Services.AddScoped<IInviteService, InviteService>();
@@ -581,6 +585,7 @@ api.MapSetupEndpoints();
 api.MapHealthEndpoints();
 api.MapAuthEndpoints();
 api.MapAdminEndpoints();
+api.MapMailSignInEndpoints();
 api.MapSecurityEndpoints();
 api.MapBackupEndpoints();
 api.MapBrandingEndpoints();

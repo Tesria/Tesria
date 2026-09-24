@@ -5,6 +5,75 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fix: a PDF in a file block downloaded instead of showing (2026-09-24, Opus 5.5)
+
+- The file block shows a PDF in the browser's own viewer by framing it,
+  but it framed the download address, which says "attachment" and, like
+  every response, refuses to be framed. So opening a page with a PDF on it
+  downloaded the file, for every reader (the owner found it on the Support
+  site's File or video page).
+- New `GET /api/attachments/{id}/view`: PDFs only, `inline`, frameable by
+  this site's own pages (`X-Frame-Options: SAMEORIGIN`, `frame-ancestors
+  'self'`), with the same visibility check as the download. The download is
+  unchanged. Tested.
+- Exports: a site export already rewrites the frame to the PDF file beside
+  the page, and now rewrites the view address too; a page exported to PDF
+  hides frames when printing and shows the file's link, as before.
+
+### Phase 18: email through the providers people already have (2026-09-24, Opus 5.5)
+
+- **18.1 Provider presets.** A **Provider** list at the top of Settings →
+  Email and in the setup wizard: Gmail, Outlook or Microsoft 365, iCloud
+  Mail, Zoho Mail, Fastmail, Proton Mail, and the sending services Amazon
+  SES, Postmark, Mailgun, SendGrid, Brevo, Resend and SMTP2GO. Choosing one
+  fills in the server, port and encryption and says in a line what goes in
+  the username and password; the fields stay editable, and Other is the old
+  form. One table (`MailProviders`, `GET /api/admin/settings/email/providers`)
+  feeds the app, the wizard and the Support pages. The wizard's Email step
+  also gains the encryption and the password it lacked.
+- **18.2 Sign in with Microsoft** and **18.3 Sign in with Google**, for the
+  mail server, in place of a password: the administrator's own app
+  registration (client ID and secret, stored protected), the authorization
+  code flow with PKCE, a refresh token stored protected and turned into an
+  access token for each send (SASL XOAUTH2, which MailKit already speaks, so
+  no new container). The signed-in mailbox becomes the username and From
+  address; a personal Microsoft account sends through Outlook.com's server
+  and a Microsoft 365 one through Microsoft 365's. Google returns only to
+  public domains, so an instance on a LAN name finishes by pasting the
+  address of the page that did not load. Starting a sign-in needs sudo; the
+  callback is anonymous but acts only on a single-use, ten-minute state
+  bound to its administrator. A refused renewal is shown on the settings
+  and raised as a new alert, **Email stopped: the mail sign-in was
+  refused**; an expired Microsoft secret is said in words, and a new secret
+  keeps the sign-in while a new client ID drops it. 19 tests, including a
+  real XOAUTH2 exchange with a fake SMTP server.
+- **18.4 Support pages.** Sending with Gmail and Sending with Outlook or
+  Microsoft 365 rewritten around the sign-in (the Google Cloud project and
+  the Microsoft Entra registration, step by step, with why each step
+  matters), a new **Sending services** page, and Email (SMTP) rewritten
+  around the Provider choice. Settings tables are built from the presets.
+  Facts checked on 2026-09-24 against each provider's own documentation.
+- Yahoo and AOL are left out at the owner's word (their OAuth is closed to
+  new applications anyway).
+
+### Support site: security alerts, backup diagrams (2026-09-24, Opus 5.5)
+
+- **Security (administration)** now shows the alerts dashboard and the
+  notification bell with alerts in it, explains how administrators hear of
+  an alert (the bell, and email at once whatever their other choices), and
+  walks through dealing with one in four steps (the owner's request). The
+  pictures are the real screens fed example alerts: the screenshot harness
+  gains `mock`, which answers chosen API calls with example data, since the
+  real alerts name real accounts and addresses.
+- **How backups work** and **Offsite copies** each gain a Mermaid diagram of
+  the design (the owner's request): the two backup services and where their
+  copies go, and which copies reach which offsite target.
+- Fix: an alert with no details ended in a stray separator ("by Sam Okafor
+  ·") on the Security tab.
+- Screenshot harness: sticky bars are made static before boxes and crops are
+  measured; the email settings pictures show only the Email section, since a
+  scrolled full-page capture still shifted under its boxes.
+
 ### Email an invite (2026-09-24, Opus 5.5)
 
 - **Invites can be emailed** (the owner's request): once an address is

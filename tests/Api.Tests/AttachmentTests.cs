@@ -55,6 +55,45 @@ public class AttachmentTests
     }
 
     [Fact]
+    public async Task A_PDF_can_be_viewed_inline_and_framed_by_this_site_only()
+    {
+        // The file block frames a PDF; pointed at the download, which says
+        // "attachment" and may not be framed, it downloaded the file instead.
+        var (factory, client, pageId) = await NewClientWithPage();
+        using var _ = factory;
+        var pdf = await (await client.PostAsync($"/api/pages/{pageId}/attachments",
+            FileContent("Plan.pdf", "%PDF-1.7\n%fake\n", "application/pdf"))).Content.ReadFromJsonAsync<AttachmentResponse>();
+
+        var view = await client.GetAsync($"/api/attachments/{pdf!.Id}/view");
+        view.EnsureSuccessStatusCode();
+        Assert.Equal("application/pdf", view.Content.Headers.ContentType!.MediaType);
+        Assert.Equal("inline", view.Content.Headers.ContentDisposition!.DispositionType);
+        Assert.Equal("SAMEORIGIN", view.Headers.GetValues("X-Frame-Options").Single());
+        Assert.Equal("frame-ancestors 'self'", view.Headers.GetValues("Content-Security-Policy").Single());
+
+        // The download is unchanged: a download, not framable.
+        var download = await client.GetAsync($"/api/attachments/{pdf.Id}/download");
+        Assert.Equal("attachment", download.Content.Headers.ContentDisposition!.DispositionType);
+        Assert.Equal("DENY", download.Headers.GetValues("X-Frame-Options").Single());
+    }
+
+    [Fact]
+    public async Task Only_a_PDF_is_viewed_inline()
+    {
+        var (factory, client, pageId) = await NewClientWithPage();
+        using var _ = factory;
+        var text = await (await client.PostAsync($"/api/pages/{pageId}/attachments",
+            FileContent("notes.txt", "hello", "text/plain"))).Content.ReadFromJsonAsync<AttachmentResponse>();
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/attachments/{text!.Id}/view")).StatusCode);
+
+        // Nor to someone who may not see the page.
+        var pdf = await (await client.PostAsync($"/api/pages/{pageId}/attachments",
+            FileContent("Plan.pdf", "%PDF-1.7\n", "application/pdf"))).Content.ReadFromJsonAsync<AttachmentResponse>();
+        var stranger = factory.CreateClient();
+        Assert.Equal(HttpStatusCode.NotFound, (await stranger.GetAsync($"/api/attachments/{pdf!.Id}/view")).StatusCode);
+    }
+
+    [Fact]
     public async Task Upload_rejects_empty_file()
     {
         var (factory, client, pageId) = await NewClientWithPage();

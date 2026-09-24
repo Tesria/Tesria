@@ -2193,6 +2193,21 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .alerts__head { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
 .alerts__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
 .admin__toggle--inline { margin-bottom: 0.75rem; }
+/* Email settings (dev-plan Phase 18): the chosen provider's hint, the
+   choice between its sign-in and a password, and the sign-in itself. */
+.mail-hint {
+  margin: 0.25rem 0 1rem; padding: 0.7rem 0.9rem; font-size: 0.9rem;
+  background: var(--primary-softer); border: 1px solid var(--primary-soft-border); border-radius: var(--radius);
+}
+.mail-hint ul { margin: 0 0 0.4rem; padding-left: 1.1rem; }
+.mail-hint p { margin: 0.3rem 0 0; }
+.mail-choice { border: 0; margin: 0 0 0.75rem; padding: 0; }
+.mail-choice legend { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.5rem; padding: 0; }
+.mail-signin__redirect { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-top: 0.25rem; }
+.mail-signin__redirect code { overflow-wrap: anywhere; user-select: all; }
+.mail-signin__paste { margin-top: 1rem; }
+.mail-test { margin-top: 1rem; }
+
 /* The address gets the room: it was a 120px column, too narrow to read one. */
 .invite-form { grid-template-columns: minmax(0, 1fr) 150px auto; }
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */

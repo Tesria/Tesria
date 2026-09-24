@@ -31,7 +31,8 @@ public interface IEmailSender
 /// subject, never the body) and logged.
 /// </summary>
 public sealed class SmtpEmailSender(
-    ISiteSettingsService settings, IAuditLogger audit, AppDbContext db, ILogger<SmtpEmailSender> logger)
+    ISiteSettingsService settings, IAuditLogger audit, AppDbContext db, ILogger<SmtpEmailSender> logger,
+    MailOAuthService oauth)
     : IEmailSender
 {
     public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(15);
@@ -53,6 +54,20 @@ public sealed class SmtpEmailSender(
             HtmlBody = EmailTemplates.Html(s.InstanceName, message.Text),
         }.ToMessageBody();
 
+        // A provider's sign-in (dev-plan 18.2, 18.3) is renewed before the
+        // connection is opened, so a refused one fails with the provider's
+        // reason rather than as a mail server error.
+        string? accessToken = null;
+        if (s.SmtpSignIn != Domain.MailSignIn.Password)
+        {
+            try { accessToken = await oauth.AccessTokenAsync(s, ct); }
+            catch (MailOAuthException ex)
+            {
+                logger.LogWarning("Email to {To} not sent: {Reason}", message.To, ex.Message);
+                return new EmailResult(false, ex.Message);
+            }
+        }
+
         try
         {
             using var client = new SmtpClient { Timeout = (int)Timeout.TotalMilliseconds };
@@ -63,7 +78,9 @@ public sealed class SmtpEmailSender(
                 _ => SecureSocketOptions.None,
             };
             await client.ConnectAsync(s.SmtpHost, s.SmtpPort, security, ct);
-            if (!string.IsNullOrEmpty(s.SmtpUsername))
+            if (accessToken is not null)
+                await client.AuthenticateAsync(new SaslMechanismOAuth2(s.MailOAuthAccount ?? s.SmtpUsername ?? "", accessToken), ct);
+            else if (!string.IsNullOrEmpty(s.SmtpUsername))
                 await client.AuthenticateAsync(new NetworkCredential(s.SmtpUsername, settings.Unprotect(s.SmtpPasswordProtected) ?? ""), ct);
             await client.SendAsync(mime, ct);
             await client.DisconnectAsync(true, ct);

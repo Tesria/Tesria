@@ -109,7 +109,21 @@ public static class AdminEndpoints
         int LockoutMaxSeconds,
         DateTimeOffset UpdatedAt,
         /// <summary>Which parts of this the caller may change (dev-plan 11.1).</summary>
-        string[] Permissions);
+        string[] Permissions,
+        MailSignInInfo? Mail = null);
+
+    /// <summary>
+    /// The mail provider and its sign-in (dev-plan Phase 18). Like the SMTP
+    /// password, the client secrets and the stored sign-in are write-only:
+    /// only whether each is set. The redirect addresses are what the
+    /// administrator registers with Microsoft or Google.
+    /// </summary>
+    public record MailSignInInfo(
+        string? Provider, MailSignIn SignIn,
+        string? MicrosoftClientId, bool MicrosoftClientSecretSet, string? MicrosoftTenant,
+        string? GoogleClientId, bool GoogleClientSecretSet,
+        string? Account, DateTimeOffset? ConnectedAt, string? Error,
+        string MicrosoftRedirectUri, string GoogleRedirectUri, bool GooglePasteBack);
 
     /// <summary>
     /// Every field is optional: an omitted (null) field leaves the stored value
@@ -138,7 +152,13 @@ public static class AdminEndpoints
         int? TokenMintLimitPerHour,
         int? LockoutThreshold,
         int? LockoutBaseSeconds,
-        int? LockoutMaxSeconds);
+        int? LockoutMaxSeconds,
+        string? SmtpProvider = null,
+        string? MicrosoftClientId = null,
+        string? MicrosoftClientSecret = null,
+        string? MicrosoftTenant = null,
+        string? GoogleClientId = null,
+        string? GoogleClientSecret = null);
 
     public static IEndpointRouteBuilder MapAdminEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -275,6 +295,12 @@ public static class AdminEndpoints
             if (r.SmtpPassword is not null) yield return (nameof(r.SmtpPassword), InstancePermissions.SettingsEmail);
             if (r.SmtpFromAddress is not null) yield return (nameof(r.SmtpFromAddress), InstancePermissions.SettingsEmail);
             if (r.SmtpTls is not null) yield return (nameof(r.SmtpTls), InstancePermissions.SettingsEmail);
+            if (r.SmtpProvider is not null) yield return (nameof(r.SmtpProvider), InstancePermissions.SettingsEmail);
+            if (r.MicrosoftClientId is not null) yield return (nameof(r.MicrosoftClientId), InstancePermissions.SettingsEmail);
+            if (r.MicrosoftClientSecret is not null) yield return (nameof(r.MicrosoftClientSecret), InstancePermissions.SettingsEmail);
+            if (r.MicrosoftTenant is not null) yield return (nameof(r.MicrosoftTenant), InstancePermissions.SettingsEmail);
+            if (r.GoogleClientId is not null) yield return (nameof(r.GoogleClientId), InstancePermissions.SettingsEmail);
+            if (r.GoogleClientSecret is not null) yield return (nameof(r.GoogleClientSecret), InstancePermissions.SettingsEmail);
             if (r.RequireTotpForAdmins is not null) yield return (nameof(r.RequireTotpForAdmins), InstancePermissions.SecuritySettings);
             if (r.EmbedAllowlist is not null) yield return (nameof(r.EmbedAllowlist), InstancePermissions.SecuritySettings);
             if (r.LoginRateLimitPerMinute is not null) yield return (nameof(r.LoginRateLimitPerMinute), InstancePermissions.SecuritySettings);
@@ -308,7 +334,7 @@ public static class AdminEndpoints
     private static async Task<IResult> UpdateSettings(
         UpdateSettingsRequest req, ISiteSettingsService settings,
         CurrentUser current, IAuditLogger audit, AppDbContext db, ISecurityDetector detector,
-        HttpContext http, IConfiguration config, IInstancePermissions permissions)
+        HttpContext http, IConfiguration config, IInstancePermissions permissions, MailOAuthService mailOAuth)
     {
         // Per field (dev-plan 11.1), and the whole request is refused rather
         // than partly applied: a half-saved settings form is worse than a
@@ -371,6 +397,20 @@ public static class AdminEndpoints
         if (req.SmtpPassword is not null) changed.Add(nameof(req.SmtpPassword));
         if (req.SmtpFromAddress is not null) changed.Add(nameof(req.SmtpFromAddress));
         if (req.SmtpTls is not null) changed.Add(nameof(req.SmtpTls));
+        if (req.SmtpProvider is not null)
+        {
+            if (req.SmtpProvider.Length > 0 && MailProviders.Find(req.SmtpProvider) is null)
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    ["smtpProvider"] = ["That is not one of the listed providers."],
+                });
+            changed.Add(nameof(req.SmtpProvider));
+        }
+        if (req.MicrosoftClientId is not null) changed.Add(nameof(req.MicrosoftClientId));
+        if (req.MicrosoftClientSecret is not null) changed.Add(nameof(req.MicrosoftClientSecret));
+        if (req.MicrosoftTenant is not null) changed.Add(nameof(req.MicrosoftTenant));
+        if (req.GoogleClientId is not null) changed.Add(nameof(req.GoogleClientId));
+        if (req.GoogleClientSecret is not null) changed.Add(nameof(req.GoogleClientSecret));
         if (req.RequireTotpForAdmins is not null) changed.Add(nameof(req.RequireTotpForAdmins));
         if (req.EmbedAllowlist is not null) changed.Add(nameof(req.EmbedAllowlist));
 
@@ -406,6 +446,29 @@ public static class AdminEndpoints
             if (req.SmtpUsername is not null) s.SmtpUsername = Blank(req.SmtpUsername);
             if (req.SmtpFromAddress is not null) s.SmtpFromAddress = Blank(req.SmtpFromAddress);
             if (req.SmtpTls is { } tls) s.SmtpTls = tls;
+            if (req.SmtpProvider is not null) s.SmtpProvider = Blank(req.SmtpProvider);
+            // A stored sign-in belongs to the app registration that made it: a
+            // different client or directory cannot renew it, so it is dropped
+            // and the settings say to sign in again. A new secret for the same
+            // client keeps it (an expired secret is replaced this way).
+            var microsoftMoved = (req.MicrosoftClientId is not null && Blank(req.MicrosoftClientId) != s.MicrosoftClientId)
+                || (req.MicrosoftTenant is not null && Blank(req.MicrosoftTenant) != s.MicrosoftTenant);
+            var googleMoved = req.GoogleClientId is not null && Blank(req.GoogleClientId) != s.GoogleClientId;
+            if ((microsoftMoved && s.SmtpSignIn == MailSignIn.Microsoft) || (googleMoved && s.SmtpSignIn == MailSignIn.Google))
+            {
+                s.SmtpSignIn = MailSignIn.Password;
+                s.MailOAuthRefreshTokenProtected = null;
+                s.MailOAuthAccount = null;
+                s.MailOAuthConnectedAt = null;
+                s.MailOAuthError = null;
+            }
+            if (req.MicrosoftClientId is not null) s.MicrosoftClientId = Blank(req.MicrosoftClientId);
+            if (req.MicrosoftTenant is not null) s.MicrosoftTenant = Blank(req.MicrosoftTenant);
+            if (req.GoogleClientId is not null) s.GoogleClientId = Blank(req.GoogleClientId);
+            if (req.MicrosoftClientSecret is not null)
+                s.MicrosoftClientSecretProtected = Blank(req.MicrosoftClientSecret) is { } ms ? mailOAuth.Protect(ms) : null;
+            if (req.GoogleClientSecret is not null)
+                s.GoogleClientSecretProtected = Blank(req.GoogleClientSecret) is { } gs ? mailOAuth.Protect(gs) : null;
             if (req.RequireTotpForAdmins is { } totp) s.RequireTotpForAdmins = totp;
             // Normalized on the way in, so the stored value is exactly what
             // both the resolve endpoint and the CSP will read back.
@@ -462,7 +525,19 @@ public static class AdminEndpoints
         s.LockoutMaxSeconds,
         s.UpdatedAt,
         // Filled in by GetSettings, which knows who is asking.
-        Permissions: []);
+        Permissions: [],
+        Mail: MailInfo(s, config));
+
+    internal static MailSignInInfo MailInfo(SiteSettings s, IConfiguration config)
+    {
+        var (google, pasteBack) = MailOAuthService.RedirectFor(MailSignIn.Google, s, config);
+        return new MailSignInInfo(
+            s.SmtpProvider, s.SmtpSignIn,
+            s.MicrosoftClientId, !string.IsNullOrEmpty(s.MicrosoftClientSecretProtected), s.MicrosoftTenant,
+            s.GoogleClientId, !string.IsNullOrEmpty(s.GoogleClientSecretProtected),
+            s.MailOAuthAccount, s.MailOAuthConnectedAt, s.MailOAuthError,
+            MailOAuthService.RedirectFor(MailSignIn.Microsoft, s, config).Uri, google, pasteBack);
+    }
 
     /// <summary>
     /// Issues a one-time, short-lived password reset for another account.

@@ -412,6 +412,13 @@ for (const s of spec.shots) {
     continue
   }
   const pg = await pageFor(s)
+  // `mock`: API answers the page gets instead of the real ones, as
+  // [{ url: glob, json }]. For screens whose real data names real people or
+  // addresses, such as security alerts: the page is the real one, showing
+  // example data (2026-09-24). Removed again after the shot.
+  for (const m of s.mock ?? []) {
+    await pg.route(m.url, (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(m.json) }))
+  }
   try {
     if (s.url) { await pg.goto(BASE + s.url, { waitUntil: 'domcontentloaded' }); await pg.waitForLoadState('load').catch(() => {}) }
     if (s.viewport) await pg.setViewportSize(s.viewport)
@@ -423,6 +430,19 @@ for (const s of spec.shots) {
     if (s.skipCapture) { console.log('ran', s.name); continue }
     if (s.hideCaret !== false) {
       await pg.addStyleTag({ content: '*{caret-color:transparent !important} *::selection{background:transparent}' })
+    }
+    // A full-page capture of a scrolled page paints the sticky bars where
+    // they sit in the viewport, which is in the middle of the page: typing
+    // into a field lower down put the top bar across the Settings picture
+    // (found 2026-09-23). So they are made static, before anything is
+    // measured, so that nothing it moves can put a box off its target.
+    // A scrolled page can still come out shifted in the full-page capture
+    // (the email settings pictures, 2026-09-24, boxes about 15 pixels high):
+    // there, a css step that hides what is above the subject avoids the
+    // scroll altogether.
+    if (s.clipTo && await pg.evaluate(() => window.scrollY > 0)) {
+      await pg.addStyleTag({ content: '.topbar, .page-actionbar, .space-actionbar { position: static !important; }' })
+      await pg.waitForTimeout(100)
     }
     if (s.annotate) await pg.evaluate(`(${ANNOTATE})(${JSON.stringify(s.annotate)})`)
 
@@ -441,14 +461,6 @@ for (const s of spec.shots) {
       const x1 = Math.max(...boxes.map(b => b.x + b.width)), y1 = Math.max(...boxes.map(b => b.y + b.height))
       const scroll = await pg.evaluate(() => ({ x: window.scrollX, y: window.scrollY }))
       const box = { x: x0 + scroll.x, y: y0 + scroll.y, width: x1 - x0, height: y1 - y0 }
-      // A full-page capture of a scrolled page paints the sticky bars where
-      // they sit in the viewport, which is in the middle of the page: typing
-      // into a field lower down put the top bar across the Settings picture
-      // (found 2026-09-23). A sticky element keeps its place in the flow, so
-      // making it static moves nothing else.
-      if (scroll.y > 0) {
-        await pg.addStyleTag({ content: '.topbar, .page-actionbar, .space-actionbar { position: static !important; }' })
-      }
       const p = s.clipPad == null ? 0 : s.clipPad
       await pg.screenshot({
         path: file,
@@ -483,6 +495,7 @@ for (const s of spec.shots) {
       process.exit(1)
     }
   }
+  if (s.mock) await pg.unrouteAll({ behavior: 'ignoreErrors' })
   if (s.viewport) await pg.setViewportSize({ width: 1440, height: 900 })
 }
 

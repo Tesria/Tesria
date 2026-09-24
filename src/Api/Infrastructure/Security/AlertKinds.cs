@@ -28,6 +28,7 @@ public static class AlertKinds
         ["backup.agent_offline"] = "A backup agent is not reporting",
         ["backup.restore_test_failed"] = "A restore test failed",
         ["backup.disk_low"] = "Backup disk nearly full",
+        ["mail.signin_failed"] = "Email stopped: the mail sign-in was refused",
         ["backup.retention_reduced"] = "Backup retention policy made stricter",
         ["owner.transferred"] = "Ownership of this instance was transferred",
         ["permissions.expanded"] = "A role was given more rights",
