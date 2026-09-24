@@ -2116,6 +2116,10 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
   display: grid; gap: 0.75rem;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
 }
+/* Rows of cards with no heading between them (the API tokens tab's figures
+   and charts) keep the same gap between rows as between cards; a heading
+   gives the dashboard's rows theirs (the owner, 2026-09-24). */
+.dash__grid + .dash__grid { margin-top: 0.75rem; }
 .stat {
   padding: 0.85rem 1rem; background: var(--surface);
   border: 1px solid var(--border); border-radius: var(--radius);
