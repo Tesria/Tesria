@@ -1175,6 +1175,24 @@ export async function build({
     ].join('\n')),
     p('Read it from the left: Tesria writes to its database and its attachments. The ', b('pgbackrest service'), ' records every change to the database as it happens and keeps full copies; the ', b('backup service'), ' takes a daily dump of the database and an archive of the attachments. Both report to the Backups tab, and both can send copies away from this computer, which the dotted lines show (see ', pageLink('Offsite copies'), ').'),
 
+    h(2, 'How far back each copy can take you'),
+    p('Not every copy can bring back the same thing. The difference that matters most is ', b('how much recent work you could lose'), ': a copy that records every change can put the wiki back as it was a minute before something went wrong, while a daily copy can only put it back as it was at the last daily backup, up to a day earlier.'),
+    ul(
+      li(p(b('On this computer, the continuous backups'), ' (the pgbackrest service): the database to any second you choose. Attachments come from the daily archive.')),
+      li(p(b('On this computer, the daily backups'), ' (the backup service): the database and the attachments as they were at the last daily backup.')),
+      li(p(b('Cloud storage:'), ' both of the above. It is the only offsite copy that receives every database change as it happens, so it can restore to any second, even if this computer is gone.')),
+      li(p(b('A network drive:'), ' the daily backups only. After losing this computer, you get the wiki back as it was at the last daily backup, and anything written since is lost.')),
+      li(p(b('A removable drive:'), ' the daily backups, as of the last time someone chose ', b('Copy now'), '. Often the oldest copy of all.')),
+    ),
+    panel('info', p(b('Why a network drive does not get every change.'), ' The database’s changes are handed over the moment they happen, by the database itself, which cannot check that a network folder is really connected. When a network drive is disconnected, its folder is still there on this computer, empty, and the changes would quietly pile up on this computer’s own disk while everything looked fine. So only the daily backups, which do check, go to a network drive. (A technical administrator can give a NAS the changes too, over SSH; the backup runbook in Tesria’s documentation has the recipe.)')),
+    h(3, 'Which should you use?'),
+    ul(
+      li(p(b('Cloud storage, if you can use only one.'), ' It loses the least work, and it survives a fire, flood or theft that takes this computer, and anything else in the building, with it.')),
+      li(p(b('A network drive as well, if you have one.'), ' Restoring from it is faster than downloading from the cloud, it costs nothing more, and it stays in your hands. Turn on the drive’s own snapshots, so the copies survive even if this computer is broken into. On its own, remember what it cannot do: it may be up to a day behind, and it sits in the same building.')),
+      li(p(b('A removable drive'), ' for a copy you take somewhere else, such as home, if you have no cloud storage. It is only as recent as the last time someone copied to it.')),
+    ),
+    p('How to set each one up is in ', pageLink('Offsite copies'), '.'),
+
     h(2, 'Database dumps and uploads'),
     p('The ', c('backup'), ' service. Once every 24 hours (', c('BACKUP_INTERVAL_HOURS'), '), it takes a ', b('dump'), ' of the database, a complete copy in one file, and an archive of every attachment, both at the same moment.'),
     ul(
