@@ -25,6 +25,8 @@
 // TARGET_HOST (127.0.0.1), TARGET_HTTP (18080), TARGET_HTTPS (18443).
 
 import net from 'node:net'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const env = (name, fallback) => process.env[name] || fallback
 const TARGET_HOST = env('TARGET_HOST', '127.0.0.1')
@@ -66,7 +68,9 @@ function forward(client, targetPort) {
   upstream.on('close', () => client.destroy())
 }
 
-if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop())) {
+// Run as a program, not imported (a test imports proxyLine). Compared as
+// resolved paths, which works with Windows' backslashes too.
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   for (const { listen, target } of ROUTES) {
     const server = net.createServer({ allowHalfOpen: false }, (socket) => forward(socket, target))
     server.on('error', (err) => {

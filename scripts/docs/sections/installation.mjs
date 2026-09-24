@@ -309,6 +309,8 @@ export async function build({
       setting('ACME_EMAIL', 'an email address Let’s Encrypt can write to about your certificate.'),
       setting('CADDYFILE', 'which web server configuration to use. Leave it out on a private network. Set it to ', c('deploy/Caddyfile.public'), ' when the server can be reached from the internet.'),
       setting('PROXY_TRUSTED_NETWORKS', 'only if you put a proxy of your own in front of Tesria: that proxy’s address, such as ', c('10.0.0.5/32'), '. Tesria then believes the visitor addresses it passes on.'),
+      setting('COMPOSE_FILE', 'set by the Docker Desktop setup in ', pageLink('Real visitor addresses with Docker Desktop'), ', which adds its own file to the list. Leave it alone otherwise.'),
+      setting('PROXY_PROTOCOL_FROM', 'optional, and set by that same setup: which addresses Tesria’s web server believes when they attach a visitor’s real address. Left out, nothing is believed, which is right for every other install.'),
       setting('TESRIA_SUBNET', 'optional. The private network Tesria’s own services talk to each other on, ', c('10.203.0.0/24'), ' unless you set another. Change it only if that range is already used by a VPN or your own network. After changing it, run ', c('docker compose down'), ' and then ', c('docker compose up -d'), '.'),
     ),
 
@@ -709,6 +711,52 @@ export async function build({
     h(2, 'Already using an app connector or a subnet router?'),
     p('If your tailnet already has a device that routes to your home or office network (Tailscale calls these ', b('subnet routers'), ' and ', b('app connectors'), '), you can reach Tesria through it without anything above: add Tesria’s usual address to it in the admin console. Nothing changes in Tesria. The difference is the certificate: through a router you reach Tesria at its usual address, with its usual certificate, so each device still needs to trust it once. The Tailscale service above gives it a certificate every device already trusts.'),
     p('Tailscale and the Tailscale logo are trademarks of Tailscale Inc. Tesria is not affiliated with or endorsed by Tailscale.'),
+  ))
+
+  // ================================================ Real addresses, Docker Desktop
+  await page('Real visitor addresses with Docker Desktop', install, doc(
+    p('Tesria notes the network address of every visit: for sign-in limits, security alerts, the audit log, and blocking an address that attacks it. On a Linux server that just works. With ', b('Docker Desktop'), ' on a Mac or on Windows it does not: Docker Desktop receives every connection itself and passes it on from one address of its own, ', c('192.168.65.1'), '. Your laptop, your phone and a stranger then all look like the same visitor.'),
+    p('Tesria notices this. An alert about that address says every device shares it, and it cannot be blocked, since blocking it would lock everyone out. This page fixes it properly: a small program on the computer itself, where the real address can still be seen, hands each visit to Tesria with its real address attached.'),
+    panel('info', p(b('Who needs this.'), ' Only Tesria running under Docker Desktop, on a Mac or Windows. On a Linux server, and for visits through ', pageLink('Reaching Tesria from anywhere with Tailscale', 'Tailscale'), ', there is nothing to do.')),
+
+    h(2, 'Before you start'),
+    ul(
+      li(p(b('Node.js'), ' on the computer Tesria runs on, from ', c('nodejs.org'), '. Nothing else is installed.')),
+      li(p(b('Tesria running'), ' as ', pageLink('Installing with Docker Compose'), ' describes, with its ', c('.env'), ' in the Tesria folder.')),
+    ),
+
+    h(2, 'On a Mac'),
+    step(1, 'Run the setup'),
+    p('In Terminal, in the Tesria folder:'),
+    codeBlock('bash', 'deploy/docker-desktop/install-macos.sh'),
+    p('It adds one line to ', c('.env'), ', moves Tesria’s web server to ports only this Mac can reach, and adds a login item that takes over ports 80 and 443. It ends by saying Tesria answers.'),
+    step(2, 'Allow incoming connections'),
+    p('If macOS asks whether ', b('node'), ' may accept incoming network connections, choose ', b('Allow'), '. Without it, other devices cannot reach Tesria.'),
+
+    h(2, 'On Windows'),
+    step(1, 'Open PowerShell as administrator'),
+    p('Open the Start menu, type ', b('PowerShell'), ', and choose ', b('Run as administrator'), '. Administrator rights are needed to add the firewall rule and the task that starts it when you sign in.'),
+    step(2, 'Run the setup'),
+    p('Go to the Tesria folder, then run:'),
+    codeBlock('powershell', 'powershell -ExecutionPolicy Bypass -File deploy\\docker-desktop\\install-windows.ps1'),
+    p('It does the same as on a Mac, with a Windows Firewall rule and a Task Scheduler task instead of a login item.'),
+
+    h(2, 'Check it'),
+    p('Sign in to Tesria from another device, such as your phone on the same Wi-Fi. Then open ', ...adminAt('Audit'), ': the sign-in shows that device’s own address, such as ', c('192.168.1.50'), ', instead of ', c('192.168.65.1'), '.'),
+
+    h(2, 'Worth knowing'),
+    ul(
+      li(p(b('It runs while you are signed in to the computer.'), ' The login item (Mac) or task (Windows) starts when you sign in. A computer that restarts and waits at the sign-in screen does not answer until someone signs in, which is usually fine for a computer that stays signed in.')),
+      li(p(b('Nothing else changes.'), ' Devices keep the same address for Tesria, and the certificate stays the same, so nothing needs trusting again.')),
+      li(p(b('It cannot be used to fake an address.'), ' Tesria’s web server now accepts connections only from this computer, and believes the attached address only from there.')),
+    ),
+
+    h(2, 'Undo it'),
+    p('On a Mac:'),
+    codeBlock('bash', 'deploy/docker-desktop/install-macos.sh --uninstall'),
+    p('On Windows, in PowerShell as administrator:'),
+    codeBlock('powershell', 'powershell -ExecutionPolicy Bypass -File deploy\\docker-desktop\\install-windows.ps1 -Uninstall'),
+    p('Either puts everything back as it was.'),
   ))
 
   // ============================================================ Single sign-on

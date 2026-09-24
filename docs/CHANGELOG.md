@@ -34,6 +34,13 @@ shares when Tesria runs under Docker Desktop.
   that address instead of 192.168.65.1. Found in testing: a port published
   on 127.0.0.1 arrives from the stack's own gateway, not Docker Desktop's, so
   the override trusts `TESRIA_SUBNET` as well.
+- **One command turns it on or off:** `install-macos.sh` (a launchd login
+  item) and `install-windows.ps1` (a Task Scheduler task and a firewall
+  rule), each with an undo. Installed on the owner's Mac; the Windows script
+  is untested until the owner runs it on a PC. The forwarder's "am I being
+  run" check split its path on `/` and would have done nothing on Windows;
+  it now compares resolved paths. Docs: *Real visitor addresses with Docker
+  Desktop*, and the two settings in the configuration reference.
 
 ### The docs pack is a release download, not a committed file (2026-09-24, Opus 5.5)
 
