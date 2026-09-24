@@ -10,9 +10,9 @@
 #      folder also uses docker-compose.real-addresses.yml;
 #   2. moves Caddy to ports only this PC can reach (docker compose up -d caddy);
 #   3. lets Node.js accept connections on ports 80 and 443 through Windows
-#      Firewall, and adds a task that runs real-addresses.mjs whenever you
-#      sign in to Windows. It takes ports 80 and 443 and hands each
-#      connection to Caddy with the visitor's real address.
+#      Firewall, and adds a task that runs real-addresses.mjs in the
+#      background from startup, with no window. It takes ports 80 and 443
+#      and hands each connection to Caddy with the visitor's real address.
 # Devices keep the same addresses and certificates. Administrator rights are
 # needed only for the firewall rule and the task.
 #Requires -RunAsAdministrator
@@ -64,12 +64,19 @@ if (-not (Get-NetFirewallRule -DisplayName $RuleName -ErrorAction SilentlyContin
 
 $script = Join-Path $Root 'deploy\docker-desktop\real-addresses.mjs'
 $action = New-ScheduledTaskAction -Execute $Node -Argument "`"$script`"" -WorkingDirectory $Root
-$trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
+# At startup, as this user but without signing in ("S4U"): no console window
+# to close by mistake (the first version ran at sign-in in a visible window,
+# found testing, 2026-09-24), and no password stored.
+$trigger = New-ScheduledTaskTrigger -AtStartup
+$principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType S4U -RunLevel Limited
 # Restarted if it stops; never stopped for running long, never started on battery only.
 $settings = New-ScheduledTaskSettingsSet -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) `
     -ExecutionTimeLimit ([TimeSpan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+# A version already running (an earlier install) holds ports 80 and 443.
+Stop-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
 Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings `
-    -Description 'Hands visitors to Tesria with their real addresses (deploy/docker-desktop).' -Force | Out-Null
+    -Principal $principal -Force `
+    -Description 'Hands visitors to Tesria with their real addresses (deploy/docker-desktop).' | Out-Null
 Start-ScheduledTask -TaskName $TaskName
 
 for ($i = 0; $i -lt 10; $i++) {
@@ -84,5 +91,5 @@ for ($i = 0; $i -lt 10; $i++) {
         }
     } catch { }
 }
-Write-Warning 'The task is installed, but Tesria did not answer on https://localhost yet. Check it in Task Scheduler.'
+Write-Warning 'The task is installed, but Tesria did not answer on https://localhost yet. Is Docker Desktop running? Check the task in Task Scheduler.'
 exit 1

@@ -739,14 +739,14 @@ export async function build({
     step(2, 'Run the setup'),
     p('Go to the Tesria folder, then run:'),
     codeBlock('powershell', 'powershell -ExecutionPolicy Bypass -File deploy\\docker-desktop\\install-windows.ps1'),
-    p('It does the same as on a Mac, with a Windows Firewall rule and a Task Scheduler task instead of a login item.'),
+    p('It does the same as on a Mac, with a Windows Firewall rule, and a Task Scheduler task that runs in the background from startup, with no window.'),
 
     h(2, 'Check it'),
     p('Sign in to Tesria from another device, such as your phone on the same Wi-Fi. Then open ', ...adminAt('Audit'), ': the sign-in shows that device’s own address, such as ', c('192.168.1.50'), ', instead of ', c('192.168.65.1'), '.'),
 
     h(2, 'Worth knowing'),
     ul(
-      li(p(b('It runs while you are signed in to the computer.'), ' The login item (Mac) or task (Windows) starts when you sign in. A computer that restarts and waits at the sign-in screen does not answer until someone signs in, which is usually fine for a computer that stays signed in.')),
+      li(p(b('It runs while you are signed in to the Mac.'), ' The Mac’s login item starts when you sign in. On Windows the task starts with the computer, but Docker Desktop itself waits for someone to sign in, so Tesria answers once they have either way.')),
       li(p(b('Nothing else changes.'), ' Devices keep the same address for Tesria, and the certificate stays the same, so nothing needs trusting again.')),
       li(p(b('It cannot be used to fake an address.'), ' Tesria’s web server now accepts connections only from this computer, and believes the attached address only from there.')),
     ),
