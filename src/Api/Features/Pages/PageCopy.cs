@@ -37,10 +37,13 @@ public static class PageCopy
         if (source?.CurrentVersion is null || !await perms.CanViewPageAsync(id)) return Results.NotFound();
 
         var spaceId = req.SpaceId ?? source.SpaceId;
+        // A space or parent the caller cannot see answers as a missing one
+        // does (dev-plan 14.1).
+        if (req.SpaceId is { } targetSpace && !await perms.CanViewSpaceAsync(targetSpace)) return Results.NotFound();
         if (req.ParentPageId is { } parentId)
         {
             var parent = await db.Pages.AsNoTracking().FirstOrDefaultAsync(p => p.Id == parentId, ct);
-            if (parent is null || parent.SpaceId != spaceId)
+            if (parent is null || parent.SpaceId != spaceId || !await perms.CanViewPageAsync(parentId))
                 return Results.ValidationProblem(new Dictionary<string, string[]> { ["parentPageId"] = ["Parent page not found in that space."] });
         }
 

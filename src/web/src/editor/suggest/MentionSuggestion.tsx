@@ -30,7 +30,7 @@ function loadDirectory(): Promise<Directory[]> {
 function matches(users: Directory[], query: string): Directory[] {
   const q = query.toLowerCase()
   return users
-    .filter((u) => u.displayName.toLowerCase().includes(q) || u.email.toLowerCase().split('@')[0].includes(q))
+    .filter((u) => u.displayName.toLowerCase().includes(q) || (u.email ?? '').toLowerCase().split('@')[0].includes(q))
     .slice(0, 8)
 }
 

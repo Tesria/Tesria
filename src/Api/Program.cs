@@ -93,6 +93,9 @@ builder.Services.AddSingleton<RecoveryAttemptLimiter>();
 builder.Services.AddScoped<IAccountRecoveryService, AccountRecoveryService>();
 builder.Services.AddScoped<ITotpService, TotpService>();
 builder.Services.AddScoped<Tesria.Api.Infrastructure.Email.IEmailSender, Tesria.Api.Infrastructure.Email.SmtpEmailSender>();
+// A week's warning before an API token expires (dev-plan 14.1).
+builder.Services.AddSingleton<Tesria.Api.Infrastructure.Auth.TokenExpiryNotifier>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<Tesria.Api.Infrastructure.Auth.TokenExpiryNotifier>());
 // Signing in to the mail server with Microsoft or Google (dev-plan 18.2, 18.3).
 builder.Services.AddSingleton<Tesria.Api.Infrastructure.Email.MailOAuthState>();
 builder.Services.AddScoped<Tesria.Api.Infrastructure.Email.MailOAuthService>();
@@ -571,6 +574,7 @@ app.UseAuthorization();
 app.UseMiddleware<LastSeenMiddleware>();
 // Read-only API tokens may not change anything over REST (dev-plan 8.4).
 app.UseMiddleware<Tesria.Api.Infrastructure.Security.TokenScopeMiddleware>();
+app.UseMiddleware<Tesria.Api.Infrastructure.Security.TokenAccountGuardMiddleware>();
 // A render token may only read the page or space it was minted for (12.1).
 app.UseMiddleware<Tesria.Api.Infrastructure.Security.RenderScopeMiddleware>();
 // While a restore is running the wiki is read-only (dev-plan 9.4). Last, so

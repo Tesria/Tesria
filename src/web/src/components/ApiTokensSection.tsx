@@ -8,6 +8,9 @@ export function ApiTokensSection() {
   const { ask, dialog } = useConfirm()
   const [name, setName] = useState('')
   const [readOnly, setReadOnly] = useState(false)
+  // How long it lasts (dev-plan 14.1): 90 days unless someone chooses
+  // otherwise, and "never" only when chosen.
+  const [days, setDays] = useState(90)
   const [error, setError] = useState<string | null>(null)
   const [justCreated, setJustCreated] = useState<CreatedApiToken | null>(null)
 
@@ -22,10 +25,11 @@ export function ApiTokensSection() {
     if (!name.trim()) return
     setError(null)
     try {
-      const created = await api.apiTokens.create(name, readOnly)
+      const created = await api.apiTokens.create(name, readOnly, days)
       setJustCreated(created)
       setName('')
       setReadOnly(false)
+      setDays(90)
       load()
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not create the token.')
@@ -48,7 +52,9 @@ export function ApiTokensSection() {
     <>
       <p className="muted small">
         Use a token to call the REST API from scripts or integrations, without a browser session:{' '}
-        <code>Authorization: Bearer &lt;token&gt;</code>. A token can do anything you can do, unless you make it read-only.
+        <code>Authorization: Bearer &lt;token&gt;</code>. A token can do anything you can do, unless you make it read-only,
+        except manage your account: tokens, sessions, password, two-factor and profile need you signed in here.
+        You are told a week before a token expires.
       </p>
       {error && <p className="alert alert--error">{error}</p>}
 
@@ -70,6 +76,15 @@ export function ApiTokensSection() {
         <label>
           Name
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="CI pipeline" required />
+        </label>
+        <label className="api-tokens__expiry">
+          Expires
+          <select value={days} onChange={(e) => setDays(Number(e.target.value))}>
+            <option value={30}>In 30 days</option>
+            <option value={90}>In 90 days</option>
+            <option value={365}>In a year</option>
+            <option value={0}>Never</option>
+          </select>
         </label>
         <label className="admin__toggle api-tokens__scope">
           <input type="checkbox" checked={readOnly} onChange={(e) => setReadOnly(e.target.checked)} />
@@ -93,6 +108,8 @@ export function ApiTokensSection() {
             <code className="muted small">{t.prefix}</code>
             <span className="muted small">
               {t.lastUsedAt ? `last used ${new Date(t.lastUsedAt).toLocaleString()}` : 'never used'}
+              {' · '}
+              <Expiry at={t.expiresAt} />
             </span>
             <span className="version__actions">
               <button type="button" className="link-btn link-btn--danger" onClick={() => revoke(t.id)}>
@@ -106,4 +123,14 @@ export function ApiTokensSection() {
       {dialog}
     </>
   )
+}
+
+/** When a token stops working, in words; expired and nearly-expired stand out. */
+function Expiry({ at }: { at: string | null }) {
+  if (!at) return <>never expires</>
+  const when = new Date(at)
+  const days = (when.getTime() - Date.now()) / 86_400_000
+  if (days <= 0) return <span className="badge badge--danger">expired</span>
+  const date = when.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
+  return days <= 7 ? <strong>expires {date}</strong> : <>expires {date}</>
 }

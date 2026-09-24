@@ -38,6 +38,13 @@ public interface INotificationService
     Task NotifyUserAsync(Guid userId, string action, string targetType, Guid targetId, Guid actorId, object? metadata = null);
 
     /// <summary>
+    /// A notification from the system itself, with no actor, to one account:
+    /// today, an API token about to expire (dev-plan 14.1). Not subject to
+    /// "never about your own action", which is what it would otherwise hit.
+    /// </summary>
+    Task NotifySystemAsync(Guid userId, string action, string targetType, Guid targetId, object? metadata = null);
+
+    /// <summary>
     /// Queues one notification per active administrator (dev-plan 3.3). No
     /// actor: security alerts come from the system, and an admin whose own
     /// action tripped a detector should still hear about it.
@@ -94,6 +101,22 @@ public sealed class NotificationService(AppDbContext db, IPermissionService perm
     {
         var recipients = await SpaceWatcherIdsAsync(spaceId);
         Enqueue(await WhoCanViewPageAsync(recipients, pageId), "page", pageId, "page.created", actorId, metadata);
+    }
+
+    public Task NotifySystemAsync(Guid userId, string action, string targetType, Guid targetId, object? metadata = null)
+    {
+        db.Notifications.Add(new Notification
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Action = action,
+            TargetType = targetType,
+            TargetId = targetId,
+            ActorId = null,
+            MetadataJson = metadata is null ? null : JsonSerializer.Serialize(metadata),
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+        return Task.CompletedTask;
     }
 
     public Task NotifyUserAsync(

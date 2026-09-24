@@ -638,7 +638,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ...(await picture(templates, 'template-form', 'Naming a template', 'The name, and where the template is offered.')),
     ul(
       li(p(b('This space only'), ' offers it when someone creates a page in this space. Most templates belong here.')),
-      li(p(b('Instance-wide'), ' offers it in every space. Use it for something the whole organization shares, such as an incident report.')),
+      li(p(b('Instance-wide'), ' offers it in every space. Use it for something the whole organization shares, such as an incident report. This choice appears only for people with the right ', b('Manage instance-wide templates'), ', which administrators have; everyone else saves templates for their space.')),
     ),
     p('The template is a copy of the page as it is now. Changing the page later does not change the template; save it as a template again if you want the new version.'),
 
@@ -652,7 +652,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Who may rename or delete one:'),
     ul(
       li(p(b('A space’s template:'), ' anyone who can edit that space.')),
-      li(p(b('An instance-wide template:'), ' whoever made it, and administrators.')),
+      li(p(b('An instance-wide template:'), ' anyone with ', b('Manage instance-wide templates'), ', which administrators have.')),
     ),
   ))
 

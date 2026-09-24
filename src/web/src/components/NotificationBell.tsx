@@ -34,6 +34,18 @@ function describe(n: AppNotification): string {
       return 'Security alert'
     }
   }
+  // A week's warning before an API token expires (dev-plan 14.1).
+  if (n.action === 'token.expiring') {
+    try {
+      const meta = JSON.parse(n.metadataJson ?? '{}') as { Name?: string; ExpiresAt?: string }
+      const when = meta.ExpiresAt
+        ? new Date(meta.ExpiresAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
+        : 'soon'
+      return `Your API token “${meta.Name ?? ''}” expires on ${when}`
+    } catch {
+      return 'One of your API tokens expires soon'
+    }
+  }
   const who = n.actorName ?? 'Someone'
   const what = ACTION_LABEL[n.action] ?? n.action
   let title = ''
@@ -95,6 +107,10 @@ export function NotificationBell() {
     if (!n.readAt) {
       api.notifications.markRead(n.id).catch(() => {})
       setCount((c) => Math.max(0, c - 1))
+    }
+    if (n.targetType === 'token') {
+      navigate('/profile#api-tokens')
+      return
     }
     if (n.targetType === 'security') {
       navigate('/admin/security')

@@ -165,15 +165,20 @@ public static class PageEndpoints
         if (page is null || page.CurrentVersion is null) return Results.NotFound();
 
         // Tolerate a retried/double-clicked publish as a safe no-op rather than
-        // erroring, instead of treating "already published" as not-found.
+        // erroring, instead of treating "already published" as not-found. Only
+        // for someone who may read the page: this answered with any page's
+        // title and content, restricted or not, before any check (found in
+        // the 14.1 review).
         if (page.Status != PageStatus.Draft)
-            return Results.Ok(ToDetail(page, page.CurrentVersion));
+            return await perms.CanReadPageAsync(page.Id)
+                ? Results.Ok(ToDetail(page, page.CurrentVersion))
+                : Results.NotFound();
 
         var userId = current.RequireId();
         // Ownership guard: the draft's own creator, or anyone with edit rights
-        // on its space. Page ids are unguessable in practice, but check anyway.
-        if (page.CreatedById != userId && !await perms.CanEditSpaceAsync(page.SpaceId))
-            return Results.Forbid();
+        // on its space. Not found rather than forbidden, so a draft in a
+        // space the caller cannot see stays invisible.
+        if (!await perms.CanReadPageAsync(page.Id)) return Results.NotFound();
 
         var title = (req.Title ?? "").Trim();
         if (title.Length == 0)
@@ -207,9 +212,9 @@ public static class PageEndpoints
             .FirstOrDefaultAsync(p => p.Id == id && p.Status == PageStatus.Draft && p.DeletedAt == null);
         if (page is null) return Results.NotFound();
 
-        var userId = current.RequireId();
-        if (page.CreatedById != userId && !await perms.CanEditSpaceAsync(page.SpaceId))
-            return Results.Forbid();
+        // The draft's creator, or anyone who may edit its space; for anyone
+        // else it does not exist (dev-plan 14.1).
+        if (!await perms.CanReadPageAsync(page.Id)) return Results.NotFound();
 
         // Nothing was ever really saved, so this is a hard delete, not a trash:
         //clear the current-version pointer first (the restrict FK would
@@ -345,12 +350,15 @@ public static class PageEndpoints
         var fromSpace = page.SpaceId;
         if (req.SpaceId is { } targetSpace && targetSpace != page.SpaceId)
         {
-            if (!await db.Spaces.AnyAsync(sp => sp.Id == targetSpace)) return Results.NotFound();
+            // A space or parent the caller cannot see answers exactly as a
+            // missing one does (dev-plan 14.1).
+            if (!await db.Spaces.AnyAsync(sp => sp.Id == targetSpace) || !await perms.CanViewSpaceAsync(targetSpace))
+                return Results.NotFound();
             if (!await perms.CanEditSpaceAsync(targetSpace)) return Results.Forbid();
             if (req.ParentPageId is { } p0)
             {
                 var parent = await db.Pages.AsNoTracking().FirstOrDefaultAsync(x => x.Id == p0);
-                if (parent is null || parent.SpaceId != targetSpace)
+                if (parent is null || parent.SpaceId != targetSpace || !await perms.CanViewPageAsync(p0))
                     return Results.ValidationProblem(Error("parentPageId", "Parent page not found in that space."));
                 if (!await perms.CanEditPageAsync(p0)) return Results.Forbid();
             }
@@ -511,7 +519,8 @@ public static class PageEndpoints
     {
         var page = await db.Pages.IgnoreQueryFilters()
             .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt != null);
-        if (page is null) return Results.NotFound();
+        // A trashed page the caller could not see is not found (dev-plan 14.1).
+        if (page is null || !await perms.CanViewPageAsync(id)) return Results.NotFound();
         if (!await perms.CanEditPageAsync(id)) return Results.Forbid();
 
         // If the original parent no longer exists (still trashed or purged),
@@ -536,7 +545,7 @@ public static class PageEndpoints
     {
         var page = await db.Pages.IgnoreQueryFilters()
             .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt != null);
-        if (page is null) return Results.NotFound();
+        if (page is null || !await perms.CanViewPageAsync(id)) return Results.NotFound();
         // Permanent deletion is an admin-level act on the space.
         if (!await perms.CanAdminSpaceAsync(page.SpaceId)) return Results.Forbid();
         if (await DeniedByInstanceRightAsync(db, rights, current, id) is { } refusal) return refusal;
@@ -603,7 +612,7 @@ public static class PageEndpoints
 
     private static async Task<IResult> ListVersions(Guid id, AppDbContext db, IPermissionService perms)
     {
-        if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
+        if (!await perms.CanReadPageAsync(id)) return Results.NotFound();
         var versions = await db.PageVersions.AsNoTracking()
             .Where(v => v.PageId == id)
             .OrderByDescending(v => v.VersionNumber)
@@ -622,7 +631,7 @@ public static class PageEndpoints
     {
         // Guard here too: page versions are queried by page id, so they would
         // otherwise bypass the page's view restrictions.
-        if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
+        if (!await perms.CanReadPageAsync(id)) return Results.NotFound();
 
         var v = await db.PageVersions.AsNoTracking()
             .Include(v => v.Author)
@@ -640,7 +649,7 @@ public static class PageEndpoints
     private static async Task<IResult> RestoreVersion(
         Guid id, int number, AppDbContext db, IPermissionService perms, IPageWriter writer, CancellationToken ct)
     {
-        if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
+        if (!await perms.CanReadPageAsync(id)) return Results.NotFound();
         var source = await db.PageVersions.AsNoTracking()
             .FirstOrDefaultAsync(v => v.PageId == id && v.VersionNumber == number, ct);
         if (source is null) return Results.NotFound();

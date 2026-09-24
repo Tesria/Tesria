@@ -4995,8 +4995,12 @@ Before the repo or any image is public:
 5. `SECURITY.md` gets a real contact (3.7 left the disclosure path to this
    point).
 
-**Already found, not yet changed** (by the 10.5 fact-finding, 2026-09-23;
-the clear bugs it found were fixed then and are in the CHANGELOG):
+**Fixed 2026-09-24** (all of the list below, with four worse findings the
+review of it turned up; see the CHANGELOG's "14.1 The security findings,
+fixed"). Steps 1 to 4 above (history, what the repo says about its owner,
+a full security pass, dependencies) are still to do, with the owner.
+
+**Found by the 10.5 fact-finding, 2026-09-23 (all fixed 2026-09-24):**
 
 - A full-access token can mint more tokens and revoke the owner's sessions,
   and tokens never expire.
@@ -5635,6 +5639,21 @@ run an **app connector or subnet router**: add Tesria's address to it, and
 what changes (nothing in Tesria). Pictures only of Tesria; Tailscale's own
 screens are described in words, since they change.
 
+## Phase 20: Progress you can see
+
+### 20.1 A progress bar for exporting a site or a pack · `S` · Model: Opus 5.5
+
+Asked for by the owner, 2026-09-24. **Export as site** captures every page
+through the PDF sidecar's browser and **Export as pack** gathers every page,
+version and attachment; on a large space either takes minutes, and today the
+button just waits. Show how far along it is: pages done out of the total,
+the page being worked on, and time so far, with the download starting when
+it is ready. Likely shape: the export runs as a job with an id, the page
+polls its progress (or reads a server-sent stream), and a finished job keeps
+its file for a short while so a closed tab can come back for it. Decide
+when building whether both exports share one job mechanism (the backups'
+job table may already fit), and what canceling does.
+
 ## Order of execution, flattened
 
 1. **0.1** Roles (Fable→Opus) → **0.2** Settings → **0.3** Telemetry → **0.4** Media storage
@@ -5663,6 +5682,7 @@ screens are described in words, since they change.
 18. **17** Developer docs on the Support site (asked for 2026-09-24), after Phase 16 so every page carries its version table from the start.
 19. **18.1** Provider presets and **18.4** the app-password and sending-service pages (asked for 2026-09-24): small and independent, so any time; best before 14, since they are what a new owner meets in the setup wizard. Then **18.2** Sign in with Microsoft → **18.3** Sign in with Google, before 14 if the owner wants the public release to work with a personal Outlook.com account.
 20. **19.1** Tailscale sidecar → **19.2** its Support pages (asked for 2026-09-24). Independent of everything else; best after 14.2, so the compose file it extends is the published one.
+21. **20.1** Export progress bars (asked for 2026-09-24). Independent; any time.
 
 Phases 6 and 8.2 are floaters (small, no dependents) and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm

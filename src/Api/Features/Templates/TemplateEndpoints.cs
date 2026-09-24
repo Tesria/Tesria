@@ -62,15 +62,16 @@ public static class TemplateEndpoints
     /// <summary>
     /// Who may rename or delete a template. A space's templates are part of
     /// that space's shared setup, so anyone who can edit the space. An
-    /// instance-wide one, its author, and since 2026-09-22 also anyone holding
-    /// "Manage spaces": before, only the author could, so an instance-wide
-    /// template left by somebody who had gone could never be removed.
+    /// instance-wide one is offered in every space, so it takes "Manage
+    /// instance-wide templates" (dev-plan 14.1), held by administrators by
+    /// default; before, any user could create one, and its author could
+    /// always change it.
     /// </summary>
     private static async Task<bool> CanManageAsync(
         PageTemplate t, CurrentUser current, IPermissionService perms, IInstancePermissions rights) =>
         t.SpaceId is { } spaceId
             ? await perms.CanEditSpaceAsync(spaceId)
-            : t.CreatedById == current.RequireId() || await rights.HasAsync(InstancePermissions.SpacesManage);
+            : await rights.HasAsync(InstancePermissions.TemplatesInstance);
 
     private static async Task<IResult> Update(
         Guid id, UpdateTemplateRequest req, AppDbContext db, CurrentUser current,
@@ -91,7 +92,8 @@ public static class TemplateEndpoints
     }
 
     private static async Task<IResult> Create(
-        CreateTemplateRequest req, AppDbContext db, CurrentUser current, IPermissionService perms)
+        CreateTemplateRequest req, AppDbContext db, CurrentUser current, IPermissionService perms,
+        IInstancePermissions rights)
     {
         var name = (req.Name ?? "").Trim();
         if (name.Length == 0)
@@ -101,11 +103,22 @@ public static class TemplateEndpoints
 
         if (req.SpaceId is { } spaceId)
         {
-            if (!await db.Spaces.AnyAsync(s => s.Id == spaceId))
+            // A space the caller cannot see is as missing as one that does
+            // not exist (dev-plan 14.1).
+            if (!await db.Spaces.AnyAsync(s => s.Id == spaceId) || !await perms.CanViewSpaceAsync(spaceId))
                 return Results.ValidationProblem(Error("spaceId", "Space not found."));
             // Space-scoped templates affect everyone creating pages in that
             // space, so they require the same rights as editing the space.
             if (!await perms.CanEditSpaceAsync(spaceId)) return Results.Forbid();
+        }
+        else if (!await rights.HasAsync(InstancePermissions.TemplatesInstance))
+        {
+            return Results.Json(new
+            {
+                code = "permission_required",
+                permission = InstancePermissions.TemplatesInstance,
+                message = "Your role does not have the right to manage instance-wide templates. Save it as a template of this space instead.",
+            }, statusCode: StatusCodes.Status403Forbidden);
         }
 
         var template = new PageTemplate
@@ -129,6 +142,7 @@ public static class TemplateEndpoints
     {
         var template = await db.PageTemplates.FirstOrDefaultAsync(t => t.Id == id);
         if (template is null) return Results.NotFound();
+        if (template.SpaceId is { } sid && !await perms.CanViewSpaceAsync(sid)) return Results.NotFound();
 
         if (!await CanManageAsync(template, current, perms, rights)) return Results.Forbid();
 

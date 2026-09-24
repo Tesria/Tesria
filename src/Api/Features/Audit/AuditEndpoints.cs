@@ -25,6 +25,9 @@ public static class AuditEndpoints
     }
 
     /// <summary>Most recent audit entries, optionally filtered to one target.</summary>
+    /// <summary>How many entries one request may look through for ones the caller can see.</summary>
+    private const int MaxScanned = 5000;
+
     private static async Task<IResult> List(
         AppDbContext db, IPermissionService perms, string? targetType, Guid? targetId, int? take)
     {
@@ -36,34 +39,40 @@ public static class AuditEndpoints
         if (targetId is { } id)
             query = query.Where(a => a.TargetId == id);
 
-        // Newest first. Postgres can sort DateTimeOffset in SQL; the SQLite test
-        // provider cannot, so there we sort in memory over a bounded window.
-        List<AuditLog> rows;
-        if (db.Database.IsNpgsql())
+        // Newest first, by the chain's sequence (it only ever grows, and both
+        // databases sort it in SQL). Filtered for what the caller may see
+        // batch by batch until the page is full (dev-plan 14.1): before, the
+        // limit was applied first and the filter after, so hidden rows used
+        // up the page and someone could be shown a handful, or none, of the
+        // entries they were entitled to. Entry metadata embeds page titles and
+        // space keys, so anything whose target the caller cannot see is
+        // dropped; a page that no longer exists (purged) cannot be
+        // authorized, so it is hidden too. Scanning stops at a bound so a
+        // caller who can see almost nothing does not read the whole log.
+        var rows = new List<AuditLog>();
+        long? before = null;
+        var scanned = 0;
+        while (rows.Count < limit && scanned < MaxScanned)
         {
-            rows = await query.OrderByDescending(a => a.CreatedAt).Take(limit).ToListAsync();
-        }
-        else
-        {
-            var all = await query.ToListAsync();
-            rows = all.OrderByDescending(a => a.CreatedAt).Take(limit).ToList();
-        }
-
-        // Entry metadata embeds page titles and space keys, so drop anything
-        // whose target the caller cannot see. A page target that no longer
-        // exists (purged) can't be authorized, so it is hidden too.
-        var visible = new List<AuditLog>();
-        foreach (var a in rows)
-        {
-            var allowed = a.TargetType switch
+            // Rows the chain has not numbered yet (only before its backfill
+            // has run) cannot be paged by number, and are left out.
+            var batchQuery = before is { } b ? query.Where(a => a.Sequence != null && a.Sequence < b) : query.Where(a => a.Sequence != null);
+            var batch = await batchQuery.OrderByDescending(a => a.Sequence).Take(limit * 2).ToListAsync();
+            if (batch.Count == 0) break;
+            scanned += batch.Count;
+            before = batch[^1].Sequence!.Value;
+            foreach (var a in batch)
             {
-                "space" => a.TargetId is { } sid && await perms.CanViewSpaceAsync(sid),
-                "page" => a.TargetId is { } pid && await perms.CanViewPageAsync(pid),
-                _ => true, // groups and other non-content targets aren't sensitive
-            };
-            if (allowed) visible.Add(a);
+                var allowed = a.TargetType switch
+                {
+                    "space" => a.TargetId is { } sid && await perms.CanViewSpaceAsync(sid),
+                    "page" => a.TargetId is { } pid && await perms.CanViewPageAsync(pid),
+                    _ => true, // groups and other non-content targets aren't sensitive
+                };
+                if (allowed) rows.Add(a);
+                if (rows.Count == limit) break;
+            }
         }
-        rows = visible;
 
         // Resolve actor names in one round trip.
         var actorIds = rows.Where(r => r.ActorId is not null).Select(r => r.ActorId!.Value).Distinct().ToList();

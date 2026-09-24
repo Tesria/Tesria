@@ -27,7 +27,8 @@ public static class WebhookEndpoints
     private static async Task<IResult> List(string key, AppDbContext db, IPermissionService perms)
     {
         var space = await FindSpaceAsync(db, key);
-        if (space is null) return Results.NotFound();
+        // A space the caller cannot see is not found, not forbidden (dev-plan 14.1).
+        if (space is null || !await perms.CanViewSpaceAsync(space.Id)) return Results.NotFound();
         // A webhook's URL and event filter are configuration, not content:
         // still, only space admins should see or manage this integration.
         if (!await perms.CanAdminSpaceAsync(space.Id)) return Results.Forbid();
@@ -44,7 +45,8 @@ public static class WebhookEndpoints
         Infrastructure.Security.ISecurityDetector detector, Infrastructure.Security.EgressGuard egress)
     {
         var space = await FindSpaceAsync(db, key);
-        if (space is null) return Results.NotFound();
+        // A space the caller cannot see is not found, not forbidden (dev-plan 14.1).
+        if (space is null || !await perms.CanViewSpaceAsync(space.Id)) return Results.NotFound();
         if (!await perms.CanAdminSpaceAsync(space.Id)) return Results.Forbid();
 
         if (!Uri.TryCreate(req.Url, UriKind.Absolute, out var uri) ||
@@ -100,7 +102,8 @@ public static class WebhookEndpoints
         string key, Guid id, AppDbContext db, IPermissionService perms)
     {
         var space = await FindSpaceAsync(db, key);
-        if (space is null) return Results.NotFound();
+        // A space the caller cannot see is not found, not forbidden (dev-plan 14.1).
+        if (space is null || !await perms.CanViewSpaceAsync(space.Id)) return Results.NotFound();
         if (!await perms.CanAdminSpaceAsync(space.Id)) return Results.Forbid();
 
         var webhook = await db.Webhooks.FirstOrDefaultAsync(w => w.Id == id && w.SpaceId == space.Id);

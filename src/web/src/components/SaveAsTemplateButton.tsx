@@ -1,5 +1,6 @@
 import { type FormEvent, useState } from 'react'
-import { api, ApiError } from '../api/client'
+import { api, ApiError, Permission } from '../api/client'
+import { useAuth } from '../auth/AuthContext'
 
 type Props = {
   spaceId: string
@@ -9,6 +10,9 @@ type Props = {
 
 /** Turns a page's current content into a reusable template. */
 export function SaveAsTemplateButton({ spaceId, contentJson, defaultName }: Props) {
+  // Instance-wide templates take their own right (dev-plan 14.1); without
+  // it the choice is not offered at all.
+  const mayOfferEverywhere = useAuth().can(Permission.TemplatesInstance)
   const [open, setOpen] = useState(false)
   const [name, setName] = useState(defaultName)
   const [scope, setScope] = useState<'space' | 'instance'>('space')
@@ -55,13 +59,15 @@ export function SaveAsTemplateButton({ spaceId, contentJson, defaultName }: Prop
               required
             />
           </label>
-          <label>
-            Offer it in
-            <select value={scope} onChange={(e) => setScope(e.target.value as 'space' | 'instance')}>
-              <option value="space">This space only</option>
-              <option value="instance">Every space (instance-wide)</option>
-            </select>
-          </label>
+          {mayOfferEverywhere && (
+            <label>
+              Offer it in
+              <select value={scope} onChange={(e) => setScope(e.target.value as 'space' | 'instance')}>
+                <option value="space">This space only</option>
+                <option value="instance">Every space (instance-wide)</option>
+              </select>
+            </label>
+          )}
           <button type="submit" className="btn btn--primary btn--sm" disabled={busy}>
             {busy ? 'Saving…' : 'Save'}
           </button>

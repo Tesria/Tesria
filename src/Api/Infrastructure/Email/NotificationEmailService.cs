@@ -150,6 +150,7 @@ public sealed class NotificationEmailService(
         "page.updated" => "A page was updated",
         "comment.created" => "New comment",
         "user.mentioned" => "You were mentioned",
+        "token.expiring" => "An API token expires soon",
         _ => n.Action,
     };
 
@@ -166,6 +167,13 @@ public sealed class NotificationEmailService(
             {
                 lines.Add($"- Security {meta.GetValueOrDefault("Severity", "alert").ToLowerInvariant()}: {(meta.TryGetValue("Kind", out var kind) ? Security.AlertKinds.Label(kind) : "see the Security page")}");
                 lines.Add($"  {baseUrl}/admin/security");
+            }
+            else if (n.Action == "token.expiring")
+            {
+                var when = DateTimeOffset.TryParse(meta.GetValueOrDefault("ExpiresAt"), out var at)
+                    ? at.ToString("MMMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture) : "soon";
+                lines.Add($"- Your API token \"{meta.GetValueOrDefault("Name", "")}\" expires on {when}. Make a new one before then, or scripts using it stop working.");
+                lines.Add($"  {baseUrl}/profile#api-tokens");
             }
             else if (n.TargetType == "page" && pages.TryGetValue(n.TargetId, out var page))
             {

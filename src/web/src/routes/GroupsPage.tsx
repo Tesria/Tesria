@@ -209,7 +209,7 @@ function MemberEditor({ group, onChanged }: { group: Group; onChanged: () => voi
         <select value={userId} onChange={(e) => setUserId(e.target.value)} aria-label="User to add" required>
           <option value="">Choose a user…</option>
           {candidates.map((u) => (
-            <option key={u.id} value={u.id}>{u.displayName} ({u.email})</option>
+            <option key={u.id} value={u.id}>{u.displayName}{u.email ? ` (${u.email})` : ''}</option>
           ))}
         </select>
         <button type="submit" className="btn btn--primary btn--sm" disabled={!userId}>Add member</button>
@@ -221,7 +221,7 @@ function MemberEditor({ group, onChanged }: { group: Group; onChanged: () => voi
         {members.map((m) => (
           <li key={m.userId} className="attachment">
             <span>{m.displayName}</span>
-            <span className="muted small">{m.email}</span>
+            {m.email && <span className="muted small">{m.email}</span>}
             {!group.builtIn && (
               <button type="button" className="link-btn link-btn--danger" onClick={() => remove(m)}>
                 Remove

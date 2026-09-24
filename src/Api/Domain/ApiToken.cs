@@ -33,4 +33,14 @@ public class ApiToken
     public DateTimeOffset CreatedAt { get; set; }
 
     public DateTimeOffset? LastUsedAt { get; set; }
+
+    /// <summary>
+    /// When the token stops working (dev-plan 14.1); null never expires, which
+    /// is a choice made when the token is created. Tokens from before expiry
+    /// existed were given 90 days from the upgrade, not "never".
+    /// </summary>
+    public DateTimeOffset? ExpiresAt { get; set; }
+
+    /// <summary>When its owner was told it expires within a week, so they are told once.</summary>
+    public DateTimeOffset? ExpiryWarnedAt { get; set; }
 }

@@ -5,6 +5,59 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### 14.1 The security findings, fixed (2026-09-24, Opus 5.5)
+
+Every finding listed under 14.1, plus four worse ones the review of them
+turned up. The owner answered the four decisions before bed.
+
+- **API tokens expire.** Chosen when a token is made: 30 days, 90 (the
+  default), a year, or never. Tokens from before get 90 days from the
+  upgrade, not "never". A week before one expires its owner is told, once,
+  in the bell and by email (`TokenExpiryNotifier`; a system notification,
+  since "never about your own action" swallowed the first version).
+- **A token cannot manage its account** (`TokenAccountGuardMiddleware`):
+  only `GET /api/auth/me` under `/api/auth`, and nothing under
+  `/api/api-tokens`. Worse than listed: saving the profile with a token
+  used to hand back a fresh browser session that passed every "confirm your
+  password" check, and "sign out other sessions" from a token signed out
+  every one of them.
+- **Render tokens are held to their page or space.** The route filter's
+  comment said anything unlisted was refused; the code let it through, a
+  space token was not held to its space, and `/mcp` was open to it. Now the
+  list, taken from what a full site export actually requested, is all it
+  may reach. A full Support export ran with no refusal.
+- **`POST /pages/{id}/publish` handed any published page to anyone** signed
+  in, restricted or not, before any check (not on the list; found by the
+  review). Fixed.
+- **Drafts and trashed pages** are no longer readable through versions,
+  attachments, labels and comments: `CanReadPageAsync` answers not found for
+  trash, and allows a draft to its author and its space's editors. Comments
+  on a draft notify nobody and fire no webhook.
+- **Hidden spaces answer 404, not 403**: webhooks, space permissions, page
+  restore and purge, restriction removal, template create and delete, page
+  move and copy.
+- **Email addresses** in `/api/users` and group member lists only for those
+  who may see the user list, and for yourself.
+- **Administrators acting on each other**: suspending, signing out,
+  revoking tokens, resetting the password or turning off two-factor of
+  another administrator is the owner's, or needs the new right **Manage
+  administrators' accounts**, off for administrators by default, so an
+  owner who steps back can let them recover each other. Never the owner's
+  account.
+- **Instance-wide templates** need the new right **Manage instance-wide
+  templates**, held by administrators; the choice is hidden without it.
+- **Two-factor for administrators, everywhere**: an administrator who must
+  have two-factor and has not set it up holds no administration rights in
+  any check, including the ones handlers make themselves (the settings form
+  let such an administrator switch the rule off).
+- **Comment edit and delete** re-check that the author can still see the
+  page.
+- **The audit list** fills its page with entries the caller may see, by the
+  chain's sequence, instead of cutting to the limit first.
+- The favicon no longer names the owner's site in its source comment,
+  which every export shipped.
+- 13 tests in `PreReleaseAuditTests`.
+
 ### Support site: how far back each backup copy can take you (2026-09-24, Opus 5.5)
 
 - **How backups work** gains a section that says in words what the

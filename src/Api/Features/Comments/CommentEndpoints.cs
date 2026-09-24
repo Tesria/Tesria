@@ -43,7 +43,7 @@ public static partial class CommentEndpoints
     private static async Task<IResult> ListForPage(
         Guid pageId, AppDbContext db, IPermissionService perms, CurrentUser current)
     {
-        if (!await perms.CanViewPageAsync(pageId)) return Results.NotFound();
+        if (!await perms.CanReadPageAsync(pageId)) return Results.NotFound();
         // Anonymous readers see comments only where the space allows it; the
         // page itself was already established as public, so 401 here reveals
         // nothing the page did not.
@@ -75,7 +75,7 @@ public static partial class CommentEndpoints
         IPermissionService perms, INotificationService notifications, IWebhookDispatcher webhooks)
     {
         // Commenting requires being able to see the page.
-        if (!await perms.CanViewPageAsync(pageId)) return Results.NotFound();
+        if (!await perms.CanReadPageAsync(pageId)) return Results.NotFound();
 
         var body = (req.Body ?? "").Trim();
         if (body.Length == 0)
@@ -83,12 +83,16 @@ public static partial class CommentEndpoints
         if (req.AnchorJson is not null && !IsValidJson(req.AnchorJson))
             return Results.ValidationProblem(Error("anchorJson", "Anchor must be valid JSON."));
 
-        // perms.CanViewPageAsync (above) already resolved the page including
-        // drafts; re-resolve SpaceId the same way so a not-yet-published
-        // draft's own page can still receive comments.
-        var spaceId = await db.Pages.IgnoreQueryFilters()
-            .Where(p => p.Id == pageId).Select(p => (Guid?)p.SpaceId).FirstOrDefaultAsync();
-        if (spaceId is null) return Results.NotFound();
+        // perms.CanReadPageAsync (above) already resolved the page including
+        // drafts (its author and editors only); re-resolve it the same way so a
+        // not-yet-published draft can still receive comments.
+        var target = await db.Pages.IgnoreQueryFilters()
+            .Where(p => p.Id == pageId).Select(p => new { p.SpaceId, p.Status }).FirstOrDefaultAsync();
+        if (target is null) return Results.NotFound();
+        var spaceId = (Guid?)target.SpaceId;
+        // A draft does not exist for anyone else yet: its comments tell no
+        // watcher and fire no webhook (dev-plan 14.1).
+        var isDraft = target.Status == PageStatus.Draft;
 
         if (req.ParentCommentId is { } parentId)
         {
@@ -111,12 +115,16 @@ public static partial class CommentEndpoints
             UpdatedAt = now,
         };
         db.Comments.Add(comment);
-        await notifications.NotifyPageWatchersAsync(
-            pageId, spaceId.Value, "comment.created", authorId, new { Body = Truncate(Readable(body)) });
-        await NotifyMentionsAsync(pageId, body, previous: null, authorId, db, perms, notifications);
+        if (!isDraft)
+        {
+            await notifications.NotifyPageWatchersAsync(
+                pageId, spaceId.Value, "comment.created", authorId, new { Body = Truncate(Readable(body)) });
+            await NotifyMentionsAsync(pageId, body, previous: null, authorId, db, perms, notifications);
+        }
         await db.SaveChangesAsync();
-        await webhooks.DispatchAsync(
-            spaceId.Value, "comment.created", "page", pageId, new { Body = Truncate(body) });
+        if (!isDraft)
+            await webhooks.DispatchAsync(
+                spaceId.Value, "comment.created", "page", pageId, new { Body = Truncate(body) });
         // Re-read with the author joined rather than assigning the navigation:
         // attaching a detached User makes EF try to INSERT it, which trips the
         // unique-email constraint. One extra read on create is the cheap,
@@ -134,6 +142,8 @@ public static partial class CommentEndpoints
         // Author included so the response carries the name the client renders.
         var comment = await db.Comments.Include(c => c.Author).FirstOrDefaultAsync(c => c.Id == id);
         if (comment is null || comment.DeletedAt is not null) return Results.NotFound();
+        // The author may have lost sight of the page since (dev-plan 14.1).
+        if (!await perms.CanReadPageAsync(comment.PageId)) return Results.NotFound();
         if (comment.AuthorId != current.RequireId()) return Results.Forbid();
 
         var body = (req.Body ?? "").Trim();
@@ -148,10 +158,12 @@ public static partial class CommentEndpoints
         return Results.Ok(ToResponse(comment));
     }
 
-    private static async Task<IResult> Delete(Guid id, AppDbContext db, CurrentUser current)
+    private static async Task<IResult> Delete(Guid id, AppDbContext db, CurrentUser current, IPermissionService perms)
     {
         var comment = await db.Comments.FirstOrDefaultAsync(c => c.Id == id);
         if (comment is null || comment.DeletedAt is not null) return Results.NotFound();
+        // The author may have lost sight of the page since (dev-plan 14.1).
+        if (!await perms.CanReadPageAsync(comment.PageId)) return Results.NotFound();
         if (comment.AuthorId != current.RequireId()) return Results.Forbid();
 
         // Soft delete: retain the row so any replies keep their thread context.
@@ -213,7 +225,7 @@ public static partial class CommentEndpoints
     {
         var comment = await db.Comments.Include(c => c.Author).FirstOrDefaultAsync(c => c.Id == id);
         if (comment is null || comment.DeletedAt is not null) return Results.NotFound();
-        if (!await perms.CanViewPageAsync(comment.PageId)) return Results.NotFound();
+        if (!await perms.CanReadPageAsync(comment.PageId)) return Results.NotFound();
         if (comment.ParentCommentId is not null)
             return Results.ValidationProblem(Error("id", "Resolve the thread's first comment; replies go with it."));
         var userId = current.RequireId();
