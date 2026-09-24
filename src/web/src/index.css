@@ -2208,6 +2208,20 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .mail-signin__paste { margin-top: 1rem; }
 .mail-test { margin-top: 1rem; }
 
+/* Tailscale (dev-plan 19.1): its own wordmark as the heading, swapped for
+   the white one in dark mode by the same rules as the brand logo. */
+.tailscale-card__title { margin: 0 0 0.75rem; line-height: 0; }
+.tailscale-card__logo { height: 22px; width: auto; }
+.tailscale-card__logo--dark { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tailscale-card__logo--light { display: none; }
+  :root:not([data-theme="light"]) .tailscale-card__logo--dark { display: inline; }
+}
+:root[data-theme="dark"] .tailscale-card__logo--light { display: none; }
+:root[data-theme="dark"] .tailscale-card__logo--dark { display: inline; }
+.tailscale-card__facts { list-style: none; padding: 0; margin: 0 0 0.75rem; display: grid; gap: 0.35rem; }
+.tailscale-card__trademark { margin-top: 1rem; font-size: 0.75rem; }
+
 /* The address gets the room: it was a 120px column, too narrow to read one. */
 .invite-form { grid-template-columns: minmax(0, 1fr) 150px auto; }
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
@@ -3084,3 +3098,10 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
 .card,
 .alerts__item,
 .space-card a { box-shadow: var(--shadow-card); }
+
+/* Text for screen readers only, where a picture already says it on screen
+   (the Tailscale card's wordmark heading). */
+.visually-hidden {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}

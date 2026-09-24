@@ -5,6 +5,28 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Phase 19: reaching Tesria from anywhere with Tailscale (2026-09-24, Opus 5.5)
+
+- **An optional `tailscale` service** (Compose profile `tailscale`, off
+  unless started with `docker compose --profile tailscale up -d`). It joins
+  the tailnet as `TS_HOSTNAME` (default `tesria`) with `TS_AUTHKEY` from
+  `.env`, and Tailscale Serve answers `https://<name>.<tailnet>.ts.net` with
+  a certificate Tailscale provisions, forwarding to Caddy. Funnel is turned
+  off in `deploy/tailscale/serve.json`: nothing is published. Userspace
+  networking, so no extra privileges. Verified live on the owner's tailnet.
+- **A Tailscale card in Settings**: connected or not, the tailnet address,
+  and the device key's expiry, with the steps to disable it (a device drops
+  off the tailnet when its key expires, after 180 days by default). Read
+  from a status file the sidecar's health check writes; the app never gets
+  Tailscale's control socket. `GET /api/admin/tailscale`, 4 tests.
+- **Support**: "Reaching Tesria from anywhere with Tailscale", step by step
+  (HTTPS for the tailnet, an auth key, `.env`, starting it, the address,
+  turning off key expiry), with what to do for people who already run an
+  app connector or subnet router; `TS_AUTHKEY` and `TS_HOSTNAME` in the
+  Configuration reference and `.env.example`.
+- Tailscale's logo (wordmark and icon, unmodified, from its media kit) in
+  `src/web/public/brands/tailscale`, with a trademark note.
+
 ### 14.1 The security findings, fixed (2026-09-24, Opus 5.5)
 
 Every finding listed under 14.1, plus four worse ones the review of them

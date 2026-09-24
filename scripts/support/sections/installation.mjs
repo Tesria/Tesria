@@ -130,6 +130,16 @@ export const shots = () => [
       { type: 'box', target: '[data-shot="send-test"]', pad: 4 },
     ],
   },
+  // The Tailscale card, alone, with an example address for the real one.
+  {
+    name: 'tailscale-card', url: '/admin/settings', viewport: NARROW, phone: false, settle: 800,
+    steps: [
+      { wait: 2500 },
+      { css: '.profile__section:not(#tailscale), .tabs, .admin h1 { display: none !important; }' },
+      { eval: "document.querySelectorAll('#tailscale a').forEach((a) => { a.textContent = 'https://tesria.your-tailnet.ts.net'; a.removeAttribute('href') })" },
+    ],
+    clipTo: '#tailscale', clipPad: 10,
+  },
   // Gmail chosen, with App password: the hint and the choice.
   {
     name: 'email-provider-gmail', url: '/admin/settings', viewport: NARROW, phone: false, settle: 800,
@@ -166,7 +176,7 @@ export const shots = () => [
 
 export async function build({
   top, page, ensure, attachCurrent, doc, p, h, text, bold, italic, code, ul, ol, li, panel, table, codeBlock,
-  fileBlock, live, tasks, task, picture, pageLink, mailProviders,
+  fileBlock, live, tasks, task, picture, pageLink, mailProviders, image,
 }) {
   const root = top['Installation and operations']
   const b = (t) => text(t, bold)
@@ -301,6 +311,13 @@ export async function build({
     ul(
       setting('COLLAB_SHARED_SECRET', 'turns on editing a page with several people at once. Any long random value. Empty, one person edits a page at a time.'),
       setting('PDF_SHARED_SECRET', 'turns on PDF export. Any long random value. Without it, exporting as HTML still works, and asking for a PDF says to print the HTML export instead.'),
+    ),
+
+    h(2, 'Tailscale'),
+    p('Optional, and used only when the Tailscale service is started. ', pageLink('Reaching Tesria from anywhere with Tailscale'), ' walks through it.'),
+    ul(
+      setting('TS_AUTHKEY', 'an auth key from your Tailscale admin console, so Tesria can join your tailnet. Needed only for the first start: after that the device remembers who it is.'),
+      setting('TS_HOSTNAME', 'the name Tesria takes on your tailnet, and so the first part of its address: ', c('tesria'), ' unless you set another.'),
     ),
 
     h(2, 'Single sign-on'),
@@ -600,6 +617,84 @@ export async function build({
       li(p('Put it in ', b('Admin, Settings, Public address'), ', such as ', c('https://wiki.home.arpa'), '. Links in emails use it, and the ', b('Trust this device'), ' guide suggests it to anyone who opens Tesria by number.')),
       li(p('Tell everyone the new address, and bookmark it on each device.')),
     ),
+  ))
+
+  // Tailscale (dev-plan 19.2), checked against Tailscale's docs on
+  // 2026-09-24 (kb/1282/docker and its parameters, features/tailscale-serve,
+  // features/tailscale-funnel, kb/1153/enabling-https, kb/1281/app-connectors)
+  // and run live on the owner's tailnet that night. The picture is of
+  // Tesria's own card, with an example address in place of the real tailnet's.
+  const tailscalePage = await ensure('Reaching Tesria from anywhere with Tailscale', install)
+  const squircle = await attachCurrent(tailscalePage, 'tailscale-icon.png',
+    readFileSync(join(ROOT, 'src/web/public/brands/tailscale/tailscale-icon.png')), 'image/png')
+  await page('Reaching Tesria from anywhere with Tailscale', install, doc(
+    image(squircle, 'Tailscale', { width: 10, align: 'left' }),
+    p(b('Tailscale'), ' joins your own devices (laptop, phone, the computer Tesria runs on) into one private network, called a ', b('tailnet'), ', that works wherever each of them is: at home, at the office, on a phone’s data plan. If your devices already use it, Tesria can join too, and then you can open it from anywhere, with no port opened to the internet and no router settings changed.'),
+    p('Why this rather than putting Tesria on the internet? Nothing outside your tailnet can even reach it, so there is nothing for strangers to try passwords against. And because Tailscale gives Tesria a real certificate for its tailnet address, no device needs the ', pageLink('Trusting the local certificate', 'trust this device'), ' step.'),
+    panel('info', p(b('What it costs.'), ' Tailscale has a free plan for personal use, which is plenty for this. Check its pricing page for a team.')),
+
+    h(2, 'Before you start'),
+    ul(
+      li(p(b('Tailscale on your devices,'), ' signed in to the same tailnet: the ones you will open Tesria from.')),
+      li(p(b('Access to the Tailscale admin console'), ' at ', c('login.tailscale.com/admin'), ', to make a key and turn on HTTPS.')),
+    ),
+    p('The computer Tesria runs on does not need Tailscale installed: Tesria runs its own small Tailscale container beside it.'),
+
+    step(1, 'Turn on HTTPS for your tailnet'),
+    p('In the admin console, open ', b('DNS'), '. Make sure ', b('MagicDNS'), ' is on (it usually is), and under ', b('HTTPS Certificates'), ' choose ', b('Enable HTTPS'), '. This lets Tailscale give Tesria a certificate for its address. You do this once per tailnet.'),
+
+    step(2, 'Make an auth key'),
+    p('An auth key lets a new device join your tailnet without anyone signing in on it. In the admin console, open ', b('Settings'), ', then ', b('Keys'), ', and choose ', b('Generate auth key'), '.'),
+    ul(
+      li(p(b('Description:'), ' ', c('Tesria'), '.')),
+      li(p(b('Reusable: off.'), ' It is used once, to join.')),
+      li(p(b('Ephemeral: off.'), ' Tesria should stay on the tailnet when it restarts.')),
+      li(p('Leave the rest as they are, and choose ', b('Generate key'), '. Copy the key, which starts with ', c('tskey-auth-'), ': it is shown once.')),
+    ),
+
+    step(3, 'Put the key in .env'),
+    p('Open the ', c('.env'), ' file in the Tesria folder in a text editor, add this line with your key after the ', c('='), ', and save:'),
+    codeBlock('bash', 'TS_AUTHKEY=tskey-auth-xxxxxxxx'),
+    p('Tesria takes the name ', c('tesria'), ' on your tailnet. To use another, also add a line such as ', c('TS_HOSTNAME=wiki'), '.'),
+    panel('warning', p(b('Treat the key like a password.'), ' Until it is used or expires, anyone with it could add a device to your tailnet. ', c('.env'), ' is where Tesria keeps its secrets; never share it or put it in version control.')),
+
+    step(4, 'Start the Tailscale service'),
+    p('In the Tesria folder, run:'),
+    codeBlock('bash', 'docker compose --profile tailscale up -d'),
+    p('The ', c('--profile tailscale'), ' part is what starts it: Tailscale is off unless you ask for it. The first start joins your tailnet and fetches the certificate, which takes up to a minute.'),
+
+    step(5, 'Open Tesria at its tailnet address'),
+    p('In Tesria, choose ', b('Admin'), ', then ', b('Settings'), '. The ', b('Tailscale'), ' card says whether it is connected and gives its address, which looks like ', c('https://tesria.your-tailnet.ts.net'), '. Open that address from any device on your tailnet, wherever it is, and sign in as usual.'),
+    ...(await picture(tailscalePage, 'tailscale-card', 'The Tailscale card in Settings: connected, its tailnet address, and when its device key expires',
+      'The Tailscale card: whether Tesria is connected, its address on your tailnet, and when its device key expires.')),
+
+    step(6, 'Turn off key expiry for Tesria'),
+    p('Every device on a tailnet has to sign in again from time to time: after 180 days, unless you change it. For a person’s laptop that is a good thing. For Tesria it means it quietly drops off your tailnet one day, and you find out when you are away and cannot reach it. The card shows the date, and a reminder until you do this:'),
+    ol(
+      li(p('In the Tailscale admin console, open ', b('Machines'), '.')),
+      li(p('Find ', b('tesria'), ' (or the name you chose), open its menu, and choose ', b('Disable key expiry'), '.')),
+    ),
+    p('The card then says the key does not expire.'),
+
+    h(2, 'Good to know'),
+    ul(
+      li(p(b('It is a second way in, not a replacement.'), ' Tesria still answers at its usual address on your network. Links in emails keep using the address in ', b('Settings'), '.')),
+      li(p(b('Nothing is published to the internet.'), ' Tailscale can also publish a device to everyone (a feature it calls Funnel). Tesria’s setup turns that off, so only devices on your tailnet can reach it.')),
+      li(p(b('Everything works as usual,'), ' including editing a page with several people at once: the tailnet address goes through the same web server as the local one.')),
+      li(p(b('Who on your tailnet may reach Tesria'), ' is set by Tailscale’s access rules, in its admin console. Tesria’s own sign-in still applies to everyone who does.')),
+      li(p(b('To stop it,'), ' run ', c('docker compose stop tailscale'), '. To remove Tesria from your tailnet, also delete it under ', b('Machines'), ' and remove the ', c('TS_AUTHKEY'), ' line.')),
+    ),
+
+    h(2, 'If it does not connect'),
+    ul(
+      li(p(b('The card says it needs a new auth key.'), ' The key was used already, had expired, or was mistyped. Make a new one (step 2), replace it in ', c('.env'), ', and run step 4 again.')),
+      li(p(b('The card says it is not reporting.'), ' The Tailscale container has stopped. Run step 4 again; ', c('docker compose logs tailscale'), ' says why it stopped.')),
+      li(p(b('The address does not open.'), ' Check that the device you are using is signed in to Tailscale on the same tailnet, and that HTTPS is on (step 1). The first visit after starting can take a few seconds while the certificate arrives.')),
+    ),
+
+    h(2, 'Already using an app connector or a subnet router?'),
+    p('If your tailnet already has a device that routes to your home or office network (Tailscale calls these ', b('subnet routers'), ' and ', b('app connectors'), '), you can reach Tesria through it without anything above: add Tesria’s usual address to it in the admin console. Nothing changes in Tesria. The difference is the certificate: through a router you reach Tesria at its usual address, with its usual certificate, so each device still needs to trust it once. The Tailscale service above gives it a certificate every device already trusts.'),
+    p('Tailscale and the Tailscale logo are trademarks of Tailscale Inc. Tesria is not affiliated with Tailscale.'),
   ))
 
   // ============================================================ Single sign-on
@@ -1589,6 +1684,15 @@ export async function cleanup({ author }) {
       const index = byName > trustAt ? trustAt + 1 : trustAt
       await author.call('PUT', `/api/pages/${kids[byName].id}/move`, { parentPageId: install.id, index })
       console.log('  moved Opening Tesria by name after Trusting the local certificate')
+    }
+    // Tailscale (dev-plan 19.2) right after it: the other way to reach Tesria.
+    const fresh = (find(await author.call('GET', `/api/pages/tree?spaceId=${space.id}`), 'Installation and operations')?.children) ?? kids
+    const nameAt = fresh.findIndex((n) => n.title === 'Opening Tesria by name')
+    const tsAt = fresh.findIndex((n) => n.title === 'Reaching Tesria from anywhere with Tailscale')
+    if (nameAt >= 0 && tsAt >= 0 && tsAt !== nameAt + 1) {
+      const index = tsAt > nameAt ? nameAt + 1 : nameAt
+      await author.call('PUT', `/api/pages/${fresh[tsAt].id}/move`, { parentPageId: install.id, index })
+      console.log('  moved the Tailscale page after Opening Tesria by name')
     }
   }
 

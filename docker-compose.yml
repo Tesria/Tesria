@@ -121,8 +121,13 @@ services:
       # Which Caddyfile is in use: the default one makes its own certificate,
       # and then the app offers /trust to each device (dev-plan 15.5).
       Tls__Caddyfile: ${CADDYFILE:-deploy/Caddyfile}
+      # Where the optional Tailscale sidecar leaves its status (dev-plan
+      # 19.1), for the Tailscale card in Administration. Only a file: the app
+      # never gets Tailscale's control socket.
+      Tailscale__StatusFile: /tailscale-status/status.json
     volumes:
       - uploads:/app/uploads
+      - tailscale_status:/tailscale-status:ro
     expose:
       - "8080"
 
@@ -324,6 +329,46 @@ services:
   # built and tested without a cloud account, a card, or the internet. Off by
   # default: `docker compose --profile offsite-test up -d minio`.
   # See deploy/pgbackrest/README.md for the two commands that set it up.
+  # Reaching Tesria from anywhere on your tailnet (dev-plan 19.1), off
+  # unless asked for:  docker compose --profile tailscale up -d
+  # It joins your tailnet as TS_HOSTNAME (default "tesria") and serves
+  # https://<that name>.<your tailnet>.ts.net with a certificate Tailscale
+  # provisions, forwarding to Caddy so /collab and everything else is routed
+  # exactly as on the LAN. Serve only, never Funnel: deploy/tailscale/
+  # serve.json turns Funnel off, so nothing is published to the internet.
+  # Needs TS_AUTHKEY in .env (Tailscale admin console, Settings, Keys) and
+  # HTTPS turned on for the tailnet (DNS page). See the Support page
+  # "Reaching Tesria from anywhere with Tailscale".
+  tailscale:
+    image: tailscale/tailscale:stable
+    profiles: ["tailscale"]
+    restart: unless-stopped
+    depends_on:
+      - caddy
+    hostname: ${TS_HOSTNAME:-tesria}
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY:-}
+      TS_HOSTNAME: ${TS_HOSTNAME:-tesria}
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_SERVE_CONFIG: /config/serve.json
+      # Userspace networking: no /dev/net/tun or extra privileges needed,
+      # and Serve works the same.
+      TS_USERSPACE: "true"
+    volumes:
+      # The device's identity: kept so a restart is the same device, and the
+      # auth key is needed only for the first start.
+      - tailscale_state:/var/lib/tailscale
+      - ./deploy/tailscale/serve.json:/config/serve.json:ro
+      - tailscale_status:/status
+    # The check doubles as the status report: this device only (no peers),
+    # written where the app can read it for its Tailscale card.
+    healthcheck:
+      test: ["CMD-SHELL", "tailscale status --json --peers=false > /status/status.tmp && mv /status/status.tmp /status/status.json"]
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
+
   minio:
     # quay.io, not Docker Hub: MinIO's Hub images are no longer public
     # ("pull access denied"), and quay.io is where the project publishes.
@@ -352,6 +397,8 @@ services:
       retries: 12
 
 volumes:
+  tailscale_state:
+  tailscale_status:
   minio:
   minio_certs:
   pgdata:

@@ -590,6 +590,7 @@ api.MapHealthEndpoints();
 api.MapAuthEndpoints();
 api.MapAdminEndpoints();
 api.MapMailSignInEndpoints();
+api.MapTailscaleEndpoints();
 api.MapSecurityEndpoints();
 api.MapBackupEndpoints();
 api.MapBrandingEndpoints();

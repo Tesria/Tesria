@@ -501,6 +501,18 @@ export type MailSignInInfo = {
   googlePasteBack: boolean
 }
 
+/** The optional Tailscale sidecar, as its status file says (dev-plan 19.1). */
+export type TailscaleStatus = {
+  configured: boolean
+  state: string | null
+  online: boolean
+  address: string | null
+  keyExpiry: string | null
+  version: string | null
+  checkedAt: string | null
+  stale: boolean
+}
+
 /** One mail provider preset (dev-plan 18.1). */
 export type MailProvider = {
   id: string
@@ -1410,6 +1422,8 @@ export const api = {
     },
   },
   admin: {
+    /** The optional Tailscale sidecar's status (dev-plan 19.1). */
+    tailscale: () => request<TailscaleStatus>('GET', '/api/admin/tailscale'),
     settings: {
       get: () => request<SiteSettings>('GET', '/api/admin/settings'),
       update: (input: Partial<SiteSettingsUpdate>) =>
