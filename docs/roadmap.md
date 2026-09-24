@@ -178,3 +178,35 @@ attributes, and the export renderer needs a case for it.
 - **Whether bars should link to pages** the way Confluence's do, which
   pulls in the permission-masking rule: a bar linking to a page the reader
   cannot see must not reveal its title.
+
+## Enterprise features (from the 2026-09-24 readiness review)
+
+Added 2026-09-24 when the owner asked for "enterprise grade software". The
+security gaps from that review are dev-plan 14.3; these are the features a
+larger organization would ask for next. Unscheduled, and each depends on an
+organization actually wanting it.
+
+- **User provisioning from the identity provider (SCIM 2.0).** Accounts
+  created, updated and suspended by Okta, Microsoft Entra ID or similar, so
+  leaving the company removes wiki access without anyone touching Tesria.
+  Pairs with single sign-on, which exists; group sync would map provider
+  groups to Tesria groups. Worth doing when a team with a provider asks.
+- **Audit log streaming to a SIEM.** The audit chain is tamper-evident but
+  lives only in Tesria. Streaming each entry (syslog, or HTTPS in a common
+  shape such as JSON lines or CEF) to Splunk, Elastic or Sentinel lets a
+  security team watch it with everything else. Also a scheduled export for
+  retention beyond the database.
+- **SAML 2.0 sign-in.** OpenID Connect covers most providers; some
+  organizations only offer SAML. A library, a settings screen, and tests
+  against a real provider.
+- **High availability.** More than one app container behind a load
+  balancer: shared state (settings cache, rate limits, detection counters,
+  export progress, the render token key) moved to a shared store, sticky
+  collaboration sessions or a Hocuspocus cluster, and a managed or
+  replicated PostgreSQL. A feature, not a fix: one container is the
+  supported shape today (`docs/security.md`, gap 13).
+- **Data retention and legal hold.** Policies that remove old versions,
+  trash and audit entries after a period, and a hold that suspends them for
+  a space under investigation.
+- **Encryption at rest for attachments** with a key the operator holds
+  (the database already relies on the host's disk encryption).

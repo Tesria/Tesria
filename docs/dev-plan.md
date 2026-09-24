@@ -5083,23 +5083,56 @@ software." Each known gap in `docs/security.md` now carries a verdict; this
 item is the ones marked Must fix and Should fix, in the order worth doing.
 
 **Must fix**
-1. **A `migrate` service** holds the database owner's credentials, runs the
-   migrations and creates the least-privilege role, then exits; the app and
-   the collaboration service start after it with the app role only (gap 10).
-2. **Live-editing connections end when access does** (gap 11): the
-   collaboration service closes a connection when its token expires and when
-   the app tells it (over its existing authenticated channel) that a user was
-   suspended, signed out everywhere, or restricted from the page.
-3. **Registration is audited** (`user.registered`, with how: invite, open
-   registration, single sign-on) (gap 3).
+1. **A `migrate` service** (gap 10). The same app image, run with a
+   `--migrate` argument: it connects as the database owner, applies the
+   migrations, creates or updates the `tesria_app` role and its grants,
+   runs the seeds, and exits. The `app` service waits for it to finish
+   (`depends_on: condition: service_completed_successfully`) and is given
+   only `ConnectionStrings__App`; the collaboration service loses its
+   owner fallback. **Decision:** `APP_DB_PASSWORD` becomes required (the
+   app refuses to start without it, with a message saying how to set it),
+   ending the "run as the owner on a LAN" mode. The owner's instance has
+   it set already. Upgrade note: nothing to do but `docker compose up -d`.
+2. **Live-editing connections end when access does** (gap 11).
+   * The collaboration service checks each connection's token expiry in its
+     existing sweep and closes expired ones.
+   * The editor asks the app for a fresh token on every connect and
+     reconnect (the provider's `token` as a function), so a long session
+     reconnects without a hiccup and a revoked person is turned away.
+   * The app tells the collaboration service, over its existing
+     shared-secret channel, to close: every connection of a person who is
+     suspended, signed out everywhere, or whose tokens are revoked; and
+     every connection to a page whose restrictions change (they reconnect
+     and are re-authorized, so only the people who lost access stay out).
+3. **Registration is audited** (gap 3): `user.registered`, with how
+   (first account, open registration, invite, single sign-on).
 
 **Should fix**
-4. The version is answered to signed-in callers only (gap 1).
-5. The password-reset email is sent in the background (gap 12).
-6. The TOTP challenge is single-use (gap 6).
-7. The Compose network gets a fixed subnet, and only it is trusted (gap 7).
-8. NAT64 in the egress guard's private list (gap 14).
-9. An optional image-host allowlist for pages (gap 2).
+4. **The version only to signed-in callers** (gap 1): `/api/health`
+   answers `{status}` to anyone and adds the version for a session or
+   token; `/api/instance` the same. The Support pages that told readers to
+   open `/api/health` point at Administration, About instead.
+5. **The reset email in the background** (gap 12): queued to the email
+   sender's own background worker, so the answer takes the same time
+   whether or not the address has an account.
+6. **The TOTP challenge is single-use** (gap 6): a used challenge is
+   remembered until it expires (in memory, like the other counters).
+7. **A fixed network for the stack** (gap 7): `docker-compose.yml`
+   defines the network's subnet (default `10.203.0.0/24`, changeable with
+   `TESRIA_SUBNET` if it collides), and `Proxy:TrustedNetworks` defaults to
+   loopback plus that subnet instead of every private range. **Decision:**
+   the upgrade recreates the network, so it needs a `docker compose down`
+   then `up -d` once, which the release notes will say.
+8. **NAT64** (gap 14): `64:ff9b::/96` in the egress guard's private list.
+9. **An image-host allowlist** (gap 2): an Administration, Security
+   setting, off by default. On, pages may show images only from this
+   instance and the listed hosts (the CSP's `img-src` follows it), and the
+   editor says why a pasted image from elsewhere does not show.
+
+**Decisions a second opinion could check** (per the model note): the
+migrate service's role handling (1), the revocation channel between the
+app and the collaboration service (2), and trusting one subnet (7). All
+three are reversible; none changes a file format.
 
 **Acceptable, documented:** gaps 4, 5, 8, 9 and 13 (single server).
 
@@ -5795,10 +5828,11 @@ would move them away from the permissions and render token they run with.
 19. **18.1** Provider presets and **18.4** the app-password and sending-service pages (asked for 2026-09-24): small and independent, so any time; best before 14, since they are what a new owner meets in the setup wizard. Then **18.2** Sign in with Microsoft → **18.3** Sign in with Google, before 14 if the owner wants the public release to work with a personal Outlook.com account.
 20. **19.1** Tailscale sidecar → **19.2** its Support pages (asked for 2026-09-24). Independent of everything else; best after 14.2, so the compose file it extends is the published one.
 21. **20.1** Export progress bars (asked for 2026-09-24; shipped 2026-09-24).
+22. **14.3** Enterprise hardening (asked for 2026-09-24): the known gaps marked Must fix and Should fix, before the public release.
 
-Phases 6 and 8.2 are floaters (small, no dependents) and can fill gaps.
-3.6 (dependency fixes) can also be pulled forward at any time; the npm
-findings don't get better by waiting.
+3.6 (dependency updates) can be pulled forward at any time: Dependabot
+opens them weekly, and `scripts/audit.sh` is the gate. (Phases 6 and 8.2,
+once listed here as floaters, shipped 2026-09-10.)
 
 ## Things this plan deliberately does not decide
 
