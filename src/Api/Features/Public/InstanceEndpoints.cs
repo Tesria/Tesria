@@ -19,7 +19,12 @@ public static class InstanceEndpoints
 {
     public record InstanceResponse(
         string InstanceName, bool NeedsOwner, bool PublicReading, bool AllowPublicRegistration,
-        BrandingResponse Branding);
+        BrandingResponse Branding,
+        /// <summary>
+        /// The server makes its own certificate, so browsers warn until each
+        /// device trusts it; the sign-in page then links to /trust (15.5).
+        /// </summary>
+        bool OwnCertificate = false);
 
     /// <summary>
     /// The branding the SPA draws (dev-plan 13.1). Anonymous because the
@@ -42,7 +47,7 @@ public static class InstanceEndpoints
         return routes;
     }
 
-    private static async Task<IResult> Get(AppDbContext db, ISiteSettingsService settings)
+    private static async Task<IResult> Get(AppDbContext db, ISiteSettingsService settings, IConfiguration config)
     {
         var s = await settings.GetAsync();
 
@@ -60,6 +65,7 @@ public static class InstanceEndpoints
             NeedsOwner: !await db.Users.AsNoTracking().AnyAsync(),
             PublicReading: publicReading,
             AllowPublicRegistration: s.AllowPublicRegistration,
-            Branding: BrandingOf(BrandView.From(s))));
+            Branding: BrandingOf(BrandView.From(s)),
+            OwnCertificate: Trust.TrustEndpoints.OwnCertificate(config)));
     }
 }

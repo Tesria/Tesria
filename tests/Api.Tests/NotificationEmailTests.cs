@@ -62,7 +62,7 @@ public class NotificationEmailTests
         var mail = Assert.Single(Outbox(factory).Sent);
         Assert.Equal("admin@example.com", mail.To);
         Assert.Contains("Security alert", mail.Subject);
-        Assert.Contains("admin.promoted", mail.Text);
+        Assert.Contains("Administrator promoted", mail.Text);
         Assert.Contains("https://wiki.example.com/admin/security", mail.Text);
 
         // Once. The next pass finds nothing.

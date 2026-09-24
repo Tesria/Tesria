@@ -1,6 +1,7 @@
 using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -17,9 +18,10 @@ public class OidcUserProvisionerTests
     private static (TestAppFactory factory, AppDbContext db, OidcUserProvisioner provisioner) NewProvisioner()
     {
         var factory = new TestAppFactory();
-        var db = factory.Services.CreateScope().ServiceProvider.GetRequiredService<AppDbContext>();
+        var services = factory.Services.CreateScope().ServiceProvider;
+        var db = services.GetRequiredService<AppDbContext>();
         db.Database.EnsureCreated();
-        return (factory, db, new OidcUserProvisioner(db));
+        return (factory, db, new OidcUserProvisioner(db, services.GetRequiredService<ISiteSettingsService>()));
     }
 
     [Fact]
@@ -119,5 +121,53 @@ public class OidcUserProvisionerTests
 
         var user = await provisioner.ResolveOrProvisionAsync("sub-no-name", "noname@example.com", true, null);
         Assert.Equal("noname@example.com", user.DisplayName);
+    }
+    [Fact]
+    public async Task Invite_only_refuses_a_new_account_through_sso()
+    {
+        var (factory, db, provisioner) = NewProvisioner();
+        using var _ = factory;
+        var settings = factory.Services.CreateScope().ServiceProvider.GetRequiredService<ISiteSettingsService>();
+
+        await provisioner.ResolveOrProvisionAsync("sub-owner", "owner@example.com", true, "Owner");
+        await settings.UpdateAsync(s => s.AllowPublicRegistration = false, actorId: null);
+
+        await Assert.ThrowsAsync<OidcRegistrationClosedException>(() =>
+            provisioner.ResolveOrProvisionAsync("sub-stranger", "stranger@example.com", true, "Stranger"));
+        Assert.Equal(1, await db.Users.CountAsync());
+    }
+
+    [Fact]
+    public async Task Invite_only_still_signs_in_and_links_existing_accounts()
+    {
+        var (factory, db, provisioner) = NewProvisioner();
+        using var _ = factory;
+        var settings = factory.Services.CreateScope().ServiceProvider.GetRequiredService<ISiteSettingsService>();
+
+        var owner = await provisioner.ResolveOrProvisionAsync("sub-owner", "owner@example.com", true, "Owner");
+        var local = await provisioner.ResolveOrProvisionAsync("sub-temp", "member@example.com", true, "Member");
+        local.OidcSubject = null;
+        await db.SaveChangesAsync();
+        await settings.UpdateAsync(s => s.AllowPublicRegistration = false, actorId: null);
+
+        Assert.Equal(owner.Id, (await provisioner.ResolveOrProvisionAsync("sub-owner", "owner@example.com", true, "Owner")).Id);
+        var linked = await provisioner.ResolveOrProvisionAsync("sub-member", "member@example.com", true, "Member");
+        Assert.Equal(local.Id, linked.Id);
+        Assert.Equal("sub-member", linked.OidcSubject);
+    }
+    [Theory]
+    [InlineData("/spaces", true)]
+    [InlineData("/", true)]
+    [InlineData("/spaces/DEMO/pages/1?x=1#top", true)]
+    [InlineData("//evil.example", false)]
+    [InlineData("/\\evil.example", false)]
+    [InlineData("https://evil.example", false)]
+    [InlineData("spaces", false)]
+    [InlineData("/a\nb", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void Sso_return_address_is_a_path_on_this_site(string? url, bool allowed)
+    {
+        Assert.Equal(allowed, Tesria.Api.Features.Auth.AuthEndpoints.IsLocalPath(url));
     }
 }

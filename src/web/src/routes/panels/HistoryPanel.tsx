@@ -3,6 +3,7 @@ import { api, ApiError, type VersionContent, type VersionMeta } from '../../api/
 import { Avatar } from '../../components/Avatar'
 import { useConfirm } from '../../components/ConfirmDialog'
 import { Editor } from '../../editor/Editor'
+import { reconcileDocument } from '../../editor/externalEdits'
 
 export function HistoryPanel({
   pageId,
@@ -18,6 +19,26 @@ export function HistoryPanel({
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const { ask, dialog } = useConfirm()
+  // Two versions picked for comparing (dev-plan 15.3), and what they became.
+  const [picked, setPicked] = useState<number[]>([])
+  const [comparison, setComparison] = useState<{ older: number; newer: number; json: string } | null>(null)
+
+  function togglePick(n: number) {
+    setPicked((list) => list.includes(n) ? list.filter((x) => x !== n) : [...list, n].slice(-2))
+  }
+
+  async function compare() {
+    if (picked.length !== 2) return
+    const [older, newer] = [...picked].sort((a, b) => a - b)
+    const [a, b] = await Promise.all([api.pages.version(pageId, older), api.pages.version(pageId, newer)])
+    const who = versions?.find((v) => v.versionNumber === newer)?.authorName
+    // The same block-level diff that shows outside edits (8.6): what the
+    // newer one added is highlighted, what it removed is struck through.
+    const merged = reconcileDocument(JSON.parse(a.contentJson), JSON.parse(b.contentJson),
+      { source: 'version', actor: `version ${newer}${who ? ` by ${who}` : ''}`, at: b.createdAt })
+    setPreview(null)
+    setComparison({ older, newer, json: JSON.stringify(merged) })
+  }
 
   useEffect(() => {
     setPreview(null)
@@ -54,9 +75,19 @@ export function HistoryPanel({
   return (
     <div className="history">
       {error && <p className="alert alert--error">{error}</p>}
+      <p className="muted small">
+        Tick two versions to compare them.{' '}
+        {picked.length === 2 && (
+          <button type="button" className="btn btn--sm" onClick={() => void compare()}>
+            Compare v{Math.min(...picked)} and v{Math.max(...picked)}
+          </button>
+        )}
+      </p>
       <ul className="version-list">
         {versions?.map((v) => (
           <li key={v.id} className="version">
+            <input type="checkbox" className="version__pick" aria-label={`Compare version ${v.versionNumber}`}
+              checked={picked.includes(v.versionNumber)} onChange={() => togglePick(v.versionNumber)} />
             <span className="version__num">v{v.versionNumber}</span>
             {v.versionNumber === currentVersion && <span className="badge">current</span>}
             <Avatar
@@ -91,6 +122,19 @@ export function HistoryPanel({
           </div>
           <div className="page-body">
             <Editor value={preview.contentJson} editable={false} />
+          </div>
+        </div>
+      )}
+
+      {comparison && (
+        <div className="version-preview paper">
+          <div className="row-between">
+            <h3>Version {comparison.older} compared with version {comparison.newer}</h3>
+            <button type="button" className="link-btn" onClick={() => setComparison(null)}>Close</button>
+          </div>
+          <p className="muted small">Highlighted: added in version {comparison.newer}. Struck through: removed since version {comparison.older}. Paragraphs are compared whole.</p>
+          <div className="page-body">
+            <Editor value={comparison.json} editable={false} />
           </div>
         </div>
       )}

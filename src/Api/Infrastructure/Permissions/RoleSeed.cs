@@ -126,4 +126,29 @@ public static class RoleSeed
             actorId: null, ct);
         return granting ? [.. fresh.Select(p => p.Key)] : [];
     }
+
+    /// <summary>
+    /// Takes administration rights away from user-tier roles (dev-plan 15.1),
+    /// once, for an instance that gave some before the rule. Recorded in the
+    /// audit log, one entry per role, so the owner can see what changed.
+    /// </summary>
+    public static async Task StripAdministrationRightsFromUserTierAsync(
+        AppDbContext db, Audit.IAuditLogger audit, PermissionCache cache, ILogger logger, CancellationToken ct = default)
+    {
+        var roles = await db.Roles.Include(r => r.Permissions).Where(r => r.Tier == UserRole.Member).ToListAsync(ct);
+        var changed = false;
+        foreach (var role in roles)
+        {
+            var removed = role.Permissions.Where(p => !InstancePermissions.AllowedInTier(p.Key, UserRole.Member)).Select(p => p.Key).Order().ToArray();
+            if (removed.Length == 0) continue;
+            role.Permissions.RemoveAll(p => removed.Contains(p.Key));
+            audit.Record("permissions.changed", "role", role.Id,
+                new { role.Name, Added = Array.Empty<string>(), Removed = removed, Reason = "Administration rights belong to administrator roles" });
+            logger.LogWarning("Removed administration rights {Removed} from the user-tier role {Role}.", string.Join(", ", removed), role.Name);
+            changed = true;
+        }
+        if (!changed) return;
+        await db.SaveChangesAsync(ct);
+        cache.Invalidate();
+    }
 }

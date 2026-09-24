@@ -46,16 +46,22 @@ export function SaveAsTemplateButton({ spaceId, contentJson, defaultName }: Prop
       {open && (
         <form className="card principal-picker template-form" onSubmit={submit}>
           {error && <p className="alert alert--error">{error}</p>}
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Template name"
-            required
-          />
-          <select value={scope} onChange={(e) => setScope(e.target.value as 'space' | 'instance')}>
-            <option value="space">This space only</option>
-            <option value="instance">Instance-wide</option>
-          </select>
+          <label>
+            Template name
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Such as Meeting notes"
+              required
+            />
+          </label>
+          <label>
+            Offer it in
+            <select value={scope} onChange={(e) => setScope(e.target.value as 'space' | 'instance')}>
+              <option value="space">This space only</option>
+              <option value="instance">Every space (instance-wide)</option>
+            </select>
+          </label>
           <button type="submit" className="btn btn--primary btn--sm" disabled={busy}>
             {busy ? 'Saving…' : 'Save'}
           </button>

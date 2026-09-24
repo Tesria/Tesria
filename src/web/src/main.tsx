@@ -24,6 +24,7 @@ import { PageEditor } from './routes/PageEditor'
 import { TrashPage } from './routes/TrashPage'
 import { SearchPage } from './routes/SearchPage'
 import { LabelPage } from './routes/LabelPage'
+import { LabelsIndexPage } from './routes/LabelsIndexPage'
 import { AuditPage } from './routes/AuditPage'
 import { GroupsPage } from './routes/GroupsPage'
 import { SpacePermissionsPage } from './routes/SpacePermissionsPage'
@@ -101,6 +102,7 @@ const router = createBrowserRouter(
                 </Route>
               </Route>
               <Route element={<ProtectedRoute />}>
+                <Route path="labels" element={<LabelsIndexPage />} />
                 <Route path="labels/:name" element={<LabelPage />} />
                 {/* Old locations, kept for bookmarks. */}
                 <Route path="audit" element={<Navigate to="/admin/audit" replace />} />

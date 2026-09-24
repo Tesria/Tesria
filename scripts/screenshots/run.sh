@@ -8,6 +8,13 @@
 #
 #   SHOT_EMAIL / SHOT_PASSWORD   an account on this instance to sign in as
 #
+# SHOT_SIGNIN=0 skips signing in, for screens nobody can sign in to yet
+# (the setup wizard on an instance with no owner); the two variables are then
+# not needed. SHOT_NETWORK and SHOT_BASE point it at another instance: the
+# scratch instance (scripts/scratch-instance.sh) is shot from inside its app
+# container, as http://localhost:8080, because localhost is the one plain
+# HTTP address a browser treats as secure.
+#
 # Chromium comes from the PDF sidecar's image, which already carries one
 # matched to its Playwright version -- nothing to install.
 #
@@ -22,16 +29,16 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 SPEC="$1"
 [ -n "$SPEC" ] || { echo "usage: run.sh <spec.json> [shot-name]" >&2; exit 2; }
 SPECDIR="$(cd "$(dirname "$SPEC")" && pwd)"
-[ -n "$SHOT_EMAIL" ] && [ -n "$SHOT_PASSWORD" ] || { echo "set SHOT_EMAIL and SHOT_PASSWORD" >&2; exit 2; }
+[ "$SHOT_SIGNIN" = 0 ] || { [ -n "$SHOT_EMAIL" ] && [ -n "$SHOT_PASSWORD" ]; } || { echo "set SHOT_EMAIL and SHOT_PASSWORD" >&2; exit 2; }
 # Output goes beside the spec unless told otherwise; the onboarding set
 # writes straight into the SPA's public/ directory (dev-plan 10.4).
 OUTDIR="${SHOT_OUT:-$SPECDIR/shots}"
 mkdir -p "$OUTDIR"
 OUTDIR="$(cd "$OUTDIR" && pwd)"
-docker run --rm --network "container:tesria-caddy-1" --shm-size 256mb \
+docker run --rm --network "${SHOT_NETWORK:-container:tesria-caddy-1}" --shm-size 256mb \
   -e SHOT_BROWSER="${SHOT_BROWSER:-chromium}" -e SHOT_MOBILE="${SHOT_MOBILE:-}" -e SHOT_THEME="${SHOT_THEME:-}" -e SHOT_ACCENT="${SHOT_ACCENT:-}" \
   -e BASE="${SHOT_BASE:-https://tesria.localhost}" \
-  -e EMAIL="$SHOT_EMAIL" -e PASSWORD="$SHOT_PASSWORD" \
+  -e SHOT_SIGNIN="${SHOT_SIGNIN:-}" -e EMAIL="$SHOT_EMAIL" -e PASSWORD="$SHOT_PASSWORD" \
   -v "$HERE/shot.mjs":/app/shot.mjs \
   -v "$SPECDIR":/work -v "$OUTDIR":/out -v "$HERE/../..":/repo:ro -w /app \
   --entrypoint node tesria-pdf /app/shot.mjs "/work/$(basename "$SPEC")" "$2"

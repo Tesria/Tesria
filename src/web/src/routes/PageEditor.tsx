@@ -10,8 +10,10 @@ import { CollabStatus, type CollabConnection } from '../editor/CollabStatus'
 import { useSpaceContext } from './SpacePage'
 import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
 import { LeaveEditorDialog } from './LeaveEditorDialog'
+import { useConfirm } from '../components/ConfirmDialog'
 import { clearPasted, noteEditorSession, notePastedFormatting } from '../onboarding/signals'
 import { useTitlePage } from '../components/DocumentTitle'
+import { ResolvedCommentStyles } from '../components/ResolvedCommentStyles'
 
 const EMPTY_DOC = '{"type":"doc","content":[]}'
 
@@ -57,6 +59,7 @@ export function PageEditor() {
   // inside the paper card), same as view mode: the Editor/CollaborativeEditor
   // hand their live TipTap instance up via this callback once created.
   const [editorInstance, setEditorInstance] = useState<TiptapEditor | null>(null)
+  const { ask, dialog: confirmDialog } = useConfirm()
   /** Tracked changes from outside this session, waiting to be decided (dev-plan 8.6). */
   const [pendingExternal, setPendingExternal] = useState(0)
   const collabRef = useRef<CollabHandle | null>(null)
@@ -101,7 +104,17 @@ export function PageEditor() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEdit])
 
-  function onPickTemplate(id: string) {
+  async function onPickTemplate(id: string) {
+    // A template replaces the whole page; what is already written goes with
+    // it, so say so first (it used to go without a word, 2026-09-23).
+    if (editorInstance && editorInstance.getText().trim().length > 0) {
+      const ok = await ask({
+        title: 'Replace what you have written?',
+        confirmLabel: 'Use the template',
+        body: <p>Starting from a template replaces everything on this page so far.</p>,
+      })
+      if (!ok) return
+    }
     setTemplateId(id)
     const template = templates.find((t) => t.id === id)
     setContent(template ? template.contentJson : EMPTY_DOC)
@@ -381,6 +394,7 @@ export function PageEditor() {
           </select>
         </label>
       )}
+      {pageId && <ResolvedCommentStyles pageId={pageId} />}
       <div className="paper">
         <input
           className="title-input"
@@ -450,6 +464,7 @@ export function PageEditor() {
           onPublish={publishAndLeave}
         />
       )}
+      {confirmDialog}
     </>
   )
 }

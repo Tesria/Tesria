@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { NavLink, Outlet, useMatch, useOutletContext, useParams, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { api, type PageTreeNode, type Space } from '../api/client'
@@ -9,6 +9,7 @@ import { SpaceIcon } from '../components/SpaceIcon'
 import { SettingsIcon, SidebarIcon } from '../components/NavIcons'
 import { usePublishSpaceNav } from '../components/spaceNav'
 import { useTitleSpace } from '../components/DocumentTitle'
+import { SidebarResizer, useSidebarWidth } from '../components/SidebarResizer'
 
 /**
  * Whether the space sidebar is hidden (dev-plan 10.5 step 1, the owner's
@@ -49,6 +50,7 @@ export function SpacePage() {
   const [tree, setTree] = useState<PageTreeNode[]>([])
   const [error, setError] = useState<string | null>(null)
   const [collapsed, setCollapsed] = useState(readCollapsed)
+  const { width: sidebarWidth, set: setSidebarWidth } = useSidebarWidth()
   // "+ New" is contextual, matching Confluence: creating from an open page
   // makes a subpage of it, creating from anywhere else (the space landing,
   // Permissions, Trash, ...) makes a top-level page. Same rule for both the
@@ -131,7 +133,10 @@ export function SpacePage() {
   }
 
   return (
-    <div className={collapsed ? 'space-layout space-layout--collapsed' : 'space-layout'}>
+    <div
+      className={collapsed ? 'space-layout space-layout--collapsed' : 'space-layout'}
+      style={{ '--sidebar-width': `${sidebarWidth}px` } as CSSProperties}
+    >
       {/* Mobile only (hidden >640px): the sidebar below is always visible
           on desktop, so this bar only needs to exist as a narrow-viewport
           substitute for it. Back-to-space-home navigation lives in the
@@ -168,6 +173,7 @@ export function SpacePage() {
         </div>
       )}
       <aside className="sidebar" hidden={collapsed}>
+        <SidebarResizer width={sidebarWidth} onResize={setSidebarWidth} />
         <div className="sidebar__top">
           <div className="sidebar__head">
             <SpaceIcon space={space} size={32} />
@@ -195,7 +201,7 @@ export function SpacePage() {
             CSS (.sidebar .tree-section / .sidebar .tree) rather than with
             props, because PageTree renders the same markup here and in the
             mobile inline copy on the space home. */}
-        <PageTree tree={tree} spaceKey={space.key} onMoved={reloadTree} readOnly={!user} />
+        <PageTree tree={tree} spaceKey={space.key} onMoved={reloadTree} readOnly={!user} treeStyle={space.treeStyle} />
         {user && (
           <div className="sidebar__foot">
             <NavLink

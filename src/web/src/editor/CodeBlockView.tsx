@@ -4,7 +4,10 @@ import { codeLanguages, MERMAID_LANGUAGE } from './lowlight'
 import { MermaidDiagram } from './MermaidView'
 
 /** Code-block node view: a language picker + line-number/copy buttons above the code. */
-export function CodeBlockView({ node, updateAttributes }: ReactNodeViewProps) {
+export function CodeBlockView({ node, updateAttributes, editor }: ReactNodeViewProps) {
+  // Readers get the language as a label, not a picker: a change there went
+  // nowhere, since the page is not being edited (found 2026-09-23).
+  const editable = editor.isEditable
   const [copied, setCopied] = useState(false)
   const language = (node.attrs.language as string | null) ?? 'plaintext'
   const lineNumbers = Boolean(node.attrs.lineNumbers)
@@ -25,15 +28,21 @@ export function CodeBlockView({ node, updateAttributes }: ReactNodeViewProps) {
   return (
     <NodeViewWrapper className="code-block">
       <div className="code-block__header" contentEditable={false}>
-        <select
-          className="code-block__lang"
-          value={language}
-          onChange={(e) => updateAttributes({ language: e.target.value })}
-        >
-          {codeLanguages.map((l) => (
-            <option key={l.value} value={l.value}>{l.label}</option>
-          ))}
-        </select>
+        {editable ? (
+          <select
+            className="code-block__lang"
+            value={language}
+            onChange={(e) => updateAttributes({ language: e.target.value })}
+          >
+            {codeLanguages.map((l) => (
+              <option key={l.value} value={l.value}>{l.label}</option>
+            ))}
+          </select>
+        ) : (
+          <span className="code-block__lang code-block__lang--label">
+            {codeLanguages.find((l) => l.value === language)?.label ?? language}
+          </span>
+        )}
         <div className="code-block__header-actions">
           {isMermaid && (
             <button
@@ -46,7 +55,7 @@ export function CodeBlockView({ node, updateAttributes }: ReactNodeViewProps) {
               {showSource ? 'Diagram' : 'Source'}
             </button>
           )}
-          {!isMermaid && (
+          {!isMermaid && editable && (
           <button
             type="button"
             className={lineNumbers ? 'code-block__linenum-toggle is-active' : 'code-block__linenum-toggle'}

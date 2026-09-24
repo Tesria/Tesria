@@ -4,12 +4,13 @@
   "shots": [
     {
       "name": "setup",
+      "abortOnFail": true,
       "url": "/spaces",
       "settle": 1200,
       "skipCapture": true,
       "steps": [
         {
-          "eval": "(async () => { const H = { 'Content-Type': 'application/json', 'X-Requested-With': 'Tesria' }; const call = async (m, u, b) => { const r = await fetch(u, { method: m, credentials: 'include', headers: H, body: b ? JSON.stringify(b) : undefined }); return r.status === 204 ? null : r.json().catch(() => null) }; const doc = (t) => JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: t }] }] }); const sp = await call('POST', '/api/spaces', { Key: 'DEMO', Name: 'Getting started', Description: 'Everything a new arrival needs.' }); if (!sp || !sp.id) throw new Error('DEMO already exists, or could not be created'); const w = await call('POST', '/api/pages', { SpaceId: sp.id, ParentPageId: null, Title: 'Welcome', ContentJson: doc('A space holds pages, and a page holds everything else: text, tables, images and comments.') }); await call('POST', '/api/pages', { SpaceId: sp.id, ParentPageId: w.id, Title: 'Writing here', ContentJson: doc('Select any text to format it, or press slash on a blank line to insert something.') }); await call('POST', '/api/pages', { SpaceId: sp.id, ParentPageId: null, Title: 'House rules', ContentJson: doc('Write plainly. Link generously. Leave the page better than you found it.') }); const eng = await call('POST', '/api/spaces', { Key: 'DEMOENG', Name: 'Engineering', Description: 'How the thing is built.' }); if (eng && eng.id) await call('POST', '/api/pages', { SpaceId: eng.id, ParentPageId: null, Title: 'Architecture', ContentJson: doc('One service, one database, one editor.') }); const hb = await call('POST', '/api/spaces', { Key: 'DEMOHB', Name: 'Handbook', Description: 'How we work.' }); if (hb && hb.id) await call('POST', '/api/pages', { SpaceId: hb.id, ParentPageId: null, Title: 'Time off', ContentJson: doc('Take it. Tell someone first.') }); })()"
+          "eval": "(async () => { const H = { 'Content-Type': 'application/json', 'X-Requested-With': 'Tesria' }; const call = async (m, u, b) => { const r = await fetch(u, { method: m, credentials: 'include', headers: H, body: b ? JSON.stringify(b) : undefined }); return r.status === 204 ? null : r.json().catch(() => null) }; const doc = (t) => JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: t }] }] }); await call('POST', '/api/notifications/read-all'); const sp = await call('POST', '/api/spaces', { Key: 'TOUR', Name: 'Getting started', Description: 'Everything a new arrival needs.' }); if (!sp || !sp.id) throw new Error('TOUR already exists, or could not be created'); const w = await call('POST', '/api/pages', { SpaceId: sp.id, ParentPageId: null, Title: 'Welcome', ContentJson: doc('A space holds pages, and a page holds everything else: text, tables, images and comments.') }); await call('POST', '/api/pages', { SpaceId: sp.id, ParentPageId: w.id, Title: 'Writing here', ContentJson: doc('Select any text to format it, or press slash on a blank line to insert something.') }); await call('POST', '/api/pages', { SpaceId: sp.id, ParentPageId: null, Title: 'House rules', ContentJson: doc('Write plainly. Link generously. Leave the page better than you found it.') }); const eng = await call('POST', '/api/spaces', { Key: 'TOURENG', Name: 'Engineering', Description: 'How the thing is built.' }); if (eng && eng.id) await call('POST', '/api/pages', { SpaceId: eng.id, ParentPageId: null, Title: 'Architecture', ContentJson: doc('One service, one database, one editor.') }); const hb = await call('POST', '/api/spaces', { Key: 'TOURHB', Name: 'Handbook', Description: 'How we work.' }); if (hb && hb.id) await call('POST', '/api/pages', { SpaceId: hb.id, ParentPageId: null, Title: 'Time off', ContentJson: doc('Take it. Tell someone first.') }); })()"
         },
         {
           "wait": 1000
@@ -29,13 +30,13 @@
           "label": "spaces visible in frame (must be demo only)"
         },
         {
-          "moveTo": ".space-card a[href='/spaces/DEMO']"
+          "moveTo": ".space-card a[href='/spaces/TOUR']"
         },
         {
           "wait": 800
         },
         {
-          "click": ".space-card a[href='/spaces/DEMO']"
+          "click": ".space-card a[href='/spaces/TOUR']"
         },
         {
           "waitFor": ".sidebar .tree-section"
@@ -59,24 +60,24 @@
           "wait": 1600
         }
       ],
-      "css": ".space-grid .space-card { display: none }\n.space-grid .space-card:has(a[href='/spaces/DEMO']),\n.space-grid .space-card:has(a[href='/spaces/DEMOENG']),\n.space-grid .space-card:has(a[href='/spaces/DEMOHB']) { display: list-item }"
+      "css": ".space-grid .space-card { display: none }\n.space-grid .space-card:has(a[href='/spaces/TOUR']),\n.space-grid .space-card:has(a[href='/spaces/TOURENG']),\n.space-grid .space-card:has(a[href='/spaces/TOURHB']) { display: list-item }"
     },
     {
       "name": "new-page",
-      "url": "/spaces/DEMO",
+      "url": "/spaces/TOUR",
       "record": {
         "seconds": 10
       },
       "waitFor": ".sidebar .tree-section",
       "steps": [
         {
-          "moveTo": ".sidebar a[href='/spaces/DEMO/new']"
+          "moveTo": ".sidebar a[href='/spaces/TOUR/new']"
         },
         {
           "wait": 600
         },
         {
-          "click": ".sidebar a[href='/spaces/DEMO/new']"
+          "click": ".sidebar a[href='/spaces/TOUR/new']"
         },
         {
           "waitFor": ".title-input"
@@ -120,7 +121,7 @@
     },
     {
       "name": "editor-slash",
-      "url": "/spaces/DEMO",
+      "url": "/spaces/TOUR",
       "record": {
         "seconds": 9
       },
@@ -183,7 +184,7 @@
     },
     {
       "name": "editor-toolbar",
-      "url": "/spaces/DEMO",
+      "url": "/spaces/TOUR",
       "record": {
         "seconds": 10
       },
@@ -259,7 +260,7 @@
     },
     {
       "name": "mention",
-      "url": "/spaces/DEMO",
+      "url": "/spaces/TOUR",
       "record": {
         "seconds": 8
       },
@@ -319,7 +320,7 @@
     },
     {
       "name": "inline-comment",
-      "url": "/spaces/DEMO",
+      "url": "/spaces/TOUR",
       "record": {
         "seconds": 10
       },
@@ -376,7 +377,7 @@
     },
     {
       "name": "page-tree-drag",
-      "url": "/spaces/DEMO",
+      "url": "/spaces/TOUR",
       "record": {
         "seconds": 9
       },
@@ -425,7 +426,8 @@
     },
     {
       "name": "search",
-      "url": "/spaces/DEMO",
+      "url": "/spaces/TOUR",
+      "css": ".search-results .search-result:not(:has(a[href^='/spaces/TOUR/'])) { display: none !important }",
       "record": {
         "seconds": 9
       },
@@ -455,7 +457,7 @@
           "selector": "input[aria-label='Search pages']"
         },
         {
-          "waitFor": ".search-result__snippet"
+          "waitFor": ".search-result:has(a[href^='/spaces/TOUR/']) .search-result__snippet"
         },
         {
           "wait": 2000
@@ -464,7 +466,7 @@
     },
     {
       "name": "templates",
-      "url": "/spaces/DEMO",
+      "url": "/spaces/TOUR",
       "record": {
         "seconds": 10
       },
@@ -521,7 +523,7 @@
     },
     {
       "name": "link-shortcut",
-      "url": "/spaces/DEMO",
+      "url": "/spaces/TOUR",
       "record": {
         "seconds": 8
       },
@@ -566,7 +568,7 @@
     },
     {
       "name": "watch",
-      "url": "/spaces/DEMO",
+      "url": "/spaces/TOUR",
       "record": {
         "seconds": 8
       },
@@ -675,9 +677,9 @@
       "steps": [
         {
           "deleteSpace": [
-            "DEMO",
-            "DEMOENG",
-            "DEMOHB"
+            "TOUR",
+            "TOURENG",
+            "TOURHB"
           ]
         },
         {

@@ -126,6 +126,11 @@ public sealed class PermissionService(AppDbContext db, CurrentUser current, ISit
             .Where(ug => ug.UserId == userId)
             .Select(ug => ug.GroupId)
             .ToListAsync();
+        // The built-in groups follow the account's tier (dev-plan 15.1); an
+        // account that is not active is in none of them.
+        var account = await db.Users.AsNoTracking()
+            .Where(u => u.Id == userId).Select(u => new { u.Role, u.Status }).FirstOrDefaultAsync();
+        if (account is { Status: UserStatus.Active }) groupIds.AddRange(BuiltInGroups.For(account.Role));
 
         _principals = [userId.Value, .. groupIds];
         return _principals;

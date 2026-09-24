@@ -23,10 +23,12 @@ export function InsertMenu({ editor }: { editor: TiptapEditor }) {
 
   // Slash items delete the "/query" range before inserting; here the range
   // is the current selection, so an empty selection deletes nothing and a
-  // real one is replaced: the same thing typing would do.
+  // real one is replaced: the same thing typing would do. An item that wraps
+  // (a panel, a quote) gets an empty range instead, so it wraps the
+  // selection rather than deleting it first.
   function insert(item: SlashItem) {
     const { from, to } = editor.state.selection
-    item.command(editor, { from, to })
+    item.command(editor, item.wraps ? { from, to: from } : { from, to })
     setOpen(false)
   }
 

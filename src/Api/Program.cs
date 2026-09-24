@@ -485,6 +485,15 @@ using (var scope = app.Services.CreateScope())
         scope.ServiceProvider.GetRequiredService<ISiteSettingsService>(),
         startupLog);
 
+    // Administration rights leave user-tier roles (dev-plan 15.1).
+    await Tesria.Api.Infrastructure.Permissions.RoleSeed.StripAdministrationRightsFromUserTierAsync(
+        db, scope.ServiceProvider.GetRequiredService<IAuditLogger>(),
+        scope.ServiceProvider.GetRequiredService<Tesria.Api.Infrastructure.Permissions.PermissionCache>(), startupLog);
+
+    // The built-in groups, Owner, Admins and Users (dev-plan 15.1).
+    await Tesria.Api.Infrastructure.Permissions.BuiltInGroups.EnsureAsync(
+        db, scope.ServiceProvider.GetRequiredService<IAuditLogger>(), startupLog);
+
     // The first start after dev-plan 10.1 gives an existing instance its owner.
     await Tesria.Api.Infrastructure.Auth.OwnerSeed.EnsureAsync(
         db,
@@ -612,6 +621,8 @@ app.MapMcp("/mcp").RequireAuthorization(new Microsoft.AspNetCore.Authorization.A
 
 // Not under /api: robots.txt and sitemap.xml live at the root (dev-plan 5.2).
 app.MapPublicEndpoints();
+// /trust: trusting this server's own certificate, over plain HTTP too (15.5).
+Tesria.Api.Features.Trust.TrustEndpoints.MapTrustEndpoints(app);
 app.MapInstanceEndpoints();
 // The logo and favicon files, anonymous because the sign-in page needs them.
 Tesria.Api.Features.Admin.BrandingEndpoints.MapBrandingAssetEndpoints(app);

@@ -143,6 +143,10 @@ public interface ISecurityDetector
     Task PagesRemovedAsync(Guid actorId, int count, string action, Guid pageId);
     Task TokenMintedAsync(Guid actorId);
     Task AdminPromotedAsync(Guid actorId, User promoted);
+    /// <summary>An administrator turned off someone else's two-factor (dev-plan 15.1).</summary>
+    Task TwoFactorRemovedAsync(Guid actorId, User target);
+    /// <summary>A private space was made open to everyone signed in (dev-plan 15.3).</summary>
+    Task SpaceOpenedAsync(Guid actorId, Guid spaceId, string spaceKey);
     Task PublicSpacesToggledAsync(Guid? actorId, bool enabled);
     /// <summary>A space was published to, or withdrawn from, the world (dev-plan 5.1). Always an alert.</summary>
     Task SpaceVisibilityChangedAsync(Guid actorId, Space space, bool isPublic);
@@ -270,6 +274,18 @@ public sealed class SecurityDetector(AppDbContext db, SecurityCounters counters,
         RaiseAsync("admin.promoted", SecuritySeverity.Warning, key: promoted.Id.ToString(),
             actorId: actorId, targetType: "user", targetId: promoted.Id, alert: true, cooldown: false,
             metadata: new { promoted.Email });
+
+    // No cooldown: turning off someone's two-factor is exactly what an
+    // attacker holding an administrator's session would do next.
+    public Task TwoFactorRemovedAsync(Guid actorId, User target) =>
+        RaiseAsync("user.totp_disabled", SecuritySeverity.Warning, key: target.Id.ToString(),
+            actorId: actorId, targetType: "user", targetId: target.Id, alert: true, cooldown: false,
+            metadata: new { target.Email });
+
+    public Task SpaceOpenedAsync(Guid actorId, Guid spaceId, string spaceKey) =>
+        RaiseAsync("space.opened", SecuritySeverity.Warning, key: spaceId.ToString(),
+            actorId: actorId, targetType: "space", targetId: spaceId, alert: true, cooldown: false,
+            metadata: new { Key = spaceKey });
 
     public Task PublicSpacesToggledAsync(Guid? actorId, bool enabled) =>
         RaiseAsync("settings.public_spaces_toggled", SecuritySeverity.Critical, key: "instance",

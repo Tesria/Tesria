@@ -24,6 +24,7 @@ public static class PermissionEndpoints
         space.MapGet("/", ListSpacePermissions);
         space.MapPost("/", GrantSpacePermission);
         space.MapDelete("/{id:guid}", RevokeSpacePermission);
+        space.MapDelete("/", MakeSpaceOpen);
 
         var page = routes.MapGroup("/pages/{pageId:guid}/restrictions")
             .WithTags("Permissions").RequireAuthorization();
@@ -89,6 +90,31 @@ public static class PermissionEndpoints
             }
         }
 
+        await db.SaveChangesAsync();
+        return Results.NoContent();
+    }
+
+    /// <summary>
+    /// Makes a private space open again (dev-plan 15.3): every grant goes, so
+    /// every signed-in user can view, edit and administer it. The last-admin
+    /// rule made this unreachable one grant at a time. A space administrator,
+    /// with the password again, audited and alerted, because it widens access
+    /// to everything in the space at once.
+    /// </summary>
+    private static async Task<IResult> MakeSpaceOpen(
+        string key, AppDbContext db, IPermissionService perms, IAuditLogger audit, CurrentUser current,
+        Infrastructure.Security.ISecurityDetector detector, HttpContext http, IConfiguration config)
+    {
+        var space = await FindSpaceAsync(db, key);
+        if (space is null) return Results.NotFound();
+        if (!await perms.CanAdminSpaceAsync(space.Id)) return Results.Forbid();
+        if (Features.Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
+
+        var rows = await db.SpacePermissions.Where(p => p.SpaceId == space.Id).ToListAsync();
+        if (rows.Count == 0) return Results.NoContent();
+        db.SpacePermissions.RemoveRange(rows);
+        audit.Record("space.opened", "space", space.Id, new { space.Key, space.Name, Grants = rows.Count });
+        await detector.SpaceOpenedAsync(current.RequireId(), space.Id, space.Key);
         await db.SaveChangesAsync();
         return Results.NoContent();
     }

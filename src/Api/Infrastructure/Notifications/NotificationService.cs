@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Tesria.Api.Domain;
 using Microsoft.EntityFrameworkCore;
+using Tesria.Api.Infrastructure.Permissions;
 
 namespace Tesria.Api.Infrastructure.Notifications;
 
@@ -44,8 +45,29 @@ public interface INotificationService
     Task NotifyAdminsAsync(string action, Guid targetId, object? metadata = null);
 }
 
-public sealed class NotificationService(AppDbContext db) : INotificationService
+public sealed class NotificationService(AppDbContext db, IPermissionService perms) : INotificationService
 {
+    // A watch is not access. Someone who watched a space before a page in it
+    // was restricted, or before the space was, still has the watch; the bell
+    // hid what they could not open, but the notification email carried the
+    // page's title and a comment's first 140 characters regardless (found
+    // 2026-09-23). So every watcher is checked against the target itself.
+    private async Task<List<Guid>> WhoCanViewPageAsync(IEnumerable<Guid> userIds, Guid pageId)
+    {
+        var allowed = new List<Guid>();
+        foreach (var userId in userIds)
+            if (await perms.AsUser(userId).CanViewPageAsync(pageId)) allowed.Add(userId);
+        return allowed;
+    }
+
+    private async Task<List<Guid>> WhoCanViewSpaceAsync(IEnumerable<Guid> userIds, Guid spaceId)
+    {
+        var allowed = new List<Guid>();
+        foreach (var userId in userIds)
+            if (await perms.AsUser(userId).CanViewSpaceAsync(spaceId)) allowed.Add(userId);
+        return allowed;
+    }
+
     public async Task NotifyPageWatchersAsync(
         Guid pageId, Guid spaceId, string action, Guid actorId, object? metadata = null)
     {
@@ -57,21 +79,21 @@ public sealed class NotificationService(AppDbContext db) : INotificationService
             .Distinct()
             .ToListAsync();
 
-        Enqueue(recipients, "page", pageId, action, actorId, metadata);
+        Enqueue(await WhoCanViewPageAsync(recipients, pageId), "page", pageId, action, actorId, metadata);
     }
 
     public async Task NotifySpaceWatchersAsync(
         Guid spaceId, string action, Guid actorId, object? metadata = null)
     {
         var recipients = await SpaceWatcherIdsAsync(spaceId);
-        Enqueue(recipients, "space", spaceId, action, actorId, metadata);
+        Enqueue(await WhoCanViewSpaceAsync(recipients, spaceId), "space", spaceId, action, actorId, metadata);
     }
 
     public async Task NotifyOfNewPageAsync(
         Guid pageId, Guid spaceId, Guid actorId, object? metadata = null)
     {
         var recipients = await SpaceWatcherIdsAsync(spaceId);
-        Enqueue(recipients, "page", pageId, "page.created", actorId, metadata);
+        Enqueue(await WhoCanViewPageAsync(recipients, pageId), "page", pageId, "page.created", actorId, metadata);
     }
 
     public Task NotifyUserAsync(

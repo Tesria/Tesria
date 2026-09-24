@@ -182,7 +182,7 @@ public static class SiteExportEndpoints
         var rows = await db.Pages.AsNoTracking()
             .Where(p => p.SpaceId == spaceId)
             .OrderBy(p => p.Position).ThenBy(p => p.Title)
-            .Select(p => new { p.Id, p.Title, p.ParentPageId })
+            .Select(p => new { p.Id, p.Title, p.ParentPageId, p.Emoji })
             .ToListAsync(ct);
 
         var allowed = new HashSet<Guid>();
@@ -193,7 +193,7 @@ public static class SiteExportEndpoints
         [
             .. rows
                 .Where(r => r.ParentPageId == parent && allowed.Contains(r.Id))
-                .Select(r => new SiteExport.PageNode(r.Id, r.Title, Build(r.Id))),
+                .Select(r => new SiteExport.PageNode(r.Id, r.Title, Build(r.Id), r.Emoji)),
         ];
 
         // A page whose parent is hidden would otherwise vanish with it; it is
@@ -207,7 +207,7 @@ public static class SiteExportEndpoints
         Collect(tree);
         var orphans = rows
             .Where(r => allowed.Contains(r.Id) && !placedIds.Contains(r.Id))
-            .Select(r => new SiteExport.PageNode(r.Id, r.Title, Build(r.Id)))
+            .Select(r => new SiteExport.PageNode(r.Id, r.Title, Build(r.Id), r.Emoji))
             .ToList();
         return [.. tree, .. orphans];
     }
@@ -242,7 +242,7 @@ public static class SiteExportEndpoints
     /// app, and the way to guarantee that is to ship the app's own CSS rather
     /// than a version of it maintained separately.
     /// </summary>
-    private static async Task<string> StylesheetAsync(IWebHostEnvironment env, CancellationToken ct)
+    internal static async Task<string> StylesheetAsync(IWebHostEnvironment env, CancellationToken ct)
     {
         var assets = Path.Combine(env.WebRootPath ?? "", "assets");
         if (!Directory.Exists(assets)) return "";

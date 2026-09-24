@@ -13,6 +13,7 @@ import {
   UserStatus,
 } from '../../api/client'
 import { ALERT_KIND_LABEL } from './alertKinds'
+import { useConfirm } from '../../components/ConfirmDialog'
 
 const SEVERITY_LABEL: Record<SecuritySeverity, string> = { 0: 'info', 1: 'warning', 2: 'critical' }
 
@@ -43,6 +44,7 @@ const LIMIT_FIELDS: Array<{ key: keyof Omit<SecurityLimits, 'activeLockouts'>; l
 
 /** Admin → Security (dev-plan 3.2; 3.3 adds events, alerts and mitigations). */
 export function AdminSecurityPage() {
+  const { ask, dialog } = useConfirm()
   const [limits, setLimits] = useState<SecurityLimits | null>(null)
   const [overview, setOverview] = useState<SecurityOverview | null>(null)
   const [alerts, setAlerts] = useState<SecurityAlert[]>([])
@@ -140,14 +142,15 @@ export function AdminSecurityPage() {
     form.reset()
   }
 
-  /** The one-click mitigations relevant to an alert's key. */
+  /** The mitigations relevant to an alert's key, each asked first (dev-plan 15.4). */
   function mitigations(a: SecurityAlert) {
-    const actions: Array<{ label: string; run: () => Promise<unknown>; done: string }> = []
+    const actions: Array<{ label: string; run: () => Promise<unknown>; done: string; ask: string }> = []
     if (a.ip) {
       actions.push({
         label: `Block ${a.ip}`,
         run: () => api.admin.security.blocks.add({ cidr: a.ip!, reason: `alert: ${a.kind}`, expiresInHours: 24 }),
         done: `${a.ip} blocked for 24 hours.`,
+        ask: `Every request from ${a.ip} is refused for 24 hours, whoever it is.`,
       })
     }
     // For account-keyed alerts the key is the user id; the actor may be the
@@ -157,9 +160,12 @@ export function AdminSecurityPage() {
       : a.kind === 'admin.promoted' ? a.key : null
     if (userId) {
       actions.push(
-        { label: 'Sign out everywhere', run: () => api.admin.users.revokeSessions(userId), done: 'Sessions revoked.' },
-        { label: 'Revoke tokens', run: () => api.admin.users.revokeTokens(userId), done: 'Tokens revoked.' },
-        { label: 'Suspend', run: () => api.admin.users.setStatus(userId, UserStatus.Suspended), done: 'Account suspended.' },
+        { label: 'Sign out everywhere', run: () => api.admin.users.revokeSessions(userId), done: 'Sessions revoked.',
+          ask: 'Every browser signed in to this account is signed out. They can sign in again.' },
+        { label: 'Revoke tokens', run: () => api.admin.users.revokeTokens(userId), done: 'Tokens revoked.',
+          ask: 'Every API token of this account is deleted; scripts and assistants using them stop working.' },
+        { label: 'Suspend', run: () => api.admin.users.setStatus(userId, UserStatus.Suspended), done: 'Account suspended.',
+          ask: 'The account is signed out and cannot sign in or use its tokens until someone reactivates it.' },
       )
     }
     return actions
@@ -257,7 +263,10 @@ export function AdminSecurityPage() {
                     )}
                     {mitigations(a).map((m) => (
                       <button key={m.label} type="button" className="btn btn--ghost btn--sm" disabled={busy}
-                        onClick={() => act(m.run, m.done, 'The action failed.')}>
+                        onClick={async () => {
+                          if (await ask({ title: `${m.label}?`, confirmLabel: m.label, danger: true, body: <p>{m.ask}</p> }))
+                            await act(m.run, m.done, 'The action failed.')
+                        }}>
                         {m.label}
                       </button>
                     ))}
@@ -318,7 +327,11 @@ export function AdminSecurityPage() {
                   <td>
                     <div className="admin-table__actions">
                       <button type="button" className="link-btn" disabled={busy}
-                        onClick={() => act(() => api.admin.security.blocks.remove(b.id), 'Unblocked.', 'Could not unblock.')}>
+                        onClick={async () => {
+                          if (await ask({ title: `Unblock ${b.cidr}?`, confirmLabel: 'Unblock',
+                            body: <p>Requests from {b.cidr} are accepted again straight away.</p> }))
+                            await act(() => api.admin.security.blocks.remove(b.id), 'Unblocked.', 'Could not unblock.')
+                        }}>
                         Remove
                       </button>
                     </div>
@@ -414,6 +427,7 @@ export function AdminSecurityPage() {
           </p>
         )}
       </section>
+      {dialog}
     </>
   )
 }

@@ -74,7 +74,8 @@ export function LoginPage() {
   function ssoLogin() {
     // A full-page navigation, not a fetch: the identity provider needs to
     // take over the browser's own address bar for its login page.
-    window.location.href = `/api/auth/oidc/login?returnUrl=${encodeURIComponent('/spaces')}`
+    // The server accepts only same-origin paths here (dev-plan 3.7).
+    window.location.href = `/api/auth/oidc/login?returnUrl=${encodeURIComponent(destination)}`
   }
 
   if (challenge) {
@@ -135,7 +136,10 @@ export function LoginPage() {
         )}
         {mayRegister && (
           <p className="muted small">
-            No account? <Link to="/register">Create one</Link>
+            No account?{' '}
+            <Link to={invited ? `/register?invite=${encodeURIComponent(searchParams.get('invite') ?? '')}` : '/register'}>
+              Create one
+            </Link>
           </p>
         )}
         {/* Somebody who reached sign-in out of habit on an instance that does
@@ -143,6 +147,16 @@ export function LoginPage() {
         {instance?.publicReading && (
           <p className="muted small">
             <Link to="/spaces">Browse what is public</Link>
+          </p>
+        )}
+        {/* The browser's certificate warning is the first thing anyone on a
+            server with its own certificate meets (dev-plan 15.5). Whoever
+            sees this link got past it, so the link stays on this connection
+            rather than switching to plain HTTP, which some networks block. */}
+        {instance?.ownCertificate && (
+          <p className="muted small">
+            Did your browser warn that this site is not secure?{' '}
+            <a href="/trust">Trust this device</a>
           </p>
         )}
       </form>

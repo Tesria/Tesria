@@ -86,10 +86,11 @@ public static partial class SiteChrome
     /// </summary>
     public record SpaceHead(
         string Key, string Name, bool IsPublic,
-        SpaceIconKind IconKind, string? IconValue, string? IconPath);
+        SpaceIconKind IconKind, string? IconValue, string? IconPath,
+        SpaceTreeStyle TreeStyle = SpaceTreeStyle.Plain);
 
     public static SpaceHead HeadOf(Space space, string? iconPath) =>
-        new(space.Key, space.Name, space.IsPublic, space.IconKind, space.IconValue, iconPath);
+        new(space.Key, space.Name, space.IsPublic, space.IconKind, space.IconValue, iconPath, space.TreeStyle);
 
     /* ---- the pieces ------------------------------------------------------ */
 
@@ -222,6 +223,36 @@ public static partial class SiteChrome
         """;
 
     /// <summary>
+    /// What goes before each page in a numbered or bulleted tree (dev-plan
+    /// 15.8), from the pages' depths in tree order: outline numbers (1, 1.1,
+    /// 1.2, 2) like a numbered table of contents, or a bullet that changes
+    /// with the level. The same rule as treeMarkers.ts in the app, so an
+    /// exported site numbers its pages as the wiki does.
+    /// </summary>
+    public static IReadOnlyList<string?> TreeMarkers(IReadOnlyList<int> depths, SpaceTreeStyle style)
+    {
+        var result = new string?[depths.Count];
+        if (style == SpaceTreeStyle.Plain) return result;
+        var counters = new List<int>();
+        for (var i = 0; i < depths.Count; i++)
+        {
+            var depth = depths[i];
+            while (counters.Count <= depth) counters.Add(0);
+            counters[depth]++;
+            counters.RemoveRange(depth + 1, counters.Count - depth - 1);
+            result[i] = style == SpaceTreeStyle.Numbered
+                ? string.Join('.', counters.Take(depth + 1))
+                : Bullets[depth % Bullets.Length];
+        }
+        return result;
+    }
+
+    private static readonly string[] Bullets = ["•", "◦", "▪"];
+
+    /// <summary>The filter's "and the pages under it" toggle; the same drawing as ChildrenIcon in PageTree.tsx.</summary>
+    private const string ChildrenIcon = """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h9" /><path d="M8 4v12a2 2 0 0 0 2 2h1" /><path d="M8 10h3" /><path d="M14 10h5" /><path d="M14 18h5" /></svg>""";
+
+    /// <summary>
     /// The space sidebar: the icon, key and name, then the page tree under a
     /// "Pages" heading. The same three bands the application shows, minus the
     /// parts that only mean something signed in (+ New page, Space settings),
@@ -240,7 +271,9 @@ public static partial class SiteChrome
         </div></div></div>
         <div class="tree-section">
         <div class="tree-section__heading"><span>{PagesIcon} Pages</span></div>
-        {Tree(pages, currentPath)}
+        <div class="tree-filter"><input type="search" class="tree-filter__input" placeholder="Filter pages" aria-label="Filter pages" /><button type="button" class="tree-filter__children is-on" aria-pressed="true" aria-label="Show the pages under each match" title="Show the pages under each match">{ChildrenIcon}</button></div>
+        {Tree(pages, currentPath, space.TreeStyle)}
+        <p class="muted small tree-filter__none" style="display:none">No pages match.</p>
         </div>
         </aside>
         """;
@@ -250,17 +283,23 @@ public static partial class SiteChrome
     /// The page tree, flattened with the same indentation the application
     /// uses (8px plus 14px a level, set inline there and so inline here).
     /// </summary>
-    public static string Tree(IReadOnlyList<SiteExport.Placed> pages, string currentPath)
+    public static string Tree(IReadOnlyList<SiteExport.Placed> pages, string currentPath, SpaceTreeStyle style = SpaceTreeStyle.Plain)
     {
         if (pages.Count == 0) return """<p class="muted small">No pages yet.</p>""";
+        var markers = TreeMarkers(pages.Select(p => p.Depth).ToList(), style);
         var sb = new StringBuilder("""<nav class="tree">""");
-        foreach (var page in pages)
+        for (var i = 0; i < pages.Count; i++)
         {
+            var page = pages[i];
             var current = page.Path == currentPath;
             var cls = current ? "tree__link is-active" : "tree__link";
             var aria = current ? " aria-current=\"page\"" : "";
-            sb.Append($"<a class=\"{cls}\"{aria} style=\"padding-left: {8 + page.Depth * 14}px\" ")
-              .Append($"href=\"{SiteExport.Relative(currentPath, page.Path)}\">{SiteExport.Escape(page.Title)}</a>");
+            sb.Append($"<a class=\"{cls}\"{aria} data-depth=\"{page.Depth}\" style=\"padding-left: {8 + page.Depth * 14}px\" ")
+              .Append($"href=\"{SiteExport.Relative(currentPath, page.Path)}\">")
+              // The same markup as the app's tree (dev-plan 15.7, 15.8).
+              .Append(markers[i] is { } marker ? $"<span class=\"tree__marker\" aria-hidden=\"true\">{marker}</span>" : "")
+              .Append(page.Emoji is null ? "" : $"<span class=\"tree__emoji\" aria-hidden=\"true\">{SiteExport.Escape(page.Emoji)}</span>")
+              .Append($"<span class=\"tree__title\">{SiteExport.Escape(page.Title)}</span></a>");
         }
         return sb.Append("</nav>").ToString();
     }
@@ -405,8 +444,9 @@ public static partial class SiteChrome
     /// <summary>
     /// The one script an export carries. It applies the stored theme and
     /// accent before first paint (without it the file renders light for a
-    /// frame and then flips), then drives the appearance menu and the
-    /// full-width toggle.
+    /// frame and then flips), then drives the appearance menu, the
+    /// full-width toggle, animations, Expand blocks, code blocks' Copy and
+    /// the sidebar's page filter.
     /// Marked <c>data-export-keep</c>, which is how the capture knows to keep
     /// it when it strips the application's own scripts.
     ///
@@ -565,6 +605,126 @@ public static partial class SiteChrome
             sync();
             syncWidth();
             wireAnimations();
+            wireExpands();
+            wireCopy();
+            wireTreeFilter();
+          }
+
+          // Filtering the sidebar's pages as you type (dev-plan 15.9): the
+          // same rule as treeFilter.ts in the app. A page shows when its
+          // title or number contains what was typed, with its parents,
+          // dimmed, for context; case and accents are ignored. The filter
+          // is kept for this browser tab, so it is still there when the
+          // page you chose has loaded.
+          function wireTreeFilter() {
+            var input = d.querySelector('.tree-filter__input');
+            if (!input) return;
+            var none = d.querySelector('.tree-filter__none');
+            var norm = function (s) { return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); };
+            var rows = [].slice.call(d.querySelectorAll('.tree .tree__link')).map(function (a) {
+              var marker = a.querySelector('.tree__marker'), title = a.querySelector('.tree__title');
+              var text = title ? title.textContent : a.textContent;
+              return { a: a, title: title, text: text, depth: Number(a.getAttribute('data-depth')) || 0,
+                hay: norm((marker ? marker.textContent + ' ' : '') + text) };
+            });
+            function mark(row, q) {
+              if (!row.title) return;
+              var at = q ? row.text.toLowerCase().indexOf(q) : -1;
+              row.title.textContent = '';
+              if (at < 0) { row.title.textContent = row.text; return; }
+              var m = d.createElement('mark');
+              m.className = 'tree__match';
+              m.textContent = row.text.slice(at, at + q.length);
+              row.title.appendChild(d.createTextNode(row.text.slice(0, at)));
+              row.title.appendChild(m);
+              row.title.appendChild(d.createTextNode(row.text.slice(at + q.length)));
+            }
+            // Whether the pages under each match show too, remembered in
+            // this browser like the app's own toggle.
+            var toggle = d.querySelector('.tree-filter__children');
+            var KEY = 'tesria-tree-filter-children', withChildren = true;
+            try { withChildren = localStorage.getItem(KEY) !== '0'; } catch (e) { /* on */ }
+            function showToggle() {
+              if (!toggle) return;
+              toggle.setAttribute('aria-pressed', withChildren ? 'true' : 'false');
+              toggle.classList.toggle('is-on', withChildren);
+            }
+            showToggle();
+            if (toggle) toggle.addEventListener('click', function () {
+              withChildren = !withChildren;
+              try { if (withChildren) localStorage.removeItem(KEY); else localStorage.setItem(KEY, '0'); } catch (e) { /* this page only */ }
+              showToggle();
+              apply();
+            });
+            var first = null;
+            function apply() {
+              var raw = input.value.trim(), q = norm(raw), shown = {}, match = {}, any = false;
+              first = null;
+              var parent = {};
+              rows.forEach(function (r, i) {
+                if (!q || r.hay.indexOf(q) < 0) return;
+                match[i] = shown[i] = true;
+                if (!first) first = r;
+                for (var j = i - 1, depth = r.depth; j >= 0 && depth > 0; j--) {
+                  if (rows[j].depth < depth) { shown[j] = parent[j] = true; depth = rows[j].depth; }
+                }
+                if (withChildren) {
+                  for (var k = i + 1; k < rows.length && rows[k].depth > r.depth; k++) shown[k] = true;
+                }
+              });
+              rows.forEach(function (r, i) {
+                var show = !q || shown[i];
+                r.a.style.display = show ? '' : 'none';
+                r.a.classList.toggle('tree__link--context', !!q && !!parent[i] && !match[i]);
+                mark(r, q ? raw.toLowerCase() : '');
+                if (show) any = true;
+              });
+              if (none) none.style.display = q && !any ? '' : 'none';
+            }
+            var FILTER = 'tesria-tree-filter';
+            function remember() {
+              try { if (input.value) sessionStorage.setItem(FILTER, input.value); else sessionStorage.removeItem(FILTER); } catch (e) { /* this page only */ }
+            }
+            try { input.value = sessionStorage.getItem(FILTER) || ''; } catch (e) { /* empty */ }
+            if (input.value) apply();
+            input.addEventListener('input', function () { remember(); apply(); });
+            input.addEventListener('keydown', function (e) {
+              if (e.key === 'Escape') { input.value = ''; remember(); apply(); }
+              if (e.key === 'Enter' && first) { e.preventDefault(); location.href = first.a.href; }
+            });
+          }
+
+          // Expand blocks are captured closed, with their body hidden, and
+          // their toggle was the application's. Without this every answer on
+          // an exported FAQ stayed shut (found 2026-09-23).
+          function wireExpands() {
+            d.querySelectorAll('.expand').forEach(function (box) {
+              var body = box.querySelector(':scope > .expand__body');
+              if (!body) return;
+              var toggle = box.querySelector(':scope > .expand__header .expand__toggle');
+              function flip() {
+                var open = body.hasAttribute('hidden');
+                if (open) body.removeAttribute('hidden'); else body.setAttribute('hidden', '');
+                box.classList.toggle('is-open', open);
+                if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+              }
+              box.querySelectorAll(':scope > .expand__header button').forEach(function (b) { b.addEventListener('click', flip) });
+            });
+          }
+
+          // A code block's Copy button, which was the application's too.
+          function wireCopy() {
+            d.querySelectorAll('.code-block__copy').forEach(function (b) {
+              var code = b.closest('.code-block');
+              code = code && code.querySelector('pre code');
+              if (!code || !navigator.clipboard) { b.style.display = 'none'; return; }
+              b.addEventListener('click', function () {
+                navigator.clipboard.writeText(code.textContent || '').then(function () {
+                  b.textContent = 'Copied!';
+                  setTimeout(function () { b.textContent = 'Copy' }, 1500);
+                }, function () {});
+              });
+            });
           }
 
           // Videos shown as animations (dev-plan 10.5 step 2): the pause

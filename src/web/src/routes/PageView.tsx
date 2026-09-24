@@ -17,6 +17,9 @@ import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
 import { useConfirm } from '../components/ConfirmDialog'
 import { noteOpenPage, notePageVisit } from '../onboarding/signals'
 import { useTitlePage } from '../components/DocumentTitle'
+import { ResolvedCommentStyles } from '../components/ResolvedCommentStyles'
+import { MoveCopyDialog } from '../components/MoveCopyDialog'
+import { PageEmoji } from '../components/PageEmoji'
 
 type Tab = 'comments' | 'attachments' | 'history' | 'restrictions'
 
@@ -31,6 +34,7 @@ export function PageView() {
   const [error, setError] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('comments')
   const { ask, dialog } = useConfirm()
+  const [moveCopy, setMoveCopy] = useState<null | 'move' | 'copy'>(null)
 
   const load = useCallback(() => {
     setError(null)
@@ -73,7 +77,7 @@ export function PageView() {
     const ok = await ask({
       title: `Move ${page.title} to the trash?`,
       confirmLabel: 'Move to the trash',
-      body: <p>Any sub-pages go with it. A space administrator can restore the lot from the space&rsquo;s Trash.</p>,
+      body: <p>Any sub-pages go with it. Anyone who can edit it can restore the lot from the space&rsquo;s Trash.</p>,
     })
     if (!ok) return
     try {
@@ -83,6 +87,14 @@ export function PageView() {
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not delete the page.')
     }
+  }
+
+  /** Sets the page's emoji (dev-plan 15.7), and redraws the tree, which shows it too. */
+  async function setEmoji(emoji: string | null) {
+    if (!page) return
+    await api.pages.setEmoji(page.id, emoji)
+    setPage({ ...page, emoji })
+    reloadTree()
   }
 
   async function toggleFullWidth() {
@@ -113,7 +125,16 @@ export function PageView() {
 
   // Only the downloads this space allows (dev-plan 12.3). The server refuses
   // the rest anyway; offering a button that can only fail is worse than none.
-  const allows = space.exports ?? { markdown: true, html: true, pdf: true, site: true, pack: true }
+  const spaceAllows = space.exports ?? { markdown: true, html: true, pdf: true, site: true, pack: true }
+  // And only if your role may export at all: without the right each link
+  // opened a raw error page (found 2026-09-23). Anonymous readers are judged
+  // by the server alone, since a signed-out browser holds no rights list.
+  const mayExport = !user || can(Permission.PagesExport)
+  const allows = {
+    markdown: mayExport && spaceAllows.markdown,
+    html: mayExport && spaceAllows.html,
+    pdf: mayExport && spaceAllows.pdf,
+  }
 
   // Anonymous readers (dev-plan 5.3): the action bar collapses to Export;
   // comments only where the space allows them, read-only.
@@ -131,10 +152,11 @@ export function PageView() {
         <SpaceBreadcrumb space={space} tree={tree} />
         <article className={page.fullWidth ? 'page-wrap page-wrap--full' : 'page-wrap'}>
           <div className="paper">
-            <div className="page-head"><h1>{page.title}</h1></div>
+            <div className="page-head"><PageEmoji emoji={page.emoji} canEdit={false} onChange={async () => {}} /><h1>{page.title}</h1></div>
             <p className="muted small">Updated {new Date(page.updatedAt).toLocaleDateString()}</p>
             <PageLabels pageId={page.id} readOnly />
-            <div className="page-body">
+            <ResolvedCommentStyles pageId={page.id} />
+          <div className="page-body">
               <Editor value={page.contentJson} editable={false} getPageId={() => Promise.resolve(page.id)} />
             </div>
           </div>
@@ -154,15 +176,19 @@ export function PageView() {
     <>
       <div className="page-actionbar">
         <div className="page-actionbar__secondary">
-          <Link className="btn btn--primary" to={`/spaces/${key}/pages/${page.id}/edit`}>
-            Edit
-          </Link>
-          {/* Mobile only: desktop already has this in the always-visible
-              sidebar (.sidebar's "+ New page"); showing it here too would
-              just duplicate it right next to Edit for no reason. */}
-          <Link className="btn btn--primary page-actionbar__new-subpage" to={`/spaces/${key}/new?parent=${page.id}`}>
-            + New
-          </Link>
+          {page.canEdit !== false && (
+            <>
+              <Link className="btn btn--primary" to={`/spaces/${key}/pages/${page.id}/edit`}>
+                Edit
+              </Link>
+              {/* Mobile only: desktop already has this in the always-visible
+                  sidebar (.sidebar's "+ New page"); showing it here too would
+                  just duplicate it right next to Edit for no reason. */}
+              <Link className="btn btn--primary page-actionbar__new-subpage" to={`/spaces/${key}/new?parent=${page.id}`}>
+                + New
+              </Link>
+            </>
+          )}
           <button
             type="button"
             className="btn btn--ghost page-actionbar__fullwidth-toggle"
@@ -198,6 +224,10 @@ export function PageView() {
               unwatch={() => api.pageWatch.unwatch(page.id)}
             />
             <SaveAsTemplateButton spaceId={space.id} contentJson={page.contentJson} defaultName={page.title} />
+            {page.canEdit !== false && (
+              <button type="button" className="btn" data-menu-close onClick={() => setMoveCopy('move')}>Move…</button>
+            )}
+            <button type="button" className="btn" data-menu-close onClick={() => setMoveCopy('copy')}>Copy…</button>
             {/* Hidden when the role does not allow it; the server refuses it
                 either way (dev-plan 11.1). */}
             {(can(Permission.PagesDeleteAny)
@@ -221,6 +251,7 @@ export function PageView() {
       <article className={page.fullWidth ? 'page-wrap page-wrap--full' : 'page-wrap'}>
         <div className="paper">
           <div className="page-head">
+            <PageEmoji emoji={page.emoji} canEdit={page.canEdit !== false} onChange={setEmoji} />
             <h1>{page.title}</h1>
           </div>
           <p className="muted small">
@@ -228,6 +259,7 @@ export function PageView() {
           </p>
           <PageLabels pageId={page.id} />
 
+          <ResolvedCommentStyles pageId={page.id} />
           <div className="page-body">
             <Editor value={page.contentJson} editable={false} getPageId={() => Promise.resolve(page.id)} />
           </div>
@@ -240,7 +272,7 @@ export function PageView() {
           <TabButton current={tab} value="restrictions" onClick={setTab}>Restrictions</TabButton>
         </div>
         <div className="tab-panel">
-          {tab === 'comments' && <CommentsPanel pageId={page.id} />}
+          {tab === 'comments' && <CommentsPanel pageId={page.id} canEdit={page.canEdit === true} />}
           {tab === 'attachments' && <AttachmentsPanel pageId={page.id} />}
           {tab === 'restrictions' && <RestrictionsPanel pageId={page.id} />}
           {tab === 'history' && (
@@ -258,6 +290,20 @@ export function PageView() {
       </article>
       </div>
 
+      {moveCopy && (
+        <MoveCopyDialog
+          mode={moveCopy}
+          pageId={page.id}
+          pageTitle={page.title}
+          spaceId={space.id}
+          onClose={() => setMoveCopy(null)}
+          onDone={({ spaceKey, pageId: target }) => {
+            setMoveCopy(null)
+            reloadTree()
+            navigate(`/spaces/${spaceKey}/pages/${target}`)
+          }}
+        />
+      )}
       {dialog}
     </>
   )

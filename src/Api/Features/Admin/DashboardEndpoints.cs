@@ -49,7 +49,7 @@ public static class DashboardEndpoints
         return routes;
     }
 
-    private static async Task<IResult> GetDashboard(AppDbContext db, int? rangeDays)
+    private static async Task<IResult> GetDashboard(AppDbContext db, int? rangeDays, Infrastructure.Permissions.IPermissionService perms)
     {
         var days = Math.Clamp(rangeDays ?? 30, 1, 365);
         var now = DateTimeOffset.UtcNow;
@@ -118,13 +118,18 @@ public static class DashboardEndpoints
             .Select(p => new { p.Id, p.Title, SpaceKey = p.Space!.Key })
             .ToListAsync();
 
-        var topPages = topPageIds
-            .Select(t =>
-            {
-                var info = pageInfo.FirstOrDefault(p => p.Id == t.PageId);
-                return new TopPage(t.PageId, info?.Title ?? "(deleted)", info?.SpaceKey ?? "", t.Views);
-            })
-            .ToList();
+        // Administrators do not bypass space permissions, and neither does
+        // this table: a page the viewer cannot open is counted but not named
+        // (its title was shown, found 2026-09-23). No space key either, so it
+        // is not a link.
+        var topPages = new List<TopPage>();
+        foreach (var t in topPageIds)
+        {
+            var info = pageInfo.FirstOrDefault(p => p.Id == t.PageId);
+            if (info is null) topPages.Add(new TopPage(t.PageId, "(deleted)", "", t.Views));
+            else if (!await perms.CanViewPageAsync(t.PageId)) topPages.Add(new TopPage(t.PageId, "A restricted page", "", t.Views));
+            else topPages.Add(new TopPage(t.PageId, info.Title, info.SpaceKey, t.Views));
+        }
 
         var versionAuthors = await db.PageVersions.AsNoTracking()
             .Select(v => new { v.AuthorId, v.CreatedAt })

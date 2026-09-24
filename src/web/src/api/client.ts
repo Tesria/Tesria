@@ -1,5 +1,6 @@
 import { requestReauth } from '../auth/reauth'
 import type { SpaceIconKind } from '../components/spaceIconIdentity'
+import type { SpaceTreeStyle } from '../components/treeMarkers'
 
 // Typed client for the Tesria REST API. All calls are same-origin and
 // send the auth cookie automatically (credentials: 'include' for dev CORS).
@@ -34,6 +35,8 @@ export type User = {
   totpEnabled: boolean
   /** An administrator who must enroll before administering. */
   totpRequired: boolean
+  /** Two-factor is compulsory for this account, so it cannot be turned off. */
+  totpMandatory: boolean
   /** 0 off, 1 immediate, 2 daily digest (dev-plan 4.3). */
   emailNotifications: EmailNotificationMode
   /** Instance rights this account holds (dev-plan 11.1). The UI renders from
@@ -194,6 +197,8 @@ export type Space = {
   iconColor: number | null
   /** Which exports this space allows (dev-plan 12.3). All on unless an administrator turned some off. */
   exports: SpaceExports
+  /** How the page tree marks its pages: 0 plain, 1 numbered, 2 bulleted (dev-plan 15.8). */
+  treeStyle?: SpaceTreeStyle
 }
 
 export type SpaceExports = { markdown: boolean; html: boolean; pdf: boolean; site: boolean; pack: boolean }
@@ -216,6 +221,8 @@ export type InstanceInfo = {
   allowPublicRegistration: boolean
   /** The instance's branding (dev-plan 13.1). Every default is Tesria's. */
   branding: Branding
+  /** The server makes its own certificate, so each device trusts it at /trust (15.5). */
+  ownCertificate?: boolean
 }
 
 export type BrandDisplay = 'logo-and-name' | 'logo' | 'name'
@@ -328,6 +335,10 @@ export type PageDetail = {
   createdById: string
   createdAt: string
   updatedAt: string
+  /** Whether you may edit it; sent with a single-page read only. */
+  canEdit?: boolean | null
+  /** Shown before the title (dev-plan 15.7). */
+  emoji?: string | null
 }
 
 export type PageTreeNode = {
@@ -335,6 +346,8 @@ export type PageTreeNode = {
   title: string
   position: number
   children: PageTreeNode[]
+  /** Shown before the title (dev-plan 15.7). */
+  emoji?: string | null
 }
 
 export type TrashedPage = {
@@ -412,7 +425,8 @@ export const PageOperation = { View: 0, Edit: 1 } as const
 export const spaceOperationName = ['View', 'Edit', 'Admin']
 export const pageOperationName = ['View', 'Edit']
 
-export type Group = { id: string; name: string; description: string | null; memberCount: number }
+/** builtIn: Owner, Admins or Users, whose members follow each account's role (dev-plan 15.1). */
+export type Group = { id: string; name: string; description: string | null; memberCount: number; builtIn?: boolean }
 export type GroupMember = { userId: string; email: string; displayName: string }
 export const UserStatus = { Active: 0, Suspended: 1 } as const
 export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus]
@@ -468,6 +482,8 @@ export type AdminUser = {
   isSso: boolean
   recoveryCodesRemaining: number
   recoveryCodesSaved: boolean
+  /** Two-factor is on, so an administrator may turn it off (dev-plan 15.1). */
+  totpEnabled: boolean
   lastSeenAt: string | null
   createdAt: string
   failedLoginCount: number
@@ -951,6 +967,9 @@ export type Comment = {
   isDeleted: boolean
   createdAt: string
   updatedAt: string
+  /** Set on a resolved thread's first comment (dev-plan 15.3). */
+  resolvedAt?: string | null
+  resolvedByName?: string | null
 }
 
 /** An error carrying the HTTP status and any field validation messages. */
@@ -1036,10 +1055,17 @@ async function handle<T>(res: Response): Promise<T> {
     const fieldErrors = (data && typeof data === 'object' && 'errors' in data
       ? (data as { errors: Record<string, string[]> }).errors
       : {}) as Record<string, string[]>
+    // `detail` is where Results.Problem puts its explanation. It used to be
+    // skipped, so "Registration is by invitation on this instance." reached
+    // people as "You do not have permission to do that." and a rate limit
+    // as "Request failed (429)." (found writing the support site, 2026-09-23).
+    const field = (name: string) =>
+      data && typeof data === 'object' && name in data && (data as Record<string, unknown>)[name]
+        ? String((data as Record<string, unknown>)[name])
+        : undefined
     const message =
-      (data && typeof data === 'object' && 'message' in data
-        ? String((data as { message: unknown }).message)
-        : undefined) ??
+      field('message') ??
+      field('detail') ??
       firstFieldError(fieldErrors) ??
       defaultMessage(res.status)
     const code = data && typeof data === 'object' && 'code' in data
@@ -1076,6 +1102,8 @@ function defaultMessage(status: number): string {
   if (status === 403) return 'You do not have permission to do that.'
   if (status === 404) return 'Not found.'
   if (status === 409) return 'Conflict.'
+  if (status === 413) return 'That file is too large to upload here.'
+  if (status === 429) return 'Too many attempts. Wait a minute and try again.'
   return `Request failed (${status}).`
 }
 
@@ -1161,6 +1189,7 @@ export const api = {
         iconKind?: SpaceIconKind
         iconValue?: string | null
         iconColor?: number | null
+        treeStyle?: SpaceTreeStyle
       },
     ) => request<Space>('PUT', `/api/spaces/${encodeURIComponent(key)}`, input),
     /** The picture case, which needs the bytes rather than JSON. */
@@ -1252,10 +1281,16 @@ export const api = {
         baseVersion?: number | null
       },
     ) => request<PageDetail>('PUT', `/api/pages/${id}`, input),
-    move: (id: string, input: { parentPageId?: string | null; index: number }) =>
+    /** spaceId moves the page, and the pages under it, to another space (dev-plan 15.3). */
+    move: (id: string, input: { parentPageId?: string | null; index: number; spaceId?: string | null }) =>
       request<void>('PUT', `/api/pages/${id}/move`, input),
+    copy: (id: string, input: { spaceId?: string | null; parentPageId?: string | null; includeChildren: boolean }) =>
+      request<{ id: string; spaceId: string; title: string; pages: number }>('POST', `/api/pages/${id}/copy`, input),
     setLayout: (id: string, input: { fullWidth: boolean }) =>
       request<void>('PUT', `/api/pages/${id}/layout`, input),
+    /** An emoji before the title, or null to take it away (dev-plan 15.7). */
+    setEmoji: (id: string, emoji: string | null) =>
+      request<void>('PUT', `/api/pages/${id}/emoji`, { emoji }),
     remove: (id: string) => request<void>('DELETE', `/api/pages/${id}`),
     createDraft: (input: { spaceId: string; parentPageId?: string | null }) =>
       request<{ id: string }>('POST', '/api/pages/draft', input),
@@ -1332,6 +1367,9 @@ export const api = {
       revokeTokens: (id: string) =>
         request<void>('POST', `/api/admin/users/${id}/revoke-tokens`),
       unlock: (id: string) => request<void>('POST', `/api/admin/users/${id}/unlock`),
+      /** Sudo; never the owner; another administrator only by the owner (dev-plan 15.1). */
+      disableTwoFactor: (id: string) =>
+        request<void>('POST', `/api/admin/users/${id}/disable-two-factor`),
       issueReset: (id: string) =>
         request<{ token: string; path: string; expiresAt: string }>(
           'POST', `/api/admin/users/${id}/reset-password`),
@@ -1514,6 +1552,8 @@ export const api = {
       request<void>('POST', `/api/spaces/${encodeURIComponent(key)}/permissions`, input),
     revoke: (key: string, id: string) =>
       request<void>('DELETE', `/api/spaces/${encodeURIComponent(key)}/permissions/${id}`),
+    /** Removes every grant: the space becomes open (dev-plan 15.3). Sudo. */
+    makeOpen: (key: string) => request<void>('DELETE', `/api/spaces/${encodeURIComponent(key)}/permissions`),
   },
   pageRestrictions: {
     list: (pageId: string) => request<PageRestriction[]>('GET', `/api/pages/${pageId}/restrictions`),
@@ -1551,5 +1591,7 @@ export const api = {
       request<Comment>('POST', `/api/pages/${pageId}/comments`, input),
     update: (id: string, body: string) => request<Comment>('PUT', `/api/comments/${id}`, { body }),
     remove: (id: string) => request<void>('DELETE', `/api/comments/${id}`),
+    resolve: (id: string) => request<Comment>('POST', `/api/comments/${id}/resolve`),
+    reopen: (id: string) => request<Comment>('POST', `/api/comments/${id}/reopen`),
   },
 }

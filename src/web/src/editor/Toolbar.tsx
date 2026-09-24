@@ -100,9 +100,9 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
 
   // In the order they leave the row when space runs out: the rarest
   // formatting first, then lists, then the colored and aligned things,
-  // then the common marks, bold last. On a phone everything down to
-  // italic goes and the row reads "Aa · B I · link · +" beside
-  // Update/Close: the four things a thumb actually reaches for.
+  // then the common marks, bold last. On a phone all of it goes and the
+  // row reads "Aa Style" and "+ Insert" beside Update/Close; every
+  // formatting control is then in the Style menu.
   const collapsible: Collapsible[] = [
     { key: 'superscript', group: 'format', icon: <span className="tb-glyph">x²</span>, label: 'Superscript', isActive: editor.isActive('superscript'), run: () => chain().toggleSuperscript().run() },
     { key: 'subscript', group: 'format', icon: <span className="tb-glyph">x₂</span>, label: 'Subscript', isActive: editor.isActive('subscript'), run: () => chain().toggleSubscript().run() },
@@ -156,7 +156,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
   )
 
   // What the text menu shows beneath the block styles for whatever left the
-  // row. Alignment expands to its three choices; the two color controls
+  // row. Alignment expands to its four choices; the two color controls
   // carry their palette with them so a phone still has every color. The
   // "+" menu never receives any of this: it is for things to insert.
   const overflowActions: OverflowAction[] = collapsible

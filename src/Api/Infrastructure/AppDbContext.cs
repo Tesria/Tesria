@@ -220,6 +220,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         b.Entity<Page>(e =>
         {
             e.Property(p => p.Title).HasMaxLength(500);
+            e.Property(p => p.Emoji).HasMaxLength(Features.Spaces.SpaceIcons.MaxEmojiLength);
 
             // Trashed pages, and pages still in the invisible Draft state (created
             // but never published: see PageEndpoints.CreateDraft), are hidden from

@@ -73,7 +73,10 @@ export function SetupPage() {
     )
   }
 
-  const done = (key: StepKey) => status?.steps?.[key] != null
+  // Welcome is never recorded (there is nothing to record), so it counts as
+  // done once the wizard has moved past it.
+  const done = (key: StepKey) =>
+    status?.steps?.[key] != null || (key === 'welcome' && at !== 'welcome')
   const skipped = (key: StepKey) => status?.steps?.[key]?.skipped === true
   const index = STEPS.findIndex((s) => s.key === at)
 

@@ -22,7 +22,7 @@ public class IncludePageBlock : IDynamicBlockKind
 
     public async Task<BlockResult> RenderAsync(BlockContext ctx, CancellationToken ct)
     {
-        var raw = ctx.Required("page");
+        var raw = ctx.Required("page", FragmentNodeType is null ? "Choose a page to include." : "Choose the page whose excerpt to include.");
         if (!Guid.TryParse(raw, out var pageId))
             throw new BlockParamException("page", "Choose a page to include.");
 

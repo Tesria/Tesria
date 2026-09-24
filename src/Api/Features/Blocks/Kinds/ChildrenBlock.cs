@@ -50,6 +50,6 @@ public sealed class ChildrenBlock : IDynamicBlockKind
         }
 
         var result = await Build(ctx.Host.Id, 1);
-        return BlockResult.List(Kind, result, empty: "This page has no child pages.");
+        return BlockResult.List(Kind, result, empty: "This page has no sub-pages.");
     }
 }

@@ -35,4 +35,11 @@ public class Comment
 
     /// <summary>Set when soft-deleted; the row is retained to preserve threads.</summary>
     public DateTimeOffset? DeletedAt { get; set; }
+
+    /// <summary>
+    /// When the thread was resolved (dev-plan 15.3). Only a thread's first
+    /// comment is resolved; replies belong to it. Null while open.
+    /// </summary>
+    public DateTimeOffset? ResolvedAt { get; set; }
+    public Guid? ResolvedById { get; set; }
 }

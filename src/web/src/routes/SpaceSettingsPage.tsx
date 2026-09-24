@@ -7,6 +7,14 @@ import { DeleteSpaceDialog } from './DeleteSpaceDialog'
 import { SiteExportSection } from '../components/SiteExportSection'
 import { PackExportSection } from '../components/PackExportSection'
 import { useSpaceContext } from './SpacePage'
+import { SpaceTreeStyle } from '../components/treeMarkers'
+
+/** The three page tree styles (dev-plan 15.8), each with a small preview. */
+const TREE_STYLES: { value: SpaceTreeStyle; label: string; sample: string[] }[] = [
+  { value: SpaceTreeStyle.Plain, label: 'Plain', sample: ['Getting started', '\u00a0\u00a0Quick start', 'User manual'] },
+  { value: SpaceTreeStyle.Numbered, label: 'Numbered', sample: ['1  Getting started', '\u00a0\u00a01.1  Quick start', '2  User manual'] },
+  { value: SpaceTreeStyle.Bulleted, label: 'Bulleted', sample: ['•  Getting started', '\u00a0\u00a0◦  Quick start', '•  User manual'] },
+]
 
 /**
  * A space's own settings: what it is called, and how it looks (dev-plan 6).
@@ -74,6 +82,20 @@ export function SpaceSettingsPage() {
     }
   }
 
+  /** The page tree's style (dev-plan 15.8). Saved on the choice, like the icon. */
+  async function saveTreeStyle(treeStyle: SpaceTreeStyle) {
+    setBusy(true)
+    setStatus(null)
+    setError(null)
+    try {
+      applied(await api.spaces.update(space.key, { name: space.name, description: space.description, treeStyle }), 'Page tree updated.')
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not save.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function saveDetails(e: FormEvent) {
     e.preventDefault()
     setBusy(true)
@@ -124,6 +146,31 @@ export function SpaceSettingsPage() {
             {busy ? 'Saving…' : 'Save'}
           </button>
         </form>
+      </section>
+
+      <section className="profile__section profile__section--wide" id="page-tree">
+        <h2>Page tree</h2>
+        <p className="muted small">
+          How the sidebar marks this space&rsquo;s pages. Numbers and bullets are only drawn beside the titles: they
+          are not part of any title or address, and they follow the tree as pages are added and moved.
+        </p>
+        <fieldset className="tree-style" disabled={busy}>
+          <legend className="sr-only">Page tree style</legend>
+          {TREE_STYLES.map((option) => (
+            <label key={option.value} className={(space.treeStyle ?? SpaceTreeStyle.Plain) === option.value ? 'tree-style__option is-active' : 'tree-style__option'}>
+              <input
+                type="radio"
+                name="tree-style"
+                checked={(space.treeStyle ?? SpaceTreeStyle.Plain) === option.value}
+                onChange={() => void saveTreeStyle(option.value)}
+              />
+              <span className="tree-style__name">{option.label}</span>
+              <span className="tree-style__sample" aria-hidden="true">
+                {option.sample.map((line) => <span key={line}>{line}</span>)}
+              </span>
+            </label>
+          ))}
+        </fieldset>
       </section>
 
       {can(Permission.SpacesExports) && (
@@ -181,7 +228,7 @@ export function SpaceSettingsPage() {
         <p className="muted small">
           {space.archived
             ? 'This space is archived. It stays out of the spaces list until you bring it back, and nothing in it has been touched.'
-            : 'Keeps the space and everything in it, out of the way: archived spaces are hidden from the spaces list unless you ask for them. Reversible at any time.'}
+            : 'Keeps the space and everything in it, out of the way: an archived space is hidden from the spaces list and from public reading, and Admin → Spaces still lists it. Reversible at any time.'}
         </p>
         <button type="button" className="btn" disabled={busy} onClick={() => setArchived(!space.archived)}>
           {space.archived ? 'Unarchive this space' : 'Archive this space'}

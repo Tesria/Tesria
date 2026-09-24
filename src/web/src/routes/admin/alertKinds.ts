@@ -25,4 +25,18 @@ export const ALERT_KIND_LABEL: Record<string, string> = {
   'backup.retention_reduced': 'Backup retention policy made stricter',
   'owner.transferred': 'Ownership of this instance was transferred',
   'permissions.expanded': 'A role was given more rights',
+  // These were raised but had no words, so they showed by internal name in
+  // the Security tab and the bell (found 2026-09-23).
+  'user.totp_disabled': 'Two-factor turned off for an account',
+  'space.opened': 'A private space was made open to everyone',
+  'space.published': 'A space was published to the internet',
+  'space.unpublished': 'A space was withdrawn from public reading',
+  'space.deleted': 'A space was deleted',
+  'backup.restored': 'The wiki was restored from a backup',
+  'backup.offsite_absent': 'No offsite backup is configured',
+  'backup.offsite_manual_only': 'The only offsite backup is a removable drive',
+  'backup.offsite_failed': 'An offsite backup failed',
+  'backup.offsite_stale': 'An offsite backup is out of date',
+  'backup.offsite_archive_gap': 'Changes are not reaching the cloud backup',
+  'backup.offsite_drill_failed': 'An offsite restore drill failed',
 }

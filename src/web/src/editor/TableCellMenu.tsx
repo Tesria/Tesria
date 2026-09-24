@@ -141,6 +141,22 @@ export function TableCellMenu({ editor }: { editor: TiptapEditor }) {
       </button>
       {open && (
         <div className="cell-menu__panel" style={{ left: rect.right - 20 - o.x, top: rect.bottom + 4 - o.y }}>
+          {/* The table itself (dev-plan 15.2): headers, merging, and a way to
+              delete it that is not "select every cell and press Backspace". */}
+          <p className="cell-menu__heading">Table</p>
+          <div className="cell-menu__actions">
+            <TableAction editor={editor} label="Header row" active={headerRowOn(editor)}
+              run={() => editor.chain().focus().toggleHeaderRow().run()} />
+            <TableAction editor={editor} label="Header column" active={headerColumnOn(editor)}
+              run={() => editor.chain().focus().toggleHeaderColumn().run()} />
+            <TableAction editor={editor} label="Merge cells" disabled={!editor.can().mergeCells()}
+              title="Select two or more cells first, by dragging across them"
+              run={() => editor.chain().focus().mergeCells().run()} />
+            <TableAction editor={editor} label="Split cell" disabled={!editor.can().splitCell()}
+              run={() => editor.chain().focus().splitCell().run()} />
+            <TableAction editor={editor} label="Delete table" danger
+              run={() => { setOpen(false); editor.chain().focus().deleteTable().run() }} />
+          </div>
           <p className="cell-menu__heading">Background color</p>
           <div className="cell-menu__scopes">
             {SCOPES.map((s) => (
@@ -165,5 +181,42 @@ export function TableCellMenu({ editor }: { editor: TiptapEditor }) {
         </div>
       )}
     </div>
+  )
+}
+
+/** Whether the table's first row is made of header cells. */
+function headerRowOn(editor: TiptapEditor): boolean {
+  const found = findTable(editor.state.selection.$from)
+  const first = found?.node.firstChild
+  if (!first || first.childCount === 0) return false
+  let all = true
+  first.forEach((cell) => { if (cell.type.name !== 'tableHeader') all = false })
+  return all
+}
+
+/** Whether every row starts with a header cell. */
+function headerColumnOn(editor: TiptapEditor): boolean {
+  const found = findTable(editor.state.selection.$from)
+  if (!found || found.node.childCount === 0) return false
+  let all = true
+  found.node.forEach((row) => { if (row.firstChild?.type.name !== 'tableHeader') all = false })
+  return all
+}
+
+function TableAction({ label, run, active, disabled, danger, title }: {
+  editor: TiptapEditor
+  label: string
+  run: () => void
+  active?: boolean
+  disabled?: boolean
+  danger?: boolean
+  title?: string
+}) {
+  const cls = ['cell-menu__action', active ? 'is-active' : '', danger ? 'cell-menu__action--danger' : ''].filter(Boolean).join(' ')
+  return (
+    <button type="button" className={cls} disabled={disabled} title={title} aria-pressed={active}
+      onMouseDown={(e) => e.preventDefault()} onClick={run}>
+      {label}
+    </button>
   )
 }

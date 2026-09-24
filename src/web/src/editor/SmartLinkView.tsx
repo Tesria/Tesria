@@ -1,13 +1,7 @@
 import { useEffect, useState } from 'react'
 import { NodeViewWrapper, type ReactNodeViewProps } from '@tiptap/react'
 import { api, type LinkPreview } from '../api/client'
-
-/** An address typed without a scheme is a web address, as in the link dialog. */
-function normalize(value: string): string {
-  const v = value.trim()
-  if (!v) return ''
-  return /^[a-z][a-z0-9+.-]*:/i.test(v) ? v : `https://${v}`
-}
+import { normalizeWebAddress as normalize } from './webAddress'
 
 /**
  * Renders a link with the target's own title, fetched server-side and
@@ -18,7 +12,17 @@ function normalize(value: string): string {
  * card/inline choice (dev-plan 10.5 step 1). Until then it was inserted with
  * no address and nothing could give it one, so the element did nothing.
  */
-export function SmartLinkView({ node, editor, selected, updateAttributes }: ReactNodeViewProps) {
+export function SmartLinkView({ node, editor, selected, updateAttributes, getPos }: ReactNodeViewProps) {
+  // "Inline" turns the card into a link inside a line of text (dev-plan 15.2):
+  // a paragraph holding the inline form, in the block's place. An old
+  // document's inline block still shows as it did.
+  function toInline() {
+    const pos = typeof getPos === 'function' ? getPos() : undefined
+    if (typeof pos !== 'number') return
+    editor.chain().focus().insertContentAt({ from: pos, to: pos + node.nodeSize },
+      { type: 'paragraph', content: [{ type: 'smartLinkInline', attrs: { url: String(node.attrs.url ?? '') } }] }).run()
+  }
+
   const url = String(node.attrs.url ?? '')
   const inline = node.attrs.display === 'inline'
   const [preview, setPreview] = useState<LinkPreview | null>(null)
@@ -71,7 +75,7 @@ export function SmartLinkView({ node, editor, selected, updateAttributes }: Reac
             <button type="button" className={inline ? 'link-btn' : 'link-btn is-active'} aria-pressed={!inline}
               onClick={() => updateAttributes({ display: 'card' })}>Card</button>
             <button type="button" className={inline ? 'link-btn is-active' : 'link-btn'} aria-pressed={inline}
-              onClick={() => updateAttributes({ display: 'inline' })}>Inline</button>
+              onClick={() => (url ? toInline() : updateAttributes({ display: 'inline' }))}>Inline</button>
           </span>
         </form>
       )}

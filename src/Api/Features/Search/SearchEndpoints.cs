@@ -18,6 +18,8 @@ public static class SearchEndpoints
         return routes;
     }
 
+    private sealed record Hit(Guid Id, Guid SpaceId, string SpaceKey, string Title);
+
     private static async Task<IResult> SearchAsync(
         string? q, Guid? spaceId, AppDbContext db, IPermissionService perms)
     {
@@ -51,16 +53,27 @@ public static class SearchEndpoints
                 .OrderBy(p => p.Title);
         }
 
-        var rows = await query
-            .Take(MaxResults)
-            .Select(p => new { p.Id, p.SpaceId, SpaceKey = p.Space!.Key, p.Title })
-            .ToListAsync();
-
-        // Space access is not enough: drop pages hidden by page restrictions.
-        var visible = rows.ToList();
+        // Space access is not enough: pages hidden by page restrictions are
+        // dropped too. That happens after the query, so the query reads on in
+        // batches until it has MaxResults readable hits or runs out; taking 50
+        // and then filtering returned fewer than 50 when more existed (found
+        // 2026-09-23). The batch cap bounds the work a query can cause.
+        const int batch = 100, maxBatches = 10;
+        var projected = query.Select(p => new Hit(p.Id, p.SpaceId, p.Space!.Key, p.Title));
+        var visible = new List<Hit>();
         var allowed = new List<Guid>();
-        foreach (var r in visible)
-            if (await perms.CanViewPageAsync(r.Id)) allowed.Add(r.Id);
+        for (var i = 0; i < maxBatches && allowed.Count < MaxResults; i++)
+        {
+            var rows = await projected.Skip(i * batch).Take(batch).ToListAsync();
+            foreach (var r in rows)
+            {
+                if (allowed.Count >= MaxResults) break;
+                if (!await perms.CanViewPageAsync(r.Id)) continue;
+                allowed.Add(r.Id);
+                visible.Add(r);
+            }
+            if (rows.Count < batch) break;
+        }
 
         // The passage that matched, not the page's opening line: computed
         // once for the survivors (SearchSnippets).

@@ -309,23 +309,40 @@ public class InstancePermissionTests
         var ownerClient = factory.CreateClient();
         await RegisterAsync(ownerClient, "owner@example.com");
         var matrix = await MatrixAsync(ownerClient);
-        var userRole = matrix.Roles.Single(r => r.Key == "user");
+        var adminRole = matrix.Roles.Single(r => r.Key == "admin");
 
-        // A user-tier role gaining an administration right is the quiet
-        // escalation this alert exists for.
-        (await ownerClient.PutAsJsonAsync($"/api/admin/roles/{userRole.Id}/permissions",
-            new { Permissions = userRole.Permissions.Append(InstancePermissions.UsersView).ToArray() }))
+        // An administrator role gaining a right is the escalation this alert
+        // exists for. (A user-tier role can no longer gain an administration
+        // right at all, dev-plan 15.1.)
+        (await ownerClient.PutAsJsonAsync($"/api/admin/roles/{adminRole.Id}/permissions",
+            new { Permissions = adminRole.Permissions.Append(InstancePermissions.SettingsBranding).ToArray() }))
             .EnsureSuccessStatusCode();
 
         var entry = await InScopeAsync(factory, db => db.AuditLogs.AsNoTracking()
             .FirstAsync(a => a.Action == "permissions.changed"));
-        Assert.Contains("users.view", entry.MetadataJson);
+        Assert.Contains("settings.branding", entry.MetadataJson);
         Assert.Contains("Added", entry.MetadataJson);
 
         var alerts = await ownerClient.GetFromJsonAsync<List<AlertDto>>("/api/admin/security/alerts?status=all");
         Assert.Contains(alerts!, a => a.Kind == "permissions.expanded");
 
         Assert.NotNull((await MatrixAsync(ownerClient)).ReviewedAt);
+    }
+
+    [Fact]
+    public async Task A_user_tier_role_cannot_hold_an_administration_right()
+    {
+        using var factory = new TestAppFactory();
+        var ownerClient = factory.CreateClient();
+        await RegisterAsync(ownerClient, "owner@example.com");
+        var userRole = (await MatrixAsync(ownerClient)).Roles.Single(r => r.Key == "user");
+
+        var refused = await ownerClient.PutAsJsonAsync($"/api/admin/roles/{userRole.Id}/permissions",
+            new { Permissions = userRole.Permissions.Append(InstancePermissions.UsersView).ToArray() });
+        Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+        Assert.Contains("promote", await refused.Content.ReadAsStringAsync());
+        Assert.DoesNotContain(InstancePermissions.UsersView,
+            (await MatrixAsync(ownerClient)).Roles.Single(r => r.Key == "user").Permissions);
     }
 
     [Fact]

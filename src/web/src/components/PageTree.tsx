@@ -1,5 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { treeMarkers, type SpaceTreeStyle } from './treeMarkers'
+import { matchingRows, splitMatch, visibleRows } from './treeFilter'
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
   DndContext,
   PointerSensor,
@@ -27,12 +29,12 @@ export function findTreePath(tree: PageTreeNode[], pageId: string): PageTreeNode
   return null
 }
 
-type FlatNode = { id: string; title: string; parentId: string | null; depth: number }
+type FlatNode = { id: string; title: string; emoji?: string | null; marker?: string | null; parentId: string | null; depth: number }
 type PendingMove = { pageId: string; parentPageId: string | null; index: number }
 
 function flatten(nodes: PageTreeNode[], parentId: string | null = null, depth = 0): FlatNode[] {
   return nodes.flatMap((node) => [
-    { id: node.id, title: node.title, parentId, depth },
+    { id: node.id, title: node.title, emoji: node.emoji, parentId, depth },
     ...flatten(node.children, node.id, depth + 1),
   ])
 }
@@ -142,9 +144,12 @@ export function PageTree({
   onNavigate,
   onMoved,
   readOnly = false,
+  treeStyle,
 }: {
   tree: PageTreeNode[]
   spaceKey: string
+  /** Plain, numbered or bulleted (dev-plan 15.8): the space's setting. */
+  treeStyle?: SpaceTreeStyle
   onNavigate?: () => void
   onMoved?: () => void
   /** Anonymous readers (dev-plan 5.3): browse only, no reorder control. */
@@ -168,7 +173,21 @@ export function PageTree({
   const [overId, setOverId] = useState<string | null>(null)
   const [dragOffsetX, setDragOffsetX] = useState(0)
 
-  const flat = useMemo(() => flatten(editMode ? draftTree : tree), [editMode, draftTree, tree])
+  const flat = useMemo(() => {
+    const nodes = flatten(editMode ? draftTree : tree)
+    // Worked out as drawn, so the numbers follow a drag before it is saved.
+    const markers = treeMarkers(nodes.map((n) => n.depth), treeStyle)
+    return nodes.map((n, i) => ({ ...n, marker: markers[i] }))
+  }, [editMode, draftTree, tree, treeStyle])
+  // The filter stays while you move between pages (the owner chose that
+  // over clearing it, 2026-09-23), and for this browser tab, so a reload
+  // or the phone menu opening again keeps it. One per space.
+  const filterKey = `tesria-tree-filter:${spaceKey}`
+  const [filter, setFilterState] = useState(() => readFilter(filterKey))
+  const setFilter = (value: string) => { setFilterState(value); writeFilter(filterKey, value) }
+  useEffect(() => { setFilterState(readFilter(filterKey)) }, [filterKey])
+  const [withChildren, setWithChildren] = useState(readWithChildren)
+  const navigate = useNavigate()
 
   // A row can't be dropped under itself or one of its own descendants: the
   // backend rejects that as a cycle regardless, but excluding the dragged
@@ -291,14 +310,59 @@ export function PageTree({
   }
 
   if (!editMode) {
+    const rows = flat.map((n) => ({ title: n.title, depth: n.depth, marker: n.marker }))
+    const shown = visibleRows(rows, filter, withChildren)
+    const matches = matchingRows(rows, filter)
+    // Dimmed: the parents above a match, shown only to place it. Pages
+    // shown because they are under a match are the point, so they are not.
+    const parentsOnly = visibleRows(rows, filter, false)
+    const firstMatch = flat.find((_, i) => matches.has(i))
+    // Choosing a page keeps the filter, so the next result is a click away.
+    const chosen = () => { onNavigate?.() }
     return (
       <div className="tree-section">
         {heading}
         {error && <p className="alert alert--error">{error}</p>}
-        <nav className="tree">
-          {flat.map((node) => (
-            <StaticRow key={node.id} node={node} spaceKey={spaceKey} onNavigate={onNavigate} />
+        <div className="tree-filter">
+          <input
+            type="search"
+            className="tree-filter__input"
+            placeholder="Filter pages"
+            aria-label="Filter pages"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') { e.preventDefault(); setFilter('') }
+              if (e.key === 'Enter' && firstMatch) {
+                e.preventDefault()
+                navigate(`/spaces/${spaceKey}/pages/${firstMatch.id}`)
+                chosen()
+              }
+            }}
+          />
+          <button
+            type="button"
+            className={withChildren ? 'tree-filter__children is-on' : 'tree-filter__children'}
+            aria-pressed={withChildren}
+            title={withChildren ? 'Showing the pages under each match' : 'Show the pages under each match'}
+            aria-label="Show the pages under each match"
+            onClick={() => { const next = !withChildren; setWithChildren(next); writeWithChildren(next) }}
+          >
+            <ChildrenIcon />
+          </button>
+        </div>
+        <nav className="tree" aria-label="Pages">
+          {flat.map((node, i) => (shown === null || shown.has(i)) && (
+            <StaticRow
+              key={node.id}
+              node={node}
+              spaceKey={spaceKey}
+              onNavigate={chosen}
+              query={filter}
+              context={parentsOnly !== null && parentsOnly.has(i) && !matches.has(i)}
+            />
           ))}
+          {shown !== null && shown.size === 0 && <p className="muted small tree-filter__none">No pages match.</p>}
         </nav>
       </div>
     )
@@ -341,20 +405,67 @@ function StaticRow({
   node,
   spaceKey,
   onNavigate,
+  query = '',
+  context = false,
 }: {
   node: FlatNode
   spaceKey: string
   onNavigate?: () => void
+  /** What the tree is filtered by, to highlight in the title. */
+  query?: string
+  /** Shown only because a page under it matched. */
+  context?: boolean
 }) {
   return (
     <NavLink
       to={`/spaces/${spaceKey}/pages/${node.id}`}
-      className={({ isActive }) => (isActive ? 'tree__link is-active' : 'tree__link')}
+      className={({ isActive }) => ['tree__link', isActive && 'is-active', context && 'tree__link--context'].filter(Boolean).join(' ')}
       style={{ paddingLeft: 8 + node.depth * INDENT }}
       onClick={onNavigate}
     >
-      {node.title}
+      <TreeLabel node={node} query={query} />
     </NavLink>
+  )
+}
+
+/**
+ * Whether the filter also shows the pages under each match (the owner,
+ * 2026-09-23). On unless someone turned it off, which is remembered in
+ * browser storage; storage that is missing or refuses leaves it on.
+ */
+const WITH_CHILDREN_KEY = 'tesria-tree-filter-children'
+function readWithChildren(): boolean {
+  try { return localStorage.getItem(WITH_CHILDREN_KEY) !== '0' } catch { return true }
+}
+function writeWithChildren(on: boolean) {
+  try { if (on) localStorage.removeItem(WITH_CHILDREN_KEY); else localStorage.setItem(WITH_CHILDREN_KEY, '0') } catch { /* lasts until reload */ }
+}
+
+function readFilter(key: string): string {
+  try { return sessionStorage.getItem(key) ?? '' } catch { return '' }
+}
+function writeFilter(key: string, value: string) {
+  try { if (value) sessionStorage.setItem(key, value); else sessionStorage.removeItem(key) } catch { /* lasts until reload */ }
+}
+
+/** A parent with two pages under it: the "and its children" toggle. */
+function ChildrenIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 4h9" /><path d="M8 4v12a2 2 0 0 0 2 2h1" /><path d="M8 10h3" /><path d="M14 10h5" /><path d="M14 18h5" />
+    </svg>
+  )
+}
+
+/** A page's title in the tree, after its emoji if it has one (dev-plan 15.7). */
+function TreeLabel({ node, query = '' }: { node: FlatNode; query?: string }) {
+  const parts = splitMatch(node.title, query)
+  return (
+    <>
+      {node.marker && <span className="tree__marker" aria-hidden="true">{node.marker}</span>}
+      {node.emoji && <span className="tree__emoji" aria-hidden="true">{node.emoji}</span>}
+      {parts ? <span>{parts[0]}<mark className="tree__match">{parts[1]}</mark>{parts[2]}</span> : <span>{node.title}</span>}
+    </>
   )
 }
 
@@ -376,7 +487,7 @@ function DraggableRow({ node, isDimmed }: { node: FlatNode; isDimmed: boolean })
       title="Drag to reorder or move, Save or Cancel to browse again"
       {...listeners}
     >
-      {node.title}
+      <TreeLabel node={node} />
     </div>
   )
 }

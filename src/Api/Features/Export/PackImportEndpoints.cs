@@ -42,8 +42,8 @@ public static partial class PackImportEndpoints
             // caps a request body at 30 MB and the form reader caps a
             // multipart section at 128 MB. Without them the format's own
             // ceiling would be decoration, and a large pack would fail with a
-            // transport error rather than an answer. Caddy allows 100 MB in
-            // front of this, which is the practical limit over the network.
+            // transport error rather than an answer. Caddy allows this one
+            // route the same 500 MB (deploy/Caddyfile), and 100 MB elsewhere.
             .WithMetadata(new RequestSizeLimitAttribute(WikiPack.MaxTotalBytes))
             .WithMetadata(new RequestFormLimitsAttribute
             {
@@ -136,6 +136,8 @@ public static partial class PackImportEndpoints
                 // two-step opt-in and a zip file does not get to take it.
                 IsPublic = false,
                 Archived = false,
+                // A value this version does not know is left plain.
+                TreeStyle = Enum.IsDefined((SpaceTreeStyle)model.Space.TreeStyle) ? (SpaceTreeStyle)model.Space.TreeStyle : SpaceTreeStyle.Plain,
                 CreatedById = user,
                 CreatedAt = now,
             };
@@ -153,6 +155,20 @@ public static partial class PackImportEndpoints
 
             await ApplyIconAsync(space, model, zip, media, written, ct);
             db.Spaces.Add(space);
+            // Private to the importer (dev-plan 15.1, the owner's decision): a
+            // pack can carry pages that were restricted where it came from,
+            // and those restrictions do not travel. The importer is its one
+            // administrator until they choose who else gets in, which the
+            // import screen asks straight away.
+            db.SpacePermissions.Add(new SpacePermission
+            {
+                Id = Guid.NewGuid(),
+                SpaceId = space.Id,
+                PrincipalType = PrincipalType.User,
+                PrincipalId = user,
+                Operation = SpaceOperation.Admin,
+                CreatedAt = now,
+            });
 
             var versions = 0;
             var position = 0;
@@ -170,6 +186,9 @@ public static partial class PackImportEndpoints
                     ParentPageId = maps.Page(packed.Parent),
                     Title = Clip(packed.Title, 500),
                     FullWidth = packed.FullWidth,
+                    // Checked like one typed in: a pack is a file from anywhere.
+                    Emoji = string.IsNullOrWhiteSpace(packed.Emoji) ? null
+                        : Spaces.SpaceIcons.NormalizeEmoji(packed.Emoji).Value,
                     // Renormalized rather than carried: the pack is in tree
                     // order, so counting is more trustworthy than a number
                     // that was only ever relative to pages that may not have

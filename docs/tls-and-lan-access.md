@@ -95,6 +95,30 @@ the CA itself changes: see [Troubleshooting](#troubleshooting)).
 
 ### One-time setup per device
 
+**The easy way: open `http://<server-hostname>/trust` on the device.** It is
+served over plain HTTP, so it opens with no warning. It guesses the device,
+fills in the address, and gives step-by-step instructions: for a computer, a
+download of the script below with the address already written in; for an
+iPhone, iPad or Android phone, the certificate and the Settings path to trust
+it. The sign-in page links to it. The rest of this section is the same thing
+by hand.
+
+**Windows without a script.** PowerShell's execution policy blocks
+downloaded script files by default ("running scripts is disabled on this
+system"), and an employer can lock it. A typed command is not affected, so
+the guide gives Windows one line to paste instead, which trusts the server
+for the current Windows account and needs no administrator:
+
+```powershell
+$c = "$env:TEMP\tesria-ca.crt"; Invoke-WebRequest -UseBasicParsing -Uri "http://<server-hostname>/ca.crt" -OutFile $c; Import-Certificate -FilePath $c -CertStoreLocation Cert:\CurrentUser\Root
+```
+
+`trust-ca.ps1` below is for trusting it machine-wide, as an administrator.
+
+Each script has one line to edit if you run it from the repository without an
+argument: `TESRIA_ADDRESS` in `trust-ca.sh`, `$TesriaAddress` in
+`trust-ca.ps1`.
+
 **macOS or Linux:**
 
 ```bash

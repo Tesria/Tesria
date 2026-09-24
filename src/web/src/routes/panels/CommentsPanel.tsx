@@ -3,9 +3,11 @@ import { api, type Comment } from '../../api/client'
 import { Avatar } from '../../components/Avatar'
 import { useConfirm } from '../../components/ConfirmDialog'
 import { useAuth } from '../../auth/AuthContext'
+import { CommentBody, MentionTextarea } from '../../components/MentionTextarea'
 import { buildThreads, COMMENTS_CHANGED, announceCommentsChanged, type CommentNode as Node } from './commentThreads'
 
-export function CommentsPanel({ pageId, readOnly = false }: { pageId: string; readOnly?: boolean }) {
+export function CommentsPanel({ pageId, readOnly = false, canEdit = false }: { pageId: string; readOnly?: boolean; canEdit?: boolean }) {
+  const [showResolved, setShowResolved] = useState(false)
   const [comments, setComments] = useState<Comment[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -27,6 +29,9 @@ export function CommentsPanel({ pageId, readOnly = false }: { pageId: string; re
   }, [pageId])
 
   const threads = useMemo(() => (comments ? buildThreads(comments) : []), [comments])
+  // Resolved threads fold away (dev-plan 15.3); the count says they are there.
+  const open = threads.filter((t) => !t.resolvedAt)
+  const resolved = threads.filter((t) => t.resolvedAt)
 
   return (
     <div className="comments">
@@ -34,21 +39,42 @@ export function CommentsPanel({ pageId, readOnly = false }: { pageId: string; re
       {!readOnly && <CommentForm pageId={pageId} onAdded={reload} placeholder="Add a comment…" />}
       {comments && comments.length === 0 && <p className="muted small">No comments yet.</p>}
       <ul className="comment-list">
-        {threads.map((node) => (
-          <CommentItem key={node.id} node={node} pageId={pageId} onChanged={reload} readOnly={readOnly} />
+        {open.map((node) => (
+          <CommentItem key={node.id} node={node} pageId={pageId} onChanged={reload} readOnly={readOnly} canEdit={canEdit} />
         ))}
       </ul>
+      {resolved.length > 0 && (
+        <>
+          <button type="button" className="link-btn comments__resolved-toggle" onClick={() => setShowResolved((v) => !v)}>
+            {showResolved ? 'Hide resolved' : `Show resolved (${resolved.length})`}
+          </button>
+          {showResolved && (
+            <ul className="comment-list comment-list--resolved">
+              {resolved.map((node) => (
+                <CommentItem key={node.id} node={node} pageId={pageId} onChanged={reload} readOnly={readOnly} canEdit={canEdit} />
+              ))}
+            </ul>
+          )}
+        </>
+      )}
     </div>
   )
 }
 
-export function CommentItem({ node, pageId, onChanged, readOnly = false }: { node: Node; pageId: string; onChanged: () => void; readOnly?: boolean }) {
+export function CommentItem({ node, pageId, onChanged, readOnly = false, canEdit = false }: { node: Node; pageId: string; onChanged: () => void; readOnly?: boolean; canEdit?: boolean }) {
   const { user } = useAuth()
   const [replying, setReplying] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editBody, setEditBody] = useState(node.body ?? '')
   const isOwn = user?.id === node.authorId && !node.isDeleted
   const { ask, dialog } = useConfirm()
+
+  async function toggleResolved() {
+    if (node.resolvedAt) await api.comments.reopen(node.id)
+    else await api.comments.resolve(node.id)
+    onChanged()
+    announceCommentsChanged()
+  }
 
   async function saveEdit(e: FormEvent) {
     e.preventDefault()
@@ -88,11 +114,17 @@ export function CommentItem({ node, pageId, onChanged, readOnly = false }: { nod
         />
         <span className="comment__author">{node.authorName}</span>
         {node.isInline && <span className="badge">inline</span>}
+        {node.resolvedAt && <span className="badge badge--resolved">resolved</span>}
         <span className="muted small">{new Date(node.createdAt).toLocaleString()}</span>
       </div>
+      {node.resolvedAt && (
+        <p className="muted small comment__resolved">
+          Resolved{node.resolvedByName ? ` by ${node.resolvedByName}` : ''} {new Date(node.resolvedAt).toLocaleString()}
+        </p>
+      )}
       {editing ? (
         <form onSubmit={saveEdit} className="comment__edit">
-          <textarea value={editBody} onChange={(e) => setEditBody(e.target.value)} rows={2} required />
+          <MentionTextarea value={editBody} onValueChange={setEditBody} rows={2} required />
           <div className="row-gap">
             <button type="submit" className="btn btn--primary btn--sm">Save</button>
             <button type="button" className="btn btn--ghost btn--sm" onClick={() => setEditing(false)}>Cancel</button>
@@ -100,12 +132,17 @@ export function CommentItem({ node, pageId, onChanged, readOnly = false }: { nod
         </form>
       ) : (
         <p className={node.isDeleted ? 'comment__body muted' : 'comment__body'}>
-          {node.isDeleted ? '[deleted]' : node.body}
+          {node.isDeleted ? '[deleted]' : <CommentBody text={node.body ?? ''} />}
         </p>
       )}
       {!node.isDeleted && !readOnly && (
         <div className="comment__actions">
           <button type="button" className="link-btn" onClick={() => setReplying((v) => !v)}>Reply</button>
+          {node.parentCommentId === null && (isOwn || canEdit) && (
+            <button type="button" className="link-btn" onClick={() => toggleResolved()}>
+              {node.resolvedAt ? 'Reopen' : 'Resolve'}
+            </button>
+          )}
           {isOwn && (
             <>
               <button type="button" className="link-btn" onClick={() => { setEditing(true); setEditBody(node.body ?? '') }}>Edit</button>
@@ -125,7 +162,7 @@ export function CommentItem({ node, pageId, onChanged, readOnly = false }: { nod
       {node.replies.length > 0 && (
         <ul className="comment-list comment-list--nested">
           {node.replies.map((child) => (
-            <CommentItem key={child.id} node={child} pageId={pageId} onChanged={onChanged} readOnly={readOnly} />
+            <CommentItem key={child.id} node={child} pageId={pageId} onChanged={onChanged} readOnly={readOnly} canEdit={canEdit} />
           ))}
         </ul>
       )}
@@ -166,7 +203,7 @@ function CommentForm({
 
   return (
     <form className="comment-form" onSubmit={onSubmit}>
-      <textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder={placeholder} rows={2} />
+      <MentionTextarea value={body} onValueChange={setBody} placeholder={placeholder} rows={2} />
       <button type="submit" className="btn btn--primary btn--sm" disabled={busy || !body.trim()}>
         {busy ? 'Posting…' : 'Post'}
       </button>

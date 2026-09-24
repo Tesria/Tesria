@@ -59,6 +59,36 @@ public class TokenScopeTests
     }
 
     [Fact]
+    public async Task A_read_only_token_cannot_get_into_live_editing()
+    {
+        // The collab token is fetched with a GET, which the method-based
+        // read-only check lets through, but it grants writes to the draft.
+        var (f, session, _, page) = await World();
+        using var _ = f;
+        var ro = await TokenClient(f, session, readOnly: true);
+        var rw = await TokenClient(f, session, readOnly: false);
+
+        var refused = await ro.GetAsync($"/api/pages/{page.Id}/collab-token");
+        Assert.Equal(HttpStatusCode.Forbidden, refused.StatusCode);
+        Assert.Contains("read_only_token", await refused.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.OK, (await rw.GetAsync($"/api/pages/{page.Id}/collab-token")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Renaming_a_page_without_sending_content_keeps_the_content()
+    {
+        var (f, session, _, page) = await World();
+        using var _ = f;
+        var rw = await TokenClient(f, session, readOnly: false);
+
+        (await rw.PutAsJsonAsync($"/api/pages/{page.Id}", new { Title = "Renamed" })).EnsureSuccessStatusCode();
+
+        var detail = await rw.GetFromJsonAsync<System.Text.Json.JsonElement>($"/api/pages/{page.Id}");
+        Assert.Equal("Renamed", detail.GetProperty("title").GetString());
+        Assert.Contains("hi", detail.GetProperty("contentJson").GetString());
+    }
+
+    [Fact]
     public async Task A_full_token_and_a_cookie_session_are_unaffected()
     {
         var (f, session, _, page) = await World();

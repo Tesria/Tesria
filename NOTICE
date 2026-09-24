@@ -17,7 +17,7 @@ under the License.
 
 ---
 
-Third-party components are distributed under their own licences. The full
+Third-party components are distributed under their own licenses. The full
 set, with versions, is in `src/web/package-lock.json`, `collab/package-lock.json`
 and the `PackageReference` entries in `src/Api/Api.csproj`; the notable ones are:
 
@@ -36,3 +36,5 @@ and the `PackageReference` entries in `src/Api/Api.csproj`; the notable ones are
   - qrcode                                                MIT
   - Vite, oxlint                                          MIT
   - PostgreSQL, pgBackRest, Caddy (deployed images)       PostgreSQL / MIT / Apache-2.0
+  - restic (backup sidecar)                               BSD-2-Clause
+  - Playwright, Chromium (PDF sidecar)                    Apache-2.0 / BSD-3-Clause

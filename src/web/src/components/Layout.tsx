@@ -202,7 +202,7 @@ export function Layout() {
               )}
               {/* readOnly: no reorder pencil and no dragging inside a menu
                   that closes on the first tap: navigation only. */}
-              <PageTree tree={spaceNav.tree} spaceKey={spaceNav.space.key} readOnly onNavigate={closeNav} />
+              <PageTree tree={spaceNav.tree} spaceKey={spaceNav.space.key} readOnly onNavigate={closeNav} treeStyle={spaceNav.space.treeStyle} />
               {user && (
                 <NavLink to={`/spaces/${spaceNav.space.key}/settings`} className="sidebar__trash" onClick={closeNav}>
                   <SettingsIcon /> Space settings

@@ -38,8 +38,17 @@
 
 param(
     [Parameter(Position = 0)]
-    [string]$HostName = "localhost"
+    [string]$HostName = ""
 )
+
+# ---------------------------------------------------------------------------
+# EDIT THIS LINE: the address you type into your browser to open Tesria,
+# without "https://". For example wiki-server.local or mymac.local.
+# (A copy downloaded from your server's /trust page already has it filled in.)
+$TesriaAddress = "localhost"
+# ---------------------------------------------------------------------------
+
+if (-not $HostName) { $HostName = $TesriaAddress }
 
 $ErrorActionPreference = "Stop"
 
@@ -93,8 +102,8 @@ Remove-Item $tmpCert -ErrorAction SilentlyContinue
 
 Write-Host "==> Done. Restart your browser (fully quit and reopen, not just the tab)."
 Write-Host "    Chrome and Edge read the Windows machine trust store, so both will trust it now."
-Write-Host "    Firefox keeps its own certificate store and needs a separate manual import"
-Write-Host "    -- see docs/tls-and-lan-access.md."
+Write-Host "    Firefox keeps its own certificate store and needs a separate step:"
+Write-Host "    see http://$HostName/trust"
 
 Write-Host ""
 Write-Host "==> Verifying: refetching https://$HostName/ (should now succeed with no warning)..."
@@ -103,7 +112,7 @@ try {
     Write-Host "    Success -- this machine now trusts $HostName."
 }
 catch {
-    Write-Host "    Still failing. Try fully restarting your browser, and see docs/tls-and-lan-access.md if the warning persists."
+    Write-Host "    Still failing. Fully quit and reopen your browser, and see http://$HostName/trust if the warning persists."
 }
 
 Write-Host ""

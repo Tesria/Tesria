@@ -62,8 +62,9 @@ export function RecoveryCodesSection() {
   return (
     <>
       <p className="muted small">
-        Single-use codes that reset your password if you are locked out. They
-        work with no email server configured.
+        Single-use codes that sign you in in place of your authenticator app,
+        or reset your password if you are locked out. They work with no email
+        server configured.
       </p>
 
       {remaining !== null && (
@@ -87,9 +88,9 @@ export function RecoveryCodesSection() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
-              required
               autoFocus
             />
+            <span className="muted small">Not needed within a few minutes of signing in.</span>
           </label>
           {error && <p className="alert alert--error">{error}</p>}
           <div className="row-gap">

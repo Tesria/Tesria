@@ -48,7 +48,7 @@ export function ApiTokensSection() {
     <>
       <p className="muted small">
         Use a token to call the REST API from scripts or integrations, without a browser session:{' '}
-        <code>Authorization: Bearer &lt;token&gt;</code>. A token can do anything you can do.
+        <code>Authorization: Bearer &lt;token&gt;</code>. A token can do anything you can do, unless you make it read-only.
       </p>
       {error && <p className="alert alert--error">{error}</p>}
 

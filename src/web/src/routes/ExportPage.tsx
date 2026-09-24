@@ -89,6 +89,7 @@ export function ExportPage() {
       {chrome === 'site' && space && (
         <nav className="export__crumb"><span>{space.name}</span></nav>
       )}
+      {page.emoji && <span className="page-emoji" aria-hidden="true">{page.emoji}</span>}
       <h1>{page.title}</h1>
       <Editor value={page.contentJson} editable={false} getPageId={() => Promise.resolve(page.id)} />
     </article>

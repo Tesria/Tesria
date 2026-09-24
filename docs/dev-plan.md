@@ -3588,10 +3588,25 @@ are a few hundred kilobytes, so neither limit binds.
    Bunny*, the Blender Foundation's open film (CC BY 3.0, credited on the
    page), from Blender's own channel: fine to show on a public site, and
    YouTube is already on the default allowlist.
-6. **Write Support** in the order of the tree, shooting as each section is
-   written.
-7. **Export**: the pack committed to the repository, and the static site
-   checked against Cloudflare's limits and walked as a reader.
+6. ✅ **written 2026-09-23.** **Write Support** in the order of the tree,
+   shooting as each section is written. `scripts/support/publish-support.sh`
+   writes 165 pages from `scripts/support/sections/`, each picture taken on
+   a desktop and a phone from the Tesria Demo space; the wizard's pictures
+   come from a scratch instance (`scripts/support/shoot-setup.sh`). Reading
+   every screen's code to document it turned up the fixes in the CHANGELOG
+   and the whole of Phase 15, which were built first so nothing was shot
+   twice.
+7. ✅ **exported 2026-09-23.** **Export**: the pack committed to the
+   repository, and the static site checked against Cloudflare's limits and
+   walked as a reader. `scripts/support/export-support.sh` writes
+   `support/support-pack.zip` (23.5 MiB, 395 files) and the site (396
+   files, 50 MiB unpacked, the largest file 1.5 MiB: well inside 25 MiB and
+   20,000 files). Every internal link, image and anchor resolves. The walk
+   found that exported Expand blocks could not be opened, which hid every
+   FAQ answer, and that live blocks kept their editing header; both are
+   fixed. The site is exported as the author (`audience=me`) because this
+   instance has anonymous reading off; nothing in Support is restricted, so
+   the pages are the same.
 
 ---
 
@@ -4941,6 +4956,433 @@ miss of the kind the gate exists for:
 
 ---
 
+## Phase 14: The public release
+
+**What the owner asked for (2026-09-23).** "It will go public as a repo
+under the Apache 2 license. I also want to post to dockerhub if it's free so
+people can pull there. I have an account ready to do that." Publishing by
+GitHub Actions (the owner's choice, 2026-09-23). The Docker Hub account is
+`brianrodz`, on the free Personal plan: unlimited public repositories, and
+people pulling are limited to 100 pulls an hour each.
+
+`LICENSE` (Apache 2.0) and `NOTICE` exist already (8.2). What stands between
+the repo and the public is the audit `CLAUDE.md` has been waiting on since
+2026-09-08. 3.7 was a security review of the code as of 2026-09-09; phases 5
+to 13 came after it.
+
+### 14.1 Pre-release audit · `M` · Model: Opus 5.5
+
+Before the repo or any image is public:
+
+1. **Secrets and private details in the whole history**, not only the
+   tree: credentials, the NAS address and share names, personal email
+   addresses, anything from `.env`, `.nas-credentials` or
+   `.debug-credentials`. A finding in history means rewriting history
+   before the first public push, which is the one hard-to-reverse decision
+   here, so it goes to the owner first.
+2. **What the repo says about its owner.** `CLAUDE.md`, the CHANGELOG and
+   the plan are written for this project's sessions and name the owner's
+   machines and habits. Decide what a public reader should see: keep,
+   trim, or move to a private place.
+3. **A security pass over everything since 3.7**, the same method as 3.7
+   (every route for authorization, every upload and export path), with its
+   findings added to `security.md`'s "Known gaps" or fixed.
+4. **Dependencies**: `npm audit` and `dotnet list package --vulnerable`
+   clean, or each finding explained.
+5. `SECURITY.md` gets a real contact (3.7 left the disclosure path to this
+   point).
+
+**Already found, not yet changed** (by the 10.5 fact-finding, 2026-09-23;
+the clear bugs it found were fixed then and are in the CHANGELOG):
+
+- A full-access token can mint more tokens and revoke the owner's sessions,
+  and tokens never expire.
+- Render tokens (`trx_`) reach far more of `/api` than their comment says,
+  and space-scoped ones are not held to their space.
+- Some refusals are 403 where the rest of the API says 404, which reveals
+  that a hidden space exists (webhooks, space permissions, page restore,
+  restriction removal, template delete).
+- Drafts and trashed pages are readable by id through versions,
+  attachments, labels and comments.
+- `GET /api/users` and group member lists give every signed-in user every
+  account's email address.
+- Holders of `users.manage` can suspend, sign out and issue reset links for
+  other administrators; a reset link is an account takeover.
+- Admin routes that check rights inside the handler skip the "administrators
+  must have two-factor" rule.
+- Comment edit and delete do not re-check that the author can still see the
+  page.
+- Any user can create an instance-wide template.
+- The audit list is cut to its limit before permission filtering.
+- The favicon's source comment names the owner's personal site
+  (`brianintheloop.com/tesria`), and every HTML export and exported site
+  ships that comment. Decide whether it stays in a public release.
+
+### 14.2 Images on Docker Hub · `M` · Model: Opus 5.5 · after 14.1
+
+- **Five images**, each for both `linux/amd64` and `linux/arm64`:
+  `brianrodz/tesria-app`, `-db` (used by the `db` and `pgbackrest`
+  services), `-backup`, `-collab` and `-pdf`. Caddy and MinIO stay their
+  upstream images. The repositories are created by the first push; nothing
+  is made by hand.
+- **Tags**: `1.2.3`, `1.2` and `latest` from a pushed git tag `v1.2.3`,
+  nothing from ordinary commits.
+- **GitHub Actions**, one workflow on `v*` tags and on demand. Each
+  architecture builds on its own native runner (`ubuntu-24.04` and
+  `ubuntu-24.04-arm`, free for public repos) and a last job joins them into
+  one multi-architecture tag; emulating ARM would take the PDF image, which
+  carries a browser, from minutes to most of an hour.
+- **Credentials**: a Docker Hub access token with read and write access,
+  held as the repository secret `DOCKERHUB_TOKEN`, with the account name in
+  the variable `DOCKERHUB_USERNAME`. The owner makes both; no session sees
+  the token.
+- **`docker-compose.yml`** names each image (`image:`) next to its
+  `build:`, with the version from `TESRIA_VERSION` (default `latest`). So
+  `docker compose pull` then `up -d` runs the published images, and
+  `up -d --build` still builds from source.
+- **Support site**: the Quick start leads with pulling the images, and
+  building from source becomes the alternative. Rewritten as part of this
+  item, once the commands can be tried against real images; until then it
+  says to clone and build, which is true today.
+
+**Not decided here, deliberately:** the Docker-Sponsored Open Source
+program (it lifts the pull limit and allows an organization namespace, but
+needs an established public project to apply), signing images, and
+publishing to GitHub's own registry as well.
+
+---
+
+## Phase 15: What the Support site found missing
+
+**What the owner asked for (2026-09-23).** Writing the Support site (10.5)
+meant documenting every screen, and the fact-finding turned up access
+questions and features people would expect. The owner's answers:
+
+1. Someone with two-factor on who has lost the phone and every recovery code
+   needs a way back: "Separate admin action".
+2. An imported pack: "Make it private to the importer, but make them assign
+   users or groups immediately after import. There should also be 3 default
+   groups that cannot be deleted Owner, Admin, and Users." Membership nested
+   (the owner's choice between nested and by-tier).
+3. Rights of the administration area: "Do not give these rights to user tier
+   roles. Make them get promoted to an admin if you want to give them admin
+   privileges."
+4. The missing features: "All of them. Lets add them to the dev plan now and
+   build them."
+
+### 15.1 Access · `M` · Model: Opus 5.5 · ✅ **shipped 2026-09-23**
+
+- **Turn off two-factor, by an administrator.** A button on Users, beside
+  Reset password, for accounts with two-factor on. Needs `users.manage`,
+  asks for the password again (sudo), is never offered on the owner, and is
+  refused on another administrator unless the caller is the owner (the same
+  rule as promoting). Clears the secret and signs the account out
+  everywhere. Audited as `user.totp_disabled`; raises a Warning alert,
+  "Two-factor turned off for an account", with no cooldown, because this is
+  exactly what an attacker holding an admin session would do. Resets stay
+  as they are: a reset link never touches two-factor.
+- **Built-in groups: Owner, Admins, Users.** Seeded on startup, cannot be
+  renamed, deleted or have members added or removed. Membership is not
+  stored: it follows the tier at the moment of the check.
+  - Owner: the owner.
+  - Admins: administrators and the owner.
+  - Users: every active account.
+  The permission service resolves them wherever a group principal is
+  checked. The Groups tab lists them first, marked built in, with their
+  members shown read-only.
+- **Imported packs start private.** The import grants the importer Admin on
+  the new space, so it starts as private as a space whose first grant was
+  theirs. The result screen then goes straight to **Who should have
+  access?**: the space's permissions, with the built-in groups offered first
+  (Users is one click from "everyone signed in"). Skipping it leaves the
+  space to the importer alone, and the screen says so. The pack export
+  screen's promise is then true.
+- **Administration rights stay in the administrator tier.** Rights whose
+  scope is Administration are not offered for user-tier roles: the matrix
+  shows them as not applicable there, and the server refuses to grant them.
+  A one-time migration removes any the user tier already holds, and the
+  audit log records what was removed. Content rights (including creating
+  invite links) stay available to both tiers.
+
+### 15.2 Editor · `L` · Model: Opus 5.5 · ✅ **shipped 2026-09-23**
+
+- **Tables:** turn the header row and the header column on and off; merge
+  and split cells; a **Delete table** button. All in the cell menu (the
+  arrow in a cell), beside the background colors.
+- **Images:** resize by dragging a corner (widths stored as a percentage of
+  the column, so they survive other screens), alignment (left, center,
+  right, and full width), a caption under the picture, and editable alt
+  text. All in the image bubble; exports keep them.
+- **File or video:** an **Upload** button in the block itself, on new pages
+  too, instead of a trip to the Attachments tab.
+- **Smart link, inline:** Inline becomes a real inline link that sits in a
+  sentence (a separate inline node), not a block that happens to be short.
+
+### 15.3 Pages and collaboration · `L` · Model: Opus 5.5 · ✅ **shipped 2026-09-23**
+
+- **Resolve comments.** A thread can be resolved and reopened by its author,
+  the page's editors, and space administrators. Resolved threads fold away
+  under **Show resolved**; an inline comment's highlight goes when it is
+  resolved and comes back if reopened.
+- **Compare versions.** In History, pick two versions and see what changed
+  between them, words added and removed highlighted, reusing the tracked-
+  change marks of 8.6 in a read-only view.
+- **Move and copy from the page menu.** **Move** picks a new parent, in this
+  space or another the person can edit, with the same checks as a drag.
+  **Copy** makes a new page (and optionally its sub-pages) with the content
+  and labels, not the history or comments, titled "Copy of …".
+- **A label index.** `/labels` lists every label in use with its page count,
+  linked from each label page and from Finding things.
+- **Mentions in comments.** Typing @ in a comment box offers people the same
+  way the editor does; the person is notified if they can see the page.
+- **Reopening a restricted space.** Space settings → Permissions gets **Make
+  this space open again**: removes every grant after a confirmation that
+  says the space becomes readable, editable and administrable by everyone
+  signed in, and asks for the password. Audited; alerts administrators.
+
+### 15.4 Confirmations · `S` · Model: Opus 5.5 · ✅ **shipped 2026-09-23**
+
+Every destructive or account-affecting admin action gets a confirmation
+naming what it does and to whom: Suspend, Sign out, Revoke tokens, invite
+Revoke, removing a block, removing a group member, and the Security tab's
+one-click mitigations.
+
+### 15.5 Trust this device · `M` · Model: Opus 5.5 · ✅ **shipped 2026-09-23**
+
+**Verified by the owner on Windows and iOS (2026-09-23)**, after two fixes
+his first tries found: Windows' execution policy (now a pasted line) and a
+numeric address that can never match the certificate (now explained).
+
+**Asked for by the owner, 2026-09-23**, reviewing the first Support site:
+trusting the local certificate was written for people who already know
+what a certificate is. "If it's hard to setup or maintain people will drop
+it in favor of something easier to use." The owner suggested an endpoint
+that serves the certificate and the scripts, and a wizard that asks a few
+questions and fills the script in.
+
+**What it is.** A page at `http://<server>/trust`, served over **plain
+HTTP** on purpose: it is the one page a device that trusts nothing yet can
+open without a warning, the same reason `/ca.crt` is served on port 80. It
+asks two questions, with answers guessed already:
+
+1. **Which device is this?** Windows, Mac, Linux, iPhone or iPad, Android,
+   from the browser's user agent, changeable.
+2. **What address do you open Tesria at?** Filled in from the address the
+   page was opened at. A bare IP address gets a warning, with the reason
+   and how to find the computer's name instead.
+
+Then numbered steps for that device, in the words a beginner needs: on a
+Mac or Linux, download a script **with the address already written in** and
+run it (the exact command, where to type it, and that the password prompt
+shows nothing as you type); on Windows, **one line to paste into
+PowerShell**, because PowerShell's execution policy refuses downloaded
+scripts by default and employers lock it (the owner's first try on
+Windows, 2026-09-23), while a typed command is not affected and trusts the
+server for that Windows account with no administrator; by hand as the
+second option; for a phone, the
+certificate itself and the Settings path to trust it. Last, **Check it
+worked**: a link to `https://<address>/` that should open with no warning.
+Firefox, which keeps its own list, gets its own note.
+
+**The scripts** stay `deploy/scripts/trust-ca.sh` and `trust-ca.ps1`, one
+copy. Each gains a clearly marked line near the top, `TESRIA_ADDRESS`,
+which is the one thing a person edits by hand and the one line the wizard
+fills in. The app embeds both at build time and serves them at
+`/trust/trust-tesria.sh` and `/trust/trust-tesria.ps1?address=...`.
+
+**Where you find it.** One wizard, three ways in. **Profile → Trust this
+device**, the owner's suggestion (2026-09-23): most people click past the
+warning once, sign in, and can then set the device up properly from inside
+the app. The sign-in page, for someone past the warning but not signed in.
+And the address itself, which is the only way for a browser that will not
+let anyone click past (managed browsers, or any that has seen HSTS) and the
+easiest on a phone. The wizard stays a page of its own rather than a screen
+of the app, because it has to work over plain HTTP for those last cases;
+two copies would drift.
+
+**Where it shows.** Only where the server uses its own certificate
+(the default `deploy/Caddyfile`). With `CADDYFILE=deploy/Caddyfile.public`
+there is nothing to trust, and `/trust` says so. The app learns which file
+is in use from the same `CADDYFILE` variable, so there is nothing new to
+set. The sign-in page links to it ("Seeing a security warning?") on
+servers with their own certificate.
+
+**Decisions worth a second look** (security, named so the owner can choose
+to have them reviewed):
+
+- **An anonymous page over plain HTTP.** It holds nothing secret: the
+  certificate's public half, which `/ca.crt` already serves, and two
+  scripts. Someone who can tamper with a LAN's plain HTTP could change the
+  page or the script. That is already true of `/ca.crt`, which this does
+  not make worse: a first contact over an untrusted network has to trust
+  something, and on a home or office LAN that is the accepted risk. Both
+  scripts print the certificate's fingerprint for anyone who wants to
+  compare it at the server.
+- **The address is written into a script someone will run as
+  administrator.** It is checked against a strict pattern (letters, digits,
+  dots and hyphens, or an IPv4 address) before it goes anywhere near the
+  script, so no quote, space, `$` or backtick can reach a shell. Tested
+  with hostile input.
+- **The page's script is a separate same-origin file**, so the Content
+  Security Policy is unchanged: no inline script, no nonce.
+
+### 15.9 Filter the page tree · `S` · Model: Opus 5.5 · ✅ **shipped 2026-09-23**
+
+The owner: "add a search to the top of the pages tree that filters the list
+based on the search", in exports too, resetting once a page is chosen.
+Matches and their parents, highlighted, in the app's tree and an exported
+site's sidebar, by the same rule. A toggle adds the pages under each match.
+The owner then chose to keep the filter while its results are opened,
+rather than clearing it.
+
+### 15.8 Numbered and bulleted page trees · `S` · Model: Opus 5.5 · ✅ **shipped 2026-09-23**
+
+Asked for by the owner after trying 15.7 on the Support site: "an option
+to automatically # or bullet the space pages kind of like the table of
+contents element", and the markers "only a visual element and not part of
+the actual page key or title", reflowing when pages move. A space setting
+(`Space.TreeStyle`, migration `SpaceTreeStyle`): Plain, Numbered (outline,
+1.1) or Bulleted. Computed from the tree's order wherever it is drawn: the
+app's sidebar and phone menu, and an exported site. Support is numbered.
+
+### 15.7 Page emoji · `S` · Model: Opus 5.5 · ✅ **shipped 2026-09-23**
+
+The owner asked for an emoji on the Support site's section pages, so they
+stand out in the tree. Built as a page setting rather than a character in
+the title, so search, breadcrumbs and exported addresses stay clean, and so
+anyone can use it: `Page.Emoji` (migration `PageEmoji`), set from the page
+by whoever may edit it, shown above the title and in the tree, and carried
+by copies, packs and exported sites. Not versioned, like the page width.
+
+### 15.6 The Support site, rewritten for beginners · `L` · Model: Opus 5.5
+
+**The owner's review of the first version (2026-09-23)**: "very basic and
+dry and feels like AI wrote it with no care for the users." The rules for
+the rewrite, which also apply to anything written for users from now on:
+
+- **Write for someone new.** Context first: what a thing is, why you would
+  want it, with an example. Then how.
+- **Procedures are numbered steps**, Step 1, Step 2, Step 3, each with a
+  picture that has a box around the thing to click and an arrow to it.
+- **Offer a script wherever a step is technical**, for Windows, macOS and
+  Linux, and say exactly what to edit in it. Downloads are attachments on
+  the page, and gain a GitHub link once the repository is public (14.2).
+- **One picture per row**, never two side by side, and every picture has a
+  shadow. Desktop and phone go in separate "On a computer" and "On a phone"
+  sections, and only where the phone is different; otherwise the page shows
+  the desktop.
+- **A picture only where it shows something words cannot**, such as where
+  a control is or what a layout looks like. Never a picture of text the
+  page already says: the owner's example was a screenshot of the Storage
+  targets card, a paragraph shrunk to unreadable size above the same words.
+- **Pictures the right size on every device.** Close-ups are taken in a
+  narrow window (480px) and shown at their own size on a desktop; on a
+  phone a resized picture fills the column. A crop of a 1280px window was
+  shown at about a quarter of its size on a phone.
+- **Lists, not tables, for anything longer than a few words.** A two-column
+  table of explanations runs off the side of a phone.
+- **Every variant, live, with an example of when to use it** (the owner,
+  2026-09-23: the chart page showed none of bar, column, line and pie).
+  An element with kinds, styles or options shows each one on the page:
+  every chart type, every panel type, each list style, table options,
+  status colors, and so on.
+- **Element pages show the real element**, live on the page, and explain
+  when you would use it with examples. A picture only where it shows
+  something moving. Every element page has the same **Insert it** section in
+  the same place, giving the slash command.
+- **Pilot first.** Three pages go to the owner before anything else
+  changes: Trusting the local certificate (built on 15.5), Panel (an
+  element page) and Creating a space (a manual page). The owner's review is
+  in progress (2026-09-23): the certificate and Creating a space pages
+  looked good, and the Panels animation was fixed; Opening Tesria by name
+  and Templates were added at his request. The rollout waits for his
+  approval.
+
+## Phase 16: Versions, for the app, the docs and wiki packs
+
+Asked for by the owner, 2026-09-24, to plan now and build later: "we need
+to think about a version system for the app and the docs", starting at
+**0.5** as the product approaches beta, living "nicely with the build
+pipelines we create in GitHub as GitHub Actions", with "backwards
+compatibility and migrations for imported space packs" so that "if
+someone spends a lot of time making a space and then they distribute it
+as a pack it doesn't break if we update Tesria".
+
+**Where things stand (2026-09-24).** `Api.csproj` says 0.2.0 and the web
+app's `package.json` says 0.0.0; nothing shows either. Wiki packs carry a
+format number (`WikiPack.Format`, 1): adding an optional field leaves it
+alone (the page emoji and tree style of 15.7 and 15.8 did), changing what
+a field means raises it, and a reader refuses a format newer than it knows.
+There is no upgrade path for an older one yet, because there has only
+ever been one. The database has EF Core migrations, which run at startup.
+
+### 16.1 One version number, set by the release · `M` · Model: Opus 5.5
+
+- **Semantic versioning, starting at 0.5.0** (the owner's suggestion).
+  While the major number is 0, a minor release (0.6) may change behavior
+  and a patch (0.5.1) only fixes; 1.0 is the promise of stability.
+- **One source of truth**: a pushed git tag `v0.5.0`. GitHub Actions reads
+  it and stamps it into the server build (`-p:Version`), the web build and
+  the Docker images (14.2's tags come from the same tag). A build without a
+  tag, such as a local one, is `0.5.0-dev+<commit>`, so it can never be
+  mistaken for a release.
+- **Shown where people look**: Admin → Dashboard, the footer of Admin, the
+  API (`/api/instance` and the OpenAPI document), exported sites' footers,
+  and `docker compose` health output. Upgrading tells the owner what
+  version they came from and went to (audit entry).
+- **Release notes**: the Support site's Release notes page gains an entry
+  per release, from the CHANGELOG's dated entries grouped by version.
+
+### 16.2 Docs that say which version they describe · `M` · Model: Opus 5.5
+
+- **Every Support page ends with a small version table**: *Applies to*
+  (such as "Tesria 0.8 and later"), *Last updated* (a date), and a short
+  *What changed* line. Written by the publisher, not by hand: each section
+  records the version a page was last checked against, and the date comes
+  from the page's own history.
+- **"Applies to" moves only when the page's content changes for a new
+  version.** A page written for 0.5 that is still true in 0.9 keeps saying
+  0.5 and later. A page describing a feature added in 0.7 says 0.7 and
+  later, which also tells readers of an older install that they do not
+  have it yet.
+- **The published site is the latest release's.** Older versions are the
+  wiki pack committed at each release tag (10.5), which anyone can import
+  to read the docs for the version they run. A version picker on the site
+  is possible later, and not planned.
+
+### 16.3 Packs that keep working across versions · `M` · Model: Opus 5.5
+
+- **The compatibility promise**: a pack exported by any release from 0.5
+  on imports into every later release. (Packs from before 0.5 are format 1
+  too, and are covered by the same path.)
+- **Pack migrations**, like database migrations: when a release has to
+  raise `WikiPack.Format`, it ships an upgrade step from the previous
+  format (`PackUpgrades`, 1 → 2, 2 → 3, …). The importer applies the steps
+  in order to the pack's JSON before reading it, so the import code only
+  ever reads the current format. Document content has the same problem one
+  level down: a change to an editor node's shape (renamed attribute,
+  split node) ships a content upgrade that the pack upgrade applies to
+  every version of every page, and that the app applies to stored pages in
+  a database migration.
+- **The version that made a pack is recorded** (the manifest's
+  `generator` already names Tesria; it gains the release number), so an
+  import can say "made with Tesria 0.6" and an error can say which step
+  failed.
+- **Tested by fixtures, not by hope**: every release that raises the format
+  commits a small pack made by the release before it
+  (`tests/Api.Tests/Packs/format-N.zip`), and a test imports every fixture
+  into the current build. A fixture is never regenerated, which is what
+  makes it a test of the old format.
+- **Newer than known stays refused**, with a message saying which Tesria
+  version is needed, rather than a partial import.
+
+**Decisions for the owner before building**: 0.5.0 as the first number
+(suggested by the owner); whether the Docker `latest` tag follows every
+release or only non-prerelease ones; and whether the site keeps a copy of
+older versions' docs online or only in the repository.
+
+---
+
 ## Order of execution, flattened
 
 1. **0.1** Roles (Fable→Opus) → **0.2** Settings → **0.3** Telemetry → **0.4** Media storage
@@ -4961,6 +5403,11 @@ miss of the kind the gate exists for:
 13d. Three small follow-ups (Opus 5.5, shipped 2026-09-22): the dashboard's two top-ten tables as cards, **Test connection** back on Storage targets (9.2 step 5), and `OFFSITE_CLOUD_BUDGET_GB` (9.3 step 3).
 13b. **13.1** Instance branding (designed and shipped 2026-09-22 by Opus 5.5, the first item under the new model gate). Before 10.5 at the owner's request, and the manual's screenshots are then taken on an unbranded instance.
 14. **10.5** The Support site and the Demo space (rescoped from "rebuild the user manual" by the owner, 2026-09-22), **after 8.5**, now that the owner has settled the wiki as its source of truth (2026-09-21). A manual whose only copy is inside the instance is how the last one was lost, so the pack that can export it is a prerequisite, not a preference.
+
+15. **15.1** Access → **15.2** Editor → **15.3** Pages and collaboration → **15.4** Confirmations (asked for 2026-09-23). Before 10.5's step 7, so the Support site documents them and its pictures show them.
+15a. **15.5** Trust this device → **15.6** the Support rewrite, pilot pages first (asked for 2026-09-23). Before 14, because the Support site is what goes public with the images.
+16. **14.1** Pre-release audit → **14.2** Images on Docker Hub (asked for 2026-09-23). After 10.5, so the Support site and the images go public together.
+17. **16.1** One version number → **16.2** Versioned docs → **16.3** Pack migrations (asked for 2026-09-24). 16.1 alongside 14.2, since both are the same GitHub Actions release pipeline; 16.2 before the Support site is published at tesria.com; 16.3 before the first release that changes the pack format.
 
 Phases 6 and 8.2 are floaters (small, no dependents) and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm

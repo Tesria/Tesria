@@ -152,14 +152,14 @@ export const DYNAMIC_KINDS: DynamicKind[] = [
     keywords: ['labels', 'tags', 'popular', 'related'],
     params: [
       {
-        key: 'mode', label: 'Show', type: 'select', default: 'page',
+        key: 'mode', label: 'List', type: 'select', default: 'page',
         options: [
           { value: 'page', label: "This page's labels" },
           { value: 'popular', label: 'Popular in this space' },
           { value: 'related', label: 'Related labels' },
         ],
       },
-      { key: 'limit', label: 'Limit', type: 'number', min: 1, max: 100, default: 20 },
+      { key: 'limit', label: 'Show', type: 'number', min: 1, max: 100, default: 20 },
     ],
   },
   {

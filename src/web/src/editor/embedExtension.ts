@@ -2,6 +2,7 @@ import { Node, mergeAttributes } from '@tiptap/core'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import { EmbedView } from './EmbedView'
 import { SmartLinkView } from './SmartLinkView'
+import { InlineSmartLinkView } from './InlineSmartLinkView'
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -103,5 +104,39 @@ export const SmartLink = Node.create({
 
   addNodeView() {
     return ReactNodeViewRenderer(SmartLinkView)
+  },
+})
+
+/**
+ * A smart link that sits inside a sentence (dev-plan 15.2). The document
+ * stores the address only, like the card.
+ */
+export const InlineSmartLink = Node.create({
+  name: 'smartLinkInline',
+  group: 'inline',
+  inline: true,
+  atom: true,
+  selectable: true,
+
+  addAttributes() {
+    return {
+      url: {
+        default: '',
+        parseHTML: (element: HTMLElement) => element.getAttribute('href') ?? '',
+      },
+    }
+  },
+
+  parseHTML() {
+    return [{ tag: 'a[data-type="smart-link-inline"]' }]
+  },
+
+  renderHTML({ node }) {
+    const url = String(node.attrs.url ?? '')
+    return ['a', { 'data-type': 'smart-link-inline', class: 'smart-link-inline', href: url, rel: 'noreferrer noopener', target: '_blank' }, url]
+  },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(InlineSmartLinkView)
   },
 })

@@ -19,13 +19,16 @@ public static partial class SpaceEndpoints
     public record DeletionPreviewResponse(string Key, string Name, int Pages, int Attachments, long Bytes, bool IsPublic);
     public record UpdateSpaceRequest(
         string Name, string? Description,
-        SpaceIconKind? IconKind = null, string? IconValue = null, int? IconColor = null);
+        SpaceIconKind? IconKind = null, string? IconValue = null, int? IconColor = null,
+        /// <summary>Plain, numbered or bulleted page tree (dev-plan 15.8); omitted leaves it alone.</summary>
+        SpaceTreeStyle? TreeStyle = null);
     public record SpaceResponse(
         Guid Id, string Key, string Name, string? Description,
         bool Archived, Guid? HomepageId, DateTimeOffset CreatedAt,
         bool IsPublic, bool PublicComments,
         SpaceIconKind IconKind, string? IconValue, int? IconColor,
-        SpaceExportsDto Exports);
+        SpaceExportsDto Exports,
+        SpaceTreeStyle TreeStyle = SpaceTreeStyle.Plain);
 
     /// <summary>
     /// Which exports this space allows (dev-plan 12.3). Part of every space
@@ -165,6 +168,12 @@ public static partial class SpaceEndpoints
         }
 
         if (req.IconColor is { } color) space.IconColor = color;
+
+        if (req.TreeStyle is { } style)
+        {
+            if (!Enum.IsDefined(style)) return Results.ValidationProblem(Error("treeStyle", "Choose plain, numbered or bulleted."));
+            space.TreeStyle = style;
+        }
 
         space.Name = name;
         space.Description = string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim();
@@ -307,7 +316,7 @@ public static partial class SpaceEndpoints
 
     private static SpaceResponse ToResponse(Space s) =>
         new(s.Id, s.Key, s.Name, s.Description, s.Archived, s.HomepageId, s.CreatedAt, s.IsPublic, s.PublicComments,
-            s.IconKind, s.IconValue, s.IconColor, ExportsOf(s));
+            s.IconKind, s.IconValue, s.IconColor, ExportsOf(s), s.TreeStyle);
 
     private static SpaceExportsDto ExportsOf(Space s) =>
         new(s.ExportMarkdown, s.ExportHtml, s.ExportPdf, s.ExportSite, s.ExportPack);

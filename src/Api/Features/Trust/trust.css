@@ -1,0 +1,77 @@
+/* "Trust this device" (dev-plan 15.5). Loaded after the application's own
+   stylesheet, so buttons, alerts, code and the color tokens are the app's;
+   this only lays out the page. */
+
+.trust-top {
+  display: flex; align-items: center; gap: 0.5rem; height: 52px; padding: 0 1rem;
+  border-bottom: 1px solid var(--border); background: var(--surface); color: var(--primary);
+}
+.trust-top__name { font-weight: 700; color: var(--text); }
+
+.trust { max-width: 46rem; margin: 0 auto; padding: 2rem 1rem 4rem; line-height: 1.55; }
+.trust h1 { margin: 0 0 0.4rem; font-size: 1.9rem; }
+.trust-lead { font-size: 1.1rem; color: var(--muted); margin: 0 0 1.5rem; }
+
+.trust-why {
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-alt);
+  padding: 0.75rem 1rem; margin-bottom: 2rem;
+}
+.trust-why summary, .trust-manual summary { cursor: pointer; font-weight: 600; }
+.trust-why p { margin: 0.6rem 0 0; }
+
+.trust-step {
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
+  padding: 1.25rem 1.25rem 1rem; margin: 0 0 1.25rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.trust-step h2 { display: flex; align-items: center; gap: 0.6rem; margin: 0 0 0.5rem; font-size: 1.2rem; }
+.trust-step__num {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 1.8rem; height: 1.8rem; border-radius: 50%; background: var(--primary); color: #fff;
+  font-size: 0.95rem; font-weight: 700;
+}
+
+.trust-devices { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+.trust-device {
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text);
+  padding: 0.55rem 0.9rem; font: inherit; cursor: pointer;
+}
+.trust-device:hover { background: var(--bg-alt); }
+.trust-device.is-active { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); color: var(--primary); font-weight: 600; }
+
+.trust-address {
+  display: flex; align-items: stretch; margin-top: 0.75rem; max-width: 30rem;
+  border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--surface);
+}
+.trust-address__prefix { display: flex; align-items: center; padding: 0 0.6rem; background: var(--bg-alt); color: var(--muted); }
+.trust-address input { flex: 1; min-width: 0; border: 0; border-radius: 0; font: inherit; padding: 0.55rem 0.6rem; }
+.trust-address:focus-within { border-color: var(--primary); }
+.trust-address__error, .trust-ip { margin-top: 0.75rem; }
+.trust-ip p { margin: 0 0 0.5rem; }
+.trust-ip ul { margin: 0 0 0.5rem; padding-left: 1.2rem; }
+
+.trust-guide > p:first-child { margin-top: 0.25rem; }
+.trust-list { padding-left: 1.3rem; }
+.trust-list > li { margin: 0 0 0.9rem; padding-left: 0.2rem; }
+.trust-list > li::marker { font-weight: 700; color: var(--primary); }
+.trust-list .btn { margin: 0.1rem 0.5rem 0.25rem 0; }
+/* The note under a download button reads as its caption, on its own line. */
+.trust-list .btn + .muted { display: block; font-size: 0.92rem; }
+a.btn[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
+
+.trust-cmd {
+  display: flex; align-items: center; gap: 0.5rem; margin-top: 0.45rem;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-alt); padding: 0.45rem 0.5rem 0.45rem 0.75rem;
+}
+/* Wrapped rather than scrolled: a command cut off at the edge looks like the
+   whole of it, and the Windows line is long. Copy takes it whole either way. */
+.trust-cmd code { flex: 1; min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; background: none; padding: 0; line-height: 1.5; }
+.trust-cmd .btn { flex: none; align-self: flex-start; }
+
+.trust-manual { margin: 0.75rem 0 0; border-top: 1px solid var(--border); padding-top: 0.75rem; }
+.trust-manual ol, .trust-manual p { margin: 0.5rem 0 0; }
+.trust-firefox { margin-top: 1rem; }
+
+.trust kbd {
+  display: inline-block; min-width: 1.4em; padding: 0 0.35em; border: 1px solid var(--border); border-bottom-width: 2px;
+  border-radius: 4px; background: var(--surface); font: inherit; font-size: 0.85em; text-align: center;
+}

@@ -53,7 +53,7 @@ public static class OpenApiSetup
                 {
                     Type = SecuritySchemeType.ApiKey,
                     In = ParameterLocation.Cookie,
-                    Name = "tesria_auth",
+                    Name = "tesria.auth",
                     Description = "The SPA's session cookie. Unsafe requests also need `X-Requested-With: Tesria`.",
                 };
 
@@ -108,10 +108,17 @@ public static class OpenApiSetup
             // app's `connect-src 'self'` blocks those calls, which is the
             // behavior we want, a documentation page has no business
             // phoning anywhere, so the button that leads to them is hidden
-            // rather than left to fail in front of the reader. The library
-            // has no switch for the lookups themselves; the CSP is the
-            // backstop, and it holds.
+            // rather than left to fail in front of the reader. Scalar 2.17
+            // added switches for the lookups themselves (its agent, MCP and
+            // telemetry), which were still trying and failing against the CSP
+            // on every load (seen 2026-09-23); the CSP stays the backstop.
             options.WithClientButton(false);
+            options.DisableAgent();
+            options.DisableMcp();
+            options.DisableTelemetry();
+            // Its developer toolbar (Configure, Share, Deploy) leads to
+            // Scalar's hosted service, and it shows on localhost addresses.
+            options.HideDeveloperTools();
             // The page's one inline script runs under the nonce the security
             // headers minted for this request (SecurityHeadersMiddleware),
             // instead of the app opening `unsafe-inline` for everyone.

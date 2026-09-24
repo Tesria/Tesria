@@ -22,7 +22,8 @@ import { Extension, Mark, mergeAttributes, type Range } from '@tiptap/core'
  */
 
 /** Who made the change, which decides the highlight's color and its label. */
-export type ExternalEditSource = 'api' | 'mcp' | 'page'
+/** `version`: a comparison of two versions in History (dev-plan 15.3), where the actor is the version. */
+export type ExternalEditSource = 'api' | 'mcp' | 'page' | 'version'
 
 export type ExternalEditAttrs = {
   source: ExternalEditSource | null
@@ -39,6 +40,7 @@ const SOURCE_LABELS: Record<ExternalEditSource, string> = {
   api: 'the API',
   mcp: 'MCP',
   page: 'another session',
+  version: 'a later version',
 }
 
 /**
@@ -68,6 +70,8 @@ function ago(iso: string): string {
  * document ages.
  */
 function title(kind: 'Added' | 'Removed', attrs: Partial<ExternalEditAttrs>): string {
+  // A comparison says which version, not who wrote it from where.
+  if (attrs.source === 'version') return `${kind} in ${attrs.actor ?? 'the later version'}`
   const source = attrs.source ? SOURCE_LABELS[attrs.source] ?? attrs.source : 'outside this session'
   const actor = attrs.actor ? ` · ${attrs.actor}` : ''
   const at = attrs.at ? `, ${ago(attrs.at)}` : ''

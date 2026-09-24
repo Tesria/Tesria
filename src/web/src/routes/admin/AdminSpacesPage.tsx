@@ -27,10 +27,14 @@ export function AdminSpacesPage() {
   const { ask, dialog } = useConfirm()
 
   const load = useCallback(() => {
-    Promise.all([api.admin.spaces.list(), api.admin.settings.get()])
+    // Settings are read only for the public-reading switch, and a role that
+    // manages spaces may hold no settings right at all: that refusal used to
+    // take the whole tab down (found 2026-09-23). Without it, Publish stays
+    // offered and the server says if the switch is off.
+    Promise.all([api.admin.spaces.list(), api.admin.settings.get().catch(() => null)])
       .then(([rows, settings]) => {
         setSpaces(rows)
-        setAllowPublic(settings.allowPublicSpaces)
+        setAllowPublic(settings?.allowPublicSpaces ?? true)
       })
       .catch((err: unknown) =>
         setError(err instanceof ApiError ? err.message : 'Could not load spaces.'))

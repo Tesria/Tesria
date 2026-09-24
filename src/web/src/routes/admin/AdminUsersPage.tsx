@@ -52,6 +52,17 @@ export function AdminUsersPage() {
     }
   }
 
+  /**
+   * An account action, asked first (dev-plan 15.4): each of these takes
+   * something away from a real person, and a stray click on the wrong row
+   * used to do it at once.
+   */
+  async function confirmThen(u: AdminUser, title: string, confirmLabel: string, body: string,
+    work: () => Promise<unknown>, fallback: string, danger = true) {
+    const ok = await ask({ title, confirmLabel, danger, body: <p>{body}</p> })
+    if (ok) await act(u.id, work, fallback)
+  }
+
   async function issueReset(u: AdminUser) {
     await act(u.id, async () => {
       const issued = await api.admin.users.issueReset(u.id)
@@ -123,7 +134,7 @@ export function AdminUsersPage() {
                 <td>
                   {u.role === UserRole.Owner
                     ? <span className="badge badge--owner">owner</span>
-                    : u.role === UserRole.Admin ? <span className="badge">admin</span> : 'Member'}
+                    : u.role === UserRole.Admin ? <span className="badge">admin</span> : 'User'}
                   {u.isSso && <span className="badge">sso</span>}
                   {/* The role within the tier (dev-plan 11.2). A picker only
                       where there is a choice to make and the right to make it. */}
@@ -234,9 +245,11 @@ export function AdminUsersPage() {
                         type="button"
                         className="link-btn"
                         disabled={busy}
-                        onClick={() => act(u.id, () => api.admin.users.setStatus(
-                          u.id, u.status === UserStatus.Suspended ? UserStatus.Active : UserStatus.Suspended,
-                        ), 'Could not change the status.')}
+                        onClick={() => u.status === UserStatus.Suspended
+                          ? act(u.id, () => api.admin.users.setStatus(u.id, UserStatus.Active), 'Could not change the status.')
+                          : confirmThen(u, `Suspend ${u.displayName}?`, 'Suspend',
+                            'They are signed out everywhere, cannot sign in, and their API tokens stop working until someone reactivates the account. Nothing they wrote is removed.',
+                            () => api.admin.users.setStatus(u.id, UserStatus.Suspended), 'Could not change the status.')}
                       >
                         {u.status === UserStatus.Suspended ? 'Reactivate' : 'Suspend'}
                       </button>
@@ -246,8 +259,9 @@ export function AdminUsersPage() {
                         type="button"
                         className="link-btn"
                         disabled={busy}
-                        onClick={() => act(u.id, () => api.admin.users.revokeSessions(u.id),
-                          'Could not revoke sessions.')}
+                        onClick={() => confirmThen(u, `Sign ${u.displayName} out everywhere?`, 'Sign out everywhere',
+                          'Every browser signed in to this account is signed out on its next request. They can sign in again.',
+                          () => api.admin.users.revokeSessions(u.id), 'Could not revoke sessions.', false)}
                       >
                         Sign out
                       </button>
@@ -257,8 +271,9 @@ export function AdminUsersPage() {
                         type="button"
                         className="link-btn"
                         disabled={busy}
-                        onClick={() => act(u.id, () => api.admin.users.revokeTokens(u.id),
-                          'Could not revoke tokens.')}
+                        onClick={() => confirmThen(u, `Revoke every API token of ${u.displayName}?`, 'Revoke the tokens',
+                          'Every script or assistant using one of their tokens stops working, and the tokens cannot be brought back: they would have to make new ones.',
+                          () => api.admin.users.revokeTokens(u.id), 'Could not revoke tokens.')}
                       >
                         Revoke tokens
                       </button>
@@ -266,6 +281,30 @@ export function AdminUsersPage() {
                     {u.hasPassword && !othersOwnerRow && (
                       <button type="button" className="link-btn" disabled={busy} onClick={() => issueReset(u)}>
                         Reset password
+                      </button>
+                    )}
+                    {u.totpEnabled && u.role !== UserRole.Owner && u.id !== me?.id
+                      && (u.role === UserRole.Member || iAmOwner) && (
+                      <button
+                        type="button"
+                        className="link-btn"
+                        disabled={busy}
+                        onClick={async () => {
+                          const ok = await ask({
+                            title: `Turn off two-factor for ${u.displayName}?`,
+                            danger: true,
+                            confirmLabel: 'Turn off two-factor',
+                            body: (
+                              <>
+                                <p>For someone who has lost the phone with their authenticator app and every recovery code. They sign in with their password alone until they set two-factor up again.</p>
+                                <p>They are signed out everywhere, and every administrator is alerted. Make sure you are talking to the person, not someone claiming to be them.</p>
+                              </>
+                            ),
+                          })
+                          if (ok) await act(u.id, () => api.admin.users.disableTwoFactor(u.id), 'Could not turn off two-factor.')
+                        }}
+                      >
+                        Turn off two-factor
                       </button>
                     )}
                     {u.lockedUntil && new Date(u.lockedUntil) > new Date() && (

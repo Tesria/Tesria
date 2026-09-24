@@ -64,7 +64,7 @@ public static class SecurityEndpoints
             OpenAlerts: await db.SecurityAlerts.CountAsync(a => a.Status != SecurityAlertStatus.Resolved),
             CriticalOpen: await db.SecurityAlerts.CountAsync(a => a.Status != SecurityAlertStatus.Resolved && a.Severity == SecuritySeverity.Critical),
             EventsLast24h: recent,
-            BlockedNetworks: await db.BlockedNetworks.CountAsync(),
+            BlockedNetworks: await CountLiveBlocksAsync(db),
             BlockedHits: blocklist.BlockedHits,
             AllowPublicSpaces: s.AllowPublicSpaces,
             AllowPublicRegistration: s.AllowPublicRegistration,
@@ -133,8 +133,31 @@ public static class SecurityEndpoints
         return Results.Ok(ToRow(alert, await NamesAsync(db, [alert.ActorId, alert.AcknowledgedById, alert.ResolvedById])));
     }
 
+    /// <summary>
+    /// Removes blocks whose time is up. An expired block had stopped blocking
+    /// but stayed listed, counted, and in the way of blocking the same range
+    /// again ("Already blocked.") (found 2026-09-23). Filtered in memory: the
+    /// list is short, and SQLite cannot compare DateTimeOffset in a query.
+    /// </summary>
+    private static async Task<int> CountLiveBlocksAsync(AppDbContext db)
+    {
+        await PurgeExpiredBlocksAsync(db);
+        return await db.BlockedNetworks.CountAsync();
+    }
+
+    private static async Task PurgeExpiredBlocksAsync(AppDbContext db)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var expired = (await db.BlockedNetworks.Where(b => b.ExpiresAt != null).ToListAsync())
+            .Where(b => b.ExpiresAt <= now).ToList();
+        if (expired.Count == 0) return;
+        db.BlockedNetworks.RemoveRange(expired);
+        await db.SaveChangesAsync();
+    }
+
     private static async Task<IResult> ListBlocks(AppDbContext db)
     {
+        await PurgeExpiredBlocksAsync(db);
         var rows = (await db.BlockedNetworks.AsNoTracking().ToListAsync()).OrderByDescending(b => b.CreatedAt).ToList();
         var names = await NamesAsync(db, rows.Select(r => r.CreatedById));
         return Results.Ok(rows.Select(b => new BlockRow(b.Id, b.Cidr, b.Reason, Name(names, b.CreatedById), b.CreatedAt, b.ExpiresAt)));
@@ -155,6 +178,7 @@ public static class SecurityEndpoints
             return Results.ValidationProblem(new Dictionary<string, string[]> { ["expiresInHours"] = ["Between 1 hour and 1 year."] });
 
         var canonical = $"{network.BaseAddress}/{network.PrefixLength}";
+        await PurgeExpiredBlocksAsync(db);
         if (await db.BlockedNetworks.AnyAsync(b => b.Cidr == canonical))
             return Results.Conflict(new { title = "Already blocked." });
 

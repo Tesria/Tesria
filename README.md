@@ -87,8 +87,12 @@ The API needs a PostgreSQL database. The simplest option is to run just the
 database from the compose stack and point the API at it:
 
 ```bash
-docker compose up -d db      # Postgres on localhost:5432 (per your .env)
+docker compose up -d db pgbackrest   # Postgres on localhost:5432 (per your .env)
 ```
+
+The backup sidecar comes up with it: on a fresh volume the database alone
+restarts every few seconds, because WAL archiving waits for the stanza that
+`pgbackrest` creates (see the warning under Quick start).
 
 Then, in two terminals:
 

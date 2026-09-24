@@ -16,14 +16,13 @@
 # or mobile devices (which need a manual profile install, also covered there).
 #
 # Usage:
-#   ./trust-ca.sh [host]
+#   bash trust-ca.sh [host]
 #
-#   host   Where to reach your Tesria server: a hostname (NOT a raw
-#          IP -- see docs/tls-and-lan-access.md for why). Defaults to
-#          "localhost". Examples:
-#            ./trust-ca.sh
-#            ./trust-ca.sh wiki-server.local
-#            ./trust-ca.sh mymac.local
+#   host   Where to reach your Tesria server: a hostname (NOT a raw IP;
+#          see docs/tls-and-lan-access.md for why). Defaults to
+#          TESRIA_ADDRESS below. Examples:
+#            bash trust-ca.sh
+#            bash trust-ca.sh wiki-server.local
 #
 # Re-running this script is safe: it replaces any previously trusted copy of
 # this same CA rather than adding a duplicate.
@@ -33,9 +32,16 @@
 # key, and everyone will need to re-run this script: the old trust doesn't
 # carry over.
 
+# ---------------------------------------------------------------------------
+# EDIT THIS LINE: the address you type into your browser to open Tesria,
+# without "https://". For example wiki-server.local or mymac.local.
+# (A copy downloaded from your server's /trust page already has it filled in.)
+TESRIA_ADDRESS="localhost"
+# ---------------------------------------------------------------------------
+
 set -euo pipefail
 
-HOST="${1:-localhost}"
+HOST="${1:-$TESRIA_ADDRESS}"
 CERT_NAME="Tesria Local CA (${HOST})"
 TMP_CERT="$(mktemp -t tesria-ca.XXXXXX).crt"
 trap 'rm -f "$TMP_CERT"' EXIT
@@ -93,7 +99,7 @@ Linux)
 		exit 1
 	fi
 	echo "==> Done. Restart your browser. Chrome/Chromium read the system store directly;"
-	echo "    Firefox needs a separate manual import (see docs/tls-and-lan-access.md)."
+	echo "    Firefox needs a separate step: see http://${HOST}/trust"
 	;;
 *)
 	echo "ERROR: unsupported OS '$OS'. This script handles macOS and Linux only:" >&2
@@ -107,6 +113,6 @@ echo "==> Verifying: refetching https://${HOST}/ (should now succeed with no -k)
 if curl -fsS --max-time 10 "https://${HOST}/api/health" >/dev/null 2>&1; then
 	echo "    Success: this machine now trusts ${HOST}."
 else
-	echo "    Still failing without -k. Try fully restarting your browser, and see"
-	echo "    docs/tls-and-lan-access.md if the warning persists."
+	echo "    Still failing. Fully quit and reopen your browser, and see"
+	echo "    http://${HOST}/trust if the warning persists."
 fi

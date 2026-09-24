@@ -39,6 +39,13 @@ public class Page
     /// </summary>
     public bool FullWidth { get; set; }
 
+    /// <summary>
+    /// An emoji shown before the title in the page tree and at the top of the
+    /// page (dev-plan 15.7), or null. Page metadata, like the title's width:
+    /// not part of the content, so setting it makes no new version.
+    /// </summary>
+    public string? Emoji { get; set; }
+
     public Guid CreatedById { get; set; }
     public User? CreatedBy { get; set; }
 

@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { api, ApiError, Permission, type Invite } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
+import { useConfirm } from '../../components/ConfirmDialog'
 
 /**
  * Admin → Invites (dev-plan 1.4's management surface), and the "Invite
@@ -15,6 +16,7 @@ export function AdminInvitesPage() {
   const { can } = useAuth()
   const canCreate = can(Permission.InvitesCreate)
   const canManage = can(Permission.InvitesManage)
+  const { ask, dialog } = useConfirm()
   const [invites, setInvites] = useState<Invite[] | null>(null)
   const [email, setEmail] = useState('')
   const [days, setDays] = useState(7)
@@ -144,8 +146,12 @@ export function AdminInvitesPage() {
                   <button
                     type="button"
                     className="link-btn link-btn--danger"
-                    onClick={() => api.admin.invites.revoke(i.id).then(load).catch(() =>
-                      setError('Could not revoke that invite.'))}
+                    onClick={async () => {
+                      // Asked first (dev-plan 15.4): the link may already be in someone's inbox.
+                      if (!await ask({ title: 'Revoke this invite?', confirmLabel: 'Revoke the invite', danger: true,
+                        body: <p>The link stops working. Anyone you sent it to will need a new one.</p> })) return
+                      api.admin.invites.revoke(i.id).then(load).catch(() => setError('Could not revoke that invite.'))
+                    }}
                   >
                     Revoke
                   </button>
@@ -158,6 +164,7 @@ export function AdminInvitesPage() {
           )}
         </tbody>
       </table>}
+      {dialog}
     </>
   )
 }
