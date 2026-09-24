@@ -5,6 +5,13 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Support site: how far back each backup copy can take you (2026-09-24, Opus 5.5)
+
+- **How backups work** gains a section that says in words what the
+  diagrams only showed (the owner noticed it reading the Offsite copies
+  diagram): what each copy can bring back, why a network drive gets the
+  daily backups but not every database change, and which to use.
+
 ### Fix: a PDF in a file block downloaded instead of showing (2026-09-24, Opus 5.5)
 
 - The file block shows a PDF in the browser's own viewer by framing it,
