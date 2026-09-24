@@ -615,7 +615,7 @@
     "appliesTo": "0.5",
     "updated": "2026-09-24",
     "note": "Revised.",
-    "hash": "21a7b8f127d73ba3"
+    "hash": "a0d2df8eaad211a3"
   },
   "Installation and operations / Email (SMTP)": {
     "appliesTo": "0.5",
@@ -656,8 +656,8 @@
   "Installation and operations / Real visitor addresses with Docker Desktop": {
     "appliesTo": "0.6",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.6.",
-    "hash": "bb80c19a9e5082e4"
+    "note": "Revised.",
+    "hash": "ec36424e0b4fa6b0"
   },
   "Installation and operations / Security hardening": {
     "appliesTo": "0.5",
