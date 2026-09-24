@@ -5,6 +5,9 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+Development builds now say **0.7.0-dev**: 0.6.0 is released, so what comes
+after it is the next minor version.
+
 ## [0.6.0] - 2026-09-24
 
 The first public release: Tesria's repository opens, with its docs at
