@@ -74,7 +74,26 @@ services:
     expose:
       - "5432"
 
+  # The database owner's work, done once before the app starts (dev-plan
+  # 14.3): migrations, and the least-privilege role the app runs as. The same
+  # image as the app, run with --migrate; it exits when done. It is the only
+  # Tesria container that holds the owner's password, apart from the backup
+  # services, which need it to dump and archive.
+  migrate:
+    image: tesria-app
+    pull_policy: never
+    command: ["--migrate"]
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      ConnectionStrings__App: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${APP_DB_USER:-tesria_app};Password=${APP_DB_PASSWORD:?APP_DB_PASSWORD must be set in .env (openssl rand -hex 24)}"
+
   app:
+    image: tesria-app
     build:
       context: .
       dockerfile: deploy/Dockerfile
@@ -85,15 +104,14 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment:
       ASPNETCORE_URLS: http://+:8080
       ASPNETCORE_ENVIRONMENT: Production
-      # Owner connection: migrations and role provisioning at startup only.
-      ConnectionStrings__Default: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
-      # Runtime connection: a least-privilege role the app creates on start
-      # (dev-plan 3.1). It cannot alter or delete audit rows. An empty
-      # APP_DB_PASSWORD falls back to the owner with a warning.
-      ConnectionStrings__App: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${APP_DB_USER:-tesria_app};Password=${APP_DB_PASSWORD:-}"
+      # The least-privilege role (dev-plan 3.1), and only it (14.3): it cannot
+      # alter or delete audit rows, and the owner's password is not here.
+      ConnectionStrings__App: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${APP_DB_USER:-tesria_app};Password=${APP_DB_PASSWORD:?APP_DB_PASSWORD must be set in .env (openssl rand -hex 24)}"
       # Shared with the collab sidecar; signs the tokens that authorize a user
       # to join a page's live editing session. Empty disables co-editing.
       Collab__Secret: ${COLLAB_SHARED_SECRET}
@@ -112,11 +130,12 @@ services:
       Oidc__ClientSecret: ${OIDC_CLIENT_SECRET}
       Oidc__DisplayName: ${OIDC_DISPLAY_NAME}
       Oidc__RequireHttpsMetadata: ${OIDC_REQUIRE_HTTPS_METADATA:-true}
-      # Which addresses may set X-Forwarded-For / X-Forwarded-Proto. The
-      # default covers the private ranges Docker allocates the compose
-      # network from, which is safe only while port 8080 stays unpublished.
-      # Fronting the app with a proxy elsewhere? Name that proxy here.
+      # Which addresses may set X-Forwarded-For / X-Forwarded-Proto. By
+      # default loopback and this stack's own subnet (below, dev-plan 14.3),
+      # where Caddy lives. Fronting the app with a proxy elsewhere? Name that
+      # proxy here instead.
       Proxy__TrustedNetworks: ${PROXY_TRUSTED_NETWORKS:-}
+      Proxy__ComposeSubnet: ${TESRIA_SUBNET:-10.203.0.0/24}
       # Where links in email point. Overridable at runtime in Admin → Settings.
       Pdf__Endpoint: "http://pdf:8091"
       Pdf__SharedSecret: ${PDF_SHARED_SECRET:-}
@@ -234,17 +253,15 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      # The app provisions the runtime role this sidecar signs in with.
+      # The migrate step provisions the role this sidecar signs in with; the
+      # app being healthy means it has.
       app:
         condition: service_healthy
     environment:
       COLLAB_PORT: 8090
       COLLAB_SHARED_SECRET: ${COLLAB_SHARED_SECRET}
-      # Same least-privilege role as the app; falls back to the owner when
-      # APP_DB_PASSWORD is empty (see server.js).
-      DATABASE_URL: "postgres://${APP_DB_USER:-tesria_app}:${APP_DB_PASSWORD:-}@db:5432/${POSTGRES_DB}"
-      DATABASE_URL_FALLBACK: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}"
-      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-}
+      # The same least-privilege role as the app, and only it (dev-plan 14.3).
+      DATABASE_URL: "postgres://${APP_DB_USER:-tesria_app}:${APP_DB_PASSWORD:?APP_DB_PASSWORD must be set in .env}@db:5432/${POSTGRES_DB}"
     expose:
       - "8090"
 
@@ -398,6 +415,17 @@ services:
       interval: 10s
       timeout: 5s
       retries: 12
+
+# The stack's own network, on a fixed subnet (dev-plan 14.3), so the app can
+# trust forwarded addresses from exactly this range rather than from every
+# private one. Change TESRIA_SUBNET if it collides with a network you already
+# use (a VPN, say). Changing it needs `docker compose down` (never `down -v`)
+# and `docker compose up -d`, because Docker recreates the network.
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${TESRIA_SUBNET:-10.203.0.0/24}
 
 volumes:
   tailscale_state:

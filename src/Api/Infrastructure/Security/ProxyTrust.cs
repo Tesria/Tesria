@@ -40,8 +40,22 @@ public static class ProxyTrust
 
         options.KnownProxies.Clear();
         options.KnownIPNetworks.Clear();
-        foreach (var network in ParseNetworks(config["Proxy:TrustedNetworks"]))
+        foreach (var network in ParseNetworks(TrustedNetworksFrom(config)))
             options.KnownIPNetworks.Add(network);
+    }
+
+    /// <summary>
+    /// What is trusted (dev-plan 14.3): an explicit <c>Proxy:TrustedNetworks</c>
+    /// wins; otherwise, under Compose, loopback and the stack's own subnet
+    /// (<c>Proxy:ComposeSubnet</c>, which docker-compose.yml fixes and passes
+    /// in), so publishing port 8080 by mistake does not make every private
+    /// address a trusted proxy. Outside Compose, the private ranges as before.
+    /// </summary>
+    public static string? TrustedNetworksFrom(IConfiguration config)
+    {
+        if (!string.IsNullOrWhiteSpace(config["Proxy:TrustedNetworks"])) return config["Proxy:TrustedNetworks"];
+        var subnet = config["Proxy:ComposeSubnet"];
+        return string.IsNullOrWhiteSpace(subnet) ? null : $"127.0.0.0/8,::1/128,{subnet.Trim()}";
     }
 
     public static IEnumerable<IPNetwork> ParseNetworks(string? list)

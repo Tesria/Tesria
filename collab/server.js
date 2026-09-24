@@ -19,11 +19,9 @@ import { reconcile } from './vendor/collab-schema.js'
 
 const PORT = Number(process.env.COLLAB_PORT ?? 8090)
 const SECRET = process.env.COLLAB_SHARED_SECRET
-// The least-privilege role (dev-plan 3.1) when one is configured; otherwise
-// the owner, so an install without APP_DB_PASSWORD keeps working.
-const DATABASE_URL = process.env.APP_DB_PASSWORD
-  ? process.env.DATABASE_URL
-  : (process.env.DATABASE_URL_FALLBACK ?? process.env.DATABASE_URL)
+// The least-privilege role (dev-plan 3.1), and only it: the owner's password
+// is no longer given to this service (dev-plan 14.3).
+const DATABASE_URL = process.env.DATABASE_URL
 
 if (!SECRET) {
   console.error('[collab] COLLAB_SHARED_SECRET is required')

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Tesria.Api.Infrastructure;
 using Xunit;
@@ -65,5 +66,23 @@ public class HardeningTests
 
         Assert.Equal("a@example.com", Assert.Single(recorder.Sent).To);
         await queue.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public void Under_Compose_only_loopback_and_the_stacks_subnet_are_trusted_proxies()
+    {
+        static Microsoft.Extensions.Configuration.IConfiguration Config(params (string, string)[] pairs) =>
+            new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+                .AddInMemoryCollection(pairs.ToDictionary(p => p.Item1, p => (string?)p.Item2)).Build();
+        var ts = Tesria.Api.Infrastructure.Security.ProxyTrust.TrustedNetworksFrom;
+
+        Assert.Equal("127.0.0.0/8,::1/128,10.203.0.0/24", ts(Config(("Proxy:ComposeSubnet", "10.203.0.0/24"))));
+        // An explicit list still wins, and outside Compose the old default applies.
+        Assert.Equal("192.0.2.10/32", ts(Config(("Proxy:ComposeSubnet", "10.203.0.0/24"), ("Proxy:TrustedNetworks", "192.0.2.10/32"))));
+        Assert.Null(ts(Config()));
+
+        var networks = Tesria.Api.Infrastructure.Security.ProxyTrust.ParseNetworks(ts(Config(("Proxy:ComposeSubnet", "10.203.0.0/24")))).ToList();
+        Assert.Contains(networks, n => n.Contains(IPAddress.Parse("10.203.0.7")));
+        Assert.DoesNotContain(networks, n => n.Contains(IPAddress.Parse("192.168.1.20")));
     }
 }

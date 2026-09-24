@@ -57,6 +57,26 @@ var builder = WebApplication.CreateBuilder(args);
 var ownerConnectionString = builder.Configuration.GetConnectionString("Default")
     ?? "Host=localhost;Port=5432;Database=confluence;Username=confluence;Password=confluence";
 var appConnectionString = builder.Configuration.GetConnectionString("App");
+
+// The `migrate` service (dev-plan 14.3): the same image, run with --migrate,
+// does the owner's work and exits before the app starts.
+if (args.Contains("--migrate"))
+{
+    using var migrateLogs = LoggerFactory.Create(l => l.AddConsole());
+    Environment.ExitCode = await MigrateCommand.RunAsync(
+        ownerConnectionString, appConnectionString, migrateLogs.CreateLogger("Migrate"));
+    return;
+}
+
+// In production the app runs as the least-privilege role and nothing else
+// (dev-plan 14.3): without APP_DB_PASSWORD it refuses to start rather than
+// quietly running as the owner. Development and the tests keep the old
+// fallback, so `dotnet ef` and a local run still work.
+if (builder.Environment.IsProduction() && !DatabaseRoles.TryParseApp(appConnectionString, out _, out _))
+    throw new InvalidOperationException(
+        "APP_DB_PASSWORD is not set. Tesria runs as a database role that cannot alter its audit log, and needs "
+        + "that role's password: add APP_DB_PASSWORD=<a long random string> to .env (openssl rand -hex 24 makes one), "
+        + "then run docker compose up -d.");
 var runtimeConnectionString = DatabaseRoles.ChooseRuntimeConnection(
     ownerConnectionString, appConnectionString,
     LoggerFactory.Create(l => l.AddConsole()).CreateLogger("Startup"));
@@ -461,20 +481,24 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     if (db.Database.IsNpgsql())
     {
-        // Production: everything that needs ownership happens here, on the
-        // owner connection, before the app serves a request: migrations,
-        // chaining any pre-chain audit rows (an UPDATE the runtime role is
-        // not allowed), and provisioning that runtime role.
-        // Unpooled: once startup is over, no owner connection should remain
-        // open in this process for the rest of its life.
-        var ownerUnpooled = new Npgsql.NpgsqlConnectionStringBuilder(ownerConnectionString) { Pooling = false }.ConnectionString;
-        var ownerOptions = new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(ownerUnpooled).Options;
-        await using var owner = new AppDbContext(ownerOptions);
-        owner.Database.Migrate();
-        var chained = await AuditChain.BackfillAsync(owner);
-        if (chained > 0) startupLog.LogInformation("Audit chain: linked {Count} pre-existing rows", chained);
-        if (appConnectionString is not null)
-            await DatabaseRoles.EnsureAppRoleAsync(owner, appConnectionString, startupLog);
+        if (app.Environment.IsProduction())
+        {
+            // The owner's work was done by the `migrate` service before this
+            // process started (dev-plan 14.3); this one has no owner password.
+            // A schema that is behind means that step failed, and serving
+            // requests against it would fail later and less clearly.
+            var pending = (await db.Database.GetPendingMigrationsAsync()).ToList();
+            if (pending.Count > 0)
+                throw new InvalidOperationException(
+                    $"The database is {pending.Count} migration(s) behind this version of Tesria ({pending[0]} first). "
+                    + "The migrate step did not finish: see docker compose logs migrate.");
+        }
+        else if (await MigrateCommand.RunAsync(ownerConnectionString, appConnectionString, startupLog) != 0)
+        {
+            // Development: migrate inline, as before, so a local run needs no
+            // second step.
+            throw new InvalidOperationException("Migrating the database failed; see the log above.");
+        }
     }
     else
     {
