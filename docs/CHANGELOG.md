@@ -5,8 +5,43 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
-Development builds now say **0.6.0-dev**: 0.5.0 is released, so what comes
-after it is the next minor version.
+## [0.6.0] - 2026-09-24
+
+The first public release: Tesria's repository opens, with its docs at
+[tesria.com/docs](https://tesria.com/docs). The entries below are the full
+record; these are the highlights.
+
+**Upgrading from 0.5**
+
+- `APP_DB_PASSWORD` is now required in `.env`: Compose will not start
+  without it. It was already set on any instance that followed the README.
+- The stack's network now has a fixed address range, so the upgrade needs
+  the stack recreated once: `docker compose down`, then
+  `docker compose up -d --build`. **Never `down -v`**, which deletes the
+  wiki. If `10.203.0.0/24` clashes with a VPN or your network, set
+  `TESRIA_SUBNET` first.
+- Keep the database names your `.env` already has. The example now suggests
+  `tesria`, for new installs only.
+
+**Highlights**
+
+- **Hardening:** the database owner's password left the app (a one-shot
+  migrate service holds it); live editing ends the moment someone's access
+  does; an optional allowlist for where pictures may come from; every new
+  account is audited; the two-factor challenge works once; forwarded
+  addresses are trusted only from the stack's own network; reset emails go
+  out in the background; the version is shown only to signed-in people.
+- **Real visitor addresses** for sign-in limits, alerts and the audit log:
+  through Tailscale, and under Docker Desktop on a Mac or Windows with one
+  setup command. Refused-request alerts now say what was refused and by
+  which browser.
+- **Administration:** an About tab (the version, every dependency with its
+  license, and an on-demand check for known vulnerabilities), and an API
+  tokens tab with what people's tokens and AI assistants have been doing.
+- **Exports** show their progress as they run.
+- **Docs:** the whole manual at tesria.com/docs, including a section for
+  developers; single sign-on is labeled beta until people report on their
+  providers.
 
 ### Real addresses for Tailscale visitors (2026-09-24, Opus 5.5)
 

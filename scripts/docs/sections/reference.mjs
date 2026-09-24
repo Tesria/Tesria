@@ -42,6 +42,19 @@ export async function prepare({ author }) {
   return {}
 }
 
+/** The newest release's notes go first; a new page lands at the end. */
+export async function cleanup({ author }) {
+  const space = await author.call('GET', '/api/spaces/DOCS')
+  const tree = await author.call('GET', `/api/pages/tree?spaceId=${space.id}`)
+  const notes = tree.find((n) => n.title === 'Release notes')
+  const kids = notes?.children ?? []
+  const at = kids.findIndex((n) => n.title === 'Tesria 0.6')
+  if (at > 0) {
+    await author.call('PUT', `/api/pages/${kids[at].id}/move`, { parentPageId: notes.id, index: 0 })
+    console.log('  moved Tesria 0.6 to the top of Release notes')
+  }
+}
+
 export async function build({ top, page, doc, p, h, text, bold, italic, code, ul, ol, li, panel, codeBlock, live, expand, toc, pageLink, adminAt }) {
   const b = (t) => text(t, bold)
   const c = (t) => text(t, code)
@@ -366,6 +379,29 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     p('To see which version you are running, open ', b('Administration'), ', then ', b('Dashboard'), ': the ', b('Tesria version'), ' card shows it, with the version you upgraded from, and so does ', b('About'), '. Signed in, ', c('https://your-server/api/health'), ' (', c('your-server'), ' being your Tesria’s address) includes it too, as ', c('"version"'), '; to anyone not signed in it says only that Tesria is running, so the version is not advertised.'),
     p('Versions are numbered like ', c('0.5.0'), ': the last number changes for fixes, the middle one for new features. Every page on this site ends with a table saying which version it applies to.'),
     live('children', { depth: '1', sort: 'position' }),
+  ))
+  await page('Tesria 0.6', notes, doc(
+    p('Tesria 0.6, released September 24, 2026, is the first public release: Tesria’s source code and these docs are open to everyone. If you already run 0.5, read ', i('Before you upgrade'), ' first: two things need doing once.'),
+    toc(),
+
+    h(2, 'Before you upgrade'),
+    p('These only matter if you already run Tesria 0.5. The upgrade itself is the usual one; see ', pageLink('Upgrading'), '.'),
+    ul(
+      li(p(b('APP_DB_PASSWORD is now required.'), ' Tesria will not start without it in ', c('.env'), '. Anyone who followed the setup already has it. See ', pageLink('Configuration reference'), '.')),
+      li(p(b('Recreate the stack once.'), ' Tesria’s services now talk over a fixed private network, which needs them recreated after the update: run ', c('docker compose down'), ', then ', c('docker compose up -d --build'), '. Never add ', c('-v'), ' to ', c('down'), ': that deletes the wiki and its backups.')),
+      li(p(b('Keep your database names.'), ' The example settings now suggest ', c('tesria'), ' for the database, for new installs. An existing install keeps whatever its ', c('.env'), ' says.')),
+    ),
+
+    h(2, 'What is new'),
+    ul(
+      li(p(b('Safer by default.'), ' Tesria no longer holds the database owner’s password while it runs; someone whose access is taken away is disconnected from live editing at once; each new account is recorded in the audit log; and an administrator can limit which websites pictures may come from. See ', pageLink('Security hardening'), '.')),
+      li(p(b('Real visitor addresses.'), ' Sign-in limits, security alerts and the audit log now see each device’s own address when people come in through Tailscale, and under Docker Desktop after one setup command. See ', pageLink('Real visitor addresses with Docker Desktop'), '.')),
+      li(p(b('Clearer security alerts.'), ' An alert about many refused requests now says which pages were refused, whether the visitor was signed in, and which browser it was.')),
+      li(p(b('Two new administration tabs.'), ' ', b('About'), ' lists everything Tesria is built from, with licenses, and checks it for known vulnerabilities when you ask. ', b('API tokens'), ' shows every token, how much it is used, and what AI assistants did with it.')),
+      li(p(b('Export progress.'), ' Exporting a space shows how far along it is.')),
+      li(p(b('These docs,'), ' now public at tesria.com/docs, with a section for developers.')),
+      li(p(b('Single sign-on is in beta.'), ' It works with any OpenID Connect provider, and reports on how it went with yours are welcome. See ', pageLink('Single sign-on (OIDC)'), '.')),
+    ),
   ))
   await page('Tesria 0.5', notes, doc(
     p('Tesria 0.5, released September 24, 2026, is the first numbered release. It includes everything below. If you ran a build from before it, read ', i('Before you upgrade'), ' first: a few things now work differently.'),

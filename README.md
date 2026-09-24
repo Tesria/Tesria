@@ -4,9 +4,8 @@ A self-hosted, Docker-deployable knowledge base / wiki modeled on Atlassian
 Confluence. Priorities: **data safety** (strong backup & recovery), a faithful
 block-based editor, and one-command deployment.
 
-**Status:** 0.5.0 is the latest release; `main` is working toward 0.6.
-Tesria is a complete, working wiki, not yet announced publicly. What it does
-today:
+**Status:** 0.6.0, the first public release. Website: [tesria.com](https://tesria.com).
+What Tesria does today:
 
 - **Writing:** spaces of pages in a tree, a block editor (tables, panels,
   code, diagrams, math, charts, layouts, live blocks that list pages and
@@ -35,11 +34,10 @@ original design the project started from.
 
 ## Documentation
 
-- **Using and running Tesria:** the docs, to be published at
-  tesria.com/docs. Until then, download `docs-pack.zip` from the
-  repository's **docs** release and import it into your Tesria (Spaces,
-  then **Import a pack**), or open `docs-site.zip` from the same release in
-  a browser.
+- **Using and running Tesria:** the docs at
+  [tesria.com/docs](https://tesria.com/docs). Each release also carries
+  them as downloads: `docs-pack.zip` to import into your own Tesria (Spaces,
+  then **Import a pack**), and `docs-site.zip` to read offline.
 - **How it is built:** [`docs/architecture.md`](./docs/architecture.md),
   and the threat model and known gaps in [`docs/security.md`](./docs/security.md).
 - **Backups and disaster recovery:** [`docs/backup-recovery.md`](./docs/backup-recovery.md).

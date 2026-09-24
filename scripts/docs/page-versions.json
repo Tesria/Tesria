@@ -893,6 +893,12 @@
     "note": "Revised.",
     "hash": "7d85a6dab5059f6c"
   },
+  "Release notes / Tesria 0.6": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "d8b1dab186f1d61e"
+  },
   "REST API": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
