@@ -1,6 +1,6 @@
 // User manual, Spaces and Pages (dev-plan 10.5, rewritten for 15.6).
 //
-// Written to scripts/support/WRITING.md. "Creating a space" and "Templates"
+// Written to scripts/docs/WRITING.md. "Creating a space" and "Templates"
 // are the approved pilot pages, moved here from sections/pilot.mjs as they
 // were, with their pictures, the Meeting notes template they need, and the
 // cleanup that places Templates after Creating a page.

@@ -18,7 +18,7 @@ public sealed class OidcEmailNotVerifiedException(string email)
 /// Refused to create an account through SSO because registration is by
 /// invitation. Without this check, "Invite only" held for the sign-up form but
 /// not for SSO: with a public provider such as Google, anyone with an account
-/// there got one here (found writing the support site, 2026-09-23).
+/// there got one here (found writing the docs, 2026-09-23).
 /// </summary>
 public sealed class OidcRegistrationClosedException(string email)
     : Exception($"There is no account for {email}, and this instance is invite only. Ask an administrator " +

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Writes the Support space (dev-plan 10.5 step 6): the pages of Tesria's
-# support site, and the screenshots on them.
+# Writes the Docs space (dev-plan 10.5 step 6): the pages of Tesria's
+# docs, and the screenshots on them.
 #
-#   scripts/support/publish-support.sh                     every section
-#   scripts/support/publish-support.sh getting-started     one section
-#   scripts/support/publish-support.sh --no-shoot ...      reuse the last pictures
+#   scripts/docs/publish-docs.sh                     every section
+#   scripts/docs/publish-docs.sh getting-started     one section
+#   scripts/docs/publish-docs.sh --no-shoot ...      reuse the last pictures
 #
 # Signs in as SHOT_EMAIL / SHOT_PASSWORD from the gitignored
 # .debug-credentials, takes each section's screenshots from the Tesria Demo
@@ -30,4 +30,4 @@ if docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt "$CA" >/de
   export NODE_EXTRA_CA_CERTS="$CA"
 fi
 
-exec node scripts/support/publish-support.mjs "$@"
+exec node scripts/docs/publish-docs.mjs "$@"

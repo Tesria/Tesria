@@ -52,7 +52,7 @@ export function MailProviderHint({ provider, signingIn }: { provider: MailProvid
       )}
       {provider.note && <p>{provider.note}</p>}
       <p>
-        Step by step: <em>{provider.supportPage}</em>, in the Tesria docs.
+        Step by step: <em>{provider.docsPage}</em>, in the Tesria docs.
       </p>
     </div>
   )

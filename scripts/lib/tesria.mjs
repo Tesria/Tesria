@@ -1,6 +1,6 @@
 // Shared by the scripts that write content into a Tesria instance through
 // its API: scripts/demo/seed-demo.mjs (the Tesria Demo space) and
-// scripts/support/publish-support.mjs (the Support space, dev-plan 10.5).
+// scripts/docs/publish-docs.mjs (the Docs space, dev-plan 10.5).
 // Signing in, the document builders, drawn images, and `site()`, which finds
 // or creates pages by title so a run can be repeated safely.
 

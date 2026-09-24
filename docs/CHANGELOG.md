@@ -8,6 +8,13 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.6.0-dev**: 0.5.0 is released, so what comes
 after it is the next minor version.
 
+### Single sign-on is labeled beta (2026-09-24, Opus 5.5)
+
+The owner has no identity provider to test against, so single sign-on
+(OIDC) ships as a beta: the docs say so where it is set up and listed, ask
+administrators to keep a password account, and ask them to report how it
+went with their provider in a GitHub issue.
+
 ### The Support space is now Docs (2026-09-24, Opus 5.5)
 
 Renamed at the owner's request to match where it will be published,
@@ -21,8 +28,12 @@ site" now says "the docs", in the pages, in the app (the mail provider,
 email settings and Tailscale cards) and in the repository. The shared
 `site()` helper now keeps an existing space's name and description in step
 with its script, which also updated the Tesria Demo space's description.
-The tooling keeps its names (`scripts/support/`, `support/support-pack.zip`,
-`SUPPORT_SHOTS`) so existing commands and links still work.
+The tooling was renamed to match, at the owner's request ("lets just do it
+right"): `scripts/docs/` with `publish-docs.sh` and `export-docs.sh`,
+`DOCS_SHOTS` for retaking pictures, the pack at `docs/site/docs-pack.zip`
+(the static site beside it, still not committed), and `DocsPage` for the
+mail presets' page title. Earlier entries below were updated to the new
+paths so their commands still work; their wording is left as it was.
 
 ### 14.3 Enterprise hardening (2026-09-24, Opus 5.5, reviewed by Fable 5.1)
 
@@ -291,7 +302,7 @@ tailnet rather than putting Tesria on the internet.
   rule won); it now has 14px, more than half the logo's height.
 - The notice on the card and the Support page says "not affiliated with
   or endorsed by Tailscale". The Support picture is retaken.
-- `SUPPORT_SHOTS=name,name` retakes only the named Support pictures, so
+- `DOCS_SHOTS=name,name` retakes only the named Support pictures, so
   one changed screen does not mean reshooting a whole section.
 
 ## [0.5.0] - 2026-09-24
@@ -377,7 +388,7 @@ page the sidebar slid up under the top bar.
   release before it. The import result says which Tesria made the pack.
 - **Docs that say which version they describe** (16.2): the Support
   publisher ends every page with a small table (Applies to, Updated,
-  Changes), kept in the committed `scripts/support/page-versions.json`.
+  Changes), kept in the committed `scripts/docs/page-versions.json`.
   "Applies to" moves only when a section says so (`since`), so a typo fix
   does not make a page look newer than the feature. The Release notes page
   has a full entry for 0.5.
@@ -587,7 +598,7 @@ turned up. The owner answered the four decisions first.
 ### 15.6 The Support site, rewritten (2026-09-24, Opus 5.5)
 
 - Every Support page rewritten to the rules the owner set reviewing the
-  first version (`scripts/support/WRITING.md`): written for someone new, with
+  first version (`scripts/docs/WRITING.md`): written for someone new, with
   what a thing is and why they would want it before any steps; numbered
   steps with the control boxed; one picture per row with a shadow, taken in a
   narrow window so it reads on a phone, and none of text the page already
@@ -761,12 +772,12 @@ turned up. The owner answered the four decisions first.
 
 ### 10.5 steps 6 and 7: the Support site, written and exported (2026-09-23, Opus 5.5)
 
-- 165 pages in the Support space, written by `scripts/support/publish-support.sh`
+- 165 pages in the Support space, written by `scripts/docs/publish-docs.sh`
   with every picture taken on a desktop and a phone from the Tesria Demo
   space.
-- `support/support-pack.zip` is the space as a wiki pack, committed so the
+- `docs/site/docs-pack.zip` is the space as a wiki pack, committed so the
   site survives anything that happens to an instance. Import it from
-  Spaces → Import a pack. `scripts/support/export-support.sh` regenerates it
+  Spaces → Import a pack. `scripts/docs/export-docs.sh` regenerates it
   and exports the static site, checked against Cloudflare's limits.
 
 ### Phase 15: what the Support site found missing (2026-09-23, Opus 5.5)

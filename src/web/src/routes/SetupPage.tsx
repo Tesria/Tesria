@@ -582,7 +582,7 @@ function FirstSpaceStep({
   const [key, setKey] = useState('')
   // The key follows the name until someone types in it. It used to fill in
   // only while empty, so after the first letter of the name it stuck: "Team
-  // handbook" gave the key T (found writing the Support site, 2026-09-24).
+  // handbook" gave the key T (found writing the docs, 2026-09-24).
   const [keyEdited, setKeyEdited] = useState(false)
   return (
     <Panel

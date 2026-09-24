@@ -183,7 +183,7 @@
     "appliesTo": "0.6",
     "updated": "2026-09-24",
     "note": "Revised.",
-    "hash": "e7c5041dcfc0f599"
+    "hash": "d3a9ba416f53c158"
   },
   "Contributing / Making a release": {
     "appliesTo": "0.6",
@@ -507,7 +507,7 @@
     "appliesTo": "0.5",
     "updated": "2026-09-24",
     "note": "Revised.",
-    "hash": "353d63413c6efea2"
+    "hash": "26c2a34a16c5cbfb"
   },
   "Finding things / Label pages": {
     "appliesTo": "0.5",
@@ -537,7 +537,7 @@
     "appliesTo": "0.5",
     "updated": "2026-09-24",
     "note": "Revised.",
-    "hash": "84472800afeda3ec"
+    "hash": "6736abc882bb2c20"
   },
   "Getting started / Quick start": {
     "appliesTo": "0.5",
@@ -615,7 +615,7 @@
     "appliesTo": "0.5",
     "updated": "2026-09-24",
     "note": "Revised.",
-    "hash": "a060ba9002a40aa8"
+    "hash": "b20a74cb55976297"
   },
   "Installation and operations / Email (SMTP)": {
     "appliesTo": "0.5",
@@ -663,7 +663,7 @@
     "appliesTo": "0.5",
     "updated": "2026-09-24",
     "note": "Revised.",
-    "hash": "5c747f1048e58191"
+    "hash": "eff36ea766b98d6c"
   },
   "Installation and operations / Trusting the local certificate": {
     "appliesTo": "0.5",

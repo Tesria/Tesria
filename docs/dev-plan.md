@@ -3586,17 +3586,17 @@ are a few hundred kilobytes, so neither limit binds.
    page), from Blender's own channel: fine to show on a public site, and
    YouTube is already on the default allowlist.
 6. ✅ **written 2026-09-23.** **Write Support** in the order of the tree,
-   shooting as each section is written. `scripts/support/publish-support.sh`
-   writes 165 pages from `scripts/support/sections/`, each picture taken on
+   shooting as each section is written. `scripts/docs/publish-docs.sh`
+   writes 165 pages from `scripts/docs/sections/`, each picture taken on
    a desktop and a phone from the Tesria Demo space; the wizard's pictures
-   come from a scratch instance (`scripts/support/shoot-setup.sh`). Reading
+   come from a scratch instance (`scripts/docs/shoot-setup.sh`). Reading
    every screen's code to document it turned up the fixes in the CHANGELOG
    and the whole of Phase 15, which were built first so nothing was shot
    twice.
 7. ✅ **exported 2026-09-23.** **Export**: the pack committed to the
    repository, and the static site checked against Cloudflare's limits and
-   walked as a reader. `scripts/support/export-support.sh` writes
-   `support/support-pack.zip` (23.5 MiB, 395 files) and the site (396
+   walked as a reader. `scripts/docs/export-docs.sh` writes
+   `docs/site/docs-pack.zip` (23.5 MiB, 395 files) and the site (396
    files, 50 MiB unpacked, the largest file 1.5 MiB: well inside 25 MiB and
    20,000 files). Every internal link, image and anchor resolves. The walk
    found that exported Expand blocks could not be opened, which hid every
@@ -5397,7 +5397,7 @@ by copies, packs and exported sites. Not versioned, like the page width.
 
 **Rolled out 2026-09-24** after the owner approved the pilot pages: every
 section rewritten to the rules below, a Features page, and Gmail and
-Outlook pages under Email (SMTP). Exported to `support/support-pack.zip`
+Outlook pages under Email (SMTP). Exported to `docs/site/docs-pack.zip`
 and a static site within Cloudflare's limits, with no broken links. One
 thing is left: the setup-wizard pictures are whole 1024px windows and want
 retaking narrow on a scratch instance, which needs the owner to create its
@@ -5547,7 +5547,7 @@ Differences from the plan above:
 - **The release workflow builds the image but publishes none**: that is
   14.2. Its release notes are the CHANGELOG's section, cut to the
   highlights when longer than GitHub allows (0.5.0 is the whole history).
-- **16.2's registry** is `scripts/support/page-versions.json`, keyed by
+- **16.2's registry** is `scripts/docs/page-versions.json`, keyed by
   "Parent / Title". A section passes `since` to move "Applies to" and
   `changed` for the "Changes" line; otherwise a change to the words
   says "Revised." The table's labels are *Applies to*, *Updated* and
@@ -5592,7 +5592,7 @@ table.
 ---
 
 **As built (2026-09-24, Opus 5.5).** A **Developers** section at the end of
-the Support site (`scripts/support/sections/developers.mjs`), with REST API
+the Support site (`scripts/docs/sections/developers.mjs`), with REST API
 and MCP moved under it (same page ids). Added: **Code examples** (one
 program in JavaScript and Python, kept in `docs/examples` and run against
 the instance before publishing), an **API reference** generated from

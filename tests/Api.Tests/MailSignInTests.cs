@@ -26,7 +26,7 @@ namespace Tesria.Api.Tests;
 /// </summary>
 public class MailSignInTests
 {
-    private record ProviderDto(string Id, string Name, string Host, int Port, int Tls, string SupportPage, int? SignIn);
+    private record ProviderDto(string Id, string Name, string Host, int Port, int Tls, string DocsPage, int? SignIn);
     private record MailDto(string? Provider, int SignIn, string? MicrosoftClientId, bool MicrosoftClientSecretSet,
         string? GoogleClientId, bool GoogleClientSecretSet, string? Account, string? Error,
         string MicrosoftRedirectUri, string GoogleRedirectUri, bool GooglePasteBack);
@@ -107,7 +107,7 @@ public class MailSignInTests
         var admin = await AdminAsync(app);
         var providers = await admin.GetFromJsonAsync<List<ProviderDto>>("/api/admin/settings/email/providers");
         var gmail = providers!.Single(p => p.Id == "gmail");
-        Assert.Equal(("smtp.gmail.com", 587, "Sending with Gmail"), (gmail.Host, gmail.Port, gmail.SupportPage));
+        Assert.Equal(("smtp.gmail.com", 587, "Sending with Gmail"), (gmail.Host, gmail.Port, gmail.DocsPage));
         Assert.Equal((int)MailSignIn.Google, gmail.SignIn);
         Assert.Contains(providers!, p => p.Id == "icloud");
 

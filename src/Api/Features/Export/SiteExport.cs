@@ -116,7 +116,7 @@ public static partial class SiteExport
         // Anything still pointing at the app itself (a label's page, search, a
         // profile) has nothing behind it in a static site. A Labels list block
         // links every label to /labels/…, and those 404ed on the exported
-        // Support site (2026-09-24).
+        // docs (2026-09-24).
         html = AppLink().Replace(html,
             "href=\"#\" title=\"This is part of the Tesria app, not this export.\" aria-disabled=\"true\"");
 

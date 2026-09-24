@@ -1,9 +1,9 @@
-// Writes the Support space (dev-plan 10.5 step 6), the pages of Tesria's
-// support site. Run it through publish-support.sh.
+// Writes the Docs space (dev-plan 10.5 step 6), the pages of Tesria's
+// docs. Run it through publish-docs.sh.
 //
-// SUPPORT_SHOTS=name,name retakes only the named pictures.
+// DOCS_SHOTS=name,name retakes only the named pictures.
 //
-// Each section lives in scripts/support/sections/<name>.mjs and exports:
+// Each section lives in scripts/docs/sections/<name>.mjs and exports:
 //
 //   shots     harness shots (scripts/screenshots, see shot.mjs), taken from
 //             the Tesria Demo space. Every shot is taken twice, on a desktop
@@ -92,9 +92,9 @@ const wanted = args.filter((a) => !a.startsWith('--'))
 
 /** Runs the harness over a section's shots, once for a desktop and once for a phone. */
 function takeShots(section, all) {
-  // SUPPORT_SHOTS=name,name retakes only those pictures; the rest are kept
+  // DOCS_SHOTS=name,name retakes only those pictures; the rest are kept
   // as they were, so one changed screen does not mean a whole section.
-  const only = process.env.SUPPORT_SHOTS?.split(',').map((n) => n.trim()).filter(Boolean)
+  const only = process.env.DOCS_SHOTS?.split(',').map((n) => n.trim()).filter(Boolean)
   const shots = only ? all.filter((s) => only.includes(s.name)) : all
   const dir = join(HERE, 'shots', section)
   mkdirSync(dir, { recursive: true })
@@ -215,7 +215,7 @@ async function main() {
     // A section may set the stage before its pictures are taken: activity
     // that has to exist for a screen to show anything, such as notifications.
     const prepared = section.prepare ? (await section.prepare({ lib, author, demo, demoId })) ?? {} : {}
-    // A prepare step may rename or move a Support page (reference.mjs did,
+    // A prepare step may rename or move a docs page (reference.mjs did,
     // and the stale tree made a second page beside the renamed one).
     if (section.prepare) await s.refresh()
     const shots = typeof section.shots === 'function' ? section.shots({ demo, ...prepared }) : section.shots ?? []
@@ -239,7 +239,7 @@ async function main() {
       }
       const desk = read('desktop')
       if (!desk) {
-        const how = shot.startsWith('setup-') ? 'take them with scripts/support/shoot-setup.sh' : 'run without --no-shoot'
+        const how = shot.startsWith('setup-') ? 'take them with scripts/docs/shoot-setup.sh' : 'run without --no-shoot'
         throw new Error(`no screenshot ${name}/${shot}; ${how}`)
       }
       const deskId = await s.attachCurrent(pageId, `${shot}.png`, desk, 'image/png')
@@ -304,7 +304,7 @@ async function main() {
     async function picture(pageId, shot, alt, caption, { width } = {}) {
       const bytes = shotFile('desktop', `${shot}.png`)
       const id = await s.attachCurrent(pageId, `${shot}.png`, bytes, 'image/png')
-      // Desktop pictures are taken at 2x; the Support page's column is about
+      // Desktop pictures are taken at 2x; the docs page's column is about
       // 720 CSS pixels wide.
       const cssWidth = bytes.readUInt32BE(16) / 2
       const fit = width ?? (cssWidth < 690 ? Math.round((cssWidth / 720) * 100) : undefined)
@@ -324,7 +324,7 @@ async function main() {
     }
 
     /**
-     * A link to another Support page, by its title, with the title (or
+     * A link to another docs page, by its title, with the title (or
      * `label`) as its text. An exported site turns it into a link between
      * its own files. A page that does not exist yet, on a first run before
      * its section has been written, is bold text instead, with a warning.

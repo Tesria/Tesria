@@ -1,5 +1,5 @@
 // Getting started: from nothing to a first page (dev-plan 10.5), rewritten to
-// the owner's rules of 2026-09-23 (scripts/support/WRITING.md) for someone
+// the owner's rules of 2026-09-23 (scripts/docs/WRITING.md) for someone
 // new to wikis and to running software.
 //
 //   What is Tesria               the idea of a wiki, and why run your own
@@ -14,11 +14,11 @@
 //                                and Templates rather than repeating them
 //
 // The setup wizard's pictures come from the scratch instance, not the Demo
-// space: scripts/support/shoot-setup.sh takes them (files named setup-*), and
-// publish-support.sh finds them here by name. They are whole 1024-pixel
+// space: scripts/docs/shoot-setup.sh takes them (files named setup-*), and
+// publish-docs.sh finds them here by name. They are whole 1024-pixel
 // windows, so only the two that show a layout are used.
 //
-// Run it on its own: scripts/support/publish-support.sh getting-started
+// Run it on its own: scripts/docs/publish-docs.sh getting-started
 
 export const shots = () => [
   // Your first space and page: writing a first page, as an animation, in a
@@ -168,7 +168,7 @@ export async function build({
     ul(
       li(p(b('An email server'), ' (SMTP), so Tesria can send password resets, invitations and notifications. Without one, Tesria still works: an administrator gives anyone who forgets their password a one-time reset link, and invitations are links you pass on yourself. See ', pageLink('Email (SMTP)'), '.')),
       li(p(b('Somewhere else to keep backups:'), ' a cloud storage bucket, a network drive, or a removable drive. See ', pageLink('Offsite copies'), '.')),
-      li(p(b('Single sign-on,'), ' if your organization already signs people in with an OpenID Connect provider. See ', pageLink('Single sign-on (OIDC)'), '.')),
+      li(p(b('Single sign-on'), ' (in beta), if your organization already signs people in with an OpenID Connect provider. See ', pageLink('Single sign-on (OIDC)'), '.')),
     ),
     p('Ready? Check the ', pageLink('System requirements'), ', then go to the ', pageLink('Quick start'), '.'),
   ))

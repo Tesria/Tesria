@@ -2,10 +2,10 @@
 # Screenshots of the first-run setup wizard, taken on the scratch instance.
 #
 #   scripts/scratch-instance.sh reset          an empty instance on :8099
-#   scripts/support/shoot-setup.sh before     the steps before an owner exists
+#   scripts/docs/shoot-setup.sh before     the steps before an owner exists
 #   (a person creates the owner at http://localhost:8099, saves the recovery
 #    codes, presses Continue once and stops there)
-#   scripts/support/shoot-setup.sh after      every step after the account
+#   scripts/docs/shoot-setup.sh after      every step after the account
 #
 # The owner is made by hand because making accounts is a person's job here,
 # and because the recovery codes it shows are real. The "after" phase signs
@@ -28,4 +28,4 @@ if [ "${1:-}" = after ]; then
   fi
 fi
 
-exec node scripts/support/shoot-setup.mjs "$@"
+exec node scripts/docs/shoot-setup.mjs "$@"

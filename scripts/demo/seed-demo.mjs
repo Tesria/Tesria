@@ -4,7 +4,7 @@
 // What it builds, and why each part exists:
 //
 //   Element gallery   one clean page per editor element, matching the
-//                     Support space's Elements pages one for one, so every
+//                     Docs space's Elements pages one for one, so every
 //                     screenshot shows one element on its own.
 //   Kestrel launch    a small fictional team wiki (a company launching a
 //                     product), because live content needs real material:
@@ -198,7 +198,7 @@ async function main() {
   await el('Excerpt', excerpt(p('This paragraph is the excerpt: the part other pages can include.')), p('This paragraph is not.'))
   await el('Page properties', pageProperties([['Property', 'Value'], ['Status', p(status('In review', 'blue'))], ['Owner', p(person('Mei Chen'))]]))
   await el('Smart link', smartLink('https://example.com', 'card'))
-  // An open film, so it can appear on a public support site: Big Buck Bunny,
+  // An open film, so it can appear on a public docs site: Big Buck Bunny,
   // (c) Blender Foundation, CC BY 3.0, from Blender's own channel. YouTube is
   // on the default embed allowlist, so no setting changes for it.
   await el('Embed',

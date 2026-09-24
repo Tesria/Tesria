@@ -12,19 +12,19 @@ namespace Tesria.Api.Infrastructure.Email;
 /// <param name="Group">How the list is grouped: <c>mail</c> for an email account, <c>service</c> for a sending service.</param>
 /// <param name="Username">What goes in the username, in words.</param>
 /// <param name="Password">What goes in the password, in words: usually not the account's own password.</param>
-/// <param name="SupportPage">The Support site page that walks through it, by title.</param>
+/// <param name="DocsPage">The docs page that walks through it, by title.</param>
 /// <param name="SignIn">The provider's own sign-in, when Tesria offers one instead of a password (18.2, 18.3).</param>
 /// <param name="Note">Anything the host, port or account needs said, such as a regional address.</param>
 public sealed record MailProvider(
     string Id, string Name, string Group,
     string Host, int Port, SmtpTlsMode Tls,
-    string Username, string Password, string SupportPage,
+    string Username, string Password, string DocsPage,
     MailSignIn? SignIn = null, string? Note = null);
 
 /// <summary>
 /// The presets, in the order they are offered. Every value was checked
-/// against the provider's own help pages on 2026-09-24 (the Support pages'
-/// source comments name them); the Support site's settings tables are built
+/// against the provider's own help pages on 2026-09-24 (the docs pages'
+/// source comments name them); the docs' settings tables are built
 /// from this list, so the two cannot disagree.
 /// </summary>
 public static class MailProviders

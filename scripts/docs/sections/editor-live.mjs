@@ -1,7 +1,7 @@
 // User manual → The editor → Live content: one page per live content block,
-// written to the owner's rules (scripts/support/WRITING.md, element pages).
+// written to the owner's rules (scripts/docs/WRITING.md, element pages).
 // Each page shows the real block, working on the page itself, once for each
-// setting that gives something worth seeing in the Support space.
+// setting that gives something worth seeing in the Docs space.
 //
 // Facts from src/web/src/editor/dynamicBlockKinds.ts (the kinds, their
 // settings and defaults), slash/items.ts (the slash menu matches a word

@@ -357,7 +357,7 @@ services:
   # exactly as on the LAN. Serve only, never Funnel: deploy/tailscale/
   # serve.json turns Funnel off, so nothing is published to the internet.
   # Needs TS_AUTHKEY in .env (Tailscale admin console, Settings, Keys) and
-  # HTTPS turned on for the tailnet (DNS page). See the Support page
+  # HTTPS turned on for the tailnet (DNS page). See the docs page
   # "Reaching Tesria from anywhere with Tailscale".
   tailscale:
     image: tailscale/tailscale:stable

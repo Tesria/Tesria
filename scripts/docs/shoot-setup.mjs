@@ -1,11 +1,11 @@
-// Screenshots of the first-run setup wizard for the Support space's
+// Screenshots of the first-run setup wizard for the Docs space's
 // "First-run setup wizard" page (dev-plan 10.5 step 6). Run it through
 // shoot-setup.sh, which explains the two phases.
 //
 // The wizard only exists on an instance with no owner, so it is shot on the
 // scratch instance (scripts/scratch-instance.sh), never the real one. The
 // pictures land beside the Getting started section's other shots, where
-// publish-support.mjs finds them by name.
+// publish-docs.mjs finds them by name.
 
 import { spawnSync } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'

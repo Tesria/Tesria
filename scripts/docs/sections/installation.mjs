@@ -1,6 +1,6 @@
 // Installation and operations: running Tesria, for whoever looks after the
 // server (dev-plan 10.5), rewritten to the owner's rules of 2026-09-23
-// (scripts/support/WRITING.md). Trusting the local certificate and Opening
+// (scripts/docs/WRITING.md). Trusting the local certificate and Opening
 // Tesria by name are the approved pilot pages, moved here from pilot.mjs
 // unchanged.
 //
@@ -325,7 +325,7 @@ export async function build({
       setting('TS_HOSTNAME', 'the name Tesria takes on your tailnet, and so the first part of its address: ', c('tesria'), ' unless you set another.'),
     ),
 
-    h(2, 'Single sign-on'),
+    h(2, 'Single sign-on (beta)'),
     p('All optional, and off while ', c('OIDC_AUTHORITY'), ' is empty. ', pageLink('Single sign-on (OIDC)'), ' walks through them.'),
     ul(
       setting('OIDC_AUTHORITY', 'your identity provider’s address.'),
@@ -715,6 +715,7 @@ export async function build({
   await page('Single sign-on (OIDC)', root, doc(
     p(b('Single sign-on'), ' (SSO) lets people sign in to Tesria with an account they already have somewhere else, such as their work account, instead of a separate Tesria password. There is one password less to remember, and when someone’s work account is closed, they can no longer sign in with it here either.'),
     p('Tesria works with any provider that speaks ', b('OpenID Connect'), ' (OIDC), the standard most of them use: Keycloak, Authentik, Okta, Microsoft Entra ID and Google among them. It sits alongside ordinary Tesria accounts, so nobody has to switch.'),
+    panel('warning', p(b('Single sign-on is in beta.'), ' It follows the OpenID Connect standard and its tests pass, but it has not yet been tried against every provider. Keep at least one ordinary administrator account with a password, so a sign-on problem never locks you out. Whether it works for you or not, please say so, naming your provider, in an issue at ', c('github.com/Tesria/Tesria/issues'), ': that is how it leaves beta.')),
 
     h(2, 'Before you start'),
     ul(

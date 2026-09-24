@@ -6,8 +6,8 @@
 // deciding whether to use Tesria finds it first. No other products named,
 // and nothing that is not built yet.
 //
-// Pictures follow scripts/support/WRITING.md: narrow windows so they read on
-// a phone, only the Tesria Demo space, the Support space's own tree, and the
+// Pictures follow scripts/docs/WRITING.md: narrow windows so they read on
+// a phone, only the Tesria Demo space, the Docs space's own tree, and the
 // example accounts. A few features have no picture because none shows
 // anything words do not (sessions) or because the screen holds details a
 // public page must not (backups, which name the owner's storage).
@@ -56,7 +56,7 @@ export const shots = ({ demo }) => [
 
   // ---- Keeping it organized
   { name: 'feat-spaces', url: '/spaces', viewport: NARROW, phone: false, steps: [{ wait: 2500 }], clipTo: '.space-grid', clipPad: 10 },
-  // The Support space's own tree, numbered: the Demo space's is plain.
+  // The Docs space's own tree, numbered: the Demo space's is plain.
   { name: 'feat-tree', url: '/spaces/DOCS', viewport: { width: 900, height: 640 }, phone: false, steps: [{ wait: 3000 }], clipTo: '.sidebar .tree-section', clipPad: 6 },
   {
     name: 'feat-filter', url: '/spaces/DOCS', phone: false,
@@ -182,7 +182,7 @@ export async function build({ page, ensure, doc, p, h, text, bold, italic, panel
     ...(await feature('Public reading', 'Let people without an account read chosen spaces, such as public documentation, while everything else stays private. It is off until an administrator turns it on and a space is chosen.', 'Public reading', pic('feat-public', 'The switches that allow public reading'))),
 
     h(2, 'Accounts and security'),
-    ...(await feature('Accounts your way', 'Open sign-up, invite links only, or sign-in with your organization’s single sign-on (OpenID Connect).', 'Accounts and invites', pic('feat-invites', 'Making an invite link'))),
+    ...(await feature('Accounts your way', 'Open sign-up, invite links only, or sign-in with your organization’s single sign-on (OpenID Connect, in beta).', 'Accounts and invites', pic('feat-invites', 'Making an invite link'))),
     ...(await feature('Two-factor sign-in and recovery', 'Add a code from an authenticator app to sign-in, keep recovery codes for when you lose it, and reset a forgotten password by email.', 'Two-factor and recovery codes', pic('feat-two-factor', 'Turning on two-factor sign-in'))),
     ...(await feature('Roles and groups', 'Owner, administrator and user roles, with each right a role holds shown and changeable in one table, plus your own roles and groups of people to share with at once.', 'Roles', pic('feat-groups', 'Groups, including the three built in'))),
     ...(await feature('Protection built in', 'Passwords are stored with a modern slow hash, repeated wrong guesses are slowed and locked out, suspicious activity alerts administrators, and every administrative change is written to an audit log that shows if anyone tampers with it.', 'Security hardening', pic('feat-protection', 'Limits on repeated sign-in attempts'))),

@@ -15,7 +15,7 @@ PostgreSQL 18 + Caddy auto-HTTPS). Data safety is covered by pgBackRest
 point-in-time recovery plus logical and file backups. Phase 4 added labels,
 page export, an audit log, and groups with space permissions / page
 restrictions. Phase 5 added real-time collaborative editing, page templates,
-notifications/watches, a public REST API (tokens + webhooks), and OIDC/SSO.
+notifications/watches, a public REST API (tokens + webhooks), and OIDC/SSO (beta).
 The editor overhaul added syntax-highlighted code blocks, tables/task lists
 with hover-triggered controls, images (with a draft/publish page lifecycle
 so uploads work on unsaved pages), inline/anchored comments, a slash-command
@@ -27,7 +27,7 @@ menu, and a per-page full-width layout toggle: see
 - **Backend:** ASP.NET Core (C#), .NET 10 (LTS); EF Core 10
 - **Database:** PostgreSQL 18 (Npgsql); page content stored as ProseMirror JSON
 - **Frontend:** React 19 + TypeScript + Vite; TipTap v3 block editor
-- **Auth:** local accounts (Argon2id), API tokens, and optional OIDC/SSO,
+- **Auth:** local accounts (Argon2id), API tokens, and optional OIDC/SSO (beta),
   cookie sessions, all converging on the same permission model
 - **Collaboration:** Node + Hocuspocus/Yjs sidecar for simultaneous editing
 - **PDF export:** Node + Playwright sidecar rendering the print-ready HTML export

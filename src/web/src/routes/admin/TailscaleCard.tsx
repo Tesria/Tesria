@@ -5,7 +5,7 @@ import { api, type TailscaleStatus } from '../../api/client'
  * Administration → Settings → Tailscale (dev-plan 19.1): whether the
  * optional Tailscale sidecar is running, the address it serves Tesria at on
  * the tailnet, and when its device key expires. Read-only: the sidecar is
- * set up in .env and started with its Compose profile, which the Support
+ * set up in .env and started with its Compose profile, which the docs
  * page walks through.
  */
 export function TailscaleCard() {

@@ -3,7 +3,7 @@
 // of Administration. Replaced the owner's personal site before the public
 // release (dev-plan 14.1).
 
-/** The project's site, with the Support pages. */
+/** The project's site, with the docs pages. */
 export const TESRIA_SITE = 'https://tesria.com'
 
 /** The source code. */

@@ -189,7 +189,7 @@ input, textarea {
 input:focus, textarea:focus { outline: 2px solid var(--primary); outline-offset: -1px; }
 /* A select under its label looks like the text boxes beside it, on its own
    line: "Start from a template (optional)" ran straight into the browser's
-   own drop-down (the Support pictures, 2026-09-23). */
+   own drop-down (the docs pictures, 2026-09-23). */
 label > select {
   display: block; margin-top: 0.25rem; min-width: 14rem; max-width: 100%; font: inherit; color: var(--text);
   padding: 0.45rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
@@ -921,7 +921,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .gallery .image-figure { width: 100% !important; margin: 0; }
 /* On a phone a resized picture fills the column: a close-up set to 60% of a
    desktop column would otherwise be shrunk twice, and its text with it
-   (the owner, reading the Support site on an iPhone, 2026-09-23). */
+   (the owner, reading the docs on an iPhone, 2026-09-23). */
 @media (max-width: 600px) {
   .image-figure[style*="width"] { width: 100% !important; }
 }
@@ -2857,7 +2857,7 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
 .setup__actions { margin-top: 0.75rem; }
 /* Scoped to the panel so it outranks the panel's own "label is a grid" rule
    above, which stacked the box over its text and ran the title into the
-   description (found shooting the support site, 2026-09-23). */
+   description (found shooting the docs, 2026-09-23). */
 .setup__step-panel .setup__check { display: flex; gap: 0.6rem; align-items: flex-start; }
 /* width: auto undoes the global full-width input, which otherwise gives a
    checkbox the whole row and centers it there. */

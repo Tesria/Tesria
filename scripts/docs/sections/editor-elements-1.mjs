@@ -136,7 +136,7 @@ export async function build({
   const tableOf = (attrs, ...rows) => ({ type: 'table', ...(attrs ? { attrs } : {}), content: rows })
   /** The Insert it table: a slash command and what it gives. */
   const commands = (...rows) => table([['Type this', 'To get'], ...rows], [200, 500])
-  /** A link to a heading on another Support page. */
+  /** A link to a heading on another docs page. */
   const sectionLink = (title, anchor, label) => {
     const t = pageLink(title, label)
     const mark = t.marks?.find((m) => m.type === 'link')

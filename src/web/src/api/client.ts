@@ -569,8 +569,8 @@ export type MailProvider = {
   /** What goes in the username and password, in words. */
   username: string
   password: string
-  /** The Support page that walks through it, by title. */
-  supportPage: string
+  /** The docs page that walks through it, by title. */
+  docsPage: string
   signIn: MailSignIn | null
   note: string | null
 }
@@ -1264,7 +1264,7 @@ async function handle<T>(res: Response): Promise<T> {
     // `detail` is where Results.Problem puts its explanation. It used to be
     // skipped, so "Registration is by invitation on this instance." reached
     // people as "You do not have permission to do that." and a rate limit
-    // as "Request failed (429)." (found writing the support site, 2026-09-23).
+    // as "Request failed (429)." (found writing the docs, 2026-09-23).
     const field = (name: string) =>
       data && typeof data === 'object' && name in data && (data as Record<string, unknown>)[name]
         ? String((data as Record<string, unknown>)[name])

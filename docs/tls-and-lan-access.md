@@ -260,6 +260,6 @@ certificate Tailscale provisions, so no device needs to trust Caddy's
 internal CA for that address. It is a second way in: the LAN address and
 its certificate are unchanged. Start it with
 `docker compose --profile tailscale up -d` after adding `TS_AUTHKEY` to
-`.env`; the Support page "Reaching Tesria from anywhere with Tailscale" has
+`.env`; the docs page "Reaching Tesria from anywhere with Tailscale" has
 the steps, including turning off the device's key expiry.
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Exports the Support space (dev-plan 10.5 step 7): the wiki pack into
-# support/support-pack.zip, which is committed, and the static site into the
-# directory given (default support/), checked against Cloudflare's limits.
+# Exports the Docs space (dev-plan 10.5 step 7): the wiki pack into
+# docs/site/docs-pack.zip, which is committed, and the static site into the
+# directory given (default docs/site/), checked against Cloudflare's limits.
 #
-#   scripts/support/export-support.sh [site-directory]
+#   scripts/docs/export-docs.sh [site-directory]
 #
 # Signs in as SHOT_EMAIL / SHOT_PASSWORD from the gitignored .debug-credentials.
 set -euo pipefail
@@ -26,4 +26,4 @@ if docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt "$CA" >/de
   export NODE_EXTRA_CA_CERTS="$CA"
 fi
 
-exec node scripts/support/export-support.mjs "$@"
+exec node scripts/docs/export-docs.mjs "$@"

@@ -1,10 +1,10 @@
-// Welcome to Tesria: the first page of the Support space, and the front door
+// Welcome to Tesria: the first page of the Docs space, and the front door
 // of tesria.com for someone who has never heard of Tesria (rewritten to the
-// owner's rules of 2026-09-23, scripts/support/WRITING.md). It says what
+// owner's rules of 2026-09-23, scripts/docs/WRITING.md). It says what
 // Tesria is, who it suits, and where to go next; the Features page, second in
 // the tree, is the full tour, so this page does not repeat it.
 //
-// Run it on its own: scripts/support/publish-support.sh welcome
+// Run it on its own: scripts/docs/publish-docs.sh welcome
 
 // One picture: what Tesria looks like, which words cannot show. A whole
 // window, so on a phone its text is small; it is there for the shape of the

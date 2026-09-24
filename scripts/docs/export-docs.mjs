@@ -1,9 +1,9 @@
-// Exports the Support space (dev-plan 10.5 step 7). Run it through
-// export-support.sh.
+// Exports the Docs space (dev-plan 10.5 step 7). Run it through
+// export-docs.sh.
 //
-//   support/support-pack.zip   the wiki pack, committed: the copy of the
+//   docs/site/docs-pack.zip   the wiki pack, committed: the copy of the
 //                              site that survives a reset of the instance
-//   <out>/support-site.zip     the static site, for tesria.com; not
+//   <out>/docs-site.zip         the static site, for tesria.com/docs; not
 //                              committed, because it is rebuilt from the pack
 //
 // The site is also checked against Cloudflare's limits for static assets on
@@ -16,7 +16,8 @@ import * as lib from '../lib/tesria.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..', '..')
-const OUT = process.argv[2] || join(ROOT, 'support')
+const SITE_DIR = join(ROOT, 'docs', 'site')
+const OUT = process.argv[2] || SITE_DIR
 const MAX_FILE = 25 * 1024 * 1024
 const MAX_FILES = 20_000
 
@@ -46,20 +47,20 @@ function entries(zip) {
 }
 
 const pack = await download('/api/spaces/DOCS/export/pack')
-mkdirSync(join(ROOT, 'support'), { recursive: true })
-writeFileSync(join(ROOT, 'support', 'support-pack.zip'), pack)
-console.log(`pack: support/support-pack.zip, ${(pack.length / 1048576).toFixed(1)} MiB, ${entries(pack).length} files`)
+mkdirSync(SITE_DIR, { recursive: true })
+writeFileSync(join(SITE_DIR, 'docs-pack.zip'), pack)
+console.log(`pack: docs/site/docs-pack.zip, ${(pack.length / 1048576).toFixed(1)} MiB, ${entries(pack).length} files`)
 
 // The site as its reader will see it would be audience=anonymous, but that
 // needs anonymous reading on for the instance. As the author is the same
-// set of pages here: nothing in Support is restricted.
+// set of pages here: nothing in Docs is restricted.
 const site = await download('/api/spaces/DOCS/export/site?audience=me')
 mkdirSync(OUT, { recursive: true })
-writeFileSync(join(OUT, 'support-site.zip'), site)
+writeFileSync(join(OUT, 'docs-site.zip'), site)
 const files = entries(site).filter((e) => !e.name.endsWith('/'))
 const biggest = files.reduce((a, b) => (b.size > a.size ? b : a), { size: 0 })
 const total = files.reduce((n, e) => n + e.size, 0)
-console.log(`site: ${join(OUT, 'support-site.zip')}, ${files.length} files, ${(total / 1048576).toFixed(1)} MiB unpacked`)
+console.log(`site: ${join(OUT, 'docs-site.zip')}, ${files.length} files, ${(total / 1048576).toFixed(1)} MiB unpacked`)
 console.log(`largest file: ${biggest.name}, ${(biggest.size / 1048576).toFixed(2)} MiB`)
 
 const problems = []
