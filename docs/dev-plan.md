@@ -5134,6 +5134,33 @@ migrate service's role handling (1), the revocation channel between the
 app and the collaboration service (2), and trusting one subnet (7). All
 three are reversible; none changes a file format.
 
+**Reviewed by Fable 5.1, 2026-09-24, at the owner's request; the owner
+confirmed both decisions (`APP_DB_PASSWORD` required; a one-time network
+recreate).** Corrections, folded in before building:
+- (1) Only what needs ownership moves to `migrate`: migrations, the
+  app-role provisioning, and the audit-chain backfill. The seeds stay in
+  the app. The app refuses to start when migrations are pending, naming
+  `docker compose logs migrate`. The backup sidecars keep the owner
+  password by necessity; `security.md` says so.
+- (2) Not "tokens revoked" (collaboration tokens come from a browser
+  session). Triggers: suspension, sign-out everywhere and password change,
+  space permission, page restriction, group membership and role changes.
+  The collaboration service never decides who lost access: the app tells
+  it to close a user's connections, or a page's, and the reconnect is
+  re-authorized by `/collab-token`. The editor tells "reconnecting" from
+  "refused" from "page gone". Token lifetime drops to 10 minutes, since
+  reconnecting is now seamless; the expiry sweep is the backstop.
+- (4) The version is gated in all three places, including the OpenAPI
+  document's `info.version`, or it is theater.
+- (5) Not "constant time": the same order of magnitude.
+- (6) Not an in-memory set: a nonce column on the user, cleared on redeem,
+  so one challenge is live per user and restarts do not reopen it.
+- (7) `docker compose down`, never `down -v`, in the release notes; the
+  subnet overridable for VPN overlaps.
+- (8) Check the private list for carrier NAT (`100.64.0.0/10`, which
+  Tailscale uses), link-local and reserved ranges while adding NAT64.
+- (9) Exported sites carry the image rule as a `<meta>` CSP.
+
 **Acceptable, documented:** gaps 4, 5, 8, 9 and 13 (single server).
 
 ---

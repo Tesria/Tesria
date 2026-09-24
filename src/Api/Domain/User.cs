@@ -124,6 +124,14 @@ public class User
     /// <summary>The last time step a code was accepted for, so no code is accepted twice.</summary>
     public long? TotpLastStep { get; set; }
 
+    /// <summary>
+    /// The live two-factor sign-in challenge's nonce (dev-plan 14.3): a new
+    /// password step replaces it and a completed sign-in clears it, so a
+    /// challenge that was used, or overtaken, cannot be replayed within its
+    /// five minutes.
+    /// </summary>
+    public string? TotpChallengeNonce { get; set; }
+
     /// <summary>How this person wants their own notifications by email (dev-plan 4.3). Security alerts to administrators ignore this.</summary>
     public EmailNotificationMode EmailNotifications { get; set; } = EmailNotificationMode.Off;
 

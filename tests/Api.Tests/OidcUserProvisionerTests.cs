@@ -21,7 +21,7 @@ public class OidcUserProvisionerTests
         var services = factory.Services.CreateScope().ServiceProvider;
         var db = services.GetRequiredService<AppDbContext>();
         db.Database.EnsureCreated();
-        return (factory, db, new OidcUserProvisioner(db, services.GetRequiredService<ISiteSettingsService>()));
+        return (factory, db, new OidcUserProvisioner(db, services.GetRequiredService<ISiteSettingsService>(), services.GetRequiredService<Tesria.Api.Infrastructure.Audit.IAuditLogger>()));
     }
 
     [Fact]

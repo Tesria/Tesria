@@ -171,6 +171,38 @@ public class SessionsAndTotpTests
     }
 
     [Fact]
+    public async Task A_challenge_signs_in_once_and_a_newer_one_replaces_it()
+    {
+        // dev-plan 14.3: the challenge used to stay good for its five minutes.
+        // Recovery codes stand in for the authenticator here, because each is
+        // good once whatever the clock says, so a refusal below can only be
+        // the challenge's.
+        using var factory = new TestAppFactory();
+        var client = factory.CreateClient();
+        var registered = await RegisterAsync(client, "a@example.com");
+        await EnrollAsync(client);
+        var codes = registered.RecoveryCodes;
+
+        var browser = factory.CreateClient();
+        var challenge = await (await LoginAsync(browser, "a@example.com")).Content.ReadFromJsonAsync<ChallengeDto>();
+        (await browser.PostAsJsonAsync("/api/auth/login/totp", new { challenge!.Challenge, Code = codes[0] }))
+            .EnsureSuccessStatusCode();
+
+        // The same challenge again, with an unused recovery code: spent.
+        Assert.Equal(HttpStatusCode.Unauthorized, (await factory.CreateClient().PostAsJsonAsync("/api/auth/login/totp",
+            new { challenge.Challenge, Code = codes[1] })).StatusCode);
+
+        // Two password steps: only the newer challenge is live.
+        var older = await (await LoginAsync(factory.CreateClient(), "a@example.com")).Content.ReadFromJsonAsync<ChallengeDto>();
+        var newer = await (await LoginAsync(factory.CreateClient(), "a@example.com")).Content.ReadFromJsonAsync<ChallengeDto>();
+        Assert.Equal(HttpStatusCode.Unauthorized, (await factory.CreateClient().PostAsJsonAsync("/api/auth/login/totp",
+            new { older!.Challenge, Code = codes[1] })).StatusCode);
+        // codes[1] is still unused, which the newer challenge proves.
+        (await factory.CreateClient().PostAsJsonAsync("/api/auth/login/totp",
+            new { newer!.Challenge, Code = codes[1] })).EnsureSuccessStatusCode();
+    }
+
+    [Fact]
     public async Task A_recovery_code_stands_in_for_the_authenticator()
     {
         using var factory = new TestAppFactory();

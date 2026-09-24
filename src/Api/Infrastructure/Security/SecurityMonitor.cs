@@ -122,12 +122,24 @@ public static class PrivateNetworks
                 || (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31)
                 || (bytes[0] == 192 && bytes[1] == 168)
                 || (bytes[0] == 169 && bytes[1] == 254) // link-local incl. 169.254.169.254
-                || (bytes[0] == 100 && bytes[1] >= 64 && bytes[1] <= 127) // CGNAT
+                || (bytes[0] == 100 && bytes[1] >= 64 && bytes[1] <= 127) // CGNAT, and Tailscale's range
+                || (bytes[0] == 192 && bytes[1] == 0 && bytes[2] == 0) // IETF protocol assignments
+                || (bytes[0] == 198 && (bytes[1] == 18 || bytes[1] == 19)) // benchmarking
                 || bytes[0] == 0
                 || bytes[0] >= 224; // multicast and reserved
         }
+        // IPv6 addresses that carry an IPv4 address inside them reach that
+        // IPv4 address through a translator, so they are judged by it (dev-plan
+        // 14.3): NAT64 (64:ff9b::/96 and the local-use 64:ff9b:1::/48, the
+        // IPv4 address in the last four bytes) and 6to4 (2002::/16, the IPv4
+        // address in bytes two to five). NAT64 to a public host still works.
+        if (bytes[0] == 0x00 && bytes[1] == 0x64 && bytes[2] == 0xff && bytes[3] == 0x9b)
+            return IsPrivateOrLocal(new IPAddress(bytes[12..16]));
+        if (bytes[0] == 0x20 && bytes[1] == 0x02)
+            return IsPrivateOrLocal(new IPAddress(bytes[2..6]));
         return address.IsIPv6LinkLocal || address.IsIPv6SiteLocal || address.IsIPv6Multicast
-            || address.IsIPv6UniqueLocal;
+            || address.IsIPv6UniqueLocal
+            || (bytes[0] == 0x01 && bytes[1] == 0x00 && bytes[2..8].All(b => b == 0)); // discard, 100::/64
     }
 }
 

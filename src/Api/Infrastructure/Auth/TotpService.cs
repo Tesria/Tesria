@@ -21,9 +21,17 @@ public interface ITotpService
     void Enable(User user);
     void Disable(User user);
 
-    /// <summary>A short-lived, signed token proving the password step passed.</summary>
-    string IssueChallenge(Guid userId, string? ip);
-    Guid? RedeemChallenge(string challenge, string? ip);
+    /// <summary>
+    /// A short-lived, signed token proving the password step passed. Sets the
+    /// user's challenge nonce; the caller saves.
+    /// </summary>
+    string IssueChallenge(User user, string? ip);
+
+    /// <summary>
+    /// Whose challenge this is, when it is signed, unexpired, from the same
+    /// address, and still the user's live one (<see cref="User.TotpChallengeNonce"/>).
+    /// </summary>
+    Guid? RedeemChallenge(string challenge, string? ip, Func<Guid, string?> liveNonceOf);
 }
 
 /// <summary>
@@ -40,7 +48,7 @@ public sealed class TotpService(IDataProtectionProvider dataProtection) : ITotpS
     private readonly IDataProtector _secrets = dataProtection.CreateProtector("Tesria.Totp.Secret.v1");
     private readonly IDataProtector _challenges = dataProtection.CreateProtector("Tesria.Totp.Challenge.v1");
 
-    private sealed record Challenge(Guid UserId, string? Ip, DateTimeOffset ExpiresAt);
+    private sealed record Challenge(Guid UserId, string? Ip, DateTimeOffset ExpiresAt, string? Nonce = null);
 
     public (string Base32Secret, string OtpauthUri) BeginEnrollment(User user, string issuer)
     {
@@ -90,10 +98,14 @@ public sealed class TotpService(IDataProtectionProvider dataProtection) : ITotpS
         user.TotpLastStep = null;
     }
 
-    public string IssueChallenge(Guid userId, string? ip) =>
-        _challenges.Protect(JsonSerializer.Serialize(new Challenge(userId, ip, DateTimeOffset.UtcNow.Add(ChallengeLifetime))));
+    public string IssueChallenge(User user, string? ip)
+    {
+        user.TotpChallengeNonce = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16));
+        return _challenges.Protect(JsonSerializer.Serialize(
+            new Challenge(user.Id, ip, DateTimeOffset.UtcNow.Add(ChallengeLifetime), user.TotpChallengeNonce)));
+    }
 
-    public Guid? RedeemChallenge(string challenge, string? ip)
+    public Guid? RedeemChallenge(string challenge, string? ip, Func<Guid, string?> liveNonceOf)
     {
         Challenge? parsed;
         try { parsed = JsonSerializer.Deserialize<Challenge>(_challenges.Unprotect(challenge ?? "")); }
@@ -102,6 +114,13 @@ public sealed class TotpService(IDataProtectionProvider dataProtection) : ITotpS
         // Bound to the address that passed the password step: a challenge
         // lifted from one network is no use on another.
         if (!string.Equals(parsed.Ip, ip, StringComparison.Ordinal)) return null;
+        // Only the user's live challenge: one that completed a sign-in, or was
+        // replaced by a newer password step, is spent (dev-plan 14.3).
+        var live = liveNonceOf(parsed.UserId);
+        if (parsed.Nonce is null || live is null
+            || !System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+                System.Text.Encoding.UTF8.GetBytes(parsed.Nonce), System.Text.Encoding.UTF8.GetBytes(live)))
+            return null;
         return parsed.UserId;
     }
 }

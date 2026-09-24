@@ -215,7 +215,7 @@ public static class AuthEndpoints
     private static async Task<IResult> Register(
         RegisterRequest req, AppDbContext db, IPasswordHasher hasher, HttpContext http,
         ISiteSettingsService settings, IAccountRecoveryService recovery, IInviteService invites,
-        ISecurityDetector detector)
+        ISecurityDetector detector, IAuditLogger audit)
     {
         var email = (req.Email ?? "").Trim().ToLowerInvariant();
         var displayName = (req.DisplayName ?? "").Trim();
@@ -292,6 +292,17 @@ public static class AuthEndpoints
             invite.UsedByUserId = user.Id;
         }
 
+        // Every account's creation is in the audit log, with how it came to be
+        // (dev-plan 14.3): an audit log that misses new accounts is not one a
+        // compliance review can rely on.
+        audit.RecordAs(user.Id, "user.registered", "user", user.Id, new
+        {
+            user.Email,
+            How = isFirstAccount ? "first account" : invite is not null ? "invite" : "open registration",
+            InviteId = invite?.Id,
+            Ip = ClientIp(http),
+        });
+
         await detector.RegistrationAsync(ClientIp(http));
         await db.SaveChangesAsync();
         await tx.CommitAsync();
@@ -355,8 +366,9 @@ public static class AuthEndpoints
             // Password accepted; not signed in. The challenge proves that step
             // to the code endpoint. The failure counter is not reset yet: a
             // wrong code counts as a failure too.
+            var challenge = totp.IssueChallenge(user, ClientIp(http));
             await db.SaveChangesAsync();
-            return Results.Ok(new TotpChallengeResponse(true, totp.IssueChallenge(user.Id, ClientIp(http))));
+            return Results.Ok(new TotpChallengeResponse(true, challenge));
         }
 
         return await CompleteSignInAsync(db, http, audit, recovery, siteSettings, detector, user, totp: false, rights);
@@ -369,8 +381,15 @@ public static class AuthEndpoints
         ITotpService totp,
         Infrastructure.Permissions.IInstancePermissions rights)
     {
-        var userId = totp.RedeemChallenge(req.Challenge, ClientIp(http));
-        var user = userId is null ? null : await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        // The challenge names its user; that user's live nonce decides whether
+        // it is still good. Loaded first, then checked, in one lookup.
+        User? user = null;
+        var userId = totp.RedeemChallenge(req.Challenge, ClientIp(http), id =>
+        {
+            user = db.Users.FirstOrDefault(u => u.Id == id);
+            return user?.TotpChallengeNonce;
+        });
+        if (userId is null) user = null;
         var now = DateTimeOffset.UtcNow;
 
         if (user is null || user.TotpEnabledAt is null || user.Status != UserStatus.Active || AuthLockout.IsLocked(user, now))
@@ -395,6 +414,8 @@ public static class AuthEndpoints
             return Results.Unauthorized();
         }
 
+        // Spent: the same challenge cannot sign in a second time.
+        user.TotpChallengeNonce = null;
         return await CompleteSignInAsync(db, http, audit, recovery, siteSettings, detector, user, totp: true, rights);
     }
 

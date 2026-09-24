@@ -37,7 +37,7 @@ public interface IOidcUserProvisioner
     Task<User> ResolveOrProvisionAsync(string subject, string? email, bool emailVerified, string? displayName);
 }
 
-public sealed class OidcUserProvisioner(AppDbContext db, ISiteSettingsService settings) : IOidcUserProvisioner
+public sealed class OidcUserProvisioner(AppDbContext db, ISiteSettingsService settings, Audit.IAuditLogger audit) : IOidcUserProvisioner
 {
     public async Task<User> ResolveOrProvisionAsync(
         string subject, string? email, bool emailVerified, string? displayName)
@@ -88,6 +88,12 @@ public sealed class OidcUserProvisioner(AppDbContext db, ISiteSettingsService se
             CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Users.Add(user);
+        // As registration does (dev-plan 14.3): every account's creation is audited.
+        audit.RecordAs(user.Id, "user.registered", "user", user.Id, new
+        {
+            user.Email,
+            How = isFirstAccount ? "first account, single sign-on" : "single sign-on",
+        });
         await db.SaveChangesAsync();
         return user;
     }
