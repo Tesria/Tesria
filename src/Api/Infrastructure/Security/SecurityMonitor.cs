@@ -164,8 +164,12 @@ public interface ISecurityDetector
     Task SpaceVisibilityChangedAsync(Guid actorId, Space space, bool isPublic);
     Task WebhookPrivateTargetAsync(Guid actorId, string url, Guid spaceId);
     Task AuditChainBrokenAsync(Audit.AuditChainReport report);
-    /// <summary>Called by the denied-response middleware once its own counter crosses.</summary>
-    Task DeniedSpikeAsync(string ip, int count);
+    /// <summary>
+    /// Called by the denied-response middleware once its own counter crosses,
+    /// with what the refused requests were, and whether the address stands
+    /// for many clients (<see cref="SharedClientAddresses"/>).
+    /// </summary>
+    Task DeniedSpikeAsync(string ip, int count, DeniedRequestLog.Summary summary, bool sharedAddress);
     /// <summary>
     /// A backup problem (dev-plan 9.1): <c>backup.failed</c>, <c>backup.overdue</c>,
     /// <c>backup.agent_offline</c>, <c>backup.restore_test_failed</c> or
@@ -322,9 +326,16 @@ public sealed class SecurityDetector(AppDbContext db, SecurityCounters counters,
         RaiseAsync("audit.chain_broken", SecuritySeverity.Critical, key: "instance", alert: true,
             metadata: new { report.BrokenAtSequence, report.Problem, report.Checked });
 
-    public Task DeniedSpikeAsync(string ip, int count) =>
+    public Task DeniedSpikeAsync(string ip, int count, DeniedRequestLog.Summary summary, bool sharedAddress) =>
         RaiseAsync("http.denied_spike", SecuritySeverity.Warning, key: ip, ip: ip, alert: true,
-            metadata: new { Denied = count, WindowMinutes = SecurityThresholds.DeniedWindow.TotalMinutes });
+            metadata: new
+            {
+                Denied = count,
+                WindowMinutes = SecurityThresholds.DeniedWindow.TotalMinutes,
+                summary.TopPaths, summary.Unauthorized, summary.Forbidden,
+                summary.WithSession, summary.WithToken, summary.Anonymous, summary.Browsers,
+                SharedAddress = sharedAddress,
+            });
 
     public Task BackupProblemAsync(string kind, SecuritySeverity severity, string agent, object? metadata) =>
         RaiseAsync(kind, severity, key: agent, alert: true, metadata: metadata);

@@ -103,10 +103,13 @@ public sealed class BlocklistMiddleware(RequestDelegate next, BlocklistCache blo
 
 /// <summary>
 /// Counts 401/403 responses per address and raises one alert when the count
-/// crosses the threshold. Runs its detector in its own scope because by the
-/// time the status is known the request's own unit of work is finished.
+/// crosses the threshold, saying what was refused (<see cref="DeniedRequestLog"/>).
+/// Runs its detector in its own scope because by the time the status is
+/// known the request's own unit of work is finished.
 /// </summary>
-public sealed class DeniedResponseMiddleware(RequestDelegate next, SecurityCounters counters, IServiceScopeFactory scopes)
+public sealed class DeniedResponseMiddleware(
+    RequestDelegate next, SecurityCounters counters, DeniedRequestLog log, SharedClientAddresses shared,
+    IServiceScopeFactory scopes)
 {
     public async Task InvokeAsync(HttpContext context)
     {
@@ -114,16 +117,20 @@ public sealed class DeniedResponseMiddleware(RequestDelegate next, SecurityCount
 
         var status = context.Response.StatusCode;
         if (status is not (StatusCodes.Status401Unauthorized or StatusCodes.Status403Forbidden)) return;
-        var ip = context.Connection.RemoteIpAddress?.ToString();
-        if (ip is null) return;
+        var address = context.Connection.RemoteIpAddress;
+        if (address is null) return;
+        if (address.IsIPv4MappedToIPv6) address = address.MapToIPv4();
+        var ip = address.ToString();
 
+        log.Record(ip, context, status);
         var count = counters.Hit("http.denied_spike", ip, SecurityThresholds.DeniedWindow);
         if (count != SecurityThresholds.DeniedResponsesPerAddress) return;
 
         try
         {
             using var scope = scopes.CreateScope();
-            await scope.ServiceProvider.GetRequiredService<ISecurityDetector>().DeniedSpikeAsync(ip, count);
+            await scope.ServiceProvider.GetRequiredService<ISecurityDetector>().DeniedSpikeAsync(
+                ip, count, log.Summarize(ip, SecurityThresholds.DeniedWindow), shared.IsShared(address));
             await scope.ServiceProvider.GetRequiredService<AppDbContext>().SaveChangesAsync();
         }
         catch (Exception)

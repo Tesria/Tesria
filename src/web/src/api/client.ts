@@ -678,6 +678,8 @@ export type SecurityAlert = {
   resolvedByName: string | null
   note: string | null
   metadataJson: string | null
+  /** The address stands for many devices (Docker Desktop's gateway): it says nothing about who, and is never blocked. */
+  ipShared?: boolean
 }
 
 export type BlockedNetwork = {

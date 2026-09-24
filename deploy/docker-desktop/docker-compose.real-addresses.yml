@@ -1,0 +1,21 @@
+# Real visitor addresses under Docker Desktop, Mac or Windows (see
+# deploy/docker-desktop/real-addresses.mjs for why). Used as a second compose file,
+# by adding this line to .env:
+#
+#   COMPOSE_FILE=docker-compose.yml:deploy/docker-desktop/docker-compose.real-addresses.yml
+#
+# Caddy moves to ports only this Mac can reach, so every visitor comes
+# through the forwarder on 80 and 443, and nobody on the network can reach
+# Caddy directly to claim an address that is not theirs. Caddy believes the
+# forwarder's PROXY line only from where its connections arrive: a port
+# bound to 127.0.0.1 is handed in from this stack's own network gateway
+# (TESRIA_SUBNET; found testing, 2026-09-24), and Docker Desktop's gateway
+# is listed too in case a version delivers it from there. Both are addresses
+# only this Mac and this stack's containers can connect from.
+services:
+  caddy:
+    ports: !override
+      - "127.0.0.1:18080:80"
+      - "127.0.0.1:18443:443"
+    environment:
+      PROXY_PROTOCOL_FROM: ${PROXY_PROTOCOL_FROM:-${TESRIA_SUBNET:-10.203.0.0/24} 192.168.65.0/24}

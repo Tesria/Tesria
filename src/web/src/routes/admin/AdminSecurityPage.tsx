@@ -25,6 +25,43 @@ function meta(json: string | null): Record<string, unknown> {
   }
 }
 
+/** The details every alert lists inline: its plain values. Lists and flags get their own lines. */
+const STRUCTURED = new Set(['TopPaths', 'Browsers', 'SharedAddress', 'Unauthorized', 'Forbidden', 'WithSession', 'WithToken', 'Anonymous'])
+function plainDetails(json: string | null): string[] {
+  return Object.entries(meta(json))
+    .filter(([k, v]) => !STRUCTURED.has(k) && (v === null || typeof v !== 'object'))
+    .map(([k, v]) => `${k}: ${String(v)}`)
+}
+
+type Counted = { Path?: string; Agent?: string; Count: number }
+
+/**
+ * What a spike of refused requests was (the owner, 2026-09-24: "100 denied"
+ * alone could not be explained): the paths refused most, whether the
+ * requests were signed in, and which browsers sent them.
+ */
+function DeniedDetails({ json }: { json: string | null }) {
+  const m = meta(json)
+  const paths = (m.TopPaths as Counted[] | undefined) ?? []
+  const browsers = (m.Browsers as Counted[] | undefined) ?? []
+  if (paths.length === 0 && browsers.length === 0) return null
+  const n = (k: string) => Number(m[k] ?? 0)
+  return (
+    <ul className="alerts__details small">
+      {paths.length > 0 && (
+        <li>Refused most: {paths.map((p, i) => <span key={p.Path}>{i > 0 && ', '}<code>{p.Path}</code> ({p.Count})</span>)}</li>
+      )}
+      <li>
+        {n('Unauthorized')} as not signed in, {n('Forbidden')} as not allowed. {n('WithSession')} carried a sign-in
+        cookie that was not accepted or not enough, {n('WithToken')} an API token, and {n('Anonymous')} neither.
+      </li>
+      {browsers.length > 0 && (
+        <li>From: {browsers.map((b, i) => <span key={b.Agent}>{i > 0 && ', '}{b.Agent} ({b.Count})</span>)}</li>
+      )}
+    </ul>
+  )
+}
+
 function Severity({ level }: { level: SecuritySeverity }) {
   const cls = level === SecuritySeverity.Critical ? 'badge badge--danger' : level === SecuritySeverity.Warning ? 'badge badge--warn' : 'badge'
   return <span className={cls}>{SEVERITY_LABEL[level]}</span>
@@ -145,7 +182,9 @@ export function AdminSecurityPage() {
   /** The mitigations relevant to an alert's key, each asked first (dev-plan 15.4). */
   function mitigations(a: SecurityAlert) {
     const actions: Array<{ label: string; run: () => Promise<unknown>; done: string; ask: string }> = []
-    if (a.ip) {
+    // A shared address (every device behind Docker Desktop) is never one
+    // caller; blocking it would lock everyone out, so it is not offered.
+    if (a.ip && !a.ipShared) {
       actions.push({
         label: `Block ${a.ip}`,
         run: () => api.admin.security.blocks.add({ cidr: a.ip!, reason: `alert: ${a.kind}`, expiresInHours: 24 }),
@@ -226,10 +265,18 @@ export function AdminSecurityPage() {
                   {[
                     a.ip && <>address <code>{a.ip}</code></>,
                     a.actorName && <>by {a.actorName}</>,
-                    ...Object.entries(meta(a.metadataJson)).map(([k, v]) => `${k}: ${String(v)}`),
+                    ...plainDetails(a.metadataJson),
                     a.note && <>note: “{a.note}”</>,
                   ].filter(Boolean).map((part, i) => <span key={i}>{i > 0 && ' · '}{part}</span>)}
                 </p>
+                {a.kind === 'http.denied_spike' && <DeniedDetails json={a.metadataJson} />}
+                {a.ipShared && (
+                  <p className="alerts__shared small">
+                    Every device that reaches Tesria through Docker Desktop arrives from <code>{a.ip}</code>, so this
+                    address cannot say which device it was, and it cannot be blocked. To see each device's real address,
+                    see <em>Real visitor addresses with Docker Desktop</em> in the Tesria docs.
+                  </p>
+                )}
                 {a.status !== AlertStatus.Resolved && (
                   <div className="alerts__actions">
                     {a.status === AlertStatus.Open && (

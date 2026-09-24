@@ -23,7 +23,9 @@ public static class SecurityEndpoints
         Guid Id, Guid EventId, string Kind, SecuritySeverity Severity, string Key, string? Ip, Guid? ActorId,
         string? ActorName, SecurityAlertStatus Status, DateTimeOffset CreatedAt,
         DateTimeOffset? AcknowledgedAt, string? AcknowledgedByName,
-        DateTimeOffset? ResolvedAt, string? ResolvedByName, string? Note, string? MetadataJson);
+        DateTimeOffset? ResolvedAt, string? ResolvedByName, string? Note, string? MetadataJson,
+        /// <summary>The address stands for many clients (Docker Desktop's gateway, say): not one to block.</summary>
+        bool IpShared = false);
 
     public record BlockRow(Guid Id, string Cidr, string? Reason, string? CreatedByName, DateTimeOffset CreatedAt, DateTimeOffset? ExpiresAt);
     public record BlockRequest(string Cidr, string? Reason, int? ExpiresInHours);
@@ -91,7 +93,7 @@ public static class SecurityEndpoints
             e.TargetType, e.TargetId, e.MetadataJson, e.CreatedAt)));
     }
 
-    private static async Task<IResult> ListAlerts(AppDbContext db, string? status)
+    private static async Task<IResult> ListAlerts(AppDbContext db, SharedClientAddresses shared, string? status)
     {
         IQueryable<SecurityAlert> query = db.SecurityAlerts.AsNoTracking().Include(a => a.Event);
         if (!string.Equals(status, "all", StringComparison.OrdinalIgnoreCase))
@@ -99,10 +101,10 @@ public static class SecurityEndpoints
 
         var rows = (await query.Take(500).ToListAsync()).OrderByDescending(a => a.CreatedAt).ToList();
         var names = await NamesAsync(db, rows.SelectMany(r => new[] { r.ActorId, r.AcknowledgedById, r.ResolvedById }));
-        return Results.Ok(rows.Select(a => ToRow(a, names)));
+        return Results.Ok(rows.Select(a => ToRow(a, names, shared)));
     }
 
-    private static async Task<IResult> Acknowledge(Guid id, NoteRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit)
+    private static async Task<IResult> Acknowledge(Guid id, NoteRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit, SharedClientAddresses shared)
     {
         var alert = await db.SecurityAlerts.Include(a => a.Event).FirstOrDefaultAsync(a => a.Id == id);
         if (alert is null) return Results.NotFound();
@@ -115,10 +117,10 @@ public static class SecurityEndpoints
         if (!string.IsNullOrWhiteSpace(req.Note)) alert.Note = req.Note.Trim();
         audit.Record("security.alert_acknowledged", "security", alert.Id, new { alert.Kind });
         await db.SaveChangesAsync();
-        return Results.Ok(ToRow(alert, await NamesAsync(db, [alert.ActorId, alert.AcknowledgedById, alert.ResolvedById])));
+        return Results.Ok(ToRow(alert, await NamesAsync(db, [alert.ActorId, alert.AcknowledgedById, alert.ResolvedById]), shared));
     }
 
-    private static async Task<IResult> Resolve(Guid id, NoteRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit)
+    private static async Task<IResult> Resolve(Guid id, NoteRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit, SharedClientAddresses shared)
     {
         var alert = await db.SecurityAlerts.Include(a => a.Event).FirstOrDefaultAsync(a => a.Id == id);
         if (alert is null) return Results.NotFound();
@@ -130,7 +132,7 @@ public static class SecurityEndpoints
         if (!string.IsNullOrWhiteSpace(req.Note)) alert.Note = req.Note.Trim();
         audit.Record("security.alert_resolved", "security", alert.Id, new { alert.Kind, alert.Note });
         await db.SaveChangesAsync();
-        return Results.Ok(ToRow(alert, await NamesAsync(db, [alert.ActorId, alert.AcknowledgedById, alert.ResolvedById])));
+        return Results.Ok(ToRow(alert, await NamesAsync(db, [alert.ActorId, alert.AcknowledgedById, alert.ResolvedById]), shared));
     }
 
     /// <summary>
@@ -164,10 +166,19 @@ public static class SecurityEndpoints
     }
 
     private static async Task<IResult> AddBlock(
-        BlockRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit, BlocklistCache blocklist, HttpContext http)
+        BlockRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit, BlocklistCache blocklist, HttpContext http,
+        SharedClientAddresses shared)
     {
         if (!BlocklistCache.TryParseCidr(req.Cidr, out var network))
             return Results.ValidationProblem(new Dictionary<string, string[]> { ["cidr"] = ["Enter an IP address or CIDR range."] });
+
+        // An address that stands for every device (Docker Desktop's gateway)
+        // is never one attacker: blocking it would lock everyone out.
+        if (shared.Covers(network))
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["cidr"] = ["That range includes an address every device shares here (Docker Desktop's), so blocking it would lock everyone out."],
+            });
 
         // Locking yourself out is the one mistake this page must not allow.
         var self = http.Connection.RemoteIpAddress;
@@ -214,10 +225,10 @@ public static class SecurityEndpoints
         return Results.NoContent();
     }
 
-    private static AlertRow ToRow(SecurityAlert a, Dictionary<Guid, string> names) => new(
+    private static AlertRow ToRow(SecurityAlert a, Dictionary<Guid, string> names, SharedClientAddresses shared) => new(
         a.Id, a.EventId, a.Kind, a.Severity, a.Key, a.Ip, a.ActorId, Name(names, a.ActorId), a.Status, a.CreatedAt,
         a.AcknowledgedAt, Name(names, a.AcknowledgedById), a.ResolvedAt, Name(names, a.ResolvedById), a.Note,
-        a.Event?.MetadataJson);
+        a.Event?.MetadataJson, shared.IsShared(a.Ip));
 
     private static async Task<Dictionary<Guid, string>> NamesAsync(AppDbContext db, IEnumerable<Guid?> ids)
     {

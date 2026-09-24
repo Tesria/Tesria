@@ -2201,6 +2201,9 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .alerts__item--warning { border-left-color: var(--warning, #b7791f); }
 .alerts__head { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
 .alerts__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+.alerts__details { margin: 0.35rem 0 0; padding-left: 1.1rem; color: var(--muted); }
+.alerts__details li { margin: 0.15rem 0; }
+.alerts__shared { margin: 0.5rem 0 0; padding: 0.45rem 0.65rem; border-radius: 6px; background: color-mix(in srgb, var(--warning) 12%, transparent); }
 .admin__toggle--inline { margin-bottom: 0.75rem; }
 /* Email settings (dev-plan Phase 18): the chosen provider's hint, the
    choice between its sign-in and a password, and the sign-in itself. */

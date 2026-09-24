@@ -39,6 +39,20 @@
 	# below, so tell Caddy not to also add its own (cert automation for
 	# {$DOMAIN} is unaffected: this only concerns the redirect route).
 	auto_https disable_redirects
+	# Real visitor addresses behind Docker Desktop (deploy/docker-desktop): a
+	# forwarder on the Mac puts each visitor's address in front of the
+	# connection (the PROXY protocol), and Caddy believes that line only from
+	# PROXY_PROTOCOL_FROM. The default is loopback alone, which nothing here
+	# connects from, so without deploy/docker-desktop this changes nothing. The
+	# address then reaches the app as X-Forwarded-For, as before.
+	servers {
+		listener_wrappers {
+			proxy_protocol {
+				allow {$PROXY_PROTOCOL_FROM:127.0.0.1/32}
+			}
+			tls
+		}
+	}
 }
 
 # The internal CA's root certificate. The type is what lets an iPhone or an

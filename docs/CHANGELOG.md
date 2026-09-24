@@ -8,6 +8,33 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.6.0-dev**: 0.5.0 is released, so what comes
 after it is the next minor version.
 
+### Refused-request alerts explain themselves; real addresses behind Docker Desktop (2026-09-24, Opus 5.5)
+
+A "spike of denied requests" alert from 192.168.65.1 could not be
+explained: it counted refusals without recording them, and that address is
+Docker Desktop's gateway, which every device (the Mac, a PC, a phone)
+shares when Tesria runs under Docker Desktop.
+
+- **The alert says what was refused:** the most-refused paths (ids folded
+  into `{id}`, query strings never kept), how many were 401 or 403, how many
+  carried a session cookie, an API token or neither, and which browsers sent
+  them ("Chrome on Windows"). Kept in memory for the alert's five minutes,
+  bounded per address and in total.
+- **A shared address is recognized** (`Proxy:SharedClientAddresses`, by
+  default Docker Desktop's gateway): its alerts say so, the card offers no
+  Block button, and the server refuses to block any range that covers it,
+  which would lock every device out.
+- **Real addresses behind Docker Desktop** (`deploy/docker-desktop/`): a
+  small Node forwarder on the host takes ports 80 and 443 and hands each
+  connection to Caddy with the visitor's address in front (the PROXY
+  protocol); a compose override moves Caddy to ports only the host can
+  reach; the Caddyfile believes that line only from `PROXY_PROTOCOL_FROM`,
+  loopback by default, so nothing changes without the override. Tested live
+  on the owner's Mac: a request to the Mac's network address was recorded as
+  that address instead of 192.168.65.1. Found in testing: a port published
+  on 127.0.0.1 arrives from the stack's own gateway, not Docker Desktop's, so
+  the override trusts `TESRIA_SUBNET` as well.
+
 ### The docs pack is a release download, not a committed file (2026-09-24, Opus 5.5)
 
 Every export of the docs added a 17 MB zip to every clone (six in a day).

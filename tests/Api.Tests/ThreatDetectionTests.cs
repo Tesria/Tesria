@@ -317,4 +317,62 @@ public class ThreatDetectionTests
                      "/api/admin/security/alerts", "/api/admin/security/blocks" })
             Assert.Equal(HttpStatusCode.Forbidden, (await member.GetAsync(path)).StatusCode);
     }
+
+    private record AlertDetailDto(Guid Id, string Kind, string? Ip, string? MetadataJson, bool IpShared);
+
+    private static async Task RefuseAsync(TestAppFactory factory, string ip, int times, string? cookie = null)
+    {
+        var client = From(factory, ip);
+        client.DefaultRequestHeaders.Add("User-Agent",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36");
+        if (cookie is not null) client.DefaultRequestHeaders.Add("Cookie", cookie);
+        for (var i = 0; i < times; i++)
+            Assert.Equal(HttpStatusCode.Unauthorized,
+                (await client.GetAsync($"/api/pages/{Guid.NewGuid()}/collab-token")).StatusCode);
+    }
+
+    [Fact]
+    public async Task A_spike_of_refusals_says_what_was_refused_and_by_what()
+    {
+        using var factory = new TestAppFactory();
+        var admin = await AdminAsync(factory);
+        await RefuseAsync(factory, "203.0.113.9", 60, cookie: "tesria.auth=expired");
+        await RefuseAsync(factory, "203.0.113.9", 40);
+
+        var alert = (await admin.GetFromJsonAsync<List<AlertDetailDto>>("/api/admin/security/alerts?status=all"))!
+            .Single(a => a.Kind == "http.denied_spike");
+        Assert.Equal("203.0.113.9", alert.Ip);
+        Assert.False(alert.IpShared);
+        var m = System.Text.Json.JsonDocument.Parse(alert.MetadataJson!).RootElement;
+        Assert.Equal(100, m.GetProperty("Denied").GetInt32());
+        // One path however many pages: ids are folded into a placeholder.
+        var top = m.GetProperty("TopPaths")[0];
+        Assert.Equal("/api/pages/{id}/collab-token", top.GetProperty("Path").GetString());
+        Assert.Equal(100, top.GetProperty("Count").GetInt32());
+        Assert.Equal(100, m.GetProperty("Unauthorized").GetInt32());
+        Assert.Equal(60, m.GetProperty("WithSession").GetInt32());
+        Assert.Equal(40, m.GetProperty("Anonymous").GetInt32());
+        Assert.Equal("Chrome on Windows", m.GetProperty("Browsers")[0].GetProperty("Agent").GetString());
+        Assert.False(m.GetProperty("SharedAddress").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Docker_Desktops_shared_address_is_flagged_and_cannot_be_blocked()
+    {
+        using var factory = new TestAppFactory();
+        var admin = await AdminAsync(factory);
+        await RefuseAsync(factory, "192.168.65.1", 100);
+
+        var alert = (await admin.GetFromJsonAsync<List<AlertDetailDto>>("/api/admin/security/alerts?status=all"))!
+            .Single(a => a.Kind == "http.denied_spike");
+        Assert.True(alert.IpShared);
+
+        // Blocking it, or any range around it, would lock every device out.
+        foreach (var cidr in new[] { "192.168.65.1", "192.168.64.0/22" })
+        {
+            var res = await admin.PostAsJsonAsync("/api/admin/security/blocks", new { Cidr = cidr });
+            Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+        }
+        (await admin.PostAsJsonAsync("/api/admin/security/blocks", new { Cidr = "203.0.113.0/24" })).EnsureSuccessStatusCode();
+    }
 }

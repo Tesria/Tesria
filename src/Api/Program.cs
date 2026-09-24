@@ -94,6 +94,8 @@ builder.Services.AddScoped<IAuditLogger, AuditLogger>();
 builder.Services.AddScoped<IAuditChainVerifier, AuditChainVerifier>();
 builder.Services.AddSingleton<AuditChainMonitor>();
 builder.Services.AddSingleton<SecurityCounters>();
+builder.Services.AddSingleton<DeniedRequestLog>();
+builder.Services.AddSingleton<SharedClientAddresses>();
 // Email sent after its request is answered (dev-plan 14.3).
 builder.Services.AddSingleton<Tesria.Api.Infrastructure.Email.EmailQueue>();
 builder.Services.AddSingleton<Tesria.Api.Infrastructure.Email.IEmailQueue>(sp => sp.GetRequiredService<Tesria.Api.Infrastructure.Email.EmailQueue>());
