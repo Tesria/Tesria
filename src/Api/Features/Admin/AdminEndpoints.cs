@@ -38,9 +38,15 @@ public static class AdminEndpoints
     /// (the inviter's own words, the default when empty) above the link.
     /// </summary>
     public record CreateInviteRequest(string? Email, int? ExpiresInDays, bool? SendEmail = null, string? Message = null);
-    /// <summary><c>Emailed</c> and <c>EmailError</c> say what happened to an email that was asked for.</summary>
+    /// <summary>
+    /// <c>Emailed</c> and <c>EmailError</c> say what happened to an email that
+    /// was asked for. <c>TailnetUrl</c> is the same link on the Tailscale
+    /// address, when Tesria has one, for someone who reaches it through a
+    /// tailnet rather than the internet.
+    /// </summary>
     public record IssuedInviteResponse(
-        string Token, string Path, string? Email, DateTimeOffset ExpiresAt, bool Emailed = false, string? EmailError = null);
+        string Token, string Path, string? Email, DateTimeOffset ExpiresAt, bool Emailed = false, string? EmailError = null,
+        string? TailnetUrl = null);
     /// <summary>What the invite form needs to offer an email: whether the server sends, and the words to start from.</summary>
     public record InviteEmailResponse(bool Enabled, string Subject, string Message);
     /// <summary><c>UsedByName</c>: the account the invite created, so the list says who, not only when.</summary>
@@ -664,7 +670,9 @@ public static class AdminEndpoints
         await db.SaveChangesAsync(ct);
 
         var expiresAt = DateTimeOffset.UtcNow.AddDays(days);
-        var issued = new IssuedInviteResponse(token, $"/register?invite={token}", email, expiresAt);
+        var path = $"/register?invite={token}";
+        var tailnet = TailscaleEndpoints.AddressOf(config) is { } address ? address + path : null;
+        var issued = new IssuedInviteResponse(token, path, email, expiresAt, TailnetUrl: tailnet);
         if (!send) return Results.Ok(issued);
 
         // The token exists in plain text only now, so this is the one moment
@@ -672,11 +680,17 @@ public static class AdminEndpoints
         // still shows the link to send some other way, and says why.
         var s = await settings.GetAsync(ct);
         var (subject, defaultMessage) = await InviteEmailTextAsync(db, current, s, ct);
-        var link = $"{SiteUrl.Resolve(s, config)}/register?invite={token}";
+        var link = SiteUrl.Resolve(s, config) + path;
+        // Both addresses when there are two: the person invited may reach
+        // this Tesria only through the inviter's tailnet (the owner's case,
+        // 2026-09-24: family in another state, nothing on the internet).
+        var alsoTailnet = tailnet is not null && tailnet != link
+            ? $"\n\nIf you reach {s.InstanceName} through Tailscale, use this address instead:\n{tailnet}"
+            : "";
         var result = await sender.SendAsync(new EmailMessage(email!, subject,
             (string.IsNullOrEmpty(message) ? defaultMessage : message) + "\n\n" +
             $"Create your account here. The link works once, for {email}, and expires on " +
-            $"{expiresAt.ToString("MMMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture)}:\n{link}"), ct);
+            $"{expiresAt.ToString("MMMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture)}:\n{link}" + alsoTailnet), ct);
         return Results.Ok(issued with { Emailed = result.Sent, EmailError = result.Error });
     }
 

@@ -20,7 +20,9 @@ export function AdminInvitesPage() {
   const [invites, setInvites] = useState<Invite[] | null>(null)
   const [email, setEmail] = useState('')
   const [days, setDays] = useState(7)
-  const [issued, setIssued] = useState<string | null>(null)
+  // One link, or two when Tesria is also on a tailnet (the second for
+  // people who reach it through Tailscale rather than this address).
+  const [issued, setIssued] = useState<{ label: string | null; url: string }[] | null>(null)
   // Emailing the invite (the owner's request, 2026-09-24): offered once an
   // address is typed and the server sends email. The token is only known
   // when the invite is made, so the email goes out then or not at all.
@@ -61,8 +63,12 @@ export function AdminInvitesPage() {
         ...(emailing ? { sendEmail: true, message } : {}),
       })
       // Built from the current origin: the server is behind a proxy and does
-      // not reliably know its own public address.
-      setIssued(`${window.location.origin}${invite.path}`)
+      // not reliably know its own public address. The tailnet address it
+      // does know, from the Tailscale sidecar.
+      const here = `${window.location.origin}${invite.path}`
+      setIssued(invite.tailnetUrl && invite.tailnetUrl !== here
+        ? [{ label: 'At this address', url: here }, { label: 'Through Tailscale', url: invite.tailnetUrl }]
+        : [{ label: null, url: here }])
       setEmailed(!emailing ? null : invite.emailed ? { to: invite.email ?? email.trim() } : { failed: invite.emailError ?? 'the mail server did not say why' })
       setEmail('')
       if (mail) setMessage(mail.message)
@@ -146,16 +152,21 @@ export function AdminInvitesPage() {
       )}
       {issued && (
         <div className="admin__notice">
-          <p>Invite link, shown once:</p>
-          <code className="admin__link">{issued}</code>
+          <p>{issued.length > 1 ? 'Invite link, shown once. Send whichever address the person can reach; both are the same invite, and it works once:' : 'Invite link, shown once:'}</p>
+          {issued.map((link) => (
+            <div key={link.url} className="invite-link">
+              {link.label && <p className="invite-link__label">{link.label}</p>}
+              <code className="admin__link">{link.url}</code>
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() => navigator.clipboard.writeText(link.url).catch(() => {})}
+              >
+                Copy{link.label ? ` the ${link.label === 'Through Tailscale' ? 'Tailscale' : 'usual'} link` : ''}
+              </button>
+            </div>
+          ))}
           <div className="row-gap">
-            <button
-              type="button"
-              className="btn btn--ghost btn--sm"
-              onClick={() => navigator.clipboard.writeText(issued).catch(() => {})}
-            >
-              Copy
-            </button>
             <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setIssued(null); setEmailed(null) }}>
               Dismiss
             </button>

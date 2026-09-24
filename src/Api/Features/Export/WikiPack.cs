@@ -171,8 +171,9 @@ public static class WikiPack
     /// </summary>
     public static async Task WriteAsync(
         Stream destination, Model model, Func<string, CancellationToken, Task<Stream?>> files,
-        CancellationToken ct = default)
+        CancellationToken ct = default, ExportProgress.Reporter? report = null)
     {
+        report ??= ExportProgress.Reporter.None;
         using var zip = new ZipArchive(destination, ZipArchiveMode.Create, leaveOpen: true);
 
         await WriteJsonAsync(zip, ManifestEntry, model.Manifest, ct);
@@ -184,18 +185,27 @@ public static class WikiPack
 
         // Pages in the order Place() walks them, which is the order a reader
         // of the tree would expect, and attachments beside them.
+        report.Stage("Writing pages", model.Pages.Count);
         foreach (var page in model.Pages)
         {
+            report.Working(page.Title);
             await WriteJsonAsync(zip, PageEntry(page.Id), page, ct);
+            report.Step();
         }
 
-        foreach (var file in model.Pages
-                     .SelectMany(p => p.Attachments)
-                     .Select(a => a.File)
-                     .Concat(model.Space.Icon.File is { } icon ? [icon] : Array.Empty<string>())
-                     .Distinct()
-                     .Order(StringComparer.Ordinal))
+        var names = model.Pages.SelectMany(p => p.Attachments).DistinctBy(a => a.File).ToDictionary(a => a.File, a => a.Filename);
+        var entries = model.Pages
+            .SelectMany(p => p.Attachments)
+            .Select(a => a.File)
+            .Concat(model.Space.Icon.File is { } icon ? [icon] : Array.Empty<string>())
+            .Distinct()
+            .Order(StringComparer.Ordinal)
+            .ToList();
+        report.Stage("Copying files", entries.Count);
+        foreach (var file in entries)
         {
+            report.Working(names.GetValueOrDefault(file, "the space's icon"));
+            report.Step();
             await using var bytes = await files(file, ct);
             if (bytes is null) continue; // a file that has gone is skipped, not fatal
             var entry = Fixed(zip.CreateEntry(file, CompressionLevel.Optimal));

@@ -70,6 +70,8 @@ builder.Services.AddScoped<IAuditLogger, AuditLogger>();
 builder.Services.AddScoped<IAuditChainVerifier, AuditChainVerifier>();
 builder.Services.AddSingleton<AuditChainMonitor>();
 builder.Services.AddSingleton<SecurityCounters>();
+// Export progress (dev-plan 20.1): in memory, like the counters above.
+builder.Services.AddSingleton(new Tesria.Api.Features.Export.ExportProgress(TimeProvider.System));
 builder.Services.AddSingleton<BlocklistCache>();
 builder.Services.AddScoped<ISecurityDetector, SecurityDetector>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<AuditChainMonitor>());
@@ -611,6 +613,7 @@ api.MapLabelEndpoints();
 api.MapExportEndpoints();
 api.MapSiteExportEndpoints();
 api.MapPackExportEndpoints();
+api.MapExportProgressEndpoints();
 api.MapPackImportEndpoints();
 api.MapBlockEndpoints();
 api.MapEmbedEndpoints();

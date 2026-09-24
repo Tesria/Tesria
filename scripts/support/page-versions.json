@@ -38,8 +38,8 @@
   "Administration / Invites": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "f995854a3d2c8828"
+    "note": "0.6: with Tailscale, a second link for people on your tailnet.",
+    "hash": "92c573ccf2790278"
   },
   "Administration / Owner, administrators and users": {
     "appliesTo": "0.5",
@@ -386,8 +386,8 @@
   "Exporting and publishing / A space as a website": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "c1f30ee58ead3588"
+    "note": "0.6: a progress bar and Cancel while it builds.",
+    "hash": "b564821204394ebf"
   },
   "Exporting and publishing / Exporting a page": {
     "appliesTo": "0.5",
@@ -416,8 +416,8 @@
   "Exporting and publishing / Wiki packs": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "0fd8ef603419c1a9"
+    "note": "0.6: a progress bar and Cancel while it packs.",
+    "hash": "e7ca38fcbdc9ad74"
   },
   "FAQ": {
     "appliesTo": "0.5",
@@ -542,8 +542,8 @@
   "Installation and operations / Reaching Tesria from anywhere with Tailscale": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
-    "note": "Revised.",
-    "hash": "b1f81814b791f0ac"
+    "note": "0.6: inviting someone who is not on your network.",
+    "hash": "e060e6df0b2269c3"
   },
   "Installation and operations / Security hardening": {
     "appliesTo": "0.5",

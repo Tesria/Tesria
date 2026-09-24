@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { api, ApiError } from '../api/client'
+import { api } from '../api/client'
+import { ExportProgressView } from './ExportProgress'
+import { useExportRun } from './useExportRun'
 
 /**
  * Space settings → Export as a pack (dev-plan 8.5).
@@ -14,26 +15,8 @@ import { api, ApiError } from '../api/client'
  * whole purpose is to be the copy that survives.
  */
 export function PackExportSection({ spaceKey }: { spaceKey: string }) {
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  async function run() {
-    setBusy(true)
-    setError(null)
-    try {
-      const zip = await api.spaces.exportPack(spaceKey)
-      const url = URL.createObjectURL(zip)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `${spaceKey.toLowerCase()}-pack.zip`
-      link.click()
-      URL.revokeObjectURL(url)
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'The pack could not be built.')
-    } finally {
-      setBusy(false)
-    }
-  }
+  const exporting = useExportRun(`${spaceKey.toLowerCase()}-pack.zip`, 'The pack could not be built.')
+  const run = () => exporting.run((options) => api.spaces.exportPack(spaceKey, options))
 
   return (
     <>
@@ -48,13 +31,14 @@ export function PackExportSection({ spaceKey }: { spaceKey: string }) {
         same bytes, so a pack can live in a Git repository and a commit shows what
         actually changed.
       </p>
-      {error && <p className="alert alert--error">{error}</p>}
+      {exporting.error && <p className="alert alert--error">{exporting.error}</p>}
 
       <div className="row-gap" style={{ marginTop: '0.75rem' }}>
-        <button type="button" className="btn btn--primary" disabled={busy} onClick={run}>
-          {busy ? 'Packing…' : 'Export as a pack'}
+        <button type="button" className="btn btn--primary" disabled={exporting.busy} onClick={run}>
+          {exporting.busy ? 'Packing…' : 'Export as a pack'}
         </button>
       </div>
+      <ExportProgressView state={exporting} noun="pack" />
       <p className="muted small">
         Everything you can read goes in, restricted pages included, so treat the
         file as you would the space. Who may read what does not travel with it:

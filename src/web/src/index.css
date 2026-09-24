@@ -1363,7 +1363,11 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   border: 1px solid var(--border); border-radius: var(--radius); padding: 0.6rem 0.75rem; background: var(--surface);
 }
 .tree-style__option.is-active { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
-.tree-style__option input { position: absolute; opacity: 0; pointer-events: none; }
+/* Hidden but focusable. The size matters: a generic form rule gives inputs
+   width: 100% of the window, and these three stuck out past the right edge
+   and made the whole settings page scroll sideways on a narrow screen
+   (found 2026-09-24). */
+.tree-style__option input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; margin: 0; }
 .tree-style__option:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; }
 .tree-style__name { font-weight: 600; }
 .tree-style__sample { display: grid; font-size: 0.85rem; color: var(--muted); white-space: pre; font-variant-numeric: tabular-nums; }
@@ -2994,6 +2998,34 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
   /* Link targets are not printed after the text: a wiki is full of links and
      the result is unreadable. The HTML export keeps them clickable instead. */
 }
+
+/* An invite's links: one, or the usual one and the tailnet one, each with
+   its own Copy. */
+.invite-link { margin-bottom: 0.75rem; }
+.invite-link__label { margin: 0 0 0.25rem; font-weight: 600; font-size: 0.85rem; }
+.invite-link .admin__link { display: block; margin-bottom: 0.35rem; }
+
+/* Export progress (dev-plan 20.1): a bar under the export button, with what
+   it is doing and the time so far above it, the item being worked on and
+   Cancel below. Indeterminate while there is nothing to count yet. */
+.export-progress { margin-top: 0.75rem; max-width: 36rem; }
+.export-progress__head, .export-progress__foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+}
+.export-progress__bar {
+  position: relative; height: 8px; margin: 0.4rem 0; overflow: hidden;
+  border-radius: 999px; background: var(--border);
+}
+.export-progress__bar > span {
+  position: absolute; inset: 0 auto 0 0; width: 0; border-radius: inherit;
+  background: var(--primary); transition: width 0.3s ease;
+}
+.export-progress__bar.is-indeterminate > span { width: 30%; animation: export-progress-slide 1.2s ease-in-out infinite; }
+@keyframes export-progress-slide { from { left: -30%; } to { left: 100%; } }
+@media (prefers-reduced-motion: reduce) {
+  .export-progress__bar.is-indeterminate > span { animation: none; width: 100%; opacity: 0.4; }
+}
+.export-progress__detail { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Exported HTML (dev-plan 12.2). These rules ship inside the exported
    stylesheet, so they have to stand on their own: an export has no

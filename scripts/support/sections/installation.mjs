@@ -69,6 +69,11 @@ const TAG_SIGNIN = "[...document.querySelectorAll('#email .mail-signin button')]
 // come from, so it is hidden.
 const HIDE_POLICY_AUTHOR = "[...document.querySelectorAll('.backup-policy p')].filter((p) => p.textContent.trim().startsWith('Last changed')).forEach((p) => { p.style.display = 'none' })"
 
+/** What changed on these pages for a new version (dev-plan 16.2). */
+export const changes = {
+  'Reaching Tesria from anywhere with Tailscale': '0.6: inviting someone who is not on your network.',
+}
+
 export const shots = () => [
   // ---- Trusting the local certificate: the two controls in the /trust
   // guide a reader has to find. Its written steps are not pictured: the
@@ -684,6 +689,15 @@ export async function build({
       li(p(b('Who on your tailnet may reach Tesria'), ' is set by Tailscale’s access rules, in its admin console. Tesria’s own sign-in still applies to everyone who does.')),
       li(p(b('To stop it,'), ' run ', c('docker compose stop tailscale'), '. To remove Tesria from your tailnet, also delete it under ', b('Machines'), ' and remove the ', c('TS_AUTHKEY'), ' line.')),
     ),
+
+    h(2, 'Inviting someone who is not on your network'),
+    p('Family or a friend in another town can use your Tesria through Tailscale too, without it ever being on the internet. They need a free Tailscale account of their own and the Tailscale app on their device.'),
+    step(1, 'Share Tesria’s device with them'),
+    p('In the Tailscale admin console, open ', b('Machines'), ', find ', b('tesria'), ', open its ', b('⋯'), ' menu and choose ', b('Share'), '. Tailscale gives you a link to send them; when they accept it, Tesria appears in their Tailscale, and nothing else of yours does. (Inviting them into your tailnet as a user works too, but gives them your other devices as well unless you limit it.)'),
+    step(2, 'Make them an invite in Tesria'),
+    p('In ', b('Admin'), ', ', b('Invites'), ', make an invite as usual (see ', pageLink('Invites'), '). Because Tesria is on your tailnet, it shows two links: copy the one under ', b('Through Tailscale'), ' and send it to them. If Tesria emails the invite, both links are in the email, with the Tailscale one explained.'),
+    step(3, 'They open it with Tailscale on'),
+    p('With the Tailscale app connected, the link opens Tesria, and they create their account. From then on they open the same address to sign in.'),
 
     h(2, 'If it does not connect'),
     ul(

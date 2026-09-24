@@ -5,6 +5,44 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+Development builds now say **0.6.0-dev**: 0.5.0 is released, so what comes
+after it is the next minor version.
+
+### Invites carry the Tailscale address too (2026-09-24, Opus 5.5)
+
+Asked for by the owner, to invite family in another state through the
+tailnet rather than putting Tesria on the internet.
+
+- When the Tailscale sidecar knows Tesria's tailnet address, a new invite
+  shows two links, **At this address** and **Through Tailscale**, each with
+  its own Copy. Same invite, still single-use. An emailed invite carries
+  both, the tailnet one explained. `IssuedInviteResponse.TailnetUrl`; two
+  tests.
+- Support: the Invites page says so, and the Tailscale page gains
+  "Inviting someone who is not on your network": share the device from the
+  Tailscale admin console, send the Through Tailscale link.
+
+### 20.1 Export progress (2026-09-24, Opus 5.5)
+
+- **Export as a site and Export as a pack show a bar**: the stage ("Capturing
+  pages", "Writing pages", "Copying files"), done out of total, the page or
+  file being worked on and the time so far; then the download, in MB. Checked
+  live on the Support space (178 pages).
+- **Cancel**, beside the bar, aborts the request, which stops the export on
+  the server; leaving the page does the same.
+- How: the export still runs in its own request. The page makes up an id,
+  sends it as `?progress=`, and polls `GET /api/export-progress/{id}`
+  (`ExportProgress`, in memory, per exporter, forgotten ten minutes after its
+  last change). A job table was the alternative and was not worth it: it
+  would move exports out of the request that holds their permissions.
+  Four tests.
+- Fix found on the way: the page-tree style's hidden radio buttons were as
+  wide as the window, so space settings scrolled sideways on a narrow
+  screen.
+- The Support pages for both exports mention the bar and Cancel, and their
+  version tables say what changed in 0.6 (sections can now export
+  `changes`, a note per page).
+
 ### Tailscale's logo, checked against its guidelines (2026-09-24, Opus 5.5)
 
 - The owner checked Tailscale's logo rules: naming an integration in a

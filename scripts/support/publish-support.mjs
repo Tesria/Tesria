@@ -136,9 +136,14 @@ async function main() {
   // Every page a section writes ends with its version table (dev-plan 16.2).
   // A section may pass `since` for a page about something newer than the
   // release it was first written for, and `changed` to say what changed.
+  // A section may also export `changes`, { title: note }, for the pages it
+  // changed for a new version, rather than threading `changed` through each
+  // call.
   const writePage = s.page
+  let sectionChanges = {}
   s.page = async (title, parentId, content, options = {}) => {
-    const { since, changed, ...rest } = options
+    const { since, changed: given, ...rest } = options
+    const changed = given ?? sectionChanges[title]
     const parentTitle = parentId ? (function find(nodes) {
       for (const n of nodes) {
         if (n.id === parentId) return n.title
@@ -201,6 +206,7 @@ async function main() {
   for (const name of wanted.length ? wanted : SECTIONS) {
     if (!existsSync(join(HERE, 'sections', `${name}.mjs`))) throw new Error(`no section called ${name}`)
     const section = await import(`./sections/${name}.mjs`)
+    sectionChanges = section.changes ?? {}
     console.log(`\n${name}`)
     // A section may set the stage before its pictures are taken: activity
     // that has to exist for a screen to show anything, such as notifications.

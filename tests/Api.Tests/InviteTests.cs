@@ -13,7 +13,8 @@ public class InviteTests
 {
     private record RegisteredDto(Guid Id, string Email, string DisplayName, int Role,
         string? AvatarHash, int? AvatarVariant, bool HasPassword, List<string> RecoveryCodes);
-    private record InviteDto(string Token, string Path, string? Email, DateTimeOffset ExpiresAt, bool Emailed = false, string? EmailError = null);
+    private record InviteDto(string Token, string Path, string? Email, DateTimeOffset ExpiresAt, bool Emailed = false, string? EmailError = null,
+        string? TailnetUrl = null);
     private record InviteEmailDto(bool Enabled, string Subject, string Message);
     private record InviteRow(Guid Id, string? Email, DateTimeOffset ExpiresAt, DateTimeOffset? UsedAt, DateTimeOffset CreatedAt,
         string? UsedByName = null);
@@ -204,6 +205,49 @@ public class InviteTests
         Assert.Contains("for dana@example.com", mail.Text);
 
         (await RegisterAsync(factory.CreateClient(), "dana@example.com", issued.Token)).EnsureSuccessStatusCode();
+    }
+
+    // -- Tailscale ----------------------------------------------------------
+
+    /// <summary>An instance whose Tailscale sidecar reports this address.</summary>
+    private static TestAppFactory WithTailnet(string dnsName)
+    {
+        var status = Path.Combine(Path.GetTempPath(), $"ts-{Guid.NewGuid():N}.json");
+        File.WriteAllText(status, $$$"""{"BackendState":"Running","Self":{"DNSName":"{{{dnsName}}}.","Online":true}}""");
+        return new TestAppFactory(new Dictionary<string, string?> { ["Tailscale:StatusFile"] = status });
+    }
+
+    [Fact]
+    public async Task With_Tailscale_an_invite_also_carries_the_tailnet_link()
+    {
+        using var factory = WithTailnet("tesria.example-tailnet.ts.net");
+        var (admin, outbox) = await ClosedInstanceWithEmailAsync(factory);
+
+        var issued = await (await admin.PostAsJsonAsync("/api/admin/invites",
+            new { Email = "sam@example.com", SendEmail = true }))
+            .Content.ReadFromJsonAsync<InviteDto>();
+
+        var tailnet = $"https://tesria.example-tailnet.ts.net/register?invite={issued!.Token}";
+        Assert.Equal(tailnet, issued.TailnetUrl);
+        // The email has both: the usual address first, then the tailnet one.
+        var text = Assert.Single(outbox.Sent).Text;
+        var usual = text.IndexOf($"https://wiki.example.com/register?invite={issued.Token}", StringComparison.Ordinal);
+        Assert.True(usual >= 0 && text.IndexOf(tailnet, StringComparison.Ordinal) > usual);
+        Assert.Contains("through Tailscale", text);
+    }
+
+    [Fact]
+    public async Task Without_Tailscale_an_invite_has_one_link()
+    {
+        using var factory = new TestAppFactory();
+        var (admin, outbox) = await ClosedInstanceWithEmailAsync(factory);
+
+        var issued = await (await admin.PostAsJsonAsync("/api/admin/invites",
+            new { Email = "sam@example.com", SendEmail = true }))
+            .Content.ReadFromJsonAsync<InviteDto>();
+
+        Assert.Null(issued!.TailnetUrl);
+        Assert.DoesNotContain("Tailscale", Assert.Single(outbox.Sent).Text);
     }
 
     [Fact]

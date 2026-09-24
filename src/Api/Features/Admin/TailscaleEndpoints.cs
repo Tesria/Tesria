@@ -34,6 +34,15 @@ public static class TailscaleEndpoints
 
     private static IResult Get(IConfiguration config) => Results.Ok(Read(config["Tailscale:StatusFile"]));
 
+    /// <summary>
+    /// This Tesria's address on the tailnet, such as
+    /// <c>https://tesria.example.ts.net</c>, or null when the sidecar is not
+    /// in use. Known even while the device is offline, since a link made now
+    /// is used later. Invites carry it beside the usual link, for people who
+    /// reach Tesria through Tailscale rather than the internet.
+    /// </summary>
+    public static string? AddressOf(IConfiguration config) => Read(config["Tailscale:StatusFile"]).Address;
+
     public static TailscaleStatus Read(string? path)
     {
         var none = new TailscaleStatus(false, null, false, null, null, null, null, false);

@@ -182,6 +182,43 @@ export type ImportedPack = {
   madeWith: string | null
 }
 
+/** How far along a site or pack export is (dev-plan 20.1). */
+export type ExportProgress = {
+  stage: string
+  done: number
+  total: number
+  current: string | null
+  startedAt: string
+  /** Built: what is left is the download. */
+  finished: boolean
+}
+
+export type ExportOptions = {
+  /** Made up by the page, to ask the server how far along it is. */
+  progressId?: string
+  /** Aborting it cancels the export on the server too. */
+  signal?: AbortSignal
+  /** Bytes received of the finished file, once it is being sent. */
+  onDownload?: (received: number, total: number | null) => void
+}
+
+/** A response body as a Blob, telling `onDownload` how much has arrived. */
+async function readWithProgress(res: Response, onDownload?: ExportOptions['onDownload']): Promise<Blob> {
+  if (!onDownload || !res.body) return res.blob()
+  const length = Number(res.headers.get('Content-Length')) || null
+  const reader = res.body.getReader()
+  const chunks: BlobPart[] = []
+  let received = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    chunks.push(value)
+    received += value.length
+    onDownload(received, length)
+  }
+  return new Blob(chunks, { type: res.headers.get('Content-Type') ?? 'application/zip' })
+}
+
 export type Space = {
   id: string
   key: string
@@ -1304,14 +1341,17 @@ export const api = {
     remove: (key: string, input: { confirmKey: string; password?: string; code?: string }) =>
       request<void>('DELETE', `/api/spaces/${encodeURIComponent(key)}`, input),
     /** The whole space as a static site, as a zip (dev-plan 12.2). */
-    exportSite: async (key: string, audience: 'anonymous' | 'me'): Promise<Blob> => {
+    exportSite: async (key: string, audience: 'anonymous' | 'me', options: ExportOptions = {}): Promise<Blob> => {
+      const progress = options.progressId ? `&progress=${options.progressId}` : ''
       const res = await fetch(
-        `/api/spaces/${encodeURIComponent(key)}/export/site?audience=${audience}`,
-        { credentials: 'include', headers: CSRF_HEADER },
+        `/api/spaces/${encodeURIComponent(key)}/export/site?audience=${audience}${progress}`,
+        { credentials: 'include', headers: CSRF_HEADER, signal: options.signal },
       )
       if (!res.ok) return handle<Blob>(res)
-      return res.blob()
+      return readWithProgress(res, options.onDownload)
     },
+    /** How far along an export is (dev-plan 20.1); 404 until it has started. */
+    exportProgress: (id: string) => request<ExportProgress>('GET', `/api/export-progress/${id}`),
     /** What an import turned out to contain, and what it could not carry. */
     importPack: async (file: File, key: string, name?: string): Promise<ImportedPack> => {
       const body = new FormData()
@@ -1332,13 +1372,15 @@ export const api = {
      * No audience to choose, unlike a site: a pack is for reading back into
      * Tesria, so it carries everything you can see and nothing you cannot.
      */
-    exportPack: async (key: string): Promise<Blob> => {
-      const res = await fetch(`/api/spaces/${encodeURIComponent(key)}/export/pack`, {
+    exportPack: async (key: string, options: ExportOptions = {}): Promise<Blob> => {
+      const progress = options.progressId ? `?progress=${options.progressId}` : ''
+      const res = await fetch(`/api/spaces/${encodeURIComponent(key)}/export/pack${progress}`, {
         credentials: 'include',
         headers: CSRF_HEADER,
+        signal: options.signal,
       })
       if (!res.ok) return handle<Blob>(res)
-      return res.blob()
+      return readWithProgress(res, options.onDownload)
     },
   },
   pages: {
@@ -1482,7 +1524,7 @@ export const api = {
     invites: {
       list: () => request<Invite[]>('GET', '/api/admin/invites'),
       create: (input: { email?: string; expiresInDays?: number; sendEmail?: boolean; message?: string }) =>
-        request<{ token: string; path: string; email: string | null; expiresAt: string; emailed: boolean; emailError: string | null }>(
+        request<{ token: string; path: string; email: string | null; expiresAt: string; emailed: boolean; emailError: string | null; tailnetUrl: string | null }>(
           'POST', '/api/admin/invites', input),
       /** Whether the server sends email, and the invite message to start from. */
       email: () => request<{ enabled: boolean; subject: string; message: string }>('GET', '/api/admin/invites/email'),

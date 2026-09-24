@@ -28,8 +28,9 @@ public static class PackExportEndpoints
         return routes;
     }
 
+    /// <param name="progress">An id to read how far along it is from <c>/api/export-progress/{id}</c> (dev-plan 20.1).</param>
     private static async Task<IResult> ExportPack(
-        string key, AppDbContext db, IPermissionService perms, IAttachmentStorage storage,
+        string key, string? progress, ExportProgress tracker, Infrastructure.Auth.CurrentUser current, AppDbContext db, IPermissionService perms, IAttachmentStorage storage,
         IProfileMediaService media, ISiteSettingsService settings, IAuditLogger audit,
         CancellationToken ct)
     {
@@ -42,7 +43,12 @@ public static class PackExportEndpoints
         // sensitive enough to lock down is one where this matters most.
         if (!SpaceExports.Allows(space, ExportFormat.Pack)) return SpaceExports.Refused(space, ExportFormat.Pack);
 
-        var (model, storageKeys) = await BuildAsync(db, perms, settings, space, ct);
+        var report = tracker.Start(current.Id, progress);
+        report.Stage("Checking which pages go in", 0);
+        WikiPack.Model model;
+        Dictionary<Guid, string> storageKeys;
+        try { (model, storageKeys) = await BuildAsync(db, perms, settings, space, ct); }
+        catch { report.Finish(); throw; }
 
         audit.Record("space.exported", "space", space.Id, new
         {
@@ -70,13 +76,17 @@ public static class PackExportEndpoints
             await WikiPack.WriteAsync(
                 spool, model,
                 (name, _) => Task.FromResult(Open(name, storageKeys, storage, media, space)),
-                ct);
+                ct, report);
             spool.Position = 0;
         }
         catch
         {
             await spool.DisposeAsync();
             throw;
+        }
+        finally
+        {
+            report.Finish();
         }
 
         return Results.Stream(spool, "application/zip", $"{space.Key.ToLowerInvariant()}-pack.zip");

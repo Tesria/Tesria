@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { api, ApiError } from '../api/client'
+import { api } from '../api/client'
+import { ExportProgressView } from './ExportProgress'
+import { useExportRun } from './useExportRun'
 
 /**
  * Space settings → Export as a site (dev-plan 12.2).
@@ -11,28 +13,8 @@ import { api, ApiError } from '../api/client'
  */
 export function SiteExportSection({ spaceKey }: { spaceKey: string }) {
   const [audience, setAudience] = useState<'anonymous' | 'me'>('anonymous')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  async function run() {
-    setBusy(true)
-    setError(null)
-    try {
-      const zip = await api.spaces.exportSite(spaceKey, audience)
-      // A download rather than a navigation: the response is a file, and the
-      // page should stay where it is.
-      const url = URL.createObjectURL(zip)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `${spaceKey.toLowerCase()}-site.zip`
-      link.click()
-      URL.revokeObjectURL(url)
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'The site could not be built.')
-    } finally {
-      setBusy(false)
-    }
-  }
+  const exporting = useExportRun(`${spaceKey.toLowerCase()}-site.zip`, 'The site could not be built.')
+  const run = () => exporting.run((options) => api.spaces.exportSite(spaceKey, audience, options))
 
   return (
     <>
@@ -42,7 +24,7 @@ export function SiteExportSection({ spaceKey }: { spaceKey: string }) {
         host and it reads like the wiki does, light and dark included. It also
         works straight from your computer: unzip it and open index.html.
       </p>
-      {error && <p className="alert alert--error">{error}</p>}
+      {exporting.error && <p className="alert alert--error">{exporting.error}</p>}
 
       <div className="setup__cards">
         <button type="button" className={`setup__card${audience === 'anonymous' ? ' is-chosen' : ''}`}
@@ -64,10 +46,11 @@ export function SiteExportSection({ spaceKey }: { spaceKey: string }) {
       </div>
 
       <div className="row-gap" style={{ marginTop: '0.75rem' }}>
-        <button type="button" className="btn btn--primary" disabled={busy} onClick={run}>
-          {busy ? 'Building the site…' : 'Export as a site'}
+        <button type="button" className="btn btn--primary" disabled={exporting.busy} onClick={run}>
+          {exporting.busy ? 'Building the site…' : 'Export as a site'}
         </button>
       </div>
+      <ExportProgressView state={exporting} noun="site" />
       <p className="muted small">
         A page takes about a second to render, so a large space takes a minute or
         two. Live blocks are frozen as they were at the moment of export.

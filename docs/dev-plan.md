@@ -5682,7 +5682,7 @@ screens are described in words, since they change.
 
 ## Phase 20: Progress you can see
 
-### 20.1 A progress bar for exporting a site or a pack · `S` · Model: Opus 5.5
+### 20.1 A progress bar for exporting a site or a pack · `S` · Model: Opus 5.5 · ✅ **shipped 2026-09-24**
 
 Asked for by the owner, 2026-09-24. **Export as site** captures every page
 through the PDF sidecar's browser and **Export as pack** gathers every page,
@@ -5694,6 +5694,13 @@ polls its progress (or reads a server-sent stream), and a finished job keeps
 its file for a short while so a closed tab can come back for it. Decide
 when building whether both exports share one job mechanism (the backups'
 job table may already fit), and what canceling does.
+
+**As built (2026-09-24).** No job table: the export still runs in its own
+request, and the page polls a progress side channel (`?progress=<id>`,
+`GET /api/export-progress/{id}`, in memory per exporter). Canceling aborts
+the request, which stops the work. The one thing given up is coming back
+to a closed tab for the file; running exports outside a request to allow it
+would move them away from the permissions and render token they run with.
 
 ## Order of execution, flattened
 
@@ -5723,7 +5730,7 @@ job table may already fit), and what canceling does.
 18. **17** Developer docs on the Support site (asked for 2026-09-24), after Phase 16 so every page carries its version table from the start.
 19. **18.1** Provider presets and **18.4** the app-password and sending-service pages (asked for 2026-09-24): small and independent, so any time; best before 14, since they are what a new owner meets in the setup wizard. Then **18.2** Sign in with Microsoft → **18.3** Sign in with Google, before 14 if the owner wants the public release to work with a personal Outlook.com account.
 20. **19.1** Tailscale sidecar → **19.2** its Support pages (asked for 2026-09-24). Independent of everything else; best after 14.2, so the compose file it extends is the published one.
-21. **20.1** Export progress bars (asked for 2026-09-24). Independent; any time.
+21. **20.1** Export progress bars (asked for 2026-09-24; shipped 2026-09-24).
 
 Phases 6 and 8.2 are floaters (small, no dependents) and can fill gaps.
 3.6 (dependency fixes) can also be pulled forward at any time; the npm

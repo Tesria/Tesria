@@ -73,6 +73,11 @@ const SECURITY_EXAMPLE = [
   })) },
 ]
 
+/** What changed on these pages for a new version (dev-plan 16.2). */
+export const changes = {
+  'Invites': '0.6: with Tailscale, a second link for people on your tailnet.',
+}
+
 export const shots = () => [
   // ---- Administration: where the Admin link is. A desktop window, where
   // the link sits in the bar itself rather than under More.
@@ -461,6 +466,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Choose ', b('Create and email invite'), ' (or ', b('Create invite'), ' without the email). The link appears once, above the list, whichever you chose. If it was emailed, a green note says so. Otherwise choose ', b('Copy'), ' and send it yourself. If you lose it, revoke the invite and make a new one.'),
     panel('note', p(b('If the email could not be sent,'), ' the invite is still made, and a red note gives the mail server’s reason. Copy the link and send it another way, then see ', pageLink('Email (SMTP)'), ' to find out why.')),
     panel('note', p(b('The copied link starts with the address you are using.'), ' Make invites from Tesria opened at the address everyone uses, not at ', c('localhost'), ' on the server, or the link will not work for the person you send it to. An emailed link uses the address set in ', b('Settings'), ' instead.')),
+    panel('note', p(b('With Tailscale, there are two links.'), ' If your Tesria is also on a tailnet (see ', pageLink('Reaching Tesria from anywhere with Tailscale'), '), the invite shows ', b('At this address'), ' and ', b('Through Tailscale'), ', each with its own Copy. They are the same invite, so it still works once: send whichever address the person can reach. An emailed invite carries both.')),
 
     h(2, 'Keeping track'),
     p('The list below the form shows every invite: who it is for (or ', b('Anyone'), '), whether it is ', b('Unused'), ', ', b('used'), ' and by whom, or ', b('expired'), ', and when it expires. ', b('Revoke'), ' cancels an unused one after asking; whoever you sent it to will need a new one.'),
