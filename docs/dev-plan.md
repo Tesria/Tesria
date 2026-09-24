@@ -5595,7 +5595,18 @@ joins the tailnet as its own device, reachable at
 tailnet devices need no "trust this device" step at all. Both get a Support
 page; the sidecar is what gets built.
 
-### 19.1 A Tailscale sidecar, off unless asked for · `M` · Model: Opus 5.5
+### 19.1 A Tailscale sidecar, off unless asked for · `M` · Model: Opus 5.5 · ✅ **shipped 2026-09-24**
+
+**As built:** Serve forwards to Caddy (`https+insecure://caddy:443`), so
+`/collab` and every route work as on the LAN; verified live on the owner's
+tailnet (valid certificate, sign-in, the API and the collab WebSocket). The
+status is the sidecar's health check writing `tailscale status --json
+--peers=false` to a shared volume every 30 seconds; the app reads the file
+only (no control socket) for a Tailscale card in Settings that shows the
+address and warns about the device's key expiry until it is turned off.
+The card and the Support page carry Tailscale's own logo, unmodified, from
+its media kit, with a trademark line.
+
 
 - A `tailscale` service in `docker-compose.yml` under a Compose **profile**,
   so nobody runs it without choosing to: the official Tailscale image,
@@ -5627,7 +5638,7 @@ page; the sidecar is what gets built.
 - **Tests**: the compose file validates with and without the profile; a
   live check on the owner's tailnet, since it cannot be faked honestly.
 
-### 19.2 Support pages · `S` · Model: Opus 5.5 · with 19.1
+### 19.2 Support pages · `S` · Model: Opus 5.5 · ✅ **shipped 2026-09-24**
 
 Under Installation and operations, next to Opening Tesria by name:
 **Reaching Tesria from anywhere with Tailscale**, written for someone new
