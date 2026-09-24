@@ -671,7 +671,7 @@ const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g
 const RETIRED = Object.fromEntries(BLOCKS.map((x) => [x.title, [`el-${slug(x.title)}.png`, `el-${slug(x.title)}.phone.png`]]))
 
 export async function cleanup({ author }) {
-  const space = await author.call('GET', '/api/spaces/SUPPORT')
+  const space = await author.call('GET', '/api/spaces/DOCS')
   const tree = await author.call('GET', `/api/pages/tree?spaceId=${space.id}`)
   const find = (nodes, title) => {
     for (const n of nodes) {

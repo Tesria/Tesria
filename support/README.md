@@ -1,7 +1,8 @@
-# The Support site
+# Tesria's docs
 
-`support-pack.zip` is Tesria's support site: the Support space, exported as a
-wiki pack (dev-plan 10.5). The wiki is the source of truth. This copy is here
+`support-pack.zip` is Tesria's docs, published at tesria.com/docs: the Docs
+space (called Support until 2026-09-24), exported as a wiki pack (dev-plan
+10.5). The file keeps its old name so existing links to it still work. The wiki is the source of truth. This copy is here
 so the site survives anything that happens to an instance, and so anyone can
 run it locally.
 

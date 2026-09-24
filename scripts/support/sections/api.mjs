@@ -72,7 +72,7 @@ export const shots = () => [
  * ids, and every link to them, stay the same.
  */
 export async function prepare({ author }) {
-  const space = await author.call('GET', '/api/spaces/SUPPORT')
+  const space = await author.call('GET', '/api/spaces/DOCS')
   const tree = await author.call('GET', `/api/pages/tree?spaceId=${space.id}`)
   const developers = tree.find((n) => n.title === 'Developers')
   if (!developers) return {}
@@ -408,7 +408,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(c('get_space_tree'), ': a space’s pages, as a tree, leaving out any you cannot see and everything under them. ', i('“Show me how the Engineering space is organized.”'))),
       li(p(c('search_pages'), ': full-text search, everywhere or in one space, returning 20 pages (up to 50 if it asks) with the passage that matched. ', i('“Find everything about the office move.”'))),
       li(p(c('find_pages_by_label'), ': the pages with a label, everywhere or in one space. ', i('“List the pages labeled incident.”'))),
-      li(p(c('list_labels'), ': the labels used in a space, most used first, counting only pages you can see. ', i('“Which labels does the Support space use?”'))),
+      li(p(c('list_labels'), ': the labels used in a space, most used first, counting only pages you can see. ', i('“Which labels does the Docs space use?”'))),
     ),
 
     h(2, 'Reading'),

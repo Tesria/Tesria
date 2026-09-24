@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Seeds the Tesria Demo space (dev-plan 10.5 step 5): the pages the support
-# site's screenshots and clips are taken from.
+# Seeds the Tesria Demo space (dev-plan 10.5 step 5): the pages the docs
+# screenshots and clips are taken from.
 #
 #   scripts/demo/seed-demo.sh
 #

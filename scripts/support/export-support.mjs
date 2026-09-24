@@ -45,7 +45,7 @@ function entries(zip) {
   return list
 }
 
-const pack = await download('/api/spaces/SUPPORT/export/pack')
+const pack = await download('/api/spaces/DOCS/export/pack')
 mkdirSync(join(ROOT, 'support'), { recursive: true })
 writeFileSync(join(ROOT, 'support', 'support-pack.zip'), pack)
 console.log(`pack: support/support-pack.zip, ${(pack.length / 1048576).toFixed(1)} MiB, ${entries(pack).length} files`)
@@ -53,7 +53,7 @@ console.log(`pack: support/support-pack.zip, ${(pack.length / 1048576).toFixed(1
 // The site as its reader will see it would be audience=anonymous, but that
 // needs anonymous reading on for the instance. As the author is the same
 // set of pages here: nothing in Support is restricted.
-const site = await download('/api/spaces/SUPPORT/export/site?audience=me')
+const site = await download('/api/spaces/DOCS/export/site?audience=me')
 mkdirSync(OUT, { recursive: true })
 writeFileSync(join(OUT, 'support-site.zip'), site)
 const files = entries(site).filter((e) => !e.name.endsWith('/'))

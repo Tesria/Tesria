@@ -51,7 +51,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, ul, li, 
 
 /** The phone picture the first version showed beside the desktop one. */
 export async function cleanup({ author }) {
-  const space = await author.call('GET', '/api/spaces/SUPPORT')
+  const space = await author.call('GET', '/api/spaces/DOCS')
   const tree = await author.call('GET', `/api/pages/tree?spaceId=${space.id}`)
   const node = tree.find((n) => n.title === 'Welcome to Tesria')
   if (!node) return

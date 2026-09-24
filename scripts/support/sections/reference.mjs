@@ -28,7 +28,7 @@ export const shots = []
  * sitting beside it.
  */
 export async function prepare({ author }) {
-  const space = await author.call('GET', '/api/spaces/SUPPORT')
+  const space = await author.call('GET', '/api/spaces/DOCS')
   const tree = await author.call('GET', `/api/pages/tree?spaceId=${space.id}`)
   const notes = tree.find((n) => n.title === 'Release notes')
   const old = notes?.children?.find((n) => n.title === 'Tesria 0.2')

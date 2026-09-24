@@ -1,6 +1,7 @@
 # Getting help
 
-1. **The Support site.** Search it, or start at Troubleshooting and the FAQ.
+1. **The docs** at tesria.com/docs. Search them, or start at Troubleshooting
+   and the FAQ.
 2. **Your administrator,** if someone else runs your Tesria: account
    problems and access to a space are theirs to solve.
 3. **An issue on GitHub,** for a bug or a question the site does not

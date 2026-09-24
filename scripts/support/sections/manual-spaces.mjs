@@ -716,7 +716,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('To move a page to another space, or to copy one, see ', pageLink('Moving and copying pages'), '.'),
 
     h(2, 'Numbers or bullets beside each page'),
-    p('A space whose pages are read in order, such as a manual or a course, is easier to follow when its tree is numbered: 1, 1.1, 1.2, 2, like the contents of a book. The tree of this support site is numbered that way. A space can have numbers, bullets, or neither.'),
+    p('A space whose pages are read in order, such as a manual or a course, is easier to follow when its tree is numbered: 1, 1.1, 1.2, 2, like the contents of a book. The tree of these docs is numbered that way. A space can have numbers, bullets, or neither.'),
     step(1, 'Open Space settings'),
     p('Choose ', b('Space settings'), ' at the bottom of the space’s sidebar, and scroll to ', b('Page tree'), ' on the ', b('Details'), ' tab.'),
     step(2, 'Choose a style'),
@@ -1007,7 +1007,7 @@ async function placeAfter(author, spaceId, parentTitle, title, afterTitle) {
 }
 
 export async function cleanup({ author }) {
-  const space = await author.call('GET', '/api/spaces/SUPPORT')
+  const space = await author.call('GET', '/api/spaces/DOCS')
   const tree = await author.call('GET', `/api/pages/tree?spaceId=${space.id}`)
   const find = (nodes, title) => {
     for (const n of nodes) {

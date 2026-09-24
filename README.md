@@ -92,7 +92,7 @@ docker compose up -d --build collab   # or pdf, after changing those services
 ```
 
 See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for the conventions and how a
-change is proposed, and the Support site's **Developers** section for the
+change is proposed, and the **Developers** section of the docs for the
 architecture.
 
 ## Tests

@@ -32,7 +32,7 @@ import {
   gallery, fileBlock, layout, table, pageProperties, landscape, handoutPdf,
 } from '../lib/tesria.mjs'
 
-const SPACE = { key: 'DEMO', name: 'Tesria Demo', description: 'The pages the Tesria support site is illustrated from. Everything here is fictional.' }
+const SPACE = { key: 'DEMO', name: 'Tesria Demo', description: 'The pages the Tesria docs are illustrated from. Everything here is fictional.' }
 
 async function main() {
   const alex = await signIn(need('SHOT_EMAIL'), need('SHOT_PASSWORD'))
@@ -159,7 +159,7 @@ async function main() {
   // ------------------------------------------------------ element gallery
   console.log('Element gallery')
   const gallerySpace = await page('Element gallery', null, doc(
-    p('One page per element, each showing that element on its own. The support site’s pictures of the editor are taken here.'),
+    p('One page per element, each showing that element on its own. The docs’ pictures of the editor are taken here.'),
     live('children', { depth: '1', sort: 'position' }),
   ))
   const el = (title, ...content) => page(title, gallerySpace, doc(...content))

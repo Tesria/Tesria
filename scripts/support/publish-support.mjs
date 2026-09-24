@@ -23,7 +23,9 @@ import * as lib from '../lib/tesria.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..', '..')
-const SPACE = { key: 'SUPPORT', name: 'Support', description: 'How to install, use and run Tesria.' }
+// Docs, not Support (the owner, 2026-09-24): the exported site lives at
+// tesria.com/docs, and tesria.com/support is where people support Tesria.
+const SPACE = { key: 'DOCS', name: 'Docs', description: 'How to install, use and run Tesria.' }
 
 /** The top of the tree, in this order: the approved outline (dev-plan 10.5). */
 const TOP = [

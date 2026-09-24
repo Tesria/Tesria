@@ -458,7 +458,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('While you are reordering pages with the pencil beside ', b('Pages'), ', the filter is set aside and the whole tree shows, so nothing is hidden while you move things. See ', pageLink('The page tree and reordering'), '.'),
 
     h(2, 'Numbered and bulleted trees'),
-    p('A space can show numbers beside its pages, like the contents of a book: 1, 1.1, 1.2, 2. It makes a long tree easier to scan and to talk about (“it’s in 3.2”), which is why this support site uses it. Or it can show bullets, which change shape with each level, or nothing at all.'),
+    p('A space can show numbers beside its pages, like the contents of a book: 1, 1.1, 1.2, 2. It makes a long tree easier to scan and to talk about (“it’s in 3.2”), which is why these docs use it. Or it can show bullets, which change shape with each level, or nothing at all.'),
     p('It is a setting of the space, so everyone sees the same. The numbers are only drawn beside the titles: they are not part of any title or address, and they follow the tree when pages are added or moved, so nobody ever has to renumber anything.'),
     p('To change it, open ', b('Space settings'), ' at the bottom of the sidebar. On the ', b('Details'), ' tab, under ', b('Page tree'), ', choose ', b('Plain'), ', ', b('Numbered'), ' or ', b('Bulleted'), '. The change is saved as soon as you choose; there is no Save button.'),
     ...(await picture(around, 'tree-style', 'The Page tree setting, with Numbered boxed', 'The Page tree setting in Space settings. Each choice shows what the tree will look like.')),
@@ -563,7 +563,7 @@ const RETIRED = {
 }
 
 export async function cleanup({ author }) {
-  const space = await author.call('GET', '/api/spaces/SUPPORT')
+  const space = await author.call('GET', '/api/spaces/DOCS')
   const tree = await author.call('GET', `/api/pages/tree?spaceId=${space.id}`)
   const find = (nodes, title) => {
     for (const n of nodes) {

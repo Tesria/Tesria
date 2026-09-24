@@ -241,7 +241,7 @@ export function EmailSettingsSection({
             </p>
           ) : (
             <p className="muted small">
-              First register Tesria with {signInName}, once: the Support site’s{' '}
+              First register Tesria with {signInName}, once: the Tesria docs’{' '}
               <em>{provider?.supportPage}</em> page walks through it. Then fill in these and sign in.
             </p>
           )}

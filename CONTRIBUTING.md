@@ -1,7 +1,7 @@
 # Contributing to Tesria
 
 Thank you for wanting to help. The full guide, with every step explained,
-is on the Support site under **Developers → Contributing**. This file is
+is in the docs (tesria.com/docs) under **Developers → Contributing**. This file is
 the short version.
 
 ## Before you start
@@ -58,5 +58,5 @@ under the project's license, the [Apache License 2.0](LICENSE).
 
 ## Releases
 
-See **Developers → Contributing → Making a release** on the Support site,
+See **Developers → Contributing → Making a release** in the docs,
 and `.github/workflows/release.yml`.

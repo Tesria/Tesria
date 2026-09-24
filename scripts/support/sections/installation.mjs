@@ -1679,7 +1679,7 @@ export async function prepare({ author }) {
 }
 
 export async function cleanup({ author }) {
-  const space = await author.call('GET', '/api/spaces/SUPPORT')
+  const space = await author.call('GET', '/api/spaces/DOCS')
   const tree = await author.call('GET', `/api/pages/tree?spaceId=${space.id}`)
   const find = (nodes, title) => {
     for (const n of nodes) {

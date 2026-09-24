@@ -505,7 +505,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Sooner or later a page has to leave the wiki: a policy sent to someone without an account, a handbook put on a public website, a whole space moved to another Tesria. This chapter covers each way out:'),
     ul(
       li(p(b('Exporting a page'), ' as a PDF, a web page or a Markdown file.')),
-      li(p(b('A space as a website:'), ' every page as a static site that any web host can serve, like the Support site you are reading.')),
+      li(p(b('A space as a website:'), ' every page as a static site that any web host can serve, like the docs you are reading.')),
       li(p(b('Wiki packs:'), ' a whole space with its history, to import into another Tesria or keep as a copy.')),
       li(p(b('Public reading:'), ' letting anyone read a space in Tesria itself, without an account.')),
       li(p(b('Turning exports off'), ' for a space that should not leave.')),
@@ -543,7 +543,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
   await page('A space as a website', exporting, doc(
     p('A whole space can be exported as a website: a folder of ordinary web pages, with the space’s page tree down the side, that any web host can serve and anyone can read. There is no server to run and nothing to sign in to. Use it to put a handbook, a product manual or a set of guides on the internet, or to keep a copy you can read with no Tesria at all.'),
-    p('The Support site at tesria.com, which you may be reading now, is one, exported from Tesria’s own wiki.'),
+    p('Tesria’s docs at tesria.com/docs, which you may be reading now, are one, exported from Tesria’s own wiki.'),
 
     step(1, 'Open the space’s settings'),
     p('In the space, choose ', b('Space settings'), ' at the bottom of the sidebar. The ', b('Details'), ' tab opens; scroll down to ', b('Export as a site'), '.'),
@@ -831,7 +831,7 @@ const PROFILE_ORDER = ['Avatar, name and email', 'Password', 'Email notification
 export async function cleanup({ author }) {
   for (const t of await author.call('GET', '/api/api-tokens'))
     if (t.name === EXAMPLE_TOKEN) await author.call('DELETE', `/api/api-tokens/${t.id}`)
-  const space = await author.call('GET', '/api/spaces/SUPPORT')
+  const space = await author.call('GET', '/api/spaces/DOCS')
   const treeNow = () => author.call('GET', `/api/pages/tree?spaceId=${space.id}`)
   const find = (nodes, title) => {
     for (const n of nodes) {

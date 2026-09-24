@@ -31,7 +31,7 @@ export function TailscaleCard() {
             anywhere at a <code>ts.net</code> address with a real certificate, without opening it to the internet.
           </p>
           <p className="muted small">
-            Not running. Set it up with the Support site’s <em>Reaching Tesria from anywhere with Tailscale</em>.
+            Not running. Set it up with the Tesria docs’ <em>Reaching Tesria from anywhere with Tailscale</em>.
           </p>
         </>
       ) : (

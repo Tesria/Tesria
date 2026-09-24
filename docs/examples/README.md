@@ -1,6 +1,6 @@
 # API examples
 
-The two scripts the Support site's "Code examples" page shows
+The two scripts the docs' "Code examples" page shows
 (`scripts/support/sections/developers.mjs` reads them from here), so the
 page and the code cannot drift apart. They do the same five things: list
 spaces, search one, write a page, change it without overwriting anyone,

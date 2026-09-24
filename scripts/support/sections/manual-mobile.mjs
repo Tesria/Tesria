@@ -228,7 +228,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
 // The new page goes first in the chapter, before the tour of the layout.
 export async function cleanup({ author }) {
-  const space = await author.call('GET', '/api/spaces/SUPPORT')
+  const space = await author.call('GET', '/api/spaces/DOCS')
   const tree = await author.call('GET', `/api/pages/tree?spaceId=${space.id}`)
   const find = (nodes, title) => {
     for (const n of nodes) {

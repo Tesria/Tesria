@@ -57,9 +57,9 @@ export const shots = ({ demo }) => [
   // ---- Keeping it organized
   { name: 'feat-spaces', url: '/spaces', viewport: NARROW, phone: false, steps: [{ wait: 2500 }], clipTo: '.space-grid', clipPad: 10 },
   // The Support space's own tree, numbered: the Demo space's is plain.
-  { name: 'feat-tree', url: '/spaces/SUPPORT', viewport: { width: 900, height: 640 }, phone: false, steps: [{ wait: 3000 }], clipTo: '.sidebar .tree-section', clipPad: 6 },
+  { name: 'feat-tree', url: '/spaces/DOCS', viewport: { width: 900, height: 640 }, phone: false, steps: [{ wait: 3000 }], clipTo: '.sidebar .tree-section', clipPad: 6 },
   {
-    name: 'feat-filter', url: '/spaces/SUPPORT', phone: false,
+    name: 'feat-filter', url: '/spaces/DOCS', phone: false,
     viewport: { width: 420, height: 560 }, record: { size: { width: 420, height: 560 } },
     waitFor: '.space-home-tree .tree-filter__input', lead: 900, tail: 1800,
     css: '.tip, .onboarding-tip { display: none !important; }',
@@ -177,7 +177,7 @@ export async function build({ page, ensure, doc, p, h, text, bold, italic, panel
 
     h(2, 'Sharing and publishing'),
     ...(await feature('Export a page', 'Download a page as a PDF, a Markdown file or a single HTML file that looks like the page and works on its own.', 'Exporting and publishing', pic('feat-export', 'The export choices in a page’s menu'))),
-    ...(await feature('Publish a space as a website', 'Export a whole space as a static website, with its sidebar, a filter that narrows the pages as you type, and your branding, ready to host anywhere. This support site is one.', 'Exporting and publishing', pic('feat-site', 'Exporting a space as a website'))),
+    ...(await feature('Publish a space as a website', 'Export a whole space as a static website, with its sidebar, a filter that narrows the pages as you type, and your branding, ready to host anywhere. These docs are one.', 'Exporting and publishing', pic('feat-site', 'Exporting a space as a website'))),
     ...(await feature('Wiki packs', 'Package a whole space, with its history, comments and files, as one file you can keep as a backup or import into another Tesria.', 'Wiki packs', pic('feat-pack', 'Exporting a space as a wiki pack'))),
     ...(await feature('Public reading', 'Let people without an account read chosen spaces, such as public documentation, while everything else stays private. It is off until an administrator turns it on and a space is chosen.', 'Public reading', pic('feat-public', 'The switches that allow public reading'))),
 
@@ -209,7 +209,7 @@ export async function build({ page, ensure, doc, p, h, text, bold, italic, panel
 
 /** Features goes second at the top of the tree, after Welcome to Tesria. */
 export async function cleanup({ author }) {
-  const space = await author.call('GET', '/api/spaces/SUPPORT')
+  const space = await author.call('GET', '/api/spaces/DOCS')
   const tree = await author.call('GET', `/api/pages/tree?spaceId=${space.id}`)
   const at = tree.findIndex((n) => n.title === 'Features')
   const welcome = tree.findIndex((n) => n.title === 'Welcome to Tesria')

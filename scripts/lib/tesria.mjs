@@ -230,6 +230,12 @@ export async function site(author, spec, { editor } = {}) {
     space = await author.call('POST', '/api/spaces', { key: spec.key, name: spec.name, description: spec.description })
     console.log(`created space ${spec.key}`)
   }
+  // The script says what the space is called: a rename there (Support to
+  // Docs, 2026-09-24) reaches an instance that already has the space.
+  if (space.name !== spec.name || (space.description ?? null) !== (spec.description ?? null)) {
+    space = await author.call('PUT', `/api/spaces/${spec.key}`, { name: spec.name, description: spec.description })
+    console.log(`updated space ${spec.key}: ${spec.name}`)
+  }
 
   const directory = await author.call('GET', '/api/users')
   /** A mention of someone by display name, or plain text if there is no such account. */

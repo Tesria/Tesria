@@ -440,8 +440,8 @@ built from `SiteUrl.Resolve` and the page's space key.
 
 **Mail providers and signing in to them (dev-plan Phase 18).**
 `MailProviders` is the one table of presets (host, port, encryption, what
-goes in the username and password, the Support page); the settings form,
-the setup wizard and the Support site's tables all read it, the last
+goes in the username and password, the docs page); the settings form,
+the setup wizard and the docs' tables all read it, the last
 through `GET /api/admin/settings/email/providers` when the pages are
 written. `SiteSettings.SmtpSignIn` is `Password`, `Microsoft` or `Google`.
 For the last two, `MailOAuthService` runs the authorization code flow with

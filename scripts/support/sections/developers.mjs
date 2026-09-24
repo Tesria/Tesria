@@ -348,7 +348,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('A new kind of block'), ' is defined once, in the web app’s ', c('editor/extensions.ts'), ', never in one editor alone: the collaboration service and the exports rely on the same definition.')),
       li(p(b('What you may not see does not exist.'), ' A request for something the caller may not see answers ', c('404'), ', never ', c('403'), '.')),
       li(p(b('Every change is written down.'), ' An entry in ', c('docs/CHANGELOG.md'), ' saying what changed and why, and ', c('docs/architecture.md'), ' updated if how something works has changed.')),
-      li(p(b('Words people read'), ' are in US English, plain and specific, without em dashes. The Support site follows ', c('scripts/support/WRITING.md'), '.')),
+      li(p(b('Words people read'), ' are in US English, plain and specific, without em dashes. These docs follow ', c('scripts/support/WRITING.md'), '.')),
     ),
   ))
 

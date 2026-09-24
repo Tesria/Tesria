@@ -395,7 +395,7 @@ export async function build(helpers) {
     image(formId, 'A sign-up form with a title, three fields and a blue button', { width: 60 }),
     p('A ', b('border'), ' draws a thin line around it. Use it for screenshots and diagrams in plain documents:'),
     image(formId, 'The same sign-up form, with a border', { width: 60, border: true }),
-    p('A ', b('shadow'), ' lifts it off the page. Use it for screenshots that should look like a window; every picture on these Support pages has one:'),
+    p('A ', b('shadow'), ' lifts it off the page. Use it for screenshots that should look like a window; every picture in these docs has one:'),
     image(formId, 'The same sign-up form, with a shadow', { width: 60, shadow: true }),
 
     h(2, 'Changing and removing it'),
@@ -553,7 +553,7 @@ export async function build(helpers) {
   // The Demo space's clip (seed-demo.mjs): the slash menu, in the tour space.
   const clipId = await attachCurrent(animationPage, 'slash-menu.webm', slashClip, 'video/webm')
   await page('Animation', elements, doc(
-    p('An animation is a short video that plays like a GIF: silently, on a loop, starting by itself, with no player controls. It is the clearest way to show a small thing being done, such as a menu opening, a click, a drag, and a video file is a fraction of the size of the same GIF. The recordings on these Support pages are animations.'),
+    p('An animation is a short video that plays like a GIF: silently, on a loop, starting by itself, with no player controls. It is the clearest way to show a small thing being done, such as a menu opening, a click, a drag, and a video file is a fraction of the size of the same GIF. The recordings in these docs are animations.'),
 
     h(2, 'Insert it'),
     table([
@@ -1102,7 +1102,7 @@ export async function build(helpers) {
 const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
 export async function cleanup({ author }) {
-  const space = await author.call('GET', '/api/spaces/SUPPORT')
+  const space = await author.call('GET', '/api/spaces/DOCS')
   const tree = await author.call('GET', `/api/pages/tree?spaceId=${space.id}`)
   const find = (nodes, title) => {
     for (const n of nodes) {

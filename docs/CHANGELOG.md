@@ -8,6 +8,22 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.6.0-dev**: 0.5.0 is released, so what comes
 after it is the next minor version.
 
+### The Support space is now Docs (2026-09-24, Opus 5.5)
+
+Renamed at the owner's request to match where it will be published,
+tesria.com/docs (tesria.com/support is now where people support Tesria).
+The space is **Docs** with the key `DOCS`; the key was changed in place
+(one SQL update on the owner's instance, since the app cannot change a
+key), so page ids, history and watches are unchanged, and the publisher
+rewrote every page's links. The exported pack now imports as `DOCS`, and
+the site's title reads "Tesria - Docs". Wording that named "the Support
+site" now says "the docs", in the pages, in the app (the mail provider,
+email settings and Tailscale cards) and in the repository. The shared
+`site()` helper now keeps an existing space's name and description in step
+with its script, which also updated the Tesria Demo space's description.
+The tooling keeps its names (`scripts/support/`, `support/support-pack.zip`,
+`SUPPORT_SHOTS`) so existing commands and links still work.
+
 ### 14.3 Enterprise hardening (2026-09-24, Opus 5.5, reviewed by Fable 5.1)
 
 Every Must fix and Should fix from the known gaps in `docs/security.md`:
