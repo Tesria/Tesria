@@ -489,6 +489,9 @@ public static class AuthEndpoints
         return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user, rights));
     }
 
+    /// <summary>How many ended sessions the Sessions list keeps, for context.</summary>
+    public const int RecentlyEndedShown = 5;
+
     private static async Task<IResult> ListSessions(AppDbContext db, CurrentUser current, HttpContext http)
     {
         var mine = SessionIdOf(http.User);
@@ -496,12 +499,14 @@ public static class AuthEndpoints
             .Where(s => s.UserId == current.RequireId())
             .ToListAsync();
         // Live sessions first, newest first; a few recently revoked ones for
-        // context. Ordered in memory (SQLite cannot order DateTimeOffset).
+        // context. "A few" is a number: every sign-out of the last week was
+        // listed, and an account that scripts sign in to had hundreds, a
+        // Sessions list 13,000 pixels tall (found 2026-09-24). Ordered in memory
+        // (SQLite cannot order DateTimeOffset).
         var cutoff = DateTimeOffset.UtcNow.AddDays(-7);
-        return Results.Ok(rows
-            .Where(s => s.RevokedAt == null || s.RevokedAt > cutoff)
-            .OrderBy(s => s.RevokedAt != null)
-            .ThenByDescending(s => s.LastSeenAt)
+        var live = rows.Where(s => s.RevokedAt == null).OrderByDescending(s => s.LastSeenAt);
+        var ended = rows.Where(s => s.RevokedAt > cutoff).OrderByDescending(s => s.RevokedAt).Take(RecentlyEndedShown);
+        return Results.Ok(live.Concat(ended)
             .Select(s => new SessionResponse(s.Id, s.CreatedAt, s.LastSeenAt, s.Ip, s.UserAgent, s.Id == mine, s.RevokedAt)));
     }
 

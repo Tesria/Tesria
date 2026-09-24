@@ -3,7 +3,7 @@
 Tesria is self-hosted software; a vulnerability in it is a vulnerability
 on every instance somebody runs. Please report privately.
 
-- **Email:** brianrodriguez@gmail.com with `[tesria security]` in the
+- **Email:** brianintheloopdev@gmail.com with `[tesria security]` in the
   subject. If the repository is public by the time you read this, GitHub's
   private vulnerability reporting on the repository is equally good.
 - **Include:** what you found, how to reproduce it, which version

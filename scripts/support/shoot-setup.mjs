@@ -30,6 +30,7 @@ const settle = { wait: 900 }
 // The address field starts as the address the browser used, which here is
 // the inside of a container; a reader should see an address like theirs.
 const address = { type: 'https://wiki.example.com', selector: '.setup__step-panel label:has-text("Its address") input' }
+const NO_REVIEWER = "document.querySelectorAll('p').forEach((el) => { if (el.textContent.includes('Last reviewed')) el.textContent = el.textContent.replace(/\\s*Last reviewed[^.]*\\./, '') })"
 const inviteOnly = { click: '.setup__cards .setup__card >> nth=0' }
 
 /**
@@ -66,14 +67,19 @@ const spec = (kind) => ({
   shots: list.map(([name, desktop, phone], i) => ({
     name,
     ...(i === 0 ? { url: '/setup', waitFor: '.setup__step-panel h2' } : {}),
-    steps: kind === 'desktop' ? desktop : (phone ?? desktop),
+    // A rerun has already kept the defaults once, so the table says when and
+    // by whom; a reader on a new instance never sees that.
+    steps: [...(kind === 'desktop' ? desktop : (phone ?? desktop)),
+      ...(name === 'setup-permissions' ? [{ eval: NO_REVIEWER }] : [])],
     settle: 600,
     // The same window as the section's other whole-window shots. On a phone
     // the list of steps sits above the form: the welcome picture shows it
     // once, whole, and every other phone picture is cut to the step's form,
     // because ten copies of that list made the page 14,000 pixels long.
+    // The roles table is cut to the step itself: a whole window made its
+    // text small on a phone, where the page shows it at the phone's width.
     ...(kind === 'desktop'
-      ? { viewport: { width: 1024, height: 640 } }
+      ? { viewport: { width: 1024, height: 640 }, ...(name === 'setup-permissions' ? { clipTo: '.setup__step-panel', clipPad: 8 } : {}) }
       : { viewport: { width: 390, height: 700 }, ...(name === 'setup-welcome' ? { fullPage: true } : { clipTo: '.setup__panel' }) }),
   })),
 })

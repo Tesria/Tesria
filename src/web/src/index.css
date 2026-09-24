@@ -175,6 +175,7 @@ button { font: inherit; color: inherit; }
 /* Used by the no-offsite-backup, low-disk and pack-import warnings, which
    rendered colorless until 2026-09-22 because this rule did not exist. */
 .alert--warning { background: var(--panel-warning-bg); color: var(--text); border-left: 3px solid var(--panel-warning-border); }
+.alert--success { background: var(--panel-success-bg); color: var(--text); border-left: 3px solid var(--panel-success-border); }
 
 .badge {
   display: inline-block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
@@ -2192,6 +2193,14 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .alerts__head { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
 .alerts__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
 .admin__toggle--inline { margin-bottom: 0.75rem; }
+/* The address gets the room: it was a 120px column, too narrow to read one. */
+.invite-form { grid-template-columns: minmax(0, 1fr) 150px auto; }
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .invite-form { grid-template-columns: 1fr; }
+}
+/* Emailing an invite: a row of its own under the invite form's fields. */
+.invite-email { grid-column: 1 / -1; }
+.invite-email textarea { width: 100%; font: inherit; resize: vertical; }
 .block-form { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
 .block-form input { flex: 1 1 12rem; }
 

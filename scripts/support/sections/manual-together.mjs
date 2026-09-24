@@ -43,6 +43,14 @@ const ONLY_DEMO_SPACE = `document.querySelectorAll('table.admin-table tbody tr')
 // The email address is the one field on a profile that could be a real one.
 const EXAMPLE_EMAIL = "document.querySelectorAll('.profile__section input[type=\"email\"]').forEach((i) => { i.value = 'alex.rivera@example.com' })"
 
+// The screenshot browser's sessions come from Docker's own addresses (::1,
+// 192.168.65.1) and one says only "Browser"; these read like a real person's.
+const EXAMPLE_SESSIONS = `[...document.querySelectorAll('#sessions tbody tr, .profile__section tbody tr')].slice(0, 3).forEach((row, n) => {
+  const [ip, agent] = [['203.0.113.24', 'Chrome on Windows'], ['198.51.100.7', 'Safari on iPhone'], ['203.0.113.80', 'Firefox on macOS']][n]
+  const code = row.querySelector('td code'); if (code) code.textContent = ip
+  const small = row.querySelector('td .muted.small'); if (small) small.textContent = agent
+})`
+
 /**
  * Gives Alex something ordinary in the bell and the comments pictures
  * something to show. Alex is an administrator, so the bell otherwise holds
@@ -193,12 +201,14 @@ export const shots = ({ demo }) => [
   // is long; the first three rows show what a list looks like.
   {
     name: 'sessions', url: '/profile', viewport: TABLE, phone: false, settle: 1000,
-    steps: [{ wait: 2500 }, { eval: EXAMPLE_EMAIL }, { css: `${section('Sessions').replace(':has(> h2:text-is("Sessions"))', '')} tbody tr:nth-child(n+4) { display: none }` }],
+    steps: [{ wait: 2500 }, { eval: EXAMPLE_EMAIL }, { eval: EXAMPLE_SESSIONS }, { css: `${section('Sessions').replace(':has(> h2:text-is("Sessions"))', '')} tbody tr:nth-child(n+4) { display: none }` }],
     clipTo: section('Sessions'), clipPad: 0,
   },
   {
-    name: 'api-tokens', url: '/profile', viewport: TABLE, phone: false, settle: 1000,
-    steps: [{ wait: 2500 }, { type: 'Nightly report', selector: '#api-tokens form input[placeholder="CI pipeline"]' }, { eval: 'document.activeElement && document.activeElement.blur()' }],
+    // The other sections hidden, so nothing scrolls: scrolled, the boxes
+    // were measured before the page moved and landed beside their targets.
+    name: 'api-tokens', url: '/profile', viewport: NARROW, phone: false, settle: 1000,
+    steps: [{ wait: 2500 }, { css: '.profile__section:not(#api-tokens) { display: none !important; }' }, { type: 'Nightly report', selector: '#api-tokens form input[placeholder="CI pipeline"]' }, { eval: 'document.activeElement && document.activeElement.blur()' }],
     clipTo: '#api-tokens form', clipPad: 12,
     annotate: [
       { type: 'box', target: '#api-tokens .api-tokens__scope', pad: 4 },

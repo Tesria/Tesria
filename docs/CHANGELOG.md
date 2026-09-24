@@ -5,6 +5,50 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Email an invite (2026-09-24, Opus 5.5)
+
+- **Invites can be emailed** (the owner's request): once an address is
+  typed and the server sends email, the invite form offers **Email the
+  invite to …** (ticked) with a **Message** box holding a short default note
+  that names the inviter. Edit it freely; Tesria adds the link below it, with
+  the address it works for and the date it expires, so it cannot be left out
+  or mistyped. The subject names the inviter and the instance.
+- The token exists in plain text only when the invite is made, so the email
+  goes then or not at all. A mail server that refuses leaves the invite in
+  place: the page says why and still shows the link to copy.
+- `GET /api/admin/invites/email` says whether the server sends and gives the
+  default text; `POST /api/admin/invites` takes `sendEmail` and `message`
+  (up to 2,000 characters) and answers `emailed` and `emailError`. The
+  message goes out as plain text with an escaped HTML twin.
+- The invite form gives the address its room (it was a 120px column), and
+  the button follows the message.
+
+### Fix: the setup wizard said a new instance had upgraded (2026-09-24, Opus 5.5)
+
+- The wizard's roles step showed the roles page's notice that a default
+  "changed when this instance upgraded", with a second Keep these defaults
+  button. A new instance has upgraded from nothing, and the wizard has its
+  own button. The notice now stays on Administration → Roles, for instances
+  that did upgrade.
+- Verified live on the scratch instance with its new owner: the first
+  space's key skips leading digits ("2026 Team handbook" gives `TEAMHA`)
+  and stops following the name once edited by hand.
+- The setup wizard's roles picture on the Support site is cut to the step
+  rather than a whole window.
+
+### Fix: the Sessions list grew without end (2026-09-24, Opus 5.5)
+
+- The profile's Sessions list showed every session ended in the last week,
+  not "a few" as its comment meant. An account that scripts sign in to had
+  hundreds, a list about 13,000 pixels tall, which pushed API tokens past
+  what Chromium can capture: three Support pictures, including the one under
+  REST API on the Features page, came out blank (the owner found it). Now
+  every live session and the five most recently ended.
+- The Support publisher also ends the example account's other sessions
+  before taking pictures, and the Sessions picture uses example addresses
+  and browsers instead of Docker's own.
+- `SECURITY.md` gives brianintheloopdev@gmail.com as the security contact.
+
 ### 15.6 The Support site, rewritten (2026-09-24, Opus 5.5)
 
 - Every Support page rewritten to the rules the owner set reviewing the
@@ -29,6 +73,11 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   Authenticated SMTP, which Microsoft turns off by default at the end of
   December 2026. Both checked against the providers' own pages on
   2026-09-24.
+- Then (the owner's request) **Sending with Apple iCloud Mail**, **Sending
+  with Zoho Mail**, **Sending with Fastmail** and **Sending with Proton
+  Mail**, each with its settings table, where to make its app password (or
+  Proton's SMTP token), the plan it needs, and its usual errors; the Email
+  (SMTP) page links to all six.
 - The pilot pages the owner approved moved into the sections they belong
   to, and every reference to another page is a link (`pageLink`).
 
@@ -1878,8 +1927,8 @@ check now reads "this role or above" rather than naming both.
 - **Exactly one owner, always.** The first account on an empty instance is
   the owner (local or SSO). On an existing instance, a startup step
   (`OwnerSeed`) promotes the longest-standing active administrator and
-  audits it as `owner.assigned`. On this instance that is
-  brianrodriguez@gmail.com.
+  audits it as `owner.assigned`. On this instance that is the owner's own
+  account.
 - **Only the owner changes roles.** `PUT /admin/users/{id}/role` moved to a
   new `RequireOwner` policy, which carries the same two-factor rule as
   `RequireAdmin`.

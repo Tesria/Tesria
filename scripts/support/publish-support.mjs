@@ -68,6 +68,11 @@ async function main() {
   await author.call('PUT', '/api/auth/me/onboarding', { tipsEnabled: false })
   // And an unread count on the bell is noise in every picture.
   await author.call('POST', '/api/notifications/read-all')
+  // Every screenshot run signs in, and the sessions pile up in the profile's
+  // Sessions list: hundreds of them pushed API tokens past the height Chromium
+  // can capture, and three pictures came out white (2026-09-24). The example
+  // account's other sessions are ended first, so the list stays short.
+  await author.call('DELETE', '/api/auth/me/sessions/others')
 
   const s = await lib.site(author, SPACE)
 

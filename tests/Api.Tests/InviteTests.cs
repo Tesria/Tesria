@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Tesria.Api.Tests;
@@ -12,7 +13,8 @@ public class InviteTests
 {
     private record RegisteredDto(Guid Id, string Email, string DisplayName, int Role,
         string? AvatarHash, int? AvatarVariant, bool HasPassword, List<string> RecoveryCodes);
-    private record InviteDto(string Token, string Path, string? Email, DateTimeOffset ExpiresAt);
+    private record InviteDto(string Token, string Path, string? Email, DateTimeOffset ExpiresAt, bool Emailed = false, string? EmailError = null);
+    private record InviteEmailDto(bool Enabled, string Subject, string Message);
     private record InviteRow(Guid Id, string? Email, DateTimeOffset ExpiresAt, DateTimeOffset? UsedAt, DateTimeOffset CreatedAt,
         string? UsedByName = null);
 
@@ -170,5 +172,91 @@ public class InviteTests
         (await RegisterAsync(admin, "admin@example.com")).EnsureSuccessStatusCode();
 
         (await RegisterAsync(factory.CreateClient(), "someone@example.com", "not-a-real-token")).EnsureSuccessStatusCode();
+    }
+
+    // -- emailing an invite --------------------------------------------------
+
+    private static async Task<(HttpClient Admin, RecordingEmailSender Outbox)> ClosedInstanceWithEmailAsync(TestAppFactory factory)
+    {
+        var admin = await ClosedInstanceAsync(factory);
+        (await admin.PutAsJsonAsync("/api/admin/settings",
+            new { EmailEnabled = true, BaseUrl = "https://wiki.example.com", InstanceName = "Acme Wiki" })).EnsureSuccessStatusCode();
+        return (admin, factory.Services.GetRequiredService<RecordingEmailSender>());
+    }
+
+    [Fact]
+    public async Task An_emailed_invite_carries_the_inviters_message_and_a_link_that_works()
+    {
+        using var factory = new TestAppFactory();
+        var (admin, outbox) = await ClosedInstanceWithEmailAsync(factory);
+
+        var issued = await (await admin.PostAsJsonAsync("/api/admin/invites",
+            new { Email = "Dana@Example.com", SendEmail = true, Message = "Welcome aboard, Dana!\nSee you Monday." }))
+            .Content.ReadFromJsonAsync<InviteDto>();
+        Assert.True(issued!.Emailed);
+
+        var mail = Assert.Single(outbox.Sent);
+        Assert.Equal("dana@example.com", mail.To);
+        Assert.StartsWith("[Acme Wiki] ", mail.Subject);
+        // The message first, then the link, which the inviter cannot edit out.
+        Assert.StartsWith("Welcome aboard, Dana!\nSee you Monday.\n\n", mail.Text);
+        Assert.Contains($"https://wiki.example.com/register?invite={issued.Token}", mail.Text);
+        Assert.Contains("for dana@example.com", mail.Text);
+
+        (await RegisterAsync(factory.CreateClient(), "dana@example.com", issued.Token)).EnsureSuccessStatusCode();
+    }
+
+    [Fact]
+    public async Task An_empty_message_sends_the_default_one()
+    {
+        using var factory = new TestAppFactory();
+        var (admin, outbox) = await ClosedInstanceWithEmailAsync(factory);
+        var template = await admin.GetFromJsonAsync<InviteEmailDto>("/api/admin/invites/email");
+        Assert.True(template!.Enabled);
+        Assert.Contains("Acme Wiki", template.Message);
+
+        (await admin.PostAsJsonAsync("/api/admin/invites", new { Email = "lee@example.com", SendEmail = true, Message = "  " }))
+            .EnsureSuccessStatusCode();
+        Assert.StartsWith(template.Message, Assert.Single(outbox.Sent).Text);
+    }
+
+    [Fact]
+    public async Task An_invite_email_needs_an_address_and_a_message_of_sensible_length()
+    {
+        using var factory = new TestAppFactory();
+        var (admin, outbox) = await ClosedInstanceWithEmailAsync(factory);
+
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await admin.PostAsJsonAsync("/api/admin/invites", new { SendEmail = true })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await admin.PostAsJsonAsync("/api/admin/invites",
+                new { Email = "lee@example.com", SendEmail = true, Message = new string('x', 2001) })).StatusCode);
+        Assert.Empty(outbox.Sent);
+    }
+
+    [Fact]
+    public async Task A_mail_server_that_refuses_leaves_the_invite_usable_and_says_why()
+    {
+        using var factory = new TestAppFactory();
+        var (admin, outbox) = await ClosedInstanceWithEmailAsync(factory);
+        outbox.Fail = true;
+
+        var issued = await (await admin.PostAsJsonAsync("/api/admin/invites",
+            new { Email = "sam@example.com", SendEmail = true })).Content.ReadFromJsonAsync<InviteDto>();
+        Assert.False(issued!.Emailed);
+        Assert.Equal("simulated failure", issued.EmailError);
+
+        (await RegisterAsync(factory.CreateClient(), "sam@example.com", issued.Token)).EnsureSuccessStatusCode();
+    }
+
+    [Fact]
+    public async Task Without_being_asked_nothing_is_emailed()
+    {
+        using var factory = new TestAppFactory();
+        var (admin, outbox) = await ClosedInstanceWithEmailAsync(factory);
+        var issued = await (await admin.PostAsJsonAsync("/api/admin/invites", new { Email = "pat@example.com" }))
+            .Content.ReadFromJsonAsync<InviteDto>();
+        Assert.False(issued!.Emailed);
+        Assert.Empty(outbox.Sent);
     }
 }

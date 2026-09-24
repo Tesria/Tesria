@@ -695,10 +695,151 @@ export async function build({
       li(p(b('“Authentication unsuccessful”'), ' on its own usually means a wrong password, or that the mailbox needs a second sign-in step (such as a code on a phone). Tesria cannot answer that step. Ask your administrator whether a mailbox without it can be used for sending, or use a sending service instead.')),
     ),
   ))
+  // More providers with app passwords (the owner, 2026-09-24). Each checked
+  // that day against the provider's own help: Apple (support.apple.com
+  // 102525 and 102654), Fastmail (fastmail.help, server names and ports; app
+  // passwords), Zoho (zoho.com/mail/help/zoho-smtp.html; app passwords; its
+  // free plan no longer includes other apps for new accounts) and Proton
+  // (proton.me/support/smtp-submission).
+  const settingsTable = (host, port, security, user, password, from) => table([
+    ['Setting', 'Value'],
+    ['SMTP host', p(c(host))],
+    ['Port', p(c(port))],
+    ['Username', user],
+    ['Password', password],
+    ['From address', from],
+    ['Encryption', security],
+  ], [140, 300])
+  const fillIn = () => p('Choose ', b('Admin'), ', then ', b('Settings'), ', and fill in the ', b('Email'), ' section with these values:')
+  const testIt = () => [
+    p('Choose ', b('Save mail settings'), ', turn on ', b('Send email'), ', then choose ', b('Send test email to me'), ' and check that it arrived, including in the spam folder. The full walk-through is on ', pageLink('Email (SMTP)'), '.'),
+  ]
+
+  await page('Sending with Apple iCloud Mail', email, doc(
+    p('If you use an iPhone or a Mac, you may already have an iCloud Mail address ending in ', c('@icloud.com'), ' (or ', c('@me.com'), ' or ', c('@mac.com'), '). Tesria can send its email through it. Like Gmail, Apple does not let other programs use your Apple Account password: you make an ', b('app-specific password'), ', a separate password for Tesria alone, which you can delete at any time without touching your account.'),
+    panel('success', p(b('Better: a sending address of its own.'), ' The emails people get come from this address, and they use your Apple Account. For a team wiki, a separate account or a sending service is tidier; for a family or a small group, your own iCloud address is fine.')),
+
+    h(2, 'Before you start'),
+    ul(
+      li(p(b('iCloud Mail turned on'), ' for your Apple Account, so you have an iCloud email address.')),
+      li(p(b('Two-factor authentication'), ' on your Apple Account. Apple only offers app-specific passwords when it is, and most accounts have it already.')),
+    ),
+
+    step(1, 'Make an app-specific password'),
+    ol(
+      li(p('Go to ', c('account.apple.com'), ' and sign in.')),
+      li(p('In ', b('Sign-In and Security'), ', choose ', b('App-Specific Passwords'), '.')),
+      li(p('Choose to generate one, name it ', c('Tesria'), ', and copy the password Apple shows.')),
+    ),
+
+    step(2, 'Fill in Tesria’s email settings'),
+    fillIn(),
+    settingsTable('smtp.mail.me.com', '587', 'STARTTLS', 'Your full iCloud address, such as name@icloud.com', 'The app-specific password', 'The same iCloud address'),
+
+    step(3, 'Turn it on and send a test'),
+    ...testIt(),
+
+    h(2, 'If the test fails'),
+    ul(
+      li(p(b('The sign-in is refused.'), ' Check that the username is the whole address, not only the part before the @, and that the password is the app-specific one. Your Apple Account password does not work here.')),
+      li(p(b('It worked, then stopped.'), ' Changing or resetting your Apple Account password deletes every app-specific password. Make a new one and enter it in the ', b('Password'), ' box.')),
+    ),
+  ))
+
+  await page('Sending with Zoho Mail', email, doc(
+    p('Zoho Mail is popular with small businesses that want email on their own domain, such as ', c('you@yourcompany.com'), '. Tesria can send through it, on a paid plan: Zoho’s free plan no longer lets new accounts use other programs to send or read mail.'),
+
+    h(2, 'Before you start'),
+    ul(
+      li(p(b('A Zoho Mail account on a paid plan'), ' (or a free account old enough to have kept that access).')),
+      li(p(b('Which server is yours.'), ' Zoho has two, and data centers in several regions, each with its own address. The exact one is in Zoho Mail’s settings, under ', b('Mail Accounts'), ', in the IMAP and SMTP details. For most accounts on the main data center it is:'),
+        ul(
+          li(p(c('smtppro.zoho.com'), ': an organization’s account on its own domain (a paid plan).')),
+          li(p(c('smtp.zoho.com'), ': a personal account.')),
+        )),
+    ),
+    p('In Europe the address ends in ', c('.eu'), ' instead of ', c('.com'), ', in India in ', c('.in'), ', and so on. Use the one Zoho shows you.'),
+
+    step(1, 'Make an application-specific password, if you use two-factor sign-in'),
+    p('With two-factor sign-in on your Zoho account (recommended), other programs need a password of their own. In ', c('accounts.zoho.com'), ', choose ', b('Security'), ', then ', b('App Passwords'), ', then ', b('Generate New Password'), '. Name it ', c('Tesria'), ' and copy it: Zoho shows it only once. Without two-factor sign-in, your Zoho password is what goes in the ', b('Password'), ' box.'),
+
+    step(2, 'Fill in Tesria’s email settings'),
+    fillIn(),
+    settingsTable('smtppro.zoho.com', '465', 'SSL on connect', 'Your full Zoho email address', 'The application-specific password', 'The same address, or one of its aliases'),
+    p('Use your own server’s address from Zoho’s settings in place of ', c('smtppro.zoho.com'), ' if it differs. Port 587 with STARTTLS works too.'),
+
+    step(3, 'Turn it on and send a test'),
+    ...testIt(),
+
+    h(2, 'If the test fails'),
+    ul(
+      li(p(b('“Relaying Disallowed”'), ' means the From address does not belong to the account signing in. Use the account’s own address, or one of its aliases.')),
+      li(p(b('The sign-in is refused.'), ' Check the server address against Zoho’s settings (the region matters), and that the password is the application-specific one if two-factor sign-in is on.')),
+    ),
+  ))
+
+  await page('Sending with Fastmail', email, doc(
+    p('Fastmail is a paid email service, often with your own domain. Tesria sends through it with an ', b('app password'), ': Fastmail never accepts your everyday password from another program, and an app password can be limited to email and deleted whenever you like.'),
+
+    h(2, 'Before you start'),
+    p('A Fastmail plan above ', b('Basic'), '. The Basic plan does not include sending from other programs, so it cannot make app passwords.'),
+
+    step(1, 'Make an app password'),
+    ol(
+      li(p('In Fastmail, open ', b('Settings'), ', then ', b('Privacy & Security'), '.')),
+      li(p('Under ', b('Connected apps & API tokens'), ', choose ', b('Manage app passwords and access'), ', then ', b('New app password'), '.')),
+      li(p('Name it ', c('Tesria'), ', leave the access as mail (the default covers it), and copy the password it shows.')),
+    ),
+
+    step(2, 'Fill in Tesria’s email settings'),
+    fillIn(),
+    settingsTable('smtp.fastmail.com', '465', 'SSL on connect', 'Your full Fastmail address', 'The app password', 'Your Fastmail address, or another address on your account'),
+    p('Port 587 with STARTTLS works too.'),
+
+    step(3, 'Turn it on and send a test'),
+    ...testIt(),
+
+    h(2, 'If the test fails'),
+    ul(
+      li(p(b('The sign-in is refused.'), ' Check that the username includes the domain, and that the password is an app password. Your Fastmail password, and its two-step code, do not work here.')),
+    ),
+  ))
+
+  await page('Sending with Proton Mail', email, doc(
+    p('Proton Mail can send Tesria’s email, with two conditions: a ', b('paid Proton plan'), ', and an address on ', b('your own domain'), ', such as ', c('wiki@yourcompany.com'), '. A plain ', c('@proton.me'), ' address cannot be used by other programs, on any plan.'),
+    p('Instead of a password, Proton gives you an ', b('SMTP token'), ': a long code that lets one program send from one address. Your Proton password never goes into Tesria.'),
+    panel('info', p(b('What about Proton’s encryption?'), ' Email Tesria sends through Proton is delivered like any other email. Proton’s end-to-end encryption applies between Proton users, not to messages sent through a program this way.')),
+
+    h(2, 'Before you start'),
+    ul(
+      li(p(b('A paid Proton Mail plan'), ' with your own domain added to it and verified.')),
+      li(p(b('An address on that domain'), ' for Tesria to send from.')),
+    ),
+
+    step(1, 'Make an SMTP token'),
+    ol(
+      li(p('In Proton Mail, open ', b('Settings'), ', then ', b('All settings'), ', then ', b('IMAP/SMTP'), '.')),
+      li(p('Under ', b('SMTP tokens'), ', choose ', b('Generate token'), ', pick the address Tesria will send from, and name it ', c('Tesria'), '.')),
+      li(p('Copy the token Proton shows.')),
+    ),
+
+    step(2, 'Fill in Tesria’s email settings'),
+    fillIn(),
+    settingsTable('smtp.protonmail.ch', '587', 'STARTTLS', 'The address the token is for', 'The SMTP token', 'The same address'),
+
+    step(3, 'Turn it on and send a test'),
+    ...testIt(),
+
+    h(2, 'If the test fails'),
+    ul(
+      li(p(b('The sign-in is refused.'), ' Check that the username is exactly the address you made the token for, and that it is on your own domain. Your Proton password does not work here.')),
+    ),
+  ))
+
   await page('Email (SMTP)', root, doc(
     p('Tesria sends a few kinds of email: password reset links, invitations, security alerts to administrators, and notifications to people who ask for them. To send them it needs an ', b('SMTP server'), ', the kind of mail server programs send through. Your organization’s mail server works, and so do sending services such as Amazon SES, Postmark or Mailgun.'),
     p('Email is optional. Without it, an administrator resets a forgotten password by giving the person a one-time link (see ', pageLink('Resetting a password'), '), and alerts wait in the bell for an administrator to see.'),
-    panel('info', p(b('No mail server of your own?'), ' A Gmail account made for the wiki works well for a small team: see ', pageLink('Sending with Gmail'), '. For Microsoft accounts, see ', pageLink('Sending with Outlook or Microsoft 365'), ' first, because a personal Outlook.com account cannot be used.')),
+    panel('info', p(b('No mail server of your own?'), ' The email you already have may do. A Gmail account made for the wiki works well for a small team: see ', pageLink('Sending with Gmail'), '. For Microsoft accounts, see ', pageLink('Sending with Outlook or Microsoft 365'), ' first, because a personal Outlook.com account cannot be used. There are also pages for ', pageLink('Sending with Apple iCloud Mail', 'iCloud Mail'), ', ', pageLink('Sending with Zoho Mail', 'Zoho Mail'), ', ', pageLink('Sending with Fastmail', 'Fastmail'), ' and ', pageLink('Sending with Proton Mail', 'Proton Mail'), '.')),
 
     h(2, 'Before you start'),
     p('Have these from your email provider or IT department. They are usually on a help page about “SMTP” or “sending from an app”:'),

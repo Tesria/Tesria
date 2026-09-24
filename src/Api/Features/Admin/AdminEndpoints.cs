@@ -2,6 +2,7 @@ using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Audit;
 using Tesria.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure.Email;
 using Tesria.Api.Infrastructure.Permissions;
 using Tesria.Api.Infrastructure.Settings;
 using Tesria.Api.Infrastructure.Security;
@@ -32,8 +33,16 @@ public static class AdminEndpoints
     /// </summary>
     public record IssuedResetResponse(string Token, string Path, DateTimeOffset ExpiresAt);
 
-    public record CreateInviteRequest(string? Email, int? ExpiresInDays);
-    public record IssuedInviteResponse(string Token, string Path, string? Email, DateTimeOffset ExpiresAt);
+    /// <summary>
+    /// <c>SendEmail</c> emails the link to <c>Email</c>, with <c>Message</c>
+    /// (the inviter's own words, the default when empty) above the link.
+    /// </summary>
+    public record CreateInviteRequest(string? Email, int? ExpiresInDays, bool? SendEmail = null, string? Message = null);
+    /// <summary><c>Emailed</c> and <c>EmailError</c> say what happened to an email that was asked for.</summary>
+    public record IssuedInviteResponse(
+        string Token, string Path, string? Email, DateTimeOffset ExpiresAt, bool Emailed = false, string? EmailError = null);
+    /// <summary>What the invite form needs to offer an email: whether the server sends, and the words to start from.</summary>
+    public record InviteEmailResponse(bool Enabled, string Subject, string Message);
     /// <summary><c>UsedByName</c>: the account the invite created, so the list says who, not only when.</summary>
     public record InviteResponse(
         Guid Id, string? Email, DateTimeOffset ExpiresAt, DateTimeOffset? UsedAt, DateTimeOffset CreatedAt,
@@ -161,6 +170,7 @@ public static class AdminEndpoints
         group.MapPut("/spaces/{key}/public", SetSpacePublic).RequirePermission(InstancePermissions.SpacesPublish);
         group.MapGet("/invites", ListInvites).RequirePermission(InstancePermissions.InvitesManage);
         group.MapPost("/invites", CreateInvite).RequirePermission(InstancePermissions.InvitesCreate);
+        group.MapGet("/invites/email", InviteEmail).RequirePermission(InstancePermissions.InvitesCreate);
         group.MapDelete("/invites/{id:guid}", RevokeInvite).RequirePermission(InstancePermissions.InvitesManage);
         group.MapPost("/audit/verify", VerifyAuditChain).RequirePermission(InstancePermissions.AuditView);
         group.MapPost("/users/{userId:guid}/unlock", Unlock).RequirePermission(InstancePermissions.UsersManage);
@@ -531,7 +541,8 @@ public static class AdminEndpoints
     /// </summary>
     private static async Task<IResult> CreateInvite(
         CreateInviteRequest req, AppDbContext db, CurrentUser current,
-        IAuditLogger audit, IInviteService invites)
+        IAuditLogger audit, IInviteService invites, ISiteSettingsService settings,
+        IEmailSender sender, IConfiguration config, CancellationToken ct)
     {
         var days = req.ExpiresInDays ?? (int)InviteService.DefaultLifetime.TotalDays;
         if (days < 1 || days > 90)
@@ -541,15 +552,62 @@ public static class AdminEndpoints
             });
 
         var email = string.IsNullOrWhiteSpace(req.Email) ? null : req.Email.Trim().ToLowerInvariant();
-        if (email is not null && await db.Users.AnyAsync(u => u.Email == email))
+        var send = req.SendEmail == true;
+        if (send && email is null)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["email"] = ["Add the address to email the invite to."],
+            });
+        var message = req.Message?.Trim();
+        if (message is { Length: > MaxInviteMessage })
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["message"] = [$"Keep the message under {MaxInviteMessage} characters."],
+            });
+        if (email is not null && await db.Users.AnyAsync(u => u.Email == email, ct))
             return Results.Conflict(new { message = "An account with this email already exists." });
 
         var token = invites.Issue(current.RequireId(), email, TimeSpan.FromDays(days));
-        audit.Record("invite.created", "instance", null, new { Email = email, Days = days });
-        await db.SaveChangesAsync();
+        audit.Record("invite.created", "instance", null, new { Email = email, Days = days, Emailed = send });
+        await db.SaveChangesAsync(ct);
 
         var expiresAt = DateTimeOffset.UtcNow.AddDays(days);
-        return Results.Ok(new IssuedInviteResponse(token, $"/register?invite={token}", email, expiresAt));
+        var issued = new IssuedInviteResponse(token, $"/register?invite={token}", email, expiresAt);
+        if (!send) return Results.Ok(issued);
+
+        // The token exists in plain text only now, so this is the one moment
+        // it can be emailed. A failure leaves the invite in place: the page
+        // still shows the link to send some other way, and says why.
+        var s = await settings.GetAsync(ct);
+        var (subject, defaultMessage) = await InviteEmailTextAsync(db, current, s, ct);
+        var link = $"{SiteUrl.Resolve(s, config)}/register?invite={token}";
+        var result = await sender.SendAsync(new EmailMessage(email!, subject,
+            (string.IsNullOrEmpty(message) ? defaultMessage : message) + "\n\n" +
+            $"Create your account here. The link works once, for {email}, and expires on " +
+            $"{expiresAt.ToString("MMMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture)}:\n{link}"), ct);
+        return Results.Ok(issued with { Emailed = result.Sent, EmailError = result.Error });
+    }
+
+    /// <summary>Long enough for a real note, short enough that nobody pastes a document into an invite.</summary>
+    public const int MaxInviteMessage = 2000;
+
+    private static async Task<IResult> InviteEmail(
+        AppDbContext db, CurrentUser current, ISiteSettingsService settings, CancellationToken ct)
+    {
+        var s = await settings.GetAsync(ct);
+        var (subject, message) = await InviteEmailTextAsync(db, current, s, ct);
+        return Results.Ok(new InviteEmailResponse(s.EmailEnabled, subject, message));
+    }
+
+    /// <summary>The subject, and the message an inviter starts from; the link is added below it when it is sent.</summary>
+    private static async Task<(string Subject, string Message)> InviteEmailTextAsync(
+        AppDbContext db, CurrentUser current, Domain.SiteSettings s, CancellationToken ct)
+    {
+        var id = current.RequireId();
+        var name = await db.Users.Where(u => u.Id == id).Select(u => u.DisplayName).FirstOrDefaultAsync(ct) ?? "Someone";
+        return ($"[{s.InstanceName}] {name} invited you to {s.InstanceName}",
+            $"Hi,\n\n{name} has invited you to join {s.InstanceName}, our wiki, where we keep our documentation and notes " +
+            "and work on them together.\n\nUse the link below to create your account. It only takes a minute.");
     }
 
     private static async Task<IResult> RevokeInvite(
