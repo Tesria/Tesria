@@ -78,6 +78,9 @@ services:
     build:
       context: .
       dockerfile: deploy/Dockerfile
+      # Set by the release pipeline (dev-plan 16.1); empty for a local build.
+      args:
+        TESRIA_VERSION: ${TESRIA_VERSION:-}
     restart: unless-stopped
     depends_on:
       db:

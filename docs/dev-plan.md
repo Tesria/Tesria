@@ -5342,7 +5342,7 @@ a field means raises it, and a reader refuses a format newer than it knows.
 There is no upgrade path for an older one yet, because there has only
 ever been one. The database has EF Core migrations, which run at startup.
 
-### 16.1 One version number, set by the release · `M` · Model: Opus 5.5
+### 16.1 One version number, set by the release · `M` · Model: Opus 5.5 · ✅ **shipped 2026-09-24**
 
 - **Semantic versioning, starting at 0.5.0** (the owner's suggestion).
   While the major number is 0, a minor release (0.6) may change behavior
@@ -5359,7 +5359,7 @@ ever been one. The database has EF Core migrations, which run at startup.
 - **Release notes**: the Support site's Release notes page gains an entry
   per release, from the CHANGELOG's dated entries grouped by version.
 
-### 16.2 Docs that say which version they describe · `M` · Model: Opus 5.5
+### 16.2 Docs that say which version they describe · `M` · Model: Opus 5.5 · ✅ **shipped 2026-09-24**
 
 - **Every Support page ends with a small version table**: *Applies to*
   (such as "Tesria 0.8 and later"), *Last updated* (a date), and a short
@@ -5376,7 +5376,7 @@ ever been one. The database has EF Core migrations, which run at startup.
   to read the docs for the version they run. A version picker on the site
   is possible later, and not planned.
 
-### 16.3 Packs that keep working across versions · `M` · Model: Opus 5.5
+### 16.3 Packs that keep working across versions · `M` · Model: Opus 5.5 · ✅ **shipped 2026-09-24**
 
 - **The compatibility promise**: a pack exported by any release from 0.5
   on imports into every later release. (Packs from before 0.5 are format 1
@@ -5406,6 +5406,35 @@ ever been one. The database has EF Core migrations, which run at startup.
 (suggested by the owner); whether the Docker `latest` tag follows every
 release or only non-prerelease ones; and whether the site keeps a copy of
 older versions' docs online or only in the repository.
+
+**As built (2026-09-24, Opus 5.5, overnight at the owner's request).** The
+owner chose 0.5.0 and "add the workflow, push v0.5.0". The other two
+decisions are still open and neither blocks anything: the Docker tag
+belongs to 14.2, and older docs live in the repository for now.
+Differences from the plan above:
+- **The version lives in `src/Api/Api.csproj`** (`0.5.0`, informational
+  `0.5.0-dev`), and the tag stamps it: `release.yml` passes
+  `TESRIA_VERSION` to the Docker build, which sets `InformationalVersion`.
+  A local Docker build says `0.5.0-dev` without `+<commit>`, because the
+  build context has no `.git`. The web app's `package.json` says 0.5.0 but
+  nothing reads it except the Support publisher (for "Applies to").
+- **Shown on** the admin dashboard (a "Tesria version" card with the
+  version upgraded from), `/api/health`, `/api/instance`, the OpenAPI
+  document, exported sites' footers and packs' `generator`. Not in a footer
+  of Admin: the dashboard card is one click away and says more.
+- **The release workflow builds the image but publishes none**: that is
+  14.2. Its release notes are the CHANGELOG's section, cut to the
+  highlights when longer than GitHub allows (0.5.0 is the whole history).
+- **16.2's registry** is `scripts/support/page-versions.json`, keyed by
+  "Parent / Title". A section passes `since` to move "Applies to" and
+  `changed` for the "Changes" line; otherwise a change to the words
+  says "Revised." The table's labels are *Applies to*, *Updated* and
+  *Changes*, shorter than planned so they fit a phone. The first time a
+  page is seen, "Updated" is the day
+  its current words were published, from the page itself.
+- **16.3's fixture** is `tests/Api.Tests/Packs/tesria-0.5.0-format-1.zip`,
+  made by a 0.5.0 build from synthetic content. `PackUpgrades.All` is
+  empty; the tests prove the path with a pretend format 2.
 
 ## Phase 17: Developer docs on the Support site
 
@@ -5689,7 +5718,7 @@ job table may already fit), and what canceling does.
 15. **15.1** Access → **15.2** Editor → **15.3** Pages and collaboration → **15.4** Confirmations (asked for 2026-09-23). Before 10.5's step 7, so the Support site documents them and its pictures show them.
 15a. **15.5** Trust this device → **15.6** the Support rewrite, pilot pages first (asked for 2026-09-23). Before 14, because the Support site is what goes public with the images.
 16. **14.1** Pre-release audit → **14.2** Images on Docker Hub (asked for 2026-09-23). After 10.5, so the Support site and the images go public together.
-17. **16.1** One version number → **16.2** Versioned docs → **16.3** Pack migrations (asked for 2026-09-24). 16.1 alongside 14.2, since both are the same GitHub Actions release pipeline; 16.2 before the Support site is published at tesria.com; 16.3 before the first release that changes the pack format.
+17. **16.1** One version number → **16.2** Versioned docs → **16.3** Pack migrations (asked for 2026-09-24; all three shipped 2026-09-24 with the 0.5.0 release). 16.1 alongside 14.2, since both are the same GitHub Actions release pipeline; 16.2 before the Support site is published at tesria.com; 16.3 before the first release that changes the pack format.
 18. **17** Developer docs on the Support site (asked for 2026-09-24), after Phase 16 so every page carries its version table from the start.
 19. **18.1** Provider presets and **18.4** the app-password and sending-service pages (asked for 2026-09-24): small and independent, so any time; best before 14, since they are what a new owner meets in the setup wizard. Then **18.2** Sign in with Microsoft → **18.3** Sign in with Google, before 14 if the owner wants the public release to work with a personal Outlook.com account.
 20. **19.1** Tailscale sidecar → **19.2** its Support pages (asked for 2026-09-24). Independent of everything else; best after 14.2, so the compose file it extends is the published one.

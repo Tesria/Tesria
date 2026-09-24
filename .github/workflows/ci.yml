@@ -1,0 +1,51 @@
+# The checks every change must pass (dev-plan 16): the backend tests, and
+# the web app's build, lint and tests. The same jobs gate a release
+# (release.yml). Changes to documentation alone do not run them.
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['docs/**', '**/*.md', 'support/**', 'scripts/support/**']
+  pull_request:
+    paths-ignore: ['docs/**', '**/*.md', 'support/**', 'scripts/support/**']
+  workflow_call:
+
+permissions:
+  contents: read
+
+# A newer push to the same branch makes an older run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet test tests/Api.Tests --nologo
+
+  web:
+    name: Web build, lint and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: src/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/web/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm run lint
+      - run: npm test

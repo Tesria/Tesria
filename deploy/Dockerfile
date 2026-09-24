@@ -40,7 +40,12 @@ COPY deploy/scripts/trust-ca.sh deploy/scripts/trust-ca.ps1 deploy/scripts/
 # Embed the built SPA so `dotnet publish` includes it in the image.
 RUN rm -rf src/Api/wwwroot && mkdir -p src/Api/wwwroot
 COPY --from=web /web/dist/ src/Api/wwwroot/
-RUN dotnet publish src/Api/Api.csproj -c Release -o /app -r "$(cat /tmp/rid)" --self-contained false /p:UseAppHost=false
+# The release version (dev-plan 16.1): GitHub Actions passes the tag's
+# number, such as 0.5.0. Without it the build keeps Api.csproj's
+# "<next release>-dev", so a local image can never pass for a release.
+ARG TESRIA_VERSION=
+RUN dotnet publish src/Api/Api.csproj -c Release -o /app -r "$(cat /tmp/rid)" --self-contained false /p:UseAppHost=false \
+    ${TESRIA_VERSION:+/p:InformationalVersion=$TESRIA_VERSION}
 
 # --- Stage 3: runtime -------------------------------------------------------
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime

@@ -250,8 +250,21 @@ public static class SiteExportEndpoints
         return css is null ? "" : await System.IO.File.ReadAllTextAsync(css, ct);
     }
 
-    private static string Footer(string instanceName) =>
-        $"""<footer class="site-foot">Exported from {SiteExport.Escape(instanceName)} on {DateTimeOffset.UtcNow:d MMMM yyyy}.</footer>""";
+    /// <summary>
+    /// The line at the bottom of every page: where and when, and which Tesria
+    /// (dev-plan 16.1), with the date the US way. An instance still called
+    /// Tesria is not named twice.
+    /// </summary>
+    internal static string Footer(string instanceName, DateTimeOffset? at = null)
+    {
+        var date = (at ?? DateTimeOffset.UtcNow).ToString("MMMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture);
+        var version = $"Tesria {Infrastructure.Versioning.AppVersion.Current}";
+        var text = instanceName == "Tesria"
+            ? $"Exported on {date} from {version}."
+            : $"Exported from {instanceName} on {date}, with {version}.";
+        var escaped = SiteExport.Escape(text);
+        return $"""<footer class="site-foot" title="{escaped}">{escaped}</footer>""";
+    }
 
     /// <summary>
     /// Wraps a captured page in the application's chrome: the top bar, the

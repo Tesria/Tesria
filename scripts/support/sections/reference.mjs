@@ -14,11 +14,33 @@
 // (AdminSettingsPage), the editor's messages (CollabStatus, PageEditor), and
 // the live content kinds registered in Program.cs (twelve).
 //
-// Left out as unconfirmed: team sizes a server suits, and any version
-// number but the one the app reports (0.2). Versioning is planned (dev-plan
-// Phase 16) and not described.
+// Left out as unconfirmed: team sizes a server suits.
+//
+// Release notes checked 2026-09-24 against docs/CHANGELOG.md's 0.5.0 section,
+// AppVersion (where the version is shown), ApiTokenEndpoints (30, 90, 365
+// days or never; 90 by default) and InstancePermissions (the two new rights).
 
 export const shots = []
+
+/**
+ * The release notes page for the builds before 0.5 was called "Tesria 0.2",
+ * a number that was never released. It becomes the 0.5 page rather than
+ * sitting beside it.
+ */
+export async function prepare({ author }) {
+  const space = await author.call('GET', '/api/spaces/SUPPORT')
+  const tree = await author.call('GET', `/api/pages/tree?spaceId=${space.id}`)
+  const notes = tree.find((n) => n.title === 'Release notes')
+  const old = notes?.children?.find((n) => n.title === 'Tesria 0.2')
+  if (!old || notes.children.some((n) => n.title === 'Tesria 0.5')) return {}
+  const current = await author.call('GET', `/api/pages/${old.id}`)
+  await author.call('PUT', `/api/pages/${old.id}`, {
+    title: 'Tesria 0.5', contentJson: current.contentJson, changeComment: 'Renamed for the 0.5 release',
+    baseVersion: current.currentVersionNumber,
+  })
+  console.log('  renamed Tesria 0.2 to Tesria 0.5')
+  return {}
+}
 
 export async function build({ top, page, doc, p, h, text, bold, italic, code, ul, ol, li, panel, codeBlock, live, expand, toc, pageLink }) {
   const b = (t) => text(t, bold)
@@ -341,33 +363,89 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
   const notes = top['Release notes']
   await page('Release notes', null, doc(
     p('What each version of Tesria brought. Read these before you upgrade, to know what will be different afterwards; ', pageLink('Upgrading'), ' explains the upgrade itself.'),
-    p('To see which version you are running, open ', c('https://your-server/api/health'), ' (', c('your-server'), ' being your Tesria’s address). The answer includes ', c('"version"'), '.'),
+    p('To see which version you are running, open ', b('Administration'), ', then ', b('Dashboard'), ': the ', b('Tesria version'), ' card shows it, with the version you upgraded from. Without an account, open ', c('https://your-server/api/health'), ' (', c('your-server'), ' being your Tesria’s address); the answer includes ', c('"version"'), '.'),
+    p('Versions are numbered like ', c('0.5.0'), ': the last number changes for fixes, the middle one for new features. Every page on this site ends with a table saying which version it applies to.'),
     live('children', { depth: '1', sort: 'position' }),
   ))
-  await page('Tesria 0.2', notes, doc(
-    p('Tesria 0.2 is the version this site describes, and the one ', c('/api/health'), ' reports. Here is what it includes, with where to read more.'),
-    h(2, 'Writing'),
+  await page('Tesria 0.5', notes, doc(
+    p('Tesria 0.5, released September 24, 2026, is the first numbered release. It includes everything below. If you ran a build from before it, read ', i('Before you upgrade'), ' first: a few things now work differently.'),
+    toc(),
+
+    h(2, 'Before you upgrade'),
+    p('These only matter if you already run Tesria from a build made before 0.5.'),
+    ul(
+      li(p(b('API tokens now expire.'), ' A token made before 0.5 expires 90 days after the upgrade. A week before, its owner is told in the app and by email, and can make a new one. See ', pageLink('API tokens'), '.')),
+      li(p(b('A token can no longer manage its account.'), ' Scripts using a token cannot make or revoke tokens, or change a password, sessions or two-factor settings. Do those in the browser.')),
+      li(p(b('Administrators may need two-factor sign-in.'), ' If your Tesria requires it for administrators, an administrator who has not turned it on has no administration rights until they do. Everything else keeps working for them.')),
+      li(p(b('Two new rights.'), ' Resetting another administrator’s password or two-factor is for the Owner only, unless the Owner gives the right to administrators. Saving a template for the whole wiki needs its own right, which administrators have. See ', pageLink('Roles'), '.')),
+      li(p(b('Other people’s email addresses'), ' are shown only to people who may view users, and to each person for their own account.')),
+    ),
+
+    h(2, 'New in 0.5'),
+    h(3, 'Email'),
+    ul(
+      li(p(b('Send email by signing in'), ' to Gmail or Outlook, instead of typing a mail server’s password, with guides for iCloud, Zoho, Fastmail and Proton as well. See ', pageLink('Email (SMTP)', 'Email'), '.')),
+      li(p(b('Invite people by email,'), ' with a message you can edit before it is sent.')),
+    ),
+    h(3, 'Reaching Tesria'),
+    ul(
+      li(p(b('From anywhere, with Tailscale.'), ' An optional part joins your tailnet and gives Tesria a private address with a real certificate, reachable only from your own devices. See ', pageLink('Reaching Tesria from anywhere with Tailscale'), '.')),
+      li(p(b('Trust this device:'), ' a page that walks any computer or phone through trusting a server on your own network, so the browser stops warning.')),
+    ),
+    h(3, 'Security'),
+    ul(
+      li(p(b('API tokens expire,'), ' after 30 days, 90 (the default), a year, or never, chosen when you make one.')),
+      li(p(b('Tighter limits on what a token can reach:'), ' a token for showing one page can reach only that page.')),
+      li(p(b('Drafts and the trash stay private'), ' everywhere: comments, history, attachments and labels of a draft are seen only by the people who may see the draft.')),
+      li(p(b('A space you cannot see answers “not found”'), ' everywhere, not just on its pages.')),
+      li(p(b('Security alerts and admin notifications'), ' are explained, with what to do about each. See ', pageLink('Security (administration)', 'Security'), '.')),
+    ),
+    h(3, 'Backups'),
+    ul(
+      li(p(b('How far back each copy can take you,'), ' and diagrams of how backups and offsite copies work. See ', pageLink('How backups work'), '.')),
+    ),
+    h(3, 'Versions'),
+    ul(
+      li(p(b('One version number,'), ' shown on the dashboard, in the API and on exported sites. Upgrading records where you came from in the audit log.')),
+      li(p(b('Wiki packs keep working.'), ' A pack made by 0.5 or later imports into every later version, and the import says which version made it. See ', pageLink('Wiki packs'), '.')),
+    ),
+    h(3, 'The page tree and pages'),
+    ul(
+      li(p(b('Numbered or bulleted trees,'), ' and a filter to find a page in a long tree.')),
+      li(p(b('An emoji before a page’s title.'))),
+    ),
+    h(3, 'Fixes'),
+    ul(
+      li(p('A PDF in a file block downloaded when its page was opened. It now shows in the page.')),
+      li(p('The list of your sessions grew without end. It shows the five most recently ended.')),
+      li(p('The setup wizard said a brand new Tesria had been upgraded.')),
+      li(p('An invite used while registration was open still said “Unused”.')),
+      li(p('New accounts could skip saving their recovery codes.')),
+    ),
+
+    h(2, 'Everything in 0.5'),
+    h(3, 'Writing'),
     ul(
       li(p('A block editor with a slash menu and a wide range of elements: panels, layouts, tables, code, diagrams, math, charts, galleries, video, animations, embeds and more. See ', pageLink('Elements'), '.')),
       li(p('Twelve kinds of live content, from the pages under this one to a report of open tasks. See ', pageLink('Live content'), '.')),
       li(p('Templates for pages that should start alike. See ', pageLink('Templates'), '.')),
     ),
-    h(2, 'Working together'),
+    h(3, 'Working together'),
     ul(
       li(p('Several people editing a page at once, with changes from scripts and assistants shown as tracked changes to accept or reject.')),
       li(p('Comments on a page or on a few words of it, mentions, watching, and notifications in the app and by email.')),
       li(p('A page’s full history, with any version brought back in one click.')),
     ),
-    h(2, 'Organizing and sharing'),
+    h(3, 'Organizing and sharing'),
     ul(
       li(p('Spaces with permissions for people and groups, restrictions on single pages, labels, and a trash.')),
       li(p('Full-text search across everything you can see.')),
       li(p('Exports as Markdown, HTML and PDF, a whole space as a website or a wiki pack, and public reading for the spaces you choose.')),
       li(p('A REST API with read-only and full tokens, webhooks, and a built-in MCP server for AI assistants.')),
     ),
-    h(2, 'Running it'),
+    h(3, 'Running it'),
     ul(
-      li(p('One Docker Compose file, with HTTPS set up by itself, and a ', b('Trust this device'), ' guide for servers on your own network.')),
+      li(p('One Docker Compose file, with HTTPS set up by itself.')),
       li(p('A setup wizard, a guided tour, and tips for new people.')),
       li(p('Backups from the first start, with point-in-time recovery, restore and undo from the browser, offsite copies to the cloud, a network drive or a removable drive, and restore drills that prove they work.')),
       li(p('Roles with rights you can change, security alerts, rate limits and lockouts, two-factor sign-in, single sign-on, and an audit log that shows if it has been tampered with.')),

@@ -318,6 +318,13 @@ public class SiteSettings
     /// </summary>
     public string? SetupProgressJson { get; set; }
 
+    // --- Versions (dev-plan 16.1).
+    /// <summary>The Tesria that last started against this database.</summary>
+    public string? RunningVersion { get; set; }
+    /// <summary>The one before it, when it changed.</summary>
+    public string? PreviousVersion { get; set; }
+    public DateTimeOffset? VersionChangedAt { get; set; }
+
     public DateTimeOffset UpdatedAt { get; set; }
     public Guid? UpdatedById { get; set; }
 }

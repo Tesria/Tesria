@@ -501,6 +501,11 @@ using (var scope = app.Services.CreateScope())
     await Tesria.Api.Infrastructure.Permissions.BuiltInGroups.EnsureAsync(
         db, scope.ServiceProvider.GetRequiredService<IAuditLogger>(), startupLog);
 
+    // Which version is running, and an audit entry when that changed (dev-plan 16.1).
+    await Tesria.Api.Infrastructure.Versioning.VersionSeed.EnsureAsync(
+        scope.ServiceProvider.GetRequiredService<ISiteSettingsService>(),
+        scope.ServiceProvider.GetRequiredService<IAuditLogger>(), db, startupLog);
+
     // The first start after dev-plan 10.1 gives an existing instance its owner.
     await Tesria.Api.Infrastructure.Auth.OwnerSeed.EnsureAsync(
         db,

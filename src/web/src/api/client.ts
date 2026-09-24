@@ -178,6 +178,8 @@ export type ImportedPack = {
   spaceRestrictions: number
   pageRestrictions: number
   authors: string[]
+  /** Which Tesria made the pack, such as "Tesria 0.5.0" (dev-plan 16.3). */
+  madeWith: string | null
 }
 
 export type Space = {
@@ -713,6 +715,8 @@ export type Dashboard = {
   }
   /** Dev-plan 9.1: one entry per backup agent. */
   health: { backups: BackupHealth[] }
+  /** Which Tesria is running, and what it replaced (dev-plan 16.1). */
+  version: { current: string; previous: string | null; changedAt: string | null } | null
 }
 
 /** Backups (dev-plan 9.1). The two sidecars: pg_dump plus uploads, and pgBackRest. */

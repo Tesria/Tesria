@@ -24,7 +24,9 @@ public static class InstanceEndpoints
         /// The server makes its own certificate, so browsers warn until each
         /// device trusts it; the sign-in page then links to /trust (15.5).
         /// </summary>
-        bool OwnCertificate = false);
+        bool OwnCertificate = false,
+        /// <summary>Which Tesria this is (dev-plan 16.1), as /api/health says too.</summary>
+        string? Version = null);
 
     /// <summary>
     /// The branding the SPA draws (dev-plan 13.1). Anonymous because the
@@ -66,6 +68,7 @@ public static class InstanceEndpoints
             PublicReading: publicReading,
             AllowPublicRegistration: s.AllowPublicRegistration,
             Branding: BrandingOf(BrandView.From(s)),
-            OwnCertificate: Trust.TrustEndpoints.OwnCertificate(config)));
+            OwnCertificate: Trust.TrustEndpoints.OwnCertificate(config),
+            Version: Infrastructure.Versioning.AppVersion.Current));
     }
 }
