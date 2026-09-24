@@ -13,4 +13,4 @@ export const TESRIA_SOURCE = 'https://github.com/Tesria/Tesria'
  * Supporting the project (Administration, About). Tesria is free; this is
  * for people who want to say thanks.
  */
-export const TESRIA_DONATE = 'https://www.patreon.com/c/BrianInTheLoop'
+export const TESRIA_DONATE = 'https://patreon.com/BrianInTheLoop'
