@@ -8,6 +8,7 @@ type Crumb = { label: string; to?: string }
 /** The settings tabs, by their path segment. Keep in step with SpaceSettingsLayout. */
 const SETTINGS_TAB_LABELS: Record<string, string> = {
   permissions: 'Permissions',
+  templates: 'Templates',
   webhooks: 'Webhooks',
   trash: 'Trash',
 }

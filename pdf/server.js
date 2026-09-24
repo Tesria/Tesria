@@ -207,7 +207,11 @@ async function renderHtml(url, token, { inlineAssets = true } = {}) {
       ).forEach((n) => n.remove())
       doc.querySelectorAll('[contenteditable]').forEach((n) => n.removeAttribute('contenteditable'))
       // ProseMirror's own editing affordances mean nothing in a file.
-      doc.querySelectorAll('.ProseMirror-gapcursor, .column-resize-handle, .tip').forEach((n) => n.remove())
+      doc.querySelectorAll('.ProseMirror-gapcursor, .column-resize-handle, .tip, .dynamic-block__refresh').forEach((n) => n.remove())
+      // The editor selects the first node when it is an atom, and a selected
+      // node is outlined. Nobody selected anything in a file.
+      doc.querySelectorAll('.ProseMirror-selectednode').forEach((n) => n.classList.remove('ProseMirror-selectednode'))
+      doc.querySelectorAll('.dynamic-block.is-selected').forEach((n) => n.classList.remove('is-selected'))
       doc.documentElement.removeAttribute('data-export-ready')
 
       const style = doc.createElement('style')

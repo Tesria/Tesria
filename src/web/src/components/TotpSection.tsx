@@ -66,7 +66,7 @@ export function TotpSection() {
       setPassword('')
       setCode('')
       await refresh()
-    }, 'Two-factor sign-in is off.')
+    }, 'Two-factor sign-in is off. Other devices have been signed out.')
   }
 
   if (!user?.hasPassword) {
@@ -84,7 +84,9 @@ export function TotpSection() {
             <strong>On.</strong> Signing in asks for a code from your authenticator app.
             Your recovery codes work in its place if you lose the device.
           </p>
-          {user.totpRequired === false && (
+          {user.totpMandatory ? (
+            <p className="muted small">Administrators on this instance must keep two-factor sign-in on.</p>
+          ) : (
             <>
               <label>
                 Current password

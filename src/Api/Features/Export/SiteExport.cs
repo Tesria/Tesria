@@ -16,7 +16,7 @@ public static partial class SiteExport
 {
     /// <summary>One page's place in the exported site.</summary>
     /// <param name="Path">Directory path from the site root, e.g. <c>getting-started/install</c>.</param>
-    public record Placed(Guid Id, string Title, string Path, int Depth, Guid? ParentId);
+    public record Placed(Guid Id, string Title, string Path, int Depth, Guid? ParentId, string? Emoji = null);
 
     [GeneratedRegex("[^a-z0-9]+")]
     private static partial Regex NotSlug();
@@ -55,7 +55,7 @@ public static partial class SiteExport
                 for (var n = 2; !used.Add(unique); n++) unique = $"{slug}-{n}";
 
                 var path = prefix.Length == 0 ? unique : $"{prefix}/{unique}";
-                placed.Add(new Placed(node.Id, node.Title, path, depth, parentId));
+                placed.Add(new Placed(node.Id, node.Title, path, depth, parentId, node.Emoji));
                 if (node.Children.Count > 0) Walk(node.Children, path, depth + 1, node.Id);
             }
         }
@@ -65,7 +65,7 @@ public static partial class SiteExport
     }
 
     /// <summary>A page in the tree, as this file needs it.</summary>
-    public record PageNode(Guid Id, string Title, IReadOnlyList<PageNode> Children);
+    public record PageNode(Guid Id, string Title, IReadOnlyList<PageNode> Children, string? Emoji = null);
 
     /// <summary>
     /// Rewrites what the app's own URLs mean once the pages are files.
@@ -81,6 +81,8 @@ public static partial class SiteExport
     ///   here.
     /// * An attachment URL becomes the file beside the page.
     /// </summary>
+    private const string MissingPage = "#tesria-page-not-exported";
+
     public static string RewriteLinks(
         string html, string fromPath, IReadOnlyDictionary<Guid, string> pagePaths,
         IReadOnlyDictionary<Guid, string> assetNames)
@@ -93,10 +95,14 @@ public static partial class SiteExport
             if (pagePaths.TryGetValue(id, out var target))
                 return Relative(fromPath, target) + anchor;
             // Nothing to point at. The href is emptied rather than removed so
-            // the surrounding markup stays valid; the class is what the
-            // stylesheet uses to gray it out and the title says why.
-            return "#";
+            // the surrounding markup stays valid; the stylesheet grays out
+            // href="#", and the title added below says why. (The title was
+            // promised here and never written until 2026-09-23.)
+            return MissingPage;
         });
+        html = html.Replace($"href=\"{MissingPage}\"",
+            "href=\"#\" title=\"This page is not part of this export.\" aria-disabled=\"true\"");
+        html = html.Replace(MissingPage, "#");
 
         // Attachments: /api/attachments/{id}/download (and the inline form).
         html = AttachmentLink().Replace(html, match =>

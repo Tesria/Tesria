@@ -23,7 +23,7 @@ export function RecoveryCodes({
   const asText = [
     'Tesria recovery codes',
     '',
-    'Each code can be used once to reset your password if you are locked out.',
+    'Each code can be used once: to sign in in place of your authenticator app, or to reset your password if you are locked out.',
     'Keep them somewhere safe and offline.',
     '',
     ...codes,
@@ -54,9 +54,9 @@ export function RecoveryCodes({
   return (
     <div className="recovery">
       <p className="recovery__lead">
-        Save these recovery codes. Each one can be used <strong>once</strong> to
-        reset your password if you are locked out, and this is the only time
-        they will be shown.
+        Save these recovery codes. Each one can be used <strong>once</strong>, to
+        sign in in place of your authenticator app or to reset your password if
+        you are locked out, and this is the only time they will be shown.
       </p>
 
       <ol className="recovery__codes">

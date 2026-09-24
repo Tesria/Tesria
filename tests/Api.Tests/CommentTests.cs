@@ -103,4 +103,51 @@ public class CommentTests
         Assert.Equal(HttpStatusCode.Forbidden,
             (await other.DeleteAsync($"/api/comments/{c.Id}")).StatusCode);
     }
+
+    private record Resolved(Guid Id, DateTimeOffset? ResolvedAt, string? ResolvedByName);
+    private record NotificationRow(Guid Id, string Action, string TargetType, Guid TargetId);
+
+    [Fact]
+    public async Task A_thread_is_resolved_and_reopened_by_those_who_may()
+    {
+        var (factory, author, pageId) = await NewClientWithPage();
+        using var _ = factory;
+        var root = (await (await author.PostAsJsonAsync($"/api/pages/{pageId}/comments",
+            new { Body = "Is this final?", ParentCommentId = (Guid?)null, AnchorJson = (string?)null }))
+            .Content.ReadFromJsonAsync<CommentResponse>())!;
+        var reply = (await (await author.PostAsJsonAsync($"/api/pages/{pageId}/comments",
+            new { Body = "Yes.", ParentCommentId = root.Id, AnchorJson = (string?)null }))
+            .Content.ReadFromJsonAsync<CommentResponse>())!;
+
+        var done = await (await author.PostAsync($"/api/comments/{root.Id}/resolve", null)).Content.ReadFromJsonAsync<Resolved>();
+        Assert.NotNull(done!.ResolvedAt);
+        Assert.NotNull(done.ResolvedByName);
+        var listed = await author.GetFromJsonAsync<List<Resolved>>($"/api/pages/{pageId}/comments");
+        Assert.NotNull(listed!.Single(c => c.Id == root.Id).ResolvedAt);
+
+        // A reply goes with its thread; it is not resolved on its own.
+        Assert.Equal(HttpStatusCode.BadRequest, (await author.PostAsync($"/api/comments/{reply.Id}/resolve", null)).StatusCode);
+
+        // Someone who may edit the page may reopen it (the space is open).
+        var editor = factory.CreateClient();
+        await editor.RegisterAndSignInAsync();
+        var reopened = await (await editor.PostAsync($"/api/comments/{root.Id}/reopen", null)).Content.ReadFromJsonAsync<Resolved>();
+        Assert.Null(reopened!.ResolvedAt);
+    }
+
+    [Fact]
+    public async Task Mentioning_someone_in_a_comment_tells_them()
+    {
+        var (factory, author, pageId) = await NewClientWithPage();
+        using var _ = factory;
+        var sam = factory.CreateClient();
+        var samId = await sam.RegisterAndSignInAsync();
+
+        (await author.PostAsJsonAsync($"/api/pages/{pageId}/comments",
+            new { Body = $"Over to you, @[Sam](user:{samId}).", ParentCommentId = (Guid?)null, AnchorJson = (string?)null }))
+            .EnsureSuccessStatusCode();
+
+        var notes = await sam.GetFromJsonAsync<List<NotificationRow>>("/api/notifications");
+        Assert.Contains(notes!, n => n.Action == "user.mentioned" && n.TargetId == pageId);
+    }
 }

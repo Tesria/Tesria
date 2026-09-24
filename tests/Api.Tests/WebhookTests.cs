@@ -50,6 +50,10 @@ public class WebhookTests
             new { Url = "not-a-url", Events = "page.updated" })).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync($"/api/spaces/{key}/webhooks",
             new { Url = "https://example.com/hook", Events = "" })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync($"/api/spaces/{key}/webhooks",
+            new { Url = "https://example.com/hook", Events = "page.update" })).StatusCode);
+        Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync($"/api/spaces/{key}/webhooks",
+            new { Url = "https://example.com/hook", Events = "page.created, comment.created" })).StatusCode);
     }
 
     [Fact]

@@ -538,6 +538,12 @@ namespace Tesria.Api.Infrastructure.Migrations
                     b.Property<Guid?>("ParentCommentId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ResolvedById")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -757,6 +763,10 @@ namespace Tesria.Api.Infrastructure.Migrations
 
                     b.Property<Guid?>("DeletedById")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Emoji")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
 
                     b.Property<bool>("FullWidth")
                         .HasColumnType("boolean");
@@ -1445,6 +1455,9 @@ namespace Tesria.Api.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset?>("PublicSince")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("TreeStyle")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 

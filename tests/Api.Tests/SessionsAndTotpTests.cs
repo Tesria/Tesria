@@ -45,6 +45,37 @@ public class SessionsAndTotpTests
     }
 
     [Fact]
+    public async Task An_administrator_can_turn_off_a_users_two_factor_but_not_the_owners()
+    {
+        using var factory = new TestAppFactory();
+        var owner = factory.CreateClient();
+        var ownerAccount = await RegisterAsync(owner, "owner@example.com");
+        var admin = factory.CreateClient();
+        var adminAccount = await RegisterAsync(admin, "admin@example.com");
+        (await owner.PutAsJsonAsync($"/api/admin/users/{adminAccount.Id}/role", new { Role = 1 })).EnsureSuccessStatusCode();
+        var member = factory.CreateClient();
+        var memberAccount = await RegisterAsync(member, "member@example.com");
+        await EnrollAsync(member);
+        await EnrollAsync(admin);
+        await EnrollAsync(owner);
+
+        // The one who lost the phone: turned off, signed out, and back in with the password alone.
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await admin.PostAsync($"/api/admin/users/{memberAccount.Id}/disable-two-factor", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await member.GetAsync("/api/auth/me")).StatusCode);
+        var again = factory.CreateClient();
+        var login = await LoginAsync(again, "member@example.com");
+        login.EnsureSuccessStatusCode();
+        Assert.DoesNotContain("requiresTotp\":true", await login.Content.ReadAsStringAsync());
+
+        // Never the owner, and another administrator only by the owner.
+        Assert.Equal(HttpStatusCode.Forbidden,
+            (await admin.PostAsync($"/api/admin/users/{ownerAccount.Id}/disable-two-factor", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await owner.PostAsync($"/api/admin/users/{adminAccount.Id}/disable-two-factor", null)).StatusCode);
+    }
+
+    [Fact]
     public async Task Sessions_are_listed_and_revocable_one_at_a_time()
     {
         using var factory = new TestAppFactory();

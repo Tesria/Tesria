@@ -118,6 +118,9 @@ services:
       Pdf__Endpoint: "http://pdf:8091"
       Pdf__SharedSecret: ${PDF_SHARED_SECRET:-}
       Site__BaseUrl: "https://${DOMAIN}"
+      # Which Caddyfile is in use: the default one makes its own certificate,
+      # and then the app offers /trust to each device (dev-plan 15.5).
+      Tls__Caddyfile: ${CADDYFILE:-deploy/Caddyfile}
     volumes:
       - uploads:/app/uploads
     expose:

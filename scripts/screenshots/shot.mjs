@@ -31,7 +31,11 @@ const ANNOTATE = `
   document.querySelectorAll('.__ann').forEach(n => n.remove())
   const layer = document.createElement('div')
   layer.className = '__ann'
-  layer.style.cssText = 'position:fixed;inset:0;z-index:2147483647;pointer-events:none'
+  // Anchored to the page, not the window: a shot that has scrolled is
+  // captured as the full page, and a fixed layer then drew every mark off
+  // by the scroll (the iPhone guide picture, 2026-09-23).
+  const pageW = document.documentElement.scrollWidth, pageH = document.documentElement.scrollHeight
+  layer.style.cssText = 'position:absolute;left:0;top:0;width:' + pageW + 'px;height:' + pageH + 'px;z-index:2147483647;pointer-events:none'
   const svgns = 'http://www.w3.org/2000/svg'
   const svg = document.createElementNS(svgns, 'svg')
   svg.setAttribute('width', '100%'); svg.setAttribute('height', '100%')
@@ -45,7 +49,8 @@ const ANNOTATE = `
     const els = document.querySelectorAll(sel)
     const el = els[nth || 0]
     if (!el) throw new Error('annotation target not found: ' + sel)
-    const r = el.getBoundingClientRect()
+    const b = el.getBoundingClientRect()
+    const r = { x: b.x + window.scrollX, y: b.y + window.scrollY, width: b.width, height: b.height }
     return { x: r.x, y: r.y, w: r.width, h: r.height, cx: r.x + r.width / 2, cy: r.y + r.height / 2 }
   }
 
@@ -87,7 +92,7 @@ const ANNOTATE = `
       if (a.label) {
         const t = document.createElement('div')
         t.textContent = a.label
-        const align = (dir === 'left') ? 'right:' + (window.innerWidth - x1 + 8) + 'px;'
+        const align = (dir === 'left') ? 'right:' + (pageW - x1 + 8) + 'px;'
           : (dir === 'right') ? 'left:' + (x1 + 8) + 'px;'
           : 'left:' + (x1 + 10) + 'px;'
         t.style.cssText = 'position:absolute;' + align + 'top:' + (y1 - 11) + 'px;'
@@ -176,16 +181,19 @@ await ctx.addInitScript(seedAppearance)
 const page = await ctx.newPage()
 watch(page)
 
-// Sign in once; every shot reuses the session.
-await page.goto(BASE + '/login', { waitUntil: 'domcontentloaded' })
-await page.waitForSelector('input[type="email"]', { timeout: 20000 })
-await page.fill('input[type="email"]', EMAIL)
-await page.fill('input[type="password"]', PASSWORD)
-await Promise.all([
-  page.waitForURL(u => !u.pathname.startsWith('/login'), { timeout: 20000 }),
-  page.click('button[type="submit"]'),
-])
-console.log('signed in as', EMAIL)
+// Sign in once; every shot reuses the session. SHOT_SIGNIN=0 stays signed
+// out, for an instance that has no accounts yet.
+if (process.env.SHOT_SIGNIN !== '0') {
+  await page.goto(BASE + '/login', { waitUntil: 'domcontentloaded' })
+  await page.waitForSelector('input[type="email"]', { timeout: 20000 })
+  await page.fill('input[type="email"]', EMAIL)
+  await page.fill('input[type="password"]', PASSWORD)
+  await Promise.all([
+    page.waitForURL(u => !u.pathname.startsWith('/login'), { timeout: 20000 }),
+    page.click('button[type="submit"]'),
+  ])
+  console.log('signed in as', EMAIL)
+}
 
 // A second, signed-out context for shots of what an anonymous visitor sees.
 let anonPage = null
@@ -330,7 +338,9 @@ async function record(s) {
     ...contextOptions,
     viewport,
     // 1x: a clip is watched at its own size, and 2x quadruples the bytes
-    // against a budget measured in hundreds of kilobytes.
+    // against a budget measured in hundreds of kilobytes. 2x does not work
+    // anyway: the recorder does not scale the frames, so the page filled
+    // only the top-left quarter of the video (the owner, 2026-09-23).
     deviceScaleFactor: 1,
     storageState: await ctx.storageState(),
     recordVideo: { dir, size },
@@ -338,6 +348,14 @@ async function record(s) {
   await recCtx.addInitScript(seedAppearance)
   const pg = await recCtx.newPage()
   watch(pg)
+  // A clip of the editor opens a new page, which makes a draft, and the clip
+  // ends before anyone closes it. Its drafts are noted here and discarded
+  // after the recording, so a clip never leaves one behind (2026-09-23).
+  const drafts = []
+  pg.on('response', async (res) => {
+    if (res.request().method() !== 'POST' || !res.url().endsWith('/api/pages/draft') || !res.ok()) return
+    try { drafts.push((await res.json()).id) } catch { /* not a draft after all */ }
+  })
 
   if (s.url) {
     await pg.goto(BASE + s.url, { waitUntil: 'domcontentloaded' })
@@ -362,6 +380,17 @@ async function record(s) {
 
   const video = pg.video()
   await recCtx.close() // flushes the video file
+  // From a page rather than ctx.request: the browser resolves *.localhost
+  // itself, and Node's resolver does not (ENOTFOUND, found 2026-09-23).
+  if (drafts.length) {
+    const tidy = await ctx.newPage()
+    await tidy.goto(BASE + '/api/health').catch(() => {})
+    for (const id of drafts) {
+      const status = await tidy.evaluate((draft) => fetch(`/api/pages/${draft}/draft`, { method: 'DELETE', headers: { 'X-Requested-With': 'Tesria' } }).then((r) => r.status), id)
+      if (status >= 300) console.error('could not discard draft', id, status)
+    }
+    await tidy.close()
+  }
   const produced = await video.path()
   // Copy rather than rename: the temporary directory and /out are different
   // filesystems inside the container (a bind mount), and rename across them
@@ -412,6 +441,14 @@ for (const s of spec.shots) {
       const x1 = Math.max(...boxes.map(b => b.x + b.width)), y1 = Math.max(...boxes.map(b => b.y + b.height))
       const scroll = await pg.evaluate(() => ({ x: window.scrollX, y: window.scrollY }))
       const box = { x: x0 + scroll.x, y: y0 + scroll.y, width: x1 - x0, height: y1 - y0 }
+      // A full-page capture of a scrolled page paints the sticky bars where
+      // they sit in the viewport, which is in the middle of the page: typing
+      // into a field lower down put the top bar across the Settings picture
+      // (found 2026-09-23). A sticky element keeps its place in the flow, so
+      // making it static moves nothing else.
+      if (scroll.y > 0) {
+        await pg.addStyleTag({ content: '.topbar, .page-actionbar, .space-actionbar { position: static !important; }' })
+      }
       const p = s.clipPad == null ? 0 : s.clipPad
       await pg.screenshot({
         path: file,
@@ -437,6 +474,14 @@ for (const s of spec.shots) {
     console.log('shot', s.name)
   } catch (err) {
     console.error('FAILED', s.name, '::', err.message)
+    // A setup that fails must stop the run: the teardown after it deletes
+    // spaces by key, and would otherwise delete one this run did not make
+    // (the onboarding spec's DEMO was the Tesria Demo space's key too, found
+    // 2026-09-23).
+    if (s.abortOnFail) {
+      await browser.close()
+      process.exit(1)
+    }
   }
   if (s.viewport) await pg.setViewportSize({ width: 1440, height: 900 })
 }

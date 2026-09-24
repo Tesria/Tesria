@@ -7,7 +7,10 @@ import { filterEmoji, type Emoji } from '../emoji'
 import { SuggestionList, type SuggestionListRef } from './SuggestionList'
 import { renderSuggestion } from './renderSuggestion'
 
-const EmojiList = forwardRef<SuggestionListRef, SuggestionProps<Emoji>>((props, ref) => (
+// Nothing at all until two characters are typed: the plugin opens on the
+// bare ":", and showing "No matching emoji" there read as a broken menu
+// every time someone typed a colon (found 2026-09-23).
+const EmojiList = forwardRef<SuggestionListRef, SuggestionProps<Emoji>>((props, ref) => props.query.length < 2 ? null : (
   <SuggestionList
     ref={ref}
     items={props.items}

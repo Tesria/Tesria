@@ -35,7 +35,7 @@ import { EmojiSuggestion } from './suggest/EmojiSuggestion'
 import { TaskAssignee } from './taskAssignee'
 import { DynamicBlock } from './dynamicBlock'
 import { Excerpt, PageProperties } from './excerptExtension'
-import { Embed, SmartLink } from './embedExtension'
+import { Embed, SmartLink, InlineSmartLink } from './embedExtension'
 import { AttachmentBlock, Gallery } from './mediaExtension'
 import { Math as MathNode } from './mathExtension'
 import { Chart } from './chartExtension'
@@ -262,6 +262,7 @@ export function getSharedExtensions({ collaborative = false, editable = true }: 
     // and attachment-backed media.
     Embed,
     SmartLink,
+    InlineSmartLink,
     AttachmentBlock,
     Gallery,
     // Wave F. Mermaid is not a node: it is a code-block language whose view

@@ -47,10 +47,16 @@ public sealed class BlockContext(
     public string Str(string name, string @default) =>
         parameters.TryGetValue(name, out var v) && !string.IsNullOrWhiteSpace(v) ? v.Trim() : @default;
 
-    public string Required(string name) =>
+    /// <summary>
+    /// A parameter that must be set. <paramref name="message"/> is what a
+    /// reader sees on a block nobody has configured yet, so it says what to
+    /// do; the bare "'labels' is required." reached pages as it was until
+    /// 2026-09-23.
+    /// </summary>
+    public string Required(string name, string? message = null) =>
         parameters.TryGetValue(name, out var v) && !string.IsNullOrWhiteSpace(v)
             ? v.Trim()
-            : throw new BlockParamException(name, $"'{name}' is required.");
+            : throw new BlockParamException(name, message ?? $"'{name}' is required.");
 
     public int Int(string name, int @default, int min, int max)
     {

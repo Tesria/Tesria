@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Storage;
 using Tesria.Api.Infrastructure.Webhooks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -130,6 +131,33 @@ public class DraftPageTests
         Assert.Equal(HttpStatusCode.Created, upload.StatusCode);
         var attachment = await upload.Content.ReadFromJsonAsync<AttachmentResponse>();
         Assert.Equal(draft.Id, attachment!.PageId);
+    }
+
+    [Fact]
+    public async Task Discarding_a_draft_removes_its_attachment_files()
+    {
+        var (factory, client, spaceId) = await NewClientWithSpace();
+        using var _ = factory;
+        var draft = await (await client.PostAsJsonAsync("/api/pages/draft",
+            new { SpaceId = spaceId, ParentPageId = (Guid?)null }))
+            .Content.ReadFromJsonAsync<DraftResponse>();
+        using var content = new MultipartFormDataContent();
+        var bytes = new ByteArrayContent([1, 2, 3, 4]);
+        bytes.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+        content.Add(bytes, "file", "pic.png");
+        var attachment = await (await client.PostAsync($"/api/pages/{draft!.Id}/attachments", content))
+            .Content.ReadFromJsonAsync<AttachmentResponse>();
+
+        string storageKey;
+        using (var scope = factory.Services.CreateScope())
+            storageKey = await scope.ServiceProvider.GetRequiredService<AppDbContext>().Attachments
+                .Where(a => a.Id == attachment!.Id).Select(a => a.StorageKey).FirstAsync();
+        var storage = factory.Services.GetRequiredService<IAttachmentStorage>();
+        Assert.NotNull(storage.OpenRead(storageKey));
+
+        (await client.DeleteAsync($"/api/pages/{draft.Id}/draft")).EnsureSuccessStatusCode();
+
+        Assert.Null(storage.OpenRead(storageKey));
     }
 
     [Fact]

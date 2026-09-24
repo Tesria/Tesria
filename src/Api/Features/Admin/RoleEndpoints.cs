@@ -151,6 +151,7 @@ public static class RoleEndpoints
         };
         role.Permissions = [.. (source?.Permissions.Select(p => p.Key) ?? InstancePermissions.DefaultsFor(req.Tier))
             .Where(InstancePermissions.IsAssignable)
+            .Where(k => InstancePermissions.AllowedInTier(k, req.Tier))
             .Distinct()
             .Select(k => new RolePermission { RoleId = role.Id, Key = k })];
         db.Roles.Add(role);
@@ -247,6 +248,12 @@ public static class RoleEndpoints
         // Unknown and reserved keys are ignored rather than refused: a client
         // echoing back a catalog it half understands should not fail.
         var wanted = req.Permissions.Where(InstancePermissions.IsAssignable).ToHashSet();
+        var outOfTier = wanted.Where(k => !InstancePermissions.AllowedInTier(k, role.Tier)).ToList();
+        if (outOfTier.Count > 0)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["permissions"] = [$"{string.Join(", ", outOfTier.Select(k => InstancePermissions.All.First(p => p.Key == k).Label))}: administration rights belong to administrator roles. To give someone these, promote them to an administrator."],
+            });
         var current_ = role.Permissions.Select(p => p.Key).ToHashSet();
         var added = wanted.Except(current_).Order().ToArray();
         var removed = current_.Except(wanted).Order().ToArray();

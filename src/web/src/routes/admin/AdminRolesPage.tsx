@@ -386,13 +386,19 @@ function RoleArea({
           </td>
           {roles.map((role) => (
             <td key={role.id} className="roles-table__cell">
-              <input
-                type="checkbox"
-                aria-label={`${p.label} for ${role.name}`}
-                checked={draft[role.id]?.has(p.key) ?? false}
-                disabled={busy || !role.editable}
-                onChange={() => onToggle(role, p.key)}
-              />
+              {/* Administration rights belong to administrator roles (dev-plan
+                  15.1): a user-tier role is promoted, not widened. */}
+              {role.tier === UserRole.Member && p.scope === 'Administration' ? (
+                <span className="muted" title="An administration right: promote the person to an administrator role to give it.">–</span>
+              ) : (
+                <input
+                  type="checkbox"
+                  aria-label={`${p.label} for ${role.name}`}
+                  checked={draft[role.id]?.has(p.key) ?? false}
+                  disabled={busy || !role.editable}
+                  onChange={() => onToggle(role, p.key)}
+                />
+              )}
             </td>
           ))}
         </tr>

@@ -7,6 +7,7 @@ using Tesria.Api.Infrastructure.Mentions;
 using Tesria.Api.Infrastructure.Notifications;
 using Tesria.Api.Infrastructure.Permissions;
 using Tesria.Api.Infrastructure.Security;
+using Tesria.Api.Infrastructure.Storage;
 using Tesria.Api.Infrastructure.Webhooks;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,17 +26,28 @@ public static class PageEndpoints
     /// callers omit it and keep last-write-wins.
     /// </param>
     public record UpdatePageRequest(string? Title, string ContentJson, string? ChangeComment, int? BaseVersion = null);
-    public record MovePageRequest(Guid? ParentPageId, int Index);
+    /// <summary><paramref name="SpaceId"/>: another space to move to, with the pages under it (dev-plan 15.3).</summary>
+    public record MovePageRequest(Guid? ParentPageId, int Index, Guid? SpaceId = null);
     public record CreateDraftRequest(Guid SpaceId, Guid? ParentPageId);
     public record PublishPageRequest(string Title, string ContentJson);
     public record DraftResponse(Guid Id);
     public record SetLayoutRequest(bool FullWidth);
+    /// <summary>An emoji for the page, or null to take it away (dev-plan 15.7).</summary>
+    public record SetEmojiRequest(string? Emoji);
 
     public record PageDetailResponse(
         Guid Id, Guid SpaceId, Guid? ParentPageId, string Title, int Position, PageStatus Status,
         int CurrentVersionNumber, string ContentJson, bool FullWidth, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt,
         /// <summary>Who created it: the SPA needs it to know whether "delete your own pages" applies (dev-plan 11.1).</summary>
-        Guid CreatedById);
+        Guid CreatedById,
+        /// <summary>
+        /// Whether the caller may edit it, so the SPA shows Edit only to people
+        /// who can use it (it was shown to every reader, 2026-09-23). Set on the
+        /// single-page read only; null elsewhere.
+        /// </summary>
+        bool? CanEdit = null,
+        /// <summary>Shown before the title (dev-plan 15.7).</summary>
+        string? Emoji = null);
     public record PageVersionResponse(
         Guid Id, int VersionNumber, string? ChangeComment, Guid AuthorId,
         string AuthorName, string? AuthorAvatarHash, int? AuthorAvatarVariant,
@@ -44,7 +56,7 @@ public static class PageEndpoints
         Guid Id, int VersionNumber, string ContentJson, string? ChangeComment,
         Guid AuthorId, string AuthorName, string? AuthorAvatarHash, int? AuthorAvatarVariant,
         DateTimeOffset CreatedAt);
-    public record PageTreeNode(Guid Id, string Title, int Position, List<PageTreeNode> Children);
+    public record PageTreeNode(Guid Id, string Title, int Position, List<PageTreeNode> Children, string? Emoji = null);
     public record TrashedPageResponse(Guid Id, string Title, DateTimeOffset DeletedAt, Guid? DeletedById);
 
     public static IEndpointRouteBuilder MapPageEndpoints(this IEndpointRouteBuilder routes)
@@ -61,7 +73,9 @@ public static class PageEndpoints
         group.MapGet("/{id:guid}", Get).AllowAnonymous();
         group.MapPut("/{id:guid}", Update);
         group.MapPut("/{id:guid}/move", Move);
+        group.MapPost("/{id:guid}/copy", PageCopy.CopyAsync);
         group.MapPut("/{id:guid}/layout", SetLayout);
+        group.MapPut("/{id:guid}/emoji", SetEmoji);
         group.MapDelete("/{id:guid}", Delete);
         group.MapPost("/{id:guid}/restore", Restore);
         group.MapDelete("/{id:guid}/purge", Purge);
@@ -186,7 +200,8 @@ public static class PageEndpoints
     }
 
     private static async Task<IResult> DeleteDraft(
-        Guid id, AppDbContext db, CurrentUser current, IPermissionService perms)
+        Guid id, AppDbContext db, CurrentUser current, IPermissionService perms,
+        IAttachmentStorage storage, ILoggerFactory logs)
     {
         var page = await db.Pages.IgnoreQueryFilters()
             .FirstOrDefaultAsync(p => p.Id == id && p.Status == PageStatus.Draft && p.DeletedAt == null);
@@ -199,11 +214,37 @@ public static class PageEndpoints
         // Nothing was ever really saved, so this is a hard delete, not a trash:
         //clear the current-version pointer first (the restrict FK would
         // otherwise block it), then remove the page; versions cascade.
+        var storageKeys = await StorageKeysOfAsync(db, [page.Id]);
         page.CurrentVersionId = null;
         await db.SaveChangesAsync();
         db.Pages.Remove(page);
         await db.SaveChangesAsync();
+        DeleteFiles(storage, logs, storageKeys, "discarding a draft");
         return Results.NoContent();
+    }
+
+    /// <summary>The files behind a set of pages' attachments, read before the rows cascade away.</summary>
+    private static Task<List<string>> StorageKeysOfAsync(AppDbContext db, IReadOnlyCollection<Guid> pageIds) =>
+        db.Attachments.IgnoreQueryFilters().AsNoTracking()
+            .Where(a => pageIds.Contains(a.PageId))
+            .Select(a => a.StorageKey)
+            .ToListAsync();
+
+    /// <summary>
+    /// Removes attachment files once their rows are gone. Hard-deleting a page
+    /// used to drop the rows and leave the files on the uploads volume, where
+    /// nothing pointed at them (found 2026-09-23); deleting a space already
+    /// did this. After the commit and best effort, as there: a file that will
+    /// not delete is logged by key for the runbook's sweep.
+    /// </summary>
+    private static void DeleteFiles(IAttachmentStorage storage, ILoggerFactory logs, List<string> storageKeys, string what)
+    {
+        var log = logs.CreateLogger(typeof(PageEndpoints));
+        foreach (var storageKey in storageKeys)
+        {
+            try { storage.Delete(storageKey); }
+            catch (Exception ex) { log.LogError(ex, "Orphaned attachment file after {What}: {StorageKey}", what, storageKey); }
+        }
     }
 
     private static async Task<IResult> Get(
@@ -233,7 +274,8 @@ public static class PageEndpoints
         }
 
         await RecordViewAsync(id, db, current, http);
-        return Results.Ok(ToDetail(page, page.CurrentVersion));
+        var canEdit = current.Id is not null && await perms.CanEditPageAsync(id);
+        return Results.Ok(ToDetail(page, page.CurrentVersion) with { CanEdit = canEdit });
     }
 
     /// <summary>
@@ -290,12 +332,34 @@ public static class PageEndpoints
     }
 
     private static async Task<IResult> Move(
-        Guid id, MovePageRequest req, AppDbContext db, IPermissionService perms)
+        Guid id, MovePageRequest req, AppDbContext db, IPermissionService perms, IAuditLogger audit)
     {
         var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == id);
         if (page is null) return Results.NotFound();
         if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
         if (!await perms.CanEditPageAsync(id)) return Results.Forbid();
+
+        // To another space (dev-plan 15.3): the page and everything under it
+        // change space together, drafts and trash included, so nothing is
+        // left behind pointing at a parent that is no longer beside it.
+        var fromSpace = page.SpaceId;
+        if (req.SpaceId is { } targetSpace && targetSpace != page.SpaceId)
+        {
+            if (!await db.Spaces.AnyAsync(sp => sp.Id == targetSpace)) return Results.NotFound();
+            if (!await perms.CanEditSpaceAsync(targetSpace)) return Results.Forbid();
+            if (req.ParentPageId is { } p0)
+            {
+                var parent = await db.Pages.AsNoTracking().FirstOrDefaultAsync(x => x.Id == p0);
+                if (parent is null || parent.SpaceId != targetSpace)
+                    return Results.ValidationProblem(Error("parentPageId", "Parent page not found in that space."));
+                if (!await perms.CanEditPageAsync(p0)) return Results.Forbid();
+            }
+            var subtree = await SubtreeIdsAsync(db, page.Id, page.SpaceId);
+            var moving = await db.Pages.IgnoreQueryFilters().Where(x => subtree.Contains(x.Id)).ToListAsync();
+            foreach (var x in moving) x.SpaceId = targetSpace;
+            page.SpaceId = targetSpace;
+            audit.Record("page.moved", "page", page.Id, new { page.Title, FromSpace = fromSpace, ToSpace = targetSpace, Pages = moving.Count });
+        }
         // Re-parenting also needs edit rights on the destination.
         if (req.ParentPageId is { } destination && !await perms.CanEditPageAsync(destination))
             return Results.Forbid();
@@ -308,7 +372,7 @@ public static class PageEndpoints
             if (newParent is null)
                 return Results.ValidationProblem(Error("parentPageId", "Parent page not found."));
             if (newParent.SpaceId != page.SpaceId)
-                return Results.ValidationProblem(Error("parentPageId", "Parent page is in a different space."));
+                return Results.ValidationProblem(Error("parentPageId", "Parent page is in a different space. Name the space to move it there."));
             if (await WouldCreateCycleAsync(db, movingPageId: id, newParentId))
                 return Results.ValidationProblem(Error("parentPageId", "Cannot move a page beneath one of its own descendants."));
         }
@@ -353,6 +417,32 @@ public static class PageEndpoints
         if (!await perms.CanEditPageAsync(id)) return Results.Forbid();
 
         page.FullWidth = req.FullWidth;
+        await db.SaveChangesAsync();
+        return Results.NoContent();
+    }
+
+    /// <summary>
+    /// Sets or clears the page's emoji (dev-plan 15.7). Whoever may edit the
+    /// page may, as with its width; like the width it is not content, so it
+    /// makes no new version.
+    /// </summary>
+    private static async Task<IResult> SetEmoji(
+        Guid id, SetEmojiRequest req, AppDbContext db, IPermissionService perms)
+    {
+        var page = await db.Pages.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt == null);
+        if (page is null) return Results.NotFound();
+        if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
+        if (!await perms.CanEditPageAsync(id)) return Results.Forbid();
+
+        if (string.IsNullOrWhiteSpace(req.Emoji))
+            page.Emoji = null;
+        else
+        {
+            var (emoji, error) = Features.Spaces.SpaceIcons.NormalizeEmoji(req.Emoji);
+            if (error is not null) return Results.ValidationProblem(Error("emoji", "Pick a single emoji."));
+            page.Emoji = emoji;
+        }
         await db.SaveChangesAsync();
         return Results.NoContent();
     }
@@ -442,7 +532,7 @@ public static class PageEndpoints
     private static async Task<IResult> Purge(
         Guid id, AppDbContext db, IAuditLogger audit, IPermissionService perms,
         CurrentUser current, ISecurityDetector detector, HttpContext http, IConfiguration config,
-        Infrastructure.Permissions.IInstancePermissions rights)
+        Infrastructure.Permissions.IInstancePermissions rights, IAttachmentStorage storage, ILoggerFactory logs)
     {
         var page = await db.Pages.IgnoreQueryFilters()
             .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt != null);
@@ -454,6 +544,7 @@ public static class PageEndpoints
         if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
 
         var subtree = await CollectTrashedSubtreeAsync(db, page.SpaceId, id);
+        var storageKeys = await StorageKeysOfAsync(db, subtree.Select(p => p.Id).ToList());
         // Clear current-version pointers so the cascade to versions is not blocked
         // by the restrict FK, then hard-delete the subtree (versions, attachments,
         // and comments cascade).
@@ -464,7 +555,24 @@ public static class PageEndpoints
         audit.Record("page.purged", "page", page.Id, new { page.Title, SubtreeCount = subtree.Count });
         await detector.PagesRemovedAsync(current.RequireId(), subtree.Count, "page.purged", page.Id);
         await db.SaveChangesAsync();
+        DeleteFiles(storage, logs, storageKeys, "deleting a page permanently");
         return Results.NoContent();
+    }
+
+    /// <summary>A page and every page under it, drafts and trash included.</summary>
+    internal static async Task<HashSet<Guid>> SubtreeIdsAsync(AppDbContext db, Guid rootId, Guid spaceId)
+    {
+        var all = await db.Pages.IgnoreQueryFilters().AsNoTracking()
+            .Where(p => p.SpaceId == spaceId).Select(p => new { p.Id, p.ParentPageId }).ToListAsync();
+        var ids = new HashSet<Guid> { rootId };
+        var added = true;
+        while (added)
+        {
+            added = false;
+            foreach (var p in all)
+                if (p.ParentPageId is { } parent && ids.Contains(parent) && ids.Add(p.Id)) added = true;
+        }
+        return ids;
     }
 
     private static async Task<IResult> Trash(Guid spaceId, AppDbContext db, IPermissionService perms)
@@ -479,11 +587,17 @@ public static class PageEndpoints
 
         // List only "trash roots": the pages actually deleted (whose parent is
         // not itself trashed); each stands for one restorable subtree.
-        var roots = trashed
+        var candidates = trashed
             .Where(p => p.ParentPageId is null || !trashedIds.Contains(p.ParentPageId.Value))
             .OrderByDescending(p => p.DeletedAt)
-            .Select(p => new TrashedPageResponse(p.Id, p.Title, p.DeletedAt!.Value, p.DeletedById))
             .ToList();
+        // Viewing the space is not viewing every page in it: a restricted
+        // page's title stayed restricted in the tree and search, and showed
+        // here to anyone who could open the space (found 2026-09-23).
+        var roots = new List<TrashedPageResponse>();
+        foreach (var p in candidates)
+            if (await perms.CanViewPageAsync(p.Id))
+                roots.Add(new TrashedPageResponse(p.Id, p.Title, p.DeletedAt!.Value, p.DeletedById));
         return Results.Ok(roots);
     }
 
@@ -524,37 +638,26 @@ public static class PageEndpoints
     }
 
     private static async Task<IResult> RestoreVersion(
-        Guid id, int number, AppDbContext db, CurrentUser current, IPermissionService perms)
+        Guid id, int number, AppDbContext db, IPermissionService perms, IPageWriter writer, CancellationToken ct)
     {
-        var page = await db.Pages.Include(p => p.CurrentVersion)
-            .FirstOrDefaultAsync(p => p.Id == id);
-        if (page is null) return Results.NotFound();
         if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
-        if (!await perms.CanEditPageAsync(id)) return Results.Forbid();
-
         var source = await db.PageVersions.AsNoTracking()
-            .FirstOrDefaultAsync(v => v.PageId == id && v.VersionNumber == number);
+            .FirstOrDefaultAsync(v => v.PageId == id && v.VersionNumber == number, ct);
         if (source is null) return Results.NotFound();
 
         // Rollback preserves history: it appends a new version copying the old
-        // content rather than deleting anything.
-        // Captured before the new version is attached: setting
-        // page.CurrentVersionId lets EF's navigation fix-up repoint
-        // page.CurrentVersion at the *new* version, which would make the
-        // mention diff below compare the content against itself.
-        var previousContent = page.CurrentVersion?.ContentJson;
-
-        var now = DateTimeOffset.UtcNow;
-        var nextNumber = (page.CurrentVersion?.VersionNumber ?? 0) + 1;
-        var version = NewVersion(page, nextNumber, source.ContentJson, current.RequireId(),
-            $"Restored from version {number}", now);
-        db.PageVersions.Add(version);
-        page.CurrentVersionId = version.Id;
-        page.SearchText = PageContent.BuildSearchText(page.Title, source.ContentJson);
-        page.UpdatedAt = now;
-
-        await db.SaveChangesAsync();
-        return Results.Ok(ToDetail(page, version));
+        // content rather than deleting anything. It goes through the writer
+        // like any other update, so watchers, webhooks, the audit log and
+        // anyone with the page open hear about it; a restore used to change
+        // the page without a word to any of them (found 2026-09-23).
+        var result = await writer.UpdateAsync(id, null, source.ContentJson, $"Restored from version {number}", ct);
+        return result.Status switch
+        {
+            PageWriteStatus.NotFound => Results.NotFound(),
+            PageWriteStatus.Forbidden => Results.Forbid(),
+            PageWriteStatus.Invalid => Results.ValidationProblem(Error(result.Field!, result.Message!)),
+            _ => Results.Ok(ToDetail(result.Page!, result.Version!)),
+        };
     }
 
     private static async Task<IResult> Tree(Guid spaceId, AppDbContext db, IPermissionService perms)
@@ -565,7 +668,7 @@ public static class PageEndpoints
         var pages = await db.Pages.AsNoTracking()
             .Where(p => p.SpaceId == spaceId)
             .OrderBy(p => p.Position).ThenBy(p => p.Title)
-            .Select(p => new { p.Id, p.Title, p.Position, p.ParentPageId })
+            .Select(p => new { p.Id, p.Title, p.Position, p.ParentPageId, p.Emoji })
             .ToListAsync();
 
         // Drop pages the caller may not view (restrictions are inherited, so a
@@ -578,7 +681,7 @@ public static class PageEndpoints
         var byParent = pages.ToLookup(p => p.ParentPageId);
         List<PageTreeNode> Build(Guid? parentId) =>
             byParent[parentId]
-                .Select(p => new PageTreeNode(p.Id, p.Title, p.Position, Build(p.Id)))
+                .Select(p => new PageTreeNode(p.Id, p.Title, p.Position, Build(p.Id), p.Emoji))
                 .ToList();
 
         return Results.Ok(Build(null));
@@ -693,7 +796,7 @@ public static class PageEndpoints
     private static PageDetailResponse ToDetail(Page page, PageVersion version) => new(
         page.Id, page.SpaceId, page.ParentPageId, page.Title, page.Position, page.Status,
         version.VersionNumber, version.ContentJson, page.FullWidth, page.CreatedAt, page.UpdatedAt,
-        page.CreatedById);
+        page.CreatedById, Emoji: page.Emoji);
 
     private static Dictionary<string, string[]> Error(string field, string message) =>
         new() { [field] = [message] };

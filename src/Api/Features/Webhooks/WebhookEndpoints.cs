@@ -8,6 +8,9 @@ namespace Tesria.Api.Features.Webhooks;
 
 public static class WebhookEndpoints
 {
+    /// <summary>Every event a webhook can be sent (PageWriter, CommentEndpoints).</summary>
+    public static readonly string[] KnownEvents = ["page.created", "page.updated", "comment.created"];
+
     public record CreateWebhookRequest(string Url, string Events);
     public record CreatedWebhookResponse(Guid Id, string Url, string Events, bool Enabled, string Secret);
     public record WebhookResponse(Guid Id, string Url, string Events, bool Enabled, DateTimeOffset CreatedAt);
@@ -54,6 +57,15 @@ public static class WebhookEndpoints
         if (events.Length == 0)
             return Results.ValidationProblem(Error("events",
                 "Specify one or more comma-separated events (e.g. \"page.updated,comment.created\"), or \"*\" for all."));
+        // A misspelled event used to be accepted and then never fire, which
+        // looks exactly like a broken receiver (found 2026-09-23).
+        var unknown = events.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(e => e != "*" && !KnownEvents.Contains(e))
+            .ToList();
+        if (unknown.Count > 0)
+            return Results.ValidationProblem(Error("events",
+                $"Unknown event {string.Join(", ", unknown.Select(e => $"\"{e}\""))}. " +
+                $"The events are {string.Join(", ", KnownEvents)}, or \"*\" for all."));
 
         var webhook = new Webhook
         {

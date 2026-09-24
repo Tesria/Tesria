@@ -55,6 +55,13 @@ public class Space
     /// <summary>Whether anonymous readers may see (never write) comments. Off by default.</summary>
     public bool PublicComments { get; set; }
 
+    /// <summary>
+    /// How the page tree marks its pages (dev-plan 15.8): plain, numbered in
+    /// outline (1, 1.1, 1.2, 2), or bulleted. The numbers are worked out from
+    /// the tree's order when it is drawn, so they follow every move.
+    /// </summary>
+    public SpaceTreeStyle TreeStyle { get; set; } = SpaceTreeStyle.Plain;
+
     // --- Exports (dev-plan 12.3). Each format on by default; an
     // administrator turns them off for a space more sensitive than the rest.
     // They bind everyone, administrators and the owner included: the people
@@ -84,6 +91,14 @@ public class Space
 /// the generated default (the key's first letter on a colored tile), so
 /// every space has one from the moment it is created.
 /// </summary>
+/// <summary>How a space's page tree marks its pages (dev-plan 15.8).</summary>
+public enum SpaceTreeStyle
+{
+    Plain = 0,
+    Numbered = 1,
+    Bulleted = 2,
+}
+
 public enum SpaceIconKind
 {
     None = 0,

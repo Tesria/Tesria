@@ -49,15 +49,18 @@ PNG only.
 
 ## The demo space
 
-The spec's `setup` shot creates `DEMO` ("Getting started") with three pages,
-plus `DEMOENG` and `DEMOHB` so the spaces list has something plausible in it,
-and `teardown` deletes all three. Both run on every invocation, so the clips
+The spec's `setup` shot creates `TOUR` ("Getting started") with three pages,
+plus `TOURENG` and `TOURHB` so the spaces list has something plausible in it,
+and `teardown` deletes all three. (They were `DEMO`, `DEMOENG` and `DEMOHB`
+until 2026-09-23, when `DEMO` became the Tesria Demo space's key: a failed
+setup followed by the teardown would have deleted it. `setup` now carries
+`abortOnFail`, so a failure ends the run before the teardown.) Both run on every invocation, so the clips
 never depend on this instance's real content and cannot leak it. Deleting the
 space needs the key typed back and the password in the same request (11.3),
 which the `deleteSpace` step does with the harness's own credentials; the
 password is never in the spec file and never on screen.
 
-If a run dies between the two, `DEMO` is left behind and the next `setup`
+If a run dies between the two, `TOUR` is left behind and the next `setup`
 fails loudly rather than filming a space full of the last run's leftovers.
 `scripts/screenshots/onboarding.sh teardown` clears it.
 

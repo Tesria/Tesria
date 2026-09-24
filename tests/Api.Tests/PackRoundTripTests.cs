@@ -206,13 +206,13 @@ public class PackRoundTripTests
     }
 
     [Fact]
-    public async Task An_imported_space_is_private_and_carries_no_permissions()
+    public async Task An_imported_space_is_private_to_the_importer_and_carries_no_other_permissions()
     {
         await using var app = new TestAppFactory();
         var author = app.CreateClient();
         var importer = app.CreateClient();
         await author.RegisterAndSignInAsync();
-        await importer.RegisterAndSignInAsync();
+        var importerId = await importer.RegisterAndSignInAsync();
 
         await SeedAsync(author);
         // Published at the source, so "private on arrival" is a decision the
@@ -230,7 +230,12 @@ public class PackRoundTripTests
         Assert.False(space.IsPublic);
         Assert.False(space.Archived);
         Assert.Null(space.PublicSince);
-        Assert.Equal(0, await db.SpacePermissions.CountAsync(p => p.SpaceId == space.Id));
+        // One grant: the importer, as its administrator (dev-plan 15.1). The
+        // source's grants and restrictions name people elsewhere and never travel.
+        var grant = await db.SpacePermissions.SingleAsync(p => p.SpaceId == space.Id);
+        Assert.Equal(importerId, grant.PrincipalId);
+        Assert.Equal(SpaceOperation.Admin, grant.Operation);
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, (await author.GetAsync("/api/spaces/DEST")).StatusCode);
         Assert.Equal(0, await db.PageRestrictions.CountAsync(
             r => db.Pages.Where(p => p.SpaceId == space.Id).Select(p => p.Id).Contains(r.PageId)));
     }

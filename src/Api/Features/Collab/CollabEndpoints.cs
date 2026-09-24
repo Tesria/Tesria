@@ -24,10 +24,19 @@ public static class CollabEndpoints
     /// </summary>
     private static async Task<IResult> IssueToken(
         Guid id, AppDbContext db, IPermissionService perms, CurrentUser current,
-        ICollabTokenService tokens)
+        ICollabTokenService tokens, HttpContext http)
     {
         if (!await perms.CanViewPageAsync(id)) return Results.NotFound();
         if (!await perms.CanEditPageAsync(id)) return Results.Forbid();
+        // A GET, so the read-only check that covers writes never sees it; but
+        // what it hands out is write access to the live draft. A read-only
+        // API token could edit a page through it (found 2026-09-23).
+        if (TokenScope.IsReadOnly(http.User))
+            return Results.Json(new
+            {
+                code = "read_only_token",
+                message = "This API token is read-only. Mint one with write access at Profile → API tokens.",
+            }, statusCode: StatusCodes.Status403Forbidden);
 
         // Collaboration is optional: without a shared secret the SPA falls back
         // to plain single-user editing rather than failing.

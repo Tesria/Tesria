@@ -1,5 +1,6 @@
 using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure;
+using Tesria.Api.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 
 namespace Tesria.Api.Infrastructure.Auth;
@@ -14,6 +15,16 @@ public sealed class OidcEmailNotVerifiedException(string email)
                 "the email with your identity provider, first.");
 
 /// <summary>
+/// Refused to create an account through SSO because registration is by
+/// invitation. Without this check, "Invite only" held for the sign-up form but
+/// not for SSO: with a public provider such as Google, anyone with an account
+/// there got one here (found writing the support site, 2026-09-23).
+/// </summary>
+public sealed class OidcRegistrationClosedException(string email)
+    : Exception($"There is no account for {email}, and this instance is invite only. Ask an administrator " +
+                "for an invite, create your account from it, then sign in with SSO.");
+
+/// <summary>
 /// Resolves an external OIDC identity (the "sub" claim, plus email/name) to a
 /// local <see cref="User"/> row: signing in a returning user, linking to an
 /// existing local account, or provisioning a brand-new one (PLAN §1: local
@@ -26,7 +37,7 @@ public interface IOidcUserProvisioner
     Task<User> ResolveOrProvisionAsync(string subject, string? email, bool emailVerified, string? displayName);
 }
 
-public sealed class OidcUserProvisioner(AppDbContext db) : IOidcUserProvisioner
+public sealed class OidcUserProvisioner(AppDbContext db, ISiteSettingsService settings) : IOidcUserProvisioner
 {
     public async Task<User> ResolveOrProvisionAsync(
         string subject, string? email, bool emailVerified, string? displayName)
@@ -57,6 +68,10 @@ public sealed class OidcUserProvisioner(AppDbContext db) : IOidcUserProvisioner
         // Same rule as local registration: the first account on an empty instance
         // administers it, however it arrived.
         var isFirstAccount = !await db.Users.AnyAsync();
+        // And the same gate: a closed instance signs in the accounts it has
+        // and makes no new ones, whichever way the person arrived.
+        if (!isFirstAccount && !(await settings.GetAsync()).AllowPublicRegistration)
+            throw new OidcRegistrationClosedException(normalizedEmail);
 
         var user = new User
         {

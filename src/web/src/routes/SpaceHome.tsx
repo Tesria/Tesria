@@ -36,7 +36,7 @@ export function SpaceHome() {
               copy exists only so mobile (where that sidebar is hidden) has
               somewhere to browse pages that isn't hidden behind a toggle. */}
           <div className="space-home-tree">
-            <PageTree tree={tree} spaceKey={space.key} onMoved={reloadTree} readOnly={!user} />
+            <PageTree tree={tree} spaceKey={space.key} onMoved={reloadTree} readOnly={!user} treeStyle={space.treeStyle} />
           </div>
         </>
       )}

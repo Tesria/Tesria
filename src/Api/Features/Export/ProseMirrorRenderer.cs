@@ -174,6 +174,10 @@ public static class ProseMirrorRenderer
                 var mdTarget = SafeExternalUrl(Attr(node, "url"));
                 if (mdTarget is not null) sb.Append('<').Append(mdTarget).Append(">\n\n");
                 break;
+            case "smartLinkInline":
+                // Inside a sentence (dev-plan 15.2), so no paragraph break after it.
+                if (SafeExternalUrl(Attr(node, "url")) is { } inlineTarget) sb.Append('<').Append(inlineTarget).Append('>');
+                break;
             case "attachmentBlock":
                 var mdAttachment = Attr(node, "attachmentId");
                 if (mdAttachment is not null)
@@ -225,6 +229,10 @@ public static class ProseMirrorRenderer
                 // URL, so it won't render standalone outside the app: acceptable for
                 // internal dev docs.
                 sb.Append($"![{Attr(node, "alt") ?? ""}]({Attr(node, "src") ?? ""})\n\n");
+                // A caption (dev-plan 15.2) has no Markdown of its own; an
+                // italic line under the picture reads as one everywhere.
+                if (Attr(node, "caption") is { Length: > 0 } caption)
+                    sb.Append('*').Append(caption.Replace("*", "\\*")).Append("*\n\n");
                 break;
             case "table":
                 RenderMarkdownTable(node, sb);

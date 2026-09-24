@@ -186,6 +186,14 @@ input, textarea {
   border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text);
 }
 input:focus, textarea:focus { outline: 2px solid var(--primary); outline-offset: -1px; }
+/* A select under its label looks like the text boxes beside it, on its own
+   line: "Start from a template (optional)" ran straight into the browser's
+   own drop-down (the Support pictures, 2026-09-23). */
+label > select {
+  display: block; margin-top: 0.25rem; min-width: 14rem; max-width: 100%; font: inherit; color: var(--text);
+  padding: 0.45rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
+}
+label > select:focus { outline: 2px solid var(--primary); outline-offset: -1px; }
 label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.6rem; }
 /* Form controls never smaller than 16px on a phone. iOS Safari zooms the
    page into any control it focuses that is set below 16px, and keeps that
@@ -195,8 +203,12 @@ label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 
    or change comment would zoom it, after which the sticky bars sat partly
    outside the zoomed viewport. That is the "toolbars disappear on iPhone"
    report. 16px is the threshold at which Safari leaves the page alone. */
-@media (max-width: 640px) { /* keep in sync with --bp-mobile */
-  input, select, textarea { font-size: 16px; }
+@media (max-width: 640px), (pointer: coarse) { /* keep in sync with --bp-mobile */
+  /* !important because a control styled smaller by its own class (the page
+     tree's filter box, 2026-09-23) out-ranked this and zoomed the page
+     again; and any touch screen, because an iPad is wider than a phone and
+     zooms the same way. */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea { font-size: 16px !important; }
 }
 label input, label textarea { margin-top: 0.25rem; }
 /* Password fields (PasswordInput.tsx): a wrapper div takes the place of the
@@ -627,7 +639,21 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 }
 
 /* ---- space layout (sidebar + content) ------------------------------------ */
-.space-layout { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 52px); }
+.space-layout { display: grid; grid-template-columns: var(--sidebar-width, 260px) 1fr; min-height: calc(100vh - 52px); }
+
+/* The sidebar's width can be dragged (the owner, 2026-09-23): a thin handle
+   on its right edge, a line in the accent color while it is hovered, focused
+   or dragged. It straddles the edge so it is easy to catch. */
+.sidebar__resize {
+  position: absolute; top: 0; bottom: 0; right: -5px; width: 10px; z-index: 5;
+  cursor: col-resize; touch-action: none;
+}
+.sidebar__resize::after {
+  content: ''; position: absolute; top: 0; bottom: 0; left: 4px; width: 2px;
+  background: var(--primary); opacity: 0; transition: opacity 0.12s;
+}
+.sidebar__resize:hover::after, .sidebar__resize:focus-visible::after, .sidebar__resize.is-dragging::after { opacity: 1; }
+.sidebar__resize:focus-visible { outline: none; }
 
 /* The sidebar is its own scroll container, not part of the document's.
    It is pinned below the 52px topbar and exactly as tall as what is left of
@@ -874,6 +900,29 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .editor__content img { max-width: 100%; border-radius: 4px; }
 .editor__content img.img-border { border: 1px solid var(--border); padding: 2px; }
 .editor__content img.img-shadow { box-shadow: var(--img-shadow); }
+/* A picture with a size, an alignment and a caption (dev-plan 15.2). With no
+   width it is its own size, up to the column; with one, a share of the
+   column. Aligned within the column, never floated: text does not wrap. */
+.image-figure { position: relative; display: block; width: fit-content; max-width: 100%; margin: 0.75rem auto; }
+.image-figure[style*="width"] img { width: 100%; }
+.image-figure img { display: block; max-width: 100%; height: auto; }
+.image-figure--left { margin-left: 0; margin-right: auto; }
+.image-figure--right { margin-left: auto; margin-right: 0; }
+.image-figure--full { width: 100%; }
+.image-figure--full img { width: 100%; }
+.image-figure__caption { margin-top: 0.4rem; font-size: 0.85rem; color: var(--muted); text-align: center; font-style: italic; }
+.editor--editable .image-figure.is-selected img { outline: 2px solid var(--primary); outline-offset: 2px; }
+.image-figure__resize {
+  position: absolute; right: -6px; bottom: -6px; width: 14px; height: 14px; border-radius: 3px;
+  background: var(--primary); border: 2px solid var(--surface); cursor: nwse-resize; touch-action: none;
+}
+.gallery .image-figure { width: 100% !important; margin: 0; }
+/* On a phone a resized picture fills the column: a close-up set to 60% of a
+   desktop column would otherwise be shrunk twice, and its text with it
+   (the owner, reading the Support site on an iPhone, 2026-09-23). */
+@media (max-width: 600px) {
+  .image-figure[style*="width"] { width: 100% !important; }
+}
 .editor__content mark { background: var(--mark-bg); padding: 0.05em 0.1em; border-radius: 2px; }
 .editor__content .comment-highlight { background: var(--comment-bg); border-bottom: 2px solid var(--comment-border); cursor: pointer; }
 /* A change made from outside this session (dev-plan 8.6). Not scoped to
@@ -998,6 +1047,11 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 
 /* tables */
 .editor__content .tableWrapper { overflow-x: auto; margin: 0.75rem 0; }
+/* While editing, room above a table for its column buttons (TableControls
+   puts them 30px above the table). With the reading margin alone they sat
+   on the line before the table, over its text, which on a phone, where a
+   tap shows them, covered the words being read (found 2026-09-23). */
+.editor--editable .editor__content .tableWrapper { margin-top: 2.25rem; }
 .editor__content table { border-collapse: collapse; table-layout: fixed; width: 100%; margin: 0; }
 /* Custom table width/full-width: !important is required here, not optional
    styling preference: prosemirror-tables' TableView recalculates and
@@ -1080,9 +1134,19 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 
 /* task lists */
 .editor__content ul[data-type="taskList"] { list-style: none; padding-left: 0; margin: 0.5em 0; }
-.editor__content ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 0.4rem; }
-.editor__content ul[data-type="taskList"] li > label { flex: 0 0 auto; margin-top: 0.3em; user-select: none; }
-.editor__content ul[data-type="taskList"] li > div { flex: 1 1 auto; }
+/* The checkbox is centered on the task's first line, whatever the text size
+   or the browser: a box nudged down by a fixed amount matched on a desktop
+   and sat too high on an iPhone, which draws its checkbox at another size
+   (the owner, 2026-09-23). So the row gets its own spacing rather than the
+   paragraph's margins, the checkbox a fixed size, and its holder exactly one
+   line tall ("1lh"); 1.6em is the fallback for browsers without lh. */
+.editor__content ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.2em 0; }
+.editor__content ul[data-type="taskList"] li > label {
+  flex: 0 0 auto; display: flex; align-items: center; height: 1.6em; height: 1lh; margin: 0; user-select: none;
+}
+.editor__content ul[data-type="taskList"] li > label input[type="checkbox"] { width: 1em; height: 1em; margin: 0; }
+.editor__content ul[data-type="taskList"] li > div { flex: 1 1 auto; min-width: 0; }
+.editor__content ul[data-type="taskList"] li > div > p { margin: 0; }
 .editor__content ul[data-type="taskList"] li[data-checked="true"] > div { color: var(--muted); text-decoration: line-through; }
 /* The formatting button group: rendered inside .page-actionbar (edit mode)
    or floating inside a .toolbar--bubble menu; either way it's no longer
@@ -1098,7 +1162,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
    format is actually active, so "what's currently applied" stays the only
    thing rendered in color. */
 /* One row, never wrapping: flex-wrap:nowrap is the guarantee, and
-   useToolbarOverflow moves what does not fit into the Insert menu. Overflow
+   useToolbarOverflow moves what does not fit into the Style menu. Overflow
    must stay *visible*: every dropdown and popover in this row is absolutely
    positioned inside it, and overflow:hidden (tried first) clipped them all
    into invisibility. No background or radius of its own: the bar it sits in
@@ -1127,7 +1191,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
    The threshold is where the full label, B, I, link and + no longer fit
    beside Update/Close. */
 .toolbar-dropdown__compact { display: none; align-items: center; gap: 0.35rem; font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
-/* The narrowest phones (375px and below): "Aa Text Style", "+ Insert",
+/* The narrowest phones (400px and below): "Aa Style", "+ Insert",
    Update and Close have to share one row, so the four buttons give up a
    little padding rather than any label wrapping onto two lines. */
 @media (max-width: 400px) {
@@ -1243,6 +1307,72 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 /* ---- page view ----------------------------------------------------------- */
 .page-head { margin-bottom: 0.25rem; }
 .page-head h1 { margin: 0; }
+
+/* A page's emoji (dev-plan 15.7): above the title, large, the way a page
+   icon sits in Confluence. "Add emoji" is quiet until wanted. */
+.page-emoji { display: inline-block; font-size: 2.4rem; line-height: 1; margin-bottom: 0.35rem; }
+.page-emoji--button { border: 0; background: none; padding: 0.1rem 0.2rem; border-radius: var(--radius); cursor: pointer; }
+.page-emoji--button:hover { background: var(--hover); }
+.page-emoji-picker { position: relative; display: inline-block; }
+.page-emoji__add { font-size: 0.85rem; color: var(--muted); margin-bottom: 0.25rem; }
+.page-emoji__add:hover { color: var(--text); }
+.page-head .page-emoji__add { opacity: 0; transition: opacity 0.15s; }
+.page-head:hover .page-emoji__add, .page-emoji__add:focus-visible, .page-emoji-picker:focus-within .page-emoji__add { opacity: 1; }
+@media (hover: none) { .page-head .page-emoji__add { opacity: 1; } }
+.page-emoji__panel {
+  position: absolute; left: 0; top: calc(100% + 6px); z-index: 30; width: min(320px, calc(100vw - 2rem));
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-lg); padding: 0.6rem; display: grid; gap: 0.5rem;
+}
+.page-emoji__search, .page-emoji__paste input { width: 100%; }
+.page-emoji__sections { display: grid; gap: 0.5rem; max-height: min(340px, 50vh); overflow-y: auto; }
+.page-emoji__label { margin: 0 0 0.15rem; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.page-emoji__grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; }
+.page-emoji__choice { border: 0; background: none; font-size: 1.35rem; line-height: 1; padding: 0.3rem 0; border-radius: 6px; cursor: pointer; }
+.page-emoji__choice:hover, .page-emoji__choice.is-active { background: var(--hover); }
+.page-emoji__paste { display: flex; gap: 0.4rem; align-items: center; }
+.page-emoji__paste input { flex: 1; min-width: 0; }
+
+/* The same emoji before a page's name in the tree, the app's and an
+   exported site's. */
+.tree__emoji { display: inline-block; width: 1.35em; margin-right: 0.15rem; text-align: center; }
+/* Read by screen readers, not shown. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* Filtering the page tree as you type (the owner, 2026-09-23). The box sits
+   under the Pages heading and stays put while the rows scroll; a parent shown
+   only because a page under it matched is dimmed, and the match is marked. */
+.tree-filter { flex: 0 0 auto; margin: 0.1rem 0 0.4rem; display: flex; gap: 0.3rem; align-items: stretch; }
+.tree-filter__input { flex: 1 1 auto; min-width: 0; }
+.tree-filter__children {
+  flex: none; display: inline-flex; align-items: center; justify-content: center; width: 2rem;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--muted); cursor: pointer;
+}
+.tree-filter__children:hover { color: var(--text); }
+.tree-filter__children.is-on { color: var(--primary); border-color: var(--primary); background: var(--primary-soft); }
+.tree-filter__input { padding: 0.35rem 0.55rem; font-size: 0.85rem; background: var(--surface); }
+.tree__link--context { color: var(--muted); }
+.tree__match { background: var(--primary-soft, rgba(37, 99, 235, 0.15)); color: inherit; border-radius: 2px; padding: 0 1px; }
+.tree-filter__none { padding: 0.3rem 0.5rem; margin: 0; }
+
+/* Space settings → Page tree: three choices, each with a preview. */
+.tree-style { display: flex; flex-wrap: wrap; gap: 0.75rem; border: 0; padding: 0; margin: 0.5rem 0 0; }
+.tree-style__option {
+  display: grid; gap: 0.35rem; min-width: 12rem; flex: 1 1 12rem; cursor: pointer;
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 0.6rem 0.75rem; background: var(--surface);
+}
+.tree-style__option.is-active { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
+.tree-style__option input { position: absolute; opacity: 0; pointer-events: none; }
+.tree-style__option:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; }
+.tree-style__name { font-weight: 600; }
+.tree-style__sample { display: grid; font-size: 0.85rem; color: var(--muted); white-space: pre; font-variant-numeric: tabular-nums; }
+
+/* A numbered or bulleted tree (dev-plan 15.8): the marker in the muted color,
+   numbers in tabular figures so 1.2 and 1.10 line up. */
+.tree__marker { display: inline-block; flex: none; min-width: 1.2em; margin-right: 0.4rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* A title that wraps lines up under its own first word, not under the number. */
+.tree__link:has(.tree__marker), .tree__link:has(.tree__emoji) { display: flex; align-items: baseline; }
+.tree__emoji { flex: none; }
 .template-form { flex: 1 1 100%; margin-top: 0.5rem; }
 
 /* full-width action bar: replaces the old in-header button row (view mode)
@@ -1306,7 +1436,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   .page-actionbar__fullwidth-toggle { display: none; }
   .page-actionbar__new-subpage { display: inline-flex; }
   /* The one-row toolbar handles narrow widths by measurement (buttons that
-     do not fit move into the Insert menu) and by the container queries on
+     do not fit move into the Style menu) and by the container queries on
      .page-actionbar__primary above, so nothing viewport-specific is needed. */
 }
 
@@ -1327,7 +1457,15 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 }
 .overflow-menu__dropdown .btn:hover, .overflow-menu__dropdown > a:hover { background: var(--bg-alt); text-decoration: none; }
 .overflow-menu__dropdown .btn--danger { color: var(--danger); }
-.overflow-menu__dropdown .template-form { flex: none; margin-top: 0.4rem; }
+.overflow-menu__dropdown .template-form { flex: none; margin-top: 0.4rem; display: grid; gap: 0.1rem; padding: 0.6rem; }
+.overflow-menu__dropdown .template-form label { margin-bottom: 0.4rem; }
+.overflow-menu__dropdown .template-form label > select { width: 100%; min-width: 0; }
+/* The menu's own rule makes every button a plain row; Save is the form's
+   action and looks like one. */
+.overflow-menu__dropdown .template-form .btn--primary {
+  width: auto; justify-self: start; justify-content: center; background: var(--primary); color: #fff; padding: 0.4rem 0.9rem;
+}
+.overflow-menu__dropdown .template-form .btn--primary:hover { background: var(--primary-dark); }
 .page-body { margin: 1rem 0 2rem; }
 
 /* overflow-x: auto here (not wrapping) matches the tableWrapper pattern:
@@ -1400,6 +1538,10 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   position: absolute;
   left: 0.9rem;
   top: 0.95rem;
+  /* Centered on the first line of text, whatever its size (the owner,
+     2026-09-23): the padding, then half of one line less half the icon.
+     The fixed top above is the fallback for browsers without lh. */
+  top: calc(0.85rem + (1lh - 20px) / 2);
   width: 20px;
   height: 20px;
   background-color: var(--panel-icon);
@@ -1410,6 +1552,11 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
    of the panel's padding, making the box look lopsided. */
 .panel > :first-child { margin-top: 0; }
 .panel > :last-child { margin-bottom: 0; }
+/* The editor's paragraph rule (.editor__content .ProseMirror p) out-ranked
+   the two above, so a panel's text started half a line below its padding
+   and its icon sat above the first line (found 2026-09-23). */
+.editor__content .ProseMirror .panel > :first-child, .editor__content .ProseMirror .decision > :first-child { margin-top: 0; }
+.editor__content .ProseMirror .panel > :last-child, .editor__content .ProseMirror .decision > :last-child { margin-bottom: 0; }
 .editor__content .panel--info, .panel--info {
   background: var(--panel-info-bg); border-color: var(--panel-info-border);
   --panel-icon: var(--panel-info-icon);
@@ -1489,6 +1636,15 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 }
 .cell-menu__heading { margin: 0 0 0.45rem; font-size: 0.78rem; font-weight: 600; color: var(--muted); }
 .cell-menu__scopes { display: flex; gap: 0.25rem; margin-bottom: 0.5rem; }
+.cell-menu__actions { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.6rem; }
+.cell-menu__action {
+  font: inherit; font-size: 0.8rem; padding: 0.25rem 0.55rem; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer;
+}
+.cell-menu__action:hover:not(:disabled) { background: var(--bg); }
+.cell-menu__action:disabled { opacity: 0.45; cursor: default; }
+.cell-menu__action.is-active { border-color: var(--primary); color: var(--primary); }
+.cell-menu__action--danger { color: var(--danger, #c9372c); }
 .cell-menu__scope {
   padding: 0.2rem 0.5rem; font-size: 0.76rem; cursor: pointer;
   border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--muted);
@@ -2053,6 +2209,14 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
    scrolls within the card rather than spilling past its edge, and time and
    address cells keep to one line so the table stays readable. */
 .profile__section--wide { max-width: none; }
+
+/* The profile page (owner, 2026-09-23): every card the window's full width,
+   one to a row, like the admin pages. A 480px strip in a 900px column was
+   too narrow, and a grid of small cards read as a jumble. The fields inside
+   keep a readable width; a password box across a whole monitor is not one. */
+.profile-grid > .profile__section { max-width: none; margin: 0 0 1.25rem; }
+.profile-grid > .profile__section:not(.profile__section--wide) form,
+.profile-grid > .profile__section:not(.profile__section--wide) > p { max-width: 40rem; }
 .profile__section { overflow-x: auto; }
 .admin-table .nowrap { white-space: nowrap; }
 
@@ -2167,6 +2331,8 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 }
 .decision::before {
   content: ''; position: absolute; left: 0.9rem; top: 0.95rem; width: 20px; height: 20px;
+  /* On the first line of text, as for a panel. */
+  top: calc(0.85rem + (1lh - 20px) / 2);
   background-color: var(--panel-success-icon);
   --decision-icon-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%229%22%2F%3E%3Cpath%20d%3D%22m8%2012.5%202.5%202.5L16%209.5%22%2F%3E%3C%2Fsvg%3E");
   -webkit-mask: var(--decision-icon-url) center / 20px 20px no-repeat;
@@ -2286,6 +2452,22 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
   font-weight: 500; white-space: nowrap; cursor: default;
 }
 .ProseMirror-selectednode.mention { outline: 2px solid var(--primary); outline-offset: 1px; }
+/* The @ picker in a comment box (dev-plan 15.3). */
+.mention-textarea { position: relative; flex: 1; }
+.mention-textarea textarea { width: 100%; }
+.mention-textarea__menu { position: absolute; left: 0; top: 100%; z-index: 20; margin: 0.2rem 0 0; min-width: 14rem; list-style: none; padding: 0.25rem; }
+.badge--resolved { background: var(--success-soft, #e3fcef); color: var(--success, #1f845a); }
+.comments__resolved-toggle { margin: 0.5rem 0; }
+.version__pick { width: auto; margin: 0 0.25rem 0 0; }
+/* The label index (dev-plan 15.3). */
+.labels-index__filter { max-width: 20rem; margin-bottom: 0.75rem; }
+.labels-index { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; }
+.labels-index li { display: flex; align-items: center; gap: 0.4rem; }
+/* Move and Copy (dev-plan 15.3). */
+.move-copy .recovery-prompt__card > label:not(.setup__check) { display: grid; gap: 0.3rem; margin: 0.6rem 0; }
+.move-copy .setup__check { display: flex; gap: 0.5rem; align-items: flex-start; margin: 0.6rem 0; }
+.move-copy .setup__check input { width: auto; margin-top: 0.2rem; }
+.comment-list--resolved .comment { opacity: 0.8; }
 
 /* An action item's assignee is deliberately *not* drawn again: the mention it
    is derived from is already in the item's own text (taskAssignee.ts), so a
@@ -2308,11 +2490,12 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .dynamic-block {
   margin: 0.75rem 0; padding: 0.6rem 0.9rem; border: 1px dashed var(--border); border-radius: var(--radius);
 }
-/* In the reading view the frame disappears: the content is the point. */
-.page-body .dynamic-block { border-color: transparent; padding: 0; }
+/* In the reading view the frame disappears: the content is the point. An
+   export is a reading view too, and its page has no .page-body. */
+.page-body .dynamic-block, .paper--export .dynamic-block { border-color: transparent; padding: 0; }
 .editor--editable .dynamic-block.is-selected { border-style: solid; border-color: var(--primary); }
 .dynamic-block__head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
-.page-body .dynamic-block__head { display: none; }
+.page-body .dynamic-block__head, .paper--export .dynamic-block__head { display: none; }
 .dynamic-block__kind { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
 .dynamic-block__refresh { border: none; background: none; color: var(--muted); cursor: pointer; padding: 0 0.2rem; border-radius: 4px; }
 .dynamic-block__refresh:hover { background: var(--bg-alt); color: var(--text); }
@@ -2374,6 +2557,14 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .smart-link__display { display: inline-flex; gap: 0.35rem; margin-left: 0.25rem; }
 .smart-link__display .is-active { font-weight: 700; text-decoration: underline; }
 .smart-link--inline .smart-link__form { display: flex; }
+/* The inline smart link (dev-plan 15.2): a link in the line, marked as a
+   smart one by a small arrow; its editing field opens beside it. */
+.smart-link-inline { display: inline; }
+.smart-link-inline__link { font-weight: 500; }
+.smart-link-inline__link::after { content: " \2197"; font-size: 0.8em; color: var(--muted); }
+.smart-link-inline.is-selected .smart-link-inline__link { outline: 2px solid var(--primary); outline-offset: 1px; border-radius: 3px; }
+.smart-link-inline__edit { display: inline-flex; gap: 0.3rem; align-items: center; margin-left: 0.4rem; vertical-align: middle; }
+.smart-link-inline__edit input { width: 16rem; padding: 0.15rem 0.4rem; font-size: 0.85rem; }
 .smart-link__body {
   display: flex; gap: 0.75rem; align-items: center; padding: 0.6rem 0.8rem; text-decoration: none;
   border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text);
@@ -2396,11 +2587,16 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .attachment-block__note { margin: 0; color: var(--muted); font-size: 0.9rem; }
 .attachment-block__video, .attachment-block__audio { width: 100%; border-radius: var(--radius); background: #000; }
 .attachment-block__audio { background: none; }
+.attachment-block__image { display: block; max-width: 100%; height: auto; border-radius: var(--radius); }
 /* An animation (dev-plan 10.5 step 2): no player chrome, so it reads as part
    of the page, with one small pause button that shows on hover and focus,
    and always on a touch screen, where there is no hover. */
-.animation { position: relative; }
-.animation__video { display: block; background: transparent; }
+/* Shown at its own size, centered, like a picture, and with a picture's
+   shadow: stretched to the column, a clip recorded in a narrow window was
+   blurred on a desktop. On a phone it fills the column. */
+.animation { position: relative; width: fit-content; max-width: 100%; margin: 0.75rem auto; }
+.animation__video { display: block; background: transparent; width: auto; max-width: 100%; box-shadow: var(--img-shadow); }
+@media (max-width: 600px) { .animation, .animation__video { width: 100%; } }
 .animation__toggle {
   position: absolute; right: 0.5rem; bottom: 0.5rem; width: 30px; height: 30px;
   display: inline-flex; align-items: center; justify-content: center;
@@ -2424,10 +2620,14 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 
 /* The gallery is a layout over ordinary image nodes: the images keep every
    affordance they already have. */
-.gallery { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.75rem 0; }
-.gallery > * { margin: 0; }
-.gallery p { flex: 1 1 200px; min-width: 0; }
-.gallery img { width: 100%; border-radius: var(--radius); }
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.5rem; margin: 0.75rem 0; }
+.gallery > * { margin: 0; min-width: 0; }
+/* A grid of equal tiles. It was a flex row whose sizing rule targeted only
+   paragraphs, but images are block nodes and sit in the gallery directly, so
+   each took a whole row and nothing tiled (found 2026-09-23). A grid rather
+   than flex, so a last odd image stays a tile instead of stretching across
+   the row. Tiles share a shape and are cropped to it. */
+.gallery img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--radius); display: block; }
 .editor--editable .gallery { padding: 0.4rem; border: 1px dashed var(--border); border-radius: var(--radius); }
 
 /* ---- Phase 7 Wave F: diagrams, math, charts ---------------------------- */
@@ -2609,8 +2809,14 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
 .setup__step-panel h2 { margin: 0; }
 .setup__step-panel label { display: grid; gap: 0.25rem; }
 .setup__actions { margin-top: 0.75rem; }
-.setup__check { display: flex; gap: 0.6rem; align-items: flex-start; }
-.setup__check input { margin-top: 0.2rem; }
+/* Scoped to the panel so it outranks the panel's own "label is a grid" rule
+   above, which stacked the box over its text and ran the title into the
+   description (found shooting the support site, 2026-09-23). */
+.setup__step-panel .setup__check { display: flex; gap: 0.6rem; align-items: flex-start; }
+/* width: auto undoes the global full-width input, which otherwise gives a
+   checkbox the whole row and centers it there. */
+.setup__check input { width: auto; margin-top: 0.2rem; flex: none; }
+.setup__check strong, .setup__check .small { display: block; }
 .setup__cards { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 .setup__card {
   display: grid; gap: 0.3rem; text-align: left; padding: 0.9rem;
@@ -2839,7 +3045,8 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
    column they sat at the 480px form width with the rest of a large display
    empty; as a grid they fill it, and each form keeps a width you can still
    read a label across. */
-.admin-settings { display: grid; gap: 0 1rem; grid-template-columns: repeat(auto-fit, minmax(26rem, 1fr)); align-items: start; }
+/* min(): a 26rem column is wider than a phone, and ran off its right edge. */
+.admin-settings { display: grid; gap: 0 1rem; grid-template-columns: repeat(auto-fit, minmax(min(26rem, 100%), 1fr)); align-items: start; }
 .admin-settings > .profile__section { max-width: none; }
 
 /* Every raised surface in the product, given the same lift. Kept as one rule

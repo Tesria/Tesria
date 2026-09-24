@@ -73,6 +73,37 @@ public class NotificationTests
     }
 
     [Fact]
+    public async Task A_watcher_who_cannot_see_a_restricted_page_is_not_notified_about_it()
+    {
+        using var factory = new TestAppFactory();
+        var alice = factory.CreateClient();
+        var aliceId = await alice.RegisterAndSignInAsync();
+        var spaceId = await alice.CreateSpaceAsync();
+        var spaces = await alice.GetFromJsonAsync<List<SpaceDto>>("/api/spaces");
+        var key = spaces!.Single(s => s.Id == spaceId).Key;
+
+        var bob = factory.CreateClient();
+        await bob.RegisterAndSignInAsync();
+        await bob.PostAsync($"/api/spaces/{key}/watch", null);
+
+        var open = await NewPage(alice, spaceId, "Open");
+        var secret = await NewPage(alice, spaceId, "Secret");
+        (await alice.PostAsJsonAsync($"/api/pages/{secret.Id}/restrictions",
+            new { PrincipalType = 0, PrincipalId = aliceId, Operation = 0 })).EnsureSuccessStatusCode();
+
+        await alice.PutAsJsonAsync($"/api/pages/{secret.Id}",
+            new { Title = "Secret", ContentJson = Doc, ChangeComment = (string?)null });
+        await alice.PostAsJsonAsync($"/api/pages/{secret.Id}/comments",
+            new { Body = "the numbers are bad", ParentCommentId = (Guid?)null, AnchorJson = (string?)null });
+        await alice.PutAsJsonAsync($"/api/pages/{open.Id}",
+            new { Title = "Open", ContentJson = Doc, ChangeComment = (string?)null });
+
+        var notes = await bob.GetFromJsonAsync<List<NotificationRow>>("/api/notifications");
+        Assert.DoesNotContain(notes!, n => n.TargetId == secret.Id && n.Action != "page.created");
+        Assert.Contains(notes!, n => n.Action == "page.updated" && n.TargetId == open.Id);
+    }
+
+    [Fact]
     public async Task Unwatching_stops_further_notifications()
     {
         using var factory = new TestAppFactory();

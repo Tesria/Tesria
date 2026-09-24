@@ -149,11 +149,17 @@ public sealed class PageWriter(
         if (!await perms.CanViewPageAsync(pageId)) return PageWriteResult.NotFound();
         if (!await perms.CanEditPageAsync(pageId)) return PageWriteResult.Forbidden("You do not have edit rights on that page.");
 
-        if (!PageContent.TryNormalize(contentJson, out var content))
-            return PageWriteResult.Invalid("contentJson", "Content must be valid JSON.");
-
         var page = await db.Pages.Include(p => p.CurrentVersion).FirstOrDefaultAsync(p => p.Id == pageId, ct);
         if (page is null) return PageWriteResult.NotFound();
+
+        // No content means "leave the content alone": a rename. It used to be
+        // read as an empty document, so renaming a page through the API or
+        // MCP (update_page with only a title) wiped it (found 2026-09-23).
+        string content;
+        if (contentJson is null)
+            content = page.CurrentVersion?.ContentJson ?? PageContent.EmptyDoc;
+        else if (!PageContent.TryNormalize(contentJson, out content))
+            return PageWriteResult.Invalid("contentJson", "Content must be valid JSON.");
 
         if (title is not null)
         {

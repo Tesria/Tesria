@@ -160,7 +160,7 @@ export function AdminDashboardPage() {
         <>
           <h2 className="dash__heading">People</h2>
           <div className="dash__grid">
-            <Stat label="Users" value={data.people.total} hint={`${data.people.admins} admin`} />
+            <Stat label="Users" value={data.people.total} hint={`${data.people.admins} ${data.people.admins === 1 ? 'administrator' : 'administrators'}`} />
             <Stat label="Active (7 days)" value={data.people.activeLast7Days} />
             <Stat label="Active (30 days)" value={data.people.activeLast30Days} />
             <Stat

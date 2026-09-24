@@ -118,7 +118,7 @@ public static class PackExportEndpoints
         var rows = await db.Pages.AsNoTracking()
             .Where(p => p.SpaceId == space.Id && p.Status == PageStatus.Current && p.DeletedAt == null)
             .OrderBy(p => p.Position).ThenBy(p => p.Title)
-            .Select(p => new { p.Id, p.ParentPageId, p.Title, p.Position, p.FullWidth, p.CreatedAt, p.CreatedById })
+            .Select(p => new { p.Id, p.ParentPageId, p.Title, p.Position, p.FullWidth, p.CreatedAt, p.CreatedById, p.Emoji })
             .ToListAsync(ct);
 
         var visible = new List<Guid>();
@@ -194,7 +194,8 @@ public static class PackExportEndpoints
                     a.Id, a.Filename, a.ContentType, a.Size, WikiPack.AttachmentEntry(a.Id)))],
                 [.. comments.Where(c => c.PageId == row.Id).Select(c => new WikiPack.PackComment(
                     c.Id, c.ParentCommentId, c.AuthorId, c.Body, c.AnchorJson,
-                    c.CreatedAt, c.UpdatedAt, c.DeletedAt))]));
+                    c.CreatedAt, c.UpdatedAt, c.DeletedAt))],
+                row.Emoji));
         }
 
         // Display names only, and only for the people who actually wrote
@@ -243,7 +244,8 @@ public static class PackExportEndpoints
                     hasIcon ? null : space.IconValue,
                     space.IconColor,
                     hasIcon ? WikiPack.IconEntry : null),
-                templates),
+                templates,
+                (int)space.TreeStyle),
             authors,
             pages), storageKeys);
     }

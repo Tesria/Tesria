@@ -23,6 +23,7 @@ export function LabelPage() {
 
   return (
     <div className="page-wrap">
+      <p className="small"><Link to="/labels">All labels</Link></p>
       <h1>
         Label: <span className="badge">{name}</span>
       </h1>

@@ -81,7 +81,9 @@ public static class WikiPack
         string? Description,
         Guid? Homepage,
         PackIcon Icon,
-        IReadOnlyList<PackTemplate> Templates);
+        IReadOnlyList<PackTemplate> Templates,
+        /// <summary>The page tree's style (dev-plan 15.8). Optional: older packs import as plain.</summary>
+        int TreeStyle = 0);
 
     /// <param name="File">Set only for an uploaded icon: the entry holding its bytes.</param>
     public sealed record PackIcon(int Kind, string? Value, int? Color, string? File);
@@ -100,7 +102,9 @@ public static class WikiPack
         IReadOnlyList<PackVersion> Versions,
         IReadOnlyList<string> Labels,
         IReadOnlyList<PackAttachment> Attachments,
-        IReadOnlyList<PackComment> Comments);
+        IReadOnlyList<PackComment> Comments,
+        /// <summary>The page's emoji (dev-plan 15.7). Optional: packs from before it import unchanged.</summary>
+        string? Emoji = null);
 
     public sealed record PackVersion(
         int Number, DateTimeOffset CreatedAt, Guid? Author, string? Comment, JsonNode Content);

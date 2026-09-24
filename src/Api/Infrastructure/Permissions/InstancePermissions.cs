@@ -111,12 +111,12 @@ public static class InstancePermissions
         new(SpacesCreate, "Content", "Create spaces",
             "Start a new space. A new space is open to every signed-in user until someone grants access to particular people.", PermissionScope.Content, UserRole.Member),
         new(PagesDeleteOwn, "Content", "Delete pages you created",
-            "Move your own pages to the trash, where a space administrator can restore them.",
+            "Move your own pages to the trash, where anyone who can edit them can restore them.",
             PermissionScope.Content, UserRole.Member),
         new(PagesDeleteAny, "Content", "Delete pages created by others",
             "Trash anyone's page in a space you can edit.", PermissionScope.Content, UserRole.Admin),
         new(PagesExport, "Content", "Export pages",
-            "Download a page as PDF, HTML or Markdown.", PermissionScope.Content, UserRole.Member),
+            "Download a page as PDF, HTML or Markdown, and a space as a website or a wiki pack.", PermissionScope.Content, UserRole.Member),
         new(TokensUse, "Content", "Use API tokens",
             "Create personal API tokens, and use the API and the MCP server with them.",
             PermissionScope.Content, UserRole.Member),
@@ -146,7 +146,7 @@ public static class InstancePermissions
             "Create groups and change who is in them.", PermissionScope.Administration, UserRole.Admin),
 
         new(SpacesManage, "Spaces", "Manage spaces",
-            "See every space, archive one, and grant yourself access to administer it.",
+            "See every space in Administration, and grant yourself access to administer it.",
             PermissionScope.Administration, UserRole.Admin),
         new(SpacesPublish, "Spaces", "Publish spaces",
             "Make a space readable without an account, or withdraw it.",
@@ -233,6 +233,16 @@ public static class InstancePermissions
 
     /// <summary>A key the catalog still defines. Rows for anything else are ignored.</summary>
     public static bool IsAssignable(string key) => Known.Contains(key);
+
+    /// <summary>
+    /// Whether a role of this tier may hold the right (dev-plan 15.1, the
+    /// owner's rule): rights of the administration area belong to
+    /// administrator roles, so giving someone admin powers means promoting
+    /// them. A user-tier role holding one used to see the Admin link and be
+    /// turned away by the admin area.
+    /// </summary>
+    public static bool AllowedInTier(string key, UserRole tier) =>
+        tier != UserRole.Member || All.FirstOrDefault(p => p.Key == key)?.Scope != PermissionScope.Administration;
 
     public static bool IsReserved(string key) => ReservedKeys.Contains(key);
 

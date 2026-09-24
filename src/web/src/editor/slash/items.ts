@@ -7,7 +7,7 @@ import { insertPageProperties } from '../excerptExtension'
 import { triggerLinkDialog } from '../linkShortcut'
 import {
   BlockquoteIcon, BulletListIcon, CodeBlockIcon, DateIcon, DecisionIcon, DividerIcon, ErrorPanelIcon, ExpandIcon,
-  HeadingIcon, ImageIcon, InfoPanelIcon, LayoutIcon, NotePanelIcon, OrderedListIcon, StatusIcon, SuccessPanelIcon,
+  HeadingIcon, TextIcon, ImageIcon, InfoPanelIcon, LayoutIcon, NotePanelIcon, OrderedListIcon, StatusIcon, SuccessPanelIcon,
   TableIcon, TaskListIcon, TocIcon, WarningPanelIcon, ExcerptIcon, PropertiesIcon,
   EmbedIcon, SmartLinkIcon, PaperclipIcon, GalleryIcon, MermaidIcon, MathIcon, ChartIcon, LinkIcon,
 } from '../icons'
@@ -26,6 +26,13 @@ export type SlashItem = {
   /** A component, not an element: this file is plain TypeScript. */
   icon: ComponentType
   keywords?: string[]
+  /**
+   * Wraps or converts the blocks it is used on rather than inserting a new
+   * one. From the + menu, a selection is what it applies to, not something
+   * to replace: choosing "Info panel" over selected text deleted the text
+   * and wrapped an empty line until 2026-09-23.
+   */
+  wraps?: boolean
   command: (editor: Editor, range: { from: number; to: number }) => void
 }
 
@@ -87,46 +94,67 @@ const PANEL_ICONS: Record<(typeof PANEL_TYPES)[number], ComponentType> = {
  */
 export const SLASH_ITEMS: SlashItem[] = [
   {
+    title: 'Normal text',
+    group: 'text',
+    icon: TextIcon,
+    description: 'Plain body text',
+    keywords: ['text', 'paragraph', 'body', 'p'],
+    wraps: true,
+    command: (editor, range) => editor.chain().focus().deleteRange(range).setParagraph().run(),
+  },
+  {
     title: 'Heading 1',
     group: 'text',
     icon: HeadingIcon,
     description: 'Big section heading',
-    command: (editor, range) => editor.chain().focus().deleteRange(range).toggleHeading({ level: 1 }).run(),
+    keywords: ['h1', 'heading', 'title'],
+    wraps: true,
+    command: (editor, range) => editor.chain().focus().deleteRange(range).setHeading({ level: 1 }).run(),
   },
   {
     title: 'Heading 2',
     group: 'text',
     icon: HeadingIcon,
     description: 'Medium section heading',
-    command: (editor, range) => editor.chain().focus().deleteRange(range).toggleHeading({ level: 2 }).run(),
+    keywords: ['h2', 'heading', 'title'],
+    wraps: true,
+    command: (editor, range) => editor.chain().focus().deleteRange(range).setHeading({ level: 2 }).run(),
   },
   {
     title: 'Heading 3',
     group: 'text',
     icon: HeadingIcon,
     description: 'Small section heading',
-    command: (editor, range) => editor.chain().focus().deleteRange(range).toggleHeading({ level: 3 }).run(),
+    keywords: ['h3', 'heading', 'title'],
+    wraps: true,
+    command: (editor, range) => editor.chain().focus().deleteRange(range).setHeading({ level: 3 }).run(),
   },
   {
     title: 'Heading 4',
     group: 'text',
     icon: HeadingIcon,
     description: 'A heading within a small section',
-    command: (editor, range) => editor.chain().focus().deleteRange(range).toggleHeading({ level: 4 }).run(),
+    keywords: ['h4', 'heading', 'title'],
+    wraps: true,
+    command: (editor, range) => editor.chain().focus().deleteRange(range).setHeading({ level: 4 }).run(),
   },
   {
     title: 'Heading 5',
     group: 'text',
     icon: HeadingIcon,
     description: 'A minor heading',
-    command: (editor, range) => editor.chain().focus().deleteRange(range).toggleHeading({ level: 5 }).run(),
+    keywords: ['h5', 'heading', 'title'],
+    wraps: true,
+    command: (editor, range) => editor.chain().focus().deleteRange(range).setHeading({ level: 5 }).run(),
   },
   {
     title: 'Heading 6',
     group: 'text',
     icon: HeadingIcon,
     description: 'The smallest heading',
-    command: (editor, range) => editor.chain().focus().deleteRange(range).toggleHeading({ level: 6 }).run(),
+    keywords: ['h6', 'heading', 'title'],
+    wraps: true,
+    command: (editor, range) => editor.chain().focus().deleteRange(range).setHeading({ level: 6 }).run(),
   },
   {
     title: 'Bullet list',
@@ -176,6 +204,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     icon: BlockquoteIcon,
     description: 'Quoted text',
     keywords: ['quote'],
+    wraps: true,
     command: (editor, range) => editor.chain().focus().deleteRange(range).toggleBlockquote().run(),
   },
   {
@@ -184,6 +213,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     icon: CodeBlockIcon,
     description: 'Syntax-highlighted code',
     keywords: ['code', 'snippet'],
+    wraps: true,
     command: (editor, range) => editor.chain().focus().deleteRange(range).toggleCodeBlock().run(),
   },
   {
@@ -210,6 +240,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     group: 'panel' as const,
     icon: PANEL_ICONS[type],
     keywords: ['panel', 'callout', 'admonition', type],
+    wraps: true,
     command: (editor: Editor, range: { from: number; to: number }) =>
       editor.chain().focus().deleteRange(range).setPanel(type).run(),
   })),
@@ -236,6 +267,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     icon: ExpandIcon,
     description: 'Collapsible section with a title',
     keywords: ['collapse', 'toggle', 'details', 'accordion'],
+    wraps: true,
     command: (editor, range) => editor.chain().focus().deleteRange(range).setExpand().run(),
   },
   {
@@ -252,6 +284,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     icon: DecisionIcon,
     description: 'Record something that was agreed',
     keywords: ['decided', 'agreed'],
+    wraps: true,
     command: (editor, range) => editor.chain().focus().deleteRange(range).setDecision().run(),
   },
   {
@@ -278,6 +311,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     icon: ExcerptIcon,
     description: 'Mark the part of this page other pages can include',
     keywords: ['excerpt', 'summary', 'snippet'],
+    wraps: true,
     command: (editor, range) => editor.chain().focus().deleteRange(range).setExcerpt().run(),
   },
   {

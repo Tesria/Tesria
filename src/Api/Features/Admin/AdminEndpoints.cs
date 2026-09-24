@@ -47,7 +47,9 @@ public static class AdminEndpoints
         /// <summary>Which role, not just which tier (dev-plan 11.2).</summary>
         Guid? RoleId, string RoleName,
         /// <summary>Whether the codes were ever confirmed saved; a count of 8 nobody saw is not recovery.</summary>
-        bool RecoveryCodesSaved);
+        bool RecoveryCodesSaved,
+        /// <summary>Two-factor is on, so an administrator may turn it off (dev-plan 15.1).</summary>
+        bool TotpEnabled);
 
     public record LockoutRow(Guid UserId, string Email, string DisplayName, int FailedLoginCount, DateTimeOffset LockedUntil);
     public record SecurityLimitsResponse(
@@ -154,6 +156,7 @@ public static class AdminEndpoints
         group.MapPut("/users/{userId:guid}/status", SetStatus).RequirePermission(InstancePermissions.UsersManage);
         group.MapPost("/users/{userId:guid}/revoke-sessions", RevokeSessions).RequirePermission(InstancePermissions.UsersManage);
         group.MapPost("/users/{userId:guid}/revoke-tokens", RevokeTokens).RequirePermission(InstancePermissions.UsersManage);
+        group.MapPost("/users/{userId:guid}/disable-two-factor", DisableTwoFactor).RequirePermission(InstancePermissions.UsersManage);
         group.MapGet("/spaces", ListSpaces).RequirePermission(InstancePermissions.SpacesManage);
         group.MapPut("/spaces/{key}/public", SetSpacePublic).RequirePermission(InstancePermissions.SpacesPublish);
         group.MapGet("/invites", ListInvites).RequirePermission(InstancePermissions.InvitesManage);
@@ -309,7 +312,10 @@ public static class AdminEndpoints
                     status = 403,
                     code = "permission_required",
                     permission = key,
-                    message = $"You do not have the right to change {field}.",
+                    // Named by the right's label, as the Roles tab shows it; the
+                    // message used to give the setting's field name, such as
+                    // "AllowPublicSpaces" (found 2026-09-23).
+                    message = $"Your role does not have the right to {LabelOf(key)}.",
                 }, statusCode: StatusCodes.Status403Forbidden);
 
         // The public-read switch in either direction is sudo territory
@@ -570,7 +576,7 @@ public static class AdminEndpoints
                 db.RecoveryCodes.Count(c => c.UserId == u.Id && c.UsedAt == null),
                 u.LastSeenAt, u.CreatedAt, u.FailedLoginCount, u.LockedUntil,
                 u.RoleId, u.InstanceRole == null ? "" : u.InstanceRole.Name,
-                u.RecoveryCodesAcknowledgedAt != null))
+                u.RecoveryCodesAcknowledgedAt != null, u.TotpEnabledAt != null))
             .ToListAsync();
 
         // Ordered in memory: SQLite cannot ORDER BY a DateTimeOffset, and this
@@ -809,6 +815,45 @@ public static class AdminEndpoints
         return Results.NoContent();
     }
 
+    /// <summary>
+    /// Turns off another account's two-factor (dev-plan 15.1): the way back for
+    /// someone who has lost the phone and every recovery code, since a password
+    /// reset never touches two-factor. Never the owner, whom nobody else may
+    /// act on; another administrator only by the owner, as with promotion.
+    /// Signs the account out everywhere, asks for the caller's password, and
+    /// alerts every administrator.
+    /// </summary>
+    private static async Task<IResult> DisableTwoFactor(
+        Guid userId, AppDbContext db, IAuditLogger audit, CurrentUser current, ITotpService totp,
+        ISecurityDetector detector, HttpContext http, IConfiguration config)
+    {
+        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Results.NotFound();
+        var callerId = current.RequireId();
+        if (user.Role == UserRole.Owner)
+            return Results.Json(new { title = "Forbidden", status = 403,
+                message = "The owner turns two-factor off from their own profile." }, statusCode: StatusCodes.Status403Forbidden);
+        if (userId == callerId)
+            return Results.Conflict(new { message = "Turn your own two-factor off from your profile." });
+        var caller = await db.Users.AsNoTracking().FirstAsync(u => u.Id == callerId);
+        if (user.Role >= UserRole.Admin && caller.Role != UserRole.Owner)
+            return Results.Json(new { title = "Forbidden", status = 403,
+                message = "Only the owner can turn off an administrator's two-factor." }, statusCode: StatusCodes.Status403Forbidden);
+        if (user.TotpEnabledAt is null)
+            return Results.Conflict(new { message = "Two-factor is not on for this account." });
+
+        totp.Disable(user);
+        user.SecurityStamp = Guid.NewGuid().ToString("N");
+        var now = DateTimeOffset.UtcNow;
+        foreach (var s in await db.UserSessions.Where(s => s.UserId == userId && s.RevokedAt == null).ToListAsync())
+            s.RevokedAt = now;
+        audit.Record("user.totp_disabled", "user", user.Id, new { user.Email });
+        await detector.TwoFactorRemovedAsync(callerId, user);
+        await db.SaveChangesAsync();
+        return Results.NoContent();
+    }
+
     private static async Task<AdminUserResponse?> OneUserAsync(AppDbContext db, Guid userId) =>
         await db.Users.AsNoTracking()
             .Where(u => u.Id == userId)
@@ -819,7 +864,7 @@ public static class AdminEndpoints
                 db.RecoveryCodes.Count(c => c.UserId == u.Id && c.UsedAt == null),
                 u.LastSeenAt, u.CreatedAt, u.FailedLoginCount, u.LockedUntil,
                 u.RoleId, u.InstanceRole == null ? "" : u.InstanceRole.Name,
-                u.RecoveryCodesAcknowledgedAt != null))
+                u.RecoveryCodesAcknowledgedAt != null, u.TotpEnabledAt != null))
             .FirstOrDefaultAsync();
 
     // ---- spaces -------------------------------------------------------------
@@ -939,4 +984,11 @@ public static class AdminEndpoints
 
     private static async Task<AdminSpaceResponse> OneSpaceAsync(AppDbContext db, Guid spaceId) =>
         (await SpaceRowsAsync(db, spaceId)).Single();
+
+    /// <summary>A right's label as a phrase: "Change anonymous reading" becomes "change anonymous reading".</summary>
+    private static string LabelOf(string key)
+    {
+        var label = InstancePermissions.All.FirstOrDefault(p => p.Key == key)?.Label ?? key;
+        return label.Length > 0 ? char.ToLowerInvariant(label[0]) + label[1..] : label;
+    }
 }

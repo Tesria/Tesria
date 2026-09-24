@@ -10,7 +10,7 @@ so a single failure never loses data.
 | 1. Physical PITR | pgBackRest continuous WAL archiving → restore to any second | **Active** |
 | 2. Logical dumps | Scheduled `pg_dump` (custom format) with retention + verify | **Active** |
 | 3. File backups | Attachment (`uploads`) archives on the same schedule | **Active** |
-| 4. Offsite | A copy off this machine | **Not implemented** (dev-plan 9.2) |
+| 4. Offsite | A copy off this machine: cloud, network drive or removable drive | **Active** when configured (dev-plan 9.2) |
 | 5. In-app | Page version history + trash / soft-delete | **Active** |
 
 Layers 1 to 3 report to the app and are managed from **Administration →

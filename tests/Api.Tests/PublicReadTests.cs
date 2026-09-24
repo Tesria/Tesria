@@ -407,10 +407,12 @@ public class PublicReadTests
         // The documented fields and nothing else: no space keys, no account
         // count, no addresses, no settings beyond these. "branding" (dev-plan
         // 13.1) is what every page, the sign-in page included, already shows.
+        // "ownCertificate" (15.5) says what the certificate itself tells
+        // anyone who connects.
         var fields = System.Text.Json.JsonDocument.Parse(body).RootElement
             .EnumerateObject().Select(p => p.Name).Order().ToArray();
         Assert.Equal(
-            ["allowPublicRegistration", "branding", "instanceName", "needsOwner", "publicReading"],
+            ["allowPublicRegistration", "branding", "instanceName", "needsOwner", "ownCertificate", "publicReading"],
             fields);
         Assert.DoesNotContain("PUB", body);
         Assert.DoesNotContain("admin@example.com", body);

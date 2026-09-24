@@ -87,7 +87,13 @@ public static class AuthEndpoints
         /// Codes exist from registration, so a count alone cannot tell codes
         /// someone has from codes nobody was ever shown (2026-09-22).
         /// </summary>
-        bool RecoveryCodesSaved);
+        bool RecoveryCodesSaved,
+        /// <summary>
+        /// Two-factor is compulsory for this account (an administrator on an
+        /// instance that requires it), so turning it off is refused. The SPA
+        /// used to offer "Turn off" anyway, which could only fail (2026-09-23).
+        /// </summary>
+        bool TotpMandatory);
     public record NotificationPreferenceRequest(EmailNotificationMode EmailNotifications);
 
     /// <summary>The password was right; a one-time code is still needed.</summary>
@@ -174,6 +180,20 @@ public static class AuthEndpoints
             enabled, string.IsNullOrWhiteSpace(displayName) ? "Single sign-on" : displayName));
     }
 
+    /// <summary>
+    /// A path on this site and nothing else: the rule ASP.NET Core's
+    /// Url.IsLocalUrl uses. "//host" and "/\host" are both refused, since
+    /// browsers read a backslash as a slash and would leave for that host
+    /// ("/\" got through the earlier check, found 2026-09-23).
+    /// </summary>
+    public static bool IsLocalPath(string? url)
+    {
+        if (string.IsNullOrEmpty(url) || url[0] != '/') return false;
+        if (url.Length == 1) return true;
+        if (url[1] == '/' || url[1] == '\\') return false;
+        return !url.Any(char.IsControl);
+    }
+
     private static IResult OidcLogin(string? returnUrl, IConfiguration config)
     {
         if (string.IsNullOrWhiteSpace(config["Oidc:Authority"]))
@@ -181,9 +201,7 @@ public static class AuthEndpoints
 
         // Only ever redirect back into this same app, never to an
         // attacker-supplied external URL (an open-redirect otherwise).
-        var target = returnUrl is { Length: > 0 } && returnUrl.StartsWith('/') && !returnUrl.StartsWith("//")
-            ? returnUrl
-            : "/";
+        var target = IsLocalPath(returnUrl) ? returnUrl! : "/";
         return Results.Challenge(
             new AuthenticationProperties { RedirectUri = target },
             [OidcAuthenticationDefaults.Scheme]);
@@ -685,7 +703,8 @@ public static class AuthEndpoints
     {
         var remaining = await recovery.RemainingCodesAsync(user.Id);
         var enabled = user.TotpEnabledAt is not null;
-        var required = user.Role >= UserRole.Admin && !enabled && (await siteSettings.GetAsync()).RequireTotpForAdmins;
+        var mandatory = user.Role >= UserRole.Admin && (await siteSettings.GetAsync()).RequireTotpForAdmins;
+        var required = mandatory && !enabled;
         // The SPA renders from these: which nav entries, tabs and buttons
         // exist at all (dev-plan 11.1). Every one is enforced server-side too.
         var held = rights is null ? [] : (await rights.ForUserAsync(user.Id)).Order().ToArray();
@@ -696,7 +715,7 @@ public static class AuthEndpoints
         var setupRequired = await Features.Setup.SetupEndpoints.RequiredForAsync(user, siteSettings);
         return new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.AvatarVariant,
             user.PasswordHash != null, remaining, enabled, required, user.EmailNotifications, held, roleName,
-            setupRequired, Onboarding.SummaryFor(user), user.RecoveryCodesAcknowledgedAt != null);
+            setupRequired, Onboarding.SummaryFor(user), user.RecoveryCodesAcknowledgedAt != null, mandatory);
     }
 
     private static async Task<IResult> UpdateProfile(

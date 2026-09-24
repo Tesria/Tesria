@@ -1,6 +1,7 @@
 import { type FormEvent, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, ApiError, type ImportedPack } from '../api/client'
+import { SpaceAccessEditor } from './SpaceAccessEditor'
 
 /** "1 page", "3 pages": an English plural, which the counts here all need. */
 function count(n: number, noun: string) {
@@ -67,8 +68,8 @@ export function ImportPackForm({ onImported }: { onImported: () => void }) {
           <p className="alert alert--warning">
             The original had restrictions on who could read it: {result.spaceRestrictions} on the space
             and {result.pageRestrictions} on individual pages. Those do not travel in a pack, because
-            they name people on another instance. This space is readable by every member until you set
-            them again under Permissions.
+            they name people on another instance. Set the page restrictions again from each page’s
+            Restrictions tab.
           </p>
         )}
         <p className="muted small">
@@ -80,6 +81,14 @@ export function ImportPackForm({ onImported }: { onImported: () => void }) {
           instance, because a name is not an account.
         </p>
         {result.source && <p className="muted small">Exported from {result.source}.</p>}
+        {/* Straight on to access (dev-plan 15.1): the space starts private to
+            whoever imported it, and this is the moment to say who else. */}
+        <h2 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>Who should have access?</h2>
+        <p className="muted small">
+          For now only you can see {result.name}. Give access to people or groups: the Users group
+          is everyone with an account. You can change this later in the space’s settings, under Permissions.
+        </p>
+        <SpaceAccessEditor spaceKey={result.key} />
         <Link className="btn btn--primary" to={`/spaces/${result.key}`}>
           Open {result.name}
         </Link>

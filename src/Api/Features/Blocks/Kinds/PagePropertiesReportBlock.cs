@@ -16,7 +16,7 @@ public sealed class PagePropertiesReportBlock : IDynamicBlockKind
 
     public async Task<BlockResult> RenderAsync(BlockContext ctx, CancellationToken ct)
     {
-        var wanted = ctx.Required("labels")
+        var wanted = ctx.Required("labels", "Name at least one label.")
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(l => l.ToLowerInvariant())
             .Distinct()

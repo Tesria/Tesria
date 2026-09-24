@@ -82,10 +82,16 @@ export function WelcomePage() {
   useEffect(() => {
     const onLeave = () => {
       if (leaving) return
-      navigator.sendBeacon?.(
-        '/api/auth/me/onboarding',
-        new Blob([JSON.stringify({ tourSkipped: true })], { type: 'application/json' }),
-      )
+      // A keepalive fetch rather than sendBeacon: a beacon can only POST and
+      // cannot carry the X-Requested-With header the CSRF check wants, so it
+      // was refused and the tour came back every session (2026-09-23).
+      void fetch('/api/auth/me/onboarding', {
+        method: 'PUT',
+        keepalive: true,
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'Tesria' },
+        body: JSON.stringify({ tourSkipped: true }),
+      }).catch(() => {})
     }
     window.addEventListener('pagehide', onLeave)
     return () => window.removeEventListener('pagehide', onLeave)

@@ -108,7 +108,7 @@ public class SiteExportTests
 
         var rewritten = SiteExport.RewriteLinks(html, "guides", new Dictionary<Guid, string>(), new Dictionary<Guid, string>());
 
-        Assert.Contains("""href="#">Secret""", rewritten);
+        Assert.Contains("""href="#" title="This page is not part of this export." aria-disabled="true">Secret""", rewritten);
     }
 
     [Fact]

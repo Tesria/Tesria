@@ -41,6 +41,17 @@
 	auto_https disable_redirects
 }
 
+# The internal CA's root certificate. The type is what lets an iPhone or an
+# Android phone offer to install it rather than showing it as text, and the
+# name is what the /trust page tells people to look for in their Downloads.
+(ca_cert) {
+	root * /data/caddy/pki/authorities/local
+	rewrite * /root.crt
+	header Content-Type application/x-x509-ca-cert
+	header Content-Disposition "attachment; filename=\"tesria-ca.crt\""
+	file_server
+}
+
 (app_proxy) {
 	encode gzip zstd
 
@@ -48,9 +59,7 @@
 	# see deploy/scripts/trust-ca.sh / trust-ca.ps1. Not secret: this is the
 	# public half of the CA, safe to serve to anyone who can reach this server.
 	handle /ca.crt {
-		root * /data/caddy/pki/authorities/local
-		rewrite * /root.crt
-		file_server
+		import ca_cert
 	}
 
 	# Real-time collaboration websockets go to the Node sidecar. Caddy proxies
@@ -65,8 +74,16 @@
 		reverse_proxy app:8080
 	}
 
-	# Allow large-ish attachment uploads (tune as needed).
-	request_body {
+	# Uploads: 100 MB, except a wiki pack import, which the format allows to
+	# be 500 MB (WikiPack.MaxTotalBytes). One limit for both refused any pack
+	# over 100 MB before the app saw it (found 2026-09-23). The two matchers
+	# are exclusive, so exactly one limit applies to any request.
+	@packImport path /api/spaces/import
+	@notPackImport not path /api/spaces/import
+	request_body @packImport {
+		max_size 500MB
+	}
+	request_body @notPackImport {
 		max_size 100MB
 	}
 }
@@ -89,12 +106,18 @@
 
 # Same /ca.crt download over plain HTTP, so a brand-new client (nothing
 # trusted yet) can fetch the root CA without needing to skip TLS verification
-# first. Everything else on port 80 still redirects to HTTPS as usual.
+# first, and the /trust page that explains what to do with it. Everything
+# else on port 80 still redirects to HTTPS as usual.
 :80 {
 	handle /ca.crt {
-		root * /data/caddy/pki/authorities/local
-		rewrite * /root.crt
-		file_server
+		import ca_cert
+	}
+	# "Trust this device" (dev-plan 15.5): the page that walks someone
+	# through trusting the certificate above, and the scripts that do it.
+	# Plain HTTP for the same reason as /ca.crt: nothing is trusted yet.
+	@trust path /trust /trust/*
+	handle @trust {
+		reverse_proxy app:8080
 	}
 	handle {
 		redir https://{host}{uri} permanent

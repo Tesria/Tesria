@@ -104,10 +104,20 @@ export function SpaceTemplatesPage() {
 
   return (
     <>
-      <p className="muted small">
-        What is offered when someone creates a page here. To make one, open a page and choose
-        Save as template from its menu.
-      </p>
+      {/* How to make one, as steps rather than one grey line: the owner
+          looked for a way to create a template here and did not find it
+          (2026-09-23). A template is made from a page, so the page is
+          where the button is. */}
+      <section className="profile__section profile__section--wide template-howto">
+        <h2>Making a template</h2>
+        <p className="muted">A template is a page that new pages start from, such as meeting notes or a project brief.</p>
+        <ol>
+          <li>Write a page the way you want new ones to start: its headings, a table to fill in, and hints such as &ldquo;Owner: who?&rdquo;.</li>
+          <li>On that page, open the <strong>&#8942;</strong> menu at the top right and choose <strong>Save as template</strong>.</li>
+          <li>Give it a name, choose <strong>This space only</strong> or <strong>Instance-wide</strong>, and choose <strong>Save</strong>.</li>
+        </ol>
+        <p className="muted small">It is then offered under <strong>Start from a template</strong> whenever someone creates a page here.</p>
+      </section>
       {error && <p className="alert alert--error">{error}</p>}
       {templates === null ? <p className="muted">Loading…</p> : (
         <>

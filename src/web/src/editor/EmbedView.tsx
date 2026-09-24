@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { NodeViewWrapper, type ReactNodeViewProps } from '@tiptap/react'
 import { api, ApiError, type EmbedResolution } from '../api/client'
+import { normalizeWebAddress } from './webAddress'
 
 type State =
   | { status: 'empty' }
@@ -48,7 +49,7 @@ export function EmbedView({ node, editor, selected, updateAttributes }: ReactNod
             // architecture doc's editor gotcha.
             e.preventDefault()
             e.stopPropagation()
-            updateAttributes({ url: draft.trim() })
+            updateAttributes({ url: normalizeWebAddress(draft) })
           }}
         >
           <input

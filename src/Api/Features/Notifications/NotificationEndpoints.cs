@@ -38,18 +38,22 @@ public static class NotificationEndpoints
 
         // Newest first, bounded. Postgres can order DateTimeOffset in SQL; the
         // SQLite test provider cannot, so there we sort in memory.
+        // Read past the limit before filtering, then cut: taking exactly the
+        // limit and then dropping what the reader can no longer see returned
+        // short lists (found 2026-09-23). Four times over, bounded.
+        var fetch = Math.Min(limit * 4, MaxTake * 4);
         List<Notification> rows;
         if (db.Database.IsNpgsql())
         {
-            rows = await query.OrderByDescending(n => n.CreatedAt).Take(limit).ToListAsync();
+            rows = await query.OrderByDescending(n => n.CreatedAt).Take(fetch).ToListAsync();
         }
         else
         {
             var all = await query.ToListAsync();
-            rows = all.OrderByDescending(n => n.CreatedAt).Take(limit).ToList();
+            rows = all.OrderByDescending(n => n.CreatedAt).Take(fetch).ToList();
         }
 
-        var visible = await FilterViewableAsync(rows, perms);
+        var visible = (await FilterViewableAsync(rows, perms)).Take(limit).ToList();
         return Results.Ok(await ToResponsesAsync(visible, db));
     }
 

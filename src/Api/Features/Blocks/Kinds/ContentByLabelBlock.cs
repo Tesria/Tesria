@@ -11,7 +11,7 @@ public sealed class ContentByLabelBlock : IDynamicBlockKind
     public async Task<BlockResult> RenderAsync(BlockContext ctx, CancellationToken ct)
     {
         // Labels are stored lower-cased (LabelEndpoints), so match that here.
-        var wanted = ctx.Required("labels")
+        var wanted = ctx.Required("labels", "Name at least one label.")
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(l => l.ToLowerInvariant())
             .Distinct()

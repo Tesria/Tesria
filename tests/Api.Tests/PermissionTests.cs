@@ -104,6 +104,115 @@ public class PermissionTests
         Assert.Equal(HttpStatusCode.OK, (await bob.GetAsync($"/api/spaces/{space.Key}")).StatusCode);
     }
 
+    private record GrantRow(Guid Id, int PrincipalType, Guid PrincipalId, int Operation);
+
+    private record BuiltInGroupDto(Guid Id, string Name, string? Description, int MemberCount, bool BuiltIn);
+    private record MemberDto(Guid UserId, string Email, string DisplayName);
+
+    [Fact]
+    public async Task The_built_in_groups_follow_each_accounts_tier()
+    {
+        using var factory = new TestAppFactory();
+        var owner = factory.CreateClient();
+        var ownerId = await owner.RegisterAndSignInAsync();
+        var member = factory.CreateClient();
+        var memberId = await member.RegisterAndSignInAsync();
+
+        var groups = await owner.GetFromJsonAsync<List<BuiltInGroupDto>>("/api/groups");
+        Assert.Equal(["Owner", "Admins", "Users"], groups!.Take(3).Select(g => g.Name));
+        Assert.All(groups!.Take(3), g => Assert.True(g.BuiltIn));
+        var users = groups!.Single(g => g.Name == "Users");
+        var admins = groups!.Single(g => g.Name == "Admins");
+        Assert.Equal(2, users.MemberCount);
+        Assert.Equal([ownerId], (await owner.GetFromJsonAsync<List<MemberDto>>($"/api/groups/{admins.Id}/members"))!.Select(m => m.UserId));
+
+        // A private space shared with Users is readable by everyone with an account.
+        var space = await NewSpace(owner, "ALL");
+        await owner.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
+            new { PrincipalType = User, PrincipalId = ownerId, Operation = Admin });
+        Assert.Equal(HttpStatusCode.NotFound, (await member.GetAsync($"/api/spaces/{space.Key}")).StatusCode);
+        await owner.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
+            new { PrincipalType = Group, PrincipalId = users.Id, Operation = View });
+        Assert.Equal(HttpStatusCode.OK, (await member.GetAsync($"/api/spaces/{space.Key}")).StatusCode);
+
+        // Promotion puts someone in Admins without anyone touching the group.
+        (await owner.PutAsJsonAsync($"/api/admin/users/{memberId}/role", new { Role = 1 })).EnsureSuccessStatusCode();
+        Assert.Equal(2, (await owner.GetFromJsonAsync<List<MemberDto>>($"/api/groups/{admins.Id}/members"))!.Count);
+
+        // And they are not anyone's to change.
+        Assert.Equal(HttpStatusCode.Conflict, (await owner.DeleteAsync($"/api/groups/{users.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await owner.PutAsJsonAsync($"/api/groups/{users.Id}", new { Name = "Everyone" })).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await owner.PostAsJsonAsync($"/api/groups/{admins.Id}/members", new { UserId = ownerId })).StatusCode);
+    }
+
+    [Fact]
+    public async Task A_private_space_can_be_made_open_again_by_its_administrator()
+    {
+        using var factory = new TestAppFactory();
+        var alice = factory.CreateClient();
+        var aliceId = await alice.RegisterAndSignInAsync();
+        var bob = factory.CreateClient();
+        await bob.RegisterAndSignInAsync();
+        var space = await NewSpace(alice, "BACK");
+        await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
+            new { PrincipalType = User, PrincipalId = aliceId, Operation = Admin });
+        Assert.Equal(HttpStatusCode.NotFound, (await bob.GetAsync($"/api/spaces/{space.Key}")).StatusCode);
+
+        // Not someone who cannot administer it.
+        Assert.Contains((await bob.DeleteAsync($"/api/spaces/{space.Key}/permissions")).StatusCode,
+            new[] { HttpStatusCode.NotFound, HttpStatusCode.Forbidden });
+
+        Assert.Equal(HttpStatusCode.NoContent, (await alice.DeleteAsync($"/api/spaces/{space.Key}/permissions")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await bob.GetAsync($"/api/spaces/{space.Key}")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Deleting_a_group_takes_its_grants_with_it()
+    {
+        using var factory = new TestAppFactory();
+        var alice = factory.CreateClient();
+        var aliceId = await alice.RegisterAndSignInAsync();
+        var space = await NewSpace(alice, "GONE");
+        await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
+            new { PrincipalType = User, PrincipalId = aliceId, Operation = Admin });
+        var group = (await (await alice.PostAsJsonAsync("/api/groups", new { Name = "Readers" }))
+            .Content.ReadFromJsonAsync<GroupDto>())!;
+        await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
+            new { PrincipalType = Group, PrincipalId = group.Id, Operation = View });
+
+        Assert.Equal(HttpStatusCode.NoContent, (await alice.DeleteAsync($"/api/groups/{group.Id}")).StatusCode);
+
+        var grants = await alice.GetFromJsonAsync<List<GrantRow>>($"/api/spaces/{space.Key}/permissions");
+        Assert.DoesNotContain(grants!, g => g.PrincipalId == group.Id);
+    }
+
+    [Fact]
+    public async Task A_group_that_is_a_spaces_only_access_cannot_be_deleted()
+    {
+        // Removing its grant would leave the space with none: open to everyone.
+        using var factory = new TestAppFactory();
+        var alice = factory.CreateClient();
+        var aliceId = await alice.RegisterAndSignInAsync();
+        var space = await NewSpace(alice, "ONLY");
+        var group = (await (await alice.PostAsJsonAsync("/api/groups", new { Name = "Owners" }))
+            .Content.ReadFromJsonAsync<GroupDto>())!;
+        await alice.PostAsJsonAsync($"/api/groups/{group.Id}/members", new { UserId = aliceId });
+        await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
+            new { PrincipalType = Group, PrincipalId = group.Id, Operation = Admin });
+        // The first grant added Alice too; take her own grant away, leaving the group.
+        var grants = await alice.GetFromJsonAsync<List<GrantRow>>($"/api/spaces/{space.Key}/permissions");
+        var hers = grants!.Single(g => g.PrincipalType == User);
+        (await alice.DeleteAsync($"/api/spaces/{space.Key}/permissions/{hers.Id}")).EnsureSuccessStatusCode();
+
+        var refused = await alice.DeleteAsync($"/api/groups/{group.Id}");
+        Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+        Assert.Contains("only access", await refused.Content.ReadAsStringAsync());
+
+        var bob = factory.CreateClient();
+        await bob.RegisterAndSignInAsync();
+        Assert.Equal(HttpStatusCode.NotFound, (await bob.GetAsync($"/api/spaces/{space.Key}")).StatusCode);
+    }
+
     [Fact]
     public async Task Page_restrictions_hide_the_page_and_its_children()
     {

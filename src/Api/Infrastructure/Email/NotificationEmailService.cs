@@ -164,7 +164,7 @@ public sealed class NotificationEmailService(
             var meta = Meta(n.MetadataJson);
             if (n.Action == "security.alert")
             {
-                lines.Add($"- Security {meta.GetValueOrDefault("Severity", "alert").ToLowerInvariant()}: {meta.GetValueOrDefault("Kind", "see the Security page")}");
+                lines.Add($"- Security {meta.GetValueOrDefault("Severity", "alert").ToLowerInvariant()}: {(meta.TryGetValue("Kind", out var kind) ? Security.AlertKinds.Label(kind) : "see the Security page")}");
                 lines.Add($"  {baseUrl}/admin/security");
             }
             else if (n.TargetType == "page" && pages.TryGetValue(n.TargetId, out var page))

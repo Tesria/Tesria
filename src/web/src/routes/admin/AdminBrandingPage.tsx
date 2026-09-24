@@ -293,7 +293,7 @@ export function AdminBrandingPage() {
           />
           <FileSlot
             title="Favicon"
-            hint="The tab icon. Square works best: SVG, PNG or ICO. Separate from the logo, because a wide logo makes a poor 16-pixel icon."
+            hint="The tab icon. Square works best: SVG, PNG, ICO, JPEG or WebP. Separate from the logo, because a wide logo makes a poor 16-pixel icon."
             favicon={settings.faviconHash}
             accept=".svg,.ico,image/svg+xml,image/png,image/x-icon,image/vnd.microsoft.icon,image/jpeg,image/webp"
             busy={busy}

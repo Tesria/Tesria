@@ -115,7 +115,7 @@ public sealed class TesriaTools
         [Description("The space key, e.g. 'ENG'.")] string spaceKey,
         AppDbContext db, IPermissionService perms, CancellationToken ct)
     {
-        var space = await db.Spaces.AsNoTracking().FirstOrDefaultAsync(s => s.Key == spaceKey, ct);
+        var space = await db.Spaces.AsNoTracking().FirstOrDefaultAsync(s => s.Key == spaceKey.ToUpperInvariant(), ct);
         if (space is null || !await perms.CanViewSpaceAsync(space.Id)) throw McpAccess.NotFound("Space");
 
         var pages = await db.Pages.AsNoTracking()
@@ -150,7 +150,7 @@ public sealed class TesriaTools
         Guid? spaceId = null;
         if (!string.IsNullOrWhiteSpace(spaceKey))
         {
-            var space = await db.Spaces.AsNoTracking().FirstOrDefaultAsync(s => s.Key == spaceKey, ct);
+            var space = await db.Spaces.AsNoTracking().FirstOrDefaultAsync(s => s.Key == spaceKey.ToUpperInvariant(), ct);
             if (space is null || !await perms.CanViewSpaceAsync(space.Id)) throw McpAccess.NotFound("Space");
             spaceId = space.Id;
         }
@@ -209,7 +209,7 @@ public sealed class TesriaTools
         foreach (var row in rows.OrderBy(r => r.Title, StringComparer.CurrentCultureIgnoreCase))
         {
             if (!viewable.Contains(row.SpaceId)) continue;
-            if (spaceKey is not null && row.SpaceKey != spaceKey) continue;
+            if (spaceKey is not null && !string.Equals(row.SpaceKey, spaceKey, StringComparison.OrdinalIgnoreCase)) continue;
             if (!await perms.CanViewPageAsync(row.Id)) continue;
             found.Add(new PageRef(row.Id, row.SpaceKey, row.Title));
         }
@@ -223,7 +223,7 @@ public sealed class TesriaTools
         [Description("The space key.")] string spaceKey,
         AppDbContext db, IPermissionService perms, CancellationToken ct)
     {
-        var space = await db.Spaces.AsNoTracking().FirstOrDefaultAsync(s => s.Key == spaceKey, ct);
+        var space = await db.Spaces.AsNoTracking().FirstOrDefaultAsync(s => s.Key == spaceKey.ToUpperInvariant(), ct);
         if (space is null || !await perms.CanViewSpaceAsync(space.Id)) throw McpAccess.NotFound("Space");
 
         var rows = await db.PageLabels.AsNoTracking()
@@ -258,7 +258,7 @@ public sealed class TesriaTools
         [Description("Create it beneath this page.")] Guid? parentPageId = null)
     {
         McpAccess.RequireWrite(current, accessor);
-        var space = await db.Spaces.AsNoTracking().FirstOrDefaultAsync(s => s.Key == spaceKey, ct);
+        var space = await db.Spaces.AsNoTracking().FirstOrDefaultAsync(s => s.Key == spaceKey.ToUpperInvariant(), ct);
         if (space is null || !await perms.CanViewSpaceAsync(space.Id)) throw McpAccess.NotFound("Space");
 
         var result = await writer.CreateAsync(space.Id, parentPageId, title, Body(content, contentJson), ct);

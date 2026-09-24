@@ -250,6 +250,15 @@ export function ErrorPanelIcon() {
   )
 }
 
+/** A paragraph mark, for "Normal text". */
+export function TextIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 6h14M12 6v13M9 19h6" />
+    </svg>
+  )
+}
+
 export function HeadingIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

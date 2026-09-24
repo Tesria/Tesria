@@ -5,6 +5,253 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### 15.9 Filter the page tree (2026-09-23, Opus 5.5)
+
+- A **Filter pages** box at the top of every space's page tree, and of an
+  exported site's sidebar (the owner's request). Typing shows the pages
+  whose title, or number in a numbered tree, contains the text, with their
+  parent pages dimmed for context and the match highlighted; case and
+  accents are ignored. The filter stays while you open its results, the
+  current page highlighted in it (the owner chose keeping it over clearing
+  it), and is remembered for the browser tab, per space; × or Escape clears
+  it, and Enter opens the first match. Numbers keep their full-tree values while
+  filtering.
+- A toggle beside the box, **Show the pages under each match**: type
+  "elements" and see Elements with every page under it (the owner's
+  request). On by default; turning it off is remembered in that browser.
+- One rule in two places: `treeFilter.ts` in the app (tested) and the
+  export's own script, which each exported link now carries its depth for.
+
+### 15.8 Numbered and bulleted page trees (2026-09-23, Opus 5.5)
+
+- **Space settings → Page tree**: Plain, Numbered or Bulleted, each with a
+  preview. Numbered is outline numbering like a numbered table of contents
+  (1, 1.1, 1.2, 2); Bulleted changes the bullet by level.
+- The markers are drawn, never stored: no title, page address or search
+  result contains them. They are worked out from the tree's order as it is
+  drawn, so moving or adding a page renumbers everything at once, even
+  while dragging in Reorder mode before it is saved (the owner's request).
+  A title that wraps lines up under its own first word.
+- **The space sidebar can be resized** (the owner, once the numbers took
+  room): drag the handle on its right edge, or focus it and use the arrow
+  keys; double-click or Home puts it back to 260px. Between 200px and 560px,
+  never more than half the window, and remembered in that browser like
+  hiding the sidebar. Phones keep their menu.
+- The same rule numbers an exported site's sidebar (`SiteChrome.TreeMarkers`
+  and `treeMarkers.ts`, tested with the same cases), and wiki packs carry
+  the setting (optional, so older packs import as plain).
+- Migration `SpaceTreeStyle`. The Support space is numbered, and its section
+  emoji from 15.7 are taken off again: the owner preferred numbers.
+- **Templates are easier to find.** Space settings → Templates opens with
+  three steps for making one, where it had one grey line; the owner looked
+  there for a way to create a template and did not find it. The Save as
+  template form has labels and a real Save button, and a drop-down under a
+  label (such as Start from a template) sits on its own line and matches
+  the text boxes. Support gains a **Templates** page.
+- Support gains **Opening Tesria by name**: why a name rather than a
+  number, finding it, why a `.local` name can take a few tries, and how to
+  make it instant (awake and wired, router settings, a fixed address, the
+  hosts file, a name server such as Pi-hole with a `.home.arpa` name).
+
+### 15.7 Page emoji (2026-09-23, Opus 5.5)
+
+- A page can have an emoji, shown large above its title and before its name
+  in the page tree, so sections stand out (the owner's request, for the
+  Support site's tree). Anyone who may edit the page sets it from the page:
+  **Add emoji** appears when you hover the title, and opens a picker that
+  searches the editor's emoji by name and takes any other pasted in.
+  Choosing saves at once; it is page metadata like the width, so it makes
+  no new version.
+- The picker has three groups: **Emoji**, **Numbers** (1️⃣ to 🔟) for pages
+  read in order, and **Bullets** (• ▪ ▸ ➤ ◆ and others) for a plain marker.
+  A search covers all three.
+- Carried by copies, wiki packs (an optional field, so older packs import
+  unchanged, and checked on the way in) and exported sites' sidebars.
+- Migration `PageEmoji`.
+- Animations (a video set to play as one) now show at their own size with
+  a picture's shadow, rather than stretched across the column. The Panels
+  clip was recorded at 2x, which Playwright does not scale: the page sat in
+  the top-left quarter of the video. It is recorded at 1x in a narrow
+  window instead.
+
+### 15.5 Trust this device (2026-09-23, Opus 5.5)
+
+- **`http://<server>/trust`**, a page that walks anyone through trusting the
+  server's own certificate, over plain HTTP so a new device opens it with no
+  warning. It guesses the device (Windows, Mac, Linux, iPhone or iPad,
+  Android) and the address, and gives numbered steps: a script with the
+  address already written in, or the certificate and the Settings path on a
+  phone, then a link to check it worked. Firefox gets its own note, and an
+  IP address gets an explanation of why a name works better.
+- Three ways in: **Profile → Trust this device** for anyone signed in (the
+  owner's suggestion: most people click past the warning once and sign in),
+  the sign-in page ("Did your browser warn that this site is not secure?"),
+  and the address itself, which is the way for phones and for browsers that
+  will not let anyone click past the warning. All only on servers with their
+  own certificate. With the public
+  Caddyfile the page says there is nothing to set up.
+- `deploy/scripts/trust-ca.sh` and `trust-ca.ps1` each have one marked line
+  to edit, `TESRIA_ADDRESS`; the page fills it in. The address is checked
+  against a strict pattern first, since the script runs as an administrator.
+- Windows gets one line to paste into PowerShell rather than a script to
+  run. The owner's first try on Windows was refused by PowerShell's
+  execution policy, which blocks downloaded scripts by default and can be
+  locked by an employer; a typed command is not affected. It trusts the
+  server for the current Windows account (`CurrentUser\Root`), so it needs
+  no administrator. The script stays for trusting it machine-wide.
+- Profile and the sign-in page link to `/trust` on the connection already
+  in use, rather than switching to plain HTTP: whoever sees those links got
+  past the warning already, and `http://` by name was unreachable from the
+  owner's Windows machine while HTTPS worked.
+- Opened by a number such as 192.168.1.50, the page now says plainly to
+  open Tesria by its name afterwards: the owner trusted the certificate on
+  Windows and Chrome still said "Not secure", because a number can never
+  match a certificate issued for a name. It names the server when Admin →
+  Settings → Public address holds a real name. "Check it worked" explains
+  `chrome://restart` and the two certificate errors Chrome can show.
+- `/ca.crt` is now served as `application/x-x509-ca-cert`, named
+  `tesria-ca.crt`. Without the type, an iPhone showed the certificate as
+  text rather than offering to install it.
+
+### 10.5 steps 6 and 7: the Support site, written and exported (2026-09-23, Opus 5.5)
+
+- 165 pages in the Support space, written by `scripts/support/publish-support.sh`
+  with every picture taken on a desktop and a phone from the Tesria Demo
+  space.
+- `support/support-pack.zip` is the space as a wiki pack, committed so the
+  site survives anything that happens to an instance. Import it from
+  Spaces → Import a pack. `scripts/support/export-support.sh` regenerates it
+  and exports the static site, checked against Cloudflare's limits.
+
+### Phase 15: what the Support site found missing (2026-09-23, Opus 5.5)
+
+Designed and built by Opus 5.5 from the owner's answers (dev-plan Phase 15).
+
+- **15.1 Access.**
+  - Administrators can turn off another account's two-factor: never the
+    owner's, and another administrator's only by the owner. It asks for the
+    password, signs the account out everywhere, and raises a Warning alert.
+  - Three built-in groups, Owner, Admins and Users, nested, with membership
+    worked out from each account's tier at check time. They cannot be edited
+    or deleted. A custom group already using one of those names is renamed,
+    with an audit entry.
+  - An imported pack now starts private to the importer, and the result
+    screen goes straight to "Who should have access?".
+  - Administration rights can no longer be given to user-tier roles. The
+    server refuses them, the Roles tab shows a dash, and a startup step
+    removes any held already, with an audit entry.
+- **15.2 Editor.**
+  - Tables: header row and header column on and off, merge and split cells,
+    and Delete table, all in the cell menu.
+  - Images: drag to resize (a percentage of the column), left, center, right
+    and full-width alignment, a caption, and editable alt text. The Markdown
+    export carries the caption.
+  - File or video: an Upload button in the block.
+  - Smart link: a real inline form that sits in a sentence. Inline and Card
+    convert between the two.
+- **15.3 Pages and collaboration.**
+  - Comments: threads can be resolved and reopened, and resolved threads fold
+    away and lose their highlight. Mentions work in comments.
+  - History: compare any two versions.
+  - Move a page, with its sub-pages, to another space. Copy a page, with or
+    without its sub-pages. A copy duplicates its attachments, so its pictures
+    do not depend on the original. The dialog opens above the page and
+    closes the page menu behind it.
+  - A label index at /labels.
+  - Space settings → Permissions: "Make this space open again".
+- **15.4 Confirmations.** Suspend, Sign out, Revoke tokens, invite Revoke,
+  unblocking an address, removing a group member, and the Security tab's
+  mitigations each ask first.
+- Migration `CommentResolution` adds `ResolvedAt` and `ResolvedById` to
+  comments.
+
+### 10.5 step 6: fixes the Support site's fact-finding turned up (2026-09-23, Opus 5.5)
+
+Documenting every screen meant reading every screen's code. These were
+fixed before any of it was photographed.
+
+**Security**
+- Single sign-on created accounts even when registration was invite-only.
+- The single sign-on return address accepted `/\host`, an open redirect.
+- Watchers were notified, and could be emailed, about pages they could not
+  view.
+- A read-only API token could get a live-editing token and change a page.
+- Renaming a page through the API or MCP, without sending content, emptied
+  it.
+- The trash, and the dashboard's Most viewed, showed titles of restricted
+  pages.
+- Deleting a group left its grants behind. They now go with it, and the
+  delete is refused where that would open a space or page to everyone.
+
+**Bugs**
+- Error messages dropped the server's explanation, so people saw "Request
+  failed (429)." or "You do not have permission to do that.".
+- Leaving the welcome tour midway was refused by the CSRF check, so the tour
+  came back every session.
+- Turn off two-factor was offered to administrators who must keep it.
+- Edit, + New and the export options showed to people who could not use
+  them.
+- The Insert menu deleted selected text before wrapping it. The slash menu
+  had no Normal text, and headings had no h1 to h6 aliases and switched
+  themselves off.
+- Galleries did not tile.
+- Code block controls stayed live for readers.
+- The emoji menu opened on a bare colon.
+- Picture files showed as file cards in File or video.
+- Embeds refused an address typed without https://.
+- On phones, a table's buttons covered the text above it.
+- Search and notifications returned short lists, because they were cut to
+  their limit before permission filtering.
+- Restoring a version notified nobody, fired no webhook, and did not reach
+  open editors.
+- Permanently deleting a page, or discarding a draft, left its files on
+  disk.
+- Webhook event names were not checked.
+- A wiki pack over 100 MB was refused by Caddy.
+- Exported sites showed links to pages left out of the export with no
+  explanation.
+- The admin Spaces tab failed for roles without a settings right.
+- Expired address blocks stayed listed, and blocked the same range from
+  being added again.
+- Alerts showed their internal names, in the app and in emails.
+- A settings refusal named an internal field, such as AllowPublicSpaces.
+- The setup wizard misplaced its checkboxes, and never checked off Welcome.
+- The tour's recording used the key DEMO, the Tesria Demo space's key, for
+  a temporary space it deletes. A failed setup would have deleted Tesria
+  Demo. Its spaces are now TOUR, and a failed setup stops the run.
+- Scalar's API reference tried to reach api.scalar.com on every load. It no
+  longer does, and its developer toolbar is hidden.
+- Wording across many screens, including `NOTICE`'s British "licences".
+- Typing in a text box no longer zooms the page on an iPhone or iPad. The
+  16px rule that prevents it lost to any box styled smaller by its own class
+  (the new page filter), and did not apply to iPads at all; it now wins, on
+  any touch screen.
+- Profile used a 900px column of 480px cards, one long narrow strip on
+  any wide screen. Its cards now take the window's full width, one to a
+  row like the admin pages, grouped as account, security and preferences;
+  the fields inside keep a readable width.
+- Panel and decision icons, and task checkboxes, now line up with the first
+  line of text on every browser. The icons sat a fixed distance from the
+  top, and the editor's paragraph margin out-ranked the panel's own rule,
+  so the text began half a line lower; task checkboxes were nudged down a
+  fixed amount that matched Chrome and missed on an iPhone. Each is now
+  centered on one line's height (CSS `lh`), and measured within 1.5 pixels
+  in both Chrome and Safari's engine.
+- On a phone, a picture resized smaller than the column now fills it
+  rather than shrinking twice.
+- Selecting a picture, or working in a panel or table, inside a layout
+  column showed the layout's menu on top of that block's own menu. Only the
+  innermost menu shows now; the layout's returns in plain text.
+- Admin → Settings ran off the right edge of a phone: its columns had a
+  26rem minimum, wider than the screen.
+- The screenshot harness painted the sticky top bar into the middle of a
+  cropped picture whenever a step had scrolled the page.
+- Exported pages and sites: Expand blocks were captured shut and their
+  toggle did nothing without the application, so no FAQ answer could be
+  read. The export's script now opens and closes them, and wires code
+  blocks' Copy button. Live blocks lost their editing header and Refresh
+  button, and nothing is shown selected.
+
 ### 8.5 Wiki packs: export and import a space (2026-09-21)
 
 A space can now be exported as a **pack** and read back into any Tesria: the

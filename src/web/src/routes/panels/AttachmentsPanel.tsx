@@ -52,8 +52,14 @@ export function AttachmentsPanel({ pageId }: { pageId: string }) {
       body: <p>The file goes with it. Anywhere it is embedded in this page stops rendering.</p>,
     })
     if (!ok) return
-    await api.attachments.remove(id)
-    reload()
+    // A refusal used to vanish without a word (found 2026-09-23).
+    setError(null)
+    try {
+      await api.attachments.remove(id)
+      reload()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not delete the attachment.')
+    }
   }
 
   return (

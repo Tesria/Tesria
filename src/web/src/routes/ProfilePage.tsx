@@ -10,6 +10,7 @@ import { NotificationPreferences } from '../components/NotificationPreferences'
 import { TourAndTipsSection } from '../components/TourAndTipsSection'
 import { TotpSection } from '../components/TotpSection'
 import { noteProfileVisit } from '../onboarding/signals'
+import { useInstance } from '../InstanceContext'
 
 type Status = { kind: 'ok' | 'error'; message: string } | null
 
@@ -24,6 +25,7 @@ type Status = { kind: 'ok' | 'error'; message: string } | null
  */
 export function ProfilePage() {
   const { user, refresh, can } = useAuth()
+  const instance = useInstance()
   useEffect(() => { noteProfileVisit() }, [])
 
   const [displayName, setDisplayName] = useState(user?.displayName ?? '')
@@ -118,147 +120,174 @@ export function ProfilePage() {
   if (!user) return null
 
   return (
-    <div className="page-wrap">
+    <div className="page-wrap page-wrap--admin">
       <h1>Your profile</h1>
-
-      <section className="profile__section">
-        <h2>Avatar</h2>
-        <AvatarPicker />
-      </section>
-
-      <section className="profile__section">
-        <h2>Display name</h2>
-        <p className="muted small">Shown on your pages, comments and version history.</p>
-        <form onSubmit={saveName}>
-          <label>
-            Display name
-            <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
-          </label>
-          {note(nameStatus)}
-          <button type="submit" className="btn btn--primary" disabled={nameBusy}>
-            {nameBusy ? 'Saving…' : 'Save name'}
-          </button>
-        </form>
-      </section>
-
-      <section className="profile__section">
-        <h2>Email address</h2>
-        {ssoOnly ? (
-          <p className="muted small">
-            This account signs in through your identity provider, which owns its email address.
-          </p>
-        ) : (
-          <form onSubmit={saveEmail}>
-            <label>
-              Email address
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            </label>
-            <label>
-              Current password
-              <PasswordInput
-                value={emailPassword}
-                onChange={(e) => setEmailPassword(e.target.value)}
-                autoComplete="current-password"
-                required
-              />
-            </label>
-            {note(emailStatus)}
-            <button type="submit" className="btn btn--primary" disabled={emailBusy}>
-              {emailBusy ? 'Saving…' : 'Change email'}
-            </button>
-          </form>
-        )}
-      </section>
-
-      <section className="profile__section" id="two-factor">
-        <h2>Two-factor sign-in</h2>
-        <TotpSection />
-      </section>
-
-      {!ssoOnly && (
+      {/* Full-width cards, one to a row, like the admin pages (the owner,
+          2026-09-23): 480px cards in a 900px column were one long narrow
+          strip, and a grid of them read as a jumble. */}
+      <div className="profile-grid">
         <section className="profile__section">
-          <h2>Recovery codes</h2>
-          <RecoveryCodesSection />
+          <h2>Avatar</h2>
+          <AvatarPicker />
         </section>
-      )}
 
-      <section className="profile__section">
-        <h2>Sessions</h2>
-        <SessionsSection />
-      </section>
-
-      <section className="profile__section" id="notifications">
-        <h2>Email notifications</h2>
-        <NotificationPreferences />
-      </section>
-
-      <section className="profile__section" id="tour-and-tips">
-        <h2>Tour and tips</h2>
-        <TourAndTipsSection />
-      </section>
-
-      {can(Permission.TokensUse) ? (
-        <section className="profile__section" id="api-tokens">
-          <h2>API tokens</h2>
-          <ApiTokensSection />
-        </section>
-      ) : (
-        <section className="profile__section" id="api-tokens">
-          <h2>API tokens</h2>
-          <p className="muted small">
-            Your role does not allow API tokens. An administrator can grant it under
-            Administration, Roles.
-          </p>
-        </section>
-      )}
-
-      <section className="profile__section">
-        <h2>Password</h2>
-        {ssoOnly ? (
-          <p className="muted small">
-            This account signs in through your identity provider, which owns its password.
-          </p>
-        ) : (
-          <form onSubmit={savePassword}>
-            <p className="muted small">
-              Changing your password signs out every other device using this account.
-            </p>
+        <section className="profile__section">
+          <h2>Display name</h2>
+          <p className="muted small">Shown on your pages, comments and version history.</p>
+          <form onSubmit={saveName}>
             <label>
-              Current password
-              <PasswordInput
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                autoComplete="current-password"
-                required
-              />
+              Display name
+              <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
             </label>
-            <label>
-              New password
-              <PasswordInput
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                autoComplete="new-password"
-                minLength={8}
-                required
-              />
-            </label>
-            <label>
-              Confirm new password
-              <PasswordInput
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                autoComplete="new-password"
-                minLength={8}
-                required
-              />
-            </label>
-            {note(passwordStatus)}
-            <button type="submit" className="btn btn--primary" disabled={passwordBusy}>
-              {passwordBusy ? 'Saving…' : 'Change password'}
+            {note(nameStatus)}
+            <button type="submit" className="btn btn--primary" disabled={nameBusy}>
+              {nameBusy ? 'Saving…' : 'Save name'}
             </button>
           </form>
+        </section>
+
+        <section className="profile__section">
+          <h2>Email address</h2>
+          {ssoOnly ? (
+            <p className="muted small">
+              This account signs in through your identity provider, which owns its email address.
+            </p>
+          ) : (
+            <form onSubmit={saveEmail}>
+              <label>
+                Email address
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              </label>
+              <label>
+                Current password
+                <PasswordInput
+                  value={emailPassword}
+                  onChange={(e) => setEmailPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+              </label>
+              {note(emailStatus)}
+              <button type="submit" className="btn btn--primary" disabled={emailBusy}>
+                {emailBusy ? 'Saving…' : 'Change email'}
+              </button>
+            </form>
+          )}
+        </section>
+
+        <section className="profile__section">
+          <h2>Password</h2>
+          {ssoOnly ? (
+            <p className="muted small">
+              This account signs in through your identity provider, which owns its password.
+            </p>
+          ) : (
+            <form onSubmit={savePassword}>
+              <p className="muted small">
+                Changing your password signs out every other device using this account.
+              </p>
+              <label>
+                Current password
+                <PasswordInput
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+              </label>
+              <label>
+                New password
+                <PasswordInput
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                />
+              </label>
+              <label>
+                Confirm new password
+                <PasswordInput
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                />
+              </label>
+              {note(passwordStatus)}
+              <button type="submit" className="btn btn--primary" disabled={passwordBusy}>
+                {passwordBusy ? 'Saving…' : 'Change password'}
+              </button>
+            </form>
+          )}
+        </section>
+
+        <section className="profile__section" id="two-factor">
+          <h2>Two-factor sign-in</h2>
+          <TotpSection />
+        </section>
+
+        {!ssoOnly && (
+          <section className="profile__section">
+            <h2>Recovery codes</h2>
+            <RecoveryCodesSection />
+          </section>
         )}
-      </section>
+
+        {/* Trusting the server's own certificate (dev-plan 15.5). The wizard
+
+            is a page of its own at /trust, also served over plain HTTP for a
+
+            device that cannot get past the warning at all. From here the
+
+            connection already works, so the link stays on it: plain HTTP was
+
+            unreachable from the owner's Windows machine (2026-09-23). */}
+        {instance?.ownCertificate && (
+          <section className="profile__section" id="trust-this-device">
+            <h2>Trust this device</h2>
+            <p className="muted">
+              This server makes its own security certificate, so each browser warns about it until the device is told to
+              trust it. If you see "Not secure" beside the address, or had to click past a warning to get here, a short
+              guide sets this device up: it takes about three minutes, once per device.
+            </p>
+            <p>
+              <a className="btn" href="/trust">Set up this device</a>
+            </p>
+          </section>
+        )}
+
+        <section className="profile__section" id="notifications">
+          <h2>Email notifications</h2>
+          <NotificationPreferences />
+        </section>
+
+        <section className="profile__section" id="tour-and-tips">
+          <h2>Tour and tips</h2>
+          <TourAndTipsSection />
+        </section>
+
+        <section className="profile__section profile__section--wide">
+          <h2>Sessions</h2>
+          <SessionsSection />
+        </section>
+
+        {can(Permission.TokensUse) ? (
+          <section className="profile__section profile__section--wide" id="api-tokens">
+            <h2>API tokens</h2>
+            <ApiTokensSection />
+          </section>
+        ) : (
+          <section className="profile__section profile__section--wide" id="api-tokens">
+            <h2>API tokens</h2>
+            <p className="muted small">
+              Your role does not allow API tokens. An administrator can grant it under
+              Administration, Roles.
+            </p>
+          </section>
+        )}
+      </div>
     </div>
   )
 }
