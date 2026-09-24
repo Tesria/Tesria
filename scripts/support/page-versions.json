@@ -167,17 +167,65 @@
     "note": "Revised.",
     "hash": "fa13304f5772c871"
   },
-  "Developers": {
+  "Contributing / Building from source": {
     "appliesTo": "0.6",
     "updated": "2026-09-24",
     "note": "Written for Tesria 0.6.",
-    "hash": "8d9ae3320961fe15"
+    "hash": "8b4877e206c2167c"
+  },
+  "Contributing / How the code is organized": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "7b4b589e0cb0a982"
+  },
+  "Contributing / Making a release": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "aecf03fdeca620ff"
+  },
+  "Contributing / Proposing a change": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "027bd23b478a5432"
+  },
+  "Contributing / Running the tests": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "006a813118b88364"
+  },
+  "Developers": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Revised.",
+    "hash": "4c83fae2a23085da"
+  },
+  "Developers / Contributing": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "d8147d89c13b7c27"
+  },
+  "Developers / How Tesria is built": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "3d9ff7fc54a6f868"
   },
   "Developers / MCP": {
     "appliesTo": "0.6",
     "updated": "2026-09-24",
     "note": "Written for Tesria 0.6.",
     "hash": "378225cd97ed3de1"
+  },
+  "Developers / Project documents": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "0c5aa7d1a4f80858"
   },
   "Developers / REST API": {
     "appliesTo": "0.6",
@@ -515,6 +563,36 @@
     "note": "Revised.",
     "hash": "737506a23e3a60ca"
   },
+  "How Tesria is built / Editing together": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "7a2fb5e8ac36146a"
+  },
+  "How Tesria is built / Exports and wiki packs, in the code": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "52bbdfee7cd3974e"
+  },
+  "How Tesria is built / Following a request": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "6f4c04531235a8fa"
+  },
+  "How Tesria is built / The parts of Tesria": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "298c9b742e865ff1"
+  },
+  "How Tesria is built / Who can see what, in the code": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "ace55b672bfa2657"
+  },
   "Installation and operations": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
@@ -773,6 +851,24 @@
     "note": "Written for Tesria 0.5.",
     "hash": "8eba6db526fbf3b4"
   },
+  "Project documents / Code of conduct": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "540d655c688293ef"
+  },
+  "Project documents / Getting help": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "cc06a8d2e2a781cf"
+  },
+  "Project documents / Governance": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "3b1342351b144d2a"
+  },
   "Release notes": {
     "appliesTo": "0.5",
     "updated": "2026-09-24",
@@ -790,6 +886,18 @@
     "updated": "2026-09-24",
     "note": "Written for Tesria 0.5.",
     "hash": "b529e31bc93df28b"
+  },
+  "REST API / API reference": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "4f72040a9ec8b626"
+  },
+  "REST API / Code examples": {
+    "appliesTo": "0.6",
+    "updated": "2026-09-24",
+    "note": "Written for Tesria 0.6.",
+    "hash": "b56e23cd359dc421"
   },
   "REST API / Getting started with the API": {
     "appliesTo": "0.5",

@@ -81,41 +81,30 @@ the instance.
 
 Check health directly: `curl -k https://localhost/api/health`.
 
-## Local development (without Docker)
+## Development
 
-The API needs a PostgreSQL database. The simplest option is to run just the
-database from the compose stack and point the API at it:
-
-```bash
-docker compose up -d db pgbackrest   # Postgres on localhost:5432 (per your .env)
-```
-
-The backup sidecar comes up with it: on a fresh volume the database alone
-restarts every few seconds, because WAL archiving waits for the stanza that
-`pgbackrest` creates (see the warning under Quick start).
-
-Then, in two terminals:
+Tesria is developed the way it runs, with Docker: change the code, rebuild
+the part you changed, and look at it in the browser.
 
 ```bash
-# API  (http://localhost:5291) · reads ConnectionStrings:Default; the default
-# targets Host=localhost;Database=confluence;Username=confluence
-dotnet run --project src/Api
-
-# Web  (http://localhost:5173, proxies /api to the API)
-cd src/web && npm install && npm run dev
+docker compose up -d --build app   # after changing the API or the web app
+docker compose up -d --build collab   # or pdf, after changing those services
 ```
 
-Open http://localhost:5173, create an account, and start a space. Migrations run
-automatically on API startup. (Tests, by contrast, need no database: see below.)
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for the conventions and how a
+change is proposed, and the Support site's **Developers** section for the
+architecture.
 
 ## Tests
 
 ```bash
-dotnet test
+dotnet test tests/Api.Tests                       # the server
+cd src/web && npm ci && npm run build && npm run lint && npm test   # the web app
 ```
 
 The API test suite boots the app in-process against SQLite in-memory, so it runs
-without Docker or a live PostgreSQL.
+without Docker or a live PostgreSQL. GitHub Actions runs both on every push and
+pull request.
 
 ## Backups
 

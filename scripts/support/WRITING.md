@@ -41,6 +41,12 @@ sections they belong to (`installation.mjs`, `editor-elements-1.mjs`,
   each with a few bold words that say what it is about.
 - **Link to other Support pages** with `pageLink('Exact title')` (or
   `pageLink('Title', 'link text')`), never a bold name alone.
+- **Say how to get there, every time** (the owner, 2026-09-24: pages named
+  a screen and assumed the reader knew where it was). Never "in
+  Administration, Users" alone: use `...adminAt('Users')`, which adds where
+  Admin is on a computer, a narrow window and a phone, or
+  `...profileAt('Sessions')` for a card on the profile. A page about one
+  screen starts with how to open it.
 
 ### Element pages (User manual → The editor → Elements, and Live content)
 

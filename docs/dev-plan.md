@@ -5437,7 +5437,7 @@ Differences from the plan above:
   made by a 0.5.0 build from synthetic content. `PackUpgrades.All` is
   empty; the tests prove the path with a pretend format 2.
 
-## Phase 17: Developer docs on the Support site
+## Phase 17: Developer docs on the Support site · ✅ **shipped 2026-09-24**
 
 Asked for by the owner, 2026-09-24: once versioning (Phase 16) is in,
 the Support site gains developer documentation **below the user
@@ -5469,6 +5469,26 @@ table.
   governance and support, and the changelog by version.
 
 ---
+
+**As built (2026-09-24, Opus 5.5).** A **Developers** section at the end of
+the Support site (`scripts/support/sections/developers.mjs`), with REST API
+and MCP moved under it (same page ids). Added: **Code examples** (one
+program in JavaScript and Python, kept in `docs/examples` and run against
+the instance before publishing), an **API reference** generated from
+`/api/openapi.json` at publish time (every endpoint by area, with its query
+and body fields; the operations carry no summaries, so each area has a
+written line instead), **How Tesria is built** (the parts, a request start
+to finish, editing together, permissions, exports and packs, two Mermaid
+diagrams), **Contributing** (building, tests, layout and conventions,
+proposing a change, making a release) and **Project documents** (code of
+conduct, governance, getting help), with `CONTRIBUTING.md`,
+`CODE_OF_CONDUCT.md`, `GOVERNANCE.md` and `SUPPORT.md` in the repository.
+The code of conduct is written for Tesria, "inspired by the Contributor
+Covenant", with reports to the security address (the owner's choice).
+Found on the way: the README's "Local development (without Docker)" did
+not work (the database publishes no port, and the fallback connection
+string still said "confluence"); it now describes the Docker loop the
+project actually uses. Running the API outside Docker is not documented.
 
 ## Phase 18: Email through the providers people already have
 
@@ -5727,7 +5747,7 @@ would move them away from the permissions and render token they run with.
 15a. **15.5** Trust this device → **15.6** the Support rewrite, pilot pages first (asked for 2026-09-23). Before 14, because the Support site is what goes public with the images.
 16. **14.1** Pre-release audit → **14.2** Images on Docker Hub (asked for 2026-09-23). After 10.5, so the Support site and the images go public together.
 17. **16.1** One version number → **16.2** Versioned docs → **16.3** Pack migrations (asked for 2026-09-24; all three shipped 2026-09-24 with the 0.5.0 release). 16.1 alongside 14.2, since both are the same GitHub Actions release pipeline; 16.2 before the Support site is published at tesria.com; 16.3 before the first release that changes the pack format.
-18. **17** Developer docs on the Support site (asked for 2026-09-24), after Phase 16 so every page carries its version table from the start.
+18. **17** Developer docs on the Support site (asked for 2026-09-24; shipped 2026-09-24), after Phase 16 so every page carries its version table from the start.
 19. **18.1** Provider presets and **18.4** the app-password and sending-service pages (asked for 2026-09-24): small and independent, so any time; best before 14, since they are what a new owner meets in the setup wizard. Then **18.2** Sign in with Microsoft → **18.3** Sign in with Google, before 14 if the owner wants the public release to work with a personal Outlook.com account.
 20. **19.1** Tailscale sidecar → **19.2** its Support pages (asked for 2026-09-24). Independent of everything else; best after 14.2, so the compose file it extends is the published one.
 21. **20.1** Export progress bars (asked for 2026-09-24; shipped 2026-09-24).

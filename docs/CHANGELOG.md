@@ -8,6 +8,25 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.6.0-dev**: 0.5.0 is released, so what comes
 after it is the next minor version.
 
+### Phase 17: developer docs on the Support site (2026-09-24, Opus 5.5)
+
+- **Developers**, a section at the end of the Support site, holding REST API
+  and MCP and four new parts: **Code examples** (list, search, write a page,
+  change it safely with `baseVersion`, label it; in JavaScript and Python
+  with nothing to install, from `docs/examples`, both run against a live
+  instance before publishing), an **API reference** generated from the
+  OpenAPI document at publish time (every request, by area), **How Tesria is
+  built** (five pages, two Mermaid diagrams), **Contributing** (five pages)
+  and **Project documents** (code of conduct, governance, getting help).
+- The repository gains `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`,
+  `GOVERNANCE.md` and `SUPPORT.md`, matching those pages.
+- Fix: the README's "Local development (without Docker)" could not work
+  (the database container publishes no port, and the fallback connection
+  string still used the project's old name). It now describes the Docker
+  loop.
+- `WRITING.md` gains the rule that every page says how to reach the screen
+  it names.
+
 ### Administration: an API tokens tab (2026-09-24, Opus 5.5)
 
 Asked for by the owner: "I have no idea who has created tokens and how
