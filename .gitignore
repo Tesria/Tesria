@@ -53,3 +53,6 @@ scripts/support/shots/
 # The static Support site, which export-support.sh also writes here; rebuilt
 # from the pack, and 50 MB, so never committed.
 support/support-site.zip
+
+# Notes for Claude specific to this machine and its owner (dev-plan 14.1)
+CLAUDE.local.md

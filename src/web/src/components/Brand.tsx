@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { DEFAULT_BRANDING, type BrandLogo, type Branding } from '../api/client'
 import { useInstance } from '../InstanceContext'
 import { BrandMark } from './BrandMark'
+import { TESRIA_SITE } from '../links'
 
 /**
  * The instance's brand (dev-plan 13.1): its logo and name, or Tesria's mark
@@ -92,7 +93,7 @@ export function PoweredBy() {
   return (
     <p className="powered-by">
       Powered by{' '}
-      <a href="https://brianintheloop.com/tesria" target="_blank" rel="noopener noreferrer">Tesria</a>
+      <a href={TESRIA_SITE} target="_blank" rel="noopener noreferrer">Tesria</a>
     </p>
   )
 }

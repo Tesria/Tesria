@@ -36,33 +36,6 @@ Read first, in this order:
   yet scheduled or designed (MCP support, expanded API, Mermaid diagrams,
   portable space/site export). Add new ideas here as they come up.
 
-## Model gate: check before starting any dev-plan item
-
-**Since 2026-09-22, Opus 5.5 does both halves: design and implementation.**
-The owner switched on trial after Anthropic's launch page reported Opus 5.5
-performing at Fable 5.1's level on most work at lower cost. The earlier
-split (Fable designs, Opus implements) is retired for new work. The tags on
-items already in [`docs/dev-plan.md`](./docs/dev-plan.md) stay as the record
-of who did what, and new items are tagged **`Model: Opus 5.5`**.
-
-**Before starting an item, check you are running as Opus 5.5**: the system
-prompt states it ("You are powered by the model named …"). If you are
-anything else, **stop before any tool call that does work.** Say which model
-the plan now expects and offer exactly two options: switch models, or
-override for this item. Wait for the answer, and if the user overrides, note
-it in the item's CHANGELOG entry. The point is unchanged: no silent design
-decisions on a model the owner has not chosen for them.
-
-**Fable is still available as a second opinion, on request.** It is not
-required for anything. When a design turns on a security model or a
-decision that is expensive to reverse (a migration, an auth change, a file
-format), name those decisions in the design so the owner can choose to have
-them reviewed.
-
-**This is a trial.** If a design by Opus 5.5 misses something Fable-level
-design would have caught, say so plainly when it surfaces, and record it in
-the item's CHANGELOG entry, so the owner has evidence either way.
-
 ## Working conventions established in this repo
 
 - **Docker is the source of truth for manual verification.** After a backend
@@ -113,25 +86,6 @@ the item's CHANGELOG entry, so the owner has evidence either way.
   `--disable-features=HttpsUpgrades`. Annotations (circles, arrows, labels)
   are drawn as a DOM overlay before the capture, not painted onto the PNG.
 
-- **Driving the iOS Simulator, learned the hard way (2026-09-14).** Boot
-  exactly one device and wait for `xcrun simctl bootstatus -b` before
-  anything else: this machine is tight on memory, and a second boot takes
-  it down. Caddy's CA goes in with `xcrun simctl keychain <udid>
-  add-root-cert`, then `https://localhost` in Safari is the instance with no
-  warning. Disconnect the hardware keyboard (`defaults write
-  com.apple.iphonesimulator ConnectHardwareKeyboard -bool false`, relaunch
-  the app) or the software keyboard never appears. Injected taps do **not**
-  reliably move focus between web form fields, and the software keyboard
-  drops shift (`@` types as `2`); ask the person to focus the field and
-  then type. Never tap right after a swipe: the page is still moving.
-  `xcrun simctl openurl` and `xcrun simctl io <udid> screenshot` need no
-  panel access and are the reliable half.
-  Switching `xcode-select` to Xcode also routes `git` and `python3` through
-  Xcode's tools, and both refuse to run until `sudo xcodebuild -license
-  accept`: a patch script then prints the license notice instead of
-  running, and looks like success unless its output is read. Do not use the
-  simulator on this machine at all unless asked: it is an 8 GB Mac.
-
 - **The app uses a data router** (`createBrowserRouter` in `main.tsx`,
   since 2026-09-16), not `<BrowserRouter>`: `PageEditor`'s leave prompt
   depends on `useBlocker`, which only a data router provides. Anything that
@@ -149,14 +103,6 @@ the item's CHANGELOG entry, so the owner has evidence either way.
   `SHOT_BROWSER=webkit` runs Safari's engine. The debug account's sign-in is
   in the gitignored `.debug-credentials` at the repo root.
 
-- **The owner's NAS is available for 9.2 (offsite backups) work**, offered
-  2026-09-21: an SMB share on the LAN, credentials in the gitignored
-  `.nas-credentials` at the repo root, same convention as
-  `.debug-credentials`. Two rules from the owner, and both are promises
-  rather than enforcement, because the account can write anywhere on the
-  NAS: **work only under the folder set aside for it, and delete nothing there
-  without explicit permission.** Not in use until 9.2 is being implemented;
-  the owner said to reach it then, not before.
 - **Dependency audit is a release gate.** `scripts/audit.sh` runs
   `npm audit` (web + collab) and `dotnet list package --vulnerable
   --include-transitive`; it must exit 0 before a release or after touching
@@ -176,110 +122,3 @@ the item's CHANGELOG entry, so the owner has evidence either way.
   `docker compose exec`/`cp` args (e.g. `/scripts/verify.sh` becomes a bogus
   `C:/Program Files/Git/scripts/verify.sh`). Prefix the command with
   `MSYS_NO_PATHCONV=1` when running those.
-- **Remote**: `origin` → [`Tesria/Tesria`](https://github.com/Tesria/Tesria),
-  **private**, pushed 2026-09-08 (before that the repo was deliberately local
-  only, pending a code audit). Default branch is `main` (renamed from
-  `master` on 2026-09-08; the old branch is gone from both ends, so a clone
-  predating that rename needs `git branch -m master main` plus a re-point at
-  the new upstream). Keep it
-  private: it isn't the open-source release, and that audit still hasn't
-  happened. The history was scanned for secrets before the first push (`.env`
-  is gitignored and was never committed; `.env.example` is placeholders only).
-
-## Session handoff: 2026-08-03
-
-Everything through this date is committed (this repo had ~2 weeks of
-uncommitted work sitting in the working tree; it's now split into four
-commits: the ConfluenceClone→Tesria rename, the drag-and-drop page tree
-feature + a search bug fix, the password-visibility toggle, and this doc
-update). `dotnet test` (111 tests) and `npm run build && npm run lint` were
-both green as of the last commit; the Docker `app` image was rebuilt and
-the features were verified live in-browser (desktop + mobile viewports)
-before committing: see `docs/CHANGELOG.md`'s dated entries for what
-"verified" covered for each one.
-
-Two pieces of throwaway test data are sitting in the live app, left
-alone deliberately (permanent deletion isn't something this assistant
-does unprompted): safe to remove or ignore:
-- A **"DnD Tester"** test account with a **"Drag and Drop Test" (`DND`)**
-  space, created to verify the drag-and-drop tree feature without touching
-  real content.
-- A **"Trash Test Page"** sitting in the real **"App Design"** space's
-  Trash, from an earlier trash/restore verification pass.
-- ~~An **"API Docs Bot"** account and the **"API"** space it authored,
-  created 2026-09-08 (23 pages, 8 labels, panels, colored tables, a saved
-  template).~~ **Also gone** (noticed 2026-09-21), the same way the manual
-  was. The API's own reference still exists where it always did, as OpenAPI
-  plus `docs/` (8.3), which is the reason this one is a smaller loss.
-- ~~A **"Manual Bot"** account and the **"Tesria User Manual"** (`MANUAL`)
-  space it authored, created 2026-09-11: 47 pages and 86 screenshots.~~
-  **Both are gone** (noticed 2026-09-21): this database has four spaces and
-  none is the manual, the API space and its bot went the same way, and the
-  oldest retained logical backup (2026-09-17) already lacks them. Nothing in
-  the repository held a copy, because the manual was a wiki rather than a
-  file. Rebuilding it is **dev-plan 10.5**. The standing-admin risk the old
-  note warned about is gone with the account.
-
-  The lesson is worth more than the pages were: **content that lives only in
-  the instance is content one reset deletes.** Anything written here that
-  must survive needs a committed export (8.5's wiki packs) or to be written
-  in the repository instead.
-
-- **A page called "RESTORE MARKER 9.4"** in the throwaway `UIWALK2` space,
-  written 2026-09-22 while verifying the restore feature. It was the canary:
-  created after the backup being restored, so it had to vanish on each
-  restore and come back on each undo. Safe to delete; left in place because
-  it is in a throwaway space and deleting is not something to do unprompted.
-- **About fifteen extra backups from 2026-09-22**, the safety backups every
-  restore and undo took. They are real backups and retention will age them
-  out on the ordinary schedule.
-- **Four throwaway spaces from verifying 8.5** (2026-09-21): `FIXTURE2`,
-  `JTSCOPY`, `UIWALK` and `UIWALK2`, all imported copies of `FIXTURE` or
-  `JTS` made while walking the pack export/import. Safe to delete whenever;
-  left in place because deleting a space is irreversible and needs a password.
-  Their attachments have their own freshly minted storage keys, so removing
-  them cannot touch the originals' files.
-
-If a new session picks up UI work in the "App Design" space (the
-dogfooding space documenting Tesria's own architecture), note it's real,
-intentional content, not test data to clean up.
-
-## Environment note: Windows → Mac migration (completed 2026-07-25)
-
-Migrated from a Windows desktop to an Apple Silicon (M2 Max) Mac. All Docker
-base images in this stack (`postgres:18`, `node:22-slim`,
-`mcr.microsoft.com/dotnet/*`, `caddy:2`, plus `pgbackrest` via apt) are
-multi-arch and built/ran natively on arm64 with no emulation, as expected.
-Data was restored from the logical dump + uploads tarball in
-`../tesria-migration-package/` (21 tables, 6 attachments: verified
-against the migration package's own record) and a fresh Mac-native backup +
-restore-test was taken immediately after. Two real issues turned up, both
-now fixed:
-
-- **Whole-project file permissions were 600/700 (owner-only), everywhere.**
-  Not a Windows quirk, whatever copied the project folder to this Mac
-  stripped all group/other bits repo-wide. This silently broke Docker
-  multi-stage builds that `COPY` host files and then `USER <nonroot>` before
-  running them (mode bits are preserved by `COPY`, so a root-owned 600 file
-  becomes unreadable to a later non-root user): `tsc` in the web build stage,
-  `collab/server.js`, and `src/Api/appsettings.json` in the app image all
-  failed this way (`EACCES`/`UnauthorizedAccessException`). Fixed by
-  normalizing the whole tree (`dirs 755`, `files 644`, `*.sh 755`, `.env`
-  kept at `600`). If a future clone/copy of this repo reintroduces
-  restrictive permissions, expect the same failure mode.
-- **`docker compose up -d db` alone crash-loops the container every ~10s**
-  on a fresh volume, because `archive_command` (pgBackRest) fails with no
-  stanza yet: the `pgbackrest` sidecar (which runs `stanza-create`) isn't
-  up. The failure escalates to a full postmaster restart, not a quiet retry.
-  The migration package's own runbook says to bring up `db` alone before
-  restoring; safer in practice is `docker compose up -d db pgbackrest`
-  first, then restore once WAL archiving is confirmed stable (no restarts,
-  clean `archive-push` completions in `docker compose logs pgbackrest`).
-- Also added a repo-root `.dockerignore` (`node_modules`, `dist`, `bin`,
-  `obj`, `.git`, `.env`): there wasn't one before, so stale host build
-  artifacts (also carried over from Windows: `src/web/node_modules`,
-  `src/web/dist`, `src/Api/bin`/`obj`, `tests/Api.Tests/bin`/`obj`, all
-  gitignored) were being pulled into image build contexts and clobbering
-  fresh in-container installs. Those stale directories were deleted on the
-  host; `dotnet-ef` was reinstalled as a global tool (PATH updated via
-  `~/.zprofile`).

@@ -240,7 +240,7 @@ page the sidebar slid up under the top bar.
 ### 14.1 The security findings, fixed (2026-09-24, Opus 5.5)
 
 Every finding listed under 14.1, plus four worse ones the review of them
-turned up. The owner answered the four decisions before bed.
+turned up. The owner answered the four decisions first.
 
 - **API tokens expire.** Chosen when a token is made: 30 days, 90 (the
   default), a year, or never. Tokens from before get 90 days from the
@@ -1490,7 +1490,7 @@ clean recovery afterwards.
 ### Design 9.2: offsite backups to cloud, NAS and removable media (2026-09-21, Fable)
 
 The owner answered the seven decisions 9.2 had waited on since 2026-09-17,
-added removable media to its scope, and offered his NAS for testing. The
+added removable media to its scope, and offered a NAS for testing. The
 full design is in `dev-plan.md`; the decisions that shape it are these.
 
 **Every offsite secret stays in `.env` and is read only by the backup
@@ -4428,7 +4428,7 @@ word needs, so it is gone, and the brand reads "Tesria" at every width.
 
 ### Design: Tesria's brand mark in the favicon and topbar (2026-09-08)
 
-Took the layers mark from the brand page at brianintheloop.com/tesria. It
+Took the layers mark from the project's original brand page. It
 needed no adaptation: the mark is already drawn in the same language as this
 app's icon set (24x24 viewBox, 1.8 stroke, round caps and joins,
 `currentColor`), so it dropped straight in.

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, NavLink, Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { Permission, UserRole } from '../../api/client'
+import { TESRIA_SITE, TESRIA_SOURCE } from '../../links'
 
 /**
  * The admin section's shell (dev-plan 2.1).
@@ -110,8 +111,10 @@ function VersionLine() {
   }, [])
   return (
     <p className="admin-version">
-      <a href="https://brianintheloop.com/tesria" target="_blank" rel="noopener noreferrer">Tesria</a>
+      <a href={TESRIA_SITE} target="_blank" rel="noopener noreferrer">Tesria</a>
       {version && <> {version.split('+')[0]}</>}
+      {' · '}
+      <a href={TESRIA_SOURCE} target="_blank" rel="noopener noreferrer">Source code</a>
     </p>
   )
 }

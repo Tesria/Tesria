@@ -870,7 +870,7 @@ eight times the schema, renderer and export work.
 
 ## Phase 8 · Brand page: claims and roadmap
 
-The page at brianintheloop.com/tesria was audited against the product.
+The project's original brand page was audited against the product.
 Every present-tense claim holds **except one**; the four roadmap items map
 onto `roadmap.md` and are sequenced here.
 
@@ -1199,7 +1199,7 @@ decides what to do with it. Concretely:
    added is marked `externalInsert`; text it removed stays in place,
    marked `externalDelete`, struck through. Both marks carry
    `{ source: 'api' | 'mcp' | 'page', actor, at }`, so the highlight can
-   say *Added by MCP · Brian's laptop token, 2 minutes ago* on hover and
+   say *Added by MCP · Sam's laptop token, 2 minutes ago* on hover and
    color by source.
 2. **Publishing accepts.** Before the editor sends its content, it runs
    `acceptExternalEdits`: `externalDelete` ranges are removed,
@@ -1897,12 +1897,9 @@ only copy off the box. The questions stay as the record of what was asked.
 6. restic replaces the uploads tarball, or both are kept.
 7. ~~NAS as a first-class target type, or a documented recipe.~~
    **Answered 2026-09-21: first-class.** The owner wants people to use the
-   storage they already have, and has made his own NAS available for
-   building and testing: an SMB share on the LAN, credentials in the
-   gitignored `.nas-credentials`, with two standing rules, that only the
-   folder set aside for it may be touched and that nothing there is deleted without
-   explicit permission. SMB/CIFS is therefore the documented and tested LAN
-   protocol; NFS stays a recipe.
+   storage they already have, and made a NAS available for building and
+   testing, an SMB share on the LAN. SMB/CIFS is therefore the documented
+   and tested LAN protocol; NFS stays a recipe.
 8. Removable media (added 2026-09-21 at the owner's request): on-demand
    only, which is the recommendation for version 1, or also "copy whenever
    the drive appears" by polling for the sentinel. And whether a removable
@@ -2185,7 +2182,7 @@ must be operated.
    The default for an unconfigured path slot is a committed empty directory
    with no sentinel, since Compose cannot leave a mount out, and a path with
    no sentinel is exactly what "not there" already means.
-   Verified against the owner's NAS over SMB, inside `a folder set aside for it` only: the
+   Verified against a real NAS over SMB, in a folder set aside for it: the
    unclaimed share was reported absent with nothing written, claiming it
    started backups, the copy on the NAS restored **byte-identical** with 36
    tables, and a scan of the NAS files (with a control) found no `PGDMP`
@@ -5021,9 +5018,8 @@ a full security pass, dependencies) are still to do, with the owner.
   page.
 - Any user can create an instance-wide template.
 - The audit list is cut to its limit before permission filtering.
-- The favicon's source comment names the owner's personal site
-  (`brianintheloop.com/tesria`), and every HTML export and exported site
-  ships that comment. Decide whether it stays in a public release.
+- The favicon's source comment named the owner's personal site, and every
+  HTML export and exported site shipped that comment. Removed.
 
 ### 14.2 Images on Docker Hub · `M` · Model: Opus 5.5 · after 14.1
 
