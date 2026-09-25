@@ -8,10 +8,61 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.7.3-dev**: 0.7.2 is released, and the next
 release is 0.7.3, with the review fixes below.
 
-### Fixes from an outside review: restores (dev-plan 14.4, 2026-09-25, Opus 5.5)
+### Fixes from an outside review: restores work again, and live editing asks the app (dev-plan 14.4, 2026-09-25, Opus 5.5; designs reviewed by Fable 5.1)
+
+- **A restored wiki can read its own tables again (DATA-01).** Since 0.6.0
+  (14.3) a restore from the admin page produced a database the app's role
+  had no access to, because only the one-shot `migrate` service granted it
+  and a restore never ran it; a backup from an older version also waited
+  for migrations nothing would apply. `migrate` now stays running. A
+  restore asks it, through a comment on the restored copy, to migrate and
+  grant that copy **before** anything is replaced, and waits for the
+  answer; if it fails, or does not come within ten minutes, the copy is
+  dropped and nothing has changed. Every thirty seconds `migrate` also
+  checks the live database for pending migrations or a missing grant and
+  repairs either, which covers a point-in-time restore and a restore run
+  by hand. The design review proposed reusing the database container's
+  restore-request files; the logical backup service does not mount that
+  volume, so the request is the restored database's own comment instead,
+  which both sides can already set with the owner's connection.
+- **Live editing asks the app about every connection (SEC-02).** 0.6.0
+  closed connections when access changed, but the collaboration service
+  checked only a token's signature and expiry, so a client that kept its
+  token could reconnect with it for up to ten minutes after losing access.
+  Tokens now name the browser session or API token they were issued
+  under, and the service asks the app (an internal route on the compose
+  network, guarded by the shared secret and refused by Caddy from outside)
+  at every connection, and once a minute for every open one, whether the
+  account, that session or token, and the right to edit the page still
+  hold. An app that cannot be asked admits nobody, after waiting up to
+  fifteen seconds for one that is restarting. `docs/security.md`, which
+  had called this fixed, is corrected.
+
+**Rehearsed on a throwaway stack** built from this code (the deploy bundle,
+local images, its own project, volumes, subnet and port), before anything
+touched a real instance:
+- a same-version restore through the admin API: `migrate` answered in three
+  seconds, the app came back able to read everything and still unable to
+  change the audit log, the page written after the backup was gone, and
+  Undo brought it back;
+- a restore of a dump made by 0.5.0 (56 migrations, a fresh account and
+  page): `migrate` applied the missing five to the restored copy, and the
+  0.5.0 account signed in and its page was served;
+- grants stripped from the live database: repaired in sixteen seconds with
+  nobody asking;
+- `migrate` stopped mid-restore and the restore canceled: the copy was
+  dropped and the wiki unchanged;
+- a client that reuses its token: its session was signed out, the minute's
+  recheck closed its connection, and its reconnects with the still-valid
+  token were refused. Connecting while the app restarted waited, and was
+  admitted once the app answered.
+The browser editor itself was not walked here; it is checked on a real
+instance when 0.7.3 is installed.
+
+### Fixes from an outside review: the first three (dev-plan 14.4, 2026-09-25, Opus 5.5)
 
 An outside code review of 0.7 (2026-09-24) found eight problems, all real.
-These are the first three, in the admin page's restore.
+These three were fixed first, in the admin page's restore.
 
 - **A restore no longer calls itself a success with half a wiki (DATA-03).**
   The database was restored first and the attachments unpacked after the
@@ -48,10 +99,12 @@ These are the first three, in the admin page's restore.
 
 **Trial record (the model gate).** DATA-04 was introduced by 14.3, which
 made the job history append-only without changing the two paths that
-updated it. So were two findings still being fixed: restores leave the
-restored database without the app role's grants (DATA-01), and live-editing
-connections are not re-checked against page permissions (SEC-02). 14.3 was
-designed by Opus 5.5 and reviewed by Fable 5.1; neither caught them.
+updated it. So were DATA-01 and SEC-02 above. 14.3 was designed by Opus
+5.5 and reviewed by Fable 5.1; neither caught them. Fable 5.1's review of
+the 14.4 designs caught real problems (the pass belonged before the swap;
+a re-check carrying tokens would have ended every connection at ten
+minutes) and made one factual error (which volumes the backup services
+mount), found while building.
 
 ## [0.7.2] - 2026-09-25
 

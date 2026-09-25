@@ -111,10 +111,16 @@ with the audit log **hard**, the hash chain makes it **detectable**, and
 point-in-time recovery (already shipped) makes it **recoverable**.
 
 **Two connections.** `ConnectionStrings:Default` is the owner (the
-`POSTGRES_USER` superuser). Since 14.3 only the one-shot `migrate` service
-has it (`MigrateCommand`: the app image run with `--migrate`): unpooled, it
-applies migrations, backfills the chain and provisions the runtime role,
-then exits, and the app starts only after it succeeds. The app and the
+`POSTGRES_USER` superuser). Since 14.3 only the `migrate` service has it
+(`MigrateCommand`: the app image run with `--migrate --watch`): unpooled, it
+applies migrations, backfills the chain and provisions the runtime role, and
+the app starts only once that first pass has succeeded (its health check).
+Since 14.4 it then stays up: a logical restore asks it for the same pass on
+the restored copy before the swap, through that database's comment
+(`tesria-maintenance requested <job>`, answered `done` or `failed`), and
+every thirty seconds it runs the pass on the live database if migrations are
+pending or the runtime role cannot read `Pages`, which covers a
+point-in-time restore and one run by hand. The app and the
 collaboration sidecar never see the owner password, and a production app
 refuses to start with migrations pending. Outside production (tests,
 `dotnet run`) the app runs the same steps itself at startup. `ConnectionStrings:App` is `tesria_app` (`APP_DB_PASSWORD`), which
@@ -1680,9 +1686,11 @@ migration, carries no grants for the runtime role (`--no-privileges`), and has
 settings this process has cached. Startup already does all of that in the right
 order and is the path every deploy exercises, so `RestoreCompletion` polls the
 job and calls `StopApplication` rather than re-running those steps at runtime.
-(Since 14.3 startup no longer migrates or grants: the one-shot `migrate`
-service does, and a restore never runs it. That is the review's DATA-01, being
-fixed in dev-plan 14.4.)
+(Since 14.3 startup no longer migrates or grants; since 14.4 the restore has
+the `migrate` service do both on the restored copy before the swap, so by the
+time the app restarts into it there is nothing left for startup to do. From
+14.3 until then a restore left the app unable to read its own tables: the
+review's DATA-01.)
 It also writes `backup.restored` at startup, keyed on `LastRestoreJobId` and
 skipped when an entry for that job exists, so any number of restarts produce
 exactly one record, in the restored database's own chain.

@@ -5450,6 +5450,35 @@ building.
   app accepts a supplied root certificate and key, and current browsers
   honor name constraints on user-installed roots.
 
+**As built (2026-09-25, Opus 5.5): Designs A and B, as corrected above.**
+Where the build differs:
+- *A, the signal.* The review's "reuse the `pgsocket` request files" was
+  wrong on a fact: the logical `backup` service does not mount that volume,
+  and a file channel would also need a directory the app image's non-root
+  user can write. The request is the restored copy's database comment
+  instead: `tesria-maintenance requested <job>`, answered `done <job>` or
+  `failed <job>: <message>` (`MigrateCommand`, `restore.sh` step 3b). Both
+  sides already hold the owner's connection, only the owner can set it,
+  and it lives on the database it is about. The script clears it before
+  the swap.
+- *A, the service.* Still called `migrate` (`--migrate --watch`), so the
+  app's startup error and the docs stay right. `restart: unless-stopped`;
+  healthy once `/tmp/tesria-migrated` exists (the image's own check is for
+  the web app and is overridden); a failed first pass exits non-zero. The
+  self-check guards `has_table_privilege` with `CASE`, since it throws for
+  a table or role that is not there.
+- *B.* The token carries `sk` (`s` session or `t` API token), `sid` and
+  `st` (16 hex characters of SHA-256 of the security stamp, so a password
+  change or suspension also ends a connection). The app's route is
+  `POST /internal/collab/authorize`; a connection that cannot get an
+  answer waits up to fifteen seconds (the app restarting) before it is
+  refused. A single sign-out sends no revocation notice (14.3 notifies on
+  "sign out everywhere"), so the minute's recheck is what ends that one.
+- *Tests.* `CollabAuthorizeTests` (the route: secret, sign-out, a page
+  restricted away, a changed stamp, a revoked API token) and
+  `MigrateWatchTests` on PostgreSQL (a request answered and granted; lost
+  grants repaired). The rehearsal is in the CHANGELOG.
+
 #### The straightforward fixes
 
 - **DATA-02, the Undo copy of the files.** *Done 2026-09-25.* The file

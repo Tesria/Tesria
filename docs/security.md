@@ -118,25 +118,43 @@ older references still point at the right item.
    *Acceptable*, and common (GitHub works the same way). An organization
    with single sign-on can have its own provider handle recovery instead.
 10. ~~The database owner's password is in the app's environment.~~
-    **Fixed.** A one-shot `migrate` service holds the owner credentials: it
-    applies migrations, fills in the audit chain and provisions the
-    least-privilege role, then exits. The app and the collaboration service
-    are given only the app role (`APP_DB_PASSWORD`, now required), and in
-    production the app refuses to start with migrations pending rather than
-    applying them. The two backup services still hold the owner password:
-    a backup has to read everything, and pgBackRest needs the owner. They
-    run no code that answers the network.
+    **Fixed.** A `migrate` service holds the owner credentials: it applies
+    migrations, fills in the audit chain and provisions the least-privilege
+    role. The app and the collaboration service are given only the app
+    role (`APP_DB_PASSWORD`, now required), and in production the app
+    refuses to start with migrations pending rather than applying them.
+    Since 0.7.3 `migrate` stays running: a restore asks it (through a
+    comment on the restored copy, which only the owner can set) to bring
+    that copy up to date and grant the app its access, and every thirty
+    seconds it checks the live database needs neither. It listens on no
+    port and takes no request from the app. The two backup services also
+    hold the owner password: a backup has to read everything, and
+    pgBackRest needs the owner. None of the three runs code that answers
+    the network.
 11. ~~An open live-editing connection outlives a change of permission.~~
-    **Fixed.** When a save changes something that can take editing away
-    (a suspension, a sign-out or password change, a role, a group
-    membership, a space permission or a page restriction), the app asks
-    the collaboration service to close the connections it touches. The
-    browser reconnects and asks the app for a new token, which is refused
-    to anyone no longer allowed, and the editor says so. Tokens last ten
-    minutes, and connections whose token has expired are closed on the same
-    sweep. A change to a page restriction closes the connections to every
-    page in that space, since restrictions are inherited; the reconnect
-    costs the others a moment.
+    **Fixed in 0.7.3.** 0.6.0 called this fixed and was wrong: it closed
+    the connections when access changed, but the collaboration service
+    checked only a token's signature and expiry, so a client that kept its
+    token could reconnect with it for up to ten minutes (an outside review
+    found it, 2026-09-24; advisory to follow). Now:
+    - Every connection is authorized by the app, not only the token that
+      opened it. The token names the browser session or API token it was
+      issued under; at every connection the collaboration service asks the
+      app (on the compose network, with the shared secret) whether the
+      account is active, that session or token still valid, and the page
+      still editable by them. Caddy refuses the internal route from
+      outside. An app that cannot be asked admits nobody, after waiting
+      fifteen seconds for one that is restarting.
+    - Once a minute it asks again for every open connection, in one
+      request, and closes those the app no longer allows, so access that
+      has gone ends within a minute even if the notice below never arrives.
+    - As before, when a save changes something that can take editing away
+      (a suspension, a sign-out or password change, a role, a group
+      membership, a space permission or a page restriction), the app asks
+      the service to close the connections it touches at once, and tokens
+      last ten minutes. A change to a page restriction closes the
+      connections to every page in that space, since restrictions are
+      inherited; the reconnect costs the others a moment.
 12. ~~Asking for a password reset takes longer for an address that has an
     account.~~ **Fixed.** The email is queued and sent in the background,
     so both answers take the same order of time. Not exactly the same: a

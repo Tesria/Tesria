@@ -148,18 +148,17 @@ your shell and the restore runs for real):
 docker compose exec -e RESTORE_DRY_RUN=1 backup /scripts/restore.sh db-20260920T030000Z.dump
 ```
 
-One difference from the admin page: nothing restarts the application for
-you. Restart it afterwards, so it migrates the restored database, grants its
-runtime role again and drops its old connections:
+The script asks the `migrate` service to bring the restored copy up to date
+and grant the app its access before it replaces anything, so `migrate` must
+be running (`docker compose ps migrate`); if it is not, the script stops
+after ten minutes with nothing changed. One difference from the admin page:
+nothing restarts the application for you. Restart it afterwards, so it drops
+its old connections and forgets what it cached:
 
 ```bash
 docker compose restart app
 docker compose restart collab
 ```
-
-If the script says it is waiting for the application to bring the schema up
-to date, run those from another terminal rather than letting it wait out its
-ten minutes.
 
 ---
 
