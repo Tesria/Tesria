@@ -184,6 +184,7 @@ public static partial class SiteExport
         body.Append($"<h1>{Escape(space.Name)}</h1>");
         if (!string.IsNullOrWhiteSpace(space.Description))
             body.Append($"<p class=\"site-lede\">{Escape(space.Description)}</p>");
+        body.Append(SiteChrome.Contents(pages, head.TreeStyle));
         return Shell(Infrastructure.Branding.BrandTitle.Format(brand.Instance, space.Name),
             body.ToString(), css, brand, head, pages, footer, "");
     }

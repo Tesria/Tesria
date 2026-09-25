@@ -3074,6 +3074,19 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
    height; it keeps filling the window under the bar. */
 .export--file { min-height: calc(100vh - 52px); padding: 1.5rem 1rem 0; }
 .site-lede { color: var(--muted); }
+/* An exported site's front page lists its sections (the owner, 2026-09-24). */
+.site-contents { margin-top: 1.75rem; }
+.site-contents__heading { font-size: 1.1rem; margin: 0 0 0.75rem; }
+.site-contents__sections {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: 1.25rem 2rem; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+.site-contents__title { font-weight: 600; display: inline-flex; gap: 0.4rem; }
+.site-contents__pages { list-style: none; margin: 0.35rem 0 0; padding: 0; font-size: 0.92rem; }
+.site-contents__pages li { margin: 0.2rem 0; }
+.site-contents__page { display: inline-flex; gap: 0.4rem; color: var(--text); }
+.site-contents__page:hover { color: var(--primary); }
+.site-contents .tree__marker { color: var(--muted); font-variant-numeric: tabular-nums; }
 /* A band pinned to the bottom of the window, like the bar at the top, so it
    is always there rather than only after the last line of a long page (the
    owner, 2026-09-24). Fixed rather than sticky because a captured page's own

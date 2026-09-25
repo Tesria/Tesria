@@ -8,6 +8,13 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.7.0-dev**: 0.6.0 is released, so what comes
 after it is the next minor version.
 
+### An exported site's front page lists its contents (2026-09-24, Opus 5.5)
+
+The front page of an exported site (tesria.com/docs among them) showed only
+the space's name and description, and looked empty. It now lists every
+top-level page with the pages directly under it, linked and numbered as the
+sidebar numbers them, in columns on a wide screen and one column on a phone.
+
 ## [0.6.0] - 2026-09-24
 
 The first public release: Tesria's repository opens, with its docs at

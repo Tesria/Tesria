@@ -308,6 +308,36 @@ public static partial class SiteChrome
     }
 
     /// <summary>
+    /// The front page's contents (the owner, 2026-09-24: a site's front page
+    /// with only a name and a description "seems blank"): each top-level page
+    /// and the pages directly under it, linked, numbered as the sidebar
+    /// numbers them. Two levels, so a large space stays a page, not a list.
+    /// </summary>
+    public static string Contents(IReadOnlyList<SiteExport.Placed> pages, SpaceTreeStyle style = SpaceTreeStyle.Plain)
+    {
+        if (pages.Count == 0) return "";
+        var markers = TreeMarkers(pages.Select(p => p.Depth).ToList(), style);
+        string Link(int i, string cls) =>
+            $"<a class=\"{cls}\" href=\"{SiteExport.Relative("", pages[i].Path)}\">"
+            + (markers[i] is { } m ? $"<span class=\"tree__marker\" aria-hidden=\"true\">{m}</span>" : "")
+            + (pages[i].Emoji is { } e ? $"<span class=\"tree__emoji\" aria-hidden=\"true\">{SiteExport.Escape(e)}</span>" : "")
+            + $"<span>{SiteExport.Escape(pages[i].Title)}</span></a>";
+
+        var sb = new StringBuilder("<nav class=\"site-contents\" aria-label=\"Contents\"><h2 class=\"site-contents__heading\">Contents</h2><ul class=\"site-contents__sections\">");
+        for (var i = 0; i < pages.Count; i++)
+        {
+            if (pages[i].Depth != 0) continue;
+            sb.Append("<li class=\"site-contents__section\">").Append(Link(i, "site-contents__title"));
+            var children = new StringBuilder();
+            for (var j = i + 1; j < pages.Count && pages[j].Depth > 0; j++)
+                if (pages[j].Depth == 1) children.Append("<li>").Append(Link(j, "site-contents__page")).Append("</li>");
+            if (children.Length > 0) sb.Append("<ul class=\"site-contents__pages\">").Append(children).Append("</ul>");
+            sb.Append("</li>");
+        }
+        return sb.Append("</ul></nav>").ToString();
+    }
+
+    /// <summary>
     /// A space's icon: an uploaded picture, a chosen emoji, or the key's first
     /// letter on a colored tile. Mirrors <c>SpaceIcon.tsx</c>, including its
     /// rounded-square radius, so the sidebar shows the same tile the
