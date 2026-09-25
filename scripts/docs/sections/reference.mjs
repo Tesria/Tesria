@@ -404,6 +404,8 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
 
     h(2, '0.7.1'),
     p('Released the same day. On an exported website, choosing a page in the sidebar no longer scrolls the sidebar back to the top, so you keep your place in a long list of pages.'),
+    h(2, '0.7.2'),
+    p('Released September 25, 2026. On a phone, an exported website opens each page first, with its list of pages behind a menu button in the top bar, instead of above the page. The button turns into a cross to close the list, and takes you back to where you were reading.'),
   ))
   await page('Tesria 0.6', notes, doc(
     p('Tesria 0.6, released September 24, 2026, is the first public release: Tesria’s source code and these docs are open to everyone. If you already run 0.5, read ', i('Before you upgrade'), ' first: two things need doing once.'),
