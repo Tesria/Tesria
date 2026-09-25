@@ -5180,6 +5180,205 @@ differs from the plan:
 - The editor's refused states are `denied` (a 401 or 403 for a new token)
   and `gone` (a 404); both are final until the page is reloaded.
 
+### 14.4 Fixes from the outside review · `M` · Model: Opus 5.5, designs reviewed by Fable 5.1
+
+An independent developer reviewed a clean copy of the source (2026-09-24)
+and reported seven findings. Each was checked against the code and all
+seven are real and present in 0.7.x. Two were introduced by 14.3: DATA-01
+(its migrate service took over the grants a restore relied on the app to
+restore) and SEC-02 (its revocation closes connections but does not stop a
+token from reconnecting). Neither the 14.3 design nor its review caught
+them.
+
+Three of the fixes are designs that turn on a security model or are
+expensive to reverse, so they are written here for review before they are
+built. The other four are straightforward and are listed after them.
+
+**Order:** the data-safety and access fixes (DATA-01 to DATA-04, SEC-02,
+and correcting `docs/security.md`, which calls SEC-02's gap fixed) ship
+first, as soon as they pass a real restore against PostgreSQL with the
+production role; SEC-01, LIC-01 and DOC-01 follow. GitHub security
+advisories are published for SEC-01 and SEC-02 once their fixes ship.
+
+#### Design A: restores run the database's own maintenance (DATA-01)
+
+*The problem.* A logical restore creates the new database with
+`pg_restore --no-owner --no-privileges`, so its tables carry no grants for
+`tesria_app`. Before 14.3 the app re-granted them whenever it started. Since
+14.3 only the one-shot `migrate` service (the one component besides the
+backup services with the owner's password) applies migrations and grants,
+and a restore never runs it. The restored wiki cannot read its own tables,
+the admin page that offers Undo with it, and a restore from an older
+version also waits for migrations nothing will apply.
+
+*The design.* `migrate` becomes a small long-running service, `db-admin`,
+the same image run with `--db-admin`:
+
+1. At start it does exactly what `migrate` does today: migrations, the
+   audit chain backfill, the app role and its grants. The app still waits
+   for that first pass (`service_healthy` on a health check that passes
+   once the pass has succeeded, instead of `service_completed_successfully`).
+2. Then it waits for requests. The only request is "bring this database up
+   to date": a file the restore writes into a small volume shared by the
+   backup services and `db-admin` (`maintenance`), naming the job. It runs
+   the same pass, and writes the outcome (applied migrations, or the error)
+   beside the request.
+3. The restore script, after the swap and before anything else touches the
+   new database, writes the request and waits (up to ten minutes) for the
+   outcome. On success it carries the rows across as today and finishes. On
+   failure or timeout it swaps the previous database back, restores the
+   uploads it moved aside, and fails the job with the error, so a failed
+   restore leaves the wiki as it was rather than broken.
+
+*What it holds.* The owner's password, which the two backup services
+already hold. No port, no network listener, no request from the app: its
+only input is a file that only the backup services can write, and its only
+action is the pass it already runs at every start.
+
+*Considered and not chosen.*
+- Restoring with privileges (dropping `--no-privileges`): fixes a
+  same-version restore when the role names match, but not a restore from
+  an older version, which still needs migrations, and not a dump from an
+  instance whose app role has another name.
+- Giving the backup image the migration code (an EF bundle): couples the
+  backup image to every schema change and duplicates what the app image
+  already does.
+- Giving the app the owner's password again: undoes gap 10.
+
+*Questions for review.* Is a shared-volume file the right signal (versus a
+row in a table only the owner can write)? Is the automatic swap-back on
+failure safe when the failure happens after the carried rows were
+imported? Should `db-admin` also re-run the pass after a physical (PITR)
+restore, which today restarts the database with its own grants intact?
+
+#### Design B: every collaboration connection is authorized by the app (SEC-02)
+
+*The problem.* The collaboration service verifies a token's signature,
+expiry and page, and that the page exists. It never asks whether the
+person may still edit it. Revocation closes open connections, but the same
+token reconnects until it expires (ten minutes). The editor asks for a new
+token on reconnect; a modified client need not.
+
+*The design.*
+1. Tokens gain the session they were issued under (`sid`: the session row
+   for a browser, the API token's id for a script).
+2. On every connection, after the signature and expiry check, the service
+   asks the app: `POST /internal/collab/authorize` on the compose network
+   (`http://app:8080`), with the shared secret, carrying the token. The app
+   checks that the account is active, that the session or API token is
+   still valid, and that the account may edit the page now, and answers
+   yes or no. The connection is refused unless the answer is yes, and
+   refused if the app cannot be reached (closed by default).
+3. Every open connection is re-authorized the same way once a minute, a
+   backstop for a revocation notice that did not arrive. A no closes it; an
+   unreachable app keeps it until its token expires, so an app restart does
+   not drop every editor.
+4. The internal route is refused unless the request carries the shared
+   secret, and Caddy refuses `/internal/*` from outside regardless.
+
+*Why the app and not the service.* The permission model (roles, groups,
+space permissions, inherited page restrictions, suspension, sessions)
+exists once, in the app. Re-implementing any of it in the collaboration
+service is how the two would drift apart.
+
+*Considered and not chosen.*
+- A revocation list in the service (reject tokens issued before a
+  revocation): lost when the service restarts, and it only knows the
+  revocations whose notice arrived, which is the case the backstop exists
+  for.
+- Shorter tokens (a minute): narrows the window without closing it, and
+  multiplies token requests.
+
+*Questions for review.* Is re-authorizing once a minute the right interval
+for an instance of a few dozen editors? Is "unreachable app keeps the
+connection until its token expires" the right trade against dropping every
+editor during an app restart?
+
+#### Design C: trusting the local certificate only after comparing it (SEC-01)
+
+*The problem.* On a home or office network Tesria makes its own
+certificate authority. The setup page (`/trust`) and its scripts are
+served over plain HTTP, and they download the authority's certificate over
+plain HTTP and install it as trusted. The scripts show a fingerprint but
+compare it with nothing. Someone who can alter traffic on that network can
+substitute an authority of their own, which every device would then trust
+for every website, or substitute the script itself.
+
+*The design.*
+1. **A fingerprint from somewhere the network cannot reach.** The
+   authority's SHA-256 fingerprint is shown:
+   - on the server itself: `deploy/scripts/show-ca-fingerprint.sh`, and in
+     `docker compose logs caddy` at start;
+   - in Administration, on a new **Certificate** card, for an administrator
+     signed in on the server computer at `https://localhost`, which does
+     not cross the network.
+2. **The scripts require it.** `trust-ca.sh --fingerprint <sha256>` and
+   `trust-ca.ps1 -Fingerprint <sha256>` download the certificate, compute
+   its fingerprint, and install it only if the two match; without the
+   argument they refuse. The Windows one-liner goes.
+3. **The scripts come from GitHub, not from the server.** `/trust` gives
+   commands that download the scripts over HTTPS from the release
+   (`releases/latest/download/trust-ca.sh`, attached to every release like
+   `tesria-deploy.zip`), which a network attacker cannot alter.
+4. **Phones compare by eye.** iPhones and Android phones install a
+   certificate through the system's own screens, which show its SHA-256
+   fingerprint. `/trust` says to compare it with the fingerprint from the
+   server, character for character, before trusting it, and never shows a
+   fingerprint of its own for the reader to compare against.
+5. **What trusting it means.** `/trust` and the docs say plainly that a
+   trusted authority vouches for every website, not only Tesria, and point
+   to the alternatives that need no local authority: Tailscale's HTTPS, or
+   a real domain with a public certificate.
+
+*Considered for later.* A name-constrained authority (one that browsers
+accept only for this server's own names) would limit the damage if the
+server's own authority key were ever stolen. It does not help against
+substitution, which this design addresses, and Caddy's internal authority
+cannot create one; Tesria would have to create and supply its own root.
+
+*Questions for review.* Is the server console plus the localhost admin card
+enough of an independent channel for someone who installs Tesria on a
+headless server? Should `/trust` stay on plain HTTP at all, or redirect to
+HTTPS with a warning to click through, which is no better authenticated?
+
+#### The straightforward fixes
+
+- **DATA-02, the Undo copy of the files.** *Done 2026-09-25.* The file
+  backup and the offsite copy exclude `.pre-restore` and the new
+  `.restore-staging`, and a restore never unpacks either from an older
+  archive. Both stay in the uploads volume, not the backups volume as first
+  planned: moving the files aside and into place is then a rename rather
+  than a copy of every attachment, which is what keeps the switch fast and
+  a crash harmless.
+- **DATA-03, failing closed.** *Done 2026-09-25.* Any `pg_restore` error
+  fails the restore, except `COMMENT ON EXTENSION` (owner-only, harmless),
+  matched by the failing command; a restore as the superuser reports none.
+  The attachments are unpacked into `.restore-staging` beside the live ones
+  before the switch, with a space and write check, so a bad archive stops
+  the restore before anything changes. After the switch, a failed move
+  swaps the database back and returns the files, by moving only.
+- **DATA-04, canceling within the database's permissions.** *Done
+  2026-09-25.* The backup agent runs a restore or undo only while
+  `SiteSettings.RestoreJobId` names that job, and treats any other as
+  withdrawn: it ends it as canceled instead of running it, and stops a
+  running one at its next check before the point of no return. A queued
+  cancel and the unclaimed-job timeout therefore only clear the setting
+  (with an audit entry each), never touching `BackupJobs`, which stays
+  append-only for the app; the backups page shows a withdrawn job as ended
+  before the agent records it. Requesting a restore saves the job and the
+  setting in one transaction, so an agent never sees a job without its
+  name. `DatabaseRoleTests` runs these paths on PostgreSQL as the app role
+  (CI has a postgres service for it), and fails on the old code with the
+  review's permission error.
+- **LIC-01, complete notices.** The generator fills in a missing license
+  text from the SPDX text for the package's license, with the copyright
+  line from its metadata, fails when neither exists, and CI checks the
+  notices as well as the manifest.
+- **DOC-01, private material.** The model-selection rules, account and plan
+  details and session notes move to local-only notes; quotations and
+  attributions to the project's owner in public files are reworded
+  neutrally.
+
 ---
 
 ## Phase 15: What the Support site found missing
