@@ -5,6 +5,16 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-09-24
+
+- **An exported site's sidebar keeps its place.** Every page of an exported
+  site is its own file, so each choice in the tree loaded the next page with
+  the sidebar scrolled back to the top, losing your place in a long tree
+  such as tesria.com/docs (the owner noticed it there). The sidebar's scroll
+  is now kept for the browser tab, and the page you open is scrolled into
+  view when it is not, which is also where someone arriving from a search
+  starts. Tesria itself never had this: it does not reload between pages.
+
 ## [0.7.0] - 2026-09-24
 
 Tesria no longer has to be built to be installed. Each release now comes as

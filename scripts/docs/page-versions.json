@@ -902,8 +902,8 @@
   "Release notes / Tesria 0.7": {
     "appliesTo": "0.7",
     "updated": "2026-09-25",
-    "note": "Written for Tesria 0.7.",
-    "hash": "88becafddf37f13f"
+    "note": "Revised.",
+    "hash": "8f27afb4cf82fdfa"
   },
   "REST API": {
     "appliesTo": "0.5",

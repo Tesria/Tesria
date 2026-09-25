@@ -401,6 +401,9 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
       li(p(b('tesria-deploy.zip.'), ' About 100 KB with everything needed to run those images: no source code, and no Git. Upgrading is unzipping the next one over it.')),
       li(p(b('A space’s home page lists its contents,'), ' each section and the pages in it, numbered like the sidebar. An exported website’s front page shows the same.')),
     ),
+
+    h(2, '0.7.1'),
+    p('Released the same day. On an exported website, choosing a page in the sidebar no longer scrolls the sidebar back to the top, so you keep your place in a long list of pages.'),
   ))
   await page('Tesria 0.6', notes, doc(
     p('Tesria 0.6, released September 24, 2026, is the first public release: Tesria’s source code and these docs are open to everyone. If you already run 0.5, read ', i('Before you upgrade'), ' first: two things need doing once.'),

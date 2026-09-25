@@ -641,6 +641,7 @@ public static partial class SiteChrome
             wireExpands();
             wireCopy();
             wireTreeFilter();
+            wireTreeScroll();
           }
 
           // Filtering the sidebar's pages as you type (dev-plan 15.9): the
@@ -724,6 +725,30 @@ public static partial class SiteChrome
             input.addEventListener('keydown', function (e) {
               if (e.key === 'Escape') { input.value = ''; remember(); apply(); }
               if (e.key === 'Enter' && first) { e.preventDefault(); location.href = first.a.href; }
+            });
+          }
+
+          // The sidebar keeps its place (the owner, 2026-09-24). Every page of
+          // an exported site is its own file, so each choice in the tree
+          // loaded a fresh sidebar scrolled to the top, where the app, which
+          // never reloads, keeps its place. The tree's scroll is kept for this
+          // browser tab and put back on the next page; and the page now open
+          // is scrolled into view if it is not, which is also where a reader
+          // who arrives from elsewhere starts.
+          function wireTreeScroll() {
+            var tree = d.querySelector('.sidebar .tree');
+            if (!tree) return;
+            var KEY = 'tesria-tree-scroll', saved = null;
+            try { saved = sessionStorage.getItem(KEY); } catch (e) { /* not kept */ }
+            if (saved !== null) tree.scrollTop = Number(saved) || 0;
+            var current = tree.querySelector('.tree__link.is-active');
+            if (current) {
+              var box = tree.getBoundingClientRect(), row = current.getBoundingClientRect();
+              if (row.top < box.top || row.bottom > box.bottom)
+                tree.scrollTop += row.top - box.top - (box.height - row.height) / 2;
+            }
+            addEventListener('pagehide', function () {
+              try { sessionStorage.setItem(KEY, String(Math.round(tree.scrollTop))); } catch (e) { /* not kept */ }
             });
           }
 
