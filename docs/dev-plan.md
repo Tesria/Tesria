@@ -5479,6 +5479,24 @@ Where the build differs:
   `MigrateWatchTests` on PostgreSQL (a request answered and granted; lost
   grants repaired). The rehearsal is in the CHANGELOG.
 
+**As built (2026-09-25, Opus 5.5): Design C, as corrected above.** Where
+the build differs:
+- *No `show-ca-fingerprint.sh`.* The app's own log is the console route
+  (`LocalAuthority`: it reads `http://caddy/ca.crt` on the compose network
+  at start and hourly, and logs SHA-256 and SHA-1 when it changes), so
+  `docker compose logs app | grep -i fingerprint` works on every host
+  without a second script to keep in step.
+- *SHA-1 as well.* Windows' certificate window shows only the SHA-1
+  "Thumbprint", so the log and the card give both, and the by-hand Windows
+  steps compare that one.
+- *The trusted channel* (`TrustedChannel`) is loopback, or a tailnet address
+  arriving at a `ts.net` host. Not the compose gateway: on Linux that is the
+  host itself, but also every client of a host-side proxy, so it cannot be
+  told apart from the LAN. A forged `X-Forwarded-For: 127.0.0.1` sent over
+  Tailscale was checked live and is ignored.
+- *The Windows one-liner stays,* now checking SHA-256 itself; the machine-
+  wide script gained `-CurrentUser`.
+
 #### The straightforward fixes
 
 - **DATA-02, the Undo copy of the files.** *Done 2026-09-25.* The file

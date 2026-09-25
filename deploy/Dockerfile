@@ -34,9 +34,6 @@ RUN case "$TARGETARCH" in arm64) echo linux-arm64 ;; *) echo linux-x64 ;; esac >
 COPY src/Api/Api.csproj src/Api/
 RUN dotnet restore src/Api/Api.csproj -r "$(cat /tmp/rid)"
 COPY src/Api/ src/Api/
-# The certificate scripts the /trust page serves (dev-plan 15.5), embedded
-# from their one copy in deploy/scripts.
-COPY deploy/scripts/trust-ca.sh deploy/scripts/trust-ca.ps1 deploy/scripts/
 # Embed the built SPA so `dotnet publish` includes it in the image.
 RUN rm -rf src/Api/wwwroot && mkdir -p src/Api/wwwroot
 COPY --from=web /web/dist/ src/Api/wwwroot/

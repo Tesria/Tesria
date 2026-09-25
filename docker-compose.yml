@@ -159,6 +159,10 @@ services:
       # Which Caddyfile is in use: the default one makes its own certificate,
       # and then the app offers /trust to each device (dev-plan 15.5).
       Tls__Caddyfile: ${CADDYFILE:-deploy/Caddyfile}
+      # Where the app reads the public root of Caddy's own certificate
+      # authority, to show its fingerprint (dev-plan 14.4). The compose
+      # network only; the app never sees the authority's key.
+      Tls__AuthorityCertificateUrl: "http://caddy/ca.crt"
       # Where the optional Tailscale sidecar leaves its status (dev-plan
       # 19.1), for the Tailscale card in Administration. Only a file: the app
       # never gets Tailscale's control socket.

@@ -123,10 +123,11 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     step(2, 'Trust the server, if the browser warns you'),
     p('If the browser says the connection is not private, your Tesria makes its own certificate, and the phone has to be told to trust it. The ', b('Trust this device'), ' guide walks you through it. On the phone, open ', c('http://your-server/trust'), ' (with ', c('http'), ', not ', c('https'), '), where ', c('your-server'), ' is your Tesria’s address, and choose your kind of phone.'),
-    ...(await phonePicture(setup, 'phone-trust', 'The Trust this device guide on an iPhone', 'The guide’s third step on an iPhone: download the certificate, then switch trust on in Settings.')),
+    ...(await phonePicture(setup, 'phone-trust', 'The Trust this device guide on an iPhone', 'The guide’s fourth step on an iPhone: download the certificate, compare its fingerprint, then switch trust on in Settings.')),
+    p('You also need the server’s ', b('fingerprint'), ', a long code that only your server’s certificate has, so you can check that the certificate your phone received is really your server’s. Whoever runs your Tesria can read it on the server; ', pageLink('Trusting the local certificate'), ' says where.'),
     ul(
-      li(p(b('On an iPhone or iPad,'), ' use ', b('Safari'), ': other browsers there cannot install certificates. It takes two parts, installing the certificate and then switching on trust for it in the Settings app.')),
-      li(p(b('On Android,'), ' the certificate is installed from Settings. The menus differ a little between phone makers; the guide says where to look.')),
+      li(p(b('On an iPhone or iPad,'), ' use ', b('Safari'), ': other browsers there cannot install certificates. It takes three parts: installing the certificate, comparing its fingerprint in the Settings app, and then switching on trust for it.')),
+      li(p(b('On Android,'), ' the certificate is installed from Settings, and trusted at once, so compare its fingerprint straight afterwards. The menus differ a little between phone makers; the guide says where to look.')),
     ),
     p('Every step, with what to tap, is in ', pageLink('Trusting the local certificate'), ', under ', b('On a phone'), '. Once you are signed in, the same guide is on your profile, under ', b('Trust this device'), '.'),
 

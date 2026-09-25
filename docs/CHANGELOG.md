@@ -8,6 +8,47 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.8.0-dev**: 0.7.3 is released, and the next
 release is 0.8.0, with the rest of the review fixes (SEC-01, LIC-01, DOC-01).
 
+### Fixes from an outside review: trusting the local certificate (dev-plan 14.4, SEC-01, 2026-09-25, Opus 5.5; design reviewed by Fable 5.1)
+
+On a server without a public domain, each device trusts the certificate
+authority Caddy makes for it. The certificate, the `/trust` guide and the
+scripts it handed out all came over plain HTTP, and nothing checked the
+certificate against anything, so someone able to alter traffic on that
+network could have a device trust their authority, for every website, or
+run their script. The review rated it High.
+
+- **A fingerprint from the server itself.** The app reads the public root
+  of Caddy's authority over the compose network and logs its SHA-256 and
+  SHA-1 fingerprints at startup (`docker compose logs app | grep -i
+  fingerprint`). A new **Certificate** card in Administration, Settings,
+  shows them only to a request from the server computer itself or through
+  Tailscale at its `ts.net` name; elsewhere it says where to look instead.
+  The app never sees the authority's key.
+- **Nothing is trusted without it.** `trust-ca.sh --fingerprint` and
+  `trust-ca.ps1 -Fingerprint` refuse without a matching fingerprint, and
+  the Windows one-line command computes the certificate's SHA-256 and
+  imports nothing unless it matches. On phones, and in Keychain Access,
+  Windows' certificate window and Firefox, the steps now include comparing
+  the fingerprint by eye before trusting.
+- **Scripts from GitHub, not the server.** The server no longer serves
+  `trust-tesria.sh` or `.ps1`, with the address written in; every release
+  attaches `trust-ca.sh` and `trust-ca.ps1`, and `/trust` fetches them
+  from `releases/latest/download/` over HTTPS. `/trust` shows no
+  fingerprint of its own, says it could have been altered, and defers to
+  the docs over HTTPS.
+- **What trusting means.** `/trust` and the docs say that a trusted
+  authority vouches for every website, and name the two ways that need
+  none: Tailscale and a real domain.
+
+Tested: the scripts' refusal and match paths (on macOS with `sudo`
+stubbed, and in PowerShell 7 with `Import-Certificate` stubbed); the card
+and endpoint from the server, the LAN, Docker Desktop's shared gateway and
+Tailscale; the page's commands filled from a pasted fingerprint, on a
+phone-width screen and a desktop; and, live, the logged fingerprint
+against the certificate Caddy serves. Windows PowerShell 5.1 itself, the
+elevation relaunch and a real phone comparison are for a Windows PC and a
+phone before release.
+
 ## [0.7.3] - 2026-09-25
 
 ### Fixes from an outside review: restores work again, and live editing asks the app (dev-plan 14.4, 2026-09-25, Opus 5.5; designs reviewed by Fable 5.1)

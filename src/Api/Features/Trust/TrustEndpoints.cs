@@ -8,8 +8,15 @@ namespace Tesria.Api.Features.Trust;
 
 /// <summary>
 /// "Trust this device" (dev-plan 15.5): a page that walks someone through
-/// trusting this server's own certificate, and the two scripts that do it,
-/// with the server's address already written in.
+/// trusting this server's own certificate authority.
+///
+/// <para>Since 14.4 (the review's SEC-01) every route to trusting it goes
+/// through a fingerprint the person gets from the server itself, never from
+/// this page: the page reaches them over plain HTTP, so on a network someone
+/// else controls, the page, a script it served and the certificate could all
+/// be someone else's. It therefore serves no scripts (they come from the
+/// GitHub release), shows no fingerprint, and points to the same steps in
+/// the docs over HTTPS, which win if the two ever differ.</para>
 ///
 /// <para>Served over plain HTTP as well as HTTPS, on purpose: a device that
 /// trusts nothing yet can open <c>http://server/trust</c> without a warning,
@@ -19,16 +26,17 @@ namespace Tesria.Api.Features.Trust;
 /// Its script and stylesheet are separate same-origin files, which keeps the
 /// Content Security Policy as it is.</para>
 ///
-/// <para>The address goes into a script someone runs as an administrator,
-/// so it is checked against <see cref="Address"/> before it is written in:
-/// letters, digits, dots and hyphens, or an IPv4 address. Nothing that a
-/// shell or PowerShell would treat as syntax can pass.</para>
+/// <para>The address it fills into commands is the one the page was
+/// reached at, checked against <see cref="Address"/> first: letters, digits,
+/// dots and hyphens, or an IPv4 address.</para>
 /// </summary>
 public static partial class TrustEndpoints
 {
-    /// <summary>The line of each script that holds the address, as it is in deploy/scripts.</summary>
-    public const string ShMarker = "TESRIA_ADDRESS=\"localhost\"";
-    public const string Ps1Marker = "$TesriaAddress = \"localhost\"";
+    /// <summary>The same steps over HTTPS, which the page defers to.</summary>
+    public const string DocsUrl = "https://tesria.com/docs/installation-and-operations/trusting-the-local-certificate/";
+
+    /// <summary>Where the scripts come from: the latest release, over HTTPS.</summary>
+    public const string ReleaseDownload = "https://github.com/Tesria/Tesria/releases/latest/download/";
 
     public static IEndpointRouteBuilder MapTrustEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -37,8 +45,6 @@ public static partial class TrustEndpoints
         trust.MapGet("/app.css", AppCss);
         trust.MapGet("/trust.css", () => Asset("trust/trust.css", "text/css"));
         trust.MapGet("/trust.js", () => Asset("trust/trust.js", "text/javascript"));
-        trust.MapGet("/trust-tesria.sh", (string? address) => Script("trust/trust-ca.sh", ShMarker, $"TESRIA_ADDRESS=\"{{0}}\"", address, "trust-tesria.sh", crlf: false));
-        trust.MapGet("/trust-tesria.ps1", (string? address) => Script("trust/trust-ca.ps1", Ps1Marker, $"$TesriaAddress = \"{{0}}\"", address, "trust-tesria.ps1", crlf: true));
         return routes;
     }
 
@@ -54,28 +60,6 @@ public static partial class TrustEndpoints
     /// <summary>A host name, or an IPv4 address. No port, no scheme, no path.</summary>
     [GeneratedRegex(@"^(?=.{1,253}$)[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$")]
     internal static partial Regex Address();
-
-    private static IResult Script(string resource, string marker, string format, string? address, string filename, bool crlf)
-    {
-        address = (address ?? "").Trim().ToLowerInvariant();
-        if (!Address().IsMatch(address))
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["address"] = ["Give the address you open Tesria at, such as wiki-server.local, without https:// or a port."],
-            });
-        var text = Read(resource);
-        // A script that still said localhost would quietly trust the wrong
-        // server, so a template that lost its marker is an error, not a guess.
-        if (!text.Contains(marker, StringComparison.Ordinal))
-            throw new InvalidOperationException($"{resource} no longer contains the line {marker}");
-        text = text.Replace(marker, string.Format(format, address), StringComparison.Ordinal);
-        text = text.Replace("\r\n", "\n");
-        if (crlf) text = text.Replace("\n", "\r\n");
-        // PowerShell 5.1 reads a file without a byte order mark as the
-        // system code page; with one, as UTF-8.
-        var bytes = crlf ? [.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(text)] : Encoding.UTF8.GetBytes(text);
-        return Results.File(bytes, "application/octet-stream", filename);
-    }
 
     private static IResult Asset(string resource, string contentType) =>
         Results.Text(Read(resource), contentType + "; charset=utf-8");
@@ -126,14 +110,42 @@ public static partial class TrustEndpoints
     private const string BrandMark = """<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5-8 4.5-8-4.5L12 3z" /><path d="M4 12l8 4.5 8-4.5M4 16.5L12 21l8-4.5" /></svg>""";
 
     /// <summary>
-    /// The Windows one-liner. Typed commands are not subject to PowerShell's
-    /// execution policy, which blocks a downloaded .ps1 by default and can be
-    /// locked by an employer (found by the owner on Windows, 2026-09-23).
-    /// CurrentUser\Root needs no administrator; Windows asks the person to
-    /// confirm the certificate instead, which is the prompt the page describes.
+    /// The commands the page shows, as templates its script fills in as the
+    /// address and fingerprint are typed: <c>{address}</c>, <c>{fingerprint}</c>
+    /// (colon pairs) and <c>{hex}</c> (bare). Rendered once here, with
+    /// placeholders, for a page read without its script.
     /// </summary>
-    internal static string WindowsCommand(string address) => WebUtility.HtmlEncode(
-        $"$c = \"$env:TEMP\\tesria-ca.crt\"; Invoke-WebRequest -UseBasicParsing -Uri \"http://{(address.Length == 0 ? "your-server" : address)}/ca.crt\" -OutFile $c; Import-Certificate -FilePath $c -CertStoreLocation Cert:\\CurrentUser\\Root");
+    internal const string MacLinuxCommand =
+        "curl -fsSLO " + ReleaseDownload + "trust-ca.sh && bash trust-ca.sh --fingerprint {fingerprint} {address}";
+
+    /// <summary>
+    /// Windows, as one typed line: typed commands are not subject to
+    /// PowerShell's execution policy, which blocks a downloaded .ps1 by
+    /// default and can be locked by an employer (2026-09-23), and
+    /// CurrentUser\Root needs no administrator. It computes the certificate's
+    /// SHA-256 itself (Windows PowerShell 5.1 only offers SHA-1) and imports
+    /// nothing unless it matches.
+    /// </summary>
+    internal const string WindowsLine =
+        "$c = \"$env:TEMP\\tesria-ca.crt\"; Invoke-WebRequest -UseBasicParsing -Uri \"http://{address}/ca.crt\" -OutFile $c; "
+        + "$x = New-Object Security.Cryptography.X509Certificates.X509Certificate2($c); "
+        + "$h = [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($x.RawData)) -replace '-', ''; "
+        + "if ($h -eq \"{hex}\") { Import-Certificate -FilePath $c -CertStoreLocation Cert:\\CurrentUser\\Root } "
+        + "else { Write-Host \"The certificate does not match the fingerprint. Nothing was trusted.\" -ForegroundColor Red }";
+
+    /// <summary>Windows, for everyone on the computer: the script, from the release.</summary>
+    internal const string WindowsScript =
+        "Invoke-WebRequest -UseBasicParsing " + ReleaseDownload + "trust-ca.ps1 -OutFile \"$env:TEMP\\trust-ca.ps1\"; "
+        + "powershell -ExecutionPolicy Bypass -File \"$env:TEMP\\trust-ca.ps1\" {address} -Fingerprint {hex}";
+
+    /// <summary>A command box: the template for the script, and a first rendering with placeholders.</summary>
+    internal static string Command(string template, string address) =>
+        $$"""<div class="trust-cmd"><code data-template="{{WebUtility.HtmlEncode(template)}}">{{WebUtility.HtmlEncode(Fill(template, address))}}</code><button type="button" class="btn btn--sm" data-copy>Copy</button></div>""";
+
+    internal static string Fill(string template, string address) => template
+        .Replace("{address}", address.Length == 0 ? "your-server" : address)
+        .Replace("{fingerprint}", "PASTE-THE-FINGERPRINT")
+        .Replace("{hex}", "PASTE-THE-FINGERPRINT");
 
     /// <summary>
     /// The server's own name, from Admin → Settings → Public address, when it
@@ -170,11 +182,21 @@ public static partial class TrustEndpoints
         <h1>Trust this server on your device</h1>
         <p class="trust-lead">A few minutes, once per device, and your browser stops warning you about this server.</p>
 
-        <details class="trust-why" open>
+        <div class="alert alert--warning trust-channel">
+        <p><strong>This page reached you over a connection that is not protected yet,</strong> so on a network someone else controls, it could have been changed on the way. The same steps are in the <a href="{{DocsUrl}}">Tesria docs</a>, over a protected connection. If this page and the docs ever differ, follow the docs.</p>
+        </div>
+
+        <details class="trust-why">
         <summary>Why am I seeing a security warning?</summary>
-        <p>Browsers keep web traffic private with <strong>certificates</strong>: a certificate proves to your browser that it is talking to the real server and not an impostor. Public websites buy theirs from companies every browser already trusts.</p>
-        <p>A Tesria server on your own network cannot get one of those, so it makes its own. Your browser has never heard of it, so it warns you. The connection is still encrypted; the browser just cannot vouch for who is on the other end.</p>
-        <p>The fix is to tell your device, once, "this server's certificate is mine, trust it". This page walks you through that for your device. You will need to be an administrator of the device, and it takes about three minutes.</p>
+        <p>Browsers keep web traffic private with <strong>certificates</strong>: a certificate proves to your browser that it is talking to the real server and not an impostor. Public websites get theirs from certificate authorities every browser already trusts.</p>
+        <p>A Tesria server on your own network cannot get one of those, so it becomes its own certificate authority. Your browser has never heard of it, so it warns you. The connection is still encrypted; the browser just cannot vouch for who is on the other end.</p>
+        <p>The fix is to tell your device, once, "this server's certificate authority is mine, trust it". This page walks you through that. You will need to be an administrator of the device.</p>
+        </details>
+
+        <details class="trust-why">
+        <summary>What does trusting it mean?</summary>
+        <p>A device that trusts a certificate authority believes it about <strong>every</strong> website, not only Tesria. That is fine while the authority's key stays on your server, where Tesria keeps it. It is also why each device checks the fingerprint in step 3 first: so that what it trusts is your server's, and nobody else's.</p>
+        <p>Two ways need nothing trusted on each device: reaching Tesria through <strong>Tailscale</strong>, whose addresses have public certificates, or giving it a <strong>real domain</strong> with a public certificate. Both are in the <a href="{{DocsUrl}}">docs</a>.</p>
         </details>
 
         <section class="trust-step" data-step="1">
@@ -205,51 +227,69 @@ public static partial class TrustEndpoints
         </section>
 
         <section class="trust-step" data-step="3">
-        <h2><span class="trust-step__num">3</span> Trust the certificate</h2>
+        <h2><span class="trust-step__num">3</span> Get the server's fingerprint</h2>
+        <p>The <strong>fingerprint</strong> is a long code that only your server's certificate has, like <code>4B:1E:09:…</code> (32 pairs). Your device checks the certificate against it before trusting anything. Get it from the server itself, <strong>not from this page</strong>, which could have been changed:</p>
+        <ul>
+          <li><strong>Ask whoever runs your Tesria.</strong> They can read it on the server.</li>
+          <li><strong>On the server computer,</strong> open <code>https://localhost</code>, then Administration, Settings, <strong>Certificate</strong>.</li>
+          <li><strong>In a terminal on the server,</strong> in the Tesria folder: <code>docker compose logs app | grep -i fingerprint</code> <span class="muted">(on Windows, <code>| Select-String fingerprint</code>)</span>.</li>
+          <li><strong>Through Tailscale,</strong> if your Tesria has it: Administration, Settings, Certificate, at its <code>ts.net</code> address.</li>
+        </ul>
+        <label class="trust-address trust-fingerprint">
+          <span class="trust-address__prefix">SHA-256</span>
+          <input id="trust-fingerprint" type="text" aria-label="The server's SHA-256 fingerprint" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste the fingerprint here" />
+        </label>
+        <p class="alert alert--error" id="trust-fingerprint-error" hidden>That is not a SHA-256 fingerprint: it should be 64 letters and numbers, usually in pairs like <code>4B:1E:09</code>. Copy the SHA-256 one, not the SHA-1.</p>
+        <p class="muted">The commands below fill it in. On a phone you compare it by eye instead, so keep it at hand.</p>
+        </section>
+
+        <section class="trust-step" data-step="4">
+        <h2><span class="trust-step__num">4</span> Trust the certificate</h2>
 
         <div class="trust-guide" data-for="mac">
-          <p>The quickest way is a small script that downloads the certificate and adds it to your Mac's list of trusted certificates. It already has your server's address in it.</p>
+          <p>One line in Terminal downloads Tesria's script from GitHub, and the script trusts your server's certificate only if it matches the fingerprint.</p>
           <ol class="trust-list">
-            <li><a class="btn btn--primary" data-download="sh" href="#">Download the script for Mac</a><span class="muted"> It is saved to your Downloads folder as <code>trust-tesria.sh</code>.</span></li>
             <li>Open <strong>Terminal</strong>: press <kbd>⌘</kbd> <kbd>Space</kbd>, type <em>Terminal</em>, and press <kbd>Return</kbd>.</li>
             <li>Copy this line, paste it into Terminal, and press <kbd>Return</kbd>:
-              <div class="trust-cmd"><code>bash ~/Downloads/trust-tesria.sh</code><button type="button" class="btn btn--sm" data-copy>Copy</button></div></li>
+              {{Command(MacLinuxCommand, address)}}</li>
             <li>Type your Mac's login password when asked, and press <kbd>Return</kbd>. <span class="muted">Nothing appears while you type; that is normal.</span></li>
+            <li>If it says the certificate <strong>does not match</strong>, stop: nothing was trusted. Check the fingerprint and the address.</li>
             <li>Quit your browser completely (<kbd>⌘</kbd> <kbd>Q</kbd>) and open it again.</li>
           </ol>
           <details class="trust-manual"><summary>Rather do it by hand?</summary>
             <ol>
               <li><a data-cert href="/ca.crt">Download the certificate</a>, then double-click it in your Downloads folder. <strong>Keychain Access</strong> opens and adds it to your login keychain.</li>
               <li>In Keychain Access, find the certificate named <em>Caddy Local Authority</em> and double-click it.</li>
-              <li>Open the <strong>Trust</strong> section and set "When using this certificate" to <strong>Always Trust</strong>.</li>
-              <li>Close the window and enter your password to save.</li>
+              <li>Open <strong>Details</strong> and find <strong>SHA-256</strong> under Fingerprints. Compare it with the server's, every pair. If it differs, delete the certificate and stop.</li>
+              <li>If it matches, open the <strong>Trust</strong> section and set "When using this certificate" to <strong>Always Trust</strong>. Close the window and enter your password to save.</li>
             </ol>
           </details>
         </div>
 
         <div class="trust-guide" data-for="windows">
-          <p>The quickest way is one line you paste into PowerShell. It downloads the certificate and adds it to the certificates your Windows account trusts. Nothing to install, no administrator needed, and it works even where Windows blocks running script files.</p>
+          <p>One line in PowerShell downloads the certificate, checks it against the fingerprint, and adds it to the certificates your Windows account trusts only if it matches. Nothing to install, no administrator needed, and it works even where Windows blocks running script files.</p>
           <ol class="trust-list">
             <li>Open <strong>PowerShell</strong>: press the <kbd>Windows</kbd> key, type <em>PowerShell</em>, and press <kbd>Enter</kbd>.</li>
             <li>Copy this line, paste it into PowerShell (right-click pastes), and press <kbd>Enter</kbd>:
-              <div class="trust-cmd"><code data-template="{{WindowsCommand("{address}")}}">{{WindowsCommand(address)}}</code><button type="button" class="btn btn--sm" data-copy>Copy</button></div></li>
-            <li>Windows shows a <strong>Security Warning</strong>: "You are about to install a certificate from a certification authority claiming to represent Caddy Local Authority". That is your server's certificate. Choose <strong>Yes</strong>.</li>
+              {{Command(WindowsLine, address)}}</li>
+            <li>If it says the certificate <strong>does not match</strong>, stop: nothing was trusted. Otherwise Windows shows a <strong>Security Warning</strong> about a certificate from <em>Caddy Local Authority</em>: that is your server's. Choose <strong>Yes</strong>.</li>
             <li>Close every browser window and open your browser again.</li>
           </ol>
           <details class="trust-manual"><summary>Setting it up for every user on this computer?</summary>
-            <p>The line above trusts the server for your Windows account. To trust it for everyone who signs in to this computer, use the script instead. It needs an administrator.</p>
+            <p>The line above trusts the server for your Windows account. To trust it for everyone who signs in to this computer, use Tesria's script from GitHub instead. It needs an administrator, and asks.</p>
             <ol>
-              <li><a data-download="ps1" href="#">Download the script for Windows</a>. It is saved to your Downloads folder as <code>trust-tesria.ps1</code>, with your server's address already in it.</li>
-              <li>Open PowerShell as above. Windows does not run script files by default ("running scripts is disabled on this system"), so run this one with the line below, which allows it once without changing that setting:
-                <div class="trust-cmd"><code>powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\Downloads\trust-tesria.ps1"</code><button type="button" class="btn btn--sm" data-copy>Copy</button></div></li>
-              <li>Choose <strong>Yes</strong> when Windows asks to allow changes: adding a certificate for everyone needs an administrator.</li>
+              <li>In PowerShell, run:
+                {{Command(WindowsScript, address)}}</li>
+              <li>Choose <strong>Yes</strong> when Windows asks to allow changes.</li>
             </ol>
             <p class="muted">On a work computer your IT department may block scripts completely, and then this does not run at all. The line at the top still works, or ask IT to add the certificate for you.</p>
           </details>
           <details class="trust-manual"><summary>Rather do it by hand?</summary>
+            <p>Windows' certificate window shows only the <strong>SHA-1</strong> fingerprint, which it calls the Thumbprint. The server shows that one too, beside the SHA-256.</p>
             <ol>
               <li><a data-cert href="/ca.crt">Download the certificate</a>, then double-click <code>tesria-ca.crt</code> in your Downloads folder.</li>
-              <li>Choose <strong>Install Certificate…</strong>, then <strong>Current User</strong>, and <strong>Next</strong>.</li>
+              <li>On the <strong>Details</strong> tab, choose <strong>Thumbprint</strong> and compare it with the server's SHA-1 fingerprint. If it differs, close the window and stop.</li>
+              <li>If it matches, go back to <strong>General</strong> and choose <strong>Install Certificate…</strong>, then <strong>Current User</strong>, and <strong>Next</strong>.</li>
               <li>Choose <strong>Place all certificates in the following store</strong>, then <strong>Browse…</strong>, and pick <strong>Trusted Root Certification Authorities</strong>.</li>
               <li>Choose <strong>Next</strong>, <strong>Finish</strong>, and <strong>Yes</strong> on the Security Warning.</li>
             </ol>
@@ -257,34 +297,33 @@ public static partial class TrustEndpoints
         </div>
 
         <div class="trust-guide" data-for="linux">
-          <p>The quickest way is a small script that downloads the certificate and adds it to your system's trusted certificates. It works on Ubuntu, Debian, Fedora and their relatives, and already has your server's address in it.</p>
+          <p>One line in a terminal downloads Tesria's script from GitHub, and the script trusts your server's certificate only if it matches the fingerprint. It works on Ubuntu, Debian, Fedora and their relatives.</p>
           <ol class="trust-list">
-            <li><a class="btn btn--primary" data-download="sh" href="#">Download the script for Linux</a><span class="muted"> It is saved to your Downloads folder as <code>trust-tesria.sh</code>.</span></li>
             <li>Open a terminal. On most systems, press <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>T</kbd>.</li>
             <li>Copy this line, paste it into the terminal, and press <kbd>Enter</kbd>:
-              <div class="trust-cmd"><code>bash ~/Downloads/trust-tesria.sh</code><button type="button" class="btn btn--sm" data-copy>Copy</button></div></li>
+              {{Command(MacLinuxCommand, address)}}</li>
             <li>Type your password when asked. <span class="muted">Nothing appears while you type; that is normal.</span></li>
-            <li>Close your browser completely and open it again.</li>
+            <li>If it says the certificate <strong>does not match</strong>, stop: nothing was trusted. Otherwise close your browser completely and open it again.</li>
           </ol>
         </div>
 
         <div class="trust-guide" data-for="ios">
-          <p>On an iPhone or iPad this takes two parts: install the certificate, then switch on full trust for it. Use <strong>Safari</strong> for the first part; other browsers cannot install certificates.</p>
+          <p>On an iPhone or iPad this takes three parts: install the certificate, compare its fingerprint, then switch on full trust for it. Use <strong>Safari</strong> for the first part; other browsers cannot install certificates.</p>
           <ol class="trust-list">
             <li><a class="btn btn--primary" data-cert href="/ca.crt">Download the certificate</a> and tap <strong>Allow</strong>. <span class="muted">It says a configuration profile was downloaded; that is the certificate.</span></li>
             <li>Open the <strong>Settings</strong> app. Tap <strong>Profile Downloaded</strong> near the top, then <strong>Install</strong>, enter your passcode, and tap <strong>Install</strong> twice more.</li>
-            <li>In Settings, go to <strong>General</strong>, <strong>About</strong>, <strong>Certificate Trust Settings</strong> (at the very bottom).</li>
-            <li>Switch on the certificate named <em>Caddy Local Authority</em>, and tap <strong>Continue</strong>.</li>
+            <li>Compare the fingerprint: in Settings, <strong>General</strong>, <strong>VPN &amp; Device Management</strong>, tap the <em>Caddy Local Authority</em> profile, then <strong>More Details</strong> and the certificate. Scroll to <strong>SHA-256</strong> and compare it with the server's, every pair. If it differs, go back and tap <strong>Remove Profile</strong>, and stop.</li>
+            <li>If it matches: in Settings, <strong>General</strong>, <strong>About</strong>, <strong>Certificate Trust Settings</strong> (at the very bottom), switch on <em>Caddy Local Authority</em> and tap <strong>Continue</strong>.</li>
           </ol>
         </div>
 
         <div class="trust-guide" data-for="android">
-          <p>Android installs the certificate from its Settings. The exact menu names vary a little between phone makers.</p>
+          <p>Android trusts a certificate as soon as it is installed, so compare its fingerprint straight afterwards. The exact menu names vary a little between phone makers.</p>
           <ol class="trust-list">
             <li><a class="btn btn--primary" data-cert href="/ca.crt">Download the certificate</a>. <span class="muted">It goes to your Downloads.</span></li>
-            <li>Open <strong>Settings</strong> and search for <strong>CA certificate</strong>. <span class="muted">It is usually under Security and privacy, More security settings, Encryption and credentials, Install a certificate.</span></li>
-            <li>Choose <strong>CA certificate</strong>, then <strong>Install anyway</strong>, and confirm with your screen lock.</li>
-            <li>Pick the certificate you downloaded, named <code>tesria-ca.crt</code>.</li>
+            <li>Open <strong>Settings</strong> and search for <strong>CA certificate</strong>. <span class="muted">It is usually under Security and privacy, More security settings, Encryption and credentials, Install a certificate.</span> Choose <strong>CA certificate</strong>, then <strong>Install anyway</strong>, confirm with your screen lock, and pick <code>tesria-ca.crt</code>.</li>
+            <li>Compare the fingerprint: in the same Encryption and credentials screen, open <strong>Trusted credentials</strong>, the <strong>User</strong> tab, and tap <em>Caddy Local Authority</em>. Compare its <strong>SHA-256</strong> fingerprint with the server's, every pair.</li>
+            <li>If it differs, tap <strong>Remove</strong> at the bottom of that screen straight away.</li>
           </ol>
         </div>
 
@@ -293,21 +332,22 @@ public static partial class TrustEndpoints
           <ol>
             <li><a data-cert href="/ca.crt">Download the certificate</a>.</li>
             <li>In Firefox, open <strong>Settings</strong>, <strong>Privacy &amp; Security</strong>, scroll to <strong>Certificates</strong>, and choose <strong>View Certificates…</strong>.</li>
-            <li>On the <strong>Authorities</strong> tab choose <strong>Import…</strong>, pick <code>tesria-ca.crt</code>, and tick <strong>Trust this CA to identify websites</strong>.</li>
+            <li>On the <strong>Authorities</strong> tab choose <strong>Import…</strong> and pick <code>tesria-ca.crt</code>. Before ticking anything, choose <strong>View</strong> and compare its <strong>SHA-256</strong> fingerprint with the server's. If it differs, cancel.</li>
+            <li>If it matches, tick <strong>Trust this CA to identify websites</strong> and choose OK.</li>
           </ol>
         </details>
         </section>
 
-        <section class="trust-step" data-step="4">
-        <h2><span class="trust-step__num">4</span> Check it worked</h2>
+        <section class="trust-step" data-step="5">
+        <h2><span class="trust-step__num">5</span> Check it worked</h2>
         <p>Open Tesria with this link. If it opens with no warning, and your browser shows the usual padlock or "secure" sign by the address, you are done on this device.</p>
         <p><a class="btn btn--primary" id="trust-open" href="https://{{address}}/">Open Tesria securely</a></p>
         <details class="trust-manual" open><summary>Still says "Not secure"?</summary>
           <ul>
             <li><strong>Quit the browser completely.</strong> Closing its windows is not always enough: Chrome can keep running in the background. In Chrome or Edge, type <code>chrome://restart</code> (or <code>edge://restart</code>) into the address bar and press Enter.</li>
             <li><strong>Open Tesria by its name,</strong> not a number like 192.168.1.50. A number can never match the certificate, however it is trusted.</li>
-            <li><strong>Ask the browser why.</strong> Click "Not secure" beside the address, then the certificate. <em>NET::ERR_CERT_COMMON_NAME_INVALID</em> means the address is not the name the certificate is for: use the name. <em>NET::ERR_CERT_AUTHORITY_INVALID</em> means this device does not trust the server yet: do step 3 again, then restart the browser.</li>
-            <li><strong>Was the server reinstalled from scratch?</strong> Then it made a new certificate, and each device needs these steps again.</li>
+            <li><strong>Ask the browser why.</strong> Click "Not secure" beside the address, then the certificate. <em>NET::ERR_CERT_COMMON_NAME_INVALID</em> means the address is not the name the certificate is for: use the name. <em>NET::ERR_CERT_AUTHORITY_INVALID</em> means this device does not trust the server yet: do step 4 again, then restart the browser.</li>
+            <li><strong>Was the server reinstalled from scratch?</strong> Then it made a new certificate authority, with a new fingerprint, and each device needs these steps again.</li>
           </ul>
         </details>
         </section>

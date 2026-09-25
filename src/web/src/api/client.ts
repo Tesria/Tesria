@@ -546,6 +546,20 @@ export type MailSignInInfo = {
 }
 
 /** The optional Tailscale sidecar, as its status file says (dev-plan 19.1). */
+/**
+ * The server's own certificate authority (dev-plan 14.4): its fingerprints,
+ * given only when this connection could not have been altered on the way
+ * (`channel`), since people compare them before trusting the server.
+ */
+export type CertificateStatus = {
+  ownCertificate: boolean
+  known: boolean
+  channel: 'server' | 'tailnet' | null
+  sha256: string | null
+  sha1: string | null
+  subject: string | null
+}
+
 export type TailscaleStatus = {
   configured: boolean
   state: string | null
@@ -1557,6 +1571,7 @@ export const api = {
   admin: {
     /** The optional Tailscale sidecar's status (dev-plan 19.1). */
     tailscale: () => request<TailscaleStatus>('GET', '/api/admin/tailscale'),
+    certificate: () => request<CertificateStatus>('GET', '/api/admin/certificate'),
     settings: {
       get: () => request<SiteSettings>('GET', '/api/admin/settings'),
       update: (input: Partial<SiteSettingsUpdate>) =>

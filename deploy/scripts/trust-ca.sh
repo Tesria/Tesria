@@ -1,72 +1,92 @@
 #!/usr/bin/env bash
 # Trust Tesria's local certificate authority (macOS and Linux).
 #
-# Every Tesria deployment that isn't using a real domain + Let's
-# Encrypt serves HTTPS using a self-signed certificate authority that Caddy
-# generates for itself. That's why your browser warns you the first time you
-# visit. This script downloads that CA's root certificate from a running
-# Tesria server and installs it into your system's trust store, so
-# every browser and HTTP client on this machine trusts it from then on: no
-# more warnings, on this device, for this server (or any other hostname/IP it
-# answers on).
+# A Tesria server without a public domain makes its own certificate
+# authority, so browsers warn about it. This script downloads that
+# authority's certificate from the server and adds it to this computer's
+# trusted certificates, so the warning stops: once per device.
 #
-# This is a ONE-TIME, PER-DEVICE step. Run it once on every Mac/Linux machine
-# you want to access the wiki from without warnings. It does NOT affect
-# Firefox (which keeps its own certificate store: see docs/tls-and-lan-access.md)
-# or mobile devices (which need a manual profile install, also covered there).
+# It only does so when the certificate's SHA-256 fingerprint matches the one
+# you give it (the review's SEC-01, dev-plan 14.4). The certificate comes
+# over plain HTTP, because nothing is trusted yet, so on a network someone
+# else controls it could be theirs; and a trusted authority vouches for every
+# website, not only Tesria. The fingerprint is how you know it is your
+# server's. Get it from the server itself, never from the network:
+#   - on the server:  docker compose logs app | grep -i fingerprint
+#   - or in Tesria:   Administration, Settings, Certificate, opened on the
+#                     server computer (https://localhost) or through Tailscale
 #
 # Usage:
-#   bash trust-ca.sh [host]
+#   bash trust-ca.sh --fingerprint <SHA-256 fingerprint> <address>
 #
-#   host   Where to reach your Tesria server: a hostname (NOT a raw IP;
-#          see docs/tls-and-lan-access.md for why). Defaults to
-#          TESRIA_ADDRESS below. Examples:
-#            bash trust-ca.sh
-#            bash trust-ca.sh wiki-server.local
+#   address   What you type into the browser to open Tesria, without
+#             https://, such as wiki-server.local.
 #
-# Re-running this script is safe: it replaces any previously trusted copy of
-# this same CA rather than adding a duplicate.
+# Get this script from Tesria's GitHub releases, or from the tesria-deploy.zip
+# you installed from, not from the server: a script fetched over the same
+# plain HTTP could have been changed on the way.
 #
-# IMPORTANT: if the server's `caddy_data` Docker volume is ever deleted (e.g.
-# `docker compose down -v`), Caddy generates a brand-new CA with a new private
-# key, and everyone will need to re-run this script: the old trust doesn't
-# carry over.
-
-# ---------------------------------------------------------------------------
-# EDIT THIS LINE: the address you type into your browser to open Tesria,
-# without "https://". For example wiki-server.local or mymac.local.
-# (A copy downloaded from your server's /trust page already has it filled in.)
-TESRIA_ADDRESS="localhost"
-# ---------------------------------------------------------------------------
+# Re-running it is safe. If the server is reinstalled from scratch (its
+# caddy_data volume deleted), it makes a new authority with a new
+# fingerprint, and every device needs this again.
 
 set -euo pipefail
 
-HOST="${1:-$TESRIA_ADDRESS}"
-CERT_NAME="Tesria Local CA (${HOST})"
+usage() {
+	echo "Usage: bash trust-ca.sh --fingerprint <SHA-256 fingerprint> <address>" >&2
+	echo "  The fingerprint is on the server: docker compose logs app | grep -i fingerprint" >&2
+	exit 2
+}
+
+HOST=""
+EXPECTED=""
+while [ $# -gt 0 ]; do
+	case "$1" in
+	--fingerprint) [ $# -ge 2 ] || usage; EXPECTED="$2"; shift 2 ;;
+	--fingerprint=*) EXPECTED="${1#*=}"; shift ;;
+	-h | --help) usage ;;
+	-*) echo "Unknown option: $1" >&2; usage ;;
+	*) [ -z "$HOST" ] || usage; HOST="$1"; shift ;;
+	esac
+done
+[ -n "$HOST" ] || { echo "ERROR: give the address you open Tesria at." >&2; usage; }
+[ -n "$EXPECTED" ] || { echo "ERROR: give the certificate's fingerprint; without it this script will not trust anything." >&2; usage; }
+
+# Compared as 64 hex digits, whatever the separators and case.
+normalize() { printf '%s' "$1" | tr -cd '0-9A-Fa-f' | tr 'a-f' 'A-F'; }
+EXPECTED="$(normalize "$EXPECTED")"
+if [ "${#EXPECTED}" -ne 64 ]; then
+	echo "ERROR: that is not a SHA-256 fingerprint (64 hexadecimal digits, usually in pairs like AB:CD:...)." >&2
+	exit 2
+fi
+
 TMP_CERT="$(mktemp -t tesria-ca.XXXXXX).crt"
 trap 'rm -f "$TMP_CERT"' EXIT
 
-echo "==> Fetching CA certificate from http://${HOST}/ca.crt ..."
+echo "==> Fetching the certificate from http://${HOST}/ca.crt ..."
 if ! curl -fsS --max-time 10 "http://${HOST}/ca.crt" -o "$TMP_CERT"; then
-	echo "ERROR: couldn't download the CA certificate from http://${HOST}/ca.crt" >&2
-	echo "       Make sure Tesria is running and reachable at that address," >&2
-	echo "       and that nothing is blocking port 80 (this fetch deliberately uses" >&2
-	echo "       plain HTTP, since nothing is trusted yet)." >&2
+	echo "ERROR: couldn't download the certificate from http://${HOST}/ca.crt" >&2
+	echo "       Make sure Tesria is running and reachable at that address, and that" >&2
+	echo "       nothing blocks port 80." >&2
 	exit 1
 fi
 
 if ! openssl x509 -in "$TMP_CERT" -noout -subject >/dev/null 2>&1; then
-	echo "ERROR: the file downloaded from http://${HOST}/ca.crt doesn't look like a" >&2
-	echo "       valid certificate. Got:" >&2
-	head -c 300 "$TMP_CERT" >&2
-	echo >&2
+	echo "ERROR: what http://${HOST}/ca.crt sent is not a certificate. Nothing was trusted." >&2
 	exit 1
 fi
 
 SUBJECT="$(openssl x509 -in "$TMP_CERT" -noout -subject | sed 's/^subject= *//')"
-FINGERPRINT="$(openssl x509 -in "$TMP_CERT" -noout -fingerprint -sha256 | cut -d= -f2)"
-echo "==> Got certificate: ${SUBJECT}"
-echo "    SHA-256 fingerprint: ${FINGERPRINT}"
+ACTUAL="$(normalize "$(openssl x509 -in "$TMP_CERT" -noout -fingerprint -sha256 | cut -d= -f2)")"
+if [ "$ACTUAL" != "$EXPECTED" ]; then
+	echo "ERROR: the certificate from ${HOST} does NOT match the fingerprint you gave." >&2
+	echo "       Nothing was trusted." >&2
+	echo "       Check you copied the fingerprint from this server, and the address is" >&2
+	echo "       right. If both are, something on the network may be answering in the" >&2
+	echo "       server's place: do not trust it, and try from another network." >&2
+	exit 1
+fi
+echo "==> The certificate matches the fingerprint: ${SUBJECT}"
 
 OS="$(uname -s)"
 
@@ -99,7 +119,7 @@ Linux)
 		exit 1
 	fi
 	echo "==> Done. Restart your browser. Chrome/Chromium read the system store directly;"
-	echo "    Firefox needs a separate step: see http://${HOST}/trust"
+	echo "    Firefox needs a separate step: see the Tesria docs, Trusting the local certificate."
 	;;
 *)
 	echo "ERROR: unsupported OS '$OS'. This script handles macOS and Linux only:" >&2
@@ -113,6 +133,6 @@ echo "==> Verifying: refetching https://${HOST}/ (should now succeed with no -k)
 if curl -fsS --max-time 10 "https://${HOST}/api/health" >/dev/null 2>&1; then
 	echo "    Success: this machine now trusts ${HOST}."
 else
-	echo "    Still failing. Fully quit and reopen your browser, and see"
-	echo "    http://${HOST}/trust if the warning persists."
+	echo "    Still failing. Fully quit and reopen your browser. If the warning stays,"
+	echo "    see the Tesria docs, Trusting the local certificate."
 fi

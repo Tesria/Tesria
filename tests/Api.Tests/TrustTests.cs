@@ -1,14 +1,15 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Tesria.Api.Tests;
 
 /// <summary>
-/// "Trust this device" (dev-plan 15.5): the page, and the scripts with the
-/// address written in. The address ends up in a script someone runs as an
-/// administrator, so most of this is about what may not get in.
+/// "Trust this device" (dev-plan 15.5): the page. Since 14.4 (the review's
+/// SEC-01) it serves no scripts and shows no fingerprint: both would arrive
+/// over the same unprotected connection as the certificate they vouch for.
 /// </summary>
 public class TrustTests
 {
@@ -36,19 +37,62 @@ public class TrustTests
     }
 
     [Fact]
-    public async Task Windows_gets_a_line_to_paste_because_script_files_are_blocked_by_default()
+    public async Task Windows_gets_a_line_to_paste_that_checks_the_fingerprint_before_importing()
     {
         // PowerShell's execution policy stops a downloaded .ps1 from running,
-        // and an employer can lock it (the owner's Windows machine, 2026-09-23).
-        // A typed command is not subject to it, and CurrentUser\Root needs no
-        // administrator.
+        // and an employer can lock it (2026-09-23). A typed command is not
+        // subject to it, and CurrentUser\Root needs no administrator. Since
+        // 14.4 it imports nothing unless the certificate matches.
         using var factory = new TestAppFactory();
         var html = System.Net.WebUtility.HtmlDecode(await Client(factory).GetStringAsync("/trust"));
         Assert.Contains("Invoke-WebRequest -UseBasicParsing -Uri \"http://wiki-server.local/ca.crt\"", html);
+        Assert.Contains("ComputeHash($x.RawData)", html);
+        Assert.Contains("if ($h -eq \"PASTE-THE-FINGERPRINT\") { Import-Certificate", html);
         Assert.Contains("-CertStoreLocation Cert:\\CurrentUser\\Root", html);
-        // The template the page's script fills as the address changes.
-        Assert.Contains("data-template=\"$c = ", html);
+        // The template the page's script fills as the address and fingerprint change.
         Assert.Contains("http://{address}/ca.crt", html);
+        Assert.Contains("-eq \"{hex}\"", html);
+    }
+
+    [Fact]
+    public async Task The_scripts_come_from_the_release_and_refuse_without_a_fingerprint()
+    {
+        using var factory = new TestAppFactory();
+        var html = System.Net.WebUtility.HtmlDecode(await Client(factory).GetStringAsync("/trust"));
+        Assert.Contains("https://github.com/Tesria/Tesria/releases/latest/download/trust-ca.sh", html);
+        Assert.Contains("bash trust-ca.sh --fingerprint {fingerprint} {address}", html);
+        Assert.Contains("https://github.com/Tesria/Tesria/releases/latest/download/trust-ca.ps1", html);
+        Assert.Contains("-Fingerprint {hex}", html);
+    }
+
+    [Fact]
+    public async Task The_server_no_longer_hands_out_scripts()
+    {
+        // A script fetched over plain HTTP could be anyone's; an altered one
+        // needs no certificate at all.
+        using var factory = new TestAppFactory();
+        foreach (var path in new[] { "/trust/trust-tesria.sh?address=wiki", "/trust/trust-tesria.ps1?address=wiki" })
+        {
+            var res = await Client(factory).GetAsync(path);
+            var text = await res.Content.ReadAsStringAsync();
+            Assert.DoesNotContain("#!/usr/bin/env bash", text);
+            Assert.DoesNotContain("Import-Certificate", text);
+        }
+    }
+
+    [Fact]
+    public async Task The_page_never_shows_a_fingerprint_and_defers_to_the_docs()
+    {
+        // The page is what an attacker on the network can change, so a
+        // fingerprint on it would vouch for nothing.
+        using var factory = new TestAppFactory();
+        factory.Services.GetRequiredService<Tesria.Api.Infrastructure.Security.LocalAuthority>()
+            .Set(new("AA:BB:CC:DD", "11:22:33", "Caddy Local Authority"));
+        var html = await Client(factory).GetStringAsync("/trust");
+        Assert.DoesNotContain("AA:BB:CC:DD", html);
+        Assert.DoesNotContain("11:22:33", html);
+        Assert.Contains("https://tesria.com/docs/installation-and-operations/trusting-the-local-certificate/", html);
+        Assert.Contains("If this page and the docs ever differ, follow the docs.", html);
     }
 
     [Fact]
@@ -80,71 +124,12 @@ public class TrustTests
     }
 
     [Fact]
-    public async Task The_mac_and_linux_script_comes_with_the_address_written_in()
-    {
-        using var factory = new TestAppFactory();
-        var res = await Client(factory).GetAsync("/trust/trust-tesria.sh?address=Studio.Local");
-        Assert.Equal(HttpStatusCode.OK, res.StatusCode);
-        Assert.Equal("trust-tesria.sh", res.Content.Headers.ContentDisposition?.FileNameStar ?? res.Content.Headers.ContentDisposition?.FileName?.Trim('"'));
-        var text = await res.Content.ReadAsStringAsync();
-        Assert.Contains("TESRIA_ADDRESS=\"studio.local\"", text);
-        Assert.DoesNotContain("TESRIA_ADDRESS=\"localhost\"", text);
-        Assert.StartsWith("#!/usr/bin/env bash", text);
-        Assert.DoesNotContain("\r\n", text);
-    }
-
-    [Fact]
-    public async Task The_windows_script_comes_with_the_address_written_in_and_as_windows_expects_it()
-    {
-        using var factory = new TestAppFactory();
-        var bytes = await Client(factory).GetByteArrayAsync("/trust/trust-tesria.ps1?address=wiki-server.local");
-        // A byte order mark, so Windows PowerShell 5.1 reads it as UTF-8.
-        Assert.Equal(Encoding.UTF8.GetPreamble(), bytes[..3]);
-        var text = Encoding.UTF8.GetString(bytes[3..]);
-        Assert.Contains("$TesriaAddress = \"wiki-server.local\"", text);
-        Assert.Contains("\r\n", text);
-        Assert.DoesNotContain("\r\r", text);
-    }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData("wiki;rm -rf ~")]
-    [InlineData("wiki\"; Remove-Item C:\\ #")]
-    [InlineData("$(id)")]
-    [InlineData("`whoami`")]
-    [InlineData("wiki server")]
-    [InlineData("wiki\nserver")]
-    [InlineData("https://wiki")]
-    [InlineData("wiki:8443")]
-    [InlineData("wiki/ca.crt")]
-    [InlineData("-wiki")]
-    [InlineData("wiki..local")]
-    public async Task An_address_that_is_not_a_plain_name_is_refused_before_it_reaches_a_script(string address)
-    {
-        using var factory = new TestAppFactory();
-        var client = Client(factory);
-        foreach (var kind in new[] { "sh", "ps1" })
-        {
-            var res = await client.GetAsync($"/trust/trust-tesria.{kind}?address={Uri.EscapeDataString(address)}");
-            Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
-        }
-    }
-
-    [Fact]
-    public async Task An_ip_address_is_allowed_because_the_page_explains_the_catch()
-    {
-        using var factory = new TestAppFactory();
-        var text = await Client(factory).GetStringAsync("/trust/trust-tesria.sh?address=192.0.2.10");
-        Assert.Contains("TESRIA_ADDRESS=\"192.0.2.10\"", text);
-    }
-
-    [Fact]
     public async Task A_server_with_a_public_certificate_has_nothing_to_set_up()
     {
         using var factory = new TestAppFactory(new Dictionary<string, string?> { ["Tls:Caddyfile"] = "deploy/Caddyfile.public" });
         var html = await Client(factory).GetStringAsync("/trust");
         Assert.Contains("Nothing to set up", html);
-        Assert.DoesNotContain("trust-tesria.sh", html);
+        Assert.DoesNotContain("trust-ca.sh", html);
 
         var instance = await Client(factory).GetFromJsonAsync<System.Text.Json.JsonElement>("/api/instance");
         Assert.False(instance.GetProperty("ownCertificate").GetBoolean());
@@ -159,12 +144,17 @@ public class TrustTests
     }
 
     [Fact]
-    public void Both_scripts_in_deploy_still_have_the_line_the_page_fills_in()
+    public void Both_scripts_in_deploy_insist_on_a_matching_fingerprint()
     {
-        // The endpoints refuse to serve a template that lost its marker; this
-        // catches it at test time instead of on someone's first download.
+        // The release attaches these (14.4); a script that would install a
+        // certificate it had not checked is the finding this exists to fix.
         var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../deploy/scripts"));
-        Assert.Contains(Tesria.Api.Features.Trust.TrustEndpoints.ShMarker, File.ReadAllText(Path.Combine(root, "trust-ca.sh")));
-        Assert.Contains(Tesria.Api.Features.Trust.TrustEndpoints.Ps1Marker, File.ReadAllText(Path.Combine(root, "trust-ca.ps1")));
+        var sh = File.ReadAllText(Path.Combine(root, "trust-ca.sh"));
+        Assert.Contains("without it this script will not trust anything", sh);
+        Assert.Contains("if [ \"$ACTUAL\" != \"$EXPECTED\" ]; then", sh);
+        Assert.True(sh.IndexOf("$ACTUAL\" != \"$EXPECTED", StringComparison.Ordinal) < sh.IndexOf("add-trusted-cert", StringComparison.Ordinal));
+        var ps1 = File.ReadAllText(Path.Combine(root, "trust-ca.ps1"));
+        Assert.Contains("[Parameter(Mandatory = $true)]\n    [string]$Fingerprint", ps1.Replace("\r\n", "\n"));
+        Assert.True(ps1.IndexOf("if ($actual -ne $expected)", StringComparison.Ordinal) < ps1.IndexOf("Import-Certificate -FilePath", StringComparison.Ordinal));
     }
 }

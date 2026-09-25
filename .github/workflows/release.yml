@@ -78,5 +78,9 @@ jobs:
         run: |
           prerelease=""
           case "$GITHUB_REF_NAME" in *-*) prerelease="--prerelease" ;; esac
+          # The certificate scripts ride along (dev-plan 14.4, the review's
+          # SEC-01): /trust points at releases/latest/download/, over HTTPS,
+          # instead of serving them over the plain HTTP it arrives on.
           gh release create "$GITHUB_REF_NAME" --title "Tesria ${GITHUB_REF_NAME#v}" \
-            --notes-file notes.md --verify-tag $prerelease tesria-deploy.zip
+            --notes-file notes.md --verify-tag $prerelease tesria-deploy.zip \
+            deploy/scripts/trust-ca.sh deploy/scripts/trust-ca.ps1

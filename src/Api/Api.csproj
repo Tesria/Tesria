@@ -21,13 +21,11 @@
          served as static files. -->
   </PropertyGroup>
 
-  <!-- "Trust this device" (dev-plan 15.5): the certificate scripts, one copy
-       in deploy/scripts, and the page's own script and stylesheet. Embedded
-       so the image needs nothing beside the assembly; deploy/Dockerfile
-       copies deploy/scripts into the build for this. -->
+  <!-- "Trust this device" (dev-plan 15.5): the page's own script and
+       stylesheet, embedded so the image needs nothing beside the assembly.
+       The certificate scripts are no longer served from here (14.4, the
+       review's SEC-01): they come from the GitHub release instead. -->
   <ItemGroup>
-    <EmbeddedResource Include="..\..\deploy\scripts\trust-ca.sh" LogicalName="trust/trust-ca.sh" />
-    <EmbeddedResource Include="..\..\deploy\scripts\trust-ca.ps1" LogicalName="trust/trust-ca.ps1" />
     <EmbeddedResource Include="Features\Trust\trust.js" LogicalName="trust/trust.js" />
     <EmbeddedResource Include="Features\Trust\trust.css" LogicalName="trust/trust.css" />
   </ItemGroup>

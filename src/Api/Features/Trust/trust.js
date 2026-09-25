@@ -1,6 +1,8 @@
 // "Trust this device" (dev-plan 15.5). The page works without this file:
 // every device's steps are shown. With it, the page shows only yours, and
-// writes the address into the downloads and the final check.
+// writes the address and the fingerprint (14.4, the review's SEC-01) into
+// the commands and the final check. It never supplies a fingerprint itself:
+// the person pastes the one they got from the server.
 (function () {
   'use strict';
   var d = document;
@@ -8,6 +10,7 @@
   // script (TrustEndpoints.Address); the server checks again regardless.
   var ADDRESS = /^(?=.{1,253}$)[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$/;
   var IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/;
+  var PLACEHOLDER = 'PASTE-THE-FINGERPRINT';
 
   function guessDevice() {
     var ua = navigator.userAgent || '';
@@ -39,26 +42,29 @@
     return value.trim().toLowerCase().replace(/^[a-z]+:\/\//, '').replace(/[/:].*$/, '');
   }
 
-  function useAddress() {
+  // 64 hex digits, whatever separators and case it was pasted with.
+  function fingerprint() {
+    var input = d.getElementById('trust-fingerprint');
+    var raw = input ? input.value : '';
+    var hex = raw.replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+    var ok = hex.length === 64;
+    var error = d.getElementById('trust-fingerprint-error');
+    if (error) error.hidden = ok || raw.trim() === '';
+    return ok ? { hex: hex, pairs: hex.match(/../g).join(':') } : null;
+  }
+
+  function update() {
     var input = d.getElementById('trust-address');
     var address = clean(input.value);
     var ok = ADDRESS.test(address);
     d.getElementById('trust-address-error').hidden = ok || address === '';
     d.getElementById('trust-ip').hidden = !(ok && IPV4.test(address));
-    d.querySelectorAll('[data-download]').forEach(function (a) {
-      var kind = a.getAttribute('data-download');
-      if (ok) {
-        a.href = '/trust/trust-tesria.' + kind + '?address=' + encodeURIComponent(address);
-        a.removeAttribute('aria-disabled');
-      } else {
-        a.removeAttribute('href');
-        a.setAttribute('aria-disabled', 'true');
-      }
-    });
-    // Commands with the address in them (the Windows line), rewritten as
-    // the address changes; the placeholder stands in until it is valid.
+    var fp = fingerprint();
     d.querySelectorAll('[data-template]').forEach(function (el) {
-      el.textContent = el.getAttribute('data-template').replace('{address}', ok ? address : 'your-server');
+      el.textContent = el.getAttribute('data-template')
+        .split('{address}').join(ok ? address : 'your-server')
+        .split('{fingerprint}').join(fp ? fp.pairs : PLACEHOLDER)
+        .split('{hex}').join(fp ? fp.hex : PLACEHOLDER);
     });
     var open = d.getElementById('trust-open');
     if (open) open.href = ok ? 'https://' + address + '/' : '#';
@@ -92,11 +98,11 @@
       b.addEventListener('click', function () { choose(b.getAttribute('data-device')); });
     });
     choose(guessDevice());
-    var input = d.getElementById('trust-address');
-    if (input) {
-      input.addEventListener('input', useAddress);
-      useAddress();
-    }
+    ['trust-address', 'trust-fingerprint'].forEach(function (id) {
+      var input = d.getElementById(id);
+      if (input) input.addEventListener('input', update);
+    });
+    if (d.getElementById('trust-address')) update();
     d.querySelectorAll('[data-copy]').forEach(function (b) {
       b.addEventListener('click', function () {
         var code = b.parentNode.querySelector('code');

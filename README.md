@@ -109,9 +109,11 @@ the instance.
 - The app is also reachable from other devices on your LAN (including phones)
   by IP or hostname, no extra config needed. To make that access, and the
   `localhost` warning above, go away for good on a given device, run
-  `deploy/scripts/trust-ca.sh` (macOS/Linux) or `trust-ca.ps1` (Windows) once,
-  or open `http://<server>/trust` on that device for a guided version;
-  see [`docs/tls-and-lan-access.md`](./docs/tls-and-lan-access.md) for details
+  `deploy/scripts/trust-ca.sh` (macOS/Linux) or `trust-ca.ps1` (Windows) once
+  with the server's certificate fingerprint (`docker compose logs app | grep
+  -i fingerprint` on the server), or open `http://<server>/trust` on that
+  device for a guided version; see
+  [`docs/tls-and-lan-access.md`](./docs/tls-and-lan-access.md) for details
   and the real-domain-without-public-exposure option.
 
 Check health directly: `curl -k https://localhost/api/health` (it gives the

@@ -2236,6 +2236,12 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 :root[data-theme="dark"] .tailscale-card__logo--light { display: none; }
 :root[data-theme="dark"] .tailscale-card__logo--dark { display: inline; }
 .tailscale-card__facts { list-style: none; padding: 0; margin: 0 0 0.75rem; display: grid; gap: 0.35rem; }
+/* The certificate card (dev-plan 14.4): fingerprints in pairs that line up
+   with what people read off their device, wrapping on a phone. */
+.certificate-card__prints { margin: 0 0 0.75rem; display: grid; grid-template-columns: auto 1fr; gap: 0.4rem 0.75rem; align-items: baseline; }
+.certificate-card__prints dt { font-weight: 600; }
+.certificate-card__prints dd { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; }
+.certificate-card__print { font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); font-size: 0.82rem; overflow-wrap: anywhere; user-select: all; }
 .tailscale-card__trademark { margin-top: 1rem; font-size: 0.75rem; }
 
 /* The address gets the room: it was a 120px column, too narrow to read one. */

@@ -173,6 +173,34 @@ older references still point at the right item.
     (`64:ff9b::/96`) and 6to4 (`2002::/16`) addresses and judges that, and
     also refuses `192.0.0.0/24`, `198.18.0.0/15` and the IPv6 discard
     range.
+15. ~~Trusting the local certificate trusted whatever the network sent.~~
+    **Fixed in 0.8.0.** Found by an outside review (2026-09-24). On a
+    server without a public domain, each device trusts Caddy's own
+    certificate authority, and the certificate, the `/trust` guide and the
+    scripts it handed out all arrived over plain HTTP. Anyone able to alter
+    traffic on that network could substitute an authority of their own,
+    which the device would then trust for every website, or a script that
+    ran anything they liked. Now:
+    - Every route to trusting it compares the certificate's SHA-256
+      fingerprint with one taken from the server itself: the app reads
+      Caddy's public root over the compose network and logs the
+      fingerprint at startup, and the Certificate card in Administration
+      shows it only to a request from the server computer (loopback) or
+      through Tailscale at its `ts.net` name.
+    - `trust-ca.sh` and `trust-ca.ps1` refuse without a matching
+      fingerprint, and the Windows one-line command imports nothing unless
+      it matches. Phones compare by eye, with the steps to do so.
+    - The server no longer serves the scripts: every release attaches them,
+      and `/trust` fetches them from GitHub over HTTPS. `/trust` itself
+      stays on plain HTTP, shows no fingerprint, and says the docs over
+      HTTPS win if the two differ.
+    - `/trust` and the docs say what trusting an authority means, and name
+      the two ways that need none: Tailscale and a real domain.
+    *Remaining:* the `/trust` page and `ca.crt` still travel unprotected,
+    so a person who skips the comparison is no safer than before; the
+    steps make skipping it the harder path. A name-constrained authority,
+    which browsers would accept only for this server's names, would limit
+    the damage of a stolen authority key, and is noted for later.
 
 ## Internet-readiness checklist
 

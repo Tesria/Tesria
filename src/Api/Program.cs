@@ -175,6 +175,11 @@ builder.Services.AddHttpClient("pdf", c => c.Timeout = TimeSpan.FromSeconds(30))
 // it. Short on purpose: the reconciliation has a second, slower path (the
 // document's next load), and a save should not sit behind a sick sidecar.
 builder.Services.AddHttpClient("collab", c => c.Timeout = TimeSpan.FromSeconds(3));
+// The certificate authority's fingerprint, read from Caddy on the compose
+// network (dev-plan 14.4, the review's SEC-01).
+builder.Services.AddHttpClient(Tesria.Api.Infrastructure.Security.LocalAuthority.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(5));
+builder.Services.AddSingleton<Tesria.Api.Infrastructure.Security.LocalAuthority>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<Tesria.Api.Infrastructure.Security.LocalAuthority>());
 
 // Machine-readable API description (dev-plan 8.3).
 builder.Services.AddTesriaOpenApi();
@@ -652,6 +657,7 @@ api.MapAuthEndpoints();
 api.MapAdminEndpoints();
 api.MapMailSignInEndpoints();
 api.MapTailscaleEndpoints();
+api.MapCertificateEndpoints();
 api.MapAdminTokenEndpoints();
 api.MapAboutEndpoints();
 api.MapSecurityEndpoints();

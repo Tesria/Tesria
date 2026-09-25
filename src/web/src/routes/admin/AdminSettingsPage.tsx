@@ -3,6 +3,7 @@ import { api, ApiError, type SiteSettings, Permission } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import { EmailSettingsSection } from './EmailSettingsSection'
 import { TailscaleCard } from './TailscaleCard'
+import { CertificateCard } from './CertificateCard'
 
 /** Admin → Settings (dev-plan 2.3), the UI over the SiteSettings row. */
 export function AdminSettingsPage() {
@@ -221,6 +222,7 @@ export function AdminSettingsPage() {
       {can(Permission.SettingsEmail) && (
         <EmailSettingsSection settings={settings} onSaved={setSettings} />
       )}
+      {can(Permission.SettingsInstance) && <CertificateCard />}
       {can(Permission.SettingsInstance) && <TailscaleCard />}
       </div>
     </>

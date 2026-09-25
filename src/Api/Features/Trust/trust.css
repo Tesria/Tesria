@@ -75,3 +75,11 @@ a.btn[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
   display: inline-block; min-width: 1.4em; padding: 0 0.35em; border: 1px solid var(--border); border-bottom-width: 2px;
   border-radius: 4px; background: var(--surface); font: inherit; font-size: 0.85em; text-align: center;
 }
+
+/* The fingerprint (dev-plan 14.4): 95 characters in pairs, in a font where
+   every pair lines up with the one the person reads off the server. */
+.trust-fingerprint { max-width: 46rem; }
+.trust-fingerprint input { font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); font-size: 0.85rem; }
+#trust-fingerprint-error { margin-top: 0.75rem; }
+.trust-channel { margin: 1rem 0; }
+.trust-channel p { margin: 0; }

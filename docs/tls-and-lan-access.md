@@ -95,40 +95,55 @@ the CA itself changes: see [Troubleshooting](#troubleshooting)).
 
 ### One-time setup per device
 
-**The easy way: open `http://<server-hostname>/trust` on the device.** It is
-served over plain HTTP, so it opens with no warning. It guesses the device,
-fills in the address, and gives step-by-step instructions: for a computer, a
-download of the script below with the address already written in; for an
-iPhone, iPad or Android phone, the certificate and the Settings path to trust
-it. The sign-in page links to it. The rest of this section is the same thing
-by hand.
+**Check the fingerprint first, always** (since 0.8.0; the review's SEC-01).
+The certificate reaches a device over plain HTTP, because nothing is trusted
+yet, so on a network someone else controls it could be theirs; and a trusted
+authority vouches for every website, not only Tesria. Every route below
+therefore compares the certificate's SHA-256 fingerprint with the one the
+server reports, and trusts nothing that does not match. Get the fingerprint
+from the server itself, never from the network:
+
+- `docker compose logs app | grep -i fingerprint` on the server (the app
+  reads Caddy's public root over the compose network at startup and logs its
+  SHA-256 and SHA-1 fingerprints);
+- or Administration, Settings, **Certificate**, which shows them only to a
+  request from the server computer itself (loopback) or through Tailscale at
+  its `ts.net` name, where the browser has already checked a public
+  certificate. Elsewhere the card says where to look instead.
+
+**The guided way: `http://<server-hostname>/trust` on the device.** Served
+over plain HTTP so it opens with no warning, which also means it could be
+altered on a hostile network. It therefore shows no fingerprint, serves no
+scripts, and says that the docs over HTTPS win if the two ever differ. It
+guesses the device, fills the address and a pasted fingerprint into the
+commands, and for a phone gives the Settings path to compare the fingerprint
+by eye and then trust the certificate.
+
+**The scripts** come from the GitHub release (every release attaches
+`trust-ca.sh` and `trust-ca.ps1`; `/trust` uses
+`releases/latest/download/`) or from `deploy/scripts` in the bundle, never
+from the server. Both require the fingerprint:
+
+```bash
+bash trust-ca.sh --fingerprint <sha256> <server-hostname>
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\trust-ca.ps1 <server-hostname> -Fingerprint <sha256>
+```
+
+`trust-ca.ps1` trusts the server machine-wide, as an administrator;
+`-CurrentUser` trusts it for the current account with no administrator.
 
 **Windows without a script.** PowerShell's execution policy blocks
 downloaded script files by default ("running scripts is disabled on this
 system"), and an employer can lock it. A typed command is not affected, so
-the guide gives Windows one line to paste instead, which trusts the server
-for the current Windows account and needs no administrator:
+the guide gives Windows one line to paste instead. It computes the
+certificate's SHA-256 itself (Windows PowerShell 5.1 only offers SHA-1) and
+imports it into the current account's Root store only on a match:
 
 ```powershell
-$c = "$env:TEMP\tesria-ca.crt"; Invoke-WebRequest -UseBasicParsing -Uri "http://<server-hostname>/ca.crt" -OutFile $c; Import-Certificate -FilePath $c -CertStoreLocation Cert:\CurrentUser\Root
-```
-
-`trust-ca.ps1` below is for trusting it machine-wide, as an administrator.
-
-Each script has one line to edit if you run it from the repository without an
-argument: `TESRIA_ADDRESS` in `trust-ca.sh`, `$TesriaAddress` in
-`trust-ca.ps1`.
-
-**macOS or Linux:**
-
-```bash
-./deploy/scripts/trust-ca.sh <server-hostname>
-```
-
-**Windows** (double-click, or run from PowerShell):
-
-```powershell
-.\deploy\scripts\trust-ca.ps1 <server-hostname>
+$c = "$env:TEMP\tesria-ca.crt"; Invoke-WebRequest -UseBasicParsing -Uri "http://<server-hostname>/ca.crt" -OutFile $c; $x = New-Object Security.Cryptography.X509Certificates.X509Certificate2($c); $h = [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($x.RawData)) -replace '-', ''; if ($h -eq "<sha256 without colons>") { Import-Certificate -FilePath $c -CertStoreLocation Cert:\CurrentUser\Root } else { Write-Host "The certificate does not match the fingerprint. Nothing was trusted." -ForegroundColor Red }
 ```
 
 `<server-hostname>` should be a name, e.g. `mymac.local`, not a raw IP, for
@@ -136,19 +151,15 @@ the SNI reason above. The script itself works identically either way (it's
 just fetching a file over HTTP); it's the *browser's* subsequent HTTPS
 requests that need a real hostname to validate cleanly.
 
-`<server-address>` is however that device reaches the server: an IP
-(`192.168.1.50`), a hostname (`mymac.local`), or just omit it to default to
-`localhost` (for running the script on the same machine as the server).
-
 Both scripts:
 1. Download the CA's public root certificate from `http://<server-address>/ca.crt`
-   (deliberately plain HTTP: nothing is trusted yet, so there's no TLS to
-   speak of for this one bootstrap fetch; the file itself isn't secret, it's
-   the public half of the CA).
-2. Install it into the OS's system trust store (macOS System keychain /
-   Windows machine Root store), which both scripts need administrator
-   privileges for for: you'll be prompted for your password.
-3. Re-check `https://<server-address>/api/health` to confirm it worked.
+   (deliberately plain HTTP: nothing is trusted yet).
+2. Compare its SHA-256 fingerprint with the one given, and stop, trusting
+   nothing, if they differ.
+3. Install it into the OS's trust store (macOS System keychain, the Linux
+   system store, or Windows' machine or current-user Root store). You'll be
+   prompted for your password or an administrator.
+4. Re-check `https://<server-address>/api/health` to confirm it worked.
 
 Re-running either script is safe: it replaces the previous copy of this
 same CA instead of piling up duplicates.
@@ -163,6 +174,8 @@ Firefox keeps its own certificate store, separate from the OS. Either:
 - Import manually: Settings → Privacy & Security → Certificates → View
   Certificates → Authorities → Import, and select the `ca.crt` you
   downloaded (or fetch it yourself from `http://<server-address>/ca.crt`).
+  Use View to compare its SHA-256 fingerprint before ticking "Trust this CA
+  to identify websites".
 - Or set `security.enterprise_roots.enabled = true` in `about:config`, which
   makes Firefox read the OS trust store like other browsers (simplest if you
   manage several machines and don't want a per-browser step).
@@ -175,15 +188,19 @@ short:
 1. On the phone's browser, visit `http://<server-address>/ca.crt` and
    download it (or AirDrop/transfer the file downloaded elsewhere).
 2. **iOS:** opening the file prompts to install a configuration profile
-   (Settings → General → VPN & Device Management → install it). Then go to
-   Settings → General → About → Certificate Trust Settings and enable full
-   trust for the new root: iOS requires this second step separately, or the
-   cert is installed but not trusted for TLS.
+   (Settings → General → VPN & Device Management → install it). Before
+   trusting it, compare the fingerprint: the profile's More Details, the
+   certificate, SHA-256. If it differs from the server's, remove the
+   profile. Then go to Settings → General → About → Certificate Trust
+   Settings and enable full trust for the new root: iOS requires this second
+   step separately, or the cert is installed but not trusted for TLS.
 3. **Android:** Settings → Security → Encryption & credentials → Install a
-   certificate → CA certificate, and select the downloaded file. Some
-   versions warn that a "network may be monitored" when a user-installed CA
-   is trusted: that's standard Android messaging for any manually-installed
-   CA, expected here.
+   certificate → CA certificate, and select the downloaded file. Android
+   trusts it on install, so compare straight afterwards: Trusted
+   credentials → User → the certificate shows its SHA-256 fingerprint;
+   remove it if it differs. Some versions warn that a "network may be
+   monitored" when a user-installed CA is trusted: that's standard Android
+   messaging for any manually-installed CA, expected here.
 
 ### Troubleshooting
 
