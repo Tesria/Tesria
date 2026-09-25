@@ -35,7 +35,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node scripts/release/deploy-bundle.mjs "${GITHUB_REF_NAME#v}" out
+      - run: node scripts/bundle/deploy-bundle.mjs "${GITHUB_REF_NAME#v}" out
       - uses: actions/upload-artifact@v4
         with:
           name: tesria-deploy
