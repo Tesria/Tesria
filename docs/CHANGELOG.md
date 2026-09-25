@@ -8,6 +8,20 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.8.0-dev**: 0.7.1 is released, so what comes
 after it is the next minor version.
 
+### An exported site on a phone: the page first, the tree behind a menu (2026-09-24, Opus 5.5)
+
+On a phone an exported site (tesria.com/docs among them) stacked the page
+tree above the page, so each page opened with its text below the fold. The
+tree is now behind a ☰ button in the top bar, as in the app: it opens the
+tree in the page's place, with the open page's entry in view, and the button
+becomes ✕ to close it, back where the reader was; choosing a page closes it
+too. The owner found it, and asked that export changes always be tested in
+a real export, on a phone and a desktop, on a content page as well as the
+front page; this was. A fixed overlay was tried first and, in Chromium's
+phone emulation, sat over the top bar; the tree now takes the page's place
+in the normal flow instead. A ✕ inside the list was tried too and scrolled
+out of view on a deep page.
+
 ## [0.7.1] - 2026-09-24
 
 - **An exported site's sidebar keeps its place.** Every page of an exported

@@ -110,7 +110,11 @@ public static partial class SiteChrome
             ? $"<span class=\"brand\">{inner}</span>"
             : $"<a class=\"brand\" href=\"{SiteExport.Escape(homeHref)}\">{inner}</a>";
 
-        return $"""<header class="topbar">{home}<div class="topbar__right">{WidthToggle()}{ThemeMenu(brand)}</div></header>""";
+        // The phone menu (the owner, 2026-09-24: on a phone the page tree sat
+        // above the page and pushed it off the screen). The app's own button,
+        // shown only on a phone; it opens the sidebar over the page.
+        var menu = """<button type="button" class="topbar__hamburger site-menu" aria-label="Pages" aria-expanded="false" aria-controls="site-pages">☰</button>""";
+        return $"""<header class="topbar">{menu}{home}<div class="topbar__right">{WidthToggle()}{ThemeMenu(brand)}</div></header>""";
     }
 
     /// <summary>
@@ -267,7 +271,7 @@ public static partial class SiteChrome
             ? """<span class="badge badge--public" title="Readable by anyone on the internet">public</span>"""
             : "";
         return $"""
-        <aside class="sidebar">
+        <aside class="sidebar" id="site-pages">
         <div class="sidebar__top"><div class="sidebar__head">{SpaceIcon(space, 32, currentPath)}<div>
         <div class="sidebar__key">{SiteExport.Escape(space.Key)}{badge}</div>
         <div class="sidebar__name">{SiteExport.Escape(space.Name)}</div>
@@ -642,6 +646,7 @@ public static partial class SiteChrome
             wireCopy();
             wireTreeFilter();
             wireTreeScroll();
+            wireSiteMenu();
           }
 
           // Filtering the sidebar's pages as you type (dev-plan 15.9): the
@@ -734,22 +739,64 @@ public static partial class SiteChrome
           // never reloads, keeps its place. The tree's scroll is kept for this
           // browser tab and put back on the next page; and the page now open
           // is scrolled into view if it is not, which is also where a reader
-          // who arrives from elsewhere starts.
+          // who arrives from elsewhere starts. On a phone the tree is hidden
+          // until the menu opens it, and a hidden tree cannot scroll, so the
+          // menu places it again when it opens.
+          var placeTree = function () {};
           function wireTreeScroll() {
             var tree = d.querySelector('.sidebar .tree');
             if (!tree) return;
-            var KEY = 'tesria-tree-scroll', saved = null;
-            try { saved = sessionStorage.getItem(KEY); } catch (e) { /* not kept */ }
-            if (saved !== null) tree.scrollTop = Number(saved) || 0;
-            var current = tree.querySelector('.tree__link.is-active');
-            if (current) {
-              var box = tree.getBoundingClientRect(), row = current.getBoundingClientRect();
-              if (row.top < box.top || row.bottom > box.bottom)
-                tree.scrollTop += row.top - box.top - (box.height - row.height) / 2;
-            }
+            var KEY = 'tesria-tree-scroll';
+            placeTree = function () {
+              if (!tree.offsetParent) return;
+              var saved = null;
+              try { saved = sessionStorage.getItem(KEY); } catch (e) { /* not kept */ }
+              if (saved !== null) tree.scrollTop = Number(saved) || 0;
+              var current = tree.querySelector('.tree__link.is-active');
+              if (current) {
+                var box = tree.getBoundingClientRect(), row = current.getBoundingClientRect();
+                if (row.top < box.top || row.bottom > box.bottom)
+                  tree.scrollTop += row.top - box.top - (box.height - row.height) / 2;
+              }
+            };
+            placeTree();
             addEventListener('pagehide', function () {
+              // Only a tree on screen has a position worth keeping: a closed
+              // phone menu reads 0, which would lose the reader's place.
+              if (!tree.offsetParent) return;
               try { sessionStorage.setItem(KEY, String(Math.round(tree.scrollTop))); } catch (e) { /* not kept */ }
             });
+          }
+
+          // The phone menu: the Pages button shows the page tree in place of
+          // the page, as the app's own menu does; choosing a page, Escape, or
+          // the button again closes it, back where the reader was.
+          function wireSiteMenu() {
+            var button = d.querySelector('.site-menu'), sidebar = d.getElementById('site-pages');
+            if (!button || !sidebar) { if (button) button.hidden = true; return; }
+            var readingAt = 0;
+            function set(open) {
+              if (open === d.body.classList.contains('site-menu-open')) return;
+              if (open) readingAt = scrollY;
+              d.body.classList.toggle('site-menu-open', open);
+              button.setAttribute('aria-expanded', open ? 'true' : 'false');
+              // A cross while it is open (the owner, 2026-09-24: "no x to
+              // close it like there is on the real app"), in the top bar, which
+              // stays on screen however far the list has scrolled.
+              button.textContent = open ? '\u2715' : '\u2630';
+              button.setAttribute('aria-label', open ? 'Close pages' : 'Pages');
+              if (open) {
+                // The tree now scrolls with the page: bring the open page's
+                // entry into view rather than restoring the tree's own scroll.
+                var current = sidebar.querySelector('.tree__link.is-active');
+                if (current) current.scrollIntoView({ block: 'center' }); else scrollTo(0, 0);
+              } else {
+                scrollTo(0, readingAt);
+              }
+            }
+            button.addEventListener('click', function () { set(!d.body.classList.contains('site-menu-open')); });
+            addEventListener('keydown', function (e) { if (e.key === 'Escape') set(false); });
+            sidebar.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('a')) set(false); });
           }
 
           // Expand blocks are captured closed, with their body hidden, and
