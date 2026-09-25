@@ -5,8 +5,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
-Development builds now say **0.7.3-dev**: 0.7.2 is released, and the next
-release is 0.7.3, with the review fixes below.
+## [0.7.3] - 2026-09-25
 
 ### Fixes from an outside review: restores work again, and live editing asks the app (dev-plan 14.4, 2026-09-25, Opus 5.5; designs reviewed by Fable 5.1)
 

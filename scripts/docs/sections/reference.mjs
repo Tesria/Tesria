@@ -406,6 +406,14 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     p('Released the same day. On an exported website, choosing a page in the sidebar no longer scrolls the sidebar back to the top, so you keep your place in a long list of pages.'),
     h(2, '0.7.2'),
     p('Released September 25, 2026. On a phone, an exported website opens each page first, with its list of pages behind a menu button in the top bar, instead of above the page. The button turns into a cross to close the list, and takes you back to where you were reading.'),
+    h(2, '0.7.3'),
+    p('Released September 25, 2026. Fixes from an outside review of Tesria’s code. Upgrade as usual; see ', pageLink('Upgrading'), '.'),
+    ul(
+      li(p(b('Restoring a backup works again.'), ' Since 0.6, a restore from the backups page left Tesria unable to read the restored wiki. If you restored since then and Tesria has not worked properly since, upgrade and restore again. A restore now also stops before changing anything if the attachments in the backup cannot be unpacked, instead of finishing with the pages but not their files.')),
+      li(p(b('Live editing ends when access does.'), ' Someone whose access to a page was taken away could keep editing it live for up to ten minutes. Tesria now checks every live editing connection when it opens and once a minute after, and ends it as soon as the person may no longer edit the page.')),
+      li(p(b('Canceling a restore that has not started yet works.'), ' It used to fail with an error, and the restore could run later anyway.')),
+      li(p(b('One more container keeps running.'), ' ', c('docker compose ps'), ' now shows ', c('migrate'), ' as ', c('Up'), ' instead of finished. That is expected: it brings a restored backup up to date, and checks the database every thirty seconds.')),
+    ),
   ))
   await page('Tesria 0.6', notes, doc(
     p('Tesria 0.6, released September 24, 2026, is the first public release: Tesria’s source code and these docs are open to everyone. If you already run 0.5, read ', i('Before you upgrade'), ' first: two things need doing once.'),

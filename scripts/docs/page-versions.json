@@ -109,9 +109,9 @@
   },
   "Backups and recovery / Restoring and undo": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-25",
     "note": "Revised.",
-    "hash": "f72f1e15ebf940c2"
+    "hash": "3aa0eea5b4bae5c1"
   },
   "Backups and recovery / Retention": {
     "appliesTo": "0.5",
@@ -181,9 +181,9 @@
   },
   "Contributing / How the code is organized": {
     "appliesTo": "0.6",
-    "updated": "2026-09-24",
+    "updated": "2026-09-25",
     "note": "Revised.",
-    "hash": "d3a9ba416f53c158"
+    "hash": "0e87abd46a88bc8c"
   },
   "Contributing / Making a release": {
     "appliesTo": "0.6",
@@ -687,7 +687,7 @@
     "appliesTo": "0.5",
     "updated": "2026-09-25",
     "note": "Revised.",
-    "hash": "f10a584a1c5b7192"
+    "hash": "c22d17d50132b2e5"
   },
   "License and credits": {
     "appliesTo": "0.5",
@@ -903,7 +903,7 @@
     "appliesTo": "0.7",
     "updated": "2026-09-25",
     "note": "Revised.",
-    "hash": "28098124fcfc0c11"
+    "hash": "6c1ecac7f7ebf9a4"
   },
   "REST API": {
     "appliesTo": "0.5",

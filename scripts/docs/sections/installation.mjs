@@ -1242,7 +1242,7 @@ export async function build({
     step(3, 'Restart on the new version'),
     p('In the Tesria folder:'),
     codeBlock('bash', 'docker compose pull\ndocker compose up -d'),
-    p('The new images download while the old version keeps running. Then the setup step updates the database and stops, each container is replaced, and Tesria is back. From a clone, run ', c('docker compose up -d --build'), ' instead, which builds first.'),
+    p('The new images download while the old version keeps running. Then the setup step (the ', c('migrate'), ' service) updates the database, each container is replaced, and Tesria is back. Since 0.7.3 ', c('migrate'), ' keeps running afterwards: it does the same for a restored backup, so it is meant to be there. From a clone, run ', c('docker compose up -d --build'), ' instead, which builds first.'),
     panel('warning', p(b('Some upgrades ask for one more step.'), ' The ', pageLink('Release notes'), ' say when, for example to run ', c('docker compose down'), ' and then ', c('docker compose up -d'), ' once. Never add ', c('-v'), ' to ', c('down'), ': that deletes the wiki and its backups.')),
 
     step(4, 'Check it'),
@@ -1485,7 +1485,7 @@ export async function build({
     codeBlock('bash', 'docker compose exec -e RESTORE_DRY_RUN=1 backup /scripts/restore.sh db-20260920T030000Z.dump'),
     p('Then run it for real, with the name of the dump you want:'),
     codeBlock('bash', 'docker compose exec backup /scripts/restore.sh db-20260920T030000Z.dump'),
-    p('It takes the same safety backup first, restores beside the live wiki, and puts back the attachments archived with the dump. Then restart Tesria, and the live editing service after it, so they pick up the restored database:'),
+    p('It takes the same safety backup first, restores beside the live wiki, has the ', c('migrate'), ' service bring the restored copy up to date (so that service must be running: ', c('docker compose ps migrate'), '), and puts back the attachments archived with the dump. Then restart Tesria, and the live editing service after it, so they pick up the restored database:'),
     codeBlock('bash', 'docker compose restart app\ndocker compose restart collab'),
     p('A restore run this way is not recorded as one, so the next daily audit check warns once that the audit log is shorter than before. That is expected: the log went back with everything else.'),
   ))
