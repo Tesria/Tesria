@@ -8,6 +8,31 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.7.0-dev**: 0.6.0 is released, so what comes
 after it is the next minor version.
 
+### 14.2 Images on Docker Hub and GitHub's registry, and tesria-deploy.zip (2026-09-24, Opus 5.5)
+
+Tesria no longer has to be built to be installed.
+
+- **Five images**, `tesria-app`, `-db` (also run as `pgbackrest`), `-backup`,
+  `-collab` and `-pdf`, each for linux/amd64 and linux/arm64, published to
+  Docker Hub (`brianintheloop/`) and GitHub's registry (`ghcr.io/tesria/`),
+  tagged `1.2.3`, `1.2` and `latest` from a release. The owner added GitHub's
+  registry to the plan, since it costs nothing more. `images.yml` builds each
+  architecture on its own native runner and joins them; release.yml calls it,
+  and it runs by hand for an existing tag (0.6.0's images were published
+  that way).
+- **`tesria-deploy.zip`** on every release (about 100 KB): the compose file
+  without build instructions, its image version pinned to the release, plus
+  the example settings and the runtime files the stack reads from its folder.
+  Upgrading is unzipping the next one over it; `.env` is never in it. It
+  replaces `git clone` for people who only run Tesria; the clone and
+  `--build` stay for building from source.
+- `docker-compose.yml` names each image (`TESRIA_IMAGES`, `TESRIA_IMAGE_TAG`).
+- The docs' Quick start, installing, upgrading and recovery pages, and the
+  README, lead with the zip and the images.
+- Found on the way: `.gitignore`'s `[Rr]elease/` (from the .NET template)
+  silently ignored a new `scripts/release/` folder; the script lives in
+  `scripts/bundle/`.
+
 ### A space's home page and an exported site's front page list their contents (2026-09-24, Opus 5.5)
 
 The front page of an exported site (tesria.com/docs among them) showed only

@@ -107,7 +107,9 @@ jobs:
           # their shared tags.
           outputs: type=image,"name=docker.io/${{ vars.DOCKERHUB_USERNAME }}/tesria-${{ matrix.image.name }},${{ env.GHCR_NAMESPACE }}/tesria-${{ matrix.image.name }}",push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=${{ matrix.image.name }}-${{ matrix.platform.arch }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.image.name }}-${{ matrix.platform.arch }}
+          # Best effort: a cache that cannot be saved (GitHub's cache service
+          # timed out once, 2026-09-24) must not fail an image that built.
+          cache-to: type=gha,mode=max,scope=${{ matrix.image.name }}-${{ matrix.platform.arch }},ignore-error=true
       - name: Keep the digest
         run: |
           mkdir -p "$RUNNER_TEMP/digests"

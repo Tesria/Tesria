@@ -216,7 +216,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     q('Why does my browser say “Not secure”?',
       p('On your own network, Tesria makes its own certificate, which each device has to be told to trust, once. It takes about three minutes: see ', pageLink('Trusting the local certificate'), '.')),
     q('How do I update Tesria?',
-      p('Two commands, with a backup first. See ', pageLink('Upgrading'), '.')),
+      p('Download the new release and run two commands, with a backup first. See ', pageLink('Upgrading'), '.')),
     q('Is my wiki backed up?',
       p('Yes, from the moment Tesria first starts, with nothing to set up: daily copies of everything, and a continuous record of changes that can bring the wiki back to any moment. Those copies are on the same machine, though, so also set up an offsite copy. See ', pageLink('Backups and recovery'), '.')),
     q('What happens if the server dies?',

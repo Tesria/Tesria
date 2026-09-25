@@ -187,7 +187,7 @@ export async function build({
     ], [200, 400]),
     ul(
       li(p(b('Processor:'), ' x86-64 or ARM64, so Apple silicon Macs and ARM servers work as well as ordinary PCs. Most of the time Tesria is idle; exporting a page as a PDF keeps one core busy for about a second.')),
-      li(p(b('Memory:'), ' 2 GB to run Tesria. The machine needs 4 GB when it also builds Tesria’s software, which happens on the first install and each upgrade.')),
+      li(p(b('Memory:'), ' 2 GB to run Tesria from its ready-made images, as ', pageLink('Quick start'), ' does. Building Tesria from source instead needs 4 GB, on the first install and each upgrade.')),
       li(p(b('Disk:'), ' about 5 GB of it is the software itself. The rest holds your pages, files and, above all, backups, which grow with the history you choose to keep. More disk is never wasted here.')),
       li(p(b('System:'), ' anything that runs Docker with Compose: Linux, or a Mac or Windows computer with Docker Desktop.')),
     ),
@@ -217,18 +217,21 @@ export async function build({
 
   // ================================================================ Quick start
   await page('Quick start', root, doc(
-    p('This page takes you from a computer with Docker to your own Tesria, open in your browser and ready for its guided setup. You type a handful of commands and fill in one settings file; the rest is waiting while Tesria builds itself.'),
+    p('This page takes you from a computer with Docker to your own Tesria, open in your browser and ready for its guided setup. You type a handful of commands and fill in one settings file; the rest is waiting while Tesria downloads.'),
     p('If you have not yet, read ', pageLink('Prerequisites'), ' first: it explains Docker, and what to have ready.'),
     panel('note', p(b('Throughout this page, '), c('your-server'), b(' stands for your server’s address:'), ' the name people will type to reach Tesria, such as ', c('studio.local'), ' or ', c('wiki.example.com'), '. On the computer Tesria runs on, ', c('localhost'), ' works too.')),
 
     step(1, 'Download Tesria'),
-    p('Open a terminal (Terminal on a Mac, PowerShell on Windows) on the computer Tesria will run on, go to the folder you want Tesria in, and run:'),
-    codeBlock('bash', 'git clone https://github.com/Tesria/Tesria.git\ncd Tesria'),
-    p('That makes a folder called ', c('Tesria'), ' with everything in it, and moves into it. Run the rest of the commands on this page from there.'),
+    p('Open a terminal (Terminal on a Mac, PowerShell on Windows) on the computer Tesria will run on, go to the folder you want Tesria in, and download the latest release. On a Mac or Linux:'),
+    codeBlock('bash', 'curl -LO https://github.com/Tesria/Tesria/releases/latest/download/tesria-deploy.zip\nunzip tesria-deploy.zip -d tesria && cd tesria'),
+    p('On Windows, in PowerShell:'),
+    codeBlock('powershell', 'Invoke-WebRequest https://github.com/Tesria/Tesria/releases/latest/download/tesria-deploy.zip -OutFile tesria-deploy.zip\nExpand-Archive tesria-deploy.zip -DestinationPath tesria; cd tesria'),
+    p('That makes a folder called ', c('tesria'), ' with Tesria’s settings and scripts, about 100 KB, and moves into it. Tesria itself comes as ready-made images, downloaded in step 3. Run the rest of the commands on this page from that folder.'),
 
     step(2, 'Make your settings file'),
     p('Tesria reads its settings from a plain text file called ', c('.env'), ' in that folder. It comes with an example to copy:'),
     codeBlock('bash', 'cp .env.example .env'),
+    p('On Windows: ', c('Copy-Item .env.example .env'), '.'),
     p('Open ', c('.env'), ' in a plain text editor (', c('nano .env'), ' in a Mac or Linux terminal, ', c('notepad .env'), ' on Windows). Each line is a setting, in the form ', c('NAME=value'), '. Change these before the first start:'),
     ul(
       li(p(c('POSTGRES_PASSWORD'), ': the password for Tesria’s database. Any long random string.')),
@@ -246,8 +249,8 @@ export async function build({
     panel('success', p(b('Cannot see .env in the Mac Finder?'), ' Files whose names start with a dot are hidden. Press ', b('⌘ Shift .'), ' in a Finder window to show them.')),
 
     step(3, 'Start Tesria'),
-    codeBlock('bash', 'docker compose up -d --build'),
-    p('This builds Tesria’s software and starts every part of it. ', c('--build'), ' builds it first, and ', c('-d'), ' lets it carry on in the background, so you get your terminal back. The first time takes several minutes; later starts are much quicker.'),
+    codeBlock('bash', 'docker compose pull\ndocker compose up -d'),
+    p('The first command downloads Tesria’s images, the ready-made software for each of its parts, for Intel, AMD or ARM computers alike. The second starts them, and ', c('-d'), ' lets them carry on in the background, so you get your terminal back. The download is several hundred megabytes the first time; later starts take seconds.'),
     p('While it starts, Tesria sets up its database and backups by itself. There is nothing else to install.'),
     panel('warning', p(b('Always start everything together.'), ' On a new install, starting only the database with ', c('docker compose up -d db'), ' makes it restart over and over, because its backups wait for the backup service that starts alongside it.')),
 
@@ -262,6 +265,12 @@ export async function build({
     step(5, 'Follow the setup wizard'),
     p('Tesria opens its ', b('setup wizard'), ', which creates your account as the ', b('owner'), ' and asks a few questions about who can join and how much backup history to keep. It takes a few minutes; ', pageLink('First-run setup wizard'), ' goes through every step.'),
     panel('warning', p(b('Do the setup straight away.'), ' Until it is done, the first person to open the address and create an account becomes the owner. Finish the wizard before you share the address with anyone.')),
+
+    h(2, 'Building from source instead'),
+    p('If you want to change Tesria, or would rather build it yourself than download its images, clone the repository instead of step 1, and build in step 3:'),
+    codeBlock('bash', 'git clone https://github.com/Tesria/Tesria.git\ncd Tesria'),
+    codeBlock('bash', 'docker compose up -d --build'),
+    p('Building takes several minutes the first time, and needs more memory than running (see ', pageLink('System requirements'), '). ', pageLink('Contributing'), ' covers working on the code.'),
 
     h(2, 'Next'),
     p('Once the wizard is done, ', pageLink('Your first space and page'), ' walks you through writing something. When other devices on your network need to reach Tesria, see ', pageLink('Opening Tesria by name'), '. And ', pageLink('Installing with Docker Compose'), ' explains what each part of Tesria does and where it keeps your data.'),

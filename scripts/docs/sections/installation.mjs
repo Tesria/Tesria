@@ -250,8 +250,8 @@ export async function build({
     panel('warning', p(b('Keep a copy of BACKUP_ENCRYPTION_KEY somewhere other than this computer,'), ' such as a password manager. The backups it encrypts cannot be restored without it, by anyone.')),
 
     step(2, 'Start everything'),
-    codeBlock('bash', 'docker compose up -d --build'),
-    p(c('--build'), ' makes Tesria’s containers from the files in the folder, which takes a few minutes the first time. ', c('-d'), ' runs them in the background, so you get the terminal back.'),
+    codeBlock('bash', 'docker compose pull\ndocker compose up -d'),
+    p(c('pull'), ' downloads Tesria’s ready-made images for this release, which takes a few minutes the first time. ', c('-d'), ' runs them in the background, so you get the terminal back. If you cloned the repository to build from source instead, run ', c('docker compose up -d --build'), ' in place of both.'),
     p('While it starts, a few things happen on their own: the database starts, the ', c('pgbackrest'), ' service prepares its backup store, Tesria creates its tables and a restricted database account for itself, and Caddy makes a certificate for your address.'),
     panel('note', p(b('Start the whole set, not only the database.'), ' On a new install, ', c('docker compose up -d db'), ' on its own makes the database restart every few seconds, because it waits for the ', c('pgbackrest'), ' service to prepare the backup store. If you ever need the database without the rest, start the two together: ', c('docker compose up -d db pgbackrest'), '.')),
 
@@ -1233,12 +1233,16 @@ export async function build({
     p('Choose ', b('Admin'), ', then ', b('Backups'), ', then ', b('Back up now'), ', and wait until the page says the backups have finished. If the upgrade goes wrong, this is what you go back to. See ', pageLink('Backups and recovery'), '.'),
 
     step(2, 'Get the new version'),
-    p('If you installed Tesria with ', c('git clone'), ', as ', pageLink('Quick start'), ' does, run this in the Tesria folder:'),
-    codeBlock('bash', 'git pull'),
+    p('If you installed Tesria from ', c('tesria-deploy.zip'), ', as ', pageLink('Quick start'), ' does, download the new one and unzip it over your Tesria folder. Your ', c('.env'), ' is kept: it is not in the zip. In the folder above your Tesria folder, on a Mac or Linux:'),
+    codeBlock('bash', 'curl -LO https://github.com/Tesria/Tesria/releases/latest/download/tesria-deploy.zip\nunzip -o tesria-deploy.zip -d tesria'),
+    p('On Windows, in PowerShell:'),
+    codeBlock('powershell', 'Invoke-WebRequest https://github.com/Tesria/Tesria/releases/latest/download/tesria-deploy.zip -OutFile tesria-deploy.zip\nExpand-Archive tesria-deploy.zip -DestinationPath tesria -Force'),
+    p('If you cloned the repository to build from source, run ', c('git pull'), ' in the Tesria folder instead.'),
 
-    step(3, 'Rebuild and restart'),
-    codeBlock('bash', 'docker compose up -d --build'),
-    p('Building takes a few minutes while the old version keeps running. Then the setup step updates the database and stops, each container is replaced, and Tesria is back.'),
+    step(3, 'Restart on the new version'),
+    p('In the Tesria folder:'),
+    codeBlock('bash', 'docker compose pull\ndocker compose up -d'),
+    p('The new images download while the old version keeps running. Then the setup step updates the database and stops, each container is replaced, and Tesria is back. From a clone, run ', c('docker compose up -d --build'), ' instead, which builds first.'),
     panel('warning', p(b('Some upgrades ask for one more step.'), ' The ', pageLink('Release notes'), ' say when, for example to run ', c('docker compose down'), ' and then ', c('docker compose up -d'), ' once. Never add ', c('-v'), ' to ', c('down'), ': that deletes the wiki and its backups.')),
 
     step(4, 'Check it'),
@@ -1603,7 +1607,7 @@ export async function build({
 
     step(2, 'Install an empty Tesria'),
     p('Get Tesria as in ', pageLink('Quick start'), ', and write a new ', c('.env'), ' with new passwords and a new ', c('BACKUP_ENCRYPTION_KEY'), '. Keep the same ', c('DOMAIN'), ' if you want the same address. Then start it:'),
-    codeBlock('bash', 'docker compose up -d --build'),
+    codeBlock('bash', 'docker compose pull\ndocker compose up -d'),
     p('Wait until ', c('docker compose ps'), ' shows ', c('app'), ' as healthy. Do not go through the setup wizard: the restore replaces everything anyway.'),
 
     step(3, 'Take the newest backup out of the copy'),
@@ -1699,7 +1703,7 @@ export async function build({
     codeBlock('bash', 'docker run --rm -v tesria_backups:/b -v "$PWD":/out alpine tar czf /out/tesria-backups.tgz -C /b .'),
     p('That makes ', c('tesria-backups.tgz'), '. Copy it to the new computer, into its Tesria folder.'),
     step(3, 'Install Tesria on the new computer'),
-    p('As in ', pageLink('Quick start'), ', with a new ', c('.env'), ', and the same ', c('DOMAIN'), ' to keep the same address. Start it with ', c('docker compose up -d --build'), ', wait until ', c('app'), ' is healthy, and skip the setup wizard.'),
+    p('As in ', pageLink('Quick start'), ', with a new ', c('.env'), ', and the same ', c('DOMAIN'), ' to keep the same address. Start it with ', c('docker compose pull'), ' and ', c('docker compose up -d'), ', wait until ', c('app'), ' is healthy, and skip the setup wizard.'),
     step(4, 'Restore the backup'),
     codeBlock('bash', 'docker compose cp tesria-backups.tgz backup:/tmp/\ndocker compose exec backup tar xzf /tmp/tesria-backups.tgz -C /backups\ndocker compose exec backup ls /backups'),
     p('Then restore the newest dump by its name, and restart Tesria:'),

@@ -57,6 +57,19 @@ original design the project started from.
 
 ## Quick start (Docker)
 
+From the ready-made images (Docker Hub `brianintheloop/tesria-*`, or
+`ghcr.io/tesria/tesria-*`), with only the files needed to run them:
+
+```bash
+curl -LO https://github.com/Tesria/Tesria/releases/latest/download/tesria-deploy.zip
+unzip tesria-deploy.zip -d tesria && cd tesria
+cp .env.example .env        # then edit the values below
+docker compose pull
+docker compose up -d
+```
+
+Or from source, in a clone of this repository:
+
 ```bash
 cp .env.example .env        # then edit the values below
 docker compose up -d --build
