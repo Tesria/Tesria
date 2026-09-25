@@ -58,7 +58,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-      - run: dotnet test tests/Api.Tests --nologo --filter "FullyQualifiedName~DatabaseRoleTests"
+      - run: dotnet test tests/Api.Tests --nologo --filter "FullyQualifiedName~DatabaseRoleTests|FullyQualifiedName~MigrateWatchTests"
 
   web:
     name: Web build, lint and tests

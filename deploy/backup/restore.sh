@@ -24,7 +24,9 @@
 #   1. preconditions, each refusing with a reason, while nothing is touched
 #   2. a safety backup, always, because this is the moment somebody most
 #      wants a backup they did not have to remember to take
-#   3. restore into a new database and verify it there
+#   3. restore into a new database and verify it there, then have the
+#      migrate service bring it up to date and grant the app its access
+#      (14.4), and unpack the attachments beside the live ones
 #   4. the last cancel check
 #   5. the point of no return: the swap, in one psql session
 #   6. the uploads, by rename, so a crash leaves both copies
@@ -78,6 +80,8 @@ step() {
 # psql against the maintenance database, which is the only place from which
 # the live database can be renamed.
 adm() { psql -X -q -t -A -v ON_ERROR_STOP=1 --dbname=postgres "$@"; }
+# Drops the restored copy, for every refusal before the switch.
+drop_restored() { adm -c "DROP DATABASE IF EXISTS \"${NEW_DB}\";" >/dev/null 2>&1 || true; }
 # psql against a named database.
 in_db() { local d="$1"; shift; psql -X -q -t -A -v ON_ERROR_STOP=1 --dbname="$d" "$@"; }
 
@@ -113,7 +117,7 @@ fi
 
 if dry; then
   log "DRY RUN: would restore ${DUMP}${ARCHIVE:+ and $ARCHIVE}"
-  log "DRY RUN: would take a safety backup, restore into ${NEW_DB}, verify it,"
+  log "DRY RUN: would take a safety backup, restore into ${NEW_DB}, verify it, have migrate update it,"
   log "DRY RUN: rename ${LIVE_DB} to ${KEPT_DB} and ${NEW_DB} to ${LIVE_DB},"
   log "DRY RUN: move the uploads aside into ${KEPT_UPLOADS} and extract the archive."
   exit 0
@@ -191,6 +195,45 @@ if [ "${R_MIGRATIONS:-0}" -gt "$LIVE_MIGRATIONS" ]; then
 fi
 log "restored copy looks sound: ${R_PAGES} pages, ${R_USERS} accounts, ${R_MIGRATIONS} migrations"
 
+# --- 3b. The database's own maintenance, on the restored copy ---------------
+#
+# The copy was restored without privileges, so the app's role cannot read it,
+# and a copy from an older Tesria lacks this version's migrations. Only the
+# `migrate` service does that work (it holds the code for both), so it is
+# asked, and waited for, while nothing has been replaced (the review's
+# DATA-01, 2026-09-24). The request and the answer are the copy's database
+# comment: this script and `migrate` both hold the owner's connection, and
+# the signal lives on the very database it is about.
+
+step "asking the migrate service to bring the restored copy up to date"
+REQUEST_ID="${JOB_ID:-manual}"
+adm -c "COMMENT ON DATABASE \"${NEW_DB}\" IS 'tesria-maintenance requested ${REQUEST_ID}';" >/dev/null \
+  || { drop_restored; die "could not ask for the restored copy to be brought up to date; nothing was changed"; }
+ANSWER=""
+for _ in $(seq 1 200); do
+  sleep 3
+  ANSWER="$(adm -v db="$NEW_DB" <<'SQL' 2>/dev/null || true
+SELECT coalesce(shobj_description(oid, 'pg_database'), '') FROM pg_database WHERE datname = :'db';
+SQL
+)"
+  case "$ANSWER" in
+    "tesria-maintenance done ${REQUEST_ID}") break ;;
+    "tesria-maintenance failed ${REQUEST_ID}"*)
+      drop_restored
+      die "the restored copy could not be brought up to date (${ANSWER#tesria-maintenance failed ${REQUEST_ID}: }); nothing was changed" ;;
+  esac
+  if declare -f restore_canceled >/dev/null && restore_canceled; then
+    drop_restored
+    die "canceled before the wiki was changed; nothing was replaced"
+  fi
+done
+if [ "$ANSWER" != "tesria-maintenance done ${REQUEST_ID}" ]; then
+  drop_restored
+  die "the migrate service did not answer within ten minutes (is it running? docker compose ps migrate); nothing was changed"
+fi
+adm -c "COMMENT ON DATABASE \"${NEW_DB}\" IS NULL;" >/dev/null 2>&1 || true
+log "the restored copy is up to date and the app may read it"
+
 # --- 4. The last moment anyone can call this off ---------------------------
 
 if declare -f restore_canceled >/dev/null && restore_canceled; then
@@ -202,22 +245,21 @@ fi
 
 STAGED=0
 if [ -f "$ARCHIVE" ] && [ -d "$UPLOADS" ]; then
-  drop_new() { adm -c "DROP DATABASE IF EXISTS \"${NEW_DB}\";" >/dev/null 2>&1 || true; }
-  [ -w "$UPLOADS" ] || { drop_new; die "${UPLOADS} is read-only in this container, so the attachments could not be restored; nothing was changed"; }
+  [ -w "$UPLOADS" ] || { drop_restored; die "${UPLOADS} is read-only in this container, so the attachments could not be restored; nothing was changed"; }
   # The staged copy sits beside the live files until the switch, so the
   # uploads volume needs room for both. Twice the archive is a generous
   # estimate of the unpacked size: attachments are mostly already compressed.
   NEED_FILES=$(( $(stat -c %s "$ARCHIVE" 2>/dev/null || echo 0) * 2 ))
   FREE_FILES="$(df -B1 --output=avail "$UPLOADS" 2>/dev/null | tail -1 | tr -d ' ')"
   if [ -n "${FREE_FILES:-}" ] && [ "$FREE_FILES" -lt "$NEED_FILES" ]; then
-    drop_new; die "not enough free space for the attachments: ${NEED_FILES} bytes are needed and ${FREE_FILES} are free; nothing was changed"
+    drop_restored; die "not enough free space for the attachments: ${NEED_FILES} bytes are needed and ${FREE_FILES} are free; nothing was changed"
   fi
   step "unpacking the attachments beside the live ones, to check them"
-  rm -rf "$STAGING" && mkdir -p "$STAGING" || { drop_new; die "could not prepare ${STAGING}; nothing was changed"; }
+  rm -rf "$STAGING" && mkdir -p "$STAGING" || { drop_restored; die "could not prepare ${STAGING}; nothing was changed"; }
   # An older archive may carry .pre-restore (the Undo copy at the time it was
   # taken); it is never unpacked, or it would replace the current Undo copy.
   if ! tar -xzf "$ARCHIVE" -C "$STAGING" --exclude='./.pre-restore' --exclude='./.restore-staging'; then
-    rm -rf "$STAGING"; drop_new
+    rm -rf "$STAGING"; drop_restored
     die "the attachments archive $(basename "$ARCHIVE") could not be unpacked; nothing was changed"
   fi
   STAGED=1
@@ -310,19 +352,8 @@ UPDATE "SiteSettings"
    SET "RestoreJobId" = NULL, "RestoreStartedAt" = NULL, "RestoreCancelRequestedAt" = NULL;
 SQL
 
-# Wait for the app to restart and migrate: a dump older than the current build
-# is missing columns the carried-across rows need. Ten minutes at most, then
-# carry on regardless, because a wiki that is up matters more than a tidy
-# history.
-if [ "${R_MIGRATIONS:-0}" -lt "${LIVE_MIGRATIONS:-0}" ]; then
-  step "waiting for the application to bring the schema up to date"
-  for _ in $(seq 1 120); do
-    NOW_MIGRATIONS="$(in_db "$LIVE_DB" -c 'SELECT count(*) FROM "__EFMigrationsHistory";' 2>/dev/null || echo 0)"
-    [ "${NOW_MIGRATIONS:-0}" -ge "${LIVE_MIGRATIONS:-0}" ] && break
-    sleep 5
-  done
-  log "schema is at ${NOW_MIGRATIONS:-?} migrations"
-fi
+# No wait for migrations here any more: the copy was brought up to date
+# before the switch (3b), so the carried rows fit it already.
 
 if [ -n "$DIR" ] && declare -f restore_import_carry >/dev/null; then
   restore_import_carry "$DIR"

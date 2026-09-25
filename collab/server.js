@@ -39,6 +39,14 @@ const pool = new pg.Pool({ connectionString: DATABASE_URL })
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const SWEEP_MS = Number(process.env.COLLAB_SWEEP_MS ?? 15000)
 
+// The app, on the compose network, for asking whether a connection may stand
+// (dev-plan 14.4, the review's SEC-02). Never the public address.
+const APP_URL = (process.env.APP_URL ?? 'http://app:8080').replace(/\/$/, '')
+const RECHECK_MS = Number(process.env.COLLAB_RECHECK_MS ?? 60000)
+// How long a new connection waits for an app that does not answer (it is
+// restarting, most likely) before it is turned away.
+const AUTHORIZE_PATIENCE_MS = Number(process.env.COLLAB_AUTHORIZE_PATIENCE_MS ?? 15000)
+
 // When this process started. Compared with SiteSettings.LastRestoredAt by the
 // sweep: a restore that finished after this moment means every document in
 // memory may hold content from after the backup, and the only reliable way to
@@ -212,8 +220,46 @@ function verifyToken(token, documentName) {
   if (typeof payload.exp !== 'number' || payload.exp * 1000 < Date.now()) return null
   // Bind the token to one document so it cannot be replayed against another page.
   if (payload.pageId !== documentName) return null
+  // What the token was issued under, for asking the app (14.4). A token from
+  // before that has none and is refused; the editor asks for a new one.
+  if (typeof payload.sk !== 'string' || !UUID.test(payload.sid ?? '') || typeof payload.st !== 'string') return null
+  if (!UUID.test(payload.userId ?? '')) return null
   return payload
 }
+
+/**
+ * Asks the app whether connections may stand (dev-plan 14.4, the review's
+ * SEC-02). A valid signature proves the app issued the token; only the app
+ * knows whether the account, its session and its right to edit the page
+ * still hold, so it is asked at every connection and once a minute for every
+ * open one. This service never evaluates a permission itself.
+ *
+ * Takes `{ key, userId, pageId, sk, sid, st }` items; returns a Map of key to
+ * yes or no, or null when the app could not be asked.
+ */
+async function authorize(connections) {
+  try {
+    const response = await fetch(`${APP_URL}/internal/collab/authorize`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-collab-secret': SECRET },
+      body: JSON.stringify({ connections }),
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!response.ok) {
+      console.warn(`[collab] the app answered ${response.status} to an authorization check`)
+      return null
+    }
+    const { allowed } = await response.json()
+    return new Map(Object.entries(allowed ?? {}))
+  } catch (err) {
+    console.warn(`[collab] could not ask the app about connections: ${err.message}`)
+    return null
+  }
+}
+
+const claimsOf = (payload) => ({
+  userId: payload.userId, pageId: payload.pageId, sk: payload.sk, sid: payload.sid, st: payload.st,
+})
 
 /**
  * Tells Hocuspocus this request is dealt with.
@@ -373,9 +419,29 @@ const server = new Server({
       console.warn(`[collab] refusing ${documentName}: no such page`)
       throw new Error('Unauthorized')
     }
+    // The signature says the app issued this token, not that it would still
+    // (14.4): a token outlives a revocation by up to its ten minutes, and a
+    // client need not ask for a fresh one to reconnect. So the app is asked.
+    // Closed by default: an app that cannot be asked admits nobody, after a
+    // short wait, since the usual reason is an app restarting.
+    const claims = claimsOf(payload)
+    let answer = await authorize([{ key: 'c', ...claims }])
+    for (let waited = 0; answer === null && waited < AUTHORIZE_PATIENCE_MS; waited += 2000) {
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      answer = await authorize([{ key: 'c', ...claims }])
+    }
+    if (answer === null) {
+      console.warn(`[collab] refusing ${documentName}: the app could not be asked`)
+      throw new Error('Unavailable')
+    }
+    if (answer.get('c') !== true) {
+      console.warn(`[collab] refusing ${documentName}: the app says no`)
+      throw new Error('Unauthorized')
+    }
     // Surfaced to other clients as the collaborator's identity; the expiry is
-    // kept so the sweep can end the connection when the token does.
-    return { user: { id: payload.userId, name: payload.displayName }, exp: payload.exp }
+    // kept so the sweep can end the connection when the token does, and the
+    // claims so the recheck can ask about it again.
+    return { user: { id: payload.userId, name: payload.displayName }, exp: payload.exp, claims }
   },
 
   extensions: [
@@ -502,6 +568,34 @@ function endConnection(connection, code, reason) {
   try { connection.webSocket.close(code, reason) } catch { /* already closing */ }
 }
 
+/**
+ * Asks the app about every open connection, in one request, and ends those it
+ * says no to (dev-plan 14.4). The backstop for a revocation notice that never
+ * arrived: with it, access that has gone ends within a minute whatever
+ * happened to the notice. An app that cannot be asked ends nothing; the
+ * token's expiry still does, within ten minutes.
+ */
+async function recheckConnections() {
+  if (inMaintenance()) return
+  const open = []
+  for (const [, document] of server.hocuspocus.documents) {
+    for (const connection of document.getConnections()) {
+      const claims = connection.context?.claims
+      if (claims) open.push({ connection, claims })
+    }
+  }
+  if (open.length === 0) return
+  const answer = await authorize(open.map(({ claims }, i) => ({ key: String(i), ...claims })))
+  if (answer === null) return
+  let closed = 0
+  open.forEach(({ connection }, i) => {
+    if (answer.get(String(i)) === true) return
+    endConnection(connection, 4403, 'access-changed')
+    closed++
+  })
+  if (closed) console.log(`[collab] closed ${closed} connection(s): the app no longer allows them`)
+}
+
 /** Ends connections whose token has expired; the editor reconnects with a fresh one (dev-plan 14.3). */
 function closeExpired() {
   const now = Date.now() / 1000
@@ -524,6 +618,11 @@ server.listen().then(() => {
     SWEEP_MS,
   )
   sweep.unref()
+  const recheck = setInterval(
+    () => recheckConnections().catch((err) => console.error('[collab] recheck failed', err)),
+    RECHECK_MS,
+  )
+  recheck.unref()
 })
 
 for (const signal of ['SIGINT', 'SIGTERM']) {

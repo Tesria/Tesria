@@ -4,6 +4,8 @@ using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Backups;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
+using Tesria.Api.Infrastructure.Security;
 using Npgsql;
 using Xunit;
 
@@ -17,6 +19,7 @@ namespace Tesria.Api.Tests;
 /// (2026-09-24) shipped. A path that must work under the grants gets a test
 /// here.
 /// </summary>
+[Collection("Postgres")]
 public class DatabaseRoleTests
 {
     private const string Label = "20260920T030000Z";
@@ -130,5 +133,112 @@ public class DatabaseRoleTests
             Assert.True(await db.AuditLogs.AnyAsync(a => a.Action == "backup.restore_abandoned" && a.TargetId == jobId));
         }
         (await owner.PostAsJsonAsync("/api/spaces", new { Key = "OK", Name = "Ok" })).EnsureSuccessStatusCode();
+    }
+}
+
+/// <summary>
+/// The long-running migrate service (the review's DATA-01): what a restore
+/// asks of it, and what it repairs on its own.
+/// </summary>
+[Collection("Postgres")]
+public class MigrateWatchTests
+{
+    [PostgresFact]
+    public async Task A_restored_copy_is_brought_up_to_date_and_granted_when_asked()
+    {
+        using var pg = new PostgresTestDatabase();
+        var live = new NpgsqlConnectionStringBuilder(pg.OwnerConnection).Database!;
+        var restoreDb = $"{live}_restore";
+        await using (var admin = new NpgsqlConnection(PostgresTestDatabase.Server))
+        {
+            await admin.OpenAsync();
+            await new NpgsqlCommand($"CREATE DATABASE \"{restoreDb}\"", admin).ExecuteNonQueryAsync();
+        }
+        var marker = Path.Combine(Path.GetTempPath(), $"tesria-migrated-{Guid.NewGuid():N}");
+        using var stop = new CancellationTokenSource();
+        var watch = Task.Run(() => MigrateCommand.WatchAsync(
+            pg.OwnerConnection, pg.AppConnection, NullLogger.Instance, stop.Token, readyMarker: marker));
+        try
+        {
+            // The first pass has to finish before the watch serves anything.
+            await WaitForAsync(() => Task.FromResult(File.Exists(marker)));
+            await Comment(pg, restoreDb, $"{MigrateCommand.Requested}job-1");
+
+            await WaitForAsync(async () => await ReadComment(pg, restoreDb) == $"{MigrateCommand.Done}job-1");
+
+            // The app's role can now sign in to the copy and read it.
+            var asApp = new NpgsqlConnectionStringBuilder(pg.AppConnection) { Database = restoreDb, Pooling = false };
+            await using var app = new NpgsqlConnection(asApp.ConnectionString);
+            await app.OpenAsync();
+            Assert.Equal(0L, await new NpgsqlCommand("SELECT count(*) FROM \"Pages\"", app).ExecuteScalarAsync());
+        }
+        finally
+        {
+            stop.Cancel();
+            await watch;
+            NpgsqlConnection.ClearAllPools();
+            await using var admin = new NpgsqlConnection(PostgresTestDatabase.Server);
+            await admin.OpenAsync();
+            await new NpgsqlCommand($"DROP DATABASE IF EXISTS \"{restoreDb}\" WITH (FORCE)", admin).ExecuteNonQueryAsync();
+        }
+    }
+
+    [PostgresFact]
+    public async Task A_live_database_that_lost_its_grants_is_repaired()
+    {
+        // As after a point-in-time restore to before the grants, or a
+        // restore run by hand: nobody asks, the check notices.
+        using var pg = new PostgresTestDatabase();
+        var marker = Path.Combine(Path.GetTempPath(), $"tesria-migrated-{Guid.NewGuid():N}");
+        using var stop = new CancellationTokenSource();
+        var watch = Task.Run(() => MigrateCommand.WatchAsync(
+            pg.OwnerConnection, pg.AppConnection, NullLogger.Instance, stop.Token, TimeSpan.FromSeconds(1), marker));
+        try
+        {
+            await WaitForAsync(() => Task.FromResult(File.Exists(marker)));
+            await using (var owner = new NpgsqlConnection(pg.OwnerConnection))
+            {
+                await owner.OpenAsync();
+                await new NpgsqlCommand("REVOKE ALL ON ALL TABLES IN SCHEMA public FROM tesria_test_app", owner).ExecuteNonQueryAsync();
+            }
+            await WaitForAsync(async () =>
+            {
+                await using var owner = new NpgsqlConnection(pg.OwnerConnection);
+                await owner.OpenAsync();
+                return await new NpgsqlCommand(
+                    "SELECT has_table_privilege('tesria_test_app', 'public.\"Pages\"', 'SELECT')", owner).ExecuteScalarAsync() is true;
+            });
+        }
+        finally
+        {
+            stop.Cancel();
+            await watch;
+        }
+    }
+
+    private static async Task Comment(PostgresTestDatabase pg, string db, string text)
+    {
+        await using var conn = new NpgsqlConnection(PostgresTestDatabase.Server);
+        await conn.OpenAsync();
+        await new NpgsqlCommand($"COMMENT ON DATABASE \"{db}\" IS '{text}'", conn).ExecuteNonQueryAsync();
+    }
+
+    private static async Task<string?> ReadComment(PostgresTestDatabase pg, string db)
+    {
+        await using var conn = new NpgsqlConnection(PostgresTestDatabase.Server);
+        await conn.OpenAsync();
+        var cmd = new NpgsqlCommand("SELECT shobj_description(oid, 'pg_database') FROM pg_database WHERE datname = @db", conn);
+        cmd.Parameters.AddWithValue("db", db);
+        return await cmd.ExecuteScalarAsync() as string;
+    }
+
+    private static async Task WaitForAsync(Func<Task<bool>> condition)
+    {
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(60);
+        while (!await condition())
+        {
+            if (DateTimeOffset.UtcNow > deadline) throw new TimeoutException("condition not met within 60 seconds");
+            await Task.Delay(250);
+        }
     }
 }

@@ -49,7 +49,7 @@ Read first, in this order:
   stay green, but none substitutes for looking at the running app for UI
   changes.
 - **A path that must work under the app role's grants gets a test in
-  `DatabaseRoleTests`** (added 2026-09-25 for the review's DATA-04). SQLite
+  `DatabaseRoleTests`** (added 2026-09-25 for the review's DATA-04; `MigrateWatchTests` beside it). SQLite
   has no roles, so every other test passes whether or not the app writes a
   table it may not. Those tests run on real PostgreSQL when
   `TESRIA_TEST_POSTGRES` is set, and are skipped otherwise; CI runs them

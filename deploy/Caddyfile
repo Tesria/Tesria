@@ -87,6 +87,12 @@
 	handle /collab* {
 		reverse_proxy collab:8090
 	}
+	# The app's internal routes answer the collaboration service on the
+	# compose network (dev-plan 14.4). Never from outside, whatever the app
+	# would say; the app checks the shared secret as well.
+	handle /internal* {
+		respond 404
+	}
 
 	# Everything else is proxied to the app container, which serves both the API
 	# (/api/*) and the React SPA.

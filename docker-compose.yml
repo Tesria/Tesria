@@ -87,11 +87,22 @@ services:
   migrate:
     image: ${TESRIA_IMAGES:-brianintheloop/tesria}-app:${TESRIA_IMAGE_TAG:-latest}
     pull_policy: missing
-    command: ["--migrate"]
-    restart: "no"
+    # Stays up after its first pass (dev-plan 14.4): a restore asks it to
+    # bring the restored copy up to date and grant the app its access, and
+    # every thirty seconds it checks the live database needs neither.
+    command: ["--migrate", "--watch"]
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
+    # Healthy once the first pass has succeeded; the image's own check is
+    # for the web app, which this is not.
+    healthcheck:
+      test: ["CMD", "test", "-f", "/tmp/tesria-migrated"]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+      start_period: 10m
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__Default: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
@@ -110,7 +121,7 @@ services:
       db:
         condition: service_healthy
       migrate:
-        condition: service_completed_successfully
+        condition: service_healthy
     environment:
       ASPNETCORE_URLS: http://+:8080
       ASPNETCORE_ENVIRONMENT: Production
@@ -270,6 +281,9 @@ services:
     environment:
       COLLAB_PORT: 8090
       COLLAB_SHARED_SECRET: ${COLLAB_SHARED_SECRET}
+      # Where this asks whether a connection may stand (dev-plan 14.4). The
+      # compose network, never the public address.
+      APP_URL: "http://app:8080"
       # The same least-privilege role as the app, and only it (dev-plan 14.3).
       DATABASE_URL: "postgres://${APP_DB_USER:-tesria_app}:${APP_DB_PASSWORD:?APP_DB_PASSWORD must be set in .env}@db:5432/${POSTGRES_DB}"
     expose:

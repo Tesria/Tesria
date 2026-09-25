@@ -59,12 +59,25 @@ var ownerConnectionString = builder.Configuration.GetConnectionString("Default")
 var appConnectionString = builder.Configuration.GetConnectionString("App");
 
 // The `migrate` service (dev-plan 14.3): the same image, run with --migrate,
-// does the owner's work and exits before the app starts.
+// does the owner's work before the app starts. With --watch (14.4) it then
+// stays up to serve restores and to repair a database that needs a pass.
 if (args.Contains("--migrate"))
 {
     using var migrateLogs = LoggerFactory.Create(l => l.AddConsole());
-    Environment.ExitCode = await MigrateCommand.RunAsync(
-        ownerConnectionString, appConnectionString, migrateLogs.CreateLogger("Migrate"));
+    var migrateLog = migrateLogs.CreateLogger("Migrate");
+    if (args.Contains("--watch"))
+    {
+        using var stopping = new CancellationTokenSource();
+        using var term = System.Runtime.InteropServices.PosixSignalRegistration.Create(
+            System.Runtime.InteropServices.PosixSignal.SIGTERM, ctx => { ctx.Cancel = true; stopping.Cancel(); });
+        Console.CancelKeyPress += (_, e) => { e.Cancel = true; stopping.Cancel(); };
+        Environment.ExitCode = await MigrateCommand.WatchAsync(
+            ownerConnectionString, appConnectionString, migrateLog, stopping.Token);
+    }
+    else
+    {
+        Environment.ExitCode = await MigrateCommand.RunAsync(ownerConnectionString, appConnectionString, migrateLog);
+    }
     return;
 }
 
@@ -664,6 +677,8 @@ api.MapAuditEndpoints();
 api.MapGroupEndpoints();
 api.MapPermissionEndpoints();
 api.MapCollabEndpoints();
+// The collaboration service asking about its connections (14.4, SEC-02).
+app.MapCollabInternalEndpoints();
 api.MapTemplateEndpoints();
 api.MapWatchEndpoints();
 api.MapNotificationEndpoints();

@@ -81,14 +81,15 @@ placeholders, not blanks, so nothing fails loudly if you skip one:
 | Variable | |
 |---|---|
 | `POSTGRES_PASSWORD` | Any long random string. |
-| `APP_DB_PASSWORD` | Any long random string, different from the above (`openssl rand -hex 24`). **Required.** A one-shot `migrate` service creates a least-privilege `tesria_app` role with it before the app starts, and the app runs only as that role; it cannot alter or delete audit rows, and the app never sees the owner password. |
+| `APP_DB_PASSWORD` | Any long random string, different from the above (`openssl rand -hex 24`). **Required.** The `migrate` service creates a least-privilege `tesria_app` role with it before the app starts, and the app runs only as that role; it cannot alter or delete audit rows, and the app never sees the owner password. |
 | `BACKUP_ENCRYPTION_KEY` | **Required.** Encrypts the pgBackRest repository (`openssl rand -hex 32`). Backups made with it are unrecoverable without it, so keep it somewhere safe, and *don't* reuse a key from another install unless you intend to restore that install's backups. |
 | `DOMAIN`, `ACME_EMAIL` | `localhost` is fine for a laptop. |
 | `COLLAB_SHARED_SECRET` | Optional (`openssl rand -hex 32`). Empty disables real-time co-editing; the editor falls back to single-user. |
 | `PDF_SHARED_SECRET` | Optional (`openssl rand -hex 32`). Empty disables PDF export; `?format=pdf` then answers 503 telling the user to print the HTML export. |
 
-Everything else, schema included, sets itself up: a one-shot `migrate`
-service updates the database before the app starts, and the pgBackRest
+Everything else, schema included, sets itself up: the `migrate` service
+updates the database before the app starts (and stays up to do the same for
+a restore), and the pgBackRest
 sidecar creates its stanza on first boot. Then open `https://<domain>/` and the setup wizard takes it from
 there: it creates the owner account, names the instance, and walks you
 through who can join, what each role may do, and how much backup history to

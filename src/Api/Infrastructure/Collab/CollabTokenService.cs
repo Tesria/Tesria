@@ -17,8 +17,25 @@ namespace Tesria.Api.Infrastructure.Collab;
 /// </summary>
 public interface ICollabTokenService
 {
-    string Issue(Guid pageId, Guid userId, string displayName);
+    string Issue(Guid pageId, Guid userId, string displayName, CollabSubject subject);
     bool IsConfigured { get; }
+}
+
+/// <summary>
+/// What the token was issued under, so the app can be asked again later
+/// whether it still stands (the review's SEC-02, 2026-09-24): a browser
+/// session (<c>s</c>) or an API token (<c>t</c>), by id, and a short hash of
+/// the account's security stamp, which a password change, a suspension or
+/// "sign out everywhere" replaces. A hash, not the stamp: the token's payload
+/// is readable by whoever holds it.
+/// </summary>
+public sealed record CollabSubject(string Kind, Guid Id, string StampHash)
+{
+    public const string Session = "s";
+    public const string ApiToken = "t";
+
+    public static string HashStamp(string stamp) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(stamp)))[..16].ToLowerInvariant();
 }
 
 public sealed class CollabTokenService(IConfiguration config) : ICollabTokenService
@@ -35,7 +52,7 @@ public sealed class CollabTokenService(IConfiguration config) : ICollabTokenServ
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(Secret);
 
-    public string Issue(Guid pageId, Guid userId, string displayName)
+    public string Issue(Guid pageId, Guid userId, string displayName, CollabSubject subject)
     {
         if (Secret is not { } secret || string.IsNullOrWhiteSpace(secret))
             throw new InvalidOperationException("Collab:Secret is not configured.");
@@ -44,7 +61,10 @@ public sealed class CollabTokenService(IConfiguration config) : ICollabTokenServ
             pageId.ToString(),
             userId.ToString(),
             displayName,
-            DateTimeOffset.UtcNow.Add(Lifetime).ToUnixTimeSeconds()));
+            DateTimeOffset.UtcNow.Add(Lifetime).ToUnixTimeSeconds(),
+            subject.Kind,
+            subject.Id.ToString(),
+            subject.StampHash));
 
         var encodedPayload = Base64Url(payload);
         var signature = Base64Url(HMACSHA256.HashData(Encoding.UTF8.GetBytes(secret),
@@ -57,5 +77,6 @@ public sealed class CollabTokenService(IConfiguration config) : ICollabTokenServ
     private static string Base64Url(byte[] bytes) =>
         Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
-    private record CollabTokenPayload(string pageId, string userId, string displayName, long exp);
+    private record CollabTokenPayload(
+        string pageId, string userId, string displayName, long exp, string sk, string sid, string st);
 }
