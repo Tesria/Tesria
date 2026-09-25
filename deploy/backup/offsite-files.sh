@@ -219,6 +219,7 @@ restic_run_for() {
   local out
   if ! out="$(rst backup --tag tesria --tag "$AGENT" \
                  --exclude '*.tmp' --exclude 'lost+found' \
+                 --exclude "$RESTIC_UPLOADS/.pre-restore" --exclude "$RESTIC_UPLOADS/.restore-staging" \
                  "$RESTIC_UPLOADS" "$RESTIC_DUMPS" 2>&1 | tail -3 | tr '\n' ' ')"; then
     note "offsite files: backup failed: $out"
     offsite_files_status "$slot" "The last offsite file backup failed: $out"
@@ -265,6 +266,7 @@ restic_run_removable() {
   local out
   if ! out="$(rst backup --tag tesria --tag removable \
                  --exclude '*.tmp' --exclude 'lost+found' \
+                 --exclude "$RESTIC_UPLOADS/.pre-restore" --exclude "$RESTIC_UPLOADS/.restore-staging" \
                  "$RESTIC_UPLOADS" "$RESTIC_DUMPS" 2>&1 | tail -3 | tr '\n' ' ')"; then
     note "removable: copy failed: $out"
     offsite_files_status removable "The last copy to the drive failed: $out"

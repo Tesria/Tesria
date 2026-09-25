@@ -196,18 +196,19 @@ public sealed class RestoreCompletion(
         }
 
         // Nothing claimed it. Better to give the wiki back than to leave it
-        // read-only waiting for a sidecar that is not coming.
+        // read-only waiting for a sidecar that is not coming. Clearing
+        // RestoreJobId withdraws the job, as a queued cancel does: the job row
+        // is append-only for this role (the review's DATA-04), and whichever
+        // agent comes along later ends it rather than running it.
         if (job is { Status: BackupNames.StatusRequested }
             && DateTimeOffset.UtcNow - pending.StartedAt > Unclaimed)
         {
             logger.LogError("Restore {JobId} was not claimed within {Minutes} minutes; abandoning it",
                 pending.JobId, Unclaimed.TotalMinutes);
-            var writable = await db.BackupJobs.FirstAsync(j => j.Id == pending.JobId, ct);
-            writable.Status = BackupNames.StatusFailed;
-            writable.FinishedAt = DateTimeOffset.UtcNow;
-            writable.Error = "No backup agent claimed this restore. Nothing was changed.";
+            scope.ServiceProvider.GetRequiredService<IAuditLogger>().RecordAs(null,
+                "backup.restore_abandoned", "backup", pending.JobId, new { job.Agent, job.Target, Minutes = Unclaimed.TotalMinutes });
             await db.SaveChangesAsync(ct);
-            await EndAsync(scope, settings, writable.Error, ct);
+            await EndAsync(scope, settings, "No backup agent claimed this restore. Nothing was changed.", ct);
         }
     }
 

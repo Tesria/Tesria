@@ -421,8 +421,12 @@ public class RestoreTests
 
         (await owner.PostAsJsonAsync("/api/admin/backups/restore/cancel", new { })).EnsureSuccessStatusCode();
 
+        // The row is left for the agent to end (BackupJobs is append-only for
+        // the app's role, DATA-04); the page already shows it as ended.
         var job = await ReadAsync(factory, db => db.BackupJobs.SingleAsync());
-        Assert.Equal(BackupNames.StatusFailed, job.Status);
+        Assert.Equal(BackupNames.StatusRequested, job.Status);
+        var shown = await owner.GetFromJsonAsync<JobStatusDto>($"/api/admin/backups/jobs/{job.Id}");
+        Assert.Equal(BackupNames.StatusFailed, shown!.Status);
         var settings = await ReadAsync(factory, db => db.SiteSettings.FirstAsync());
         Assert.Null(settings.RestoreJobId);
         Assert.False(factory.Services.GetRequiredService<RestoreState>().InProgress);
@@ -451,6 +455,7 @@ public class RestoreTests
     }
 
     private record CancelBody(bool Canceled, string Message);
+    private record JobStatusDto(Guid Id, string Status, string? Error);
 
     [Fact]
     public async Task Canceling_when_nothing_is_running_is_a_conflict()

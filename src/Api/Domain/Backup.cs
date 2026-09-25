@@ -67,6 +67,20 @@ public static class BackupNames
     public const string StatusSucceeded = "succeeded";
     public const string StatusFailed = "failed";
 
+    /// <summary>
+    /// A restore or undo still queued that the wiki is no longer waiting for:
+    /// canceled before an agent claimed it, or abandoned when none did. The
+    /// app cannot end the row itself, because BackupJobs is append-only for
+    /// its role (the review's DATA-04); the agent that next looks ends it
+    /// instead of running it, and until then it is shown as ended.
+    /// </summary>
+    public static bool IsWithdrawnRestore(BackupJob j, Guid? awaitedRestore) =>
+        j.Status == StatusRequested && j.Kind is KindRestore or KindRestoreUndo && j.Id != awaitedRestore;
+
+    /// <summary>What a withdrawn restore says, here and when its agent ends it.</summary>
+    public const string WithdrawnRestoreError =
+        "Canceled, or no backup agent picked it up in time, before it started. Nothing was changed.";
+
     public const string RemovedByRetention = "retention";
     public const string RemovedMissing = "missing";
 }

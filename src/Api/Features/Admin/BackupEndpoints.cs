@@ -128,7 +128,7 @@ public static class BackupEndpoints
                 .OrderByDescending(b => b.RemovedAt).Select(ToDto).ToList()
             : [];
         var jobs = snapshot.Jobs.OrderByDescending(j => j.RequestedAt).Take(50)
-            .Select(j => ToDto(j, names, includeLog: false)).ToList();
+            .Select(j => ToDto(j, names, includeLog: false, s)).ToList();
 
         var targets = await db.BackupTargets.AsNoTracking()
             .OrderBy(t => t.Slot).ThenBy(t => t.Kind).ToListAsync();
@@ -366,11 +366,11 @@ public static class BackupEndpoints
         return Results.Ok(ToDto(job, await NamesAsync(db, [actorId]), includeLog: false));
     }
 
-    private static async Task<IResult> GetJob(Guid id, AppDbContext db)
+    private static async Task<IResult> GetJob(Guid id, AppDbContext db, ISiteSettingsService settings)
     {
         var job = await db.BackupJobs.AsNoTracking().FirstOrDefaultAsync(j => j.Id == id);
         if (job is null) return Results.NotFound();
-        return Results.Ok(ToDto(job, await NamesAsync(db, [job.RequestedById]), includeLog: true));
+        return Results.Ok(ToDto(job, await NamesAsync(db, [job.RequestedById]), includeLog: true, await settings.GetAsync()));
     }
 
     /// <summary>The dashboard's view: small, and computed from the same status as this page.</summary>
@@ -492,10 +492,20 @@ public static class BackupEndpoints
         b.Id, b.Agent, b.Label, b.Type, b.Prior, b.FullLabel, b.StartedAt, b.CompletedAt, b.SizeBytes,
         b.HasUploads, b.Error, b.RemovedAt, b.RemovedReason, b.LastVerifiedAt, b.LastVerifyOk, b.DetailJson);
 
-    private static JobDto ToDto(BackupJob j, Dictionary<Guid, string> names, bool includeLog) => new(
-        j.Id, j.Agent, j.Kind, j.Trigger, j.Status, j.Target, j.RequestedAt,
-        j.RequestedById is { } id ? names.GetValueOrDefault(id) : null,
-        j.StartedAt, j.FinishedAt, j.Error, j.ResultJson, includeLog ? j.LogTail : null);
+    /// <summary>
+    /// With the settings, a withdrawn restore is shown as the failure it is
+    /// before its agent gets round to recording it (DATA-04), so the page
+    /// neither says it is waiting nor keeps polling it.
+    /// </summary>
+    private static JobDto ToDto(BackupJob j, Dictionary<Guid, string> names, bool includeLog, SiteSettings? s = null)
+    {
+        var withdrawn = s is not null && BackupNames.IsWithdrawnRestore(j, s.RestoreJobId);
+        return new(
+            j.Id, j.Agent, j.Kind, j.Trigger, withdrawn ? BackupNames.StatusFailed : j.Status, j.Target, j.RequestedAt,
+            j.RequestedById is { } id ? names.GetValueOrDefault(id) : null,
+            j.StartedAt, j.FinishedAt, withdrawn ? BackupNames.WithdrawnRestoreError : j.Error,
+            j.ResultJson, includeLog ? j.LogTail : null);
+    }
 
     private static async Task<Dictionary<Guid, string>> NamesAsync(AppDbContext db, IEnumerable<Guid?> ids)
     {

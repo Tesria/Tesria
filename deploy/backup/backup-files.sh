@@ -22,6 +22,9 @@ if [ ! -d "$SRC" ]; then
 fi
 
 log "archiving uploads ${SRC} -> ${OUT}"
-tar -czf "${OUT}.tmp" -C "$SRC" .
+# Not the restore's own working folders (the review's DATA-02, 2026-09-24):
+# .pre-restore is the Undo copy of the files, and an archive that carried it
+# brought an older Undo copy back over the current one on the next restore.
+tar -czf "${OUT}.tmp" --exclude='./.pre-restore' --exclude='./.restore-staging' -C "$SRC" .
 mv "${OUT}.tmp" "${OUT}"
 log "OK ${OUT} ($(du -h "${OUT}" | cut -f1))"

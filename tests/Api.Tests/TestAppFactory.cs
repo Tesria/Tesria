@@ -40,6 +40,15 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
     /// <summary>Arbitrary configuration overrides, e.g. <c>Egress:AllowedNetworks</c>.</summary>
     public TestAppFactory(Dictionary<string, string?> settings) => _settings = settings;
 
+    private readonly PostgresTestDatabase? _postgres;
+
+    /// <summary>
+    /// Real PostgreSQL instead of SQLite, with the production split: the app
+    /// migrates as the owner and then runs as the least-privilege role, so its
+    /// grants are enforced (the review's DATA-04). See <see cref="PostgresFactAttribute"/>.
+    /// </summary>
+    public TestAppFactory(PostgresTestDatabase postgres) => _postgres = postgres;
+
     /// <summary>
     /// Every client sends the CSRF marker the app requires on cookie-
     /// authenticated state changes (dev-plan 3.4), the way the SPA does. The
@@ -55,6 +64,13 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
     {
         _connection.Open();
         builder.UseEnvironment("Testing");
+        if (_postgres is not null)
+        {
+            // Settings rather than app configuration: Program reads the
+            // connection strings before the host is built.
+            builder.UseSetting("ConnectionStrings:Default", _postgres.OwnerConnection);
+            builder.UseSetting("ConnectionStrings:App", _postgres.AppConnection);
+        }
 
         // A minimal SPA shell, so the public-meta middleware (dev-plan 5.2) has
         // something to inject into. The real one is built into the image.
@@ -72,6 +88,9 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
             .AddInMemoryCollection(_settings));
         builder.ConfigureServices(services =>
         {
+            ReplaceTestDoubles(services);
+            if (_postgres is not null) return;
+
             // Drop the production Npgsql registration entirely, both the built
             // options and the internal options-configuration action EF adds per
             // AddDbContext call, so SQLite is the only configured provider.
@@ -87,28 +106,31 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
 
             services.AddDbContext<AppDbContext>((sp, o) => o.UseSqlite(_connection)
                 .AddInterceptors(sp.GetRequiredService<Tesria.Api.Infrastructure.Collab.CollabRevocationInterceptor>()));
-
-            // Runs before the app's pipeline, so forwarded headers behave as
-            // they do behind Caddy: see the filter for how tests use it.
-            services.AddTransient<IStartupFilter, TestRemoteIpStartupFilter>();
-
-            // Replace the real channel-backed sender with a recording fake, so
-            // tests can assert on dispatched webhooks without any network I/O
-            // or a running background delivery service.
-            // Email is recorded, never sent (dev-plan 4.1).
-            services.RemoveAll<Tesria.Api.Infrastructure.Email.IEmailSender>();
-            services.AddSingleton<RecordingEmailSender>();
-            services.AddSingleton<Tesria.Api.Infrastructure.Email.IEmailSender>(sp => sp.GetRequiredService<RecordingEmailSender>());
-
-            // Queued email is sent at once in tests, so a test can read it
-            // back as soon as the request returns (dev-plan 14.3).
-            services.RemoveAll<Tesria.Api.Infrastructure.Email.IEmailQueue>();
-            services.AddSingleton<Tesria.Api.Infrastructure.Email.IEmailQueue, ImmediateEmailQueue>();
-
-            services.RemoveAll<IWebhookSender>();
-            services.AddSingleton<RecordingWebhookSender>();
-            services.AddSingleton<IWebhookSender>(sp => sp.GetRequiredService<RecordingWebhookSender>());
         });
+    }
+
+    private static void ReplaceTestDoubles(IServiceCollection services)
+    {
+        // Runs before the app's pipeline, so forwarded headers behave as
+        // they do behind Caddy: see the filter for how tests use it.
+        services.AddTransient<IStartupFilter, TestRemoteIpStartupFilter>();
+
+        // Replace the real channel-backed sender with a recording fake, so
+        // tests can assert on dispatched webhooks without any network I/O
+        // or a running background delivery service.
+        // Email is recorded, never sent (dev-plan 4.1).
+        services.RemoveAll<Tesria.Api.Infrastructure.Email.IEmailSender>();
+        services.AddSingleton<RecordingEmailSender>();
+        services.AddSingleton<Tesria.Api.Infrastructure.Email.IEmailSender>(sp => sp.GetRequiredService<RecordingEmailSender>());
+
+        // Queued email is sent at once in tests, so a test can read it
+        // back as soon as the request returns (dev-plan 14.3).
+        services.RemoveAll<Tesria.Api.Infrastructure.Email.IEmailQueue>();
+        services.AddSingleton<Tesria.Api.Infrastructure.Email.IEmailQueue, ImmediateEmailQueue>();
+
+        services.RemoveAll<IWebhookSender>();
+        services.AddSingleton<RecordingWebhookSender>();
+        services.AddSingleton<IWebhookSender>(sp => sp.GetRequiredService<RecordingWebhookSender>());
     }
 
     protected override void Dispose(bool disposing)

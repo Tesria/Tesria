@@ -1661,6 +1661,13 @@ to `<db>_pre_restore` rather than dropped, which is the undo; the attachments
 move to `.pre-restore/` inside the same volume, so that swap is renames too and
 a crash leaves both copies rather than half of each.
 
+It fails closed (2026-09-25, from an outside review). `pg_restore` must finish
+without errors, and the attachments archive is unpacked into
+`.restore-staging/`, beside the live files, *before* the swap, so a bad archive
+or a full or read-only volume stops the restore while nothing has changed. A
+failure after the swap moves the files back and renames the databases back,
+and the restore reports failure. Neither folder is ever backed up.
+
 **2. The sidecar remembers what the database cannot.** Every restore has a
 directory on the sidecar's own volume (`/backups/restores/<jobId>/`) holding
 the request, the phases, the log and a CSV export of the tables that describe
@@ -1673,13 +1680,19 @@ migration, carries no grants for the runtime role (`--no-privileges`), and has
 settings this process has cached. Startup already does all of that in the right
 order and is the path every deploy exercises, so `RestoreCompletion` polls the
 job and calls `StopApplication` rather than re-running those steps at runtime.
+(Since 14.3 startup no longer migrates or grants: the one-shot `migrate`
+service does, and a restore never runs it. That is the review's DATA-01, being
+fixed in dev-plan 14.4.)
 It also writes `backup.restored` at startup, keyed on `LastRestoreJobId` and
 skipped when an entry for that job exists, so any number of restarts produce
 exactly one record, in the restored database's own chain.
 
 **Maintenance is held in two places on purpose.** `SiteSettings.RestoreJobId`
 survives the application restarting mid-restore and is what the sidecar can
-see; `RestoreState`, a singleton, is what the application can still read during
+see. It is also the authority on whether the job is still wanted: an agent runs
+a restore only while it names that job, so the app cancels a queued restore, or
+gives up on one no agent claimed, by clearing it, and never has to change the
+job row, which its database role may not; `RestoreState`, a singleton, is what the application can still read during
 the seconds of the swap and the minutes of a point-in-time restore, when the
 database cannot answer at all. `MaintenanceMiddleware` reads the singleton,
 refuses every unsafe method with 503 and a body the SPA turns into an overlay,

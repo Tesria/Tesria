@@ -476,10 +476,20 @@ SQL
 # Has somebody asked to stop? Checked at every step up to the point of no
 # return and never after it, which is what makes the answer to "can I cancel"
 # honest rather than hopeful.
+#
+# Two ways to ask. A cancel while the job runs sets RestoreCancelRequestedAt.
+# A cancel while it was still queued, and the app giving up on a job nobody
+# claimed, clear RestoreJobId instead, because the app may not write the job
+# row (BackupJobs is append-only for its role, the review's DATA-04): a
+# restore runs only while the wiki is waiting for that very job.
+# RESTORE_JOB_ID is the job being run; without it only the flag counts.
 restore_canceled() {
   local v
-  v="$(q <<'SQL' 2>/dev/null
-SELECT CASE WHEN "RestoreCancelRequestedAt" IS NOT NULL THEN 't' ELSE 'f' END FROM "SiteSettings" LIMIT 1;
+  v="$(q -v job="${RESTORE_JOB_ID:-}" <<'SQL' 2>/dev/null
+SELECT CASE WHEN "RestoreCancelRequestedAt" IS NOT NULL
+              OR (:'job' <> '' AND "RestoreJobId"::text IS DISTINCT FROM :'job')
+            THEN 't' ELSE 'f' END
+  FROM "SiteSettings" LIMIT 1;
 SQL
 )" || return 1
   [ "$v" = t ]
@@ -546,8 +556,30 @@ SQL
 # and prints a JSON object describing what it did; everything around it here
 # is the same for both kinds: the directory, the phases, the log, and the row
 # that is written afterwards from the restored database.
+# A queued restore the wiki stopped waiting for (canceled, or abandoned by
+# the app when no agent came) is ended here instead of run. Nothing was
+# touched, and maintenance belongs to whatever the wiki is waiting for now,
+# so it is left alone.
+restore_withdrawn() {
+  local id="$1"
+  RESTORE_JOB_ID="$id" restore_canceled || return 1
+  log "restore job $id was withdrawn before it started; not running it"
+  q -v id="$id" >/dev/null 2>&1 <<'SQL' || true
+UPDATE "BackupJobs"
+   SET "Status" = 'failed', "FinishedAt" = now(),
+       "Error" = 'Canceled, or no backup agent picked it up in time, before it started. Nothing was changed.'
+ WHERE "Id" = :'id'::uuid;
+SQL
+  # A cancel that arrived as the flag, for the job the wiki is waiting for,
+  # still leaves maintenance on: that one is this job's to clear.
+  RESTORE_JOB_ID="$id" restore_clear_maintenance
+  return 0
+}
+
 run_restore_wiki_job() {
   local id="$1" target="$2" options="${3:-}" dir logf status=succeeded err="" extra
+  restore_withdrawn "$id" && return 0
+  export RESTORE_JOB_ID="$id"
   dir="$(restore_dir_for "$id")"
   logf="$dir/log"
   : > "$logf"
@@ -571,10 +603,13 @@ run_restore_wiki_job() {
     set_message "Restore from $target FAILED: $err"
     restore_clear_maintenance
   fi
+  unset RESTORE_JOB_ID
 }
 
 run_restore_undo_job() {
   local id="$1" target="$2" options="${3:-}" dir logf status=succeeded err="" extra
+  restore_withdrawn "$id" && return 0
+  export RESTORE_JOB_ID="$id"
   dir="$(restore_dir_for "$id")"
   logf="$dir/log"
   : > "$logf"
@@ -589,6 +624,7 @@ run_restore_undo_job() {
   fi
   cat "$logf"
   finish_job "$id" "$status" "$err" "$logf" "$extra"
+  unset RESTORE_JOB_ID
 }
 
 run_restore_discard_job() {
@@ -605,10 +641,13 @@ run_restore_discard_job() {
 # Gives the wiki back when a restore did not happen. The app clears this too
 # when it sees the job fail; doing it here as well means a failure that the
 # app never sees (it was restarting) still ends the read-only state.
+# Only while the wiki is waiting for this job (or for none): a failed or
+# withdrawn job must not end the maintenance of a newer restore.
 restore_clear_maintenance() {
-  q >/dev/null 2>&1 <<'SQL' || true
+  q -v job="${RESTORE_JOB_ID:-}" >/dev/null 2>&1 <<'SQL' || true
 UPDATE "SiteSettings"
-   SET "RestoreJobId" = NULL, "RestoreStartedAt" = NULL, "RestoreCancelRequestedAt" = NULL;
+   SET "RestoreJobId" = NULL, "RestoreStartedAt" = NULL, "RestoreCancelRequestedAt" = NULL
+ WHERE :'job' = '' OR "RestoreJobId" IS NULL OR "RestoreJobId"::text = :'job';
 SQL
 }
 

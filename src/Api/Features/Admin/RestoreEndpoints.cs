@@ -214,8 +214,10 @@ public static class RestoreEndpoints
         db.BackupJobs.Add(job);
         audit.Record("backup.restore_requested", "backup", job.Id,
             new { backup.Agent, backup.Label, Mode = mode, At = at });
-        await db.SaveChangesAsync();
-
+        // One save for the job and the setting that names it (the settings
+        // service shares this context): the backup agent runs a restore only
+        // while RestoreJobId names it, so a job saved a moment before its name
+        // would look withdrawn to an agent that happened to look in between.
         await settings.UpdateAsync(x =>
         {
             x.RestoreJobId = job.Id;
@@ -248,14 +250,15 @@ public static class RestoreEndpoints
         var job = await db.BackupJobs.FirstOrDefaultAsync(j => j.Id == jobId);
         var actorId = current.RequireId();
 
-        // Still queued: no sidecar has claimed it, so it can simply be ended.
+        // Still queued: no agent has claimed it, so the wiki simply stops
+        // waiting for it. The job row is not touched, and cannot be: BackupJobs
+        // is append-only for this role (the review's DATA-04, 2026-09-24). An
+        // agent runs a restore only while RestoreJobId names it, so clearing it
+        // withdraws the job; the agent that next looks ends it as canceled, and
+        // until then the backups page already shows it so (IsWithdrawnRestore).
         if (job is { Status: BackupNames.StatusRequested })
         {
-            job.Status = BackupNames.StatusFailed;
-            job.FinishedAt = DateTimeOffset.UtcNow;
-            job.Error = "Canceled before it started.";
             audit.Record("backup.restore_cancelled", "backup", job.Id, new { job.Target, Phase = "queued" });
-            await db.SaveChangesAsync();
             await settings.UpdateAsync(x =>
             {
                 x.RestoreJobId = null;
@@ -318,8 +321,7 @@ public static class RestoreEndpoints
         };
         db.BackupJobs.Add(job);
         audit.Record("backup.restore_undo_requested", "backup", job.Id, new { kept.JobId, kept.Mode, kept.RestoredAt });
-        await db.SaveChangesAsync();
-
+        // One save, as for a restore: see Request.
         await settings.UpdateAsync(x =>
         {
             x.RestoreJobId = job.Id;

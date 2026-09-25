@@ -8,6 +8,51 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.7.3-dev**: 0.7.2 is released, and the next
 release is 0.7.3, with the review fixes below.
 
+### Fixes from an outside review: restores (dev-plan 14.4, 2026-09-25, Opus 5.5)
+
+An outside code review of 0.7 (2026-09-24) found eight problems, all real.
+These are the first three, in the admin page's restore.
+
+- **A restore no longer calls itself a success with half a wiki (DATA-03).**
+  The database was restored first and the attachments unpacked after the
+  switch; an archive that would not unpack, or an uploads folder that could
+  not be written, was logged and the restore still reported success. Any
+  database restore error was also waved through to a check that only
+  counted rows. Now `pg_restore` must finish without errors, and the
+  attachments are unpacked and checked beside the live ones, on the same
+  volume, before anything is switched: a bad archive, a read-only folder or
+  a full disk stops the restore while nothing has changed. If putting the
+  files in place fails after the switch, the previous database and files go
+  back and the restore fails. Nothing is deleted on the way back, only moved.
+  Tested in the backup image, with the database calls stubbed: a good
+  archive, a corrupt one, and a move failing at either step after the switch.
+- **Backups no longer carry the restore's working folders (DATA-02).** The
+  attachments archive and the offsite copy included `.pre-restore`, the
+  Undo copy of the files, so a later restore could bring an old Undo copy
+  back over the current one. Both are now excluded, and a restore never
+  unpacks one from an older archive.
+- **Canceling a queued restore works, and so does giving up on one nobody
+  picked up (DATA-04).** Since 14.3 the app's database role may add to the
+  job history but not change it, and both paths changed it: the cancel
+  failed with a permission error and left the restore to run later, and the
+  fifteen-minute timeout failed before it could end maintenance, leaving the
+  wiki read-only. The job history stays append-only. Instead the backup
+  agent runs a restore only while the wiki is waiting for that very job, so
+  the app withdraws one by no longer waiting for it, and the agent ends it
+  when it next looks; the backups page shows it as ended at once. Requesting
+  a restore now saves the job and the setting that names it in one
+  transaction, so an agent can never see one without the other. These
+  paths now have tests on real PostgreSQL as the app's role, which fail on
+  the old code with the review's error and pass on the new;
+  CI runs them against a postgres service.
+
+**Trial record (the model gate).** DATA-04 was introduced by 14.3, which
+made the job history append-only without changing the two paths that
+updated it. So were two findings still being fixed: restores leave the
+restored database without the app role's grants (DATA-01), and live-editing
+connections are not re-checked against page permissions (SEC-02). 14.3 was
+designed by Opus 5.5 and reviewed by Fable 5.1; neither caught them.
+
 ## [0.7.2] - 2026-09-25
 
 ### An exported site on a phone: the page first, the tree behind a menu (2026-09-24, Opus 5.5)

@@ -48,6 +48,14 @@ Read first, in this order:
   `npm run build && npm run lint && npm test` covers the frontend. All should
   stay green, but none substitutes for looking at the running app for UI
   changes.
+- **A path that must work under the app role's grants gets a test in
+  `DatabaseRoleTests`** (added 2026-09-25 for the review's DATA-04). SQLite
+  has no roles, so every other test passes whether or not the app writes a
+  table it may not. Those tests run on real PostgreSQL when
+  `TESRIA_TEST_POSTGRES` is set, and are skipped otherwise; CI runs them
+  against a postgres service. Locally, a throwaway server does it:
+  `docker run -d --rm --name tesria-test-pg -p 127.0.0.1:55432:5432 -e POSTGRES_PASSWORD=tesria-test postgres:18`,
+  then `TESRIA_TEST_POSTGRES='Host=127.0.0.1;Port=55432;Username=postgres;Password=tesria-test'`.
 - **Frontend tests are for logic, never for rendering** (`npm test`, vitest,
   added 2026-09-20 for the 8.6 block diff). What belongs there is pure
   functions with edge cases a walk cannot cover honestly. Components,
