@@ -454,7 +454,7 @@ public static class BackupEndpoints
     /// take the kept copy. That date is computed by the same code the policy
     /// preview uses, with the kept copy entered into the list as a backup
     /// taken at the moment of the restore, because that is exactly how the
-    /// sidecar decides (the owner's rule, 2026-09-22).
+    /// sidecar decides (decided 2026-09-22).
     /// </summary>
     private static RestoreStatusDto RestoreStatusOf(SiteSettings s, BackupStatus.Snapshot snapshot)
     {

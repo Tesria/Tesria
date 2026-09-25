@@ -179,8 +179,8 @@ export function PageTree({
     const markers = treeMarkers(nodes.map((n) => n.depth), treeStyle)
     return nodes.map((n, i) => ({ ...n, marker: markers[i] }))
   }, [editMode, draftTree, tree, treeStyle])
-  // The filter stays while you move between pages (the owner chose that
-  // over clearing it, 2026-09-23), and for this browser tab, so a reload
+  // The filter stays while you move between pages (chosen over clearing
+  // it, 2026-09-23), and for this browser tab, so a reload
   // or the phone menu opening again keeps it. One per space.
   const filterKey = `tesria-tree-filter:${spaceKey}`
   const [filter, setFilterState] = useState(() => readFilter(filterKey))

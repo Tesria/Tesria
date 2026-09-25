@@ -245,8 +245,8 @@ public static class AuthEndpoints
         // An invite presented is spent whether or not registration is open.
         // It used to be looked at only when registration was closed, so with
         // registration open an invite link created the account and the invite
-        // stayed "Unused", unlinked to the account and still usable (found by
-        // the owner, 2026-09-22). With registration open a token that does
+        // stayed "Unused", unlinked to the account and still usable (found in
+        // use, 2026-09-22). With registration open a token that does
         // not match is simply ignored: anyone may register anyway.
         Invite? invite = null;
         if (!isFirstAccount && !string.IsNullOrWhiteSpace(req.InviteToken))

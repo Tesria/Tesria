@@ -1,5 +1,5 @@
 /**
- * Filtering the page tree as you type (the owner, 2026-09-23). A page shows
+ * Filtering the page tree as you type (2026-09-23). A page shows
  * when its title, or its number in a numbered tree, contains what was
  * typed; its parents show with it, so a match is never out of context.
  * Case and accents are ignored. The same rule as the script an exported

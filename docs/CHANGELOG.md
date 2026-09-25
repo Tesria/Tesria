@@ -8,6 +8,24 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.8.0-dev**: 0.7.3 is released, and the next
 release is 0.8.0, with the rest of the review fixes (SEC-01, LIC-01, DOC-01).
 
+### Fixes from an outside review: private material out of public files (dev-plan 14.4, DOC-01, 2026-09-25, Opus 5.5)
+
+The development plan, this CHANGELOG and many code comments were written
+for the project's working sessions, and read that way in public: an
+instruction telling an assistant to stop unless it was a particular model,
+account and plan details, notes on what a session could not do, the
+identifiers of commits from before the history was rewritten, and hundreds
+of attributions and quotations of the person who runs the project.
+
+- The model gate is now a plain record of which model designed and built
+  each item; the instructions for an assistant live in local notes only.
+- Account and plan details, session notes and the old commit identifiers
+  are gone. The Docker Hub name in the plan is corrected to the public one.
+- Attributions and quotations are reworded neutrally everywhere, keeping
+  each decision's reason and date ("requested 2026-09-23", "found in
+  testing"). The Owner role, the copyright notice, the About tab's credit
+  and the public security contact are unchanged.
+
 ### Fixes from an outside review: complete third-party notices (dev-plan 14.4, LIC-01, 2026-09-25, Opus 5.5)
 
 The notices Tesria ships (`THIRD-PARTY-NOTICES.txt`, linked from the About
@@ -163,7 +181,7 @@ These three were fixed first, in the admin page's restore.
   the old code with the review's error and pass on the new;
   CI runs them against a postgres service.
 
-**Trial record (the model gate).** DATA-04 was introduced by 14.3, which
+**Trial record (the model choice).** DATA-04 was introduced by 14.3, which
 made the job history append-only without changing the two paths that
 updated it. So were DATA-01 and SEC-02 above. 14.3 was designed by Opus
 5.5 and reviewed by Fable 5.1; neither caught them. Fable 5.1's review of
@@ -181,7 +199,7 @@ tree above the page, so each page opened with its text below the fold. The
 tree is now behind a ☰ button in the top bar, as in the app: it opens the
 tree in the page's place, with the open page's entry in view, and the button
 becomes ✕ to close it, back where the reader was; choosing a page closes it
-too. The owner found it, and asked that export changes always be tested in
+too. Found in use, with a request that export changes always be tested in
 a real export, on a phone and a desktop, on a content page as well as the
 front page; this was. A fixed overlay was tried first and, in Chromium's
 phone emulation, sat over the top bar; the tree now takes the page's place
@@ -193,7 +211,7 @@ out of view on a deep page.
 - **An exported site's sidebar keeps its place.** Every page of an exported
   site is its own file, so each choice in the tree loaded the next page with
   the sidebar scrolled back to the top, losing your place in a long tree
-  such as tesria.com/docs (the owner noticed it there). The sidebar's scroll
+  such as tesria.com/docs (where it was noticed). The sidebar's scroll
   is now kept for the browser tab, and the page you open is scrolled into
   view when it is not, which is also where someone arriving from a search
   starts. Tesria itself never had this: it does not reload between pages.
@@ -235,8 +253,8 @@ Tesria no longer has to be built to be installed.
 - **Five images**, `tesria-app`, `-db` (also run as `pgbackrest`), `-backup`,
   `-collab` and `-pdf`, each for linux/amd64 and linux/arm64, published to
   Docker Hub (`brianintheloop/`) and GitHub's registry (`ghcr.io/tesria/`),
-  tagged `1.2.3`, `1.2` and `latest` from a release. The owner added GitHub's
-  registry to the plan, since it costs nothing more. `images.yml` builds each
+  tagged `1.2.3`, `1.2` and `latest` from a release. GitHub's registry was
+  added to the plan, since it costs nothing more. `images.yml` builds each
   architecture on its own native runner and joins them; release.yml calls it,
   and it runs by hand for an existing tag (0.6.0's images were published
   that way).
@@ -338,14 +356,14 @@ shares when Tesria runs under Docker Desktop.
   protocol); a compose override moves Caddy to ports only the host can
   reach; the Caddyfile believes that line only from `PROXY_PROTOCOL_FROM`,
   loopback by default, so nothing changes without the override. Tested live
-  on the owner's Mac: a request to the Mac's network address was recorded as
+  on a Mac: a request to the Mac's network address was recorded as
   that address instead of 192.168.65.1. Found in testing: a port published
   on 127.0.0.1 arrives from the stack's own gateway, not Docker Desktop's, so
   the override trusts `TESRIA_SUBNET` as well.
 - **One command turns it on or off:** `install-macos.sh` (a launchd login
   item) and `install-windows.ps1` (a Task Scheduler task and a firewall
-  rule), each with an undo. Installed on the owner's Mac, and verified on
-  the owner's Windows PC: a sign-in attempt from the Mac was recorded with
+  rule), each with an undo. Installed on a Mac, and verified on a Windows
+  PC: a sign-in attempt from the Mac was recorded with
   the Mac's own address. The first Windows version ran in a visible console
   window that closing would have stopped; the task now runs hidden from
   startup. The forwarder's "am I being
@@ -356,7 +374,7 @@ shares when Tesria runs under Docker Desktop.
 ### The docs pack is a release download, not a committed file (2026-09-24, Opus 5.5)
 
 Every export of the docs added a 17 MB zip to every clone (six in a day).
-At the owner's request the pack leaves the repository: `docs/site/*.zip` is
+As requested, the pack leaves the repository: `docs/site/*.zip` is
 ignored, and the new `scripts/docs/release-docs.sh` uploads the pack and the
 static site to a GitHub release. With no argument it refreshes the standing
 **docs** pre-release, which always holds the latest export; with a version
@@ -383,17 +401,17 @@ connection string uses `tesria`.
 
 ### Single sign-on is labeled beta (2026-09-24, Opus 5.5)
 
-The owner has no identity provider to test against, so single sign-on
+The project has no identity provider to test against, so single sign-on
 (OIDC) ships as a beta: the docs say so where it is set up and listed, ask
 administrators to keep a password account, and ask them to report how it
 went with their provider in a GitHub issue.
 
 ### The Support space is now Docs (2026-09-24, Opus 5.5)
 
-Renamed at the owner's request to match where it will be published,
+Renamed, as requested, to match where it will be published,
 tesria.com/docs (tesria.com/support is now where people support Tesria).
 The space is **Docs** with the key `DOCS`; the key was changed in place
-(one SQL update on the owner's instance, since the app cannot change a
+(one SQL update on the project's instance, since the app cannot change a
 key), so page ids, history and watches are unchanged, and the publisher
 rewrote every page's links. The exported pack now imports as `DOCS`, and
 the site's title reads "Tesria - Docs". Wording that named "the Support
@@ -401,8 +419,8 @@ site" now says "the docs", in the pages, in the app (the mail provider,
 email settings and Tailscale cards) and in the repository. The shared
 `site()` helper now keeps an existing space's name and description in step
 with its script, which also updated the Tesria Demo space's description.
-The tooling was renamed to match, at the owner's request ("lets just do it
-right"): `scripts/docs/` with `publish-docs.sh` and `export-docs.sh`,
+The tooling was renamed to match too, as requested, to do it properly:
+`scripts/docs/` with `publish-docs.sh` and `export-docs.sh`,
 `DOCS_SHOTS` for retaking pictures, the pack at `docs/site/docs-pack.zip`
 (the static site beside it, still not committed), and `DocsPage` for the
 mail presets' page title. Earlier entries below were updated to the new
@@ -457,7 +475,7 @@ collaboration service now closes the socket too, which makes the editor
 reconnect.
 
 **Model trial record.** Opus 5.5 designed this item; Fable 5.1 reviewed the
-design before it was built, at the owner's request, and caught things the
+design before it was built, at the project's request, and caught things the
 Opus design had missed or got wrong. The plan moved the seeds into the
 migrate step and did not make the app refuse to start with migrations
 pending. It named a trigger that does not exist ("tokens revoked") and
@@ -473,13 +491,13 @@ they are in `docs/dev-plan.md` under 14.3.
 ### 14.1 Pre-release audit complete, not released (2026-09-24, Opus 5.5)
 
 - **History rewritten** before an outside review: every commit and the
-  `v0.5.0` tag carry the owner's GitHub no-reply address; a personal
+  `v0.5.0` tag carry the project's GitHub no-reply address; a personal
   address and a NAS path were scrubbed from old versions of documents; old
   versions of the Support pack were removed from history (a clone is 33 MB
   of history instead of about 200). A fresh clone was scanned for personal
   details, credential values and secret-shaped strings: none outside test
   fixtures. Anyone with an older clone must clone again.
-- `CLAUDE.md` split: conventions stay, owner-specific notes move to a
+- `CLAUDE.md` split: conventions stay, personal notes move to a
   gitignored `CLAUDE.local.md`.
 
 ### 14.1 The second security review, fixed (2026-09-24, Opus 5.5)
@@ -522,7 +540,7 @@ MCP, collaboration, backups, egress and deployment). Fixed:
 - The backup service refuses a restore time or backup label that is not
   exactly the shape the app writes before it reaches pgBackRest's command
   line.
-- Token usage is kept after a token is revoked (reported by the owner: the
+- Token usage is kept after a token is revoked (found in testing: the
   tab read zero once the test tokens were gone). Migration
   `TokenUsageOutlivesToken`.
 
@@ -553,9 +571,9 @@ additions to `AdminTokenTests`.
 
 ### Administration: an API tokens tab (2026-09-24, Opus 5.5)
 
-Asked for by the owner: "I have no idea who has created tokens and how
-often they are in use", then "keep an eye on what agents are doing", then
-that it deserves its own tab.
+Requested so an administrator can see who has created tokens and how often
+they are used, and keep an eye on what agents are doing, in a tab of its
+own.
 
 - **Administration, API tokens**: every token on the instance with its
   owner, name, first characters, read-only or full access, last use (when
@@ -581,7 +599,7 @@ that it deserves its own tab.
 
 ### Support: every page says how to get where it sends you (2026-09-24, Opus 5.5)
 
-The owner: pages assumed the reader knew where the screens were.
+Found in review: pages assumed the reader knew where the screens were.
 
 - The API tokens page starts with **Where to find them** (your picture at
   the top right, then the API tokens card, with a picture of each) and has
@@ -597,17 +615,17 @@ The owner: pages assumed the reader knew where the screens were.
 
 ### Administration: an About tab (2026-09-24, Opus 5.5)
 
-Asked for by the owner: the version, "a full dependency list with
-attribution", a way to see whether any dependency has an active CVE ("if a
-new zero day hits they can easily go to the about and see if they are
-exposed"), and a Patreon link.
+Requested: the version, a full dependency list with attribution, a way to
+see whether any dependency has an active CVE (so that when a new zero-day
+appears, an administrator can open About and see whether they are exposed),
+and a Patreon link.
 
 - **About**: Tesria's version (and what it was upgraded from), links to
   tesria.com, the source and the third-party licenses; a thank-you message
   with **Support Tesria on Patreon**; and every dependency that ships (348:
   the server's NuGet packages, the web app's, the collaboration and PDF
   services' npm packages, and 8 container images), each with its license.
-  The container images have their own section (the owner's request), each
+  The container images have their own section (as requested), each
   with what it is for (runs the app, builds it, optional, testing only) and
   a `docker scout cves` command to copy; the packages are filtered
   separately. Needs `dashboard.view`.
@@ -631,8 +649,8 @@ exposed"), and a Patreon link.
 
 ### Invites carry the Tailscale address too (2026-09-24, Opus 5.5)
 
-Asked for by the owner, to invite family in another state through the
-tailnet rather than putting Tesria on the internet.
+Requested, to invite family in another state through the tailnet rather
+than putting Tesria on the internet.
 
 - When the Tailscale sidecar knows Tesria's tailnet address, a new invite
   shows two links, **At this address** and **Through Tailscale**, each with
@@ -666,7 +684,7 @@ tailnet rather than putting Tesria on the internet.
 
 ### Tailscale's logo, checked against its guidelines (2026-09-24, Opus 5.5)
 
-- The owner checked Tailscale's logo rules: naming an integration in a
+- Tailscale's logo rules were checked: naming an integration in a
   dashboard or documentation is allowed; never as Tesria's own branding,
   never suggesting Tailscale made or endorses Tesria, with clear space and
   the logo's own colors and proportions. Recorded in
@@ -723,7 +741,7 @@ entries below are the full record; these are the highlights.
 
 ### Fix: an exported site's footer and sidebar (2026-09-24, Opus 5.5)
 
-Reported by the owner from a site opened from disk: the footer only
+Found in use, on a site opened from disk: the footer only
 appeared after scrolling to the end of a page, and at the end of a long
 page the sidebar slid up under the top bar.
 
@@ -781,7 +799,7 @@ page the sidebar slid up under the top bar.
   `.env`, and Tailscale Serve answers `https://<name>.<tailnet>.ts.net` with
   a certificate Tailscale provisions, forwarding to Caddy. Funnel is turned
   off in `deploy/tailscale/serve.json`: nothing is published. Userspace
-  networking, so no extra privileges. Verified live on the owner's tailnet.
+  networking, so no extra privileges. Verified live on a real tailnet.
 - **A Tailscale card in Settings**: connected or not, the tailnet address,
   and the device key's expiry, with the steps to disable it (a device drops
   off the tailnet when its key expires, after 180 days by default). Read
@@ -798,7 +816,7 @@ page the sidebar slid up under the top bar.
 ### 14.1 The security findings, fixed (2026-09-24, Opus 5.5)
 
 Every finding listed under 14.1, plus four worse ones the review of them
-turned up. The owner answered the four decisions first.
+turned up. The four decisions were answered first.
 
 - **API tokens expire.** Chosen when a token is made: 30 days, 90 (the
   default), a year, or never. Tokens from before get 90 days from the
@@ -844,14 +862,14 @@ turned up. The owner answered the four decisions first.
   page.
 - **The audit list** fills its page with entries the caller may see, by the
   chain's sequence, instead of cutting to the limit first.
-- The favicon no longer names the owner's site in its source comment,
+- The favicon no longer names a personal website in its source comment,
   which every export shipped.
 - 13 tests in `PreReleaseAuditTests`.
 
 ### Support site: how far back each backup copy can take you (2026-09-24, Opus 5.5)
 
 - **How backups work** gains a section that says in words what the
-  diagrams only showed (the owner noticed it reading the Offsite copies
+  diagrams only showed (noticed in review of the Offsite copies
   diagram): what each copy can bring back, why a network drive gets the
   daily backups but not every database change, and which to use.
 
@@ -860,7 +878,7 @@ turned up. The owner answered the four decisions first.
 - The file block shows a PDF in the browser's own viewer by framing it,
   but it framed the download address, which says "attachment" and, like
   every response, refuses to be framed. So opening a page with a PDF on it
-  downloaded the file, for every reader (the owner found it on the Support
+  downloaded the file, for every reader (found in use on the Support
   site's File or video page).
 - New `GET /api/attachments/{id}/view`: PDFs only, `inline`, frameable by
   this site's own pages (`X-Frame-Options: SAMEORIGIN`, `frame-ancestors
@@ -903,7 +921,7 @@ turned up. The owner answered the four decisions first.
   matters), a new **Sending services** page, and Email (SMTP) rewritten
   around the Provider choice. Settings tables are built from the presets.
   Facts checked on 2026-09-24 against each provider's own documentation.
-- Yahoo and AOL are left out at the owner's word (their OAuth is closed to
+- Yahoo and AOL are left out, as decided (their OAuth is closed to
   new applications anyway).
 
 ### Support site: security alerts, backup diagrams (2026-09-24, Opus 5.5)
@@ -911,12 +929,12 @@ turned up. The owner answered the four decisions first.
 - **Security (administration)** now shows the alerts dashboard and the
   notification bell with alerts in it, explains how administrators hear of
   an alert (the bell, and email at once whatever their other choices), and
-  walks through dealing with one in four steps (the owner's request). The
+  walks through dealing with one in four steps (as requested). The
   pictures are the real screens fed example alerts: the screenshot harness
   gains `mock`, which answers chosen API calls with example data, since the
   real alerts name real accounts and addresses.
 - **How backups work** and **Offsite copies** each gain a Mermaid diagram of
-  the design (the owner's request): the two backup services and where their
+  the design (as requested): the two backup services and where their
   copies go, and which copies reach which offsite target.
 - Fix: an alert with no details ended in a stray separator ("by Sam Okafor
   ·") on the Security tab.
@@ -926,7 +944,7 @@ turned up. The owner answered the four decisions first.
 
 ### Email an invite (2026-09-24, Opus 5.5)
 
-- **Invites can be emailed** (the owner's request): once an address is
+- **Invites can be emailed** (as requested): once an address is
   typed and the server sends email, the invite form offers **Email the
   invite to …** (ticked) with a **Message** box holding a short default note
   that names the inviter. Edit it freely; Tesria adds the link below it, with
@@ -961,7 +979,7 @@ turned up. The owner answered the four decisions first.
   not "a few" as its comment meant. An account that scripts sign in to had
   hundreds, a list about 13,000 pixels tall, which pushed API tokens past
   what Chromium can capture: three Support pictures, including the one under
-  REST API on the Features page, came out blank (the owner found it). Now
+  REST API on the Features page, came out blank (found in review). Now
   every live session and the five most recently ended.
 - The Support publisher also ends the example account's other sessions
   before taking pictures, and the Sessions picture uses example addresses
@@ -970,7 +988,7 @@ turned up. The owner answered the four decisions first.
 
 ### 15.6 The Support site, rewritten (2026-09-24, Opus 5.5)
 
-- Every Support page rewritten to the rules the owner set reviewing the
+- Every Support page rewritten to the rules set in review of the
   first version (`scripts/docs/WRITING.md`): written for someone new, with
   what a thing is and why they would want it before any steps; numbered
   steps with the control boxed; one picture per row with a shadow, taken in a
@@ -984,7 +1002,7 @@ turned up. The owner answered the four decisions first.
 - New pages: Setting up a phone or tablet, Page emoji, Moving and copying
   pages, How live content works, Opening Tesria by name, and, under
   Email (SMTP), **Sending with Gmail** and **Sending with Outlook or
-  Microsoft 365** (the owner's request, for people without a mail server of
+  Microsoft 365** (requested, for people without a mail server of
   their own). The Microsoft page says plainly that a personal Outlook.com
   account cannot be used: since September 2024 Microsoft accepts only an
   OAuth sign-in there, and Tesria signs in to a mail server with a password.
@@ -992,12 +1010,12 @@ turned up. The owner answered the four decisions first.
   Authenticated SMTP, which Microsoft turns off by default at the end of
   December 2026. Both checked against the providers' own pages on
   2026-09-24.
-- Then (the owner's request) **Sending with Apple iCloud Mail**, **Sending
+- Then (as requested) **Sending with Apple iCloud Mail**, **Sending
   with Zoho Mail**, **Sending with Fastmail** and **Sending with Proton
   Mail**, each with its settings table, where to make its app password (or
   Proton's SMTP token), the plan it needs, and its usual errors; the Email
   (SMTP) page links to all six.
-- The pilot pages the owner approved moved into the sections they belong
+- The pilot pages, once approved, moved into the sections they belong
   to, and every reference to another page is a link (`pageLink`).
 
 ### Fixes the rewrite turned up (2026-09-24, Opus 5.5)
@@ -1033,17 +1051,17 @@ turned up. The owner answered the four decisions first.
 ### 15.9 Filter the page tree (2026-09-23, Opus 5.5)
 
 - A **Filter pages** box at the top of every space's page tree, and of an
-  exported site's sidebar (the owner's request). Typing shows the pages
+  exported site's sidebar (as requested). Typing shows the pages
   whose title, or number in a numbered tree, contains the text, with their
   parent pages dimmed for context and the match highlighted; case and
   accents are ignored. The filter stays while you open its results, the
-  current page highlighted in it (the owner chose keeping it over clearing
+  current page highlighted in it (keeping it was chosen over clearing
   it), and is remembered for the browser tab, per space; × or Escape clears
   it, and Enter opens the first match. Numbers keep their full-tree values while
   filtering.
 - A toggle beside the box, **Show the pages under each match**: type
-  "elements" and see Elements with every page under it (the owner's
-  request). On by default; turning it off is remembered in that browser.
+  "elements" and see Elements with every page under it (as requested).
+  On by default; turning it off is remembered in that browser.
 - One rule in two places: `treeFilter.ts` in the app (tested) and the
   export's own script, which each exported link now carries its depth for.
 
@@ -1055,9 +1073,9 @@ turned up. The owner answered the four decisions first.
 - The markers are drawn, never stored: no title, page address or search
   result contains them. They are worked out from the tree's order as it is
   drawn, so moving or adding a page renumbers everything at once, even
-  while dragging in Reorder mode before it is saved (the owner's request).
+  while dragging in Reorder mode before it is saved (as requested).
   A title that wraps lines up under its own first word.
-- **The space sidebar can be resized** (the owner, once the numbers took
+- **The space sidebar can be resized** (requested once the numbers took
   room): drag the handle on its right edge, or focus it and use the arrow
   keys; double-click or Home puts it back to 260px. Between 200px and 560px,
   never more than half the window, and remembered in that browser like
@@ -1066,10 +1084,10 @@ turned up. The owner answered the four decisions first.
   and `treeMarkers.ts`, tested with the same cases), and wiki packs carry
   the setting (optional, so older packs import as plain).
 - Migration `SpaceTreeStyle`. The Support space is numbered, and its section
-  emoji from 15.7 are taken off again: the owner preferred numbers.
+  emoji from 15.7 are taken off again: numbers were preferred.
 - **Templates are easier to find.** Space settings → Templates opens with
-  three steps for making one, where it had one grey line; the owner looked
-  there for a way to create a template and did not find it. The Save as
+  three steps for making one, where it had one grey line; a search there in
+  testing for a way to create a template came up empty. The Save as
   template form has labels and a real Save button, and a drop-down under a
   label (such as Start from a template) sits on its own line and matches
   the text boxes. Support gains a **Templates** page.
@@ -1077,7 +1095,7 @@ turned up. The owner answered the four decisions first.
   Tesria does, grouped by what you are trying to do (writing, organizing,
   working together, sharing, security, running it, developers, phones),
   each with why you would want it and a link to the page that explains it.
-  No other products named and nothing unbuilt, at the owner's choice.
+  No other products named and nothing unbuilt, by choice.
 - Support gains **Opening Tesria by name**: why a name rather than a
   number, finding it, why a `.local` name can take a few tries, and how to
   make it instant (awake and wired, router settings, a fixed address, the
@@ -1086,7 +1104,7 @@ turned up. The owner answered the four decisions first.
 ### 15.7 Page emoji (2026-09-23, Opus 5.5)
 
 - A page can have an emoji, shown large above its title and before its name
-  in the page tree, so sections stand out (the owner's request, for the
+  in the page tree, so sections stand out (requested for the
   Support site's tree). Anyone who may edit the page sets it from the page:
   **Add emoji** appears when you hover the title, and opens a picker that
   searches the editor's emoji by name and takes any other pasted in.
@@ -1113,8 +1131,8 @@ turned up. The owner answered the four decisions first.
   address already written in, or the certificate and the Settings path on a
   phone, then a link to check it worked. Firefox gets its own note, and an
   IP address gets an explanation of why a name works better.
-- Three ways in: **Profile → Trust this device** for anyone signed in (the
-  owner's suggestion: most people click past the warning once and sign in),
+- Three ways in: **Profile → Trust this device** for anyone signed in
+  (suggested because most people click past the warning once and sign in),
   the sign-in page ("Did your browser warn that this site is not secure?"),
   and the address itself, which is the way for phones and for browsers that
   will not let anyone click past the warning. All only on servers with their
@@ -1124,18 +1142,18 @@ turned up. The owner answered the four decisions first.
   to edit, `TESRIA_ADDRESS`; the page fills it in. The address is checked
   against a strict pattern first, since the script runs as an administrator.
 - Windows gets one line to paste into PowerShell rather than a script to
-  run. The owner's first try on Windows was refused by PowerShell's
+  run. The first try on a Windows PC was refused by PowerShell's
   execution policy, which blocks downloaded scripts by default and can be
   locked by an employer; a typed command is not affected. It trusts the
   server for the current Windows account (`CurrentUser\Root`), so it needs
   no administrator. The script stays for trusting it machine-wide.
 - Profile and the sign-in page link to `/trust` on the connection already
   in use, rather than switching to plain HTTP: whoever sees those links got
-  past the warning already, and `http://` by name was unreachable from the
-  owner's Windows machine while HTTPS worked.
+  past the warning already, and `http://` by name was unreachable from a
+  Windows PC in testing while HTTPS worked.
 - Opened by a number such as 192.168.1.50, the page now says plainly to
-  open Tesria by its name afterwards: the owner trusted the certificate on
-  Windows and Chrome still said "Not secure", because a number can never
+  open Tesria by its name afterwards: with the certificate trusted on
+  Windows, Chrome still said "Not secure", because a number can never
   match a certificate issued for a name. It names the server when Admin →
   Settings → Public address holds a real name. "Check it worked" explains
   `chrome://restart` and the two certificate errors Chrome can show.
@@ -1155,7 +1173,7 @@ turned up. The owner answered the four decisions first.
 
 ### Phase 15: what the Support site found missing (2026-09-23, Opus 5.5)
 
-Designed and built by Opus 5.5 from the owner's answers (dev-plan Phase 15).
+Designed and built by Opus 5.5 from the decisions made (dev-plan Phase 15).
 
 - **15.1 Access.**
   - Administrators can turn off another account's two-factor: never the
@@ -1355,8 +1373,8 @@ spent: it read "Unused", named no account, and still worked for someone
 else. An invite is now spent whenever one comes with a registration, and the
 Invites tab says who each one created ("used by Alex Rivera, 9/22/2026"). With
 registration open, a token that does not match is ignored, as before.
-Invites used before this fix could not be linked after the fact. Found by
-the owner.
+Invites used before this fix could not be linked after the fact. Found in
+testing.
 
 ### 10.5 step 5: the Tesria Demo space (2026-09-23, Opus 5.5)
 
@@ -1369,7 +1387,7 @@ of the fictional people, so history, comments and contributors show two,
 and it can be run again safely: it changes only what differs. Images and a
 PDF are drawn by the script rather than committed as files.
 
-**The interface is in US English**, at the owner's request: Math (typing
+**The interface is in US English**, as requested: Math (typing
 "maths" still finds it), color, gray, centered, labeled, canceled, defense,
 catalog and toward, in every label, tooltip, screen-reader label and API
 message people read. Stored values keep their spelling, because pages
@@ -1377,7 +1395,7 @@ already hold them (a status or text color is still stored as `grey`), and so
 do identifiers and CSS class names, which nobody reads and which would break
 for nothing. The support site is written in US English from the start.
 
-Then **everything else, at the owner's request**, so the repository reads
+Then **everything else, as requested**, so the repository reads
 one way throughout: every document (this changelog and the plan included),
 the README and project notes, `.env.example`, code comments, test names,
 internal names (`normalizeTocOptions`, `LabeledPage`, `BeginEnrollment`,
@@ -1394,7 +1412,7 @@ nothing else. All 808 backend tests and the frontend's 50 pass.
 
 ### Fix: new accounts could skip their recovery codes (2026-09-22, Opus 5.5)
 
-Found by the owner creating the Demo accounts: three of four went straight
+Found while creating the Demo accounts: three of four went straight
 to the welcome tour and never saw their recovery codes, though the Users
 tab said each had 8. Registration signed the account in before handing the
 codes to the page, and two redirects fired in between: the tour gate
@@ -1412,7 +1430,7 @@ codes" takes the person's word, "Make new codes" replaces them. The Users
 tab marks such accounts **not saved** beside the count.
 
 Not walked live, because that means creating an account; covered by a
-test of the saved flag, and the owner's next registration is the check.
+test of the saved flag, and the next real registration is the check.
 
 ### 10.5 step 3: system requirements, measured (2026-09-22, Opus 5.5)
 
@@ -1443,9 +1461,9 @@ played.
 
 ### 10.5 step 1: the fixes before the support site (2026-09-22, Opus 5.5)
 
-The owner rescoped 10.5 from "rebuild the manual" into a support site for
+10.5 was rescoped from "rebuild the manual" into a support site for
 tesria.com (a public **Support** space exported as a static site, and a
-private **Tesria Demo** space to shoot it from) and asked for every gap the
+private **Tesria Demo** space to shoot it from), with every gap the
 inventory found to be fixed first, so nothing is documented broken or
 recorded twice.
 
@@ -1480,7 +1498,7 @@ content sync and the inline-comment popover. Both now wait for it.
 - **Invite people**, a page for anyone holding "Create invite links"
   without the admin area, where that right did nothing.
 
-**Mobile, added by the owner while this was under way**
+**Mobile, added while this was under way**
 - A phone held sideways fills the screen: the page asks for the whole
   display (`viewport-fit=cover`) and pads its bars and sidebar clear of the
   notch, instead of sitting between two empty bands.
@@ -1535,7 +1553,7 @@ running, since it runs one job at a time: a restore or undo takes its
 outcome from what it recorded in its restore directory, anything else is
 marked interrupted, and the restore currently in progress is never touched.
 The five closed as succeeded with the finish times their logs recorded.
-Found by the owner.
+Found in use.
 
 ### Fix: admin table rows with actions were misaligned (2026-09-22, Opus 5.5)
 
@@ -1544,7 +1562,7 @@ on Users, Spaces, Security, Sessions and the backups list) sat out of line
 with the rest of its row, its divider at a different height from the
 others. The cell itself was a flex container, which takes a `<td>` out of
 table layout, so it stopped sizing with its row. The flex layout now lives
-on a wrapper inside the cell. Found by the owner on the backups page.
+on a wrapper inside the cell. Found on the backups page.
 
 Recent runs also shows a connection test's answer, the same sentence as the
 Storage targets card, where it used to say only "Done."
@@ -1689,7 +1707,7 @@ routes were first mapped without the right.
 
 ### Design 13.1: instance branding (2026-09-22, Opus 5.5)
 
-At the owner's request, the owner (and anyone the owner grants the right)
+As requested, the owner (and anyone the owner grants the right)
 can brand the instance. That means a brand name for the header, a logo,
 including SVG, with an optional dark-mode version, a favicon, a custom
 accent color per theme, and locking the theme or accent for everyone.
@@ -1702,15 +1720,15 @@ inline theme script stays byte-identical so its CSP hash still matches. SVG
 is sanitized by an allowlist and only ever displayed through `<img>`, so a
 sanitizer bug still cannot run script. A custom accent must pass the same
 4.5:1 contrast checks as the built-in six. The first item designed under the
-new model gate. Full design in `dev-plan.md` as 13.1, with every decision
+new model choice. Full design in `dev-plan.md` as 13.1, with every decision
 answered the same day. Tab titles become `Instance Name - Space Name / Page
 Name`. A Reset to Tesria button undoes all branding. Attribution stays
 subtle: one muted line under a branded sign-in form, and a version line at
 the foot of Administration.
 
-### Model gate: Opus 5.5 designs and implements (2026-09-22)
+### Model choice: Opus 5.5 designs and implements (2026-09-22)
 
-The owner retired the Fable-designs, Opus-implements split, on trial, after
+The Fable-designs, Opus-implements split was retired, on trial, after
 Anthropic's launch page reported Opus 5.5 at Fable 5.1's level on most work
 at lower cost. New plan items are tagged `Model: Opus 5.5`. Earlier tags stay
 as history, and Fable remains an optional second opinion. The rule is
@@ -1746,7 +1764,7 @@ space. What shipped:
   smart).
 - **Undo and the kept copy.** While a kept copy exists the page offers Undo and
   Remove. It ages out under the retention policy like a backup taken at the
-  moment of the restore, which was the owner's call.
+  moment of the restore, as decided.
 - **The record.** `backup.restored` is audited and raised as a Critical alert
   to every administrator, written after the restore so it lands in the restored
   database's own chain, and exactly once however many times the app restarts.
@@ -1774,7 +1792,7 @@ explanation.
 
 ### Design 9.4: restore from the admin page (2026-09-22, Fable)
 
-At the owner's request: the backups page could test a restore but never
+Requested: the backups page could test a restore but never
 perform one, and only the newest backup was reachable by hand. Now any
 backup on the page can be restored, logical or point-in-time, behind a
 gate stronger than deleting a space: a right of its own that only the owner
@@ -1788,13 +1806,13 @@ its own volume, and the app restarts itself afterwards. Point-in-time
 recovery needs Postgres stopped, so the `db` container gains a supervisor
 that stops and starts its own database on a request only the `pgbackrest`
 sidecar can write. The previous copy is kept as the undo and ages
-out under the retention policy like any backup, the owner's call. Full
+out under the retention policy like any backup, as decided. Full
 design in `dev-plan.md` as 9.4; the five decisions were answered the same
 day.
 
 ### Design 9.3: space charts on the backups page (2026-09-21, Fable)
 
-At the owner's request: a pie chart of backups against other usage against
+Requested: a pie chart of backups against other usage against
 free space, one per backup target. The sidecar already measures free and
 total bytes; the one missing number is what the backups themselves occupy,
 and that is the whole data-model change. The editor's existing SVG pie is
@@ -1827,8 +1845,8 @@ with a rough monthly cost.
   geometry and colors, checked rather than assumed. It gained a fix on the
   way: a pie of one slice used to draw a degenerate arc, which is invisible.
 
-**Corrected the same day, after the owner checked it against macOS.** The
-chart said 1.6 TB free; his Mac said 761 GB. `df` on the container's own
+**Corrected the same day, after a check against macOS.** The
+chart said 1.6 TB free; the Mac said 761 GB. `df` on the container's own
 volume reports Docker's *virtual* disk, which under Docker Desktop is sparse
 and reports the size it may grow to rather than the space the host can still
 give it. For a warning meant to fire before backups fill the disk, that is
@@ -1842,7 +1860,7 @@ prose, which was making tables scroll sideways on a large display. The
 Settings tab needed that separately, since its forms carry a 480px form
 width and left most of a wide display empty; they are a grid now.
 
-The slice colors were wrong on the first pass and the owner said so: gray
+The slice colors were wrong on the first pass, as review pointed out: gray
 read as *disabled* rather than as a slice, and the wiki and its backups were
 near enough in shade to be taken for each other. Four distinct hues now,
 with their own tokens and dark-mode values, and the pie has the same drop
@@ -2047,16 +2065,16 @@ clean recovery afterwards.
 
 ### Design 9.2: offsite backups to cloud, NAS and removable media (2026-09-21, Fable)
 
-The owner answered the seven decisions 9.2 had waited on since 2026-09-17,
-added removable media to its scope, and offered a NAS for testing. The
+The seven decisions 9.2 had waited on since 2026-09-17 were answered,
+removable media was added to its scope, and a NAS was offered for testing. The
 full design is in `dev-plan.md`; the decisions that shape it are these.
 
 **Every offsite secret stays in `.env` and is read only by the backup
-sidecar.** The admin-page alternative was analyzed and put to the owner,
+sidecar.** The admin-page alternative was analyzed and considered,
 and it turns on one fact from the code: Data Protection keys live in the
 database, so a UI-stored key would travel inside every backup along with
-the means to decrypt it, and a key that can delete is the fatal case. The
-owner chose `.env` for simplicity and safety. The screen shows fingerprints
+the means to decrypt it, and a key that can delete is the fatal case.
+`.env` was chosen for simplicity and safety. The screen shows fingerprints
 the sidecar publishes; the app never holds a value.
 
 **Three fixed slots, cloud, NAS and removable, each with its own
@@ -2078,7 +2096,7 @@ backup.
 
 ### Design 8.5: wiki packs (2026-09-21, Fable)
 
-The owner settled that the rebuilt manual's source of truth is the wiki, which
+It was settled that the rebuilt manual's source of truth is the wiki, which
 makes a portable, committable export a prerequisite rather than a nicety: the
 last manual was lost with the database it lived in. This is the design for
 that export and its import; Opus implements it next. The full entry is in
@@ -2135,7 +2153,7 @@ what `scripts/screenshots/` seeds before first paint, and every picture must
 be regenerable from a committed spec, because a screenshot nobody can
 reproduce is one that will be wrong after the next redesign.
 
-CLAUDE.md's handoff notes, which still described both spaces as living
+The project's notes, which still described both spaces as living
 content, now say what actually happened. The lesson is worth more than the
 pages were, and is written down in both places: **content that lives only in
 the instance is content one reset deletes.** That is an argument for
@@ -2323,7 +2341,7 @@ docs saying otherwise. Both selectors are now the ones actually rendered.
 
 ### An exported site works from the filesystem (2026-09-20)
 
-Reported by the owner: unzip a site export, open it, click a link in the
+Found in use: unzip a site export, open it, click a link in the
 sidebar, and Chrome shows a listing of the folder instead of the page.
 
 Every link pointed at a directory (`../frontend-architecture/`). A web server
@@ -2377,7 +2395,7 @@ keep their own colors, where they still do their job.
 
 ### An exported page looks like the product it came from (2026-09-20)
 
-Reported by the owner the same day the capture work shipped: the HTML export
+Reported the same day the capture work shipped: the HTML export
 was the page and nothing else, which is faithful but does not look like
 Tesria. It now carries the application's own chrome.
 
@@ -2405,14 +2423,14 @@ shipped a site with no navigation at all on a phone, and only opening one at
 forced light. The render route now distinguishes the two, so an HTML export
 keeps the reader's theme (and can change it) while a PDF stays print.
 
-The wordmark is the instance name, which is half of the instance branding the
-owner wants: an administrator already sets it and it already travels. The
+The wordmark is the instance name, which is half of the instance branding
+requested: an administrator already sets it and it already travels. The
 replaceable mark is the other half; `SiteChrome.Brand` is the seam it will
 arrive through, and `docs/roadmap.md` records what is left to build.
 
 ### Exports that look like the page (2026-09-20)
 
-Reported by the owner: exports flatten elements and look nothing like the
+Found in use: exports flatten elements and look nothing like the
 rendered page, tables worst of all. Three causes, and none of them was a
 table bug. The exported stylesheet was fifteen lines with no table rule in
 it. `ProseMirrorRenderer.cs` rendered thirty-five node types a second time in
@@ -2695,7 +2713,7 @@ leaving its promise hanging.
 
 ### Fix: Resolve did nothing on a security alert (2026-09-20)
 
-Reported by the owner: pressing **Resolve** on Administration -> Security
+Found in use: pressing **Resolve** on Administration -> Security
 had no effect, on acknowledged alerts too. The button asked for the
 optional resolution note through `window.prompt`, which throws where a
 browser refuses dialogs (the in-app browser always, and Chrome once
@@ -2803,13 +2821,13 @@ retention policy** for Administrator and pressing Review changes reported
 "Administrator (1 account) Loses: Change the retention policy"; the change
 was discarded rather than saved, since saving needs the owner's password
 and would alter the live configuration. The tab gating for a restricted
-administrator is covered by tests rather than a browser pass: it needs a
-second account signed in, which the assistant cannot do.
+administrator is covered by tests rather than a browser pass, which would
+need a second account signed in.
 
 ### Design: roles with assignable rights (2026-09-20)
 
-Dev-plan Phase 11, written by Fable 5.1 at the owner's request, after
-10.1 shipped. Nothing is implemented yet. The owner decided: the owner
+Dev-plan Phase 11, written by Fable 5.1 as requested, after
+10.1 shipped. Nothing is implemented yet. Decided: the owner
 edits every role's rights and administrators edit only user-tier roles;
 the owner is subject to the matrix except for roles, ownership and the
 matrix itself; users get "delete pages you created" by default but not
@@ -2879,8 +2897,8 @@ Tests: 498 pass, 12 new in `OwnerTests`. Two tests in `AdminPanelTests` that
 encoded the last-administrator rule were removed, and the assertions that
 the first account has role 1 became role 2 across four suites.
 
-**Verified live** on this instance, in all three states (the owner signed
-each account in; the assistant does not enter passwords):
+**Verified live** on this instance, in all three states (each account was
+signed in by hand; the assistant does not enter passwords):
 
 - **Upgrade:** the app rebuilt, the seed promoted the owner, chained its
   `owner.assigned` entry and stamped `SetupCompletedAt`.
@@ -2925,8 +2943,8 @@ reported on it, and the next pass judges with fresh heartbeats. New test
 
 ### Design: Owner role, first-run setup, and onboarding (2026-09-20)
 
-Dev-plan Phase 10, written by Fable 5.1 at the owner's request. Nothing is
-implemented yet. The owner decided that Owner powers are ownership only
+Dev-plan Phase 10, written by Fable 5.1 as requested. Nothing is
+implemented yet. It was decided that Owner powers are ownership only
 (promoting and demoting administrators, transferring ownership) and that
 four setup steps cannot be skipped: recovery codes, instance name and
 address, registration mode, and the backup retention policy.
@@ -3046,16 +3064,16 @@ sidecar's `find -mtime +14` would have removed those as well.
 
 ### Design: backups in the admin portal, and the offsite plan (2026-09-17)
 
-Dev-plan Phase 9, written by Fable 5.1 per the model gate (the owner
-asked for the feature, Opus gathered the facts from the live stack and
+Dev-plan Phase 9, written by Fable 5.1 per the model choice (the feature
+was requested, Opus gathered the facts from the live stack and
 the offsite research, then stopped and handed over). Nothing is
 implemented yet.
 
 - **9.1 Backups admin section** (Fable → Opus, ready for Opus): the
   database is the contract between the app and the two backup sidecars
   (three new tables the sidecars write and the app reads; the policy on
-  `SiteSettings`). One retention rule for both systems, as the owner
-  chose: a backup is removed only when it is outside both "newest N" and
+  `SiteSettings`). One retention rule for both systems, as
+  decided: a backup is removed only when it is outside both "newest N" and
   "last D days"; retention off keeps everything. A 24-hour grace period
   on reductions, enforced by the sidecars rather than the app. The
   sidecars are rewritten to poll, persist their schedule (no more full
@@ -3067,7 +3085,7 @@ implemented yet.
   pgBackRest dual repositories, restic, NAS mounts, immutability,
   credentials, costs and restore drills, with a recommendation (local
   first, then replicate; B2 as the documented default; restic for the
-  dumps and uploads) and the seven decisions the owner still has to make.
+  dumps and uploads) and the seven decisions still to be made.
 
 ### Fix: dashboard charts dropped today (2026-09-17)
 
@@ -3413,7 +3431,7 @@ the prose filled out: what each dashboard number is for and what it is
 *not* for, the full list of audited actions by area, the leaving-checklist
 for suspending an account, and why the base URL matters more than it
 looks. Taking those needed an administrator, so the documentation bot was
-promoted to one: at the repository owner's explicit request, recorded
+promoted to one: at the project's explicit request, recorded
 here because a standing admin account is a standing risk, and it can be
 demoted from **Administration → Users** whenever the docs are done.
 
@@ -3638,9 +3656,8 @@ design half.
 
 ### MCP server: the contract, token scopes, and `/mcp` (dev-plan 8.4, Fable half) (2026-09-11)
 
-*The plan says to load the `claude-api` skill before designing the tool
-surface; it is not enabled on this account, so the design is from the MCP
-specification and the official C# SDK's conventions directly.*
+*The tool surface is designed from the MCP specification and the official
+C# SDK's conventions directly.*
 
 The contract is in `architecture.md` ("MCP server"). The decisions that are
 expensive to reverse, and why:
@@ -3747,7 +3764,7 @@ with a comment saying to bump them together or not at all.
 **License (8.2)**: the brand page says Apache 2.0 and the repo had no
 `LICENSE` file. Added, with a `NOTICE` listing the third-party components,
 and SPDX identifiers in both `package.json`s and the `.csproj`. Public
-visibility is still the user's call; the license file existing is a
+visibility is still a separate decision; the license file existing is a
 precondition for that, not a consequence.
 
 Verified end to end: a real PDF of a page carrying dynamic blocks, an
@@ -4000,7 +4017,7 @@ popover with the heading list.
 ### Editor parity Wave A: structural blocks (dev-plan 7, Wave A) (2026-09-10)
 
 Seven of Confluence's structural elements, in the editor, the reading view
-and both export formats. Started as Fable by user override and finished as
+and both export formats. Started as Fable and finished as
 Opus (the plan tags the wave Opus).
 
 - **Heading anchors.** Every heading gets an id derived from its text
@@ -4043,7 +4060,7 @@ Also in this pass, from live review:
 - The **+** insert trigger is a plain "+" sitting with the other toolbar
   icons rather than a labeled button pushed to the right edge, and the
   text-style dropdown reads "Normal text" with no icon: both matching a
-  Confluence screenshot the user supplied.
+  Confluence screenshot supplied for reference.
 - **Publish/Update and Close moved onto the toolbar row**, out of the bottom
   of the form (`form=` ties the submit button to the form it now sits
   outside of).
@@ -4068,7 +4085,7 @@ pass.
 
 ### Editor chrome: one-row toolbar with an Insert menu, borderless page (2026-09-10)
 
-*Scope added by the user at the start of Phase 7, modeled on Confluence's
+*Scope added at the start of Phase 7, modeled on Confluence's
 editor.*
 
 The page is a continuous surface: no box, border or shadow around the
@@ -4187,7 +4204,7 @@ tests re-pointed at routes that stay closed.
 
 ### Feature: security alerts and notifications by email (dev-plan 4.3) (2026-09-09)
 
-*Plan tag: Opus. Run as Fable by user override.*
+*Plan tag: Opus. Run as Fable.*
 
 Notifications are now an outbox: the request that causes one writes the
 row, and `NotificationEmailService` picks it up within a minute, so no
@@ -4207,7 +4224,7 @@ outbox is left untouched.
 
 ### Feature: password recovery by email (dev-plan 4.2) (2026-09-09)
 
-*Plan tag: Opus. Run as Fable by user override.*
+*Plan tag: Opus. Run as Fable.*
 
 `POST /api/auth/recover/email` emails a one-time reset link: 32 random
 bytes, stored hashed, one hour, single-use, and a newer request kills the
@@ -4223,7 +4240,7 @@ a newer link invalidates the older; throttling.
 
 ### Feature: outbound email (dev-plan 4.1) (2026-09-09)
 
-*Plan tag: Opus. Run as Fable by user override.*
+*Plan tag: Opus. Run as Fable.*
 
 `SmtpEmailSender` (MailKit) sends from the SMTP settings an administrator
 fills in: no environment variables, no restart. Plain text is the
@@ -4283,7 +4300,7 @@ surprises; and the internet-readiness checklist (`.env` values, ports,
 accounts, operations) that Phase 5's public-spaces switch will link to.
 `SECURITY.md` at the root is the disclosure path.
 
-The review pass (manual; no review skill is available here) walked every
+The review pass (manual) walked every
 registered route: all `/api` routes require authorization except health,
 register, both sign-in steps, recovery and OIDC status/login, each of
 which is rate-limited where it takes a credential; the OIDC `returnUrl`
@@ -4296,7 +4313,7 @@ codes).
 
 ### Security: dependency hygiene (dev-plan 3.6) (2026-09-09)
 
-*Plan tag: Opus. Run as Fable by user override.*
+*Plan tag: Opus. Run as Fable.*
 
 `npm audit` on the SPA went from 38 findings (3 high) to zero:
 `react-router-dom` 7.18.1 → 7.18.3 (the RSC CSRF advisory; patch-level, no
@@ -4320,7 +4337,7 @@ updates arrive ungrouped.
 
 ### Security: sessions, two-factor sign-in, sudo mode, pinned Argon2 (dev-plan 3.5) (2026-09-09)
 
-*Plan tag: Opus. Run as Fable by user override.*
+*Plan tag: Opus. Run as Fable.*
 
 Every sign-in is now a `UserSession` row the cookie points at, so one
 browser can be signed out without signing out all of them. Profile →
@@ -4355,7 +4372,7 @@ extends the window, hash upgrade on sign-in. Full suite: 262 passing.
 
 ### Security: SSRF guard, attachment types, CSRF header (dev-plan 3.4) (2026-09-09)
 
-*Plan tag: Opus. Run as Fable by user override.*
+*Plan tag: Opus. Run as Fable.*
 
 Webhooks could target any URL the server could reach: the cloud metadata
 address, the database, the collab sidecar. `EgressGuard` now refuses
@@ -4387,7 +4404,7 @@ explanatory body; with it → 200; the SPA still performs state changes.
 
 ### Security: threat detection, admin alerts, blocklist (dev-plan 3.3) (2026-09-09)
 
-*Plan tag: Fable → Opus. Both halves run as Fable by user override. The
+*Plan tag: Fable → Opus. Both halves run as Fable. The
 design (signals, thresholds, alert lifecycle, what it deliberately does
 not do) is in architecture.md and was written before the code.*
 
@@ -4433,7 +4450,7 @@ working Acknowledge; `DELETE FROM "SecurityEvents"` as `tesria_app` →
 
 ### Security: rate limiting and account lockout (dev-plan 3.2) (2026-09-09)
 
-*Plan tag: Opus. Run as Fable by user override.*
+*Plan tag: Opus. Run as Fable.*
 
 Online brute force against `/api/auth/login` was unlimited. Now: a sliding
 window per client address on sign-in, registration and recovery (default
@@ -4494,8 +4511,8 @@ members cannot verify.
 
 ### Security: proxy trust, secure cookies, security headers (dev-plan 3.0) (2026-09-09)
 
-*Plan tag: Opus. Run as Fable at the user's request: Phase 3 is security
-work and the user chose to spend the larger model on all of it.*
+*Plan tag: Opus. Run as Fable on request: Phase 3 is security work, and
+the larger model was chosen for all of it.*
 
 The app now knows who the client is. `UseForwardedHeaders` runs first in
 the pipeline and believes `X-Forwarded-For` / `X-Forwarded-Proto` from the
@@ -4595,7 +4612,7 @@ response means the whole dashboard is consistent with itself rather than
 assembled from twelve different instants. Range is clamped to 1–365 days.
 
 Charts are hand-rolled SVG sparklines: no charting dependency added, since
-the bundle is already 1.1 MB. Written against the `dataviz` skill: one series
+the bundle is already 1.1 MB. Written to common charting practice: one series
 means no legend and no categorical palette, color is a single token
 (`--primary`, or `--danger` for failed sign-ins, which is a status signal
 rather than another series), text wears text tokens rather than the series
@@ -4909,7 +4926,7 @@ future Viewer/Moderator is a new value, not a migration. The first account
 created on an empty instance is Admin, whether it arrives through `/register`
 or OIDC provisioning; the migration backfills existing installs by promoting
 the earliest-created account, so no instance is left with content and nobody
-able to administer it. Verified on this instance's real data: the owner's
+able to administer it. Verified on this instance's real data: the earliest
 account was promoted, the docs bot was not.
 
 **Admins are not a permission bypass.** This was the design question the plan
@@ -4938,7 +4955,7 @@ space they hold no grant for, and revoking the recovered grant returns them
 to no access.
 
 Spec: `architecture.md` → "Roles and administrators". Written by Fable 5.1
-under the plan's model gate, implemented by Opus 5.
+under the plan's model choice, implemented by Opus 5.
 
 ### Fix: the topbar is three tiers now, not two (2026-09-08)
 
@@ -5556,7 +5573,7 @@ rebuilt container.
 
 ### Fix: three real overflow/positioning bugs found in a full-route mobile audit (2026-07-26)
 
-The user reported the login page and space-home view still looked broken
+Reports that the login page and space-home view still looked broken
 on mobile despite the earlier "audit all pages at 320px" pass, turned out
 to be two separate things: (1) the Cache-Control bug above, serving a
 stale pre-fix build, and (2) three genuine bugs a route-by-route sweep with
@@ -5783,7 +5800,7 @@ Known gaps, not addressed in this pass:
 - The touch-reveal path (tap-to-show table controls) is verified correct by
   direct testing of its resolution logic; a live end-to-end confirmation on
   a real touch device wasn't completed (the iOS Simulator was unavailable,
-  crash-looping, for the rest of this session).
+  crash-looping, at the time).
 - Several admin/settings pages (Groups' create-group form, likely Webhooks/
   API Tokens/Permissions too) use fixed-width multi-column form layouts not
   covered by this pass: found in passing, out of scope here.

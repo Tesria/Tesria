@@ -1,5 +1,5 @@
 // Getting started: from nothing to a first page (dev-plan 10.5), rewritten to
-// the owner's rules of 2026-09-23 (scripts/docs/WRITING.md) for someone
+// the rules of 2026-09-23 (scripts/docs/WRITING.md) for someone
 // new to wikis and to running software.
 //
 //   What is Tesria               the idea of a wiki, and why run your own

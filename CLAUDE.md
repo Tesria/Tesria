@@ -103,7 +103,7 @@ Read first, in this order:
   `https://tesria.localhost` instead of `https://localhost`. Caddy serves
   both and cookies are per-host, so the second hostname has no session
   while the first keeps yours. This is how the signed-out half of a live
-  walk gets done without asking the owner to sign back in afterwards.
+  walk gets done without signing anyone out of the first hostname.
 - **Screenshot-harness steps run *before* a shot's `settle` wait**, so a
   `probe` placed first reads the page before the session check has answered
   and every signed-in route looks like "Loading…". Put a `{ "wait": 2500 }`

@@ -4,7 +4,7 @@
 // passes it into its Linux VM from one address, 192.168.65.1, so Tesria
 // sees every device (this Mac, a PC, a phone) as the same visitor: its
 // sign-in limits, security alerts and audit log cannot tell them apart,
-// and blocking one would block all (the owner, 2026-09-24). Docker Desktop
+// and blocking one would block all (2026-09-24). Docker Desktop
 // on Windows works the same way. Only the computer itself still sees the
 // real address. This runs on it (plain Node, nothing to install), outside
 // Docker, listens where Caddy used to (80 and 443), and hands each

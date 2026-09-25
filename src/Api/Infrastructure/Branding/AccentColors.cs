@@ -28,8 +28,8 @@ public sealed record AccentCheck(
 /// <c>--primary</c> is link text, so it needs 4.5:1 against the page, and
 /// the text on a filled button needs 4.5:1 against <c>--primary</c>. A color
 /// that fails gets the nearest shade that passes suggested beside it. The
-/// owner decided (2026-09-22) that the suggestion is an offer, not a rule:
-/// "Suggest a better shade, but allow users to override it if they like."</para>
+/// suggestion is an offer, not a rule (decided 2026-09-22): a better shade
+/// is suggested, and an administrator may keep their own.</para>
 /// </summary>
 public static partial class AccentColors
 {

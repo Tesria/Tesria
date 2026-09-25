@@ -123,7 +123,7 @@ public static class ExportEndpoints
         if (format != "html") return Results.File(bytes, "application/pdf", $"{safeName}.pdf");
 
         // The top bar, so a single-file export looks like the product it came
-        // from (owner's request, 2026-09-20). No sidebar: one page has no
+        // from (requested 2026-09-20). No sidebar: one page has no
         // tree to show, and the brand links nowhere because there is nowhere
         // in a single file to go.
         var html = Encoding.UTF8.GetString(bytes);

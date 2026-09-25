@@ -5,7 +5,7 @@ import { treeMarkers, type SpaceTreeStyle } from './treeMarkers'
 type Row = { node: PageTreeNode; depth: number; marker: string | null }
 
 /**
- * A space's contents on its home page (the owner, 2026-09-24: the home page
+ * A space's contents on its home page (2026-09-24: the home page
  * with only a description "looks bare"): each top-level page and the pages
  * directly under it, numbered as the sidebar numbers them. The same list an
  * exported site's front page shows (SiteChrome.Contents), in the same

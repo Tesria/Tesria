@@ -1,5 +1,5 @@
 // Troubleshooting, FAQ, Glossary, Release notes, Security, License and
-// credits (dev-plan 10.5), rewritten to the owner's rules of 2026-09-23
+// credits (dev-plan 10.5), rewritten to the rules of 2026-09-23
 // (WRITING.md, the pilot pages). Text pages: what they describe is pictured
 // on the pages they link to.
 //

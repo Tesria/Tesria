@@ -1015,7 +1015,7 @@ serializable transaction so two racing first registrations cannot both win
 (SQLite, used by tests, serializes writes anyway). The migration that adds
 the column also **promotes the earliest-created user** on existing installs,
 so no instance is left with content and nobody able to administer it. On
-this dev instance that is the owner's account, not the docs bot.
+a development instance that is the first person's account, not a bot's.
 
 **The owner (dev-plan 10.1).** `Owner = 2` is the account that owns the
 instance. It does everything an administrator does, plus the two things

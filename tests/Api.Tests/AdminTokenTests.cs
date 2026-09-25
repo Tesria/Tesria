@@ -9,7 +9,7 @@ using Xunit;
 namespace Tesria.Api.Tests;
 
 /// <summary>
-/// The administrators' API tokens tab (the owner, 2026-09-24): who holds
+/// The administrators' API tokens tab (2026-09-24): who holds
 /// tokens, how much each is used through the API and through MCP, what
 /// assistants did, and revoking one token.
 /// </summary>
@@ -93,7 +93,7 @@ public class AdminTokenTests
         var rows = await owner.GetFromJsonAsync<List<TokenRow>>("/api/admin/api-tokens");
         (await owner.DeleteAsync($"/api/admin/api-tokens/{rows!.Single(r => r.Name == "rogue").Id}")).EnsureSuccessStatusCode();
 
-        // What it did stays counted after it is gone (the owner, 2026-09-24).
+        // What it did stays counted after it is gone (2026-09-24).
         var summary = await owner.GetFromJsonAsync<Summary>("/api/admin/api-tokens/summary");
         Assert.Equal(1, summary!.Last7Days.Reads);
         Assert.Equal(1, summary.Tokens);

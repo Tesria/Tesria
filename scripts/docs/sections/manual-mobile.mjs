@@ -1,5 +1,5 @@
-// User manual: Tesria on phones and tablets (added by the owner, 2026-09-22),
-// rewritten to the owner's rules of 2026-09-23 (WRITING.md, pilot.mjs).
+// User manual: Tesria on phones and tablets (added 2026-09-22),
+// rewritten to the rules of 2026-09-23 (WRITING.md, pilot.mjs).
 //
 // Facts checked 2026-09-24 against the phone layout (640 pixels and
 // narrower): Layout (the ☰ menu, search inside it), SpacePage, SpaceHome,

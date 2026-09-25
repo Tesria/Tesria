@@ -1,6 +1,6 @@
 // Welcome to Tesria: the first page of the Docs space, and the front door
 // of tesria.com for someone who has never heard of Tesria (rewritten to the
-// owner's rules of 2026-09-23, scripts/docs/WRITING.md). It says what
+// rules of 2026-09-23, scripts/docs/WRITING.md). It says what
 // Tesria is, who it suits, and where to go next; the Features page, second in
 // the tree, is the full tour, so this page does not repeat it.
 //

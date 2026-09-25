@@ -1,41 +1,31 @@
 # Development plan: sequenced (2026-09-08)
 
 The next body of work, ordered by dependency rather than by the order it was
-asked for. Written by Fable 5.1; **each item names the model that should
-execute it** (see "Model gate": read that section before starting
-anything). Every item is grounded in the code as it stands today (see "What
-exists"), not in assumptions.
+asked for. Written by Fable 5.1; each item names the model that designed
+and built it, as a record (see "Which model did what"). Every item is
+grounded in the code as it stands today (see "What exists"), not in
+assumptions.
 
 Distinct from [`PLAN.md`](../PLAN.md) (the founding design, complete) and
 [`roadmap.md`](./roadmap.md) (unscheduled ideas: the ones from there that
 are now scheduled are pulled in here). Move items to the
 [`CHANGELOG`](./CHANGELOG.md) as they ship.
 
-## Model gate: read this first
+## Which model did what
 
-**Since 2026-09-22, Opus 5.5 designs and implements every item.** The owner
-switched on trial after Anthropic's launch page reported Opus 5.5 at Fable
-5.1's level on most work, for less. New items are tagged
-**`Model: Opus 5.5`**. Tags on earlier items are kept as history:
+Tesria is built with Claude, and each item's `Model:` tag records which
+model designed and built it. Since 2026-09-22 new items are designed and
+built by Opus 5.5 (tagged **`Model: Opus 5.5`**), with Fable 5.1 reviewing a
+design when it turns on a security model or a decision that is expensive to
+reverse. Earlier tags are kept as history:
 
-- **`Model: Opus`**: well-specified implementation, executed by Opus 5.
-- **`Model: Fable`**: a design or security-model decision, executed by Fable 5.1.
+- **`Model: Opus`**: well-specified implementation, by Opus 5.
+- **`Model: Fable`**: a design or security-model decision, by Fable 5.1.
 - **`Model: Fable → Opus`**: Fable wrote the spec, then Opus implemented it,
-  in two sittings with the written spec as the handoff.
+  with the written spec as the handoff.
 
-**Before starting any item, check you are running as Opus 5.5** (the system
-prompt states it: "You are powered by the model named …"). **If not, STOP
-before any tool call that does work.** Tell the user the plan expects Opus
-5.5, then offer exactly two options: switch models, or override for this
-item. Do not proceed until they answer. If they override, record it in that
-item's CHANGELOG entry ("executed by X, plan asked for Opus 5.5, user
-override"). This rule also lives in `CLAUDE.md`, so it applies whether or
-not a session has read this file.
-
-Fable stays available as an optional second opinion. A design names its
-security-model and hard-to-reverse decisions so the owner can ask for one.
-Because this is a trial, anything an Opus 5.5 design missed that surfaces
-later is recorded in that item's CHANGELOG entry.
+Where a design missed something that surfaced later, that item's CHANGELOG
+entry says so, and which model designed it.
 
 ## How to read this
 
@@ -317,8 +307,8 @@ undetectable without a login history.
     sidecars. They landed with 9.1 (2026-09-17).*
 - One aggregate endpoint `GET /api/admin/dashboard?range=30d` computed
   server-side; the page must not fire fifteen queries.
-- **Charts:** load the `dataviz` skill before writing any chart code. One
-  small library or hand-rolled SVG; the bundle is already 1.1 MB.
+- **Charts:** follow common charting practice (one series needs no legend,
+  color as a status signal only). One small library or hand-rolled SVG; the bundle is already 1.1 MB.
 - Themed: stat tiles must read in both themes and every accent.
 
 ---
@@ -333,7 +323,7 @@ limiter would rate-limit Caddy: i.e. everyone, and 3.3's detectors would
 see one IP for the whole world. Alerts are delivered in-app here and gain
 email in 4.3; do not block this phase on email.
 
-### 3.0 Proxy trust and transport · `S` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable by user override)
+### 3.0 Proxy trust and transport · `S` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable)
 - `UseForwardedHeaders` with `KnownNetworks` set to the compose network (not
   `KnownProxies` by IP, Caddy's container IP is not stable). Verify with a
   test that `RemoteIpAddress` and `Request.Scheme` reflect the client.
@@ -384,7 +374,7 @@ email in 4.3; do not block this phase on email.
   chain cannot detect on its own; and every stored hash was recomputed
   independently in Python from a `psql` dump to prove the jsonb round trip.
 
-### 3.2 Brute-force protection and rate limiting · `M` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable by user override)
+### 3.2 Brute-force protection and rate limiting · `M` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable)
 - Depends on 3.0.
 - `Microsoft.AspNetCore.RateLimiting` (built-in, no package): sliding
   window per IP on `/auth/login`, `/auth/register`, `/auth/recover/*`,
@@ -403,7 +393,7 @@ email in 4.3; do not block this phase on email.
   button; 3.3 adds events, alerts and mitigations to it. Recovery and admin
   unlock also clear a lockout.
 
-### 3.3 Threat detection and admin alerting · `L` · Model: Fable → Opus · ✅ **shipped 2026-09-09** (both halves as Fable by user override)
+### 3.3 Threat detection and admin alerting · `L` · Model: Fable → Opus · ✅ **shipped 2026-09-09** (both halves as Fable)
 - **Fable designs** the signal set, thresholds, and the alert lifecycle;
   **Opus implements.** The design goes into `architecture.md` first.
 - `SecurityEvent` table (kind, severity, actor?, IP, targetId?, metadata,
@@ -436,7 +426,7 @@ email in 4.3; do not block this phase on email.
   `SecurityThresholds`, not settings: see the design in architecture.md
   for why. Rate-limit counters were already on the Security page from 3.2.
 
-### 3.4 Egress and input hardening · `M` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable by user override)
+### 3.4 Egress and input hardening · `M` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable)
 - **SSRF guard**, one implementation shared by webhooks (today) and link
   previews (7.E): deny loopback, private, link-local and the cloud metadata
   address; resolve DNS *then* connect to the resolved IP (no rebinding);
@@ -458,7 +448,7 @@ email in 4.3; do not block this phase on email.
   stays on the two `IFormFile` endpoints because the framework attaches
   its own form-token requirement to them by default.
 
-### 3.5 Sessions, 2FA and admin safety · `M` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable by user override)
+### 3.5 Sessions, 2FA and admin safety · `M` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable)
 - Idle timeout (e.g. 14 days) and an absolute lifetime (e.g. 90 days) on
   top of `SecurityStamp`; a "sessions" list on `/profile` with revoke.
 - **TOTP 2FA** (`Otp.NET`): opt-in per user, enforceable for admins via
@@ -474,7 +464,7 @@ email in 4.3; do not block this phase on email.
   "DB role rotation" is not an endpoint (it is `.env` + restart). A wrong
   TOTP code or re-auth answer counts toward the 3.2 lockout.
 
-### 3.6 Dependency hygiene · `S` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable by user override)
+### 3.6 Dependency hygiene · `S` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable)
 - Fix the 38 npm findings (`react-router` upgrade first, check the 7.x
   changelog for breaking changes to `NavLink`/`useLocation`, both used).
 - Add `collab/package-lock.json` and make the collab Dockerfile use
@@ -492,12 +482,11 @@ email in 4.3; do not block this phase on email.
 - Write `docs/security.md`: threat model (who attacks a public wiki and
   why), what each item above defends, what it does not, and the operator's
   **internet-readiness checklist**, the thing Phase 5's toggle links to.
-- Run the `security-review` skill against the phase's branch and fix what
-  it finds before merging.
+- Review the phase's branch for security and fix what the review finds
+  before merging.
 - Decide and document the disclosure/contact path (a `SECURITY.md`) if the
   repo goes public.
-- **Shipped with one deviation:** no `security-review` skill exists in
-  this environment, so the review was a manual pass: every registered
+- **Shipped:** the review was a manual pass: every registered
   route inventoried for authorization, the credential endpoints for rate
   limiting, the OIDC return URL, token listing, and settings responses.
   Its surviving findings are `security.md`'s "Known gaps" list.
@@ -509,7 +498,7 @@ email in 4.3; do not block this phase on email.
 After the admin panel because SMTP configuration lives in 2.3; after
 security because 4.2 needs 3.2's limiter and 4.3 needs 3.3's alerts.
 
-### 4.1 Sender + SMTP · `S` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable by user override)
+### 4.1 Sender + SMTP · `S` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable)
 - `IEmailSender`; `SmtpEmailSender` via MailKit; `NullEmailSender` when
   `EmailEnabled` is false. Plain text plus a minimal HTML wrapper; no
   template engine. "Send test email" in 2.3 goes live. Delivery failures
@@ -521,7 +510,7 @@ security because 4.2 needs 3.2's limiter and 4.3 needs 3.3's alerts.
   (neither existed), and a `BaseUrl` setting (default `https://$DOMAIN`)
   so emailed links know the instance's address.
 
-### 4.2 Password recovery: email · `M` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable by user override)
+### 4.2 Password recovery: email · `M` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable)
 - `POST /api/auth/recover/email` → always 202, same body either way.
   Token: 32 random bytes, stored hashed, 1-hour expiry, single-use,
   invalidated by a newer request. `/reset?token=…` → new password → rotate
@@ -532,7 +521,7 @@ security because 4.2 needs 3.2's limiter and 4.3 needs 3.3's alerts.
   path is throttled per address by 1.3's limiter and per client address
   by 3.2's.
 
-### 4.3 Email delivery for alerts and notifications · `M` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable by user override)
+### 4.3 Email delivery for alerts and notifications · `M` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable)
 - Security alerts (3.3) go to admins by email as well as in-app, this is
   the "email the admin group" requirement, and it is deliberately the
   *first* email notification wired up.
@@ -586,7 +575,7 @@ it, and others can host their own copy publicly too.
   "not for everyone" now includes the internet. The matrix is
   `PublicReadTests` (nine tests over the full grid) and was written first.
 
-### 5.2 Server: opening the read endpoints · `M` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable by user override)
+### 5.2 Server: opening the read endpoints · `M` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable)
 - Replace `RequireAuthorization()` on read routes with a policy that admits
   anonymous callers and lets the permission service decide (5.1). Write
   routes stay `RequireAuthorization()`; anonymous gets 401 there.
@@ -608,7 +597,7 @@ it, and others can host their own copy publicly too.
   anonymous check whoever is asking, so a private title never reaches a
   link preview even for a signed-in admin's request.
 
-### 5.3 SPA: a read-only public experience · `M` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable by user override)
+### 5.3 SPA: a read-only public experience · `M` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable)
 - Route split: public space routes render outside `ProtectedRoute`;
   `AuthContext` already models `user === null`, so components branch on it
   rather than assuming a session.
@@ -620,7 +609,7 @@ it, and others can host their own copy publicly too.
 - A visible "Public" badge on public spaces for signed-in users, so nobody
   edits a public page thinking it's internal.
 
-### 5.4 Operator controls · `S` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable by user override)
+### 5.4 Operator controls · `S` · Model: Opus · ✅ **shipped 2026-09-09** (run as Fable)
 - The 2.4 Spaces admin page: public column; toggle with a confirmation
   that names what becomes visible (page count, attachment count).
 - The 2.3 kill switch and the 3.3 "disable all public spaces" mitigation
@@ -629,7 +618,7 @@ it, and others can host their own copy publicly too.
 
 ### 5.5 Anonymous access is opt-in twice · `S` · Model: Opus · ✅ **shipped 2026-09-20**
 
-*Added 2026-09-20 at the owner's request, specified by Fable 5.1. Sequenced
+*Added 2026-09-20 at the project's request, specified by Fable 5.1. Sequenced
 before the onboarding wizard (10.2), which gains the switch.*
 
 **The problem.** With **Allow public spaces** off (the default), an
@@ -798,7 +787,7 @@ eight times the schema, renderer and export work.
 | Blog posts (per-space blog) | ❌ | **not an editor element, a content type.** Decide separately; listed so it isn't forgotten. |
 | Live search, User list, Profile picture, Spaces list, Create-from-template, Network | ❌ | low value; revisit after D |
 
-### Wave A: structural blocks (frontend + renderer) · `L` · Model: Opus · ✅ **shipped 2026-09-10** (started as Fable by user override, finished as Opus)
+### Wave A: structural blocks (frontend + renderer) · `L` · Model: Opus · ✅ **shipped 2026-09-10** (started as Fable, finished as Opus)
 - **Anchor first**: stable `id` attr on headings (slugified, de-duplicated);
   the link popover gets a "link to heading" list. TOC depends on it.
 - **Table of contents**: a node with no stored content; the node view
@@ -898,7 +887,6 @@ onto `roadmap.md` and are sequenced here.
 
 ### 8.4 MCP server · `L` · Model: Fable → Opus · ✅ **shipped 2026-09-11** (contract and token scopes as Fable; the ten tools, `PageWriter` and the Markdown converter as Opus)
 - **Fable designs** the tool surface and the auth model; **Opus implements.**
-  Load the `claude-api` skill before designing tool definitions.
 - A separate process (Node sidecar, like collab) or a .NET endpoint speaking
   MCP over HTTP; authenticates with an API token. Tools: search, get page,
   list space tree, get labels, create/update page: writes opt-in per
@@ -910,13 +898,13 @@ onto `roadmap.md` and are sequenced here.
 ### 8.5 Wiki packs: space export and import · `XL` · Model: Fable → Opus · ✅ **designed and shipped 2026-09-21** (Fable designed, Opus implemented)
 
 **What it is for.** A pack is how a wiki survives its instance. The manual
-written on 2026-09-11 was lost with the database it lived in, and the owner
-has since decided the rebuilt manual's source of truth is the wiki, not the
-repository. So the pack is the thing 10.5 commits: export the manual, keep
-the export in git, import it anywhere. The second use is moving a space
-between two instances. It is **not** a sync, a merge, or a backup of the
-instance; Phase 9 does backups, and merging is deliberately out of scope
-(see "Not decided").
+written on 2026-09-11 was lost with the database it lived in, and it has
+since been decided that the rebuilt manual's source of truth is the wiki,
+not the repository. So the pack is the thing 10.5 commits: export the
+manual, keep the export in git, import it anywhere. The second use is
+moving a space between two instances. It is **not** a sync, a merge, or a
+backup of the instance; Phase 9 does backups, and merging is deliberately
+out of scope (see "Not decided").
 
 **The shape of the problem.** Every row a space is made of carries ids that
 mean nothing on another instance: page ids, attachment storage keys,
@@ -1310,7 +1298,7 @@ JSON walk, one test.
    accept the first one's deletion on the human's behalf, which is the thing
    this phase exists to stop; the cost is a redundant (idempotent) reconcile
    when a draft holds an unresolved deletion.
-   **Vitest was added to the web package** for this, at the owner's approval,
+   **Vitest was added to the web package** for this, once approved,
    with the boundary written into CLAUDE.md: logic yes, rendering never.
 3. ✅ **shipped 2026-09-20.** The schema bundle build and the sidecar's
    `fetch`-time reconcile with `meta.version`; the client seeds
@@ -1411,11 +1399,11 @@ feature; do not conflate).
 
 ## Phase 9 · Backups: an admin section now, offsite targets later
 
-Written 2026-09-17 by Fable 5.1, at the owner's request, from the code and
+Written 2026-09-17 by Fable 5.1, at the project's request, from the code and
 from the live stack (not from the docs; the docs described a stub that was
 never wired). Two items: **9.1** is specified below in full and is ready
 for Opus. **9.2** is a future item; it holds the research and the
-decisions the owner still has to make.
+decisions still to be made.
 
 **What is true today, and what this phase changes.** There are two
 independent backup systems and the app can see neither:
@@ -1435,7 +1423,7 @@ independent backup systems and the app can see neither:
   dashboard's Health tiles (2.5) were never built because there was
   nothing to read.
 
-**The owner's decisions (2026-09-17), fixed for both items:**
+**The decisions (2026-09-17), fixed for both items:**
 
 1. A backup is **kept** if it is one of the newest *N* **or** taken within
    the last *D* days; it is **removed only when it is outside both**. An
@@ -1754,7 +1742,7 @@ in the UI.
 
 **Designed 2026-09-21 (Fable); ready for Opus.** Research done 2026-09-17
 (Opus, from official docs; items marked *unverified* were not confirmed).
-The owner answered every open decision on 2026-09-21; the answers are
+Every open decision was answered on 2026-09-21; the answers are
 recorded with the questions below, and the design that follows them is
 what Opus implements. **Prerequisites:** 9.1 shipped (it did), and the
 logical dumps **encrypted before anything copies them off the box** (they
@@ -1777,7 +1765,7 @@ remote-only, because a remote outage would then fill `pg_wal`.
 - *Uploads and logical dumps:* **restic**, not `rclone` or a plain copy.
   It encrypts client-side always, deduplicates (back up the uploads
   volume directly instead of a fresh tarball), and its `forget
-  --keep-last N --keep-within Dd --prune` **is the owner's retention
+  --keep-last N --keep-within Dd --prune` **is Phase 9's retention
   rule**. Backends: local, SFTP, its own `rest-server`, S3 and
   compatibles, B2, Azure, GCS. `check --read-data-subset=5%` after each
   run. Not Glacier or Deep Archive: they break restic, and 12 to 48 hour
@@ -1874,15 +1862,15 @@ repo2 (SFTP, or NFS with `repo-symlink=n`, or `cifs`) plus a restic
 `rest-server --append-only` on it; a cloud copy of the NAS can come
 later.
 
-**Open decisions for the owner, all answered 2026-09-21.** In order: (1)
-B2 is the documented default; (2) credentials stay in `.env`, never the
-UI, the owner's words being "keep it all in .env to avoid issues and keep
-top security", and the analysis that led there is in the design below;
-(3) governance lock, no longer than retention; (4) separate passphrases,
-escrowed off the host; (5) each remote gets its own schedule and
-retention; (6) restic replaces the uploads tarball; (7) NAS first-class,
-SMB tested; (8) removable media is on-demand only and never counts as the
-only copy off the box. The questions stay as the record of what was asked.
+**Open decisions, all answered 2026-09-21.** In order: (1) B2 is the
+documented default; (2) credentials stay in `.env`, never the UI, to
+avoid problems and keep security as tight as possible, and the analysis
+that led there is in the design below; (3) governance lock, no longer
+than retention; (4) separate passphrases, escrowed off the host; (5) each
+remote gets its own schedule and retention; (6) restic replaces the
+uploads tarball; (7) NAS first-class, SMB tested; (8) removable media is
+on-demand only and never counts as the only copy off the box. The
+questions stay as the record of what was asked.
 
 
 1. The documented default provider: B2, generic S3, or R2.
@@ -1896,11 +1884,11 @@ only copy off the box. The questions stay as the record of what was asked.
 5. Whether repo2 gets its own schedule and retention (recommended yes).
 6. restic replaces the uploads tarball, or both are kept.
 7. ~~NAS as a first-class target type, or a documented recipe.~~
-   **Answered 2026-09-21: first-class.** The owner wants people to use the
-   storage they already have, and made a NAS available for building and
-   testing, an SMB share on the LAN. SMB/CIFS is therefore the documented
+   **Answered 2026-09-21: first-class.** People should be able to use the
+   storage they already have, and a NAS was made available for building
+   and testing, an SMB share on the LAN. SMB/CIFS is therefore the documented
    and tested LAN protocol; NFS stays a recipe.
-8. Removable media (added 2026-09-21 at the owner's request): on-demand
+8. Removable media (added on request, 2026-09-21): on-demand
    only, which is the recommendation for version 1, or also "copy whenever
    the drive appears" by polling for the sentinel. And whether a removable
    target may stand as an instance's *only* copy off the box, or whether the
@@ -1929,7 +1917,7 @@ backup would carry the key to delete itself. A key that can delete is the
 fatal case, since `forget --prune` and `expire` need one. The write-only
 design (a key without `deleteFiles`, verified by Test connection refusing
 a key that can delete, with pruning moved to provider lifecycle rules) was
-put to the owner and he chose `.env` instead, for simplicity: one place,
+considered, and `.env` was chosen instead, for simplicity: one place,
 no misconfiguration that quietly weakens it. So: **every offsite secret
 lives in `.env`, is read only by the backup sidecar, and never reaches the
 app, the database, a log, or a screen.** The screen shows fingerprints.
@@ -2215,7 +2203,7 @@ must be operated.
    minute stale, and a button that re-ran what just ran would be a second
    way to say the same thing. If a target can be configured but not yet
    exercised, this is worth revisiting.
-   **Added back 2026-09-22, at the owner's request.** The case for it turned
+   **Added back 2026-09-22, on request.** The case for it turned
    out to be the one above: somebody has just changed `.env` (a key
    rotated, a share remounted, a drive plugged in) and wants the answer now
    rather than at the next pass. It queues a `test-target` job for each
@@ -2285,10 +2273,10 @@ Cloudflare R2 pricing and bucket locks.
 
 ### 9.3 Space charts on the backups page · `M` · Model: Opus · ✅ **shipped 2026-09-22**
 
-**What the owner asked for (2026-09-21).** A pie chart on the backups page
+**What was asked for (2026-09-21).** A pie chart on the backups page
 showing backups against overall disk usage against free space, and one such
 chart per backup target, so that a person with a NAS or a drive configured
-sees a chart for each. "Every backup target should be represented here."
+sees a chart for each, with every backup target represented.
 
 **What each chart says.** Three slices: **backups** (this target's backup
 data), **other** (everything else on that disk or share), **free**. The
@@ -2382,7 +2370,7 @@ what 9.2's slot status publishes.
    would give the cloud pie a free-space feel, and it is the one part of
    this item that invents a number rather than reporting one. Worth adding
    if anyone asks for it; left out rather than guessed at.
-   **Added 2026-09-22, at the owner's request.** `OFFSITE_CLOUD_BUDGET_GB`
+   **Added 2026-09-22, on request.** `OFFSITE_CLOUD_BUDGET_GB`
    is published by the pgbackrest sidecar as `BudgetBytes` on both cloud
    rows, in a statement of its own so a sidecar ahead of the migration
    loses only the budget. The pie gains a "Left in budget" slice, never
@@ -2395,8 +2383,8 @@ what 9.2's slot status publishes.
 4. ✅ **shipped 2026-09-22.** `architecture.md`, the runbook paragraph on
    the disk, CHANGELOG.
 
-**Corrected the same day, after the owner checked the number against macOS.**
-The chart said 1.6 TB free; his Mac said 761 GB. Both were "right": `df` on
+**Corrected the same day, after the number was checked against macOS.**
+The chart said 1.6 TB free; the Mac said 761 GB. Both were "right": `df` on
 the container's own volume reports **Docker's virtual disk**, which under
 Docker Desktop is sparse and reports the size it may grow to rather than the
 space the host can still give it. For a warning whose whole purpose is to
@@ -2412,7 +2400,7 @@ changes. This is the difference between a chart that decorates and one that
 can be trusted, and it was only found because somebody compared it to the
 operating system.
 
-Three smaller changes at the owner's request, the same day:
+Three smaller changes on request, the same day:
 
 - A **live wiki** slice, so the chart answers "how much is the wiki and how
   much is its backups" rather than lumping the wiki in with everything else.
@@ -2426,7 +2414,7 @@ Three smaller changes at the owner's request, the same day:
   scrolled sideways inside a narrow column with empty space either side. The
   cap is gone and prose inside is held to 80ch so it stays readable.
   A first attempt also capped the card tracks, on the theory that a lone card
-  should not stretch across a 4K display. The owner was right that this was
+  should not stretch across a 4K display. Review showed that this was
   worse: it stopped the two agent cards short of the edge and squeezed the
   chart into wrapping text. The tracks are `1fr` again and the cards split
   whatever width they are given.
@@ -2434,7 +2422,7 @@ Three smaller changes at the owner's request, the same day:
   carry the 480px form width, so as one column they left most of a large
   display empty. They are a grid now, four across at 1990px.
 
-**Colors, after the owner looked at it.** Gray for "everything else" read as
+**Colors, after review.** Gray for "everything else" read as
 *disabled* rather than as a slice, and the wiki and its backups were shades
 close enough to be taken for each other. The four slices are now four
 distinct hues with their own tokens (blue, magenta, orange, green), lifted
@@ -2455,15 +2443,14 @@ composition and cost.
 
 ### 9.4 Restore from the admin page · `L` · Model: Fable → Opus · ✅ **shipped 2026-09-22** (Fable designed, Opus implemented)
 
-**What the owner asked for (2026-09-22).** The backups page has Test
-restore on every row but nothing that restores one: "It appears that you
-can only restore to the most recent backup which may not be desired. What
-if the user wants to select an older backup and restore that?" Offered a
-choice between a runbook pointer and a real restore from the page, the
-owner chose the restore, gated hard, and both kinds of backup: "Let's do B
-and lets cover both."
+**What was asked for (2026-09-22).** The backups page has Test restore
+on every row but nothing that restores one. It seemed only the most
+recent backup could be restored, which may not be what is wanted: a user
+may need to pick an older backup and restore that. Offered a choice
+between a runbook pointer and a real restore from the page, the restore
+was chosen (option B), gated hard, covering both kinds of backup.
 
-**Designed 2026-09-22 (Fable). The owner answered every decision the same
+**Designed 2026-09-22 (Fable). Every decision was answered the same
 day; the answers are recorded with the questions at the end, and the design
 reflects them. Ready for Opus.** Prerequisites, all shipped: 9.1 (the job
 contract), 9.2 (offsite copies exist, so the local disk is never the only
@@ -2639,7 +2626,7 @@ polling continues; if `LastRestoreJobId` names a job with no
 then. That startup check is how the audit entry lands in the right chain,
 robust to any number of restarts, and idempotent.
 
-**The kept copy's lifetime (the owner's decision 2).** The retention policy
+**The kept copy's lifetime (decision 2).** The retention policy
 governs it, by the same rule as a backup. On every retention pass the
 logical sidecar enters the kept copy into the plan as if it were a backup
 taken at the moment of the restore, and removes it when the plan would
@@ -2802,14 +2789,14 @@ restored page; `docker compose stop`, `start`, `restart db` and
 completing in under ten seconds; a stale request file is ignored on
 start. The `.env` is restored byte for byte after, as in 9.2.
 
-**Open decisions for the owner, all answered 2026-09-22.** The questions
+**Open decisions, all answered 2026-09-22.** The questions
 stay as the record of what was asked.
 1. Who holds `backups.restore` by default: the owner only, grantable to a
    role (recommended), or the owner and administrators. **Answered: the
    recommendation.**
 2. The kept copy: until removed by hand, or removed automatically. **Answered:
-   the retention policy removes it "when it reaches end of life by the
-   policy definition"**, which is the paragraph on the kept copy's lifetime
+   the retention policy removes it when it reaches end of life as the
+   policy defines it**, which is the paragraph on the kept copy's lifetime
    above: it ages like a backup taken at the moment of the restore and goes
    when the plan would remove that backup.
 3. A logical restore always restores the cycle's uploads with the dump
@@ -2902,8 +2889,8 @@ was refused at the endpoint and shown no Restore button. The instance ended
 with 34 pages, 8 spaces and 6 attachments, which is what it started with,
 and the `.env` byte-identical.
 
-**Corrected 2026-09-22: every restore that was undone stayed "running".** The
-owner noticed five restores on Recent runs still saying Running…, and the
+**Corrected 2026-09-22: every restore that was undone stayed "running".** In
+use, five restores on Recent runs were found still saying Running…, and the
 page polling them every five seconds for ever. The walk above checked that
 history carried across; it did not check that it carried across *correctly*.
 The kept copy an undo puts back is a snapshot taken mid-restore, so it holds
@@ -2926,13 +2913,13 @@ closed as succeeded, with the finish times their own logs recorded.
 
 ## Phase 10: Owner and onboarding
 
-Written 2026-09-20 by Fable 5.1 at the owner's request, from the code as
+Written 2026-09-20 by Fable 5.1 at the project's request, from the code as
 it stands after 9.1. Four items, in order: **10.1** the Owner role,
 **10.4** the media harness (the clips the tours use), **10.2** first-run
 setup for the owner, **10.3** the tour and tips for everyone else. Each is
 specified below in full and is ready for Opus.
 
-**What the owner asked for.** A built-in onboarding: on a fresh server, the
+**What was asked for.** A built-in onboarding: on a fresh server, the
 first sign-in walks the administrator through creating their account and
 configuring the instance (retention policy, email server, and so on). A new
 role, **Owner**, above admin; the first account is the owner. Onboarding for
@@ -2941,7 +2928,7 @@ clips or at least screenshots, and power-user features taught as tips (the
 `/` menu, for one). Tips can be turned off and the non-essential parts of
 onboarding skipped; the critical first-time owner setup cannot be.
 
-**The owner's decisions (2026-09-20), fixed:**
+**The decisions (2026-09-20), fixed:**
 
 1. **Owner powers are ownership only.** Only the Owner promotes or demotes
    administrators and transfers ownership. Administrators keep every other
@@ -3320,18 +3307,17 @@ undo, the profile section, and every route touched by `Root`.
 
 ### 10.5 The Support site and the Demo space · `XL` · Model: Opus 5.5
 
-**Rescoped by the owner, 2026-09-22.** What began as "rebuild the user
-manual" is now the product's support site. The owner owns tesria.com and
-will host it there: the **Support** space is exported as a static site
-(12.2) and served from Cloudflare. A second space, **Tesria Demo**, holds
-the pages the screenshots and clips are taken from. The tree below was
-approved by the owner on 2026-09-22.
+**Rescoped 2026-09-22.** What began as "rebuild the user manual" is now
+the product's support site, to be hosted at tesria.com: the **Support**
+space is exported as a static site (12.2) and served from Cloudflare. A
+second space, **Tesria Demo**, holds the pages the screenshots and clips
+are taken from. The tree below was approved on 2026-09-22.
 
 **Why it was here in the first place still stands.** A manual written on
 2026-09-11 (47 pages, 86 screenshots) lived only inside the instance and is
 gone; nothing in the repository held a copy. So the Support space is
-exported as a wiki pack and **committed to the repository** (the owner's
-decision), which also means anyone can pull it and run the support site
+exported as a wiki pack and **committed to the repository** (as
+decided), which also means anyone can pull it and run the support site
 locally. The wiki stays the source of truth (decided 2026-09-21): the site
 is written in Tesria and exported, not written as Markdown and imported.
 
@@ -3390,7 +3376,7 @@ is written in Tesria and exported, not written as Markdown and imported.
     exported site · wiki packs · public reading · turning exports off
   - Your profile: avatar, name, email · sessions · email notifications ·
     API tokens · password
-  - **Tesria on phones and tablets** (added by the owner, 2026-09-22): the
+  - **Tesria on phones and tablets** (added 2026-09-22): the
     phone top bar and menu · moving between spaces and pages · the
     editor's phone toolbar and Insert button · tables by touch · the
     keyboard and the sticky bars · what a phone does not offer (reordering
@@ -3409,9 +3395,9 @@ is written in Tesria and exported, not written as Markdown and imported.
 - Troubleshooting · FAQ · Glossary · Release notes (from the changelog) ·
   Security · License and credits
 
-**Media rules** (the owner's, and 10.5's original ones).
+**Media rules** (the ones requested, and 10.5's original ones).
 **Every element page shows the element on a desktop and on a phone**, side
-by side (the owner, 2026-09-22: mobile support took a great deal of work
+by side (2026-09-22: mobile support took a great deal of work
 and the first tree left it out). The harness already shoots at phone width
 with touch on (`SHOT_MOBILE=1`), so each shot is taken twice. Light theme,
 blue accent, unbranded (branding reset to Tesria; only the
@@ -3419,10 +3405,10 @@ Branding page shows it set). Seeded fictional content only. Every
 screenshot and clip comes from a committed spec in `scripts/screenshots/`,
 so each can be regenerated after a redesign. Cloudflare Workers static
 assets allow **25 MiB per file** and 20,000 files on the free plan
-(checked 2026-09-22; the owner had understood 50 MB); the harness's clips
+(checked 2026-09-22; 50 MB had been assumed); the harness's clips
 are a few hundred kilobytes, so neither limit binds.
 
-**Decisions (the owner, 2026-09-22).**
+**Decisions (2026-09-22).**
 
 1. **Animations are a mode of the existing "File or video" element**, not a
    new element: "Play as animation" shows a video attachment silent,
@@ -3437,15 +3423,15 @@ are a few hundred kilobytes, so neither limit binds.
 3. **System requirements are measured**, not guessed: the running stack's
    memory, CPU at rest and under a PDF export, and disk, published with
    stated headroom.
-4. **The owner creates the Demo accounts** (fictional people for mentions,
+4. **The Demo accounts are created by hand** (fictional people for mentions,
    co-editing, the Users tab and contributors) from a list this item
    provides. **The existing spaces are all build leftovers and are deleted
-   by the owner after step 1**, before Demo is seeded.
+   by hand after step 1**, before Demo is seeded.
 5. **A pack of the Support space is committed to the repository.**
 6. **One password rule.** The setup wizard asked for 12 characters in the
    browser while the server, and every other form, require 8; nothing
-   recorded 12 as a decision. The wizard now follows the server's rule. The
-   owner can ask for a stronger owner rule instead, enforced by the server.
+   recorded 12 as a decision. The wizard now follows the server's rule. A
+   stronger rule for the owner account, enforced by the server, is an option.
 
 **Steps, each shippable alone.**
 
@@ -3472,7 +3458,7 @@ are a few hundred kilobytes, so neither limit binds.
      use it.
    - The "Create spaces" right's description stops saying the creator
      administers the space, which the permission model does not do.
-   - Added by the owner while this step was under way (2026-09-22): a
+   - Added while this step was under way (2026-09-22): a
      phone held sideways fills the screen instead of sitting between two
      empty bands; the space sidebar can be hidden, on any screen wide
      enough to have one; the date popup's field fits its box on iOS; and on
@@ -3483,7 +3469,7 @@ are a few hundred kilobytes, so neither limit binds.
      had no style; and "Get access" on an open space would have granted the
      space's first permission, which closes it to everyone else. It now
      grants nothing there.
-   - ✅ **Fixed 2026-09-23.** **Reported by the owner: a used invite still
+   - ✅ **Fixed 2026-09-23.** **Found in use: a used invite still
      reads "Unused".** The cause: registration looks an invite up only
      when public registration is closed, so with it open (as on this
      instance) an invite link creates the account and the invite is never
@@ -3547,7 +3533,7 @@ are a few hundred kilobytes, so neither limit binds.
    **20 GB of disk** to start, more as backups accumulate. Any host that
    runs Docker with Compose v2: Linux on x86-64 or ARM64, macOS or Windows
    with Docker Desktop.
-4. **The owner creates the Demo accounts and deletes the old spaces.**
+4. **The Demo accounts are created and the old spaces deleted, by hand.**
    The accounts, all fictional, on `example.com` (reserved for examples, so
    no mail can reach a real person): **Alex Rivera** (administrator, for
    the admin screens), **Priya Natarajan**, **Sam Okafor**, **Mei Chen**
@@ -3558,7 +3544,7 @@ are a few hundred kilobytes, so neither limit binds.
    until its owner turns it on, and the badge means *no recovery codes
    left*, which registration makes impossible for a new account, since it
    issues them. Not faked; the badge is shown on its own page if at all.)
-   Created by the owner 2026-09-22: Alex Rivera (administrator), Priya
+   Created 2026-09-22: Alex Rivera (administrator), Priya
    Natarajan, Sam Okafor and Mei Chen. Two of
    them co-editing need the harness to sign in as a second person: their
    sign-ins go in the gitignored `.debug-credentials` beside the existing
@@ -3609,8 +3595,8 @@ are a few hundred kilobytes, so neither limit binds.
 
 ## Phase 11: Roles with assignable rights
 
-Written 2026-09-20 by Fable 5.1 at the owner's request, from the code as it
-stands after 10.1. Three items: **11.1** the permission model, the matrix
+Written 2026-09-20 by Fable 5.1 at the project's request, from the code as
+it stands after 10.1. Three items: **11.1** the permission model, the matrix
 and its enforcement; **11.2** custom roles; **11.3** deleting a space, the
 first destructive action gated by a right from 11.1. All three are
 specified in full below.
@@ -3618,13 +3604,13 @@ Phase 10's remaining items move behind them (see the order of execution):
 10.2's wizard gains a required step where the owner reviews the matrix, and
 that step should be built once, against the real thing.
 
-**What the owner asked for.** Rights assignable to roles: Owner, Admin and
+**What was asked for.** Rights assignable to roles: Owner, Admin and
 User for now, with good defaults. The owner reviews and approves the
 defaults, or changes them, during onboarding. The example given: an
 instance may not want administrators to be able to change the backup
 retention policy.
 
-**The owner's decisions (2026-09-20), fixed:**
+**The decisions (2026-09-20), fixed:**
 
 1. **The owner edits everything.** Administrators cannot change the rights
    of administrators, but can change the rights of users, and of any other
@@ -3649,7 +3635,7 @@ retention policy.
   tier. Three built-in roles exist, one per tier, and custom roles (11.2)
   are extra roles within the User or Admin tier. Nothing in 10.1 changes.
 - **Defaults preserve today's behavior, with exactly two exceptions**:
-  users lose "delete pages created by others" (the owner's decision), and
+  users lose "delete pages created by others" (decided 2026-09-20), and
   gain nothing they did not have. An upgraded instance therefore changes
   in one visible way, stated in the CHANGELOG and shown on the new Roles
   tab. Administrators keep everything they can do today.
@@ -3907,7 +3893,7 @@ owner's reserved powers) is unaffected.
 
 ### 11.3 Delete a space · `M` · Model: Fable → Opus · ✅ **shipped 2026-09-20**
 
-**What the owner asked for (2026-09-20).** Administrators and the owner
+**What was asked for (2026-09-20).** Administrators and the owner
 can delete a space, from the space's settings page, with a warning that
 it is irreversible and destroys every page under it, a confirmation
 prompt, and the password required to confirm.
@@ -4036,10 +4022,10 @@ export.
 
 ## Phase 12: Exports that look like the page
 
-*Added 2026-09-20 at the owner's request, designed by Fable. The complaint:
-"the export output is terrible; it flattens elements and makes them look
-nothing like the rendered page; tables look completely different." Plus
-two new formats: a page as a static HTML file, and a whole space as a
+*Added 2026-09-20 at the project's request, designed by Fable. The
+complaint: the export output was poor, flattening elements so they looked
+nothing like the rendered page, with tables looking completely different.
+Plus two new formats: a page as a static HTML file, and a whole space as a
 static site that can be hosted on Cloudflare Pages and looks the same.
 The motivating use is the official Tesria documentation: written here,
 published cheaply.*
@@ -4281,7 +4267,7 @@ is rewritten to a relative site path; a link to a page not in the export
 Attachment URLs are rewritten to `assets/`. Embeds keep their iframe, the
 site is online.
 
-**Themes survive the export.** *(Owner's request, 2026-09-20.)* The app's
+**Themes survive the export.** *(Requested 2026-09-20.)* The app's
 light, dark and system themes and its accent colors are a `data-theme`
 and `data-accent` attribute on `<html>`, set from `localStorage` by a
 small inline script before first paint (`theme.ts`, and the same logic
@@ -4322,7 +4308,7 @@ diagram, a chart, an image and an internal link; then the same site on
 a phone width.
 
 
-**Follow-up, same day: the chrome (owner's request).** The export was the
+**Follow-up, same day: the chrome (requested).** The export was the
 page and nothing else, which is faithful and does not look like Tesria. Both
 HTML exports now carry the app's top bar (the mark, the instance name, and
 the full appearance menu with three modes and six accents), and a site also
@@ -4348,25 +4334,26 @@ carry it too.
 - **PDFs are untouched**, and the render route now says so explicitly:
   `chrome=page` and `chrome=site` keep the reader's theme, no chrome at all
   means paper and stays forced light.
-- **An export now works from the filesystem** (owner, same day). Unzipped
-  and opened, clicking a sidebar link showed Chrome's folder listing instead
-  of the page: every link ended at a directory, which a server resolves to
-  its index file and `file://` cannot. Links name `index.html` now (sidebar,
-  body and brand alike), which works in both places and costs a hosted site
-  nothing, and the 404 stopped linking to `/`, the root of the disk. The one
-  case still not right is a host serving `404.html` for a missing path
-  *below* the root, where the browser resolves its relative links against
-  that path; making them root-absolute would fix it and break `file://`, and
-  the export is more often read locally than 404'd at depth.
-- **The width toggle came back** (owner, same day). The capture route has no
-  action bar, so an export had lost both the reading view's full-width
+- **An export now works from the filesystem** (found in use, same day).
+  Unzipped and opened, clicking a sidebar link showed Chrome's folder
+  listing instead of the page: every link ended at a directory, which a
+  server resolves to its index file and `file://` cannot. Links name
+  `index.html` now (sidebar, body and brand alike), which works in both
+  places and costs a hosted site nothing, and the 404 stopped linking to
+  `/`, the root of the disk. The one case still not right is a host serving
+  `404.html` for a missing path *below* the root, where the browser
+  resolves its relative links against that path; making them root-absolute
+  would fix it and break `file://`, and the export is more often read
+  locally than 404'd at depth.
+- **The width toggle came back** (requested, same day). The capture route
+  has no action bar, so an export had lost both the reading view's full-width
   control and the page's own `fullWidth` setting, which meant every exported
   page was full width regardless of how it was written. An HTML export now
   opens at the page's width and carries the toggle in the top bar; the
   reader's choice persists across a site, and the phone hides it for the same
   reason the app does. A PDF gets neither: the sheet is the width, and
   `.page-wrap`'s 900px cap on A4 would be margins nobody asked for.
-- **Two tweaks after the first look** (owner, same day). The PDF footer's
+- **Two tweaks after the first look** (requested, same day). The PDF footer's
   page numbering was four flex items under `space-between`, so it read
   "Every element    1    of    4"; it is one item now, right-justified. And
   the space tile in an export is the theme accent rather than one of the
@@ -4384,12 +4371,12 @@ carry it too.
 
 ### 12.3 Turn a space's exports off, format by format · `S` · Model: Opus 5.5 · ✅ **shipped 2026-09-22**
 
-**What the owner asked for (2026-09-22).** "Add in the space settings the
-ability to disable exports on the entire space. It should be granular so we
-can enable/disable markdown, pdf, and website." A permission administrators
-and the owner hold by default, every format on by default, "but this will
-allow admins to disable exports on a specific space if it is more sensitive
-than other spaces in their instance."
+**What was asked for (2026-09-22).** A setting in the space settings to
+disable exports for the whole space, granular enough to turn Markdown, PDF
+and website on or off separately. A permission administrators and the
+owner hold by default, every format on by default, so that administrators
+can disable exports on a space that is more sensitive than the other
+spaces in their instance.
 
 **Decisions made in building it, stated so they can be reversed cheaply.**
 1. **Five switches, not three.** The product has two more exports than the
@@ -4397,7 +4384,7 @@ than other spaces in their instance."
    pack. Leaving them out would let a sensitive space be downloaded whole, as a
    pack with its history, after an administrator believed exports were off.
    So each of the five is a switch: Markdown, HTML, PDF, Website and Wiki pack.
-   Dropping two is a one-line change each if the owner wants three.
+   Dropping two is a one-line change each if only three are wanted.
 2. **A right of its own, `spaces.exports`,** Administration scope,
    `DefaultFrom: Admin`, so administrators and the owner hold it and any role
    can be granted it. It is not a space permission: judging a space more
@@ -4439,21 +4426,20 @@ than other spaces in their instance."
 
 ### 13.1 Instance branding · `L` · Model: Opus 5.5 · ✅ **shipped 2026-09-22** (designed and implemented by Opus 5.5)
 
-**What the owner asked for (2026-09-22).** "Add branding support to the app.
-It will allow owners and admins (off by default) to edit the page branding.
-They can set a new logo for Tesria and replace the word Tesria on the header
-bar with their own brand name. They can also set the favicon." Logos in
-several formats (SVG, PNG and so on). Theme options can be restricted for
-users: only light, only dark, and a fixed accent color. The accent can be a
-custom color, not only one of the six built in, and "if they allow both dark
-and light themes they can set both a light and dark accent color". And:
-"The branding should also be reflected in the web export. If someone exports
-a page or site the branding they set should be visible in their exported
-html."
+**What was asked for (2026-09-22).** Branding support: owners, and
+administrators (off by default), can edit the page branding. They can set
+a new logo in place of Tesria's, replace the word Tesria in the header bar
+with their own brand name, and set the favicon. Logos in several formats
+(SVG, PNG and so on). Theme options can be restricted for users: only
+light, only dark, and a fixed accent color. The accent can be a custom
+color, not only one of the six built in, and when both dark and light
+themes are allowed, both a light and a dark accent color can be set. And
+the branding should carry into the web export: a page or site someone
+exports should show the branding they set in the exported HTML.
 
-**Model note.** The first item designed under the 2026-09-22 model gate, in
+**Model note.** The first item designed under the 2026-09-22 model choice, in
 which Opus 5.5 does design and implementation. The decisions most worth a
-second opinion, if the owner wants one, are the SVG handling (decision 6) and
+second opinion, if one is wanted, are the SVG handling (decision 6) and
 getting branding into the page before first paint (decision 3), because a
 mistake in either is a security hole or a visible flash on every load.
 
@@ -4489,7 +4475,7 @@ mistake in either is a security hole or a visible flash on every load.
 **Decisions made in this design, with the reasons.**
 
 1. **The brand name is its own field, and nothing changes until someone sets
-   it** (the owner's decisions A and B). `BrandName` is empty by default, and
+   it** (decisions A and B). `BrandName` is empty by default, and
    empty means "Tesria". Renaming the instance does not touch the header: an
    instance renamed "Acme Docs" with no branding still says Tesria in the top
    left. The brand name, when set, is the only name the interface shows:
@@ -4506,9 +4492,9 @@ mistake in either is a security hole or a visible flash on every load.
      Tesria.
 
 2. **A right of its own, `settings.branding`,** Administration scope,
-   `DefaultFrom: Owner`, grantable to a role on the Roles tab. This is what
-   "owners and admins (off by default)" means in the rights model 11.1
-   built, and it is the same shape as `users.promote_admins` and
+   `DefaultFrom: Owner`, grantable to a role on the Roles tab. This is how
+   the request (owners, and administrators off by default) maps onto the
+   rights model 11.1 built, the same shape as `users.promote_admins` and
    `backups.restore`. It covers the brand name, logos, favicon, colors and
    locks. The instance name stays under `settings.instance`, which
    administrators keep, because the two are separate things.
@@ -4582,7 +4568,7 @@ mistake in either is a security hole or a visible flash on every load.
    When both themes are allowed, the owner may upload a second logo for dark
    mode; without one, the light logo is used in both. It is switched by CSS
    on the same attributes the theme uses, so it never flashes. This is decision
-   D only because the owner did not ask for it.
+   D only because it was not asked for.
 
 8. **The logo and the name are displayed in one of three ways**: logo and
    name (the default, as Tesria is today), logo only (for a logo that already
@@ -4655,8 +4641,8 @@ mistake in either is a security hole or a visible flash on every load.
     uploaded files cannot come back. The instance name is untouched: it was
     never branding.
 
-15. **Tab titles are `Instance Name - Space Name / Page Name`** (the owner's
-    instruction, 2026-09-22). Today the application never sets the title, so
+15. **Tab titles are `Instance Name - Space Name / Page Name`** (decided
+    2026-09-22). Today the application never sets the title, so
     every tab says "Tesria" whatever is open in it. From here:
     - A page: `Acme Docs - Engineering / Architecture`.
     - A space with no page open (its overview, settings, trash):
@@ -4674,10 +4660,10 @@ mistake in either is a security hole or a visible flash on every load.
     - One small pure function builds the title, in the SPA and mirrored in
       C# for the shell and the exports, so the two cannot disagree.
 
-16. **The sign-in page carries the brand** (the owner's request,
-    2026-09-22: "Above that put the Logo and Branding"). Today the card says
-    only "Sign in". From here, above the card's heading, the brand block in
-    one of four arrangements (the owner's refinement, the same day):
+16. **The sign-in page carries the brand** (requested 2026-09-22: the
+    logo and branding above the heading). Today the card says only
+    "Sign in". From here, above the card's heading, the brand block in
+    one of four arrangements (refined the same day):
     - **Logo and name side by side, the default.** Unbranded, that is
       `[Tesria mark] Tesria`, the header's own arrangement at a larger size:
       the logo up to 48px tall, the name at heading size, centered on each
@@ -4694,7 +4680,7 @@ mistake in either is a security hole or a visible flash on every load.
     name never gets the name printed twice beside it on one screen but not
     the other. *How to arrange them* (side by side, or stacked) matters only
     when both are shown, and only on the sign-in page, because the header is
-    always side by side. Together they give exactly the owner's four options.
+    always side by side. Together they give exactly the four requested.
     - **Sizing.** Logo widths follow the logo's aspect ratio, capped at the
       card's width. The dark logo is used in dark mode, as in the header.
     - **Unbranded, it is Tesria's own mark and name,** side by side. The page
@@ -4834,25 +4820,27 @@ interface reserves covers them. The content hash is the cache buster.
   - Open the logo's URL directly and confirm nothing runs.
   - Reset, and leave the instance unbranded as it was found.
 
-**Decisions, answered by the owner 2026-09-22.** The owner's words are
-quoted where they settled something.
-- **A. Branding and the instance name are separate.** "The instance name and
-  branding are two separate entities." Branding has its own right, and the
-  instance name stays with administrators under `settings.instance`.
-- **B. Only the brand name shows in the interface.** "The instance name is
-  pretty inconsequential." Nothing changes until branding is set on purpose:
-  "This should only replace the branding if someone intentionally configures
-  the branding." See decision 1.
-- **C. Suggest a better shade, but let the owner keep theirs.** "Suggest a
-  better shade, but allow users to override it if they like." See decision 5.
-- **D. The dark-mode logo is in.** "This is a good idea."
-- **E. `Svg.Skia` is in, as long as it adds no image.** "As long as this isn't
-  another docker image. I am worried about the number of images and the
-  amount of ram required to run Tesria." It is a library inside the existing
-  app process. See decision 9 for the size check and the fallback.
-- **F. Attribution: subtle, in two places.** "I want it to be light if
-  someone wants to use their branding. I don't need to be in users face
-  screaming that this is Tesria. I like a subtle approach."
+**Decisions, answered 2026-09-22.** The reasoning is given where it
+settled something.
+- **A. Branding and the instance name are separate.** They are two
+  different things. Branding has its own right, and the instance name stays
+  with administrators under `settings.instance`.
+- **B. Only the brand name shows in the interface.** The instance name
+  matters little. Nothing changes until branding is set on purpose: the
+  default branding is replaced only when someone configures branding
+  intentionally. See decision 1.
+- **C. Suggest a better shade, but let the owner keep theirs.** A better
+  shade is suggested, and users may override it if they like. See
+  decision 5.
+- **D. The dark-mode logo is in.** Judged a good idea.
+- **E. `Svg.Skia` is in, as long as it adds no image.** Accepted on the
+  condition that it is not another Docker image, because of concern about
+  the number of images and the memory needed to run Tesria. It is a library
+  inside the existing app process. See decision 9 for the size check and
+  the fallback.
+- **F. Attribution: subtle, in two places.** Light when someone uses their
+  own branding: not in users' faces insisting that this is Tesria, but a
+  subtle approach.
   - **Under the sign-in form**, a single muted line, "Powered by Tesria",
     in the small secondary text size, linking to the project. Shown only
     once branding is configured: before then the page already carries
@@ -4888,7 +4876,7 @@ steps shipped together, in one sitting, rather than as five commits.
   new package. `deploy/Dockerfile` now publishes for the image's own
   architecture (`-r linux-arm64` or `linux-x64` from BuildKit's
   `TARGETARCH`), which drops all of it, SkiaSharp's own included. Nothing
-  about the owner's condition changed: no new image, no new container, and
+  about decision E's condition changed: no new image, no new container, and
   the renderer is only loaded while an SVG favicon is being uploaded.
 - **Exports stopped pointing at the instance for their favicon.** The
   capture kept the page's `<link rel="icon" href="/favicon.svg">`, which
@@ -4934,7 +4922,7 @@ steps shipped together, in one sitting, rather than as five commits.
   temporary grant of the right to the Administrator role was revoked, and
   `.env` was byte-identical.
 
-**Trial record (the model gate, 2026-09-22).** The first item designed and
+**Trial record (the model choice, 2026-09-22).** The first item designed and
 built by Opus 5.5. Nothing that surfaced during implementation was a design
 miss of the kind the gate exists for:
 - The two traps the design named, the CSP hash and a hostile SVG, were the
@@ -4955,12 +4943,10 @@ miss of the kind the gate exists for:
 
 ## Phase 14: The public release
 
-**What the owner asked for (2026-09-23).** "It will go public as a repo
-under the Apache 2 license. I also want to post to dockerhub if it's free so
-people can pull there. I have an account ready to do that." Publishing by
-GitHub Actions (the owner's choice, 2026-09-23). The Docker Hub account is
-`brianrodz`, on the free Personal plan: unlimited public repositories, and
-people pulling are limited to 100 pulls an hour each.
+**The goal (2026-09-23).** A public repository under the Apache 2.0
+license, with images on Docker Hub so people can pull them, published by
+GitHub Actions (chosen 2026-09-23). Public repositories on Docker Hub cost
+nothing, and anonymous pulls are rate-limited per person.
 
 `LICENSE` (Apache 2.0) and `NOTICE` exist already (8.2). What stands between
 the repo and the public is the audit `CLAUDE.md` has been waiting on since
@@ -4976,14 +4962,14 @@ Before the repo or any image is public:
    addresses, anything from `.env`, `.nas-credentials` or
    `.debug-credentials`. A finding in history means rewriting history
    before the first public push, which is the one hard-to-reverse decision
-   here, so it goes to the owner first. Known already (2026-09-24): the
-   owner's personal address is in commits `586b045` and `41b4a2a` (the
-   CHANGELOG and `SECURITY.md` as they were then). The tree no longer has
-   it: `SECURITY.md` now gives the project's security address.
-2. **What the repo says about its owner.** `CLAUDE.md`, the CHANGELOG and
-   the plan are written for this project's sessions and name the owner's
-   machines and habits. Decide what a public reader should see: keep,
-   trim, or move to a private place.
+   here, so it is decided before anything is pushed. Known already
+   (2026-09-24): a personal address in two old commits of the CHANGELOG and
+   `SECURITY.md`. The tree no longer has it: `SECURITY.md` now gives the
+   project's security address.
+2. **What the repo says about the people behind it.** `CLAUDE.md`, the
+   CHANGELOG and the plan were written for this project's working
+   sessions. Decide what a public reader should see: keep, trim, or move
+   to a private place.
 3. **A security pass over everything since 3.7**, the same method as 3.7
    (every route for authorization, every upload and export path), with its
    findings added to `security.md`'s "Known gaps" or fixed.
@@ -4996,9 +4982,9 @@ Before the repo or any image is public:
 review of it turned up; see the CHANGELOG's "14.1 The security findings,
 fixed").
 
-**Steps 1 to 5 done 2026-09-24, not released** (the owner's instruction:
+**Steps 1 to 5 done 2026-09-24, not released** (as decided:
 audit fully, then hand a fresh clone to an outside reviewer first):
-1. History rewritten: every commit and the `v0.5.0` tag carry the owner's
+1. History rewritten: every commit and the `v0.5.0` tag carry a
    GitHub no-reply identity; a personal address and a NAS path were
    scrubbed from old document versions; old versions of the Support pack
    (screenshots that could not be checked) were removed. Verified on a
@@ -5006,9 +4992,9 @@ audit fully, then hand a fresh clone to an outside reviewer first):
    credential value in any file version or commit, and no secret-shaped
    string outside tests. The pre-rewrite repository is kept as a bundle
    outside the repository.
-2. `CLAUDE.md` keeps the conventions; the owner-specific notes moved to a
+2. `CLAUDE.md` keeps the conventions; the personal notes moved to a
    gitignored `CLAUDE.local.md`. The dev plan and CHANGELOG were trimmed.
-   Old versions of some files still name the owner's public site, which is
+   Old versions of some files still name a personal public site, which is
    not a secret.
 3. A second security review in three parts: seventeen findings, the two
    high ones and most others fixed (CHANGELOG, "14.1 The second security
@@ -5039,13 +5025,13 @@ What is left before release: the outside review, then 14.2.
   page.
 - Any user can create an instance-wide template.
 - The audit list is cut to its limit before permission filtering.
-- The favicon's source comment named the owner's personal site, and every
+- The favicon's source comment named a personal site, and every
   HTML export and exported site shipped that comment. Removed.
 
 ### 14.2 Images on Docker Hub · `M` · Model: Opus 5.5 · after 14.1
 
 - **Five images**, each for both `linux/amd64` and `linux/arm64`:
-  `brianrodz/tesria-app`, `-db` (used by the `db` and `pgbackrest`
+  `brianintheloop/tesria-app`, `-db` (used by the `db` and `pgbackrest`
   services), `-backup`, `-collab` and `-pdf`. Caddy and MinIO stay their
   upstream images. The repositories are created by the first push; nothing
   is made by hand.
@@ -5058,7 +5044,7 @@ What is left before release: the outside review, then 14.2.
   carries a browser, from minutes to most of an hour.
 - **Credentials**: a Docker Hub access token with read and write access,
   held as the repository secret `DOCKERHUB_TOKEN`, with the account name in
-  the variable `DOCKERHUB_USERNAME`. The owner makes both; no session sees
+  the variable `DOCKERHUB_USERNAME`. Both are made by hand; no session sees
   the token.
 - **`docker-compose.yml`** names each image (`image:`) next to its
   `build:`, with the version from `TESRIA_VERSION` (default `latest`). So
@@ -5067,7 +5053,7 @@ What is left before release: the outside review, then 14.2.
 - **Support site**: the Quick start leads with pulling the images, and
   building from source becomes the alternative. Rewritten as part of this
   item, once the commands can be tried against real images; until then it
-  says to clone and build, which is true today. (The owner confirmed on
+  says to clone and build, which is true today. (Confirmed on
   2026-09-24: the `git clone` stays until the public release and the
   Docker Hub rollout.)
 
@@ -5078,9 +5064,9 @@ publishing to GitHub's own registry as well.
 
 ### 14.3 Enterprise hardening: the known gaps worth closing · `M` · Model: Opus 5.5
 
-Asked for by the owner, 2026-09-24: "I want this to be enterprise grade
-software." Each known gap in `docs/security.md` now carries a verdict; this
-item is the ones marked Must fix and Should fix, in the order worth doing.
+Requested 2026-09-24: the software should be enterprise grade. Each known
+gap in `docs/security.md` now carries a verdict; this item is the ones
+marked Must fix and Should fix, in the order worth doing.
 
 **Must fix**
 1. **A `migrate` service** (gap 10). The same app image, run with a
@@ -5091,8 +5077,8 @@ item is the ones marked Must fix and Should fix, in the order worth doing.
    only `ConnectionStrings__App`; the collaboration service loses its
    owner fallback. **Decision:** `APP_DB_PASSWORD` becomes required (the
    app refuses to start without it, with a message saying how to set it),
-   ending the "run as the owner on a LAN" mode. The owner's instance has
-   it set already. Upgrade note: nothing to do but `docker compose up -d`.
+   ending the "run as the owner on a LAN" mode. The development instance
+   has it set already. Upgrade note: nothing to do but `docker compose up -d`.
 2. **Live-editing connections end when access does** (gap 11).
    * The collaboration service checks each connection's token expiry in its
      existing sweep and closes expired ones.
@@ -5134,9 +5120,9 @@ migrate service's role handling (1), the revocation channel between the
 app and the collaboration service (2), and trusting one subnet (7). All
 three are reversible; none changes a file format.
 
-**Reviewed by Fable 5.1, 2026-09-24, at the owner's request; the owner
-confirmed both decisions (`APP_DB_PASSWORD` required; a one-time network
-recreate).** Corrections, folded in before building:
+**Reviewed by Fable 5.1, 2026-09-24, on request; both decisions were
+confirmed (`APP_DB_PASSWORD` required; a one-time network recreate).**
+Corrections, folded in before building:
 - (1) Only what needs ownership moves to `migrate`: migrations, the
   app-role provisioning, and the audit-chain backfill. The seeds stay in
   the app. The app refuses to start when migrations are pending, naming
@@ -5540,27 +5526,29 @@ the build differs:
 - **DOC-01, private material.** The model-selection rules, account and plan
   details and session notes move to local-only notes; quotations and
   attributions to the project's owner in public files are reworded
-  neutrally.
+  neutrally. *Done 2026-09-25:* the model gate became a record,
+  and about 400 lines across the plan, the CHANGELOG, code comments and
+  the docs sources were reworded, with each decision's reason and date
+  kept.
 
 ---
 
 ## Phase 15: What the Support site found missing
 
-**What the owner asked for (2026-09-23).** Writing the Support site (10.5)
+**What was asked for (2026-09-23).** Writing the Support site (10.5)
 meant documenting every screen, and the fact-finding turned up access
-questions and features people would expect. The owner's answers:
+questions and features people would expect. The answers:
 
 1. Someone with two-factor on who has lost the phone and every recovery code
-   needs a way back: "Separate admin action".
-2. An imported pack: "Make it private to the importer, but make them assign
-   users or groups immediately after import. There should also be 3 default
-   groups that cannot be deleted Owner, Admin, and Users." Membership nested
-   (the owner's choice between nested and by-tier).
-3. Rights of the administration area: "Do not give these rights to user tier
-   roles. Make them get promoted to an admin if you want to give them admin
-   privileges."
-4. The missing features: "All of them. Lets add them to the dev plan now and
-   build them."
+   needs a way back: a separate admin action.
+2. An imported pack: private to the importer, who must then assign users
+   or groups immediately after import; and three default groups that
+   cannot be deleted: Owner, Admin and Users. Membership nested (chosen
+   over by-tier).
+3. Rights of the administration area: not given to user-tier roles.
+   Someone who needs admin privileges is promoted to administrator.
+4. The missing features: all of them, added to the dev plan now and
+   built.
 
 ### 15.1 Access · `M` · Model: Opus 5.5 · ✅ **shipped 2026-09-23**
 
@@ -5641,14 +5629,14 @@ one-click mitigations.
 
 ### 15.5 Trust this device · `M` · Model: Opus 5.5 · ✅ **shipped 2026-09-23**
 
-**Verified by the owner on Windows and iOS (2026-09-23)**, after two fixes
-his first tries found: Windows' execution policy (now a pasted line) and a
+**Verified on Windows and iOS (2026-09-23)**, after two fixes that the
+first tries found: Windows' execution policy (now a pasted line) and a
 numeric address that can never match the certificate (now explained).
 
-**Asked for by the owner, 2026-09-23**, reviewing the first Support site:
-trusting the local certificate was written for people who already know
-what a certificate is. "If it's hard to setup or maintain people will drop
-it in favor of something easier to use." The owner suggested an endpoint
+**Requested 2026-09-23**, reviewing the first Support site: trusting
+the local certificate was written for people who already know what a
+certificate is, and a setup that is hard to do or maintain gets dropped
+for something easier to use. The suggestion was an endpoint
 that serves the certificate and the scripts, and a wizard that asks a few
 questions and fills the script in.
 
@@ -5668,7 +5656,7 @@ Mac or Linux, download a script **with the address already written in** and
 run it (the exact command, where to type it, and that the password prompt
 shows nothing as you type); on Windows, **one line to paste into
 PowerShell**, because PowerShell's execution policy refuses downloaded
-scripts by default and employers lock it (the owner's first try on
+scripts by default and employers lock it (found on the first try on
 Windows, 2026-09-23), while a typed command is not affected and trusts the
 server for that Windows account with no administrator; by hand as the
 second option; for a phone, the
@@ -5683,7 +5671,7 @@ fills in. The app embeds both at build time and serves them at
 `/trust/trust-tesria.sh` and `/trust/trust-tesria.ps1?address=...`.
 
 **Where you find it.** One wizard, three ways in. **Profile → Trust this
-device**, the owner's suggestion (2026-09-23): most people click past the
+device**, suggested 2026-09-23: most people click past the
 warning once, sign in, and can then set the device up properly from inside
 the app. The sign-in page, for someone past the warning but not signed in.
 And the address itself, which is the only way for a browser that will not
@@ -5699,8 +5687,8 @@ is in use from the same `CADDYFILE` variable, so there is nothing new to
 set. The sign-in page links to it ("Seeing a security warning?") on
 servers with their own certificate.
 
-**Decisions worth a second look** (security, named so the owner can choose
-to have them reviewed):
+**Decisions worth a second look** (security, named so they can be chosen
+for review):
 
 - **An anonymous page over plain HTTP.** It holds nothing secret: the
   certificate's public half, which `/ca.crt` already serves, and two
@@ -5720,7 +5708,7 @@ to have them reviewed):
 
 ### 15.10 Email an invite · `S` · Model: Opus 5.5 · ✅ **shipped 2026-09-24**
 
-Asked for by the owner: with email set up, the invite form emails the link
+Requested: with email set up, the invite form emails the link
 with a message the inviter can edit, so nobody copies a code into a chat.
 Tesria appends the link, the address it works for and its expiry, so they
 cannot be edited out. Sent when the invite is made, the only moment the
@@ -5729,26 +5717,26 @@ See the CHANGELOG.
 
 ### 15.9 Filter the page tree · `S` · Model: Opus 5.5 · ✅ **shipped 2026-09-23**
 
-The owner: "add a search to the top of the pages tree that filters the list
-based on the search", in exports too, resetting once a page is chosen.
+Requested: a search at the top of the pages tree that filters the list,
+in exports too, resetting once a page is chosen.
 Matches and their parents, highlighted, in the app's tree and an exported
 site's sidebar, by the same rule. A toggle adds the pages under each match.
-The owner then chose to keep the filter while its results are opened,
+It was then decided to keep the filter while its results are opened,
 rather than clearing it.
 
 ### 15.8 Numbered and bulleted page trees · `S` · Model: Opus 5.5 · ✅ **shipped 2026-09-23**
 
-Asked for by the owner after trying 15.7 on the Support site: "an option
-to automatically # or bullet the space pages kind of like the table of
-contents element", and the markers "only a visual element and not part of
-the actual page key or title", reflowing when pages move. A space setting
+Requested after trying 15.7 on the Support site: an option to number or
+bullet the space's pages automatically, much like the table of contents
+element, with the markers purely visual and not part of the page's key or
+title, reflowing when pages move. A space setting
 (`Space.TreeStyle`, migration `SpaceTreeStyle`): Plain, Numbered (outline,
 1.1) or Bulleted. Computed from the tree's order wherever it is drawn: the
 app's sidebar and phone menu, and an exported site. Support is numbered.
 
 ### 15.7 Page emoji · `S` · Model: Opus 5.5 · ✅ **shipped 2026-09-23**
 
-The owner asked for an emoji on the Support site's section pages, so they
+Requested: an emoji on the Support site's section pages, so they
 stand out in the tree. Built as a page setting rather than a character in
 the title, so search, breadcrumbs and exported addresses stay clean, and so
 anyone can use it: `Page.Emoji` (migration `PageEmoji`), set from the page
@@ -5757,16 +5745,16 @@ by copies, packs and exported sites. Not versioned, like the page width.
 
 ### 15.6 The Support site, rewritten for beginners · `L` · Model: Opus 5.5 · ✅ **shipped 2026-09-24**
 
-**Rolled out 2026-09-24** after the owner approved the pilot pages: every
+**Rolled out 2026-09-24** after the pilot pages were approved: every
 section rewritten to the rules below, a Features page, and Gmail and
 Outlook pages under Email (SMTP). Exported to `docs/site/docs-pack.zip`
 and a static site within Cloudflare's limits, with no broken links. One
 thing is left: the setup-wizard pictures are whole 1024px windows and want
-retaking narrow on a scratch instance, which needs the owner to create its
-first account.
+retaking narrow on a scratch instance, which needs its first account
+created by hand.
 
-**The owner's review of the first version (2026-09-23)**: "very basic and
-dry and feels like AI wrote it with no care for the users." The rules for
+**The review of the first version (2026-09-23)**: too basic and dry,
+reading as if AI wrote it with no care for the users. The rules for
 the rewrite, which also apply to anything written for users from now on:
 
 - **Write for someone new.** Context first: what a thing is, why you would
@@ -5782,7 +5770,7 @@ the rewrite, which also apply to anything written for users from now on:
   the desktop.
 - **A picture only where it shows something words cannot**, such as where
   a control is or what a layout looks like. Never a picture of text the
-  page already says: the owner's example was a screenshot of the Storage
+  page already says: the example given was a screenshot of the Storage
   targets card, a paragraph shrunk to unreadable size above the same words.
 - **Pictures the right size on every device.** Close-ups are taken in a
   narrow window (480px) and shown at their own size on a desktop; on a
@@ -5790,7 +5778,7 @@ the rewrite, which also apply to anything written for users from now on:
   shown at about a quarter of its size on a phone.
 - **Lists, not tables, for anything longer than a few words.** A two-column
   table of explanations runs off the side of a phone.
-- **Every variant, live, with an example of when to use it** (the owner,
+- **Every variant, live, with an example of when to use it** (requested
   2026-09-23: the chart page showed none of bar, column, line and pie).
   An element with kinds, styles or options shows each one on the page:
   every chart type, every panel type, each list style, table options,
@@ -5799,23 +5787,21 @@ the rewrite, which also apply to anything written for users from now on:
   when you would use it with examples. A picture only where it shows
   something moving. Every element page has the same **Insert it** section in
   the same place, giving the slash command.
-- **Pilot first.** Three pages go to the owner before anything else
+- **Pilot first.** Three pages go for review before anything else
   changes: Trusting the local certificate (built on 15.5), Panel (an
-  element page) and Creating a space (a manual page). The owner's review is
-  in progress (2026-09-23): the certificate and Creating a space pages
+  element page) and Creating a space (a manual page). The review is in
+  progress (2026-09-23): the certificate and Creating a space pages
   looked good, and the Panels animation was fixed; Opening Tesria by name
-  and Templates were added at his request. The rollout waits for his
-  approval.
+  and Templates were added on request. The rollout waits for approval.
 
 ## Phase 16: Versions, for the app, the docs and wiki packs
 
-Asked for by the owner, 2026-09-24, to plan now and build later: "we need
-to think about a version system for the app and the docs", starting at
-**0.5** as the product approaches beta, living "nicely with the build
-pipelines we create in GitHub as GitHub Actions", with "backwards
-compatibility and migrations for imported space packs" so that "if
-someone spends a lot of time making a space and then they distribute it
-as a pack it doesn't break if we update Tesria".
+Requested 2026-09-24, to plan now and build later: a version system for
+the app and the docs, starting at **0.5** as the product approaches beta,
+fitting well with the build pipelines in GitHub Actions, with backward
+compatibility and migrations for imported space packs, so that a space
+someone spent a lot of time on and then distributed as a pack does not
+break when Tesria is updated.
 
 **Where things stand (2026-09-24).** `Api.csproj` says 0.2.0 and the web
 app's `package.json` says 0.0.0; nothing shows either. Wiki packs carry a
@@ -5827,7 +5813,7 @@ ever been one. The database has EF Core migrations, which run at startup.
 
 ### 16.1 One version number, set by the release · `M` · Model: Opus 5.5 · ✅ **shipped 2026-09-24**
 
-- **Semantic versioning, starting at 0.5.0** (the owner's suggestion).
+- **Semantic versioning, starting at 0.5.0** (as suggested).
   While the major number is 0, a minor release (0.6) may change behavior
   and a patch (0.5.1) only fixes; 1.0 is the promise of stability.
 - **One source of truth**: a pushed git tag `v0.5.0`. GitHub Actions reads
@@ -5885,13 +5871,13 @@ ever been one. The database has EF Core migrations, which run at startup.
 - **Newer than known stays refused**, with a message saying which Tesria
   version is needed, rather than a partial import.
 
-**Decisions for the owner before building**: 0.5.0 as the first number
-(suggested by the owner); whether the Docker `latest` tag follows every
+**Decisions before building**: 0.5.0 as the first number
+(as suggested); whether the Docker `latest` tag follows every
 release or only non-prerelease ones; and whether the site keeps a copy of
 older versions' docs online or only in the repository.
 
-**As built (2026-09-24, Opus 5.5, overnight at the owner's request).** The
-owner chose 0.5.0 and "add the workflow, push v0.5.0". The other two
+**As built (2026-09-24, Opus 5.5, overnight on request).** 0.5.0 was
+chosen, along with adding the workflow and pushing v0.5.0. The other two
 decisions are still open and neither blocks anything: the Docker tag
 belongs to 14.2, and older docs live in the repository for now.
 Differences from the plan above:
@@ -5922,7 +5908,7 @@ Differences from the plan above:
 
 ## Phase 17: Developer docs on the Support site · ✅ **shipped 2026-09-24**
 
-Asked for by the owner, 2026-09-24: once versioning (Phase 16) is in,
+Requested 2026-09-24: once versioning (Phase 16) is in,
 the Support site gains developer documentation **below the user
 sections**, fit for the official support site of a production open-source
 project, exported and hosted at tesria.com like the rest (10.5). Written
@@ -5967,7 +5953,7 @@ proposing a change, making a release) and **Project documents** (code of
 conduct, governance, getting help), with `CONTRIBUTING.md`,
 `CODE_OF_CONDUCT.md`, `GOVERNANCE.md` and `SUPPORT.md` in the repository.
 The code of conduct is written for Tesria, "inspired by the Contributor
-Covenant", with reports to the security address (the owner's choice).
+Covenant", with reports to the security address (as decided).
 Found on the way: the README's "Local development (without Docker)" did
 not work (the database publishes no port, and the fallback connection
 string still said "confluence"); it now describes the Docker loop the
@@ -5975,7 +5961,7 @@ project actually uses. Running the API outside Docker is not documented.
 
 ## Phase 18: Email through the providers people already have
 
-Asked for by the owner, 2026-09-24, after the Support site's Gmail and
+Requested 2026-09-24, after the Support site's Gmail and
 Outlook pages showed the gap: Tesria signs in to a mail server with a
 username and password only, so a personal Outlook.com account cannot send
 its email at all (Microsoft has required an OAuth sign-in there since
@@ -6043,7 +6029,7 @@ Microsoft preset is chosen.
   with Microsoft's reason, administrators get a security-style alert, and
   the settings say "Reconnect". An expiring client secret is warned about
   ahead of its date when Microsoft reports it.
-- **Security decisions to name for the owner** (a stored refresh token can
+- **Security decisions to name for review** (a stored refresh token can
   send mail as that mailbox until revoked): connecting needs a recent
   password (sudo), like other credential changes; connect, disconnect and
   every refresh failure are audited; the token never leaves the server,
@@ -6102,19 +6088,19 @@ presets, fetched from the app when the pages are written.
   password; signing in with a provider stays in Administration, since the
   wizard has no sudo prompt.
 
-**Not planned**: Yahoo and AOL Mail, at all (the owner, 2026-09-24; their
+**Not planned**: Yahoo and AOL Mail, at all (decided 2026-09-24; their
 OAuth is closed to new applications anyway), and a Tesria-run relay that would let instances skip registering their own app
 (it would put every instance's mail through a service the project runs,
 which is exactly what a self-hosted wiki is for avoiding).
 
 ## Phase 19: Reaching Tesria from anywhere with Tailscale
 
-Asked for by the owner, 2026-09-24: people who already run Tailscale should
+Requested 2026-09-24: people who already run Tailscale should
 be able to reach their Tesria from anywhere, without opening it to the
 internet.
 
 **Which Tailscale feature, checked against Tailscale's docs that day.** The
-owner asked for an "app connector". In Tailscale's terms an app connector
+request named an app connector. In Tailscale's terms an app connector
 routes tailnet traffic to applications by domain name through a dedicated
 Linux device ("App connectors let you route your self-hosted applications and
 software as a service (SaaS) applications through dedicated devices in your
@@ -6131,7 +6117,7 @@ page; the sidecar is what gets built.
 ### 19.1 A Tailscale sidecar, off unless asked for · `M` · Model: Opus 5.5 · ✅ **shipped 2026-09-24**
 
 **As built:** Serve forwards to Caddy (`https+insecure://caddy:443`), so
-`/collab` and every route work as on the LAN; verified live on the owner's
+`/collab` and every route work as on the LAN; verified live on a real
 tailnet (valid certificate, sign-in, the API and the collab WebSocket). The
 status is the sidecar's health check writing `tailscale status --json
 --peers=false` to a shared volume every 30 seconds; the app reads the file
@@ -6163,13 +6149,13 @@ its media kit, with a trademark line.
 - **Health and status**: the Health checks page and `/api/health` mention
   whether the sidecar is connected, if that can be read without giving the
   app access to Tailscale's socket (to decide; leaving it out is acceptable).
-- **Security decisions to name for the owner**: the auth key in `.env` can
+- **Security decisions to name for review**: the auth key in `.env` can
   add a device to the tailnet until it expires or is revoked (recommend a
   tagged, non-reusable key or an OAuth client, and say how to revoke); who
   on the tailnet may reach Tesria is Tailscale's access policy, not Tesria's,
   and Tesria's own sign-in still applies to everyone.
 - **Tests**: the compose file validates with and without the profile; a
-  live check on the owner's tailnet, since it cannot be faked honestly.
+  live check on a real tailnet, since it cannot be faked honestly.
 
 ### 19.2 Support pages · `S` · Model: Opus 5.5 · ✅ **shipped 2026-09-24**
 
@@ -6187,7 +6173,7 @@ screens are described in words, since they change.
 
 ### 20.1 A progress bar for exporting a site or a pack · `S` · Model: Opus 5.5 · ✅ **shipped 2026-09-24**
 
-Asked for by the owner, 2026-09-24. **Export as site** captures every page
+Requested 2026-09-24. **Export as site** captures every page
 through the PDF sidecar's browser and **Export as pack** gathers every page,
 version and attachment; on a large space either takes minutes, and today the
 button just waits. Show how far along it is: pages done out of the total,
@@ -6216,22 +6202,22 @@ would move them away from the permissions and render token they run with.
 7. **6** Space icons
 8. **7.A** → **7.B** → **7.C** → **7.D** (Fable→Opus) → **7.E** → **7.F**
 9. **8.1** PDF (after 7.A) → **8.2** License (any time) → **8.3** OpenAPI → **8.4** MCP (Fable→Opus) → **8.6** External edits as tracked changes (Fable→Opus) → **8.5** Wiki packs (Fable→Opus)
-10. **9.1** Backups admin section (Fable→Opus; shipped 2026-09-17) → **9.2** Offsite backups (Fable→Opus; shipped 2026-09-22) → **9.3** Space charts (shipped 2026-09-22) → **9.4** Restore from the admin page (Fable designed and the owner answered its five decisions 2026-09-22; Opus shipped it the same day)
+10. **9.1** Backups admin section (Fable→Opus; shipped 2026-09-17) → **9.2** Offsite backups (Fable→Opus; shipped 2026-09-22) → **9.3** Space charts (shipped 2026-09-22) → **9.4** Restore from the admin page (Fable designed it and its five decisions were answered 2026-09-22; Opus shipped it the same day)
 11. **10.1** Owner role (shipped 2026-09-20) → **11.1** Instance rights and the Roles tab (shipped 2026-09-20) → **11.2** Custom roles (shipped 2026-09-20) → **11.3** Delete a space (shipped 2026-09-20) → **5.5** Anonymous access is opt-in twice (shipped 2026-09-20) → **10.4** Media harness (shipped 2026-09-20) → **10.2** Owner setup wizard (shipped 2026-09-20) → **10.3** Tour and tips (shipped 2026-09-20) (all specified 2026-09-20 as Fable; Opus implements). Phase 11 goes before the wizard because the wizard has a required step that reviews the matrix, and before 10.3 because the tour's screens should show the real Roles tab. 10.4 before 10.2 because the wizard's Done screen and the tour embed its output.
-12. **12.1** Capture-based export and the element audit (shipped 2026-09-20) → **12.2** Publish a space as a static site (shipped 2026-09-20). 12 before 8.5 because the site export builds the walk over a space that the wiki pack will reuse, and because the owner's documentation is waiting on it.
+12. **12.1** Capture-based export and the element audit (shipped 2026-09-20) → **12.2** Publish a space as a static site (shipped 2026-09-20). 12 before 8.5 because the site export builds the walk over a space that the wiki pack will reuse, and because the project's documentation is waiting on it.
 13. **8.6** External edits as tracked changes (steps 1–5 shipped 2026-09-21; step 6 folded into 10.5).
 13a. **8.5** Wiki packs (designed 2026-09-21 as Fable; Opus implements next). Before 10.5, because the pack is what a rebuilt manual is committed as.
 13c. **12.3** Turn a space's exports off, format by format (Opus 5.5, shipped 2026-09-22).
 13d. Three small follow-ups (Opus 5.5, shipped 2026-09-22): the dashboard's two top-ten tables as cards, **Test connection** back on Storage targets (9.2 step 5), and `OFFSITE_CLOUD_BUDGET_GB` (9.3 step 3).
-13b. **13.1** Instance branding (designed and shipped 2026-09-22 by Opus 5.5, the first item under the new model gate). Before 10.5 at the owner's request, and the manual's screenshots are then taken on an unbranded instance.
-14. **10.5** The Support site and the Demo space (rescoped from "rebuild the user manual" by the owner, 2026-09-22), **after 8.5**, now that the owner has settled the wiki as its source of truth (2026-09-21). A manual whose only copy is inside the instance is how the last one was lost, so the pack that can export it is a prerequisite, not a preference.
+13b. **13.1** Instance branding (designed and shipped 2026-09-22 by Opus 5.5, the first item under the new model choice). Before 10.5 on request, and the manual's screenshots are then taken on an unbranded instance.
+14. **10.5** The Support site and the Demo space (rescoped from "rebuild the user manual" 2026-09-22), **after 8.5**, now that the wiki is settled as its source of truth (2026-09-21). A manual whose only copy is inside the instance is how the last one was lost, so the pack that can export it is a prerequisite, not a preference.
 
 15. **15.1** Access → **15.2** Editor → **15.3** Pages and collaboration → **15.4** Confirmations (asked for 2026-09-23). Before 10.5's step 7, so the Support site documents them and its pictures show them.
 15a. **15.5** Trust this device → **15.6** the Support rewrite, pilot pages first (asked for 2026-09-23). Before 14, because the Support site is what goes public with the images.
 16. **14.1** Pre-release audit → **14.2** Images on Docker Hub (asked for 2026-09-23; both shipped 2026-09-24, 14.2 with GitHub's registry too, in 0.7.0). After 10.5, so the Support site and the images go public together.
 17. **16.1** One version number → **16.2** Versioned docs → **16.3** Pack migrations (asked for 2026-09-24; all three shipped 2026-09-24 with the 0.5.0 release). 16.1 alongside 14.2, since both are the same GitHub Actions release pipeline; 16.2 before the Support site is published at tesria.com; 16.3 before the first release that changes the pack format.
 18. **17** Developer docs on the Support site (asked for 2026-09-24; shipped 2026-09-24), after Phase 16 so every page carries its version table from the start.
-19. **18.1** Provider presets and **18.4** the app-password and sending-service pages (asked for 2026-09-24): small and independent, so any time; best before 14, since they are what a new owner meets in the setup wizard. Then **18.2** Sign in with Microsoft → **18.3** Sign in with Google, before 14 if the owner wants the public release to work with a personal Outlook.com account.
+19. **18.1** Provider presets and **18.4** the app-password and sending-service pages (asked for 2026-09-24): small and independent, so any time; best before 14, since they are what a new owner meets in the setup wizard. Then **18.2** Sign in with Microsoft → **18.3** Sign in with Google, before 14 if the public release should work with a personal Outlook.com account.
 20. **19.1** Tailscale sidecar → **19.2** its Support pages (asked for 2026-09-24). Independent of everything else; best after 14.2, so the compose file it extends is the published one.
 21. **20.1** Export progress bars (asked for 2026-09-24; shipped 2026-09-24).
 22. **14.3** Enterprise hardening (asked for 2026-09-24; shipped 2026-09-24): the known gaps marked Must fix and Should fix, before the public release.

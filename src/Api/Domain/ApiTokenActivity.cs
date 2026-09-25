@@ -2,8 +2,8 @@ namespace Tesria.Api.Domain;
 
 /// <summary>
 /// One token's use on one day (UTC), for the administrators' API tokens tab
-/// (the owner, 2026-09-24: "I have no idea who has created tokens and how
-/// often they are in use", and "keep an eye on what agents are doing").
+/// (2026-09-24): who created each token, how often it is used, and what the
+/// agents behind them are doing, none of which was visible before.
 /// REST requests are split into reads and changes by method; MCP tool calls
 /// are counted apart, by whether the tool writes. Kept 90 days, including
 /// after the token is revoked.

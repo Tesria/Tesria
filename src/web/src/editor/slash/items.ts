@@ -343,7 +343,7 @@ export const SLASH_ITEMS: SlashItem[] = [
         .run(),
   },
   {
-    // "Math", the owner's American English (2026-09-23). "maths" stays a
+    // "Math", in American English (2026-09-23). "maths" stays a
     // keyword so a British reader typing it still finds the element.
     title: 'Math',
     group: 'block',

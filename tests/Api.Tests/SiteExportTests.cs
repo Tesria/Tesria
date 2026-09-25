@@ -155,7 +155,7 @@ public class SiteExportTests
     [Fact]
     public void No_link_in_a_site_ends_at_a_directory()
     {
-        // Reported by the owner, 2026-09-20: unzipped and opened from the
+        // Reported 2026-09-20: unzipped and opened from the
         // filesystem, clicking a sidebar link showed Chrome's folder listing
         // instead of the page. A server serves a directory's index file;
         // file:// has nothing to do that, so every link names the file.
@@ -237,7 +237,7 @@ public class SiteExportTests
     [Fact]
     public void A_generated_tile_is_drawn_in_the_theme_accent()
     {
-        // Owner's request, 2026-09-20, and export-only: the app's twelve
+        // Requested 2026-09-20, and export-only: the app's twelve
         // per-space colors exist to tell spaces apart in a list, and an
         // export is one space. Tokens rather than the hex they resolve to, so
         // the tile follows the reader's accent and light/dark with the rest
@@ -287,7 +287,7 @@ public class SiteExportTests
     public void The_top_bar_carries_a_full_width_toggle()
     {
         // The reading view has one in its action bar; an export has no action
-        // bar, so it moves to the top bar (owner's request, 2026-09-20).
+        // bar, so it moves to the top bar (requested 2026-09-20).
         var bar = SiteChrome.Topbar(new SiteChrome.Brand("Tesria"), homeHref: null);
 
         Assert.Contains("data-export-width-toggle", bar);

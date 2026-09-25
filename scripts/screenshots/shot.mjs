@@ -340,7 +340,7 @@ async function record(s) {
     // 1x: a clip is watched at its own size, and 2x quadruples the bytes
     // against a budget measured in hundreds of kilobytes. 2x does not work
     // anyway: the recorder does not scale the frames, so the page filled
-    // only the top-left quarter of the video (the owner, 2026-09-23).
+    // only the top-left quarter of the video (2026-09-23).
     deviceScaleFactor: 1,
     storageState: await ctx.storageState(),
     recordVideo: { dir, size },

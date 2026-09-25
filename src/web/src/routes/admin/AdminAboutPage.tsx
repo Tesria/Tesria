@@ -4,7 +4,7 @@ import { useAuth } from '../../auth/AuthContext'
 import { TESRIA_SITE, TESRIA_SOURCE, TESRIA_SUPPORT } from '../../links'
 
 /**
- * Administration → About (the owner, 2026-09-24): which Tesria this is, a way
+ * Administration → About (2026-09-24): which Tesria this is, a way
  * to support it, everything it is built from with each license, and a check
  * of all of it against OSV.dev for known vulnerabilities. The check is only
  * ever made when someone presses the button, because it sends the package
@@ -41,7 +41,7 @@ export function AdminAboutPage() {
     }
   }
 
-  // Two lists (the owner, 2026-09-24): the container images on their own,
+  // Two lists (2026-09-24): the container images on their own,
   // since those are what someone checks with Docker's tools, and the
   // packages, which the button checks.
   const images = useMemo(() => (about?.dependencies ?? []).filter((d) => d.ecosystem === 'Container'), [about])

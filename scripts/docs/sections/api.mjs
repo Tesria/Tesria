@@ -1,4 +1,4 @@
-// REST API and MCP (dev-plan 10.5), rewritten to the owner's rules of
+// REST API and MCP (dev-plan 10.5), rewritten to the docs rules of
 // 2026-09-23 (WRITING.md, the pilot pages). A fuller developer section is
 // planned (dev-plan Phase 17); these pages are the beginner's way in.
 //

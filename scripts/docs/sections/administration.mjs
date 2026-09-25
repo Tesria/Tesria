@@ -1,5 +1,5 @@
 // Administration: every tab under /admin (dev-plan 10.5), rewritten to the
-// owner's rules of 2026-09-23 (WRITING.md, the pilot pages): for someone
+// rules of 2026-09-23 (WRITING.md, the pilot pages): for someone
 // who has just become the administrator of a team wiki, what each screen is
 // for, when they would use it and how, with narrow pictures of the controls.
 //

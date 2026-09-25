@@ -249,8 +249,8 @@ public static class InstancePermissions
     public static bool IsAssignable(string key) => Known.Contains(key);
 
     /// <summary>
-    /// Whether a role of this tier may hold the right (dev-plan 15.1, the
-    /// owner's rule): rights of the administration area belong to
+    /// Whether a role of this tier may hold the right (dev-plan 15.1):
+    /// rights of the administration area belong to
     /// administrator roles, so giving someone admin powers means promoting
     /// them. A user-tier role holding one used to see the Admin link and be
     /// turned away by the admin area.

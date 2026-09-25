@@ -1,5 +1,5 @@
 // User manual → The editor → Elements, second half (dev-plan 15.6): the
-// element pages rewritten to the owner's rules (WRITING.md), on the model of
+// element pages rewritten to the docs rules (WRITING.md), on the model of
 // the approved Panels page (pilot.mjs).
 //
 //   Math, Chart, Image, Gallery, File or video, Animation, Embed, Smart link,

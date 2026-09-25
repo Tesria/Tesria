@@ -150,7 +150,7 @@ public class InviteTests
     [InlineData(false)]
     public async Task An_invite_is_spent_and_names_its_account_whether_or_not_registration_is_open(bool open)
     {
-        // Found by the owner, 2026-09-22: with registration open the invite
+        // Found 2026-09-22: with registration open the invite
         // was never looked at, so it stayed "Unused" and could be used again.
         using var factory = new TestAppFactory();
         var admin = open ? factory.CreateClient() : await ClosedInstanceAsync(factory);

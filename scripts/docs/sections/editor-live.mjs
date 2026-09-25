@@ -1,5 +1,5 @@
 // User manual → The editor → Live content: one page per live content block,
-// written to the owner's rules (scripts/docs/WRITING.md, element pages).
+// written to the docs rules (scripts/docs/WRITING.md, element pages).
 // Each page shows the real block, working on the page itself, once for each
 // setting that gives something worth seeing in the Docs space.
 //
@@ -16,7 +16,7 @@
 // (live content), Change history, Contributors, Include page, Excerpt include,
 // Page properties report, Labels list, Task report, Page tree.
 //
-// New page, for the owner to confirm: "How live content works", under Live
+// New page, to be confirmed in review: "How live content works", under Live
 // content. It holds the notes every block shares, and it is the source the
 // Include page and Excerpt include examples show (its first paragraph is an
 // excerpt). cleanup() puts it first in the section.

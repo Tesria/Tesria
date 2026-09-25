@@ -4,7 +4,7 @@ import { useDismissable } from '../hooks/useDismissable'
 
 /**
  * Markers for pages that are read in order, or listed rather than
- * illustrated (the owner, 2026-09-23): numbered steps in the tree, or a
+ * illustrated (2026-09-23): numbered steps in the tree, or a
  * plain bullet where a picture would be noise. All are single characters
  * the server already accepts as a page's emoji.
  */

@@ -6,7 +6,7 @@ namespace Tesria.Api.Infrastructure.Security;
 
 /// <summary>
 /// What the refused requests from one address were, so a "spike of denied
-/// requests" alert says what it saw (the owner, 2026-09-24: an alert that
+/// requests" alert says what it saw (2026-09-24: an alert that
 /// only said "100 denied" could not be explained from the app). Kept in
 /// memory, bounded, and only for the alert's window, like the counters.
 /// </summary>

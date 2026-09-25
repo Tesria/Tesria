@@ -23,7 +23,7 @@ export function AdminInvitesPage() {
   // One link, or two when Tesria is also on a tailnet (the second for
   // people who reach it through Tailscale rather than this address).
   const [issued, setIssued] = useState<{ label: string | null; url: string }[] | null>(null)
-  // Emailing the invite (the owner's request, 2026-09-24): offered once an
+  // Emailing the invite (requested 2026-09-24): offered once an
   // address is typed and the server sends email. The token is only known
   // when the invite is made, so the email goes out then or not at all.
   const [mail, setMail] = useState<{ enabled: boolean; subject: string; message: string } | null>(null)

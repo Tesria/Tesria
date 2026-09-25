@@ -4,10 +4,10 @@ using Microsoft.EntityFrameworkCore;
 namespace Tesria.Api.Infrastructure.Permissions;
 
 /// <summary>
-/// The three groups every instance has (dev-plan 15.1, the owner's request):
+/// The three groups every instance has (dev-plan 15.1):
 /// Owner, Admins and Users. They cannot be renamed, deleted, or have members
 /// added or removed, because their membership is not stored at all: it is the
-/// account's tier at the moment of the check, nested the way the owner chose.
+/// account's tier at the moment of the check, nested as decided in 15.1.
 ///
 ///   Owner  the owner
 ///   Admins administrators and the owner

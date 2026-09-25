@@ -36,7 +36,7 @@ function plainDetails(json: string | null): string[] {
 type Counted = { Path?: string; Agent?: string; Count: number }
 
 /**
- * What a spike of refused requests was (the owner, 2026-09-24: "100 denied"
+ * What a spike of refused requests was (2026-09-24: "100 denied"
  * alone could not be explained): the paths refused most, whether the
  * requests were signed in, and which browsers sent them.
  */

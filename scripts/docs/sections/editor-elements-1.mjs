@@ -626,7 +626,7 @@ export async function build({
   ))
 
   // ================================================================ Panels
-  // Moved from sections/pilot.mjs as the owner approved it.
+  // Moved from sections/pilot.mjs once it was approved.
   const panels = ids['Panels']
   await page('Panels', elements, doc(
     p('A panel is a colored box around one or more paragraphs. It tells readers “stop and read this” before they have read a word of it, and its color tells them what kind of thing it is: background, a tip, a warning. Use one for the thing on a page that nobody should miss.'),

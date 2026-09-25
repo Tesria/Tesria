@@ -243,7 +243,7 @@ export function ProfilePage() {
 
             connection already works, so the link stays on it: plain HTTP was
 
-            unreachable from the owner's Windows machine (2026-09-23). */}
+            unreachable from a Windows machine in testing (2026-09-23). */}
         {instance?.ownCertificate && (
           <section className="profile__section" id="trust-this-device">
             <h2>Trust this device</h2>

@@ -306,7 +306,7 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .auth-brand--stacked .brand__logo, .auth-brand--logo .brand__logo { height: 72px; }
 .auth-brand__name { font-size: 1.6rem; font-weight: 700; line-height: 1.2; color: var(--text); overflow-wrap: anywhere; }
 
-/* Subtle on purpose (the owner's words: "I like a subtle approach"). */
+/* Subtle on purpose: a quiet touch was preferred. */
 .powered-by { margin: 1.25rem 0 0; font-size: 0.75rem; color: var(--muted); }
 .powered-by a { color: inherit; text-decoration: underline; text-decoration-color: currentColor; }
 .admin-version { margin: 2rem 0 0; font-size: 0.75rem; color: var(--muted); }
@@ -642,7 +642,7 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 /* ---- space layout (sidebar + content) ------------------------------------ */
 .space-layout { display: grid; grid-template-columns: var(--sidebar-width, 260px) 1fr; min-height: calc(100vh - 52px); }
 
-/* The sidebar's width can be dragged (the owner, 2026-09-23): a thin handle
+/* The sidebar's width can be dragged (2026-09-23): a thin handle
    on its right edge, a line in the accent color while it is hovered, focused
    or dragged. It straddles the edge so it is easy to catch. */
 .sidebar__resize {
@@ -922,7 +922,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .gallery .image-figure { width: 100% !important; margin: 0; }
 /* On a phone a resized picture fills the column: a close-up set to 60% of a
    desktop column would otherwise be shrunk twice, and its text with it
-   (the owner, reading the docs on an iPhone, 2026-09-23). */
+   (found reading the docs on an iPhone, 2026-09-23). */
 @media (max-width: 600px) {
   .image-figure[style*="width"] { width: 100% !important; }
 }
@@ -1140,7 +1140,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 /* The checkbox is centered on the task's first line, whatever the text size
    or the browser: a box nudged down by a fixed amount matched on a desktop
    and sat too high on an iPhone, which draws its checkbox at another size
-   (the owner, 2026-09-23). So the row gets its own spacing rather than the
+   (2026-09-23). So the row gets its own spacing rather than the
    paragraph's margins, the checkbox a fixed size, and its holder exactly one
    line tall ("1lh"); 1.6em is the fallback for browsers without lh. */
 .editor__content ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.2em 0; }
@@ -1342,7 +1342,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 /* Read by screen readers, not shown. */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
-/* Filtering the page tree as you type (the owner, 2026-09-23). The box sits
+/* Filtering the page tree as you type (2026-09-23). The box sits
    under the Pages heading and stays put while the rows scroll; a parent shown
    only because a page under it matched is dimmed, and the match is marked. */
 .tree-filter { flex: 0 0 auto; margin: 0.1rem 0 0.4rem; display: flex; gap: 0.3rem; align-items: stretch; }
@@ -2119,7 +2119,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 }
 /* Rows of cards with no heading between them (the API tokens tab's figures
    and charts) keep the same gap between rows as between cards; a heading
-   gives the dashboard's rows theirs (the owner, 2026-09-24). */
+   gives the dashboard's rows theirs (2026-09-24). */
 .dash__grid + .dash__grid { margin-top: 0.75rem; }
 .stat {
   padding: 0.85rem 1rem; background: var(--surface);
@@ -2270,7 +2270,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
    address cells keep to one line so the table stays readable. */
 .profile__section--wide { max-width: none; }
 
-/* The profile page (owner, 2026-09-23): every card the window's full width,
+/* The profile page (2026-09-23): every card the window's full width,
    one to a row, like the admin pages. A 480px strip in a 900px column was
    too narrow, and a grid of small cards read as a jumble. The fields inside
    keep a readable width; a password box across a whole monitor is not one. */
@@ -3081,7 +3081,7 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
    height; it keeps filling the window under the bar. */
 .export--file { min-height: calc(100vh - 52px); padding: 1.5rem 1rem 0; }
 .site-lede { color: var(--muted); }
-/* An exported site's front page lists its sections (the owner, 2026-09-24). */
+/* An exported site's front page lists its sections (2026-09-24). */
 .site-contents { margin-top: 1.75rem; }
 .site-contents__heading { font-size: 1.1rem; margin: 0 0 0.75rem; }
 .site-contents__sections {
@@ -3095,8 +3095,8 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
 .site-contents__page:hover { color: var(--primary); }
 .site-contents .tree__marker { color: var(--muted); font-variant-numeric: tabular-nums; }
 /* A band pinned to the bottom of the window, like the bar at the top, so it
-   is always there rather than only after the last line of a long page (the
-   owner, 2026-09-24). Fixed rather than sticky because a captured page's own
+   is always there rather than only after the last line of a long page
+   (2026-09-24). Fixed rather than sticky because a captured page's own
    closing tags end the layout before it, so where it lands in the document
    differs between the captured pages and the index; fixed does not care.
    The layout leaves room for it below, and the sidebar is that much
@@ -3129,7 +3129,7 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
 .space-layout--export .sidebar__toggle { display: none; }
 
 /* On a phone an export hides .sidebar behind the top bar's Pages button,
-   as the application hides it behind its menu (the owner, 2026-09-24: stacked
+   as the application hides it behind its menu (2026-09-24: stacked
    above the page, it pushed the page off the screen). Opened, the tree takes
    the page's place under the sticky top bar, in the page's own flow and
    scroll; a fixed overlay was tried first and, in Chromium's phone

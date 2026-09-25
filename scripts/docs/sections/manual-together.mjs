@@ -1,5 +1,5 @@
 // User manual: Working together, Finding things, Exporting and publishing,
-// and Your profile (dev-plan 10.5), rewritten to the owner's rules of
+// and Your profile (dev-plan 10.5), rewritten to the docs rules of
 // 2026-09-23 (WRITING.md, and the pilot pages in pilot.mjs).
 //
 // Facts checked 2026-09-24 against CommentsPanel, commentThreads,

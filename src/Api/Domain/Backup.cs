@@ -39,7 +39,7 @@ public static class BackupNames
     /// <summary>
     /// Remove the kept copy a restore left behind. Requested by a person, or
     /// by the retention policy when the kept copy reaches the age at which a
-    /// backup would be removed (the owner's decision, 2026-09-22).
+    /// backup would be removed (decided 2026-09-22).
     /// </summary>
     public const string KindRestoreDiscard = "restore-discard";
 

@@ -10,7 +10,7 @@ import { relative } from './format'
 import { Sparkline } from './Sparkline'
 
 /**
- * Administration → API tokens (the owner, 2026-09-24): every token on the
+ * Administration → API tokens (2026-09-24): every token on the
  * instance, whose it is, how much it is used through the REST API and by
  * assistants through MCP, and what those assistants did, with Revoke for one
  * token at a time.

@@ -13,7 +13,7 @@ const findInner = findParentNode((n) => ['panel', 'expand', 'decision', 'excerpt
 /**
  * Only the innermost thing's menu shows. A picture, a panel or a table in a
  * column has controls of its own, and this bar drawn over them was two menus
- * stacked on top of each other (the owner's screenshot, 2026-09-23). The
+ * stacked on top of each other (seen in a screenshot, 2026-09-23). The
  * layout's bar comes back as soon as the cursor is in plain text.
  */
 function layoutIsInnermost(state: EditorState): boolean {

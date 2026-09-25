@@ -22,7 +22,7 @@
 // Pictures only where they show something words cannot, such as where a
 // control is, and taken in a narrow window: at about the width they are
 // shown, their text is the size of the page's on a desktop and still
-// readable on a phone (the owner, 2026-09-23).
+// readable on a phone (2026-09-23).
 const NARROW = { width: 480, height: 900 }
 const SPACE_FORM = [
   { wait: 2000 }, { click: '.row-gap .btn--primary' }, { wait: 400 },
@@ -615,7 +615,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   ))
 
   // ------------------------------------------------- Templates (approved)
-  // The owner could not find how to make a template (2026-09-23): it was one
+  // How to make a template was hard to find (2026-09-23): it was one
   // paragraph inside Creating a page.
   await page('Templates', pagesSection, doc(
     p('A ', b('template'), ' is a page that new pages start from. Instead of a blank page, whoever creates one gets your headings, your tables and your hints already in place, and only has to fill them in. Templates keep pages that should look alike looking alike, and save everyone from copying the last one and deleting its contents.'),

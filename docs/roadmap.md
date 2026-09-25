@@ -54,7 +54,7 @@ to get the whole wiki, ready to go, on their own instance.
 
 ## Instance branding
 
-*Asked for by the owner on 2026-09-20, while reviewing the HTML export's new
+*Asked for on 2026-09-20, while reviewing the HTML export's new
 top bar: "in the future I want to enable branding where users can replace the
 icon and Tesria title with their own icon and name for their instance. This
 should be exported also."*
@@ -181,7 +181,7 @@ attributes, and the export renderer needs a case for it.
 
 ## Enterprise features (from the 2026-09-24 readiness review)
 
-Added 2026-09-24 when the owner asked for "enterprise grade software". The
+Added 2026-09-24, when enterprise-grade features were asked for. The
 security gaps from that review are dev-plan 14.3; these are the features a
 larger organization would ask for next. Unscheduled, and each depends on an
 organization actually wanting it.

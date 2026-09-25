@@ -11,9 +11,8 @@ public sealed record BrandLogo(string Url, string Format, int? Width, int? Heigh
 /// shell, and the exports. One projection of <see cref="SiteSettings"/>, so
 /// the three cannot disagree about what "branded" means.
 ///
-/// Every default reproduces Tesria exactly. That is the owner's rule: "This
-/// should only replace the branding if someone intentionally configures the
-/// branding."
+/// Every default reproduces Tesria exactly. That is the rule: branding is
+/// replaced only when someone deliberately configures it.
 /// </summary>
 public sealed record BrandView(
     string Name,

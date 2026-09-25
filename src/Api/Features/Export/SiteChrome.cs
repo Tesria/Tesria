@@ -6,8 +6,8 @@ namespace Tesria.Api.Features.Export;
 /// <summary>
 /// The application's furniture around an exported page: the top bar with the
 /// brand and the appearance menu, and (for a site) the space sidebar with its
-/// icon, name and page tree. Owner's request, 2026-09-20: "make the export
-/// html look more like the real product".
+/// icon, name and page tree. Requested 2026-09-20: an exported page should
+/// look more like the product itself.
 ///
 /// <para><b>Why this is built here rather than captured.</b> Phase 12's rule is
 /// that an export should be a photograph of the page, not a second rendering
@@ -110,7 +110,7 @@ public static partial class SiteChrome
             ? $"<span class=\"brand\">{inner}</span>"
             : $"<a class=\"brand\" href=\"{SiteExport.Escape(homeHref)}\">{inner}</a>";
 
-        // The phone menu (the owner, 2026-09-24: on a phone the page tree sat
+        // The phone menu (2026-09-24: on a phone the page tree sat
         // above the page and pushed it off the screen). The app's own button,
         // shown only on a phone; it opens the sidebar over the page.
         var menu = """<button type="button" class="topbar__hamburger site-menu" aria-label="Pages" aria-expanded="false" aria-controls="site-pages">☰</button>""";
@@ -312,7 +312,7 @@ public static partial class SiteChrome
     }
 
     /// <summary>
-    /// The front page's contents (the owner, 2026-09-24: a site's front page
+    /// The front page's contents (2026-09-24: a site's front page
     /// with only a name and a description "seems blank"): each top-level page
     /// and the pages directly under it, linked, numbered as the sidebar
     /// numbers them. Two levels, so a large space stays a page, not a list.
@@ -733,7 +733,7 @@ public static partial class SiteChrome
             });
           }
 
-          // The sidebar keeps its place (the owner, 2026-09-24). Every page of
+          // The sidebar keeps its place (2026-09-24). Every page of
           // an exported site is its own file, so each choice in the tree
           // loaded a fresh sidebar scrolled to the top, where the app, which
           // never reloads, keeps its place. The tree's scroll is kept for this
@@ -780,8 +780,7 @@ public static partial class SiteChrome
               if (open) readingAt = scrollY;
               d.body.classList.toggle('site-menu-open', open);
               button.setAttribute('aria-expanded', open ? 'true' : 'false');
-              // A cross while it is open (the owner, 2026-09-24: "no x to
-              // close it like there is on the real app"), in the top bar, which
+              // A cross while it is open, as in the app (2026-09-24), in the top bar, which
               // stays on screen however far the list has scrolled.
               button.textContent = open ? '\u2715' : '\u2630';
               button.setAttribute('aria-label', open ? 'Close pages' : 'Pages');

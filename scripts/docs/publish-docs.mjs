@@ -7,10 +7,10 @@
 //
 //   shots     harness shots (scripts/screenshots, see shot.mjs), taken from
 //             the Tesria Demo space. Every shot is taken twice, on a desktop
-//             and on a phone, because the owner asked for both on every page.
+//             and on a phone, because every page needs both.
 //   build     writes the section's pages, given the helpers below.
 //
-// The wiki is the source of truth (the owner, 2026-09-21); this script is how
+// The wiki is the source of truth (2026-09-21); this script is how
 // its pages were written, kept so they can be rewritten after a redesign. Its
 // safe copy is the space exported as a wiki pack (export-docs.sh), published
 // as a release download (release-docs.sh).
@@ -24,7 +24,7 @@ import * as lib from '../lib/tesria.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..', '..')
-// Docs, not Support (the owner, 2026-09-24): the exported site lives at
+// Docs, not Support (2026-09-24): the exported site lives at
 // tesria.com/docs, and tesria.com/support is where people support Tesria.
 const SPACE = { key: 'DOCS', name: 'Docs', description: 'How to install, use and run Tesria.' }
 
@@ -284,7 +284,7 @@ async function main() {
         [lib.p(lib.text(caption ?? alt, lib.italic))])]
     }
 
-    // ---- The rules from the owner's review (dev-plan 15.6, 2026-09-23) ----
+    // ---- The rules from the docs review (dev-plan 15.6, 2026-09-23) ----
     // One picture per row, never two side by side; every picture has a
     // shadow; a phone picture only where the phone is different, in its own
     // "On a phone" section. The caption is the image's own, so it moves with
@@ -347,7 +347,7 @@ async function main() {
       return lib.text(label ?? title, { type: 'link', attrs: { href: `/spaces/${SPACE.key}/pages/${id}` } })
     }
 
-    // How to get somewhere, said in full every time (the owner, 2026-09-24:
+    // How to get somewhere, said in full every time (2026-09-24:
     // pages named a screen and assumed the reader knew where it was).
     // Spread into a paragraph: p('Grant it in ', ...adminAt('Roles'), '.').
     const strong = (t) => lib.text(t, lib.bold)
@@ -358,7 +358,7 @@ async function main() {
     await section.build({ ...lib, ...s, top, figure, phoneFigure, picture, phonePicture, animation, pageLink, adminAt, profileAt, ...prepared })
     if (section.cleanup) await section.cleanup({ lib, author, ...prepared })
   }
-  // The tree is numbered (dev-plan 15.8, the owner's choice over emoji):
+  // The tree is numbered (dev-plan 15.8, chosen over emoji):
   // the numbers are drawn from the tree's order, never stored in a title.
   if (s.space.treeStyle !== 1) {
     await author.call('PUT', `/api/spaces/${SPACE.key}`, { name: s.space.name, description: s.space.description, treeStyle: 1 })

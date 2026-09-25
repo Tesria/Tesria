@@ -1,7 +1,7 @@
 // Writes the dependency manifest the About tab in Administration shows, and
-// the third-party notices it links to (the owner, 2026-09-24: "a full
-// dependency list with attribution ... so users can see if there are any
-// deps that have active CVEs and they know their exposure").
+// the third-party notices it links to (2026-09-24): a full dependency list
+// with attribution, so people can see whether any has an active CVE and
+// know their exposure.
 //
 //   node scripts/deps/build-manifest.mjs          write both files
 //   node scripts/deps/build-manifest.mjs --check  fail if the manifest is stale

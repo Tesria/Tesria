@@ -38,7 +38,7 @@ public class ApiToken
     /// How many requests it has made, counted from 0.6 (tokens from before
     /// start at zero), and the address the last one came from: what lets an
     /// administrator see who uses tokens and spot one being used from
-    /// somewhere unexpected (the owner, 2026-09-24). Written in the same save
+    /// somewhere unexpected (2026-09-24). Written in the same save
     /// as <see cref="LastUsedAt"/>, so counting costs nothing extra.
     /// </summary>
     public long UseCount { get; set; }

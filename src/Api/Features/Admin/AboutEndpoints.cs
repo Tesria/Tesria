@@ -12,7 +12,7 @@ using Tesria.Api.Infrastructure.Versioning;
 namespace Tesria.Api.Features.Admin;
 
 /// <summary>
-/// Administration, About (the owner, 2026-09-24): which Tesria this is,
+/// Administration, About (2026-09-24): which Tesria this is,
 /// everything it is built from with each license, and whether any of it has
 /// a known vulnerability, so that when a new one is announced an
 /// administrator can see at once whether their instance is exposed.

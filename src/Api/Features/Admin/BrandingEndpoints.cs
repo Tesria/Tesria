@@ -118,7 +118,7 @@ public static partial class BrandingEndpoints
         var before = BrandView.From(await settings.GetAsync());
         var actorId = current.RequireId();
 
-        // The owner decided a color that fails the contrast check may still
+        // It was decided that a color that fails the contrast check may still
         // be kept (decision C). It is recorded, so "why are the links hard to
         // read" has an answer in the audit log.
         var overridden = new List<string>();

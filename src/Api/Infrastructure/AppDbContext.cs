@@ -321,7 +321,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 
         // Token use (the admin API tokens tab): a day row per token. Like the
         // MCP log, it outlives the token, so revoking one does not erase what
-        // it did (the owner, 2026-09-24: the charts read zero once the token
+        // it did (2026-09-24: the charts read zero once the token
         // was gone); both are pruned after 90 days.
         b.Entity<ApiTokenDay>(e =>
         {

@@ -227,7 +227,7 @@ SQL
 }
 
 # The kept copy ages out under the retention policy, by the same rule as a
-# backup (the owner's decision, 2026-09-22): it is entered into the plan as if
+# backup (decided 2026-09-22): it is entered into the plan as if
 # it were a backup taken at the moment of the restore, and removed when the
 # plan would remove that backup. Retention off keeps it, as retention off
 # keeps everything.

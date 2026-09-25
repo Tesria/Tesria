@@ -157,7 +157,7 @@ public static partial class PackImportEndpoints
 
             await ApplyIconAsync(space, model, zip, media, written, ct);
             db.Spaces.Add(space);
-            // Private to the importer (dev-plan 15.1, the owner's decision): a
+            // Private to the importer (dev-plan 15.1): a
             // pack can carry pages that were restricted where it came from,
             // and those restrictions do not travel. The importer is its one
             // administrator until they choose who else gets in, which the

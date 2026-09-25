@@ -1,5 +1,5 @@
 // Installation and operations: running Tesria, for whoever looks after the
-// server (dev-plan 10.5), rewritten to the owner's rules of 2026-09-23
+// server (dev-plan 10.5), rewritten to the rules of 2026-09-23
 // (scripts/docs/WRITING.md). Trusting the local certificate and Opening
 // Tesria by name are the approved pilot pages, moved here from pilot.mjs
 // unchanged.
@@ -30,7 +30,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 // Pictures only where they show something words cannot, such as where a
 // control is, and taken in a narrow window: at about the width they are
 // shown, their text is the size of the page's on a desktop and still
-// readable on a phone (the owner, 2026-09-23).
+// readable on a phone (2026-09-23).
 const NARROW = { width: 480, height: 900 }
 const ADDRESS = [{ wait: 1500 }, { type: 'wiki-server.local', selector: '#trust-address' }, { click: '[data-device="mac"]' }, { wait: 300 }]
 
@@ -566,7 +566,7 @@ export async function build({
   ))
 
   // ============================================== Opening Tesria by name
-  // The owner's home network, 2026-09-23: a .local name took several tries
+  // A home network, 2026-09-23: a .local name took several tries
   // to open. Words only: routers and system files cannot be photographed
   // usefully, and every router's screens differ.
   await ensure('Opening Tesria by name', install)
@@ -642,7 +642,7 @@ export async function build({
   // Tailscale (dev-plan 19.2), checked against Tailscale's docs on
   // 2026-09-24 (kb/1282/docker and its parameters, features/tailscale-serve,
   // features/tailscale-funnel, kb/1153/enabling-https, kb/1281/app-connectors)
-  // and run live on the owner's tailnet that night. The picture is of
+  // and run live on a real tailnet that night. The picture is of
   // Tesria's own card, with an example address in place of the real tailnet's.
   const tailscalePage = await ensure('Reaching Tesria from anywhere with Tailscale', install)
   const squircle = await attachCurrent(tailscalePage, 'tailscale-icon.png',
@@ -1333,7 +1333,7 @@ export async function build({
 
   await page('How backups work', backups, doc(
     p('Two backup services run beside Tesria. Each keeps its own kind of copy, for a different kind of trouble, and both report to the ', b('Backups'), ' tab under ', b('Admin'), '.'),
-    // The owner asked for a picture of the design (2026-09-24); a diagram
+    // A picture of the design was asked for (2026-09-24); a diagram
     // drawn from text, so it stays true when edited.
     codeBlock('mermaid', [
       'flowchart LR',

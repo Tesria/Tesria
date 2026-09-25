@@ -51,7 +51,7 @@ public class PageEmojiTests
     [InlineData("✔")]
     public async Task Numbers_and_bullets_are_accepted_as_well_as_emoji(string value)
     {
-        // The picker offers them for pages read in order (the owner, 2026-09-23).
+        // The picker offers them for pages read in order (2026-09-23).
         using var factory = new TestAppFactory();
         var c = factory.CreateClient();
         await c.RegisterAndSignInAsync();
