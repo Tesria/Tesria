@@ -5,6 +5,9 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+Development builds now say **0.7.3-dev**: 0.7.2 is released, and the next
+release is 0.7.3, with the review fixes below.
+
 ## [0.7.2] - 2026-09-25
 
 ### An exported site on a phone: the page first, the tree behind a menu (2026-09-24, Opus 5.5)

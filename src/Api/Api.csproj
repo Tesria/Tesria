@@ -11,8 +11,8 @@
          builds as X.Y.Z (GitHub Actions passes TESRIA_VERSION to the Docker
          build, which sets InformationalVersion). A build without one is the
          next release with -dev, so it can never pass for a release. -->
-    <Version>0.7.2</Version>
-    <InformationalVersion>0.7.2-dev</InformationalVersion>
+    <Version>0.7.3</Version>
+    <InformationalVersion>0.7.3-dev</InformationalVersion>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <Authors>Brian Rodriguez</Authors>
     <Product>Tesria</Product>
