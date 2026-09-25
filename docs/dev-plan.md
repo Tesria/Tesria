@@ -5341,6 +5341,115 @@ enough of an independent channel for someone who installs Tesria on a
 headless server? Should `/trust` stay on plain HTTP at all, or redirect to
 HTTPS with a warning to click through, which is no better authenticated?
 
+**Reviewed by Fable 5.1, 2026-09-25, at the project's request.** All three
+designs keep their main choices; the corrections below are folded in before
+building.
+
+*Design A (DATA-01).*
+- **Run the pass before the swap, on `<db>_restore`, not after it.** The
+  restore script writes the request naming that database and the job;
+  `db-admin` migrates, backfills and grants against it while the wiki is
+  still up; on failure or timeout the script drops `<db>_restore` and fails
+  with nothing changed. Table grants live in that database's catalog and
+  `GRANT CONNECT` is on the database object, so both survive the rename.
+  This answers the swap-back question by never being in that position:
+  after the swap the only work left is the carried rows, as today, and the
+  restore script's step 7 (waiting for the app to migrate) goes.
+- **The signal is the one that exists.** The `db` container already takes a
+  restore request as a file on the `pgsocket` volume (`deploy/db/entrypoint.sh`:
+  two lines, job id first, a stale request ignored, the outcome written
+  beside it), and the backup services already mount that volume. `db-admin`
+  mounts it too and reads the same shape from its own directory; no new
+  volume. Not a table: the row would sit in the database being replaced
+  and the outcome would have to cross the swap. The database named in a
+  request is checked against `^<db>(_restore)?$` before it is used.
+- **A self-check as the backstop.** Every thirty seconds `db-admin` asks the
+  live database two cheap questions, are migrations pending and does the
+  app role hold `SELECT` on `Pages` (`has_table_privilege`), and runs the
+  pass when either says so. That covers a point-in-time restore (the third
+  question: yes, and it needs no request), a restore run by hand from the
+  runbook, and a lost request. The app, which refuses to start on a schema
+  that is behind, then comes up on its next restart; the docs say so.
+- The first pass failing must still exit non-zero, so `docker compose up`
+  reports it the way it does today instead of the app waiting on a
+  container that loops. The app's startup error and the docs name
+  `docker compose logs migrate`; keep the service name or change both.
+- `security.md` gap 10 lists `db-admin` beside the backup services as a
+  running container that holds the owner's password; its only input is a
+  file the backup services write, and its only action is idempotent.
+- Rehearse on a throwaway compose project with the published images (as
+  the 0.6.0 bundle was tested), restoring a same-version dump and a 0.6.0
+  dump (older schema), before the first restore on a real instance.
+
+*Design B (SEC-02).*
+- **The internal call carries claims, not the token.** Tokens last ten
+  minutes and connections last hours, so a re-check that carried the token
+  would fail on expiry after ten minutes for everyone. The service sends
+  what it verified (`userId`, `pageId`, `sid`) under `X-Collab-Secret`, the
+  header the app already uses toward the service, and the app trusts the
+  header and never parses a token. The same body serves the connect-time
+  check.
+- **Batch the backstop.** One request a minute listing every open
+  connection, answered per connection. Sixty seconds is right: the
+  revocation notice is the fast path, and a few dozen editors are one small
+  call.
+- **"Unreachable" must close in a way the editor retries.** Today the editor
+  asks the app for a fresh token before every connect, so an app that is
+  down fails the token fetch first and the editor keeps retrying; the
+  connect-time refusal is only reached with a token in hand. Fail closed is
+  right, but close with the retryable path (as `token-expired` does, which
+  makes the provider reconnect and ask for a token again), not the
+  `Unauthorized` one, or an honest editor caught in the second between
+  token fetch and app restart sits on "disconnected" for good. 14.3 found
+  the provider's close semantics only by a live check; check this live too.
+- "An unreachable app keeps the connection until its token expires" is
+  already how the service behaves: it keeps `exp` per connection and
+  `closeExpired` ends them. State it; do not rebuild it.
+- The app's answer covers: account active, session (or API token) still
+  valid and not read-only, `CanEditPage` now, page exists. The service's
+  own `pageExists` check stays as the cheap first gate.
+- Caddy refuses `/internal*` in `app_proxy` before the catch-all (both the
+  named site and `:443` import it; `:80` proxies only `/trust`). The route
+  is anonymous, guarded by a constant-time compare of the secret, excluded
+  from OpenAPI and from the rate limiter's per-user buckets.
+- The advisory: every version before 0.7.3; from 0.6.0 (14.3) the window
+  is the token's ten minutes, before that a token's full life with no
+  revocation at all.
+
+*Design C (SEC-01).*
+- **Headless servers have SSH**, which is an authenticated channel. The
+  app computes the fingerprint at start (fetching `http://caddy/ca.crt` on
+  the compose network, which the LAN attacker cannot touch) and prints it
+  in its log, so `docker compose logs app` shows it and no volume is
+  mounted; the same value feeds the admin card and
+  `show-ca-fingerprint.sh`. Say so on `/trust` and in the docs.
+- The card's "at localhost" test uses the resolved client address (the
+  one 14.2 hardened) and requires loopback. Under Docker Desktop without
+  the forwarder every visitor is `192.168.65.1`, so the card is hidden
+  there and says the console has it: fail safe, and correct.
+- **Stop serving the scripts from the server at all** (`/trust/trust-tesria.*`
+  and the address prefill go; the script takes the address as an
+  argument). A script fetched over plain HTTP is the whole problem, and an
+  altered script needs no certificate. `releases/latest/download/` skips
+  pre-releases, so the standing `docs` release never captures it; the
+  release workflow attaches both scripts. For installs without internet,
+  the same scripts are already in `tesria-deploy.zip` under
+  `deploy/scripts`, which arrived over HTTPS: `/trust` says so.
+- `/trust` stays on plain HTTP: a redirect to HTTPS authenticates
+  nothing. But the page can be altered by the same attacker, so it must
+  not be the only place the procedure lives: the docs and the bundle's
+  README carry it, and the page says that if it differs from the docs, the
+  docs are right.
+- Phones: iOS shows the SHA-256 fingerprint in the profile's certificate
+  details, and trust is a separate step (Certificate Trust Settings), so
+  the comparison sits between install and trust. Android trusts a user
+  certificate on install and shows the fingerprint afterwards under
+  Trusted credentials, so the instruction there is compare at once and
+  remove it if it differs. Check both on real devices.
+- Name constraints later are feasible without replacing Caddy: its `pki`
+  app accepts a supplied root certificate and key, and current browsers
+  honor name constraints on user-installed roots.
+
 #### The straightforward fixes
 
 - **DATA-02, the Undo copy of the files.** *Done 2026-09-25.* The file

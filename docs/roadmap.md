@@ -210,3 +210,21 @@ organization actually wanting it.
   a space under investigation.
 - **Encryption at rest for attachments** with a key the operator holds
   (the database already relies on the host's disk encryption).
+
+## Donut charts (saved 2026-09-25, not scheduled)
+
+Saved at the project's request; it says when. The one pie in the product
+(`src/web/src/components/PieChart.tsx`) draws both the editor's pie chart
+(`chartExtension.ts`, type `pie`) and the admin backups page's disk usage
+(`DiskSpace.tsx`, `StorageTargets.tsx`). The disk charts should look like the
+donut on tesria.com's front page instead of a pie, and the editor's chart
+element should gain **donut** as its own chart type beside pie, not as a
+replacement, so existing pages keep their pies.
+
+Notes for whoever builds it: a new entry in `CHART_TYPES` is a new stored
+value in the chart node's `data-chart-type` attribute, which the site export
+and PDF render through the same component, so both should follow for free;
+check them all the same (an export change is tested in a real export). The
+collaboration service's bundled schema (`collab/vendor/collab-schema.js`) is
+built from `src/web`, so the image is rebuilt with it. The donut's hole is a
+good place for the total (the disk's free space, or the chart's sum).
