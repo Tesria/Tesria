@@ -8,6 +8,29 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.8.0-dev**: 0.7.3 is released, and the next
 release is 0.8.0, with the rest of the review fixes (SEC-01, LIC-01, DOC-01).
 
+### Fixes from an outside review: complete third-party notices (dev-plan 14.4, LIC-01, 2026-09-25, Opus 5.5)
+
+The notices Tesria ships (`THIRD-PARTY-NOTICES.txt`, linked from the About
+tab) listed 54 of its 332 packages with only a name, a version and a link,
+among them MailKit, Markdig, Npgsql and most of Microsoft's: those packages
+ship no license file, and the generator accepted that silently. MIT, BSD
+and the others require their copyright notice and conditions to travel
+with the software.
+
+- A package with no license file now gets its own copyright notice, from
+  its metadata (the nuspec's copyright line, or the npm author), and the
+  standard text of its license, kept in `scripts/deps/licenses` and taken
+  verbatim from copies on hand (BSD-2-Clause and the PostgreSQL License are
+  Markdig's and Npgsql's own wording, so they apply only to those). The
+  three Hocuspocus packages name no author; their notice comes from the
+  project's own license file, checked by hand.
+- A package's NOTICE and third-party notices files are included too
+  (Playwright's, and the one many Microsoft packages share), each distinct
+  one written once at the end.
+- Generating fails, writing nothing, when a package has neither, or when
+  a workspace's `node_modules` is missing; and CI's check now fails when
+  the committed notices lack any package's text.
+
 ### Fixes from an outside review: trusting the local certificate (dev-plan 14.4, SEC-01, 2026-09-25, Opus 5.5; design reviewed by Fable 5.1)
 
 On a server without a public domain, each device trusts the certificate

@@ -5529,7 +5529,14 @@ the build differs:
 - **LIC-01, complete notices.** The generator fills in a missing license
   text from the SPDX text for the package's license, with the copyright
   line from its metadata, fails when neither exists, and CI checks the
-  notices as well as the manifest.
+  notices as well as the manifest. *Done 2026-09-25.* The standard texts are
+  vendored in `scripts/deps/licenses`, verbatim from copies on hand rather
+  than retyped; notice files are included and deduplicated; CI checks the
+  committed file's completeness, since regenerating needs `node_modules`.
+  Not done: inspecting the built images themselves. The notices file ships
+  inside the app image and covers the web, collaboration and PDF packages;
+  the collaboration and PDF images also carry each package's own files in
+  `node_modules`.
 - **DOC-01, private material.** The model-selection rules, account and plan
   details and session notes move to local-only notes; quotations and
   attributions to the project's owner in public files are reworded
