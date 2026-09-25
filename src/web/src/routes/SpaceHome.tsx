@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { api } from '../api/client'
 import { PageTree } from '../components/PageTree'
+import { SpaceContents } from '../components/SpaceContents'
 import { WatchToggle } from '../components/WatchToggle'
 import { useSpaceContext } from './SpacePage'
 import { useAuth } from '../auth/AuthContext'
@@ -31,10 +32,14 @@ export function SpaceHome() {
         </p>
       ) : (
         <>
-          <p className="muted">Select a page from the tree, or create a new one.</p>
-          {/* Desktop already shows this permanently in the sidebar: this
-              copy exists only so mobile (where that sidebar is hidden) has
-              somewhere to browse pages that isn't hidden behind a toggle. */}
+          {/* A computer: the space's sections and their pages (the owner,
+              2026-09-24: the home page looked bare), beside the sidebar's
+              full tree. */}
+          <div className="space-home-contents">
+            <SpaceContents tree={tree} spaceKey={space.key} treeStyle={space.treeStyle} />
+          </div>
+          {/* A phone has no sidebar, and the menu's tree is read-only: here
+              the whole tree, where pages can also be reordered. */}
           <div className="space-home-tree">
             <PageTree tree={tree} spaceKey={space.key} onMoved={reloadTree} readOnly={!user} treeStyle={space.treeStyle} />
           </div>

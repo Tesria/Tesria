@@ -750,8 +750,8 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
   border-radius: 50%; background: var(--primary);
 }
 .space-content { min-width: 0; }
-/* Hidden by default (desktop already shows the tree permanently in
-   .sidebar): shown only under --bp-mobile, see SpaceHome.tsx. */
+/* The space home (SpaceHome.tsx): its contents on a computer, the whole tree
+   on a phone, where there is no sidebar and pages are reordered here. */
 .space-home-tree { display: none; }
 /* Here (mobile), links are the only way to reach a page: blue signals
    "tap to go", same as any other link. In .sidebar (desktop) the tree
@@ -803,6 +803,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   .space-actionbar { display: flex; }
   .space-actionbar.space-actionbar--hidden-on-page { display: none; }
   .space-home-tree { display: block; margin-top: 1rem; }
+  .space-home-contents { display: none; }
   /* .sidebar's two jobs (browsing the tree, and reaching + New page and
      Space settings) are covered by .space-home-tree and .space-actionbar
      instead at this width. */

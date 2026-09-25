@@ -442,13 +442,14 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
   // ------------------------------------------ The space home and watching
   await page('The space home and watching', spaces, doc(
-    p('Every space has a home: the page you land on when you open the space without choosing a page in it. It shows the space’s name and description, and it is where you choose to be told about everything that happens in the space.'),
+    p('Every space has a home: the page you land on when you open the space without choosing a page in it. It shows the space’s name, its description and its contents, and it is where you choose to be told about everything that happens in the space.'),
 
     h(2, 'The home page'),
     ul(
       li(p(b('The name and description'), ' at the top. Change them in ', b('Space settings'), ', on the ', b('Details'), ' tab.')),
+      li(p(b('Contents,'), ' on a computer: each top-level page and the pages directly under it, numbered the way the sidebar numbers them. Choose one to open it. An exported website’s front page shows the same list.')),
+      li(p(b('On a phone,'), ' the whole page tree instead, because a phone has no sidebar to show it in. You can reorder pages there too.')),
       li(p(b('A new space'), ' has no pages yet, and says so, with a ', b('Create the first one'), ' link.')),
-      li(p(b('On a phone,'), ' the home page also lists the space’s pages, because a phone has no sidebar to show them in.')),
     ),
     p('To get back to the home page from anywhere in the space, choose the space’s name at the start of the breadcrumb above the page.'),
 
