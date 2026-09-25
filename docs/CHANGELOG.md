@@ -5,6 +5,9 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+Development builds now say **0.8.0-dev**: 0.7.1 is released, so what comes
+after it is the next minor version.
+
 ## [0.7.1] - 2026-09-24
 
 - **An exported site's sidebar keeps its place.** Every page of an exported
