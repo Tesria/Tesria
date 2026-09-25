@@ -30,6 +30,10 @@ registry (`ghcr.io/tesria/tesria-*`), for Intel, AMD and ARM machines, with
   pulls instead of building, which also halves the memory needed to install.
 - A space's home page lists its contents, numbered like the sidebar, and so
   does an exported site's front page, which looked empty before.
+- Two of the web app's build tools updated for advisories GitHub raised
+  when the repository went public: PostCSS 8.5.28 (GHSA-fxqj-rqcc-2cmp) and
+  nanoid 3.3.19 (GHSA-2v37-7h3g-55p8). Both only build the web app; neither
+  is in what Tesria runs.
 
 ### 14.2 Images on Docker Hub and GitHub's registry, and tesria-deploy.zip (2026-09-24, Opus 5.5)
 
