@@ -15,6 +15,11 @@ name: tesria
 services:
   db:
     # PostgreSQL 18 plus pgBackRest (for WAL archiving / PITR).
+    # Published images (dev-plan 14.2): `docker compose pull` fetches them,
+    # `up -d --build` builds them from this checkout instead. TESRIA_IMAGES
+    # picks the registry (Docker Hub by default, or ghcr.io/tesria/tesria),
+    # TESRIA_IMAGE_TAG the version; see .env.example.
+    image: ${TESRIA_IMAGES:-brianintheloop/tesria}-db:${TESRIA_IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: deploy/db/Dockerfile
@@ -80,8 +85,8 @@ services:
   # Tesria container that holds the owner's password, apart from the backup
   # services, which need it to dump and archive.
   migrate:
-    image: tesria-app
-    pull_policy: never
+    image: ${TESRIA_IMAGES:-brianintheloop/tesria}-app:${TESRIA_IMAGE_TAG:-latest}
+    pull_policy: missing
     command: ["--migrate"]
     restart: "no"
     depends_on:
@@ -93,7 +98,7 @@ services:
       ConnectionStrings__App: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${APP_DB_USER:-tesria_app};Password=${APP_DB_PASSWORD:?APP_DB_PASSWORD must be set in .env (openssl rand -hex 24)}"
 
   app:
-    image: tesria-app
+    image: ${TESRIA_IMAGES:-brianintheloop/tesria}-app:${TESRIA_IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: deploy/Dockerfile
@@ -177,6 +182,7 @@ services:
 
   backup:
     # postgres:18 plus restic; see deploy/backup/Dockerfile for why restic.
+    image: ${TESRIA_IMAGES:-brianintheloop/tesria}-backup:${TESRIA_IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: deploy/backup/Dockerfile
@@ -249,6 +255,7 @@ services:
   collab:
     # Real-time co-editing (Yjs/Hocuspocus). The editor engine is JS-only, so
     # this is isolated in a Node sidecar (PLAN §1) rather than in the .NET app.
+    image: ${TESRIA_IMAGES:-brianintheloop/tesria}-collab:${TESRIA_IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: collab/Dockerfile
@@ -276,6 +283,7 @@ services:
     # It is handed a self-contained document (images inlined, diagrams
     # carrying their own renderer) and runs with its network switched off,
     # so rendering never reaches anything.
+    image: ${TESRIA_IMAGES:-brianintheloop/tesria}-pdf:${TESRIA_IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: pdf/Dockerfile
@@ -292,6 +300,7 @@ services:
     # Physical backups + PITR (PLAN §5, Layer 1). Same image as db so it has the
     # pgBackRest binary; shares the repo, the data dir (read-only), and the
     # Postgres socket so it can run backups as the postgres user.
+    image: ${TESRIA_IMAGES:-brianintheloop/tesria}-db:${TESRIA_IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: deploy/db/Dockerfile

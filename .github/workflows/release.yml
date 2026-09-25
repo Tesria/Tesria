@@ -1,7 +1,9 @@
-# A release (dev-plan 16.1): pushing a tag such as v0.5.0 runs the checks,
-# builds the app image stamped with that version, and publishes a GitHub
-# release whose notes are docs/CHANGELOG.md's section for it. The image is
-# built to prove it builds; publishing images is a later step (Docker Hub).
+# A release (dev-plan 16.1, 14.2): pushing a tag such as v0.7.0 runs the
+# checks, publishes the five images to Docker Hub and GitHub's registry
+# (images.yml), builds tesria-deploy.zip (everything needed to run those
+# images), and publishes a GitHub release with that zip and notes from
+# docs/CHANGELOG.md's section for the version. The docs are attached
+# afterwards by scripts/docs/release-docs.sh, from a running instance.
 name: Release
 
 on:
@@ -15,27 +17,42 @@ jobs:
   checks:
     uses: ./.github/workflows/ci.yml
 
-  image:
-    name: Build the app image
+  images:
+    needs: checks
+    uses: ./.github/workflows/images.yml
+    with:
+      tag: ${{ github.ref_name }}
+    permissions:
+      contents: read
+      packages: write
+    secrets: inherit
+
+  bundle:
+    name: Build tesria-deploy.zip
     runs-on: ubuntu-latest
-    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - name: Build
-        run: |
-          docker buildx build -f deploy/Dockerfile \
-            --build-arg TESRIA_VERSION="${GITHUB_REF_NAME#v}" \
-            --load -t tesria:"${GITHUB_REF_NAME#v}" .
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/release/deploy-bundle.mjs "${GITHUB_REF_NAME#v}" out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tesria-deploy
+          path: out/tesria-deploy.zip
+          if-no-files-found: error
 
   release:
     name: Publish the release
-    needs: [checks, image]
+    needs: [checks, images, bundle]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: tesria-deploy
       - name: Notes from the CHANGELOG
         run: |
           version="${GITHUB_REF_NAME#v}"
@@ -62,4 +79,4 @@ jobs:
           prerelease=""
           case "$GITHUB_REF_NAME" in *-*) prerelease="--prerelease" ;; esac
           gh release create "$GITHUB_REF_NAME" --title "Tesria ${GITHUB_REF_NAME#v}" \
-            --notes-file notes.md --verify-tag $prerelease
+            --notes-file notes.md --verify-tag $prerelease tesria-deploy.zip

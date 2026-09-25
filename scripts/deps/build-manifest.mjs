@@ -130,10 +130,11 @@ function images() {
     for (const m of readFileSync(join(ROOT, f), 'utf8').matchAll(/^FROM\s+(\S+)/gim)) found.set(m[1], f)
   }
   const compose = readFileSync(join(ROOT, 'docker-compose.yml'), 'utf8')
-  // `tesria-*` names the images this repository builds itself (the migrate
-  // service reuses the app's, 14.3); their contents are the packages below.
+  // Tesria's own images (${TESRIA_IMAGES...}-app and so on, 14.2; the
+  // migrate service reuses the app's) are built from this repository; their
+  // contents are the packages below.
   for (const m of compose.matchAll(/^\s+image:\s*(\S+)/gm)) {
-    if (!m[1].startsWith('tesria-')) found.set(m[1], 'docker-compose.yml')
+    if (!m[1].startsWith('tesria-') && !m[1].includes('TESRIA_IMAGES')) found.set(m[1], 'docker-compose.yml')
   }
   for (const [ref] of found) {
     const at = ref.lastIndexOf(':')

@@ -1,0 +1,161 @@
+# Tesria's images (dev-plan 14.2): five images, each for linux/amd64 and
+# linux/arm64, published to Docker Hub and to GitHub's registry:
+#
+#   docker.io/<DOCKERHUB_USERNAME>/tesria-{app,db,backup,collab,pdf}
+#   ghcr.io/tesria/tesria-{app,db,backup,collab,pdf}
+#
+# Tagged 1.2.3, 1.2 and latest from a release tag v1.2.3 (a pre-release such
+# as v1.3.0-rc.1 gets only its own tag). Called by release.yml for every
+# release, and runnable by hand for an existing tag (Actions, Images, Run
+# workflow). Each architecture builds on its own native runner, since
+# emulating ARM would take the PDF image, which carries a browser, from
+# minutes to most of an hour; a last job joins the two into one tag.
+#
+# Needs the repository variable DOCKERHUB_USERNAME and the secret
+# DOCKERHUB_TOKEN (a Docker Hub access token with read and write access).
+# GitHub's registry uses the workflow's own token.
+name: Images
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: The release tag to build, such as v1.2.3.
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The release tag to build, such as v0.6.0.
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  GHCR_NAMESPACE: ghcr.io/tesria
+
+jobs:
+  prepare:
+    name: Work out the version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      tags: ${{ steps.v.outputs.tags }}
+    steps:
+      - id: v
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          case "$TAG" in v[0-9]*.[0-9]*.[0-9]*) ;; *) echo "Not a release tag: $TAG" >&2; exit 1 ;; esac
+          version="${TAG#v}"
+          case "$version" in
+            *-*) tags="$version" ;;                                  # a pre-release: only its own tag
+            *)   tags="$version ${version%.*} latest" ;;             # 1.2.3, 1.2 and latest
+          esac
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tags=$tags" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build ${{ matrix.image.name }} (${{ matrix.platform.arch }})
+    needs: prepare
+    runs-on: ${{ matrix.platform.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - { name: app, dockerfile: deploy/Dockerfile, description: "Tesria: the server and the web app" }
+          - { name: db, dockerfile: deploy/db/Dockerfile, description: "Tesria: PostgreSQL with pgBackRest" }
+          - { name: backup, dockerfile: deploy/backup/Dockerfile, description: "Tesria: scheduled backups" }
+          - { name: collab, dockerfile: collab/Dockerfile, description: "Tesria: live co-editing" }
+          - { name: pdf, dockerfile: pdf/Dockerfile, description: "Tesria: PDF export" }
+        platform:
+          - { arch: amd64, runner: ubuntu-24.04 }
+          - { arch: arm64, runner: ubuntu-24.04-arm }
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.image.dockerfile }}
+          platforms: linux/${{ matrix.platform.arch }}
+          build-args: TESRIA_VERSION=${{ needs.prepare.outputs.version }}
+          labels: |
+            org.opencontainers.image.title=tesria-${{ matrix.image.name }}
+            org.opencontainers.image.description=${{ matrix.image.description }}
+            org.opencontainers.image.version=${{ needs.prepare.outputs.version }}
+            org.opencontainers.image.source=https://github.com/Tesria/Tesria
+            org.opencontainers.image.url=https://tesria.com
+            org.opencontainers.image.licenses=Apache-2.0
+          # Pushed by digest only; the merge job gives the two architectures
+          # their shared tags.
+          outputs: type=image,"name=docker.io/${{ vars.DOCKERHUB_USERNAME }}/tesria-${{ matrix.image.name }},${{ env.GHCR_NAMESPACE }}/tesria-${{ matrix.image.name }}",push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ matrix.image.name }}-${{ matrix.platform.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image.name }}-${{ matrix.platform.arch }}
+      - name: Keep the digest
+        run: |
+          mkdir -p "$RUNNER_TEMP/digests"
+          digest="${{ steps.build.outputs.digest }}"
+          touch "$RUNNER_TEMP/digests/${digest#sha256:}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.image.name }}-${{ matrix.platform.arch }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    name: Tag ${{ matrix.image }}
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [app, db, backup, collab, pdf]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-${{ matrix.image }}-*
+          merge-multiple: true
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Tag both architectures in both registries
+        working-directory: ${{ runner.temp }}/digests
+        env:
+          TAGS: ${{ needs.prepare.outputs.tags }}
+          HUB: docker.io/${{ vars.DOCKERHUB_USERNAME }}/tesria-${{ matrix.image }}
+          GHCR: ${{ env.GHCR_NAMESPACE }}/tesria-${{ matrix.image }}
+        run: |
+          [ "$(ls | wc -l)" -eq 2 ] || { echo "Expected two digests (amd64 and arm64), found: $(ls)" >&2; exit 1; }
+          for repo in "$HUB" "$GHCR"; do
+            args=""
+            for tag in $TAGS; do args="$args -t $repo:$tag"; done
+            # shellcheck disable=SC2046,SC2086
+            docker buildx imagetools create $args $(printf "$repo@sha256:%s " *)
+            docker buildx imagetools inspect "$repo:${TAGS%% *}"
+          done
