@@ -5866,7 +5866,7 @@ would move them away from the permissions and render token they run with.
 
 15. **15.1** Access → **15.2** Editor → **15.3** Pages and collaboration → **15.4** Confirmations (asked for 2026-09-23). Before 10.5's step 7, so the Support site documents them and its pictures show them.
 15a. **15.5** Trust this device → **15.6** the Support rewrite, pilot pages first (asked for 2026-09-23). Before 14, because the Support site is what goes public with the images.
-16. **14.1** Pre-release audit → **14.2** Images on Docker Hub (asked for 2026-09-23). After 10.5, so the Support site and the images go public together.
+16. **14.1** Pre-release audit → **14.2** Images on Docker Hub (asked for 2026-09-23; both shipped 2026-09-24, 14.2 with GitHub's registry too, in 0.7.0). After 10.5, so the Support site and the images go public together.
 17. **16.1** One version number → **16.2** Versioned docs → **16.3** Pack migrations (asked for 2026-09-24; all three shipped 2026-09-24 with the 0.5.0 release). 16.1 alongside 14.2, since both are the same GitHub Actions release pipeline; 16.2 before the Support site is published at tesria.com; 16.3 before the first release that changes the pack format.
 18. **17** Developer docs on the Support site (asked for 2026-09-24; shipped 2026-09-24), after Phase 16 so every page carries its version table from the start.
 19. **18.1** Provider presets and **18.4** the app-password and sending-service pages (asked for 2026-09-24): small and independent, so any time; best before 14, since they are what a new owner meets in the setup wizard. Then **18.2** Sign in with Microsoft → **18.3** Sign in with Google, before 14 if the owner wants the public release to work with a personal Outlook.com account.

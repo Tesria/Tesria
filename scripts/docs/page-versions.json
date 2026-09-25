@@ -127,9 +127,9 @@
   },
   "Backups and recovery / When the machine is gone": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-25",
     "note": "Revised.",
-    "hash": "09babcd34e93ec3e"
+    "hash": "a9f50c3c60fe02ca"
   },
   "Basics / Accounts and invites": {
     "appliesTo": "0.5",
@@ -499,9 +499,9 @@
   },
   "FAQ": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-25",
     "note": "Revised.",
-    "hash": "96fa70b1c2e0f905"
+    "hash": "34727c463b2157b9"
   },
   "Features": {
     "appliesTo": "0.5",
@@ -541,15 +541,15 @@
   },
   "Getting started / Quick start": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-25",
     "note": "Revised.",
-    "hash": "14e4df8e49ee3236"
+    "hash": "36a0ef75834fd248"
   },
   "Getting started / System requirements": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-25",
     "note": "Revised.",
-    "hash": "494e2111bc689e16"
+    "hash": "9871b519dc636cee"
   },
   "Getting started / What is Tesria": {
     "appliesTo": "0.5",
@@ -637,9 +637,9 @@
   },
   "Installation and operations / Installing with Docker Compose": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-25",
     "note": "Revised.",
-    "hash": "b21e4ddde94782a9"
+    "hash": "c21ff7636136337f"
   },
   "Installation and operations / Opening Tesria by name": {
     "appliesTo": "0.5",
@@ -679,15 +679,15 @@
   },
   "Installation and operations / Uninstalling and moving": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-25",
     "note": "Revised.",
-    "hash": "42c7030b1a2c029b"
+    "hash": "001c59ab9486484f"
   },
   "Installation and operations / Upgrading": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-25",
     "note": "Revised.",
-    "hash": "72f32099c7fe8390"
+    "hash": "f10a584a1c5b7192"
   },
   "License and credits": {
     "appliesTo": "0.5",
@@ -898,6 +898,12 @@
     "updated": "2026-09-24",
     "note": "Written for Tesria 0.6.",
     "hash": "d8b1dab186f1d61e"
+  },
+  "Release notes / Tesria 0.7": {
+    "appliesTo": "0.7",
+    "updated": "2026-09-25",
+    "note": "Written for Tesria 0.7.",
+    "hash": "88becafddf37f13f"
   },
   "REST API": {
     "appliesTo": "0.5",

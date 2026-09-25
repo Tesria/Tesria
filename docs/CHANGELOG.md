@@ -5,8 +5,31 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
-Development builds now say **0.7.0-dev**: 0.6.0 is released, so what comes
-after it is the next minor version.
+## [0.7.0] - 2026-09-24
+
+Tesria no longer has to be built to be installed. Each release now comes as
+ready-made images, on Docker Hub (`brianintheloop/tesria-*`) and GitHub's
+registry (`ghcr.io/tesria/tesria-*`), for Intel, AMD and ARM machines, with
+`tesria-deploy.zip`: the few files needed to run them, about 100 KB.
+
+**Upgrading from 0.6**
+
+- A clone of the repository keeps working as before: `git pull`, then
+  `docker compose up -d --build`. Its containers are recreated once, because
+  the images now have names; the data is untouched.
+- To switch from a clone to the images: unzip `tesria-deploy.zip` into a new
+  folder, copy your `.env` into it, and run `docker compose pull` and
+  `docker compose up -d` there. The data carries over, since Docker keeps it
+  under the project's name, `tesria`, not the folder's. If you set up real
+  visitor addresses under Docker Desktop, run its install script again from
+  the new folder.
+
+**Highlights**
+
+- Images and `tesria-deploy.zip`: the docs' Quick start now downloads and
+  pulls instead of building, which also halves the memory needed to install.
+- A space's home page lists its contents, numbered like the sidebar, and so
+  does an exported site's front page, which looked empty before.
 
 ### 14.2 Images on Docker Hub and GitHub's registry, and tesria-deploy.zip (2026-09-24, Opus 5.5)
 

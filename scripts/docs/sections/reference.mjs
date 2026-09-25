@@ -42,16 +42,20 @@ export async function prepare({ author }) {
   return {}
 }
 
-/** The newest release's notes go first; a new page lands at the end. */
+/** Release notes newest first; a new page lands at the end, so it is moved up. */
 export async function cleanup({ author }) {
   const space = await author.call('GET', '/api/spaces/DOCS')
   const tree = await author.call('GET', `/api/pages/tree?spaceId=${space.id}`)
   const notes = tree.find((n) => n.title === 'Release notes')
-  const kids = notes?.children ?? []
-  const at = kids.findIndex((n) => n.title === 'Tesria 0.6')
-  if (at > 0) {
-    await author.call('PUT', `/api/pages/${kids[at].id}/move`, { parentPageId: notes.id, index: 0 })
-    console.log('  moved Tesria 0.6 to the top of Release notes')
+  if (!notes) return
+  const version = (title) => (title.match(/^Tesria (\d+)\.(\d+)$/) ?? []).slice(1).map(Number)
+  const newer = (a, b) => { const [x, y] = [version(a.title), version(b.title)]; return (y[0] - x[0]) || (y[1] - x[1]) }
+  const wanted = [...notes.children].filter((n) => version(n.title).length).sort(newer)
+  for (const [index, page] of wanted.entries()) {
+    const kids = (await author.call('GET', `/api/pages/tree?spaceId=${space.id}`)).find((n) => n.id === notes.id).children
+    if (kids[index]?.id === page.id) continue
+    await author.call('PUT', `/api/pages/${page.id}/move`, { parentPageId: notes.id, index })
+    console.log(`  moved ${page.title} to position ${index + 1} of Release notes`)
   }
 }
 
@@ -379,6 +383,24 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     p('To see which version you are running, open ', b('Administration'), ', then ', b('Dashboard'), ': the ', b('Tesria version'), ' card shows it, with the version you upgraded from, and so does ', b('About'), '. Signed in, ', c('https://your-server/api/health'), ' (', c('your-server'), ' being your Tesria’s address) includes it too, as ', c('"version"'), '; to anyone not signed in it says only that Tesria is running, so the version is not advertised.'),
     p('Versions are numbered like ', c('0.5.0'), ': the last number changes for fixes, the middle one for new features. Every page on this site ends with a table saying which version it applies to.'),
     live('children', { depth: '1', sort: 'position' }),
+  ))
+  await page('Tesria 0.7', notes, doc(
+    p('Tesria 0.7, released September 24, 2026, is the first release you install without building anything: it comes as ready-made images, and a small download with the few files needed to run them.'),
+    toc(),
+
+    h(2, 'Before you upgrade'),
+    p('These only matter if you already run Tesria 0.6. See ', pageLink('Upgrading'), ' for the steps themselves.'),
+    ul(
+      li(p(b('Installed with git clone?'), ' That keeps working exactly as before: ', c('git pull'), ', then ', c('docker compose up -d --build'), '. The containers are recreated once, because Tesria’s images now have names. Your wiki is not touched.')),
+      li(p(b('Want the ready-made images instead?'), ' Unzip ', c('tesria-deploy.zip'), ' into a new folder, copy your ', c('.env'), ' into it, and run ', c('docker compose pull'), ' and ', c('docker compose up -d'), ' there. Your wiki carries over: Docker keeps it under the project’s name, not the folder’s. If you set up ', pageLink('Real visitor addresses with Docker Desktop', 'real visitor addresses'), ', run that setup again from the new folder.')),
+    ),
+
+    h(2, 'What is new'),
+    ul(
+      li(p(b('Ready-made images.'), ' Every release is published on Docker Hub and on GitHub’s registry, for Intel, AMD and ARM computers, so installing and upgrading is a download instead of a build, and needs half the memory. See ', pageLink('Quick start'), '.')),
+      li(p(b('tesria-deploy.zip.'), ' About 100 KB with everything needed to run those images: no source code, and no Git. Upgrading is unzipping the next one over it.')),
+      li(p(b('A space’s home page lists its contents,'), ' each section and the pages in it, numbered like the sidebar. An exported website’s front page shows the same.')),
+    ),
   ))
   await page('Tesria 0.6', notes, doc(
     p('Tesria 0.6, released September 24, 2026, is the first public release: Tesria’s source code and these docs are open to everyone. If you already run 0.5, read ', i('Before you upgrade'), ' first: two things need doing once.'),
