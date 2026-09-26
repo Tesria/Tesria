@@ -370,11 +370,13 @@ that say which script or agent wrote what.
   example, while people publish directly.
 - **What triggers a review** is chosen too: new pages, edits to published
   pages, comments, and possibly moves, deletions and attachments.
-- **Reviewers per space:** a new space permission, *Review*, given to
-  people or groups. Publishing by a covered author creates a review
-  request instead of a new version; the page stays at its last approved
-  version, and the reviewers see it in a **review queue** (with
-  notifications and a count, like alerts).
+- **Reviewers are groups** (the next entry): a built-in **Global
+  Reviewers** group reviews in every space, and each space gets its own
+  **Reviewers** group when it is created, holding a new space permission,
+  *Review*. Publishing by a covered author creates a review request
+  instead of a new version; the page stays at its last approved version,
+  and the reviewers see it in a **review queue** (with notifications and a
+  count, like alerts).
 - **It works like a code review.** An edit shows a diff against the live
   version (8.6's block diff); a new page shows in full. Reviewers comment
   on a passage, and **approve or reject each change or the whole
@@ -417,3 +419,40 @@ that say which script or agent wrote what.
   a prompt carries only what the person asking may read, and never a token
   or secret; and when no agent has access yet, the button says so and
   links to setting up an API token or MCP.
+
+## Groups: defaults for every space, and assigned where people and spaces are made (suggested 2026-09-26, not scheduled)
+
+A separate addition, and the groundwork review mode needs. Today there are
+three built-in groups whose membership follows each account's role (Owner,
+Admins, Users) and custom groups filled by hand. Spaces grant View, Edit
+or Admin to people or groups, a new space gets no groups of its own,
+creating a space asks only for its key, name and description, and an
+invite carries no groups.
+
+- **More built-in global groups** beside Owner, Admins and Users:
+  **Global Viewers** (read every space) and **Global Reviewers** (review
+  in every space). Admins already acts as global administrators.
+- **Default groups for every space**, made when the space is created and
+  granted the matching permission on it: **Viewers**, **Editors**,
+  **Admins** and **Reviewers** (named with the space, such as "Handbook
+  Viewers"). They belong to the space: renamed with it, removed with it,
+  and managed by its space admins as well as by administrators.
+- **Creating a space becomes a short wizard**: name and key; who may see
+  it (everyone, or only its groups); who goes in each of its groups (the
+  creator starts as a space admin); and, once review mode exists, whether
+  it requires review.
+- **Inviting or creating a user becomes a wizard too**, with groups as a
+  step: the role (user or administrator), global groups (Global Viewers,
+  Global Reviewers), and per-space groups (pick spaces, and Viewer, Editor,
+  Admin or Reviewer in each). An invite carries its groups and applies
+  them when the account is created, with each assignment audited.
+- **A stronger Groups page:** search and filtering by space, member
+  counts, adding many people at once, which spaces each group grants what,
+  and an effective-access view for a person ("why can Sam see this
+  space?").
+- **To settle:** spaces that exist already (make their default groups
+  empty, or turn their current grants into memberships); how the groups sit
+  with page restrictions (a restricted page stays restricted to Global
+  Viewers, presumably); how "everyone" and a space's own groups combine for
+  a space open to all; and keeping the list usable with four groups per
+  space on an instance with many spaces.
