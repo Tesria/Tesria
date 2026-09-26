@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#161a1d" />
@@ -39,7 +40,7 @@
         }
         var brand = root.hasAttribute('data-brand-accent-light') || root.hasAttribute('data-brand-accent-dark');
         function valid(a) {
-          return /^(blue|teal|green|purple|orange|magenta)$/.test(a || '') || (a === 'brand' && brand);
+          return /^(blue|green|purple|orange|magenta)$/.test(a || '') || (a === 'brand' && brand);
         }
         var accent = root.getAttribute('data-accent-lock');
         if (!valid(accent)) accent = stored('tesria-accent');

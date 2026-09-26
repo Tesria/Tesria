@@ -1,0 +1,24 @@
+{
+  "layers": {
+    "write": {
+      "label": "Write",
+      "onLight": "#0c66e4",
+      "onDark": "#6cb6f7"
+    },
+    "keep": {
+      "label": "Keep",
+      "onLight": "#1a6c45",
+      "onDark": "#4bce97"
+    },
+    "share": {
+      "label": "Share",
+      "onLight": "#5b47ba",
+      "onDark": "#b8acf6"
+    },
+    "automate": {
+      "label": "Automate",
+      "onLight": "#9a4d00",
+      "onDark": "#fea362"
+    }
+  }
+}

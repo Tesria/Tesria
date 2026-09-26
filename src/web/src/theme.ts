@@ -115,7 +115,7 @@ export function systemTheme(): 'light' | 'dark' {
 
 /* ---- accent color ------------------------------------------------------ */
 
-export type AccentName = 'blue' | 'teal' | 'green' | 'purple' | 'orange' | 'magenta' | 'brand'
+export type AccentName = 'blue' | 'green' | 'purple' | 'orange' | 'magenta' | 'brand'
 
 export const ACCENT_STORAGE_KEY = 'tesria-accent'
 
@@ -124,7 +124,6 @@ export const DEFAULT_ACCENT: AccentName = 'blue'
 /** Order shown in the picker. Labels are the accessible names for each swatch. */
 export const ACCENTS: { name: AccentName; label: string }[] = [
   { name: 'blue', label: 'Blue' },
-  { name: 'teal', label: 'Teal' },
   { name: 'green', label: 'Green' },
   { name: 'purple', label: 'Purple' },
   { name: 'orange', label: 'Orange' },
@@ -169,84 +168,10 @@ export function applyAccent(accent: AccentName): void {
 
 /* ---- favicon ------------------------------------------------------------ */
 
-/**
- * The accent's hex values, light and dark. This is the source of truth the
- * favicon renders from; index.css declares the same pairs for the DOM. They
- * are duplicated because a favicon is a separate document that can never read
- * the page's custom properties, which is also why a single themeable SVG
- * favicon is not possible, and the color has to be baked in per variant.
+/*
+ * The favicon is public/favicon.svg, Tesria's four-color mark from the brand
+ * kit, and it no longer follows the accent or the theme (2026-09-26). The
+ * mark's colors are fixed, so there is nothing to repaint; the file carries
+ * its own light and dark shades for the browser's tab strip. An instance's
+ * uploaded favicon still replaces it: the server links that one.
  */
-export const ACCENT_HEX: Record<Exclude<AccentName, 'brand'>, { light: string; dark: string }> = {
-  blue: { light: '#2496ed', dark: '#6cb6f7' },
-  teal: { light: '#0b6b82', dark: '#6cc3e0' },
-  green: { light: '#1a6c45', dark: '#4bce97' },
-  purple: { light: '#5b47ba', dark: '#b8acf6' },
-  orange: { light: '#9a4d00', dark: '#fea362' },
-  magenta: { light: '#a53a7f', dark: '#f797d2' },
-}
-
-/**
- * Tesria's mark, stroked in one color. Kept in step with BrandMark.tsx and
- * public/favicon.svg by hand, three copies of two path strings is cheaper
- * than a build step to share them, but they do have to move together.
- *
- * Stroke is 2 rather than the brand's 1.8 for the same reason the static file
- * uses 2: at 16px the thinner stroke loses the lower layer lines.
- */
-function faviconSvg(color: string): string {
-  return (
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" ' +
-    `stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">` +
-    '<path d="M12 3l8 4.5-8 4.5-8-4.5L12 3z"/>' +
-    '<path d="M4 12l8 4.5 8-4.5M4 16.5L12 21l8-4.5"/>' +
-    '</svg>'
-  )
-}
-
-/**
- * Repaints the favicon for the given accent.
- *
- * Which half of the pair is used follows the *operating system*, not the app's
- * theme setting: the favicon sits in the browser's tab strip, so it should
- * match that chrome rather than the page. Someone running the app in forced
- * light on a dark-themed desktop wants the light-on-dark mark in their tabs.
- *
- * Generated at runtime rather than shipping six files: the colors then have
- * exactly one definition per theme in this file, six static files would drift
- * from the palette the first time an accent is retuned, and a data URI costs
- * no request. public/favicon.svg stays as the pre-JS default.
- */
-export function applyFavicon(accent: AccentName): void {
-  // An uploaded favicon is linked in the page by the server; painting over
-  // it would replace the instance's own icon with Tesria's mark.
-  if (brandAttr('data-brand-favicon')) return
-  const brand = {
-    light: brandAttr('data-brand-accent-light') ?? brandAttr('data-brand-accent-dark') ?? ACCENT_HEX.blue.light,
-    dark: brandAttr('data-brand-accent-dark') ?? brandAttr('data-brand-accent-light') ?? ACCENT_HEX.blue.dark,
-  }
-  const pair = accent === 'brand' ? brand : ACCENT_HEX[accent as Exclude<AccentName, 'brand'>] ?? ACCENT_HEX.blue
-  const color = systemTheme() === 'dark' ? pair.dark : pair.light
-  const href = 'data:image/svg+xml,' + encodeURIComponent(faviconSvg(color))
-
-  let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
-  if (!link) {
-    link = document.createElement('link')
-    link.rel = 'icon'
-    document.head.appendChild(link)
-  }
-  link.type = 'image/svg+xml'
-  link.href = href
-}
-
-/**
- * Paints the favicon now and repaints it whenever the OS flips light/dark.
- * Called once at startup, so the accent reaches the tab icon on every route,
- * including the sign-in pages, where the appearance menu isn't mounted.
- */
-export function startFaviconSync(): () => void {
-  applyFavicon(readAccent())
-  const query = window.matchMedia('(prefers-color-scheme: dark)')
-  const onChange = () => applyFavicon(readAccent())
-  query.addEventListener('change', onChange)
-  return () => query.removeEventListener('change', onChange)
-}

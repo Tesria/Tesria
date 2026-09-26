@@ -46,7 +46,6 @@ const NEUTRAL = { light: '#172b4d', dark: '#b6c2cf', bgLight: '#ffffff', bgDark:
  */
 const PRIMARY: Record<string, { light: string; dark: string }> = {
   blue: { light: '#0c66e4', dark: '#579dff' },
-  teal: { light: '#0b6b82', dark: '#6cc3e0' },
   green: { light: '#1a6c45', dark: '#4bce97' },
   purple: { light: '#5b47ba', dark: '#b8acf6' },
   orange: { light: '#9a4d00', dark: '#fea362' },

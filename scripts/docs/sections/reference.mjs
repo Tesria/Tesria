@@ -406,6 +406,13 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     p('Released the same day. On an exported website, choosing a page in the sidebar no longer scrolls the sidebar back to the top, so you keep your place in a long list of pages.'),
     h(2, '0.7.2'),
     p('Released September 25, 2026. On a phone, an exported website opens each page first, with its list of pages behind a menu button in the top bar, instead of above the page. The button turns into a cross to close the list, and takes you back to where you were reading.'),
+    h(2, '0.7.4'),
+    p('Released September 26, 2026. A new look for Tesria’s own mark and name; nothing else changes. Upgrade as usual; see ', pageLink('Upgrading'), '.'),
+    ul(
+      li(p(b('A new mark:'), ' four layers, one for each thing Tesria does (write, keep, share and automate), each in its own color, in the header, on exported websites and as the browser tab’s icon. It no longer takes on your accent color.')),
+      li(p(b('The name is now the TESRIA wordmark,'), ' as on tesria.com. A Tesria with its own name and logo still shows its own.')),
+      li(p(b('Teal is no longer one of the accent colors.'), ' If you had chosen it, Tesria now uses blue; choose another from the appearance menu. Teal text and highlights in your pages are unchanged.')),
+    ),
     h(2, '0.7.3'),
     p('Released September 25, 2026. Fixes from an outside review of Tesria’s code. Upgrade as usual; see ', pageLink('Upgrading'), '.'),
     ul(

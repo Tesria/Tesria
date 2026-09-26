@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useDismissable } from '../hooks/useDismissable'
 import {
-  ACCENTS, accentLock, applyAccent, applyFavicon, applyPreference, hasBrandAccent, readAccent,
+  ACCENTS, accentLock, applyAccent, applyPreference, hasBrandAccent, readAccent,
   readPreference, saveAccent, savePreference, systemTheme, themeLock, THEME_LABELS, THEME_ORDER,
   type AccentName, type ThemePreference,
 } from '../theme'
@@ -90,7 +90,6 @@ export function ThemeToggle() {
   useEffect(() => { applyPreference(preference) }, [preference])
   useEffect(() => {
     applyAccent(accent)
-    applyFavicon(accent)
   }, [accent])
 
   useEffect(() => {

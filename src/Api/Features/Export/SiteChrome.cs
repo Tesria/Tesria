@@ -131,7 +131,10 @@ public static partial class SiteChrome
             : $"<span class=\"brand__logo-wrap\">{LogoImg(brand.LogoPath, brand, currentPath, dark: false)}"
               + (brand.LogoDarkPath is null ? "" : LogoImg(brand.LogoDarkPath, brand, currentPath, dark: true))
               + "</span>";
-        var word = showName ? $"<span class=\"brand__word\">{SiteExport.Escape(brand.Name)}</span>" : "";
+        // Tesria's own name is its wordmark (the brand kit); an instance's
+        // name keeps its own letters.
+        var wordClass = brand.Name == "Tesria" ? "brand__word brand__word--tesria" : "brand__word";
+        var word = showName ? $"<span class=\"{wordClass}\">{SiteExport.Escape(brand.Name)}</span>" : "";
         return mark + word;
     }
 
@@ -386,9 +389,13 @@ public static partial class SiteChrome
         + $"stroke-width=\"{stroke.ToString(System.Globalization.CultureInfo.InvariantCulture)}\" "
         + $"stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">{body}</svg>";
 
-    /// <summary>Tesria's mark, from <c>BrandMark.tsx</c>.</summary>
+    /// <summary>
+    /// Tesria's mark, from <c>BrandMark.tsx</c>: four layers in their fixed
+    /// colors (docs/brand), whose per-layer strokes override the currentColor
+    /// the shared Svg helper sets.
+    /// </summary>
     private static readonly string BrandMark = Svg(20,
-        """<path d="M12 3l8 4.5-8 4.5-8-4.5L12 3z" /><path d="M4 12l8 4.5 8-4.5M4 16.5L12 21l8-4.5" />""");
+        """<path d="M4 17.25l8 4 8-4" stroke="var(--tesria-automate)" /><path d="M4 13.75l8 4 8-4" stroke="var(--tesria-share)" /><path d="M4 10.25l8 4 8-4" stroke="var(--tesria-keep)" /><path d="M12 2.75l8 4-8 4-8-4z" stroke="var(--tesria-write)" />""", stroke: 2);
 
     /// <summary>From <c>NavIcons.tsx</c>, which draws these at 16px.</summary>
     private static readonly string PagesIcon = Svg(16,
@@ -408,10 +415,10 @@ public static partial class SiteChrome
             """<path d="M20 13.5A8.5 8.5 0 1 1 10.5 4a6.75 6.75 0 0 0 9.5 9.5Z" />""")),
     ];
 
-    /// <summary>The six accents, from <c>theme.ts</c>.</summary>
+    /// <summary>The five accents, from <c>theme.ts</c> (teal retired 2026-09-26).</summary>
     private static readonly (string Name, string Label)[] Accents =
     [
-        ("blue", "Blue"), ("teal", "Teal"), ("green", "Green"),
+        ("blue", "Blue"), ("green", "Green"),
         ("purple", "Purple"), ("orange", "Orange"), ("magenta", "Magenta"),
     ];
 

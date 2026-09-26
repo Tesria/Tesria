@@ -1,11 +1,11 @@
 /**
- * Tesria's logo: a stack of layers. Drawn in the same language as the rest of the
- * app's icons (24x24 viewBox, 1.8 stroke, round caps and joins) because the
- * brand mark already used exactly that: no adaptation needed.
+ * Tesria's mark (the brand kit, docs/brand): a stack of four layers, one per
+ * thing Tesria does, top to bottom Write, Keep, Share and Automate, each in
+ * its official color. The colors are fixed: never the user's accent. They
+ * come from --tesria-* in index.css, which switch shade with the page's
+ * light or dark theme.
  *
- * `currentColor`, so the color is the caller's business. In the topbar that
- * resolves to `--primary` (see `.brand__mark`), which means the mark follows
- * both the light/dark theme and the chosen accent for free.
+ * Stroke 2 at small sizes, as the kit says, and 1.8 from 28px up.
  */
 export function BrandMark({ size = 20 }: { size?: number }) {
   return (
@@ -14,14 +14,15 @@ export function BrandMark({ size = 20 }: { size?: number }) {
       height={size}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
+      strokeWidth={size >= 28 ? 1.8 : 2}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path d="M12 3l8 4.5-8 4.5-8-4.5L12 3z" />
-      <path d="M4 12l8 4.5 8-4.5M4 16.5L12 21l8-4.5" />
+      <path d="M4 17.25l8 4 8-4" stroke="var(--tesria-automate)" />
+      <path d="M4 13.75l8 4 8-4" stroke="var(--tesria-share)" />
+      <path d="M4 10.25l8 4 8-4" stroke="var(--tesria-keep)" />
+      <path d="M12 2.75l8 4-8 4-8-4z" stroke="var(--tesria-write)" />
     </svg>
   )
 }

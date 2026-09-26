@@ -49,7 +49,8 @@ public sealed record BrandView(
 
     /// <summary>The accent that means "the custom colors".</summary>
     public const string BrandAccent = "brand";
-    public static readonly string[] BuiltInAccents = ["blue", "teal", "green", "purple", "orange", "magenta"];
+    /// <summary>Teal was retired on 2026-09-26; a stored "teal" reads as blue.</summary>
+    public static readonly string[] BuiltInAccents = ["blue", "green", "purple", "orange", "magenta"];
 
     /// <summary>
     /// A brand name or a logo: the instance has its own identity rather than
@@ -62,7 +63,8 @@ public sealed record BrandView(
     public string? LockedAccent => AccentPolicy == Locked ? EffectiveAccent : null;
 
     /// <summary>The accent someone gets before they have picked one.</summary>
-    public string EffectiveAccent => AccentName ?? "blue";
+    public string EffectiveAccent =>
+        AccentName is { } a && (a == BrandAccent || BuiltInAccents.Contains(a)) ? a : "blue";
 
     public bool HasBrandAccent => AccentLight is not null || AccentDark is not null;
 

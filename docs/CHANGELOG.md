@@ -5,6 +5,30 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.7.4] - 2026-09-26
+
+### A new mark and wordmark (2026-09-26, Opus 5.5)
+
+Tesria has a brand kit (`docs/brand`), and 0.7.4 carries only that:
+
+- **The mark is four layers,** one for each thing Tesria does, top to
+  bottom Write, Keep, Share and Automate, each in its own fixed color, with
+  deeper shades on light backgrounds and brighter ones on dark. It is drawn
+  the same in the header, on the `/trust` page and in exported sites, and
+  it no longer takes on the chosen accent color.
+- **The name beside it is the TESRIA wordmark,** in Archivo at weight 800
+  and 112% width, as on tesria.com. The font is cut down to those six
+  letters (3.5 KB) and embedded in the stylesheet, so exported sites carry
+  it too. An instance's own name keeps its own letters.
+- **The favicon is the kit's,** and no longer changes with the theme or
+  the accent. `favicon.ico` and a home-screen icon for iPhones and iPads
+  join it.
+- **Teal is no longer an accent color.** Anyone who had chosen it, and an
+  instance whose default or locked accent was teal, gets blue. Teal as a
+  text or highlight color in pages is unchanged.
+- The onboarding pictures and the docs' screenshots are retaken with the
+  new mark.
+
 ## [0.7.3] - 2026-09-25
 
 ### Fixes from an outside review: restores work again, and live editing asks the app (dev-plan 14.4, 2026-09-25, Opus 5.5; designs reviewed by Fable 5.1)
