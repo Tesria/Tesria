@@ -411,6 +411,26 @@ that say which script or agent wrote what.
   with this server's address), and the ground rules: write to the draft,
   where changes arrive as tracked changes; do not publish; respect review
   mode; say what was done in the change note.
+- **How the agent answers** is part of the request, picked by the person
+  (with a default per space or template), and the prompt names the exact
+  tool or endpoint for it:
+  - **edit the draft**: the change lands as tracked changes to accept or
+    reject (possible today through `update_page`);
+  - **submit it for review**: the same, but as a review request (review
+    mode above; a space that requires review turns an edit into this);
+  - **a page comment**, **an inline comment** on the passage, or **a reply
+    in a comment thread** when the request came from one: suggestions and
+    answers that leave the text alone. Tesria has comments and inline
+    comments, but MCP has no tools for them yet, and an agent needs a way
+    to anchor an inline comment to text (the quoted passage and its
+    position);
+  - **a new page** (or child page), for a summary or a write-up;
+  - **an answer only**: nothing written to the wiki, for a question or a
+    fact check, shown back in the request inbox;
+  - and combinations, such as editing and leaving a comment that explains
+    the change.
+  Whichever it is, the request records where the answer landed, so the
+  person can go straight to it.
 - **Getting it to the agent:** copy to the clipboard for any agent; or,
   for one connected over MCP, a request inbox the agent reads with a tool,
   picks up, and marks done, so the person sees the status in Tesria.
