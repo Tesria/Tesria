@@ -79,7 +79,11 @@ export function AuthBrand() {
   return (
     <div className={cls}>
       {showMark && <Mark branding={branding} markSize={36} />}
-      {showName && <span className="auth-brand__name">{branding.name}</span>}
+      {showName && (
+        <span className={branding.hasCustomName ? 'auth-brand__name' : 'auth-brand__name brand__word--tesria'}>
+          {branding.name}
+        </span>
+      )}
     </div>
   )
 }
