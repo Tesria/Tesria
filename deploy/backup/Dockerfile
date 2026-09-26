@@ -17,3 +17,6 @@ ARG RESTIC_VERSION=0.18.0-1+b4
 RUN apt-get update \
     && apt-get install -y --no-install-recommends "restic=${RESTIC_VERSION}" \
     && rm -rf /var/lib/apt/lists/*
+
+# Tesria's license and notice travel with the image (the review's LIC-01).
+COPY LICENSE NOTICE /usr/share/doc/tesria/

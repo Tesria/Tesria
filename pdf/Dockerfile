@@ -17,6 +17,10 @@ COPY pdf/package.json pdf/package-lock.json* ./
 RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit=dev; fi
 
 COPY pdf/server.js ./
+# Tesria's license and notices, and every bundled package's license text
+# (the review's LIC-01): this image is published on its own, so it carries
+# them itself; some packages, Hocuspocus among them, ship no license file.
+COPY LICENSE NOTICE src/Api/About/THIRD-PARTY-NOTICES.txt /usr/share/doc/tesria/
 
 EXPOSE 8091
 USER pwuser

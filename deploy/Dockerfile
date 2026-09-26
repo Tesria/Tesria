@@ -58,6 +58,8 @@ RUN mkdir -p /app/uploads && chown -R app:app /app/uploads
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 EXPOSE 8080
+# Tesria's license and notice travel with the image (the review's LIC-01).
+COPY LICENSE NOTICE src/Api/About/THIRD-PARTY-NOTICES.txt /usr/share/doc/tesria/
 USER app
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \

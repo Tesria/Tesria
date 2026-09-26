@@ -26,6 +26,10 @@ COPY collab/package.json collab/package-lock.json ./
 RUN npm ci --omit=dev
 
 COPY collab/server.js ./
+# Tesria's license and notices, and every bundled package's license text
+# (the review's LIC-01): this image is published on its own, so it carries
+# them itself; some packages, Hocuspocus among them, ship no license file.
+COPY LICENSE NOTICE src/Api/About/THIRD-PARTY-NOTICES.txt /usr/share/doc/tesria/
 COPY --from=schema /collab/vendor/collab-schema.js ./vendor/
 
 EXPOSE 8090

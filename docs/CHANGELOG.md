@@ -8,6 +8,29 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.8.0-dev**: 0.7.3 is released, and the next
 release is 0.8.0, with the rest of the review fixes (SEC-01, LIC-01, DOC-01).
 
+### Closing out the outside review (dev-plan 14.4, 2026-09-26, Opus 5.5)
+
+Every correction the review suggested was in; this checks the points it
+asked to have validated that had not been, and closes one gap they found.
+
+- **SEC-02:** tests now cover all three cases the review named: a
+  suspended account and a space closed to its user join the sign-out and
+  page-restriction tests, each with a token that is still valid.
+- **DATA-02, the review's own reproduction, end to end:** an Undo copy
+  saying `OLDER_UNDO` in an old archive, the live file saying
+  `CURRENT_BEFORE_RESTORE`, a restore and then Undo, with the scripts' real
+  file-handling blocks. 0.7.2's script gives back `OLDER_UNDO`, as the
+  review found; the current one gives back `CURRENT_BEFORE_RESTORE`.
+- **DATA-03, a damaged dump:** a real dump cut in half passes the first
+  readability check (its table of contents is intact) and is then refused
+  by the strict restore step, which drops the half-restored copy: nothing
+  changes. The whole dump restores in full.
+- **LIC-01, the images themselves:** the collaboration image, published on
+  its own, carried Hocuspocus and pg-types without their license texts,
+  which lived only in the app image's notices. Every image now carries
+  Tesria's `LICENSE` and `NOTICE` in `/usr/share/doc/tesria`, and those
+  that bundle packages (app, collaboration, PDF) the full notices too.
+
 ### Fixes from an outside review: private material out of public files (dev-plan 14.4, DOC-01, 2026-09-25, Opus 5.5)
 
 The development plan, this CHANGELOG and many code comments were written

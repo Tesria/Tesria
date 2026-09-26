@@ -126,6 +126,45 @@ public class CollabAuthorizeTests
     }
 
     [Fact]
+    public async Task A_suspended_accounts_connection_ends()
+    {
+        // The review's three cases (SEC-02): suspension, session revocation
+        // (sign-out, above) and permission changes (page, above; space, below).
+        using var f = Factory();
+        var owner = f.CreateClient();
+        await owner.RegisterAndSignInAsync();
+        var page = await PageAsync(owner);
+        var member = f.CreateClient();
+        var memberId = await member.RegisterAndSignInAsync();
+        var claims = await ClaimsAsync(member, page.Id);
+        Assert.Equal(new[] { true }, await AllowedAsync(f, claims));
+
+        (await owner.PutAsJsonAsync($"/api/admin/users/{memberId}/status", new { Status = 1 })).EnsureSuccessStatusCode();
+        Assert.Equal(new[] { false }, await AllowedAsync(f, claims));
+    }
+
+    [Fact]
+    public async Task A_connection_ends_when_its_space_is_closed_to_its_user()
+    {
+        using var f = Factory();
+        var owner = f.CreateClient();
+        var ownerId = await owner.RegisterAndSignInAsync();
+        var spaceId = await owner.CreateSpaceAsync("CLOSING");
+        var page = (await (await owner.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = "Live", ContentJson = Doc }))
+            .Content.ReadFromJsonAsync<PageDetail>())!;
+        var member = f.CreateClient();
+        await member.RegisterAndSignInAsync();
+        var claims = await ClaimsAsync(member, page.Id);
+        Assert.Equal(new[] { true }, await AllowedAsync(f, claims));
+
+        // The space stops being open to everyone: only the owner is granted it.
+        (await owner.PostAsJsonAsync("/api/spaces/CLOSING/permissions",
+            new { PrincipalType = 0, PrincipalId = ownerId, Operation = 2 })).EnsureSuccessStatusCode();
+        Assert.Equal(new[] { false }, await AllowedAsync(f, claims));
+    }
+
+    [Fact]
     public async Task A_changed_security_stamp_ends_the_connection()
     {
         using var f = Factory();

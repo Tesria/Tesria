@@ -18,3 +18,6 @@ RUN apt-get update \
     # by the postgres user so archive_command (which runs as postgres) can write.
     && mkdir -p /var/spool/pgbackrest /var/log/pgbackrest \
     && chown -R postgres:postgres /var/spool/pgbackrest /var/log/pgbackrest
+
+# Tesria's license and notice travel with the image (the review's LIC-01).
+COPY LICENSE NOTICE /usr/share/doc/tesria/
