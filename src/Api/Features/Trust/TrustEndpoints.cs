@@ -99,7 +99,7 @@ public static partial class TrustEndpoints
         <script src="/trust/trust.js" defer></script>
         </head>
         <body>
-        <header class="trust-top"><span class="brand__mark">{{BrandMark}}</span><span class="trust-top__name">{{name}}</span></header>
+        <header class="trust-top"><span class="brand__mark">{{BrandMark}}</span><span class="trust-top__name{{(name == "Tesria" ? " brand__word--tesria" : "")}}">{{name}}</span></header>
         <main class="trust">
         {{body}}
         </main>
@@ -107,7 +107,8 @@ public static partial class TrustEndpoints
         </html>
         """;
 
-    private const string BrandMark = """<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5-8 4.5-8-4.5L12 3z" /><path d="M4 12l8 4.5 8-4.5M4 16.5L12 21l8-4.5" /></svg>""";
+    // Tesria's mark (docs/brand), in its fixed colors from the stylesheet.
+    private const string BrandMark = """<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17.25l8 4 8-4" stroke="var(--tesria-automate)" /><path d="M4 13.75l8 4 8-4" stroke="var(--tesria-share)" /><path d="M4 10.25l8 4 8-4" stroke="var(--tesria-keep)" /><path d="M12 2.75l8 4-8 4-8-4z" stroke="var(--tesria-write)" /></svg>""";
 
     /// <summary>
     /// The commands the page shows, as templates its script fills in as the

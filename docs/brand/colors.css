@@ -1,0 +1,15 @@
+/* Tesria's four official colors, one per layer of the mark. */
+:root {
+  --tesria-write: #0c66e4;
+  --tesria-keep: #1a6c45;
+  --tesria-share: #5b47ba;
+  --tesria-automate: #9a4d00;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tesria-write: #6cb6f7;
+    --tesria-keep: #4bce97;
+    --tesria-share: #b8acf6;
+    --tesria-automate: #fea362;
+  }
+}

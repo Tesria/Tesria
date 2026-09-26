@@ -576,9 +576,27 @@ public class BrandingTests
     {
         var brand = new SiteChrome.Brand("Acme")
         {
-            Attributes = [("data-theme-lock", "dark"), ("data-accent-lock", "teal")],
+            Attributes = [("data-theme-lock", "dark"), ("data-accent-lock", "green")],
         };
         Assert.DoesNotContain("theme-menu", SiteChrome.Topbar(brand, homeHref: null));
+    }
+
+    [Fact]
+    public void A_retired_accent_reads_as_blue()
+    {
+        // Teal was an accent until 2026-09-26; an instance that chose it
+        // gets the default rather than no accent at all.
+        Assert.Equal("blue", BrandView.From(new SiteSettings { AccentName = "teal" }).EffectiveAccent);
+        Assert.Equal("green", BrandView.From(new SiteSettings { AccentName = "green" }).EffectiveAccent);
+    }
+
+    [Fact]
+    public void Tesrias_own_name_is_its_wordmark_and_an_instances_name_is_its_own()
+    {
+        Assert.Contains("brand__word--tesria", SiteChrome.Topbar(new SiteChrome.Brand("Tesria"), homeHref: null));
+        var acme = SiteChrome.Topbar(new SiteChrome.Brand("Acme"), homeHref: null);
+        Assert.Contains("class=\"brand__word\"", acme);
+        Assert.DoesNotContain("brand__word--tesria", acme);
     }
 
     [Fact]

@@ -533,7 +533,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('Dark'), ' is always dark.')),
     ),
     step(3, 'Choose an accent color'),
-    p('Pick one of the round swatches: Blue, Teal, Green, Purple, Orange or Magenta. If your organization has its own brand color, it comes first, under your organization’s name.'),
+    p('Pick one of the round swatches: Blue, Green, Purple, Orange or Magenta. If your organization has its own brand color, it comes first, under your organization’s name.'),
     p('Each choice takes effect at once; there is nothing to save. Close the menu with its ', b('×'), ', or click anywhere else.'),
 
     h(2, 'Where it is kept'),

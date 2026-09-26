@@ -57,7 +57,9 @@ export function BrandLockup() {
   return (
     <>
       {showMark && <Mark branding={branding} markSize={20} />}
-      {showName && <span className="brand__word">{branding.name}</span>}
+      {showName && (
+        <span className={branding.hasCustomName ? 'brand__word' : 'brand__word brand__word--tesria'}>{branding.name}</span>
+      )}
     </>
   )
 }

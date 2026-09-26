@@ -2,7 +2,6 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, createRoutesFromElements, Navigate, Route, RouterProvider } from 'react-router-dom'
 import './index.css'
-import { startFaviconSync } from './theme'
 import { AuthProvider } from './auth/AuthContext'
 import { InstanceProvider } from './InstanceContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
@@ -48,7 +47,6 @@ import { AdminBrandingPage } from './routes/admin/AdminBrandingPage'
 
 // Paints the tab icon in the chosen accent before React renders, and keeps
 // it in step when the OS flips light/dark.
-startFaviconSync()
 
 // A data router (createBrowserRouter), not <BrowserRouter>: only a data
 // router supports useBlocker, which is what lets the editor ask before a

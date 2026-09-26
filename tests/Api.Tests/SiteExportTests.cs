@@ -276,11 +276,13 @@ public class SiteExportTests
 
         Assert.Contains("Acme Wiki", bar);
         Assert.Contains("class=\"topbar\"", bar);
-        // The full menu, not a row of buttons: three modes and six accents.
+        // The full menu, not a row of buttons: three modes and five accents
+        // (teal retired 2026-09-26).
         foreach (var mode in new[] { "system", "light", "dark" })
             Assert.Contains($"data-theme-mode=\"{mode}\"", bar);
-        foreach (var accent in new[] { "blue", "teal", "green", "purple", "orange", "magenta" })
+        foreach (var accent in new[] { "blue", "green", "purple", "orange", "magenta" })
             Assert.Contains($"data-theme-accent=\"{accent}\"", bar);
+        Assert.DoesNotContain("data-theme-accent=\"teal\"", bar);
     }
 
     [Fact]

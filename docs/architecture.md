@@ -1472,7 +1472,7 @@ page. A PDF gets none of this: it is paper.
 
 The only JavaScript in the output is the theme script, which applies the
 stored theme and accent before first paint and then drives the appearance
-menu (three modes, six accents) through `data-theme-*` hooks, because the
+menu (three modes, five accents) through `data-theme-*` hooks, because the
 React component's own behavior cannot survive a capture that strips scripts.
 The wordmark is the instance name, which is the half of instance branding
 that already exists; a replaceable mark is the other half, and
@@ -1617,7 +1617,7 @@ compares the script byte for byte.
 OKLCH, where "the same hue, lighter" is a straight line. It derives the hover
 color, two tints, a border tint, and the text color on buttons (chosen by
 measured contrast) from one color per mode, and checks the WCAG 4.5:1 rule
-the six built-in accents meet. Colors are stored only as normalized
+the five built-in accents meet. Colors are stored only as normalized
 `#rrggbb`, because they are written into a stylesheet on every page. The
 owner may keep a color that fails the check. The admin page offers the
 nearest passing shade, and the audit entry records the override.
@@ -1936,6 +1936,18 @@ absent means "system" (the `prefers-color-scheme` media query decides),
 dark)` guarded by `:root:not([data-theme="light"])`, once under
 `:root[data-theme="dark"]`, which is what lets an explicit choice win in
 both directions.
+
+**Tesria's own mark is not themed by the accent** (since 0.7.4, the brand
+kit in `docs/brand`). It is four layers in fixed colors, one per pillar
+(Write, Keep, Share, Automate), with light and dark shades as `--tesria-*`
+tokens beside the accent swatches; the header, the `/trust` page and
+exported sites draw it with those. The favicon is the kit's `favicon.svg`,
+which switches shades with the operating system itself, and nothing repaints
+it; `favicon.ico` and `apple-touch-icon.png` are the kit's light and dark
+sets. The name beside the mark is the TESRIA wordmark, in Archivo cut to its
+six letters and embedded in the stylesheet (`src/web/src/fonts`); an
+instance's own name keeps its own letters. Teal was retired as an accent in
+0.7.4; a stored "teal" reads as blue.
 
 The accent color is a second, independent axis on the same mechanism: a
 `data-accent` attribute driving every `--primary*` token. Each accent is
