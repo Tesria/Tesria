@@ -120,6 +120,21 @@ before an implementation one:
   is careful not to do. It has to keep the established two-pass shape:
   over-fetch candidates, then filter with `IPermissionService`.
 
+**Where embeddings come from: two options (suggested 2026-09-25).** Either
+or both, chosen by the operator, and off until switched on:
+
+- **Bring your own endpoint.** The operator gives an OpenAI-compatible
+  embeddings URL and key. It can be something they run themselves, such as
+  Ollama on the same machine, or a hosted service if they accept that the
+  text leaves the server. Nothing extra ships with Tesria.
+- **A local model, pulled on request.** Where the machine can take it,
+  Tesria downloads a small sentence-embedding model (roughly 100 MB to
+  1 GB) and runs it on the CPU in a sidecar. Such models are fast on an
+  ordinary processor.
+
+Either way the vectors live in `pgvector`, search stays hybrid (BM25
+below, plus vectors), and results are filtered by permission as above.
+
 **Revisit when** either is true: neither is, as of 2026-09-11:
 
 - the wiki passes roughly **500–1,000 pages**. It has **58**, totalling
@@ -228,3 +243,65 @@ check them all the same (an export change is tested in a real export). The
 collaboration service's bundled schema (`collab/vendor/collab-schema.js`) is
 built from `src/web`, so the image is rebuilt with it. The donut's hole is a
 good place for the total (the disk's free space, or the chart's sum).
+
+## Importing ZIM files (suggested 2026-09-25, not scheduled)
+
+ZIM is the offline-wiki format of openZIM and Kiwix: Wikipedia,
+Wiktionary, Stack Exchange sites and many other reference collections,
+each packed into one compressed file.
+
+- **What it would do:** import a ZIM file into a new space: its articles
+  as pages, its images as attachments, its internal links and redirects
+  mapped to the new pages.
+- **Why:** a new wiki could start with a body of reference material, such
+  as offline documentation or a subject reference, at no cost.
+- **To settle:** reading ZIM needs `libzim` (C++, with Python bindings);
+  .NET has no mature library, so probably a small import sidecar like the
+  PDF service. Article HTML has to be cleaned into the editor's format. A
+  full Wikipedia file is around 100 GB, so imports need limits or a way to
+  pick a subset (by category or a list of articles). Each file's license,
+  usually CC BY-SA, has to travel with the pages it becomes.
+
+## BM25 ranking for search (suggested 2026-09-25, not scheduled)
+
+Search is already available over the REST API (`GET /api/search`) and to
+assistants through MCP. It ranks with PostgreSQL's `ts_rank`, which does
+not weigh how rare a word is across the wiki or how long a page is.
+
+- **What it would do:** rank by BM25 instead, through the same endpoint
+  and tools, with no change to the API.
+- **Why:** better ordering as a wiki grows, since rare terms and short,
+  focused pages rank higher; and BM25 is the lexical half that hybrid
+  search (above) merges with the vectors.
+- **Options:** a PostgreSQL extension that provides BM25 (such as
+  ParadeDB's `pg_search`), which changes the database image; or keep the
+  full-text index to find matches and compute BM25 scores over them in the
+  app.
+
+## Turning a wiki into a dataset (suggested 2026-09-25, deliberately later)
+
+Not an export of pages but a structured, machine-ready dataset from a wiki
+or chosen spaces: for training or fine-tuning a model, evaluating a
+retrieval (RAG) system, or analysis.
+
+- **What it would produce:** pages split into clean text chunks at their
+  headings, each with its metadata (space, place in the tree, labels,
+  author, dates, version), in the formats machine-learning tools read:
+  JSONL, Parquet, and a layout a Hugging Face dataset loads. Optionally,
+  pairs derived from the content, such as a question with the passage that
+  answers it, or a title with its summary: the part that makes it more
+  than an export, and the part that needs the most design.
+- **Why:** most useful to companies, whose wiki is the best record of how
+  they work; turning it into training or evaluation data today means
+  custom scripts. Most people will not need it, so it waits behind the
+  common features.
+- **To settle:** permissions (a dataset is built as one person or
+  audience, never across everything, as the site export already is);
+  sensitive content such as emails, names and secrets in pages, to be
+  scrubbed or at least flagged, with a record of what the dataset holds;
+  whether page history is included (revisions as examples of edits);
+  freshness (each dataset records the wiki version and date it came from);
+  and generated pairs need a language model, the same bring-your-own or
+  local choice as embeddings above.
+- **Revisit when** someone asks for it for real use, or after hybrid search
+  lands, since the chunking and metadata would be shared.
