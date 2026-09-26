@@ -6,6 +6,23 @@ now historical/complete) and [`CHANGELOG.md`](./CHANGELOG.md) (what's
 actually shipped). Add to this list as new ideas come up; move an entry to
 the CHANGELOG once it's actually built.
 
+## Principles (2026-09-26)
+
+**Your team's knowledge, on your own server, and you stay in control of
+it, including the AI agents that work on it.** Every item should make that
+sentence truer, through one of four pillars:
+
+| Pillar | The promise | Where the work is |
+|---|---|---|
+| **Write** | Writing together is fast and pleasant | Small: donut charts, a timeline element |
+| **Keep** | It is yours, safe and recoverable | Honest hardware requirements; lighter on small machines |
+| **Share** | Exactly the right people see exactly the right things | Default groups per space; space and invite wizards |
+| **Automate** | Agents help, and never act behind your back | Agent comments, review mode, the prompt engine, better search |
+
+What the public site says follows the same rule: only what is true today,
+in plain words. Things planned or imagined are labeled as such (see
+the public roadmap below).
+
 This file is the internal ideas log. The short, visitor-facing version is
 [`roadmap-public.md`](./roadmap-public.md), which tesria.com reads at build
 time for its Roadmap page, and whose build fails if its shape changes:

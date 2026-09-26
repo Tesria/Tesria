@@ -11,6 +11,23 @@ Distinct from [`PLAN.md`](../PLAN.md) (the founding design, complete) and
 are now scheduled are pulled in here). Move items to the
 [`CHANGELOG`](./CHANGELOG.md) as they ship.
 
+## Principles (2026-09-26)
+
+**Your team's knowledge, on your own server, and you stay in control of
+it, including the AI agents that work on it.** Every item should make that
+sentence truer, through one of four pillars:
+
+| Pillar | The promise | Where the work is |
+|---|---|---|
+| **Write** | Writing together is fast and pleasant | Small: donut charts, a timeline element |
+| **Keep** | It is yours, safe and recoverable | Honest hardware requirements; lighter on small machines |
+| **Share** | Exactly the right people see exactly the right things | Default groups per space; space and invite wizards |
+| **Automate** | Agents help, and never act behind your back | Agent comments, review mode, the prompt engine, better search |
+
+What the public site says follows the same rule: only what is true today,
+in plain words. Things planned or imagined are labeled as such (see
+`roadmap-public.md`).
+
 ## Which model did what
 
 Tesria is built with Claude, and each item's `Model:` tag records which
@@ -6190,6 +6207,55 @@ request, and the page polls a progress side channel (`?progress=<id>`,
 the request, which stops the work. The one thing given up is coming back
 to a closed tab for the file; running exports outside a request to allow it
 would move them away from the permissions and render token they run with.
+
+## Phases 21 to 24: delivering the promise (scheduled 2026-09-26)
+
+**Order:** first, 14.4's close-out (the outside review's remaining checks,
+then 0.8.0 and its advisory); then Phase 21, because review mode and both
+wizards depend on it; then 22, 23 and 24. **Releases:** 0.9 carries Phase
+21, 22.1, 22.2 and 23.1; **1.0 is when agents are fully in step**, with
+review mode and the prompt engine. Each item's design is written here
+before it is built; those marked *design review* turn on a decision that
+is expensive to reverse, and go to Fable 5.1 first. Details and open
+questions are in `roadmap.md`.
+
+### Phase 21: Groups that fit spaces (Share)
+
+- **21.1** Global Viewers and Global Reviewers beside the built-in groups,
+  and Viewers, Editors, Admins and Reviewers made with every space, owned
+  by it and managed by its space admins. · `M` · Model: Opus 5.5 · *design
+  review* (what existing spaces get, and how the groups sit with page
+  restrictions and spaces open to all)
+- **21.2** Creating a space as a wizard: name and key, who may see it, who
+  goes in each of its groups. · `M` · Model: Opus 5.5
+- **21.3** Inviting or creating a user as a wizard, with the role, global
+  groups and per-space groups; an invite carries its groups. · `M` ·
+  Model: Opus 5.5
+- **21.4** A stronger Groups page: search, filtering by space, counts,
+  bulk adds, and why a person can see a space. · `M` · Model: Opus 5.5
+
+### Phase 22: Agents that work with you (Automate)
+
+- **22.1** Comment tools in the MCP server: add, reply, list. · `S` ·
+  Model: Opus 5.5
+- **22.2** Inline comments from agents: the server finds the quoted passage
+  and places the highlight in the live draft, for REST and MCP. · `M` ·
+  Model: Opus 5.5 · *design review* (writing into live documents)
+- **22.3** The prompt engine: the Ask-an-agent button, response types, and
+  a request inbox agents read over MCP. · `L` · Model: Opus 5.5
+- **22.4** Review mode, per space and per kind of author, with the
+  reviewer groups of 21.1. · `L` · Model: Opus 5.5 · *design review*
+
+### Phase 23: Search that scales (Automate)
+
+- **23.1** BM25 ranking, through the same API. · `M` · Model: Opus 5.5
+- **23.2** Embeddings, bring your own or local, fitted to the machine. ·
+  `L` · Model: Opus 5.5 · *design review* · later
+
+### Phase 24: Light enough for small machines (Keep)
+
+- **24.1** Measured hardware requirements, published; the PDF service
+  optional. · `S` · Model: Opus 5.5
 
 ## Order of execution, flattened
 
