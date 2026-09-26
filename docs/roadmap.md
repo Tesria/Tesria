@@ -349,3 +349,71 @@ retrieval (RAG) system, or analysis.
   local choice as embeddings above.
 - **Revisit when** someone asks for it for real use, or after hybrid search
   lands, since the chunking and metadata would be shared.
+
+## Agents that work with you (suggested 2026-09-26, not scheduled)
+
+Two features meant to close the gap in an AI-first wiki workflow: agents
+writing through the REST API or MCP should work *with* the people who own
+the content, not around them. They share one idea, that Tesria can hand an
+agent exactly the context it needs, and are best designed together.
+
+What exists to build on: the draft and publish lifecycle, version history,
+API and MCP writes arriving in a draft as tracked changes a person accepts
+or rejects (dev-plan 8.6, with its block diff), comments, and API tokens
+that say which script or agent wrote what.
+
+### Review mode: approval before anything goes live
+
+- **Turned on in permissions**, per space (with an instance-wide default),
+  and separately for each kind of author: **people**, **REST API tokens**
+  and **MCP agents**. A space can require review of agents only, for
+  example, while people publish directly.
+- **What triggers a review** is chosen too: new pages, edits to published
+  pages, comments, and possibly moves, deletions and attachments.
+- **Reviewers per space:** a new space permission, *Review*, given to
+  people or groups. Publishing by a covered author creates a review
+  request instead of a new version; the page stays at its last approved
+  version, and the reviewers see it in a **review queue** (with
+  notifications and a count, like alerts).
+- **It works like a code review.** An edit shows a diff against the live
+  version (8.6's block diff); a new page shows in full. Reviewers comment
+  on a passage, and **approve or reject each change or the whole
+  document**; approving part of it publishes a version with only the
+  accepted changes.
+- **Sending it back.** To a person: back into their draft with the
+  reviewer's notes, and the rejected parts marked as tracked changes. To an
+  agent: Tesria **writes a prompt to feed back to the agent**, with the
+  page, what was accepted and rejected, why, and the reviewer's notes (the
+  prompt engine below). An agent connected over MCP could also fetch its
+  review result itself and try again.
+- **To settle:** no approving your own work unless a space allows it; an
+  owner or administrator bypass, audited; what happens when the live page
+  changes while a review is open (the diff has to be against the newest
+  version, as 8.6's reconcile already does for drafts); what the REST API
+  and MCP return when a publish becomes a review request (a pending status
+  and a review id, which is an API change); comments under review, which is
+  closer to moderation; and every decision in the audit log, with the
+  approver recorded on the version.
+
+### A prompt engine: handing a request to an agent
+
+- **A button on a page** (and on a selection): *Ask an agent*. The person
+  says what they want, in their own words or from quick actions (rewrite,
+  expand, fix, summarize, check the facts, add examples), and picks the
+  scope: the whole page, a section, or the selection.
+- **Tesria writes the prompt:** which page (title, space, address and id),
+  what is asked, and **where**: the heading path, the block, and the line
+  and column or character position when it matters, together with the
+  quoted text around it, since positions drift as the page changes. It
+  says how to reach the page (the MCP tools by name, or the REST endpoints
+  with this server's address), and the ground rules: write to the draft,
+  where changes arrive as tracked changes; do not publish; respect review
+  mode; say what was done in the change note.
+- **Getting it to the agent:** copy to the clipboard for any agent; or,
+  for one connected over MCP, a request inbox the agent reads with a tool,
+  picks up, and marks done, so the person sees the status in Tesria.
+- **To settle:** prompt templates an administrator can edit, per space,
+  and per agent (Claude Code, Cursor and others name tools differently);
+  a prompt carries only what the person asking may read, and never a token
+  or secret; and when no agent has access yet, the button says so and
+  links to setting up an API token or MCP.
