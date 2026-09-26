@@ -135,6 +135,23 @@ or both, chosen by the operator, and off until switched on:
 Either way the vectors live in `pgvector`, search stays hybrid (BM25
 below, plus vectors), and results are filtered by permission as above.
 
+**Fit it to the machine (suggested 2026-09-25).** BM25 is cheap and runs
+fine on a small computer; embeddings are not, above all the first pass
+over a large wiki, which on a modest CPU can take hours. So the person
+running Tesria chooses, with the cost in front of them:
+
+- **Off, bring your own, or local**, and for local, a choice of model
+  sizes, with what each needs in memory and roughly how long the first
+  pass would take on this machine for this wiki, before anything is
+  downloaded or started.
+- **The first pass as a background job** with progress, that can be
+  paused and resumed, throttled, or kept to quiet hours, so the wiki stays
+  responsive while it runs. After it, only pages that change are
+  re-embedded.
+- **Search never waits for it.** BM25 answers from the start; vectors join
+  the results for the pages that have them, and a wiki whose embeddings
+  are off or unfinished simply searches the way it does today.
+
 **Revisit when** either is true: neither is, as of 2026-09-11:
 
 - the wiki passes roughly **500–1,000 pages**. It has **58**, totalling
@@ -297,7 +314,9 @@ not weigh how rare a word is across the wiki or how long a page is.
   and tools, with no change to the API.
 - **Why:** better ordering as a wiki grows, since rare terms and short,
   focused pages rank higher; and BM25 is the lexical half that hybrid
-  search (above) merges with the vectors.
+  search (above) merges with the vectors. It is cheap: no model, no extra
+  memory to speak of, and fine on the smallest machine Tesria runs on, so
+  it can be on for everyone.
 - **Options:** a PostgreSQL extension that provides BM25 (such as
   ParadeDB's `pg_search`), which changes the database image; or keep the
   full-text index to find matches and compute BM25 scores over them in the
