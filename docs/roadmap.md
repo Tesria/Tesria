@@ -6,6 +6,21 @@ now historical/complete) and [`CHANGELOG.md`](./CHANGELOG.md) (what's
 actually shipped). Add to this list as new ideas come up; move an entry to
 the CHANGELOG once it's actually built.
 
+This file is the internal ideas log. The short, visitor-facing version is
+[`roadmap-public.md`](./roadmap-public.md), which tesria.com reads at build
+time for its Roadmap page, and whose build fails if its shape changes:
+
+- exactly three `##` sections, in order: `Shipped in <version>` (the
+  release the list describes, updated when a release goes out), `Next`,
+  `Ideas`;
+- each item one `- ` line of plain text, up to about 120 characters, with
+  at most one Markdown link and nothing else (no bold, nested lists or
+  continuation lines); 3 to 10 items per section;
+- written for the public: no dev-plan numbers, file paths, model names,
+  review codes, suggestion dates, quotations or security-gap references;
+- ideas phrased as possibilities, not promises; when an item ships, it
+  moves into the next `Shipped in` list.
+
 > **Status:** the first four entries below were all scheduled in
 > [`dev-plan.md`](./dev-plan.md) on 2026-09-08 and are now shipped except
 > wiki packs (8.5, deliberately last): MCP (8.4 ✅), the API surface

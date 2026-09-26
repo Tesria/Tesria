@@ -56,6 +56,10 @@ Read first, in this order:
   against a postgres service. Locally, a throwaway server does it:
   `docker run -d --rm --name tesria-test-pg -p 127.0.0.1:55432:5432 -e POSTGRES_PASSWORD=tesria-test postgres:18`,
   then `TESRIA_TEST_POSTGRES='Host=127.0.0.1;Port=55432;Username=postgres;Password=tesria-test'`.
+- **`docs/roadmap-public.md` is read by tesria.com's build**, which fails if
+  its shape changes: the rules are at the top of `docs/roadmap.md`. On every
+  release, rename `Shipped in` to the new version and move what shipped
+  into it.
 - **Frontend tests are for logic, never for rendering** (`npm test`, vitest,
   added 2026-09-20 for the 8.6 block diff). What belongs there is pure
   functions with edge cases a walk cannot cover honestly. Components,
