@@ -1,7 +1,7 @@
 # Tesria roadmap
 <!-- Read by tesria.com at build time. One line per item, written for visitors. -->
 
-## Shipped in 0.7.3
+## Shipped in 0.7.4
 - An MCP server: AI assistants write as suggestions a person accepts
 - Real-time editing together, with a slash menu for tables, panels, charts, diagrams and more
 - A REST API and webhooks, with read-only or full-access tokens and a record of what each token did
