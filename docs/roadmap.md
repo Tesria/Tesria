@@ -244,23 +244,48 @@ collaboration service's bundled schema (`collab/vendor/collab-schema.js`) is
 built from `src/web`, so the image is rebuilt with it. The donut's hole is a
 good place for the total (the disk's free space, or the chart's sum).
 
-## Importing ZIM files (suggested 2026-09-25, not scheduled)
+## ZIM files: importing and exporting (suggested 2026-09-25, not scheduled)
 
 ZIM is the offline-wiki format of openZIM and Kiwix: Wikipedia,
 Wiktionary, Stack Exchange sites and many other reference collections,
-each packed into one compressed file.
+each packed into one compressed file that the Kiwix apps read offline on
+phones, computers and small servers.
+
+**Importing**
 
 - **What it would do:** import a ZIM file into a new space: its articles
   as pages, its images as attachments, its internal links and redirects
   mapped to the new pages.
 - **Why:** a new wiki could start with a body of reference material, such
   as offline documentation or a subject reference, at no cost.
-- **To settle:** reading ZIM needs `libzim` (C++, with Python bindings);
-  .NET has no mature library, so probably a small import sidecar like the
-  PDF service. Article HTML has to be cleaned into the editor's format. A
-  full Wikipedia file is around 100 GB, so imports need limits or a way to
-  pick a subset (by category or a list of articles). Each file's license,
-  usually CC BY-SA, has to travel with the pages it becomes.
+- **To settle:** article HTML has to be cleaned into the editor's format.
+  A full Wikipedia file is around 100 GB, so imports need limits or a way
+  to pick a subset (by category or a list of articles). Each file's
+  license, usually CC BY-SA, has to travel with the pages it becomes.
+
+**Exporting**
+
+- **What it would do:** export a space, or a chosen set of spaces, as a
+  ZIM file, so a wiki can be read offline in any Kiwix app: on a phone
+  with no signal, on a laptop in the field, or served on a network with no
+  internet through `kiwix-serve`.
+- **Why:** it pairs naturally with the site export (Phase 12), which
+  already turns a space into self-contained HTML with relative links;
+  packing that into a ZIM is the smaller step. Useful for teams that work
+  offline, and for publishing a public wiki as a download.
+- **To settle:** the same audience rule as the site export (built as one
+  person or as anonymous, never across permissions); the metadata ZIM
+  requires (title, language, creator, publisher, date, description and a
+  48-pixel icon) and a main page; the full-text index libzim builds inside
+  the file, so search works offline; and pages that stay usable where a
+  Kiwix reader runs little or no JavaScript, as the site export's already
+  mostly are.
+
+**Both directions:** reading and writing ZIM needs `libzim` (C++, with
+Python bindings, including its writer); .NET has no mature library, so
+probably one small sidecar for both, like the PDF service. A file made by
+the export should import back into Tesria, which is the natural test of
+both.
 
 ## BM25 ranking for search (suggested 2026-09-25, not scheduled)
 
