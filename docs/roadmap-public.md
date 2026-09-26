@@ -14,11 +14,12 @@
 
 ## Next
 - Devices check the server's certificate fingerprint before trusting its own HTTPS
-- AI assistants can comment on a page, not only edit it
-- Review mode: changes from people, scripts or AI assistants wait for approval before going live
 - Default groups for every space, and guided setup for new spaces and new people
+- AI assistants can comment on a page, not only edit it
 - Better search ranking (BM25), light enough for the smallest server
 - An Ask an agent button that tells your AI assistant what you want, and exactly where on the page
+- Review mode: changes from people, scripts or AI assistants wait for approval before going live
+- Published hardware requirements, and a lighter install for small servers
 
 ## Ideas
 - Semantic search, using your own embedding service or a small local model if your server can run it
