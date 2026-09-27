@@ -8,15 +8,16 @@
     authority's certificate from the server and adds it to this computer's
     trusted certificates, so the warning stops: once per device.
 
-    It only does so when the certificate's SHA-256 fingerprint matches the
-    one you give it (the review's SEC-01, dev-plan 14.4). The certificate
-    comes over plain HTTP, because nothing is trusted yet, so on a network
-    someone else controls it could be theirs; and a trusted authority vouches
-    for every website, not only Tesria. The fingerprint is how you know it is
-    your server's. Get it from the server itself, never from the network:
+    It prints the certificate's SHA-256 fingerprint and trusts it, the way
+    SSH trusts a server the first time. On a network you run yourself that
+    is enough. On one someone else controls, the certificate, which comes
+    over plain HTTP because nothing is trusted yet, could be theirs, and a
+    trusted authority vouches for every website: there, give -Fingerprint,
+    and it trusts nothing unless the certificate matches (the review's
+    SEC-01, made optional by the owner on 2026-09-27). Get the fingerprint
+    from the server:
       - on the server:  docker compose logs app | Select-String fingerprint
-      - or in Tesria:   Administration, Settings, Certificate, opened on the
-                        server computer (https://localhost) or through Tailscale
+      - or in Tesria:   Administration, Settings, Certificate
 
     Get this script from Tesria's GitHub releases, or from the
     tesria-deploy.zip you installed from, not from the server: a script
@@ -35,11 +36,15 @@
     wiki-server.local.
 
 .PARAMETER Fingerprint
-    The certificate's SHA-256 fingerprint, from the server. Separators and
+    Optional. The certificate's SHA-256 fingerprint, from the server; with
+    it, nothing is trusted unless the certificate matches. Separators and
     case do not matter.
 
 .PARAMETER CurrentUser
     Trust it for your Windows account only; no administrator needed.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\trust-ca.ps1 wiki-server.local
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File .\trust-ca.ps1 wiki-server.local -Fingerprint AB:CD:...
@@ -48,8 +53,7 @@
 param(
     [Parameter(Position = 0, Mandatory = $true)]
     [string]$HostName,
-    [Parameter(Mandatory = $true)]
-    [string]$Fingerprint,
+    [string]$Fingerprint = "",
     [switch]$CurrentUser
 )
 
@@ -58,7 +62,7 @@ $ErrorActionPreference = "Stop"
 function Get-Hex([string]$value) { return ($value -replace '[^0-9A-Fa-f]', '').ToUpperInvariant() }
 
 $expected = Get-Hex $Fingerprint
-if ($expected.Length -ne 64) {
+if ($expected.Length -ne 0 -and $expected.Length -ne 64) {
     Write-Error "That is not a SHA-256 fingerprint (64 hexadecimal digits, usually in pairs like AB:CD:...)."
     exit 2
 }
@@ -74,10 +78,9 @@ function Test-Admin {
 if (-not $CurrentUser -and -not (Test-Admin)) {
     Write-Host "==> Re-launching as administrator (trusting it for everyone on this computer needs it)..."
     $scriptPath = $MyInvocation.MyCommand.Path
-    Start-Process powershell.exe -Verb RunAs -ArgumentList @(
-        "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$scriptPath`"",
-        "`"$HostName`"", "-Fingerprint", "`"$expected`""
-    )
+    $relaunch = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$scriptPath`"", "`"$HostName`"")
+    if ($expected) { $relaunch += @("-Fingerprint", "`"$expected`"") }
+    Start-Process powershell.exe -Verb RunAs -ArgumentList $relaunch
     exit
 }
 
@@ -108,7 +111,12 @@ catch {
 # certificate, which on Windows PowerShell 5.1 only offers SHA-1.
 $sha = [System.Security.Cryptography.SHA256]::Create()
 $actual = Get-Hex ([BitConverter]::ToString($sha.ComputeHash($cert.RawData)))
-if ($actual -ne $expected) {
+if (-not $expected) {
+    Write-Host "==> Its SHA-256 fingerprint: $(($actual -split '(..)' | Where-Object { $_ }) -join ':')"
+    Write-Host "    Not checked, as no -Fingerprint was given. On a network you do not"
+    Write-Host "    control, compare it with the one on the server before relying on it."
+}
+elseif ($actual -ne $expected) {
     Remove-Item $tmpCert -ErrorAction SilentlyContinue
     Write-Host ""
     Write-Host "ERROR: the certificate from $HostName does NOT match the fingerprint you gave." -ForegroundColor Red
@@ -119,7 +127,7 @@ if ($actual -ne $expected) {
     Read-Host "Press Enter to close"
     exit 1
 }
-Write-Host "==> The certificate matches the fingerprint: $($cert.Subject)"
+if ($expected) { Write-Host "==> The certificate matches the fingerprint: $($cert.Subject)" }
 
 $store = if ($CurrentUser) { "Cert:\CurrentUser\Root" } else { "Cert:\LocalMachine\Root" }
 Write-Host "==> Adding it to $store ..."

@@ -32,7 +32,7 @@ export function CertificateCard() {
       <h2>Certificate</h2>
       <p className="muted small">
         This server makes its own certificate, so each device trusts it once, with the steps at{' '}
-        <code>/trust</code>. Before trusting it, a device compares its fingerprint with this one.
+        <code>/trust</code>. On a network you do not control, a device can check its fingerprint against this one first.
       </p>
       {!status.known ? (
         <p className="muted small">Not read yet. The certificate is made the first time Tesria starts; look again in a minute.</p>

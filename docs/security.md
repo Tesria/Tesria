@@ -174,8 +174,10 @@ older references still point at the right item.
     (`64:ff9b::/96`) and 6to4 (`2002::/16`) addresses and judges that, and
     also refuses `192.0.0.0/24`, `198.18.0.0/15` and the IPv6 discard
     range.
-15. ~~Trusting the local certificate trusted whatever the network sent.~~
-    **Fixed in 0.8.0.** Found by an outside review (2026-09-24). On a
+15. Trusting the local certificate trusts what the network sends, unless
+    the device checks the fingerprint. **Scripts fixed in 0.8.0; the
+    certificate check optional by the owner's decision (below).** Found by
+    an outside review (2026-09-24). On a
     server without a public domain, each device trusts Caddy's own
     certificate authority, and the certificate, the `/trust` guide and the
     scripts it handed out all arrived over plain HTTP. Anyone able to alter
@@ -197,9 +199,20 @@ older references still point at the right item.
       HTTPS win if the two differ.
     - `/trust` and the docs say what trusting an authority means, and name
       the two ways that need none: Tailscale and a real domain.
-    *Remaining:* the `/trust` page and `ca.crt` still travel unprotected,
-    so a person who skips the comparison is no safer than before; the
-    steps make skipping it the harder path. A name-constrained authority,
+    **Changed 2026-09-27, by the owner's decision:** checking the
+    fingerprint is optional, SSH-style. Requiring it meant carrying a
+    64-character code from the server to every device, which defeats
+    self-service on the private and offline networks Tesria is for. By
+    default the scripts and the typed lines print the fingerprint and
+    trust; given one (a box on `/trust`, `--fingerprint`, `-Fingerprint`)
+    they trust nothing unless it matches. What stays fixed: the server
+    serves no scripts, the Mac and Windows commands are typed lines that
+    need none, and the Linux one fetches the script from GitHub over HTTPS.
+    *Accepted:* on a network someone else controls, a device's first trust
+    can be given an attacker's authority unless its owner checks; the page
+    and docs say so and point to the check, Tailscale, or a real domain.
+    *Remaining:* the `/trust` page and `ca.crt` travel unprotected, so a
+    person who does not check is exactly as safe as the network they are on. A name-constrained authority,
     which browsers would accept only for this server's names, would limit
     the damage of a stolen authority key, and is noted for later.
 

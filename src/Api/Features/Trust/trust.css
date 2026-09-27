@@ -83,3 +83,7 @@ a.btn[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
 #trust-fingerprint-error { margin-top: 0.75rem; }
 .trust-channel { margin: 1rem 0; }
 .trust-channel p { margin: 0; }
+/* The optional fingerprint check (2026-09-27): closed until someone wants it. */
+.trust-check > summary { cursor: pointer; list-style-position: outside; }
+.trust-check[open] > summary { margin-bottom: 0.75rem; }
+#trust-fingerprint-ok { margin-top: 0.75rem; }

@@ -6,18 +6,18 @@
 # authority's certificate from the server and adds it to this computer's
 # trusted certificates, so the warning stops: once per device.
 #
-# It only does so when the certificate's SHA-256 fingerprint matches the one
-# you give it (the review's SEC-01, dev-plan 14.4). The certificate comes
-# over plain HTTP, because nothing is trusted yet, so on a network someone
-# else controls it could be theirs; and a trusted authority vouches for every
-# website, not only Tesria. The fingerprint is how you know it is your
-# server's. Get it from the server itself, never from the network:
+# It prints the certificate's SHA-256 fingerprint and trusts it, the way SSH
+# trusts a server the first time. On a network you run yourself that is
+# enough. On one someone else controls, the certificate, which comes over
+# plain HTTP because nothing is trusted yet, could be theirs, and a trusted
+# authority vouches for every website: there, give --fingerprint, and it
+# trusts nothing unless the certificate matches (the review's SEC-01, made
+# optional by the owner on 2026-09-27). Get the fingerprint from the server:
 #   - on the server:  docker compose logs app | grep -i fingerprint
-#   - or in Tesria:   Administration, Settings, Certificate, opened on the
-#                     server computer (https://localhost) or through Tailscale
+#   - or in Tesria:   Administration, Settings, Certificate
 #
 # Usage:
-#   bash trust-ca.sh --fingerprint <SHA-256 fingerprint> <address>
+#   bash trust-ca.sh [--fingerprint <SHA-256 fingerprint>] <address>
 #
 #   address   What you type into the browser to open Tesria, without
 #             https://, such as wiki-server.local.
@@ -33,8 +33,8 @@
 set -euo pipefail
 
 usage() {
-	echo "Usage: bash trust-ca.sh --fingerprint <SHA-256 fingerprint> <address>" >&2
-	echo "  The fingerprint is on the server: docker compose logs app | grep -i fingerprint" >&2
+	echo "Usage: bash trust-ca.sh [--fingerprint <SHA-256 fingerprint>] <address>" >&2
+	echo "  Optional: the fingerprint is on the server: docker compose logs app | grep -i fingerprint" >&2
 	exit 2
 }
 
@@ -50,12 +50,11 @@ while [ $# -gt 0 ]; do
 	esac
 done
 [ -n "$HOST" ] || { echo "ERROR: give the address you open Tesria at." >&2; usage; }
-[ -n "$EXPECTED" ] || { echo "ERROR: give the certificate's fingerprint; without it this script will not trust anything." >&2; usage; }
 
 # Compared as 64 hex digits, whatever the separators and case.
 normalize() { printf '%s' "$1" | tr -cd '0-9A-Fa-f' | tr 'a-f' 'A-F'; }
 EXPECTED="$(normalize "$EXPECTED")"
-if [ "${#EXPECTED}" -ne 64 ]; then
+if [ -n "$EXPECTED" ] && [ "${#EXPECTED}" -ne 64 ]; then
 	echo "ERROR: that is not a SHA-256 fingerprint (64 hexadecimal digits, usually in pairs like AB:CD:...)." >&2
 	exit 2
 fi
@@ -78,7 +77,11 @@ fi
 
 SUBJECT="$(openssl x509 -in "$TMP_CERT" -noout -subject | sed 's/^subject= *//')"
 ACTUAL="$(normalize "$(openssl x509 -in "$TMP_CERT" -noout -fingerprint -sha256 | cut -d= -f2)")"
-if [ "$ACTUAL" != "$EXPECTED" ]; then
+if [ -z "$EXPECTED" ]; then
+	echo "==> Its SHA-256 fingerprint: $(printf '%s' "$ACTUAL" | sed 's/../&:/g; s/:$//')"
+	echo "    Not checked, as no --fingerprint was given. On a network you do not"
+	echo "    control, compare it with the one on the server before relying on it."
+elif [ "$ACTUAL" != "$EXPECTED" ]; then
 	echo "ERROR: the certificate from ${HOST} does NOT match the fingerprint you gave." >&2
 	echo "       Nothing was trusted." >&2
 	echo "       Check you copied the fingerprint from this server, and the address is" >&2
@@ -86,7 +89,7 @@ if [ "$ACTUAL" != "$EXPECTED" ]; then
 	echo "       server's place: do not trust it, and try from another network." >&2
 	exit 1
 fi
-echo "==> The certificate matches the fingerprint: ${SUBJECT}"
+[ -z "$EXPECTED" ] || echo "==> The certificate matches the fingerprint: ${SUBJECT}"
 
 OS="$(uname -s)"
 

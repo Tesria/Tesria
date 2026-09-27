@@ -52,6 +52,25 @@ overrides only.
 - `DOMAIN` defaults to `localhost` and `ACME_EMAIL` is optional (Caddy now
   takes an empty one).
 
+### Trusting the local certificate: the fingerprint check is optional (2026-09-27, Opus 5.5)
+
+The SEC-01 fix required every device to be given the server's 64-character
+fingerprint, which could only be read on the server itself or through
+Tailscale: a person had to carry it from the server to each device, and
+the offline, private networks Tesria is for have nothing else to carry it.
+The owner decided to make the check optional, the way SSH trusts a server
+the first time.
+
+- `/trust`'s commands print the certificate's fingerprint and trust it. The
+  check is a closed "Optional: check the fingerprint first" section;
+  pasting one there swaps each command for its checked form, which trusts
+  nothing unless it matches. The phone steps' comparison is optional too.
+- The Mac gets a typed line instead of the script from GitHub, so, like
+  Windows, it needs no internet. Linux keeps the script.
+- `trust-ca.sh` and `trust-ca.ps1` take the fingerprint as optional.
+- Unchanged: the server serves no scripts. The trade-off is in
+  `docs/security.md` (gap 15).
+
 ### Donut charts (2026-09-27, Opus 5.5)
 
 - **The chart element has a Donut type**, beside Pie rather than instead of

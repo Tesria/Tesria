@@ -1,8 +1,9 @@
 // "Trust this device" (dev-plan 15.5). The page works without this file:
 // every device's steps are shown. With it, the page shows only yours, and
-// writes the address and the fingerprint (14.4, the review's SEC-01) into
-// the commands and the final check. It never supplies a fingerprint itself:
-// the person pastes the one they got from the server.
+// writes the address into the commands and the final check. Checking the
+// fingerprint is optional (2026-09-27, the owner's decision, SSH-style): a
+// pasted one swaps each command for its checked form. It never supplies a
+// fingerprint itself: the person pastes the one they got from the server.
 (function () {
   'use strict';
   var d = document;
@@ -50,6 +51,8 @@
     var ok = hex.length === 64;
     var error = d.getElementById('trust-fingerprint-error');
     if (error) error.hidden = ok || raw.trim() === '';
+    var good = d.getElementById('trust-fingerprint-ok');
+    if (good) good.hidden = !ok;
     return ok ? { hex: hex, pairs: hex.match(/../g).join(':') } : null;
   }
 
@@ -61,7 +64,8 @@
     d.getElementById('trust-ip').hidden = !(ok && IPV4.test(address));
     var fp = fingerprint();
     d.querySelectorAll('[data-template]').forEach(function (el) {
-      el.textContent = el.getAttribute('data-template')
+      var checked = fp && el.getAttribute('data-template-checked');
+      el.textContent = (checked || el.getAttribute('data-template'))
         .split('{address}').join(ok ? address : 'your-server')
         .split('{fingerprint}').join(fp ? fp.pairs : PLACEHOLDER)
         .split('{hex}').join(fp ? fp.hex : PLACEHOLDER);

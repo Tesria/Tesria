@@ -37,29 +37,45 @@ public class TrustTests
     }
 
     [Fact]
-    public async Task Windows_gets_a_line_to_paste_that_checks_the_fingerprint_before_importing()
+    public async Task Windows_gets_a_line_that_prints_the_fingerprint_and_a_checked_one()
     {
         // PowerShell's execution policy stops a downloaded .ps1 from running,
         // and an employer can lock it (2026-09-23). A typed command is not
         // subject to it, and CurrentUser\Root needs no administrator. Since
-        // 14.4 it imports nothing unless the certificate matches.
+        // 2026-09-27 checking is optional (the owner's decision, SSH-style):
+        // the line shown prints the fingerprint and trusts; the checked form,
+        // which the page swaps in once one is pasted, imports nothing unless
+        // it matches.
         using var factory = new TestAppFactory();
         var html = System.Net.WebUtility.HtmlDecode(await Client(factory).GetStringAsync("/trust"));
         Assert.Contains("Invoke-WebRequest -UseBasicParsing -Uri \"http://wiki-server.local/ca.crt\"", html);
-        Assert.Contains("ComputeHash($x.RawData)", html);
-        Assert.Contains("if ($h -eq \"PASTE-THE-FINGERPRINT\") { Import-Certificate", html);
+        Assert.Contains("Write-Host (\"SHA-256: \"", html);
         Assert.Contains("-CertStoreLocation Cert:\\CurrentUser\\Root", html);
-        // The template the page's script fills as the address and fingerprint change.
+        Assert.DoesNotContain("PASTE-THE-FINGERPRINT", html);
+        // The checked template, filled by the page's script.
         Assert.Contains("http://{address}/ca.crt", html);
-        Assert.Contains("-eq \"{hex}\"", html);
+        Assert.Contains("if ($h -eq \"{hex}\") { Import-Certificate", html);
     }
 
     [Fact]
-    public async Task The_scripts_come_from_the_release_and_refuse_without_a_fingerprint()
+    public async Task A_mac_trusts_with_one_typed_line_and_no_script()
+    {
+        // No script and no GitHub (2026-09-27), so it works on a network with
+        // no internet: the certificate comes from the server itself.
+        using var factory = new TestAppFactory();
+        var html = System.Net.WebUtility.HtmlDecode(await Client(factory).GetStringAsync("/trust"));
+        Assert.Contains("curl -fsS http://wiki-server.local/ca.crt -o /tmp/tesria-ca.crt && openssl x509", html);
+        Assert.Contains("security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain", html);
+        Assert.Contains("cut -d= -f2 | tr -d :)\" = \"{hex}\" ]; then sudo security add-trusted-cert", html);
+    }
+
+    [Fact]
+    public async Task The_scripts_come_from_the_release_with_the_fingerprint_optional()
     {
         using var factory = new TestAppFactory();
         var html = System.Net.WebUtility.HtmlDecode(await Client(factory).GetStringAsync("/trust"));
         Assert.Contains("https://github.com/Tesria/Tesria/releases/latest/download/trust-ca.sh", html);
+        Assert.Contains("bash trust-ca.sh wiki-server.local", html);
         Assert.Contains("bash trust-ca.sh --fingerprint {fingerprint} {address}", html);
         Assert.Contains("https://github.com/Tesria/Tesria/releases/latest/download/trust-ca.ps1", html);
         Assert.Contains("-Fingerprint {hex}", html);
@@ -144,17 +160,19 @@ public class TrustTests
     }
 
     [Fact]
-    public void Both_scripts_in_deploy_insist_on_a_matching_fingerprint()
+    public void Both_scripts_check_a_fingerprint_when_given_and_print_it_otherwise()
     {
-        // The release attaches these (14.4); a script that would install a
-        // certificate it had not checked is the finding this exists to fix.
+        // The release attaches these (14.4). Given a fingerprint, a mismatch
+        // trusts nothing, and the check comes before any install; without one,
+        // they print it and trust (2026-09-27, optional by the owner's decision).
         var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../deploy/scripts"));
         var sh = File.ReadAllText(Path.Combine(root, "trust-ca.sh"));
-        Assert.Contains("without it this script will not trust anything", sh);
-        Assert.Contains("if [ \"$ACTUAL\" != \"$EXPECTED\" ]; then", sh);
+        Assert.Contains("Not checked, as no --fingerprint was given", sh);
+        Assert.Contains("elif [ \"$ACTUAL\" != \"$EXPECTED\" ]; then", sh);
         Assert.True(sh.IndexOf("$ACTUAL\" != \"$EXPECTED", StringComparison.Ordinal) < sh.IndexOf("add-trusted-cert", StringComparison.Ordinal));
-        var ps1 = File.ReadAllText(Path.Combine(root, "trust-ca.ps1"));
-        Assert.Contains("[Parameter(Mandatory = $true)]\n    [string]$Fingerprint", ps1.Replace("\r\n", "\n"));
-        Assert.True(ps1.IndexOf("if ($actual -ne $expected)", StringComparison.Ordinal) < ps1.IndexOf("Import-Certificate -FilePath", StringComparison.Ordinal));
+        var ps1 = File.ReadAllText(Path.Combine(root, "trust-ca.ps1")).Replace("\r\n", "\n");
+        Assert.Contains("[string]$Fingerprint = \"\"", ps1);
+        Assert.Contains("Not checked, as no -Fingerprint was given", ps1);
+        Assert.True(ps1.IndexOf("elseif ($actual -ne $expected)", StringComparison.Ordinal) < ps1.IndexOf("Import-Certificate -FilePath", StringComparison.Ordinal));
     }
 }
