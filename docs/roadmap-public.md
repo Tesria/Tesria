@@ -1,21 +1,19 @@
 # Tesria roadmap
 <!-- Read by tesria.com at build time. One line per item, written for visitors. -->
 
-## Shipped in 0.7.5
+## Shipped in 0.8.0
 - An MCP server: AI assistants' edits show as tracked changes you keep or reject
-- Real-time editing together, with a slash menu for tables, panels, charts, diagrams and more
+- Real-time editing together, with a slash menu for tables, panels, charts including donuts, diagrams and more
 - A REST API and webhooks, with read-only or full-access tokens and a record of what each token did
 - Spaces with roles, groups and page restrictions, and public spaces anyone can read
 - Export a space as a website, a PDF, or a wiki pack that imports into another Tesria
 - Automated backups with one-click restore and undo, and copies to a NAS, a removable drive or the cloud
 - Private access from anywhere through the optional Tailscale integration
 - A tamper-evident audit log, two-factor sign-in and security alerts
-- Ready-made Docker images for Intel, AMD and ARM, installed in minutes
+- One command installs Tesria from ready-made images for Intel, AMD and ARM; it makes its own passwords and keys
+- Trust your server on a phone or computer in a minute, with an optional fingerprint check
 
 ## Next
-- Install with one command: Tesria makes its own passwords and keys
-- Donut charts in pages and on the admin dashboard
-- Devices check the server's certificate fingerprint before trusting its own HTTPS
 - Default groups for every space, and guided setup for new spaces and new people
 - AI assistants can comment on a page, not only edit it
 - Better search ranking (BM25), light enough for the smallest server

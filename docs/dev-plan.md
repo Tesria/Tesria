@@ -6272,7 +6272,7 @@ questions are in `roadmap.md`.
 
 ## Phase 25: Installing without a settings file (Keep)
 
-### 25.1 Zero-config first start · `M` · Model: Opus 5.5 · ✅ **built 2026-09-27, ships in 0.8.0**
+### 25.1 Zero-config first start · `M` · Model: Opus 5.5 · ✅ **shipped 2026-09-27 in 0.8.0**
 
 Asked for 2026-09-27 with a handoff from an outside read of the repository:
 installing meant copying `.env.example` and inventing five secrets, and

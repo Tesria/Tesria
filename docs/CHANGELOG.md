@@ -5,9 +5,14 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
-Development builds now say **0.8.0-dev**: 0.7.5 is released, and the next
-release is 0.8.0, with the rest of the review fixes (SEC-01, LIC-01, DOC-01)
-and the zero-config install (25.1).
+## [0.8.0] - 2026-09-27
+
+Installing is one command: Tesria makes its own passwords and keys, and
+asks you to save the backup key. Also: trusting a device's certificate
+with an optional fingerprint check, donut charts, full-width Settings, an
+end to Safari hanging on iPhones, and the last of the outside review's
+fixes (SEC-01, LIC-01, DOC-01). Upgrading needs nothing: your `.env` keeps
+every value.
 
 ### No settings file: Tesria makes its own secrets (dev-plan 25.1, 2026-09-27, Opus 5.5)
 
