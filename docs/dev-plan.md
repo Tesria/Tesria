@@ -6256,6 +6256,16 @@ questions are in `roadmap.md`.
 
 - **24.1** Measured hardware requirements, published; the PDF service
   optional. · `S` · Model: Opus 5.5
+- **24.2** An unmounted network drive must not stop the backup service.
+  Found 2026-09-26: the NAS share was unmounted when the stack restarted,
+  and Docker Desktop on macOS refused to start `backup` at all ("error
+  while creating mount source path … permission denied"), taking the local
+  logical backups down with it. The bind mount was meant to start and
+  leave the sentinel to decide; on Linux Docker creates the missing
+  directory, on macOS it cannot create one under `/Volumes`. Mount a
+  stable parent instead, or keep the offsite copy in a container of its
+  own, and report the missing drive as the target's problem. · `S` ·
+  Model: Opus 5.5
 
 ## Order of execution, flattened
 
