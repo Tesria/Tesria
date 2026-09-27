@@ -6333,7 +6333,7 @@ one-line install script; app-store listings (Umbrel, CasaOS, Runtipi,
 Unraid); `docker compose up -d db` on its own still crash-loops on a fresh
 volume.
 
-## Phase 26: A theme pass (Write), before 1.0
+## Phase 26: A theme pass (Write), in 0.8.1
 
 ### 26.1 Flat or glass · `M` · Model: Opus 5.5
 
@@ -6342,7 +6342,9 @@ theme option, **Flat** (today's look, unchanged) or **Glass** (tesria.com's),
 per person beside light, dark and the accent, built as tokens so components
 carry no second set of rules. The notes, and what to check (contrast in
 both themes, the editor and tables, reduced transparency, exports staying
-flat), are in `roadmap.md`, "Flat or glass". Before 1.0.
+flat), are in `roadmap.md`, "Flat or glass". Scheduled 2026-09-27 as
+0.8.1, the next release, because the launch video's reshoot waits on it;
+the website side is writing a glass guide to build from.
 
 ## Order of execution, flattened
 

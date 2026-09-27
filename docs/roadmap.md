@@ -293,7 +293,7 @@ collaboration service's bundled schema (`collab/vendor/collab-schema.js`) is
 built from `src/web`, so the image is rebuilt with it. The donut's hole is a
 good place for the total (the disk's free space, or the chart's sum).
 
-## Flat or glass: a theme pass (asked for 2026-09-27, before 1.0)
+## Flat or glass: a theme pass (asked for 2026-09-27; scheduled for 0.8.1)
 
 tesria.com now has a glass style; the app is flat. The theme settings gain
 a choice of **Flat** or **Glass**, beside light, dark and the accent color.
