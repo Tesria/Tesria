@@ -127,9 +127,9 @@
   },
   "Backups and recovery / When the machine is gone": {
     "appliesTo": "0.5",
-    "updated": "2026-09-25",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "a9f50c3c60fe02ca"
+    "hash": "ed013aea7b0cc469"
   },
   "Basics / Accounts and invites": {
     "appliesTo": "0.5",
@@ -259,9 +259,9 @@
   },
   "Elements / Chart": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "72b65d960bba40a5"
+    "hash": "b6a1c8cd3961c41a"
   },
   "Elements / Code block": {
     "appliesTo": "0.5",
@@ -283,9 +283,9 @@
   },
   "Elements / Diagram (Mermaid)": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "813a2a8644331799"
+    "hash": "81cb1dbf55290ea6"
   },
   "Elements / Divider": {
     "appliesTo": "0.5",
@@ -403,9 +403,9 @@
   },
   "Elements / Table": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "97b1a5ad4442cdcb"
+    "hash": "e011e610a24e746d"
   },
   "Elements / Table of contents": {
     "appliesTo": "0.5",
@@ -463,15 +463,15 @@
   },
   "Exporting and publishing / A space as a website": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "0.6: a progress bar and Cancel while it builds.",
-    "hash": "cefb1cac2a780b69"
+    "hash": "19d3fe9634da3222"
   },
   "Exporting and publishing / Exporting a page": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "9eddda9109924a04"
+    "hash": "86bb0b6f1350065e"
   },
   "Exporting and publishing / Hosting an exported site": {
     "appliesTo": "0.5",
@@ -499,15 +499,15 @@
   },
   "FAQ": {
     "appliesTo": "0.5",
-    "updated": "2026-09-25",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "34727c463b2157b9"
+    "hash": "061fbcce5cb2cb34"
   },
   "Features": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "26c2a34a16c5cbfb"
+    "hash": "f08bf886d2724426"
   },
   "Finding things / Label pages": {
     "appliesTo": "0.5",
@@ -529,21 +529,21 @@
   },
   "Getting started / First-run setup wizard": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "6c1c6307a78950dc"
+    "hash": "0a14251d75d9eb54"
   },
   "Getting started / Prerequisites": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "6736abc882bb2c20"
+    "hash": "021f00e23318b487"
   },
   "Getting started / Quick start": {
     "appliesTo": "0.5",
-    "updated": "2026-09-25",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "36a0ef75834fd248"
+    "hash": "1579d303c511463b"
   },
   "Getting started / System requirements": {
     "appliesTo": "0.5",
@@ -607,15 +607,15 @@
   },
   "Installation and operations / Backups and recovery": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "83d0a52628eee6d0"
+    "hash": "6a28a8a414e9c762"
   },
   "Installation and operations / Configuration reference": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "49dbe9f61c2c149c"
+    "hash": "462f4b8138f522e7"
   },
   "Installation and operations / Email (SMTP)": {
     "appliesTo": "0.5",
@@ -631,15 +631,15 @@
   },
   "Installation and operations / HTTPS and domains": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "19073ad8fd6078fa"
+    "hash": "83ffdccd459d5414"
   },
   "Installation and operations / Installing with Docker Compose": {
     "appliesTo": "0.5",
-    "updated": "2026-09-25",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "c21ff7636136337f"
+    "hash": "bb353fd7632f80a8"
   },
   "Installation and operations / Opening Tesria by name": {
     "appliesTo": "0.5",
@@ -649,21 +649,21 @@
   },
   "Installation and operations / Reaching Tesria from anywhere with Tailscale": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "0.6: inviting someone who is not on your network.",
-    "hash": "4bb0d7998f1e49f3"
+    "hash": "b9b0b4dc06b08a69"
   },
   "Installation and operations / Real visitor addresses with Docker Desktop": {
     "appliesTo": "0.6",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "ec36424e0b4fa6b0"
+    "hash": "943491cc67e0d425"
   },
   "Installation and operations / Security hardening": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "446f96086befef59"
+    "hash": "789dd186c35d1cce"
   },
   "Installation and operations / Single sign-on (OIDC)": {
     "appliesTo": "0.5",
@@ -673,21 +673,21 @@
   },
   "Installation and operations / Trusting the local certificate": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "e5de3afd3764e2aa"
+    "hash": "12b615f04e0194bc"
   },
   "Installation and operations / Uninstalling and moving": {
     "appliesTo": "0.5",
-    "updated": "2026-09-25",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "001c59ab9486484f"
+    "hash": "1596fd447e49888e"
   },
   "Installation and operations / Upgrading": {
     "appliesTo": "0.5",
-    "updated": "2026-09-25",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "c22d17d50132b2e5"
+    "hash": "90652eefedebc279"
   },
   "License and credits": {
     "appliesTo": "0.5",
@@ -913,9 +913,9 @@
   },
   "REST API / API reference": {
     "appliesTo": "0.6",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "305677c27868d831"
+    "hash": "9b0e930b276febde"
   },
   "REST API / Code examples": {
     "appliesTo": "0.6",
@@ -997,9 +997,9 @@
   },
   "Tesria on phones and tablets / Setting up a phone or tablet": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "ca2a68722df21181"
+    "hash": "a512f8a14ca54b23"
   },
   "Tesria on phones and tablets / Tables by touch": {
     "appliesTo": "0.5",
@@ -1093,9 +1093,9 @@
   },
   "Troubleshooting": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "a16b72b93f6c4aba"
+    "hash": "c586b6493182dba4"
   },
   "User manual": {
     "appliesTo": "0.5",
@@ -1177,9 +1177,9 @@
   },
   "Working together / Editing at the same time": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "2614bfc7f8d98e35"
+    "hash": "ba44b43e2655ddeb"
   },
   "Working together / Mentions and notifications": {
     "appliesTo": "0.5",
