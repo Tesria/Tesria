@@ -2,7 +2,7 @@
 
 What the website, the launch video and announcements say about Tesria, and
 the proof behind each claim. Everything described as available is true of
-the current release (0.7.5). Anything planned comes from
+the current release (0.8.0). Anything planned comes from
 [`roadmap-public.md`](../roadmap-public.md) and is always called planned.
 When a claim here stops being true, or a planned item ships, this file
 changes first.
@@ -54,7 +54,9 @@ The mark's four layers, top to bottom, in their colors (see this folder's
 
 - Runs on your own hardware from ready-made Docker images for Intel, AMD
   and ARM. One command installs it; the download is about 1.5 GB, a few
-  minutes on a typical connection.
+  minutes on a typical connection. There is no settings file to write:
+  Tesria makes its own passwords and keys, and asks you to save the backup
+  key.
 - Automated backups that are tested, one-click restore **and undo** from
   the admin page, and point-in-time recovery: roll the whole wiki back to
   the minute before something went wrong.
@@ -122,9 +124,8 @@ alter its own audit log.
   the page to edit, however much later. A page nobody has edited in Tesria
   (one the agent created, say) has nothing to compare with, so its history
   is the record.
-- **From 0.8.0, once released:** no settings file to write; Tesria makes
-  its own passwords and keys on the first start, and asks the owner to save
-  the backup key. Not before the release is out.
+- **Trusting the local certificate:** each device is set up once, in a
+  minute, from `/trust`; checking the fingerprint is optional (0.8.0).
 - **Review mode is planned, without a date.** Say "Planned", not "Coming".
 - **The hardware floor** is 2 cores, 2 GB of memory and 20 GB of disk
   (the System requirements page), until the lighter install on the roadmap
