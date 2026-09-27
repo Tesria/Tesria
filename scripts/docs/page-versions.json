@@ -1,9 +1,9 @@
 {
   "Administration": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "0.6: the API tokens and About tabs, and how to open each tab.",
-    "hash": "49febbd3c86d7806"
+    "hash": "13ca2f422b1a19dc"
   },
   "Administration / About (administration)": {
     "appliesTo": "0.6",
@@ -163,9 +163,9 @@
   },
   "Basics / Theme and accent": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "39dce15dccc77499"
+    "hash": "45d5f8b497f0674d"
   },
   "Basics / Two-factor and recovery codes": {
     "appliesTo": "0.5",
@@ -901,9 +901,9 @@
   },
   "Release notes / Tesria 0.7": {
     "appliesTo": "0.7",
-    "updated": "2026-09-25",
+    "updated": "2026-09-27",
     "note": "Revised.",
-    "hash": "6c1ecac7f7ebf9a4"
+    "hash": "b494c38edbf9e470"
   },
   "REST API": {
     "appliesTo": "0.5",
