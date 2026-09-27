@@ -49,6 +49,12 @@
 	# connects from, so without deploy/docker-desktop this changes nothing. The
 	# address then reaches the app as X-Forwarded-For, as before.
 	servers {
+		# No HTTP/3 (2026-09-27). Caddy offers it by default, on UDP 443,
+		# but the stack publishes TCP only, and the Docker Desktop forwarder
+		# can carry nothing else. Safari on an iPhone took the offer,
+		# remembered it for 30 days, and then hung on a black page instead
+		# of falling back. A wiki on a local network gains nothing from it.
+		protocols h1 h2
 		# Visitors through Tailscale (deploy/tailscale) arrive from the
 		# Tailscale container, which names the real tailnet visitor in
 		# X-Forwarded-For. That header is believed from that one fixed address

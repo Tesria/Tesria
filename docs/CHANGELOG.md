@@ -52,6 +52,16 @@ overrides only.
 - `DOMAIN` defaults to `localhost` and `ACME_EMAIL` is optional (Caddy now
   takes an empty one).
 
+### No more HTTP/3 offer: an iPhone hung on a black page (2026-09-27, Opus 5.5)
+
+Caddy offers HTTP/3 by default, over UDP 443, but the stack publishes TCP
+443 only, and the Docker Desktop forwarder carries nothing else. Safari on
+an iPhone took the offer, remembered it for 30 days, and hung on a black
+page instead of falling back; other browsers fell back quietly. Both
+Caddyfiles now serve HTTP/1.1 and HTTP/2 only. A phone that already
+remembered the offer forgets it once the site's data is cleared in
+Safari's settings.
+
 ### Trusting the local certificate: the fingerprint check is optional (2026-09-27, Opus 5.5)
 
 The SEC-01 fix required every device to be given the server's 64-character

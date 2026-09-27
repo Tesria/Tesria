@@ -31,6 +31,10 @@
 	email "{$ACME_EMAIL}"
 	# Tailscale visitors: see the same setting in deploy/Caddyfile.
 	servers {
+		# No HTTP/3: the stack publishes TCP 443 only, and an offer of it
+		# over a UDP port nobody listens on left Safari hanging (see
+		# deploy/Caddyfile).
+		protocols h1 h2
 		trusted_proxies static {$TESRIA_TAILSCALE_ADDRESS:10.203.0.250}
 	}
 }
