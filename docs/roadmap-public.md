@@ -2,7 +2,7 @@
 <!-- Read by tesria.com at build time. One line per item, written for visitors. -->
 
 ## Shipped in 0.7.5
-- An MCP server: AI assistants write as suggestions a person accepts
+- An MCP server: AI assistants' edits show as tracked changes you keep or reject
 - Real-time editing together, with a slash menu for tables, panels, charts, diagrams and more
 - A REST API and webhooks, with read-only or full-access tokens and a record of what each token did
 - Spaces with roles, groups and page restrictions, and public spaces anyone can read
