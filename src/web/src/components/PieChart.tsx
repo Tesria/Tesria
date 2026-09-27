@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import { DONUT_RADIUS, DONUT_STROKE, DONUT_VIEW, donutFontSize, donutSegments } from './donut'
 
 /**
@@ -18,6 +19,27 @@ export type PieSlice = {
   color: string
 }
 
+/**
+ * The glass sheen over a pie or a donut (0.8.1): a white highlight fading
+ * from the top-left, as on tesria.com. Always drawn and hidden unless the
+ * chart is glass (glass.css), so an export keeps what the chart asked for.
+ */
+function Sheen({ cx, cy, r, id, ring }: { cx: number; cy: number; r: number; id: string; ring?: number }) {
+  return (
+    <>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0.7" y2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.45" />
+          <stop offset="0.6" stopColor="#fff" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {ring
+        ? <circle className="chart-sheen" cx={cx} cy={cy} r={r} fill="none" stroke={`url(#${id})`} strokeWidth={ring} />
+        : <circle className="chart-sheen" cx={cx} cy={cy} r={r} fill={`url(#${id})`} />}
+    </>
+  )
+}
+
 export function PieChart({
   slices, size = 120, label,
 }: {
@@ -25,6 +47,7 @@ export function PieChart({
   size?: number
   label: string
 }) {
+  const sheenId = useId().replace(/:/g, '')
   const total = slices.reduce((sum, s) => sum + Math.max(s.value, 0), 0)
   const r = size / 2 - 5
   const c = size / 2
@@ -52,6 +75,7 @@ export function PieChart({
           />
         )
       })}
+      {total > 0 && <Sheen cx={c} cy={c} r={r} id={`pie-sheen-${sheenId}`} />}
     </svg>
   )
 }
@@ -80,6 +104,7 @@ export function DonutChart({
 }) {
   const segments = donutSegments(slices.map((s) => s.value))
   const mid = DONUT_VIEW / 2
+  const sheenId = useId().replace(/:/g, '')
   const showCaption = caption && size >= 96
   return (
     <svg className="donut" viewBox={`0 0 ${DONUT_VIEW} ${DONUT_VIEW}`} width={size} height={size} role="img" aria-label={label}>
@@ -97,6 +122,8 @@ export function DonutChart({
           />
         ))}
       </g>
+      {/* Outside the rotated group, so the light still falls from the top-left. */}
+      <Sheen cx={mid} cy={mid} r={DONUT_RADIUS} id={`donut-sheen-${sheenId}`} ring={DONUT_STROKE} />
       {center && (
         <text
           className="donut__center"

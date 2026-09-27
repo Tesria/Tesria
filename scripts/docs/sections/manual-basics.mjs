@@ -520,7 +520,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
   // ==================================================== Theme and accent
   await page('Theme and accent', basics, doc(
-    p('You can choose how Tesria looks: ', b('light'), ' or ', b('dark'), ', or following your computer or phone, and an ', b('accent color'), ' for buttons, links and highlights. A dark theme is easier on the eyes at night; following the system switches for you when your device does. If you use more than one Tesria, a different accent on each tells them apart at a glance.'),
+    p('You can choose how Tesria looks: ', b('light'), ' or ', b('dark'), ', or following your computer or phone; a ', b('style'), ', flat or glass; and an ', b('accent color'), ' for buttons, links and highlights. A dark theme is easier on the eyes at night; following the system switches for you when your device does. If you use more than one Tesria, a different accent on each tells them apart at a glance.'),
 
     h(2, 'Changing it'),
     step(1, 'Open the appearance menu'),
@@ -532,12 +532,18 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('Light'), ' is always light.')),
       li(p(b('Dark'), ' is always dark.')),
     ),
-    step(3, 'Choose an accent color'),
+    step(3, 'Choose a style'),
+    ul(
+      li(p(b('Flat'), ' is solid surfaces, as Tesria has always looked. This is where everyone starts.')),
+      li(p(b('Glass'), ' is frosted: the top bar, buttons and tabs look like glass, lit from above, as on tesria.com, and the top bar turns into a frosted strip as you scroll. The page itself, the editor, tables and forms stay solid, so long text stays easy to read. Statuses, charts, diagrams and code blocks follow it too, unless one has a style of its own.')),
+    ),
+    p('If your device asks for less transparency (an accessibility setting), Glass keeps its shape but becomes solid.'),
+    step(4, 'Choose an accent color'),
     p('Pick one of the round swatches: Blue, Green, Purple, Orange or Magenta. If your organization has its own brand color, it comes first, under your organization’s name.'),
     p('Each choice takes effect at once; there is nothing to save. Close the menu with its ', b('×'), ', or click anywhere else.'),
 
     h(2, 'Where it is kept'),
-    p('Your choice is kept in this browser, not in your account, so your phone and your laptop can look different, and it works even when you are not signed in. If you clear the browser’s data for your Tesria, it goes back to the start: System and your organization’s usual accent.'),
+    p('Your choices are kept in this browser, not in your account, so your phone and your laptop can look different, and it works even when you are not signed in. If you clear the browser’s data for your Tesria, it goes back to the start: System, Flat, and your organization’s usual accent.'),
 
     h(2, 'When the choice is made for you'),
     p('An administrator can decide some of this for everyone, in ', ...adminAt('Branding'), ':'),
@@ -545,7 +551,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('The theme'), ' can be fixed to light only or dark only. Then the menu offers no theme.')),
       li(p(b('The accent'), ' can be used for everyone. Then the menu offers no accent. Or the administrator can simply choose the one people start with, which you can still change.')),
     ),
-    p('If both are fixed, there is nothing to choose, and the button is not in the top bar at all. See ', pageLink('Branding'), '.'),
+    p('The style is always yours to choose, so the button stays in the top bar even when both are fixed. See ', pageLink('Branding'), '.'),
   ))
 }
 

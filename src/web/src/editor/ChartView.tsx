@@ -1,5 +1,7 @@
 import { useMemo } from 'react'
 import { DonutChart, PieChart } from '../components/PieChart'
+import { AppearancePicker } from './AppearancePicker'
+import { appearanceData } from './appearance'
 import { NodeViewWrapper, useEditorState, type ReactNodeViewProps } from '@tiptap/react'
 import type { Node as PMNode } from '@tiptap/pm/model'
 import { CHART_TYPES, CHART_TYPE_LABELS, isChartType, type ChartType } from './chartExtension'
@@ -74,7 +76,7 @@ export function ChartView({ node, editor, selected, updateAttributes }: ReactNod
   })
 
   return (
-    <NodeViewWrapper className={selected ? 'chart is-selected' : 'chart'} contentEditable={false}>
+    <NodeViewWrapper className={selected ? 'chart is-selected' : 'chart'} contentEditable={false} {...appearanceData(node.attrs.appearance)}>
       {editor.isEditable && (
         <div className="chart__controls">
           <label>
@@ -91,6 +93,7 @@ export function ChartView({ node, editor, selected, updateAttributes }: ReactNod
               {CHART_TYPES.map((t) => <option key={t} value={t}>{CHART_TYPE_LABELS[t]}</option>)}
             </select>
           </label>
+          <AppearancePicker value={node.attrs.appearance} onChange={(appearance) => updateAttributes({ appearance })} />
           <input
             className="chart__title-input"
             value={title}

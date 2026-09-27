@@ -39,6 +39,7 @@ import { Embed, SmartLink, InlineSmartLink } from './embedExtension'
 import { AttachmentBlock, Gallery } from './mediaExtension'
 import { Math as MathNode } from './mathExtension'
 import { Chart } from './chartExtension'
+import { appearanceAttribute } from './appearance'
 
 type SharedExtensionOptions = {
   /** Collaborative editors let Yjs own undo/redo history instead of StarterKit's. */
@@ -64,6 +65,8 @@ const CodeBlock = CodeBlockLowlight.extend({
         renderHTML: (attributes: { lineNumbers?: boolean }) =>
           attributes.lineNumbers ? { 'data-line-numbers': 'true' } : {},
       },
+      // Flat or glass for this block alone, diagrams included (0.8.1).
+      appearance: appearanceAttribute,
     }
   },
   addNodeView() {

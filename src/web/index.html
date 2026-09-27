@@ -48,6 +48,10 @@
         if (valid(accent) && accent !== 'blue') {
           root.setAttribute('data-accent', accent);
         }
+        // Flat or glass (0.8.1): absent means flat.
+        if (stored('tesria-style') === 'glass') {
+          root.setAttribute('data-style', 'glass');
+        }
       })();
     </script>
   </head>

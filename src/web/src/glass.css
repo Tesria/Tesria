@@ -1,0 +1,383 @@
+/*
+ * Tesria's glass style (0.8.1, dev-plan 26.1): tesria.com's frosted look,
+ * from its glass guide, as the "Glass" choice beside "Flat" in the
+ * appearance menu. Flat is everything in index.css, untouched: every rule
+ * here applies only under :root[data-style="glass"], or to a block that
+ * asks for glass itself with data-appearance="glass".
+ *
+ * The guide's principles, kept here:
+ *   - Glass is for chrome: the top bar, buttons, navigation. Pages, the
+ *     editor, tables, forms and long text stay on solid surfaces.
+ *   - No glass on glass: once the top bar docks into a frosted strip, the
+ *     navigation inside it drops its own glass.
+ *   - The accent marks "this one": the current page, the selected choice,
+ *     the primary action. Everything else is clear glass.
+ *   - It degrades to solid: without backdrop-filter, or where the reader
+ *     asks for less transparency.
+ *
+ * Status, charts, diagrams and code blocks follow the reader's style unless
+ * they carry their own (data-appearance, editor/appearance.ts). Their glass
+ * uses no backdrop-filter: they sit on the solid page, where a blur shows
+ * nothing, and a PDF renders plain fills and shadows more faithfully.
+ */
+
+/* ---- Tokens: the guide's values; dark derived from the app's own surface -- */
+
+:root {
+  --glass: rgba(255, 255, 255, 0.5);
+  --glass-rim: rgba(255, 255, 255, 0.85);
+  --glass-hi: rgba(255, 255, 255, 0.95);
+  --glass-lo: rgba(10, 20, 34, 0.08);
+  --glass-shadow: 0 8px 24px -10px rgba(10, 20, 34, 0.3);
+  --glass-hover: rgba(255, 255, 255, 0.55);
+  --glass-lens: rgba(255, 255, 255, 0.85);
+  --glass-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.15) 70%);
+  --tint-base: rgba(255, 255, 255, 0.8);
+  --lens-tint: 82%;
+  --cta-tint: 88%;
+  --accent-rim: rgba(255, 255, 255, 0.7);
+  --accent-shadow: 0 2px 4px rgba(10, 20, 34, 0.22), 0 8px 18px -6px rgba(10, 20, 34, 0.3);
+  --hdr-shadow: 0 1px 2px rgba(10, 20, 34, 0.08), 0 8px 24px rgba(10, 20, 34, 0.16);
+  --box-shadow: 0 2px 6px rgba(10, 20, 34, 0.08), 0 24px 48px -16px rgba(10, 20, 34, 0.28);
+  /* An edge for glass on a white page, where a white rim cannot show. */
+  --glass-edge: rgba(10, 20, 34, 0.1);
+  /* A frame around content (a chart, a diagram) is larger than a button,
+     so its sheen is gentler, or a dark theme turns the frame gray. */
+  --frame-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.15) 70%);
+  --on-danger: #ffffff;
+  --status-glass-ink: #ffffff;
+  /* The console window. The app's code blocks are dark in both themes
+     (index.css), so the console keeps the guide's dark values in both,
+     and the syntax colors keep the background they were chosen for. */
+  --term: #060d17;
+  --term-ink: #dbe6f4;
+  --term-dim: #7f93ae;
+  --term-rule: #1c2d45;
+  --term-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 50%);
+  --term-head: linear-gradient(135deg, #1b2840, #04080e 70%);
+  --term-head-shadow: rgba(0, 0, 0, 0.7);
+  --term-glass: rgba(255, 255, 255, 0.07);
+  --term-glass-rim: rgba(255, 255, 255, 0.14);
+  --term-glass-hi: rgba(255, 255, 255, 0.22);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+  --glass: color-mix(in srgb, var(--surface) 60%, transparent);
+  --glass-rim: rgba(255, 255, 255, 0.14);
+  --glass-hi: rgba(255, 255, 255, 0.22);
+  --glass-lo: rgba(0, 0, 0, 0.25);
+  --glass-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.6);
+  --glass-hover: rgba(255, 255, 255, 0.07);
+  --glass-lens: rgba(255, 255, 255, 0.1);
+  --glass-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 70%);
+  --tint-base: rgba(255, 255, 255, 0.03);
+  --lens-tint: 80%;
+  --cta-tint: 86%;
+  --accent-rim: rgba(255, 255, 255, 0.5);
+  --accent-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 8px 18px -6px rgba(0, 0, 0, 0.6);
+  --hdr-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.55);
+  --box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35), 0 24px 48px -16px rgba(0, 0, 0, 0.7);
+  --glass-edge: rgba(255, 255, 255, 0.12);
+  --frame-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 60%);
+  --on-danger: var(--bg);
+  --status-glass-ink: var(--bg);
+  }
+}
+:root[data-theme="dark"] {
+  --glass: color-mix(in srgb, var(--surface) 60%, transparent);
+  --glass-rim: rgba(255, 255, 255, 0.14);
+  --glass-hi: rgba(255, 255, 255, 0.22);
+  --glass-lo: rgba(0, 0, 0, 0.25);
+  --glass-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.6);
+  --glass-hover: rgba(255, 255, 255, 0.07);
+  --glass-lens: rgba(255, 255, 255, 0.1);
+  --glass-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 70%);
+  --tint-base: rgba(255, 255, 255, 0.03);
+  --lens-tint: 80%;
+  --cta-tint: 86%;
+  --accent-rim: rgba(255, 255, 255, 0.5);
+  --accent-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 8px 18px -6px rgba(0, 0, 0, 0.6);
+  --hdr-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.55);
+  --box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35), 0 24px 48px -16px rgba(0, 0, 0, 0.7);
+  --glass-edge: rgba(255, 255, 255, 0.12);
+  --frame-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 60%);
+  --on-danger: var(--bg);
+  --status-glass-ink: var(--bg);
+}
+
+/* ---- The ground: a faint wash of the accent, so glass has something to be glass over -- */
+
+:root[data-style="glass"] body {
+  background:
+    radial-gradient(1100px 520px at 12% -8%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 62%),
+    radial-gradient(900px 480px at 100% 0%, color-mix(in srgb, var(--primary) 6%, transparent), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
+/* ---- The top bar: floats at the top, docks into a frosted strip once the page scrolls -- */
+
+:root[data-style="glass"] .topbar {
+  background: transparent;
+  border-bottom-color: transparent;
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+:root[data-style="glass"] .topbar.is-docked {
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border-bottom-color: color-mix(in srgb, var(--text) 10%, transparent);
+  box-shadow: var(--hdr-shadow);
+}
+
+/* The page bar: Spaces and Admin in one glass pill, the current one a tinted lens. */
+@media (min-width: 761px) {
+  :root[data-style="glass"] .topbar__nav {
+    padding: 4px; border-radius: 999px;
+    background: var(--glass); border: 1px solid var(--glass-rim);
+    -webkit-backdrop-filter: blur(14px) saturate(170%);
+    backdrop-filter: blur(14px) saturate(170%);
+    box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--glass-shadow);
+  }
+  /* No glass on glass: docked, the bar drops its own; the current page keeps its lens. */
+  :root[data-style="glass"] .topbar.is-docked .topbar__nav {
+    background: transparent; border-color: transparent; box-shadow: none;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+}
+:root[data-style="glass"] .topbar__link { border-radius: 999px; padding: 0.3rem 0.85rem; }
+:root[data-style="glass"] .topbar__link:hover { background: var(--glass-hover); }
+:root[data-style="glass"] .topbar__link.is-active {
+  color: var(--on-primary);
+  background: color-mix(in srgb, var(--primary) var(--lens-tint), var(--tint-base));
+  box-shadow: inset 0 1px 0 var(--glass-hi), var(--accent-shadow);
+}
+
+/* Round icon buttons: the theme and the notifications, glass with a sheen. */
+:root[data-style="glass"] .theme-toggle,
+:root[data-style="glass"] .notif__bell {
+  width: 34px; height: 34px; padding: 0; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--text);
+  background: var(--glass-sheen), var(--glass);
+  border: 1px solid var(--glass-rim);
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: blur(14px) saturate(170%);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--glass-shadow);
+}
+:root[data-style="glass"] .theme-toggle:hover, :root[data-style="glass"] .theme-toggle.is-open,
+:root[data-style="glass"] .notif__bell:hover {
+  background: var(--glass-sheen), color-mix(in srgb, var(--glass-hover) 60%, var(--glass));
+}
+
+/* On a phone the top bar is tight: smaller circles, so the wordmark keeps its room. */
+@media (max-width: 760px) {
+  :root[data-style="glass"] .theme-toggle,
+  :root[data-style="glass"] .notif__bell { width: 30px; height: 30px; box-shadow: inset 0 1px 0 var(--glass-hi), var(--glass-shadow); }
+}
+
+/* ---- Buttons: pills. Secondary is clear glass; primary and danger are tinted. -- */
+
+:root[data-style="glass"] .btn {
+  border-radius: 999px;
+  background: var(--glass); border: 1px solid var(--glass-rim);
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: blur(14px) saturate(170%);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--glass-shadow);
+}
+/* On a white page a white rim cannot show: the drop shadow and a faint edge do. */
+:root[data-style="glass"]:not([data-theme="dark"]) .btn:not(.btn--primary):not(.btn--danger) {
+  border-color: var(--glass-edge);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-style="glass"]:not([data-theme="light"]) .btn:not(.btn--primary):not(.btn--danger) {
+    border-color: var(--glass-rim);
+  }
+}
+:root[data-style="glass"] .btn:hover {
+  filter: none;
+  background: color-mix(in srgb, var(--glass-hover) 60%, var(--glass));
+}
+:root[data-style="glass"] .btn--primary {
+  color: var(--on-primary);
+  background: color-mix(in srgb, var(--primary) var(--cta-tint), var(--tint-base));
+  border-color: var(--accent-rim);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--accent-shadow);
+}
+:root[data-style="glass"] .btn--primary:hover {
+  background: color-mix(in srgb, var(--primary) calc(var(--cta-tint) + 8%), var(--tint-base));
+}
+:root[data-style="glass"] .btn--danger {
+  color: var(--on-danger);
+  background: color-mix(in srgb, var(--danger) var(--cta-tint), var(--tint-base));
+  border-color: var(--accent-rim);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--accent-shadow);
+}
+:root[data-style="glass"] .btn--danger:hover {
+  background: color-mix(in srgb, var(--danger) calc(var(--cta-tint) + 8%), var(--tint-base));
+}
+:root[data-style="glass"] .btn:focus-visible,
+:root[data-style="glass"] .theme-toggle:focus-visible,
+:root[data-style="glass"] .notif__bell:focus-visible,
+:root[data-style="glass"] .topbar__link:focus-visible,
+:root[data-style="glass"] .tab:focus-visible {
+  outline: 2px solid var(--primary); outline-offset: 2px;
+}
+
+/* Menus hold lists people read: solid, and their items stay rows, not pills. */
+:root[data-style="glass"] .overflow-menu__dropdown .btn,
+:root[data-style="glass"] .topbar__more-menu .btn {
+  border-radius: 3px; background: transparent; border-color: transparent;
+  box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+:root[data-style="glass"] .overflow-menu__dropdown .btn:hover { background: var(--bg-alt); }
+:root[data-style="glass"] .overflow-menu__dropdown .btn--danger { color: var(--danger); }
+:root[data-style="glass"] .overflow-menu__dropdown,
+:root[data-style="glass"] .theme-menu__panel,
+:root[data-style="glass"] .notif__dropdown,
+:root[data-style="glass"] .topbar__more-menu {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+  box-shadow: var(--box-shadow);
+}
+:root[data-style="glass"] .theme-menu__mode.is-active {
+  background: color-mix(in srgb, var(--primary) 16%, var(--surface));
+}
+
+/* Tabs (Administration, a page's Comments and History): one glass pill, the current one a lens. */
+:root[data-style="glass"] .tabs {
+  border-bottom: none; padding: 4px; gap: 2px; border-radius: 999px;
+  background: var(--glass); border: 1px solid var(--glass-edge);
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: blur(14px) saturate(170%);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--glass-shadow);
+}
+:root[data-style="glass"] .tab { border-bottom: none; border-radius: 999px; padding: 0.35rem 0.85rem; }
+:root[data-style="glass"] .tab:hover { background: var(--glass-hover); color: var(--text); }
+:root[data-style="glass"] .tab.is-active {
+  color: var(--on-primary);
+  background: color-mix(in srgb, var(--primary) var(--lens-tint), var(--tint-base));
+  box-shadow: inset 0 1px 0 var(--glass-hi), var(--accent-shadow);
+}
+
+/* The appearance menu's two style swatches. */
+.theme-menu__style-swatch {
+  width: 17px; height: 17px; flex: none; border-radius: 5px; border: 1px solid var(--border);
+  background: var(--surface);
+}
+.theme-menu__style-swatch--glass {
+  border-color: var(--glass-rim);
+  background: var(--glass-sheen), color-mix(in srgb, var(--primary) 22%, var(--surface));
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 2px 6px -2px rgba(10, 20, 34, 0.35);
+}
+
+/* ---- Status: a small badge, its color as a gradient, with a steady glow -- */
+
+:root[data-style="glass"] .status:not([data-appearance="flat"]), .status[data-appearance="glass"] {
+  --c: var(--status-grey-ink);
+  font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-weight: 600; letter-spacing: 0.02em; border-radius: 3px;
+  color: var(--status-glass-ink);
+  background: linear-gradient(180deg, var(--c), color-mix(in srgb, var(--c) 80%, #000));
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 6px 2.25px color-mix(in srgb, var(--c) 41%, transparent);
+}
+:root[data-style="glass"] .status--grey:not([data-appearance="flat"]), .status--grey[data-appearance="glass"] { --c: var(--status-grey-ink); }
+:root[data-style="glass"] .status--red:not([data-appearance="flat"]), .status--red[data-appearance="glass"] { --c: var(--status-red-ink); }
+:root[data-style="glass"] .status--yellow:not([data-appearance="flat"]), .status--yellow[data-appearance="glass"] { --c: var(--status-yellow-ink); }
+:root[data-style="glass"] .status--green:not([data-appearance="flat"]), .status--green[data-appearance="glass"] { --c: var(--status-green-ink); }
+:root[data-style="glass"] .status--blue:not([data-appearance="flat"]), .status--blue[data-appearance="glass"] { --c: var(--status-blue-ink); }
+:root[data-style="glass"] .status--purple:not([data-appearance="flat"]), .status--purple[data-appearance="glass"] { --c: var(--status-purple-ink); }
+
+/* ---- Charts: a glass frame, bars and slices lit from the top -- */
+
+:root[data-style="glass"] .chart:not([data-appearance="flat"]), .chart[data-appearance="glass"] {
+  padding: 0.75rem 0.9rem; border-radius: 10px;
+  background: var(--frame-sheen), var(--surface);
+  border: 1px solid var(--glass-edge);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--glass-shadow);
+}
+:root[data-style="glass"] .chart:not([data-appearance="flat"]) .chart__bar, .chart[data-appearance="glass"] .chart__bar {
+  position: relative;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 2px 6px -2px rgba(10, 20, 34, 0.3);
+}
+:root[data-style="glass"] .chart:not([data-appearance="flat"]) .chart__bar::after, .chart[data-appearance="glass"] .chart__bar::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0) 65%);
+}
+:root[data-style="glass"] .chart:not([data-appearance="flat"]) polyline, .chart[data-appearance="glass"] polyline { filter: drop-shadow(0 2px 3px rgba(10, 20, 34, 0.3)); }
+:root[data-style="glass"] .chart:not([data-appearance="flat"]) .chart__swatch, .chart[data-appearance="glass"] .chart__swatch { border-radius: 50%; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5); }
+/* The pie and donut sheen (components/PieChart.tsx) is drawn always and shown only here. */
+.chart-sheen { display: none; }
+:root[data-style="glass"] .chart-sheen, [data-appearance="glass"] .chart-sheen { display: inline; }
+.chart[data-appearance="flat"] .chart-sheen { display: none; }
+
+/* ---- Code blocks: the console window -- */
+
+.code-block__dots { display: none; }
+:root[data-style="glass"] .code-block:not([data-appearance="flat"]), .code-block[data-appearance="glass"] {
+  border-radius: 10px; overflow: hidden; color: var(--term-ink);
+  background: var(--term-sheen), color-mix(in srgb, var(--term) 94%, transparent);
+  border: 1px solid var(--term-glass-rim);
+  box-shadow: inset 0 1px 0 var(--term-glass-hi), var(--box-shadow);
+}
+:root[data-style="glass"] .code-block:not([data-appearance="flat"]) .code-block__header, .code-block[data-appearance="glass"] .code-block__header {
+  gap: 8px; padding: 8px 12px 8px 14px;
+  border-bottom: 1px solid var(--term-rule); background: var(--term-head);
+  position: relative; z-index: 1; box-shadow: 0 4px 10px -4px var(--term-head-shadow);
+  font: 500 12.5px var(--mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); color: var(--term-dim);
+}
+:root[data-style="glass"] .code-block:not([data-appearance="flat"]) .code-block__dots, .code-block[data-appearance="glass"] .code-block__dots { display: inline-flex; gap: 8px; flex: none; }
+:root[data-style="glass"] .code-block:not([data-appearance="flat"]) .code-block__dots i, .code-block[data-appearance="glass"] .code-block__dots i {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: color-mix(in srgb, var(--term-dim) 45%, transparent);
+}
+:root[data-style="glass"] .code-block:not([data-appearance="flat"]) .code-block__lang, .code-block[data-appearance="glass"] .code-block__lang {
+  flex: 1; margin-left: 6px; color: var(--term-dim);
+  font: 500 12.5px var(--mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+}
+:root[data-style="glass"] .code-block:not([data-appearance="flat"]) .code-block__copy, .code-block[data-appearance="glass"] .code-block__copy, :root[data-style="glass"] .code-block:not([data-appearance="flat"]) .code-block__linenum-toggle, .code-block[data-appearance="glass"] .code-block__linenum-toggle {
+  color: var(--term-ink); border-radius: 999px; padding: 3px 12px;
+  background: var(--term-glass); border: 1px solid var(--term-glass-rim);
+  font: 500 12.5px var(--mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  box-shadow: inset 0 1px 0 var(--term-glass-hi), 0 4px 12px -6px rgba(0, 0, 0, 0.6);
+}
+:root[data-style="glass"] .code-block:not([data-appearance="flat"]) .code-block__copy:hover, .code-block[data-appearance="glass"] .code-block__copy:hover, :root[data-style="glass"] .code-block:not([data-appearance="flat"]) .code-block__linenum-toggle:hover, .code-block[data-appearance="glass"] .code-block__linenum-toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+:root[data-style="glass"] .code-block:not([data-appearance="flat"]) pre, .code-block[data-appearance="glass"] pre, :root[data-style="glass"] .code-block:not([data-appearance="flat"]) .code-block__gutter, .code-block[data-appearance="glass"] .code-block__gutter { background: transparent; }
+:root[data-style="glass"] .code-block:not([data-appearance="flat"]) pre, .code-block[data-appearance="glass"] pre { padding: 16px 18px; line-height: 1.75; }
+:root[data-style="glass"] .code-block:not([data-appearance="flat"]) .code-block__gutter, .code-block[data-appearance="glass"] .code-block__gutter { padding-top: 16px; line-height: 1.75; border-right-color: var(--term-rule); }
+
+/* ---- Diagrams: the same window, lit, with the diagram on the page's own surface -- */
+
+:root[data-style="glass"] .code-block--diagram:not([data-appearance="flat"]) .mermaid, .code-block--diagram[data-appearance="glass"] .mermaid {
+  background: var(--frame-sheen), var(--surface);
+  margin: 10px; border-radius: 6px;
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 0 0 1px var(--glass-edge);
+}
+
+/* The Style picker in a block's controls. */
+.appearance-picker { display: inline-flex; align-items: center; gap: 0.35rem; margin: 0; font-size: 0.85rem; }
+/* `label > select` is full width everywhere (index.css); this one is its own size. */
+label.appearance-picker > select { width: auto; min-width: 0; margin-top: 0; padding: 0.2rem 0.4rem; }
+.code-block__appearance { font-size: 0.75rem; color: #cbd5e1; }
+label.code-block__appearance > select {
+  background: transparent; color: #cbd5e1; border: 1px solid #334066; border-radius: 4px;
+  font-size: 0.75rem; padding: 0.1rem 0.3rem;
+}
+.code-block__appearance select option { color: initial; }
+.chip-menu__appearance { margin-top: 0.4rem; }
+
+/* ---- Solid where asked: less transparency, or no backdrop-filter at all -- */
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root { --glass: color-mix(in srgb, var(--surface) 88%, transparent); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root { --glass: var(--surface); }
+  :root[data-style="glass"] .topbar.is-docked { background: var(--surface); }
+  :root[data-style="glass"] * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-style="glass"] .topbar { transition: none; }
+}

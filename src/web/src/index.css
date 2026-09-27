@@ -2760,6 +2760,10 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .chart__bars--h .chart__group-label { order: 0; width: 6rem; flex: none; text-align: right; }
 .chart__bars--h .chart__group-bars { flex-direction: column; flex: 1; height: auto; align-items: stretch; }
 .chart__bars--h .chart__bar { min-width: 2px; height: 14px; border-radius: 0 3px 3px 0; }
+/* flex: 1 made each bar share the column's height, and a horizontal chart's
+   column has none, so every bar collapsed to its 2px minimum (found
+   2026-09-27). A bar here is its own 14px. */
+.chart__bars--h .chart__bar { flex: none; }
 
 .chart__legend { display: flex; flex-wrap: wrap; gap: 0.75rem; list-style: none; margin: 0; padding: 0; font-size: 0.8rem; color: var(--muted); }
 .chart__legend li { display: flex; align-items: center; gap: 0.3rem; }

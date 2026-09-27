@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useDismissable } from '../hooks/useDismissable'
 import {
-  ACCENTS, accentLock, applyAccent, applyPreference, hasBrandAccent, readAccent,
-  readPreference, saveAccent, savePreference, systemTheme, themeLock, THEME_LABELS, THEME_ORDER,
-  type AccentName, type ThemePreference,
+  ACCENTS, accentLock, applyAccent, applyPreference, applyStyle, hasBrandAccent, readAccent,
+  readPreference, readStyle, saveAccent, savePreference, saveStyle, STYLES, systemTheme, themeLock,
+  THEME_LABELS, THEME_ORDER, type AccentName, type StylePreference, type ThemePreference,
 } from '../theme'
 import { useInstance } from '../InstanceContext'
 
@@ -67,7 +67,8 @@ const MODE_HINTS: Record<ThemePreference, string> = {
 }
 
 /**
- * Appearance menu: theme mode (system / light / dark) plus accent color.
+ * Appearance menu: theme mode (system / light / dark), style (flat or glass,
+ * 0.8.1) and accent color.
  *
  * `system` is the default and stays first: a new user gets whatever their OS
  * already asks for, and choosing it again clears the stored preference rather
@@ -82,6 +83,7 @@ export function ThemeToggle() {
   const [open, setOpen] = useState(false)
   const [preference, setPreference] = useState<ThemePreference>(readPreference)
   const [accent, setAccent] = useState<AccentName>(readAccent)
+  const [style, setStyle] = useState<StylePreference>(readStyle)
   const [resolvedSystem, setResolvedSystem] = useState<'light' | 'dark'>(systemTheme)
   const ref = useDismissable<HTMLDivElement>(open, () => setOpen(false))
 
@@ -91,6 +93,7 @@ export function ThemeToggle() {
   useEffect(() => {
     applyAccent(accent)
   }, [accent])
+  useEffect(() => { applyStyle(style) }, [style])
 
   useEffect(() => {
     const query = window.matchMedia('(prefers-color-scheme: dark)')
@@ -102,6 +105,11 @@ export function ThemeToggle() {
   function chooseMode(next: ThemePreference) {
     setPreference(next)
     savePreference(next)
+  }
+
+  function chooseStyle(next: StylePreference) {
+    setStyle(next)
+    saveStyle(next)
   }
 
   function chooseAccent(next: AccentName) {
@@ -126,7 +134,8 @@ export function ThemeToggle() {
       ? `Appearance: system (currently ${resolvedSystem})`
       : `Appearance: ${preference}`
 
-  if (themeLocked && accentLocked) return null
+  // The style is always a personal choice, so the menu stays even with the
+  // theme and accent both locked.
 
   return (
     <div className="theme-menu" ref={ref}>
@@ -175,6 +184,29 @@ export function ThemeToggle() {
             })}
           </div>
           </>)}
+
+          <p className="theme-menu__heading">Style</p>
+          <div className="theme-menu__modes">
+            {STYLES.map((s) => {
+              const active = style === s.name
+              return (
+                <button
+                  key={s.name}
+                  type="button"
+                  className={active ? 'theme-menu__mode is-active' : 'theme-menu__mode'}
+                  onClick={() => chooseStyle(s.name)}
+                  aria-pressed={active}
+                >
+                  <span className={`theme-menu__style-swatch theme-menu__style-swatch--${s.name}`} aria-hidden="true" />
+                  <span className="theme-menu__mode-text">
+                    <span className="theme-menu__mode-name">{s.label}</span>
+                    <span className="theme-menu__mode-hint">{s.hint}</span>
+                  </span>
+                  {active && <span className="theme-menu__check"><CheckIcon /></span>}
+                </button>
+              )
+            })}
+          </div>
 
           {!accentLocked && (<>
           <p className="theme-menu__heading">Accent color</p>

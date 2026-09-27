@@ -3,6 +3,7 @@ import { BubbleMenu } from '@tiptap/react/menus'
 import { useEditorState, type Editor as TiptapEditor } from '@tiptap/react'
 import { STATUS_COLORS, STATUS_LABELS, isStatusColor, type StatusColor } from './statusExtension'
 import { updateSelectedNode } from './selectedNode'
+import { AppearancePicker } from './AppearancePicker'
 
 /**
  * Edits the selected status lozenge: its text and one of the six colors.
@@ -31,7 +32,7 @@ export function StatusMenu({ editor }: { editor: TiptapEditor }) {
 
   // Written on every keystroke, the lozenge updates as you type, and the
   // node is re-selected afterwards so the menu stays put (see selectedNode.ts).
-  function commit(next: { text?: string; color?: StatusColor }) {
+  function commit(next: { text?: string; color?: StatusColor; appearance?: string }) {
     updateSelectedNode(editor, 'status', next)
   }
 
@@ -80,6 +81,11 @@ export function StatusMenu({ editor }: { editor: TiptapEditor }) {
             </button>
           ))}
         </div>
+        <AppearancePicker
+          className="chip-menu__appearance"
+          value={attrs?.appearance}
+          onChange={(appearance) => commit({ appearance })}
+        />
       </form>
     </BubbleMenu>
   )

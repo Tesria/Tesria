@@ -8,6 +8,38 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Development builds now say **0.8.1-dev**. 0.8.1 is the flat or glass theme
 (dev-plan 26.1).
 
+### Flat or glass (dev-plan 26.1, 2026-09-27, Opus 5.5)
+
+The appearance menu has a **Style**: Flat, which is Tesria as it has always
+looked and where everyone starts, or Glass, tesria.com's frosted look, from
+the website's glass guide. Per browser, like light and dark.
+
+- **Glass is for chrome.** The top bar floats at the top of the page and
+  docks into a frosted strip as you scroll; Spaces and Admin sit in one
+  glass pill, the current one tinted with the accent, and the pill drops
+  its own glass once the bar has docked (no glass on glass). Buttons are
+  pills: secondary ones clear glass, primary and danger tinted. Tabs are
+  one pill with the current tab tinted. The theme and notification
+  buttons are glass circles. Menus stay solid, with their items as rows.
+  Pages, the editor, tables and forms stay solid, and a faint wash of the
+  accent behind the page gives the glass something to be glass over.
+- **Status, charts, diagrams and code blocks** have glass versions: a
+  status is a small badge, its color a gradient with a steady glow; a
+  chart sits in a lit frame with its bars and slices lit from the top; a
+  code block is the console window from tesria.com/get/, with its three
+  dots and its language in the title bar; a diagram sits in the same
+  window. Each follows the reader's style unless it has a **Style** of its
+  own (Theme default, Flat or Glass), in the status menu or the block's
+  controls. An override is kept in exports: an export has no reader's
+  style, so Theme default comes out flat and Glass comes out glass.
+- **It degrades to solid** where the browser has no backdrop-filter or the
+  device asks for less transparency, and focus rings stay visible.
+- Code blocks keep a dark console in both themes, as they are dark in
+  both today, so the syntax colors keep the background they were chosen
+  for; the guide's light console is not used.
+- Found on the way: a horizontal bar chart's bars had collapsed to 2px
+  lines (they shared a height the column did not have). Fixed.
+
 ## [0.8.0] - 2026-09-27
 
 Installing is one command: Tesria makes its own passwords and keys, and

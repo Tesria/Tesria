@@ -1,4 +1,4 @@
-import { type FormEvent, useCallback, useMemo, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { Permission } from '../api/client'
@@ -127,6 +127,16 @@ export function Layout() {
     navigate('/login')
   }
 
+  // The glass style's top bar floats at the top of the page and docks into
+  // a frosted strip once it scrolls (0.8.1, glass.css). Flat ignores it.
+  const [docked, setDocked] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setDocked(window.scrollY > 4)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   function onSearch(e: FormEvent) {
     e.preventDefault()
     if (query.trim()) {
@@ -138,7 +148,7 @@ export function Layout() {
   return (
     <SpaceNavContext.Provider value={spaceNavContext}>
     <div className="app">
-      <header className="topbar">
+      <header className={docked ? 'topbar is-docked' : 'topbar'}>
         <button
           type="button"
           className="topbar__hamburger"

@@ -1,6 +1,7 @@
 import { Node, mergeAttributes } from '@tiptap/core'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import { ChartView } from './ChartView'
+import { appearanceAttribute } from './appearance'
 
 // Donut added in 0.8.0 as a type of its own: a new stored value, so pages
 // that chose pie keep their pies.
@@ -69,6 +70,8 @@ export const Chart = Node.create({
         parseHTML: (element: HTMLElement) => element.getAttribute('data-title') ?? '',
         renderHTML: (attributes: { title?: string }) => ({ 'data-title': attributes.title ?? '' }),
       },
+      // Flat or glass for this chart alone (0.8.1).
+      appearance: appearanceAttribute,
     }
   },
 

@@ -1,4 +1,5 @@
 import { Node, mergeAttributes } from '@tiptap/core'
+import { appearanceAttribute } from './appearance'
 
 /**
  * Status lozenge: Confluence's six colors, by name. Stored as a name and
@@ -55,6 +56,8 @@ export const Status = Node.create({
           'data-color': isStatusColor(attributes.color) ? attributes.color : 'grey',
         }),
       },
+      // Flat or glass for this status alone (0.8.1).
+      appearance: appearanceAttribute,
     }
   },
 

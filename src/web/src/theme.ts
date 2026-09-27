@@ -166,6 +166,47 @@ export function applyAccent(accent: AccentName): void {
 }
 
 
+/* ---- style: flat or glass (0.8.1) --------------------------------------- */
+
+/*
+ * A third axis beside the theme and the accent: how the chrome is drawn.
+ * Flat is Tesria as it has always looked; glass is tesria.com's frosted
+ * style (docs/brand, the glass guide). Expressed as `data-style="glass"` on
+ * <html>; absent means flat. Per browser, like the theme, and applied before
+ * first paint by the script in index.html.
+ */
+export type StylePreference = 'flat' | 'glass'
+
+export const STYLE_STORAGE_KEY = 'tesria-style'
+
+export const STYLES: { name: StylePreference; label: string; hint: string }[] = [
+  { name: 'flat', label: 'Flat', hint: 'Solid surfaces, as Tesria has always looked' },
+  { name: 'glass', label: 'Glass', hint: 'Frosted bars and buttons, like tesria.com' },
+]
+
+export function readStyle(): StylePreference {
+  try {
+    return localStorage.getItem(STYLE_STORAGE_KEY) === 'glass' ? 'glass' : 'flat'
+  } catch {
+    return 'flat'
+  }
+}
+
+export function saveStyle(style: StylePreference): void {
+  try {
+    if (style === 'flat') localStorage.removeItem(STYLE_STORAGE_KEY)
+    else localStorage.setItem(STYLE_STORAGE_KEY, style)
+  } catch {
+    // Ignore: the style still applies for this page's lifetime.
+  }
+}
+
+export function applyStyle(style: StylePreference): void {
+  const root = document.documentElement
+  if (style === 'glass') root.setAttribute('data-style', 'glass')
+  else root.removeAttribute('data-style')
+}
+
 /* ---- favicon ------------------------------------------------------------ */
 
 /*

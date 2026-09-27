@@ -983,6 +983,10 @@ export async function build({
       li(p(b('Code inside a sentence,'), ' such as a file name, is ', b('inline code'), ' (Ctrl+E) instead: see ', pageLink('Text formatting'), '.')),
     ),
 
+    h(2, 'Flat or glass'),
+    p('A code block’s ', b('Style'), ', beside its language while you edit, decides how this one looks. ', b('Theme default'), ' follows each reader’s own style, Flat or Glass, from the appearance menu. ', b('Flat'), ' or ', b('Glass'), ' keeps it that way for everyone, whatever their style, and in PDF, HTML and website exports too. An export has no reader’s style, so a ', b('Theme default'), ' one comes out flat.'),
+    p('As glass, a code block is a console window: a lit frame with three dots and its language along the top.'),
+
     h(2, 'Languages, and when to use each'),
     p('Choose the language from the menu at the top left of the block. It colors the code the way that language is usually shown, and readers see its name as a label, so they know what they are looking at. The languages are Plain text, JavaScript, TypeScript, Python, C#, Bash / Shell, JSON, YAML, SQL, HTML, CSS, Go, Rust, Java, Dockerfile and Markdown. One more, Mermaid diagram, draws a diagram instead: see ', pageLink('Diagram (Mermaid)'), '.'),
     h(3, 'Commands to run: Bash / Shell'),
@@ -1195,6 +1199,7 @@ export async function build({
     p('The Mermaid in this version of Tesria also draws XY charts, Sankey diagrams, Kanban boards, block diagrams, packet diagrams, requirement diagrams and C4 architecture diagrams, among others. Mermaid’s own documentation, at ', text('mermaid.js.org', link('https://mermaid.js.org')), ', shows how to write every kind.'),
 
     h(2, 'Changing and removing a diagram'),
+    p('A diagram has a ', b('Style'), ' too, beside ', b('Source'), ' while you edit. ', b('Theme default'), ' follows each reader’s own style, Flat or Glass; ', b('Flat'), ' or ', b('Glass'), ' keeps it that way for everyone, and in exports. As glass, the diagram sits in a lit console window.'),
     ul(
       li(p(b('Source'), ' and ', b('Diagram'), ', at the top right, switch between the text and the drawing. While you edit, change the text in Source, then choose Diagram to check the result. Readers can open Source too, to see how it is made.')),
       li(p(b('Copy'), ' copies the text.')),

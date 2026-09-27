@@ -6359,7 +6359,7 @@ volume.
 
 ## Phase 26: A theme pass (Write), in 0.8.1
 
-### 26.1 Flat or glass · `M` · Model: Opus 5.5
+### 26.1 Flat or glass · `M` · Model: Opus 5.5 · ✅ **built 2026-09-27, for 0.8.1**
 
 Asked for 2026-09-27: tesria.com has a glass style and the app is flat. A
 theme option, **Flat** (today's look, unchanged) or **Glass** (tesria.com's),

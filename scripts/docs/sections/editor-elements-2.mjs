@@ -328,10 +328,11 @@ export async function build(helpers) {
     p('Point at a column or a bar to see its value. Negative numbers count as zero in columns, bars, pies and donuts; a line goes below its starting level for them.'),
 
     h(2, 'Changing and removing it'),
-    p('While you are editing, three controls sit above the chart:'),
+    p('While you are editing, four controls sit above the chart:'),
     ul(
       li(p(b('Table'), ' chooses which table on the page to draw: Table 1 is the first.')),
       li(p(b('Type'), ' switches between Column (vertical), Bar (horizontal), Line, Pie and Donut. The table is not touched.')),
+      li(p(b('Style'), ' decides how this one looks. ', b('Theme default'), ' follows each reader’s own style, Flat or Glass, from the appearance menu. ', b('Flat'), ' or ', b('Glass'), ' keeps it that way for everyone, whatever their style, and in PDF, HTML and website exports too. An export has no reader’s style, so a ', b('Theme default'), ' one comes out flat.')),
       li(p(b('Chart title (optional)'), ' is a line shown above the chart.')),
     ),
     p('If there is no table on the page yet, the chart says so; if its table has no numbers, it says that instead. To remove a chart, click its edge to select it and press ', b('Delete'), '. The table stays.'),
@@ -720,6 +721,7 @@ export async function build(helpers) {
     ], [200, 500]),
     insertNote('Status', 'If you had text selected, the status takes its place.'),
     p('Its menu opens under it, with the cursor in the label: replace STATUS with your own words, then choose a color.'),
+    p('Its menu also has a ', b('Style'), ' decides how this one looks. ', b('Theme default'), ' follows each reader’s own style, Flat or Glass, from the appearance menu. ', b('Flat'), ' or ', b('Glass'), ' keeps it that way for everyone, whatever their style, and in PDF, HTML and website exports too. An export has no reader’s style, so a ', b('Theme default'), ' one comes out flat.'),
     ...(await animation(ids.Status, 'status-insert', 'Typing /status makes a status; type its label and choose a color.')),
 
     h(2, 'The six colors, and when to use each'),

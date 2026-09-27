@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { NodeViewContent, NodeViewWrapper, type ReactNodeViewProps } from '@tiptap/react'
 import { codeLanguages, MERMAID_LANGUAGE } from './lowlight'
 import { MermaidDiagram } from './MermaidView'
+import { AppearancePicker } from './AppearancePicker'
+import { appearanceData } from './appearance'
 
 /** Code-block node view: a language picker + line-number/copy buttons above the code. */
 export function CodeBlockView({ node, updateAttributes, editor }: ReactNodeViewProps) {
@@ -26,8 +28,12 @@ export function CodeBlockView({ node, updateAttributes, editor }: ReactNodeViewP
   }
 
   return (
-    <NodeViewWrapper className="code-block">
+    <NodeViewWrapper className={isMermaid ? 'code-block code-block--diagram' : 'code-block'} {...appearanceData(node.attrs.appearance)}>
       <div className="code-block__header" contentEditable={false}>
+        {/* The console window's three dots: drawn always, shown only in the
+            glass style (glass.css), so an export captures what the block
+            asked for. */}
+        <span className="code-block__dots" aria-hidden="true"><i /><i /><i /></span>
         {editable ? (
           <select
             className="code-block__lang"
@@ -44,6 +50,13 @@ export function CodeBlockView({ node, updateAttributes, editor }: ReactNodeViewP
           </span>
         )}
         <div className="code-block__header-actions">
+          {editable && (
+            <AppearancePicker
+              className="code-block__appearance"
+              value={node.attrs.appearance}
+              onChange={(appearance) => updateAttributes({ appearance })}
+            />
+          )}
           {isMermaid && (
             <button
               type="button"
@@ -67,7 +80,7 @@ export function CodeBlockView({ node, updateAttributes, editor }: ReactNodeViewP
           </button>
           )}
           <button type="button" className="code-block__copy" onMouseDown={(e) => e.preventDefault()} onClick={copyCode}>
-            {copied ? 'Copied!' : 'Copy'}
+            {copied ? 'Copied' : 'Copy'}
           </button>
         </div>
       </div>
