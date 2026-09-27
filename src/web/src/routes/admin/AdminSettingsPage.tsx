@@ -210,7 +210,8 @@ export function AdminSettingsPage() {
               Instance-wide switch for anonymous read access. With it on, publish
               individual spaces from Admin → Spaces. Before turning it on for an
               instance reachable from the internet, work through the readiness
-              checklist in <code>docs/security.md</code>. Turning it off hides every
+              checklist in the Tesria docs,{' '}
+              <a href="https://tesria.com/docs/installation-and-operations/security-hardening/" target="_blank" rel="noopener noreferrer">Security hardening</a>. Turning it off hides every
               public space at once and keeps their settings.
             </span>
           </span>

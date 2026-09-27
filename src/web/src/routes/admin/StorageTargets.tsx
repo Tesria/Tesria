@@ -412,7 +412,8 @@ export function StorageTargets({
         <p className="muted">
           No offsite target is configured, so the only copies of this instance are on this
           machine. A disk failure would take the backups with it. See{' '}
-          <code>docs/backup-recovery.md</code> for setting one up.
+          <a href="https://tesria.com/docs/installation-and-operations/backups-and-recovery/offsite-copies/" target="_blank" rel="noopener noreferrer">Offsite copies</a>{' '}
+          in the Tesria docs for setting one up.
         </p>
       ) : (
         <div className="backup-cards">

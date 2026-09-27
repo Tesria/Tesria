@@ -5,6 +5,9 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+Development builds now say **0.8.1-dev**. 0.8.1 is the flat or glass theme
+(dev-plan 26.1).
+
 ## [0.8.0] - 2026-09-27
 
 Installing is one command: Tesria makes its own passwords and keys, and
