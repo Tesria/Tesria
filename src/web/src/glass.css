@@ -332,7 +332,7 @@
   background: color-mix(in srgb, var(--term-dim) 45%, transparent);
 }
 :root[data-style="glass"] .code-block:not([data-appearance="flat"]) .code-block__lang, .code-block[data-appearance="glass"] .code-block__lang {
-  flex: 1; margin-left: 6px; color: var(--term-dim);
+  margin-left: 6px; margin-right: auto; color: var(--term-dim);
   font: 500 12.5px var(--mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
 }
 :root[data-style="glass"] .code-block:not([data-appearance="flat"]) .code-block__copy, .code-block[data-appearance="glass"] .code-block__copy, :root[data-style="glass"] .code-block:not([data-appearance="flat"]) .code-block__linenum-toggle, .code-block[data-appearance="glass"] .code-block__linenum-toggle {
