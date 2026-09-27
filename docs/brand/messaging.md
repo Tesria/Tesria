@@ -19,8 +19,8 @@ Short form: **The self-hosted wiki built for people and AI agents.**
 Hosted wikis bring real-time editing and AI, and keep your knowledge on
 their servers. Self-hosted wikis keep it on yours, and few are built for AI
 agents. Tesria is both: a real-time, self-hosted wiki with its own MCP
-server, where every change an agent makes shows up for a person to keep or
-reject.
+server, where every change an agent makes is recorded, visible and
+reversible.
 
 Tesria's case is the combination, not any single feature. Other
 self-hosted wikis have real-time editing or a REST API too, so comparisons
@@ -53,9 +53,19 @@ The mark's four layers, top to bottom, in their colors (see this folder's
 ### Keep: yours, safe and recoverable
 
 - Runs on your own hardware from ready-made Docker images for Intel, AMD
-  and ARM, installed in minutes.
+  and ARM. One command installs it; the download is about 1.5 GB, a few
+  minutes on a typical connection.
 - Automated backups that are tested, one-click restore **and undo** from
-  the admin page, and point-in-time recovery.
+  the admin page, and point-in-time recovery: roll the whole wiki back to
+  the minute before something went wrong.
+- No telemetry: Tesria sends nothing about your instance or its people
+  anywhere. It reaches out only for what you turn on (email, single
+  sign-on, webhooks, cloud backups, Tailscale, a certificate for a real
+  domain), for a link preview when someone pastes a link, and for the
+  vulnerability check in Administration, which runs only when pressed.
+- Runs without the internet once installed: sign-in, password resets by
+  one-time link or recovery code, and backups to a NAS or drive all work
+  offline.
 - Encrypted offsite copies to a NAS, a removable drive or S3-compatible
   cloud storage.
 - Reach it privately from anywhere through the optional Tailscale
@@ -76,9 +86,10 @@ The mark's four layers, top to bottom, in their colors (see this folder's
 - **A built-in MCP server:** Claude, Cursor or any MCP client can read,
   search, create and update pages, limited to what the token's owner may
   see.
-- **Agents never silently overwrite you:** every page an agent changes is
-  a new version in the history, and the next person to edit it sees the
-  change as tracked changes to keep or reject.
+- **Agents never silently overwrite you:** every change an agent makes is
+  a new version in the page's history, which anyone can restore from, and
+  administrators see what each token did. When someone edits the page, the
+  change is highlighted, with Accept all and Reject all.
 - **You can see what agents are doing:** read-only or full-access tokens,
   and a record of what each token did.
 - A REST API with an OpenAPI reference, and webhooks when pages change.
@@ -87,8 +98,9 @@ The mark's four layers, top to bottom, in their colors (see this folder's
 
 Lead with these; each is available now and easy to show.
 
-1. **An agent's edits show up as tracked changes you keep or reject.** Every
-   change is visible and reversible, not buried.
+1. **Every change an agent makes is recorded and reversible.** A new
+   version in the page's history, logged against its token, and
+   highlighted in the editor to accept or reject.
 2. **A built-in MCP server that respects permissions.** Connect an
    assistant in minutes; it sees only what its token's owner sees, and a
    read-only token cannot change anything.
@@ -102,6 +114,25 @@ Worth a line, not a headline: a tamper-evident audit log, two-factor
 sign-in, security alerts, and an app that runs as a database role unable to
 alter its own audit log.
 
+## Fine print for the site
+
+- **When the highlight appears.** An agent's change goes live at once for
+  readers. Anyone editing the page at that moment sees it highlighted
+  straight away; otherwise it is highlighted the next time anyone opens
+  the page to edit, however much later. A page nobody has edited in Tesria
+  (one the agent created, say) has nothing to compare with, so its history
+  is the record.
+- **From 0.8.0, once released:** no settings file to write; Tesria makes
+  its own passwords and keys on the first start, and asks the owner to save
+  the backup key. Not before the release is out.
+- **Review mode is planned, without a date.** Say "Planned", not "Coming".
+- **The hardware floor** is 2 cores, 2 GB of memory and 20 GB of disk
+  (the System requirements page), until the lighter install on the roadmap
+  ships.
+- **Stable docs links.** A docs page's address comes from its titles, so
+  the MCP link, /docs/developers/mcp/connecting-an-assistant/, stays as
+  long as those pages keep their names; renaming one is a messaging change.
+
 ## Claims we don't make
 
 Tesria's marketing says only what the software does today. These are the
@@ -109,7 +140,9 @@ easy overstatements, and what is true instead.
 
 | Not this | Why | Instead |
 |---|---|---|
-| Approve an agent's changes before they go live | Planned (review mode), not available | Agents' changes show as tracked changes to keep or reject |
+| Approve an agent's changes before they go live | Planned (review mode), not available | Every agent change is recorded and reversible |
+| Keep part of an agent's change and reject the rest | The editor offers Accept all and Reject all; picking pieces means editing by hand | Accept or reject an agent's change in the editor |
+| Page history names the agent | History shows the person whose token it was, and the agent's own change note if it wrote one; the per-token record is for administrators | Administrators see what each token did |
 | Built-in AI, live AI suggestions | No AI model is built in; Tesria works with the assistant you connect | Connect any AI assistant through MCP |
 | AI reviews your docs | Planned, not available | On the roadmap: review mode |
 | Tamper-evident backups | The audit log is tamper-evident; backups are tested and restorable | Tested backups with restore and undo; a tamper-evident audit log |
@@ -143,9 +176,10 @@ About 60 to 90 seconds, one beat per pillar, each shown in the real app:
    and AI tools want the keys to it.
 2. **Write (15 s):** two people editing one page live; the slash menu drops
    in a chart and a diagram.
-3. **Automate (20 s):** an assistant connected over MCP updates a page;
-   opening it shows the change as tracked changes; a person keeps part and
-   rejects the rest. The token's activity shows what it did.
+3. **Automate (20 s):** an assistant connected over MCP updates a page. An
+   administrator sees it under API tokens, What assistants did, opens the
+   page, and the editor shows the change highlighted; Reject all puts the
+   page back (or the page's history restores the version before).
 4. **Keep (15 s):** Back up now; the copy lands on a NAS; restore, then
    undo. Opened from a phone over Tailscale.
 5. **Share (10 s):** a space made public; the same space exported as a
