@@ -6268,7 +6268,31 @@ questions are in `roadmap.md`.
   2026-09-27: a NAS that comes back is only noticed at the next backup,
   because its presence is checked only when a copy runs, so the card
   says it is missing for up to a day after it returns; check it every
-  minute, as the removable drive already is. · `S` · Model: Opus 5.5
+  minute, as the removable drive already is. · `M` (was `S`) · Model: Opus 5.5
+
+  **Tried 2026-09-27 for 0.8.1, and deferred: it needs its own
+  investigation.** Measured on Docker Desktop for Mac (virtiofs), with a
+  throwaway disk image standing in for the share:
+  - *Mounting a parent that always exists* (`/Volumes`) does start with the
+    share absent, and a volume mounted later appears inside the running
+    container, readable and writable. But while any container has
+    `/Volumes` mounted, macOS cannot unmount *any* volume ("Resource
+    busy"), and it stayed pinned after the container was removed until
+    forced. That would stop anyone ejecting a backup drive or unmounting
+    the NAS while Tesria runs, and it hands the backup service every drive
+    on the Mac. Rejected.
+  - *A direct bind* of a volume mounted just before the container started
+    did not pin it (it ejected fine), but the container did not see its
+    contents either ("Directory nonexistent"). So the removable-drive slot's
+    own behavior on Docker Desktop needs checking too: a drive plugged in
+    after the stack starts may be invisible to the sidecar.
+  - Next, in order: find out when Docker Desktop's file sharing sees a
+    volume (at container start only, after a delay, or never for volumes
+    mounted after Docker Desktop started); then choose between a separate
+    `offsite` container for the NAS and removable copies (local backups can
+    then never be taken down by a missing drive, at the cost of a
+    `docker compose up -d` when a drive returns, or a host helper to do
+    that) and documenting a mount point that always exists.
 
 ## Phase 25: Installing without a settings file (Keep)
 
