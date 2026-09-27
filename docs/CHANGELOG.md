@@ -5,7 +5,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
-Development builds now say **0.8.0-dev**: 0.7.4 is released, and the next
+Development builds now say **0.8.0-dev**: 0.7.5 is released, and the next
 release is 0.8.0, with the rest of the review fixes (SEC-01, LIC-01, DOC-01).
 
 ### Closing out the outside review (dev-plan 14.4, 2026-09-26, Opus 5.5)
@@ -112,6 +112,13 @@ phone-width screen and a desktop; and, live, the logged fingerprint
 against the certificate Caddy serves. Windows PowerShell 5.1 itself, the
 elevation relaunch and a real phone comparison are for a Windows PC and a
 phone before release.
+
+## [0.7.5] - 2026-09-26
+
+- **The wordmark on the sign-in and setup pages too.** 0.7.4 gave them the
+  new mark but left the name beside it in the app's own font: those pages
+  draw the brand themselves, larger. Tesria's own name there is now the
+  TESRIA wordmark, as in the header.
 
 ## [0.7.4] - 2026-09-26
 

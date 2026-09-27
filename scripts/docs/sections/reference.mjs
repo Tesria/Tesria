@@ -406,6 +406,8 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     p('Released the same day. On an exported website, choosing a page in the sidebar no longer scrolls the sidebar back to the top, so you keep your place in a long list of pages.'),
     h(2, '0.7.2'),
     p('Released September 25, 2026. On a phone, an exported website opens each page first, with its list of pages behind a menu button in the top bar, instead of above the page. The button turns into a cross to close the list, and takes you back to where you were reading.'),
+    h(2, '0.7.5'),
+    p('Released the same day. The sign-in page and the setup wizard show the TESRIA wordmark too, as the header does.'),
     h(2, '0.7.4'),
     p('Released September 26, 2026. A new look for Tesria’s own mark and name; nothing else changes. Upgrade as usual; see ', pageLink('Upgrading'), '.'),
     ul(

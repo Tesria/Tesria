@@ -3,8 +3,8 @@
 #   scripts/scratch-instance.sh up      # build and start, on http://localhost:8099
 #   scripts/scratch-instance.sh down    # stop and destroy, volumes included
 #
-# Two containers and nothing else: the setup wizard needs a database and the
-# app, not collaboration, PDF rendering, backups or a proxy. It runs under its
+# The database, migrate and the app, and nothing else: the setup wizard
+# needs no collaboration, PDF rendering, backups or a proxy. It runs under its
 # own compose project name and its own volumes, so `down -v` here can never
 # touch the real instance.
 #
@@ -29,20 +29,39 @@ services:
       timeout: 5s
       retries: 10
 
-  app:
+  # The owner's work, as in the real stack (dev-plan 14.3, 14.4): since
+  # 0.6.0 a production app runs only as the least-privilege role and never
+  # migrates, so without this the scratch app refused to start.
+  migrate:
+    image: tesria-scratch-app
     build:
       context: ..
       dockerfile: deploy/Dockerfile
+    command: ["--migrate", "--watch"]
     depends_on:
       db:
         condition: service_healthy
     environment:
-      ASPNETCORE_URLS: http://+:8080
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__Default: "Host=db;Port=5432;Database=scratch;Username=scratch;Password=scratch"
-      # No least-privilege role here: it is a throwaway database, and the
-      # empty password makes the app fall back to the owner with a warning.
-      ConnectionStrings__App: ""
+      ConnectionStrings__App: "Host=db;Port=5432;Database=scratch;Username=tesria_app;Password=scratch-app"
+    healthcheck:
+      test: ["CMD", "test", "-f", "/tmp/tesria-migrated"]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+      start_period: 5m
+
+  app:
+    image: tesria-scratch-app
+    depends_on:
+      migrate:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Production
+      # The least-privilege role migrate provisions; throwaway, like the rest.
+      ConnectionStrings__App: "Host=db;Port=5432;Database=scratch;Username=tesria_app;Password=scratch-app"
       Collab__Secret: ""
       Oidc__Authority: ""
       Oidc__ClientId: ""

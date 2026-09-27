@@ -331,6 +331,8 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .auth-brand .brand__logo { height: 48px; max-width: min(320px, 100%); }
 .auth-brand--stacked .brand__logo, .auth-brand--logo .brand__logo { height: 72px; }
 .auth-brand__name { font-size: 1.6rem; font-weight: 700; line-height: 1.2; color: var(--text); overflow-wrap: anywhere; }
+/* The wordmark above the sign-in card and the setup wizard, at their size. */
+.auth-brand__name.brand__word--tesria { font-size: 1.6rem; }
 
 /* Subtle on purpose: a quiet touch was preferred. */
 .powered-by { margin: 1.25rem 0 0; font-size: 0.75rem; color: var(--muted); }
