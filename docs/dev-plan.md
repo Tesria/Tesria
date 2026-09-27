@@ -6264,8 +6264,11 @@ questions are in `roadmap.md`.
   leave the sentinel to decide; on Linux Docker creates the missing
   directory, on macOS it cannot create one under `/Volumes`. Mount a
   stable parent instead, or keep the offsite copy in a container of its
-  own, and report the missing drive as the target's problem. · `S` ·
-  Model: Opus 5.5
+  own, and report the missing drive as the target's problem. Also found
+  2026-09-27: a NAS that comes back is only noticed at the next backup,
+  because its presence is checked only when a copy runs, so the card
+  says it is missing for up to a day after it returns; check it every
+  minute, as the removable drive already is. · `S` · Model: Opus 5.5
 
 ## Order of execution, flattened
 
