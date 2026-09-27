@@ -5,6 +5,13 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.7.5] - 2026-09-26
+
+- **The wordmark on the sign-in and setup pages too.** 0.7.4 gave them the
+  new mark but left the name beside it in the app's own font: those pages
+  draw the brand themselves, larger. Tesria's own name there is now the
+  TESRIA wordmark, as in the header.
+
 ## [0.7.4] - 2026-09-26
 
 ### A new mark and wordmark (2026-09-26, Opus 5.5)
