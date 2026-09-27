@@ -44,7 +44,9 @@ if ($Uninstall) {
     exit 0
 }
 
-if (-not (Test-Path $EnvFile)) { throw 'No .env here: set Tesria up first (README, Quick start).' }
+if (-not (Test-Path (Join-Path $Root 'docker-compose.yml'))) { throw 'No docker-compose.yml in the Tesria folder: is this script in its deploy/docker-desktop folder?' }
+# Since 0.8.0 a .env is optional (dev-plan 25.1); make one for this line.
+if (-not (Test-Path $EnvFile)) { [IO.File]::WriteAllText($EnvFile, '', $Utf8) }
 $Node = (Get-Command node -ErrorAction SilentlyContinue).Source
 if (-not $Node) { throw 'Node.js is needed: https://nodejs.org' }
 $current = [IO.File]::ReadAllLines($EnvFile)

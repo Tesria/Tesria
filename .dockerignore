@@ -4,3 +4,5 @@
 **/obj
 .git
 .env
+backup-key.txt
+backup-key.old-*.txt

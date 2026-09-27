@@ -36,6 +36,7 @@ const FILES = [
   'deploy/Caddyfile',
   'deploy/Caddyfile.public',
   'deploy/db/entrypoint.sh',
+  'deploy/init',
   'deploy/pgbackrest',
   'deploy/backup',
   'deploy/tailscale/serve.json',
@@ -75,17 +76,23 @@ The full guide is at https://tesria.com/docs (Getting started, Quick start).
 
 First time:
 
-  1. Copy .env.example to .env and fill in POSTGRES_PASSWORD, APP_DB_PASSWORD,
-     BACKUP_ENCRYPTION_KEY (each a long random value) and DOMAIN.
-  2. docker compose pull
-  3. docker compose up -d
-  4. Open https://<DOMAIN> and the setup wizard takes it from there.
+  1. docker compose up -d
+  2. Open https://localhost (or this computer's name from another device),
+     and the setup wizard takes it from there.
+  3. Save the backup key: Tesria writes it to backup-key.txt in this folder.
+     Put it in a password manager, somewhere other than this computer.
 
-Upgrading: unzip the newer tesria-deploy.zip over this folder (your .env is
-kept: it is not in the zip), then run steps 2 and 3. Read the release notes
+Tesria makes its own passwords and keys on the first start. A .env file is
+optional: see .env.example for what it can change, such as DOMAIN for a real
+hostname.
+
+Upgrading: unzip the newer tesria-deploy.zip over this folder (your .env and
+backup-key.txt are kept: they are not in the zip), then run
+"docker compose pull" and "docker compose up -d". Read the release notes
 first: https://tesria.com/docs (Release notes).
 
-Never run "docker compose down -v": the -v deletes the wiki and its backups.
+Never run "docker compose down -v": the -v deletes the wiki, its backups and
+the keys that open them.
 
 Source code, issues and releases: https://github.com/Tesria/Tesria
 License: Apache 2.0 (LICENSE, NOTICE).

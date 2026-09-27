@@ -41,6 +41,24 @@ HANDLED=""
 
 log() { echo "[db-entrypoint $(date -u +%FT%TZ)] $*"; }
 
+# --- The secrets (dev-plan 25.1) --------------------------------------------
+
+# The owner password, from the init service's file. The image's own
+# entrypoint reads POSTGRES_PASSWORD_FILE, as root, and only on a new
+# database; POSTGRES_PASSWORD set directly still works and takes precedence.
+if [ -z "${POSTGRES_PASSWORD:-}" ] && [ -r /run/tesria/postgres-password/value ]; then
+  export POSTGRES_PASSWORD_FILE=/run/tesria/postgres-password/value
+fi
+
+# The backup key, where archive_command will find it. Before Postgres
+# starts, for the same reason as the repo2 drop-in below: a WAL segment
+# pushed without it would fail.
+# shellcheck source=../pgbackrest/cipher.sh
+if [ -r /scripts/cipher.sh ]; then
+  . /scripts/cipher.sh
+  cipher_write_conf | while read -r line; do log "$line"; done
+fi
+
 # --- The repo2 drop-in ------------------------------------------------------
 
 # shellcheck source=../pgbackrest/offsite.sh

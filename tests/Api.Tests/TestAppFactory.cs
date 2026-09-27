@@ -49,6 +49,13 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
     /// </summary>
     public TestAppFactory(PostgresTestDatabase postgres) => _postgres = postgres;
 
+    /// <summary>Real PostgreSQL, with configuration overrides as well.</summary>
+    public TestAppFactory(PostgresTestDatabase postgres, Dictionary<string, string?> settings)
+    {
+        _postgres = postgres;
+        _settings = settings;
+    }
+
     /// <summary>
     /// Every client sends the CSRF marker the app requires on cookie-
     /// authenticated state changes (dev-plan 3.4), the way the SPA does. The

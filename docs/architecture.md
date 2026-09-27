@@ -136,9 +136,25 @@ a database init script: init scripts run only on a fresh volume, which would hav
 every existing install on the superuser, and re-running the grants after
 `Migrate()` means tables added by later migrations are covered without
 anyone remembering to. Rotation is "change `APP_DB_PASSWORD`, then
-`docker compose up -d`". `APP_DB_PASSWORD` is required (14.3): Compose
-refuses to start without it, and a production app refuses to run as the
-owner. Postgres referential actions (cascades, `SET NULL`)
+`docker compose up -d`". A production app refuses to run as the owner.
+
+**Where the secrets come from (0.8.0, dev-plan 25.1).** A one-shot `init`
+service runs before everything else at every `docker compose up`: for each of
+the five secrets it takes the `.env` value, else the value it stored, else a
+new random one, and it never replaces a stored value with a generated one
+(nor invents one for a database or pgBackRest repository that already
+exists). Each lives on its own volume (`secret_*`), mounted read-only into the
+services 14.3 gave it and no others, as `/run/tesria/<name>/value`, 0440 in
+group 10203, which the non-root services join with `group_add`. The app
+builds its connection strings from those files (`SecretFiles`, filling only
+settings the environment left empty), collab and pdf read theirs, Postgres
+takes `POSTGRES_PASSWORD_FILE`, the backup sidecars use libpq's `PGPASSFILE`
+(`pgpass` beside the owner password), and pgBackRest reads the key from a
+`conf.d` drop-in. No secret is in any service's environment. `init` also
+leaves non-secret facts in `/run/tesria/status` for the app: whether it
+generated the backup key (the wizard and Administration, Backups then ask the
+owner to save it) and any setting still on a pre-0.8.0 `change-me` value (a
+critical alert). Checked by `scripts/test-init.sh` and `ZeroConfigTests`. Postgres referential actions (cascades, `SET NULL`)
 run as the table owner, so the role's lack of `DELETE` on `PageViews` does
 not stop a page purge.
 

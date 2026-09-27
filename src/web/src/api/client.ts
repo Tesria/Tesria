@@ -917,6 +917,18 @@ export type BackupOverview = {
   offsiteIsManualOnly: boolean
   disks: DiskChart[]
   restore: RestoreStatus
+  key: BackupKeyStatus
+}
+
+/**
+ * The backup key (dev-plan 25.1). `generated`: Tesria made it, so the only
+ * copy may be on this machine, and the page asks until someone says it is
+ * saved. The key itself never reaches the browser; the app cannot read it.
+ */
+export type BackupKeyStatus = {
+  generated: boolean
+  savedAt: string | null
+  savedByName: string | null
 }
 
 /** Where the instance stands on restores (dev-plan 9.4). */
@@ -1692,6 +1704,8 @@ export const api = {
       restoreTest: (label: string) =>
         request<BackupJob>('POST', `/api/admin/backups/${encodeURIComponent(label)}/restore-test`),
       job: (id: string) => request<BackupJob>('GET', `/api/admin/backups/jobs/${id}`),
+      /** Says the backup key is saved somewhere other than this machine (25.1). */
+      keySaved: () => request<BackupKeyStatus>('POST', '/api/admin/backups/key-saved', {}),
       /** Replacing the wiki with an older copy (dev-plan 9.4). */
       restorePreview: (label: string, at?: string) =>
         request<RestorePreview>(

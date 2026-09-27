@@ -6270,6 +6270,80 @@ questions are in `roadmap.md`.
   says it is missing for up to a day after it returns; check it every
   minute, as the removable drive already is. · `S` · Model: Opus 5.5
 
+## Phase 25: Installing without a settings file (Keep)
+
+### 25.1 Zero-config first start · `M` · Model: Opus 5.5 · ✅ **built 2026-09-27, ships in 0.8.0**
+
+Asked for 2026-09-27 with a handoff from an outside read of the repository:
+installing meant copying `.env.example` and inventing five secrets, and
+nothing noticed when someone did not. Its findings held: no code anywhere
+looked for the `change-me` placeholders, so an install that kept them ran
+on published passwords and a published backup key; `APP_DB_PASSWORD` was a
+hard failure while the collab and PDF secrets silently turned features off.
+
+**Built.** A one-shot `init` service (the db image, `deploy/init/init.sh`)
+that every other service waits for. Per secret: the `.env` value, else the
+stored one, else a generated one; never a generated value over a stored
+one, and never one invented for a database (`PG_VERSION` present) or a
+pgBackRest repository that already exists. A `change-me` value refuses a
+new install and flags an existing one (log at every start, a critical
+`config.placeholder_secrets` alert). Consumers read files: `SecretFiles`
+in the app (settings the environment left empty only), collab and pdf,
+`POSTGRES_PASSWORD_FILE`, `PGPASSFILE` for the backup sidecars (libpq
+wants 0600 or tighter, so a `pgpass` owned by postgres beside the value),
+and a pgBackRest `conf.d` drop-in for the key (`deploy/pgbackrest/cipher.sh`)
+so `docker compose exec` commands have it. Defaults for everything else, so
+`.env` is optional; Caddy takes an empty `ACME_EMAIL` once quoted.
+
+**Decisions** (the owner's, 2026-09-27):
+- **A: one volume per secret**, not one volume with `volume.subpath`
+  mounts, which need Docker Engine 26 and would lock out NAS systems that
+  ship older Docker. Files 0440 root in group 10203; the non-root services
+  join it with `group_add`, because several consumers of one secret run
+  as different users.
+- **B: the backup key reaches the owner as a file**, `backup-key.txt` in
+  the Tesria folder, with `init show-backup-key` as the second way. The
+  app never reads the key (the 14.3 property holds), which a key shown in
+  the wizard would have broken. The wizard's Backups step asks, with two
+  answers: "I saved it", or "Someone else runs the server" for teams where
+  operations and the wiki's administration are different people, and
+  Administration, Backups asks until someone says it is saved
+  (`SiteSettings.BackupKeySavedAt`).
+- Changing the backup key is documented as a new repository, not
+  automated, as asked.
+
+**Verified** against the handoff's nine acceptance criteria: a release
+bundle with no `.env` came up in 23 seconds with every service healthy and
+the wizard, co-editing and PDF export working; `down` and `up` kept every
+secret; the published 0.7.5 bundle with a full `.env`, upgraded by
+unzipping this one over it, kept its secrets, data and encrypted
+repository with no prompt; a new install with a `change-me` value refused
+to start; the same 0.7.5 bundle on its unedited placeholders upgraded,
+started, warned and raised one alert (not a second on restart); the app
+container mounts neither the owner password nor the key, and no service's
+environment holds a secret; a backup, a restore test, `verify.sh` and the
+point-in-time self-test passed on the zero-config install; `dotnet test`
+(including the PostgreSQL role tests) and the web build, lint and tests are
+green.
+
+**Follow-ups, not done:** generating the three offsite passphrases too (they
+stay in `.env`, entered when a target is set up); baking the `deploy/`
+scripts into the images so a bare compose file works without the zip; a
+one-line install script; app-store listings (Umbrel, CasaOS, Runtipi,
+Unraid); `docker compose up -d db` on its own still crash-loops on a fresh
+volume.
+
+## Phase 26: A theme pass (Write), before 1.0
+
+### 26.1 Flat or glass · `M` · Model: Opus 5.5
+
+Asked for 2026-09-27: tesria.com has a glass style and the app is flat. A
+theme option, **Flat** (today's look, unchanged) or **Glass** (tesria.com's),
+per person beside light, dark and the accent, built as tokens so components
+carry no second set of rules. The notes, and what to check (contrast in
+both themes, the editor and tables, reduced transparency, exports staying
+flat), are in `roadmap.md`, "Flat or glass". Before 1.0.
+
 ## Order of execution, flattened
 
 1. **0.1** Roles (Fable→Opus) → **0.2** Settings → **0.3** Telemetry → **0.4** Media storage

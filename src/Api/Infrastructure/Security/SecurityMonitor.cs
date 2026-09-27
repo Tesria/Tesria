@@ -184,6 +184,8 @@ public interface ISecurityDetector
     Task MailSignInFailedAsync(string provider, string reason);
     /// <summary>An administrator saved a backup policy that can remove more than the last one. Always an alert.</summary>
     Task BackupRetentionReducedAsync(Guid actorId, object metadata);
+    /// <summary>Secrets in .env still set to the published example values (dev-plan 25.1).</summary>
+    Task PlaceholderSecretsAsync(IReadOnlyList<string> settings);
 
     /// <summary>
     /// The wiki was replaced with an older copy (dev-plan 9.4). Always an
@@ -347,6 +349,10 @@ public sealed class SecurityDetector(AppDbContext db, SecurityCounters counters,
     public Task BackupRetentionReducedAsync(Guid actorId, object metadata) =>
         RaiseAsync("backup.retention_reduced", SecuritySeverity.Critical, key: "instance", alert: true,
             actorId: actorId, metadata: metadata, cooldown: false);
+
+    public Task PlaceholderSecretsAsync(IReadOnlyList<string> settings) =>
+        RaiseAsync("config.placeholder_secrets", SecuritySeverity.Critical, key: "instance", alert: true,
+            cooldown: false, metadata: new { Settings = settings });
 
     public Task BackupRestoredAsync(Guid? actorId, object metadata) =>
         RaiseAsync("backup.restored", SecuritySeverity.Critical, key: "instance", alert: true,

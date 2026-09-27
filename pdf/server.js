@@ -18,11 +18,18 @@
 // tool for the job (a real browser engine) is not a .NET library, and a
 // ~400MB Chromium has no business inside the app image.
 import { createServer } from 'node:http'
+import { readFileSync } from 'node:fs'
 import { lookup } from 'node:dns/promises'
 import { chromium } from 'playwright-core'
 
+function readSecretFile(path) {
+  try { return readFileSync(path, 'utf8').replace(/[\r\n]+$/, '') } catch { return '' }
+}
+
 const PORT = Number(process.env.PDF_PORT ?? 8091)
-const SECRET = process.env.PDF_SHARED_SECRET ?? ''
+// From the environment, or else the file the init service wrote (dev-plan
+// 25.1). Under Compose it is the file.
+const SECRET = process.env.PDF_SHARED_SECRET || readSecretFile('/run/tesria/pdf-secret/value')
 // A page of prose renders in well under a second; anything near this is a
 // runaway, not a slow document.
 const RENDER_TIMEOUT_MS = Number(process.env.PDF_TIMEOUT_MS ?? 20_000)

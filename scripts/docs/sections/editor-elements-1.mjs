@@ -964,7 +964,7 @@ export async function build({
 
     h(2, 'Related elements'),
     ul(
-      li(p(pageLink('Chart'), ' draws the numbers in a table on the same page as bars, columns, lines or a pie.')),
+      li(p(pageLink('Chart'), ' draws the numbers in a table on the same page as bars, columns, lines, a pie or a donut.')),
       li(p(pageLink('Layout'), ' puts text and pictures side by side.')),
       li(p(pageLink('Bullet list'), ' is simpler when each item has only one thing to say.')),
     ),
@@ -1213,7 +1213,7 @@ export async function build({
     h(2, 'Related elements'),
     ul(
       li(p(pageLink('Code block'), ' shows text as code rather than drawing it.')),
-      li(p(pageLink('Chart'), ' draws the numbers in a table as bars, lines or a pie.')),
+      li(p(pageLink('Chart'), ' draws the numbers in a table as bars, lines, a pie or a donut.')),
       li(p(pageLink('Image'), ' for a picture made in another program.')),
     ),
   ))

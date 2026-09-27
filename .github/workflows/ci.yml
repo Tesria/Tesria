@@ -58,7 +58,18 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-      - run: dotnet test tests/Api.Tests --nologo --filter "FullyQualifiedName~DatabaseRoleTests|FullyQualifiedName~MigrateWatchTests"
+      - run: dotnet test tests/Api.Tests --nologo --filter "FullyQualifiedName~DatabaseRoleTests|FullyQualifiedName~MigrateWatchTests|FullyQualifiedName~ZeroConfigRoleTests"
+
+  # The init service's secrets (dev-plan 25.1): generated once and never
+  # again, .env over what is stored, and the refusals. Runs the script where
+  # it runs in production, in the postgres:18 image.
+  init:
+    name: Init keeps its secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/test-init.sh
 
   web:
     name: Web build, lint and tests

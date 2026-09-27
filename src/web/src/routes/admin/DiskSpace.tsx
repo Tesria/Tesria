@@ -1,4 +1,4 @@
-import { PieChart } from '../../components/PieChart'
+import { DonutChart } from '../../components/PieChart'
 import type { DiskChart } from '../../api/client'
 
 /**
@@ -60,9 +60,11 @@ function DiskCard({ disk }: { disk: DiskChart }) {
     <section className="backup-card">
       <h3 className="backup-card__title">{diskName(disk.filesystem)}</h3>
       <div className="disk-chart">
-        <PieChart
+        <DonutChart
           slices={slices}
-          size={104}
+          size={112}
+          center={percent(disk.freeBytes, disk.totalBytes)}
+          caption="free"
           label={`The wiki ${bytes(disk.wikiBytes)}, its backups ${bytes(disk.backupBytes)}, everything else ${bytes(disk.otherBytes)}, free ${bytes(disk.freeBytes)} of ${bytes(disk.totalBytes)}`}
         />
         <ul className="disk-chart__legend">

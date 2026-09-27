@@ -140,6 +140,42 @@ public class DatabaseRoleTests
 /// The long-running migrate service (the review's DATA-01): what a restore
 /// asks of it, and what it repairs on its own.
 /// </summary>
+/// <summary>
+/// Zero-config first start (dev-plan 25.1), under the app role's grants: the
+/// alert raised at startup for a placeholder secret, and the owner saying the
+/// backup key is saved. Both write as the app, which SQLite cannot check.
+/// </summary>
+[Collection("Postgres")]
+public class ZeroConfigRoleTests
+{
+    private static string Status(params (string Name, string Content)[] files)
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "tesria-status-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        foreach (var (name, content) in files) File.WriteAllText(Path.Combine(dir, name), content);
+        return dir;
+    }
+
+    [PostgresFact]
+    public async Task The_placeholder_alert_and_the_saved_key_are_written_as_the_app()
+    {
+        using var pg = new PostgresTestDatabase();
+        using var factory = new TestAppFactory(pg, new Dictionary<string, string?>
+        {
+            ["Install:StatusDirectory"] = Status(("placeholders", "POSTGRES_PASSWORD\n"), ("backup-key-source", "generated\n")),
+        });
+        var owner = factory.CreateClient();
+        await owner.RegisterAndSignInAsync();
+
+        (await owner.PostAsJsonAsync("/api/admin/backups/key-saved", new { })).EnsureSuccessStatusCode();
+
+        await using var db = pg.Owner();
+        Assert.True(await db.SecurityAlerts.AnyAsync(a => a.Kind == "config.placeholder_secrets"));
+        Assert.NotNull((await db.SiteSettings.SingleAsync()).BackupKeySavedAt);
+        Assert.True(await db.AuditLogs.AnyAsync(a => a.Action == "backup.key_saved"));
+    }
+}
+
 [Collection("Postgres")]
 public class MigrateWatchTests
 {

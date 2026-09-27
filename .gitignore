@@ -1,5 +1,8 @@
 # --- Secrets / local config ---
 .env
+# The backup key init writes for the owner to save (dev-plan 25.1).
+backup-key.txt
+backup-key.old-*.txt
 *.local
 
 # --- .NET ---

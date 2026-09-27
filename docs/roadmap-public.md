@@ -13,6 +13,8 @@
 - Ready-made Docker images for Intel, AMD and ARM, installed in minutes
 
 ## Next
+- Install with one command: Tesria makes its own passwords and keys
+- Donut charts in pages and on the admin dashboard
 - Devices check the server's certificate fingerprint before trusting its own HTTPS
 - Default groups for every space, and guided setup for new spaces and new people
 - AI assistants can comment on a page, not only edit it
@@ -20,6 +22,7 @@
 - An Ask an agent button that tells your AI assistant what you want, and exactly where on the page
 - Review mode: changes from people, scripts or AI assistants wait for approval before going live
 - Published hardware requirements, and a lighter install for small servers
+- A glass look for the app, beside today's flat one, chosen in your theme settings
 
 ## Ideas
 - Semantic search, using your own embedding service or a small local model if your server can run it
@@ -27,4 +30,3 @@
 - Turning a wiki into a dataset for training or testing AI systems
 - A timeline element for planning in pages
 - SAML sign-in, and accounts provisioned from your identity provider
-- Donut charts in pages and on the admin dashboard

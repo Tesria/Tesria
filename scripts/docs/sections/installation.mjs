@@ -207,11 +207,12 @@ export async function build({
     h(2, 'What runs'),
     p('When Tesria is running, ', c('docker compose ps'), ' lists these services:'),
     ul(
+      li(p(c('init'), ': makes and keeps Tesria’s passwords and keys on the first start, then stops; everything else waits for it.')),
       li(p(c('app'), ': Tesria itself, the pages you see and the API behind them.')),
       li(p(c('db'), ': PostgreSQL 18, the database. It holds pages, comments, accounts and settings: everything except uploaded files.')),
       li(p(c('caddy'), ': the web server in front. It looks after HTTPS (the padlock in the address bar) and is the only part other computers can reach, on ports 80 and 443.')),
-      li(p(c('collab'), ': lets several people edit the same page at once. It does nothing until ', c('COLLAB_SHARED_SECRET'), ' is set.')),
-      li(p(c('pdf'), ': turns pages into PDF files. PDF export stays off until ', c('PDF_SHARED_SECRET'), ' is set.')),
+      li(p(c('collab'), ': lets several people edit the same page at once.')),
+      li(p(c('pdf'), ': turns pages into PDF files.')),
       li(p(c('backup'), ': copies the database and every attachment on a schedule, and sends copies offsite if you set that up.')),
       li(p(c('pgbackrest'), ': keeps physical backups of the database and a running record of every change, which is what lets you restore to any moment.')),
     ),
@@ -224,9 +225,10 @@ export async function build({
       li(p(c('backups'), ': the database dumps and attachment archives the ', c('backup'), ' service takes.')),
       li(p(c('pgbackrest'), ': the physical backups and the record of changes, encrypted.')),
       li(p(c('caddy_data'), ': the HTTPS certificates, including the certificate authority behind the local certificate.')),
+      li(p(c('secret_postgres_password'), ', ', c('secret_app_db_password'), ', ', c('secret_backup_key'), ', ', c('secret_collab'), ' and ', c('secret_pdf'), ': the passwords and keys ', c('init'), ' made or stored, one in each. The database and the backups cannot be opened without them.')),
     ),
     p('On disk each name starts with ', c('tesria_'), ', so the database’s volume is ', c('tesria_pgdata'), '.'),
-    panel('warning', p(b('One command deletes all of them:'), ' ', c('docker compose down -v'), '. The ', c('-v'), ' means “and the volumes”, which is the wiki and every backup on this machine. Plain ', c('docker compose down'), ' is safe. See ', pageLink('Uninstalling and moving'), '.')),
+    panel('warning', p(b('One command deletes all of them:'), ' ', c('docker compose down -v'), '. The ', c('-v'), ' means “and the volumes”, which is the wiki, every backup on this machine, and the generated passwords and keys that open the database and the backups. Never run it. Plain ', c('docker compose down'), ' is safe. See ', pageLink('Uninstalling and moving'), '.')),
 
     h(2, 'Before you start'),
     ul(
@@ -235,31 +237,29 @@ export async function build({
       li(p(b('A terminal open in that folder.'), ' Every command on these pages is run from there.')),
     ),
 
-    step(1, 'Make your settings file'),
-    p('Tesria reads its settings from a file called ', c('.env'), ' in the Tesria folder. Start from the example that comes with it:'),
-    codeBlock('bash', 'cp .env.example .env'),
-    p('Open ', c('.env'), ' in a text editor and set at least these. The example holds placeholders rather than blanks, so a value you forget does not stop Tesria starting: it just stays insecure.'),
-    ul(
-      li(p(c('POSTGRES_PASSWORD'), ' and ', c('APP_DB_PASSWORD'), ': two different long random passwords for the database.')),
-      li(p(c('BACKUP_ENCRYPTION_KEY'), ': a long random passphrase that encrypts the physical backups.')),
-      li(p(c('DOMAIN'), ' and ', c('ACME_EMAIL'), ': the address people will open Tesria at, and an email address. ', c('localhost'), ' is fine to try it on one computer.')),
-    ),
-    p('This makes a good random value; run it once for each:'),
-    codeBlock('bash', 'openssl rand -hex 32'),
-    p('Every setting is explained in the ', pageLink('Configuration reference'), '.'),
-    panel('warning', p(b('Keep a copy of BACKUP_ENCRYPTION_KEY somewhere other than this computer,'), ' such as a password manager. The backups it encrypts cannot be restored without it, by anyone.')),
+    step(1, 'Choose your address, if you have one'),
+    p('There is no settings file to fill in: Tesria makes its own passwords and keys. Its settings live in an optional file called ', c('.env'), ' in the Tesria folder, and only for what you want to change. Without one, the address is ', c('localhost'), ', which is fine to try Tesria on one computer or to run it on your own network (see ', pageLink('HTTPS and domains'), ').'),
+    p('If a web address such as ', c('wiki.example.com'), ' points at this computer, tell Tesria before the first start, so it can get a certificate for it. On a Mac or Linux:'),
+    codeBlock('bash', 'echo DOMAIN=wiki.example.com > .env'),
+    p('On Windows: ', c("Set-Content .env 'DOMAIN=wiki.example.com'"), '. Every other setting is optional, and explained in the ', pageLink('Configuration reference'), '.'),
 
     step(2, 'Start everything'),
     codeBlock('bash', 'docker compose pull\ndocker compose up -d'),
     p(c('pull'), ' downloads Tesria’s ready-made images for this release, which takes a few minutes the first time. ', c('-d'), ' runs them in the background, so you get the terminal back. If you cloned the repository to build from source instead, run ', c('docker compose up -d --build'), ' in place of both.'),
-    p('While it starts, a few things happen on their own: the database starts, the ', c('pgbackrest'), ' service prepares its backup store, Tesria creates its tables and a restricted database account for itself, and Caddy makes a certificate for your address.'),
+    p('While it starts, a few things happen on their own: the ', c('init'), ' service makes Tesria’s passwords and keys and stops, the database starts, the ', c('pgbackrest'), ' service prepares its backup store, Tesria creates its tables and a restricted database account for itself, and Caddy makes a certificate for your address.'),
     panel('note', p(b('Start the whole set, not only the database.'), ' On a new install, ', c('docker compose up -d db'), ' on its own makes the database restart every few seconds, because it waits for the ', c('pgbackrest'), ' service to prepare the backup store. If you ever need the database without the rest, start the two together: ', c('docker compose up -d db pgbackrest'), '.')),
 
-    step(3, 'Check it is running'),
+    step(3, 'Save your backup key'),
+    p('Tesria has written the key that encrypts your backups to a file called ', c('backup-key.txt'), ' in the Tesria folder, next to ', c('docker-compose.yml'), '. Open it, and copy the key into your password manager, or anywhere that is not this computer.'),
+    panel('warning', p(b('Without this key, no backup can be restored, by anyone.'), ' Once it is saved somewhere else, you may delete the file. While the computer is running, this prints the key again:'),
+      codeBlock('bash', 'docker compose run --rm init show-backup-key')),
+    p('The setup wizard asks about the key too, and Administration keeps reminding you until someone says it is saved. If you chose the key yourself, as ', c('BACKUP_ENCRYPTION_KEY'), ' in ', c('.env'), ', no file is written and nothing asks: you already have it.'),
+
+    step(4, 'Check it is running'),
     codeBlock('bash', 'docker compose ps'),
     p('Every line should say ', c('Up'), '. The ', c('db'), ', ', c('app'), ', ', c('backup'), ' and ', c('pgbackrest'), ' lines add ', c('(healthy)'), ' once their own checks pass, which can take a couple of minutes for the backup services. ', pageLink('Health checks and monitoring'), ' has more ways to check.'),
 
-    step(4, 'Open it and create the owner'),
+    step(5, 'Open it and create the owner'),
     yourServer(),
     p('Open ', c('https://your-server'), ' in a browser. A new Tesria has no accounts yet, so it opens the ', b('setup wizard'), ': it creates the ', b('owner'), ', the one account that owns this Tesria, then asks for its name, who can join, and how long to keep backups. See ', pageLink('First-run setup wizard'), '.'),
     p('On your own network, the browser may warn that the connection is not private. Nothing is wrong: ', pageLink('Trusting the local certificate'), ' explains why, and makes the warning go away.'),
@@ -280,45 +280,47 @@ export async function build({
   /** A setting and what it does, as a list item. */
   const setting = (name, ...what) => li(p(c(name), ': ', ...what))
   await page('Configuration reference', root, doc(
-    p('Tesria has two kinds of settings. The ones on this page live in the ', c('.env'), ' file in the Tesria folder: passwords, the address, backups. They are read when the containers start, and most people set them once and forget them.'),
+    p('Tesria has two kinds of settings. The ones on this page live in the ', c('.env'), ' file in the Tesria folder: passwords, the address, backups. They are read when the containers start. Every one of them is optional: Tesria runs without a ', c('.env'), ' at all, and makes its own passwords and keys. The file is only for what you want to change.'),
     p('Everything else, such as the wiki’s name, who can sign up and the email server, is changed in the browser, under ', b('Admin'), '. See ', pageLink('Settings (administration)'), '.'),
 
     h(2, 'Changing a setting'),
     ol(
-      li(p('Open ', c('.env'), ' in a plain text editor.')),
+      li(p('Open ', c('.env'), ' in a plain text editor. If there is none yet, make it: copy ', c('.env.example'), ' to ', c('.env'), ' (every line in it is commented out, so it changes nothing by itself), or start an empty file with that name.')),
       li(p('Change the line. Each is ', c('NAME=value'), ', with no spaces around the ', c('='), '. A line that starts with ', c('#'), ' is a comment and is ignored, so to turn on a setting the example has commented out, delete the ', c('#'), '.')),
       li(p('Save the file, and run ', c('docker compose up -d'), '. It restarts the services whose settings changed and leaves the rest alone.')),
     ),
     codeBlock('bash', '# Off: the # at the start makes the line a comment\n# OFFSITE_RETRY_MINUTES=15\n\n# On\nOFFSITE_RETRY_MINUTES=30'),
-    p('A long random value, for a password or a passphrase, is made with:'),
+    p('If you choose a password or a passphrase yourself, make a long random one with:'),
     codeBlock('bash', 'openssl rand -hex 32'),
-    panel('warning', p(b('.env holds every secret the server has.'), ' Never share it or put it in version control. Keep a copy of the backup passphrases somewhere that is not this machine: without them, the backups cannot be read.')),
+    panel('warning', p(b('.env holds every secret you put in it.'), ' Never share it or put it in version control. Keep a copy of the backup key and passphrases somewhere that is not this machine: without them, the backups cannot be read.')),
+
+    h(2, 'Generated for you'),
+    p('Tesria makes these five on its first start, unless you set them, and keeps each one in its own Docker volume, given only to the services that need it: Tesria itself never has the database owner’s password or the backup key. A value set in ', c('.env'), ' always wins over the stored one. To change one later, see ', pageLink('Security hardening'), ', under ', b('Changing a secret'), '.'),
+    ul(
+      setting('POSTGRES_PASSWORD', 'the password of the database’s owner account. Only two things hold it: a short setup step that updates the database each time Tesria starts and then stops, and the backup services, which use it for backups and restores. Tesria itself never has it.'),
+      setting('APP_DB_PASSWORD', 'the password of the restricted account Tesria runs as day to day, which cannot change or delete the audit log. Tesria creates that account itself.'),
+      setting('BACKUP_ENCRYPTION_KEY', 'encrypts the physical backups. They cannot be restored without it. When Tesria makes it, it also writes it to ', c('backup-key.txt'), ' in the Tesria folder for you to save somewhere else, and ', c('docker compose run --rm init show-backup-key'), ' prints it at any time. Set it yourself to restore backups from another machine with their key: see ', pageLink('When the machine is gone'), '.'),
+      setting('COLLAB_SHARED_SECRET', 'lets the service for editing a page with several people at once trust Tesria.'),
+      setting('PDF_SHARED_SECRET', 'lets the service that makes PDF files trust Tesria.'),
+    ),
 
     h(2, 'Database'),
     ul(
-      setting('POSTGRES_PASSWORD', b('Required.'), ' The password of the database’s owner account. Only two things hold it: a short setup step that updates the database each time Tesria starts and then stops, and the backup services, which use it for backups and restores. Tesria itself never has it.'),
-      setting('POSTGRES_USER', 'the owner account’s name, and ', c('POSTGRES_DB'), ', the database’s name. The example’s values work. The database is created with them on the first start; changing them later renames nothing.'),
-      setting('APP_DB_PASSWORD', b('Required.'), ' The password of the restricted account Tesria runs as day to day, which cannot change or delete the audit log. Tesria creates that account itself. Tesria will not start without it. To change it later, change the value and run ', c('docker compose up -d'), '.'),
-      setting('APP_DB_USER', 'optional. That account’s name, ', c('tesria_app'), ' unless you set another.'),
+      setting('POSTGRES_USER', 'the owner account’s name, and ', c('POSTGRES_DB'), ', the database’s name. Both are ', c('tesria'), ' unless you set others. The database is created with them on the first start; changing them later renames nothing.'),
+      setting('APP_DB_USER', 'optional. The name of the restricted account Tesria runs as, ', c('tesria_app'), ' unless you set another.'),
     ),
 
     h(2, 'Address and HTTPS'),
     p('See ', pageLink('HTTPS and domains'), ' for which to choose.'),
     ul(
       setting('DOMAIN', 'the name people reach Tesria by, such as ', c('wiki.example.com'), ', or ', c('localhost'), ' to try it on one computer. A real domain gets a free certificate from Let’s Encrypt; anything else uses a certificate Tesria makes itself. Links in emails use this address too, unless you set ', b('Public address'), ' in ', b('Admin'), ', ', b('Settings'), '.'),
-      setting('ACME_EMAIL', 'an email address Let’s Encrypt can write to about your certificate.'),
+      setting('ACME_EMAIL', 'optional. An email address Let’s Encrypt can write to about your certificate. Let’s Encrypt works without one.'),
       setting('CADDYFILE', 'which web server configuration to use. Leave it out on a private network. Set it to ', c('deploy/Caddyfile.public'), ' when the server can be reached from the internet.'),
       setting('PROXY_TRUSTED_NETWORKS', 'only if you put a proxy of your own in front of Tesria: that proxy’s address, such as ', c('10.0.0.5/32'), '. Tesria then believes the visitor addresses it passes on.'),
       setting('COMPOSE_FILE', 'set by the Docker Desktop setup in ', pageLink('Real visitor addresses with Docker Desktop'), ', which adds its own file to the list. Leave it alone otherwise.'),
       setting('PROXY_PROTOCOL_FROM', 'optional, and set by that same setup: which addresses Tesria’s web server believes when they attach a visitor’s real address. Left out, nothing is believed, which is right for every other install.'),
       setting('TESRIA_TAILSCALE_ADDRESS', 'optional. The fixed address of the Tailscale container, ', c('10.203.0.250'), ' unless you set another; Tesria believes the visitor address Tailscale passes on only from there. Change it only together with ', c('TESRIA_SUBNET'), ', to an address inside it.'),
       setting('TESRIA_SUBNET', 'optional. The private network Tesria’s own services talk to each other on, ', c('10.203.0.0/24'), ' unless you set another. Change it only if that range is already used by a VPN or your own network. After changing it, run ', c('docker compose down'), ' and then ', c('docker compose up -d'), '.'),
-    ),
-
-    h(2, 'Optional features'),
-    ul(
-      setting('COLLAB_SHARED_SECRET', 'turns on editing a page with several people at once. Any long random value. Empty, one person edits a page at a time.'),
-      setting('PDF_SHARED_SECRET', 'turns on PDF export. Any long random value. Without it, exporting as HTML still works, and asking for a PDF says to print the HTML export instead.'),
     ),
 
     h(2, 'Tailscale'),
@@ -339,10 +341,9 @@ export async function build({
     ),
 
     h(2, 'Backups on this machine'),
-    p('See ', pageLink('How backups work'), '.'),
+    p('See ', pageLink('How backups work'), '. The key that encrypts them, ', c('BACKUP_ENCRYPTION_KEY'), ', is under ', b('Generated for you'), ', above.'),
     ul(
-      setting('BACKUP_ENCRYPTION_KEY', b('Required.'), ' Encrypts the physical backups. They cannot be restored without it.'),
-      setting('BACKUP_INTERVAL_HOURS', 'how often backups run: 24 in the example.'),
+      setting('BACKUP_INTERVAL_HOURS', 'how often backups run. 24 unless set.'),
       setting('BACKUP_FULL_EVERY_DAYS', 'a new full physical backup once the newest is this many days old, with smaller ones in between. 7 unless set.'),
       setting('BACKUP_RETENTION_DAYS', 'only the starting point for how long backups are kept, read on the first start. After that, retention is set in the browser (see ', pageLink('Retention'), ') and this is ignored.'),
     ),
@@ -411,7 +412,7 @@ export async function build({
     p('The server must be reachable from the internet on both. On a home or office network, that usually means forwarding them to the server in the router’s settings. Let’s Encrypt checks port 80 when it issues the certificate.'),
     step(3, 'Set the address in .env'),
     codeBlock('bash', 'DOMAIN=wiki.example.com\nACME_EMAIL=you@example.com\nCADDYFILE=deploy/Caddyfile.public'),
-    p('The third line is the stricter configuration for the internet, explained below. Use your own domain and email address.'),
+    p('The second line is optional: Let’s Encrypt works without an email address, and writes to one about your certificate if you give it. The third line is the stricter configuration for the internet, explained below. Use your own domain and email address. If there is no ', c('.env'), ' yet, make one with these lines.'),
     step(4, 'Restart and open it'),
     codeBlock('bash', 'docker compose up -d'),
     p('Tesria asks Let’s Encrypt for a certificate, and renews it by itself from then on. Open ', c('https://wiki.example.com'), ': a padlock, and no warning on any device.'),
@@ -673,10 +674,10 @@ export async function build({
     ),
 
     step(3, 'Put the key in .env'),
-    p('Open the ', c('.env'), ' file in the Tesria folder in a text editor, add this line with your key after the ', c('='), ', and save:'),
+    p('Open the ', c('.env'), ' file in the Tesria folder in a text editor (or make one, if there is none yet), add this line with your key after the ', c('='), ', and save:'),
     codeBlock('bash', 'TS_AUTHKEY=tskey-auth-xxxxxxxx'),
     p('Tesria takes the name ', c('tesria'), ' on your tailnet. To use another, also add a line such as ', c('TS_HOSTNAME=wiki'), '.'),
-    panel('warning', p(b('Treat the key like a password.'), ' Until it is used or expires, anyone with it could add a device to your tailnet. ', c('.env'), ' is where Tesria keeps its secrets; never share it or put it in version control.')),
+    panel('warning', p(b('Treat the key like a password.'), ' Until it is used or expires, anyone with it could add a device to your tailnet. Now that it is in ', c('.env'), ', never share that file or put it in version control.')),
 
     step(4, 'Start the Tailscale service'),
     p('In the Tesria folder, run:'),
@@ -737,7 +738,7 @@ export async function build({
     h(2, 'Before you start'),
     ul(
       li(p(b('Node.js'), ' on the computer Tesria runs on, from ', c('nodejs.org'), '. Nothing else is installed.')),
-      li(p(b('Tesria running'), ' as ', pageLink('Installing with Docker Compose'), ' describes, with its ', c('.env'), ' in the Tesria folder.')),
+      li(p(b('Tesria running'), ' as ', pageLink('Installing with Docker Compose'), ' describes. The script adds its line to the ', c('.env'), ' file in the Tesria folder, and makes that file if there is none.')),
     ),
 
     h(2, 'On a Mac'),
@@ -1245,17 +1246,18 @@ export async function build({
     p('Choose ', b('Admin'), ', then ', b('Backups'), ', then ', b('Back up now'), ', and wait until the page says the backups have finished. If the upgrade goes wrong, this is what you go back to. See ', pageLink('Backups and recovery'), '.'),
 
     step(2, 'Get the new version'),
-    p('If you installed Tesria from ', c('tesria-deploy.zip'), ', as ', pageLink('Quick start'), ' does, download the new one and unzip it over your Tesria folder. Your ', c('.env'), ' is kept: it is not in the zip. In the folder above your Tesria folder, on a Mac or Linux:'),
+    p('If you installed Tesria from ', c('tesria-deploy.zip'), ', as ', pageLink('Quick start'), ' does, download the new one and unzip it over your Tesria folder. Your ', c('.env'), ', if you have one, is kept: it is not in the zip. In the folder above your Tesria folder, on a Mac or Linux:'),
     codeBlock('bash', 'curl -LO https://github.com/Tesria/Tesria/releases/latest/download/tesria-deploy.zip\nunzip -o tesria-deploy.zip -d tesria'),
     p('On Windows, in PowerShell:'),
     codeBlock('powershell', 'Invoke-WebRequest https://github.com/Tesria/Tesria/releases/latest/download/tesria-deploy.zip -OutFile tesria-deploy.zip\nExpand-Archive tesria-deploy.zip -DestinationPath tesria -Force'),
     p('If you cloned the repository to build from source, run ', c('git pull'), ' in the Tesria folder instead.'),
+    panel('note', p(b('Upgrading from a version before 0.8.0?'), ' There is nothing extra to do. Keep your ', c('.env'), ': its values win, and Tesria stores them for itself from then on. If it still has a ', c('change-me'), ' value from the old example settings, Tesria starts anyway and warns you; see ', pageLink('Security hardening'), ', under ', b('Changing a secret'), '.')),
 
     step(3, 'Restart on the new version'),
     p('In the Tesria folder:'),
     codeBlock('bash', 'docker compose pull\ndocker compose up -d'),
     p('The new images download while the old version keeps running. Then the setup step (the ', c('migrate'), ' service) updates the database, each container is replaced, and Tesria is back. Since 0.7.3 ', c('migrate'), ' keeps running afterwards: it does the same for a restored backup, so it is meant to be there. From a clone, run ', c('docker compose up -d --build'), ' instead, which builds first.'),
-    panel('warning', p(b('Some upgrades ask for one more step.'), ' The ', pageLink('Release notes'), ' say when, for example to run ', c('docker compose down'), ' and then ', c('docker compose up -d'), ' once. Never add ', c('-v'), ' to ', c('down'), ': that deletes the wiki and its backups.')),
+    panel('warning', p(b('Some upgrades ask for one more step.'), ' The ', pageLink('Release notes'), ' say when, for example to run ', c('docker compose down'), ' and then ', c('docker compose up -d'), ' once. Never add ', c('-v'), ' to ', c('down'), ': that deletes the wiki, its backups, and the generated passwords and keys that open them.')),
 
     step(4, 'Check it'),
     p('Open ', ...adminAt('About'), ': it names the version now running (so does ', c('/api/health'), ', while you are signed in). ', c('docker compose ps'), ' should show every service ', c('Up'), '.'),
@@ -1321,7 +1323,7 @@ export async function build({
     p('Every backup Tesria takes on its own is on the same computer as the wiki, so a dead disk, a fire or a theft takes both. Two things protect against that, and only you can do them:'),
     ul(
       li(p(b('Set up an offsite copy,'), ' in the cloud, on a network drive, or on a removable drive. See ', pageLink('Offsite copies'), '.')),
-      li(p(b('Keep the passphrases from .env somewhere else,'), ' such as a password manager. A copy whose passphrase is lost cannot be read by anyone.')),
+      li(p(b('Keep the backup key and the offsite passphrases somewhere else,'), ' such as a password manager. If Tesria made the backup key, it is in ', c('backup-key.txt'), ' in the Tesria folder until you delete it, and ', c('docker compose run --rm init show-backup-key'), ' prints it at any time. A copy whose key or passphrase is lost cannot be read by anyone.')),
     ),
 
     h(2, 'You may not need a backup at all'),
@@ -1606,9 +1608,10 @@ export async function build({
     ul(
       li(p(b('The passphrase of the copy you have:'), ' ', c('OFFSITE_CLOUD_PASSPHRASE'), ', ', c('OFFSITE_NAS_PASSPHRASE'), ' or ', c('OFFSITE_REMOVABLE_PASSPHRASE'), ', from wherever you kept it. Without it the copy cannot be read, and there is no way around that.')),
       li(p(b('Access to the copy:'), ' the cloud account’s key and secret, or the drive or share itself.')),
+      li(p(b('The old backup key,'), ' ', c('BACKUP_ENCRYPTION_KEY'), ', from wherever you kept it. If the old Tesria made its key itself, it is the one the owner saved from ', c('backup-key.txt'), '.')),
       li(p(b('A computer with Docker'), ' and room for the wiki. See ', pageLink('Prerequisites'), '.')),
     ),
-    p('You get back every page, every attachment and every account. You do not get back ', c('.env'), ', which is in no backup because it holds the keys: you write a new one.'),
+    p('You get back every page, every attachment and every account. You do not get back ', c('.env'), ' or the old server’s passwords and keys, which are in no backup: the new Tesria makes its own, except the backup key, which you bring.'),
 
     step(1, 'Look at what the copy holds'),
     p('The copies are standard ', b('restic'), ' repositories: restic and the passphrase read them on any computer, with no Tesria involved. Docker runs restic for you. For a drive or share, use the path it is at on this computer:'),
@@ -1618,7 +1621,9 @@ export async function build({
     p('Each line it lists is a copy, with its date. The newest is the one to restore.'),
 
     step(2, 'Install an empty Tesria'),
-    p('Get Tesria as in ', pageLink('Quick start'), ', and write a new ', c('.env'), ' with new passwords and a new ', c('BACKUP_ENCRYPTION_KEY'), '. Keep the same ', c('DOMAIN'), ' if you want the same address. Then start it:'),
+    p('Get Tesria as in ', pageLink('Quick start'), ', but before the first start, make a ', c('.env'), ' in the Tesria folder with the old backup key in it:'),
+    codeBlock('bash', 'BACKUP_ENCRYPTION_KEY=the-old-backup-key'),
+    p('That one line is enough: Tesria makes everything else fresh. Add a ', c('DOMAIN'), ' line too if you want the same address as before. Do not let the new Tesria make a new backup key, which could not read the old backups. Then start it:'),
     codeBlock('bash', 'docker compose pull\ndocker compose up -d'),
     p('Wait until ', c('docker compose ps'), ' shows ', c('app'), ' as healthy. Do not go through the setup wizard: the restore replaces everything anyway.'),
 
@@ -1653,7 +1658,7 @@ export async function build({
     ),
 
     h(2, 'To a moment in time, from the cloud'),
-    p('The steps above bring the wiki back as it was at its newest nightly backup. The cloud copy can also go back to a chosen minute, because it holds the database’s record of changes. That needs the original ', c('BACKUP_ENCRYPTION_KEY'), ' as well as the cloud passphrase, and is a job for someone comfortable with PostgreSQL: the steps are in ', c('docs/backup-recovery.md'), ' in the Tesria folder.'),
+    p('The steps above bring the wiki back as it was at its newest nightly backup. The cloud copy can also go back to a chosen minute, because it holds the database’s record of changes. That needs the original ', c('BACKUP_ENCRYPTION_KEY'), ' as well as the cloud passphrase, and is a job for someone comfortable with PostgreSQL: the steps are in ', c('docs/backup-recovery.md'), ' in Tesria’s source code, at github.com/Tesria/Tesria.'),
   ))
 
   // ============================================================ Hardening
@@ -1663,9 +1668,9 @@ export async function build({
 
     h(2, 'Configuration'),
     tasks(
-      task(false, c('DOMAIN'), ' is a real name you control, and ', c('ACME_EMAIL'), ' is an address someone reads. See ', pageLink('HTTPS and domains'), '.'),
+      task(false, c('DOMAIN'), ' is a real name you control, and ', c('ACME_EMAIL'), ', if you set it, is an address someone reads. See ', pageLink('HTTPS and domains'), '.'),
       task(false, c('CADDYFILE=deploy/Caddyfile.public'), ' is set. The standard configuration makes a certificate for any name a stranger connects with.'),
-      task(false, c('POSTGRES_PASSWORD'), ', ', c('APP_DB_PASSWORD'), ', ', c('BACKUP_ENCRYPTION_KEY'), ' and ', c('COLLAB_SHARED_SECRET'), ' are long, random and all different. ', c('APP_DB_PASSWORD'), ' is set; Tesria will not start without it.'),
+      task(false, 'No setting in ', c('.env'), ' still holds a ', c('change-me'), ' value from an old ', c('.env.example'), '. Tesria warns in ', ...adminAt('Security'), ' if one does; see ', b('Changing a secret'), ', below. The backup key is saved somewhere other than the server.'),
       task(false, 'Only ports 80 and 443 are open to the outside. Nothing publishes Tesria’s own port (8080), the database (5432) or the live editing service (8090).'),
       task(false, 'If a proxy of your own sits in front, ', c('PROXY_TRUSTED_NETWORKS'), ' names exactly that proxy.'),
       task(false, 'You have decided whether pages may show pictures from any website. If what your readers read is private, limit pictures in ', ...adminAt('Settings'), ', under ', b('Images'), '.'),
@@ -1684,12 +1689,29 @@ export async function build({
     h(2, 'Operations'),
     tasks(
       task(false, 'Backups run, a restore has been rehearsed, and there is at least one ', pageLink('Offsite copies', 'offsite copy'), '.'),
-      task(false, 'The passphrases in ', c('.env'), ' are kept somewhere other than the server.'),
+      task(false, 'The offsite passphrases in ', c('.env'), ' are kept somewhere other than the server.'),
       task(false, 'Email works, so alerts reach administrators: ', b('Send test email to me'), ' succeeds. See ', pageLink('Email (SMTP)'), '.'),
       task(false, 'Tesria’s log, which carries a copy of the audit log, is sent somewhere durable.'),
       task(false, c('scripts/verify-audit-chain.sh'), ' runs on a schedule and someone watches its result. See ', pageLink('Health checks and monitoring'), '.'),
       task(false, 'Someone watches for new releases and upgrades promptly. See ', pageLink('Upgrading'), '.'),
     ),
+
+    h(2, 'Changing a secret'),
+    p('Tesria makes its five secrets itself on the first start (see ', pageLink('Configuration reference'), '). You may still want to change one: because it leaked, or because an install from before 0.8.0 still has a ', c('change-me'), ' value from the old example settings. Tesria then starts as normal, but writes a warning to its log at every start and raises a critical alert in ', ...adminAt('Security'), ': ', i('A secret is still the public example value'), '. A new install whose ', c('.env'), ' has one does not start at all, and ', c('docker compose logs init'), ' names the setting: delete that line, so that Tesria makes its own, or set a long random value.'),
+    p('A value set in ', c('.env'), ' always wins over the stored one, so changing a secret means setting a new value there. Make a long random one with:'),
+    codeBlock('bash', 'openssl rand -hex 32'),
+    h(3, 'APP_DB_PASSWORD, COLLAB_SHARED_SECRET or PDF_SHARED_SECRET'),
+    p('Put the new value in ', c('.env'), ', then run:'),
+    codeBlock('bash', 'docker compose up -d'),
+    p('For ', c('APP_DB_PASSWORD'), ', Tesria updates its database account to the new password by itself.'),
+    h(3, 'POSTGRES_PASSWORD'),
+    p('The database keeps the password it was created with, so change it in the database first, then in ', c('.env'), ', then restart. Use your new value in place of ', c('the-new-password'), ':'),
+    codeBlock('bash', 'docker compose exec db psql -U tesria -d tesria -c "ALTER ROLE tesria PASSWORD \'the-new-password\'"'),
+    p('Put the same value in ', c('.env'), ' as ', c('POSTGRES_PASSWORD'), ', then run ', c('docker compose up -d'), '. If you changed ', c('POSTGRES_USER'), ' or ', c('POSTGRES_DB'), ' from ', c('tesria'), ', use those names in the command instead.'),
+    h(3, 'BACKUP_ENCRYPTION_KEY'),
+    p('This one cannot simply be changed. Every backup Tesria has taken stays encrypted with the old key, so changing it means starting a new backup history: a job to plan, not a one-line change. Until then, keep the old key safe, because every existing backup needs it. The steps are in ', c('docs/backup-recovery.md'), ' in Tesria’s source code, at github.com/Tesria/Tesria.'),
+    h(3, 'Afterwards'),
+    p('Once you have changed a secret, resolve its alert in ', ...adminAt('Security'), '.'),
 
     h(2, 'What Tesria does for you'),
     p('Once those are done, Tesria covers a good deal by itself: limits on sign-in attempts from one address and lockouts for one account; alerts for patterns such as password spraying or mass deletion; a blocklist for addresses; strict browser security headers; attachments that cannot run scripts as the site; webhooks that cannot reach the server’s own network; and an audit log the running application cannot alter. The ', pageLink('Security'), ' section explains each, and what it does not cover.'),
@@ -1715,7 +1737,7 @@ export async function build({
     codeBlock('bash', 'docker run --rm -v tesria_backups:/b -v "$PWD":/out alpine tar czf /out/tesria-backups.tgz -C /b .'),
     p('That makes ', c('tesria-backups.tgz'), '. Copy it to the new computer, into its Tesria folder.'),
     step(3, 'Install Tesria on the new computer'),
-    p('As in ', pageLink('Quick start'), ', with a new ', c('.env'), ', and the same ', c('DOMAIN'), ' to keep the same address. Start it with ', c('docker compose pull'), ' and ', c('docker compose up -d'), ', wait until ', c('app'), ' is healthy, and skip the setup wizard.'),
+    p('As in ', pageLink('Quick start'), ', with the same ', c('DOMAIN'), ' in its ', c('.env'), ' to keep the same address. Start it with ', c('docker compose pull'), ' and ', c('docker compose up -d'), ', wait until ', c('app'), ' is healthy, and skip the setup wizard.'),
     step(4, 'Restore the backup'),
     codeBlock('bash', 'docker compose cp tesria-backups.tgz backup:/tmp/\ndocker compose exec backup tar xzf /tmp/tesria-backups.tgz -C /backups\ndocker compose exec backup ls /backups'),
     p('Then restore the newest dump by its name, and restart Tesria:'),
@@ -1726,7 +1748,7 @@ export async function build({
     h(2, 'Removing Tesria completely'),
     panel('error', p(b('This deletes the wiki and every backup on this computer.'), ' It cannot be undone. First take a copy you can restore from somewhere else, or be sure you never want it again.')),
     codeBlock('bash', 'docker compose down -v --rmi local'),
-    p(c('-v'), ' deletes the volumes, which hold the database, the attachments and the backups. ', c('--rmi local'), ' deletes the images built for Tesria. Offsite copies are not touched: delete those from your cloud storage, network drive or removable drive yourself. Then you can delete the Tesria folder.'),
+    p(c('-v'), ' deletes the volumes, which hold the database, the attachments, the backups, and the generated passwords and keys that open the database and the backups. ', c('--rmi local'), ' deletes the images built for Tesria. Offsite copies are not touched: delete those from your cloud storage, network drive or removable drive yourself. Then you can delete the Tesria folder.'),
   ))
 }
 

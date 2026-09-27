@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { PieChart } from '../components/PieChart'
+import { DonutChart, PieChart } from '../components/PieChart'
 import { NodeViewWrapper, useEditorState, type ReactNodeViewProps } from '@tiptap/react'
 import type { Node as PMNode } from '@tiptap/pm/model'
 import { CHART_TYPES, CHART_TYPE_LABELS, isChartType, type ChartType } from './chartExtension'
@@ -113,7 +113,7 @@ export function ChartView({ node, editor, selected, updateAttributes }: ReactNod
 }
 
 /**
- * Plain SVG rather than a charting library: four chart types over one table
+ * Plain SVG rather than a charting library: five chart types over one table
  * is a few dozen lines, and the alternative is another ~150KB in the bundle
  * for a feature most pages never use.
  */
@@ -121,6 +121,20 @@ function Plot({ data, type }: { data: TableData; type: ChartType }) {
   const flat = useMemo(() => data.series.flatMap((s) => s.values), [data])
   const max = Math.max(...flat, 0)
   const min = Math.min(...flat, 0)
+
+  if (type === 'donut') {
+    // The same one column as the pie, as a ring with the column's total in
+    // the middle (0.8.0).
+    const slices = data.series.map((s, i) => ({ label: s.label, value: Math.max(s.values[0] ?? 0, 0), color: COLORS[i % COLORS.length] }))
+    const total = slices.reduce((sum, s) => sum + s.value, 0)
+    const shown = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(total)
+    return (
+      <div className="chart__plot">
+        <DonutChart slices={slices} size={120} label={`Donut chart, total ${shown}`} center={shown} caption="total" />
+        <Legend items={slices.map((s) => ({ label: s.label, color: s.color }))} />
+      </div>
+    )
+  }
 
   if (type === 'pie') {
     // A pie charts one column: the first, which is what people mean.

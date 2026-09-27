@@ -367,7 +367,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     group: 'block',
     icon: ChartIcon,
     description: 'Chart the numbers in a table on this page',
-    keywords: ['chart', 'graph', 'bar', 'pie', 'line'],
+    keywords: ['chart', 'graph', 'bar', 'pie', 'donut', 'line'],
     command: (editor, range) => editor.chain().focus().deleteRange(range).insertChart().run(),
   },
   // Wave E media. The embed asks the server what it may frame; the

@@ -17,6 +17,8 @@ export const ALERT_KIND_LABEL: Record<string, string> = {
   'settings.public_spaces_toggled': 'Public spaces switch changed',
   'webhook.private_target': 'Webhook aimed at a private address',
   'audit.chain_broken': 'Audit log chain broken',
+  // Dev-plan 25.1: an install still on .env.example's published values.
+  'config.placeholder_secrets': 'A secret is still the public example value',
   'backup.failed': 'A backup failed',
   'backup.overdue': 'Backups are overdue',
   'backup.agent_offline': 'A backup agent is not reporting',

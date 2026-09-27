@@ -45,6 +45,10 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// The secrets the init service generated (dev-plan 25.1), for any setting
+// the environment leaves empty. Before anything below reads configuration.
+builder.Configuration.AddTesriaSecretFiles();
+
 // ---------------------------------------------------------------------------
 // Services
 // ---------------------------------------------------------------------------
@@ -106,6 +110,8 @@ builder.Services.AddScoped<CurrentUser>();
 builder.Services.AddScoped<IAuditLogger, AuditLogger>();
 builder.Services.AddScoped<IAuditChainVerifier, AuditChainVerifier>();
 builder.Services.AddSingleton<AuditChainMonitor>();
+// What the init service found about this install (dev-plan 25.1).
+builder.Services.AddSingleton<InstallStatus>();
 builder.Services.AddSingleton<SecurityCounters>();
 builder.Services.AddSingleton<DeniedRequestLog>();
 builder.Services.AddSingleton<SharedClientAddresses>();
@@ -570,6 +576,26 @@ using (var scope = app.Services.CreateScope())
         scope.ServiceProvider.GetRequiredService<IAuditLogger>(),
         scope.ServiceProvider.GetRequiredService<ISiteSettingsService>(),
         startupLog);
+
+    // Secrets still set to .env.example's published values (dev-plan 25.1).
+    // init refuses that on a new install; an existing one starts, so an
+    // upgrade never breaks, and says so here at every start and once as an
+    // alert until someone resolves it.
+    var placeholders = scope.ServiceProvider.GetRequiredService<InstallStatus>().PlaceholderSettings;
+    if (placeholders.Count > 0)
+    {
+        startupLog.LogCritical(
+            "{Settings} in .env still hold the example values from .env.example, which anyone can read. " +
+            "Change them: see the docs page Security hardening, Changing a secret.",
+            string.Join(", ", placeholders));
+        var open = await db.SecurityAlerts.AnyAsync(a =>
+            a.Kind == "config.placeholder_secrets" && a.Status != SecurityAlertStatus.Resolved);
+        if (!open)
+        {
+            await scope.ServiceProvider.GetRequiredService<ISecurityDetector>().PlaceholderSecretsAsync(placeholders);
+            await db.SaveChangesAsync();
+        }
+    }
 }
 
 // A broken audit chain is a security alert, not just a log line.

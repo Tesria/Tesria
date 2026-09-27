@@ -1,5 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { StorageTargets } from './StorageTargets'
+import { BackupKeyNotice } from './BackupKeyNotice'
 import { KeptCopyCard, RestoreDialog, RestoreProgress } from './RestorePanel'
 import { DiskSpace } from './DiskSpace'
 import {
@@ -321,6 +322,12 @@ export function AdminBackupsPage() {
       {status && <p className="profile__ok">{status}</p>}
 
       {restoring && <RestoreProgress restore={data.restore} onCancel={cancelRestore} />}
+
+      <BackupKeyNotice
+        status={data.key}
+        mayConfirm={mayEditPolicy}
+        onSaved={(key) => { setData((d) => d && { ...d, key }); setStatus('Thank you. The backup key is marked as saved.') }}
+      />
 
       <div className="backup-actions">
         {can('backups.run') && (

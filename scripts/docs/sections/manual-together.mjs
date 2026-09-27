@@ -291,7 +291,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   ))
 
   await page('Editing at the same time', together, doc(
-    p('Two people fixing the same page used to mean one of them waiting, or one of them losing their work. Where your Tesria has live editing turned on, that does not happen: everyone in a page sees the others’ changes as they type, and each person’s cursor shows in its own color with their name beside it.'),
+    p('Two people fixing the same page used to mean one of them waiting, or one of them losing their work. With live editing, which is on unless an administrator has turned it off, that does not happen: everyone in a page sees the others’ changes as they type, and each person’s cursor shows in its own color with their name beside it.'),
     h(2, 'Is it on?'),
     p('Look under the page’s title while you edit. A line there says how the connection is:'),
     ul(
@@ -301,7 +301,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('You are signed out or can no longer edit this page.'), ' You were signed out, or someone changed who may edit it. Changes you make now are not saved: copy anything you need, then reload the page.')),
       li(p(b('This page no longer exists.'), ' Someone deleted it while you had it open. Copy anything you need.')),
     ),
-    p('If there is no such line at all, live editing is not turned on for your Tesria. See ', b('Without live editing'), ' below.'),
+    p('If there is no such line at all, live editing is off for your Tesria. See ', b('Without live editing'), ' below.'),
     h(2, 'How publishing works with others in the page'),
     ul(
       li(p(b('Changes to an existing page are kept in a shared draft.'), ' You can leave the editor and come back later, and so can everyone else: the draft is still there, with everyone’s changes in it.')),
@@ -310,7 +310,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('If the page changed while you were editing'), ' (someone published it another way, or restored an older version), Tesria does not publish over it. It says ', i('This page changed while you were editing'), ', highlights the difference, and lets you accept or reject it before you publish again.')),
     ),
     h(2, 'Without live editing'),
-    p('Live editing needs a setting on the server, ', c('COLLAB_SHARED_SECRET'), ', which an administrator sets when installing. Without it, each person edits on their own, and whoever publishes last wins: their version replaces the one before. If your team often edits the same pages, ask your administrator to turn it on.'),
+    p('Live editing is on in every Tesria, unless an administrator has turned off the part of the server that runs it, the ', c('collab'), ' service. Without it, each person edits on their own, and whoever publishes last wins: their version replaces the one before. If your team often edits the same pages, ask your administrator to turn it back on.'),
   ))
 
   // ================================================================ Comments
@@ -536,7 +536,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     h(2, 'If an export is missing or does not work'),
     ul(
       li(p(b('The options are not in the menu:'), ' your role does not allow exporting, or the space has turned that format off. See ', pageLink('Turning exports off'), '.')),
-      li(p(b('HTML or PDF says there is no export renderer:'), ' those two are made by a separate part of Tesria, which your administrator has not set up. Export as Markdown instead.')),
+      li(p(b('HTML or PDF says there is no export renderer:'), ' those two are made by a separate part of Tesria, which is not running on your Tesria just now. Export as Markdown instead, and tell your administrator.')),
     ),
     p('People reading a public page without signing in have the same exports as buttons at the top of the page, ', b('↓ Markdown'), ', ', b('↓ HTML'), ' and ', b('↓ PDF'), ', where the space and your Tesria allow it.'),
   ))
@@ -577,7 +577,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     h(2, 'Limits'),
     ul(
       li(p(b('Up to 300 pages'), ' in one site.')),
-      li(p(b('An export renderer'), ' has to be set up on your Tesria, the same one PDF exports use.')),
+      li(p(b('The export renderer'), ' has to be running on your Tesria: the same part that makes PDF exports.')),
       li(p(b('Embedded videos and sites'), ' still load from where they live, so readers need an internet connection for those.')),
     ),
     p('Next: ', pageLink('Hosting an exported site'), '.'),

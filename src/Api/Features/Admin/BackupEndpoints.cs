@@ -48,7 +48,15 @@ public static class BackupEndpoints
     public record Overview(
         PolicyDto Policy, List<AgentDto> Agents, List<BackupDto> Backups, List<BackupDto> Removed,
         List<JobDto> Jobs, List<TargetDto> Targets, bool OffsiteIsManualOnly,
-        List<DiskChartDto> Disks, RestoreStatusDto Restore);
+        List<DiskChartDto> Disks, RestoreStatusDto Restore, BackupKeyDto Key);
+
+    /// <summary>
+    /// The backup key (dev-plan 25.1). <c>Generated</c> means Tesria made it,
+    /// so the only copy may be on this machine; the page warns until someone
+    /// says it is saved. The key itself never comes here: the app cannot
+    /// read it.
+    /// </summary>
+    public record BackupKeyDto(bool Generated, DateTimeOffset? SavedAt, string? SavedByName);
 
     /// <summary>
     /// Where the instance stands on restores (dev-plan 9.4): one running, one
@@ -107,6 +115,7 @@ public static class BackupEndpoints
         group.MapPost("/targets/{slot}/copy", RequestCopy).RequirePermission(InstancePermissions.BackupsRun);
         group.MapPost("/targets/{slot}/test", RequestTest).RequirePermission(InstancePermissions.BackupsRun);
         group.MapGet("/jobs/{id:guid}", GetJob).RequirePermission(InstancePermissions.BackupsView);
+        group.MapPost("/key-saved", KeySaved).RequirePermission(InstancePermissions.BackupsPolicy);
         // Replacing the wiki with an older copy (dev-plan 9.4). Its own file
         // and its own right: everything above this line is about taking
         // backups, and this is the one thing that spends them.
@@ -114,11 +123,13 @@ public static class BackupEndpoints
         return routes;
     }
 
-    private static async Task<IResult> GetOverview(AppDbContext db, ISiteSettingsService settings, bool? includeRemoved)
+    private static async Task<IResult> GetOverview(
+        AppDbContext db, ISiteSettingsService settings, InstallStatus install, bool? includeRemoved)
     {
         var s = await settings.GetAsync();
         var snapshot = await BackupStatus.LoadAsync(db);
-        var names = await NamesAsync(db, snapshot.Jobs.Select(j => j.RequestedById).Append(s.BackupPolicyChangedById));
+        var names = await NamesAsync(db, snapshot.Jobs.Select(j => j.RequestedById)
+            .Append(s.BackupPolicyChangedById).Append(s.BackupKeySavedById));
 
         var present = snapshot.Backups.Where(b => b.RemovedAt is null)
             .OrderByDescending(b => b.StartedAt).Select(ToDto).ToList();
@@ -150,7 +161,36 @@ public static class BackupEndpoints
                     snapshot.Agents.Where(a => c.Agents.Contains(a.Name))
                         .Max(a => a.LastSeenAt)))
                 .ToList(),
-            RestoreStatusOf(s, snapshot)));
+            RestoreStatusOf(s, snapshot),
+            KeyOf(s, install, names)));
+    }
+
+    private static BackupKeyDto KeyOf(SiteSettings s, InstallStatus install, Dictionary<Guid, string> names) =>
+        new(install.BackupKeyGenerated, s.BackupKeySavedAt,
+            s.BackupKeySavedById is { } by && names.TryGetValue(by, out var name) ? name : null);
+
+    /// <summary>
+    /// Someone says the backup key is saved somewhere other than this
+    /// machine (dev-plan 25.1). A statement, not a proof: Tesria cannot see
+    /// where the key went, so this records who said it and when.
+    /// </summary>
+    private static async Task<IResult> KeySaved(
+        ISiteSettingsService settings, AppDbContext db, CurrentUser current, IAuditLogger audit, InstallStatus install)
+    {
+        var actorId = current.RequireId();
+        var s = await settings.GetAsync();
+        if (s.BackupKeySavedAt is null)
+        {
+            s = await settings.UpdateAsync(x =>
+            {
+                x.BackupKeySavedAt = DateTimeOffset.UtcNow;
+                x.BackupKeySavedById = actorId;
+            }, actorId);
+            audit.Record("backup.key_saved", "settings", SiteSettings.SingletonId, null);
+            await db.SaveChangesAsync();
+        }
+        var names = await NamesAsync(db, [s.BackupKeySavedById]);
+        return Results.Ok(KeyOf(s, install, names));
     }
 
     private static async Task<IResult> UpdatePolicy(

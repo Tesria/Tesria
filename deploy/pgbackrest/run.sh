@@ -16,6 +16,12 @@ TOOL_VERSION="$(pgbackrest version 2>/dev/null)"
 . /opt/tesria/common.sh
 # shellcheck source=offsite.sh
 . /scripts/offsite.sh
+# shellcheck source=cipher.sh
+. /scripts/cipher.sh
+
+# The backup key (dev-plan 25.1): each container has its own filesystem, so
+# the drop-in the db container wrote is not here.
+log "$(cipher_write_conf)"
 
 # The same drop-in the db container writes, written again here: each
 # container has its own filesystem, and the sidecar needs repo2 to create

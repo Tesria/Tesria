@@ -144,8 +144,8 @@ export async function build({
     p('Tesria’s web server answers on ports 80 and 443, the standard ports for web pages. If another web server is already running on the same computer, one of them has to move before Tesria can start.'),
 
     h(3, 'A safe place for secrets'),
-    p('During the install you make up a few long passwords, and the setup wizard gives you recovery codes for your account. A password manager is the ideal place for them. One matters more than the rest:'),
-    panel('warning', p(b('Keep the backup encryption key somewhere safe, away from the server.'), ' Tesria encrypts its backups with ', c('BACKUP_ENCRYPTION_KEY'), ', which you set during the install. Without it, the backups cannot be restored. If the server is lost and the key with it, so are the backups.')),
+    p('Tesria makes its own passwords, so there is nothing to invent. It does give you two things to keep: recovery codes for your account, and the key that encrypts your backups. A password manager is the ideal place for them. One matters more than the rest:'),
+    panel('warning', p(b('Keep the backup key somewhere safe, away from the server.'), ' Tesria makes it when it is installed and writes it to a file called ', c('backup-key.txt'), ' in the Tesria folder. Without it, the backups cannot be restored. If the server is lost and the key with it, so are the backups.')),
 
     h(2, 'How people will reach it'),
     p('Every Tesria has an address that people type into their browser. There are two kinds, and it is worth deciding which you want before you start:'),
@@ -217,7 +217,7 @@ export async function build({
 
   // ================================================================ Quick start
   await page('Quick start', root, doc(
-    p('This page takes you from a computer with Docker to your own Tesria, open in your browser and ready for its guided setup. You type a handful of commands and fill in one settings file; the rest is waiting while Tesria downloads.'),
+    p('This page takes you from a computer with Docker to your own Tesria, open in your browser and ready for its guided setup. You type three commands; the rest is waiting while Tesria downloads. There are no passwords to invent: Tesria makes its own.'),
     p('If you have not yet, read ', pageLink('Prerequisites'), ' first: it explains Docker, and what to have ready.'),
     panel('note', p(b('Throughout this page, '), c('your-server'), b(' stands for your server’s address:'), ' the name people will type to reach Tesria, such as ', c('studio.local'), ' or ', c('wiki.example.com'), '. On the computer Tesria runs on, ', c('localhost'), ' works too.')),
 
@@ -226,33 +226,23 @@ export async function build({
     codeBlock('bash', 'curl -LO https://github.com/Tesria/Tesria/releases/latest/download/tesria-deploy.zip\nunzip tesria-deploy.zip -d tesria && cd tesria'),
     p('On Windows, in PowerShell:'),
     codeBlock('powershell', 'Invoke-WebRequest https://github.com/Tesria/Tesria/releases/latest/download/tesria-deploy.zip -OutFile tesria-deploy.zip\nExpand-Archive tesria-deploy.zip -DestinationPath tesria; cd tesria'),
-    p('That makes a folder called ', c('tesria'), ' with Tesria’s settings and scripts, about 100 KB, and moves into it. Tesria itself comes as ready-made images, downloaded in step 3. Run the rest of the commands on this page from that folder.'),
+    p('That makes a folder called ', c('tesria'), ' with Tesria’s settings and scripts, about 100 KB, and moves into it. Tesria itself comes as ready-made images, downloaded in step 2. Run the rest of the commands on this page from that folder.'),
 
-    step(2, 'Make your settings file'),
-    p('Tesria reads its settings from a plain text file called ', c('.env'), ' in that folder. It comes with an example to copy:'),
-    codeBlock('bash', 'cp .env.example .env'),
-    p('On Windows: ', c('Copy-Item .env.example .env'), '.'),
-    p('Open ', c('.env'), ' in a plain text editor (', c('nano .env'), ' in a Mac or Linux terminal, ', c('notepad .env'), ' on Windows). Each line is a setting, in the form ', c('NAME=value'), '. Change these before the first start:'),
-    ul(
-      li(p(c('POSTGRES_PASSWORD'), ': the password for Tesria’s database. Any long random string.')),
-      li(p(c('APP_DB_PASSWORD'), ': a second long random string, different from the first. Tesria creates a restricted database account with it and runs as that account, which cannot alter or delete the audit log.')),
-      li(p(c('BACKUP_ENCRYPTION_KEY'), ': required. Another long random string, which encrypts your backups. ', b('Save a copy in your password manager now:'), ' backups cannot be restored without it.')),
-      li(p(c('DOMAIN'), ': your web address, such as ', c('wiki.example.com'), ', if you have one pointed at this computer. Otherwise leave it as ', c('localhost'), '. Tesria is still reachable from other devices on your network, by the computer’s name.')),
-      li(p(c('ACME_EMAIL'), ': your email address, if you set a web address above. The certificate service writes to it about your certificate.')),
-      li(p(c('COLLAB_SHARED_SECRET'), ': optional, but worth setting. Any long random string turns on editing a page with several people at the same time.')),
-      li(p(c('PDF_SHARED_SECRET'), ': optional, but worth setting. Any long random string turns on exporting pages as PDFs.')),
-    ),
-    p('On a Mac or Linux, this makes a good long random string each time you run it:'),
-    codeBlock('bash', 'openssl rand -hex 32'),
-    p('A password manager’s generator works just as well, on any computer.'),
-    panel('warning', p(b('Do not skip a setting.'), ' The example file is filled with placeholder values rather than left blank, so a setting you forget does not stop Tesria starting: it quietly uses the placeholder, which is not a secret.')),
-    panel('success', p(b('Cannot see .env in the Mac Finder?'), ' Files whose names start with a dot are hidden. Press ', b('⌘ Shift .'), ' in a Finder window to show them.')),
-
-    step(3, 'Start Tesria'),
-    codeBlock('bash', 'docker compose pull\ndocker compose up -d'),
-    p('The first command downloads Tesria’s images, the ready-made software for each of its parts, for Intel, AMD or ARM computers alike. The second starts them, and ', c('-d'), ' lets them carry on in the background, so you get your terminal back. The download is several hundred megabytes the first time; later starts take seconds.'),
-    p('While it starts, Tesria sets up its database and backups by itself. There is nothing else to install.'),
+    step(2, 'Start Tesria'),
+    panel('note', p(b('Have a web address pointed at this computer,'), ' such as ', c('wiki.example.com'), '? Tell Tesria before the first start, so it can get a certificate for it. Otherwise skip this. On a Mac or Linux:'),
+      codeBlock('bash', 'echo DOMAIN=wiki.example.com > .env'),
+      p('On Windows: ', c("Set-Content .env 'DOMAIN=wiki.example.com'"), '. Every other setting is optional; ', pageLink('Configuration reference'), ' lists them.')),
+    codeBlock('bash', 'docker compose up -d'),
+    p('This downloads Tesria’s images, the ready-made software for each of its parts, for Intel, AMD or ARM computers alike, and starts them. ', c('-d'), ' lets them carry on in the background, so you get your terminal back. The download is several hundred megabytes the first time; later starts take seconds.'),
+    p('While it starts, Tesria makes its passwords and keys, sets up its database, and starts backing itself up. There is nothing else to install.'),
     panel('warning', p(b('Always start everything together.'), ' On a new install, starting only the database with ', c('docker compose up -d db'), ' makes it restart over and over, because its backups wait for the backup service that starts alongside it.')),
+
+    step(3, 'Save your backup key'),
+    p('Tesria has written the key that encrypts your backups to a file called ', c('backup-key.txt'), ' in the ', c('tesria'), ' folder. Open it, and copy the key into your password manager, or anywhere that is not this computer.'),
+    panel('error', p(b('Without this key, no backup can be restored, by anyone.'), ' If this computer is lost before the key is saved somewhere else, the backups go with it, including the copies on a network drive or in the cloud.')),
+    p('Once it is saved, you may delete the file. While the computer is running, this prints the key again:'),
+    codeBlock('bash', 'docker compose run --rm init show-backup-key'),
+    p('The setup wizard asks about the key too, and Administration keeps reminding you until someone says it is saved.'),
 
     step(4, 'Open Tesria in your browser'),
     p('Go to ', c('https://your-server'), ', or ', c('https://localhost'), ' on the computer Tesria runs on.'),
@@ -267,7 +257,7 @@ export async function build({
     panel('warning', p(b('Do the setup straight away.'), ' Until it is done, the first person to open the address and create an account becomes the owner. Finish the wizard before you share the address with anyone.')),
 
     h(2, 'Building from source instead'),
-    p('If you want to change Tesria, or would rather build it yourself than download its images, clone the repository instead of step 1, and build in step 3:'),
+    p('If you want to change Tesria, or would rather build it yourself than download its images, clone the repository instead of step 1, and build in step 2:'),
     codeBlock('bash', 'git clone https://github.com/Tesria/Tesria.git\ncd Tesria'),
     codeBlock('bash', 'docker compose up -d --build'),
     p('Building takes several minutes the first time, and needs more memory than running (see ', pageLink('System requirements'), '). ', pageLink('Contributing'), ' covers working on the code.'),
@@ -328,8 +318,14 @@ export async function build({
 
     step(6, 'Backups'),
     p('Tesria is already backing itself up: a daily copy of the database and every uploaded file, plus a continuous backup that can rewind the database to any moment. This step decides how much of that history to keep.'),
-    p('The suggestion is to keep the newest 3 backups, and everything from the last 14 days. Keeping more uses more disk space. ', b('Keep every backup forever'), ' never removes any, which is only wise with plenty of disk to spare. Choose ', b('Keep these settings'), '.'),
-    panel('warning', p(b('The backups are encrypted with BACKUP_ENCRYPTION_KEY'), ' from your ', c('.env'), ' file. If you have not already, save a copy of it somewhere other than this server. Without it, the backups cannot be read.')),
+    p('The suggestion is to keep the newest 3 backups, and everything from the last 14 days. Keeping more uses more disk space. ', b('Keep every backup forever'), ' never removes any, which is only wise with plenty of disk to spare.'),
+    p(b('Save your backup key.'), ' The backups are encrypted with a key Tesria made when it was installed, and this step asks where it went. It is in the file ', c('backup-key.txt'), ' in the Tesria folder on the server, or printed by ', c('docker compose run --rm init show-backup-key'), ' there. Choose one:'),
+    ul(
+      li(p(b('I saved it somewhere that is not the server:'), ' once you have copied it to your password manager, or anywhere off the server.')),
+      li(p(b('Someone else runs the server; they will save it:'), ' when you are setting Tesria up from another computer and somebody else looks after the server. Administration, ', b('Backups'), ' keeps asking until one of you says it is saved.')),
+    ),
+    p('Then choose ', b('Keep these settings'), '. If you chose the key yourself in ', c('.env'), ', the wizard does not ask: you already have it.'),
+    panel('warning', p(b('Without the key, the backups cannot be read,'), ' by anyone. A key that exists only on the server is lost with the server.')),
     p('To keep a copy of your backups somewhere else, which is what saves you if the server itself is lost, see ', pageLink('Offsite copies'), '.'),
 
     step(7, 'Email'),

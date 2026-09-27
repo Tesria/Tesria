@@ -39,7 +39,10 @@ if [ "${1:-}" = "--uninstall" ]; then
   exit 0
 fi
 
-[ -f .env ] || { say "No .env here: set Tesria up first (README, Quick start)." >&2; exit 1; }
+[ -f docker-compose.yml ] || { say "No docker-compose.yml here: run this from the Tesria folder." >&2; exit 1; }
+# Since 0.8.0 a .env is optional (dev-plan 25.1); make one for this line,
+# owner-only, as .env files are.
+[ -f .env ] || ( umask 077 && : > .env )
 NODE="$(command -v node || true)"
 [ -n "$NODE" ] || { say "Node.js is needed (https://nodejs.org, or: brew install node)." >&2; exit 1; }
 if grep -q '^COMPOSE_FILE=' .env && ! grep -qxF "$LINE" .env; then

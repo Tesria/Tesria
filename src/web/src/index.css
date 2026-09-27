@@ -3206,13 +3206,13 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
    the prose inside them does not, so that is capped on its own below. */
 .page-wrap--admin { max-width: none; }
 
-/* Administration → Settings is a set of independent forms. Left as one
-   column they sat at the 480px form width with the rest of a large display
-   empty; as a grid they fill it, and each form keeps a width you can still
-   read a label across. */
-/* min(): a 26rem column is wider than a phone, and ran off its right edge. */
-.admin-settings { display: grid; gap: 0 1rem; grid-template-columns: repeat(auto-fit, minmax(min(26rem, 100%), 1fr)); align-items: start; }
-.admin-settings > .profile__section { max-width: none; }
+/* Administration → Settings is a set of independent forms, laid out like
+   the profile page and the other admin pages (0.8.0): every card the full
+   width, one to a row. The grid it replaced put five narrow cards side by
+   side and read as a jumble next to the tabs around it. The fields inside
+   keep a readable width. */
+.admin-settings > .profile__section { max-width: none; margin: 0 0 1.25rem; }
+.admin-settings > .profile__section > :is(p, label, form, div) { max-width: 40rem; }
 
 /* Every raised surface in the product, given the same lift. Kept as one rule
    so that adding a card elsewhere cannot quietly leave it flat.
@@ -3232,3 +3232,27 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
   position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
+
+/* The unsaved backup key (dev-plan 25.1): a card like the others on the
+   Backups page, marked as the one to deal with first. */
+.backup-key-notice { border-left: 4px solid var(--danger); }
+.backup-key-notice ul { margin: 0.25rem 0 0.75rem; padding-left: 1.25rem; }
+.backup-key-notice p { max-width: 48rem; }
+
+/* The wizard's backup key question (dev-plan 25.1): set apart from the
+   retention settings around it, because it is the one thing in setup that
+   cannot be fixed later if it is skipped and the server is then lost. */
+.setup__key {
+  display: grid; gap: 0.5rem; padding: 1rem;
+  border: 1px solid var(--border); border-left: 4px solid var(--danger); border-radius: var(--radius);
+}
+.setup__key h3 { margin: 0; font-size: 1rem; }
+.setup__key p, .setup__key ul { margin: 0; }
+.setup__key ul { padding-left: 1.25rem; }
+
+/* The donut (0.8.0): components/PieChart.tsx. The track shows where the
+   ring is when a segment is small or everything is zero. */
+.donut { flex: none; display: block; }
+.donut__track { stroke: var(--border); }
+.donut__center { fill: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.donut__caption { fill: var(--muted); }

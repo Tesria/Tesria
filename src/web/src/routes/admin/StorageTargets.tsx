@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { api, ApiError, type BackupJob, type BackupTarget } from '../../api/client'
-import { PieChart } from '../../components/PieChart'
+import { DonutChart } from '../../components/PieChart'
 
 /**
  * Administration → Backups → Storage targets (dev-plan 9.2 step 5).
@@ -318,9 +318,10 @@ function Composition({ rows }: { rows: BackupTarget[] }) {
 
   return (
     <div className="disk-chart">
-      <PieChart
+      <DonutChart
         slices={slices}
-        size={72}
+        size={80}
+        center={bytes(total)}
         label={slices.map((s) => `${s.label} ${bytes(s.value)}`).join(', ')}
       />
       <ul className="disk-chart__legend">

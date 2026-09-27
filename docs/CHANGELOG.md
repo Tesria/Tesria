@@ -6,7 +6,76 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 Development builds now say **0.8.0-dev**: 0.7.5 is released, and the next
-release is 0.8.0, with the rest of the review fixes (SEC-01, LIC-01, DOC-01).
+release is 0.8.0, with the rest of the review fixes (SEC-01, LIC-01, DOC-01)
+and the zero-config install (25.1).
+
+### No settings file: Tesria makes its own secrets (dev-plan 25.1, 2026-09-27, Opus 5.5)
+
+Installing is now `docker compose up -d` in the unzipped folder. There is no
+`.env` to copy and no password to invent, and `.env.example` is optional
+overrides only.
+
+- **A one-shot `init` service** runs before everything else at every start.
+  For each of the five secrets (the two database passwords, the backup key,
+  and the live-editing and PDF shared secrets) it takes the value in `.env`,
+  else the one it stored, else a new random one. It never replaces a stored
+  secret with a generated one, and it refuses to invent one for a database
+  or backups that already exist without it: either would lock the stack out
+  of its own data. `scripts/test-init.sh` checks every case, in CI.
+- **Each secret has its own volume**, mounted only into the services that
+  had it before (14.3): the app still never sees the owner password or the
+  backup key. No secret is in any service's environment any more, so
+  `docker inspect` shows none. pgBackRest reads the key from a config
+  drop-in and the backup sidecars use libpq's password file, so commands run
+  with `docker compose exec` keep working.
+- **Save the backup key.** A generated key is written to `backup-key.txt`
+  in the Tesria folder, and `docker compose run --rm init show-backup-key`
+  prints it. The setup wizard's Backups step asks where it went: "I saved
+  it", or "Someone else runs the server", for teams where the person
+  running the wiki is not the person running the server. Administration,
+  Backups keeps a "Save the backup key" card until someone says it is saved.
+- **Live editing and PDF export are on by default**, since their secrets
+  are generated. An install that left them empty gets them on upgrade.
+- **The published `change-me` values are refused.** Until now an install
+  that kept `.env.example`'s placeholders ran on publicly known passwords
+  and a publicly known backup key, with no warning. A new install on one
+  now refuses to start and says which setting; an existing one starts,
+  logs a warning at every start and raises a critical security alert, and
+  the docs page Security hardening explains changing each secret.
+- **Upgrading needs nothing.** An install with a full `.env` keeps every
+  value: `.env` wins, and `init` stores it. Checked by installing the
+  published 0.7.5 bundle, adding a page and a backup, and unzipping this one
+  over it: same secrets, same data, new backups into the same encrypted
+  repository, no prompts. A zero-config install passed a backup, a restore
+  test, the point-in-time self-test, a restart that kept every secret,
+  co-editing and PDF export.
+- `DOMAIN` defaults to `localhost` and `ACME_EMAIL` is optional (Caddy now
+  takes an empty one).
+
+### Donut charts (2026-09-27, Opus 5.5)
+
+- **The chart element has a Donut type**, beside Pie rather than instead of
+  it, so pages that chose a pie keep it: the same slices as a ring, with
+  the column's total in the middle (shortened, such as 1.2K). Found under
+  Type, and by `/donut` in the slash menu.
+- **The Backups page's disk charts are donuts**, drawn like the one on
+  tesria.com's front page, with the free share in the middle of each disk
+  and the total stored in the middle of a storage target's.
+- One ring, in `components/PieChart.tsx` beside the pie; its geometry is in
+  `donut.ts`, with tests. Exports capture the chart as drawn, so the site
+  export and PDF follow.
+
+### Docker Desktop's real-address setup works without a .env (2026-09-27, Opus 5.5)
+
+`install-macos.sh` and `install-windows.ps1` refused to run with no `.env`,
+which a zero-config install does not have. They now check they are in the
+Tesria folder and make the `.env` for their one line.
+
+### Administration, Settings: one card to a row (2026-09-27, Opus 5.5)
+
+The settings sat in a grid of narrow cards side by side, unlike every other
+admin page. Each card now takes the full width, one to a row, with its
+fields at a readable width, as on the profile page.
 
 ### Closing out the outside review (dev-plan 14.4, 2026-09-26, Opus 5.5)
 

@@ -278,12 +278,12 @@ export async function build(helpers) {
   const chartOf = (tbl, chartType, title) => ({ type: 'chart', attrs: { chartType, title, source: tbl } })
 
   await page('Chart', elements, numberCharts(doc(
-    p('A chart draws the numbers in a table on the same page as columns, bars, a line or a pie. The table stays the one place the numbers live: change a number and the chart redraws, so the two can never disagree. Use a chart when the shape of the numbers matters more than the numbers themselves: which month was best, how fast something is growing, what share each part takes.'),
+    p('A chart draws the numbers in a table on the same page as columns, bars, a line, a pie or a donut. The table stays the one place the numbers live: change a number and the chart redraws, so the two can never disagree. Use a chart when the shape of the numbers matters more than the numbers themselves: which month was best, how fast something is growing, what share each part takes.'),
 
     h(2, 'Insert it'),
     table([
       ['Type this', 'To get'],
-      ['/bar or /pie', 'A chart, drawn from the first table on the page'],
+      ['/bar, /pie or /donut', 'A chart, drawn from the first table on the page'],
       ['/chart', 'A list with Diagram (Mermaid) first and Chart second; choose Chart'],
     ], [200, 500]),
     insertNote('Chart', 'If you had text selected, the chart takes its place.'),
@@ -320,13 +320,18 @@ export async function build(helpers) {
     week,
     chartOf(week, 'pie', 'Where a 40-hour week goes'),
     panel('note', p(b('A pie uses the first column of numbers only.'), ' A table with more series draws just the first of them as a pie. Choose Column to see them all.')),
-    p('Point at a column or a bar to see its value. Negative numbers count as zero in columns, bars and pies; a line goes below its starting level for them.'),
+
+    h(3, 'Donut: parts of a whole, with the total'),
+    p('The same slices as a pie, drawn as a ring, with the total of the column in the middle. Use it where a pie fits and the total is worth showing too. The same week as a donut:'),
+    chartOf(week, 'donut', 'Where a 40-hour week goes'),
+    p('Like a pie, a donut uses the first column of numbers only. A large total is shortened in the middle, such as 1.2K for 1,234.'),
+    p('Point at a column or a bar to see its value. Negative numbers count as zero in columns, bars, pies and donuts; a line goes below its starting level for them.'),
 
     h(2, 'Changing and removing it'),
     p('While you are editing, three controls sit above the chart:'),
     ul(
       li(p(b('Table'), ' chooses which table on the page to draw: Table 1 is the first.')),
-      li(p(b('Type'), ' switches between Column (vertical), Bar (horizontal), Line and Pie. The table is not touched.')),
+      li(p(b('Type'), ' switches between Column (vertical), Bar (horizontal), Line, Pie and Donut. The table is not touched.')),
       li(p(b('Chart title (optional)'), ' is a line shown above the chart.')),
     ),
     p('If there is no table on the page yet, the chart says so; if its table has no numbers, it says that instead. To remove a chart, click its edge to select it and press ', b('Delete'), '. The table stays.'),

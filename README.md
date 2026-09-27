@@ -63,29 +63,42 @@ From the ready-made images (Docker Hub `brianintheloop/tesria-*`, or
 ```bash
 curl -LO https://github.com/Tesria/Tesria/releases/latest/download/tesria-deploy.zip
 unzip tesria-deploy.zip -d tesria && cd tesria
-cp .env.example .env        # then edit the values below
-docker compose pull
 docker compose up -d
 ```
 
 Or from source, in a clone of this repository:
 
 ```bash
-cp .env.example .env        # then edit the values below
 docker compose up -d --build
 ```
 
-Set these in `.env` before the first start: `.env.example` ships
-placeholders, not blanks, so nothing fails loudly if you skip one:
+There is no `.env` to write. On the first start the one-shot `init` service
+generates every secret (the two database passwords, the backup encryption
+key, and the shared secrets for live editing and PDF export), keeps each in
+its own Docker volume, and mounts it only into the services that need it:
+the app never sees the owner password or the backup key. Later starts reuse
+what it stored; it never replaces a stored secret with a new one.
+
+**Save the backup key.** Tesria writes it to `backup-key.txt` in the folder
+you started it from, and the setup wizard asks you to save it somewhere that
+is not this machine. Without it no backup can be restored, and a key that
+lives only on the server is lost with it. `docker compose run --rm init
+show-backup-key` prints it again at any time.
+
+A `.env` is for choosing things yourself; every line of `.env.example` is
+optional:
 
 | Variable | |
 |---|---|
-| `POSTGRES_PASSWORD` | Any long random string. |
-| `APP_DB_PASSWORD` | Any long random string, different from the above (`openssl rand -hex 24`). **Required.** The `migrate` service creates a least-privilege `tesria_app` role with it before the app starts, and the app runs only as that role; it cannot alter or delete audit rows, and the app never sees the owner password. |
-| `BACKUP_ENCRYPTION_KEY` | **Required.** Encrypts the pgBackRest repository (`openssl rand -hex 32`). Backups made with it are unrecoverable without it, so keep it somewhere safe, and *don't* reuse a key from another install unless you intend to restore that install's backups. |
-| `DOMAIN`, `ACME_EMAIL` | `localhost` is fine for a laptop. |
-| `COLLAB_SHARED_SECRET` | Optional (`openssl rand -hex 32`). Empty disables real-time co-editing; the editor falls back to single-user. |
-| `PDF_SHARED_SECRET` | Optional (`openssl rand -hex 32`). Empty disables PDF export; `?format=pdf` then answers 503 telling the user to print the HTML export. |
+| `DOMAIN` | A real hostname (`wiki.example.com`) gets a Let's Encrypt certificate. Default `localhost`. |
+| `ACME_EMAIL` | Optional contact address for Let's Encrypt. |
+| `POSTGRES_PASSWORD`, `APP_DB_PASSWORD`, `BACKUP_ENCRYPTION_KEY`, `COLLAB_SHARED_SECRET`, `PDF_SHARED_SECRET` | Generated unless set. A value set here always wins over the stored one, which is how an install from before 0.8.0 keeps its own, and how a new machine restores backups made with an old key. |
+
+`init` refuses to start a **new** install on one of the `change-me-...`
+values that `.env.example` shipped with before 0.8.0, because those are
+public. An existing install that still has one starts, logs a warning at
+every start and raises a critical security alert; the docs page *Security
+hardening* explains how to change it.
 
 Everything else, schema included, sets itself up: the `migrate` service
 updates the database before the app starts (and stays up to do the same for
@@ -96,15 +109,18 @@ through who can join, what each role may do, and how much backup history to
 keep. A fresh database has no users, so the first account to be created owns
 the instance.
 
+> **Never run `docker compose down -v`.** The `-v` deletes the volumes: the
+> wiki, its backups, and the generated secrets that open them.
+
 > **Bring the whole stack up together** (`docker compose up -d`), not
 > `docker compose up -d db` on its own. On a fresh volume the database
 > crash-loops every ~10s if started alone, because WAL archiving fails
 > until the `pgbackrest` sidecar has created the stanza. If you do need the
 > database by itself, start `db pgbackrest` together.
 
-- Real domain: set `DOMAIN=wiki.example.com` and Caddy fetches a Let's Encrypt
+- Real domain: set `DOMAIN=wiki.example.com` in a `.env` and Caddy fetches a Let's Encrypt
   cert automatically. Visit `https://wiki.example.com`.
-- Local test: keep `DOMAIN=localhost` and visit `https://localhost` (Caddy uses
+- Local test: leave `DOMAIN` unset (it defaults to `localhost`) and visit `https://localhost` (Caddy uses
   a self-signed cert, so the browser will warn once).
 - The app is also reachable from other devices on your LAN (including phones)
   by IP or hostname, no extra config needed. To make that access, and the

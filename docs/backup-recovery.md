@@ -19,8 +19,25 @@ Backups** (dev-plan 9.1): status, a retention policy that covers all three,
 when the app is down or you are working on the host.
 
 The pgBackRest repository is **encrypted at rest** (AES-256-CBC) with the
-passphrase from `BACKUP_ENCRYPTION_KEY`. **Keep that key safe and off-box**: the
-repository cannot be restored without it.
+backup key. **Keep that key safe and off-box**: the repository cannot be
+restored without it.
+
+**Where the key is (0.8.0 and later, dev-plan 25.1).** The `init` service
+generates it on a new install, stores it on the `secret_backup_key` volume
+(mounted only into `db` and `pgbackrest`), and writes a copy for the owner to
+`backup-key.txt` in the Tesria folder. `docker compose run --rm init
+show-backup-key` prints it while the machine runs. A `BACKUP_ENCRYPTION_KEY`
+in `.env` always wins over the stored one, which is how an install from before
+0.8.0 keeps its key and how a new machine reads old backups. pgBackRest reads
+it from `/etc/pgbackrest/conf.d/tesria-cipher.conf`, which each of the two
+containers writes at start, so `docker compose exec ... pgbackrest` commands
+have it too.
+
+**Changing the key** is not a setting change: every backup in the repository
+stays encrypted with the key it was made with, so a new key means a new
+repository (a new stanza, a new full backup, and the old repository kept, with
+its old key, until its backups are no longer wanted). It is deliberately not
+automated. Plan it; until it is done, keep the old key.
 
 ---
 
@@ -299,8 +316,10 @@ Timestamps use Postgres syntax with a timezone offset (e.g. `+00` for UTC).
 
 ### C. Full disaster recovery on a new host
 
-1. Install Docker, clone the repo, and recreate `.env`, **including the same
-   `BACKUP_ENCRYPTION_KEY`** as the original instance.
+1. Install Docker, get Tesria, and write a `.env` with **the original
+   instance's backup key** as `BACKUP_ENCRYPTION_KEY`, before the first
+   start. That one line is enough; everything else is generated. Without it,
+   `init` generates a new key, which cannot read the old repository.
 2. Restore the pgBackRest repository (and `uploads`) onto the new host. If you
    kept an offsite copy of the `pgbackrest` volume, load it into a fresh volume;
    if you use an S3 repo (below), it is already reachable.
@@ -598,9 +617,10 @@ passphrases. This is how you come back.
 **What you need before you start.** Nothing from the old machine, which is
 the point:
 
-1. The `.env` passphrases, from wherever you escrowed them. Without the
+1. The passphrases, from wherever you escrowed them. Without the
    right passphrase a copy is unreadable and there is no way around it.
-   `BACKUP_ENCRYPTION_KEY` reads the pgBackRest repository;
+   The backup key (`BACKUP_ENCRYPTION_KEY`, or the key from
+   `backup-key.txt` if Tesria generated it) reads the pgBackRest repository;
    `OFFSITE_CLOUD_PASSPHRASE`, `OFFSITE_NAS_PASSPHRASE` and
    `OFFSITE_REMOVABLE_PASSPHRASE` read their restic repositories.
 2. The storage credentials for whichever target you are restoring from, or
@@ -609,7 +629,9 @@ the point:
 
 **What you get back, and what you do not.** The database and the
 attachments, in full. Not the offsite configuration itself: `.env` is not in
-any backup, by design, since it holds the keys. You write a new one.
+any backup, by design, since it holds the keys. You write a new one, and
+the secrets Tesria generated are new on the new machine too, apart from any
+you carry over in it.
 
 ### 1. Take stock of what the copy holds
 
@@ -629,9 +651,10 @@ docker run --rm -e RESTIC_PASSWORD=your-passphrase -v /Volumes/your-drive:/t res
 
 ### 2. Bring up an empty instance
 
-Clone the repository, write a fresh `.env` from `.env.example` (new database
-password, new `BACKUP_ENCRYPTION_KEY` unless you are also restoring the
-pgBackRest repository, the same `DOMAIN` if you want the same address), then:
+Get Tesria as in the Quick start. A `.env` is only needed for what you carry
+over: the same `DOMAIN` if you want the same address, and the old
+`BACKUP_ENCRYPTION_KEY` if you are also restoring the pgBackRest repository.
+Everything else is generated fresh. Then:
 
 ```bash
 docker compose up -d

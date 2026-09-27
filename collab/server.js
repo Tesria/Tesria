@@ -8,6 +8,7 @@
 //   - persist document state into the main Postgres database, so live edits
 //     survive restarts and are covered by the existing backups
 import crypto from 'node:crypto'
+import { readFileSync } from 'node:fs'
 import { Server } from '@hocuspocus/server'
 import { Database } from '@hocuspocus/extension-database'
 import pg from 'pg'
@@ -17,22 +18,39 @@ import * as Y from 'yjs'
 // and missing here would be dropped from every document this touched.
 import { reconcile } from './vendor/collab-schema.js'
 
+/**
+ * A secret from the environment, or else from the file the init service
+ * wrote (dev-plan 25.1). Under Compose it is the file: the variables are no
+ * longer set, so `docker inspect` shows none of them.
+ */
+function secret(envName, name) {
+  if (process.env[envName]) return process.env[envName]
+  try {
+    return readFileSync(`/run/tesria/${name}/value`, 'utf8').replace(/[\r\n]+$/, '') || undefined
+  } catch {
+    return undefined
+  }
+}
+
 const PORT = Number(process.env.COLLAB_PORT ?? 8090)
-const SECRET = process.env.COLLAB_SHARED_SECRET
+const SECRET = secret('COLLAB_SHARED_SECRET', 'collab-secret')
 // The least-privilege role (dev-plan 3.1), and only it: the owner's password
-// is no longer given to this service (dev-plan 14.3).
+// is no longer given to this service (dev-plan 14.3). DATABASE_URL if set;
+// otherwise node-postgres takes the host, database and user from PGHOST,
+// PGDATABASE and PGUSER, and the password is the app role's file.
 const DATABASE_URL = process.env.DATABASE_URL
+const APP_DB_PASSWORD = DATABASE_URL ? undefined : secret('APP_DB_PASSWORD', 'app-db-password')
 
 if (!SECRET) {
-  console.error('[collab] COLLAB_SHARED_SECRET is required')
+  console.error('[collab] no shared secret: set COLLAB_SHARED_SECRET or start the stack with its init service')
   process.exit(1)
 }
-if (!DATABASE_URL) {
-  console.error('[collab] DATABASE_URL is required')
+if (!DATABASE_URL && !APP_DB_PASSWORD) {
+  console.error('[collab] no database password: set DATABASE_URL or start the stack with its init service')
   process.exit(1)
 }
 
-const pool = new pg.Pool({ connectionString: DATABASE_URL })
+const pool = new pg.Pool(DATABASE_URL ? { connectionString: DATABASE_URL } : { password: APP_DB_PASSWORD })
 
 // A document name is a page id. Checked before it is ever cast to uuid in
 // SQL, so a malformed name is ignored rather than throwing.

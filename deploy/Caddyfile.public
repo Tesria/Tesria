@@ -25,7 +25,10 @@
 # checklist.
 
 {
-	email {$ACME_EMAIL}
+	# Quoted, so an empty ACME_EMAIL is an empty address rather than a
+	# missing one: Caddy refuses `email` with no argument (dev-plan 25.1),
+	# and Let's Encrypt accepts an account without an email.
+	email "{$ACME_EMAIL}"
 	# Tailscale visitors: see the same setting in deploy/Caddyfile.
 	servers {
 		trusted_proxies static {$TESRIA_TAILSCALE_ADDRESS:10.203.0.250}

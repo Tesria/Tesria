@@ -1,3 +1,5 @@
+import { DONUT_RADIUS, DONUT_STROKE, DONUT_VIEW, donutFontSize, donutSegments } from './donut'
+
 /**
  * The one pie in the product.
  *
@@ -50,6 +52,68 @@ export function PieChart({
           />
         )
       })}
+    </svg>
+  )
+}
+
+/**
+ * The pie's ring-shaped sibling (0.8.0): the same slices, drawn as a ring
+ * like the donut on tesria.com's front page, with a track behind it and room
+ * in the middle for one number. The backups page's disks use it, and the
+ * editor's chart offers it as a type of its own beside pie, so pages that
+ * chose pie keep their pies.
+ *
+ * Stroked circles on a ring whose circumference is 100 (see donut.ts), so
+ * each segment's dash is its percentage. The text is outside the rotated
+ * group, so it reads upright.
+ */
+export function DonutChart({
+  slices, size = 120, label, center, caption,
+}: {
+  slices: PieSlice[]
+  size?: number
+  label: string
+  /** One short value for the hole, such as "38%" or a total. */
+  center?: string
+  /** A word under it, such as "free". Left out on small donuts, where it would be unreadable. */
+  caption?: string
+}) {
+  const segments = donutSegments(slices.map((s) => s.value))
+  const mid = DONUT_VIEW / 2
+  const showCaption = caption && size >= 96
+  return (
+    <svg className="donut" viewBox={`0 0 ${DONUT_VIEW} ${DONUT_VIEW}`} width={size} height={size} role="img" aria-label={label}>
+      <g transform={`rotate(-90 ${mid} ${mid})`} fill="none" strokeWidth={DONUT_STROKE}>
+        <circle className="donut__track" cx={mid} cy={mid} r={DONUT_RADIUS} />
+        {segments.map((segment, i) => segment.length > 0 && (
+          <circle
+            key={slices[i].label}
+            cx={mid}
+            cy={mid}
+            r={DONUT_RADIUS}
+            stroke={slices[i].color}
+            strokeDasharray={`${segment.length.toFixed(3)} ${(100 - segment.length).toFixed(3)}`}
+            strokeDashoffset={(-segment.start).toFixed(3)}
+          />
+        ))}
+      </g>
+      {center && (
+        <text
+          className="donut__center"
+          x={mid}
+          y={showCaption ? mid - 1.2 : mid}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={donutFontSize(center)}
+        >
+          {center}
+        </text>
+      )}
+      {center && showCaption && (
+        <text className="donut__caption" x={mid} y={mid + 5.2} textAnchor="middle" dominantBaseline="central" fontSize={3.4}>
+          {caption}
+        </text>
+      )}
     </svg>
   )
 }

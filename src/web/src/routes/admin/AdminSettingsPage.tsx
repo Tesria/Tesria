@@ -62,8 +62,7 @@ export function AdminSettingsPage() {
         <p className="muted">Your role does not allow changing any of this instance's settings.</p>
       )}
 
-      {/* A grid, so these independent forms use the width of a large display
-          instead of stacking in one narrow column beside empty space. */}
+      {/* Full-width cards, one to a row, like the other admin pages. */}
       <div className="admin-settings">
 
       {can(Permission.SettingsInstance) && (

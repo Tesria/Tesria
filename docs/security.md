@@ -64,6 +64,7 @@ service by sheer volume, which is the network's job, not the app's.
 | Restore from the admin page (9.4) | An administrator replacing the wiki with an older copy at all (`backups.restore` is the owner's by default and has to be granted); doing it to the wrong backup (the label is typed back) or by accident (the password is in the request); losing what was there (a safety backup is taken first and cannot be skipped, and the replaced copy is kept as the undo); doing it unnoticed (`backup.restored` is a Critical alert with no cooldown to every administrator, written *after* the restore so it lands in the restored database's own chain) | The owner, who can grant themselves the right and holds the password: this is deliberateness and a record, not a barrier. An owner-level account restoring to before something it wants hidden still leaves the safety backup, the kept copy and the alert, which is what makes it visible rather than impossible |
 | Pinned Argon2id (3.5) | Offline cracking of a leaked hash | A weak password against a determined offline attacker with time: length still matters |
 | Dependency audit (3.6) | Known vulnerabilities in what ships | Unknown ones; a compromised upstream package (Dependabot + lockfiles narrow the window) |
+| Generated secrets (25.1) | Installs running on published example passwords and a published backup key (a new install refuses a `change-me` value; an existing one is alerted at every start); a secret reaching a service that never needed it (one volume per secret, mounted only where 14.3 allowed it: the app has neither the owner password nor the backup key); secrets visible to `docker inspect` (none is in any service's environment); a generated secret replacing a stored one and locking the stack out of its database or backups (`init` never does, and refuses to invent one for a database or repository that already exists) | Anyone with root on the host or access to Docker, who can read the volumes, as they could read `.env` before; the backup key in `backup-key.txt` until the owner deletes it, which is on disk exactly where `.env` held it before; an owner who says the key is saved when it is not |
 
 ## Known gaps and accepted trade-offs
 
@@ -121,7 +122,7 @@ older references still point at the right item.
     **Fixed.** A `migrate` service holds the owner credentials: it applies
     migrations, fills in the audit chain and provisions the least-privilege
     role. The app and the collaboration service are given only the app
-    role (`APP_DB_PASSWORD`, now required), and in production the app
+    role (`APP_DB_PASSWORD`, generated since 0.8.0 unless set), and in production the app
     refuses to start with migrations pending rather than applying them.
     Since 0.7.3 `migrate` stays running: a restore asks it (through a
     comment on the restored copy, which only the owner can set) to bring
@@ -208,13 +209,17 @@ Every item is something the software cannot do for you. Do all of them
 before DNS points at the box.
 
 **Configuration (`.env`)**
-- [ ] `DOMAIN` is a real hostname you control; `ACME_EMAIL` is monitored.
+- [ ] `DOMAIN` is a real hostname you control; `ACME_EMAIL`, if set, is monitored.
 - [ ] `CADDYFILE=deploy/Caddyfile.public`: HSTS on, the on-demand-TLS
       catch-all gone. (`docs/tls-and-lan-access.md`, Path 3.)
-- [ ] `POSTGRES_PASSWORD`, `APP_DB_PASSWORD`, `BACKUP_ENCRYPTION_KEY`,
-      `COLLAB_SHARED_SECRET` are all long, random, and different from
-      each other. `APP_DB_PASSWORD` is required: Compose refuses to start
-      without it, and the app refuses to run in production as the owner.
+- [ ] No secret is still a `change-me` value from a `.env.example`
+      older than 0.8.0: `docker compose logs init` shows no warning, and
+      Administration, Security has no open "A secret is still the public
+      example value" alert. Secrets Tesria generated need nothing; any you
+      set yourself are long, random and different from each other.
+- [ ] The backup key is saved somewhere that is not this server
+      (Administration, Backups asks until someone says it is), and
+      `backup-key.txt` is deleted from the Tesria folder once it is.
 - [ ] Port 8080 (app), 5432 (db), 8090 (collab) are **not** published to
       the host. Only Caddy's 80 and 443 are. `docker compose config` shows
       `expose`, not `ports`, for the three.

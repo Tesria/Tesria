@@ -2,7 +2,9 @@ import { Node, mergeAttributes } from '@tiptap/core'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import { ChartView } from './ChartView'
 
-export const CHART_TYPES = ['bar', 'column', 'line', 'pie'] as const
+// Donut added in 0.8.0 as a type of its own: a new stored value, so pages
+// that chose pie keep their pies.
+export const CHART_TYPES = ['bar', 'column', 'line', 'pie', 'donut'] as const
 export type ChartType = (typeof CHART_TYPES)[number]
 
 export const CHART_TYPE_LABELS: Record<ChartType, string> = {
@@ -10,6 +12,7 @@ export const CHART_TYPE_LABELS: Record<ChartType, string> = {
   column: 'Column (vertical)',
   line: 'Line',
   pie: 'Pie',
+  donut: 'Donut',
 }
 
 export function isChartType(value: unknown): value is ChartType {

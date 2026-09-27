@@ -102,6 +102,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
       li(p(b('Tesria is not running.'), ' Run ', c('docker compose ps'), ' on the server. If nothing is listed, or something has exited, start everything with ', c('docker compose up -d'), '.')),
       li(p(b('It is still starting.'), ' The very first start builds Tesria and sets up its database, which takes a few minutes. After a restart, give it a minute.')),
       li(p(b('Something failed to start.'), ' Read the end of its log: ', c('docker compose logs app --tail 50'), ' for Tesria itself, or the name of whichever part is not running. The last lines usually say why.')),
+      li(p(b('docker compose up -d said '), c('service "init" didn\'t complete successfully'), b('.'), ' On a new install, a setting in ', c('.env'), ' still holds a ', c('change-me'), ' value copied from an old example file. ', c('docker compose logs init'), ' names it. Delete that line, so that Tesria makes its own, or set a long random value, then run ', c('docker compose up -d'), ' again. See ', pageLink('Security hardening'), ', under ', b('Changing a secret'), '.')),
       li(p(b('The device is on another network.'), ' A phone on mobile data, or a laptop on a guest Wi-Fi, cannot reach a server on your home or office network. Guest networks usually keep their devices apart on purpose.')),
       li(p(b('The address is wrong.'), ' Check the name, and that it starts with ', c('https://'), '.')),
     ),
@@ -189,7 +190,9 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     p('Docker Desktop is waiting for your permission to use the folder on the network drive, and waits rather than failing. Allow it when macOS asks, or add the folder in Docker Desktop’s settings, under file sharing. See ', pageLink('Offsite copies'), '.'),
 
     h(3, 'PDF or HTML export says there is no export renderer'),
-    p('The message ', i('This instance has no export renderer configured'), ' means the service that turns pages into PDF and HTML files is not set up on this server. It runs only when ', c('PDF_SHARED_SECRET'), ' is set in the ', c('.env'), ' file. Meanwhile, Markdown exports work. See ', pageLink('Configuration reference'), '.'),
+    p('The message ', i('This instance has no export renderer configured'), ' means the service that turns pages into PDF and HTML files is not running on this server. It runs by default, so check it, and read the end of its log to see why it stopped:'),
+    codeBlock('bash', 'docker compose ps\ndocker compose logs pdf --tail 50'),
+    p('A service that is not running comes back with ', c('docker compose up -d'), '. Meanwhile, Markdown exports work.'),
 
     h(3, 'An export option is missing'),
     p('Either your role may not export (an administrator can change that in ', ...adminAt('Roles'), '), or this space has turned that kind of export off. See ', pageLink('Turning exports off'), '.'),
@@ -244,7 +247,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     q('Can people read without an account?',
       p('Yes, for spaces you choose to publish, such as public documentation. It takes two switches, one for the whole wiki and one for the space, so nothing is public by accident. See ', pageLink('Public reading'), '.')),
     q('Can several people edit a page at the same time?',
-      p('Yes, when live editing is set up: everyone sees each other’s changes as they type. See ', pageLink('Editing at the same time'), '.')),
+      p('Yes: everyone sees each other’s changes as they type. Live editing is on unless an administrator has turned it off. See ', pageLink('Editing at the same time'), '.')),
     q('Can AI assistants use it?',
       p('Yes, through MCP, with a token you make. An assistant sees and changes only what you can, can be kept to reading only, and what it writes shows up in the page’s history. See ', pageLink('MCP'), '.')),
     q('I forgot my password. What now?',

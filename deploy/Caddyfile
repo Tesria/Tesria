@@ -20,7 +20,10 @@
 # for every hostname/IP this server answers on.
 
 {
-	email {$ACME_EMAIL}
+	# Quoted, so an empty ACME_EMAIL is an empty address rather than a
+	# missing one: Caddy refuses `email` with no argument (dev-plan 25.1),
+	# and Let's Encrypt accepts an account without an email.
+	email "{$ACME_EMAIL}"
 	# Clients that connect by raw IP address send no SNI at all (SNI is only
 	# defined for hostnames, not IP literals), without this, Caddy falls back
 	# to whatever certificate happens to be cached first, which is arbitrary

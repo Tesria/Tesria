@@ -1,6 +1,6 @@
 import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { api, ApiError, MailSignIn, type MailProvider, type SetupStatus } from '../api/client'
+import { api, ApiError, MailSignIn, type BackupKeyStatus, type MailProvider, type SetupStatus } from '../api/client'
 import { MailProviderHint, MailProviderPicker } from '../components/MailProviderPicker'
 import { useAuth } from '../auth/AuthContext'
 import { useInstance } from '../InstanceContext'
@@ -9,6 +9,7 @@ import { RecoveryCodes } from '../components/RecoveryCodes'
 import { TotpSection } from '../components/TotpSection'
 import { AdminRolesPage } from './admin/AdminRolesPage'
 import { AuthBrand } from '../components/Brand'
+import { BackupKeyWhere } from './admin/BackupKeyNotice'
 
 /**
  * First-run setup (dev-plan 10.2).
@@ -216,8 +217,11 @@ export function SetupPage() {
         )}
 
         {at === 'backups' && (
-          <BackupsStep busy={busy} onNext={(policy) =>
-            advance('backups', () => api.admin.backups.savePolicy(policy))} />
+          <BackupsStep busy={busy} onNext={(policy, keySaved) =>
+            advance('backups', async () => {
+              await api.admin.backups.savePolicy(policy)
+              if (keySaved) await api.admin.backups.keySaved()
+            })} />
         )}
 
         {at === 'email' && (
@@ -452,28 +456,67 @@ function BackupsStep({
   busy, onNext,
 }: {
   busy: boolean
-  onNext: (policy: { enabled: boolean; keepCount: number; keepDays: number }) => void
+  onNext: (policy: { enabled: boolean; keepCount: number; keepDays: number }, keySaved: boolean) => void
 }) {
   const [enabled, setEnabled] = useState(true)
   const [keepCount, setKeepCount] = useState(3)
   const [keepDays, setKeepDays] = useState(14)
+  // The backup key (dev-plan 25.1). Asked about only when Tesria generated
+  // it; a key set in .env was chosen by someone who has it.
+  const [key, setKey] = useState<BackupKeyStatus | null>(null)
+  const [keyChoice, setKeyChoice] = useState<'saved' | 'later' | null>(null)
+  useEffect(() => {
+    api.admin.backups.overview().then((o) => setKey(o.key)).catch(() => undefined)
+  }, [])
+  const askAboutKey = key?.generated === true && !key.savedAt
+
   return (
     <Panel
       title="Backups"
       busy={busy}
       nextLabel="Keep these settings"
-      onNext={() => onNext({ enabled, keepCount, keepDays })}
+      nextDisabled={askAboutKey && keyChoice === null}
+      onNext={() => onNext({ enabled, keepCount, keepDays }, askAboutKey && keyChoice === 'saved')}
     >
       <p className="muted">
         Two systems run already: a nightly dump of the database and uploads, and
         a continuous physical backup you can rewind to any moment. This decides
         how much of that history is kept.
       </p>
-      <p className="alert alert--error small">
-        <strong>BACKUP_ENCRYPTION_KEY</strong> in your <code>.env</code> is what
-        decrypts those backups. Keep a copy somewhere that is not this machine,
-        or a backup you can reach is a backup you cannot read.
-      </p>
+      {askAboutKey ? (
+        <div className="setup__key">
+          <h3>Save your backup key</h3>
+          <p className="small">
+            Your backups are encrypted with a key Tesria made when it was installed. Without it, no
+            backup can be restored, by anyone. Right now it may exist only on the server, so save a copy
+            somewhere else, such as a password manager.
+          </p>
+          <p className="small"><strong>Where to find it</strong>, on the server:</p>
+          <BackupKeyWhere />
+          <label className="setup__check">
+            <input type="radio" name="backup-key" checked={keyChoice === 'saved'}
+              onChange={() => setKeyChoice('saved')} />
+            I saved it somewhere that is not the server
+          </label>
+          <label className="setup__check">
+            <input type="radio" name="backup-key" checked={keyChoice === 'later'}
+              onChange={() => setKeyChoice('later')} />
+            Someone else runs the server; they will save it
+          </label>
+          {keyChoice === 'later' && (
+            <p className="muted small">
+              Administration, Backups will keep asking until someone says it is saved. The key
+              belongs with whoever runs the server, and the steps above work for them too.
+            </p>
+          )}
+        </div>
+      ) : key && !key.generated ? (
+        <p className="alert alert--error small">
+          <strong>BACKUP_ENCRYPTION_KEY</strong> in your <code>.env</code> is what
+          decrypts those backups. Keep a copy somewhere that is not this machine,
+          or a backup you can reach is a backup you cannot read.
+        </p>
+      ) : null}
       <label className="setup__check">
         <input type="checkbox" checked={!enabled} onChange={(e) => setEnabled(!e.target.checked)} />
         Keep every backup forever

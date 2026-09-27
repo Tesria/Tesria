@@ -13,9 +13,12 @@ at 14:32").
   and the `pgbackrest` sidecar (which creates the stanza and runs backups). The
   repository lives on the `pgbackrest` volume; the sidecar reaches Postgres over
   the shared `pgsocket` volume and reads PGDATA via the shared `pgdata` volume.
-- The repository is encrypted (AES-256-CBC) using `BACKUP_ENCRYPTION_KEY`; the
-  connection user comes from `POSTGRES_USER`. Both are passed as `PGBACKREST_*`
-  environment variables so no secrets live in this file.
+- The repository is encrypted (AES-256-CBC) with the backup key, which the
+  `init` service generates or takes from `BACKUP_ENCRYPTION_KEY` (dev-plan
+  25.1). `cipher.sh` writes it into `/etc/pgbackrest/conf.d/tesria-cipher.conf`
+  in each container at start, so no secret lives in this file or in any
+  service's environment, and `docker compose exec` commands still have it.
+  The connection user comes from `POSTGRES_USER` (`PGBACKREST_PG1_USER`).
 
 ## Scripts
 

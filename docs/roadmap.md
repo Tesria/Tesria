@@ -275,7 +275,7 @@ organization actually wanting it.
 - **Encryption at rest for attachments** with a key the operator holds
   (the database already relies on the host's disk encryption).
 
-## Donut charts (saved 2026-09-25, not scheduled)
+## Donut charts (saved 2026-09-25; built 2026-09-27 for 0.8.0)
 
 Saved at the project's request; it says when. The one pie in the product
 (`src/web/src/components/PieChart.tsx`) draws both the editor's pie chart
@@ -292,6 +292,30 @@ check them all the same (an export change is tested in a real export). The
 collaboration service's bundled schema (`collab/vendor/collab-schema.js`) is
 built from `src/web`, so the image is rebuilt with it. The donut's hole is a
 good place for the total (the disk's free space, or the chart's sum).
+
+## Flat or glass: a theme pass (asked for 2026-09-27, before 1.0)
+
+tesria.com now has a glass style; the app is flat. The theme settings gain
+a choice of **Flat** or **Glass**, beside light, dark and the accent color.
+Flat is today's look, unchanged, for anyone who prefers it. Scheduled as
+dev-plan 26.1.
+
+Notes for whoever builds it: the site's glass is a set of tokens on `:root`
+(light and dark), which is the shape to copy rather than one-off styles:
+`--glass` (a translucent surface, white at about half opacity in light),
+`--glass-rim` and `--glass-hi` (the lighter edge), `--glass-lo`,
+`--glass-shadow` (a soft drop), `--glass-hover`, `--glass-sheen` (a diagonal
+highlight gradient) and the accent's `--accent-rim` and `--accent-shadow`.
+In the app it should be a `data-style="glass"` on the root beside the
+existing theme attributes, redefining surface, border and shadow tokens, so
+components need no second set of rules; the "every raised surface gets the
+same lift" rule in `index.css` is where most of it lands. Keep it readable:
+translucency over the editor's text and over tables costs contrast, so
+check both themes, the editor, tables and the admin pages against WCAG AA,
+and respect `prefers-reduced-transparency` by falling back to flat. The
+choice is per person, like light and dark; whether an administrator can
+set the instance default is a small decision to make with it. Exports
+(site, PDF) stay flat.
 
 ## ZIM files: importing and exporting (suggested 2026-09-25, not scheduled)
 

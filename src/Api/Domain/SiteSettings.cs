@@ -189,6 +189,16 @@ public class SiteSettings
 
     public Guid? BackupPolicyChangedById { get; set; }
 
+    /// <summary>
+    /// When someone said they had saved the backup key (dev-plan 25.1). Only
+    /// asked when Tesria generated the key: one set in <c>.env</c> was
+    /// chosen by a person, who has it. Until then Administration, Backups
+    /// warns, because a key that exists only on this machine goes with it.
+    /// </summary>
+    public DateTimeOffset? BackupKeySavedAt { get; set; }
+
+    public Guid? BackupKeySavedById { get; set; }
+
     // --- Restore from the admin page (dev-plan 9.4). Written by the app when
     // a restore is requested and by the sidecar when it finishes. These are
     // in the database so a restore survives the app restarting mid-way; the
