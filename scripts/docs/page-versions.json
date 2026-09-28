@@ -908,8 +908,8 @@
   "Release notes / Tesria 0.8": {
     "appliesTo": "0.8",
     "updated": "2026-09-28",
-    "note": "Written for Tesria 0.8.",
-    "hash": "2fc46b924dc56017"
+    "note": "Revised.",
+    "hash": "2d588331e3a35c89"
   },
   "REST API": {
     "appliesTo": "0.5",
@@ -919,9 +919,9 @@
   },
   "REST API / API reference": {
     "appliesTo": "0.6",
-    "updated": "2026-09-27",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "9b0e930b276febde"
+    "hash": "6b185031a6f9241d"
   },
   "REST API / Code examples": {
     "appliesTo": "0.6",
