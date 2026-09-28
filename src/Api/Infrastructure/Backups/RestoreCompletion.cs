@@ -233,6 +233,18 @@ public sealed class RestoreCompletion(
     /// </summary>
     private async Task RecordAsync(IServiceScope scope, Guid jobId, SiteSettings s, CancellationToken ct)
     {
+        // One at a time: startup, the minute's check and a second call can
+        // all get here at once, and each would see no entry and write one.
+        // CI caught two entries for one restore (2026-09-28).
+        await _recordGate.WaitAsync(ct);
+        try { await RecordOnceAsync(scope, jobId, s, ct); }
+        finally { _recordGate.Release(); }
+    }
+
+    private readonly SemaphoreSlim _recordGate = new(1, 1);
+
+    private async Task RecordOnceAsync(IServiceScope scope, Guid jobId, SiteSettings s, CancellationToken ct)
+    {
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var already = await db.AuditLogs.AsNoTracking()
             .AnyAsync(a => a.Action == "backup.restored" && a.TargetId == jobId, ct);
