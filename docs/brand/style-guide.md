@@ -780,6 +780,15 @@ stops above the footer bar, and on a phone the unrolled page list is in the
 page's flow. The Pages button (`.site-menu`) always shows at 640px and below,
 since an export never measures its bar.
 
+### A page's breadcrumb
+
+Viewing a page on a computer, the breadcrumb is 15px with a 20px space icon,
+sticky at the top. In Minimal it sits inside the page bar (a fixed 52px),
+pulled up into it, across from the buttons. In Glass it is a 48px pill at the
+sidebar's top, and the button group is a 48px pill too: clear at rest, and
+once the bar docks each takes the tab bar's glass (`.tabs`). Neither moves
+when it fills in.
+
 ### The editor
 
 In Glass, on a computer, the editing space (`.space-content` holding

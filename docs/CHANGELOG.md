@@ -59,6 +59,11 @@ section with the owner.
   button is a flat outline button (tab bars, menu rows and alert actions
   keep their looks), and once the bar docks its theme and bell buttons drop
   their glass as the avatar and the Spaces and Admin pill do.
+- **A page's breadcrumb** is at the size of the Edit and Full Width buttons
+  and stays at the top while you read: in Minimal inside the page's bar,
+  across from the buttons; in Glass, once the page scrolls, the breadcrumb
+  and the buttons each sit in a glass bar of their own. The tree toggle in
+  the page filter is flat (a solid circle when on, just its icon when off).
 - **Exported sites offer Glass too:** the site's appearance menu has the
   Style (and Reduce Motion), and the site opens in the style its exporter
   was using; the Docs export opens in Glass. Its bar docks and its

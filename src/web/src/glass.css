@@ -1133,9 +1133,36 @@ label.code-block__appearance > select {
     height: 0; padding-top: 0; padding-bottom: 0; align-items: flex-start; overflow: visible;
   }
   :root[data-style="glass"] .page-actionbar:not(.page-actionbar--editor) > * { margin-top: 0.75rem; }
-  :root[data-style="glass"] .space-content .breadcrumb { padding-top: 0.75rem; padding-right: 24rem; }
-  /* With the bar gone, the page starts closer to the breadcrumb too. */
-  :root[data-style="glass"] .page-column > .breadcrumb + .page-wrap { padding-top: 0.25rem; }
+  /* The breadcrumb docks at the top as the page scrolls, in line with the
+     Edit, Full Width and ... buttons across from it and at their size
+     (the owner, 2026-09-28). Each is a pill the height of the top bar's
+     (48px): clear at rest, and once the bar has docked, a bar of its own
+     in the tab bar's glass. The pills' shape is there at rest too, so nothing moves when
+     they fill in. */
+  :root[data-style="glass"] .space-content:not(:has(> .page-actionbar--editor)) .breadcrumb {
+    position: sticky; top: calc(var(--topbar-h) + 0.75rem); z-index: 7;
+    display: flex; align-items: center; flex-wrap: wrap; row-gap: 0.1rem;
+    box-sizing: border-box; width: fit-content; max-width: calc(100% - 26rem); min-height: var(--ctl);
+    margin: 0.75rem 0 0.75rem 0.5rem; padding: 0 1rem;
+    border: 1px solid transparent; border-radius: 999px;
+    font-size: 15px;
+  }
+  :root[data-style="glass"] .space-content:not(:has(> .page-actionbar--editor)) .breadcrumb .space-icon { width: 20px; height: 20px; font-size: 11px; margin-right: 0.45rem; vertical-align: middle; }
+  :root[data-style="glass"] .space-content:not(:has(> .page-actionbar--editor)) .breadcrumb__segment { display: inline-flex; align-items: center; }
+  :root[data-style="glass"] .page-actionbar:not(.page-actionbar--editor) > .page-actionbar__secondary {
+    padding: 4px; border: 1px solid transparent; border-radius: 999px;
+  }
+  :root[data-style="glass"]:has(.topbar.is-docked) .space-content:not(:has(> .page-actionbar--editor)) .breadcrumb,
+  :root[data-style="glass"]:has(.topbar.is-docked) .page-actionbar:not(.page-actionbar--editor) > .page-actionbar__secondary {
+    /* The tab bar's glass (.tabs), exactly. */
+    background: var(--glass); border-color: var(--glass-border);
+    -webkit-backdrop-filter: blur(14px) saturate(170%);
+    backdrop-filter: blur(14px) saturate(170%);
+    box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--btn-shadow);
+  }
+  /* The page below starts where it did: the row's own bottom padding is its space. */
+  :root[data-style="glass"] .page-column > .breadcrumb + .page-wrap { padding-top: 0; }
+
 }
 /* The Danger Zone keeps its red edge on the frost. */
 :root[data-style="glass"] .page-wrap--space-settings .danger-zone { border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
@@ -1245,4 +1272,19 @@ label.code-block__appearance > select {
 }
 :root[data-style="glass"] .btn--danger:not(.topbar .btn):not(.sidebar .btn):not(.overflow-menu__dropdown .btn):not(.alerts__actions .btn):not(.tabs__menu .btn):hover:not(:disabled) {
   background: color-mix(in srgb, var(--danger) 85%, #000); border-color: color-mix(in srgb, var(--danger) 85%, #000);
+}
+/* The tree's "with children" toggle inside the filter is a flat button too
+   (the owner, 2026-09-28): on, a solid accent fill; off, just its icon.
+   No sheen, gradient stroke or shadow. */
+:root[data-style="glass"] .tree-filter__children,
+:root[data-style="glass"] .sidebar .tree-filter__children {
+  background: transparent; border: 2px solid transparent; color: var(--primary);
+  box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+:root[data-style="glass"] .tree-filter__children::before { content: none; }
+:root[data-style="glass"] .tree-filter__children:hover { background: color-mix(in srgb, var(--primary) 10%, transparent); }
+:root[data-style="glass"] .tree-filter__children.is-on,
+:root[data-style="glass"] .tree-filter__children.is-on:hover,
+:root[data-style="glass"] .sidebar .tree-filter__children.is-on {
+  background: var(--primary); border-color: var(--primary); color: var(--on-primary);
 }

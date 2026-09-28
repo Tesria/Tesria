@@ -1614,6 +1614,23 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 /* Viewing a page, the bar's last button (the ... menu) ends where the top
    bar's avatar does, at every width (the owner, 2026-09-28). */
 .page-actionbar:not(.page-actionbar--editor) { padding-right: calc(1rem + var(--safe-right)); }
+/* Minimal, on a computer: the breadcrumb sits in the page's bar, at the left
+   across from Edit, Full Width and ..., and at their size (the owner,
+   2026-09-28). The bar has a fixed height and the breadcrumb, sticky at the
+   same place, is pulled up into it by that height, so the page below starts
+   right under the bar. (Glass floats both as bars of their own, glass.css.) */
+@media (min-width: 641px) {
+  :root:not([data-style="glass"]) .page-actionbar:not(.page-actionbar--editor) { box-sizing: border-box; min-height: 52px; }
+  :root:not([data-style="glass"]) .space-content:not(:has(> .page-actionbar--editor)) .page-column > .breadcrumb {
+    position: sticky; top: var(--topbar-h); z-index: 9;
+    display: flex; align-items: center; flex-wrap: wrap;
+    box-sizing: border-box; height: 52px; margin-top: -52px;
+    width: fit-content; max-width: calc(100% - 22rem); padding: 0 0 0 1.5rem;
+    font-size: 15px;
+  }
+  :root:not([data-style="glass"]) .space-content:not(:has(> .page-actionbar--editor)) .page-column > .breadcrumb .space-icon { width: 20px; height: 20px; font-size: 11px; margin-right: 0.45rem; }
+  :root:not([data-style="glass"]) .space-content:not(:has(> .page-actionbar--editor)) .page-column > .breadcrumb .breadcrumb__segment { display: inline-flex; align-items: center; }
+}
 
 .overflow-menu { position: relative; display: inline-flex; }
 .overflow-menu__trigger {
