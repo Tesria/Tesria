@@ -291,7 +291,7 @@ export async function build({
     p('A short summary of what is ahead. Choose ', b('Start'), '.'),
 
     step(2, 'Your account'),
-    p('This makes the first account, which becomes the ', b('owner'), ': the one account that can hand the instance over to someone else, and the one that nobody else can suspend or reset. Enter your ', b('Email'), ', ', b('Your name'), ' (as others will see it) and a ', b('Password'), ', then choose ', b('Create the owner account'), '.'),
+    p('This makes the first account, which becomes the ', b('owner'), ': the one account that can hand the instance over to someone else, and the one that nobody else can suspend or reset. Enter your ', b('Email'), ', ', b('Your name'), ' (as others will see it) and a ', b('Password'), ', then choose ', b('Create the Owner Account'), '.'),
     p('Tesria then shows your ', b('recovery codes'), '. Each one signs you in once if you ever lose your password. Save them somewhere other than this computer, tick ', b('I have saved these somewhere safe'), ', and choose ', b('Continue'), '.'),
     panel('error', p(b('Do not skip saving the codes.'), ' Nobody can reset the owner’s password, not even an administrator. Losing both the password and the recovery codes means losing the instance.')),
 
@@ -305,7 +305,7 @@ export async function build({
     step(4, 'Who can join'),
     p('Pick one of the two cards; you cannot continue until you do.'),
     ul(
-      li(p(b('Invite only:'), ' nobody can sign up on their own. You create an invite link for each person and send it to them however you like. The safer choice, and right for most teams.')),
+      li(p(b('Invite Only:'), ' nobody can sign up on their own. You create an invite link for each person and send it to them however you like. The safer choice, and right for most teams.')),
       li(p(b('Open:'), ' anyone who can reach the address can create an account. Only choose this if everyone who can reach it should be able to join, for example on a private home network.')),
     ),
     p(b('Allow anonymous reading'), ' decides whether people can read without signing in. Off, every visitor has to sign in. On, spaces you mark as public can be read by anyone, which suits a help site or public documentation. Turning it on publishes nothing by itself: nothing is public until you mark a space. See ', pageLink('Public reading'), '.'),
@@ -314,7 +314,7 @@ export async function build({
     p('Every account has a ', b('role'), ': owner, administrator or user. This step shows what each role is allowed to do, one right per row, such as creating spaces or deleting other people’s pages, with a column for each role.'),
     ...(await picture(wizard, 'setup-permissions', 'The table of what each role may do',
       'Each row is a right, and each column a role. A tick means the role has that right.')),
-    p('The defaults suit most teams, so the easiest answer is ', b('Keep these defaults'), '. If something should be different, such as users not being allowed to create spaces, untick it here first. The same table is always in Administration, under ', b('Roles'), '; see ', pageLink('Roles'), '.'),
+    p('The defaults suit most teams, so the easiest answer is ', b('Keep These Defaults'), '. If something should be different, such as users not being allowed to create spaces, untick it here first. The same table is always in Administration, under ', b('Roles'), '; see ', pageLink('Roles'), '.'),
 
     step(6, 'Backups'),
     p('Tesria is already backing itself up: a daily copy of the database and every uploaded file, plus a continuous backup that can rewind the database to any moment. This step decides how much of that history to keep.'),
@@ -324,25 +324,25 @@ export async function build({
       li(p(b('I saved it somewhere that is not the server:'), ' once you have copied it to your password manager, or anywhere off the server.')),
       li(p(b('Someone else runs the server; they will save it:'), ' when you are setting Tesria up from another computer and somebody else looks after the server. Administration, ', b('Backups'), ' keeps asking until one of you says it is saved.')),
     ),
-    p('Then choose ', b('Keep these settings'), '. If you chose the key yourself in ', c('.env'), ', the wizard does not ask: you already have it.'),
+    p('Then choose ', b('Keep These Settings'), '. If you chose the key yourself in ', c('.env'), ', the wizard does not ask: you already have it.'),
     panel('warning', p(b('Without the key, the backups cannot be read,'), ' by anyone. A key that exists only on the server is lost with the server.')),
     p('To keep a copy of your backups somewhere else, which is what saves you if the server itself is lost, see ', pageLink('Offsite copies'), '.'),
 
     step(7, 'Email'),
     p('Tesria sends password resets, invitations and notifications by email, through an email server (SMTP) such as your email provider’s. If you have its details, fill in the ', b('SMTP host'), ', ', b('Port'), ' (587 is the usual one), ', b('Username'), ' and ', b('From address'), ', and choose ', b('Continue'), '. The password and a test email are in Administration, under ', b('Settings'), '.'),
-    p('No email server? Choose ', b('Skip for now'), '. Tesria works fine without one: when someone forgets their password, you give them a one-time reset link from Administration instead. See ', pageLink('Email (SMTP)'), ' when you are ready.'),
+    p('No email server? Choose ', b('Skip for Now'), '. Tesria works fine without one: when someone forgets their password, you give them a one-time reset link from Administration instead. See ', pageLink('Email (SMTP)'), ' when you are ready.'),
 
     step(8, 'Two-factor'),
     p(b('Two-factor sign-in'), ' means signing in takes your password ', i('and'), ' a six-digit code from an app on your phone, so a stolen password alone is not enough. It is recommended for the owner in particular, because nobody can reset that account.'),
     ol(
-      li(p('If you signed in more than a few minutes ago, enter your ', b('Current password'), ' first. Then choose ', b('Set up two-factor'), '.')),
+      li(p('If you signed in more than a few minutes ago, enter your ', b('Current password'), ' first. Then choose ', b('Set Up Two-Factor'), '.')),
       li(p('Scan the code it shows with an authenticator app, such as Aegis, 1Password, Google Authenticator or Authy.')),
-      li(p('Enter the six digits the app shows, and choose ', b('Turn on'), '.')),
+      li(p('Enter the six digits the app shows, and choose ', b('Turn On'), '.')),
     ),
-    p('Then choose ', b('Continue'), '. Or choose ', b('Skip for now'), ' and do it later from your profile; see ', pageLink('Two-factor and recovery codes'), '.'),
+    p('Then choose ', b('Continue'), '. Or choose ', b('Skip for Now'), ' and do it later from your profile; see ', pageLink('Two-factor and recovery codes'), '.'),
 
     step(9, 'A first space'),
-    p('A ', b('space'), ' holds the pages for one team, project or topic. Type a ', b('Name'), ', such as ', i('Team handbook'), ', and a short ', b('Key'), ', such as ', c('TEAM'), '. Tesria starts the key for you from the name; check it and make it what you want, at least two letters and digits. The key is part of the address of every page in the space and cannot be changed later. Choose ', b('Continue'), ', or ', b('Skip for now'), ' to make spaces later. ', pageLink('Creating a space'), ' helps you decide what deserves a space of its own.'),
+    p('A ', b('space'), ' holds the pages for one team, project or topic. Type a ', b('Name'), ', such as ', i('Team handbook'), ', and a short ', b('Key'), ', such as ', c('TEAM'), '. Tesria starts the key for you from the name; check it and make it what you want, at least two letters and digits. The key is part of the address of every page in the space and cannot be changed later. Choose ', b('Continue'), ', or ', b('Skip for Now'), ' to make spaces later. ', pageLink('Creating a space'), ' helps you decide what deserves a space of its own.'),
 
     step(10, 'Done'),
     p('The last step says your instance is ready and lists any steps you skipped; each one is waiting in Administration. Choose ', b('Finish'), '.'),
@@ -368,10 +368,10 @@ export async function build({
 
     step(1, 'Make a space'),
     p('Pages live in ', b('spaces'), ': one for each team, project or audience. If you made one in the setup wizard, it is waiting under ', b('Spaces'), ' at the top of the screen, and you can go straight to step 2.'),
-    p('If not, choose ', b('Spaces'), ', then ', b('New space'), '. Give it a short key, such as ', c('TEAM'), ', and a name, such as ', i('Team handbook'), ', and choose ', b('Create'), '. ', pageLink('Creating a space'), ' walks through it with pictures and helps you decide how to divide things up.'),
+    p('If not, choose ', b('Spaces'), ', then ', b('New Space'), '. Give it a short key, such as ', c('TEAM'), ', and a name, such as ', i('Team handbook'), ', and choose ', b('Create'), '. ', pageLink('Creating a space'), ' walks through it with pictures and helps you decide how to divide things up.'),
 
     step(2, 'Start a page'),
-    p('Open the space. In a new, empty space, choose ', b('Create the first one'), '. Once it has pages, choose ', b('+ New page'), ' at the top of the space’s sidebar (on a phone, ', b('+ New'), '). Choosing it while a page is open makes the new page a sub-page of that one.'),
+    p('Open the space. In a new, empty space, choose ', b('Create the first one'), '. Once it has pages, choose ', b('+ New Page'), ' at the top of the space’s sidebar (on a phone, ', b('+ New'), '). Choosing it while a page is open makes the new page a sub-page of that one.'),
     p('A good first page says what the space is for and who looks after it. If your space already has templates, a menu above the title offers to start from one; see ', pageLink('Templates'), '.'),
 
     step(3, 'Write'),
@@ -385,11 +385,11 @@ export async function build({
     p('To change the page later, open it and choose ', b('Edit'), '; when you are done, choose ', b('Update'), '. Every update is kept in the page’s history, so nothing is ever lost. See ', pageLink('Drafts, Publish and Update'), '.'),
 
     step(5, 'Invite people'),
-    p('A wiki gets useful once other people read it and write in it. If you chose ', b('Invite only'), ' in the setup wizard, invite each person with a link:'),
+    p('A wiki gets useful once other people read it and write in it. If you chose ', b('Invite Only'), ' in the setup wizard, invite each person with a link:'),
     ol(
-      li(p('Choose ', b('Admin'), ' at the top of the screen, then the ', b('Invites'), ' tab. In a narrower window, Admin is under ', b('More'), '; on a phone, it is in the menu.')),
+      li(p('Choose ', b('Admin'), ' at the top of the screen, then the ', b('Invites'), ' tab. In a narrower window, or on a phone, Admin is in the ', b('☰'), ' menu at the top left.')),
       li(p('Optionally enter the person’s email address, so only they can use the link, and choose how many days it lasts.')),
-      li(p('Choose ', b('Create invite'), ', then ', b('Copy'), ', and send the link to them however you like. It is shown only once, and works once.')),
+      li(p('Choose ', b('Create Invite'), ', then ', b('Copy'), ', and send the link to them however you like. It is shown only once, and works once.')),
     ),
     p('See ', pageLink('Invites'), ' for more. A new space can be read and edited by everyone who is signed in; to keep one to some people only, see ', pageLink('Who can see a space'), '.'),
 

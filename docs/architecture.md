@@ -1974,6 +1974,35 @@ per-accent blocks exist for *every* accent including the default: a
 higher-specificity dark block has to exist for each, or an explicit accent
 choice would pull the light palette into dark mode.
 
+The **style** is a third axis (0.8.1, dev-plan 26.1): Minimal or Glass,
+`data-style="glass"` on `<html>` (absent means Minimal, stored as `flat`),
+with every glass rule in `glass.css`, imported after `index.css` and keyed to
+that attribute. Glass leans on a few shared tokens there: `--glass*` for
+controls, `--panel-bg` for the neutral frosted panels (cards, menus,
+Administration sections), `--sidebar-bg` for the one accent-tinted panel,
+`--btn-rim` and `--rim-*` for button strokes, and `--ctl` (48px, the top
+bar) and `--ctl-page` (38px, below it) for control heights, shared with
+Minimal in `index.css`. Two things to know when changing it:
+
+- **A custom property is worked out where it is declared.** A token built
+  on `:root` from another token takes that token's `:root` value, and
+  setting the inner token on an element later does not rebuild it (this is
+  how the sidebar once lost its tint). Build a variant as its own token, or
+  set the whole value on the element.
+- **A background color may only be the last layer.** `var(--x), var(--y)`
+  where `--x` ends in a color makes the whole declaration invalid, and the
+  browser drops it silently; wrap colors meant as layers in
+  `linear-gradient(c, c)`.
+
+Elements with a **Style** of their own (status, chart, code block, diagram:
+`editor/appearance.ts`) carry `data-appearance`, which `glass.css` honors
+without `data-style`, so an export (which has no reader's style) keeps what
+the element asked for. `data-motion="reduce"` (the appearance menu's Reduce
+Motion switch, shown with Glass) stills transitions and animations, as the
+system's reduced-motion setting does; the sidebar and menu animations check
+both (`motionReduced()` in `theme.ts`). Glass scrollbars show only while a
+scroller is hovered or scrolling, marked by `scrollbars.ts`.
+
 `index.html` carries a small inline, synchronous script that re-applies the
 stored preference before first paint; a deferred or module script runs too
 late and the page visibly flips. **The storage key and attribute logic are

@@ -12,7 +12,11 @@
 // RestrictionsPanel, AttachmentsPanel, PageLabels, LabelsIndexPage,
 // LabelPage; and in src/Api, SpaceEndpoints, SpaceIcons, PermissionEndpoints,
 // PermissionService, PageEndpoints, PageCopy, LabelEndpoints,
-// AttachmentEndpoints, NotificationService.
+// AttachmentEndpoints, NotificationService. Labels re-checked for 0.8.1's
+// Title Case, and its changes (the phone space bar and Watch This Space in
+// its ⋮ menu, tab bars with •••, the filter's clear button, the export items,
+// the glass sidebar) against SpacePage, SpaceHome, OverflowTabs, PageTree,
+// PageView and SpaceSettingsPage, on 2026-09-28.
 //
 // New pages (not in the first version), for the owner to confirm:
 //   Pages → Page emoji                  the emoji above a page's title (15.7)
@@ -35,8 +39,8 @@ const SPACE_FORM = [
   { css: '.row-between, .space-grid { visibility: hidden !important; }' },
 ]
 
-// Marks the menu's Save as template button, so a picture can box it.
-const TAG_SAVE_TEMPLATE = "[...document.querySelectorAll('.overflow-menu__dropdown button')].find((b) => b.textContent.trim() === 'Save as template')?.setAttribute('data-shot', 'save-template')"
+// Marks the menu's Save as Template button, so a picture can box it.
+const TAG_SAVE_TEMPLATE = "[...document.querySelectorAll('.overflow-menu__dropdown button')].find((b) => b.textContent.trim() === 'Save as Template')?.setAttribute('data-shot', 'save-template')"
 
 // Marks the menu's Move… and Copy… buttons, for the same reason.
 const TAG_MOVE_COPY = "document.querySelectorAll('.overflow-menu__dropdown button').forEach((b) => { const t = b.textContent.trim(); if (t === 'Move…') b.setAttribute('data-shot', 'move'); if (t === 'Copy…') b.setAttribute('data-shot', 'copy') })"
@@ -48,20 +52,26 @@ const section = (title) => `section.profile__section:has(> h2:text-is("${title}"
 // no sidebar, and cropped to it, so it is still shown near its own size.
 const HIDE_CONTENT = { css: '.space-content { visibility: hidden !important; }' }
 // The first six rows of the tree are enough to show what it is; the rest,
-// and the + New page button above it, are hidden so the crop cuts nothing
+// and the + New Page button above it, are hidden so the crop cuts nothing
 // in half.
 const TREE_ROWS = (row) => ({ css: `aside.sidebar .tree > ${row}:nth-of-type(n+7), aside.sidebar .sidebar__top { visibility: hidden !important; }` })
 // Opens a page's ⋮ menu, in the narrow window.
 const OPEN_MENU = [{ wait: 2500 }, { click: 'button[title="More actions"]' }, { wait: 400 }]
-// Opens one of the tabs under a page and brings it into view.
-const OPEN_TAB = (tab) => [{ wait: 2500 }, { click: `article .tabs button:has-text("${tab}")` }, { wait: 800 }, { scrollTo: '.tab-panel' }]
+// Opens one of the tabs under a page and brings it into view. A tab that
+// does not fit the row is in its ••• menu (OverflowTabs, 0.8.1), opened first.
+const OPEN_TAB = (tab) => [
+  { wait: 2500 },
+  { eval: `(() => { const nav = document.querySelector('article .tabs'); if (nav && ![...nav.querySelectorAll(':scope > button')].some((b) => b.textContent.trim() === ${JSON.stringify(tab)})) nav.querySelector('.tabs__more-btn')?.click() })()` },
+  { wait: 300 },
+  { click: `article .tabs button:has-text("${tab}")` }, { wait: 800 }, { scrollTo: '.tab-panel' },
+]
 
 /**
  * Tesria Demo needs a template for the "Start from a template" picture: the
  * menu only appears when there is one. Made once, if it is missing.
  *
- * And the Launch plan must have no emoji, or the "Add emoji" picture has no
- * Add emoji to show.
+ * And the Launch plan must have no emoji, or the "Add Emoji" picture has no
+ * Add Emoji to show.
  */
 export async function prepare({ lib, author, demoId }) {
   const launchPlan = demoId('Launch plan')
@@ -117,12 +127,14 @@ export const shots = ({ demo }) => [
     ],
   },
 
-  // ---- The space home: where Watch this space is.
+  // ---- The space home: where Watch This Space is. Below 640 pixels the
+  // button moves into the space's ⋮ menu (0.8.1), so this is taken in a
+  // window with the computer layout; the heading row is its own element now.
   {
-    name: 'space-watch', url: '/spaces/DEMO', viewport: NARROW, phone: false,
+    name: 'space-watch', url: '/spaces/DEMO', viewport: { width: 900, height: 900 }, phone: false,
     steps: [{ wait: 2500 }, { css: '.space-content .page-wrap > p, .space-home-tree { visibility: hidden !important; }' }],
-    clipTo: '.space-content .page-wrap > .row-between', clipPad: 12,
-    annotate: [{ type: 'box', target: '.space-content .page-wrap > .row-between .btn', pad: 4 }],
+    clipTo: '.space-content .space-home__head', clipPad: 12,
+    annotate: [{ type: 'box', target: '.space-content .space-home__head > .btn', pad: 4 }],
   },
 
   // ---- Who can see a space: the form that grants access. Only the form:
@@ -134,7 +146,7 @@ export const shots = ({ demo }) => [
     annotate: [{ type: 'box', target: '.tab-panel .principal-picker', pad: 4 }],
   },
 
-  // ---- Space icons: the Icon section of Space settings.
+  // ---- Space icons: the Icon section of Space Settings.
   {
     name: 'space-icon', url: '/spaces/DEMO/settings', viewport: NARROW, phone: false, steps: [{ wait: 2500 }],
     clipTo: section('Icon'), clipPad: 8,
@@ -155,7 +167,7 @@ export const shots = ({ demo }) => [
     ],
   },
 
-  // ---- Creating a page: + New page in the sidebar, and Publish.
+  // ---- Creating a page: + New Page in the sidebar, and Publish.
   {
     name: 'page-new-button', url: '/spaces/DEMO', phone: false,
     steps: [{ wait: 2500 }, { css: '.space-content, aside.sidebar .tree-section { visibility: hidden !important; }' }],
@@ -171,7 +183,7 @@ export const shots = ({ demo }) => [
   // Closes that new page without saving, which discards its draft.
   { name: 'page-publish-closed', settle: 300, skipCapture: true, phone: false, steps: [{ click: '.page-actionbar button:has-text("Close")' }, { wait: 1200 }] },
 
-  // ---- Templates: where Save as template is, its form, and where a new
+  // ---- Templates: where Save as Template is, its form, and where a new
   // page offers one. From a meeting page in Tesria Demo, whose space has a
   // Meeting notes template (prepare, above).
   {
@@ -248,7 +260,7 @@ export const shots = ({ demo }) => [
     ],
   },
 
-  // ---- Page emoji: Add emoji on the title, and the picker it opens.
+  // ---- Page emoji: Add Emoji on the title, and the picker it opens.
   // Everything below the title is hidden: the crop's margin would cut it.
   {
     name: 'emoji-add', url: demo('Launch plan'), viewport: NARROW, phone: false,
@@ -280,7 +292,7 @@ export const shots = ({ demo }) => [
     annotate: [{ type: 'box', target: 'article .label-add', pad: 3 }],
   },
 
-  // ---- Attachments: the tab, and Upload file.
+  // ---- Attachments: the tab, and Upload File.
   {
     name: 'attachments-upload', url: demo('Image'), viewport: NARROW, phone: false, steps: OPEN_TAB('Attachments'),
     clipTo: ['article .tabs', '.tab-panel'], clipPad: 12,
@@ -315,9 +327,10 @@ export const shots = ({ demo }) => [
     annotate: [{ type: 'box', target: '.tab-panel .principal-picker', pad: 3 }],
   },
 
-  // ---- Trash: where it is in Space settings.
+  // ---- Trash: where it is in Space Settings. Wide enough for all five tabs:
+  // in a narrow window Trash goes into the ••• button at the end of the row.
   {
-    name: 'trash-tab', url: '/spaces/DEMO/settings/trash', viewport: NARROW, phone: false, steps: [{ wait: 2500 }],
+    name: 'trash-tab', url: '/spaces/DEMO/settings/trash', viewport: { width: 900, height: 900 }, phone: false, steps: [{ wait: 2500 }],
     clipTo: ['.space-content .page-wrap > h1', '.space-content .tab-panel'], clipPad: 12,
     annotate: [{ type: 'box', target: '.space-content .tabs a[href$="/trash"]', pad: 3 }],
   },
@@ -372,20 +385,20 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('An icon,'), ' so people recognize the space at a glance. See ', pageLink('Space icons'), '.')),
       li(p(b('A page tree:'), ' the pages, arranged under one another like the chapters and sections of a book. See ', pageLink('The page tree and reordering'), '.')),
       li(p(b('A home page:'), ' what you see when you open the space without choosing a page. See ', pageLink('The space home and watching'), '.')),
-      li(p(b('Its own settings:'), ' who can see it, its templates, its webhooks and its trash, all under ', b('Space settings'), '.')),
+      li(p(b('Its own settings:'), ' who can see it, its templates, its webhooks and its trash, all under ', b('Space Settings'), '.')),
     ),
 
     h(2, 'Finding your way around a space'),
     p('Open a space from ', b('Spaces'), ' at the top of any page. On a computer, the space’s sidebar runs down the left of every page in it. From the top:'),
-    ...(await picture(what, 'space-sidebar', 'The sidebar of a space, with its four parts boxed', 'A space’s sidebar: its name, + New page, the page tree and Space settings.')),
+    ...(await picture(what, 'space-sidebar', 'The sidebar of a space, with its four parts boxed', 'A space’s sidebar: its name, + New Page, the page tree and Space Settings.')),
     ol(
       li(p(b('The space itself:'), ' its icon, key and name. A ', b('public'), ' badge beside the key means anyone on the internet can read it; see ', pageLink('Public reading'), '.')),
-      li(p(b('+ New page,'), ' which starts a new page. See ', pageLink('Creating a page'), '.')),
+      li(p(b('+ New Page,'), ' which starts a new page. See ', pageLink('Creating a page'), '.')),
       li(p(b('The page tree,'), ' under ', b('Pages'), ', with every page you can see.')),
-      li(p(b('Space settings,'), ' at the bottom: details, icon, permissions, templates, webhooks and trash.')),
+      li(p(b('Space Settings,'), ' at the bottom: details, icon, permissions, templates, webhooks and trash.')),
     ),
-    p('The button beside the space’s name hides the sidebar when you want the whole window for reading; the button left in the narrow strip down the side brings it back. Drag the sidebar’s right edge to make it wider or narrower, and double-click the edge to return it to its usual width.'),
-    panel('note', p(b('On a phone there is no sidebar.'), ' The space’s home page lists its pages instead, and the bar at the top of the home page has ', b('+ New'), ' and a menu with ', b('Space settings'), '.')),
+    p('The button beside the space’s name hides the sidebar when you want the whole window for reading; the button left in the narrow strip down the side brings it back. In the Glass style, the sidebar is a floating frosted panel, and hiding it leaves a small round button in its place instead of the strip (see ', pageLink('Theme and accent'), '). Drag the sidebar’s right edge to make it wider or narrower, and double-click the edge to return it to its usual width.'),
+    panel('note', p(b('On a phone there is no sidebar.'), ' The space’s home page lists its pages instead. At its top right are ', b('+ New'), ' and a ', b('⋮'), ' menu that holds ', b('Watch This Space'), ' and ', b('Space Settings'), '.')),
 
     h(2, 'The Spaces page'),
     p(b('Spaces'), ' at the top of every page lists every space you can see, in alphabetical order, each with its icon, key, name and description. Spaces you have no access to are not listed at all, and neither are archived ones; see ', pageLink('Archiving and deleting a space'), '. To make a new space, see ', pageLink('Creating a space'), '.'),
@@ -405,11 +418,11 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     panel('success', p(b('Start with fewer, larger spaces.'), ' It is easier to find things in three well-organized spaces than in twenty small ones, and a page can be moved to another space later with everything under it.')),
 
     h(2, 'Before you start'),
-    p('You need the right to create spaces. Everyone has it by default; if you do not see a ', b('New space'), ' button in step 1, an administrator has turned it off for your role, and they can create the space for you.'),
+    p('You need the right to create spaces. Everyone has it by default; if you do not see a ', b('New Space'), ' button in step 1, an administrator has turned it off for your role, and they can create the space for you.'),
 
-    step(1, 'Open Spaces and choose New space'),
-    p('Choose ', b('Spaces'), ' at the top of any page, then ', b('New space'), ' at the top right.'),
-    ...(await picture(creating, 'space-new', 'The Spaces page with the New space button', 'The Spaces page. New space is at the top right.')),
+    step(1, 'Open Spaces and choose New Space'),
+    p('Choose ', b('Spaces'), ' at the top of any page, then ', b('New Space'), ' at the top right.'),
+    ...(await picture(creating, 'space-new', 'The Spaces page with the New Space button', 'The Spaces page. New Space is at the top right.')),
 
     step(2, 'Give it a key and a name'),
     p('A short form opens above the list.'),
@@ -446,7 +459,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'The home page'),
     ul(
-      li(p(b('The name and description'), ' at the top. Change them in ', b('Space settings'), ', on the ', b('Details'), ' tab.')),
+      li(p(b('The name and description'), ' at the top. Change them in ', b('Space Settings'), ', on the ', b('Details'), ' tab. On a phone, the space’s icon sits beside its name, since there is no sidebar to show it.')),
       li(p(b('Contents,'), ' on a computer: each top-level page and the pages directly under it, numbered the way the sidebar numbers them. Choose one to open it. An exported website’s front page shows the same list.')),
       li(p(b('On a phone,'), ' the whole page tree instead, because a phone has no sidebar to show it in. You can reorder pages there too.')),
       li(p(b('A new space'), ' has no pages yet, and says so, with a ', b('Create the first one'), ' link.')),
@@ -465,18 +478,18 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     step(1, 'Open the space’s home'),
     p('Choose the space on the ', b('Spaces'), ' page, or its name at the start of the breadcrumb.'),
-    step(2, 'Choose Watch this space'),
-    p('The button is at the top right, beside the space’s name.'),
-    ...(await picture(home, 'space-watch', 'The Watch button on a space’s home page', 'Watch this space is beside the space’s name.')),
+    step(2, 'Choose Watch This Space'),
+    p('On a computer, the button is at the top right, beside the space’s name. On a phone, it is in the ', b('⋮'), ' menu at the top right of the space’s home instead.'),
+    ...(await picture(home, 'space-watch', 'The Watch button on a space’s home page', 'Watch This Space is beside the space’s name.')),
     p('The button then reads ', b('Watching'), '. Choose it again to stop.'),
 
-    panel('success', p(b('Only need one page?'), ' Watch just that page instead, from ', b('Watch this page'), ' in its ⋮ menu. See ', pageLink('Watching'), '.')),
+    panel('success', p(b('Only need one page?'), ' Watch just that page instead, from ', b('Watch This Page'), ' in its ⋮ menu. See ', pageLink('Watching'), '.')),
   ))
 
   // -------------------------------------------------- Who can see a space
   await page('Who can see a space', spaces, doc(
     p('Most spaces are for everyone in your organization, and a new space starts that way. Some should be seen by only a few people: salaries, a confidential project, a team’s private planning. This page explains how a space decides who gets in, and how to give or take away access.'),
-    p('Everything here is done in ', b('Space settings'), ', on the ', b('Permissions'), ' tab, and needs administrator access to the space.'),
+    p('Everything here is done in ', b('Space Settings'), ', on the ', b('Permissions'), ' tab, and needs administrator access to the space.'),
 
     h(2, 'Open and private spaces'),
     ul(
@@ -496,7 +509,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'Giving someone access'),
     step(1, 'Open the Permissions tab'),
-    p('Choose ', b('Space settings'), ' at the bottom of the space’s sidebar, then the ', b('Permissions'), ' tab.'),
+    p('Choose ', b('Space Settings'), ' at the bottom of the space’s sidebar, then the ', b('Permissions'), ' tab.'),
     step(2, 'Choose who'),
     p('In the box, choose ', b('User'), ' or ', b('Group'), ', then the person or group from the list next to it.'),
     ...(await picture(who, 'space-permissions', 'The form for granting access to a space', 'Choose a user or group, the person or group, and the level, then Grant.')),
@@ -518,13 +531,13 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     h(2, 'Making a private space open again'),
     p('Because the last administrator always stays, a private space cannot be emptied one person at a time. To go back to open, use the link made for it:'),
     ol(
-      li(p('On the Permissions tab, choose ', b('Make this space open again'), '. It is in the line above the box, and only there while the space is private.')),
-      li(p('Read what will happen and choose ', b('Make it open'), '. If you have not entered your password in the last few minutes, Tesria asks for it again.')),
+      li(p('On the Permissions tab, choose ', b('Make This Space Open Again'), '. It is in the line above the box, and only there while the space is private.')),
+      li(p('Read what will happen and choose ', b('Make It Open'), '. If you have not entered your password in the last few minutes, Tesria asks for it again.')),
     ),
     p('Every grant is removed at once, and everyone signed in can view, edit and administer the space again. Restrictions on single pages stay as they are. Because this opens everything in the space to everyone, Tesria’s administrators are alerted each time it is done.'),
 
     h(2, 'Administrators and private spaces'),
-    p('Being an administrator of Tesria does not let you into every private space. If a private space has lost all its administrators, a Tesria administrator can give themselves access with ', b('Get access'), ' in ', ...adminAt('Spaces'), ', and that is recorded in the audit log. See ', pageLink('Spaces (administration)'), '.'),
+    p('Being an administrator of Tesria does not let you into every private space. If a private space has lost all its administrators, a Tesria administrator can give themselves access with ', b('Get Access'), ' in ', ...adminAt('Spaces'), ', and that is recorded in the audit log. See ', pageLink('Spaces (administration)'), '.'),
     p('To keep one page, rather than a whole space, to a few people, see ', pageLink('Restrictions'), '.'),
   ))
 
@@ -533,41 +546,41 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('A space’s icon appears wherever the space does: on the Spaces page, at the top of its sidebar and in the breadcrumb above its pages. A good icon lets people tell spaces apart at a glance, which matters more as their number grows. Every space starts with the first letter of its key on a colored tile; you can change it to an emoji or a picture of your own.'),
     p('Changing the icon needs administrator access to the space. In an open space that is everyone signed in.'),
 
-    step(1, 'Open Space settings'),
-    p('Choose ', b('Space settings'), ' at the bottom of the space’s sidebar. The ', b('Icon'), ' section is the first thing on the ', b('Details'), ' tab, with the current icon beside it.'),
-    ...(await picture(icons, 'space-icon', 'The Icon section of Space settings', 'Upload picture, and the emoji to choose from, are boxed.')),
+    step(1, 'Open Space Settings'),
+    p('Choose ', b('Space Settings'), ' at the bottom of the space’s sidebar. The ', b('Icon'), ' section is the first thing on the ', b('Details'), ' tab, with the current icon beside it.'),
+    ...(await picture(icons, 'space-icon', 'The Icon section of Space Settings', 'Upload Picture, and the emoji to choose from, are boxed.')),
 
     step(2, 'Choose the new icon'),
     p('Whatever you choose is saved straight away; there is no Save button. You have three kinds to choose from:'),
     ul(
-      li(p(b('A picture of your own:'), ' choose ', b('Upload picture'), ' and pick a PNG, JPEG or WebP file. Tesria trims it to a square from the middle, so a logo with space around it works best. Once there is one, the button reads ', b('Replace picture'), '.')),
-      li(p(b('An emoji:'), ' choose one under ', b('Or pick an emoji'), '. For one that is not offered, paste it into ', b('Any other emoji'), ' and choose ', b('Use it'), '. It has to be a single emoji, not letters.')),
+      li(p(b('A picture of your own:'), ' choose ', b('Upload Picture'), ' and pick a PNG, JPEG or WebP file. Tesria trims it to a square from the middle, so a logo with space around it works best. Once there is one, the button reads ', b('Replace Picture'), '.')),
+      li(p(b('An emoji:'), ' choose one under ', b('Or pick an emoji'), '. For one that is not offered, paste it into ', b('Any other emoji'), ' and choose ', b('Use It'), '. It has to be a single emoji, not letters.')),
       li(p(b('A different tile color:'), ' choose a color under ', b('Tile color'), '. It changes the tile behind the letter or the emoji. A picture has no tile, so remove the picture first to choose one.')),
     ),
 
     h(2, 'Going back to the letter'),
-    p(b('Use the default'), ', beside the upload button, takes away the emoji or the picture and puts the letter tile back.'),
+    p(b('Use the Default'), ', beside the upload button, takes away the emoji or the picture and puts the letter tile back.'),
   ))
 
   // ---------------------------------------- Archiving and deleting a space
   await page('Archiving and deleting a space', spaces, doc(
     p('When a project ends or a team moves on, its space can go one of two ways. ', b('Archiving'), ' puts it out of the way and keeps everything, and can be undone at any time. ', b('Deleting'), ' destroys it and everything in it, for good. If you are not sure, archive.'),
-    p('Both are at the end of ', b('Space settings'), ', on the ', b('Details'), ' tab.'),
-    ...(await picture(archive, 'space-archive', 'Archive this space and Delete this space in Space settings', 'Archive this space, and Delete this space in the Danger zone below it.')),
+    p('Both are at the end of ', b('Space Settings'), ', on the ', b('Details'), ' tab.'),
+    ...(await picture(archive, 'space-archive', 'Archive This Space and Delete This Space in Space Settings', 'Archive This Space, and Delete This Space in the Danger Zone below it.')),
 
     h(2, 'Archiving a space'),
     p('An archived space is hidden from the Spaces page, and from public reading if it was published. Nothing in it is changed or removed: people with access can still open it at its address or from a bookmark, and ', ...adminAt('Spaces'), ' lists it with an ', i('archived'), ' badge.'),
-    step(1, 'Open Space settings'),
-    p('Choose ', b('Space settings'), ' at the bottom of the space’s sidebar, and scroll to ', b('Archive'), '.'),
+    step(1, 'Open Space Settings'),
+    p('Choose ', b('Space Settings'), ' at the bottom of the space’s sidebar, and scroll to ', b('Archive'), '.'),
     step(2, 'Choose Archive this space'),
-    p('It happens at once, with no questions: it is easy to undo. To bring the space back, open its settings the same way and choose ', b('Unarchive this space'), '.'),
+    p('It happens at once, with no questions: it is easy to undo. To bring the space back, open its settings the same way and choose ', b('Unarchive This Space'), '.'),
     p('Any administrator of the space can archive it or bring it back.'),
 
     h(2, 'Deleting a space'),
     panel('error', p(b('Deleting a space cannot be undone from inside Tesria.'), ' Every page in it goes, with every version, comment, attachment and restriction, and so does everything in its trash. Only a backup taken beforehand still holds any of it.')),
-    p('Deleting is only offered to people whose role may delete spaces, which is Tesria’s administrators unless your roles were changed. For everyone else there is no Danger zone.'),
+    p('Deleting is only offered to people whose role may delete spaces, which is Tesria’s administrators unless your roles were changed. For everyone else there is no Danger Zone.'),
     step(1, 'Choose Delete this space'),
-    p('It is in the ', b('Danger zone'), ', the last section of the Details tab.'),
+    p('It is in the ', b('Danger Zone'), ', the last section of the Details tab.'),
     step(2, 'Read what will go'),
     p('The dialog counts the pages and attachments that will be destroyed, including the ones already in the trash. If the space is published for public reading, it warns that its public pages stop working at once.'),
     step(3, 'Type the key and your password'),
@@ -595,9 +608,9 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ),
     p('You can always move it later; see ', pageLink('Moving and copying pages'), '.'),
 
-    step(2, 'Choose + New page'),
+    step(2, 'Choose + New Page'),
     p('On a computer, it is near the top of the space’s sidebar. On a phone, it is ', b('+ New'), ', in the bar above the page.'),
-    ...(await picture(newPage, 'page-new-button', 'The + New page button in the sidebar', '+ New page, under the space’s name.')),
+    ...(await picture(newPage, 'page-new-button', 'The + New Page button in the sidebar', '+ New Page, under the space’s name.')),
 
     step(3, 'Give it a title'),
     p('Type the title in the ', i('Page title'), ' box at the top. Press ', b('Enter'), ' to move down to the body. If the space has templates, you can start from one instead of a blank page; see ', pageLink('Templates'), '.'),
@@ -631,25 +644,25 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('A template is made from a page, so start by writing one.'),
     step(1, 'Write the page new ones should start as'),
     p('Put in the headings, tables and lists every page of this kind needs, and write hints where the details go, such as “Owner: who?” or “What was agreed, and by whom?”. An ', b('Info panel'), ' at the top is a good place for instructions the writer should delete once they have filled the page in. You can save the page as usual, or keep it as a draft.'),
-    step(2, 'Choose Save as template'),
-    p('On that page, open the ', b('⋮'), ' menu at the top right and choose ', b('Save as template'), '.'),
-    ...(await picture(templates, 'template-menu', 'The page menu with Save as template', 'Save as template is in the page’s ⋮ menu.')),
+    step(2, 'Choose Save as Template'),
+    p('On that page, open the ', b('⋮'), ' menu at the top right and choose ', b('Save as Template'), '.'),
+    ...(await picture(templates, 'template-menu', 'The page menu with Save as Template', 'Save as Template is in the page’s ⋮ menu.')),
     step(3, 'Name it and choose where it is offered'),
     p('Give the template a name people will recognize when they create a page, such as ', i('Meeting notes'), '. Then choose where it is offered, and choose ', b('Save'), '.'),
     ...(await picture(templates, 'template-form', 'Naming a template', 'The name, and where the template is offered.')),
     ul(
       li(p(b('This space only'), ' offers it when someone creates a page in this space. Most templates belong here.')),
-      li(p(b('Instance-wide'), ' offers it in every space. Use it for something the whole organization shares, such as an incident report. This choice appears only for people with the right ', b('Manage instance-wide templates'), ', which administrators have; everyone else saves templates for their space.')),
+      li(p(b('Every space (instance-wide)'), ' offers it in every space. Use it for something the whole organization shares, such as an incident report. This choice appears only for people with the right ', b('Manage instance-wide templates'), ', which administrators have; everyone else saves templates for their space.')),
     ),
     p('The template is a copy of the page as it is now. Changing the page later does not change the template; save it as a template again if you want the new version.'),
 
     h(2, 'Starting a page from a template'),
-    p('Create a page as usual, with ', b('+ New page'), '. Above the title, ', b('Start from a template (optional)'), ' lists the space’s templates and the instance-wide ones. Choose one and the page fills in with it; then give it a title and write.'),
+    p('Create a page as usual, with ', b('+ New Page'), '. Above the title, ', b('Start from a template (optional)'), ' lists the space’s templates and the instance-wide ones. Choose one and the page fills in with it; then give it a title and write.'),
     ...(await picture(templates, 'template-pick', 'Choosing a template for a new page', 'Start from a template appears above the title of a new page.')),
     p('This menu only appears when there is at least one template to offer. If you have already written something, Tesria asks first, because the template replaces everything on the page so far.'),
 
     h(2, 'Renaming and deleting templates'),
-    p('Every template offered in a space is listed in ', b('Space settings, Templates'), ', the space’s own first, then the instance-wide ones. ', b('Rename'), ' changes its name and description; ', b('Delete'), ' stops it being offered. Pages already made from it are not changed either way.'),
+    p('Every template offered in a space is listed in ', b('Space Settings, Templates'), ': the space’s own under ', b('This Space'), ', then the instance-wide ones under ', b('Instance-Wide'), '. ', b('Rename'), ' changes its name and description; ', b('Delete'), ' stops it being offered. Pages already made from it are not changed either way.'),
     p('Who may rename or delete one:'),
     ul(
       li(p(b('A space’s template:'), ' anyone who can edit that space.')),
@@ -676,7 +689,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     h(2, 'Leaving the editor'),
     ul(
       li(p(b('Close,'), ' beside Publish or Update, leaves without saving. On a new page it throws the draft away. On a page you are changing, it goes back to the page as it was.')),
-      li(p(b('Leaving any other way,'), ' such as a link, the back button or another page in the tree, stops to ask what you want: ', b('Publish and leave'), ' (or ', b('Update and leave'), '), ', b('Discard page'), ' (or ', b('Leave unpublished'), '), or ', b('Stay in the editor'), '.')),
+      li(p(b('Leaving any other way,'), ' such as a link, the back button or another page in the tree, stops to ask what you want: ', b('Publish and Leave'), ' (or ', b('Update and Leave'), '), ', b('Discard Page'), ' (or ', b('Leave Unpublished'), '), or ', b('Stay in the Editor'), '.')),
       li(p(b('Closing the tab or the browser'), ' makes the browser ask whether you really want to leave.')),
     ),
     panel('info', p(b('Changes kept for later.'), ' Where several people can edit a page at once, changes you have not published yet are kept in a shared draft when you leave, and are waiting for you the next time you edit. See ', pageLink('Editing at the same time'), '.')),
@@ -694,7 +707,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Type in ', b('Filter pages'), ', just above the tree, and the tree shows only the pages whose titles match, with the pages above them (faded) so you can see where they sit.'),
     ...(await picture(tree, 'tree-tools', 'The Filter pages box and the reorder pencil above the tree', 'Filter pages, and the pencil that starts reordering.')),
     ul(
-      li(p(b('Enter'), ' opens the first match, and ', b('Esc'), ' clears the filter.')),
+      li(p(b('Enter'), ' opens the first match, and ', b('Esc'), ' clears the filter. So does the ', b('×'), ' at the end of the box, which appears once you have typed something.')),
       li(p('The button beside the box also shows the pages under each match. It starts on; choose it to see only the matches themselves.')),
       li(p('The filter stays while you move from page to page, so the next result is one click away.')),
     ),
@@ -718,11 +731,11 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'Numbers or bullets beside each page'),
     p('A space whose pages are read in order, such as a manual or a course, is easier to follow when its tree is numbered: 1, 1.1, 1.2, 2, like the contents of a book. The tree of these docs is numbered that way. A space can have numbers, bullets, or neither.'),
-    step(1, 'Open Space settings'),
-    p('Choose ', b('Space settings'), ' at the bottom of the space’s sidebar, and scroll to ', b('Page tree'), ' on the ', b('Details'), ' tab.'),
+    step(1, 'Open Space Settings'),
+    p('Choose ', b('Space Settings'), ' at the bottom of the space’s sidebar, and scroll to ', b('Page Tree'), ' on the ', b('Details'), ' tab.'),
     step(2, 'Choose a style'),
     p('Each choice shows a small preview, and is saved as soon as you choose it.'),
-    ...(await picture(tree, 'tree-style', 'The three page tree styles in Space settings', 'Plain, Numbered or Bulleted.')),
+    ...(await picture(tree, 'tree-style', 'The three page tree styles in Space Settings', 'Plain, Numbered or Bulleted.')),
     ul(
       li(p(b('Plain:'), ' titles only. Every space starts this way.')),
       li(p(b('Numbered:'), ' outline numbers, such as 1, 1.1, 1.2 and 2.')),
@@ -778,27 +791,27 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     h(2, 'On the bar'),
     ul(
       li(p(b('Edit'), ' opens the page in the editor. See ', pageLink('Drafts, Publish and Update'), '.')),
-      li(p(b('Full width'), ' (or ', b('Normal width'), ') widens the page to fill the window, for wide tables and diagrams. It changes the page for everyone who reads it. Phones do not show it, since a phone’s screen is already filled.')),
-      li(p(b('+ New,'), ' on a phone, starts a new page under this one. On a computer, use ', b('+ New page'), ' in the sidebar.')),
+      li(p(b('Full Width'), ' (or ', b('Normal Width'), ') widens the page to fill the window, for wide tables and diagrams. It changes the page for everyone who reads it. Phones do not show it, since a phone’s screen is already filled.')),
+      li(p(b('+ New,'), ' on a phone, starts a new page under this one. On a computer, use ', b('+ New Page'), ' in the sidebar.')),
     ),
 
     h(2, 'In the ⋮ menu'),
     ul(
-      li(p(b('Export as Markdown, HTML or PDF'), ' downloads the page as a file. Only the formats the space allows are offered. See ', pageLink('Exporting a page'), '.')),
-      li(p(b('Watch this page'), ' tells you when it changes or gets a comment. See ', pageLink('Watching'), '.')),
-      li(p(b('Save as template'), ' lets new pages start from this one. See ', pageLink('Templates'), '.')),
+      li(p(b('Export as Markdown'), ', ', b('Export as HTML'), ' and ', b('Export as PDF'), ', each with a download arrow, download the page as a file. Only the formats the space allows are offered. See ', pageLink('Exporting a page'), '.')),
+      li(p(b('Watch This Page'), ' tells you when it changes or gets a comment. See ', pageLink('Watching'), '.')),
+      li(p(b('Save as Template'), ' lets new pages start from this one. See ', pageLink('Templates'), '.')),
       li(p(b('Move…'), ' and ', b('Copy…'), ' put the page, or a copy of it, somewhere else. See ', pageLink('Moving and copying pages'), '.')),
       li(p(b('Delete'), ' moves the page and its sub-pages to the space’s trash. See ', pageLink('Trash'), '.')),
     ),
 
     h(2, 'Around the title'),
     ul(
-      li(p(b('Add emoji'), ', which appears above the title as you point at it, gives the page an emoji. See ', pageLink('Page emoji'), '.')),
-      li(p(b('+ Add label'), ', under the title, tags the page. See ', pageLink('Labels'), '.')),
+      li(p(b('Add Emoji'), ', which appears above the title as you point at it, gives the page an emoji. See ', pageLink('Page emoji'), '.')),
+      li(p(b('+ Add Label'), ', under the title, tags the page. See ', pageLink('Labels'), '.')),
     ),
 
     h(2, 'Below the page'),
-    p('Four tabs under every page:'),
+    p('Four tabs under every page. In a narrow window, the ones that do not fit go into a ', b('•••'), ' button at the end of the row, rather than the row scrolling sideways.'),
     ul(
       li(p(b('Comments:'), ' the discussion about the page. See ', pageLink('Comments'), '.')),
       li(p(b('Attachments:'), ' its files. See ', pageLink('Attachments'), '.')),
@@ -822,10 +835,10 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'Adding an emoji'),
     step(1, 'Point at the title'),
-    p(b('Add emoji'), ' appears just above the title while the pointer is over it. On a phone or tablet it is always shown.'),
-    ...(await picture(emoji, 'emoji-add', 'Add emoji above a page’s title', 'Add emoji appears above the title.')),
+    p(b('Add Emoji'), ' appears just above the title while the pointer is over it. On a phone or tablet it is always shown.'),
+    ...(await picture(emoji, 'emoji-add', 'Add Emoji above a page’s title', 'Add Emoji appears above the title.')),
     step(2, 'Choose an emoji'),
-    p('Choose ', b('Add emoji'), ' and a picker opens.'),
+    p('Choose ', b('Add Emoji'), ' and a picker opens.'),
     ...(await picture(emoji, 'emoji-picker', 'The emoji picker', 'Search at the top, the emoji below, and a box for any other.')),
     ul(
       li(p(b('Search'), ' by name, such as ', i('rocket'), ' or ', i('book'), '.')),
@@ -835,7 +848,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('The emoji is saved as soon as you choose it. It is not part of the page’s content, so it adds no version to the history and nobody is notified.'),
 
     h(2, 'Changing or removing it'),
-    p('Choose the emoji itself, above the title, to open the picker again. Choose another to replace it, or ', b('Remove the emoji'), ' at the bottom of the picker to take it away.'),
+    p('Choose the emoji itself, above the title, to open the picker again. Choose another to replace it, or ', b('Remove the Emoji'), ' at the bottom of the picker to take it away.'),
 
     h(2, 'Numbers and bullets'),
     p('The ', b('Numbers'), ' group (1️⃣ 2️⃣ 3️⃣ and so on) and the ', b('Bullets'), ' group (• ◦ ▪ ➤ ★ ✔ and others) are for pages that are read in order, or that are listed rather than illustrated, where a picture would only get in the way.'),
@@ -882,7 +895,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('It is below the page, beside Comments.'),
     step(2, 'Choose Upload file'),
     p('Pick the file. It can be of any type, up to 25 MB, one file at a time.'),
-    ...(await picture(attachments, 'attachments-upload', 'The Attachments tab with the Upload file button', 'Upload file, on the Attachments tab.')),
+    ...(await picture(attachments, 'attachments-upload', 'The Attachments tab with the Upload File button', 'Upload File, on the Attachments tab.')),
     p('To show a file inside the page, rather than only in the list, use the ', pageLink('File or video'), ' element.'),
 
     h(2, 'Opening and deleting files'),
@@ -958,11 +971,11 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Deleting a page does not destroy it straight away. It goes to the space’s ', b('trash'), ', with every page under it, and waits there until someone restores it or deletes it for good. So a page deleted by mistake can be brought back, history and all.'),
 
     h(2, 'Deleting a page'),
-    p('On the page, open the ', b('⋮'), ' menu and choose ', b('Delete'), ', then ', b('Move to the trash'), '. Its sub-pages go with it. See ', pageLink('Page actions'), ' for who may delete pages.'),
+    p('On the page, open the ', b('⋮'), ' menu and choose ', b('Delete'), ', then ', b('Move to the Trash'), '. Its sub-pages go with it. See ', pageLink('Page actions'), ' for who may delete pages.'),
 
     h(2, 'Finding the trash'),
-    p('Choose ', b('Space settings'), ' at the bottom of the space’s sidebar, then the ', b('Trash'), ' tab.'),
-    ...(await picture(trash, 'trash-tab', 'The Trash tab in Space settings', 'The trash is a tab of Space settings.')),
+    p('Choose ', b('Space Settings'), ' at the bottom of the space’s sidebar, then the ', b('Trash'), ' tab.'),
+    ...(await picture(trash, 'trash-tab', 'The Trash tab in Space Settings', 'The trash is a tab of Space Settings.')),
     p('It lists the pages that were deleted, newest first, with when. A page deleted with its sub-pages is listed once, and stands for all of them. You only see pages you would be able to see if they had not been deleted.'),
 
     h(2, 'Restoring a page'),
@@ -970,7 +983,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'Deleting a page for good'),
     panel('error', p(b('This cannot be undone.'), ' The page and its sub-pages are destroyed, with every version, comment and attachment. Only a backup taken beforehand still holds them.')),
-    p(b('Delete permanently'), ' asks first, and then, if you have not entered your password in the last few minutes, asks for it again. It needs administrator access to the space, and the same right from your role as deleting the page did.'),
+    p(b('Delete Permanently'), ' asks first, and then, if you have not entered your password in the last few minutes, asks for it again. It needs administrator access to the space, and the same right from your role as deleting the page did.'),
     p('Nothing leaves the trash on its own: pages stay there until someone restores them or deletes them permanently. Deleting the whole space empties its trash too; see ', pageLink('Archiving and deleting a space'), '.'),
   ))
 }

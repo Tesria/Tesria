@@ -11,7 +11,10 @@
 // the server CommentEndpoints, NotificationService, NotificationEmailService,
 // WatchEndpoints, SearchEndpoints, ExportEndpoints, SiteExportEndpoints,
 // SiteChrome (the exported site's filter), PackImportEndpoints and
-// AdminEndpoints (publishing).
+// AdminEndpoints (publishing). Labels re-checked for 0.8.1's Title Case, and
+// its changes (Sign Out on the profile, the bell and search moving into ☰,
+// the export items' download icon, Watch This Space in the phone's ⋮ menu,
+// tab bars with •••), on 2026-09-28.
 //
 // Pictures are close-ups taken in a narrow window, desktop only (the phone
 // has its own chapter, manual-mobile.mjs). Only Tesria Demo and the example
@@ -149,10 +152,12 @@ export const shots = ({ demo }) => [
     name: 'bell', url: demo('Launch plan'), viewport: NARROW, phone: false, settle: 800,
     // The security alerts an administrator also gets are left out: the
     // picture is of what anyone's bell looks like.
-    steps: [{ wait: 2500 }, { click: '.notif__bell' }, { wait: 800 },
+    // button.notif__bell: the top bar's invisible measuring copy has a
+    // span with the same class, first in the page.
+    steps: [{ wait: 2500 }, { click: 'button.notif__bell' }, { wait: 800 },
       { eval: "document.querySelectorAll('.notif__dropdown .notif__item').forEach((e) => { if (e.textContent.startsWith('Security')) e.closest('li').remove() })" }],
-    clipTo: ['.notif__bell', '.notif__dropdown'], clipPad: 8,
-    annotate: [{ type: 'box', target: '.notif__bell', pad: 3 }],
+    clipTo: ['button.notif__bell', '.notif__dropdown'], clipPad: 8,
+    annotate: [{ type: 'box', target: 'button.notif__bell', pad: 3 }],
   },
   {
     name: 'watch-menu', url: demo('Launch plan'), viewport: NARROW, phone: false,
@@ -177,7 +182,7 @@ export const shots = ({ demo }) => [
   // ---- Exporting and publishing.
   {
     name: 'export-menu', url: demo('Launch plan'), viewport: NARROW, phone: false,
-    steps: [{ wait: 2500 }, { click: 'button[title="More actions"]' }, { wait: 400 }, { eval: tag('.overflow-menu__dropdown a', '↓ Export', 'export') }],
+    steps: [{ wait: 2500 }, { click: 'button[title="More actions"]' }, { wait: 400 }, { eval: tag('.overflow-menu__dropdown a', 'Export', 'export') }],
     clipTo: ['.page-actionbar', '.overflow-menu__dropdown'], clipPad: 8,
     annotate: [
       { type: 'box', target: '[data-shot="export"]', nth: 0, pad: 3 },
@@ -196,7 +201,7 @@ export const shots = ({ demo }) => [
   },
   {
     name: 'pack-import-button', url: '/spaces', viewport: NARROW, phone: false, settle: 800,
-    steps: [{ wait: 2000 }, { eval: tag('.row-between .row-gap .btn', 'Import a pack', 'import') }],
+    steps: [{ wait: 2000 }, { eval: tag('.row-between .row-gap .btn', 'Import a Pack', 'import') }],
     clipTo: ['.topbar', '.row-between'], clipPad: 0,
     annotate: [{ type: 'box', target: '[data-shot="import"]', pad: 5 }],
   },
@@ -222,8 +227,9 @@ export const shots = ({ demo }) => [
     // Where your profile is: the top bar, with your picture and name boxed.
     name: 'profile-link', url: '/spaces', viewport: { width: 1024, height: 640 }, phone: false, settle: 1000,
     steps: [{ wait: 2500 }],
-    clipTo: '.topbar__right', clipPad: 10,
-    annotate: [{ type: 'box', target: '.topbar__me', pad: 4 }],
+    // The real bar and link, not the top bar's invisible measuring copy.
+    clipTo: 'header.topbar > .topbar__right', clipPad: 10,
+    annotate: [{ type: 'box', target: 'a.topbar__me', pad: 4 }],
   },
   {
     // The list under the form, with a token in it (made by prepare, revoked
@@ -320,7 +326,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'Commenting on a page'),
     step(1, 'Open the Comments tab'),
-    p('Below every page there is a row of tabs: ', b('Comments'), ', ', b('Attachments'), ', ', b('History'), ' and ', b('Restrictions'), '. Comments is open when the page loads; scroll down past the end of the page to reach it.'),
+    p('Below every page there is a row of tabs: ', b('Comments'), ', ', b('Attachments'), ', ', b('History'), ' and ', b('Restrictions'), ' (in a narrow window, the last of them may be in a ', b('•••'), ' button at the end of the row). Comments is open when the page loads; scroll down past the end of the page to reach it.'),
     step(2, 'Write and post'),
     p('Type in ', b('Add a comment…'), ' and choose ', b('Post'), '. Your comment appears at once, with your name and the time.'),
     step(3, 'Reply to keep the conversation together'),
@@ -348,8 +354,8 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'Resolving a discussion'),
     p('When a question has been answered or a change has been made, choose ', b('Resolve'), ' under the thread’s first comment. The whole thread, replies and all, folds away, and the highlight of an inline comment disappears from the page. Nothing is deleted.'),
-    p('Resolved threads are counted under the open ones, as ', b('Show resolved'), ' with their number. Choose it to see them again: each is marked ', b('resolved'), ' and says who resolved it and when. ', b('Reopen'), ' puts a thread back with the open ones, highlight included.'),
-    ...(await picture(comments, 'comments', 'A page’s comments, with a resolved thread shown', 'Resolve on an open thread, Show resolved (here, Hide resolved) below the open ones, and Reopen on a resolved thread.')),
+    p('Resolved threads are counted under the open ones, as ', b('Show Resolved'), ' with their number. Choose it to see them again: each is marked ', b('resolved'), ' and says who resolved it and when. ', b('Reopen'), ' puts a thread back with the open ones, highlight included.'),
+    ...(await picture(comments, 'comments', 'A page’s comments, with a resolved thread shown', 'Resolve on an open thread, Show Resolved (here, Hide Resolved) below the open ones, and Reopen on a resolved thread.')),
     p('A thread can be resolved or reopened by whoever wrote its first comment, and by anyone who can edit the page.'),
 
     h(2, 'Changing and deleting your comments'),
@@ -377,12 +383,12 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Nothing is sent to you until you ask for it, apart from mentions: you choose what to hear about by watching pages and spaces. See ', pageLink('Watching'), '.'),
 
     h(2, 'The bell'),
-    p('The bell is at the top right, beside your avatar. A red number on it counts what you have not read yet (it stops at 99+). It checks for new notifications every half minute, so there is nothing to refresh.'),
+    p('The bell is at the top right, beside your avatar. (When the window is too narrow for the whole top bar, the bell may have moved into the ☰ menu at its left.) A red number on it counts what you have not read yet (it stops at 99+). It checks for new notifications every half minute, so there is nothing to refresh.'),
     p('Click the bell to see your latest 50 notifications, newest first, with the unread ones highlighted. Each says who did what, on which page:'),
     ...(await picture(notify, 'bell', 'The bell, open', 'The bell and its list. Click a notification to open the page.')),
     ul(
       li(p(b('Click a notification'), ' to open the page it is about. That also marks it read.')),
-      li(p(b('Mark all read'), ' clears the count without opening anything.')),
+      li(p(b('Mark All Read'), ' clears the count without opening anything.')),
       li(p(i('You’re all caught up.'), ' means there is nothing in the list.')),
     ),
 
@@ -418,12 +424,12 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Nothing is watched until you ask, not even pages you create yourself.'),
 
     h(2, 'Watching a page'),
-    p('Open the page, then its ', b('⋮'), ' menu at the top right, and choose ', b('Watch this page'), '.'),
-    ...(await picture(watching, 'watch-menu', 'The page menu with Watch this page', 'Watch this page is in the page’s ⋮ menu.')),
+    p('Open the page, then its ', b('⋮'), ' menu at the top right, and choose ', b('Watch This Page'), '.'),
+    ...(await picture(watching, 'watch-menu', 'The page menu with Watch This Page', 'Watch This Page is in the page’s ⋮ menu.')),
     p('From then on the menu shows ', b('Watching'), ' instead. Choose it to stop.'),
 
     h(2, 'Watching a space'),
-    p('Open the space’s home page (choose the space’s name, or pick it on the Spaces page) and choose ', b('Watch this space'), ' at the top right. You then hear about every page in the space: new pages, updates and comments. The button changes to ', b('Watching'), '; choose it again to stop. See ', pageLink('The space home and watching'), '.'),
+    p('Open the space’s home page (choose the space’s name, or pick it on the Spaces page) and choose ', b('Watch This Space'), ' at the top right, beside the space’s name. On a phone it is in the ', b('⋮'), ' menu at the top right of the space’s home instead. You then hear about every page in the space: new pages, updates and comments. The button changes to ', b('Watching'), '; choose it again to stop. See ', pageLink('The space home and watching'), '.'),
 
     h(2, 'Which to choose'),
     ul(
@@ -439,7 +445,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ul(
       li(p(b('Added text is highlighted,'), ' and removed text stays visible, struck through.')),
       li(p(b('Hovering over a change'), ' says who made it, how (the API, MCP, or another session), and how long ago.')),
-      li(p(b('A bar above the page'), ' counts the changes, with ', b('Accept all'), ' and ', b('Reject all'), '. Changes are accepted or rejected together, not one by one.')),
+      li(p(b('A bar above the page'), ' counts the changes, with ', b('Accept All'), ' and ', b('Reject All'), '. Changes are accepted or rejected together, not one by one.')),
       li(p(b('Update accepts anything still waiting,'), ' so publishing never throws a change away without you choosing to.')),
     ),
     p('Changes are compared paragraph by paragraph, so an edited paragraph shows as the old one struck through with the new one after it. If nobody has the page open, the change is simply there the next time someone opens it.'),
@@ -461,7 +467,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Search looks through the title and text of every page you can read, in every space, and lists the best matches first. It is the quickest way to a page when you remember something it says but not where it lives.'),
 
     h(2, 'Searching'),
-    p('Type into ', b('Search pages…'), ' in the top bar and press ', b('Enter'), '. On a phone the search box is in the ☰ menu.'),
+    p('Type into ', b('Search pages…'), ' in the top bar and press ', b('Enter'), '. In a narrow window, and on a phone, the search box is in the ☰ menu at the left of the top bar.'),
     p('Each result shows the page’s title, the key of the space it is in, and the passage that matched, with your words highlighted. Choose a title to open the page.'),
     ...(await picture(search, 'search', 'Search results for launch', 'Results for “launch”: the title, the space, and the matching passage.')),
 
@@ -538,7 +544,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('The options are not in the menu:'), ' your role does not allow exporting, or the space has turned that format off. See ', pageLink('Turning exports off'), '.')),
       li(p(b('HTML or PDF says there is no export renderer:'), ' those two are made by a separate part of Tesria, which is not running on your Tesria just now. Export as Markdown instead, and tell your administrator.')),
     ),
-    p('People reading a public page without signing in have the same exports as buttons at the top of the page, ', b('↓ Markdown'), ', ', b('↓ HTML'), ' and ', b('↓ PDF'), ', where the space and your Tesria allow it.'),
+    p('People reading a public page without signing in have the same exports as buttons at the top of the page, ', b('Markdown'), ', ', b('HTML'), ' and ', b('PDF'), ', each with a download arrow, where the space and your Tesria allow it.'),
   ))
 
   await page('A space as a website', exporting, doc(
@@ -546,20 +552,20 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Tesria’s docs at tesria.com/docs, which you may be reading now, are one, exported from Tesria’s own wiki.'),
 
     step(1, 'Open the space’s settings'),
-    p('In the space, choose ', b('Space settings'), ' at the bottom of the sidebar. The ', b('Details'), ' tab opens; scroll down to ', b('Export as a site'), '.'),
-    ...(await picture(site, 'site-export', 'Export as a site in the space’s settings', 'Choose who the site is for, then Export as a site.')),
+    p('In the space, choose ', b('Space Settings'), ' at the bottom of the sidebar. The ', b('Details'), ' tab opens; scroll down to ', b('Export as a Site'), '.'),
+    ...(await picture(site, 'site-export', 'Export as a Site in the space’s settings', 'Choose who the site is for, then Export as a Site.')),
     step(2, 'Choose who it is for'),
     ul(
-      li(p(b('As the public sees it:'), ' only what someone with no account can already read. The space has to be published for public reading first (see ', pageLink('Public reading'), '). Nothing private can get in, whatever you yourself can see. Choose this for anything going on the internet.')),
-      li(p(b('As me:'), ' everything you can read, restricted pages included. Choose this for a copy you keep yourself, or a site behind your own sign-in. Treat it as private.')),
+      li(p(b('As the Public Sees It:'), ' only what someone with no account can already read. The space has to be published for public reading first (see ', pageLink('Public reading'), '). Nothing private can get in, whatever you yourself can see. Choose this for anything going on the internet.')),
+      li(p(b('As Me:'), ' everything you can read, restricted pages included. Choose this for a copy you keep yourself, or a site behind your own sign-in. Treat it as private.')),
     ),
-    step(3, 'Choose Export as a site'),
+    step(3, 'Choose Export as a Site'),
     p('Each page takes about a second to build, so a large space takes a minute or two. A bar under the button shows how far along it is: the pages done out of the total, the page being built, and the time so far. Then the site downloads as a zip named after the space’s key, such as ', c('team-site.zip'), '.'),
     p(b('Cancel'), ', beside the bar, stops the export; so does leaving the page before it finishes.'),
 
     h(2, 'What the site looks like'),
     ul(
-      li(p(b('Like the space in Tesria,'), ' with the same page tree in a sidebar, the same look, and a menu to switch between light and dark and pick an accent color. If the space numbers its pages (', b('Space settings, Page tree'), '), the site’s tree is numbered the same way.')),
+      li(p(b('Like the space in Tesria,'), ' with the same page tree in a sidebar, the same look, and a menu to switch between light and dark and pick an accent color. If the space numbers its pages (', b('Space Settings, Page Tree'), '), the site’s tree is numbered the same way.')),
       li(p(b('Each page is a folder'), ' named after its title, with an ', c('index.html'), ' inside, so addresses read like ', c('getting-started/quick-start/'), '.')),
       li(p(b('Pictures and attached files are copied in,'), ' and links between pages point at each other’s files. A link to a page that was left out, such as a restricted one, is grayed out, and hovering over it says the page is not part of the export.')),
       li(p(b('Expand blocks open and close'), ', and code blocks keep their ', b('Copy'), ' button. Live content is frozen as it was when you exported.')),
@@ -594,7 +600,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('The free plan allows files up to 25 MB and 20,000 files per site, which covers most spaces. A large video attached to a page is the thing most likely to go over.'),
     h(2, 'GitHub Pages, Netlify and others'),
     p('Anything that serves a folder of files works. Put the unzipped folder where the host expects it; there is no build step.'),
-    panel('warning', p(b('Exported “As me”?'), ' Then the site can hold restricted pages. Do not put it on a public host. Export ', b('As the public sees it'), ' for anything the world will read.')),
+    panel('warning', p(b('Exported “As Me”?'), ' Then the site can hold restricted pages. Do not put it on a public host. Export ', b('As the Public Sees It'), ' for anything the world will read.')),
   ))
 
   await page('Wiki packs', exporting, doc(
@@ -603,7 +609,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     panel('success', p(b('A pack can live in Git.'), ' The files inside are readable text, and the same space always packs to exactly the same file, so committing a pack after each change shows what actually changed.')),
 
     h(2, 'Exporting a pack'),
-    p('In the space, choose ', b('Space settings'), ', scroll down the ', b('Details'), ' tab to ', b('Export as a pack'), ', and choose the button of the same name. A bar shows how far along it is, with a ', b('Cancel'), ' button, and then it downloads as a zip named after the space’s key, such as ', c('team-pack.zip'), '.'),
+    p('In the space, choose ', b('Space Settings'), ', scroll down the ', b('Details'), ' tab to ', b('Export as a Pack'), ', and choose the button of the same name. A bar shows how far along it is, with a ', b('Cancel'), ' button, and then it downloads as a zip named after the space’s key, such as ', c('team-pack.zip'), '.'),
     p(b('What goes in:')),
     ul(
       li(p('Every page you can read, with every version of it, its comments, labels and attachments.')),
@@ -620,9 +626,9 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     panel('warning', p(b('Treat the file as you would the space.'), ' It holds everything you can read, restricted pages included.')),
 
     h(2, 'Importing a pack'),
-    step(1, 'Choose Import a pack'),
-    p('On the ', b('Spaces'), ' page, choose ', b('Import a pack'), ', beside ', b('New space'), '.'),
-    ...(await picture(packs, 'pack-import-button', 'The Spaces page with Import a pack', 'Import a pack is at the top right of the Spaces page.')),
+    step(1, 'Choose Import a Pack'),
+    p('On the ', b('Spaces'), ' page, choose ', b('Import a Pack'), ', beside ', b('New Space'), '.'),
+    ...(await picture(packs, 'pack-import-button', 'The Spaces page with Import a Pack', 'Import a Pack is at the top right of the Spaces page.')),
     step(2, 'Choose the file and a key'),
     p('Choose the pack file, and give the new space a ', b('Key'), ' that no other space uses, such as HANDBOOK. The ', b('Name'), ' is optional; leave it empty to keep the one in the pack. Then choose ', b('Import'), '.'),
     step(3, 'Read what came in'),
@@ -632,7 +638,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('Restrictions did not come across.'), ' If the original had any, Tesria says how many, so you can set page restrictions again from each page’s ', b('Restrictions'), ' tab.')),
     ),
     step(4, 'Choose who should have access'),
-    p('An imported space starts private: only you can see it. Right below the result, ', b('Who should have access?'), ' lets you add people and groups straight away. The ', b('Users'), ' group is everyone with an account, which is the choice for a space the whole team shares. You can change this later in ', b('Space settings, Permissions'), '. Then choose ', b('Open'), ' and the space’s name to go to it.'),
+    p('An imported space starts private: only you can see it. Right below the result, ', b('Who should have access?'), ' lets you add people and groups straight away. The ', b('Users'), ' group is everyone with an account, which is the choice for a space the whole team shares. You can change this later in ', b('Space Settings, Permissions'), '. Then choose ', b('Open'), ' and the space’s name to go to it.'),
 
     h(2, 'Good to know'),
     ul(
@@ -659,7 +665,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('Export buttons'), ' for PDF, HTML and Markdown, where the space allows them.')),
       li(p(b('Search,'), ' over the public spaces only.')),
       li(p(b('Comments, only if you allow them:'), ' tick ', b('comments'), ' beside the space in ', ...adminAt('Spaces'), '. Readers can then read the comments but not add any.')),
-      li(p(b('A Sign in button,'), ' for people who do have an account.')),
+      li(p(b('A Sign In button,'), ' for people who do have an account.')),
     ),
     p('Restricted pages, drafts, the trash and page history are never public. Search engines find the public pages through the sitemap Tesria keeps for them.'),
 
@@ -674,7 +680,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   await page('Turning exports off', exporting, doc(
     p('Some spaces are more sensitive than the rest, such as salaries or a confidential project. For those, you can turn off any of the ways to download them, so the pages stay in Tesria.'),
     h(2, 'Turning a format off'),
-    p('In the space, choose ', b('Space settings'), ' and scroll the ', b('Details'), ' tab to ', b('Exports'), '. Untick the formats this space should not allow, and choose ', b('Save'), ':'),
+    p('In the space, choose ', b('Space Settings'), ' and scroll the ', b('Details'), ' tab to ', b('Exports'), '. Untick the formats this space should not allow, and choose ', b('Save'), ':'),
     ul(
       li(p(b('Markdown, HTML, PDF:'), ' a page as a file.')),
       li(p(b('Website:'), ' the whole space as a static site.')),
@@ -688,7 +694,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
   // ========================================================== Your profile
   await page('Your profile', manual, doc(
-    p('Your profile is everything about your own account, on one page: how you appear to others, how you sign in, and what Tesria sends you. To open it, choose your avatar at the top right (your picture, or your initials in a colored circle).'),
+    p('Your profile is everything about your own account, on one page: how you appear to others, how you sign in, and what Tesria sends you. To open it, choose your avatar at the top right (your picture, or your initials in a colored circle). ', b('Sign Out'), ' is at the top right of your profile, opposite its heading.'),
     p('The page is a column of cards, one for each setting, in this order:'),
     ul(
       li(p(b('Avatar:'), ' your picture, or the color of your initials.')),
@@ -713,11 +719,11 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     h(2, 'Avatar'),
     p('Until you upload a picture, your avatar is your initials on a colored circle. Pick any of the twelve colors under ', b('Generated avatar'), ' to change it.'),
     ...(await picture(avatar, 'profile-avatar', 'The Avatar card', 'Your initials on the color you pick, or a picture you upload.')),
-    p(b('Upload picture'), ' takes a PNG, JPEG or WebP image of up to 1 MB and crops it to a square from the middle, so a portrait keeps the face. Once you have a picture, ', b('Replace picture'), ' swaps it and ', b('Remove'), ' goes back to your initials.'),
+    p(b('Upload Picture'), ' takes a PNG, JPEG or WebP image of up to 1 MB and crops it to a square from the middle, so a portrait keeps the face. Once you have a picture, ', b('Replace Picture'), ' swaps it and ', b('Remove'), ' goes back to your initials.'),
     h(2, 'Display name'),
-    p('The name shown on your pages, comments and version history, and the one people find when they type @ to mention you. Change it and choose ', b('Save name'), '.'),
+    p('The name shown on your pages, comments and version history, and the one people find when they type @ to mention you. Change it and choose ', b('Save Name'), '.'),
     h(2, 'Email address'),
-    p('Type the new address, enter your current password to show it is you, and choose ', b('Change email'), '. You sign in with the new address from then on.'),
+    p('Type the new address, enter your current password to show it is you, and choose ', b('Change Email'), '. You sign in with the new address from then on.'),
     p('If your account signs in through single sign-on, the card says so: your organization’s sign-in service owns your email address, and it is changed there.'),
   ))
 
@@ -727,8 +733,8 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ...(await picture(sessions, 'sessions', 'The Sessions card', 'Each browser signed in to your account. The one you are using is marked this browser.')),
     p('Each row shows the network address it signed in from, the browser and system (such as ', i('Safari on iOS'), '), when it was last active, and when it signed in. The one you are using is marked ', b('this browser'), '.'),
     ul(
-      li(p(b('Sign out'), ' beside a session ends it. That browser is signed out the next time it does anything.')),
-      li(p(b('Sign out all other sessions'), ' ends every session but the one you are using.')),
+      li(p(b('Sign Out'), ' beside a session ends it. That browser is signed out the next time it does anything.')),
+      li(p(b('Sign Out All Other Sessions'), ' ends every session but the one you are using.')),
     ),
     h(2, 'When sessions end by themselves'),
     ul(
@@ -760,7 +766,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'Where to find them'),
     step(1, 'Open your profile'),
-    p('At the top right of every page, beside the bell and ', b('Sign out'), ', is your picture, or your initials in a colored circle if you have not added a picture. In a wide window your name is beside it. Choose it.'),
+    p('At the top right of every page, beside the bell, is your picture, or your initials in a colored circle if you have not added a picture. In a wide window your name is beside it. Choose it.'),
     ...(await picture(tokens, 'profile-link', 'The top bar, with the initials AR boxed', 'Your picture, here the initials of Alex Rivera, opens your profile.')),
     step(2, 'Scroll to API tokens'),
     p('Your profile is a column of cards. ', b('API tokens'), ' is near the bottom, below ', b('Sessions'), '. It has the form for a new token at the top and your tokens listed under it.'),
@@ -772,9 +778,9 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Tick ', b('Read-only'), ' for anything that only looks things up. A read-only token can read pages and search, and cannot change anything.'),
     step(3, 'Choose how long it lasts'),
     p('Under ', b('Expires'), ', choose 30 days, 90 days (the usual choice), a year, or ', b('Never'), '. A token that expires on its own is one fewer thing to remember to clean up, and one that leaked stops working without anyone noticing it had. Choose ', b('Never'), ' only for something long-lived that you look after, such as a kiosk screen.'),
-    step(4, 'Choose Create token, and copy it'),
+    step(4, 'Choose Create Token, and copy it'),
     p('The token is shown once, right there. It is never shown again, so copy it into the program that will use it before you choose ', b('Done'), '. The list below keeps only its first few characters, to tell tokens apart.'),
-    ...(await picture(tokens, 'api-tokens', 'Making an API token', 'A name, when it expires, Read-only if it only reads, then Create token.')),
+    ...(await picture(tokens, 'api-tokens', 'Making an API token', 'A name, when it expires, Read-only if it only reads, then Create Token.')),
 
     h(2, 'Revoking a token'),
     p('Revoke a token when whatever used it is retired, when you are not sure where it has been, or when you simply do not recognize it any more.'),
@@ -783,7 +789,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     step(2, 'Choose Revoke'),
     ...(await picture(tokens, 'api-tokens-list', 'A token in the list, with Revoke boxed', 'Revoke is at the end of the token’s row.')),
     step(3, 'Confirm'),
-    p('Tesria asks first. Choose ', b('Revoke the token'), '. Anything using it stops working at once, and a revoked token cannot be brought back: make a new one if you need it again.'),
+    p('Tesria asks first. Choose ', b('Revoke the Token'), '. Anything using it stops working at once, and a revoked token cannot be brought back: make a new one if you need it again.'),
 
     h(2, 'Good to know'),
     ul(
@@ -801,7 +807,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ol(
       li(p('In the ', b('Password'), ' card, enter your current password.')),
       li(p('Enter the new one twice. It must be at least 8 characters; a few unrelated words make a long password that is still easy to type.')),
-      li(p('Choose ', b('Change password'), '.')),
+      li(p('Choose ', b('Change Password'), '.')),
     ),
     p('Every other device signed in to your account is signed out, so anyone who knew the old password is locked out. The browser you are using stays signed in.'),
     p('If you have forgotten your password, see ', pageLink('Resetting a password'), '. Accounts that sign in through single sign-on have no Tesria password.'),

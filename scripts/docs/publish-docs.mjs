@@ -351,7 +351,9 @@ async function main() {
     // pages named a screen and assumed the reader knew where it was).
     // Spread into a paragraph: p('Grant it in ', ...adminAt('Roles'), '.').
     const strong = (t) => lib.text(t, lib.bold)
-    const adminAt = (tab) => [strong('Admin'), ', ', strong(tab), ' (', strong('Admin'), ' is in the top bar; in a narrower window it is under ', strong('More'), ', and on a phone in the ', strong('☰'), ' menu)']
+    // 0.8.1: the top bar has no More menu; what does not fit goes to ☰, and
+    // a tab that does not fit goes to the ••• at the end of the tabs.
+    const adminAt = (tab) => [strong('Admin'), ', ', strong(tab), ' (', strong('Admin'), ' is in the top bar; in a narrower window or on a phone it is in the ', strong('☰'), ' menu at the left of the top bar, and a tab that does not fit is under ', strong('•••'), ' at the end of the tabs)']
     const profileAt = (card) => ['your profile (your picture or initials at the top right of any page)',
       ...(card ? [' and scroll to its ', strong(card), ' card'] : [])]
 

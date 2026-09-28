@@ -159,9 +159,9 @@ export async function build({
     commands(['/text', 'Normal text'], ['/paragraph', 'Normal text']),
     p('You rarely need a command for it: pressing ', b('Enter'), ' at the end of a paragraph or a heading starts a new paragraph of normal text. The commands are for turning something back into it. Type ', c('/text'), ' after a space at the end of a heading, press ', b('Enter'), ', and the heading becomes an ordinary paragraph with the same words.'),
     ul(
-      li(p(b('The style menu.'), ' At the left of the toolbar, the menu that reads ', b('Normal text'), ' (', b('Aa Style'), ' on a phone). Choose ', b('Normal text'), '.')),
+      li(p(b('The style menu.'), ' At the left of the toolbar, the menu that reads ', b('Normal Text'), ' (', b('Aa Style'), ' on a phone). Choose ', b('Normal Text'), '.')),
       li(p(b('Keyboard:'), ' Ctrl+Alt+0', mac('⌘+Option+0'), '.')),
-      li(p(b('Clear formatting:'), ' Ctrl+\\', mac('⌘+\\'), ' removes all formatting from the selected text, and also turns a heading back into normal text and resets its alignment and indentation.')),
+      li(p(b('Clear Formatting:'), ' Ctrl+\\', mac('⌘+\\'), ' removes all formatting from the selected text, and also turns a heading back into normal text and resets its alignment and indentation.')),
     ),
     p('Normal text is not in the ', b('+'), ' menu: that menu is for inserting elements, and normal text is what is already there.'),
 
@@ -193,7 +193,7 @@ export async function build({
 
     h(2, 'Changing and removing it'),
     p('Normal text has nothing to remove: it is what is left when everything else is taken away. To turn a paragraph into something else, put the cursor in it and choose the other style, or type its command after a space at the end of the line: ', c('/h2'), ' makes it a heading, ', c('/quote'), ' a quotation, ', c('/ul'), ' a bullet list.'),
-    p(b('Clear formatting'), ' (Ctrl+\\) takes selected text back to plain: no bold, no color, no alignment and no indent.'),
+    p(b('Clear Formatting'), ' (Ctrl+\\) takes selected text back to plain: no bold, no color, no alignment and no indent.'),
 
     h(2, 'Good practice'),
     ul(
@@ -248,14 +248,14 @@ export async function build({
     h(2, 'Linking to a heading'),
     p('Every heading has an address of its own, made from its words: lowercase, with hyphens for the spaces. A heading called ', i('Before you start'), ' is at the page’s address followed by ', c('#before-you-start'), '. Tesria makes these for you and keeps them unique: a second heading with the same words gets ', c('-2'), ' on the end, a third ', c('-3'), ', and so on.'),
     ul(
-      li(p(b('On the same page:'), ' add a link (Ctrl+K) and choose the heading from ', b('Headings on this page'), ' in the dialog. For example, this link goes to ', text('Heading 3', link('#heading-3')), ' above.')),
+      li(p(b('On the same page:'), ' add a link (Ctrl+K) and choose the heading from ', b('Headings on This Page'), ' in the dialog. For example, this link goes to ', text('Heading 3', link('#heading-3')), ' above.')),
       li(p(b('On another page:'), ' copy that page’s address and add ', c('#'), ' and the heading’s address to the end. Whoever opens it lands on that section.')),
       li(p(b('All of them at once:'), ' a ', pageLink('Table of contents'), ' lists every heading on the page as a link, and keeps up as the page changes.')),
     ),
     panel('note', p(b('Rewording a heading changes its address.'), ' A link to the old words still opens the page, but at the top rather than at the section. If other pages link to a section, keep its heading as it is.')),
 
     h(2, 'Changing and removing a heading'),
-    p('To change a heading’s level, put the cursor in it and choose another level from the style menu, type another command such as ', c('/h3'), ' after a space at the end of it, or press that level’s shortcut. To make it ordinary text again, choose ', b('Normal text'), ', press Ctrl+Alt+0, or press its own level’s shortcut a second time. The words stay as they are.'),
+    p('To change a heading’s level, put the cursor in it and choose another level from the style menu, type another command such as ', c('/h3'), ' after a space at the end of it, or press that level’s shortcut. To make it ordinary text again, choose ', b('Normal Text'), ', press Ctrl+Alt+0, or press its own level’s shortcut a second time. The words stay as they are.'),
 
     h(2, 'Good practice'),
     ul(
@@ -374,7 +374,7 @@ export async function build({
     p('Type the command at the start of an empty line, press ', b('Enter'), ' and type the first point. Press ', b('Enter'), ' for each next point, and ', b('Enter'), ' on an empty point to finish the list.'),
     ul(
       li(p(b('Markdown:'), ' a hyphen, ', c('-'), ', or ', c('*'), ' or ', c('+'), ', followed by a space at the start of a line.')),
-      li(p(b('Toolbar:'), ' the ', b('Bullet list'), ' button (on a phone, in the ', b('Aa Style'), ' menu). With several paragraphs selected, it makes each one a point.')),
+      li(p(b('Toolbar:'), ' the ', b('Bullet List'), ' button (on a phone, in the ', b('Aa Style'), ' menu). With several paragraphs selected, it makes each one a point.')),
       li(p(b('Keyboard:'), ' Ctrl+Shift+8', mac('⌘+Shift+8'), '.')),
     ),
     p('Lists are not in the ', b('+'), ' menu, because they have their own buttons on the toolbar.'),
@@ -403,8 +403,8 @@ export async function build({
     h(2, 'Changing and removing a list'),
     ul(
       li(p(b('To end a list,'), ' press ', b('Enter'), ' on an empty point. You are back in normal text.')),
-      li(p(b('To turn it back into paragraphs,'), ' select the list and press the ', b('Bullet list'), ' button or Ctrl+Shift+8 again.')),
-      li(p(b('To number it instead,'), ' select it and press the ', b('Ordered list'), ' button.')),
+      li(p(b('To turn it back into paragraphs,'), ' select the list and press the ', b('Bullet List'), ' button or Ctrl+Shift+8 again.')),
+      li(p(b('To number it instead,'), ' select it and press the ', b('Ordered List'), ' button.')),
     ),
 
     h(2, 'Good practice'),
@@ -432,7 +432,7 @@ export async function build({
     p('Type the command at the start of an empty line, press ', b('Enter'), ' and type the first step. Press ', b('Enter'), ' for each next step, and ', b('Enter'), ' on an empty step to finish the list.'),
     ul(
       li(p(b('Markdown:'), ' ', c('1.'), ' and a space at the start of a line. Start with another number, such as ', c('4.'), ', and the list counts from there.')),
-      li(p(b('Toolbar:'), ' the ', b('Ordered list'), ' button (on a phone, in the ', b('Aa Style'), ' menu). With several paragraphs selected, it numbers each one.')),
+      li(p(b('Toolbar:'), ' the ', b('Ordered List'), ' button (on a phone, in the ', b('Aa Style'), ' menu). With several paragraphs selected, it numbers each one.')),
       li(p(b('Keyboard:'), ' Ctrl+Shift+7', mac('⌘+Shift+7'), '.')),
     ),
     p('Lists are not in the ', b('+'), ' menu, because they have their own buttons on the toolbar.'),
@@ -460,7 +460,7 @@ export async function build({
       li(p('Pack what you need:'), ul('Laptop and charger', 'ID badge', 'Parking permit')),
       li(p('Leave by 8:30 to beat the traffic on the bridge.')),
     ),
-    p('Things within a step whose order does not matter. Press ', b('Tab'), ' to move a point in, then press the ', b('Bullet list'), ' button, or Ctrl+Shift+8, to make that level bullets.'),
+    p('Things within a step whose order does not matter. Press ', b('Tab'), ' to move a point in, then press the ', b('Bullet List'), ' button, or Ctrl+Shift+8, to make that level bullets.'),
     h(3, 'A list that starts at another number'),
     ol(
       'Unpack the monitor and stand.',
@@ -478,7 +478,7 @@ export async function build({
     ul(
       li(p(b('The numbers look after themselves.'), ' Add, remove or move a step and the rest renumber.')),
       li(p(b('To end a list,'), ' press ', b('Enter'), ' on an empty step.')),
-      li(p(b('To turn it back into paragraphs,'), ' select the list and press the ', b('Ordered list'), ' button or Ctrl+Shift+7 again. The ', b('Bullet list'), ' button turns it into bullets.')),
+      li(p(b('To turn it back into paragraphs,'), ' select the list and press the ', b('Ordered List'), ' button or Ctrl+Shift+7 again. The ', b('Bullet List'), ' button turns it into bullets.')),
     ),
 
     h(2, 'Good practice'),
@@ -506,7 +506,7 @@ export async function build({
     p('Type the command at the start of an empty line, press ', b('Enter'), ' and type the first task. Press ', b('Enter'), ' for the next, and ', b('Enter'), ' on an empty task to finish the list.'),
     ul(
       li(p(b('Markdown:'), ' ', c('[]'), ' or ', c('[ ]'), ' followed by a space at the start of a line. ', c('[x]'), ' and a space makes a task that is already done.')),
-      li(p(b('Toolbar:'), ' the ', b('Task list'), ' button (on a phone, in the ', b('Aa Style'), ' menu).')),
+      li(p(b('Toolbar:'), ' the ', b('Task List'), ' button (on a phone, in the ', b('Aa Style'), ' menu).')),
       li(p(b('Keyboard:'), ' Ctrl+Shift+9', mac('⌘+Shift+9'), '.')),
     ),
     p('Lists are not in the ', b('+'), ' menu, because they have their own buttons on the toolbar.'),
@@ -549,7 +549,7 @@ export async function build({
     h(2, 'Changing and removing a task list'),
     ul(
       li(p(b('To end a list,'), ' press ', b('Enter'), ' on an empty task.')),
-      li(p(b('To turn tasks back into paragraphs,'), ' select them and press the ', b('Task list'), ' button or Ctrl+Shift+9 again.')),
+      li(p(b('To turn tasks back into paragraphs,'), ' select them and press the ', b('Task List'), ' button or Ctrl+Shift+9 again.')),
       li(p(b('To change a task’s owner,'), ' change the name in it: the first person named is always the owner. Take the name out and the task has no owner.')),
     ),
 
@@ -592,7 +592,7 @@ export async function build({
     p('Open the page you want, copy its address from the browser’s address bar, and paste it as the ', b('Address'), '. The link keeps working when the page is renamed, because a page’s address does not change with its title.'),
     h(3, 'A link to a section'),
     p('Jump to ', text('Changing and removing a link', link('#changing-and-removing-a-link')), ' further down, or to ', sectionLink('Headings', 'the-six-levels-and-when-to-use-each', 'the six levels of heading'), ' on another page.'),
-    p('In the dialog, ', b('Headings on this page'), ' lists every heading on the page; choose one and its address fills in. Readers who click it are scrolled straight there. For a section of another page, add ', c('#'), ' and the heading’s address to the end of that page’s address: ', pageLink('Headings'), ' explains how that address is made.'),
+    p('In the dialog, ', b('Headings on This Page'), ' lists every heading on the page; choose one and its address fills in. Readers who click it are scrolled straight there. For a section of another page, add ', c('#'), ' and the heading’s address to the end of that page’s address: ', pageLink('Headings'), ' explains how that address is made.'),
     h(3, 'An email address or a phone number'),
     p('Questions go to ', text('the help desk', link('mailto:help@example.com')), ', or call ', text('+1 555 0100', link('tel:+15550100')), '.'),
     p('Type ', c('mailto:'), ' and the email address as the ', b('Address'), ', such as ', c('mailto:help@example.com'), ': clicking it opens the reader’s email app with a new message. ', c('tel:'), ' and a number does the same for calls, which is handy for anyone reading on a phone.'),
@@ -604,7 +604,7 @@ export async function build({
     p('While you edit, clicking a link does not follow it. It puts the cursor there and shows a small bar under it (on a phone, tap the link):'),
     ul(
       li(p(b('The address'), ' opens the link in a new tab, so you can check where it goes.')),
-      li(p(b('Edit'), ' opens the dialog as ', b('Edit link'), ', to change the address, the words, or both, and ', b('Save'), '. It also has ', b('Remove link'), '.')),
+      li(p(b('Edit'), ' opens the dialog as ', b('Edit link'), ', to change the address, the words, or both, and ', b('Save'), '. It also has ', b('Remove Link'), '.')),
       li(p(b('Remove'), ' takes the link away and keeps the words.')),
     ),
     p('When a reader clicks a link, it opens in a new tab, so they keep their place on your page. A link to a heading on the same page scrolls there instead.'),
@@ -655,7 +655,7 @@ export async function build({
     p('Click anywhere inside a panel and a small menu appears above it:'),
     ul(
       li(p(b('The five colored buttons'), ' switch the panel to that kind. Whatever is inside stays as it is.')),
-      li(p(b('Remove panel'), ' takes the box away and keeps everything that was in it, as ordinary text.')),
+      li(p(b('Remove Panel'), ' takes the box away and keeps everything that was in it, as ordinary text.')),
     ),
     p('A panel can hold anything a page can: several paragraphs, lists, tables, pictures, even code. To add another paragraph inside it, press ', b('Enter'), ' at the end of the last line; press ', b('Enter'), ' twice on an empty line to step out below the panel.'),
 
@@ -716,7 +716,7 @@ export async function build({
     panel('info', p(b('Open while you edit, closed for readers.'), ' An expand is always open in the editor, so you can see and change what is in it, and always starts closed when the page is read. A reader opening one opens it only for themselves.')),
 
     h(2, 'Changing and removing an expand'),
-    p('While you edit, click the title to change it. Click inside the expand and a small bar appears above it with ', b('Remove expand'), ', which takes the expand away and keeps everything that was in it, as ordinary content.'),
+    p('While you edit, click the title to change it. Click inside the expand and a small bar appears above it with ', b('Remove Expand'), ', which takes the expand away and keeps everything that was in it, as ordinary content.'),
 
     h(2, 'Good practice'),
     ul(
@@ -761,7 +761,7 @@ export async function build({
     p('One decision to a block, so each can be read, quoted and found on its own. Keep them together under a heading such as ', i('Decisions'), ', with the action items that follow from them.'),
 
     h(2, 'Changing and removing a decision'),
-    p('Click inside a decision and a small bar appears above it with ', b('Remove decision'), ', which takes the check mark away and keeps the text. There is nothing else to set: a decision has no types or colors.'),
+    p('Click inside a decision and a small bar appears above it with ', b('Remove Decision'), ', which takes the check mark away and keeps the text. There is nothing else to set: a decision has no types or colors.'),
 
     h(2, 'Good practice'),
     ul(
@@ -824,13 +824,13 @@ export async function build({
     p('A wide middle with a narrow column each side: for a page that sits in a sequence, with what comes before and after on either side, or to set one important thing in the center.'),
 
     h(2, 'How wide it is'),
-    p('A layout can also be wider than the text around it. The bar above it offers ', b('Centered'), ', the width of the text, which is how every layout above is set; ', b('Wide'), ', a little wider; and ', b('Full width'), ', as wide as the page area allows. Here are the two wider ones:'),
+    p('A layout can also be wider than the text around it. The bar above it offers ', b('Centered'), ', the width of the text, which is how every layout above is set; ', b('Wide'), ', a little wider; and ', b('Full Width'), ', as wide as the page area allows. Here are the two wider ones:'),
     wideLayout('wide', [50, 50],
       [p(b('Wide.'), ' A little more room than the text, for columns that each hold a small table or a picture.')],
       [p('Use it when Centered feels cramped but the content is still meant to be read line by line.')],
     ),
     wideLayout('full', [33.33, 33.34, 33.33],
-      [p(b('Full width.'), ' As wide as the page area.')],
+      [p(b('Full Width.'), ' As wide as the page area.')],
       [p('For the one thing on a page that needs the room, such as a comparison with a lot in each column.')],
       [p('On a phone every width looks the same: the columns stack.')],
     ),
@@ -839,8 +839,8 @@ export async function build({
     p('Click in any column and a bar appears above the layout:'),
     ul(
       li(p(b('The five shape buttons'), ' (', b('Two columns'), ', ', b('Three columns'), ', ', b('Left sidebar'), ', ', b('Right sidebar'), ' and ', b('Three with sidebars'), ') change the shape. Content stays where it is; going from three columns to two moves what was in the third into the second.')),
-      li(p(b('Centered'), ', ', b('Wide'), ' and ', b('Full width'), ' set how wide it is.')),
-      li(p(b('Remove layout'), ' takes the columns away and keeps their contents, one after another, in column order.')),
+      li(p(b('Centered'), ', ', b('Wide'), ' and ', b('Full Width'), ' set how wide it is.')),
+      li(p(b('Remove Layout'), ' takes the columns away and keeps their contents, one after another, in column order.')),
     ),
     p('While you edit, each column has a dashed outline so you can see where it starts and ends; readers do not see it. If the cursor is in a panel, a table or another element inside a column, that element’s own menu shows instead: click in plain text in the column to get the layout bar back.'),
 
@@ -886,7 +886,7 @@ export async function build({
       ['October 5', 'Mei Chen', 'Sam Okafor'],
       ['October 12', 'Jordan Brooks', 'Mei Chen'],
     ]),
-    p('The first row names the columns, in bold on a shaded background. Almost every table wants one, and a new table starts with it on. Turn it off or on with ', b('Header row'), ' in Cell options.'),
+    p('The first row names the columns, in bold on a shaded background. Almost every table wants one, and a new table starts with it on. Turn it off or on with ', b('Header Row'), ' in Cell options.'),
     h(3, 'Header column'),
     tableOf(null,
       row(th('Owner'), td('Priya Natarajan')),
@@ -894,7 +894,7 @@ export async function build({
       row(th('Launch'), td('October 14')),
       row(th('Budget'), td('$40,000')),
     ),
-    p('The first column names the rows instead. Use it for a short list of facts, one to a row, like this one. ', b('Header column'), ' in Cell options turns it on and off.'),
+    p('The first column names the rows instead. Use it for a short list of facts, one to a row, like this one. ', b('Header Column'), ' in Cell options turns it on and off.'),
     h(3, 'Header row and header column together'),
     tableOf(null,
       row(th(''), th('Starter'), th('Team'), th('Company')),
@@ -910,7 +910,7 @@ export async function build({
       row(th('10:00'), td('Security basics (two hours)', { rowspan: 2 }), td('Design review')),
       row(th('11:00'), td('Hiring panel')),
     ),
-    p('One cell stretched across several columns or rows, for something that spans them: a talk in both rooms, a session that runs two hours. To merge, drag across the cells to select them, then choose ', b('Merge cells'), ' in Cell options. ', b('Split cell'), ' turns a merged cell back into separate ones. Merge sparingly: a table with many merged cells is hard for readers to follow.'),
+    p('One cell stretched across several columns or rows, for something that spans them: a talk in both rooms, a session that runs two hours. To merge, drag across the cells to select them, then choose ', b('Merge Cells'), ' in Cell options. ', b('Split Cell'), ' turns a merged cell back into separate ones. Merge sparingly: a table with many merged cells is hard for readers to follow.'),
     h(3, 'Colored cells'),
     tableOf(null,
       row(th('Room'), th('Monday'), th('Tuesday'), th('Wednesday')),
@@ -919,7 +919,7 @@ export async function build({
       row(th('Cedar'), td('Free', { bg: LIGHT.green }), td('Free', { bg: LIGHT.green }), td('Booked', { bg: LIGHT.red })),
     ),
     p('Green is free, yellow is on hold, red is booked.'),
-    p('A background color for a cell, a whole row or a whole column. In Cell options, under ', b('Background color'), ', choose ', b('Cell'), ', ', b('Row'), ' or ', b('Column'), ', then a color from the palette of light, medium and bold shades; ', b('No color'), ' takes it off. Use color to make a pattern jump out, as here, and always say in words what each color means, because not everyone can tell colors apart.'),
+    p('A background color for a cell, a whole row or a whole column. In Cell options, under ', b('Background color'), ', choose ', b('Cell'), ', ', b('Row'), ' or ', b('Column'), ', then a color from the palette of light, medium and bold shades; ', b('No Color'), ' takes it off. Use color to make a pattern jump out, as here, and always say in words what each color means, because not everyone can tell colors apart.'),
     h(3, 'Column widths'),
     table([
       ['Term', 'What it means'],
@@ -949,7 +949,7 @@ export async function build({
       li(p(b('+'), ' above the table and down its left side adds a column or a row at that point.')),
       li(p(b('×'), ' on the strip above each column, or beside each row, deletes that column or row.')),
       li(p(b('Column borders'), ' and ', b('the right edge'), ' drag to change widths, as above; ', b('⤢'), ' makes the table full width.')),
-      li(p(b('Cell options'), ', the arrow at the top right of the cell you are in, has ', b('Header row'), ', ', b('Header column'), ', ', b('Merge cells'), ', ', b('Split cell'), ', the background colors, and ', b('Delete table'), ', which removes the whole table.')),
+      li(p(b('Cell options'), ', the arrow at the top right of the cell you are in, has ', b('Header Row'), ', ', b('Header Column'), ', ', b('Merge Cells'), ', ', b('Split Cell'), ', the background colors, and ', b('Delete Table'), ', which removes the whole table.')),
     ),
     p('On a phone, readers see every column at a readable width, and the table scrolls sideways rather than squeezing its columns into a word a line.'),
 
@@ -976,16 +976,16 @@ export async function build({
 
     h(2, 'Insert it'),
     commands(['/code', 'A code block'], ['/snippet', 'A code block']),
-    p('Type the command at the start of an empty line, press ', b('Enter'), ', then type or paste the code. Or choose ', b('+'), ' on the toolbar, then ', b('Code block'), '. If you select text first and use the ', b('+'), ' menu, that text becomes the code.'),
+    p('Type the command at the start of an empty line, press ', b('Enter'), ', then type or paste the code. Or choose ', b('+'), ' on the toolbar, then ', b('Code Block'), '. If you select text first and use the ', b('+'), ' menu, that text becomes the code.'),
     ul(
       li(p(b('Markdown:'), ' three backticks, ', c('```'), ', at the start of a line, then ', b('Enter'), '. Add the language straight after them, such as ', c('```python'), ', and the block starts in that language.')),
       li(p(b('Keyboard:'), ' Ctrl+Alt+C', mac('⌘+Option+C'), '.')),
       li(p(b('Code inside a sentence,'), ' such as a file name, is ', b('inline code'), ' (Ctrl+E) instead: see ', pageLink('Text formatting'), '.')),
     ),
 
-    h(2, 'Flat or glass'),
-    p('A code block’s ', b('Style'), ', beside its language while you edit, decides how this one looks. ', b('Theme default'), ' follows each reader’s own style, Flat or Glass, from the appearance menu. ', b('Flat'), ' or ', b('Glass'), ' keeps it that way for everyone, whatever their style, and in PDF, HTML and website exports too. An export has no reader’s style, so a ', b('Theme default'), ' one comes out flat.'),
-    p('As glass, a code block is a console window: a lit frame with three dots and its language along the top.'),
+    h(2, 'Minimal or Glass'),
+    p('A code block’s ', b('Style'), ', in the bar at the top of the block while you edit, decides how this one looks. ', b('Theme default'), ' follows each reader’s own style, Minimal or Glass, from the appearance menu. ', b('Minimal'), ' or ', b('Glass'), ' keeps it that way for everyone, whatever their style, and in PDF, HTML and website exports too. An export has no reader’s style, so a ', b('Theme default'), ' one comes out as Minimal.'),
+    p('As Glass, a code block is a dark console: a title bar along its top shows the language and ', b('Copy'), ', and a drop shadow lifts it off the page.'),
 
     h(2, 'Languages, and when to use each'),
     p('Choose the language from the menu at the top left of the block. It colors the code the way that language is usually shown, and readers see its name as a label, so they know what they are looking at. The languages are Plain text, JavaScript, TypeScript, Python, C#, Bash / Shell, JSON, YAML, SQL, HTML, CSS, Go, Rust, Java, Dockerfile and Markdown. One more, Mermaid diagram, draws a diagram instead: see ', pageLink('Diagram (Mermaid)'), '.'),
@@ -1013,6 +1013,7 @@ export async function build({
     p('While you edit, the bar at the top of the block has:'),
     ul(
       li(p(b('The language menu'), ', at the left.')),
+      li(p(b('Style'), ': ', b('Theme default'), ', ', b('Minimal'), ' or ', b('Glass'), ', as described above.')),
       li(p(b('#'), ', which turns line numbers on and off.')),
       li(p(b('Copy'), ', which copies the code. Readers have this button too.')),
     ),
@@ -1199,13 +1200,13 @@ export async function build({
     p('The Mermaid in this version of Tesria also draws XY charts, Sankey diagrams, Kanban boards, block diagrams, packet diagrams, requirement diagrams and C4 architecture diagrams, among others. Mermaid’s own documentation, at ', text('mermaid.js.org', link('https://mermaid.js.org')), ', shows how to write every kind.'),
 
     h(2, 'Changing and removing a diagram'),
-    p('A diagram has a ', b('Style'), ' too, beside ', b('Source'), ' while you edit. ', b('Theme default'), ' follows each reader’s own style, Flat or Glass; ', b('Flat'), ' or ', b('Glass'), ' keeps it that way for everyone, and in exports. As glass, the diagram sits in a lit console window.'),
+    p('A diagram has a ', b('Style'), ' too, beside ', b('Source'), ' while you edit. ', b('Theme default'), ' follows each reader’s own style, Minimal or Glass; ', b('Minimal'), ' or ', b('Glass'), ' keeps it that way for everyone, and in exports, where ', b('Theme default'), ' comes out as Minimal. As Glass, the diagram sits on a frosted panel inside the same dark console as a code block.'),
     ul(
       li(p(b('Source'), ' and ', b('Diagram'), ', at the top right, switch between the text and the drawing. While you edit, change the text in Source, then choose Diagram to check the result. Readers can open Source too, to see how it is made.')),
       li(p(b('Copy'), ' copies the text.')),
       li(p(b('The language menu'), ', at the left while you edit: choose another language and the diagram becomes an ordinary code block showing its text.')),
     ),
-    p('A mistake in the text shows Mermaid’s own message where the drawing would be, usually naming the line that went wrong. Diagrams are drawn in light or dark colors to match the theme Tesria is in.'),
+    p('A mistake in the text shows Mermaid’s own message where the drawing would be, usually naming the line that went wrong. Diagrams are drawn in light or dark colors to match the theme Tesria is in, and redraw in the matching colors when a reader switches between light and dark.'),
 
     h(2, 'Good practice'),
     ul(

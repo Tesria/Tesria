@@ -44,8 +44,8 @@ const TAG_EMAIL = `(() => {
   if (!s) return
   s.querySelector('label.admin__toggle')?.setAttribute('data-shot', 'send-email')
   for (const b of s.querySelectorAll('button')) {
-    if (b.textContent.trim() === 'Save mail settings') b.setAttribute('data-shot', 'save-mail')
-    if (b.textContent.trim() === 'Send test email to me') b.setAttribute('data-shot', 'send-test')
+    if (b.textContent.trim() === 'Save Mail Settings') b.setAttribute('data-shot', 'save-mail')
+    if (b.textContent.trim() === 'Send Test Email to Me') b.setAttribute('data-shot', 'send-test')
   }
 })()`
 
@@ -63,7 +63,7 @@ const PICK_PROVIDER = (id) => `(() => {
 // them about 15 pixels high (2026-09-24).
 const ONLY_EMAIL = { css: '.profile__section:not(#email), .tabs, .admin h1 { display: none !important; }' }
 const EXAMPLE_REDIRECT = "document.querySelectorAll('#email .mail-signin__redirect code').forEach((c) => { c.textContent = 'https://wiki.example.com/api/email/oauth/callback' })"
-const TAG_SIGNIN = "[...document.querySelectorAll('#email .mail-signin button')].find((b) => b.textContent.trim().startsWith('Sign in with'))?.setAttribute('data-shot', 'signin')"
+const TAG_SIGNIN = "[...document.querySelectorAll('#email .mail-signin button')].find((b) => b.textContent.trim().startsWith('Sign In With'))?.setAttribute('data-shot', 'signin')"
 
 // "Last changed ... by" names a real account on the instance the pictures
 // come from, so it is hidden.
@@ -105,7 +105,7 @@ export const shots = () => [
   {
     name: 'retention-review', url: '/admin/backups', viewport: NARROW, phone: false, settle: 800,
     steps: [{ wait: 3000 }, { eval: HIDE_POLICY_AUTHOR }],
-    clipTo: section('Retention policy'), clipPad: 0,
+    clipTo: section('Retention Policy'), clipPad: 0,
     annotate: [
       { type: 'box', target: '.backup-policy__rule', pad: 5 },
       { type: 'box', target: '.backup-policy button[type="submit"]', pad: 5 },
@@ -476,7 +476,7 @@ export async function build({
     h(2, 'The easy way: the Trust this device guide'),
     p('Tesria has a guide built in that asks which device you are on, fills your address into the commands, and tells you exactly what to click. There are three ways to open it:'),
     ul(
-      li(p(b('From your profile.'), ' Once you are signed in, open ', ...profileAt(), ' and choose ', b('Set up this device'), ' under ', b('Trust this device'), '.')),
+      li(p(b('From your profile.'), ' Once you are signed in, open ', ...profileAt(), ' and choose ', b('Set Up This Device'), ' under ', b('Trust this device'), '.')),
       li(p(b('From the sign-in page.'), ' Choose ', b('Trust this device'), ' under ', i('Did your browser warn that this site is not secure?'), '.')),
       li(p(b('By its address.'), ' Type ', c('http://your-server/trust'), ' into the browser. Note ', c('http'), ', not ', c('https'), ': the guide is served without encryption on purpose, so a device that does not trust the server yet can open it with no warning. This is the easiest way on a phone.')),
     ),
@@ -507,7 +507,7 @@ export async function build({
     panel('success', p(b('Typing your password shows nothing.'), ' In Terminal, and in most command windows, the password you type is hidden completely, not even as dots. That is normal: type it and press Return.')),
 
     step(4, 'Check it worked'),
-    p('Quit your browser completely and open it again. Closing its windows is not always enough, because some browsers keep running in the background: in Chrome or Edge, type ', c('chrome://restart'), ' or ', c('edge://restart'), ' into the address bar; in Safari, press ', b('⌘ Q'), '. Then choose ', b('Open Tesria securely'), ' at the end of the guide. If Tesria opens with no warning and the address bar shows a padlock, you are done on this device.'),
+    p('Quit your browser completely and open it again. Closing its windows is not always enough, because some browsers keep running in the background: in Chrome or Edge, type ', c('chrome://restart'), ' or ', c('edge://restart'), ' into the address bar; in Safari, press ', b('⌘ Q'), '. Then choose ', b('Open Tesria Securely'), ' at the end of the guide. If Tesria opens with no warning and the address bar shows a padlock, you are done on this device.'),
     p('Still says “Not secure”? Check that you opened Tesria by its name, such as ', c('wiki-server.local'), ', and not a number such as 192.168.1.50. A number never matches the certificate, however it is trusted. The guide’s last step lists the other causes.'),
 
     h(2, 'Getting past the warning the first time'),
@@ -524,7 +524,7 @@ export async function build({
     p('On an iPhone, iPad or Android phone there is no script: you install the certificate and trust it in the Settings app, and can compare its fingerprint by eye first. Open ', c('http://your-server/trust'), ' on the phone and the guide shows the steps for it. On an iPhone or iPad, use ', b('Safari'), '; other browsers there cannot install certificates.'),
     h(3, 'iPhone and iPad'),
     ol(
-      li(p('In Safari, open ', c('http://your-server/trust'), ', choose ', b('iPhone or iPad'), ', and tap ', b('Download the certificate'), '. Tap ', b('Allow'), '. It says a configuration profile was downloaded; that is the certificate.')),
+      li(p('In Safari, open ', c('http://your-server/trust'), ', choose ', b('iPhone or iPad'), ', and tap ', b('Download the Certificate'), '. Tap ', b('Allow'), '. It says a configuration profile was downloaded; that is the certificate.')),
       li(p('Open the ', b('Settings'), ' app. Tap ', b('Profile Downloaded'), ' near the top, then ', b('Install'), ', enter your passcode, and tap ', b('Install'), ' twice more.')),
       li(p('Optional, if you have the server’s fingerprint: in ', b('Settings, General, VPN & Device Management'), ', tap the ', i('Caddy Local Authority'), ' profile, then ', b('More Details'), ' and the certificate, and compare ', b('SHA-256'), ' with the server’s. If it differs, tap ', b('Remove Profile'), ' and stop.')),
       li(p('Go to ', b('Settings, General, About, Certificate Trust Settings'), ' (at the very bottom of About), switch on ', i('Caddy Local Authority'), ', and tap ', b('Continue'), '. Without this step the certificate is installed but not trusted, and the warning stays.')),
@@ -532,7 +532,7 @@ export async function build({
     h(3, 'Android'),
     p('Android trusts a certificate as soon as it is installed.'),
     ol(
-      li(p('Open ', c('http://your-server/trust'), ', choose ', b('Android'), ', and tap ', b('Download the certificate'), '. It is saved as ', c('tesria-ca.crt'), '.')),
+      li(p('Open ', c('http://your-server/trust'), ', choose ', b('Android'), ', and tap ', b('Download the Certificate'), '. It is saved as ', c('tesria-ca.crt'), '.')),
       li(p('Open ', b('Settings'), ' and search for ', b('CA certificate'), '. The menus vary between phone makers; it is usually under Security and privacy, More security settings, Encryption and credentials, Install a certificate. Choose ', b('CA certificate'), ', then ', b('Install anyway'), ', confirm with your screen lock, and pick ', c('tesria-ca.crt'), '.')),
       li(p('Optional, if you have the server’s fingerprint: in the same Encryption and credentials screen, open ', b('Trusted credentials'), ', the ', b('User'), ' tab, and tap ', i('Caddy Local Authority'), '. Compare its ', b('SHA-256'), ' fingerprint with the server’s; if it differs, tap ', b('Remove'), ' straight away.')),
     ),
@@ -798,13 +798,13 @@ export async function build({
 
     step(2, 'Add them to .env'),
     codeBlock('bash', 'OIDC_AUTHORITY=https://idp.example.com/realms/company\nOIDC_CLIENT_ID=tesria\nOIDC_CLIENT_SECRET=the-secret-from-the-provider\nOIDC_DISPLAY_NAME=Company SSO'),
-    p(c('OIDC_DISPLAY_NAME'), ' is what the sign-in button says, here ', i('Sign in with Company SSO'), '. Without it, the button says ', i('Sign in with Single sign-on'), '.'),
+    p(c('OIDC_DISPLAY_NAME'), ' is what the sign-in button says, here ', i('Sign In With Company SSO'), '. Without it, the button says ', i('Sign In With Single sign-on'), '.'),
 
     step(3, 'Restart Tesria'),
     codeBlock('bash', 'docker compose up -d app'),
 
     step(4, 'Try it'),
-    p('Sign out and open the sign-in page: it now has the ', b('Sign in with'), ' button. Choose it, sign in at your provider, and you come back to Tesria signed in. If something is wrong, you land back on the sign-in page with the reason.'),
+    p('Sign out (', b('Sign Out'), ' is at the top right of your profile page) and open the sign-in page: it now has the ', b('Sign In With'), ' button. Choose it, sign in at your provider, and you come back to Tesria signed in. If something is wrong, you land back on the sign-in page with the reason.'),
 
     h(2, 'Which account someone gets'),
     ul(
@@ -857,9 +857,9 @@ export async function build({
   }
   const fillIn = () => p('Choose ', b('Admin'), ', then ', b('Settings'), '. In the ', b('Email'), ' section, choose your provider under ', b('Provider'), ': that fills in the server for you. Then fill in the rest:')
   const testIt = () => [
-    p('Choose ', b('Save mail settings'), ', turn on ', b('Send email'), ', then choose ', b('Send test email to me'), ' and check that it arrived, including in the spam folder. The full walk-through is on ', pageLink('Email (SMTP)'), '.'),
+    p('Choose ', b('Save Mail Settings'), ', turn on ', b('Send email'), ', then choose ', b('Send Test Email to Me'), ' and check that it arrived, including in the spam folder. The full walk-through is on ', pageLink('Email (SMTP)'), '.'),
   ]
-  const signInTest = () => p('Turn on ', b('Send email'), ' at the top of the section if it is off, choose ', b('Send test email to me'), ', and check that the message arrived, including in the spam folder.')
+  const signInTest = () => p('Turn on ', b('Send email'), ' at the top of the section if it is off, choose ', b('Send Test Email to Me'), ', and check that the message arrived, including in the spam folder.')
 
   await page('Sending with Gmail', email, doc(
     p('No mail server of your own? A Gmail account can send Tesria’s email. It suits a small team: a handful of password resets, invitations and notifications a day.'),
@@ -890,10 +890,10 @@ export async function build({
     ...(await picture(email, 'email-provider-gmail', 'The Provider list set to Gmail, with what goes in the username and password, and App password chosen',
       'Choosing Gmail fills in the server. Choose App password, then fill in the fields below it.')),
     presetTable('gmail', { username: 'The full Gmail address', password: 'The app password, without the spaces', from: 'The same Gmail address' }),
-    p('Under ', b('How Tesria signs in'), ', choose ', b('App password'), '. Then choose ', b('Save mail settings'), '.'),
+    p('Under ', b('How Tesria Signs In'), ', choose ', b('App password'), '. Then choose ', b('Save Mail Settings'), '.'),
 
     step(3, 'Turn it on and send a test'),
-    p('Turn on ', b('Send email'), ' at the top of the section, then choose ', b('Send test email to me'), '. The test goes to the email address on your own Tesria account. Check that it arrived, including in the spam folder.'),
+    p('Turn on ', b('Send email'), ' at the top of the section, then choose ', b('Send Test Email to Me'), '. The test goes to the email address on your own Tesria account. Check that it arrived, including in the spam folder.'),
 
     h(2, 'The lasting way: sign in with Google'),
     p('Here you make a small “app” of your own in Google Cloud, tell Google that Tesria is allowed to come back to it, and then sign in once. It is your own because every Tesria has its own address, and Google only sends a sign-in back to addresses the app has registered. It costs nothing.'),
@@ -921,9 +921,9 @@ export async function build({
     ),
     panel('note', p(b('Tesria on a local name,'), ' such as ', c('wiki.local'), ' or ', c('192.168.1.50'), '? Google only returns to addresses on public domains, so Tesria’s settings say to choose ', b('Desktop app'), ' as the type instead. That needs no redirect address; step 7 is the extra step it takes.')),
     step(5, 'Sign in from Tesria'),
-    p('In ', b('Admin'), ', ', b('Settings'), ', ', b('Email'), ', choose ', b('Gmail or Google Workspace'), ' under ', b('Provider'), ' and leave ', b('Sign in with Google'), ' chosen. Paste the client ID and secret, then choose ', b('Sign in with Google'), '.'),
+    p('In ', b('Admin'), ', ', b('Settings'), ', ', b('Email'), ', choose ', b('Gmail or Google Workspace'), ' under ', b('Provider'), ' and leave ', b('Sign in with Google'), ' chosen. Paste the client ID and secret, then choose ', b('Sign In With Google'), '.'),
     ...(await picture(email, 'email-google-signin', 'Sign in with Google chosen, with the redirect address to register, the client ID and secret, and the sign-in button',
-      'The redirect address to register in step 4, the client ID and secret from it, and Sign in with Google.')),
+      'The redirect address to register in step 4, the client ID and secret from it, and Sign In With Google.')),
     step(6, 'Allow it on Google’s page'),
     ol(
       li(p('Choose the Gmail account the wiki will send from.')),
@@ -932,7 +932,7 @@ export async function build({
     ),
     p('Google returns you to Tesria, which says ', i('Signed in. Email now goes out from'), ' and the address. Tesria has filled in the server, the username and the From address itself.'),
     step(7, 'Only on a local name: paste the address back'),
-    p('With a ', b('Desktop app'), ' client, Google cannot return to Tesria, so after you allow it your browser opens a page that does not load, at an address starting with ', c('http://127.0.0.1'), '. That is expected. Copy the whole address from the address bar, go back to Tesria’s tab, paste it into ', b('Paste the address of the page that did not load'), ', and choose ', b('Finish signing in'), '.'),
+    p('With a ', b('Desktop app'), ' client, Google cannot return to Tesria, so after you allow it your browser opens a page that does not load, at an address starting with ', c('http://127.0.0.1'), '. That is expected. Copy the whole address from the address bar, go back to Tesria’s tab, paste it into ', b('Paste the address of the page that did not load'), ', and choose ', b('Finish Signing In'), '.'),
     step(8, 'Send a test'),
     signInTest(),
 
@@ -941,8 +941,8 @@ export async function build({
       li(p(b('“Username and Password not accepted”'), ' with an app password means Gmail refused it. Check that the username is the whole address, and paste the app password again. Your everyday Gmail password does not work here.')),
       li(p(b('The email arrives from a different address'), ' than the From address. Gmail sends only as the account that signs in, so use that address.')),
       li(p(b('An app password worked, then stopped.'), ' Changing the Gmail account’s password deletes all of its app passwords. Make a new one and enter it in the ', b('Password'), ' box.')),
-      li(p(b('A signed-in Tesria stopped sending after a week.'), ' The app was still in ', b('Testing'), ' (step 3). Publish it, then choose ', b('Sign in again with Google'), '.')),
-      li(p(b('Administrators get the alert'), ' ', i('Email stopped: the mail sign-in was refused'), '. Google ended the sign-in, for example because someone removed Tesria’s access in the Google account. The email settings show Google’s reason; choose ', b('Sign in again with Google'), '.')),
+      li(p(b('A signed-in Tesria stopped sending after a week.'), ' The app was still in ', b('Testing'), ' (step 3). Publish it, then choose ', b('Sign In Again With Google'), '.')),
+      li(p(b('Administrators get the alert'), ' ', i('Email stopped: the mail sign-in was refused'), '. Google ended the sign-in, for example because someone removed Tesria’s access in the Google account. The email settings show Google’s reason; choose ', b('Sign In Again With Google'), '.')),
     ),
 
     h(2, 'Good to know'),
@@ -989,9 +989,9 @@ export async function build({
     step(4, 'Allow it to send email'),
     p('Open ', b('API permissions'), ', choose ', b('Add a permission'), ', then ', b('Microsoft Graph'), ', then ', b('Delegated permissions'), '. Tick ', b('SMTP.Send'), ', and under OpenId permissions ', b('email'), ', ', b('offline_access'), ' and ', b('openid'), '. Choose ', b('Add permissions'), '. In an organization, an administrator may also need to choose ', b('Grant admin consent'), '.'),
     step(5, 'Sign in from Tesria'),
-    p('In ', b('Admin'), ', ', b('Settings'), ', ', b('Email'), ', choose ', b('Outlook or Microsoft 365'), ' under ', b('Provider'), ' and leave ', b('Sign in with Microsoft'), ' chosen. Paste the client ID and the secret’s value, and the directory ID if you copied one. Then choose ', b('Sign in with Microsoft'), '.'),
+    p('In ', b('Admin'), ', ', b('Settings'), ', ', b('Email'), ', choose ', b('Outlook or Microsoft 365'), ' under ', b('Provider'), ' and leave ', b('Sign in with Microsoft'), ' chosen. Paste the client ID and the secret’s value, and the directory ID if you copied one. Then choose ', b('Sign In With Microsoft'), '.'),
     ...(await picture(email, 'email-microsoft-signin', 'Sign in with Microsoft chosen, with the redirect address to register, the application ID, secret and directory ID, and the sign-in button',
-      'The redirect address to register in step 1, the IDs and secret from steps 2 and 3, and Sign in with Microsoft.')),
+      'The redirect address to register in step 1, the IDs and secret from steps 2 and 3, and Sign In With Microsoft.')),
     p('Microsoft asks which account to use and whether to allow Tesria to send email as it. Choose the mailbox the wiki will send from, and allow it. You come back to Tesria, which says ', i('Signed in. Email now goes out from'), ' and the address. Tesria has filled in the server, the username and the From address itself.'),
     step(6, 'Send a test'),
     signInTest(),
@@ -999,13 +999,13 @@ export async function build({
     h(2, 'If the test fails'),
     ul(
       li(p(b('“Authentication unsuccessful”'), ' that mentions ', c('SmtpClientAuthentication'), ' means Authenticated SMTP is off, for the mailbox or the whole organization (see Before you start). An administrator needs to turn it on.')),
-      li(p(b('Tesria says the client secret has expired.'), ' Make a new secret (step 3), paste its value in Tesria’s email settings and choose ', b('Sign in again with Microsoft'), '.')),
+      li(p(b('Tesria says the client secret has expired.'), ' Make a new secret (step 3), paste its value in Tesria’s email settings and choose ', b('Sign In Again With Microsoft'), '.')),
       li(p(b('Administrators get the alert'), ' ', i('Email stopped: the mail sign-in was refused'), '. Microsoft ended the sign-in, for example because the account’s password changed or someone removed Tesria’s access. The email settings show Microsoft’s reason; sign in again.')),
       li(p(b('Microsoft says the redirect address does not match.'), ' The address registered in step 1 must be exactly the one Tesria shows, including ', c('https://'), '.')),
     ),
 
     h(2, 'Microsoft 365 with a password, for now'),
-    p('A Microsoft 365 mailbox can still send with its password while its organization allows Authenticated SMTP with a password. Choose ', b('Password'), ' under ', b('How Tesria signs in'), ' and fill in:'),
+    p('A Microsoft 365 mailbox can still send with its password while its organization allows Authenticated SMTP with a password. Choose ', b('Password'), ' under ', b('How Tesria Signs In'), ' and fill in:'),
     presetTable('microsoft', { username: 'The mailbox’s full address', password: 'The mailbox’s password' }),
     panel('warning', p(b('Microsoft is phasing this out.'), ' At the end of December 2026, Microsoft turns password sign-in for sending off by default in existing organizations; the administrator can turn it back on for now. Organizations created from 2027 cannot use it, and Microsoft plans to remove it completely later. Signing in with Microsoft is the way that lasts.')),
     p('A Microsoft 365 “shared mailbox” has no password of its own, so it cannot send this way. A personal Outlook.com account cannot send with a password at all.'),
@@ -1146,7 +1146,7 @@ export async function build({
 
     step(1, 'Open the email settings'),
     p('Choose ', b('Admin'), ' at the top of any page, then the ', b('Settings'), ' tab. The ', b('Email'), ' section has everything, and the steps below use the boxed controls in order.'),
-    ...(await picture(email, 'email-steps', 'The Email settings, filled in with example values', 'Provider, Save mail settings, Send email and Send test email to me are boxed.')),
+    ...(await picture(email, 'email-steps', 'The Email settings, filled in with example values', 'Provider, Save Mail Settings, Send email and Send Test Email to Me are boxed.')),
 
     step(2, 'Choose your provider'),
     p('The ', b('Provider'), ' list names the common email accounts and sending services. Choosing one fills in the server, the port and the encryption, and says in a line what goes in the username and password, which is often not the password you sign in with. For anything else, leave it on ', b('Other'), ' and fill the server in yourself.'),
@@ -1159,13 +1159,13 @@ export async function build({
       li(p(b('From address'), ': who the email appears to come from. Most providers only send from the account that signs in, and sending services only from a domain you have verified with them.')),
     ),
 
-    step(4, 'Choose Save mail settings'),
+    step(4, 'Choose Save Mail Settings'),
 
     step(5, 'Turn on Send email'),
     p('The switch at the top of the section. It takes effect straight away. While it is off, Tesria does not try to send anything.'),
 
     step(6, 'Send yourself a test'),
-    p('Choose ', b('Send test email to me'), '. Tesria answers straight away: ', i('Sent: check your inbox'), ', or ', i('Not sent'), ' with the mail server’s reason. Then check that the message arrived, including in your spam folder.'),
+    p('Choose ', b('Send Test Email to Me'), '. Tesria answers straight away: ', i('Sent: check your inbox'), ', or ', i('Not sent'), ' with the mail server’s reason. Then check that the message arrived, including in your spam folder.'),
 
     h(2, 'If the test fails'),
     ul(
@@ -1245,7 +1245,7 @@ export async function build({
     ),
 
     step(1, 'Take a backup'),
-    p('Choose ', b('Admin'), ', then ', b('Backups'), ', then ', b('Back up now'), ', and wait until the page says the backups have finished. If the upgrade goes wrong, this is what you go back to. See ', pageLink('Backups and recovery'), '.'),
+    p('Choose ', b('Admin'), ', then ', b('Backups'), ', then ', b('Back Up Now'), ', and wait until the page says the backups have finished. If the upgrade goes wrong, this is what you go back to. See ', pageLink('Backups and recovery'), '.'),
 
     step(2, 'Get the new version'),
     p('If you installed Tesria from ', c('tesria-deploy.zip'), ', as ', pageLink('Quick start'), ' does, download the new one and unzip it over your Tesria folder. Your ', c('.env'), ', if you have one, is kept: it is not in the zip. In the folder above your Tesria folder, on a Mac or Linux:'),
@@ -1306,7 +1306,7 @@ export async function build({
     ),
 
     h(2, 'The audit log'),
-    p('Every change an administrator makes is recorded in the ', b('audit log'), '. Each entry is chained to the one before it, so an entry changed or deleted afterwards is detected. Tesria checks the chain every day, and ', b('Verify now'), ' under ', b('Admin'), ', ', b('Security'), ', ', b('Audit log integrity'), ' checks it on demand. See ', pageLink('Audit'), '.'),
+    p('Every change an administrator makes is recorded in the ', b('audit log'), '. Each entry is chained to the one before it, so an entry changed or deleted afterwards is detected. Tesria checks the chain every day, and ', b('Verify Now'), ' under ', b('Admin'), ', ', b('Security'), ', ', b('Audit Log Integrity'), ' checks it on demand. See ', pageLink('Audit'), '.'),
     p('To check it from outside Tesria, for example on a schedule with cron, use the script in the Tesria folder with an administrator’s API token (see ', pageLink('API tokens'), '):'),
     codeBlock('bash', 'scripts/verify-audit-chain.sh https://your-server "$TESRIA_ADMIN_TOKEN"'),
     p('It ends with exit status 0 when the chain holds and 1 when it is broken, which is what a scheduler or monitor looks at. Every audit entry is also written to Tesria’s log (', c('docker compose logs app'), '); sending that log to another machine keeps a copy that even someone with the database cannot touch.'),
@@ -1318,8 +1318,8 @@ export async function build({
     p('A ', b('backup'), ' is a copy of the wiki from which it can be rebuilt: if a disk fails, a change goes badly wrong, or the computer is lost, the backup is how you get your pages back. Tesria starts backing itself up the moment it is installed, with nothing to set up. Every day it copies the database and every attachment, and it keeps a running record of every change in between, so you can go back to last night, or to the minute before something went wrong.'),
 
     h(2, 'Where to see them'),
-    p('Choose ', b('Admin'), ' at the top of any page, then the ', b('Backups'), ' tab. Each backup service has a card saying whether it is healthy and when it last worked. Above them, ', b('Back up now'), ' takes a backup straight away, and each card’s ', b('Test restore of newest'), ' proves its newest backup can be restored, without touching the wiki.'),
-    ...(await picture(backups, 'backup-now', 'The top of the Backups tab', 'Back up now, and a backup service’s card with Test restore of newest.')),
+    p('Choose ', b('Admin'), ' at the top of any page, then the ', b('Backups'), ' tab. Each backup service has a card saying whether it is healthy and when it last worked. Above them, ', b('Back Up Now'), ' takes a backup straight away, and each card’s ', b('Test Restore of Newest'), ' proves its newest backup can be restored, without touching the wiki.'),
+    ...(await picture(backups, 'backup-now', 'The top of the Backups tab', 'Back Up Now, and a backup service’s card with Test Restore of Newest.')),
 
     h(2, 'The one thing to do yourself'),
     p('Every backup Tesria takes on its own is on the same computer as the wiki, so a dead disk, a fire or a theft takes both. Two things protect against that, and only you can do them:'),
@@ -1364,7 +1364,7 @@ export async function build({
       li(p(b('On this computer, the daily backups'), ' (the backup service): the database and the attachments as they were at the last daily backup.')),
       li(p(b('Cloud storage:'), ' both of the above. It is the only offsite copy that receives every database change as it happens, so it can restore to any second, even if this computer is gone.')),
       li(p(b('A network drive:'), ' the daily backups only. After losing this computer, you get the wiki back as it was at the last daily backup, and anything written since is lost.')),
-      li(p(b('A removable drive:'), ' the daily backups, as of the last time someone chose ', b('Copy now'), '. Often the oldest copy of all.')),
+      li(p(b('A removable drive:'), ' the daily backups, as of the last time someone chose ', b('Copy Now'), '. Often the oldest copy of all.')),
     ),
     panel('info', p(b('Why a network drive does not get every change.'), ' The database’s changes are handed over the moment they happen, by the database itself, which cannot check that a network folder is really connected. When a network drive is disconnected, its folder is still there on this computer, empty, and the changes would quietly pile up on this computer’s own disk while everything looked fine. So only the daily backups, which do check, go to a network drive. (A technical administrator can give a NAS the changes too, over SSH; the backup runbook in Tesria’s documentation has the recipe.)')),
     h(3, 'Which should you use?'),
@@ -1395,13 +1395,13 @@ export async function build({
     h(2, 'The Backups tab'),
     ul(
       li(p(b('A card for each service:'), ' whether it is healthy, when it last worked and next runs, how far back you can restore, the disk space left, and when a restore was last tested.')),
-      li(p(b('Back up now'), ' asks both services for a backup. Each picks the request up within a minute.')),
-      li(p(b('Test restore'), ' restores a backup somewhere temporary and checks it, without touching the wiki. A backup that has never been restored has not been proved to work.')),
-      li(p(b('Disk space'), ' shows what the wiki, its backups and everything else take on this computer.')),
-      li(p(b('Storage targets'), ' lists the offsite copies. See ', pageLink('Offsite copies'), '.')),
-      li(p(b('Retention policy'), ' decides how long backups are kept. See ', pageLink('Retention'), '.')),
-      li(p(b('Backups'), ' lists every backup kept, each with ', b('Test restore'), ' and, for the owner, ', b('Restore'), '. See ', pageLink('Restoring and undo'), '.')),
-      li(p(b('Recent runs'), ' lists what the services did, each with its ', b('Log'), '.')),
+      li(p(b('Back Up Now'), ' asks both services for a backup. Each picks the request up within a minute.')),
+      li(p(b('Test Restore'), ' restores a backup somewhere temporary and checks it, without touching the wiki. A backup that has never been restored has not been proved to work.')),
+      li(p(b('Disk Space'), ' shows what the wiki, its backups and everything else take on this computer.')),
+      li(p(b('Storage Targets'), ' lists the offsite copies. See ', pageLink('Offsite copies'), '.')),
+      li(p(b('Retention Policy'), ' decides how long backups are kept. See ', pageLink('Retention'), '.')),
+      li(p(b('Backups'), ' lists every backup kept, each with ', b('Test Restore'), ' and, for the owner, ', b('Restore'), '. See ', pageLink('Restoring and undo'), '.')),
+      li(p(b('Recent Runs'), ' lists what the services did, each with its ', b('Log'), '.')),
     ),
     p('What each person may do on the tab depends on their role: see ', pageLink('Backups (administration)'), '.'),
 
@@ -1433,12 +1433,12 @@ export async function build({
 
     h(2, 'Changing it'),
     step(1, 'Open the retention policy'),
-    p('Choose ', b('Admin'), ', then ', b('Backups'), ', and scroll to ', b('Retention policy'), '.'),
-    ...(await picture(retention, 'retention-review', 'The retention policy', 'The rule, and Review change.')),
+    p('Choose ', b('Admin'), ', then ', b('Backups'), ', and scroll to ', b('Retention Policy'), '.'),
+    ...(await picture(retention, 'retention-review', 'The retention policy', 'The rule, and Review Change.')),
     step(2, 'Choose the policy'),
     p('Pick one of the two choices, and with ', b('Prune old backups'), ', the number of backups and of days.'),
     step(3, 'Review the change'),
-    p('Choose ', b('Review change'), '. Before anything happens, Tesria lists exactly which backups the new policy would remove today, and how far back you could still restore. If it looks right, choose ', b('Save policy'), '. Unless you signed in in the last few minutes, Tesria asks for your password first.'),
+    p('Choose ', b('Review Change'), '. Before anything happens, Tesria lists exactly which backups the new policy would remove today, and how far back you could still restore. If it looks right, choose ', b('Save Policy'), '. Unless you signed in in the last few minutes, Tesria asks for your password first.'),
 
     h(2, 'Why some changes wait a day'),
     ul(
@@ -1467,11 +1467,11 @@ export async function build({
 
     h(2, 'Restoring a backup'),
     step(1, 'Find the backup'),
-    p('Choose ', b('Admin'), ', then ', b('Backups'), ', and scroll to the ', b('Backups'), ' list. Each row has ', b('Test restore'), ' and, in red, ', b('Restore'), '. Choose ', b('Restore'), ' on the one you want.'),
+    p('Choose ', b('Admin'), ', then ', b('Backups'), ', and scroll to the ', b('Backups'), ' list. Each row has ', b('Test Restore'), ' and, in red, ', b('Restore'), '. Choose ', b('Restore'), ' on the one you want.'),
     step(2, 'Read what it will do'),
     p('Tesria says when the backup was taken and what has been written since, which the restore takes back.'),
     step(3, 'Confirm'),
-    p('Type the backup’s name where it asks, and your password. Someone who signs in with SSO and has no Tesria password gives a code from their authenticator app instead. Then choose ', b('Restore now'), '.'),
+    p('Type the backup’s name where it asks, and your password. Someone who signs in with SSO and has no Tesria password gives a code from their authenticator app instead. Then choose ', b('Restore Now'), '.'),
 
     h(2, 'What happens next'),
     ol(
@@ -1481,16 +1481,16 @@ export async function build({
       li(p('The restored copy takes the live wiki’s place, in a moment. The wiki it replaces is ', b('kept'), ', not deleted.')),
       li(p('Tesria restarts, and your page comes back by itself.')),
     ),
-    p('While it runs, the Backups tab shows ', b('A restore is in progress'), ' with ', b('Stop the restore'), ', which works until step 4. Afterwards, the restore is recorded in the audit log and raised as a critical alert for every administrator.'),
+    p('While it runs, the Backups tab shows ', b('A Restore Is in Progress'), ' with ', b('Stop the Restore'), ', which works until step 4. Afterwards, the restore is recorded in the audit log and raised as a critical alert for every administrator.'),
 
     h(2, 'To a moment in time'),
     p('A physical backup’s row restores to any second it covers: its ', b('Restore'), ' also asks for the time to roll forward to, between the earliest and latest it can reach. Use it when you know when things went wrong, for example to just before a mass deletion. It keeps no copy of what it replaces; its undo is another restore, to the moment the first one began, which the page offers.'),
 
     h(2, 'Undo'),
-    p('After a restore from a dump, the Backups tab shows ', b('The copy kept before the last restore'), ', with two buttons:'),
+    p('After a restore from a dump, the Backups tab shows ', b('The Copy Kept Before the Last Restore'), ', with two buttons:'),
     ul(
-      li(p(b('Undo the restore'), ' puts the kept copy back, taking a backup of the wiki as it is now first. Type ', c('UNDO'), ' and your password to confirm.')),
-      li(p(b('Remove the copy'), ' deletes it to free the disk. Type ', c('REMOVE'), ' and your password. After that, the restore cannot be undone.')),
+      li(p(b('Undo the Restore'), ' puts the kept copy back, taking a backup of the wiki as it is now first. Type ', c('UNDO'), ' and your password to confirm.')),
+      li(p(b('Remove the Copy'), ' deletes it to free the disk. Type ', c('REMOVE'), ' and your password. After that, the restore cannot be undone.')),
     ),
     p('The kept copy is also removed on its own when the ', pageLink('Retention', 'retention policy'), ' would remove a backup taken at the time of the restore. While retention is off, it stays until someone removes it.'),
 
@@ -1520,13 +1520,13 @@ export async function build({
       '  bkv -->|"after every backup"| cloud["Cloud storage"]',
       '  pgb -->|"continuously"| cloud',
       '  bkv -->|"after every backup"| nas["A network drive"]',
-      '  bkv -->|"when someone chooses Copy now"| usb["A removable drive"]',
+      '  bkv -->|"when someone chooses Copy Now"| usb["A removable drive"]',
     ].join('\n')),
     p('Everything is encrypted on this computer before it leaves, so none of the three can read what it holds. Only cloud storage receives the database’s changes as they happen, which is what lets it restore to any moment; the network and removable drives hold the daily dumps and the attachments.'),
     ul(
       li(p(b('Cloud storage.'), ' Any storage that speaks the S3 protocol; Backblaze B2 is the documented choice. Copied to after every backup, and database changes stream there continuously in between. It holds everything, including restoring to any moment. The best single choice.')),
       li(p(b('A network drive.'), ' A shared folder on a NAS on your network. Copied to after every backup. It holds the dumps and the attachments.')),
-      li(p(b('A removable drive.'), ' A USB disk you plug in, copy to, and take away. Copied to only when someone chooses ', b('Copy now'), '. It holds the dumps and the attachments.')),
+      li(p(b('A removable drive.'), ' A USB disk you plug in, copy to, and take away. Copied to only when someone chooses ', b('Copy Now'), '. It holds the dumps and the attachments.')),
     ),
     p('Every copy is encrypted on the server before it leaves, each with its own passphrase. The settings go in ', c('.env'), ' rather than on the admin page, so that the keys never enter the database and never travel inside a backup. The Backups tab shows fingerprints of them instead of the keys.'),
     panel('warning', p(b('Keep the passphrases somewhere other than the server,'), ' such as a password manager. A copy whose passphrase is lost cannot be read by anyone, including you.')),
@@ -1541,7 +1541,7 @@ export async function build({
     step(3, 'Restart the services'),
     codeBlock('bash', 'docker compose up -d'),
     step(4, 'Test it'),
-    p('On the Backups tab, a ', b('Cloud'), ' card appears under ', b('Storage targets'), '. Choose ', b('Test connection'), ' on it. See ', pageLink('Testing a target and the cloud budget'), '.'),
+    p('On the Backups tab, a ', b('Cloud'), ' card appears under ', b('Storage Targets'), '. Choose ', b('Test Connection'), ' on it. See ', pageLink('Testing a target and the cloud budget'), '.'),
     panel('warning', p(b('If the cloud stays unreachable, act on the alert.'), ' Database changes wait on the server until the cloud accepts them. Past a limit (', c('OFFSITE_ARCHIVE_QUEUE_MAX'), ') they are dropped, and then restoring to a moment before the outage stops working on this computer too. Tesria alerts long before that. Fix the connection, or remove the cloud settings and restart, and then take a new backup.')),
 
     h(2, 'A network drive'),
@@ -1566,7 +1566,7 @@ export async function build({
     step(2, 'Mark the drive as Tesria’s, once'),
     codeBlock('bash', 'docker compose exec backup /scripts/claim-target.sh removable'),
     step(3, 'Copy to it'),
-    p('Whenever the drive is plugged in, choose ', b('Copy now'), ' on its card under ', b('Storage targets'), '. When the card says it is safe to remove, every byte is on the drive.'),
+    p('Whenever the drive is plugged in, choose ', b('Copy Now'), ' on its card under ', b('Storage Targets'), '. When the card says it is safe to remove, every byte is on the drive.'),
     p('The computer may still refuse to eject the drive, because the backup service is using it. To eject it cleanly, stop the service, eject, and start it again:'),
     codeBlock('bash', 'docker compose stop backup\n# eject the drive\ndocker compose up -d backup'),
     ul(
@@ -1576,13 +1576,13 @@ export async function build({
   ))
 
   await page('Testing a target and the cloud budget', backups, doc(
-    p('Two things on the ', b('Storage targets'), ' cards on the Backups tab: a way to check that an offsite copy can be reached, and a way to keep an eye on what the cloud copy costs.'),
+    p('Two things on the ', b('Storage Targets'), ' cards on the Backups tab: a way to check that an offsite copy can be reached, and a way to keep an eye on what the cloud copy costs.'),
 
     h(2, 'Test connection'),
-    p('Each card has ', b('Test connection'), '. It asks the backup services to reach that target and open it with its passphrase, and changes nothing. Use it whenever you have set up or changed a target.'),
+    p('Each card has ', b('Test Connection'), '. It asks the backup services to reach that target and open it with its passphrase, and changes nothing. Use it whenever you have set up or changed a target.'),
     ol(
       li(p('After editing ', c('.env'), ', run ', c('docker compose up -d'), ' first: the test uses the settings the services are running with, not the ones in the file.')),
-      li(p('Choose ', b('Test connection'), '. The card says ', i('Testing the connection…'), '.')),
+      li(p('Choose ', b('Test Connection'), '. The card says ', i('Testing the connection…'), '.')),
       li(p('The answer usually comes within a minute, because the services look for work once a minute. If a backup is running, the test waits for it to finish.')),
     ),
     p('The cloud card holds two copies, the database and the dumps with attachments, so it gives an answer for each.'),
@@ -1597,7 +1597,7 @@ export async function build({
     ul(
       li(p(b('After every copy,'), ' each offsite target checks that the copy is complete and undamaged.')),
       li(p(b('Every 30 days'), ' (', c('OFFSITE_DRILL_DAYS'), '), each offsite copy is restored for real: the newest dump is taken out of it, loaded into a temporary database, counted and thrown away. Nothing live is touched.')),
-      li(p(b('Test restore'), ' on the Backups tab does the same for the backups on this computer, whenever you ask.')),
+      li(p(b('Test Restore'), ' on the Backups tab does the same for the backups on this computer, whenever you ask.')),
     ),
     p('The first asks whether the copy is intact; the drill asks whether it still turns back into a wiki. A copy can pass the first and fail the second, which is why a failed drill is a critical alert for every administrator. Each target’s card shows ', b('Last restore drill'), '.'),
     panel('success', p(b('Rehearse it yourself, once or twice a year.'), ' Follow ', pageLink('When the machine is gone'), ' on a spare computer. It is the one procedure you should not be reading for the first time when you need it.')),
@@ -1682,7 +1682,7 @@ export async function build({
     h(2, 'Accounts'),
     tasks(
       task(false, 'The owner has two-factor sign-in on and has saved their recovery codes. Nobody else can reset the owner, so losing both locks the owner out. See ', pageLink('Two-factor and recovery codes'), '.'),
-      task(false, 'Every administrator has two-factor on, and ', b('Require two-factor for administrators'), ' is on (', b('Admin'), ', ', b('Security'), ', ', b('Kill switches'), ').'),
+      task(false, 'Every administrator has two-factor on, and ', b('Require two-factor for administrators'), ' is on (', b('Admin'), ', ', b('Security'), ', ', b('Kill Switches'), ').'),
       task(false, 'Each role has only what it needs: review ', b('Admin'), ', ', pageLink('Roles'), '.'),
       task(false, b('Allow public registration'), ' is off, so new accounts need an invite, unless you mean to run an open community.'),
       task(false, b('Allow public spaces'), ' stays off until you mean to publish a space to people who are not signed in.'),
@@ -1692,7 +1692,7 @@ export async function build({
     tasks(
       task(false, 'Backups run, a restore has been rehearsed, and there is at least one ', pageLink('Offsite copies', 'offsite copy'), '.'),
       task(false, 'The offsite passphrases in ', c('.env'), ' are kept somewhere other than the server.'),
-      task(false, 'Email works, so alerts reach administrators: ', b('Send test email to me'), ' succeeds. See ', pageLink('Email (SMTP)'), '.'),
+      task(false, 'Email works, so alerts reach administrators: ', b('Send Test Email to Me'), ' succeeds. See ', pageLink('Email (SMTP)'), '.'),
       task(false, 'Tesria’s log, which carries a copy of the audit log, is sent somewhere durable.'),
       task(false, c('scripts/verify-audit-chain.sh'), ' runs on a schedule and someone watches its result. See ', pageLink('Health checks and monitoring'), '.'),
       task(false, 'Someone watches for new releases and upgrades promptly. See ', pageLink('Upgrading'), '.'),
@@ -1728,12 +1728,12 @@ export async function build({
     p('Stops and removes the containers. Your data stays in its volumes, and ', c('docker compose up -d'), ' brings everything back as it was.'),
 
     h(2, 'Moving one space'),
-    p('A ', b('wiki pack'), ' carries one space, with its pages, history, comments and attachments, to another Tesria. Export it with ', b('Export as a pack'), ' in the space’s settings, then import it on the other Tesria with ', b('Import a pack'), ' on the Spaces page. See ', pageLink('Wiki packs'), '.'),
+    p('A ', b('wiki pack'), ' carries one space, with its pages, history, comments and attachments, to another Tesria. Export it with ', b('Export as a Pack'), ' in the space’s settings, then import it on the other Tesria with ', b('Import a Pack'), ' on the Spaces page. See ', pageLink('Wiki packs'), '.'),
 
     h(2, 'Moving the whole Tesria'),
     p('To a new computer, taking everything: every space, account and setting. It moves the newest backup across and restores it.'),
     step(1, 'Take a backup on the old computer'),
-    p('Choose ', b('Admin'), ', ', b('Backups'), ', ', b('Back up now'), ', and wait until it finishes.'),
+    p('Choose ', b('Admin'), ', ', b('Backups'), ', ', b('Back Up Now'), ', and wait until it finishes.'),
     step(2, 'Pack up the backups'),
     p('In the Tesria folder on the old computer:'),
     codeBlock('bash', 'docker run --rm -v tesria_backups:/b -v "$PWD":/out alpine tar czf /out/tesria-backups.tgz -C /b .'),

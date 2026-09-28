@@ -7,7 +7,12 @@
 // RecoveryCodes(Section, Prompt), Layout, SpacePage, PageTree, treeFilter,
 // treeMarkers, SidebarResizer, ThemeToggle, WelcomePage, TipHost and
 // TourAndTipsSection, and the auth, invite and recovery endpoints, on
-// 2026-09-24. Labels are quoted as the app shows them.
+// 2026-09-24. Labels are quoted as the app shows them, in Title Case for
+// buttons, tabs and switches since 0.8.1; the 0.8.1 changes (the appearance
+// menu's Minimal and Reduce Motion, the top bar folding into ☰, Sign Out on
+// the profile, tab bars with •••, the filter's clear button, the glass
+// sidebar) were checked against Layout, ThemeToggle, theme.ts, OverflowTabs,
+// PageTree, ProfilePage and glass.css on 2026-09-28.
 //
 // Every picture is a close-up taken in a narrow window, except the whole
 // page, and none has a phone version: the phone is covered by the User
@@ -22,7 +27,7 @@ const SIDEBAR = { width: 900, height: 640 }
 const BLUR = { eval: 'document.activeElement && document.activeElement.blur()' }
 // The recovery page opens on the emailed link where email is set up; the
 // picture is of the recovery code form, which every instance has.
-const CODE_FORM = "[...document.querySelectorAll('form.authcard button.link-btn')].find((b) => b.textContent.includes('Use a recovery code instead'))?.click()"
+const CODE_FORM = "[...document.querySelectorAll('form.authcard button.link-btn')].find((b) => b.textContent.includes('Use a Recovery Code Instead'))?.click()"
 
 export const shots = ({ demo }) => [
   // ---- Signing in: the form, with the two controls people look for.
@@ -154,11 +159,14 @@ export const shots = ({ demo }) => [
   },
 
   // ---- Theme and accent: the button and its menu, as on a computer.
+  // The top bar holds an invisible copy of its contents to measure what fits
+  // (.topbar__ruler, 0.8.1), and its spans carry the same class names and
+  // come first, so these selectors name the real button and bar.
   {
     name: 'theme-menu', url: demo('Launch plan'), viewport: SIDEBAR, phone: false, settle: 800,
-    steps: [{ wait: 2500 }, { click: '.theme-toggle' }, { wait: 400 }],
-    clipTo: ['.topbar__right', '.theme-menu__panel'], clipPad: 10,
-    annotate: [{ type: 'box', target: '.theme-toggle', pad: 4 }],
+    steps: [{ wait: 2500 }, { click: 'button.theme-toggle' }, { wait: 400 }],
+    clipTo: ['header.topbar > .topbar__right', '.theme-menu__panel'], clipPad: 10,
+    annotate: [{ type: 'box', target: 'button.theme-toggle', pad: 4 }],
   },
 ]
 
@@ -210,26 +218,26 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'Signing in, step by step'),
     step(1, 'Open Tesria'),
-    p('Type ', c('https://your-server'), ' into your browser’s address bar. If you are not signed in, Tesria shows the sign-in page. If some spaces can be read without an account, it shows those instead, with a ', b('Sign in'), ' button at the top right: choose it. Bookmark the address: you will come back to it.'),
+    p('Type ', c('https://your-server'), ' into your browser’s address bar. If you are not signed in, Tesria shows the sign-in page. If some spaces can be read without an account, it shows those instead, with a ', b('Sign In'), ' button at the top right: choose it. Bookmark the address: you will come back to it.'),
     step(2, 'Enter your email address and password'),
     p('Use the email address your account was made with. The eye button at the end of the password box shows what you have typed, which helps on a phone keyboard; press it again to hide it.'),
-    ...(await picture(signIn, 'sign-in', 'The sign-in page, with the show password button and Forgot your password? boxed', 'The eye shows your password as you type it. Forgot your password? is below Sign in.')),
-    step(3, 'Choose Sign in'),
+    ...(await picture(signIn, 'sign-in', 'The sign-in page, with the show password button and Forgot your password? boxed', 'The eye shows your password as you type it. Forgot your password? is below Sign In.')),
+    step(3, 'Choose Sign In'),
     p('Tesria takes you back to the page you were trying to open, or to the list of spaces if you came straight to the sign-in page.'),
 
     h(2, 'If your account has two-factor sign-in'),
-    p('After your password, a second screen headed ', b('One more step'), ' asks for the six-digit code from the authenticator app on your phone. Open the app, type the code Tesria shows for this account, and choose ', b('Sign in'), '.'),
+    p('After your password, a second screen headed ', b('One more step'), ' asks for the six-digit code from the authenticator app on your phone. Open the app, type the code Tesria shows for this account, and choose ', b('Sign In'), '.'),
     ul(
       li(p(b('The code changes every 30 seconds.'), ' If Tesria says the code is not right, wait for the next one and type that.')),
       li(p(b('No phone to hand?'), ' Type one of your recovery codes instead. Each one works once.')),
-      li(p(b('Finish within five minutes.'), ' After that the second step expires and you start again from your password. ', b('Start over'), ' does the same at any time.')),
+      li(p(b('Finish within five minutes.'), ' After that the second step expires and you start again from your password. ', b('Start Over'), ' does the same at any time.')),
     ),
     p('To turn two-factor on, see ', pageLink('Two-factor and recovery codes'), '.'),
 
     h(2, 'Other links on the sign-in page'),
     p('Which of these you see depends on how your Tesria is set up:'),
     ul(
-      li(p(b('Sign in with …'), ', under the form, appears when your organization uses single sign-on (for example ', i('Sign in with Company SSO'), '). If you have it, use it instead of a password: your organization’s own sign-in page opens, and it brings you back here.')),
+      li(p(b('Sign In With …'), ', under the form, appears when your organization uses single sign-on (for example ', i('Sign In With Company SSO'), '). If you have it, use it instead of a password: your organization’s own sign-in page opens, and it brings you back here.')),
       li(p(b('Forgot your password?'), ' starts a reset. See ', pageLink('Resetting a password'), '.')),
       li(p(b('No account? Create one'), ' appears when anyone may join, or when you arrived from an invite link.')),
       li(p(b('Browse what is public'), ' appears when some spaces can be read without signing in.')),
@@ -249,7 +257,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'How long you stay signed in'),
     p('You stay signed in on a device until you sign out, with two limits: a session ends after ', b('14 days'), ' without being used, and ', b('90 days'), ' after you signed in, however much you use it. Then you sign in again.'),
-    p(b('Sign out'), ', at the right of the top bar, ends this session on the server as well as in the browser, so a copy of it cannot be used later. Always sign out on a computer other people use. To see every device signed in to your account, and sign out the ones you do not recognize, see ', pageLink('Sessions'), '.'),
+    p(b('Sign Out'), ', at the top right of your profile page, ends this session on the server as well as in the browser, so a copy of it cannot be used later. To get there, choose your picture or name at the right of the top bar. Always sign out on a computer other people use. To see every device signed in to your account, and sign out the ones you do not recognize, see ', pageLink('Sessions'), '.'),
     panel('info', p(b('Asked for your password again?'), ' Some administrative actions, such as ones that cannot be undone, ask you to confirm your password in a box headed ', b('Confirm it’s you'), ' if you signed in more than a few minutes ago. A code from your authenticator app works instead. It makes sure the person at the keyboard is still you.')),
   ))
 
@@ -266,13 +274,13 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     step(1, 'Open the link'),
     p('An invite is a link that starts with your Tesria’s address and ends in ', c('/register?invite='), ' and a long code. Open it and the sign-up form appears, with the note ', b('You were invited to this instance.')),
     step(2, 'Fill in the form'),
-    ...(await picture(accounts, 'register-invited', 'The Create account form opened from an invite', 'The note at the top says you came from an invite. Create account is at the end.')),
+    ...(await picture(accounts, 'register-invited', 'The Create account form opened from an invite', 'The note at the top says you came from an invite. Create Account is at the end.')),
     ul(
       li(p(b('Display name:'), ' how you appear to everyone else, on pages, comments and history. Your full name is usual. You can change it later.')),
       li(p(b('Email:'), ' the address you will sign in with. If the invite was made for one address, it has to be that one.')),
       li(p(b('Password:'), ' at least 8 characters. A few unrelated words make a password that is long, hard to guess and easy to remember.')),
     ),
-    step(3, 'Choose Create account'),
+    step(3, 'Choose Create Account'),
     p('You are signed in straight away.'),
     step(4, 'Save your recovery codes'),
     p('Before anything else, Tesria shows you eight ', b('recovery codes'), '. They are your way back in if you forget your password or lose your phone, and this is the only time they are shown, so save them now: ', b('Download'), ' saves them as a text file, and ', b('Copy'), ' copies them to paste into a password manager. Then tick ', b('I have saved these codes somewhere safe'), ' and choose ', b('Continue to Tesria'), '. ', pageLink('Two-factor and recovery codes'), ' explains what they are for and where to keep them.'),
@@ -288,8 +296,9 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Type their address in ', b('Email (optional)'), ' and the invite works for that address only, so it is no use to anyone it is forwarded to. Leave it empty and whoever has the link can use it.'),
     step(2, 'Choose how long it lasts'),
     p(b('Expires in (days)'), ' is 7 to start with, and can be anything from 1 to 90. A short time is safer; a longer one suits someone who will not join for a while.'),
-    step(3, 'Create it and send it yourself'),
-    p('Choose ', b('Create invite'), '. The link appears once, with a ', b('Copy'), ' button: copy it and send it to the person yourself, by email or chat. Tesria does not send it for you, and cannot show it again.'),
+    step(3, 'Create it and send it'),
+    p('If your Tesria can send email (see ', pageLink('Email (SMTP)'), ') and you typed an address, a switch appears: ', b('Email the invite to'), ' that address. With it on, you can edit the message, the button reads ', b('Create and Email Invite'), ', and Tesria sends the link for you.'),
+    p('Otherwise choose ', b('Create Invite'), '. The link appears once, with a ', b('Copy'), ' button: copy it and send it to the person yourself, by email or chat. Tesria cannot show it again.'),
     p('Each invite is listed as ', b('Unused'), ', ', b('used'), ' (with who used it and when) or ', b('expired'), '. ', b('Revoke'), ' stops an unused one from working, for example if it went to the wrong person. Someone who may create invites but not manage them does not see the list, so they should copy each link when it is shown. More in ', pageLink('Invites'), '.'),
   ))
 
@@ -304,15 +313,15 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('You need a phone with an ', b('authenticator app'), ': a free app that makes these codes. Tesria suggests Aegis, 1Password, Google Authenticator or Authy, and any app that shows six-digit codes that change every 30 seconds will do. Install one first if you do not have one.'),
     step(1, 'Open your profile'),
     p('Choose your name or picture at the right of the top bar, and find the ', b('Two-factor sign-in'), ' card.'),
-    ...(await picture(twoFactor, 'two-factor-section', 'The Two-factor sign-in card on the profile, with Set up two-factor boxed', 'Two-factor sign-in on your profile, while it is off.')),
-    step(2, 'Choose Set up two-factor'),
-    p('If you signed in more than a few minutes ago, type your current password first; otherwise leave it empty. Then choose ', b('Set up two-factor'), '.'),
+    ...(await picture(twoFactor, 'two-factor-section', 'The Two-factor sign-in card on the profile, with Set Up Two-Factor boxed', 'Two-factor sign-in on your profile, while it is off.')),
+    step(2, 'Choose Set Up Two-Factor'),
+    p('If you signed in more than a few minutes ago, type your current password first; otherwise leave it empty. Then choose ', b('Set Up Two-Factor'), '.'),
     step(3, 'Scan the QR code with your app'),
     p('In the authenticator app, choose to add an account and point the phone’s camera at the square code. The app adds your Tesria and starts showing codes for it.'),
     p('Cannot scan it, say because you are on the phone itself? Under the code, ', i('Can’t scan? Enter this key by hand'), ' shows a key you can type into the app instead.'),
-    ...(await picture(twoFactor, 'two-factor-enroll', 'The setup step: a QR code, the six-digit code box and Turn on', 'Scan the code, type the six digits your app shows, then Turn on. (The code and key are blurred in this picture: they are secret.)')),
+    ...(await picture(twoFactor, 'two-factor-enroll', 'The setup step: a QR code, the six-digit code box and Turn On', 'Scan the code, type the six digits your app shows, then Turn On. (The code and key are blurred in this picture: they are secret.)')),
     step(4, 'Type the six-digit code and choose Turn on'),
-    p('Type the code the app shows now into ', b('Six-digit code'), ' and choose ', b('Turn on'), '. That proves the app and Tesria agree. The card then says ', b('On.')),
+    p('Type the code the app shows now into ', b('Six-digit code'), ' and choose ', b('Turn On'), '. That proves the app and Tesria agree. The card then says ', b('On.')),
     p('Turning it on signs out your account on every other device. That is deliberate: anyone else holding a session on your account has to get past the new second step too.'),
     panel('success', p(b('Check your recovery codes now,'), ' while you are on this page: the ', b('Recovery codes'), ' card below should say you have some. They are what gets you in if the phone is lost.')),
     p('From now on, signing in asks for a code after your password. See ', pageLink('Signing in'), '.'),
@@ -333,21 +342,21 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     panel('warning', p(b('Treat them like a password.'), ' Anyone who has one of your codes and knows your email can reset your password. Do not email them to yourself or keep them in a shared document.')),
     h(3, 'Checking and renewing them'),
     p('The ', b('Recovery codes'), ' card on your profile says how many unused codes you have left, and warns you in red when 2 or fewer remain.'),
-    ...(await picture(twoFactor, 'recovery-codes-section', 'The Recovery codes card, with Generate new codes boxed', 'How many codes are left, and the button that makes a new set.')),
-    p('Choose ', b('Generate new codes'), ' (with your password if you signed in more than a few minutes ago) to make a fresh set of 8. The old ones stop working at once, so make a new set after using a few, or if you think someone has seen them. Save the new ones, tick ', b('I have saved these codes somewhere safe'), ' and choose ', b('Done'), '.'),
-    p('If your account has no codes, or you never confirmed saving them, Tesria asks you after you sign in, in a box headed ', b('Set up account recovery'), ' or ', b('Do you have your recovery codes?'), '. ', b('Not now'), ' puts it off until you next sign in.'),
+    ...(await picture(twoFactor, 'recovery-codes-section', 'The Recovery codes card, with Generate New Codes boxed', 'How many codes are left, and the button that makes a new set.')),
+    p('Choose ', b('Generate New Codes'), ' (with your password if you signed in more than a few minutes ago) to make a fresh set of 8. The old ones stop working at once, so make a new set after using a few, or if you think someone has seen them. Save the new ones, tick ', b('I have saved these codes somewhere safe'), ' and choose ', b('Done'), '.'),
+    p('If your account has no codes, or you never confirmed saving them, Tesria asks you after you sign in, in a box headed ', b('Set up account recovery'), ' or ', b('Do you have your recovery codes?'), '. ', b('Not Now'), ' puts it off until you next sign in.'),
 
     h(2, 'If you lose your phone'),
     p('A lost, broken or replaced phone takes your authenticator app with it. Here is how to get going again:'),
     step(1, 'Sign in with a recovery code'),
     p('Sign in with your password as usual. At ', b('One more step'), ', type a recovery code instead of the six digits.'),
     step(2, 'Turn two-factor off'),
-    p('On your profile, the ', b('Two-factor sign-in'), ' card has ', b('Current password'), ' and ', b('Or a code from the app'), '. Type your password and choose ', b('Turn off'), '.'),
+    p('On your profile, the ', b('Two-factor sign-in'), ' card has ', b('Current password'), ' and ', b('Or a code from the app'), '. Type your password and choose ', b('Turn Off'), '.'),
     step(3, 'Set it up again on the new phone'),
-    p('Choose ', b('Set up two-factor'), ' and follow the steps above with the new phone. While you are there, make a new set of recovery codes if you have used several.'),
+    p('Choose ', b('Set Up Two-Factor'), ' and follow the steps above with the new phone. While you are there, make a new set of recovery codes if you have used several.'),
     p('Moving to a new phone you already have in hand works the same way: turn two-factor off, then set it up again with the new phone.'),
     h(3, 'Lost the phone and every recovery code?'),
-    p('Ask an administrator. They can choose ', b('Turn off two-factor'), ' for your account in ', ...adminAt('Users'), '. You are signed out everywhere, every administrator is told, and you sign in with your password alone until you set two-factor up again. They should make sure they are really talking to you before they do it.'),
+    p('Ask an administrator. They can choose ', b('Turn Off Two-Factor'), ' for your account in ', ...adminAt('Users'), '. You are signed out everywhere, every administrator is told, and you sign in with your password alone until you set two-factor up again. They should make sure they are really talking to you before they do it.'),
     panel('note', p(b('Nobody can do this for the owner.'), ' The owner’s two-factor can only be turned off from their own profile, and only the owner can turn off another administrator’s. If you own your Tesria, keep your recovery codes especially safe.')),
 
     h(2, 'When two-factor is required'),
@@ -368,28 +377,28 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     h(2, 'By email'),
     p('Where email is set up, the reset page offers it first.'),
     step(1, 'Ask for a link'),
-    p('Enter your email address and choose ', b('Email me a reset link'), '. The page answers the same whether or not the address has an account, so nobody can use it to find out who does.'),
+    p('Enter your email address and choose ', b('Email Me a Reset Link'), '. The page answers the same whether or not the address has an account, so nobody can use it to find out who does.'),
     step(2, 'Open the email'),
     p('The message is headed ', i('Reset your password'), '. Its link works ', b('once'), ' and expires ', b('an hour'), ' after it was sent, so use it soon. No email after a few minutes? Check your spam folder, then ask again.'),
     step(3, 'Choose a new password'),
-    p('The link opens ', b('Choose a new password'), '. Type it twice, at least 8 characters, and choose ', b('Reset password'), '.'),
+    p('The link opens ', b('Choose a new password'), '. Type it twice, at least 8 characters, and choose ', b('Reset Password'), '.'),
 
     h(2, 'With a recovery code'),
-    p('If the page offers email, choose ', b('Use a recovery code instead'), ' under the form; otherwise the page opens here.'),
+    p('If the page offers email, choose ', b('Use a Recovery Code Instead'), ' under the form; otherwise the page opens here.'),
     step(1, 'Enter your email address and one recovery code'),
     p('Any one of your unused codes will do. Dashes and capitals do not matter.'),
     ...(await picture(reset, 'recover', 'The Reset your password form, with the Recovery code box boxed', 'The recovery code goes in the second box.')),
     step(2, 'Choose a new password'),
-    p('Type it in ', b('New password'), ' and again in ', b('Confirm new password'), ', then choose ', b('Reset password'), '. That code is now used up, so cross it off your list.'),
+    p('Type it in ', b('New password'), ' and again in ', b('Confirm new password'), ', then choose ', b('Reset Password'), '. That code is now used up, so cross it off your list.'),
     p('Your profile shows how many codes you have left. If you are running low, make a new set: see ', pageLink('Two-factor and recovery codes'), '.'),
 
     h(2, 'From an administrator'),
     p('No email and no recovery codes? The page says ', i('Lost your codes? Ask an administrator to issue a reset link.')),
-    p('An administrator chooses ', b('Reset password'), ' beside your name in ', ...adminAt('Users'), ' and gets a one-time link. It works once, for an hour, and opens straight on ', b('Choose a new password'), '.'),
+    p('An administrator chooses ', b('Reset Password'), ' beside your name in ', ...adminAt('Users'), ' and gets a one-time link. It works once, for an hour, and opens straight on ', b('Choose a new password'), '.'),
     panel('warning', p(b('The link is as good as a password for that hour.'), ' Administrators: hand it over in person, or by a message you know only that person can read. Everyone else: if someone you do not know sends you a reset link, do not use it; ask your administrator.')),
 
     h(2, 'Afterwards'),
-    p('Tesria shows ', b('Password reset'), ' with a ', b('Sign in'), ' button. You are not signed in automatically; sign in with your new password.'),
+    p('Tesria shows ', b('Password reset'), ' with a ', b('Sign In'), ' button. You are not signed in automatically; sign in with your new password.'),
     ul(
       li(p(b('Every other device is signed out.'), ' If someone else was using your account, they are out.')),
       li(p(b('Any lock is cleared,'), ' if too many wrong tries had locked your account.')),
@@ -409,14 +418,16 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ul(
       li(p(b('The logo'), ' takes you back to the list of spaces.')),
       li(p(b('Spaces'), ' lists every space you can see.')),
-      li(p(b('Admin'), ' opens Administration, if your role gives you any administrative right. ', b('Invite people'), ' is here instead if you may invite people but not administer. In a narrower window these move into a ', b('More'), ' menu.')),
+      li(p(b('Admin'), ' opens Administration, if your role gives you any administrative right. ', b('Invite people'), ' is here instead if you may invite people but not administer.')),
       li(p(b('Search pages…'), ' searches every page you can read. See ', b('Search'), ', below.')),
-      li(p(b('The sun, moon or screen button'), ' sets light or dark and the accent color. See ', pageLink('Theme and accent'), '.')),
+      li(p(b('The sun, moon or screen button'), ' sets light or dark, the style and the accent color. See ', pageLink('Theme and accent'), '.')),
       li(p(b('The bell'), ' shows your notifications.')),
       li(p(b('Your picture and name'), ' open your profile: your password, two-factor, email settings and more. See ', pageLink('Your profile'), '.')),
-      li(p(b('Sign out'), ' ends this session.')),
     ),
-    p('On a phone, the ☰ button at the left of the top bar opens these as a menu, together with the page tree of the space you are in. See ', pageLink('The phone top bar and menu'), '.'),
+    p('To sign out, open your profile: ', b('Sign Out'), ' is at the top right of it.'),
+    h(3, 'In a narrower window'),
+    p('Nothing in the top bar is ever squeezed or cut short. When the window is too narrow for all of it, a ', b('☰'), ' button appears at the left of the bar, and ', b('Spaces'), ', ', b('Admin'), ' (or ', b('Invite people'), ') and the search box move into the menu it opens. Narrower still, the sun, moon or screen button moves into that menu too, and then the bell. Your picture stays in the bar.'),
+    p('On a phone, the same menu also holds the page tree of the space you are in. See ', pageLink('The phone top bar and menu'), '.'),
 
     h(2, 'Search'),
     p('Search finds pages by what is in them, across every space you can see. Type a word or two into ', b('Search pages…'), ' and press ', b('Enter'), '.'),
@@ -424,10 +435,11 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     panel('success', p(b('Search or filter?'), ' Search looks inside the text of pages in every space. The filter at the top of the page tree (below) looks only at the titles in the space you are in, and answers as you type. When you know roughly what a page is called, the filter is quicker.')),
 
     h(2, 'The space sidebar'),
-    p('Inside a space, the sidebar holds the space’s icon and name, ', b('+ New page'), ', the tree of its pages, and ', b('Space settings'), ' at the bottom. The name and buttons stay put while the tree scrolls, so they are always to hand however long the tree is.'),
+    p('Inside a space, the sidebar holds the space’s icon and name, ', b('+ New Page'), ', the tree of its pages, and ', b('Space Settings'), ' at the bottom. The name and buttons stay put while the tree scrolls, so they are always to hand however long the tree is.'),
     ...(await picture(around, 'sidebar', 'The space sidebar, with the hide button boxed and an arrow at its right edge', 'The boxed button hides the sidebar. Its right edge is a handle you drag to make it wider.')),
     h(3, 'Hiding it'),
     p('The button beside the space’s name hides the sidebar, to give the page more room. A narrow strip stays at the left with the same button, to bring it back. Tesria remembers your choice on this device.'),
+    p('In the Glass style (see ', pageLink('Theme and accent'), '), the sidebar is a floating frosted panel instead. Its hide button, at the panel’s top right, tucks it away into a small round button at the left of the page; choose that button to bring the sidebar back.'),
     h(3, 'Making it wider or narrower'),
     p('Long titles, numbered trees and deeply nested pages take room. You can make the sidebar as wide as you like, within reason:'),
     ul(
@@ -450,7 +462,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     step(2, 'Open a result'),
     p('Click a page to open it, or press ', b('Enter'), ' to open the first match. The filter stays as it is, so the next result is one click away: open one, read it, open the next.'),
     step(3, 'Clear it'),
-    p('Press ', b('Escape'), ' in the box, or delete what you typed, to see the whole tree again. If nothing matches, the tree says ', b('No pages match.')),
+    p('Press ', b('Escape'), ' in the box, choose the ', b('×'), ' that appears at the end of the box once you have typed something, or delete what you typed, to see the whole tree again. If nothing matches, the tree says ', b('No pages match.')),
     h(3, 'The pages under each match'),
     p('The button with the small tree on it, beside the box, is ', b('Show the pages under each match'), '. It is on unless you turn it off, and shows in the accent color while it is on. Turn it off when you want the matching pages alone. Tesria remembers the setting on this device.'),
     h(3, 'How long the filter lasts'),
@@ -460,24 +472,24 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     h(2, 'Numbered and bulleted trees'),
     p('A space can show numbers beside its pages, like the contents of a book: 1, 1.1, 1.2, 2. It makes a long tree easier to scan and to talk about (“it’s in 3.2”), which is why these docs use it. Or it can show bullets, which change shape with each level, or nothing at all.'),
     p('It is a setting of the space, so everyone sees the same. The numbers are only drawn beside the titles: they are not part of any title or address, and they follow the tree when pages are added or moved, so nobody ever has to renumber anything.'),
-    p('To change it, open ', b('Space settings'), ' at the bottom of the sidebar. On the ', b('Details'), ' tab, under ', b('Page tree'), ', choose ', b('Plain'), ', ', b('Numbered'), ' or ', b('Bulleted'), '. The change is saved as soon as you choose; there is no Save button.'),
-    ...(await picture(around, 'tree-style', 'The Page tree setting, with Numbered boxed', 'The Page tree setting in Space settings. Each choice shows what the tree will look like.')),
+    p('To change it, open ', b('Space Settings'), ' at the bottom of the sidebar. On the ', b('Details'), ' tab, under ', b('Page Tree'), ', choose ', b('Plain'), ', ', b('Numbered'), ' or ', b('Bulleted'), '. The change is saved as soon as you choose; there is no Save button.'),
+    ...(await picture(around, 'tree-style', 'The Page Tree setting, with Numbered boxed', 'The Page Tree setting in Space Settings. Each choice shows what the tree will look like.')),
     p('You need to be able to change the space’s settings. If you cannot, ask whoever looks after the space.'),
 
     h(2, 'The page bar'),
     p('Above every page is a bar with what you can do to it:'),
     ul(
       li(p(b('Edit'), ', if you may edit the page.')),
-      li(p(b('Full width'), ', to let the page use the whole window, for wide tables and diagrams. It changes the page for everyone who reads it. Not on phones.')),
+      li(p(b('Full Width'), ', to let the page use the whole window, for wide tables and diagrams. It changes the page for everyone who reads it. Not on phones.')),
       li(p(b('⋮'), ', for everything else.')),
     ),
     ...(await picture(around, 'page-menu', 'The ⋮ menu of a page, open, with its button boxed', 'The ⋮ menu. What it offers depends on the space and on your role.')),
     p('The ⋮ menu is where you export a page as Markdown, HTML or PDF, watch it to be told when it changes, save it as a template, move or copy it, and delete it. ', pageLink('Page actions'), ' explains each.'),
-    p('Above the title, the ', b('breadcrumb'), ' shows where the page sits in its space: click any part of it to go up. Below the page are four tabs: ', b('Comments'), ', ', b('Attachments'), ', ', b('History'), ' and ', b('Restrictions'), '.'),
+    p('Above the title, the ', b('breadcrumb'), ' shows where the page sits in its space: click any part of it to go up. Below the page are four tabs: ', b('Comments'), ', ', b('Attachments'), ', ', b('History'), ' and ', b('Restrictions'), '. The row never scrolls sideways: in a narrow window, the tabs that do not fit go into a ', b('•••'), ' button at the end of it. The tabs of Administration and of Space Settings work the same way.'),
 
     h(2, 'Trust this device'),
     p('If your browser says ', i('Not secure'), ' beside the address, or you had to click past a warning to open Tesria, your server makes its own security certificate and this device does not trust it yet. The connection is still encrypted, but the warning is worth fixing, once per device.'),
-    p('Your profile then has a ', b('Trust this device'), ' card with ', b('Set up this device'), ', and the sign-in page has a ', b('Trust this device'), ' link. Both open a short guide that takes about three minutes. See ', pageLink('Trusting the local certificate'), '. If your Tesria has a certificate from the internet, neither appears, and you have nothing to do.'),
+    p('Your profile then has a ', b('Trust this device'), ' card with ', b('Set Up This Device'), ', and the sign-in page has a ', b('Trust this device'), ' link. Both open a short guide that takes about three minutes. See ', pageLink('Trusting the local certificate'), '. If your Tesria has a certificate from the internet, neither appears, and you have nothing to do.'),
   ))
 
   // =================================================== The tour and tips
@@ -494,8 +506,8 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('Finding things:'), ' search and labels.')),
       li(p(b('You:'), ' your profile, and where tips are turned off.')),
     ),
-    ...(await picture(tour, 'tour', 'The first screen of the tour, with Skip the tour boxed', 'The tour’s first screen. Next moves on; Skip the tour ends it.')),
-    p(b('Next'), ' and ', b('Back'), ' move through it, and ', b('Done'), ' on the last screen finishes it. ', b('Skip the tour'), ' ends it at once. Closing the tab, or leaving it any other way, counts as skipping, so it does not come back by itself.'),
+    ...(await picture(tour, 'tour', 'The first screen of the tour, with Skip the Tour boxed', 'The tour’s first screen. Next moves on; Skip the Tour ends it.')),
+    p(b('Next'), ' and ', b('Back'), ' move through it, and ', b('Done'), ' on the last screen finishes it. ', b('Skip the Tour'), ' ends it at once. Closing the tab, or leaving it any other way, counts as skipping, so it does not come back by itself.'),
     p('On the last screen, ', b('Show me tips as I go'), ' is ticked. Leave it ticked to get tips, or untick it before you choose ', b('Done'), ' if you would rather not.'),
 
     h(2, 'Tips'),
@@ -506,26 +518,27 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p('Never over a dialog or an open menu, and never while you are selecting text in the editor.')),
       li(p('Only about something on the screen in front of you.')),
     ),
-    p('Each tip has two buttons. ', b('Got it'), ' puts that tip away for good. ', b('Turn off tips'), ' stops them all; for a few seconds afterwards, ', b('Undo'), ' turns them back on if you did not mean it.'),
+    p('Each tip has two buttons. ', b('Got It'), ' puts that tip away for good. ', b('Turn Off Tips'), ' stops them all; for a few seconds afterwards, ', b('Undo'), ' turns them back on if you did not mean it.'),
 
     h(2, 'Changing your mind'),
     p('Your profile has a ', b('Tour and tips'), ' card with everything in one place:'),
-    ...(await picture(tour, 'tour-and-tips', 'The Tour and tips card on the profile, with Show the tour again boxed', 'Tour and tips on your profile. Here tips are turned off.')),
+    ...(await picture(tour, 'tour-and-tips', 'The Tour and tips card on the profile, with Show the Tour Again boxed', 'Tour and tips on your profile. Here tips are turned off.')),
     ul(
       li(p(b('Show tips as I go'), ' turns tips on or off.')),
-      li(p(b('Show the tour again'), ' opens the tour now.')),
-      li(p(b('Reset dismissed tips'), ' brings back the tips you put away with Got it. The number beside it says how many there are.')),
+      li(p(b('Show the Tour Again'), ' opens the tour now.')),
+      li(p(b('Reset Dismissed Tips'), ' brings back the tips you put away with Got It. The number beside it says how many there are.')),
     ),
   ))
 
   // ==================================================== Theme and accent
   await page('Theme and accent', basics, doc(
-    p('You can choose how Tesria looks: ', b('light'), ' or ', b('dark'), ', or following your computer or phone; a ', b('style'), ', flat or glass; and an ', b('accent color'), ' for buttons, links and highlights. A dark theme is easier on the eyes at night; following the system switches for you when your device does. If you use more than one Tesria, a different accent on each tells them apart at a glance.'),
+    p('You can choose how Tesria looks: ', b('light'), ' or ', b('dark'), ', or following your computer or phone; a ', b('style'), ', Minimal or Glass; and an ', b('accent color'), ' for buttons, links and highlights. A dark theme is easier on the eyes at night; following the system switches for you when your device does. If you use more than one Tesria, a different accent on each tells them apart at a glance.'),
 
     h(2, 'Changing it'),
     step(1, 'Open the appearance menu'),
-    p('Choose the button at the right of the top bar, just left of the bell. It shows a sun, a moon or a screen, depending on the theme in use.'),
+    p('Choose the button at the right of the top bar, just left of the bell. It shows a sun, a moon or a screen, depending on the theme in use. In a narrow window it may have moved into the ', b('☰'), ' menu at the left of the top bar; see ', pageLink('Finding your way around'), '.'),
     ...(await picture(theme, 'theme-menu', 'The appearance menu open under its button in the top bar', 'The boxed button opens the menu. Here the theme is Light and the accent Blue.')),
+    p('The menu has three sections, one for each choice: ', b('Theme'), ', ', b('Style'), ' and ', b('Accent Color'), '.'),
     step(2, 'Choose a theme'),
     ul(
       li(p(b('System'), ' follows your computer or phone, light by day and dark by night if your device switches. This is where everyone starts, and the menu shows which one your device is using now.')),
@@ -534,16 +547,19 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ),
     step(3, 'Choose a style'),
     ul(
-      li(p(b('Flat'), ' is solid surfaces, as Tesria has always looked. This is where everyone starts.')),
-      li(p(b('Glass'), ' is frosted: the top bar, buttons and tabs look like glass, lit from above, as on tesria.com, and the top bar turns into a frosted strip as you scroll. The page itself, the editor, tables and forms stay solid, so long text stays easy to read. Statuses, charts, diagrams and code blocks follow it too, unless one has a style of its own.')),
+      li(p(b('Minimal'), ' is Tesria’s classic look: solid, quiet surfaces. This is where everyone starts.')),
+      li(p(b('Glass'), ' is the frosted look of tesria.com: the top bar, buttons and tabs look like glass, lit from above, and the top bar turns into a frosted strip as you scroll. Inside a space, the sidebar becomes a floating frosted panel. The page itself, the editor, tables and forms stay solid, so long text stays easy to read.')),
     ),
+    p('Statuses, charts, diagrams and code blocks follow the style you choose. Each of them also has a ', b('Style'), ' setting of its own, for whoever writes the page: ', b('Theme default'), ' (follow the reader’s choice, which is where they start), ', b('Minimal'), ' or ', b('Glass'), '.'),
     p('If your device asks for less transparency (an accessibility setting), Glass keeps its shape but becomes solid.'),
+    h(3, 'Reduce Motion'),
+    p('Glass moves: the sidebar shrinks into its button when you hide it, the appearance menu and the bell’s list open out of their buttons and close back into them, the top bar docks as you scroll, and the cards on the Spaces page lift as you point at them. If you would rather everything stayed still, choose Glass and turn on the ', b('Reduce Motion'), ' switch that appears under it, in the Style section. It turns all of those animations off. Minimal has none of them, so the switch only appears with Glass. If your device is already set to reduce motion (another accessibility setting), Tesria follows it without the switch.'),
     step(4, 'Choose an accent color'),
     p('Pick one of the round swatches: Blue, Green, Purple, Orange or Magenta. If your organization has its own brand color, it comes first, under your organization’s name.'),
     p('Each choice takes effect at once; there is nothing to save. Close the menu with its ', b('×'), ', or click anywhere else.'),
 
     h(2, 'Where it is kept'),
-    p('Your choices are kept in this browser, not in your account, so your phone and your laptop can look different, and it works even when you are not signed in. If you clear the browser’s data for your Tesria, it goes back to the start: System, Flat, and your organization’s usual accent.'),
+    p('Your choices are kept in this browser, not in your account, so your phone and your laptop can look different, and it works even when you are not signed in. If you clear the browser’s data for your Tesria, it goes back to the start: System, Minimal, and your organization’s usual accent.'),
 
     h(2, 'When the choice is made for you'),
     p('An administrator can decide some of this for everyone, in ', ...adminAt('Branding'), ':'),

@@ -1,129 +1,129 @@
 {
   "Administration": {
     "appliesTo": "0.5",
-    "updated": "2026-09-27",
+    "updated": "2026-09-28",
     "note": "0.6: the API tokens and About tabs, and how to open each tab.",
-    "hash": "13ca2f422b1a19dc"
+    "hash": "563f000e0cc550d8"
   },
   "Administration / About (administration)": {
     "appliesTo": "0.6",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "New in 0.6.",
-    "hash": "a2c18da51e82cc68"
+    "hash": "4235da4fbca642de"
   },
   "Administration / API tokens (administration)": {
     "appliesTo": "0.6",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "New in 0.6.",
-    "hash": "92ca7a46fd27a5d6"
+    "hash": "ebaf085e89e95afa"
   },
   "Administration / Audit": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "226861c1300bbf47"
+    "hash": "fc98abeadc9640e9"
   },
   "Administration / Backups (administration)": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "c9d1bd2899bd6f2b"
+    "hash": "99d1d5a9f5533979"
   },
   "Administration / Branding": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "1247b600e1fac60d"
+    "hash": "8fcfdb09b577136e"
   },
   "Administration / Dashboard": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "f6bd95136c9a51f5"
+    "hash": "fe63efbd0f581e61"
   },
   "Administration / Groups": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "1b8ada57f3d0e9e0"
+    "hash": "5a42f2c92e885717"
   },
   "Administration / Invites": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "0.6: with Tailscale, a second link for people on your tailnet.",
-    "hash": "6197603c7ac3ccfb"
+    "hash": "a47b324ddff04d17"
   },
   "Administration / Owner, administrators and users": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "475fd49a886f8e61"
+    "hash": "032f2a1f833bf2cf"
   },
   "Administration / Roles": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "e486babd2e05e5e2"
+    "hash": "67c7aff77f66a0cb"
   },
   "Administration / Security (administration)": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "6ced5fde8f563cf9"
+    "hash": "c7103b5a8c0c0521"
   },
   "Administration / Settings (administration)": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "f82f3a91c444602d"
+    "hash": "1ce7b788c78efd7b"
   },
   "Administration / Spaces (administration)": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "80e0dc63a52bb971"
+    "hash": "2eff3e330132f0d3"
   },
   "Administration / Users": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "0.6: a Tailscale reset link, when Tesria is on a tailnet.",
-    "hash": "e2f74acb9ef0d479"
+    "hash": "66f7e2c0dfb7f915"
   },
   "Backups and recovery / How backups work": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "27c43632fc7cb9f8"
+    "hash": "ec8034c9e1648e7d"
   },
   "Backups and recovery / Offsite copies": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "632f53a769ae6d1e"
+    "hash": "1e1619bd48aab6af"
   },
   "Backups and recovery / Restore drills": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "3031023af62dded1"
+    "hash": "05eb09b224dc72fc"
   },
   "Backups and recovery / Restoring and undo": {
     "appliesTo": "0.5",
-    "updated": "2026-09-25",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "3aa0eea5b4bae5c1"
+    "hash": "a2a90eeb7ce5f70a"
   },
   "Backups and recovery / Retention": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "5771238ed3ec16ac"
+    "hash": "5c544e124b755584"
   },
   "Backups and recovery / Testing a target and the cloud budget": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "87f88a60aecfc32a"
+    "updated": "2026-09-28",
+    "note": "Revised.",
+    "hash": "f8b4892598f0353f"
   },
   "Backups and recovery / When the machine is gone": {
     "appliesTo": "0.5",
@@ -133,45 +133,45 @@
   },
   "Basics / Accounts and invites": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "06feac450ef83d17"
+    "hash": "3b0ec36d2ae0bf1b"
   },
   "Basics / Finding your way around": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "03efbf008a7df4b2"
+    "hash": "e21830ceff030a04"
   },
   "Basics / Resetting a password": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "fecfc65d8ec5c633"
+    "hash": "994e6d07f0df1253"
   },
   "Basics / Signing in": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "c7a77c903d3748d0"
+    "hash": "4f4888a1f51a703d"
   },
   "Basics / The tour and tips": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "149d468cd35f628d"
+    "updated": "2026-09-28",
+    "note": "Revised.",
+    "hash": "f4605edd5f8b74c0"
   },
   "Basics / Theme and accent": {
     "appliesTo": "0.5",
-    "updated": "2026-09-27",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "45d5f8b497f0674d"
+    "hash": "459eaf437e8249ba"
   },
   "Basics / Two-factor and recovery codes": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "867a72e63c47322e"
+    "hash": "b7cfe7b11fbb200a"
   },
   "Contributing / Building from source": {
     "appliesTo": "0.6",
@@ -253,21 +253,21 @@
   },
   "Elements / Bullet list": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "c27c2e9a020d466a"
+    "hash": "7e177649250c326d"
   },
   "Elements / Chart": {
     "appliesTo": "0.5",
-    "updated": "2026-09-27",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "b6a1c8cd3961c41a"
+    "hash": "03e84d8c02f41dc0"
   },
   "Elements / Code block": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "1d079d031f232026"
+    "hash": "dee1120f752009a3"
   },
   "Elements / Date": {
     "appliesTo": "0.5",
@@ -277,15 +277,15 @@
   },
   "Elements / Decision": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "e2f3a0b015dfdd36"
+    "hash": "2cf364e044be6688"
   },
   "Elements / Diagram (Mermaid)": {
     "appliesTo": "0.5",
-    "updated": "2026-09-27",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "81cb1dbf55290ea6"
+    "hash": "e9e602c4d2c5c420"
   },
   "Elements / Divider": {
     "appliesTo": "0.5",
@@ -307,57 +307,57 @@
   },
   "Elements / Excerpt": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "c25865b694b9e97a"
+    "hash": "02f934bcd64a1ed8"
   },
   "Elements / Expand": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "e4559ad5c8e2f561"
+    "hash": "7612deed6314a1d3"
   },
   "Elements / File or video": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "10d31f510f517436"
+    "hash": "b430bd0907a13324"
   },
   "Elements / Gallery": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "ab67157b31610a82"
+    "hash": "c650c3a2292467d8"
   },
   "Elements / Headings": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "a0d1ee0455de2c6d"
+    "hash": "f8bd0ae86bada24b"
   },
   "Elements / Image": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "bf76c1de484e7d27"
+    "hash": "576d6b6e1990bad0"
   },
   "Elements / Layout": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "9e9b13042f189bab"
+    "hash": "3495396cf2bec650"
   },
   "Elements / Link": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "a5acae3783ae5eb4"
+    "hash": "8e0a9e7585d04b53"
   },
   "Elements / Math": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "c3cefc17d2ae451a"
+    "hash": "dc0adb2dbeb4efbf"
   },
   "Elements / Mention": {
     "appliesTo": "0.5",
@@ -367,57 +367,57 @@
   },
   "Elements / Normal text": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "73e43f97a0bc20b6"
+    "hash": "dc2d87f59a95f4d9"
   },
   "Elements / Ordered list": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "69fa5b96b9aeb2c3"
+    "hash": "85974bbd2c4ece25"
   },
   "Elements / Page properties": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "f80c577b4722d0ca"
+    "hash": "5529f67109423a71"
   },
   "Elements / Panels": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "29ff595ada23527c"
+    "hash": "6fe80073af493cb0"
   },
   "Elements / Smart link": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "408ca8e7c105d911"
+    "hash": "c9cfb3ab0a0e89ec"
   },
   "Elements / Status": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "81708a8c24b7a533"
+    "hash": "e4a6809bced95705"
   },
   "Elements / Table": {
     "appliesTo": "0.5",
-    "updated": "2026-09-27",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "e011e610a24e746d"
+    "hash": "7eb55c0c8798711e"
   },
   "Elements / Table of contents": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "c81671a7032941d6"
+    "hash": "b6fdf8d94ebc0fd7"
   },
   "Elements / Task list": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "ccb0d379656c1255"
+    "hash": "63e6802873492215"
   },
   "Email (SMTP) / Sending services": {
     "appliesTo": "0.5",
@@ -427,75 +427,75 @@
   },
   "Email (SMTP) / Sending with Apple iCloud Mail": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "61689e09dcbed61f"
+    "hash": "406874ae496b1a06"
   },
   "Email (SMTP) / Sending with Fastmail": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "73d46bcc6e3951e5"
+    "hash": "589e7ae492f6e894"
   },
   "Email (SMTP) / Sending with Gmail": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "b3774b1db715bef4"
+    "hash": "1d4e5e82cb11430b"
   },
   "Email (SMTP) / Sending with Outlook or Microsoft 365": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "f86e6ac5f9851234"
+    "hash": "46d21a2bc02a83f6"
   },
   "Email (SMTP) / Sending with Proton Mail": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "398594f887c2d664"
+    "hash": "8b59cacb64049428"
   },
   "Email (SMTP) / Sending with Zoho Mail": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "50d70bc8ecc3a08b"
+    "hash": "e8185de2a39c5189"
   },
   "Exporting and publishing / A space as a website": {
     "appliesTo": "0.5",
-    "updated": "2026-09-27",
+    "updated": "2026-09-28",
     "note": "0.6: a progress bar and Cancel while it builds.",
-    "hash": "19d3fe9634da3222"
+    "hash": "a717f2a0efa4dcf2"
   },
   "Exporting and publishing / Exporting a page": {
     "appliesTo": "0.5",
-    "updated": "2026-09-27",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "86bb0b6f1350065e"
+    "hash": "54a302031ac1af6b"
   },
   "Exporting and publishing / Hosting an exported site": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "59f96cb95c85b5e7"
+    "updated": "2026-09-28",
+    "note": "Revised.",
+    "hash": "3a7c0da611b98bdd"
   },
   "Exporting and publishing / Public reading": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "c1f68f503b58472a"
+    "hash": "0c056b037fed2c27"
   },
   "Exporting and publishing / Turning exports off": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "36baa341bf47ead9"
+    "hash": "c7f5c951832e41aa"
   },
   "Exporting and publishing / Wiki packs": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "0.6: a progress bar and Cancel while it packs.",
-    "hash": "6f9cd1f84c2289d9"
+    "hash": "90a82c9105f73911"
   },
   "FAQ": {
     "appliesTo": "0.5",
@@ -505,9 +505,9 @@
   },
   "Features": {
     "appliesTo": "0.5",
-    "updated": "2026-09-27",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "f08bf886d2724426"
+    "hash": "055b7fa9ba9fb9e2"
   },
   "Finding things / Label pages": {
     "appliesTo": "0.5",
@@ -517,9 +517,9 @@
   },
   "Finding things / Search": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "432cfd00105af6e6"
+    "hash": "41d23c918ebd451f"
   },
   "Getting started": {
     "appliesTo": "0.5",
@@ -529,9 +529,9 @@
   },
   "Getting started / First-run setup wizard": {
     "appliesTo": "0.5",
-    "updated": "2026-09-27",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "0a14251d75d9eb54"
+    "hash": "4fb862cba2104bbe"
   },
   "Getting started / Prerequisites": {
     "appliesTo": "0.5",
@@ -559,15 +559,15 @@
   },
   "Getting started / Your first space and page": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "d0fe0e52ef68d5b1"
+    "hash": "14506d7f822848e1"
   },
   "Glossary": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "c4ec63eeb9934dfb"
+    "hash": "113a61b3403857e6"
   },
   "How Tesria is built / Editing together": {
     "appliesTo": "0.6",
@@ -607,9 +607,9 @@
   },
   "Installation and operations / Backups and recovery": {
     "appliesTo": "0.5",
-    "updated": "2026-09-27",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "6a28a8a414e9c762"
+    "hash": "00783eab385939b2"
   },
   "Installation and operations / Configuration reference": {
     "appliesTo": "0.5",
@@ -619,15 +619,15 @@
   },
   "Installation and operations / Email (SMTP)": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "12199e4fd0542456"
+    "hash": "d1af909660e1e09c"
   },
   "Installation and operations / Health checks and monitoring": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "0404a54cacdf0145"
+    "hash": "e7a812a8c7c7cc36"
   },
   "Installation and operations / HTTPS and domains": {
     "appliesTo": "0.5",
@@ -655,39 +655,39 @@
   },
   "Installation and operations / Real visitor addresses with Docker Desktop": {
     "appliesTo": "0.6",
-    "updated": "2026-09-27",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "943491cc67e0d425"
+    "hash": "90ddc2dbb8cc87f9"
   },
   "Installation and operations / Security hardening": {
     "appliesTo": "0.5",
-    "updated": "2026-09-27",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "789dd186c35d1cce"
+    "hash": "0ac1d9f2483a8970"
   },
   "Installation and operations / Single sign-on (OIDC)": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "eff36ea766b98d6c"
+    "hash": "dd505272a2a3f1a0"
   },
   "Installation and operations / Trusting the local certificate": {
     "appliesTo": "0.5",
-    "updated": "2026-09-27",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "12b615f04e0194bc"
+    "hash": "6c17f8669fb640be"
   },
   "Installation and operations / Uninstalling and moving": {
     "appliesTo": "0.5",
-    "updated": "2026-09-27",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "1596fd447e49888e"
+    "hash": "a3269980a8f5aeaf"
   },
   "Installation and operations / Upgrading": {
     "appliesTo": "0.5",
-    "updated": "2026-09-27",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "90652eefedebc279"
+    "hash": "b1d5258c5d48c062"
   },
   "License and credits": {
     "appliesTo": "0.5",
@@ -697,39 +697,39 @@
   },
   "Live content / Attachments (live content)": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "37f99a1b3b6e1641"
+    "hash": "0f0e1bf1aa33f27b"
   },
   "Live content / Change history": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "a18f419ef9690d74"
+    "hash": "112c91f32f14d149"
   },
   "Live content / Children display": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "1fad27b1fc3cbe7f"
+    "hash": "7a5e7d11b8e3bdf7"
   },
   "Live content / Content by label": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "3e171a46185f6481"
+    "hash": "e114ec7d29fc9346"
   },
   "Live content / Contributors": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "892543146071240d"
+    "hash": "5cab0492807dca2a"
   },
   "Live content / Excerpt include": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "7da9f86118f94d5a"
+    "hash": "02ec45bc83f65876"
   },
   "Live content / How live content works": {
     "appliesTo": "0.5",
@@ -739,39 +739,39 @@
   },
   "Live content / Include page": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "13cc4f85742ca887"
+    "hash": "71686eab9a7130dd"
   },
   "Live content / Labels list": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "92bfcb5ef683c81d"
+    "hash": "b9dec9be2e4d05a5"
   },
   "Live content / Page properties report": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "aa7eeb00cee2a728"
+    "hash": "dd644fd1b5c76a8d"
   },
   "Live content / Page tree": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "18d830022a99c3e0"
+    "hash": "dc9f00765d13636e"
   },
   "Live content / Recently updated": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "ef5c643f409956cc"
+    "hash": "66a1b121dc83bd64"
   },
   "Live content / Task report": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "95252edc101353f1"
+    "hash": "11b6ff14ae317fd4"
   },
   "MCP": {
     "appliesTo": "0.5",
@@ -781,9 +781,9 @@
   },
   "MCP / Connecting an assistant": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "d5d870d428484f81"
+    "hash": "77165cafe2e7f25c"
   },
   "MCP / What an assistant can do": {
     "appliesTo": "0.5",
@@ -793,21 +793,21 @@
   },
   "Pages / Attachments": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "9a96ae9610c6054f"
+    "hash": "e3e2087b92cc7ca5"
   },
   "Pages / Creating a page": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "9ad0b15fac96fed5"
+    "hash": "7f0ea5c029dcd31e"
   },
   "Pages / Drafts, Publish and Update": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "3086673e4cf06b56"
+    "hash": "ad7965b771e0da81"
   },
   "Pages / History and restoring": {
     "appliesTo": "0.5",
@@ -829,15 +829,15 @@
   },
   "Pages / Page actions": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "d336c7ad1fd518c0"
+    "hash": "b41fd756a57a30a3"
   },
   "Pages / Page emoji": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "2551f4465a334bf0"
+    "hash": "7686155745d749dd"
   },
   "Pages / Restrictions": {
     "appliesTo": "0.5",
@@ -847,21 +847,21 @@
   },
   "Pages / Templates": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "39d119b92055d160"
+    "updated": "2026-09-28",
+    "note": "Revised.",
+    "hash": "97386323c96e60f1"
   },
   "Pages / The page tree and reordering": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "39c980e4521fdbc0"
+    "hash": "e242fcabda527f57"
   },
   "Pages / Trash": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "b941506a34e51766"
+    "hash": "2bd88d958354e5c1"
   },
   "Project documents / Code of conduct": {
     "appliesTo": "0.6",
@@ -895,9 +895,9 @@
   },
   "Release notes / Tesria 0.6": {
     "appliesTo": "0.6",
-    "updated": "2026-09-24",
-    "note": "Written for Tesria 0.6.",
-    "hash": "d8b1dab186f1d61e"
+    "updated": "2026-09-28",
+    "note": "Revised.",
+    "hash": "8406fb8da1d40b7a"
   },
   "Release notes / Tesria 0.7": {
     "appliesTo": "0.7",
@@ -925,9 +925,9 @@
   },
   "REST API / Getting started with the API": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "a16bf5ff747f6c6f"
+    "hash": "edc51cc759c1cc47"
   },
   "REST API / Requests and responses": {
     "appliesTo": "0.5",
@@ -937,9 +937,9 @@
   },
   "REST API / Webhooks": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "fbefcc2fc90eb9b3"
+    "updated": "2026-09-28",
+    "note": "Revised.",
+    "hash": "d859d0392f007c93"
   },
   "REST API / What the API covers": {
     "appliesTo": "0.5",
@@ -949,51 +949,51 @@
   },
   "Security": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "5e5d5a1aea08af2a"
+    "hash": "4579c7773ac6335d"
   },
   "Spaces / Archiving and deleting a space": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "e761fb14e43341e0"
+    "hash": "8c675f5a6485b9dc"
   },
   "Spaces / Creating a space": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "e85bbb558dab3587"
+    "hash": "dc56f1b86bf32731"
   },
   "Spaces / Space icons": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "3f94dcdcc0bfbe55"
+    "updated": "2026-09-28",
+    "note": "Revised.",
+    "hash": "0eb2698cfbeb2afd"
   },
   "Spaces / The space home and watching": {
     "appliesTo": "0.5",
-    "updated": "2026-09-25",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "36a2a9dd1493a838"
+    "hash": "afcf1778f9db5838"
   },
   "Spaces / What a space is": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "6592c5366c0e8fa7"
+    "hash": "615ffef92600db08"
   },
   "Spaces / Who can see a space": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "64e0d2df8078f73b"
+    "hash": "767abb83d790998f"
   },
   "Tesria on phones and tablets / Moving between spaces and pages": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "78d8e059bf75095a"
+    "updated": "2026-09-28",
+    "note": "Revised.",
+    "hash": "1b3456a40d8e207c"
   },
   "Tesria on phones and tablets / Setting up a phone or tablet": {
     "appliesTo": "0.5",
@@ -1009,9 +1009,9 @@
   },
   "Tesria on phones and tablets / The editor on a phone": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "312f8e7b340aa72a"
+    "updated": "2026-09-28",
+    "note": "Revised.",
+    "hash": "a913c07a3397c5f1"
   },
   "Tesria on phones and tablets / The keyboard and the sticky bars": {
     "appliesTo": "0.5",
@@ -1021,33 +1021,33 @@
   },
   "Tesria on phones and tablets / The phone top bar and menu": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "c525565d886be07a"
+    "updated": "2026-09-28",
+    "note": "Revised.",
+    "hash": "8f4594c581f96592"
   },
   "Tesria on phones and tablets / What a phone does not offer": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "b4784de8d62c9939"
+    "hash": "73a23525caeea016"
   },
   "The editor / Alignment and indentation": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
-    "note": "Written for Tesria 0.5.",
-    "hash": "6e6ce0347dd69ad0"
+    "updated": "2026-09-28",
+    "note": "Revised.",
+    "hash": "d06a58b656873411"
   },
   "The editor / Colors": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "8e9ef606b4714925"
+    "hash": "140b01cd7403d8fb"
   },
   "The editor / Editor tour": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "06c3d65e03edb9f8"
+    "hash": "5b8e9510935aff59"
   },
   "The editor / Elements": {
     "appliesTo": "0.5",
@@ -1057,9 +1057,9 @@
   },
   "The editor / Floating menus": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "c4ac33b601ce9347"
+    "hash": "d46dd3117b1207c6"
   },
   "The editor / Keyboard shortcuts": {
     "appliesTo": "0.5",
@@ -1069,9 +1069,9 @@
   },
   "The editor / Live content": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "a7e4b2217d981099"
+    "hash": "c54727dae92b5775"
   },
   "The editor / Markdown shortcuts": {
     "appliesTo": "0.5",
@@ -1081,21 +1081,21 @@
   },
   "The editor / Text formatting": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "0cf5008cd47bc1c4"
+    "hash": "0d8e9118cfda7cb2"
   },
   "The editor / The slash menu": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "57b6ecd387533769"
+    "hash": "11fcf0b05ec295c5"
   },
   "Troubleshooting": {
     "appliesTo": "0.5",
-    "updated": "2026-09-27",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "c586b6493182dba4"
+    "hash": "d51bb9d286dc6cf9"
   },
   "User manual": {
     "appliesTo": "0.5",
@@ -1141,9 +1141,9 @@
   },
   "User manual / The editor": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "adcc611b26f5630f"
+    "hash": "3c7c5ef1feffcb23"
   },
   "User manual / Working together": {
     "appliesTo": "0.5",
@@ -1153,9 +1153,9 @@
   },
   "User manual / Your profile": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "65f326ee0bf5af40"
+    "hash": "c7907e565a9ca910"
   },
   "Welcome to Tesria": {
     "appliesTo": "0.5",
@@ -1165,15 +1165,15 @@
   },
   "Working together / Changes from assistants and the API": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "07d70d39c463b17e"
+    "hash": "c736b77320022b9b"
   },
   "Working together / Comments": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "91e304b451103c4f"
+    "hash": "358bf94b86c86f2b"
   },
   "Working together / Editing at the same time": {
     "appliesTo": "0.5",
@@ -1183,27 +1183,27 @@
   },
   "Working together / Mentions and notifications": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "e346be87b9e58529"
+    "hash": "0133b425b28ef263"
   },
   "Working together / Watching": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "0a9d7c1fadd0dc30"
+    "hash": "1c0f26b36f226dd5"
   },
   "Your profile / API tokens": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "0.6: where to find them, revoking one step by step, and how many requests each has made.",
-    "hash": "341eb2441b0df9f4"
+    "hash": "955930dcbd55bc8f"
   },
   "Your profile / Avatar, name and email": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "2b513285f1530098"
+    "hash": "ced948240cbe07bf"
   },
   "Your profile / Email notifications": {
     "appliesTo": "0.5",
@@ -1213,14 +1213,14 @@
   },
   "Your profile / Password": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "98d11da225d4150b"
+    "hash": "4562004f394be44a"
   },
   "Your profile / Sessions": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-28",
     "note": "Revised.",
-    "hash": "3c634091e3ee57ba"
+    "hash": "2c5e1720f290ddae"
   }
 }

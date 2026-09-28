@@ -199,7 +199,7 @@ export async function build(helpers) {
       ['/math', 'An equation on its own line'],
       ['/inline', 'Math inside a sentence'],
     ], [200, 500]),
-    p('Type the command at the start of a line, or after a space, and press ', b('Enter'), '. Or choose ', b('+'), ' on the toolbar, then ', b('Math'), ' or ', b('Inline math'), '.'),
+    p('Type the command at the start of a line, or after a space, and press ', b('Enter'), '. Or choose ', b('+'), ' on the toolbar, then ', b('Math'), ' or ', b('Inline Math'), '.'),
     p('Each starts with a sample, ', c('e = mc^2'), ' or ', c('x^2'), '. Double-click it to type your own. If you had text selected, the math takes its place. There is no shortcut with dollar signs: typing ', c('$x$'), ' stays as ordinary text.'),
 
     h(2, 'Inline or on its own line'),
@@ -235,7 +235,7 @@ export async function build(helpers) {
     h(2, 'Changing and removing it'),
     ul(
       li(p(b('Double-click the math'), ' to change its LaTeX. Press ', b('Enter'), ' or click away to keep the change; ', b('Escape'), ' leaves it as it was.')),
-      li(p(b('Inline'), ' and ', b('Own line'), ', beside the LaTeX while you edit it, move the math into the sentence or onto a line of its own.')),
+      li(p(b('Inline'), ' and ', b('Own Line'), ', beside the LaTeX while you edit it, move the math into the sentence or onto a line of its own.')),
       li(p(b('A mistake shows in place.'), ' If the LaTeX cannot be drawn, for example because a brace is missing, the message saying why appears where the math would be, until you fix it.')),
       li(p(b('To remove it,'), ' click it once to select it and press ', b('Delete'), '.')),
     ),
@@ -332,7 +332,7 @@ export async function build(helpers) {
     ul(
       li(p(b('Table'), ' chooses which table on the page to draw: Table 1 is the first.')),
       li(p(b('Type'), ' switches between Column (vertical), Bar (horizontal), Line, Pie and Donut. The table is not touched.')),
-      li(p(b('Style'), ' decides how this one looks. ', b('Theme default'), ' follows each reader’s own style, Flat or Glass, from the appearance menu. ', b('Flat'), ' or ', b('Glass'), ' keeps it that way for everyone, whatever their style, and in PDF, HTML and website exports too. An export has no reader’s style, so a ', b('Theme default'), ' one comes out flat.')),
+      li(p(b('Style'), ' decides how this one looks. ', b('Theme default'), ' follows each reader’s own style, Minimal or Glass, from the appearance menu. ', b('Minimal'), ' or ', b('Glass'), ' keeps it that way for everyone, whatever their style, and in PDF, HTML and website exports too. An export has no reader’s style, so a ', b('Theme default'), ' one comes out as Minimal.')),
       li(p(b('Chart title (optional)'), ' is a line shown above the chart.')),
     ),
     p('If there is no table on the page yet, the chart says so; if its table has no numbers, it says that instead. To remove a chart, click its edge to select it and press ', b('Delete'), '. The table stays.'),
@@ -408,8 +408,8 @@ export async function build(helpers) {
     p('Click a picture while you are editing and a bar of options appears above it:'),
     ul(
       li(p(b('Border'), ' and ', b('Shadow'), ' turn each on or off.')),
-      li(p(b('Left'), ', ', b('Center'), ', ', b('Right'), ' and ', b('Full'), ' place it. ', b('Original size'), ' appears once you have resized it, and puts it back to its own size.')),
-      li(p(b('Caption'), ' and ', b('Alt text'), ' each open a box to type in; ', b('Save'), ' keeps it. Leave the box empty to remove it.')),
+      li(p(b('Left'), ', ', b('Center'), ', ', b('Right'), ' and ', b('Full'), ' place it. ', b('Original Size'), ' appears once you have resized it, and puts it back to its own size.')),
+      li(p(b('Caption'), ' and ', b('Alt Text'), ' each open a box to type in; ', b('Save'), ' keeps it. Leave the box empty to remove it.')),
       li(p(b('Comment'), ' starts a comment about the picture.')),
     ),
     p('To resize it, drag the small square at its bottom-right corner. To remove it, click it and press ', b('Delete'), '; the file stays among the page’s attachments.'),
@@ -473,7 +473,7 @@ export async function build(helpers) {
     ul(
       li(p(b('To add a picture,'), ' put the cursor in the gallery and paste, drag or type ', c('/image'), '.')),
       li(p(b('To remove one,'), ' click it and press ', b('Delete'), '.')),
-      li(p(b('Each picture keeps its options:'), ' click one for its bar of Border, Shadow, Alt text and the rest. Size and position do not apply here: the tiles decide both.')),
+      li(p(b('Each picture keeps its options:'), ' click one for its bar of Border, Shadow, Alt Text and the rest. Size and position do not apply here: the tiles decide both.')),
     ),
 
     h(2, 'Good practice'),
@@ -506,7 +506,7 @@ export async function build(helpers) {
       ['Type this', 'To get'],
       ['/file or /pdf', 'A File or video block, ready for a file'],
     ], [200, 500]),
-    insertNote('File or video', 'If you had text selected, the block takes its place.'),
+    insertNote('File or Video', 'If you had text selected, the block takes its place.'),
     p('The block has a ', b('File'), ' menu listing the page’s attachments, and an ', b('Upload'), ' button to add a file from your computer, which then shows at once. Typing ', c('/video'), ' lists Embed first, for a video from a site such as YouTube, and File or video second, for a video file of your own.'),
 
     h(2, 'What each kind of file looks like'),
@@ -668,7 +668,7 @@ export async function build(helpers) {
       ['Type this', 'To get'],
       ['/smart or /preview', 'A smart link card, with a box for the address'],
     ], [200, 500]),
-    insertNote('Smart link', 'If you had text selected, the smart link takes its place.'),
+    insertNote('Smart Link', 'If you had text selected, the smart link takes its place.'),
     p('Paste the address into the box and press ', b('Enter'), ', or choose ', b('Show'), '. It starts as a card.'),
 
     h(2, 'Card or inline'),
@@ -721,7 +721,7 @@ export async function build(helpers) {
     ], [200, 500]),
     insertNote('Status', 'If you had text selected, the status takes its place.'),
     p('Its menu opens under it, with the cursor in the label: replace STATUS with your own words, then choose a color.'),
-    p('Its menu also has a ', b('Style'), ' decides how this one looks. ', b('Theme default'), ' follows each reader’s own style, Flat or Glass, from the appearance menu. ', b('Flat'), ' or ', b('Glass'), ' keeps it that way for everyone, whatever their style, and in PDF, HTML and website exports too. An export has no reader’s style, so a ', b('Theme default'), ' one comes out flat.'),
+    p('Its menu also has a ', b('Style'), ', which decides how this one looks. ', b('Theme default'), ' follows each reader’s own style, Minimal or Glass, from the appearance menu. ', b('Minimal'), ' or ', b('Glass'), ' keeps it that way for everyone, whatever their style, and in PDF, HTML and website exports too. An export has no reader’s style, so a ', b('Theme default'), ' one comes out as Minimal.'),
     ...(await animation(ids.Status, 'status-insert', 'Typing /status makes a status; type its label and choose a color.')),
 
     h(2, 'The six colors, and when to use each'),
@@ -946,7 +946,7 @@ export async function build(helpers) {
       ['Type this', 'To get'],
       ['/toc', 'A table of contents of every heading on the page'],
     ], [200, 500]),
-    insertNote('Table of contents', 'If you had text selected, it takes its place.'),
+    insertNote('Table of Contents', 'If you had text selected, it takes its place.'),
     p('It lists every heading, from Heading 1 to Heading 6, each under the heading before it that is a level higher. Click it to change its settings.'),
 
     h(2, 'Bullet styles'),
@@ -1037,7 +1037,7 @@ export async function build(helpers) {
     live('excerpt-include', { page: ids['Page properties'] }),
 
     h(2, 'Changing and removing it'),
-    p('Edit the text inside an excerpt as you would any text. With the cursor in it, a bar appears above it with ', b('Remove excerpt'), ', which takes the mark away and keeps the text. Pages that include it show the change once you publish.'),
+    p('Edit the text inside an excerpt as you would any text. With the cursor in it, a bar appears above it with ', b('Remove Excerpt'), ', which takes the mark away and keeps the text. Pages that include it show the change once you publish.'),
 
     h(2, 'Good practice'),
     ul(
@@ -1070,7 +1070,7 @@ export async function build(helpers) {
       ['Type this', 'To get'],
       ['/properties', 'A page properties table with Status and Owner rows'],
     ], [200, 500]),
-    insertNote('Page properties', 'If you had text selected, the table takes its place.'),
+    insertNote('Page Properties', 'If you had text selected, the table takes its place.'),
     p('Fill in the second column, and add rows for any other facts you want.'),
 
     h(2, 'What it can hold'),

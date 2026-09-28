@@ -134,9 +134,9 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p('Give the token a name that says what will use it, such as ', i('Weekly report script'), '. You will see the name in the list later, next to when the token was last used.')),
       li(p('Under ', b('Expires'), ', choose how long it lasts: 90 days unless you have a reason. You are told a week before it runs out, so the script does not stop by surprise.')),
       li(p('Tick ', b('Read-only'), ' if the script only needs to look things up. A read-only token can read pages and search, and is refused anything that changes something. For this page’s last step, leave it unticked.')),
-      li(p('Choose ', b('Create token'), '.')),
+      li(p('Choose ', b('Create Token'), '.')),
     ),
-    ...(await picture(start, 'token-form', 'The API tokens form on the profile', 'Name the token, choose when it expires and whether it is read-only, then Create token.')),
+    ...(await picture(start, 'token-form', 'The API tokens form on the profile', 'Name the token, choose when it expires and whether it is read-only, then Create Token.')),
     p('Tesria shows the token once, in a box that says ', i('Copy this token now, it won’t be shown again'), '. Copy it, then choose ', b('Done'), '. It starts with ', c('cct_'), '. Tesria keeps only a fingerprint of it, which is why it cannot show it to you again: if you lose it, revoke it and make a new one.'),
     panel('warning', p(b('Treat a token like a password.'), ' Anyone who has it can do what you can do, from anywhere that reaches your server, until it expires or you revoke it. Do not paste it into chat, email or a file you share. The one thing a token can never do is manage your account (tokens, sessions, password, two-factor, profile): those answer ', c('token_not_allowed'), '.')),
 
@@ -289,14 +289,14 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'Setting one up'),
     step(1, 'Open the space’s Webhooks tab'),
-    p('In the space, choose ', b('Space settings'), ', then the ', b('Webhooks'), ' tab.'),
-    ...(await picture(hooks, 'webhook-form', 'The Webhooks tab of Space settings, filled in', 'The address to call, the events to send, and Add webhook.')),
+    p('In the space, choose ', b('Space Settings'), ', then the ', b('Webhooks'), ' tab.'),
+    ...(await picture(hooks, 'webhook-form', 'The Webhooks tab of Space Settings, filled in', 'The address to call, the events to send, and Add Webhook.')),
     step(2, 'Enter the address and the events'),
     ul(
       li(p(b('URL:'), ' the web address of the program that will receive the messages, starting with ', c('https://'), ' (or ', c('http://'), ').')),
       li(p(b('Events:'), ' which happenings to send, separated by commas, such as ', c('page.created,page.updated'), '. Leave ', c('*'), ', the default, for all of them. The events are listed below.')),
     ),
-    step(3, 'Choose Add webhook, and copy the secret'),
+    step(3, 'Choose Add Webhook, and copy the secret'),
     p('Tesria shows the webhook’s ', b('signing secret'), ' once. Copy it into the receiving program’s settings, then choose ', b('Done'), '. The program uses it to check that each message really came from your Tesria (see below). If you lose it, delete the webhook and add it again.'),
     p('To change a webhook, delete it (', b('Delete'), ' beside it in the list) and add a new one. The receiving program is not told either way.'),
 
@@ -363,7 +363,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ol(
       li(p('Name the token after the assistant, such as ', i('Claude Code on my laptop'), ', so you know which one to revoke later.')),
       li(p('Decide whether it may write (see ', b('Read-only or not'), ' below). Tick ', b('Read-only'), ' if it only needs to look things up.')),
-      li(p('Choose ', b('Create token'), ', copy the token (it starts with ', c('cct_'), ' and is shown only once), and choose ', b('Done'), '.')),
+      li(p('Choose ', b('Create Token'), ', copy the token (it starts with ', c('cct_'), ' and is shown only once), and choose ', b('Done'), '.')),
     ),
     ...(await picture(connect, 'token-form', 'The API tokens form on the profile', 'Make one token for each assistant. Read-only is the safe choice.')),
 
@@ -392,7 +392,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'When an assistant writes'),
     p('A page an assistant creates or changes is published straight away, as a new version credited to you, the token’s owner, with the assistant’s note on what it changed in the page’s history. Watchers are told, and webhooks fire, exactly as if you had done it.'),
-    p('If someone has that page open in the editor at the time, they see the assistant’s change highlighted as tracked changes, marked as coming from MCP, with ', b('Accept all'), ' and ', b('Reject all'), ' above the page. Rejecting takes it out of their draft, so their ', b('Update'), ' publishes the page without it; the assistant’s version stays in the history either way. See ', pageLink('Changes from assistants and the API'), '.'),
+    p('If someone has that page open in the editor at the time, they see the assistant’s change highlighted as tracked changes, marked as coming from MCP, with ', b('Accept All'), ' and ', b('Reject All'), ' above the page. Rejecting takes it out of their draft, so their ', b('Update'), ' publishes the page without it; the assistant’s version stays in the history either way. See ', pageLink('Changes from assistants and the API'), '.'),
     p('Next: ', pageLink('What an assistant can do'), ' lists its ten tools.'),
   ))
 

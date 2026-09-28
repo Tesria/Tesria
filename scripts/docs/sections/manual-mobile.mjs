@@ -9,7 +9,11 @@
 // useVisualViewportOffset (the sticky bars and the keyboard), index.css's
 // 16px rule for form fields on phones and touch screens (the iOS zoom fix),
 // ProfilePage's Trust this device card, the /trust guide (TrustEndpoints)
-// and SessionsSection.
+// and SessionsSection. Re-checked for 0.8.1 on 2026-09-28: Layout (the bar
+// folds into ☰ by measuring, the theme button and bell join the menu, the
+// page behind an open menu is locked, Sign Out on the profile), SpacePage's
+// space bar (no name; + New and ⋮ with Watch This Space), SpaceHome (the
+// icon beside the title) and PageTree (the filter's clear button).
 //
 // This is the chapter where phone pictures belong: every shot is taken on a
 // phone only (desktop: false). The editor ones are on a new Tesria Demo page
@@ -31,12 +35,14 @@ export const shots = ({ demo }) => [
   // ---- The top bar and its menu.
   {
     name: 'phone-page', desktop: false, url: demo('Launch plan'), settle: 1500, steps: [{ wait: 2500 }],
-    annotate: [{ type: 'box', target: '.topbar__hamburger', pad: 4 }],
+    // button.topbar__hamburger and form.topbar__search: the top bar's
+    // invisible measuring copy (0.8.1) has spans with the same classes, first.
+    annotate: [{ type: 'box', target: 'button.topbar__hamburger', pad: 4 }],
   },
   {
     name: 'phone-menu', desktop: false, url: demo('Launch plan'), settle: 800,
-    steps: [{ wait: 2500 }, { click: '.topbar__hamburger' }, { wait: 600 }],
-    annotate: [{ type: 'box', target: '.topbar__search', pad: 4 }],
+    steps: [{ wait: 2500 }, { click: 'button.topbar__hamburger' }, { wait: 600 }],
+    annotate: [{ type: 'box', target: 'form.topbar__search', pad: 4 }],
   },
 
   // ---- Moving around a space.
@@ -141,27 +147,29 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   await page('The phone top bar and menu', mobile, doc(
     p('On a computer, the top bar holds everything at once: Spaces, search, the bell and your profile. A phone is too narrow for that, so the top bar keeps only what you reach for most, and the rest goes behind the ☰ button at its left.'),
     ...(await phonePicture(bar, 'phone-page', 'A page on a phone', 'A page on a phone. ☰ opens the menu; below the top bar are Edit, + New and the page’s ⋮ menu.')),
-    p('The top bar keeps the ☰ button, the logo (tap it for the list of spaces), the light and dark switch, the bell, your avatar for your profile, and ', b('Sign out'), '.'),
+    p('The top bar keeps the ☰ button, the logo (tap it for the list of spaces) and your avatar, which opens your profile. The sun, moon or screen button (light and dark) and the bell stay beside your avatar while there is room; on a narrow phone the first of them, and then the bell too, move to the top of the ☰ menu instead.'),
+    p('To sign out, open your profile: ', b('Sign Out'), ' is at its top right.'),
     h(2, 'The ☰ menu'),
     p('Tap ☰ and the menu opens under the top bar:'),
     ul(
+      li(p(b('The sun, moon or screen button and the bell,'), ' at the top, if they did not fit in the top bar.')),
       li(p(b('Spaces,'), ' and ', b('Admin'), ' or ', b('Invite people'), ' if your role has them.')),
       li(p(b('Search pages…'), ', the search box. Type and tap ', b('Go'), ' or ', b('Enter'), ' on the keyboard.')),
-      li(p(b('The space you are in:'), ' its name, ', b('+ New page'), ', its whole page tree and ', b('Space settings'), '. Tap a page to go to it.')),
+      li(p(b('The space you are in:'), ' its name, ', b('+ New Page'), ', its whole page tree with the ', b('Filter pages'), ' box above it, and ', b('Space Settings'), '. Tap a page to go to it. Once you type in the filter, a ', b('×'), ' at the end of the box clears it.')),
     ),
     ...(await phonePicture(bar, 'phone-menu', 'The ☰ menu on a phone', 'The ☰ menu, inside a space: the search box, then the space’s pages.')),
-    p('Tap ✕, tap outside the menu, or choose anything in it to close it.'),
+    p('While the menu is open, the page behind it stays where it is: a swipe inside the menu scrolls the menu, never the page underneath. Tap ✕, tap outside the menu, or choose anything in it to close it.'),
   ))
 
   await page('Moving between spaces and pages', mobile, doc(
     p('On a computer, a space’s page tree sits in a sidebar beside every page. A phone has no room for that, so the tree is in two other places instead:'),
     ul(
       li(p(b('In the ☰ menu,'), ' from any page in the space. This is the quick way from one page to another.')),
-      li(p(b('On the space’s home page,'), ' under its name and description. There you can also reorder pages, the same way as in the sidebar.')),
+      li(p(b('On the space’s home page,'), ' under its name and description. There you can also reorder pages, the same way as in the sidebar. The space’s icon sits beside its name at the top.')),
     ),
     ...(await phonePicture(moving, 'phone-space-home', 'A space’s home on a phone', 'A space’s home on a phone, with its page tree.')),
-    p('Under the top bar, a space’s home has ', b('+ New'), ' to create a page, and a ', b('⋮'), ' menu with ', b('Space settings'), ', which holds the space’s permissions, templates, webhooks and trash as well.'),
-    ...(await phonePicture(moving, 'phone-space-actions', 'The space’s ⋮ menu on a phone', 'The ⋮ menu beside a space’s name leads to its settings.')),
+    p('At the top right of a space’s home are two buttons: ', b('+ New'), ' to create a page, and a ', b('⋮'), ' menu. The menu holds ', b('Watch This Space'), ' (on a computer it is beside the space’s name instead; see ', pageLink('The space home and watching'), ') and ', b('Space Settings'), ', which holds the space’s permissions, templates, webhooks and trash as well.'),
+    ...(await phonePicture(moving, 'phone-space-actions', 'The space’s ⋮ menu on a phone', 'The ⋮ menu at the top right of a space’s home: Watch This Space and Space Settings.')),
     p('On a page, ', b('+ New'), ' beside ', b('Edit'), ' creates a new page under the one you are reading. On a computer the same is in the sidebar.'),
   ))
 
@@ -174,7 +182,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       ['+ Insert', 'Every element, as in the slash menu'],
     ], [160, 540]),
     h(2, 'Aa Style'),
-    p('At the top, ', b('Normal text'), ' and the six heading sizes. Below them, every formatting control from the computer’s toolbar: bold, italic and the rest under ', b('Format'), ', both color palettes under ', b('Color'), ', and lists, indentation and alignment under ', b('Paragraph'), '.'),
+    p('At the top, ', b('Normal Text'), ' and the six heading sizes. Below them, every formatting control from the computer’s toolbar: bold, italic and the rest under ', b('Format'), ', both color palettes under ', b('Color'), ', and lists, indentation and alignment under ', b('Paragraph'), '.'),
     ...(await phonePicture(editor, 'phone-style-menu', 'The Aa Style menu', 'Aa Style: text styles first, then every formatting control.')),
     h(2, '+ Insert'),
     p('Everything you can add to a page: tables, panels, pictures, code, dates, and every live content block. It is the same list as the slash menu.'),
@@ -217,7 +225,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Nearly everything is the same on a phone as on a computer, administration included. These few things are not:'),
     ul(
       li(p(b('Resizing tables by dragging.'), ' Column borders and a table’s edge need a mouse or trackpad. The table’s full-width button still works. See ', pageLink('Tables by touch'), '.')),
-      li(p(b('A page’s Full width button.'), ' A phone’s page already fills the screen, so the button is hidden.')),
+      li(p(b('A page’s Full Width button.'), ' A phone’s page already fills the screen, so the button is hidden.')),
       li(p(b('The sidebar, and hiding it.'), ' Its page tree is in the ☰ menu and on the space’s home instead. See ', pageLink('Moving between spaces and pages'), '.')),
       li(p(b('Keyboard shortcuts,'), ' unless a keyboard is connected to the phone or tablet.')),
     ),

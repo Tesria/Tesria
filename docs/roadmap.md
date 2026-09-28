@@ -295,6 +295,9 @@ good place for the total (the disk's free space, or the chart's sum).
 
 ## Flat or glass: a theme pass (asked for 2026-09-27; scheduled for 0.8.1)
 
+Built for 0.8.1 as **Minimal** (the name Flat was given before it shipped)
+or **Glass**; see the CHANGELOG. The notes below are the original request.
+
 tesria.com now has a glass style; the app is flat. The theme settings gain
 a choice of **Flat** or **Glass**, beside light, dark and the accent color.
 Flat is today's look, unchanged, for anyone who prefers it. Scheduled as

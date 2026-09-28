@@ -20,7 +20,13 @@ sections they belong to (`installation.mjs`, `editor-elements-1.mjs`,
 - **US English, and no em dashes anywhere** (use a period, colon, comma or
   parentheses). Curly apostrophes (’) as the existing pages do.
 - **Warm and plain.** Short sentences. Second person ("you"). Name buttons
-  exactly as the app does, in bold.
+  exactly as the app does, in bold. The app's buttons, tabs, menu items and
+  screen headings are in Title Case (every word capitalized except short
+  words such as a, and, the, of, to, in, on, as: **Watch This Space**,
+  **Export as a Pack**; the owner's rule, 2026-09-28), so the docs are too.
+  A heading the app shows in capitals (THEME, PAGES, NOTIFICATIONS) is
+  written in Title Case here (**Theme**, **Pages**). The style once called
+  Flat is **Minimal**.
 - **Only what exists.** Check every claim against the code
   (`src/web/src`, `src/Api`). If you cannot confirm something, leave it out.
   Never describe a planned feature.

@@ -87,7 +87,7 @@ export async function build({ top, page, ensure, attachCurrent, doc, p, h, text,
 
   // ---- The parts every page shares, word for word
   const insertTable = (rows) => table([['Type this', 'To get'], ...rows], [200, 500])
-  const insertHow = () => p('Type the command at the start of a line, or after a space, and press ', b('Enter'), '. When the list shows more than one block, use the arrow keys or click the one you want. Or choose ', b('+'), ' on the toolbar: live content blocks are at the end, under ', b('Live content'), '. With text selected, the ', b('+'), ' menu puts the block in place of that text, so click on an empty line first.')
+  const insertHow = () => p('Type the command at the start of a line, or after a space, and press ', b('Enter'), '. When the list shows more than one block, use the arrow keys or click the one you want. Or choose ', b('+'), ' on the toolbar: live content blocks are at the end, under ', b('Live Content'), '. With text selected, the ', b('+'), ' menu puts the block in place of that text, so click on an empty line first.')
   const settingsHow = () => p('While you are editing, click the block. It gets a colored outline, and a small box opens above it with the block’s name and its settings. A change shows in the block straight away; readers see it once you publish or update the page.')
   const removeHow = () => p('To remove the block, click it and press ', b('Delete'), ' or ', b('Backspace'), '. Only the block goes: the pages, files or tasks it showed are not touched.')
   const examplesHow = (name) => p('Each example below is a real ', name, ' block on this page, with its settings in the heading above it.')
@@ -430,7 +430,7 @@ export async function build({ top, page, ensure, attachCurrent, doc, p, h, text,
     h(2, 'Insert it'),
     insertTable([['/excerpt', 'Excerpt include, listed after Excerpt']]),
     insertHow(),
-    panel('note', p(b('Excerpt and Excerpt include are two different things.'), ' ', b('Excerpt'), ', listed first, is the marker you put on the page you borrow from. ', b('Excerpt include'), ' is this block, on the page that shows it.')),
+    panel('note', p(b('Excerpt and Excerpt include are two different things.'), ' ', b('Excerpt'), ', listed first, is the marker you put on the page you borrow from. ', b('Excerpt Include'), ' is this block, on the page that shows it.')),
     p('Until you choose a page in its settings, it says ', i('Choose the page whose excerpt to include.')),
     h(3, 'Step 1: Mark the excerpt'),
     p('Open the page to borrow from and edit it. Select the part to share, and choose ', b('Excerpt'), ' from the ', b('+'), ' menu. See ', pageLink('Excerpt'), '.'),

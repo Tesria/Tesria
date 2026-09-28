@@ -123,12 +123,12 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     p('An administrator can end it sooner: ', b('Unlock'), ' next to the account in ', ...adminAt('Users'), '. If you have simply forgotten the password, see ', pageLink('Resetting a password'), '.'),
 
     h(3, '“Too many attempts. Wait a minute and try again.”'),
-    p('Too many sign-in attempts came from your address in the last minute: 10, by default, counting everyone who shares that address. Wait a minute. If many people sign in from one office connection, an administrator can raise the limit in ', ...adminAt('Security'), ', under ', b('Brute-force protection'), '.'),
+    p('Too many sign-in attempts came from your address in the last minute: 10, by default, counting everyone who shares that address. Wait a minute. If many people sign in from one office connection, an administrator can raise the limit in ', ...adminAt('Security'), ', under ', b('Brute-Force Protection'), '.'),
 
     h(3, 'You lost the phone with your authenticator app'),
     ul(
       li(p(b('Use a recovery code.'), ' When Tesria asks for the six-digit code, enter one of the recovery codes you saved when you turned two-factor on. Each works once. Then set two-factor up again on your profile with your new phone. See ', pageLink('Two-factor and recovery codes'), '.')),
-      li(p(b('No recovery codes?'), ' Ask an administrator to choose ', b('Turn off two-factor'), ' for your account in ', ...adminAt('Users'), '. Sign in with your password, then set it up again. Only the owner can do this for an administrator, and nobody can do it for the owner, which is why the owner’s recovery codes matter most.')),
+      li(p(b('No recovery codes?'), ' Ask an administrator to choose ', b('Turn Off Two-Factor'), ' for your account in ', ...adminAt('Users'), '. Sign in with your password, then set it up again. Only the owner can do this for an administrator, and nobody can do it for the owner, which is why the owner’s recovery codes matter most.')),
     ),
 
     h(3, 'Signed out after a restore'),
@@ -159,7 +159,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     p('Password resets, invitations, alerts and notifications all need Tesria to be able to send email. Work down this list:'),
     ol(
       li(p(b('Is sending switched on?'), ' In ', ...adminAt('Settings'), ', under ', b('Email'), ', ', b('Send email'), ' must be ticked. When it is off, no email is even attempted.')),
-      li(p(b('Send a test.'), ' Choose ', b('Send test email to me'), '. It says straight away either ', i('Sent: check your inbox'), ', or ', i('Not sent'), ' with the mail server’s own reason, such as a wrong password.')),
+      li(p(b('Send a test.'), ' Choose ', b('Send Test Email to Me'), '. It says straight away either ', i('Sent: check your inbox'), ', or ', i('Not sent'), ' with the mail server’s own reason, such as a wrong password.')),
       li(p(b('Check the port and encryption together.'), ' Port 587 goes with ', b('STARTTLS'), ', and port 465 with ', b('SSL on connect'), '. A mismatch usually fails with a timeout.')),
       li(p(b('Check the From address.'), ' Most mail services only send from an address or domain you have verified with them, and refuse or quietly drop anything else.')),
       li(p(b('Look in the spam folder.'), ' Mail from a new sender often lands there at first. Marking it as not spam helps the next one.')),
@@ -185,7 +185,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     p('A service that is not running comes back with ', c('docker compose up -d'), '. The log’s last lines that start with ', c('ERROR'), ' say what failed. See ', pageLink('Backups and recovery'), ' for how the two services work.'),
 
     h(3, 'The cloud copy fails with a “not found” or name error'),
-    p('Cloud storage services address a bucket in one of two ways, and Tesria has to use the one yours expects. Set ', c('OFFSITE_CLOUD_URI_STYLE'), ' in the ', c('.env'), ' file to ', c('path'), ' (for MinIO and most storage you run yourself) or ', c('host'), ' (for Backblaze and AWS), run ', c('docker compose up -d'), ', and choose ', b('Test connection'), ' again. See ', pageLink('Offsite copies'), '.'),
+    p('Cloud storage services address a bucket in one of two ways, and Tesria has to use the one yours expects. Set ', c('OFFSITE_CLOUD_URI_STYLE'), ' in the ', c('.env'), ' file to ', c('path'), ' (for MinIO and most storage you run yourself) or ', c('host'), ' (for Backblaze and AWS), run ', c('docker compose up -d'), ', and choose ', b('Test Connection'), ' again. See ', pageLink('Offsite copies'), '.'),
 
     h(3, 'A network drive backup seems stuck, on a Mac'),
     p('Docker Desktop is waiting for your permission to use the folder on the network drive, and waits rather than failing. Allow it when macOS asks, or add the folder in Docker Desktop’s settings, under file sharing. See ', pageLink('Offsite copies'), '.'),
@@ -261,7 +261,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
 
     h(2, 'A'),
     ul(
-      term('Accept all, Reject all', 'the buttons above the editor when a page has changed under you, from another person, a script or an assistant. They keep or discard those highlighted changes. See ', pageLink('Changes from assistants and the API'), '.'),
+      term('Accept All, Reject All', 'the buttons above the editor when a page has changed under you, from another person, a script or an assistant. They keep or discard those highlighted changes. See ', pageLink('Changes from assistants and the API'), '.'),
       term('Administrator', 'someone in the administrator tier, who runs the wiki day to day: accounts, settings, backups and security. What each administrator may do is set by their role.'),
       term('API token', 'a long secret, made on your profile, that lets a script or an AI assistant act as you. It can be made read-only. See ', pageLink('API tokens'), '.'),
       term('Archive', 'to put a space away without deleting it: it leaves the list of spaces and public reading, and nothing in it is touched. It can be brought back at any time.'),
@@ -445,7 +445,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
       li(p(b('Safer by default.'), ' Tesria no longer holds the database owner’s password while it runs; someone whose access is taken away is disconnected from live editing at once; each new account is recorded in the audit log; and an administrator can limit which websites pictures may come from. See ', pageLink('Security hardening'), '.')),
       li(p(b('Real visitor addresses.'), ' Sign-in limits, security alerts and the audit log now see each device’s own address when people come in through Tailscale, and under Docker Desktop after one setup command. See ', pageLink('Real visitor addresses with Docker Desktop'), '.')),
       li(p(b('Clearer security alerts.'), ' An alert about many refused requests now says which pages were refused, whether the visitor was signed in, and which browser it was.')),
-      li(p(b('Two new administration tabs.'), ' ', b('About'), ' lists everything Tesria is built from, with licenses, and checks it for known vulnerabilities when you ask. ', b('API tokens'), ' shows every token, how much it is used, and what AI assistants did with it.')),
+      li(p(b('Two new administration tabs.'), ' ', b('About'), ' lists everything Tesria is built from, with licenses, and checks it for known vulnerabilities when you ask. ', b('API Tokens'), ' shows every token, how much it is used, and what AI assistants did with it.')),
       li(p(b('Export progress.'), ' Exporting a space shows how far along it is.')),
       li(p(b('These docs,'), ' now public at tesria.com/docs, with a section for developers.')),
       li(p(b('Single sign-on is in beta.'), ' It works with any OpenID Connect provider, and reports on how it went with yours are welcome. See ', pageLink('Single sign-on (OIDC)'), '.')),

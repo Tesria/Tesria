@@ -84,7 +84,7 @@ export const shots = ({ demo }) => [
   },
   {
     name: 'feat-bell', url: demo('Launch plan'), viewport: NARROW, phone: false,
-    steps: [{ wait: 2500 }, { click: '.notif__bell' }, { wait: 800 },
+    steps: [{ wait: 2500 }, { click: 'button.notif__bell' }, { wait: 800 },
       { eval: "document.querySelectorAll('.notif__dropdown .notif__item').forEach((e) => { if (e.textContent.startsWith('Security')) e.remove() })" }],
     clipTo: '.notif__dropdown', clipPad: 8,
   },
@@ -105,7 +105,7 @@ export const shots = ({ demo }) => [
   { name: 'feat-invites', url: '/admin/invites', viewport: NARROW, phone: false, steps: [{ wait: 2500 }], clipTo: 'form.form-inline', clipPad: 10 },
   { name: 'feat-two-factor', url: '/profile', viewport: NARROW, phone: false, steps: [{ wait: 2500 }], clipTo: section('Two-factor sign-in'), clipPad: 8 },
   { name: 'feat-groups', url: '/admin/groups', viewport: NARROW, phone: false, steps: [{ wait: 2500 }], clipTo: 'ul.version-list', clipPad: 10 },
-  { name: 'feat-protection', url: '/admin/security', viewport: NARROW, phone: false, steps: [{ wait: 2500 }], clipTo: section('Brute-force protection'), clipPad: 8 },
+  { name: 'feat-protection', url: '/admin/security', viewport: NARROW, phone: false, steps: [{ wait: 2500 }], clipTo: section('Brute-Force Protection'), clipPad: 8 },
 
   // ---- Running it
   {
@@ -164,7 +164,7 @@ export async function build({ page, ensure, doc, p, h, text, bold, italic, panel
     h(2, 'Keeping it organized'),
     ...(await feature('Spaces', 'A space holds the pages for one team, project or audience, with its own home page, page tree, icon and permissions.', 'Creating a space', pic('feat-spaces', 'The list of spaces'))),
     ...(await feature('A page tree you arrange yourself', 'Pages nest under other pages. Drag them into order, move them to another space with everything under them, or copy them. The tree can number its pages automatically (1, 1.1, 1.2) or mark them with bullets, and renumbers itself as pages move.', 'The page tree and reordering', pic('feat-tree', 'A numbered page tree'))),
-    ...(await feature('Filter the tree as you type', 'Type a few letters at the top of the tree to see just the pages that match, with their parents and everything under them.', 'Finding your way around', anim('feat-filter'))),
+    ...(await feature('Filter the tree as you type', 'Type a few letters at the top of the tree to see just the pages that match, with their parents and everything under them. The × at the end of the box clears it.', 'Finding your way around', anim('feat-filter'))),
     ...(await feature('Labels', ['Tag pages with labels, such as ', i('meeting-notes'), ', and see every page with a label in one list, across spaces.'], 'Labels', pic('feat-labels', 'Every label, with how many pages carry it'))),
     ...(await feature('Search', 'Search every page you can see, with the matching words shown in context and the space each result is in.', 'Search', pic('feat-search', 'Search results with the matching words'))),
     ...(await feature('History and the trash', 'Every change is kept. See who changed what, compare any two versions, and put an old version back. Deleted pages go to the trash and can be restored.', 'History and restoring', pic('feat-history', 'A page’s history'))),
@@ -193,7 +193,7 @@ export async function build({ page, ensure, doc, p, h, text, bold, italic, panel
     ...(await feature('Secure connections without the fuss', 'HTTPS is automatic: a free certificate for a real web address, or one of its own on a home or office network, with a built-in guide that sets each device up to trust it.', 'Trusting the local certificate', pic('feat-trust', 'The Trust this device guide'))),
     ...(await feature('Backups you can count on', 'Continuous backups of the database, daily copies of everything, encrypted copies to a cloud bucket, a network drive or a removable drive, and a restore from the admin pages that can itself be undone.', 'Backups and recovery')),
     ...(await feature('An admin area', 'A dashboard of activity, and screens for people, spaces, invites, security, backups, roles, groups, settings and the audit log.', 'Administration', pic('feat-dashboard', 'Sign-in activity on the administration dashboard'))),
-    ...(await feature('Your name and colors', 'Replace the Tesria name and logo with your own, set the accent color, and choose light or dark for everyone.', 'Administration')),
+    ...(await feature('Your name and colors', 'Replace the Tesria name and logo with your own, set the accent color, and choose light or dark for everyone. Each person can also pick a look of their own from the appearance menu in the top bar: Minimal, Tesria’s classic look, or Glass, the frosted look of tesria.com.', 'Administration')),
 
     h(2, 'For developers and assistants'),
     ...(await feature('A REST API', 'Everything the app does is available to scripts, with personal API tokens, scopes that limit what each token may do, and an interactive reference.', 'REST API', pic('feat-api', 'Making an API token'))),
