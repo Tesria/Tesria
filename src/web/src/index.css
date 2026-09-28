@@ -22,6 +22,13 @@
    most editors and docs sites treat code. Its palette lives further down. */
 :root {
   color-scheme: light;
+  /* The top bar's height, which the sidebar, the editor's toolbar and the
+     menu pin themselves below, and the height of the controls in it: the
+     links, the search, the round buttons and the avatar. tesria.com's
+     sizes, the same in flat and glass and at every width (the owner,
+     2026-09-27); until 0.8.1 the bar was 52px with 34px controls. */
+  --topbar-h: 64px;
+  --ctl: 48px;
   --bg: #ffffff;
   --bg-alt: #f4f5f7;
   /* Raised surfaces: cards, the paper sheet, popovers, the topbar, inputs.
@@ -267,7 +274,7 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
      right-hand cluster, so the nav anchors to the brand at every tier. */
   display: flex; align-items: center; justify-content: flex-start;
   padding: 0 calc(1rem + var(--safe-right)) 0 calc(1rem + var(--safe-left));
-  height: 52px; border-bottom: 1px solid var(--border); background: var(--surface);
+  height: var(--topbar-h); border-bottom: 1px solid var(--border); background: var(--surface);
   position: sticky; top: 0; z-index: 10;
 }
 /* A flex item's default min-width is `auto`, not 0: it refuses to shrink
@@ -401,26 +408,14 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .topbar__nav { display: flex; align-items: center; gap: 0.25rem; margin-left: 1.25rem; }
 /* inline-flex + nowrap: a squeezed "API Tokens" used to wrap to two lines,
    which made the nav row taller and left its single-line neighbors sitting
-   at the top of it: the "top-aligned links" look. Links now never wrap
-   (the More menu below is what absorbs the pressure instead), and center
-   within whatever height the row has. */
+   at the top of it: the "top-aligned links" look. Links never wrap; when
+   they do not fit, the whole bar collapses into the menu (Layout.tsx,
+   useTopbarFit), and they center within whatever height the row has. */
 .topbar__link {
   display: inline-flex; align-items: center; gap: 0.25rem; white-space: nowrap;
   padding: 0.3rem 0.6rem; border-radius: 4px; color: var(--muted); font-size: 0.9rem;
   background: none; border: none; cursor: pointer;
 }
-/* The middle tier's overflow (Layout.tsx's MoreMenu). Hidden at desktop
-   width, where all four links fit, and below --bp-mobile, where the column
-   nav lists them in full; visible only between. */
-.topbar__more { display: none; position: relative; }
-.topbar__more-trigger svg { opacity: 0.7; }
-.topbar__more-menu {
-  position: absolute; left: 0; top: calc(100% + 6px); min-width: 160px; z-index: 20;
-  display: flex; flex-direction: column; gap: 0.1rem; padding: 0.3rem;
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-  box-shadow: var(--shadow-lg);
-}
-.topbar__more-menu .topbar__link { display: flex; }
 .topbar__link:hover { background: var(--bg-alt); text-decoration: none; }
 .topbar__link.is-active { color: var(--primary-dark); background: var(--primary-soft); font-weight: 600; }
 
@@ -456,17 +451,20 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
    as before this element existed. */
 .topbar__collapsible { display: contents; }
 
-/* Middle tier: the full desktop bar never fit here (brand, four links, a
-   420px search and the right-hand cluster, with no wrap fallback): it only
-   appeared to because .brand would ellipsis. The secondary links go behind
-   More, search keeps a floor it can't collapse below (unpinned it shrank to
-   ~2px), and the username, the least load-bearing thing in the bar, goes. */
-@media (max-width: 1024px) { /* keep in sync with --bp-tablet */
-  .topbar__link--secondary { display: none; }
-  .topbar__more { display: inline-flex; }
-  .topbar__search { min-width: 150px; margin: 0 0.75rem; }
-  .topbar__username { display: none; }
+/* The invisible copy of the bar that useTopbarFit (Layout.tsx) measures:
+   laid out exactly as the bar would be with nothing collapsed. */
+.topbar__ruler {
+  position: absolute; left: 0; top: 0; display: flex; align-items: center; white-space: nowrap;
+  visibility: hidden; pointer-events: none; height: 0; overflow: visible;
 }
+.topbar__ruler > * { flex: none; }
+.topbar__ruler .topbar__hamburger { display: inline-flex; }
+.topbar__ruler .topbar__search { flex: none; }
+/* The brand is never shrunk or cut short: the bar collapses first. */
+.topbar > .brand { flex-shrink: 0; }
+.topbar .brand__word { overflow: visible; text-overflow: clip; }
+/* The theme button and bell, when the bar has no room for them (fit 2, 3). */
+.topbar__panel-tools { display: none; }
 
 /* The open space's tree inside the phone menu (Layout.tsx, spaceNav.ts).
    Nothing to do above --bp-mobile, where the sidebar shows the same tree. */
@@ -474,33 +472,39 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 /* The menu's close button, likewise phone only. */
 .topbar__close { display: none; }
 
+/* The bar collapsed (useTopbarFit, Layout.tsx): the links and search are a
+   menu under the hamburger, whatever the screen width. */
+.topbar.is-collapsed .topbar__hamburger { display: inline-flex; align-items: center; }
+.topbar.is-collapsed > .topbar__collapsible {
+  display: none; position: absolute; top: var(--topbar-h); left: 0; right: 0; z-index: 12;
+  flex-direction: column; gap: 0.6rem; background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 0.75rem 1rem; box-shadow: var(--shadow-lg);
+  /* A space tree can be longer than a phone screen: the menu scrolls
+     inside itself rather than growing off the bottom of the viewport. */
+  max-height: calc(100dvh - var(--topbar-h)); overflow: hidden; overscroll-behavior: contain;
+}
+.topbar.is-collapsed > .topbar__collapsible.is-open { display: flex; }
+.topbar.is-collapsed .topbar__close {
+  display: inline-flex; align-items: center; justify-content: center;
+  position: absolute; top: 0.5rem; right: 0.6rem; width: 2.25rem; height: 2.25rem;
+  border: none; background: none; border-radius: 6px; color: var(--muted); cursor: pointer;
+}
+.topbar.is-collapsed .topbar__close:hover { background: var(--hover); color: var(--text); }
+.topbar.is-collapsed .topbar__panel-tools { display: flex; align-items: center; gap: 0.75rem; padding-right: 2.5rem; flex: 0 0 auto; }
+.topbar.is-collapsed .topbar__collapsible .topbar__nav {
+  flex: 0 0 auto; flex-direction: column; align-items: stretch; gap: 0.15rem; margin-left: 0;
+}
+/* Room for the close button so the first link does not sit under it. */
+.topbar.is-collapsed .topbar__collapsible .topbar__nav:first-of-type { padding-right: 2.5rem; }
+.topbar.is-collapsed .topbar__collapsible .topbar__search { flex: 0 0 auto; max-width: none; min-width: 0; margin: 0; }
+
+/* The open space's tree in the menu: only where the sidebar is not on the
+   page, which is a narrow screen. Three bands, the same shape as the
+   desktop sidebar: Spaces, Admin, search, the space's name and + New page
+   stay at the top; Space settings stays at the bottom; only the page tree
+   between them scrolls. */
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
-  .topbar__hamburger { display: inline-flex; align-items: center; }
-  .topbar__collapsible {
-    display: none; position: absolute; top: 52px; left: 0; right: 0; z-index: 12;
-    flex-direction: column; gap: 0.6rem; background: var(--surface); border-bottom: 1px solid var(--border);
-    padding: 0.75rem 1rem; box-shadow: var(--shadow-lg);
-    /* A space tree can be longer than a phone screen: the menu scrolls
-       inside itself rather than growing off the bottom of the viewport. */
-    max-height: calc(100dvh - 52px); overflow-y: auto; overscroll-behavior: contain;
-  }
-  .topbar__collapsible.is-open { display: flex; }
-  .topbar__close {
-    display: inline-flex; align-items: center; justify-content: center;
-    position: absolute; top: 0.5rem; right: 0.6rem; width: 2.25rem; height: 2.25rem;
-    border: none; background: none; border-radius: 6px; color: var(--muted); cursor: pointer;
-  }
-  .topbar__close:hover { background: var(--hover); color: var(--text); }
-  /* Room for the button so the first link does not sit under it. */
-  .topbar__nav { padding-right: 2.5rem; }
-  /* Three bands, the same shape as the desktop sidebar: Spaces, Admin,
-     search, the space's name and + New page stay at the top; Space
-     settings stays at the bottom; only the page tree between them scrolls.
-     The whole menu was one scroll before, so on a long space the settings
-     link and the way back to Spaces were both a long swipe away. */
-  .topbar__collapsible { overflow: hidden; }
-  .topbar__nav, .topbar__search { flex: 0 0 auto; }
-  .topbar__space {
+  .topbar.is-collapsed .topbar__space {
     display: flex; flex-direction: column; gap: 0.5rem; flex: 1 1 auto; min-height: 0;
     border-top: 1px solid var(--border); padding-top: 0.75rem; margin-top: 0.15rem;
   }
@@ -518,11 +522,6 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
      them a little more height here than the mouse needs. */
   .topbar__space .tree__link { padding: 0.45rem 0.5rem; }
   .topbar__space .tree-section { margin-top: 0.25rem; }
-  .topbar__nav { flex-direction: column; align-items: stretch; gap: 0.15rem; margin-left: 0; }
-  .topbar__link--secondary { display: inline-flex; }
-  .topbar__more { display: none; }
-  .topbar__search { max-width: none; min-width: 0; margin: 0; }
-  .topbar__username { display: none; }
 }
 
 /* Theme toggle: same neutral-by-default, darker-on-hover treatment as
@@ -668,7 +667,7 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 }
 
 /* ---- space layout (sidebar + content) ------------------------------------ */
-.space-layout { display: grid; grid-template-columns: var(--sidebar-width, 260px) 1fr; min-height: calc(100vh - 52px); }
+.space-layout { display: grid; grid-template-columns: var(--sidebar-width, 260px) 1fr; min-height: calc(100vh - var(--topbar-h)); }
 
 /* The sidebar's width can be dragged (2026-09-23): a thin handle
    on its right edge, a line in the accent color while it is hovered, focused
@@ -695,7 +694,7 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .sidebar {
   border-right: 1px solid var(--border); background: var(--bg-alt);
   padding: 1rem 1rem 1rem calc(1rem + var(--safe-left));
-  position: sticky; top: 52px; align-self: start; height: calc(100vh - 52px);
+  position: sticky; top: var(--topbar-h); align-self: start; height: calc(100vh - var(--topbar-h));
   display: flex; flex-direction: column; min-height: 0;
 }
 /* Head and foot hold their natural height; the tree takes the rest. */
@@ -728,7 +727,7 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .sidebar__toggle--hide { margin-left: auto; align-self: flex-start; }
 .space-layout--collapsed { grid-template-columns: calc(40px + var(--safe-left)) 1fr; }
 .sidebar-rail {
-  position: sticky; top: 52px; align-self: start; height: calc(100vh - 52px);
+  position: sticky; top: var(--topbar-h); align-self: start; height: calc(100vh - var(--topbar-h));
   border-right: 1px solid var(--border); background: var(--bg-alt);
   padding: 0.6rem 0 0 var(--safe-left); display: flex; justify-content: center;
 }
@@ -815,7 +814,7 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
    editing an actual page: PageView.tsx has its own breadcrumb/Edit/+New/⋮
    row by then, and stacking this above it would just be a second header. */
 .space-actionbar {
-  display: none; position: sticky; top: 52px; z-index: 8;
+  display: none; position: sticky; top: var(--topbar-h); z-index: 8;
   align-items: center; justify-content: space-between; gap: 0.5rem;
   padding: 0.5rem 0.75rem; background: var(--surface); border-bottom: 1px solid var(--border);
 }
@@ -1414,7 +1413,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
    and the editor's in-paper toolbar (edit mode), so both look the same and
    sit in the same place: sticky, spanning the full content column. */
 .page-actionbar {
-  position: sticky; top: 52px; z-index: 8;
+  position: sticky; top: var(--topbar-h); z-index: 8;
   display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;
   padding: 0.5rem calc(1.5rem + var(--safe-right)) 0.5rem 1.5rem;
   background: var(--surface); border-bottom: 1px solid var(--border);
@@ -3260,3 +3259,39 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
 .donut__track { stroke: var(--border); }
 .donut__center { fill: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
 .donut__caption { fill: var(--muted); }
+
+/* The profile page's heading, with Sign out opposite it (2026-09-27). */
+.profile__heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.profile__heading h1 { margin-right: auto; }
+
+/* ---- The top bar's controls at one height (0.8.1) ------------------------
+   48px (--ctl) in both styles, so flat and glass share a bar and a layout;
+   glass.css adds only the glass. */
+.topbar__nav { box-sizing: border-box; height: var(--ctl); }
+.topbar__nav .topbar__link { box-sizing: border-box; height: calc(var(--ctl) - 10px); padding: 0 0.85rem; font-size: 15px; }
+.topbar__search input { box-sizing: border-box; height: var(--ctl); padding: 0 1.1rem; }
+.topbar .theme-toggle, .topbar .notif__bell {
+  box-sizing: border-box; width: var(--ctl); height: var(--ctl); padding: 0; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.topbar .theme-toggle svg, .topbar .notif__bell svg { width: 20px; height: 20px; }
+.topbar__me { box-sizing: border-box; height: var(--ctl); }
+.topbar__me .avatar { width: calc(var(--ctl) - 10px); height: calc(var(--ctl) - 10px); }
+.topbar__right > .btn { box-sizing: border-box; height: var(--ctl); }
+/* In the menu the links are a list at their own height. */
+.topbar.is-collapsed .topbar__collapsible .topbar__nav { height: auto; }
+.topbar.is-collapsed .topbar__collapsible .topbar__link { height: auto; padding: 0.6rem 0.9rem; }
+/* tesria.com's weights: links medium, the current one included; buttons semibold. */
+.topbar__nav .topbar__link, .topbar__nav .topbar__link.is-active { font-weight: 500; }
+.topbar__me .topbar__username { font-weight: 500; }
+.topbar__right > .btn { font-weight: 600; }
+/* In the hamburger menu the current item is bold and in the accent color,
+   with no tint behind it; the rest are plain text (the owner, 2026-09-27).
+   :root, so it outranks the glass style's lens. */
+:root .topbar.is-collapsed .topbar__collapsible .topbar__link {
+  background: none; box-shadow: none; color: var(--text); font-weight: 400;
+}
+:root .topbar.is-collapsed .topbar__collapsible .topbar__link:hover { background: var(--bg-alt); }
+:root .topbar.is-collapsed .topbar__collapsible .topbar__link.is-active {
+  background: none; box-shadow: none; color: var(--primary); font-weight: 700;
+}

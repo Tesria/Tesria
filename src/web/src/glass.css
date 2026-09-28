@@ -41,6 +41,12 @@
   --box-shadow: 0 2px 6px rgba(10, 20, 34, 0.08), 0 24px 48px -16px rgba(10, 20, 34, 0.28);
   /* An edge for glass on a white page, where a white rim cannot show. */
   --glass-edge: rgba(10, 20, 34, 0.1);
+  /* The border of a glass control: white glass on a white page needs a
+     darker edge to show at all; in dark the white rim does it. */
+  --glass-border: rgba(10, 20, 34, 0.12);
+  /* A close shadow under a control, beneath the guide's soft one, so it
+     sits on the page rather than floating faintly above it. */
+  --glass-contact: 0 2px 6px -1px rgba(10, 20, 34, 0.2);
   /* A frame around content (a chart, a diagram) is larger than a button,
      so its sheen is gentler, or a dark theme turns the frame gray. */
   --frame-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.15) 70%);
@@ -78,6 +84,8 @@
   --hdr-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.55);
   --box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35), 0 24px 48px -16px rgba(0, 0, 0, 0.7);
   --glass-edge: rgba(255, 255, 255, 0.12);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-contact: 0 2px 6px -1px rgba(0, 0, 0, 0.55);
   --frame-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 60%);
   --on-danger: var(--bg);
   --status-glass-ink: var(--bg);
@@ -100,6 +108,8 @@
   --hdr-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.55);
   --box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35), 0 24px 48px -16px rgba(0, 0, 0, 0.7);
   --glass-edge: rgba(255, 255, 255, 0.12);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-contact: 0 2px 6px -1px rgba(0, 0, 0, 0.55);
   --frame-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 60%);
   --on-danger: var(--bg);
   --status-glass-ink: var(--bg);
@@ -117,6 +127,12 @@
 
 /* ---- The top bar: floats at the top, docks into a frosted strip once the page scrolls -- */
 
+/* The size of the top bar's controls, tesria.com's 48px: the page bar, the
+   search, the round buttons and the avatar alike, and the same at every
+   screen width (the owner, 2026-09-27). The bar grows to hold them; flat
+   keeps its 52px. */
+/* (--ctl and --topbar-h are set in index.css, shared with flat.) */
+
 :root[data-style="glass"] .topbar {
   background: transparent;
   border-bottom-color: transparent;
@@ -131,21 +147,30 @@
 }
 
 /* The page bar: Spaces and Admin in one glass pill, the current one a tinted lens. */
-@media (min-width: 761px) {
-  :root[data-style="glass"] .topbar__nav {
-    padding: 4px; border-radius: 999px;
-    background: var(--glass); border: 1px solid var(--glass-rim);
-    -webkit-backdrop-filter: blur(14px) saturate(170%);
-    backdrop-filter: blur(14px) saturate(170%);
-    box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--glass-shadow);
-  }
-  /* No glass on glass: docked, the bar drops its own; the current page keeps its lens. */
-  :root[data-style="glass"] .topbar.is-docked .topbar__nav {
-    background: transparent; border-color: transparent; box-shadow: none;
-    -webkit-backdrop-filter: none; backdrop-filter: none;
-  }
+:root[data-style="glass"] .topbar__nav {
+  box-sizing: border-box; height: var(--ctl); padding: 4px; border-radius: 999px;
+  background: var(--glass); border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: blur(14px) saturate(170%);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--glass-contact), var(--glass-shadow);
 }
-:root[data-style="glass"] .topbar__link { border-radius: 999px; padding: 0.3rem 0.85rem; }
+:root[data-style="glass"] .topbar__nav .topbar__link {
+  box-sizing: border-box; height: 100%; display: inline-flex; align-items: center;
+  padding: 0 14px; font-size: 15px;
+}
+/* No glass on glass: docked, the bar drops its own; the current page keeps its lens. */
+:root[data-style="glass"] .topbar.is-docked .topbar__nav {
+  background: transparent; border-color: transparent; box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+/* In the menu the links are a list, not a pill; the menu itself is solid. */
+:root[data-style="glass"] .topbar.is-collapsed .topbar__collapsible .topbar__nav {
+  height: auto; padding: 0 2.5rem 0 0; border: none; background: transparent; box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+:root[data-style="glass"] .topbar.is-collapsed .topbar__collapsible .topbar__link { height: auto; padding: 0.6rem 0.9rem; }
+:root[data-style="glass"] .topbar.is-collapsed > .topbar__collapsible { border-radius: 0 0 10px 10px; box-shadow: var(--box-shadow); }
+:root[data-style="glass"] .topbar__link { border-radius: 999px; }
 :root[data-style="glass"] .topbar__link:hover { background: var(--glass-hover); }
 :root[data-style="glass"] .topbar__link.is-active {
   color: var(--on-primary);
@@ -153,46 +178,92 @@
   box-shadow: inset 0 1px 0 var(--glass-hi), var(--accent-shadow);
 }
 
+/* The search: a glass pill of its own. It is a field people type in, so its
+   text sits on the glass rather than on a solid box, like the site's bars. */
+:root[data-style="glass"] .topbar__search input {
+  box-sizing: border-box; height: var(--ctl); border-radius: 999px; padding: 0 1.1rem;
+  color: var(--text);
+  background: var(--glass); border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: blur(14px) saturate(170%);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--glass-contact), var(--glass-shadow);
+}
+:root[data-style="glass"] .topbar__search input:focus {
+  outline: 2px solid var(--primary); outline-offset: 1px;
+}
+
+/* The logo at tesria.com's size: a 28px mark and a 22px wordmark, 10px
+   apart, at every screen width. Tesria's own wordmark only; an instance's
+   uploaded logo keeps its size. */
+:root[data-style="glass"] .topbar .brand { gap: 10px; }
+:root[data-style="glass"] .topbar .brand__mark svg { width: 28px; height: 28px; }
+:root[data-style="glass"] .topbar .brand__word--tesria { font-size: 22px; letter-spacing: 0.01em; }
+/* Nothing here changes with the screen width: when the bar has no room,
+   it collapses into the menu instead (useTopbarFit, Layout.tsx). */
+
 /* Round icon buttons: the theme and the notifications, glass with a sheen. */
 :root[data-style="glass"] .theme-toggle,
 :root[data-style="glass"] .notif__bell {
-  width: 34px; height: 34px; padding: 0; border-radius: 50%;
+  box-sizing: border-box; width: var(--ctl); height: var(--ctl); padding: 0; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
   color: var(--text);
   background: var(--glass-sheen), var(--glass);
-  border: 1px solid var(--glass-rim);
+  border: 1px solid var(--glass-border);
   -webkit-backdrop-filter: blur(14px) saturate(170%);
   backdrop-filter: blur(14px) saturate(170%);
-  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--glass-shadow);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--glass-contact), var(--glass-shadow);
 }
 :root[data-style="glass"] .theme-toggle:hover, :root[data-style="glass"] .theme-toggle.is-open,
 :root[data-style="glass"] .notif__bell:hover {
   background: var(--glass-sheen), color-mix(in srgb, var(--glass-hover) 60%, var(--glass));
 }
+:root[data-style="glass"] .theme-toggle svg, :root[data-style="glass"] .notif__bell svg { width: 20px; height: 20px; }
 
-/* On a phone the top bar is tight: smaller circles, so the wordmark keeps its room. */
-@media (max-width: 760px) {
-  :root[data-style="glass"] .theme-toggle,
-  :root[data-style="glass"] .notif__bell { width: 30px; height: 30px; box-shadow: inset 0 1px 0 var(--glass-hi), var(--glass-shadow); }
+/* The unread count: a small glass badge, red, with a plain shadow (no glow,
+   the owner's call on 2026-09-27: a glow read as an alarm). */
+:root[data-style="glass"] .notif__badge {
+  top: -3px; right: -3px; min-width: 20px; height: 20px; padding: 0 0.35rem; box-sizing: border-box;
+  display: inline-flex; align-items: center; justify-content: center; line-height: 1;
+  color: var(--on-danger);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--danger) 88%, #fff), color-mix(in srgb, var(--danger) 85%, #000));
+  border: 1px solid var(--accent-rim);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 2px 4px rgba(10, 20, 34, 0.3);
+}
+
+/* You: the avatar and your name in one glass bar, like Spaces and Admin,
+   as tall as the buttons beside it. On a phone the name is hidden and the
+   bar is a circle around the avatar. */
+:root[data-style="glass"] .topbar__me {
+  box-sizing: border-box; height: var(--ctl); padding: 4px; gap: 0.55rem; border-radius: 999px;
+  background: var(--glass); border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: blur(14px) saturate(170%);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--glass-contact), var(--glass-shadow);
+}
+:root[data-style="glass"] .topbar__me:hover { background: color-mix(in srgb, var(--glass-hover) 60%, var(--glass)); }
+:root[data-style="glass"] .topbar__me:hover .topbar__username { text-decoration: none; color: var(--text); }
+:root[data-style="glass"] .topbar__me .avatar {
+  width: calc(var(--ctl) - 10px); height: calc(var(--ctl) - 10px);
+  /* A 1px stroke, the whitish rim of the primary buttons; an outline, so
+     the avatar keeps its size and the stroke follows the circle. */
+  outline: 1px solid var(--accent-rim); outline-offset: -1px;
+  box-shadow: var(--accent-shadow);
+}
+:root[data-style="glass"] .topbar__me .topbar__username { padding-right: 0.9rem; font-size: 15px; color: var(--text); }
+/* No glass on glass: docked, the bar drops its own, as the page bar does. */
+:root[data-style="glass"] .topbar.is-docked .topbar__me {
+  background: transparent; border-color: transparent; box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
 }
 
 /* ---- Buttons: pills. Secondary is clear glass; primary and danger are tinted. -- */
 
 :root[data-style="glass"] .btn {
   border-radius: 999px;
-  background: var(--glass); border: 1px solid var(--glass-rim);
+  background: var(--glass); border: 1px solid var(--glass-border);
   -webkit-backdrop-filter: blur(14px) saturate(170%);
   backdrop-filter: blur(14px) saturate(170%);
   box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--glass-shadow);
-}
-/* On a white page a white rim cannot show: the drop shadow and a faint edge do. */
-:root[data-style="glass"]:not([data-theme="dark"]) .btn:not(.btn--primary):not(.btn--danger) {
-  border-color: var(--glass-edge);
-}
-@media (prefers-color-scheme: dark) {
-  :root[data-style="glass"]:not([data-theme="light"]) .btn:not(.btn--primary):not(.btn--danger) {
-    border-color: var(--glass-rim);
-  }
 }
 :root[data-style="glass"] .btn:hover {
   filter: none;
@@ -259,15 +330,19 @@
   box-shadow: inset 0 1px 0 var(--glass-hi), var(--accent-shadow);
 }
 
-/* The appearance menu's two style swatches. */
+/* The appearance menu's two style swatches, both in the accent: flat as a
+   plain square of it, glass as the same color lit, with its sheen and rim. */
 .theme-menu__style-swatch {
-  width: 17px; height: 17px; flex: none; border-radius: 5px; border: 1px solid var(--border);
-  background: var(--surface);
+  width: 17px; height: 17px; flex: none; border-radius: 5px;
+  background: var(--primary); border: 1px solid transparent;
 }
 .theme-menu__style-swatch--glass {
-  border-color: var(--glass-rim);
-  background: var(--glass-sheen), color-mix(in srgb, var(--primary) 22%, var(--surface));
-  box-shadow: inset 0 1px 0 var(--glass-hi), 0 2px 6px -2px rgba(10, 20, 34, 0.35);
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.05) 60%),
+    var(--primary);
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    0 2px 6px -1px color-mix(in srgb, var(--primary) 60%, transparent);
 }
 
 /* ---- Status: a small badge, its color as a gradient, with a steady glow -- */

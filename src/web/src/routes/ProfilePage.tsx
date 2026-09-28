@@ -1,5 +1,6 @@
 import { type FormEvent, useState , useEffect} from 'react'
 import { api, ApiError, Permission } from '../api/client'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { PasswordInput } from '../components/PasswordInput'
 import { AvatarPicker } from '../components/AvatarPicker'
@@ -24,7 +25,8 @@ type Status = { kind: 'ok' | 'error'; message: string } | null
  * other two.
  */
 export function ProfilePage() {
-  const { user, refresh, can } = useAuth()
+  const { user, refresh, can, logout } = useAuth()
+  const navigate = useNavigate()
   const instance = useInstance()
   useEffect(() => { noteProfileVisit() }, [])
 
@@ -121,7 +123,14 @@ export function ProfilePage() {
 
   return (
     <div className="page-wrap page-wrap--admin">
-      <h1>Your profile</h1>
+      {/* Sign out, opposite the heading (the owner, 2026-09-27): it left the
+          top bar, and this is where people look for their own account. */}
+      <div className="profile__heading">
+        <h1>Your profile</h1>
+        <button type="button" className="btn btn--ghost" onClick={async () => { await logout(); navigate('/login') }}>
+          Sign out
+        </button>
+      </div>
       {/* Full-width cards, one to a row, like the admin pages (the owner,
           2026-09-23): 480px cards in a 900px column were one long narrow
           strip, and a grid of them read as a jumble. */}

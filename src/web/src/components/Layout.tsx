@@ -1,4 +1,4 @@
-import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { Permission } from '../api/client'
@@ -18,11 +18,9 @@ import { SpaceNavContext, type SpaceNav } from './spaceNav'
 const navClass = ({ isActive }: { isActive: boolean }) =>
   isActive ? 'topbar__link is-active' : 'topbar__link'
 
-/* Everything but Spaces. Rendered twice, deliberately, once as flat links
-   (desktop, and the ≤--bp-mobile column) and once inside the More menu
-   (--bp-mobile..--bp-tablet), with CSS choosing which is visible. That is
-   the same trick the editor toolbar uses for its heading/list/alignment
-   groups (.toolbar__flat vs .toolbar-dropdown), not an accident. */
+/* Everything but Spaces: shown beside it in the bar, or in the menu when
+   the bar has no room (useTopbarFit below). There is no "More" menu; the
+   owner removed it on 2026-09-27. */
 /** Any one of these means the Administration area has something in it for you. */
 const ADMIN_ENTRY_RIGHTS = [
   Permission.DashboardView, Permission.UsersView, Permission.SpacesManage, Permission.InvitesManage,
@@ -43,63 +41,76 @@ const SECONDARY_NAV: { to: string; label: string; adminOnly?: boolean; nonAdminO
   { to: '/invite', label: 'Invite people', permission: Permission.InvitesCreate, nonAdminOnly: true },
 ]
 
-function ChevronIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  )
-}
-
 /**
- * The middle tier's overflow. Between --bp-mobile and --bp-tablet the bar
- * can't hold four links, a search box and the right-hand cluster, so the
- * secondary links live here. The trigger reads as active when the current
- * route is one of them, so "where am I" survives the collapse.
+ * How much of the top bar fits (2026-09-27), measured rather than guessed
+ * from the screen width: the brand can be any instance's name, the links
+ * depend on the person's rights, and the glass style's controls are larger.
+ * An invisible copy of the bar's contents (.topbar__ruler) is measured, and
+ * the fullest layout that fits wins:
+ *   0  everything in the bar, with your name beside your avatar
+ *   1  links and search in the menu (the hamburger)
+ *   2  and the theme button in the menu too
+ *   3  and the notifications too
+ * Nothing in the bar ever shrinks or is cut short to make room.
  */
-function MoreMenu({ onNavigate, items }: { onNavigate: () => void; items: typeof SECONDARY_NAV }) {
-  const [open, setOpen] = useState(false)
-  const ref = useDismissable<HTMLDivElement>(open, () => setOpen(false))
-  const { pathname } = useLocation()
-  const active = items.some((item) => pathname.startsWith(item.to))
-  // A member has nothing secondary to reach; no trigger for an empty menu.
-  if (items.length === 0) return null
-  return (
-    <div className="topbar__more" ref={ref}>
-      <button
-        type="button"
-        className={active ? 'topbar__link topbar__more-trigger is-active' : 'topbar__link topbar__more-trigger'}
-        aria-haspopup="true"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-      >
-        More <ChevronIcon />
-      </button>
-      {open && (
-        <div className="topbar__more-menu">
-          {items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={navClass}
-              onClick={() => {
-                setOpen(false)
-                onNavigate()
-              }}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </div>
-      )}
-    </div>
-  )
+const SEARCH_MIN = 200
+const FIT_SPARE = 12
+
+function useTopbarFit(header: React.RefObject<HTMLElement | null>, ruler: React.RefObject<HTMLElement | null>) {
+  const [level, setLevel] = useState(0)
+  useLayoutEffect(() => {
+    const el = header.current
+    const r = ruler.current
+    if (!el || !r) return
+    const part = (k: string) => r.querySelector<HTMLElement>(`[data-r="${k}"]`)
+    const width = (k: string) => part(k)?.getBoundingClientRect().width ?? 0
+    const px = (v: string) => parseFloat(v) || 0
+    const measure = () => {
+      const cs = getComputedStyle(el)
+      const room = el.clientWidth - px(cs.paddingLeft) - px(cs.paddingRight)
+      const right = part('right')
+      const gap = right ? px(getComputedStyle(right).columnGap) : 0
+      const navEl = part('nav')
+      const nav = width('nav') + (navEl ? px(getComputedStyle(navEl).marginLeft) : 0)
+      const burgerEl = part('hamburger')
+      const burger = width('hamburger') + (burgerEl ? px(getComputedStyle(burgerEl).marginRight) : 0)
+      const brand = width('brand')
+      const meEl = part('me')
+      const nameGap = meEl ? px(getComputedStyle(meEl).columnGap) : 0
+      const me = width('me') || width('signin')
+      const meSmall = part('name') ? me - width('name') - nameGap : me
+      const theme = width('theme')
+      const bell = width('bell')
+      const cluster = (items: number[]) => {
+        const shown = items.filter((w) => w > 0)
+        return shown.reduce((a, b) => a + b, 0) + gap * Math.max(shown.length - 1, 0)
+      }
+      const searchEl = part('search')
+      const search = SEARCH_MIN + (searchEl ? px(getComputedStyle(searchEl).marginLeft) + px(getComputedStyle(searchEl).marginRight) : 0)
+      const fits = (used: number) => used + FIT_SPARE <= room
+      const next =
+        fits(brand + nav + search + cluster([theme, bell, me])) ? 0
+        : fits(burger + brand + gap + cluster([theme, bell, meSmall])) ? 1
+        : fits(burger + brand + gap + cluster([bell, meSmall])) ? 2
+        : 3
+      setLevel(next)
+    }
+    measure()
+    const resize = new ResizeObserver(measure)
+    resize.observe(el)
+    resize.observe(r)
+    // The style and theme change the controls' sizes without resizing the bar.
+    const attrs = new MutationObserver(measure)
+    attrs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-style', 'data-theme'] })
+    document.fonts?.ready.then(measure).catch(() => undefined)
+    return () => { resize.disconnect(); attrs.disconnect() }
+  }, [header, ruler])
+  return level
 }
 
 /** Authenticated app chrome: top bar + routed content. */
 export function Layout() {
-  const { user, logout, can } = useAuth()
+  const { user, can } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [query, setQuery] = useState('')
@@ -121,11 +132,12 @@ export function Layout() {
   const setSpaceNav = useCallback((nav: SpaceNav | null) => setSpaceNavState(nav), [])
   const spaceNavContext = useMemo(() => ({ nav: spaceNav, setNav: setSpaceNav }), [spaceNav, setSpaceNav])
   const closeNav = () => setNavOpen(false)
-
-  async function onLogout() {
-    await logout()
-    navigate('/login')
-  }
+  const headerRef = useRef<HTMLElement>(null)
+  const rulerRef = useRef<HTMLDivElement>(null)
+  const fit = useTopbarFit(headerRef, rulerRef)
+  const collapsed = fit >= 1
+  // Back to a full bar: a menu left open would have nothing in it.
+  useEffect(() => { if (!collapsed) setNavOpen(false) }, [collapsed])
 
   // The glass style's top bar floats at the top of the page and docks into
   // a frosted strip once it scrolls (0.8.1, glass.css). Flat ignores it.
@@ -148,7 +160,32 @@ export function Layout() {
   return (
     <SpaceNavContext.Provider value={spaceNavContext}>
     <div className="app">
-      <header className={docked ? 'topbar is-docked' : 'topbar'}>
+      <header ref={headerRef} className={`topbar${docked ? ' is-docked' : ''}${collapsed ? ' is-collapsed' : ''}`} data-fit={fit}>
+        {/* What the bar would hold if nothing were collapsed, laid out the
+            same way but invisible, for useTopbarFit to measure. */}
+        <div className="topbar__ruler" ref={rulerRef} aria-hidden="true">
+          <span className="topbar__hamburger" data-r="hamburger">☰</span>
+          <span className="brand" data-r="brand"><BrandLockup /></span>
+          <span className="topbar__nav" data-r="nav">
+            <span className="topbar__link is-active">Spaces</span>
+            {secondaryNav.map((item) => <span key={item.to} className="topbar__link">{item.label}</span>)}
+          </span>
+          <span className="topbar__search" data-r="search" />
+          <span className="topbar__right" data-r="right">
+            <span className="theme-toggle" data-r="theme"><svg width="19" height="19" /></span>
+            {user ? (
+              <>
+                <span className="notif__bell" data-r="bell"><svg width="19" height="19" /></span>
+                <span className="topbar__me" data-r="me">
+                  <Avatar subject={user} size={24} />
+                  <span className="muted topbar__username" data-r="name">{user.displayName}</span>
+                </span>
+              </>
+            ) : (
+              <span className="btn btn--primary" data-r="signin">Sign in</span>
+            )}
+          </span>
+        </div>
         <button
           type="button"
           className="topbar__hamburger"
@@ -163,8 +200,8 @@ export function Layout() {
           <BrandLockup />
         </Link>
         <div ref={navRef} className={navOpen ? 'topbar__collapsible is-open' : 'topbar__collapsible'}>
-          {/* Phone only (the panel is a dropdown there; above the breakpoint
-              this element is display: contents and the button is hidden).
+          {/* In the menu only (the panel is a dropdown once the bar has
+              collapsed; otherwise this element is display: contents).
               Tapping outside or Escape also closes it; a visible way out
               is for the person who does not know that. */}
           <button type="button" className="topbar__close" aria-label="Close menu" onClick={closeNav}>
@@ -173,6 +210,12 @@ export function Layout() {
               <path d="M6 6l12 12M18 6L6 18" />
             </svg>
           </button>
+          {fit >= 2 && (
+            <div className="topbar__panel-tools">
+              <ThemeToggle />
+              {user && fit >= 3 && <NotificationBell />}
+            </div>
+          )}
           <nav className="topbar__nav">
             <NavLink to="/spaces" className={navClass} onClick={() => setNavOpen(false)}>Spaces</NavLink>
             {secondaryNav.map((item) => (
@@ -185,7 +228,6 @@ export function Layout() {
                 {item.label}
               </NavLink>
             ))}
-            <MoreMenu onNavigate={() => setNavOpen(false)} items={secondaryNav} />
           </nav>
           <form className="topbar__search" onSubmit={onSearch}>
             <input
@@ -222,17 +264,16 @@ export function Layout() {
           )}
         </div>
         <div className="topbar__right">
-          <ThemeToggle />
+          {fit < 2 && <ThemeToggle />}
           {user ? (
             <>
-              <NotificationBell />
+              {fit < 3 && <NotificationBell />}
               <Link to="/profile" className="topbar__me" title="Your profile">
                 <Avatar subject={user} size={24} />
-                <span className="muted topbar__username">{user.displayName}</span>
+                {fit === 0 && <span className="muted topbar__username">{user.displayName}</span>}
               </Link>
-              <button type="button" className="btn btn--ghost" onClick={onLogout}>
-                Sign out
-              </button>
+              {/* Sign out lives on the profile page, opposite its heading
+                  (the owner, 2026-09-27), not in the top bar. */}
             </>
           ) : (
             // Anonymous reader (dev-plan 5.3): the theme menu works without
