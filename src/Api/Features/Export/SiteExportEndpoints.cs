@@ -51,7 +51,7 @@ public static class SiteExportEndpoints
     /// <c>/api/export-progress/{id}</c> while it waits (dev-plan 20.1).
     /// </param>
     private static async Task<IResult> ExportSite(
-        string key, string? audience, string? progress, ExportProgress tracker, AppDbContext db, IPermissionService perms,
+        string key, string? audience, string? progress, string? style, ExportProgress tracker, AppDbContext db, IPermissionService perms,
         Infrastructure.Export.IRenderTokens renderTokens, IPdfRenderer renderer,
         IAttachmentStorage storage, IProfileMediaService media, ISiteSettingsService settings, IConfiguration config,
         CurrentUser current, IWebHostEnvironment env, Infrastructure.Branding.IBrandAssets brandAssets, CancellationToken ct)
@@ -114,6 +114,11 @@ public static class SiteExportEndpoints
             // instance name titles the pages and signs the footer.
             var packed = await BrandExport.PackAsync(siteSettings, brandAssets, env, inline: false, ct);
             var brand = packed.Brand;
+            // The look the site opens in (0.8.1): the app passes the
+            // exporter's own, so the site looks as they saw it; a reader
+            // can still switch in the site's appearance menu.
+            if (string.Equals(style, "glass", StringComparison.OrdinalIgnoreCase))
+                brand = brand with { Attributes = [.. brand.Attributes, ("data-style-default", "glass")] };
 
             // A space with an uploaded icon needs that file in the site: the
             // sidebar cannot reach back to the instance for it.

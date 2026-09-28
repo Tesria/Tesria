@@ -1456,8 +1456,10 @@ export const api = {
     /** The whole space as a static site, as a zip (dev-plan 12.2). */
     exportSite: async (key: string, audience: 'anonymous' | 'me', options: ExportOptions = {}): Promise<Blob> => {
       const progress = options.progressId ? `&progress=${options.progressId}` : ''
+      // The site opens in the look the exporter is using (0.8.1).
+      const style = document.documentElement.getAttribute('data-style') === 'glass' ? '&style=glass' : ''
       const res = await fetch(
-        `/api/spaces/${encodeURIComponent(key)}/export/site?audience=${audience}${progress}`,
+        `/api/spaces/${encodeURIComponent(key)}/export/site?audience=${audience}${progress}${style}`,
         { credentials: 'include', headers: CSRF_HEADER, signal: options.signal },
       )
       if (!res.ok) return handle<Blob>(res)

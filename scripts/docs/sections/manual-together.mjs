@@ -565,7 +565,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'What the site looks like'),
     ul(
-      li(p(b('Like the space in Tesria,'), ' with the same page tree in a sidebar, the same look, and a menu to switch between light and dark and pick an accent color. If the space numbers its pages (', b('Space Settings, Page Tree'), '), the site’s tree is numbered the same way.')),
+      li(p(b('Like the space in Tesria,'), ' with the same page tree in a sidebar, the same look, and a menu to switch between light and dark, between ', b('Minimal'), ' and ', b('Glass'), ', and pick an accent color. The site opens in the style you were using when you exported it, and each reader can switch. If the space numbers its pages (', b('Space Settings, Page Tree'), '), the site’s tree is numbered the same way.')),
       li(p(b('Each page is a folder'), ' named after its title, with an ', c('index.html'), ' inside, so addresses read like ', c('getting-started/quick-start/'), '.')),
       li(p(b('Pictures and attached files are copied in,'), ' and links between pages point at each other’s files. A link to a page that was left out, such as a restricted one, is grayed out, and hovering over it says the page is not part of the export.')),
       li(p(b('Expand blocks open and close'), ', and code blocks keep their ', b('Copy'), ' button. Live content is frozen as it was when you exported.')),

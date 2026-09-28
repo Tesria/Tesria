@@ -205,7 +205,7 @@ public static partial class SiteChrome
     private static partial System.Text.RegularExpressions.Regex HtmlTag();
 
     /// <summary>What the capture's shell and the capture browser put on the root element, and nothing else.</summary>
-    [System.Text.RegularExpressions.GeneratedRegex("\\s(?:data-theme|data-accent|data-theme-lock|data-accent-lock|data-accent-default|data-brand-[a-z-]+)=\"[^\"]*\"")]
+    [System.Text.RegularExpressions.GeneratedRegex("\\s(?:data-theme|data-accent|data-theme-lock|data-accent-lock|data-accent-default|data-style|data-style-default|data-motion|data-os|data-sb|data-brand-[a-z-]+)=\"[^\"]*\"")]
     private static partial System.Text.RegularExpressions.Regex BrandAttribute();
 
     /// <summary>
@@ -434,7 +434,7 @@ public static partial class SiteChrome
         // menu at all: a control that cannot change anything is noise.
         var themeLocked = brand.ThemeLock is not null;
         var accentLocked = brand.AccentLock is not null;
-        if (themeLocked && accentLocked) return "";
+        // The Style is never locked, so there is always a menu.
 
         var triggerIcons = string.Concat(Modes.Select(m =>
             $"<span data-theme-icon=\"{m.Mode}\" style=\"display: none\">{TriggerIcon(m.Mode)}</span>"));
@@ -459,6 +459,19 @@ public static partial class SiteChrome
         <p class="theme-menu__heading">Theme</p>
         <div class="theme-menu__modes">{modes}</div>
         """;
+        // Minimal or Glass (0.8.1), as in the app's menu, with Reduce Motion
+        // shown under it only while Glass is chosen (the script shows it).
+        var styles = string.Concat(Styles.Select(st =>
+            $"<button type=\"button\" class=\"theme-menu__mode\" data-theme-style=\"{st.Value}\" aria-pressed=\"false\">"
+            + "<span class=\"theme-menu__mode-text\">"
+            + $"<span class=\"theme-menu__mode-name\">{st.Label}</span>"
+            + $"<span class=\"theme-menu__mode-hint\">{st.Hint}</span>"
+            + "</span>"
+            + $"<span class=\"theme-menu__check\" style=\"display: none\">{CheckIcon}</span></button>"));
+        var styleSection = $"""
+        <p class="theme-menu__heading">Style</p>
+        <div class="theme-menu__modes">{styles}<button type="button" role="switch" aria-checked="false" class="theme-menu__switch" data-theme-motion style="display: none"><span class="theme-menu__mode-text"><span class="theme-menu__mode-name">Reduce Motion</span><span class="theme-menu__mode-hint">No animations when panels open and close</span></span><span class="switch" aria-hidden="true"><span class="switch__knob"></span></span></button></div>
+        """;
         var accentSection = accentLocked ? "" : $"""
         <p class="theme-menu__heading">Accent Color</p>
         <div class="theme-menu__accents">{accents}</div>
@@ -469,7 +482,7 @@ public static partial class SiteChrome
         <button type="button" class="theme-toggle" data-theme-trigger aria-haspopup="true" aria-expanded="false" title="Appearance" aria-label="Appearance">{triggerIcons}</button>
         <div class="theme-menu__panel" role="dialog" aria-label="Appearance" data-theme-panel hidden>
         <button type="button" class="popover__close" aria-label="Close" data-theme-close>{CloseIcon}</button>
-        {themeSection}{accentSection}
+        {themeSection}{styleSection}{accentSection}
         </div></div>
         """;
     }
@@ -479,6 +492,13 @@ public static partial class SiteChrome
     /// that is whichever the operating system currently resolves to, which is
     /// why the script swaps between these rather than showing one.
     /// </summary>
+    /// <summary>The two styles, labeled as in <c>theme.ts</c>'s STYLES; "flat" is Minimal's stored name.</summary>
+    private static readonly (string Value, string Label, string Hint)[] Styles =
+    [
+        ("flat", "Minimal", "Solid surfaces, as Tesria has always looked"),
+        ("glass", "Glass", "Frosted bars and buttons, like tesria.com"),
+    ];
+
     private static string TriggerIcon(string mode) => Modes.First(m => m.Mode == mode).Icon.Replace("width=\"17\" height=\"17\"", "width=\"19\" height=\"19\"");
 
     private static readonly string CheckIcon = Svg(15, """<path d="m5 12.5 4.5 4.5L19 7.5" />""");
@@ -524,6 +544,20 @@ public static partial class SiteChrome
           if (stored === 'light' || stored === 'dark') root.setAttribute('data-theme', stored);
           var startAccent = ACCENT_LOCK || get(ACCENT) || ACCENT_DEFAULT;
           if (startAccent !== DEFAULT_ACCENT) root.setAttribute('data-accent', startAccent);
+          // Minimal or Glass (0.8.1): the reader's choice, else the look the
+          // site was exported in (data-style-default), else Minimal. Stored
+          // as the app stores it ('glass', or 'flat' for Minimal), except
+          // that Minimal is stored too: here it can be a choice against a
+          // Glass default, not only the absence of one.
+          var STYLE = 'tesria-style', MOTION = 'tesria-reduce-motion';
+          var STYLE_DEFAULT = root.getAttribute('data-style-default') === 'glass' ? 'glass' : 'flat';
+          function styleNow() { var v = get(STYLE); return v === 'glass' || v === 'flat' ? v : STYLE_DEFAULT }
+          function applyStyle(v) { if (v === 'glass') root.setAttribute('data-style', 'glass'); else root.removeAttribute('data-style') }
+          function applyMotion(on) { if (on) root.setAttribute('data-motion', 'reduce'); else root.removeAttribute('data-motion') }
+          applyStyle(styleNow());
+          applyMotion(get(MOTION) === '1');
+          // Windows draws Segoe UI low in a button (index.css nudges it up).
+          if (/Windows/.test(navigator.userAgent)) root.setAttribute('data-os', 'windows');
 
           // Width is a class on an element rather than an attribute on <html>,
           // so it cannot be applied before the body exists. It is applied in
@@ -572,6 +606,19 @@ public static partial class SiteChrome
               var on = b.getAttribute('data-theme-accent') === a;
               b.classList.toggle('is-active', on);
               b.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
+            var st = styleNow(), reduce = get(MOTION) === '1';
+            d.querySelectorAll('[data-theme-style]').forEach(function (b) {
+              var on = b.getAttribute('data-theme-style') === st;
+              b.classList.toggle('is-active', on);
+              b.setAttribute('aria-pressed', on ? 'true' : 'false');
+              show(b.querySelector('.theme-menu__check'), on);
+            });
+            d.querySelectorAll('[data-theme-motion]').forEach(function (b) {
+              show(b, st === 'glass');
+              b.setAttribute('aria-checked', reduce ? 'true' : 'false');
+              var sw = b.querySelector('.switch');
+              if (sw) sw.classList.toggle('is-on', reduce);
             });
             d.querySelectorAll('[data-theme-icon]').forEach(function (i) {
               show(i, i.getAttribute('data-theme-icon') === m);
@@ -643,6 +690,22 @@ public static partial class SiteChrome
                 sync();
               });
             });
+            d.querySelectorAll('[data-theme-style]').forEach(function (b) {
+              b.addEventListener('click', function () {
+                var next = b.getAttribute('data-theme-style');
+                set(STYLE, next);
+                applyStyle(next);
+                sync();
+              });
+            });
+            d.querySelectorAll('[data-theme-motion]').forEach(function (b) {
+              b.addEventListener('click', function () {
+                var on = get(MOTION) !== '1';
+                set(MOTION, on ? '1' : null);
+                applyMotion(on);
+                sync();
+              });
+            });
             // The trigger and the "system" hint both show what the OS is
             // resolving to, so both have to follow it changing.
             matchMedia('(prefers-color-scheme: dark)').addEventListener('change', sync);
@@ -654,6 +717,57 @@ public static partial class SiteChrome
             wireTreeFilter();
             wireTreeScroll();
             wireSiteMenu();
+            wireDock();
+            wireScrollbars();
+          }
+
+          // Glass (0.8.1): the top bar docks into a frosted strip once the
+          // page scrolls, as the app's does (Layout.tsx). Minimal ignores it.
+          function wireDock() {
+            var bar = d.querySelector('.topbar');
+            if (!bar) return;
+            var on = function () { bar.classList.toggle('is-docked', window.scrollY > 4) };
+            on();
+            window.addEventListener('scroll', on, { passive: true });
+          }
+
+          // Glass (0.8.1): a scroller's thin scrollbar shows while the mouse
+          // is in it or it scrolls (data-sb), as scrollbars.ts does in the
+          // app; flipping overflow for one layout makes Chrome repaint it.
+          // A touch screen draws its own, so this is for a mouse only.
+          function wireScrollbars() {
+            var fine = matchMedia('(hover: hover) and (pointer: fine)');
+            var hovered = [], timers = new Map();
+            function active() { return fine.matches && root.getAttribute('data-style') === 'glass' }
+            function refresh(el) { el.classList.add('sb-refresh'); void el.offsetWidth; el.classList.remove('sb-refresh') }
+            function update(el) {
+              var show = hovered.indexOf(el) >= 0 || timers.has(el);
+              if (show === el.hasAttribute('data-sb')) return;
+              if (show) el.setAttribute('data-sb', ''); else el.removeAttribute('data-sb');
+              refresh(el);
+            }
+            function scrollers(t) {
+              var out = [];
+              for (var el = t instanceof Element ? t : null; el && el !== d.body; el = el.parentElement) {
+                var cs = getComputedStyle(el);
+                if ((/auto|scroll/.test(cs.overflowY) && el.scrollHeight > el.clientHeight)
+                  || (/auto|scroll/.test(cs.overflowX) && el.scrollWidth > el.clientWidth)) out.push(el);
+              }
+              return out;
+            }
+            d.addEventListener('pointerover', function (e) {
+              if (e.pointerType !== 'mouse' || !active()) return;
+              var now = scrollers(e.target);
+              hovered.slice().forEach(function (el) { if (now.indexOf(el) < 0) { hovered.splice(hovered.indexOf(el), 1); update(el) } });
+              now.forEach(function (el) { if (hovered.indexOf(el) < 0) { hovered.push(el); update(el) } });
+            }, { passive: true });
+            d.addEventListener('scroll', function (e) {
+              if (!active() || !(e.target instanceof Element) || e.target === root) return;
+              var el = e.target;
+              clearTimeout(timers.get(el));
+              timers.set(el, setTimeout(function () { timers.delete(el); update(el) }, 900));
+              update(el);
+            }, { capture: true, passive: true });
           }
 
           // Filtering the sidebar's pages as you type (dev-plan 15.9): the

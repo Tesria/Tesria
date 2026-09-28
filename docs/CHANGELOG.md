@@ -55,6 +55,14 @@ section with the owner.
   download icons in place of the arrow characters on exports; on Windows,
   button labels move up 1px (Segoe UI sits low); Show Resolved in security
   alerts is a switch; the packages list on About has a frosted drop-down.
+- **Exported sites offer Glass too:** the site's appearance menu has the
+  Style (and Reduce Motion), and the site opens in the style its exporter
+  was using; the Docs export opens in Glass. Its bar docks and its
+  scrollbars show on hover as in the app. Fixed on the way: 0.8.1's new top
+  bar had hidden an export's Pages button on phones.
+- **The editor in Glass** is a pane inset beside the sidebar, with the
+  same margins above and below, rounded corners and a shadow; the page
+  scrolls inside it under the toolbar.
 - **It degrades to solid** where the browser has no backdrop-filter or the
   device asks for less transparency, and focus rings stay visible.
 - Found on the way: a horizontal bar chart's bars had collapsed to 2px

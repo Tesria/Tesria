@@ -3329,6 +3329,10 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
    scroll; a fixed overlay was tried first and, in Chromium's phone
    emulation, sat over the top bar and its button. */
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  /* The Pages button. The app shows its ☰ only when its bar has measured
+     itself as collapsed (Layout.tsx), and an export never measures: at this
+     width it is always shown. */
+  .topbar > .site-menu { display: inline-flex; align-items: center; }
   .space-layout--export .sidebar { display: none; }
   .site-menu-open .space-layout--export .space-content { display: none; }
   .site-menu-open .space-layout--export .sidebar {

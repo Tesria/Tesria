@@ -572,13 +572,18 @@ public class BrandingTests
     }
 
     [Fact]
-    public void An_export_hides_the_appearance_menu_when_everything_is_locked()
+    public void An_export_with_theme_and_accent_locked_offers_only_the_style()
     {
+        // The Style (Minimal or Glass, 0.8.1) is never locked, so the menu
+        // stays, with only that section, as the app's does.
         var brand = new SiteChrome.Brand("Acme")
         {
             Attributes = [("data-theme-lock", "dark"), ("data-accent-lock", "green")],
         };
-        Assert.DoesNotContain("theme-menu", SiteChrome.Topbar(brand, homeHref: null));
+        var bar = SiteChrome.Topbar(brand, homeHref: null);
+        Assert.Contains("data-theme-style=\"glass\"", bar);
+        Assert.DoesNotContain("data-theme-mode=", bar);
+        Assert.DoesNotContain("data-theme-accent=", bar);
     }
 
     [Fact]

@@ -1151,3 +1151,45 @@ label.code-block__appearance > select {
 }
 /* The Danger Zone keeps its red edge on the frost. */
 :root[data-style="glass"] .page-wrap--space-settings .danger-zone { border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
+
+/* ---- Exported sites ------------------------------------------------------ */
+
+/* An exported site offers Glass too (SiteChrome.cs). Its page wrapper paints
+   the page's solid background for PDFs and Minimal; in Glass the ground, with
+   its accent wash, shows through, as it does in the app. */
+:root[data-style="glass"] .export--site { background: transparent; }
+/* The floating sidebar ends above the export's footer bar. */
+:root[data-style="glass"] .space-layout--export .sidebar {
+  height: calc(100vh - var(--topbar-h) - 2 * var(--sb-gap) - var(--site-foot-h, 0px));
+}
+/* On a phone the Pages button unrolls the sidebar into the page's own flow
+   (index.css): the floating panel's fixed height and sticky place would
+   leave the list spilling out of it. */
+@media (max-width: 640px) {
+  :root[data-style="glass"] .site-menu-open .space-layout--export .sidebar {
+    position: static; top: auto; height: auto; max-height: none; margin: 0.75rem 1rem;
+  }
+}
+
+/* ---- The editor: a pane inset beside the sidebar ------------------------- */
+
+/* Editing a page on a computer (the owner, 2026-09-28): the toolbar and the
+   page are one pane, inset like the floating sidebar: the same margin above
+   and below, so its top lines up with the sidebar's and neither edge moves,
+   rounded corners and a drop shadow. The page scrolls inside the pane, under
+   the toolbar, which stays at the pane's top. */
+@media (min-width: 641px) {
+  :root[data-style="glass"] .space-content:has(> .page-actionbar--editor) {
+    position: sticky; top: calc(var(--topbar-h) + 0.75rem); align-self: start;
+    height: calc(100vh - var(--topbar-h) - 1.5rem);
+    margin: 0.75rem calc(1rem + var(--safe-right)) 0.75rem 0.75rem;
+    overflow-y: auto; overscroll-behavior: contain;
+    border: 1px solid var(--panel-border); border-radius: 18px;
+    background: var(--surface);
+    box-shadow: var(--box-shadow);
+    min-width: 0;
+  }
+  :root[data-style="glass"] .space-content > .page-actionbar--editor {
+    top: 0; background: var(--surface);
+  }
+}

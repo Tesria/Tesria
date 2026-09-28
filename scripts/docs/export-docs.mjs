@@ -56,7 +56,8 @@ console.log(`pack: docs/site/docs-pack.zip, ${(pack.length / 1048576).toFixed(1)
 // The site as its reader will see it would be audience=anonymous, but that
 // needs anonymous reading on for the instance. As the author is the same
 // set of pages here: nothing in Docs is restricted.
-const site = await download('/api/spaces/DOCS/export/site?audience=me')
+// The docs open in Glass, tesria.com's own look; readers can switch to Minimal.
+const site = await download('/api/spaces/DOCS/export/site?audience=me&style=glass')
 mkdirSync(OUT, { recursive: true })
 writeFileSync(join(OUT, 'docs-site.zip'), site)
 const files = entries(site).filter((e) => !e.name.endsWith('/'))

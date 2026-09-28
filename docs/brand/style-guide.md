@@ -757,6 +757,29 @@ drawing and redraws when `data-theme` or the system theme changes.
 
 ---
 
+### Exported sites
+
+An exported site (`SiteChrome.cs`) ships the app's compiled stylesheet, so
+every rule here applies to it. Its own script applies the Style before first
+paint: the reader's choice (`tesria-style`, `flat` stored too, since Minimal
+can be a choice against a Glass default), else the look it was exported in
+(`data-style-default="glass"`, set when the exporter was in Glass, and by the
+Docs export), else Minimal. It docks the bar, marks hovered scrollers
+(`data-sb`) and offers Reduce Motion, as the app does. In Glass the page
+wrapper (`.export--site`) is transparent so the ground shows, the sidebar
+stops above the footer bar, and on a phone the unrolled page list is in the
+page's flow. The Pages button (`.site-menu`) always shows at 640px and below,
+since an export never measures its bar.
+
+### The editor
+
+In Glass, on a computer, the editing space (`.space-content` holding
+`.page-actionbar--editor`) is a pane inset like the sidebar: sticky at the
+sidebar's top, the same `0.75rem` margin above and below (so both edges line
+up with the sidebar's and never move), `1rem` from the window's right edge,
+18px corners, `--surface` fill and `--box-shadow`. The page scrolls inside
+the pane (`overflow-y: auto`), and the toolbar stays at the pane's top.
+
 ## 8. Motion
 
 Motion belongs to Glass. Minimal switches instantly. All of it stops when
