@@ -1176,20 +1176,27 @@ label.code-block__appearance > select {
 /* Editing a page on a computer (the owner, 2026-09-28): the toolbar and the
    page are one pane, inset like the floating sidebar: the same margin above
    and below, so its top lines up with the sidebar's and neither edge moves,
-   rounded corners and a drop shadow. The page scrolls inside the pane, under
-   the toolbar, which stays at the pane's top. */
+   rounded corners and a drop shadow. Only the page under the toolbar
+   scrolls, so its scrollbar starts below the toolbar and stops short of the
+   rounded bottom corner. The pane itself does not clip, so the toolbar's
+   menus can hang past its edge. */
 @media (min-width: 641px) {
   :root[data-style="glass"] .space-content:has(> .page-actionbar--editor) {
     position: sticky; top: calc(var(--topbar-h) + 0.75rem); align-self: start;
     height: calc(100vh - var(--topbar-h) - 1.5rem);
+    display: flex; flex-direction: column;
     margin: 0.75rem calc(1rem + var(--safe-right)) 0.75rem 0.75rem;
-    overflow-y: auto; overscroll-behavior: contain;
     border: 1px solid var(--panel-border); border-radius: 18px;
     background: var(--surface);
     box-shadow: var(--box-shadow);
     min-width: 0;
   }
   :root[data-style="glass"] .space-content > .page-actionbar--editor {
-    top: 0; background: var(--surface);
+    position: relative; top: auto; flex: none;
+    border-radius: 18px 18px 0 0; background: var(--surface);
   }
+  :root[data-style="glass"] .space-content:has(> .page-actionbar--editor) > .page-column {
+    flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  }
+  :root[data-style="glass"] .space-content:has(> .page-actionbar--editor) > .page-column::-webkit-scrollbar-track { margin-bottom: 14px; }
 }

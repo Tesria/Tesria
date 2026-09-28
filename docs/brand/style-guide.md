@@ -777,8 +777,10 @@ In Glass, on a computer, the editing space (`.space-content` holding
 `.page-actionbar--editor`) is a pane inset like the sidebar: sticky at the
 sidebar's top, the same `0.75rem` margin above and below (so both edges line
 up with the sidebar's and never move), `1rem` from the window's right edge,
-18px corners, `--surface` fill and `--box-shadow`. The page scrolls inside
-the pane (`overflow-y: auto`), and the toolbar stays at the pane's top.
+18px corners, `--surface` fill and `--box-shadow`. Only the page under the
+toolbar scrolls (the pane's `.page-column`), so its scrollbar starts below
+the toolbar and its track stops 14px short of the rounded bottom corner; the
+pane itself does not clip, so toolbar menus can hang past its edge.
 
 ## 8. Motion
 
