@@ -1244,17 +1244,23 @@ label.code-block__appearance > select {
 
 /* ---- Toning Glass down (the owner, 2026-09-28) ---------------------------- */
 
-/* 1. Docked, the bar's theme and bell buttons drop their glass, as the
-   avatar pill and the Spaces and Admin pill do: no fill, no ring, no
-   shadow. A hover or an open menu still shows a soft circle. The unread
+/* 1. Docked, the bar's theme and bell buttons (and an export's Full Width)
+   drop their glass, as the avatar pill and the Spaces and Admin pill do:
+   no fill, no ring, no shadow. A hover or an open menu still shows a soft circle. The unread
    count keeps its own look. */
 :root[data-style="glass"] .topbar.is-docked .theme-toggle,
-:root[data-style="glass"] .topbar.is-docked .notif__bell {
+:root[data-style="glass"] .topbar.is-docked .notif__bell,
+:root[data-style="glass"] .topbar.is-docked [data-export-width-toggle] {
   background: transparent; box-shadow: none;
   -webkit-backdrop-filter: none; backdrop-filter: none;
 }
 :root[data-style="glass"] .topbar.is-docked .theme-toggle::before,
-:root[data-style="glass"] .topbar.is-docked .notif__bell::before { content: none; }
+:root[data-style="glass"] .topbar.is-docked .notif__bell::before,
+:root[data-style="glass"] .topbar.is-docked [data-export-width-toggle]::before { content: none; }
+/* An exported site's Full Width button, in the same bar, goes the same way:
+   its text in the bar's color, no ring. */
+:root[data-style="glass"] .topbar.is-docked [data-export-width-toggle] { border-color: transparent; color: var(--text); }
+:root[data-style="glass"] .topbar.is-docked [data-export-width-toggle]:hover { background: var(--glass-hover); }
 :root[data-style="glass"] .topbar.is-docked .theme-toggle:hover,
 :root[data-style="glass"] .topbar.is-docked .theme-toggle.is-open,
 :root[data-style="glass"] .topbar.is-docked .notif__bell:hover,

@@ -71,7 +71,8 @@ section with the owner.
   list they open, with a button's shadow.
 - **Exported sites:** in Glass the top bar is the frosted strip from the
   start, not only once the page scrolls, so the logo never floats on its
-  own. A page's folder path is kept to 140 characters: a deep tree of long
+  own, and its Full Width button is flat there like the theme button. A
+  page's folder path is kept to 140 characters: a deep tree of long
   titles made paths Windows refused to unzip or open, and a page that would
   pass the limit now starts again at the top level of the site (its
   subpages under it), with the navigation unchanged.
