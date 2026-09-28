@@ -5,8 +5,14 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
-Development builds now say **0.8.1-dev**. 0.8.1 is the Minimal or Glass
-theme (dev-plan 26.1).
+## [0.8.1] - 2026-09-28
+
+A second look to choose: Glass, tesria.com's frosted design, beside
+Minimal, the look Tesria has always had. Also: a top bar that folds into
+its menu instead of a More menu, Sign Out on the profile page, tabs that
+never scroll sideways, names in Title Case everywhere, and a phone menu
+that scrolls and keeps its place. Upgrading needs nothing: everyone starts
+in Minimal.
 
 ### Minimal or glass (dev-plan 26.1, 2026-09-27 to 28, Opus 5.5)
 
