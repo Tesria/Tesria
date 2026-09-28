@@ -114,7 +114,10 @@ public static partial class SiteChrome
         // above the page and pushed it off the screen). The app's own button,
         // shown only on a phone; it opens the sidebar over the page.
         var menu = """<button type="button" class="topbar__hamburger site-menu" aria-label="Pages" aria-expanded="false" aria-controls="site-pages">☰</button>""";
-        return $"""<header class="topbar">{menu}{home}<div class="topbar__right">{WidthToggle()}{ThemeMenu(brand)}</div></header>""";
+        // Docked from the start (the owner, 2026-09-28): in Glass the bar is
+        // the frosted strip the app's becomes on scrolling, so the logo never
+        // floats on its own. Minimal draws its bar either way.
+        return $"""<header class="topbar is-docked">{menu}{home}<div class="topbar__right">{WidthToggle()}{ThemeMenu(brand)}</div></header>""";
     }
 
     /// <summary>
@@ -717,18 +720,7 @@ public static partial class SiteChrome
             wireTreeFilter();
             wireTreeScroll();
             wireSiteMenu();
-            wireDock();
             wireScrollbars();
-          }
-
-          // Glass (0.8.1): the top bar docks into a frosted strip once the
-          // page scrolls, as the app's does (Layout.tsx). Minimal ignores it.
-          function wireDock() {
-            var bar = d.querySelector('.topbar');
-            if (!bar) return;
-            var on = function () { bar.classList.toggle('is-docked', window.scrollY > 4) };
-            on();
-            window.addEventListener('scroll', on, { passive: true });
           }
 
           // Glass (0.8.1): a scroller's thin scrollbar shows while the mouse

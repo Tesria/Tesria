@@ -69,6 +69,12 @@ section with the owner.
   The tree toggle in the page filter is flat (a solid circle when on, just
   its icon when off), and so are Glass drop-downs: the fill and edge of the
   list they open, with a button's shadow.
+- **Exported sites:** in Glass the top bar is the frosted strip from the
+  start, not only once the page scrolls, so the logo never floats on its
+  own. A page's folder path is kept to 140 characters: a deep tree of long
+  titles made paths Windows refused to unzip or open, and a page that would
+  pass the limit now starts again at the top level of the site (its
+  subpages under it), with the navigation unchanged.
 - **Exported sites offer Glass too:** the site's appearance menu has the
   Style (and Reduce Motion), and the site opens in the style its exporter
   was using; the Docs export opens in Glass. Its bar docks and its

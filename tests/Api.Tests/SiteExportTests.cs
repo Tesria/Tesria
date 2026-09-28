@@ -70,6 +70,34 @@ public class SiteExportTests
         Assert.Equal([0, 1, 2], placed.Select(p => p.Depth));
     }
 
+    [Fact]
+    public void A_path_too_long_for_Windows_starts_again_at_the_top_level()
+    {
+        // The breadcrumb stress test's trail (2026-09-28): eight levels of
+        // long titles made a path Windows would not open once unzipped.
+        var placed = SiteExport.Place([
+            Node("Engineering Handbook",
+                Node("Platform and Infrastructure Teams",
+                    Node("Networking",
+                        Node("Service Mesh Rollout Plan for the Second Half of the Year",
+                            Node("Regional Clusters",
+                                Node("EU West",
+                                    Node("Incident Runbooks",
+                                        Node("Database Failover When the Primary Region Is Unreachable and Replication Lag Exceeds Thirty Seconds")))))))),
+            Node("EU West"),
+        ]);
+
+        Assert.All(placed, p => Assert.True(p.Path.Length <= SiteExport.MaxPathLength, p.Path));
+        Assert.Equal(placed.Count, placed.Select(p => p.Path).Distinct().Count());
+        // Moved pages keep their subpages under them, and their tree depth.
+        var runbooks = placed.Single(p => p.Title == "Incident Runbooks");
+        var failover = placed.Single(p => p.Title.StartsWith("Database Failover"));
+        Assert.StartsWith(runbooks.Path + "/", failover.Path);
+        Assert.Equal(7, failover.Depth);
+        // A top-level page of the same name keeps its own folder.
+        Assert.Contains("eu-west", placed.Select(p => p.Path));
+    }
+
     // --- Links, once pages are files.
 
     [Fact]
@@ -275,7 +303,7 @@ public class SiteExportTests
         var bar = SiteChrome.Topbar(new SiteChrome.Brand("Acme Wiki"), homeHref: "../");
 
         Assert.Contains("Acme Wiki", bar);
-        Assert.Contains("class=\"topbar\"", bar);
+        Assert.Contains("class=\"topbar is-docked\"", bar);
         // The full menu, not a row of buttons: three modes and five accents
         // (teal retired 2026-09-26).
         foreach (var mode in new[] { "system", "light", "dark" })

@@ -36,25 +36,49 @@ public static partial class SiteExport
     }
 
     /// <summary>
+    /// The longest a page's directory path may be. Windows refuses a path
+    /// past 260 characters, and a site unzipped into Downloads is already
+    /// ~50 of them in (C:\Users\name\Downloads\site\site\) before
+    /// <c>/index.html</c> is added. A deep tree of long titles went past it
+    /// and its deepest pages would not open (2026-09-28).
+    /// </summary>
+    public const int MaxPathLength = 140;
+
+    /// <summary>
     /// Lays the tree out as directories, mirroring it, de-duplicating names
     /// among siblings only: two pages called "Overview" under different
     /// parents are not in conflict, and giving them different names would be
-    /// surprising.
+    /// surprising. A page whose path would pass <see cref="MaxPathLength"/>
+    /// starts again at the top level instead, and its subpages nest under it
+    /// from there; the site's own navigation is by the tree, not the folders,
+    /// so nothing a reader follows changes.
     /// </summary>
     public static List<Placed> Place(IReadOnlyList<PageNode> tree)
     {
         var placed = new List<Placed>();
+        var topLevel = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        static string Claim(HashSet<string> used, string slug)
+        {
+            var unique = slug;
+            for (var n = 2; !used.Add(unique); n++) unique = $"{slug}-{n}";
+            return unique;
+        }
 
         void Walk(IReadOnlyList<PageNode> nodes, string prefix, int depth, Guid? parentId)
         {
-            var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var used = prefix.Length == 0 ? topLevel : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var node in nodes)
             {
                 var slug = Slug(node.Title);
-                var unique = slug;
-                for (var n = 2; !used.Add(unique); n++) unique = $"{slug}-{n}";
-
-                var path = prefix.Length == 0 ? unique : $"{prefix}/{unique}";
+                string path;
+                if (prefix.Length > 0 && prefix.Length + 1 + slug.Length + 3 > MaxPathLength)
+                    path = Claim(topLevel, slug);
+                else
+                {
+                    var unique = Claim(used, slug);
+                    path = prefix.Length == 0 ? unique : $"{prefix}/{unique}";
+                }
                 placed.Add(new Placed(node.Id, node.Title, path, depth, parentId, node.Emoji));
                 if (node.Children.Count > 0) Walk(node.Children, path, depth + 1, node.Id);
             }
