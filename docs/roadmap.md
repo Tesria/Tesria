@@ -320,6 +320,15 @@ choice is per person, like light and dark; whether an administrator can
 set the instance default is a small decision to make with it. Exports
 (site, PDF) stay flat.
 
+### Follow-ups found after 0.8.1
+
+- **Bug (reported 2026-09-28): an exported site's Reduce Motion switch does
+  nothing.** In Glass, the export's appearance menu shows the switch
+  (`SiteChrome.cs`, `data-theme-motion`), but an exported site has none of
+  the app's animations: its sidebar does not fold into a button, and its
+  menus do not open out of their buttons. Either hide the switch in exports,
+  or give the site the animations it would control.
+
 ## ZIM files: importing and exporting (suggested 2026-09-25, not scheduled)
 
 ZIM is the offline-wiki format of openZIM and Kiwix: Wikipedia,
