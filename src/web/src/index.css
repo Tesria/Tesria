@@ -1447,6 +1447,15 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .breadcrumb__segment { display: inline; }
 .breadcrumb__sep { margin: 0 0.4rem; }
 .breadcrumb__current { color: var(--text); font-weight: 600; }
+/* The "..." standing for the middle of a deep page's trail (SpaceBreadcrumb). */
+.breadcrumb:not([data-collapse]) > .breadcrumb__segment--more,
+.breadcrumb[data-collapse] > .breadcrumb__segment--middle { display: none !important; }
+.breadcrumb__more-btn {
+  font: inherit; line-height: 1.3; color: var(--primary); cursor: pointer;
+  background: none; border: 0; border-radius: 6px; padding: 0 0.45rem;
+}
+.breadcrumb__more-btn:hover, .breadcrumb__more-btn[aria-expanded="true"] { background: var(--bg-alt); }
+.breadcrumb__menu { left: 0; right: auto; white-space: normal; max-height: min(60vh, 26rem); overflow-y: auto; }
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   .breadcrumb { padding: 0.6rem 0.75rem 0; }
   .collab-status--bar { margin: 0.6rem 0.75rem 0; max-width: calc(100% - 1.5rem); }
@@ -1614,22 +1623,28 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 /* Viewing a page, the bar's last button (the ... menu) ends where the top
    bar's avatar does, at every width (the owner, 2026-09-28). */
 .page-actionbar:not(.page-actionbar--editor) { padding-right: calc(1rem + var(--safe-right)); }
+/* Viewing a page, the breadcrumb is at the size of the Edit and Full Width
+   buttons, wherever it is (the owner, 2026-09-28). */
+.space-content:not(:has(> .page-actionbar--editor)) > .page-column > .breadcrumb { font-size: 15px; }
+.space-content:not(:has(> .page-actionbar--editor)) > .page-column > .breadcrumb .space-icon {
+  width: 20px; height: 20px; font-size: 11px; margin-right: 0.45rem; vertical-align: -4px;
+}
 /* Minimal, on a computer: the breadcrumb sits in the page's bar, at the left
-   across from Edit, Full Width and ..., and at their size (the owner,
-   2026-09-28). The bar has a fixed height and the breadcrumb, sticky at the
-   same place, is pulled up into it by that height, so the page below starts
-   right under the bar. (Glass floats both as bars of their own, glass.css.) */
+   across from Edit, Full Width and ..., when it fits there on one line
+   (data-dock, SpaceBreadcrumb.tsx); otherwise it stays the first line of the
+   page, below the bar. The bar has a fixed height and the docked
+   breadcrumb, sticky at the same place, is pulled up into it by that height,
+   so the page below starts right under the bar. (Glass floats both as bars
+   of their own, glass.css.) */
 @media (min-width: 641px) {
   :root:not([data-style="glass"]) .page-actionbar:not(.page-actionbar--editor) { box-sizing: border-box; min-height: 52px; }
-  :root:not([data-style="glass"]) .space-content:not(:has(> .page-actionbar--editor)) .page-column > .breadcrumb {
+  :root:not([data-style="glass"]) .page-column > .breadcrumb[data-dock] {
     position: sticky; top: var(--topbar-h); z-index: 9;
-    display: flex; align-items: center; flex-wrap: wrap;
+    display: flex; align-items: center; flex-wrap: nowrap; white-space: nowrap;
     box-sizing: border-box; height: 52px; margin-top: -52px;
-    width: fit-content; max-width: calc(100% - 22rem); padding: 0 0 0 1.5rem;
-    font-size: 15px;
+    width: fit-content; padding: 0 0 0 1.5rem;
   }
-  :root:not([data-style="glass"]) .space-content:not(:has(> .page-actionbar--editor)) .page-column > .breadcrumb .space-icon { width: 20px; height: 20px; font-size: 11px; margin-right: 0.45rem; }
-  :root:not([data-style="glass"]) .space-content:not(:has(> .page-actionbar--editor)) .page-column > .breadcrumb .breadcrumb__segment { display: inline-flex; align-items: center; }
+  :root:not([data-style="glass"]) .page-column > .breadcrumb[data-dock] .breadcrumb__segment { display: inline-flex; align-items: center; }
 }
 
 .overflow-menu { position: relative; display: inline-flex; }

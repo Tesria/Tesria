@@ -786,8 +786,16 @@ Viewing a page on a computer, the breadcrumb is 15px with a 20px space icon,
 sticky at the top. In Minimal it sits inside the page bar (a fixed 52px),
 pulled up into it, across from the buttons. In Glass it is a 48px pill at the
 sidebar's top, and the button group is a 48px pill too: clear at rest, and
-once the bar docks each takes the tab bar's glass (`.tabs`). Neither moves
-when it fills in.
+once the bar docks each takes the tab bar's glass (`.tabs`), painted on a
+`::before` so the menus inside stay frosted against the page. Neither moves
+when it fills in; the buttons' bar appears at every width, phones included.
+
+It docks only when it fits on one line across from the buttons, measured in
+`SpaceBreadcrumb.tsx` (`data-dock`). The first that fits wins: the whole
+trail docked; the short trail (space, "...", parent, page; `data-collapse`)
+docked; the whole trail inline; the short trail inline when the whole one
+would run past two lines. Titles are never clipped. Inline, it keeps the
+15px size.
 
 ### The editor
 

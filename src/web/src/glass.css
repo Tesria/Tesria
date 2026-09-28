@@ -814,6 +814,26 @@ label.code-block__appearance > select {
   padding-right: calc(1rem + var(--safe-right));
 }
 
+/* The buttons are a pill of their own: clear at rest, and once the top bar
+   has docked, a bar in the tab bar's glass (the owner, 2026-09-28), at
+   every width. On a phone the pill's padding is taken back by its margin,
+   so the buttons stay where they were. */
+:root[data-style="glass"] .page-actionbar:not(.page-actionbar--editor) > .page-actionbar__secondary {
+  position: relative; isolation: isolate; padding: 5px; border-radius: 999px;
+}
+/* The glass is a layer behind the buttons, so the ... menu's frost still
+   reaches the page (see the breadcrumb's, below). */
+:root[data-style="glass"]:has(.topbar.is-docked) .page-actionbar:not(.page-actionbar--editor) > .page-actionbar__secondary::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit;
+  background: var(--glass); border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: blur(14px) saturate(170%);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--btn-shadow);
+}
+@media (max-width: 640px) {
+  :root[data-style="glass"] .page-actionbar:not(.page-actionbar--editor) > .page-actionbar__secondary { margin-top: -5px; margin-bottom: -5px; margin-right: -5px; }
+}
+
 /* ---- Notifications on the frosted panel: see-through fills ------------- */
 
 :root[data-style="glass"] .notif__header,
@@ -1060,19 +1080,19 @@ label.code-block__appearance > select {
 
 /* ---- A frosted drop-down (the About page's package filter) ---------------- */
 
-/* A glass pill at the page's control height, with an accent chevron (on
-   its wrapper, below) in place of the browser's arrow (the owner, 2026-09-28). The list it opens
-   is the system's own. */
+/* A pill at the page's control height, with an accent chevron (on its
+   wrapper, below) in place of the browser's arrow. Flat, in the fill and
+   hairline edge of the list it opens, with a button's drop shadow and no
+   gradient (the owner, 2026-09-28). */
 :root[data-style="glass"] select.glass-select {
   -webkit-appearance: none; appearance: none;
   box-sizing: border-box; height: var(--ctl-page); min-width: 0; width: auto;
   padding: 0 2.4rem 0 1rem; border-radius: 999px; color: var(--text);
-  border: 1px solid var(--glass-border);
-  background:
-    var(--glass-sheen), var(--glass);
-  -webkit-backdrop-filter: blur(14px) saturate(170%);
-  backdrop-filter: blur(14px) saturate(170%);
-  box-shadow: inset 0 1px 0 var(--btn-in-top), inset 0 -1px 0 var(--btn-in-bot), var(--btn-shadow);
+  border: 1px solid var(--panel-border);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--btn-shadow);
   cursor: pointer;
 }
 /* The chevron, in the accent: drawn on the wrapper (a select has no
@@ -1088,8 +1108,9 @@ label.code-block__appearance > select {
 /* No accent ring or border when clicked (the owner, 2026-09-28): Chrome
    counts a click on a select as keyboard focus, so this is for both. */
 :root[data-style="glass"] select.glass-select:focus,
-:root[data-style="glass"] select.glass-select:focus-visible { outline: none; border-color: var(--glass-border); }
+:root[data-style="glass"] select.glass-select:focus-visible { outline: none; border-color: var(--panel-border); }
 :root[data-style="glass"] select.glass-select option { color: initial; }
+:root[data-style="glass"] .breadcrumb__more-btn:hover, :root[data-style="glass"] .breadcrumb__more-btn[aria-expanded="true"] { background: var(--glass-hover); }
 /* In the permissions picker: its own select rule is more specific. */
 :root[data-style="glass"] .principal-picker select.glass-select { height: var(--ctl-page); padding: 0 2.4rem 0 1rem; min-width: 130px; }
 
@@ -1135,33 +1156,38 @@ label.code-block__appearance > select {
   :root[data-style="glass"] .page-actionbar:not(.page-actionbar--editor) > * { margin-top: 0.75rem; }
   /* The breadcrumb docks at the top as the page scrolls, in line with the
      Edit, Full Width and ... buttons across from it and at their size
-     (the owner, 2026-09-28). Each is a pill the height of the top bar's
-     (48px): clear at rest, and once the bar has docked, a bar of its own
-     in the tab bar's glass. The pills' shape is there at rest too, so nothing moves when
-     they fill in. */
-  :root[data-style="glass"] .space-content:not(:has(> .page-actionbar--editor)) .breadcrumb {
+     (the owner, 2026-09-28), when it fits there on one line: data-dock,
+     SpaceBreadcrumb.tsx. It is a pill the height of the top bar's (48px):
+     clear at rest, and once the bar has docked, a bar of its own in the tab
+     bar's glass. The pill's shape is there at rest too, so nothing moves
+     when it fills in. */
+  :root[data-style="glass"] .page-column > .breadcrumb[data-dock] {
     position: sticky; top: calc(var(--topbar-h) + 0.75rem); z-index: 7;
-    display: flex; align-items: center; flex-wrap: wrap; row-gap: 0.1rem;
-    box-sizing: border-box; width: fit-content; max-width: calc(100% - 26rem); min-height: var(--ctl);
+    display: flex; align-items: center; flex-wrap: nowrap; white-space: nowrap;
+    box-sizing: border-box; width: fit-content; min-height: var(--ctl);
     margin: 0.75rem 0 0.75rem 0.5rem; padding: 0 1rem;
     border: 1px solid transparent; border-radius: 999px;
-    font-size: 15px;
   }
-  :root[data-style="glass"] .space-content:not(:has(> .page-actionbar--editor)) .breadcrumb .space-icon { width: 20px; height: 20px; font-size: 11px; margin-right: 0.45rem; vertical-align: middle; }
-  :root[data-style="glass"] .space-content:not(:has(> .page-actionbar--editor)) .breadcrumb__segment { display: inline-flex; align-items: center; }
-  :root[data-style="glass"] .page-actionbar:not(.page-actionbar--editor) > .page-actionbar__secondary {
-    padding: 4px; border: 1px solid transparent; border-radius: 999px;
-  }
-  :root[data-style="glass"]:has(.topbar.is-docked) .space-content:not(:has(> .page-actionbar--editor)) .breadcrumb,
-  :root[data-style="glass"]:has(.topbar.is-docked) .page-actionbar:not(.page-actionbar--editor) > .page-actionbar__secondary {
+  :root[data-style="glass"] .page-column > .breadcrumb[data-dock] .breadcrumb__segment { display: inline-flex; align-items: center; }
+  /* The glass is a layer behind the pill (as the docked top bar's is): a
+     pill with a backdrop-filter of its own would be a backdrop root, and
+     the frosted menu of its "..." would blur only the pill. */
+  :root[data-style="glass"] .page-column > .breadcrumb[data-dock] { isolation: isolate; }
+  :root[data-style="glass"]:has(.topbar.is-docked) .page-column > .breadcrumb[data-dock="on"]::before {
     /* The tab bar's glass (.tabs), exactly. */
-    background: var(--glass); border-color: var(--glass-border);
+    content: ""; position: absolute; inset: -1px; z-index: -1; pointer-events: none; border-radius: inherit;
+    background: var(--glass); border: 1px solid var(--glass-border);
     -webkit-backdrop-filter: blur(14px) saturate(170%);
     backdrop-filter: blur(14px) saturate(170%);
     box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--btn-shadow);
   }
   /* The page below starts where it did: the row's own bottom padding is its space. */
-  :root[data-style="glass"] .page-column > .breadcrumb + .page-wrap { padding-top: 0; }
+  :root[data-style="glass"] .page-column > .breadcrumb[data-dock] + .page-wrap { padding-top: 0; }
+  /* Not docked, the breadcrumb is the first line of the page, below the
+     buttons floating at the top right. */
+  :root[data-style="glass"] .space-content:not(:has(> .page-actionbar--editor)) > .page-column > .breadcrumb:not([data-dock]) {
+    padding-top: calc(var(--ctl) + 1.25rem);
+  }
 
 }
 /* The Danger Zone keeps its red edge on the frost. */
