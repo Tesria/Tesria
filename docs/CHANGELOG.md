@@ -55,6 +55,10 @@ section with the owner.
   download icons in place of the arrow characters on exports; on Windows,
   button labels move up 1px (Segoe UI sits low); Show Resolved in security
   alerts is a switch; the packages list on About has a frosted drop-down.
+- **Glass is for the chrome:** outside the top bar and the sidebar, every
+  button is a flat outline button (tab bars, menu rows and alert actions
+  keep their looks), and once the bar docks its theme and bell buttons drop
+  their glass as the avatar and the Spaces and Admin pill do.
 - **Exported sites offer Glass too:** the site's appearance menu has the
   Style (and Reduce Motion), and the site opens in the style its exporter
   was using; the Docs export opens in Glass. Its bar docks and its

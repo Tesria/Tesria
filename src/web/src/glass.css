@@ -1200,3 +1200,46 @@ label.code-block__appearance > select {
   }
   :root[data-style="glass"] .space-content:has(> .page-actionbar--editor) > .page-column::-webkit-scrollbar-track { margin-bottom: 14px; }
 }
+
+/* ---- Toning Glass down (the owner, 2026-09-28) ---------------------------- */
+
+/* 1. Docked, the bar's theme and bell buttons drop their glass, as the
+   avatar pill and the Spaces and Admin pill do: no fill, no ring, no
+   shadow. A hover or an open menu still shows a soft circle. The unread
+   count keeps its own look. */
+:root[data-style="glass"] .topbar.is-docked .theme-toggle,
+:root[data-style="glass"] .topbar.is-docked .notif__bell {
+  background: transparent; box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+:root[data-style="glass"] .topbar.is-docked .theme-toggle::before,
+:root[data-style="glass"] .topbar.is-docked .notif__bell::before { content: none; }
+:root[data-style="glass"] .topbar.is-docked .theme-toggle:hover,
+:root[data-style="glass"] .topbar.is-docked .theme-toggle.is-open,
+:root[data-style="glass"] .topbar.is-docked .notif__bell:hover,
+:root[data-style="glass"] .topbar.is-docked .notif__bell.is-open { background: var(--glass-hover); }
+
+/* 2. Glass is for the chrome: the top bar and the sidebar. Everywhere else
+   (a page, Administration, settings, dialogs) every button is the flat
+   outline button: a 2px stroke and text in the accent, no fill, no sheen, no
+   shadow; danger in the danger color. Tab bars, menu rows and alert actions
+   keep their own looks. */
+:root[data-style="glass"] .btn:not(.topbar .btn):not(.sidebar .btn):not(.overflow-menu__dropdown .btn):not(.alerts__actions .btn):not(.tabs__menu .btn) {
+  background: transparent; border: 2px solid var(--primary); color: var(--primary);
+  box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+:root[data-style="glass"] .btn:not(.topbar .btn):not(.sidebar .btn):not(.overflow-menu__dropdown .btn):not(.alerts__actions .btn):not(.tabs__menu .btn)::before { content: none; }
+:root[data-style="glass"] .btn:not(.topbar .btn):not(.sidebar .btn):not(.overflow-menu__dropdown .btn):not(.alerts__actions .btn):not(.tabs__menu .btn):hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+:root[data-style="glass"] .btn--danger:not(.topbar .btn):not(.sidebar .btn):not(.overflow-menu__dropdown .btn):not(.alerts__actions .btn) { border-color: var(--danger); color: var(--danger); }
+:root[data-style="glass"] .btn--danger:not(.topbar .btn):not(.sidebar .btn):not(.overflow-menu__dropdown .btn):not(.alerts__actions .btn):hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+/* The ... button beside them: an outlined circle. */
+:root[data-style="glass"] .overflow-menu__trigger:not(.topbar *):not(.sidebar *) {
+  background: transparent; border: 2px solid var(--primary); color: var(--primary);
+  box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+:root[data-style="glass"] .overflow-menu__trigger:not(.topbar *):not(.sidebar *)::before { content: none; }
+:root[data-style="glass"] .overflow-menu__trigger:not(.topbar *):not(.sidebar *):hover { background: color-mix(in srgb, var(--primary) 10%, transparent); }

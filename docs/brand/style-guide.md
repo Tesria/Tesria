@@ -64,6 +64,15 @@ itself is in [messaging.md](messaging.md); the theming mechanism is in
 
 ---
 
+**Glass is for the chrome** (2026-09-28). Glass buttons, with their sheen,
+gradient stroke and shadow, belong to the top bar and the sidebar only.
+Everywhere else (a page, Administration, settings, dialogs) every button is
+the flat outline button: a 2px accent stroke and accent text, no fill; danger
+in the danger color; the ⋮ button an outlined circle. Tab bars, menu rows and
+alert actions keep their own looks. And once the top bar docks, its theme and
+bell buttons drop their glass as the avatar pill and the Spaces and Admin pill
+do (the unread count keeps its look).
+
 ## 2. Choosing a style
 
 ### The four settings
