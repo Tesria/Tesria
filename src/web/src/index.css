@@ -1443,7 +1443,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
    Not sticky: the first thing in the normal scrolling content, right below
    .space-actionbar (or the app topbar on desktop, where .space-actionbar is
    hidden). See SpaceBreadcrumb.tsx. */
-.breadcrumb { padding: 0.6rem 1.5rem 0; font-size: 0.85rem; color: var(--muted); }
+.breadcrumb { padding: 0.6rem 1.5rem 0; color: var(--muted); }
 .breadcrumb__segment { display: inline; }
 .breadcrumb__sep { margin: 0 0.4rem; }
 .breadcrumb__current { color: var(--text); font-weight: 600; }
@@ -1623,10 +1623,10 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 /* Viewing a page, the bar's last button (the ... menu) ends where the top
    bar's avatar does, at every width (the owner, 2026-09-28). */
 .page-actionbar:not(.page-actionbar--editor) { padding-right: calc(1rem + var(--safe-right)); }
-/* Viewing a page, the breadcrumb is at the size of the Edit and Full Width
-   buttons, wherever it is (the owner, 2026-09-28). */
-.space-content:not(:has(> .page-actionbar--editor)) > .page-column > .breadcrumb { font-size: 15px; }
-.space-content:not(:has(> .page-actionbar--editor)) > .page-column > .breadcrumb .space-icon {
+/* The breadcrumb is at the size of a page's Edit and Full Width buttons,
+   wherever it is: a page, the editor, Space Settings (the owner, 2026-09-28). */
+.breadcrumb { font-size: 15px; }
+.breadcrumb .space-icon {
   width: 20px; height: 20px; font-size: 11px; margin-right: 0.45rem; vertical-align: -4px;
 }
 /* Minimal, on a computer: the breadcrumb sits in the page's bar, at the left
@@ -2537,7 +2537,6 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--bg-alt); border: 1px solid var(--border); line-height: 1;
 }
-.breadcrumb .space-icon { margin-right: 0.35rem; }
 .space-actionbar__pages { display: inline-flex; align-items: center; gap: 0.45rem; }
 
 .icon-picker { display: grid; gap: 1rem; }

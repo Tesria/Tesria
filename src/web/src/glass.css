@@ -546,10 +546,10 @@
    has a 1px stroke in the accent (the owner, 2026-09-28). Inset, so it adds
    nothing to the item's size. */
 :root[data-style="glass"] .theme-menu__mode.is-active,
-:root[data-style="glass"] .sidebar .tree__link.is-active,
-:root[data-style="glass"] .sidebar .sidebar__trash.is-active {
+:root[data-style="glass"] .sidebar .tree__link.is-active {
   box-shadow: inset 0 0 0 1px var(--primary);
 }
+/* Space Settings, open, keeps its tint and no stroke (the owner, 2026-09-28). */
 
 /* Tabs (Administration, a page's Comments and History): one glass pill, the current one a lens. */
 /* The same pill as the top bar's Spaces and Admin (the owner, 2026-09-28):
