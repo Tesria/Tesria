@@ -30,11 +30,14 @@ export type PieSlice = {
  * its light falls on the opposite side. Always drawn and hidden unless the
  * chart is glass (glass.css), so an export keeps what the chart asked for.
  */
-function Sheen({ cx, cy, r, id, ring }: { cx: number; cy: number; r: number; id: string; ring?: number }) {
+function Sheen({ cx, cy, r, id, ring, unit = 1 }: { cx: number; cy: number; r: number; id: string; ring?: number; unit?: number }) {
   const outer = ring ? r + ring / 2 : r
   const inner = ring ? r - ring / 2 : 0
-  const band = Math.max(outer * 0.09, 0.8)
-  const line = Math.max(outer * 0.022, 0.25)
+  // `unit` is how many screen pixels one drawing unit takes. The light keeps
+  // a least on-screen width, so a small donut (the Backups page's, 80 to
+  // 112px) shows its rims as clearly as a large one (the owner, 2026-09-28).
+  const band = Math.max(outer * 0.09, 7 / unit)
+  const line = Math.max(outer * 0.022, 2.2 / unit)
   const lit = (gid: string, flip: boolean) => (
     <linearGradient id={gid} gradientUnits="userSpaceOnUse"
       x1={cx - outer} y1={cy - outer} x2={cx + outer} y2={cy + outer}>
@@ -123,7 +126,7 @@ export function PieChart({
           />
         )
       })}
-      {total > 0 && <Sheen cx={c} cy={c} r={r} id={`pie-sheen-${sheenId}`} />}
+      {total > 0 && <Sheen cx={c} cy={c} r={r} id={`pie-sheen-${sheenId}`} unit={1} />}
     </svg>
   )
 }
@@ -179,7 +182,7 @@ export function DonutChart({
         ))}
       </g>
       {/* Outside the rotated group, so the light still falls from the top-left. */}
-      <Sheen cx={mid} cy={mid} r={DONUT_RADIUS} id={`donut-sheen-${sheenId}`} ring={DONUT_STROKE} />
+      <Sheen cx={mid} cy={mid} r={DONUT_RADIUS} id={`donut-sheen-${sheenId}`} ring={DONUT_STROKE} unit={size / DONUT_VIEW} />
       {center && (
         <text
           className="donut__center"
