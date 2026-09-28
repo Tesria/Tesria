@@ -1,35 +1,79 @@
 # Tesria
 
-A self-hosted, Docker-deployable knowledge base / wiki modeled on Atlassian
-Confluence. Priorities: **data safety** (strong backup & recovery), a faithful
-block-based editor, and one-command deployment.
+**The self-hosted wiki built for people and AI agents.**
 
-**Status:** 0.6.0, the first public release. Website: [tesria.com](https://tesria.com).
-What Tesria does today:
+Write, keep and share your team's knowledge on your own server. Connect any
+AI assistant through MCP, and see every change it makes.
 
-- **Writing:** spaces of pages in a tree, a block editor (tables, panels,
-  code, diagrams, math, charts, layouts, live blocks that list pages and
-  tasks), templates, labels, and real-time co-editing with drafts, history
-  and rollback.
-- **Working together:** threaded and inline comments, mentions, watches and
-  notifications, full-text search.
-- **Sharing:** export a page as Markdown, HTML or PDF, a whole space as a
-  static website, or a space as a portable wiki pack that another Tesria can
-  import. Spaces can be published for anonymous reading.
-- **Running it:** a setup wizard, roles and rights, groups, space
-  permissions and page restrictions, invitations, two-factor sign-in,
-  single sign-on (OIDC, beta), branding, email through SMTP, Gmail or
-  Microsoft 365, and optional Tailscale for private access from anywhere.
-- **Keeping it safe:** backups with point-in-time recovery, offsite copies,
-  and restore and undo from the admin page; a tamper-evident audit log,
-  security alerts, rate limits, a least-privilege database role, and a
-  dependency list with a vulnerability check.
-- **Connecting to it:** a REST API with tokens and webhooks, and MCP for AI
-  assistants.
+**Latest release:** [0.8.1](https://github.com/Tesria/Tesria/releases/latest).
+**Website and docs:** [tesria.com](https://tesria.com). Free and open source
+under the [Apache License 2.0](./LICENSE).
 
-What changed in each version is in [`docs/CHANGELOG.md`](./docs/CHANGELOG.md);
-what comes next is in [`docs/roadmap.md`](./docs/roadmap.md) and
-[`docs/dev-plan.md`](./docs/dev-plan.md). [`PLAN.md`](./PLAN.md) is the
+## What Tesria does
+
+### Write: writing together, fast
+
+- Edit the same page at the same time, with everyone's cursor and changes
+  live.
+- A block editor with a slash menu for tables, panels, charts, Mermaid
+  diagrams, math, task lists, layouts, page properties, embeds and live
+  lists of pages and tasks, and Markdown shortcuts as you type.
+- Drafts, version history with restore, templates, labels, threaded and
+  inline comments, mentions, watches and notifications, and search across
+  every space.
+- Two looks, **Minimal** and **Glass**, each in light and dark with your
+  choice of accent color. Reading, editing and the page tree all work on a
+  phone.
+
+### Keep: yours, safe and recoverable
+
+- Ready-made Docker images for Intel, AMD and ARM. One command installs it,
+  with no settings file to write: Tesria makes its own passwords and keys,
+  and asks you to save the backup key.
+- Backups that are tested, restore **and undo** from the admin page, and
+  point-in-time recovery: roll the whole wiki back to the minute before
+  something went wrong.
+- Encrypted offsite copies to S3-compatible cloud storage, a network drive
+  or a removable drive.
+- No telemetry: Tesria sends nothing about your instance or its people
+  anywhere. Once installed it runs without the internet: sign-in, password
+  resets and backups to a network drive or removable drive all work offline.
+- A tamper-evident audit log, security alerts, two-factor sign-in, rate
+  limits, and an app that runs as a database role unable to alter its own
+  audit log.
+- Reach it privately from anywhere through the optional Tailscale
+  integration, with no port opened to the internet.
+
+### Share: the right people, the right pages
+
+- Roles, groups, space permissions and page restrictions; open sign-up,
+  invitations, or single sign-on through OpenID Connect (in beta).
+- Public spaces anyone can read, without an account.
+- Export a page as Markdown, HTML or PDF, and a whole space as a static
+  website or as a wiki pack that imports into another Tesria. The docs on
+  tesria.com are a Tesria export.
+- Your own name, logo and colors on your instance.
+- Email through any SMTP server, with step-by-step guides for Gmail,
+  Outlook and Microsoft 365, Apple iCloud Mail, Zoho, Fastmail and Proton
+  Mail, and **Sign in with Microsoft** or **Sign in with Google** in place
+  of an app password.
+
+### Automate: agents that work with you
+
+- **A built-in MCP server:** Claude, Cursor or any MCP client can read,
+  search, create and update pages, limited to what the token's owner may
+  see. A read-only token cannot change anything.
+- **Agents never silently overwrite you:** every change an agent makes is a
+  new version in the page's history, which anyone can restore, and
+  administrators see what each token did. When someone edits the page, the
+  change is highlighted, with **Accept All** and **Reject All**.
+- A REST API with an OpenAPI reference, and webhooks when pages change.
+
+Approving an agent's changes before they go live (review mode) is planned.
+What is planned is on the [public roadmap](./docs/roadmap-public.md); what
+changed in each version is in [`docs/CHANGELOG.md`](./docs/CHANGELOG.md).
+The working plans are [`docs/roadmap.md`](./docs/roadmap.md) and
+[`docs/dev-plan.md`](./docs/dev-plan.md), and [`PLAN.md`](./PLAN.md) is the
 original design the project started from.
 
 ## Documentation
@@ -37,7 +81,7 @@ original design the project started from.
 - **Using and running Tesria:** the docs at
   [tesria.com/docs](https://tesria.com/docs). Each release also carries
   them as downloads: `docs-pack.zip` to import into your own Tesria (Spaces,
-  then **Import a pack**), and `docs-site.zip` to read offline.
+  then **Import a Pack**), and `docs-site.zip` to read offline.
 - **How it is built:** [`docs/architecture.md`](./docs/architecture.md),
   and the threat model and known gaps in [`docs/security.md`](./docs/security.md).
 - **Backups and disaster recovery:** [`docs/backup-recovery.md`](./docs/backup-recovery.md).
@@ -118,19 +162,21 @@ the instance.
 > until the `pgbackrest` sidecar has created the stanza. If you do need the
 > database by itself, start `db pgbackrest` together.
 
-- Real domain: set `DOMAIN=wiki.example.com` in a `.env` and Caddy fetches a Let's Encrypt
-  cert automatically. Visit `https://wiki.example.com`.
-- Local test: leave `DOMAIN` unset (it defaults to `localhost`) and visit `https://localhost` (Caddy uses
-  a self-signed cert, so the browser will warn once).
-- The app is also reachable from other devices on your LAN (including phones)
-  by IP or hostname, no extra config needed. To make that access, and the
-  `localhost` warning above, go away for good on a given device, run
-  `deploy/scripts/trust-ca.sh` (macOS/Linux) or `trust-ca.ps1` (Windows) once
-  with the server's certificate fingerprint (`docker compose logs app | grep
-  -i fingerprint` on the server), or open `http://<server>/trust` on that
-  device for a guided version; see
-  [`docs/tls-and-lan-access.md`](./docs/tls-and-lan-access.md) for details
-  and the real-domain-without-public-exposure option.
+- **A real domain:** set `DOMAIN=wiki.example.com` in a `.env`, and Caddy
+  gets a Let's Encrypt certificate for it automatically. Visit
+  `https://wiki.example.com`.
+- **No domain:** leave `DOMAIN` unset (it defaults to `localhost`) and visit
+  `https://localhost`. Tesria makes its own certificate, so a browser warns
+  until that device trusts it.
+- **Other devices on your network,** phones included, reach Tesria by the
+  server's IP address or name with nothing to set up. To trust its
+  certificate on a device, open `http://<server>/trust` there for a guided
+  setup, or run `deploy/scripts/trust-ca.sh` (macOS and Linux) or
+  `trust-ca.ps1` (Windows). Checking the fingerprint is optional:
+  `--fingerprint` with the value from `docker compose logs app | grep -i
+  fingerprint` on the server. See
+  [`docs/tls-and-lan-access.md`](./docs/tls-and-lan-access.md) for details,
+  and for using a real domain without exposing Tesria to the internet.
 
 Check health directly: `curl -k https://localhost/api/health` (it gives the
 version only to a signed-in caller).
@@ -158,7 +204,7 @@ cd src/web && npm ci && npm run build && npm run lint && npm test   # the web ap
 
 The API test suite boots the app in-process against SQLite in-memory, so it runs
 without Docker or a live PostgreSQL. GitHub Actions runs both on every push and
-pull request.
+pull request, and runs the API tests against PostgreSQL too.
 
 ## Backups
 
@@ -190,7 +236,7 @@ Administrators may shape user roles; only the owner may change what
 administrators can do.
 
 You can add your own roles alongside the three, in either the user or the
-administrator tier: **New role** copies an existing one and you edit the
+administrator tier: **New Role** copies an existing one and you edit the
 copy in the matrix. A role is a set of rights, not a rank, so moving
 someone between roles of the same tier never promotes them.
 
@@ -208,7 +254,7 @@ src/web/        React + Vite + TypeScript SPA (TipTap editor)
 collab/         Real-time collaboration sidecar (Node + Hocuspocus/Yjs)
 pdf/            PDF rendering sidecar (Node + Playwright/Chromium)
 tests/          API integration tests (in-process, SQLite in-memory)
-deploy/         Dockerfile, Caddyfile, backup scripts, pgBackRest (Phase 3)
+deploy/         Dockerfile, Caddyfile, the init service, backup scripts, pgBackRest
 docs/           architecture, security, backup-recovery runbook, CHANGELOG, plans
 scripts/        the docs' publisher (scripts/docs), demo data, screenshots,
                 the dependency manifest, the audit gate
