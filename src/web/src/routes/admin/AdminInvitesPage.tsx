@@ -136,7 +136,7 @@ export function AdminInvitesPage() {
         {/* After the message, so it is written before it is sent; without
             the email it takes the third column of the first row. */}
         <button type="submit" className="btn btn--primary" disabled={busy}>
-          {busy ? 'Creating…' : offerEmail && sendEmail ? 'Create and email invite' : 'Create invite'}
+          {busy ? 'Creating…' : offerEmail && sendEmail ? 'Create and Email Invite' : 'Create Invite'}
         </button>
       </form>}
 
@@ -162,7 +162,7 @@ export function AdminInvitesPage() {
                 className="btn btn--ghost btn--sm"
                 onClick={() => navigator.clipboard.writeText(link.url).catch(() => {})}
               >
-                Copy{link.label ? ` the ${link.label === 'Through Tailscale' ? 'Tailscale' : 'usual'} link` : ''}
+                Copy{link.label ? ` the ${link.label === 'Through Tailscale' ? 'Tailscale' : 'Usual'} Link` : ''}
               </button>
             </div>
           ))}
@@ -214,7 +214,7 @@ export function AdminInvitesPage() {
                     className="link-btn link-btn--danger"
                     onClick={async () => {
                       // Asked first (dev-plan 15.4): the link may already be in someone's inbox.
-                      if (!await ask({ title: 'Revoke this invite?', confirmLabel: 'Revoke the invite', danger: true,
+                      if (!await ask({ title: 'Revoke this invite?', confirmLabel: 'Revoke the Invite', danger: true,
                         body: <p>The link stops working. Anyone you sent it to will need a new one.</p> })) return
                       api.admin.invites.revoke(i.id).then(load).catch(() => setError('Could not revoke that invite.'))
                     }}

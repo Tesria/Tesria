@@ -50,8 +50,8 @@ export function BackupKeyNotice({
   }
 
   return (
-    <section className="profile__section profile__section--wide backup-key-notice" role="alert">
-      <h2>Save the backup key</h2>
+    <section className="profile__section profile__section--wide backup-key-notice backups__section" role="alert">
+      <h2>Save the Backup Key</h2>
       <p>
         Tesria made the key that encrypts your backups, and it may exist only on the server. If the
         server is lost before the key is saved somewhere else, no backup can be restored, by anyone.
@@ -65,7 +65,7 @@ export function BackupKeyNotice({
       {error && <p className="alert alert--error small">{error}</p>}
       {mayConfirm ? (
         <button type="button" className="btn btn--primary" disabled={busy} onClick={confirm}>
-          {busy ? 'Saving…' : 'I saved it'}
+          {busy ? 'Saving…' : 'I Saved It'}
         </button>
       ) : (
         <p className="muted small">An administrator who can change the backup policy can mark it saved.</p>

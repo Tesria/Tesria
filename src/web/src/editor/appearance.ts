@@ -14,7 +14,7 @@ export type Appearance = (typeof APPEARANCES)[number]
 
 export const APPEARANCE_LABELS: Record<Appearance, string> = {
   theme: 'Theme default',
-  flat: 'Flat',
+  flat: 'Minimal', // stored as 'flat', its name until 2026-09-28
   glass: 'Glass',
 }
 

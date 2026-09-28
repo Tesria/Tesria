@@ -110,7 +110,7 @@ export function PageEditor() {
     if (editorInstance && editorInstance.getText().trim().length > 0) {
       const ok = await ask({
         title: 'Replace what you have written?',
-        confirmLabel: 'Use the template',
+        confirmLabel: 'Use the Template',
         body: <p>Starting from a template replaces everything on this page so far.</p>,
       })
       if (!ok) return
@@ -331,7 +331,7 @@ export function PageEditor() {
             aria-label={fullWidth ? 'Switch to normal width' : 'Switch to full width'}
           >
             <span aria-hidden="true">{fullWidth ? '⤡' : '⤢'}</span>
-            <span className="page-actionbar__fullwidth-label">{fullWidth ? 'Normal width' : 'Full width'}</span>
+            <span className="page-actionbar__fullwidth-label">{fullWidth ? 'Normal Width' : 'Full Width'}</span>
           </button>
           {/* Publish/Update and Close sit on the toolbar row, where
               Confluence keeps them, not under the page. They are outside
@@ -367,14 +367,14 @@ export function PageEditor() {
               className="btn btn--ghost btn--sm"
               onClick={() => editorInstance.commands.rejectExternalEdits()}
             >
-              Reject all
+              Reject All
             </button>
             <button
               type="button"
               className="btn btn--primary btn--sm"
               onClick={() => editorInstance.commands.acceptExternalEdits()}
             >
-              Accept all
+              Accept All
             </button>
           </span>
         </div>

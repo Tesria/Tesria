@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, Navigate, Outlet } from 'react-router-dom'
+import { Link, Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { Permission, UserRole } from '../../api/client'
 import { TESRIA_SITE, TESRIA_SOURCE } from '../../links'
+import { OverflowTabs } from '../../components/OverflowTabs'
 
 /**
  * The admin section's shell (dev-plan 2.1).
@@ -48,8 +49,6 @@ export function AdminLayout() {
     )
   }
 
-  const tab = ({ isActive }: { isActive: boolean }) => (isActive ? 'tab is-active' : 'tab')
-
   // Only the tabs this person can actually open (dev-plan 11.1). Every one is
   // refused server-side too; this keeps the shell honest about what is there.
   const tabs: { to: string; label: string; end?: boolean; permission: string; or?: string }[] = [
@@ -57,14 +56,13 @@ export function AdminLayout() {
     { to: '/admin/users', label: 'Users', permission: Permission.UsersView },
     { to: '/admin/spaces', label: 'Spaces', permission: Permission.SpacesManage },
     { to: '/admin/invites', label: 'Invites', permission: Permission.InvitesManage, or: Permission.InvitesCreate },
-    { to: '/admin/api-tokens', label: 'API tokens', permission: Permission.UsersView },
+    { to: '/admin/api-tokens', label: 'API Tokens', permission: Permission.UsersView },
     { to: '/admin/security', label: 'Security', permission: Permission.SecurityView },
     { to: '/admin/backups', label: 'Backups', permission: Permission.BackupsView },
     { to: '/admin/roles', label: 'Roles', permission: Permission.PermissionsView },
     { to: '/admin/groups', label: 'Groups', permission: Permission.GroupsManage },
     { to: '/admin/audit', label: 'Audit', permission: Permission.AuditView },
     { to: '/admin/branding', label: 'Branding', permission: Permission.SettingsBranding },
-    { to: '/admin/about', label: 'About', permission: Permission.DashboardView },
   ]
   const visible = tabs.filter((t) => can(t.permission) || (t.or !== undefined && can(t.or)))
   // The owner always reaches the matrix, even having taken permissions.view
@@ -80,12 +78,12 @@ export function AdminLayout() {
   return (
     <div className="page-wrap page-wrap--admin">
       <h1>Administration</h1>
-      <nav className="tabs">
-        {visible.map((t) => (
-          <NavLink key={t.to} to={t.to} end={t.end} className={tab}>{t.label}</NavLink>
-        ))}
-        {settingsVisible && <NavLink to="/admin/settings" className={tab}>Settings</NavLink>}
-      </nav>
+      <OverflowTabs items={[
+        ...visible.map((t) => ({ key: t.to, label: t.label, to: t.to, end: t.end })),
+        ...(settingsVisible ? [{ key: '/admin/settings', label: 'Settings', to: '/admin/settings' }] : []),
+        // About is always last (the owner, 2026-09-28).
+        ...(can(Permission.DashboardView) ? [{ key: '/admin/about', label: 'About', to: '/admin/about' }] : []),
+      ]} />
       <div className="tab-panel">
         <Outlet />
       </div>

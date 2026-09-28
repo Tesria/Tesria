@@ -12,6 +12,8 @@ import { AttachmentsPanel } from './panels/AttachmentsPanel'
 import { HistoryPanel } from './panels/HistoryPanel'
 import { SaveAsTemplateButton } from '../components/SaveAsTemplateButton'
 import { WatchToggle } from '../components/WatchToggle'
+import { OverflowTabs } from '../components/OverflowTabs'
+import { DownloadIcon } from '../components/NavIcons'
 import { OverflowMenu } from '../components/OverflowMenu'
 import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
 import { useConfirm } from '../components/ConfirmDialog'
@@ -76,7 +78,7 @@ export function PageView() {
     // The trash is reversible, so this asks plainly rather than as a danger.
     const ok = await ask({
       title: `Move ${page.title} to the trash?`,
-      confirmLabel: 'Move to the trash',
+      confirmLabel: 'Move to the Trash',
       body: <p>Any sub-pages go with it. Anyone who can edit it can restore the lot from the space&rsquo;s Trash.</p>,
     })
     if (!ok) return
@@ -143,9 +145,9 @@ export function PageView() {
       <>
         <div className="page-actionbar">
           <div className="page-actionbar__secondary">
-            {allows.markdown && <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=markdown`}>↓ Markdown</a>}
-            {allows.html && <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=html`}>↓ HTML</a>}
-            {allows.pdf && <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=pdf`}>↓ PDF</a>}
+            {allows.markdown && <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=markdown`}><DownloadIcon /> Markdown</a>}
+            {allows.html && <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=html`}><DownloadIcon /> HTML</a>}
+            {allows.pdf && <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=pdf`}><DownloadIcon /> PDF</a>}
           </div>
         </div>
         <div className="page-column">
@@ -195,18 +197,18 @@ export function PageView() {
             onClick={toggleFullWidth}
             title={page.fullWidth ? 'Switch to normal width' : 'Switch to full width'}
           >
-            {page.fullWidth ? '⤡ Normal width' : '⤢ Full width'}
+            {page.fullWidth ? '⤡ Normal Width' : '⤢ Full Width'}
           </button>
           <OverflowMenu>
             {/* Plain links so the browser downloads the file (auth cookie is sent). */}
             {allows.markdown && (
               <a className="btn" href={`/api/pages/${page.id}/export?format=markdown`}>
-                ↓ Export as Markdown
+                <DownloadIcon /> Export as Markdown
               </a>
             )}
             {allows.html && (
               <a className="btn" href={`/api/pages/${page.id}/export?format=html`}>
-                ↓ Export as HTML
+                <DownloadIcon /> Export as HTML
               </a>
             )}
             {/* Rendered by the PDF sidecar (dev-plan 8.1). Where no sidecar
@@ -214,7 +216,7 @@ export function PageView() {
                 advice, which is what this used to be. */}
             {allows.pdf && (
               <a className="btn" href={`/api/pages/${page.id}/export?format=pdf`}>
-                ↓ Export as PDF
+                <DownloadIcon /> Export as PDF
               </a>
             )}
             <WatchToggle
@@ -265,12 +267,8 @@ export function PageView() {
           </div>
         </div>
 
-        <div className="tabs">
-          <TabButton current={tab} value="comments" onClick={setTab}>Comments</TabButton>
-          <TabButton current={tab} value="attachments" onClick={setTab}>Attachments</TabButton>
-          <TabButton current={tab} value="history" onClick={setTab}>History</TabButton>
-          <TabButton current={tab} value="restrictions" onClick={setTab}>Restrictions</TabButton>
-        </div>
+        <OverflowTabs items={([['comments', 'Comments'], ['attachments', 'Attachments'], ['history', 'History'], ['restrictions', 'Restrictions']] as [Tab, string][])
+          .map(([value, label]) => ({ key: value, label, active: tab === value, onClick: () => setTab(value) }))} />
         <div className="tab-panel">
           {tab === 'comments' && <CommentsPanel pageId={page.id} canEdit={page.canEdit === true} />}
           {tab === 'attachments' && <AttachmentsPanel pageId={page.id} />}
@@ -309,24 +307,3 @@ export function PageView() {
   )
 }
 
-function TabButton({
-  current,
-  value,
-  onClick,
-  children,
-}: {
-  current: Tab
-  value: Tab
-  onClick: (t: Tab) => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      className={current === value ? 'tab is-active' : 'tab'}
-      onClick={() => onClick(value)}
-    >
-      {children}
-    </button>
-  )
-}

@@ -103,7 +103,7 @@ export function AvatarPicker() {
               onClick={() => fileInput.current?.click()}
               disabled={busy}
             >
-              {hasUpload ? 'Replace picture' : 'Upload picture'}
+              {hasUpload ? 'Replace Picture' : 'Upload Picture'}
             </button>
             {hasUpload && (
               <button

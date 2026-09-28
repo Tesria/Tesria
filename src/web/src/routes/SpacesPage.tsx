@@ -35,10 +35,10 @@ export function SpacesPage() {
         {user && can(Permission.SpacesCreate) && (
           <div className="row-gap">
             <button type="button" className="btn" onClick={() => { setImporting((v) => !v); setCreating(false) }}>
-              {importing ? 'Cancel' : 'Import a pack'}
+              {importing ? 'Cancel' : 'Import a Pack'}
             </button>
             <button type="button" className="btn btn--primary" onClick={() => { setCreating((v) => !v); setImporting(false) }}>
-              {creating ? 'Cancel' : 'New space'}
+              {creating ? 'Cancel' : 'New Space'}
             </button>
           </div>
         )}

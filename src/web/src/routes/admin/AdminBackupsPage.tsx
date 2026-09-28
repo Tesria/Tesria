@@ -18,8 +18,8 @@ import { bytes, duration, relative } from './format'
 import { useAuth } from '../../auth/AuthContext'
 
 const AGENT_TITLE: Record<BackupAgentName, string> = {
-  logical: 'Database dumps and uploads',
-  physical: 'Physical backups and point-in-time recovery',
+  logical: 'Database Dumps and Uploads',
+  physical: 'Physical Backups and Point-in-Time Recovery',
 }
 
 const AGENT_SHORT: Record<BackupAgentName, string> = {
@@ -181,7 +181,7 @@ function AgentCard({
         disabled={busy || !newest || !agent.reporting || !canRun}
         onClick={() => newest && onTest(newest.label)}
       >
-        Test restore of newest
+        Test Restore of Newest
       </button>
     </section>
   )
@@ -332,7 +332,7 @@ export function AdminBackupsPage() {
       <div className="backup-actions">
         {can('backups.run') && (
           <button type="button" className="btn btn--primary" disabled={busy || active.length > 0} onClick={backUpNow}>
-            Back up now
+            Back Up Now
           </button>
         )}
         <span className="muted small">
@@ -359,8 +359,8 @@ export function AdminBackupsPage() {
         onQueued={load}
       />
 
-      <section className="profile__section profile__section--wide">
-        <h2>Retention policy</h2>
+      <section className="profile__section profile__section--wide backups__section">
+        <h2>Retention Policy</h2>
         <p className="muted small">
           Applies to both kinds of backup, and to nothing else. The backup agents apply it after each successful
           backup. A policy that could remove more waits 24 hours before it takes effect, and every administrator
@@ -391,7 +391,7 @@ export function AdminBackupsPage() {
           </p>
           <p className="muted small">A backup is deleted only when it is outside both.</p>
           <button type="submit" className="btn btn--primary" disabled={busy || !dirty || !mayEditPolicy}>
-            Review change
+            Review Change
           </button>
           {!mayEditPolicy && (
             <p className="muted small">Your role does not allow changing the retention policy.</p>
@@ -407,8 +407,8 @@ export function AdminBackupsPage() {
           <div className="backup-preview" role="dialog" aria-label="Confirm the retention policy">
             <h3>
               {preview.input.enabled
-                ? `Keep the newest ${preview.input.keepCount} and everything from the last ${preview.input.keepDays} days`
-                : 'Keep every backup forever'}
+                ? `Keep the Newest ${preview.input.keepCount} and Everything From the Last ${preview.input.keepDays} Days`
+                : 'Keep Every Backup Forever'}
             </h3>
             {preview.result.agents.map((a) => (
               <div key={a.agent} className="backup-preview__agent">
@@ -438,7 +438,7 @@ export function AdminBackupsPage() {
               </p>
             )}
             <div className="backup-preview__actions">
-              <button type="button" className="btn btn--primary" disabled={busy} onClick={confirmPolicy}>Save policy</button>
+              <button type="button" className="btn btn--primary" disabled={busy} onClick={confirmPolicy}>Save Policy</button>
               <button type="button" className="btn btn--ghost" disabled={busy} onClick={() => setPreview(null)}>Cancel</button>
             </div>
           </div>
@@ -447,7 +447,7 @@ export function AdminBackupsPage() {
 
       <KeptCopyCard restore={data.restore} onChanged={load} />
 
-      <section className="profile__section profile__section--wide">
+      <section className="profile__section profile__section--wide backups__section">
         <h2>Backups</h2>
         {data.backups.length === 0 ? (
           <p className="muted small">No backups have been recorded yet.</p>
@@ -476,7 +476,7 @@ export function AdminBackupsPage() {
                     <div className="admin-table__actions">
                       <button type="button" className="link-btn" disabled={busy || !!b.error || !can('backups.run')}
                         onClick={() => testRestore(b.label)}>
-                        Test restore
+                        Test Restore
                       </button>
                       {mayRestore && (
                         <button type="button" className="link-btn link-btn--danger"
@@ -518,8 +518,8 @@ export function AdminBackupsPage() {
         )}
       </section>
 
-      <section className="profile__section profile__section--wide">
-        <h2>Recent runs</h2>
+      <section className="profile__section profile__section--wide backups__section">
+        <h2>Recent Runs</h2>
         {data.jobs.length === 0 ? (
           <p className="muted small">No runs recorded yet.</p>
         ) : (
@@ -559,7 +559,7 @@ function JobRows({ job, open, detail, onToggle }: { job: BackupJob; open: boolea
         <td>
           <div className="admin-table__actions">
             {(job.status === 'succeeded' || job.status === 'failed') && (
-              <button type="button" className="link-btn" onClick={onToggle}>{open ? 'Hide log' : 'Log'}</button>
+              <button type="button" className="link-btn" onClick={onToggle}>{open ? 'Hide Log' : 'Log'}</button>
             )}
           </div>
         </td>

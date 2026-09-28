@@ -81,7 +81,7 @@ export function RecoverPage() {
             this account has been signed out.
           </p>
           <button type="button" className="btn btn--primary" onClick={() => navigate('/login')}>
-            Sign in
+            Sign In
           </button>
         </div>
       </AuthPage>
@@ -104,12 +104,12 @@ export function RecoverPage() {
               </label>
               {error && <p className="alert alert--error">{error}</p>}
               <button type="submit" className="btn btn--primary" disabled={busy}>
-                {busy ? 'Sending…' : 'Email me a reset link'}
+                {busy ? 'Sending…' : 'Email Me a Reset Link'}
               </button>
             </>
           )}
           <p className="muted small">
-            <button type="button" className="link-btn" onClick={() => setMethod('code')}>Use a recovery code instead</button>
+            <button type="button" className="link-btn" onClick={() => setMethod('code')}>Use a Recovery Code Instead</button>
             {' · '}<Link to="/login">Back to sign in</Link>
           </p>
         </form>
@@ -179,12 +179,12 @@ export function RecoverPage() {
         {error && <p className="alert alert--error">{error}</p>}
 
         <button type="submit" className="btn btn--primary" disabled={busy}>
-          {busy ? 'Resetting…' : 'Reset password'}
+          {busy ? 'Resetting…' : 'Reset Password'}
         </button>
 
         <p className="muted small">
           {!token && emailOffered && (
-            <><button type="button" className="link-btn" onClick={() => setMethod('email')}>Email me a link instead</button>{' · '}</>
+            <><button type="button" className="link-btn" onClick={() => setMethod('email')}>Email Me a Link Instead</button>{' · '}</>
           )}
           <Link to="/login">Back to sign in</Link>
           {!token && !emailOffered && ' · Lost your codes? Ask an administrator to issue a reset link.'}

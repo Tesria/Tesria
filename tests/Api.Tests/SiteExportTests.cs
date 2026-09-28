@@ -295,8 +295,8 @@ public class SiteExportTests
         Assert.Contains("data-export-width-toggle", bar);
         // Both labels ship and the script shows one: a captured export has no
         // React left to re-render the text.
-        Assert.Contains("Full width", bar);
-        Assert.Contains("Normal width", bar);
+        Assert.Contains("Full Width", bar);
+        Assert.Contains("Normal Width", bar);
     }
 
     [Fact]

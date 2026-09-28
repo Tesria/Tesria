@@ -7,11 +7,11 @@ import { ErrorPanelIcon, InfoPanelIcon, NotePanelIcon, SuccessPanelIcon, Warning
 
 /** The elements that wrap other blocks, and what their Remove button says. */
 const WRAPPERS: Record<string, string> = {
-  panel: 'Remove panel',
-  expand: 'Remove expand',
-  decision: 'Remove decision',
-  excerpt: 'Remove excerpt',
-  pageProperties: 'Remove page properties',
+  panel: 'Remove Panel',
+  expand: 'Remove Expand',
+  decision: 'Remove Decision',
+  excerpt: 'Remove Excerpt',
+  pageProperties: 'Remove Page Properties',
 }
 
 const PANEL_ICONS: Record<PanelType, () => React.JSX.Element> = {

@@ -137,7 +137,7 @@ export function WelcomePage() {
               <button type="button" className="btn btn--primary" onClick={() => setAt(at + 1)}>Next</button>
             )}
             <button type="button" className="link-btn tour__skip" onClick={() => leave(false)}>
-              Skip the tour
+              Skip the Tour
             </button>
           </div>
 

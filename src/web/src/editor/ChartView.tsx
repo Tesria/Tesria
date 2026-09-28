@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type CSSProperties } from 'react'
 import { DonutChart, PieChart } from '../components/PieChart'
 import { AppearancePicker } from './AppearancePicker'
 import { appearanceData } from './appearance'
@@ -53,6 +53,8 @@ function readTable(doc: PMNode, ordinal: number): TableData | null {
 // The chart palette: readable on both themes, and distinguishable without
 // relying on hue alone (the legend names every series).
 const COLORS = ['#0c66e4', '#00875a', '#a54800', '#5e4db2', '#ae4787', '#206a83', '#946f00', '#bf2600']
+/** A pie's and a donut's colors in the glass style: brighter and more saturated (the owner, 2026-09-28). */
+const GLASS_SLICE_COLORS = ['#1f7bff', '#00b86b', '#ff7a1a', '#8b5cf6', '#ec4899', '#06b6d4', '#f5b800', '#ef4444']
 
 export function ChartView({ node, editor, selected, updateAttributes }: ReactNodeViewProps) {
   const source = Number(node.attrs.source) || 1
@@ -128,13 +130,13 @@ function Plot({ data, type }: { data: TableData; type: ChartType }) {
   if (type === 'donut') {
     // The same one column as the pie, as a ring with the column's total in
     // the middle (0.8.0).
-    const slices = data.series.map((s, i) => ({ label: s.label, value: Math.max(s.values[0] ?? 0, 0), color: COLORS[i % COLORS.length] }))
+    const slices = data.series.map((s, i) => ({ label: s.label, value: Math.max(s.values[0] ?? 0, 0), color: COLORS[i % COLORS.length], glassColor: GLASS_SLICE_COLORS[i % GLASS_SLICE_COLORS.length] }))
     const total = slices.reduce((sum, s) => sum + s.value, 0)
     const shown = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(total)
     return (
       <div className="chart__plot">
         <DonutChart slices={slices} size={120} label={`Donut chart, total ${shown}`} center={shown} caption="total" />
-        <Legend items={slices.map((s) => ({ label: s.label, color: s.color }))} />
+        <Legend items={slices.map((s) => ({ label: s.label, color: s.color, glassColor: s.glassColor }))} />
       </div>
     )
   }
@@ -143,11 +145,11 @@ function Plot({ data, type }: { data: TableData; type: ChartType }) {
     // A pie charts one column: the first, which is what people mean.
     // The drawing itself lives in components/PieChart (dev-plan 9.3), so the
     // editor and the backups page share one pie rather than two that drift.
-    const slices = data.series.map((s, i) => ({ label: s.label, value: Math.max(s.values[0] ?? 0, 0), color: COLORS[i % COLORS.length] }))
+    const slices = data.series.map((s, i) => ({ label: s.label, value: Math.max(s.values[0] ?? 0, 0), color: COLORS[i % COLORS.length], glassColor: GLASS_SLICE_COLORS[i % GLASS_SLICE_COLORS.length] }))
     return (
       <div className="chart__plot">
         <PieChart slices={slices} size={120} label="Pie chart" />
-        <Legend items={slices.map((s) => ({ label: s.label, color: s.color }))} />
+        <Legend items={slices.map((s) => ({ label: s.label, color: s.color, glassColor: s.glassColor }))} />
       </div>
     )
   }
@@ -206,13 +208,14 @@ function Plot({ data, type }: { data: TableData; type: ChartType }) {
   )
 }
 
-function Legend({ items }: { items: { label: string; color: string }[] }) {
+function Legend({ items }: { items: { label: string; color: string; glassColor?: string }[] }) {
   if (items.length === 0) return null
   return (
     <ul className="chart__legend">
       {items.map((item) => (
         <li key={item.label}>
-          <span className="chart__swatch" style={{ background: item.color }} />
+          <span className="chart__swatch"
+            style={{ background: item.color, ...(item.glassColor ? { '--glass-swatch': item.glassColor } : {}) } as CSSProperties} />
           {item.label}
         </li>
       ))}

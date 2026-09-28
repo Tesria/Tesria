@@ -223,7 +223,7 @@ export function AdminBrandingPage() {
       </section>
 
       <section className="profile__section profile__section--wide">
-        <h2>Name and logo</h2>
+        <h2>Name and Logo</h2>
         <label className="branding__field">
           <span>Brand name</span>
           <input
@@ -239,7 +239,7 @@ export function AdminBrandingPage() {
         </label>
 
         <fieldset className="branding__choice">
-          <legend>What to show</legend>
+          <legend>What to Show</legend>
           {([
             ['logo-and-name', 'Logo and name'],
             ['logo', 'Logo only, for a logo that already contains the name'],
@@ -256,7 +256,7 @@ export function AdminBrandingPage() {
         </fieldset>
 
         <fieldset className="branding__choice" disabled={!bothShown}>
-          <legend>On the sign-in page</legend>
+          <legend>On the Sign-In Page</legend>
           {([
             ['side-by-side', 'Logo and name side by side'],
             ['stacked', 'Logo above the name'],
@@ -281,7 +281,7 @@ export function AdminBrandingPage() {
             onRemove={() => run(() => api.admin.branding.removeLogo(), 'Logo removed.', 'Could not remove the logo.')}
           />
           <FileSlot
-            title="Logo for dark mode"
+            title="Logo for Dark Mode"
             hint="Optional. For a logo that disappears on a dark background; without one, the logo above is used in both."
             logo={settings.logoDark}
             dark
@@ -303,7 +303,7 @@ export function AdminBrandingPage() {
       </section>
 
       <section className="profile__section profile__section--wide">
-        <h2>Theme and color</h2>
+        <h2>Theme and Color</h2>
         <fieldset className="branding__choice">
           <legend>Theme</legend>
           {([
@@ -319,7 +319,7 @@ export function AdminBrandingPage() {
         </fieldset>
 
         <fieldset className="branding__choice">
-          <legend>Accent color</legend>
+          <legend>Accent Color</legend>
           <div className="branding__swatches">
             {ACCENTS.map((a) => (
               <button
@@ -370,7 +370,7 @@ export function AdminBrandingPage() {
       <div className="branding__actions">
         <button type="button" className="btn btn--primary" disabled={busy || !dirty} onClick={save}>Save</button>
         <button type="button" className="btn btn--ghost" disabled={busy || !dirty} onClick={() => setForm(formOf(settings))}>
-          Discard changes
+          Discard Changes
         </button>
         <span className="branding__spacer" />
         <button type="button" className="btn btn--danger" disabled={busy || !settings.isCustomized} onClick={reset}>

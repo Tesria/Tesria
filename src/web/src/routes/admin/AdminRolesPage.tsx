@@ -124,7 +124,7 @@ export function AdminRolesPage({ inSetup = false }: { inSetup?: boolean } = {}) 
     const ok = await ask({
       title: `Delete the role ${role.name}?`,
       danger: true,
-      confirmLabel: 'Delete the role',
+      confirmLabel: 'Delete the Role',
       body: (
         <>
           <p>The rights it holds go with it. Nothing else changes.</p>
@@ -174,7 +174,7 @@ export function AdminRolesPage({ inSetup = false }: { inSetup?: boolean } = {}) 
             disabled={busy}
             onClick={() => run(() => api.admin.roles.review(), 'Defaults kept.', 'Could not record that.')}
           >
-            Keep these defaults
+            Keep These Defaults
           </button>
         </div>
       )}
@@ -193,7 +193,7 @@ export function AdminRolesPage({ inSetup = false }: { inSetup?: boolean } = {}) 
           {(can('permissions.edit_user_tier') || can('permissions.edit_admin_tier')) && (
             <button type="button" className="btn btn--ghost btn--sm" disabled={busy}
               onClick={() => setCreating((v) => !v)}>
-              {creating ? 'Cancel' : 'New role'}
+              {creating ? 'Cancel' : 'New Role'}
             </button>
           )}
           <span className="muted small">
@@ -223,7 +223,7 @@ export function AdminRolesPage({ inSetup = false }: { inSetup?: boolean } = {}) 
                 ))}
               </select>
             </label>
-            <button type="submit" className="btn btn--primary" disabled={busy}>Create role</button>
+            <button type="submit" className="btn btn--primary" disabled={busy}>Create Role</button>
           </form>
         )}
 
@@ -303,7 +303,7 @@ export function AdminRolesPage({ inSetup = false }: { inSetup?: boolean } = {}) 
         <div className="roles-actions">
           <button type="button" className="btn btn--primary" disabled={busy || pending.length === 0}
             onClick={() => setReviewing(true)}>
-            Review changes
+            Review Changes
           </button>
           {pending.length > 0 && (
             <button type="button" className="btn btn--ghost" disabled={busy}
@@ -317,7 +317,7 @@ export function AdminRolesPage({ inSetup = false }: { inSetup?: boolean } = {}) 
                 void (async () => {
                   const ok = await ask({
                     title: `Reset ${role.name} to the defaults?`,
-                    confirmLabel: 'Reset the role',
+                    confirmLabel: 'Reset the Role',
                     body: <p>Every right this role holds goes back to what Tesria ships for its tier.
                       Unsaved changes in the matrix are left alone.</p>,
                   })
@@ -333,7 +333,7 @@ export function AdminRolesPage({ inSetup = false }: { inSetup?: boolean } = {}) 
 
       {reviewing && (
         <div className="backup-preview" role="dialog" aria-label="Confirm the role changes">
-          <h3>These changes take effect at once</h3>
+          <h3>These Changes Take Effect at Once</h3>
           {pending.map(({ role, added, removed }) => (
             <div key={role.id} className="backup-preview__agent">
               <p><strong>{role.name}</strong> ({role.members} {role.members === 1 ? 'account' : 'accounts'})</p>
@@ -353,7 +353,7 @@ export function AdminRolesPage({ inSetup = false }: { inSetup?: boolean } = {}) 
             </p>
           )}
           <div className="backup-preview__actions">
-            <button type="button" className="btn btn--primary" disabled={busy} onClick={save}>Save roles</button>
+            <button type="button" className="btn btn--primary" disabled={busy} onClick={save}>Save Roles</button>
             <button type="button" className="btn btn--ghost" disabled={busy} onClick={() => setReviewing(false)}>
               Cancel
             </button>

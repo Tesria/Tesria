@@ -52,7 +52,7 @@ export function GroupsPage() {
     const ok = await ask({
       title: `Delete the group ${g.name}?`,
       danger: true,
-      confirmLabel: 'Delete the group',
+      confirmLabel: 'Delete the Group',
       body: (
         <>
           <p>Everyone in it stays; only the group goes.</p>
@@ -90,7 +90,7 @@ export function GroupsPage() {
           Description
           <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional" />
         </label>
-        <button type="submit" className="btn btn--primary">Create group</button>
+        <button type="submit" className="btn btn--primary">Create Group</button>
       </form>
 
       {groups && groups.length === 0 && <p className="muted">No groups yet.</p>}
@@ -181,7 +181,7 @@ function MemberEditor({ group, onChanged }: { group: Group; onChanged: () => voi
     // access to every space shared with this group.
     const ok = await ask({
       title: `Remove ${member.displayName} from ${group.name}?`,
-      confirmLabel: 'Remove from the group',
+      confirmLabel: 'Remove From the Group',
       body: <p>They lose anything they could reach only through {group.name}.</p>,
     })
     if (!ok) return
@@ -212,7 +212,7 @@ function MemberEditor({ group, onChanged }: { group: Group; onChanged: () => voi
             <option key={u.id} value={u.id}>{u.displayName}{u.email ? ` (${u.email})` : ''}</option>
           ))}
         </select>
-        <button type="submit" className="btn btn--primary btn--sm" disabled={!userId}>Add member</button>
+        <button type="submit" className="btn btn--primary btn--sm" disabled={!userId}>Add Member</button>
       </form>
       )}
 

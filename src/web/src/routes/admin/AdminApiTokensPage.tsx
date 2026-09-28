@@ -87,7 +87,7 @@ export function AdminApiTokensPage() {
     const ok = await ask({
       title: `Revoke “${t.name}”?`,
       danger: true,
-      confirmLabel: 'Revoke the token',
+      confirmLabel: 'Revoke the Token',
       body: (
         <>
           <p>
@@ -209,12 +209,12 @@ export function AdminApiTokensPage() {
       )}
 
       <h2 className="dash__heading" id="assistant-activity">
-        {only ? <>What “{only.name}” did through MCP</> : 'What assistants did'}
+        {only ? <>What “{only.name}” Did Through MCP</> : 'What Assistants Did'}
       </h2>
       <p className="muted small">
         Each tool an assistant called through MCP, newest first, kept for 90 days. What it searched
         for is not recorded. A page you may not open yourself is not named.
-        {only && <> <button type="button" className="link-btn" onClick={() => setOnly(null)}>Show every token</button></>}
+        {only && <> <button type="button" className="link-btn" onClick={() => setOnly(null)}>Show Every Token</button></>}
       </p>
       {activity && activity.length === 0 && <p className="muted">Nothing yet.</p>}
       {activity && activity.length > 0 && (

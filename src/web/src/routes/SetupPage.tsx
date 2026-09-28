@@ -61,7 +61,7 @@ export function SetupPage() {
       <div className="setup setup--notice">
         <h1>This instance already has an owner</h1>
         <p className="muted">Setup was finished by whoever created the first account.</p>
-        <Link className="btn btn--primary" to="/login">Sign in</Link>
+        <Link className="btn btn--primary" to="/login">Sign In</Link>
       </div>
     )
   }
@@ -70,7 +70,7 @@ export function SetupPage() {
       <div className="setup setup--notice">
         <h1>Setup is already finished</h1>
         <p className="muted">Everything here lives in Administration now.</p>
-        <Link className="btn btn--primary" to="/spaces">Go to the wiki</Link>
+        <Link className="btn btn--primary" to="/spaces">Go to the Wiki</Link>
       </div>
     )
   }
@@ -203,7 +203,7 @@ export function SetupPage() {
             title="What roles may do"
             onNext={() => advance('permissions', () => api.admin.roles.review())}
             busy={busy}
-            nextLabel="Keep these defaults"
+            nextLabel="Keep These Defaults"
           >
             <p className="muted">
               A tier decides who may act on whom; a role decides what they may
@@ -294,7 +294,7 @@ function Panel({
       )}
       {onSkip && (
         <button type="button" className="btn btn--ghost" disabled={busy} onClick={onSkip}>
-          Skip for now
+          Skip for Now
         </button>
       )}
     </div>
@@ -384,7 +384,7 @@ function AccountStep({
       </label>
       <div className="row-gap setup__actions">
         <button type="submit" className="btn btn--primary" disabled={busy}>
-          {busy ? 'Creating…' : 'Create the owner account'}
+          {busy ? 'Creating…' : 'Create the Owner Account'}
         </button>
       </div>
     </form>
@@ -429,7 +429,7 @@ function RegistrationStep({ busy, onNext }: { busy: boolean; onNext: (open: bool
       <div className="setup__cards">
         <button type="button" className={`setup__card${open === false ? ' is-chosen' : ''}`}
           onClick={() => setOpen(false)}>
-          <strong>Invite only</strong>
+          <strong>Invite Only</strong>
           <span className="muted small">You create invite links. Nobody can sign up on their own.</span>
         </button>
         <button type="button" className={`setup__card${open === true ? ' is-chosen' : ''}`}
@@ -474,7 +474,7 @@ function BackupsStep({
     <Panel
       title="Backups"
       busy={busy}
-      nextLabel="Keep these settings"
+      nextLabel="Keep These Settings"
       nextDisabled={askAboutKey && keyChoice === null}
       onNext={() => onNext({ enabled, keepCount, keepDays }, askAboutKey && keyChoice === 'saved')}
     >
@@ -683,7 +683,7 @@ function DoneStep({
         <button type="button" className="btn btn--primary" disabled={busy} onClick={onFinish}>
           {busy ? 'Finishing…' : 'Finish'}
         </button>
-        <Link className="btn btn--ghost" to="/admin/invites">Invite people</Link>
+        <Link className="btn btn--ghost" to="/admin/invites">Invite People</Link>
       </div>
     </section>
   )

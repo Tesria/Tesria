@@ -79,7 +79,7 @@ export function RegisterPage() {
           <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required minLength={8} />
         </label>
         <button type="submit" className="btn btn--primary" disabled={busy}>
-          {busy ? 'Creating…' : 'Create account'}
+          {busy ? 'Creating…' : 'Create Account'}
         </button>
         <p className="muted">
           Already have an account? <Link to="/login">Sign in</Link>

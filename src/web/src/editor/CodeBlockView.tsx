@@ -30,10 +30,6 @@ export function CodeBlockView({ node, updateAttributes, editor }: ReactNodeViewP
   return (
     <NodeViewWrapper className={isMermaid ? 'code-block code-block--diagram' : 'code-block'} {...appearanceData(node.attrs.appearance)}>
       <div className="code-block__header" contentEditable={false}>
-        {/* The console window's three dots: drawn always, shown only in the
-            glass style (glass.css), so an export captures what the block
-            asked for. */}
-        <span className="code-block__dots" aria-hidden="true"><i /><i /><i /></span>
         {editable ? (
           <select
             className="code-block__lang"

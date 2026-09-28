@@ -95,7 +95,7 @@ const PANEL_ICONS: Record<(typeof PANEL_TYPES)[number], ComponentType> = {
  */
 export const SLASH_ITEMS: SlashItem[] = [
   {
-    title: 'Normal text',
+    title: 'Normal Text',
     group: 'text',
     icon: TextIcon,
     description: 'Plain body text',
@@ -158,7 +158,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     command: (editor, range) => editor.chain().focus().deleteRange(range).setHeading({ level: 6 }).run(),
   },
   {
-    title: 'Bullet list',
+    title: 'Bullet List',
     group: 'list',
     icon: BulletListIcon,
     description: 'Simple bullet list',
@@ -166,7 +166,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     command: (editor, range) => editor.chain().focus().deleteRange(range).toggleBulletList().run(),
   },
   {
-    title: 'Ordered list',
+    title: 'Ordered List',
     group: 'list',
     icon: OrderedListIcon,
     description: 'Numbered list',
@@ -174,7 +174,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     command: (editor, range) => editor.chain().focus().deleteRange(range).toggleOrderedList().run(),
   },
   {
-    title: 'Task list',
+    title: 'Task List',
     group: 'list',
     icon: TaskListIcon,
     description: 'Checkboxes to track tasks',
@@ -209,7 +209,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     command: (editor, range) => editor.chain().focus().deleteRange(range).toggleBlockquote().run(),
   },
   {
-    title: 'Code block',
+    title: 'Code Block',
     group: 'block',
     icon: CodeBlockIcon,
     description: 'Syntax-highlighted code',
@@ -236,7 +236,7 @@ export const SLASH_ITEMS: SlashItem[] = [
   // One entry per panel type, generated so the slash menu can't drift from
   // the toolbar's list (both read PANEL_TYPES/PANEL_LABELS).
   ...PANEL_TYPES.map((type) => ({
-    title: `${PANEL_LABELS[type]} panel`,
+    title: `${PANEL_LABELS[type]} Panel`,
     description: PANEL_DESCRIPTIONS[type],
     group: 'panel' as const,
     icon: PANEL_ICONS[type],
@@ -255,7 +255,7 @@ export const SLASH_ITEMS: SlashItem[] = [
   },
   // Structural blocks (dev-plan Phase 7, Wave A).
   {
-    title: 'Table of contents',
+    title: 'Table of Contents',
     group: 'block',
     icon: TocIcon,
     description: 'Links to the headings on this page',
@@ -316,7 +316,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     command: (editor, range) => editor.chain().focus().deleteRange(range).setExcerpt().run(),
   },
   {
-    title: 'Page properties',
+    title: 'Page Properties',
     group: 'block',
     icon: PropertiesIcon,
     description: 'A key/value table a properties report can collect',
@@ -355,7 +355,7 @@ export const SLASH_ITEMS: SlashItem[] = [
   {
     // The node always could be inline; nothing offered it until 2026-09-22,
     // though the Math item's description said it could.
-    title: 'Inline math',
+    title: 'Inline Math',
     group: 'block',
     icon: MathIcon,
     description: 'A LaTeX expression within a line of text',
@@ -381,7 +381,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     command: (editor, range) => editor.chain().focus().deleteRange(range).insertEmbed().run(),
   },
   {
-    title: 'Smart link',
+    title: 'Smart Link',
     group: 'block',
     icon: SmartLinkIcon,
     description: 'A link that shows the page it points at',
@@ -389,7 +389,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     command: (editor, range) => editor.chain().focus().deleteRange(range).insertSmartLink().run(),
   },
   {
-    title: 'File or video',
+    title: 'File or Video',
     group: 'block',
     icon: PaperclipIcon,
     description: 'Play or show a file attached to this page',

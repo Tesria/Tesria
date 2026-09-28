@@ -5,40 +5,56 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
-Development builds now say **0.8.1-dev**. 0.8.1 is the flat or glass theme
-(dev-plan 26.1).
+Development builds now say **0.8.1-dev**. 0.8.1 is the Minimal or Glass
+theme (dev-plan 26.1).
 
-### Flat or glass (dev-plan 26.1, 2026-09-27, Opus 5.5)
+### Minimal or glass (dev-plan 26.1, 2026-09-27 to 28, Opus 5.5)
 
-The appearance menu has a **Style**: Flat, which is Tesria as it has always
-looked and where everyone starts, or Glass, tesria.com's frosted look, from
-the website's glass guide. Per browser, like light and dark.
+The appearance menu has a **Style**: Minimal (called Flat while it was built,
+and still stored as `flat`), which is Tesria as it has always looked and
+where everyone starts, or Glass, tesria.com's frosted look, from the
+website's glass guide. Per browser, like light and dark. Reviewed section by
+section with the owner.
 
-- **Glass is for chrome.** The top bar floats at the top of the page and
-  docks into a frosted strip as you scroll; Spaces and Admin sit in one
-  glass pill, the current one tinted with the accent, and the pill drops
-  its own glass once the bar has docked (no glass on glass). Buttons are
-  pills: secondary ones clear glass, primary and danger tinted. Tabs are
-  one pill with the current tab tinted. The theme and notification
-  buttons are glass circles. Menus stay solid, with their items as rows.
-  Pages, the editor, tables and forms stay solid, and a faint wash of the
-  accent behind the page gives the glass something to be glass over.
-- **Status, charts, diagrams and code blocks** have glass versions: a
-  status is a small badge, its color a gradient with a steady glow; a
-  chart sits in a lit frame with its bars and slices lit from the top; a
-  code block is the console window from tesria.com/get/, with its three
-  dots and its language in the title bar; a diagram sits in the same
-  window. Each follows the reader's style unless it has a **Style** of its
-  own (Theme default, Flat or Glass), in the status menu or the block's
-  controls. An override is kept in exports: an export has no reader's
-  style, so Theme default comes out flat and Glass comes out glass.
+- **The top bar**, in both styles: every control one height (48px), and a
+  measured collapse instead of a More menu: the bar goes to the hamburger
+  as soon as its contents do not fit, then moves the theme button and the
+  bell into the menu, and never cuts the brand short. Sign out moved to the
+  top of the profile page. In glass the bar docks into a frosted strip as
+  you scroll, and the avatar and name grow to the buttons' height there.
+- **Glass buttons**: 48px in the top bar, 38px below it. Round and pill
+  buttons lit on a diagonal, with a gradient stroke: from the top-left in
+  dark, the mirror in light. Accent buttons get the diagonal from their own
+  color. The current item in a bar (Spaces, Admin, a tab) is a tinted lens.
+- **Frosted surfaces**: the space sidebar floats as a frosted panel, the one
+  surface tinted with the accent, and hides into a round button with an
+  animation (switchable off with **Reduce Motion**, shown with Glass in the
+  appearance menu). The appearance menu, notifications and ... menus open
+  and close from their buttons. Space cards, every Administration and Space
+  Settings section, alerts, the backup and branding cards are frosted. A
+  selected item on a frosted surface has a 1px accent stroke.
+- **Tab bars never scroll sideways** (both styles): the tabs that fit, and
+  the rest in a ••• menu. Administration's About tab is last.
+- **Scrollbars** in glass are iOS's: a thin gray thumb, no track, shown in a
+  scroller only while the pointer is in it or it scrolls.
+- **Elements**: a status is a small badge, a saturated diagonal gradient
+  with a drop shadow; a chart sits in a frosted frame, its bars and lines
+  with drop shadows, its pie and donut slices bright gradients with light on
+  their rims; a code block is a dark console with a drop shadow; a diagram
+  sits on a frosted panel in the console, and redraws in the right colors
+  when the theme changes. Each follows the reader's style unless it has a
+  **Style** of its own (Theme default, Minimal or Glass), kept in exports.
+- **Both styles**: button labels and headings in Title Case; the bar's link
+  text, the username, PAGES and Space Settings in the text color, not gray;
+  download icons in place of the arrow characters on exports; on Windows,
+  button labels move up 1px (Segoe UI sits low); Show Resolved in security
+  alerts is a switch; the packages list on About has a frosted drop-down.
 - **It degrades to solid** where the browser has no backdrop-filter or the
   device asks for less transparency, and focus rings stay visible.
-- Code blocks keep a dark console in both themes, as they are dark in
-  both today, so the syntax colors keep the background they were chosen
-  for; the guide's light console is not used.
 - Found on the way: a horizontal bar chart's bars had collapsed to 2px
-  lines (they shared a height the column did not have). Fixed.
+  lines; the top bar's hidden measuring copy widened the page on phones;
+  two frosted fills were silently dropped by the browser (a color layer
+  under an image layer), which is why some panels looked see-through.
 
 ## [0.8.0] - 2026-09-27
 

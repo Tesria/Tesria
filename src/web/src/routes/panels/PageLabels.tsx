@@ -69,7 +69,7 @@ export function PageLabels({ pageId, readOnly = false }: { pageId: string; readO
         </form>
       ) : (
         <button type="button" className="link-btn" onClick={() => setAdding(true)}>
-          + Add label
+          + Add Label
         </button>
       )}
       {error && <span className="small" style={{ color: 'var(--danger)' }}>{error}</span>}

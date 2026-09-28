@@ -37,7 +37,7 @@ export function TrashPage() {
     const ok = await ask({
       title: `Permanently delete ${title}?`,
       danger: true,
-      confirmLabel: 'Delete permanently',
+      confirmLabel: 'Delete Permanently',
       body: (
         <>
           <p>The page and any sub-pages go, with every version, comment and attachment.</p>
@@ -67,7 +67,7 @@ export function TrashPage() {
             <span className="version__actions">
               <button type="button" className="link-btn" onClick={() => restore(t.id)}>Restore</button>
               <button type="button" className="link-btn link-btn--danger" onClick={() => purge(t.id, t.title)}>
-                Delete permanently
+                Delete Permanently
               </button>
             </span>
           </li>

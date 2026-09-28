@@ -345,7 +345,7 @@ public static partial class TrustEndpoints
         <div class="trust-guide" data-for="ios">
           <p>On an iPhone or iPad this takes two parts: install the certificate, then switch on full trust for it. Use <strong>Safari</strong> for the first part; other browsers cannot install certificates.</p>
           <ol class="trust-list">
-            <li><a class="btn btn--primary" data-cert href="/ca.crt">Download the certificate</a> and tap <strong>Allow</strong>. <span class="muted">It says a configuration profile was downloaded; that is the certificate.</span></li>
+            <li><a class="btn btn--primary" data-cert href="/ca.crt">Download the Certificate</a> and tap <strong>Allow</strong>. <span class="muted">It says a configuration profile was downloaded; that is the certificate.</span></li>
             <li>Open the <strong>Settings</strong> app. Tap <strong>Profile Downloaded</strong> near the top, then <strong>Install</strong>, enter your passcode, and tap <strong>Install</strong> twice more.</li>
             <li><span class="muted">Optional, if you have the server's fingerprint:</span> in Settings, <strong>General</strong>, <strong>VPN &amp; Device Management</strong>, tap the <em>Caddy Local Authority</em> profile, then <strong>More Details</strong> and the certificate, and compare <strong>SHA-256</strong> with the server's. If it differs, tap <strong>Remove Profile</strong> and stop.</li>
             <li>In Settings, <strong>General</strong>, <strong>About</strong>, <strong>Certificate Trust Settings</strong> (at the very bottom), switch on <em>Caddy Local Authority</em> and tap <strong>Continue</strong>.</li>
@@ -355,7 +355,7 @@ public static partial class TrustEndpoints
         <div class="trust-guide" data-for="android">
           <p>Android trusts a certificate as soon as it is installed. The exact menu names vary a little between phone makers.</p>
           <ol class="trust-list">
-            <li><a class="btn btn--primary" data-cert href="/ca.crt">Download the certificate</a>. <span class="muted">It goes to your Downloads.</span></li>
+            <li><a class="btn btn--primary" data-cert href="/ca.crt">Download the Certificate</a>. <span class="muted">It goes to your Downloads.</span></li>
             <li>Open <strong>Settings</strong> and search for <strong>CA certificate</strong>. <span class="muted">It is usually under Security and privacy, More security settings, Encryption and credentials, Install a certificate.</span> Choose <strong>CA certificate</strong>, then <strong>Install anyway</strong>, confirm with your screen lock, and pick <code>tesria-ca.crt</code>.</li>
             <li><span class="muted">Optional, if you have the server's fingerprint:</span> in the same Encryption and credentials screen, open <strong>Trusted credentials</strong>, the <strong>User</strong> tab, and tap <em>Caddy Local Authority</em>. Compare its <strong>SHA-256</strong> fingerprint with the server's; if it differs, tap <strong>Remove</strong> straight away.</li>
           </ol>
@@ -375,7 +375,7 @@ public static partial class TrustEndpoints
         <section class="trust-step" data-step="4">
         <h2><span class="trust-step__num">4</span> Check it worked</h2>
         <p>Open Tesria with this link. If it opens with no warning, and your browser shows the usual padlock or "secure" sign by the address, you are done on this device.</p>
-        <p><a class="btn btn--primary" id="trust-open" href="https://{{address}}/">Open Tesria securely</a></p>
+        <p><a class="btn btn--primary" id="trust-open" href="https://{{address}}/">Open Tesria Securely</a></p>
         <details class="trust-manual" open><summary>Still says "Not secure"?</summary>
           <ul>
             <li><strong>Quit the browser completely.</strong> Closing its windows is not always enough: Chrome can keep running in the background. In Chrome or Edge, type <code>chrome://restart</code> (or <code>edge://restart</code>) into the address bar and press Enter.</li>

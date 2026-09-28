@@ -40,7 +40,7 @@ export function ApiTokensSection() {
     const ok = await ask({
       title: 'Revoke this token?',
       danger: true,
-      confirmLabel: 'Revoke the token',
+      confirmLabel: 'Revoke the Token',
       body: <p>Anything using it stops working immediately. Revoking cannot be undone; issue a new token instead.</p>,
     })
     if (!ok) return
@@ -97,7 +97,7 @@ export function ApiTokensSection() {
             </span>
           </span>
         </label>
-        <button type="submit" className="btn btn--primary">Create token</button>
+        <button type="submit" className="btn btn--primary">Create Token</button>
       </form>
 
       {tokens && tokens.length === 0 && <p className="muted">No tokens yet.</p>}

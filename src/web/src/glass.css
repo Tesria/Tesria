@@ -31,7 +31,70 @@
   --glass-shadow: 0 8px 24px -10px rgba(10, 20, 34, 0.3);
   --glass-hover: rgba(255, 255, 255, 0.55);
   --glass-lens: rgba(255, 255, 255, 0.85);
-  --glass-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.15) 70%);
+  /* A button's light in light is the mirror of dark's (the owner's call,
+     2026-09-28): dark is lit at the top left and shaded at the bottom right;
+     light is shaded at the top left and lit at the bottom right. That goes
+     for the fill (this sheen, and --fill-* for a colored button), the stroke
+     (--btn-rim, --rim-*) and the inner edge lines (--btn-in-*). */
+  --glass-sheen: linear-gradient(160deg, rgba(10, 20, 34, 0.24), rgba(10, 20, 34, 0.04) 45%, rgba(255, 255, 255, 1));
+  --btn-in-top: rgba(10, 20, 34, 0.08);
+  /* Glass status colors: more saturated than the flat badges' inks (the
+     owner, 2026-09-28); grey (Not Started) keeps the theme's own. */
+  --sg-red: #e0321c; --sg-yellow: #c96a04; --sg-green: #0b9a55; --sg-blue: #1766f2; --sg-purple: #6f3ae0;
+  /* Under a code block: a close shadow and a deeper soft one (the owner,
+     2026-09-28, the frame's own box-shadow read as none). */
+  --code-shadow: 0 4px 10px -2px rgba(10, 20, 34, 0.3), 0 16px 36px -10px rgba(10, 20, 34, 0.45);
+  /* A diagram's frosted panel, over the dark console: the sidebar's cool
+     frost, bright at the top-left and falling to a soft blue-gray at the
+     bottom-right, see-through enough for the console to tint it (the owner,
+     2026-09-28: the shared white frost read as a plain white card here). */
+  --diagram-bg:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.4) 50%, rgba(10, 20, 34, 0.05)),
+    linear-gradient(rgba(226, 233, 243, 0.86), rgba(226, 233, 243, 0.86));
+  /* Under a button (and the bar's pills beside them): a close shadow and
+     a soft one, heavier in light than the surfaces' own. */
+  --btn-shadow: 0 3px 6px -1px rgba(10, 20, 34, 0.32), 0 10px 22px -8px rgba(10, 20, 34, 0.42);
+  --btn-in-bot: rgba(255, 255, 255, 0.95);
+  --fill-top: 82%; --fill-top-base: #000;
+  --fill-end: 76%; --fill-end-base: #fff;
+  --fill-mid-at: 50%;
+  /* A small colored button (the tree toggle inside the filter) crosses
+     its gradient in 30px, so it needs stronger stops to show any depth. */
+  --fill-top-sm: 66%; --fill-end-sm: 52%;
+  --inset-btn-shadow: 0 4px 10px -1px rgba(10, 20, 34, 0.75), 0 2px 3px rgba(10, 20, 34, 0.4);
+  /* A large panel (the space sidebar). White glass on a near-white page
+     read as a plain white card, so light's is thinner and faintly cool,
+     letting the page's accent wash through, with a bright inner rim and a
+     hairline outer edge: the two edges are what read as glass on white. */
+  /* Both layers are images, so another layer can go under them (a color is
+     allowed only as the last layer, and a declaration that breaks that rule
+     is dropped whole). */
+  /* Cards and menus: bright white frost, a soft white sheen, no gray (the
+     cool base read as silver and hard to read on, the owner, 2026-09-28).
+     The sidebar has its own, tinted (--sidebar-bg, below). */
+  --panel-bg:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.35) 50%, rgba(255, 255, 255, 0.55)),
+    linear-gradient(rgba(250, 251, 253, 0.72), rgba(250, 251, 253, 0.72));
+  /* The floating sidebar, the one frosted surface tinted with the accent:
+     the cooler base with a gray fall-off it needs to read as glass beside
+     the page, 8% of the accent in it. A variable built here, not the
+     shared one with the sidebar's own amounts: a custom property is worked
+     out where it is declared, so amounts set on the sidebar never reached it
+     (that is how the tint went missing). */
+  --sidebar-bg:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.06) 50%, rgba(10, 20, 34, 0.07)),
+    linear-gradient(color-mix(in srgb, var(--primary) 8%, rgba(212, 222, 236, 0.5)), color-mix(in srgb, var(--primary) 8%, rgba(212, 222, 236, 0.5)));
+  --panel-border: rgba(10, 20, 34, 0.1);
+  --panel-rim: inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+  /* A button's stroke, a gradient on the same diagonal as its fill. */
+  --btn-rim: linear-gradient(160deg, rgba(10, 20, 34, 0.34), rgba(10, 20, 34, 0.14) 45%, #ffffff);
+  /* The stroke of a button filled with a color, as three stops mixed from
+     that color (--rim-c, set on the button): in light a deep shade of it at
+     the top left and a pale tint at the bottom right; dark keeps white (0%
+     of the color). The mix is done on the button, where --rim-c is known. */
+  --rim-top: 65%; --rim-top-base: #000;
+  --rim-mid: 85%; --rim-mid-base: #fff;
+  --rim-end: 45%; --rim-end-base: #fff;
   --tint-base: rgba(255, 255, 255, 0.8);
   --lens-tint: 82%;
   --cta-tint: 88%;
@@ -52,6 +115,7 @@
   --frame-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.15) 70%);
   --on-danger: #ffffff;
   --status-glass-ink: #ffffff;
+  --badge-rim: rgba(255, 255, 255, 0.7);
   /* The console window. The app's code blocks are dark in both themes
      (index.css), so the console keeps the guide's dark values in both,
      and the syntax colors keep the background they were chosen for. */
@@ -89,6 +153,27 @@
   --frame-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 60%);
   --on-danger: var(--bg);
   --status-glass-ink: var(--bg);
+  --badge-rim: rgba(255, 255, 255, 0.22);
+  --btn-rim: linear-gradient(160deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.06) 55%, rgba(255, 255, 255, 0.02));
+  --rim-top: 0%; --rim-top-base: rgba(255, 255, 255, 0.7);
+  --btn-in-top: rgba(255, 255, 255, 0.22);
+  --sg-red: #ff5a47; --sg-yellow: #ffc21a; --sg-green: #2fe0a0; --sg-blue: #4a9bff; --sg-purple: #a57dff;
+  --code-shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.6), 0 16px 36px -10px rgba(0, 0, 0, 0.75);
+  --diagram-bg: var(--panel-bg), linear-gradient(color-mix(in srgb, var(--surface) 80%, transparent), color-mix(in srgb, var(--surface) 80%, transparent));
+  --btn-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.55), 0 8px 24px -8px rgba(0, 0, 0, 0.6);
+  --btn-in-bot: rgba(0, 0, 0, 0.25);
+  --fill-top: 48%; --fill-top-base: #fff;
+  --fill-end: 62%; --fill-end-base: #000;
+  --fill-mid-at: 38%;
+  --fill-top-sm: 48%; --fill-end-sm: 62%;
+  --inset-btn-shadow: 0 4px 10px -1px rgba(0, 0, 0, 1), 0 2px 3px rgba(0, 0, 0, 0.7);
+  --panel-bg: var(--frame-sheen), linear-gradient(var(--glass), var(--glass));
+  /* The sidebar's accent tint in dark too (the owner, 2026-09-28). */
+  --sidebar-bg: var(--frame-sheen), linear-gradient(color-mix(in srgb, var(--primary) 10%, var(--glass)), color-mix(in srgb, var(--primary) 10%, var(--glass)));
+  --panel-border: var(--glass-border);
+  --panel-rim: inset 0 1px 0 var(--glass-hi);
+  --rim-mid: 0%; --rim-mid-base: rgba(255, 255, 255, 0.12);
+  --rim-end: 0%; --rim-end-base: rgba(255, 255, 255, 0.03);
   }
 }
 :root[data-theme="dark"] {
@@ -113,17 +198,38 @@
   --frame-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 60%);
   --on-danger: var(--bg);
   --status-glass-ink: var(--bg);
+  --badge-rim: rgba(255, 255, 255, 0.22);
+  --btn-rim: linear-gradient(160deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.06) 55%, rgba(255, 255, 255, 0.02));
+  --rim-top: 0%; --rim-top-base: rgba(255, 255, 255, 0.7);
+  --btn-in-top: rgba(255, 255, 255, 0.22);
+  --sg-red: #ff5a47; --sg-yellow: #ffc21a; --sg-green: #2fe0a0; --sg-blue: #4a9bff; --sg-purple: #a57dff;
+  --code-shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.6), 0 16px 36px -10px rgba(0, 0, 0, 0.75);
+  --diagram-bg: var(--panel-bg), linear-gradient(color-mix(in srgb, var(--surface) 80%, transparent), color-mix(in srgb, var(--surface) 80%, transparent));
+  --btn-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.55), 0 8px 24px -8px rgba(0, 0, 0, 0.6);
+  --btn-in-bot: rgba(0, 0, 0, 0.25);
+  --fill-top: 48%; --fill-top-base: #fff;
+  --fill-end: 62%; --fill-end-base: #000;
+  --fill-mid-at: 38%;
+  --fill-top-sm: 48%; --fill-end-sm: 62%;
+  --inset-btn-shadow: 0 4px 10px -1px rgba(0, 0, 0, 1), 0 2px 3px rgba(0, 0, 0, 0.7);
+  --panel-bg: var(--frame-sheen), linear-gradient(var(--glass), var(--glass));
+  /* The sidebar's accent tint in dark too (the owner, 2026-09-28). */
+  --sidebar-bg: var(--frame-sheen), linear-gradient(color-mix(in srgb, var(--primary) 10%, var(--glass)), color-mix(in srgb, var(--primary) 10%, var(--glass)));
+  --panel-border: var(--glass-border);
+  --panel-rim: inset 0 1px 0 var(--glass-hi);
+  --rim-mid: 0%; --rim-mid-base: rgba(255, 255, 255, 0.12);
+  --rim-end: 0%; --rim-end-base: rgba(255, 255, 255, 0.03);
 }
 
 /* ---- The ground: a faint wash of the accent, so glass has something to be glass over -- */
 
-:root[data-style="glass"] body {
-  background:
+:root[data-style="glass"] {
+  --ground:
     radial-gradient(1100px 520px at 12% -8%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 62%),
     radial-gradient(900px 480px at 100% 0%, color-mix(in srgb, var(--primary) 6%, transparent), transparent 60%),
     var(--bg);
-  background-attachment: fixed;
 }
+:root[data-style="glass"] body { background: var(--ground); background-attachment: fixed; }
 
 /* ---- The top bar: floats at the top, docks into a frosted strip once the page scrolls -- */
 
@@ -139,12 +245,20 @@
   transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 :root[data-style="glass"] .topbar.is-docked {
-  background: color-mix(in srgb, var(--bg) 60%, transparent);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   border-bottom-color: color-mix(in srgb, var(--text) 10%, transparent);
   box-shadow: var(--hdr-shadow);
 }
+/* The docked frosting is a layer behind the bar's contents, not the bar
+   itself: an element with a backdrop-filter is a backdrop root, and the
+   frosted menus inside the bar (appearance, notifications) would then blur
+   only the bar, showing the page's text through them sharp. */
+:root[data-style="glass"] .topbar.is-docked::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+:root[data-style="glass"] .topbar.is-menu-open::before { content: none; }
 
 /* The page bar: Spaces and Admin in one glass pill, the current one a tinted lens. */
 :root[data-style="glass"] .topbar__nav {
@@ -152,7 +266,7 @@
   background: var(--glass); border: 1px solid var(--glass-border);
   -webkit-backdrop-filter: blur(14px) saturate(170%);
   backdrop-filter: blur(14px) saturate(170%);
-  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--glass-contact), var(--glass-shadow);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--btn-shadow);
 }
 :root[data-style="glass"] .topbar__nav .topbar__link {
   box-sizing: border-box; height: 100%; display: inline-flex; align-items: center;
@@ -169,7 +283,24 @@
   -webkit-backdrop-filter: none; backdrop-filter: none;
 }
 :root[data-style="glass"] .topbar.is-collapsed .topbar__collapsible .topbar__link { height: auto; padding: 0.6rem 0.9rem; }
-:root[data-style="glass"] .topbar.is-collapsed > .topbar__collapsible { border-radius: 0 0 10px 10px; box-shadow: var(--box-shadow); }
+/* Open, the menu and the bar are one surface: both show the page's own
+   ground, lined up (fixed attachment), and the bar drops its frosting and
+   its edge so there is no seam. A frosted menu would not blur reliably (it
+   sits inside the bar, which has a blur of its own) and the page's text
+   would show through it. */
+:root[data-style="glass"] .topbar.is-menu-open,
+:root[data-style="glass"] .topbar.is-collapsed > .topbar__collapsible {
+  background: var(--ground); background-attachment: fixed;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+:root[data-style="glass"] .topbar.is-menu-open { border-bottom-color: transparent; box-shadow: none; }
+:root[data-style="glass"] .topbar.is-collapsed > .topbar__collapsible {
+  border-top: none; border-bottom: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+  border-radius: 0 0 10px 10px; box-shadow: var(--hdr-shadow);
+  /* The shadow falls below the menu only: upward it darkened the bottom of
+     the bar and drew a line between the two. */
+  clip-path: inset(0 -40px -48px -40px);
+}
 :root[data-style="glass"] .topbar__link { border-radius: 999px; }
 :root[data-style="glass"] .topbar__link:hover { background: var(--glass-hover); }
 :root[data-style="glass"] .topbar__link.is-active {
@@ -180,15 +311,18 @@
 
 /* The search: a glass pill of its own. It is a field people type in, so its
    text sits on the glass rather than on a solid box, like the site's bars. */
-:root[data-style="glass"] .topbar__search input {
+:root[data-style="glass"] .topbar__search input,
+:root[data-style="glass"] .tree-filter__input {
   box-sizing: border-box; height: var(--ctl); border-radius: 999px; padding: 0 1.1rem;
   color: var(--text);
   background: var(--glass); border: 1px solid var(--glass-border);
   -webkit-backdrop-filter: blur(14px) saturate(170%);
   backdrop-filter: blur(14px) saturate(170%);
-  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--glass-contact), var(--glass-shadow);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--btn-shadow);
 }
-:root[data-style="glass"] .topbar__search input:focus {
+:root[data-style="glass"] .tree-filter__input { font-size: 0.9rem; }
+:root[data-style="glass"] .topbar__search input:focus,
+:root[data-style="glass"] .tree-filter__input:focus {
   outline: 2px solid var(--primary); outline-offset: 1px;
 }
 
@@ -203,7 +337,9 @@
 
 /* Round icon buttons: the theme and the notifications, glass with a sheen. */
 :root[data-style="glass"] .theme-toggle,
-:root[data-style="glass"] .notif__bell {
+:root[data-style="glass"] .notif__bell,
+:root[data-style="glass"] .tree-filter__children,
+:root[data-style="glass"] .overflow-menu__trigger {
   box-sizing: border-box; width: var(--ctl); height: var(--ctl); padding: 0; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
   color: var(--text);
@@ -211,22 +347,89 @@
   border: 1px solid var(--glass-border);
   -webkit-backdrop-filter: blur(14px) saturate(170%);
   backdrop-filter: blur(14px) saturate(170%);
-  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--glass-contact), var(--glass-shadow);
+  box-shadow: inset 0 1px 0 var(--btn-in-top), inset 0 -1px 0 var(--btn-in-bot), var(--btn-shadow);
 }
 :root[data-style="glass"] .theme-toggle:hover, :root[data-style="glass"] .theme-toggle.is-open,
-:root[data-style="glass"] .notif__bell:hover {
+:root[data-style="glass"] .notif__bell:hover,
+:root[data-style="glass"] .notif__bell.is-open,
+:root[data-style="glass"] .tree-filter__children:hover,
+:root[data-style="glass"] .overflow-menu__trigger:hover {
   background: var(--glass-sheen), color-mix(in srgb, var(--glass-hover) 60%, var(--glass));
 }
 :root[data-style="glass"] .theme-toggle svg, :root[data-style="glass"] .notif__bell svg { width: 20px; height: 20px; }
+/* On, the tree toggle is a colored button like + New Page: an on/off
+   button, not a selected item in a bar, so it gets the same gradient. */
+:root[data-style="glass"] .tree-filter__children.is-on,
+:root[data-style="glass"] .tree-filter__children.is-on:hover {
+  color: var(--on-primary);
+  background: linear-gradient(160deg, color-mix(in srgb, color-mix(in srgb, var(--primary) var(--cta-tint), var(--tint-base)) var(--fill-top), var(--fill-top-base)), color-mix(in srgb, var(--primary) var(--cta-tint), var(--tint-base)) var(--fill-mid-at), color-mix(in srgb, color-mix(in srgb, var(--primary) var(--cta-tint), var(--tint-base)) var(--fill-end), var(--fill-end-base)));
+  box-shadow: inset 0 1px 0 var(--btn-in-top), inset 0 -1px 0 var(--btn-in-bot), var(--accent-shadow);
+}
+:root[data-style="glass"] .tree-filter { align-items: center; gap: 0.5rem; }
+/* Below the bar, the round buttons and the tree's filter take the page height. */
+:root[data-style="glass"] .tree-filter__children,
+:root[data-style="glass"] .overflow-menu__trigger { width: var(--ctl-page); height: var(--ctl-page); }
+:root[data-style="glass"] .tree-filter__input { height: var(--ctl-page); padding: 0 1rem; }
+
+/* The stroke of every glass button, round or pill: the rim gradient in a
+   1px ring over the border (masked to the ring, so the fill stays clear). */
+:root[data-style="glass"] .btn,
+:root[data-style="glass"] .theme-toggle,
+:root[data-style="glass"] .notif__bell,
+:root[data-style="glass"] .tree-filter__children,
+:root[data-style="glass"] .overflow-menu__trigger,
+:root[data-style="glass"] .topbar__me { position: relative; border-color: transparent; }
+:root[data-style="glass"] .btn::before,
+:root[data-style="glass"] .theme-toggle::before,
+:root[data-style="glass"] .notif__bell::before,
+:root[data-style="glass"] .tree-filter__children::before,
+:root[data-style="glass"] .overflow-menu__trigger::before,
+:root[data-style="glass"] .topbar__me::before {
+  content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px;
+  background: var(--btn-rim); pointer-events: none;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+:root[data-style="glass"] .btn--primary,
+:root[data-style="glass"] .tree-filter__children.is-on { --rim-c: var(--primary); }
+:root[data-style="glass"] .btn--danger { --rim-c: var(--danger); }
+:root[data-style="glass"] .btn--primary::before,
+:root[data-style="glass"] .btn--danger::before,
+:root[data-style="glass"] .tree-filter__children.is-on::before {
+  background: linear-gradient(160deg,
+    color-mix(in srgb, var(--rim-c) var(--rim-top), var(--rim-top-base)),
+    color-mix(in srgb, var(--rim-c) var(--rim-mid), var(--rim-mid-base)) 45%,
+    color-mix(in srgb, var(--rim-c) var(--rim-end), var(--rim-end-base)));
+}
+
+/* A button's gradient covers its whole box, border included. Drawn from the
+   padding box (the default) it repeats into the 1px transparent border, and
+   the bottom row showed the top of the next copy: a bright line under every
+   dark button, a dark one under light ones. */
+:root[data-style="glass"] .btn,
+:root[data-style="glass"] .theme-toggle,
+:root[data-style="glass"] .notif__bell,
+:root[data-style="glass"] .tree-filter__children,
+:root[data-style="glass"] .overflow-menu__trigger,
+:root[data-style="glass"] .topbar__me {
+  /* !important: every fill rule after this (colored, hover, on) sets the
+     background shorthand, which would reset it to the padding box. */
+  background-origin: border-box !important;
+}
 
 /* The unread count: a small glass badge, red, with a plain shadow (no glow,
    the owner's call on 2026-09-27: a glow read as an alarm). */
 :root[data-style="glass"] .notif__badge {
   top: -3px; right: -3px; min-width: 20px; height: 20px; padding: 0 0.35rem; box-sizing: border-box;
   display: inline-flex; align-items: center; justify-content: center; line-height: 1;
-  color: var(--on-danger);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--danger) 88%, #fff), color-mix(in srgb, var(--danger) 85%, #000));
-  border: 1px solid var(--accent-rim);
+  /* The same badge in both themes, the light one: its red, white ink and
+     shadow are fixed rather than taken from the theme's tokens (dark's
+     brighter red made its shade read as a gradient). Only the rim differs:
+     dimmer in dark, where a bright one stood out. */
+  color: #ffffff;
+  background: linear-gradient(180deg, color-mix(in srgb, #c9372c 88%, #fff), color-mix(in srgb, #c9372c 85%, #000));
+  border: 1px solid var(--badge-rim);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 2px 4px rgba(10, 20, 34, 0.3);
 }
 
@@ -235,12 +438,12 @@
    bar is a circle around the avatar. */
 :root[data-style="glass"] .topbar__me {
   box-sizing: border-box; height: var(--ctl); padding: 4px; gap: 0.55rem; border-radius: 999px;
-  background: var(--glass); border: 1px solid var(--glass-border);
+  background: var(--glass-sheen), var(--glass); border: 1px solid transparent;
   -webkit-backdrop-filter: blur(14px) saturate(170%);
   backdrop-filter: blur(14px) saturate(170%);
-  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--glass-contact), var(--glass-shadow);
+  box-shadow: inset 0 1px 0 var(--btn-in-top), inset 0 -1px 0 var(--btn-in-bot), var(--btn-shadow);
 }
-:root[data-style="glass"] .topbar__me:hover { background: color-mix(in srgb, var(--glass-hover) 60%, var(--glass)); }
+:root[data-style="glass"] .topbar__me:hover { background: var(--glass-sheen), color-mix(in srgb, var(--glass-hover) 60%, var(--glass)); }
 :root[data-style="glass"] .topbar__me:hover .topbar__username { text-decoration: none; color: var(--text); }
 :root[data-style="glass"] .topbar__me .avatar {
   width: calc(var(--ctl) - 10px); height: calc(var(--ctl) - 10px);
@@ -255,37 +458,62 @@
   background: transparent; border-color: transparent; box-shadow: none;
   -webkit-backdrop-filter: none; backdrop-filter: none;
 }
+:root[data-style="glass"] .topbar.is-docked .topbar__me::before { content: none; }
+/* Docked, with no pill round them, the avatar and name grow to the theme and
+   bell buttons' height (the owner, 2026-09-28): the avatar fills the pill's
+   48px, and the name scales with it. */
+:root[data-style="glass"] .topbar__me { transition: padding 0.2s ease; }
+:root[data-style="glass"] .topbar__me .avatar { transition: width 0.2s ease, height 0.2s ease; }
+:root[data-style="glass"] .topbar__me .topbar__username { transition: font-size 0.2s ease; }
+:root[data-style="glass"] .topbar.is-docked .topbar__me { padding: 0; }
+:root[data-style="glass"] .topbar.is-docked .topbar__me .avatar { width: var(--ctl); height: var(--ctl); }
+:root[data-style="glass"] .topbar.is-docked .topbar__me .topbar__username { font-size: 17px; padding-right: 0; }
+@media (prefers-reduced-motion: reduce) {
+  :root[data-style="glass"] .topbar__me, :root[data-style="glass"] .topbar__me .avatar,
+  :root[data-style="glass"] .topbar__me .topbar__username { transition: none; }
+}
 
 /* ---- Buttons: pills. Secondary is clear glass; primary and danger are tinted. -- */
 
 :root[data-style="glass"] .btn {
+  /* One height for every button below the top bar, small ones included:
+     38px (--ctl-page). The bar's own are 48px (index.css). */
+  box-sizing: border-box; min-height: var(--ctl-page); padding-block: 0; padding-inline: 1.15rem;
   border-radius: 999px;
-  background: var(--glass); border: 1px solid var(--glass-border);
+  background: var(--glass-sheen), var(--glass); border: 1px solid transparent;
   -webkit-backdrop-filter: blur(14px) saturate(170%);
   backdrop-filter: blur(14px) saturate(170%);
-  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--glass-shadow);
+  box-shadow: inset 0 1px 0 var(--btn-in-top), inset 0 -1px 0 var(--btn-in-bot), var(--btn-shadow);
 }
+:root[data-style="glass"] .btn--sm { padding-inline: 0.95rem; }
+/* Windows: button text 1px up (see index.css); here the height is fixed, so
+   2px of bottom padding moves the centered label up by 1px. */
+:root[data-os="windows"][data-style="glass"] .btn:not(.overflow-menu__dropdown .btn, .topbar__more-menu .btn) { padding-top: 0; padding-bottom: 2px; }
 :root[data-style="glass"] .btn:hover {
   filter: none;
-  background: color-mix(in srgb, var(--glass-hover) 60%, var(--glass));
+  background: var(--glass-sheen), color-mix(in srgb, var(--glass-hover) 60%, var(--glass));
 }
+/* A button filled with a color gets its diagonal from the color itself,
+   lighter at the top left and deeper at the bottom right: a white sheen over
+   it turned the color milky. The Glass swatch in the appearance menu is the
+   same. */
 :root[data-style="glass"] .btn--primary {
   color: var(--on-primary);
-  background: color-mix(in srgb, var(--primary) var(--cta-tint), var(--tint-base));
-  border-color: var(--accent-rim);
-  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--accent-shadow);
+  background: linear-gradient(160deg, color-mix(in srgb, color-mix(in srgb, var(--primary) var(--cta-tint), var(--tint-base)) var(--fill-top), var(--fill-top-base)), color-mix(in srgb, var(--primary) var(--cta-tint), var(--tint-base)) var(--fill-mid-at), color-mix(in srgb, color-mix(in srgb, var(--primary) var(--cta-tint), var(--tint-base)) var(--fill-end), var(--fill-end-base)));
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 var(--btn-in-top), inset 0 -1px 0 var(--btn-in-bot), var(--accent-shadow);
 }
 :root[data-style="glass"] .btn--primary:hover {
-  background: color-mix(in srgb, var(--primary) calc(var(--cta-tint) + 8%), var(--tint-base));
+  background: linear-gradient(160deg, color-mix(in srgb, color-mix(in srgb, var(--primary) calc(var(--cta-tint) + 8%), var(--tint-base)) var(--fill-top), var(--fill-top-base)), color-mix(in srgb, var(--primary) calc(var(--cta-tint) + 8%), var(--tint-base)) var(--fill-mid-at), color-mix(in srgb, color-mix(in srgb, var(--primary) calc(var(--cta-tint) + 8%), var(--tint-base)) var(--fill-end), var(--fill-end-base)));
 }
 :root[data-style="glass"] .btn--danger {
   color: var(--on-danger);
-  background: color-mix(in srgb, var(--danger) var(--cta-tint), var(--tint-base));
-  border-color: var(--accent-rim);
-  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--accent-shadow);
+  background: linear-gradient(160deg, color-mix(in srgb, color-mix(in srgb, var(--danger) var(--cta-tint), var(--tint-base)) var(--fill-top), var(--fill-top-base)), color-mix(in srgb, var(--danger) var(--cta-tint), var(--tint-base)) var(--fill-mid-at), color-mix(in srgb, color-mix(in srgb, var(--danger) var(--cta-tint), var(--tint-base)) var(--fill-end), var(--fill-end-base)));
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 var(--btn-in-top), inset 0 -1px 0 var(--btn-in-bot), var(--accent-shadow);
 }
 :root[data-style="glass"] .btn--danger:hover {
-  background: color-mix(in srgb, var(--danger) calc(var(--cta-tint) + 8%), var(--tint-base));
+  background: linear-gradient(160deg, color-mix(in srgb, color-mix(in srgb, var(--danger) calc(var(--cta-tint) + 8%), var(--tint-base)) var(--fill-top), var(--fill-top-base)), color-mix(in srgb, var(--danger) calc(var(--cta-tint) + 8%), var(--tint-base)) var(--fill-mid-at), color-mix(in srgb, color-mix(in srgb, var(--danger) calc(var(--cta-tint) + 8%), var(--tint-base)) var(--fill-end), var(--fill-end-base)));
 }
 :root[data-style="glass"] .btn:focus-visible,
 :root[data-style="glass"] .theme-toggle:focus-visible,
@@ -298,31 +526,59 @@
 /* Menus hold lists people read: solid, and their items stay rows, not pills. */
 :root[data-style="glass"] .overflow-menu__dropdown .btn,
 :root[data-style="glass"] .topbar__more-menu .btn {
+  min-height: 0; padding: 0.45rem 0.85rem;
   border-radius: 3px; background: transparent; border-color: transparent;
   box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
 }
-:root[data-style="glass"] .overflow-menu__dropdown .btn:hover { background: var(--bg-alt); }
+:root[data-style="glass"] .overflow-menu__dropdown .btn:hover { background: var(--glass-hover); }
+:root[data-style="glass"] .overflow-menu__dropdown .btn::before,
+:root[data-style="glass"] .topbar__more-menu .btn::before { content: none; }
 :root[data-style="glass"] .overflow-menu__dropdown .btn--danger { color: var(--danger); }
-:root[data-style="glass"] .overflow-menu__dropdown,
-:root[data-style="glass"] .theme-menu__panel,
-:root[data-style="glass"] .notif__dropdown,
 :root[data-style="glass"] .topbar__more-menu {
   background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
   box-shadow: var(--box-shadow);
 }
+/* The appearance menu, the notifications and a page's ... menu: frosted
+   panels, as the sidebar, over a denser base than the sidebar's, since they
+   sit over the page's text and must stay readable. */
+:root[data-style="glass"] .theme-menu__panel,
+:root[data-style="glass"] .notif__dropdown,
+:root[data-style="glass"] .overflow-menu__dropdown {
+  /* 88%: over a dark code block or a colored panel, 58% let too much through to read (the owner, 2026-09-28). */
+  background: var(--panel-bg), color-mix(in srgb, var(--surface) 88%, transparent);
+  border: 1px solid var(--panel-border); border-radius: 14px;
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--panel-rim), var(--box-shadow);
+}
+:root[data-style="glass"] .theme-menu__modes + .theme-menu__heading { border-top-color: var(--panel-border); }
 :root[data-style="glass"] .theme-menu__mode.is-active {
   background: color-mix(in srgb, var(--primary) 16%, var(--surface));
 }
+/* A selected item on a frosted surface (the appearance menu, the sidebar)
+   has a 1px stroke in the accent (the owner, 2026-09-28). Inset, so it adds
+   nothing to the item's size. */
+:root[data-style="glass"] .theme-menu__mode.is-active,
+:root[data-style="glass"] .sidebar .tree__link.is-active,
+:root[data-style="glass"] .sidebar .sidebar__trash.is-active {
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
 
 /* Tabs (Administration, a page's Comments and History): one glass pill, the current one a lens. */
+/* The same pill as the top bar's Spaces and Admin (the owner, 2026-09-28):
+   48px tall, its tabs 15px and filling it, the same edge and shadow. */
 :root[data-style="glass"] .tabs {
+  box-sizing: border-box; height: var(--ctl); align-items: stretch;
   border-bottom: none; padding: 4px; gap: 2px; border-radius: 999px;
-  background: var(--glass); border: 1px solid var(--glass-edge);
+  background: var(--glass); border: 1px solid var(--glass-border);
   -webkit-backdrop-filter: blur(14px) saturate(170%);
   backdrop-filter: blur(14px) saturate(170%);
-  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--glass-shadow);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--btn-shadow);
 }
-:root[data-style="glass"] .tab { border-bottom: none; border-radius: 999px; padding: 0.35rem 0.85rem; }
+:root[data-style="glass"] .tab {
+  display: inline-flex; align-items: center;
+  border-bottom: none; border-radius: 999px; padding: 0 14px; font-size: 15px;
+}
 :root[data-style="glass"] .tab:hover { background: var(--glass-hover); color: var(--text); }
 :root[data-style="glass"] .tab.is-active {
   color: var(--on-primary);
@@ -330,70 +586,72 @@
   box-shadow: inset 0 1px 0 var(--glass-hi), var(--accent-shadow);
 }
 
-/* The appearance menu's two style swatches, both in the accent: flat as a
-   plain square of it, glass as the same color lit, with its sheen and rim. */
-.theme-menu__style-swatch {
-  width: 17px; height: 17px; flex: none; border-radius: 5px;
-  background: var(--primary); border: 1px solid transparent;
-}
-.theme-menu__style-swatch--glass {
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.05) 60%),
-    var(--primary);
-  border-color: rgba(255, 255, 255, 0.7);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(0, 0, 0, 0.2),
-    0 2px 6px -1px color-mix(in srgb, var(--primary) 60%, transparent);
-}
-
-/* ---- Status: a small badge, its color as a gradient, with a steady glow -- */
+/* ---- Status: a small badge, its color as a gradient, with a drop shadow -- */
 
 :root[data-style="glass"] .status:not([data-appearance="flat"]), .status[data-appearance="glass"] {
   --c: var(--status-grey-ink);
   font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
   font-weight: 600; letter-spacing: 0.02em; border-radius: 3px;
   color: var(--status-glass-ink);
-  background: linear-gradient(180deg, var(--c), color-mix(in srgb, var(--c) 80%, #000));
+  /* Diagonal, lit at the top left and deeper at the bottom right (the owner, 2026-09-28). */
+  background: linear-gradient(160deg, color-mix(in srgb, var(--c) 72%, #fff), var(--c) 45%, color-mix(in srgb, var(--c) 72%, #000));
   border-color: transparent;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 6px 2.25px color-mix(in srgb, var(--c) 41%, transparent);
+  /* A plain drop shadow, no colored glow (the owner, 2026-09-28). Literal
+     values: an exported page has no theme tokens for glass. */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 1px 2px rgba(0, 0, 0, 0.28), 0 2px 5px -1px rgba(0, 0, 0, 0.3);
 }
 :root[data-style="glass"] .status--grey:not([data-appearance="flat"]), .status--grey[data-appearance="glass"] { --c: var(--status-grey-ink); }
-:root[data-style="glass"] .status--red:not([data-appearance="flat"]), .status--red[data-appearance="glass"] { --c: var(--status-red-ink); }
-:root[data-style="glass"] .status--yellow:not([data-appearance="flat"]), .status--yellow[data-appearance="glass"] { --c: var(--status-yellow-ink); }
-:root[data-style="glass"] .status--green:not([data-appearance="flat"]), .status--green[data-appearance="glass"] { --c: var(--status-green-ink); }
-:root[data-style="glass"] .status--blue:not([data-appearance="flat"]), .status--blue[data-appearance="glass"] { --c: var(--status-blue-ink); }
-:root[data-style="glass"] .status--purple:not([data-appearance="flat"]), .status--purple[data-appearance="glass"] { --c: var(--status-purple-ink); }
+:root[data-style="glass"] .status--red:not([data-appearance="flat"]), .status--red[data-appearance="glass"] { --c: var(--sg-red); }
+:root[data-style="glass"] .status--yellow:not([data-appearance="flat"]), .status--yellow[data-appearance="glass"] { --c: var(--sg-yellow); }
+:root[data-style="glass"] .status--green:not([data-appearance="flat"]), .status--green[data-appearance="glass"] { --c: var(--sg-green); }
+:root[data-style="glass"] .status--blue:not([data-appearance="flat"]), .status--blue[data-appearance="glass"] { --c: var(--sg-blue); }
+:root[data-style="glass"] .status--purple:not([data-appearance="flat"]), .status--purple[data-appearance="glass"] { --c: var(--sg-purple); }
 
 /* ---- Charts: a glass frame, bars and slices lit from the top -- */
 
 :root[data-style="glass"] .chart:not([data-appearance="flat"]), .chart[data-appearance="glass"] {
-  padding: 0.75rem 0.9rem; border-radius: 10px;
-  background: var(--frame-sheen), var(--surface);
-  border: 1px solid var(--glass-edge);
-  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-lo), var(--glass-shadow);
+  /* The frosted panel of the space cards and admin cards (the owner,
+     2026-09-28). No backdrop-filter: the chart sits on the page, where a blur
+     shows nothing, and an export (PDF) renders plain fills more faithfully. */
+  padding: 0.9rem 1rem; border-radius: 18px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  box-shadow: var(--panel-rim), var(--box-shadow);
 }
 :root[data-style="glass"] .chart:not([data-appearance="flat"]) .chart__bar, .chart[data-appearance="glass"] .chart__bar {
   position: relative;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 2px 6px -2px rgba(10, 20, 34, 0.3);
+  /* Each bar its own drop shadow, vertical or horizontal (the owner,
+     2026-09-28). Literal values: an export has no theme tokens for glass. */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 2px 4px rgba(0, 0, 0, 0.28), 0 6px 14px -4px rgba(0, 0, 0, 0.38);
 }
 :root[data-style="glass"] .chart:not([data-appearance="flat"]) .chart__bar::after, .chart[data-appearance="glass"] .chart__bar::after {
   content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0) 65%);
 }
-:root[data-style="glass"] .chart:not([data-appearance="flat"]) polyline, .chart[data-appearance="glass"] polyline { filter: drop-shadow(0 2px 3px rgba(10, 20, 34, 0.3)); }
+:root[data-style="glass"] .chart:not([data-appearance="flat"]) polyline, .chart[data-appearance="glass"] polyline { filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.45)) drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3)); }
+/* A pie or a donut (the charts with a sheen) sits on the frame with a drop shadow. */
+:root[data-style="glass"] .chart:not([data-appearance="flat"]) svg:has(.chart-sheen), .chart[data-appearance="glass"] svg:has(.chart-sheen) {
+  overflow: visible; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.25)) drop-shadow(0 8px 12px rgba(0, 0, 0, 0.3));
+}
 :root[data-style="glass"] .chart:not([data-appearance="flat"]) .chart__swatch, .chart[data-appearance="glass"] .chart__swatch { border-radius: 50%; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5); }
+/* A pie's or a donut's key in its glass colors (ChartView.tsx). */
+:root[data-style="glass"] .chart:not([data-appearance="flat"]) .chart__swatch[style*="--glass-swatch"], .chart[data-appearance="glass"] .chart__swatch[style*="--glass-swatch"] { background: var(--glass-swatch) !important; }
 /* The pie and donut sheen (components/PieChart.tsx) is drawn always and shown only here. */
 .chart-sheen { display: none; }
 :root[data-style="glass"] .chart-sheen, [data-appearance="glass"] .chart-sheen { display: inline; }
 .chart[data-appearance="flat"] .chart-sheen { display: none; }
+/* Each pie slice and donut segment a gradient of its own color (PieChart.tsx
+   draws them; the flat fill stays for the minimal style and flat exports). */
+:root[data-style="glass"] .chart-slice:not(.chart[data-appearance="flat"] *), [data-appearance="glass"] .chart-slice { fill: var(--glass-fill); }
+:root[data-style="glass"] .chart-slice--ring:not(.chart[data-appearance="flat"] *), [data-appearance="glass"] .chart-slice--ring { fill: none; stroke: var(--glass-fill); }
 
-/* ---- Code blocks: the console window -- */
+/* ---- Code blocks: the console (no window dots, the owner, 2026-09-28) -- */
 
-.code-block__dots { display: none; }
 :root[data-style="glass"] .code-block:not([data-appearance="flat"]), .code-block[data-appearance="glass"] {
   border-radius: 10px; overflow: hidden; color: var(--term-ink);
   background: var(--term-sheen), color-mix(in srgb, var(--term) 94%, transparent);
   border: 1px solid var(--term-glass-rim);
-  box-shadow: inset 0 1px 0 var(--term-glass-hi), var(--box-shadow);
+  box-shadow: inset 0 1px 0 var(--term-glass-hi), var(--code-shadow);
 }
 :root[data-style="glass"] .code-block:not([data-appearance="flat"]) .code-block__header, .code-block[data-appearance="glass"] .code-block__header {
   gap: 8px; padding: 8px 12px 8px 14px;
@@ -401,13 +659,9 @@
   position: relative; z-index: 1; box-shadow: 0 4px 10px -4px var(--term-head-shadow);
   font: 500 12.5px var(--mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); color: var(--term-dim);
 }
-:root[data-style="glass"] .code-block:not([data-appearance="flat"]) .code-block__dots, .code-block[data-appearance="glass"] .code-block__dots { display: inline-flex; gap: 8px; flex: none; }
-:root[data-style="glass"] .code-block:not([data-appearance="flat"]) .code-block__dots i, .code-block[data-appearance="glass"] .code-block__dots i {
-  width: 10px; height: 10px; border-radius: 50%;
-  background: color-mix(in srgb, var(--term-dim) 45%, transparent);
-}
 :root[data-style="glass"] .code-block:not([data-appearance="flat"]) .code-block__lang, .code-block[data-appearance="glass"] .code-block__lang {
-  margin-left: 6px; margin-right: auto; color: var(--term-dim);
+  /* No window dots before it (the owner, 2026-09-28): the language leads. */
+  margin-left: 0; margin-right: auto; color: var(--term-dim);
   font: 500 12.5px var(--mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
 }
 :root[data-style="glass"] .code-block:not([data-appearance="flat"]) .code-block__copy, .code-block[data-appearance="glass"] .code-block__copy, :root[data-style="glass"] .code-block:not([data-appearance="flat"]) .code-block__linenum-toggle, .code-block[data-appearance="glass"] .code-block__linenum-toggle {
@@ -426,9 +680,17 @@
 /* ---- Diagrams: the same window, lit, with the diagram on the page's own surface -- */
 
 :root[data-style="glass"] .code-block--diagram:not([data-appearance="flat"]) .mermaid, .code-block--diagram[data-appearance="glass"] .mermaid {
-  background: var(--frame-sheen), var(--surface);
-  margin: 10px; border-radius: 6px;
-  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 0 0 1px var(--glass-edge);
+  /* The inner panel frosted, as the cards (the owner, 2026-09-28): the
+     frosted fill over a see-through surface, so the console's dark shows
+     faintly through, blurred; the hairline edge, the rim and a shadow onto
+     the console. Solid enough that a diagram's lines and labels stay clear.
+     An export that cannot blur shows the same fill, unblurred. */
+  background: var(--diagram-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  margin: 12px; border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  box-shadow: var(--panel-rim), 0 4px 12px -4px rgba(0, 0, 0, 0.5);
 }
 
 /* The Style picker in a block's controls. */
@@ -450,9 +712,416 @@ label.code-block__appearance > select {
 }
 @media (prefers-reduced-transparency: reduce) {
   :root { --glass: var(--surface); }
-  :root[data-style="glass"] .topbar.is-docked { background: var(--surface); }
+  :root[data-style="glass"] .topbar.is-docked,
+  :root[data-style="glass"] .topbar.is-menu-open,
+  :root[data-style="glass"] .topbar.is-collapsed > .topbar__collapsible { background: var(--surface); }
   :root[data-style="glass"] * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   :root[data-style="glass"] .topbar { transition: none; }
 }
+
+/* ---- The space sidebar: a floating frosted panel (the owner, 2026-09-28) -- */
+
+/* Inset from the window (its left edge in line with the logo) and from the
+   top bar, rounded, glass. The grid column keeps its width; the panel sits
+   inside it. */
+:root[data-style="glass"] .sidebar {
+  --sb-gap: 0.75rem;
+  top: calc(var(--topbar-h) + var(--sb-gap));
+  height: calc(100vh - var(--topbar-h) - 2 * var(--sb-gap));
+  margin: var(--sb-gap) 0 var(--sb-gap) calc(1rem + var(--safe-left));
+  padding: 1rem;
+  border: 1px solid var(--panel-border); border-radius: 18px;
+  background: var(--sidebar-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--panel-rim), var(--box-shadow);
+}
+:root[data-style="glass"] .sidebar__foot { margin-left: -1rem; margin-right: -1rem; padding-left: 1rem; padding-right: 1rem; border-top-color: var(--glass-border); }
+:root[data-style="glass"] .sidebar__resize { right: -6px; }
+/* Hiding and showing animate from the panel's top-left corner, where the
+   show-sidebar button sits (SpacePage.tsx); while the panel shrinks away,
+   the page's column slides over. */
+:root[data-style="glass"] .sidebar { transform-origin: top left; }
+:root[data-style="glass"] .space-layout.is-moving { transition: grid-template-columns 0.32s cubic-bezier(0.2, 0.8, 0.2, 1); }
+@media (prefers-reduced-motion: reduce) {
+  :root[data-style="glass"] .space-layout.is-moving { transition: none; }
+}
+
+/* Hidden, the sidebar leaves one round glass button, as the theme and bell
+   buttons are, at the page's button size, in line with the logo. */
+:root[data-style="glass"] .space-layout--collapsed { grid-template-columns: calc(var(--ctl-page) + 1rem + 0.5rem + var(--safe-left)) 1fr; }
+:root[data-style="glass"] .sidebar-rail {
+  top: calc(var(--topbar-h) + 0.75rem); height: auto;
+  margin: 0.75rem 0 0 calc(1rem + var(--safe-left)); padding: 0;
+  border: none; background: none; box-shadow: none; justify-content: flex-start;
+}
+
+/* The PAGES heading and Space settings are sized in index.css (both
+   styles); here the heading holds the edit button's height. */
+:root[data-style="glass"] .sidebar .tree-section__heading { min-height: var(--ctl-page); margin-bottom: 0.5rem; }
+:root[data-style="glass"] .sidebar__trash { padding: 0.45rem 0.5rem; }
+
+/* The edit-tree button is only its icon, no glass; the hide-sidebar button
+   is the same size, and the two share a centerline at the panel's right. */
+:root[data-style="glass"] .tree-section__reorder,
+:root[data-style="glass"] .sidebar__toggle {
+  box-sizing: border-box; width: var(--ctl-page); height: var(--ctl-page); min-height: 0; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; border-radius: 10px; background: transparent; box-shadow: none; color: var(--muted);
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+:root[data-style="glass"] .tree-section__reorder::before { content: none; }
+:root[data-style="glass"] .tree-section__reorder:hover,
+:root[data-style="glass"] .sidebar__toggle:hover { background: var(--glass-hover); color: var(--text); border: none; }
+:root[data-style="glass"] .tree-section__reorder svg,
+:root[data-style="glass"] .sidebar__toggle svg { width: 20px; height: 20px; }
+:root[data-style="glass"] .sidebar__toggle--hide { align-self: center; }
+
+/* The filter spans the panel, and the "with children" toggle sits inside its
+   right end, as the avatar sits in its pill: 4px in, 8px smaller. */
+:root[data-style="glass"] .sidebar .tree-filter { position: relative; display: block; margin-bottom: 0.5rem; }
+:root[data-style="glass"] .sidebar .tree-filter__input { width: 100%; padding-right: calc(var(--ctl-page) + 0.25rem); }
+:root[data-style="glass"] .sidebar .tree-filter__children {
+  position: absolute; top: 4px; right: 4px;
+  width: calc(var(--ctl-page) - 8px); height: calc(var(--ctl-page) - 8px);
+  --fill-top: var(--fill-top-sm); --fill-end: var(--fill-end-sm);
+  box-shadow: inset 0 1px 0 var(--btn-in-top), inset 0 -1px 0 var(--btn-in-bot), var(--inset-btn-shadow);
+}
+:root[data-style="glass"] .sidebar .tree-filter__children svg { width: 16px; height: 16px; }
+
+/* ---- A page's action bar (Edit, Full Width, the ... menu): no bar -------- */
+
+/* Viewing a page, the buttons float on the page (the owner, 2026-09-28), and
+   the last one lines up with the top bar's right edge. The editor's bar keeps
+   its surface: it holds a toolbar. */
+:root[data-style="glass"] .page-actionbar:not(.page-actionbar--editor) {
+  background: transparent; border-bottom-color: transparent;
+  padding-right: calc(1rem + var(--safe-right));
+}
+
+/* ---- Notifications on the frosted panel: see-through fills ------------- */
+
+:root[data-style="glass"] .notif__header,
+:root[data-style="glass"] .notif__item { border-bottom-color: var(--panel-border); }
+:root[data-style="glass"] .notif__header {
+  /* Nearly solid: a blur here does not catch the list scrolling under it
+     inside the panel, and the title must stay readable over it. */
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: blur(14px) saturate(170%);
+}
+:root[data-style="glass"] .notif__item:hover { background: var(--glass-hover); }
+:root[data-style="glass"] .notif__item--unread { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+:root[data-style="glass"] .notif__item--unread:hover { background: color-mix(in srgb, var(--primary) 20%, transparent); }
+
+/* The hidden sidebar's button (after the plain-icon rule above, which it
+   overrides): a round glass button with the round buttons' fill, stroke,
+   shadow and a round hover. */
+:root[data-style="glass"] .sidebar-rail .sidebar__toggle {
+  position: relative; border-radius: 50%; border: 1px solid transparent;
+  background: var(--glass-sheen), var(--glass); background-origin: border-box;
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: blur(14px) saturate(170%);
+  box-shadow: inset 0 1px 0 var(--btn-in-top), inset 0 -1px 0 var(--btn-in-bot), var(--btn-shadow);
+  color: var(--primary);
+}
+:root[data-style="glass"] .sidebar-rail .sidebar__toggle:hover {
+  border: 1px solid transparent;
+  background: var(--glass-sheen), color-mix(in srgb, var(--glass-hover) 60%, var(--glass)); background-origin: border-box;
+}
+:root[data-style="glass"] .sidebar-rail .sidebar__toggle::before {
+  content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px;
+  background: var(--btn-rim); pointer-events: none;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+
+/* ---- Scrollbars: iOS's thin gray thumb, nothing else --------------------- */
+
+/* Every scrollbar (the owner, 2026-09-28, after iOS): no track, no arrows,
+   a flat, fully rounded gray thumb 6px wide. A scroller's shows only while
+   the pointer is in it or it scrolls (data-sb, set by scrollbars.ts, which
+   also makes Chrome repaint it); the page's own always shows: the pointer is
+   in the page whenever it is in use, and Chrome will not repaint the
+   window's bar on demand. Chrome, Edge and Safari draw these parts; Firefox
+   has only scrollbar-color. No scrollbar-color or -width is set where the
+   parts apply: in Chrome either one switches them off. */
+:root { --sb-thumb: rgba(10, 20, 34, 0.38); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --sb-thumb: rgba(255, 255, 255, 0.4); }
+}
+:root[data-theme="dark"] { --sb-thumb: rgba(255, 255, 255, 0.4); }
+@supports selector(::-webkit-scrollbar) {
+  :root[data-style="glass"]::-webkit-scrollbar,
+  :root[data-style="glass"] ::-webkit-scrollbar { width: 10px; height: 10px; background: transparent; }
+  :root[data-style="glass"]::-webkit-scrollbar-track,
+  :root[data-style="glass"] ::-webkit-scrollbar-track,
+  :root[data-style="glass"]::-webkit-scrollbar-corner,
+  :root[data-style="glass"] ::-webkit-scrollbar-corner { background: transparent; }
+  :root[data-style="glass"]::-webkit-scrollbar-button,
+  :root[data-style="glass"] ::-webkit-scrollbar-button { display: none; }
+  /* The 6px thumb is the middle of the 10px bar: a 2px clear border round it. */
+  :root[data-style="glass"]::-webkit-scrollbar-thumb,
+  :root[data-style="glass"] ::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 999px; background: none; }
+  :root[data-style="glass"]::-webkit-scrollbar-thumb,
+  :root[data-style="glass"] body::-webkit-scrollbar-thumb,
+  :root[data-style="glass"][data-sb]::-webkit-scrollbar-thumb,
+  :root[data-style="glass"] [data-sb]::-webkit-scrollbar-thumb { background: var(--sb-thumb) padding-box; }
+}
+@supports not selector(::-webkit-scrollbar) {
+  :root[data-style="glass"], :root[data-style="glass"] * { scrollbar-color: transparent transparent; scrollbar-width: thin; }
+  :root[data-style="glass"][data-sb], :root[data-style="glass"] [data-sb] { scrollbar-color: var(--sb-thumb) transparent; }
+}
+/* One synchronous layout with the bar gone repaints it in its new style (scrollbars.ts). */
+.sb-refresh { overflow: hidden !important; }
+/* A rounded panel that scrolls itself keeps its scrollbar clear of its
+   corners: the thumb stops at the end of the straight edge. */
+:root[data-style="glass"] .notif__dropdown::-webkit-scrollbar-track,
+:root[data-style="glass"] .theme-menu__panel::-webkit-scrollbar-track,
+:root[data-style="glass"] .overflow-menu__dropdown::-webkit-scrollbar-track { margin-block: 12px; }
+
+/* ---- A phone's space bar: no bar, its buttons float --------------------- */
+
+/* The bar (+ New and the ... menu) takes no height and its buttons float at
+   the top right, in line with the avatar, over the page as it scrolls (the
+   owner, 2026-09-28); the space home's title row moves up beside them. */
+@media (max-width: 640px) {
+  :root[data-style="glass"] .space-actionbar {
+    height: 0; padding: 0 calc(1rem + var(--safe-right)) 0 1rem; overflow: visible;
+    align-items: flex-start; background: transparent; border-bottom: none;
+  }
+  /* The buttons and the title share one 38px row at the same top, so they
+     line up whatever the font: an offset tuned to one font's metrics was
+     off on Windows. */
+  :root[data-style="glass"] .space-actionbar__actions { margin-top: calc(var(--page-pad) + 4px); }
+  :root[data-style="glass"] .space-home__head { padding-top: calc(var(--page-pad) + 4px); padding-right: 9rem; }
+  :root[data-style="glass"] .space-home__head > .space-home__title { margin-top: 0; min-height: var(--ctl-page); line-height: 1.1; }
+  /* A clear break between the bar and the page scrolling under it. */
+  :root[data-style="glass"] .topbar.is-docked { box-shadow: 0 1px 2px rgba(10, 20, 34, 0.12), 0 6px 18px rgba(10, 20, 34, 0.24); }
+}
+
+/* ---- The spaces list: each space a frosted card --------------------------- */
+
+/* The sidebar's panel (the owner, 2026-09-28): the same frosted fill, rim,
+   hairline edge and shadow. Hovered, the accent stroke of a selected item on
+   glass, and a small lift. */
+:root[data-style="glass"] .space-card a {
+  border: 1px solid var(--panel-border); border-radius: 18px;
+  background: var(--panel-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--panel-rim), var(--box-shadow);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+:root[data-style="glass"] .space-card a:hover {
+  border-color: var(--primary);
+  box-shadow: var(--panel-rim), inset 0 0 0 1px var(--primary), var(--box-shadow);
+  transform: translateY(-2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-style="glass"] .space-card a { transition: none; }
+  :root[data-style="glass"] .space-card a:hover { transform: none; }
+}
+
+/* ---- Reduce motion: the appearance menu's switch --------------------------- */
+
+/* The switch (theme.ts) stills everything, as the system's own setting does
+   through the prefers-reduced-motion rules above. */
+:root[data-motion="reduce"] *, :root[data-motion="reduce"] *::before, :root[data-motion="reduce"] *::after {
+  transition: none !important; animation: none !important;
+}
+:root[data-style="glass"][data-motion="reduce"] .space-card a:hover { transform: none; }
+
+/* ---- Administration: the KPI cards and the dashboard's panels, frosted ---- */
+
+/* The space cards' frosted panel (the owner, 2026-09-28): neutral, the rim,
+   the hairline edge and the shadow. The dashboard's two tables are in the
+   same panel, so the page reads as one set. */
+:root[data-style="glass"] .stat,
+:root[data-style="glass"] .dash__panel {
+  border: 1px solid var(--panel-border); border-radius: 18px;
+  background: var(--panel-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--panel-rim), var(--box-shadow);
+}
+
+/* ---- Security alerts: frosted cards, their actions plain text ------------- */
+
+/* Each alert is the frosted panel (the owner, 2026-09-28), keeping its
+   severity stripe on the left. Its actions (Acknowledge, Resolve) are plain
+   words in the accent, no frame: the card is the surface. */
+:root[data-style="glass"] .alerts__item {
+  border: 1px solid var(--panel-border); border-left-width: 4px; border-radius: 14px;
+  background: var(--panel-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--panel-rim), var(--box-shadow);
+}
+:root[data-style="glass"] .alerts__item--critical { border-left-color: var(--danger); }
+:root[data-style="glass"] .alerts__item--warning { border-left-color: var(--warning, #b7791f); }
+:root[data-style="glass"] .alerts__actions { gap: 1.25rem; }
+:root[data-style="glass"] .alerts__actions .btn {
+  padding-inline: 0; border: none; border-radius: 0;
+  background: none; box-shadow: none; color: var(--primary); font-weight: 600;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+:root[data-style="glass"] .alerts__actions .btn::before { content: none; }
+:root[data-style="glass"] .alerts__actions .btn:hover:not(:disabled) { background: none; text-decoration: underline; }
+
+/* ---- Branding: the logo and favicon cards, frosted ------------------------ */
+
+/* The KPI cards' frosted panel (the owner, 2026-09-28). The preview inside
+   keeps its own light or dark ground, so a logo is judged on the background
+   it will sit on. */
+:root[data-style="glass"] .branding__file {
+  border: 1px solid var(--panel-border); border-radius: 18px;
+  background: var(--panel-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--panel-rim), var(--box-shadow);
+}
+:root[data-style="glass"] .branding__file-preview { border-radius: 12px; }
+
+/* ---- Security: every section a frosted panel ------------------------------ */
+
+/* Alerts, Kill Switches, Blocked Networks and the rest (the owner,
+   2026-09-28): the KPI cards' frosted panel. The alerts inside are frosted
+   cards of their own. */
+:root[data-style="glass"] .security__section {
+  border: 1px solid var(--panel-border); border-radius: 18px;
+  background: var(--panel-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--panel-rim), var(--box-shadow);
+}
+
+/* ---- Backups: every section and card frosted ------------------------------ */
+
+/* The Security tab's frosted panel (the owner, 2026-09-28), for each section
+   (the backup key, the two backup kinds, retention, recent runs, disk space,
+   storage targets, restore) and the cards inside them. The backup key notice
+   keeps its red stripe. */
+:root[data-style="glass"] .backups__section,
+:root[data-style="glass"] .backup-card {
+  border: 1px solid var(--panel-border); border-radius: 18px;
+  background: var(--panel-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--panel-rim), var(--box-shadow);
+}
+:root[data-style="glass"] .backup-card { border-radius: 14px; }
+:root[data-style="glass"] .backups__section.backup-key-notice { border-left: 4px solid var(--danger); }
+
+/* ---- Administration: every section and card frosted ----------------------- */
+
+/* Groups, Branding, About, Settings and the rest, and a space's own
+   settings (the owner, 2026-09-28):
+   the frosted panel for every section and card on an Administration tab.
+   The Support Tesria card keeps its accent stroke. */
+:root[data-style="glass"] .page-wrap--admin .profile__section,
+:root[data-style="glass"] .page-wrap--admin .card,
+:root[data-style="glass"] .page-wrap--space-settings .profile__section,
+:root[data-style="glass"] .page-wrap--space-settings .card,
+:root[data-style="glass"] .about-card {
+  border: 1px solid var(--panel-border); border-radius: 18px;
+  background: var(--panel-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--panel-rim), var(--box-shadow);
+}
+:root[data-style="glass"] .about-card--support { border-color: var(--primary); }
+:root[data-style="glass"] .page-wrap--admin .backups__section.backup-key-notice { border-left: 4px solid var(--danger); }
+
+/* An outlined button stays flat in glass: no fill, no sheen, no gradient
+   stroke, only the 2px accent outline (index.css). */
+:root[data-style="glass"] .btn--outline {
+  background: transparent; border: 2px solid var(--primary); color: var(--primary);
+  box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+:root[data-style="glass"] .btn--outline::before { content: none; }
+:root[data-style="glass"] .btn--outline:hover { background: color-mix(in srgb, var(--primary) 10%, transparent); }
+
+/* ---- A frosted drop-down (the About page's package filter) ---------------- */
+
+/* A glass pill at the page's control height, with an accent chevron (on
+   its wrapper, below) in place of the browser's arrow (the owner, 2026-09-28). The list it opens
+   is the system's own. */
+:root[data-style="glass"] select.glass-select {
+  -webkit-appearance: none; appearance: none;
+  box-sizing: border-box; height: var(--ctl-page); min-width: 0; width: auto;
+  padding: 0 2.4rem 0 1rem; border-radius: 999px; color: var(--text);
+  border: 1px solid var(--glass-border);
+  background:
+    var(--glass-sheen), var(--glass);
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: blur(14px) saturate(170%);
+  box-shadow: inset 0 1px 0 var(--btn-in-top), inset 0 -1px 0 var(--btn-in-bot), var(--btn-shadow);
+  cursor: pointer;
+}
+/* The chevron, in the accent: drawn on the wrapper (a select has no
+   ::after, and a picture in its background cannot take a CSS color). */
+.glass-select-wrap { display: contents; }
+:root[data-style="glass"] .glass-select-wrap { position: relative; display: inline-flex; }
+:root[data-style="glass"] .glass-select-wrap::after {
+  content: ""; position: absolute; right: 1rem; top: 50%; width: 12px; height: 8px; margin-top: -4px;
+  background: var(--primary); pointer-events: none;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+/* No accent ring or border when clicked (the owner, 2026-09-28): Chrome
+   counts a click on a select as keyboard focus, so this is for both. */
+:root[data-style="glass"] select.glass-select:focus,
+:root[data-style="glass"] select.glass-select:focus-visible { outline: none; border-color: var(--glass-border); }
+:root[data-style="glass"] select.glass-select option { color: initial; }
+/* In the permissions picker: its own select rule is more specific. */
+:root[data-style="glass"] .principal-picker select.glass-select { height: var(--ctl-page); padding: 0 2.4rem 0 1rem; min-width: 130px; }
+
+/* Open, the list is a frosted panel like the appearance menu, where the
+   browser lets a select's list be styled (Chrome and Edge 135 and later);
+   elsewhere it stays the system's own. */
+@supports (appearance: base-select) {
+  :root[data-style="glass"] select.glass-select,
+  :root[data-style="glass"] select.glass-select::picker(select) { appearance: base-select; }
+  :root[data-style="glass"] select.glass-select::picker-icon { display: none; }
+  /* The styled select lays its label out itself: centered in the pill. */
+  :root[data-style="glass"] select.glass-select { display: inline-flex; align-items: center; }
+  :root[data-style="glass"] select.glass-select::picker(select) {
+    margin-top: 6px; padding: 0.35rem; min-width: anchor-size(width);
+    border: 1px solid var(--panel-border); border-radius: 14px;
+    background: var(--panel-bg), color-mix(in srgb, var(--surface) 88%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: var(--panel-rim), var(--box-shadow);
+  }
+  :root[data-style="glass"] select.glass-select option {
+    color: var(--text); padding: 0.45rem 0.75rem; border-radius: 8px; font-size: 0.9rem;
+  }
+  :root[data-style="glass"] select.glass-select option:hover,
+  :root[data-style="glass"] select.glass-select option:focus-visible { background: var(--glass-hover); outline: none; }
+  :root[data-style="glass"] select.glass-select option:checked {
+    background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--text); font-weight: 600;
+  }
+  :root[data-style="glass"] select.glass-select option::checkmark { color: var(--primary); }
+}
+
+/* ---- Viewing a page: no bar, the breadcrumb at the sidebar's top ---------- */
+
+/* On a computer the page's action bar takes no height: its buttons float at
+   the top right, still sticky, and the breadcrumb moves up to line up with
+   the top of the floating sidebar (the owner, 2026-09-28). The breadcrumb
+   leaves room on the right for the buttons. */
+@media (min-width: 641px) {
+  :root[data-style="glass"] .page-actionbar:not(.page-actionbar--editor) {
+    height: 0; padding-top: 0; padding-bottom: 0; align-items: flex-start; overflow: visible;
+  }
+  :root[data-style="glass"] .page-actionbar:not(.page-actionbar--editor) > * { margin-top: 0.75rem; }
+  :root[data-style="glass"] .space-content .breadcrumb { padding-top: 0.75rem; padding-right: 24rem; }
+  /* With the bar gone, the page starts closer to the breadcrumb too. */
+  :root[data-style="glass"] .page-column > .breadcrumb + .page-wrap { padding-top: 0.25rem; }
+}
+/* The Danger Zone keeps its red edge on the frost. */
+:root[data-style="glass"] .page-wrap--space-settings .danger-zone { border-color: color-mix(in srgb, var(--danger) 45%, transparent); }

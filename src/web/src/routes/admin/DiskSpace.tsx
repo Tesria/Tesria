@@ -18,7 +18,7 @@ import type { DiskChart } from '../../api/client'
  * A real device name is kept, because on a server that is the useful detail.
  */
 function diskName(filesystem: string | null): string {
-  if (!filesystem || /^virtiofs|^osxfs|^grpcfuse/i.test(filesystem)) return 'This machine'
+  if (!filesystem || /^virtiofs|^osxfs|^grpcfuse/i.test(filesystem)) return 'This Machine'
   return filesystem
 }
 
@@ -101,8 +101,8 @@ export function DiskSpace({ disks }: { disks: DiskChart[] }) {
   if (disks.length === 0) return null
 
   return (
-    <section className="profile__section profile__section--wide" id="disk-space">
-      <h2>Disk space</h2>
+    <section className="profile__section profile__section--wide backups__section" id="disk-space">
+      <h2>Disk Space</h2>
       <p className="muted small">
         What this machine&rsquo;s disk is holding: the live wiki, the backups of it, and
         everything else on the same disk. Measured through the host&rsquo;s own filesystem,

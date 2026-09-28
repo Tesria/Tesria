@@ -155,15 +155,15 @@ export function RecoveryCodesPrompt() {
             )}
             <div className="row-gap">
               <button type="submit" className="btn btn--primary" disabled={busy}>
-                {busy ? 'Generating…' : unsaved ? 'Make new codes' : 'Generate codes'}
+                {busy ? 'Generating…' : unsaved ? 'Make New Codes' : 'Generate Codes'}
               </button>
               {unsaved && (
                 <button type="button" className="btn btn--ghost" disabled={busy} onClick={() => void confirmSaved()}>
-                  I have my codes
+                  I Have My Codes
                 </button>
               )}
               <button type="button" className="btn btn--ghost" onClick={dismiss}>
-                Not now
+                Not Now
               </button>
             </div>
           </form>

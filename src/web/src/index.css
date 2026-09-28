@@ -29,6 +29,9 @@
      2026-09-27); until 0.8.1 the bar was 52px with 34px controls. */
   --topbar-h: 64px;
   --ctl: 48px;
+  /* Buttons below the top bar: 38px, about 80% of the bar's, in whole
+     pixels (the owner's rule, 2026-09-28). */
+  --ctl-page: 38px;
   --bg: #ffffff;
   --bg-alt: #f4f5f7;
   /* Raised surfaces: cards, the paper sheet, popovers, the topbar, inputs.
@@ -157,6 +160,28 @@ button { font: inherit; color: inherit; }
 .row-gap { display: flex; gap: 0.5rem; }
 .page-wrap { max-width: 900px; margin: 0 auto; padding: var(--page-pad); }
 .page-wrap--full { max-width: none; }
+/* The space home's heading row: the watch button lines up with the top bar's
+   right edge (1rem in from the window), past the centered column. The wrapper
+   is a size container, so 100cqw is the page area's width and the column's
+   side gap is max(0, (width - 900px) / 2). Only the heading row is in it:
+   a container is a containing block for fixed-position descendants. */
+.space-home__head-wrap { container-type: inline-size; }
+.space-home__head { padding-bottom: 0; }
+.space-home__head > .btn {
+  margin-left: auto;
+  margin-right: calc(1rem + var(--safe-right) - var(--page-pad) - max(0px, (100cqw - 900px) / 2));
+}
+.space-home__body { padding-top: 0; }
+/* The space's icon beside the title, and the watch toggle beside it, are a
+   phone's and a computer's respectively: on a phone the toggle is in the
+   space bar's ... menu (SpacePage.tsx), and on a computer the sidebar shows
+   the icon. (The bar itself shows only on a phone.) */
+.space-home__title { display: flex; align-items: center; gap: 0.6rem; }
+.space-home__icon { display: none; }
+@media (max-width: 640px) {
+  .space-home__icon { display: inline-flex; }
+  .space-home__head > .btn { display: none; }
+}
 
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   /* A title + action button (space/page header, history preview header)
@@ -180,7 +205,20 @@ button { font: inherit; color: inherit; }
 .btn--danger { background: transparent; border-color: var(--border); color: var(--danger); }
 .btn--danger:hover { background: var(--danger-soft); }
 .btn--sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
+/* Outlined: flat, a 2px stroke and the text in the accent (the About page's
+   Copy buttons, the owner, 2026-09-28). The same in both styles. */
+.btn--outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+/* The 2px stroke takes 1px more on each side than a button's usual border:
+   1px less padding keeps the size. */
+.btn--outline.btn--sm { padding: calc(0.3rem - 1px) calc(0.6rem - 1px); }
+.btn--outline:hover { background: color-mix(in srgb, var(--primary) 10%, transparent); filter: none; }
 .btn--block { display: flex; width: 100%; margin: 0.5rem 0; }
+/* On Windows (data-os, set before paint in index.html) Segoe UI's metrics
+   put a label's capitals about 1px below the button's center (the owner saw
+   + New Page sit low): 1px less padding above and 1px more below. The Mac's
+   system font centers exactly, so this is Windows only. */
+:root[data-os="windows"] .btn { padding-top: calc(0.45rem - 1px); padding-bottom: calc(0.45rem + 1px); }
+:root[data-os="windows"] .btn--sm { padding-top: calc(0.3rem - 1px); padding-bottom: calc(0.3rem + 1px); }
 
 .link-btn {
   background: none; border: none; padding: 0; cursor: pointer;
@@ -413,7 +451,9 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
    useTopbarFit), and they center within whatever height the row has. */
 .topbar__link {
   display: inline-flex; align-items: center; gap: 0.25rem; white-space: nowrap;
-  padding: 0.3rem 0.6rem; border-radius: 4px; color: var(--muted); font-size: 0.9rem;
+  /* The username's color, as PAGES and Space Settings in the sidebar (the
+     owner, 2026-09-28); the current one keeps the accent. */
+  padding: 0.3rem 0.6rem; border-radius: 4px; color: var(--text); font-size: 0.9rem;
   background: none; border: none; cursor: pointer;
 }
 .topbar__link:hover { background: var(--bg-alt); text-decoration: none; }
@@ -457,6 +497,11 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
   position: absolute; left: 0; top: 0; display: flex; align-items: center; white-space: nowrap;
   visibility: hidden; pointer-events: none; height: 0; overflow: visible;
 }
+/* The ruler lays the bar out at its natural width, which can be wider than
+   the window (a phone, or a window with a classic scrollbar), and must not
+   widen the page: the bar clips sideways. Only sideways: its menus hang
+   below it. */
+.topbar { overflow-x: clip; }
 .topbar__ruler > * { flex: none; }
 .topbar__ruler .topbar__hamburger { display: inline-flex; }
 .topbar__ruler .topbar__search { flex: none; }
@@ -532,7 +577,9 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
   background: none; border: none; cursor: pointer;
   padding: 0.2rem 0.3rem; line-height: 1; border-radius: 4px; color: var(--muted);
 }
-.theme-toggle:hover, .theme-toggle.is-open { color: var(--text); background: var(--hover); }
+.theme-toggle:hover, .theme-toggle.is-open,
+/* The bell shows it is open as the theme button does (the owner, 2026-09-28). */
+.notif__bell:hover, .notif__bell.is-open { color: var(--text); background: var(--hover); }
 .theme-menu { position: relative; display: inline-flex; }
 .theme-menu__panel {
   position: absolute; right: 0; top: calc(100% + 8px); z-index: 20;
@@ -549,9 +596,45 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 }
 .theme-menu__heading {
   margin: 0 0 0.4rem; font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.03em; color: var(--muted);
+  /* The sidebar's PAGES color (the owner, 2026-09-28). */
+  letter-spacing: 0.03em; color: var(--text);
 }
 .theme-menu__modes { display: flex; flex-direction: column; gap: 0.1rem; margin-bottom: 0.85rem; }
+/* Reduce Motion under Style (shown with glass): a row like the options, with
+   an on/off switch at its right. */
+.theme-menu__switch {
+  display: flex; align-items: center; gap: 0.6rem; width: 100%; text-align: left;
+  background: none; border: none; border-radius: 4px; padding: 0.4rem 0.5rem; margin-top: 0.2rem;
+  cursor: pointer; color: var(--text);
+}
+.theme-menu__switch:hover { background: var(--bg-alt); }
+.switch {
+  position: relative; flex: none; width: 36px; height: 20px; border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 25%, transparent); transition: background 0.15s;
+}
+.switch__knob {
+  position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); transition: transform 0.15s;
+}
+.switch.is-on { background: var(--primary); }
+.switch.is-on .switch__knob { transform: translateX(16px); }
+/* A switch with its label beside it, on a page (Show Resolved in the
+   security alerts): no frame, the switch then the words. */
+.switch-row {
+  display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.25rem 0;
+  background: none; border: none; cursor: pointer; color: var(--text); font: inherit;
+}
+.switch-row:focus-visible .switch { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* A rule between the sections (Theme, Style, Accent color), and the titles
+   and the accent dots in line with the options' content, not the panel's
+   edge (the owner, 2026-09-28). The dots spread across the options' width,
+   the first and last on their inner edges. */
+.theme-menu__modes + .theme-menu__heading { border-top: 1px solid var(--border); padding-top: 0.75rem; }
+.theme-menu__heading { padding-left: 0.5rem; padding-right: 0.5rem; }
+.theme-menu__accents { flex-wrap: nowrap; justify-content: space-between; padding: 0 0.5rem 7px; }
+/* 7px: the gap under the selected dot's ring then matches the gap above
+   THEME's capitals (the ring reaches 4px past the dot, and the capitals
+   start about 3px into their line). */
 .theme-menu__mode {
   display: flex; align-items: center; gap: 0.6rem; width: 100%; text-align: left;
   background: none; border: none; border-radius: 4px; padding: 0.4rem 0.5rem;
@@ -586,6 +669,15 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .notif__bell { position: relative; display: inline-flex; background: none; border: none; cursor: pointer; padding: 0.2rem 0.3rem; line-height: 1; color: var(--muted); }
 .notif__bell:hover { color: var(--text); }
 .notif__badge { position: absolute; top: -2px; right: -4px; background: var(--danger); color: var(--on-primary); font-size: 0.65rem; font-weight: 700; border-radius: 999px; padding: 0.05rem 0.35rem; min-width: 16px; text-align: center; }
+/* In the top bar the bell's button is 48px round the 20px icon (the shared
+   control height), and flat draws no circle: the count sits on the icon's
+   top-right corner, not the invisible box's (glass.css places it on the
+   circle). */
+:root:not([data-style="glass"]) .topbar .notif__badge {
+  top: calc(50% - 19px); right: calc(50% - 19px);
+  box-sizing: border-box; height: 17px; min-width: 17px; padding: 0 0.3rem;
+  display: inline-flex; align-items: center; justify-content: center; line-height: 1;
+}
 .notif__dropdown { position: absolute; right: 0; top: calc(100% + 8px); width: min(340px, calc(100vw - 2rem)); max-height: 420px; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); z-index: 20; }
 /* Phone-only close button on the theme and notification popups: the
    same affordance as the hamburger's. */
@@ -605,6 +697,14 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
   .notif__dropdown { position: fixed; left: 1rem; right: 1rem; top: 60px; width: auto; }
 }
 .notif__header { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 0.9rem; }
+/* The panel's title in the same style as THEME in the appearance menu and
+   PAGES in the sidebar (the owner, 2026-09-28): small bold capitals. */
+.notif__title {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text);
+}
+/* Docked at the top of the panel while the list scrolls under it (the
+   owner, 2026-09-28). */
+.notif__header { position: sticky; top: 0; z-index: 1; background: var(--surface); }
 .notif__list { list-style: none; margin: 0; padding: 0; }
 .notif__item { display: flex; flex-direction: column; gap: 0.15rem; width: 100%; text-align: left; background: none; border: none; border-bottom: 1px solid var(--border); padding: 0.6rem 0.75rem; cursor: pointer; font-size: 0.85rem; color: var(--text); }
 .notif__item:hover { background: var(--bg-alt); }
@@ -711,6 +811,16 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
    lets a flex child actually shrink below its content and scroll. */
 .sidebar .tree-section { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .sidebar .tree-section__heading { flex: 0 0 auto; }
+/* The sidebar's PAGES heading at the size of the button on its row, in both
+   styles (the owner, 2026-09-28). */
+.sidebar .tree-section__heading { font-size: 15px; color: var(--text); }
+.sidebar .tree-section__heading > span:first-child { gap: 0.55rem; }
+.sidebar .tree-section__heading > span:first-child svg { width: 22px; height: 22px; }
+/* Space settings, in the sidebar's foot, as tall as the PAGES heading: a
+   little larger, since PAGES is bold capitals and this is lowercase. */
+.sidebar .sidebar__trash { font-size: 17px; gap: 0.55rem; color: var(--text); }
+.sidebar .sidebar__trash.is-active { color: var(--primary-dark); }
+.sidebar .sidebar__trash svg { width: 22px; height: 22px; }
 .sidebar .tree {
   flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
   /* Room for the scrollbar so rows do not sit under it. */
@@ -823,7 +933,7 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
   min-width: 0; flex: 1 1 auto; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
 }
 a.space-actionbar__pages:hover { text-decoration: underline; }
-.space-actionbar__actions { display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; }
+.space-actionbar__actions { display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; margin-left: auto; }
 
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   .space-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
@@ -1473,6 +1583,9 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
      do not fit move into the Style menu) and by the container queries on
      .page-actionbar__primary above, so nothing viewport-specific is needed. */
 }
+/* Viewing a page, the bar's last button (the ... menu) ends where the top
+   bar's avatar does, at every width (the owner, 2026-09-28). */
+.page-actionbar:not(.page-actionbar--editor) { padding-right: calc(1rem + var(--safe-right)); }
 
 .overflow-menu { position: relative; display: inline-flex; }
 .overflow-menu__trigger {
@@ -1510,6 +1623,28 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .tab { background: none; border: none; border-bottom: 2px solid transparent; padding: 0.5rem 0.9rem; cursor: pointer; color: var(--muted); font-size: 0.9rem; flex-shrink: 0; }
 .tab.is-active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
 .tab-panel { padding: 1rem 0; }
+/* A tab bar that fits instead of scrolling (OverflowTabs.tsx): the tabs
+   that fit, then a ••• button with the rest in a menu. Nothing overflows,
+   so the menu can hang out of the bar. The ruler is an invisible copy that
+   the widths are measured from. */
+.tabs.tabs--fit { overflow: visible; position: relative; z-index: 6; flex-wrap: nowrap; }
+/* z-index: a frosted card below is a layer of its own (its blur), painted after the bar; the ••• menu has to sit above it. */
+.tabs--fit > .tab { flex: none; }
+.tabs__more { position: relative; flex: none; display: flex; }
+.tabs__more-btn { display: inline-flex; align-items: center; justify-content: center; }
+.tabs__menu { top: calc(100% + 6px); right: 0; left: auto; }
+.tabs__menu .btn { justify-content: flex-start; width: 100%; }
+.tabs__menu .btn.is-active { color: var(--primary); font-weight: 600; }
+.tabs__ruler {
+  position: absolute; left: 0; top: 0; width: 0; height: 0; overflow: hidden;
+  visibility: hidden; pointer-events: none;
+}
+.tabs__ruler-row { display: flex; width: max-content; white-space: nowrap; }
+.tabs__ruler-row > .tab { flex: none; }
+/* Tab labels as the top bar's Spaces and Admin: the text color, not muted,
+   at the same weight (the owner, 2026-09-28). */
+.tabs .tab:not(.is-active), .tabs__ruler-row > .tab { color: var(--text); font-weight: 500; }
+.tabs .tab.is-active { font-weight: 600; }
 
 /* ---- comments ------------------------------------------------------------ */
 .comment-form { display: flex; gap: 0.5rem; align-items: flex-start; margin-bottom: 1rem; }
@@ -2346,7 +2481,12 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .space-actionbar__pages { display: inline-flex; align-items: center; gap: 0.45rem; }
 
 .icon-picker { display: grid; gap: 1rem; }
-.icon-picker__current { display: flex; align-items: flex-start; gap: 1rem; }
+.icon-picker__current { display: flex; align-items: stretch; gap: 1rem; }
+/* Beside the 64px icon: its line at the icon's top edge, the buttons at its
+   bottom edge (the owner, 2026-09-28). */
+.icon-picker__side { display: flex; flex-direction: column; justify-content: space-between; min-height: 64px; }
+.icon-picker__side > p { margin: 0; line-height: 1.2; }
+.profile__section .icon-picker__side .btn { margin-top: 0; }
 .icon-picker__emoji, .icon-picker__colors {
   border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.35rem;
 }
@@ -3283,7 +3423,19 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
 .topbar.is-collapsed .topbar__collapsible .topbar__link { height: auto; padding: 0.6rem 0.9rem; }
 /* tesria.com's weights: links medium, the current one included; buttons semibold. */
 .topbar__nav .topbar__link, .topbar__nav .topbar__link.is-active { font-weight: 500; }
-.topbar__me .topbar__username { font-weight: 500; }
+.topbar__me .topbar__username { font-weight: 500; color: var(--text); } /* the bar's text color, as Spaces and Admin: not muted */
+/* Minimal draws no circle round the theme and bell icons, so what shows is
+   their ink, and the gaps between the ink should be even (the owner,
+   2026-09-28). Measured in the bar (Chrome, light theme): the sun's ink is
+   17.3px of its 20px box, the bell's 14.8px starting 2.6px in, and the
+   unread count's right edge is fixed at the bell's center plus 19px, whatever
+   its number. Unadjusted, the gaps were 46.3px (theme to bell) and 19.4px
+   (count to avatar). The bell steps 16px towards the theme and, while a
+   count shows, keeps 11px more on its right: both gaps come to 30px, and
+   31px from the bell to the avatar with no count. The two are wrappers
+   (.theme-menu, .notif) in the bar. */
+:root:not([data-style="glass"]) .topbar__right > .theme-menu + .notif { margin-left: -16px; }
+:root:not([data-style="glass"]) .topbar__right > .notif:has(.notif__badge) { margin-right: 11px; }
 .topbar__right > .btn { font-weight: 600; }
 /* In the hamburger menu the current item is bold and in the accent color,
    with no tint behind it; the rest are plain text (the owner, 2026-09-27).

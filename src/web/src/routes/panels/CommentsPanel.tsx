@@ -46,7 +46,7 @@ export function CommentsPanel({ pageId, readOnly = false, canEdit = false }: { p
       {resolved.length > 0 && (
         <>
           <button type="button" className="link-btn comments__resolved-toggle" onClick={() => setShowResolved((v) => !v)}>
-            {showResolved ? 'Hide resolved' : `Show resolved (${resolved.length})`}
+            {showResolved ? 'Hide Resolved' : `Show Resolved (${resolved.length})`}
           </button>
           {showResolved && (
             <ul className="comment-list comment-list--resolved">
@@ -91,7 +91,7 @@ export function CommentItem({ node, pageId, onChanged, readOnly = false, canEdit
     const ok = await ask({
       title: 'Delete this comment?',
       danger: true,
-      confirmLabel: 'Delete the comment',
+      confirmLabel: 'Delete the Comment',
       body: <p>Replies to it stay, under a note saying this one was deleted.</p>,
     })
     if (!ok) return

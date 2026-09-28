@@ -11,7 +11,7 @@ import { useState } from 'react'
 export function RecoveryCodes({
   codes,
   onDone,
-  doneLabel = "I've saved these",
+  doneLabel = "I've Saved These",
 }: {
   codes: string[]
   onDone?: () => void

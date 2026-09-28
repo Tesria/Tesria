@@ -19,7 +19,7 @@ type Props = {
  * Those used to leave instantly, and it was not obvious how to get back.
  */
 export function LeaveEditorDialog({ isNew, keepsDraft, busy, error, onStay, onLeave, onPublish }: Props) {
-  const leaveLabel = isNew ? 'Discard page' : 'Leave unpublished'
+  const leaveLabel = isNew ? 'Discard Page' : 'Leave Unpublished'
   const detail = isNew
     ? 'This page has not been published yet. Leaving now discards it.'
     : keepsDraft
@@ -33,10 +33,10 @@ export function LeaveEditorDialog({ isNew, keepsDraft, busy, error, onStay, onLe
         {error && <p className="alert alert--error">{error}</p>}
         <div className="leave-dialog__actions">
           <button type="button" className="btn btn--primary" onClick={onPublish} disabled={busy} autoFocus>
-            {busy ? 'Publishing…' : isNew ? 'Publish and leave' : 'Update and leave'}
+            {busy ? 'Publishing…' : isNew ? 'Publish and Leave' : 'Update and Leave'}
           </button>
           <button type="button" className="btn btn--danger" onClick={onLeave} disabled={busy}>{leaveLabel}</button>
-          <button type="button" className="btn btn--ghost" onClick={onStay} disabled={busy}>Stay in the editor</button>
+          <button type="button" className="btn btn--ghost" onClick={onStay} disabled={busy}>Stay in the Editor</button>
         </div>
       </div>
     </div>,

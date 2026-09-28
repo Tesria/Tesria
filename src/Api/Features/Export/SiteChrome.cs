@@ -222,13 +222,13 @@ public static partial class SiteChrome
     /// has no React left to re-render the text. <c>data-width-label</c> names
     /// the state the label belongs to, while the text names what clicking
     /// does, which is the same inversion the reading view's button has: while
-    /// the page is full width the button offers "Normal width".
+    /// the page is full width the button offers "Normal Width".
     /// </remarks>
     private static string WidthToggle() =>
         """
         <button type="button" class="btn btn--ghost btn--sm" data-export-width-toggle>
-        <span data-width-label="normal">&#10530; Full width</span>
-        <span data-width-label="full" style="display: none">&#10529; Normal width</span>
+        <span data-width-label="normal">&#10530; Full Width</span>
+        <span data-width-label="full" style="display: none">&#10529; Normal Width</span>
         </button>
         """;
 

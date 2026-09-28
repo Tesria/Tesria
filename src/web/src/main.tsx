@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, createRoutesFromElements, Navigate, Route, RouterProvider } from 'react-router-dom'
 import './index.css'
 import './glass.css'
+import { watchScrolling } from './scrollbars'
 import { AuthProvider } from './auth/AuthContext'
 import { InstanceProvider } from './InstanceContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
@@ -133,6 +134,8 @@ const router = createBrowserRouter(
         </Route>,
   ),
 )
+
+watchScrolling()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

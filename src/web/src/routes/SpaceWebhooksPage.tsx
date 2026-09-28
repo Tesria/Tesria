@@ -47,7 +47,7 @@ export function SpaceWebhooksPage() {
     const ok = await ask({
       title: 'Delete this webhook?',
       danger: true,
-      confirmLabel: 'Delete the webhook',
+      confirmLabel: 'Delete the Webhook',
       body: <p>This space stops sending events to it. The receiving end is not told.</p>,
     })
     if (!ok) return
@@ -101,7 +101,7 @@ export function SpaceWebhooksPage() {
           Events
           <input value={events} onChange={(e) => setEvents(e.target.value)} placeholder="* or page.updated,comment.created" />
         </label>
-        <button type="submit" className="btn btn--primary">Add webhook</button>
+        <button type="submit" className="btn btn--primary">Add Webhook</button>
       </form>
 
       {hooks && hooks.length === 0 && <p className="muted">No webhooks configured.</p>}

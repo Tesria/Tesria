@@ -100,7 +100,7 @@ export function AdminUsersPage() {
                 className="btn btn--ghost btn--sm"
                 onClick={() => navigator.clipboard.writeText(link.url).catch(() => {})}
               >
-                Copy{link.label ? ` the ${link.label === 'Through Tailscale' ? 'Tailscale' : 'usual'} link` : ''}
+                Copy{link.label ? ` the ${link.label === 'Through Tailscale' ? 'Tailscale' : 'Usual'} Link` : ''}
               </button>
             </div>
           ))}
@@ -223,7 +223,7 @@ export function AdminUsersPage() {
                           u.id, u.role === UserRole.Admin ? UserRole.Member : UserRole.Admin,
                         ), 'Could not change the role.')}
                       >
-                        {u.role === UserRole.Admin ? 'Demote' : 'Make admin'}
+                        {u.role === UserRole.Admin ? 'Demote' : 'Make Admin'}
                       </button>
                     )}
                     {iAmOwner && !isSelf && u.status === UserStatus.Active && (
@@ -236,7 +236,7 @@ export function AdminUsersPage() {
                             const ok = await ask({
                               title: `Make ${u.displayName} the owner of this instance?`,
                               danger: true,
-                              confirmLabel: 'Transfer ownership',
+                              confirmLabel: 'Transfer Ownership',
                               body: (
                                 <>
                                   <p>You become an administrator.</p>
@@ -253,7 +253,7 @@ export function AdminUsersPage() {
                           })()
                         }}
                       >
-                        Transfer ownership
+                        Transfer Ownership
                       </button>
                     )}
                     {!isSelf && !protectedRow && (
@@ -275,11 +275,11 @@ export function AdminUsersPage() {
                         type="button"
                         className="link-btn"
                         disabled={busy}
-                        onClick={() => confirmThen(u, `Sign ${u.displayName} out everywhere?`, 'Sign out everywhere',
+                        onClick={() => confirmThen(u, `Sign ${u.displayName} out everywhere?`, 'Sign Out Everywhere',
                           'Every browser signed in to this account is signed out on its next request. They can sign in again.',
                           () => api.admin.users.revokeSessions(u.id), 'Could not revoke sessions.', false)}
                       >
-                        Sign out
+                        Sign Out
                       </button>
                     )}
                     {!othersOwnerRow && (
@@ -287,16 +287,16 @@ export function AdminUsersPage() {
                         type="button"
                         className="link-btn"
                         disabled={busy}
-                        onClick={() => confirmThen(u, `Revoke every API token of ${u.displayName}?`, 'Revoke the tokens',
+                        onClick={() => confirmThen(u, `Revoke every API token of ${u.displayName}?`, 'Revoke the Tokens',
                           'Every script or assistant using one of their tokens stops working, and the tokens cannot be brought back: they would have to make new ones.',
                           () => api.admin.users.revokeTokens(u.id), 'Could not revoke tokens.')}
                       >
-                        Revoke tokens
+                        Revoke Tokens
                       </button>
                     )}
                     {u.hasPassword && !othersOwnerRow && (
                       <button type="button" className="link-btn" disabled={busy} onClick={() => issueReset(u)}>
-                        Reset password
+                        Reset Password
                       </button>
                     )}
                     {u.totpEnabled && u.role !== UserRole.Owner && u.id !== me?.id
@@ -309,7 +309,7 @@ export function AdminUsersPage() {
                           const ok = await ask({
                             title: `Turn off two-factor for ${u.displayName}?`,
                             danger: true,
-                            confirmLabel: 'Turn off two-factor',
+                            confirmLabel: 'Turn Off Two-Factor',
                             body: (
                               <>
                                 <p>For someone who has lost the phone with their authenticator app and every recovery code. They sign in with their password alone until they set two-factor up again.</p>
@@ -320,7 +320,7 @@ export function AdminUsersPage() {
                           if (ok) await act(u.id, () => api.admin.users.disableTwoFactor(u.id), 'Could not turn off two-factor.')
                         }}
                       >
-                        Turn off two-factor
+                        Turn Off Two-Factor
                       </button>
                     )}
                     {u.lockedUntil && new Date(u.lockedUntil) > new Date() && (

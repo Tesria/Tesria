@@ -24,7 +24,7 @@ export function SpaceAccessEditor({ spaceKey }: { spaceKey: string }) {
     const ok = await ask({
       title: 'Make this space open again?',
       danger: true,
-      confirmLabel: 'Make it open',
+      confirmLabel: 'Make It Open',
       body: (
         <p>Every grant below is removed, and everyone signed in can view, edit and administer the space and everything in it. Page restrictions stay. Every administrator is alerted.</p>
       ),
@@ -83,7 +83,7 @@ export function SpaceAccessEditor({ spaceKey }: { spaceKey: string }) {
       ) : (
         <p className="muted small">
           Only the principals listed below can access this space. Admin implies Edit implies View.{' '}
-          <button type="button" className="link-btn" onClick={() => void makeOpen()}>Make this space open again</button>
+          <button type="button" className="link-btn" onClick={() => void makeOpen()}>Make This Space Open Again</button>
         </p>
       )}
 

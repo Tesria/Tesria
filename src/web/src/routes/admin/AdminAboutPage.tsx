@@ -94,12 +94,12 @@ export function AdminAboutPage() {
         </p>
         <p className="muted small">Brian, who makes Tesria</p>
         <a className="btn btn--primary" href={TESRIA_SUPPORT} target="_blank" rel="noopener noreferrer">
-          Ways to support Tesria
+          Ways to Support Tesria
         </a>
       </section>
 
       <section className="about-card">
-        <h2>Known vulnerabilities</h2>
+        <h2>Known Vulnerabilities</h2>
         <p className="muted small">
           When a new vulnerability is announced, check here whether this Tesria is affected. The check asks
           OSV.dev, the open vulnerability database behind GitHub’s and npm’s security advisories, about
@@ -141,7 +141,7 @@ export function AdminAboutPage() {
         {!check && <p className="muted">Not checked yet.</p>}
         {canCheck && (
           <button type="button" className="btn" disabled={checking} onClick={runCheck}>
-            {checking ? 'Checking…' : 'Check for known vulnerabilities'}
+            {checking ? 'Checking…' : 'Check for Known Vulnerabilities'}
           </button>
         )}
         <p className="muted small">
@@ -150,7 +150,7 @@ export function AdminAboutPage() {
         </p>
       </section>
 
-      <h2 className="dash__heading" id="container-images">Container images</h2>
+      <h2 className="dash__heading" id="container-images">Container Images</h2>
       <p className="muted small">
         The operating systems and runtimes Tesria runs on, one image each. OSV.dev does not cover them.
         To check one for known vulnerabilities, run its command on the server (Docker Scout comes with
@@ -168,7 +168,7 @@ export function AdminAboutPage() {
               {d.note && <span className="muted small"> {d.note}</span>}
               <div className="about-images__command">
                 <code>{command}</code>
-                <button type="button" className="btn btn--ghost btn--sm"
+                <button type="button" className="btn btn--sm btn--outline"
                   onClick={() => navigator.clipboard.writeText(command).catch(() => {})}>Copy</button>
               </div>
             </li>
@@ -184,10 +184,10 @@ export function AdminAboutPage() {
       </p>
       <div className="row-gap about-filter">
         <input type="search" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filter by package or license" aria-label="Filter by package or license" />
-        <select value={component} onChange={(e) => setComponent(e.target.value)} aria-label="Part of Tesria">
+        <span className="glass-select-wrap"><select className="glass-select" value={component} onChange={(e) => setComponent(e.target.value)} aria-label="Part of Tesria">
           <option value="all">All parts</option>
           {components.map(([c]) => <option key={c} value={c}>{c}</option>)}
-        </select>
+        </select></span>
       </div>
       <table className="admin-table">
         <thead>

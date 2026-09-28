@@ -55,12 +55,13 @@ export function PrincipalPicker({ operationNames, onAdd, addLabel = 'Add' }: Pro
 
   return (
     <form className="principal-picker" onSubmit={submit}>
-      <select value={type} onChange={(e) => setType(Number(e.target.value))} aria-label="Principal type">
+      {/* Frosted drop-downs in the glass style, as the About page's (glass.css). */}
+      <span className="glass-select-wrap"><select className="glass-select" value={type} onChange={(e) => setType(Number(e.target.value))} aria-label="Principal type">
         <option value={PrincipalType.User}>User</option>
         <option value={PrincipalType.Group}>Group</option>
-      </select>
+      </select></span>
 
-      <select
+      <span className="glass-select-wrap"><select className="glass-select"
         value={principalId}
         onChange={(e) => setPrincipalId(e.target.value)}
         aria-label="Principal"
@@ -70,13 +71,13 @@ export function PrincipalPicker({ operationNames, onAdd, addLabel = 'Add' }: Pro
         {options.map((o) => (
           <option key={o.id} value={o.id}>{o.label}</option>
         ))}
-      </select>
+      </select></span>
 
-      <select value={operation} onChange={(e) => setOperation(Number(e.target.value))} aria-label="Operation">
+      <span className="glass-select-wrap"><select className="glass-select" value={operation} onChange={(e) => setOperation(Number(e.target.value))} aria-label="Operation">
         {operationNames.map((name, value) => (
           <option key={name} value={value}>{name}</option>
         ))}
-      </select>
+      </select></span>
 
       <button type="submit" className="btn btn--primary btn--sm" disabled={busy || !principalId}>
         {busy ? 'Saving…' : addLabel}

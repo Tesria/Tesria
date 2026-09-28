@@ -35,7 +35,7 @@ export function PackExportSection({ spaceKey }: { spaceKey: string }) {
 
       <div className="row-gap" style={{ marginTop: '0.75rem' }}>
         <button type="button" className="btn btn--primary" disabled={exporting.busy} onClick={run}>
-          {exporting.busy ? 'Packing…' : 'Export as a pack'}
+          {exporting.busy ? 'Packing…' : 'Export as a Pack'}
         </button>
       </div>
       <ExportProgressView state={exporting} noun="pack" />

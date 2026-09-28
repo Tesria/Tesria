@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useDismissable } from '../hooks/useDismissable'
+import { usePopoverMotion } from './popoverMotion'
 import {
-  ACCENTS, accentLock, applyAccent, applyPreference, applyStyle, hasBrandAccent, readAccent,
-  readPreference, readStyle, saveAccent, savePreference, saveStyle, STYLES, systemTheme, themeLock,
+  ACCENTS, accentLock, applyAccent, applyPreference, applyReduceMotion, applyStyle, hasBrandAccent, readAccent,
+  readPreference, readReduceMotion, readStyle, saveAccent, savePreference, saveReduceMotion, saveStyle, STYLES, systemTheme, themeLock,
   THEME_LABELS, THEME_ORDER, type AccentName, type StylePreference, type ThemePreference,
 } from '../theme'
 import { useInstance } from '../InstanceContext'
@@ -84,8 +85,10 @@ export function ThemeToggle() {
   const [preference, setPreference] = useState<ThemePreference>(readPreference)
   const [accent, setAccent] = useState<AccentName>(readAccent)
   const [style, setStyle] = useState<StylePreference>(readStyle)
+  const [reduceMotion, setReduceMotion] = useState<boolean>(readReduceMotion)
   const [resolvedSystem, setResolvedSystem] = useState<'light' | 'dark'>(systemTheme)
   const ref = useDismissable<HTMLDivElement>(open, () => setOpen(false))
+  const panel = usePopoverMotion<HTMLDivElement>(open)
 
   // index.html already applied both before first paint; these keep the DOM in
   // step after a change, and re-assert after a hot reload.
@@ -94,6 +97,7 @@ export function ThemeToggle() {
     applyAccent(accent)
   }, [accent])
   useEffect(() => { applyStyle(style) }, [style])
+  useEffect(() => { applyReduceMotion(reduceMotion) }, [reduceMotion])
 
   useEffect(() => {
     const query = window.matchMedia('(prefers-color-scheme: dark)')
@@ -105,6 +109,12 @@ export function ThemeToggle() {
   function chooseMode(next: ThemePreference) {
     setPreference(next)
     savePreference(next)
+  }
+
+  function toggleReduceMotion() {
+    const next = !reduceMotion
+    setReduceMotion(next)
+    saveReduceMotion(next)
   }
 
   function chooseStyle(next: StylePreference) {
@@ -150,8 +160,8 @@ export function ThemeToggle() {
       >
         <TriggerIcon />
       </button>
-      {open && (
-        <div className="theme-menu__panel" role="dialog" aria-label="Appearance">
+      {panel.shown && (
+        <div className="theme-menu__panel" role="dialog" aria-label="Appearance" ref={panel.ref}>
           <button type="button" className="popover__close" aria-label="Close" onClick={() => setOpen(false)}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
@@ -197,7 +207,6 @@ export function ThemeToggle() {
                   onClick={() => chooseStyle(s.name)}
                   aria-pressed={active}
                 >
-                  <span className={`theme-menu__style-swatch theme-menu__style-swatch--${s.name}`} aria-hidden="true" />
                   <span className="theme-menu__mode-text">
                     <span className="theme-menu__mode-name">{s.label}</span>
                     <span className="theme-menu__mode-hint">{s.hint}</span>
@@ -206,6 +215,22 @@ export function ThemeToggle() {
                 </button>
               )
             })}
+            {/* Only glass moves, so only glass has the switch. */}
+            {style === 'glass' && (
+              <button
+                type="button"
+                role="switch"
+                aria-checked={reduceMotion}
+                className="theme-menu__switch"
+                onClick={toggleReduceMotion}
+              >
+                <span className="theme-menu__mode-text">
+                  <span className="theme-menu__mode-name">Reduce Motion</span>
+                  <span className="theme-menu__mode-hint">No animations when panels open and close</span>
+                </span>
+                <span className={reduceMotion ? 'switch is-on' : 'switch'} aria-hidden="true"><span className="switch__knob" /></span>
+              </button>
+            )}
           </div>
 
           {!accentLocked && (<>

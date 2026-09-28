@@ -46,7 +46,7 @@ export function SpaceBreadcrumb({ space, tree }: { space: Space; tree: PageTreeN
     crumbs.push({ label: 'New page' })
   } else if (matchSettings) {
     const tab = matchSettings.params['*'] ?? ''
-    crumbs.push(tab ? { label: 'Space settings', to: `/spaces/${space.key}/settings` } : { label: 'Space settings' })
+    crumbs.push(tab ? { label: 'Space Settings', to: `/spaces/${space.key}/settings` } : { label: 'Space Settings' })
     if (tab) crumbs.push({ label: SETTINGS_TAB_LABELS[tab] ?? tab })
   } else {
     // Space landing: the h1 there already says where we are.

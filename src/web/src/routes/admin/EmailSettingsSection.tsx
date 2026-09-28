@@ -203,7 +203,7 @@ export function EmailSettingsSection({
 
       {signInKind !== null && signInKind !== MailSignIn.Password && (
         <fieldset className="mail-choice">
-          <legend>How Tesria signs in</legend>
+          <legend>How Tesria Signs In</legend>
           <label className="admin__toggle admin__toggle--inline">
             <input type="radio" name="mail-signin" checked={useSignIn} onChange={() => setUseSignIn(true)} />
             <span>
@@ -295,11 +295,11 @@ export function EmailSettingsSection({
               disabled={busy || !clientId.trim() || (!secretSet && !clientSecret)}
               onClick={signIn}
             >
-              {signedIn && mail.signIn === signInKind ? `Sign in again with ${signInName}` : `Sign in with ${signInName}`}
+              {signedIn && mail.signIn === signInKind ? `Sign In Again With ${signInName}` : `Sign In With ${signInName}`}
             </button>
             {signedIn && (
               <button type="button" className="btn btn--ghost" disabled={busy} onClick={signOut}>
-                Sign out
+                Sign Out
               </button>
             )}
           </div>
@@ -315,7 +315,7 @@ export function EmailSettingsSection({
                 />
               </label>
               <button type="submit" className="btn btn--primary" disabled={busy || !pasted.trim()}>
-                Finish signing in
+                Finish Signing In
               </button>
             </form>
           )}
@@ -359,7 +359,7 @@ export function EmailSettingsSection({
             </p>
           )}
           <button type="submit" className="btn btn--primary" disabled={busy}>
-            Save mail settings
+            Save Mail Settings
           </button>
         </form>
       )}
@@ -380,7 +380,7 @@ export function EmailSettingsSection({
             }
           }}
         >
-          Send test email to me
+          Send Test Email to Me
         </button>
       </div>
       {testResult && <p className={testResult.startsWith('Sent') ? 'profile__ok' : 'alert alert--error'}>{testResult}</p>}

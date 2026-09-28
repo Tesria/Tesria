@@ -113,7 +113,7 @@ export function SpaceIconPicker({ space, onChanged }: { space: Space; onChanged:
     <div className="icon-picker">
       <div className="icon-picker__current">
         <SpaceIcon space={space} size={64} />
-        <div>
+        <div className="icon-picker__side">
           <p className="muted small">
             {isImage
               ? 'Your uploaded picture.'
@@ -124,14 +124,14 @@ export function SpaceIconPicker({ space, onChanged }: { space: Space; onChanged:
           <div className="row-gap">
             <button type="button" className="btn btn--ghost btn--sm" disabled={busy}
               onClick={() => fileInput.current?.click()}>
-              {isImage ? 'Replace picture' : 'Upload picture'}
+              {isImage ? 'Replace Picture' : 'Upload Picture'}
             </button>
             {space.iconKind !== SpaceIconKind.None && (
               <button type="button" className="btn btn--ghost btn--sm" disabled={busy}
                 onClick={() => (isImage
                   ? save(() => api.spaces.removeIcon(space.key), 'Could not remove the picture.')
                   : setIcon(SpaceIconKind.None, null))}>
-                Use the default
+                Use the Default
               </button>
             )}
           </div>
@@ -168,7 +168,7 @@ export function SpaceIconPicker({ space, onChanged }: { space: Space; onChanged:
             maxLength={16}
           />
         </label>
-        <button type="submit" className="btn btn--ghost btn--sm" disabled={busy || !custom.trim()}>Use it</button>
+        <button type="submit" className="btn btn--ghost btn--sm" disabled={busy || !custom.trim()}>Use It</button>
       </form>
 
       <fieldset className="icon-picker__colors" disabled={busy || isImage}>

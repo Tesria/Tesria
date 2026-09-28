@@ -12,7 +12,7 @@ type Props = {
 }
 
 /** A watch/unwatch button backed by whichever page or space endpoints are passed in. */
-export function WatchToggle({ watchKey, fetchStatus, watch, unwatch, label = 'page' }: Props) {
+export function WatchToggle({ watchKey, fetchStatus, watch, unwatch, label = 'Page' }: Props) {
   const [watching, setWatching] = useState<boolean | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -46,7 +46,7 @@ export function WatchToggle({ watchKey, fetchStatus, watch, unwatch, label = 'pa
   return (
     <button type="button" className="btn btn--ghost" onClick={toggle} disabled={busy}>
       <WatchIcon />
-      {watching ? 'Watching' : `Watch this ${label}`}
+      {watching ? 'Watching' : `Watch This ${label}`}
     </button>
   )
 }

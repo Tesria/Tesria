@@ -18,8 +18,8 @@ import { DonutChart } from '../../components/PieChart'
 
 const SLOT_TITLE: Record<string, string> = {
   cloud: 'Cloud',
-  nas: 'Network drive',
-  removable: 'Removable drive',
+  nas: 'Network Drive',
+  removable: 'Removable Drive',
 }
 
 const KIND_LABEL: Record<string, string> = {
@@ -239,7 +239,7 @@ function TargetCard({
       {canRun && (
         <div className="backup-card__actions">
           <button type="button" className="btn btn--ghost btn--sm" disabled={testing} onClick={testNow}>
-            {testing ? 'Testing…' : 'Test connection'}
+            {testing ? 'Testing…' : 'Test Connection'}
           </button>
           {slot === 'removable' && (
             <button
@@ -248,7 +248,7 @@ function TargetCard({
               disabled={busy || primary.present === false}
               onClick={copyNow}
             >
-              {busy ? 'Starting…' : 'Copy now'}
+              {busy ? 'Starting…' : 'Copy Now'}
             </button>
           )}
         </div>
@@ -390,8 +390,8 @@ export function StorageTargets({
   const slots = [...new Set(enabled.map((t) => t.slot))]
 
   return (
-    <section className="profile__section profile__section--wide" id="storage-targets">
-      <h2>Storage targets</h2>
+    <section className="profile__section profile__section--wide backups__section" id="storage-targets">
+      <h2>Storage Targets</h2>
       <p className="muted small">
         Where copies of this instance are kept, other than on this machine. Configured in
         the server&rsquo;s <code>.env</code> and read only by the backup agents: the keys and

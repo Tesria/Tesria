@@ -31,7 +31,7 @@ export type LayoutWidth = (typeof LAYOUT_WIDTHS)[number]
 export const LAYOUT_WIDTH_LABELS: Record<LayoutWidth, string> = {
   default: 'Centered',
   wide: 'Wide',
-  full: 'Full width',
+  full: 'Full Width',
 }
 
 function isLayoutWidth(value: unknown): value is LayoutWidth {

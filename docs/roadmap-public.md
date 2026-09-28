@@ -20,7 +20,7 @@
 - An Ask an agent button that tells your AI assistant what you want, and exactly where on the page
 - Review mode: changes from people, scripts or AI assistants wait for approval before going live
 - Published hardware requirements, and a lighter install for small servers
-- A glass look for the app, beside today's flat one, chosen in your theme settings
+- A glass look for the app, beside today's minimal one, chosen in your theme settings
 
 ## Ideas
 - Semantic search, using your own embedding service or a small local model if your server can run it

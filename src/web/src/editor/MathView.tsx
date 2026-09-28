@@ -85,7 +85,7 @@ export function MathView({ node, editor, selected, updateAttributes }: ReactNode
             onClick={() => updateAttributes({ display: false, latex: draft })}>Inline</button>
           <button type="button" className={display ? 'link-btn is-active' : 'link-btn'} aria-pressed={display}
             onMouseDown={(e) => e.preventDefault()}
-            onClick={() => updateAttributes({ display: true, latex: draft })}>Own line</button>
+            onClick={() => updateAttributes({ display: true, latex: draft })}>Own Line</button>
         </span>
         </span>
       ) : (

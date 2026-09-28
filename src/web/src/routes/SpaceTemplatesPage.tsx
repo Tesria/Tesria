@@ -44,7 +44,7 @@ export function SpaceTemplatesPage() {
     const ok = await ask({
       title: `Delete the template ${t.name}?`,
       danger: true,
-      confirmLabel: 'Delete the template',
+      confirmLabel: 'Delete the Template',
       body: t.spaceId
         ? <p>It stops being offered when a page is created in this space. Pages already made from it are not changed.</p>
         : <p>It is instance-wide, so it stops being offered in every space. Pages already made from it are not changed.</p>,
@@ -109,7 +109,7 @@ export function SpaceTemplatesPage() {
           (2026-09-23). A template is made from a page, so the page is
           where the button is. */}
       <section className="profile__section profile__section--wide template-howto">
-        <h2>Making a template</h2>
+        <h2>Making a Template</h2>
         <p className="muted">A template is a page that new pages start from, such as meeting notes or a project brief.</p>
         <ol>
           <li>Write a page the way you want new ones to start: its headings, a table to fill in, and hints such as &ldquo;Owner: who?&rdquo;.</li>
@@ -121,9 +121,9 @@ export function SpaceTemplatesPage() {
       {error && <p className="alert alert--error">{error}</p>}
       {templates === null ? <p className="muted">Loading…</p> : (
         <>
-          <h2 className="settings-subhead">This space</h2>
+          <h2 className="settings-subhead">This Space</h2>
           {list(own, 'No templates of this space\'s own yet.')}
-          <h2 className="settings-subhead">Instance-wide</h2>
+          <h2 className="settings-subhead">Instance-Wide</h2>
           {list(shared, 'No instance-wide templates.')}
         </>
       )}

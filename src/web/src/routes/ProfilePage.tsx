@@ -128,7 +128,7 @@ export function ProfilePage() {
       <div className="profile__heading">
         <h1>Your profile</h1>
         <button type="button" className="btn btn--ghost" onClick={async () => { await logout(); navigate('/login') }}>
-          Sign out
+          Sign Out
         </button>
       </div>
       {/* Full-width cards, one to a row, like the admin pages (the owner,
@@ -150,7 +150,7 @@ export function ProfilePage() {
             </label>
             {note(nameStatus)}
             <button type="submit" className="btn btn--primary" disabled={nameBusy}>
-              {nameBusy ? 'Saving…' : 'Save name'}
+              {nameBusy ? 'Saving…' : 'Save Name'}
             </button>
           </form>
         </section>
@@ -178,7 +178,7 @@ export function ProfilePage() {
               </label>
               {note(emailStatus)}
               <button type="submit" className="btn btn--primary" disabled={emailBusy}>
-                {emailBusy ? 'Saving…' : 'Change email'}
+                {emailBusy ? 'Saving…' : 'Change Email'}
               </button>
             </form>
           )}
@@ -226,7 +226,7 @@ export function ProfilePage() {
               </label>
               {note(passwordStatus)}
               <button type="submit" className="btn btn--primary" disabled={passwordBusy}>
-                {passwordBusy ? 'Saving…' : 'Change password'}
+                {passwordBusy ? 'Saving…' : 'Change Password'}
               </button>
             </form>
           )}
@@ -262,7 +262,7 @@ export function ProfilePage() {
               guide sets this device up: it takes about three minutes, once per device.
             </p>
             <p>
-              <a className="btn" href="/trust">Set up this device</a>
+              <a className="btn" href="/trust">Set Up This Device</a>
             </p>
           </section>
         )}

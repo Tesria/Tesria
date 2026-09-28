@@ -55,7 +55,7 @@ export function SessionsSection() {
                   {!s.revokedAt && !s.current && (
                     <button type="button" className="link-btn" disabled={busy}
                       onClick={() => revoke(() => api.auth.sessions.revoke(s.id))}>
-                      Sign out
+                      Sign Out
                     </button>
                   )}
                 </div>
@@ -67,7 +67,7 @@ export function SessionsSection() {
       {live.length > 1 && (
         <button type="button" className="btn btn--ghost" disabled={busy}
           onClick={() => revoke(() => api.auth.sessions.revokeOthers())}>
-          Sign out all other sessions
+          Sign Out All Other Sessions
         </button>
       )}
     </>

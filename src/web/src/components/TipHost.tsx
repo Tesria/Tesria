@@ -139,8 +139,8 @@ export function TipHost() {
         <strong>{tip.title}</strong>
         <p className="muted small">{tip.body}</p>
         <div className="tip__actions">
-          <button type="button" className="btn btn--primary btn--sm" onClick={gotIt}>Got it</button>
-          <button type="button" className="link-btn" onClick={turnOff}>Turn off tips</button>
+          <button type="button" className="btn btn--primary btn--sm" onClick={gotIt}>Got It</button>
+          <button type="button" className="link-btn" onClick={turnOff}>Turn Off Tips</button>
         </div>
       </div>
     </aside>

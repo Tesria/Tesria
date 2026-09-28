@@ -108,17 +108,17 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
     { key: 'subscript', group: 'format', icon: <span className="tb-glyph">x₂</span>, label: 'Subscript', isActive: editor.isActive('subscript'), run: () => chain().toggleSubscript().run() },
     { key: 'outdent', group: 'paragraph', icon: <OutdentIcon />, label: 'Outdent', isActive: false, run: () => chain().outdent().run() },
     { key: 'indent', group: 'paragraph', icon: <IndentIcon />, label: 'Indent', isActive: false, run: () => chain().indent().run() },
-    { key: 'clear', group: 'format', icon: <ClearFormattingIcon />, label: 'Clear formatting', isActive: false, run: () => chain().clearFormatting().run() },
-    { key: 'task', group: 'paragraph', icon: <TaskListIcon />, label: 'Task list', isActive: editor.isActive('taskList'), run: () => chain().toggleTaskList().run() },
-    { key: 'ordered', group: 'paragraph', icon: <OrderedListIcon />, label: 'Ordered list', isActive: editor.isActive('orderedList'), run: () => chain().toggleOrderedList().run() },
-    { key: 'bullet', group: 'paragraph', icon: <BulletListIcon />, label: 'Bullet list', isActive: editor.isActive('bulletList'), run: () => chain().toggleBulletList().run() },
+    { key: 'clear', group: 'format', icon: <ClearFormattingIcon />, label: 'Clear Formatting', isActive: false, run: () => chain().clearFormatting().run() },
+    { key: 'task', group: 'paragraph', icon: <TaskListIcon />, label: 'Task List', isActive: editor.isActive('taskList'), run: () => chain().toggleTaskList().run() },
+    { key: 'ordered', group: 'paragraph', icon: <OrderedListIcon />, label: 'Ordered List', isActive: editor.isActive('orderedList'), run: () => chain().toggleOrderedList().run() },
+    { key: 'bullet', group: 'paragraph', icon: <BulletListIcon />, label: 'Bullet List', isActive: editor.isActive('bulletList'), run: () => chain().toggleBulletList().run() },
     // Alignment, color and highlight are dropdowns on the row; in the menu
     // they become three alignment items and two inline palettes (see
     // overflowActions below). Their keys are measured like any other item.
     { key: 'align', group: 'paragraph', icon: <AlignLeftIcon />, label: 'Alignment', isActive: false, run: () => {} },
-    { key: 'textcolor', group: 'color', icon: <TextColorIcon />, label: 'Text color', isActive: editor.isActive('textColor'), run: () => {} },
+    { key: 'textcolor', group: 'color', icon: <TextColorIcon />, label: 'Text Color', isActive: editor.isActive('textColor'), run: () => {} },
     { key: 'highlight', group: 'color', icon: <HighlightIcon />, label: 'Highlight', isActive: editor.isActive('highlight'), run: () => {} },
-    { key: 'code', group: 'format', icon: <InlineCodeIcon />, label: 'Inline code', isActive: editor.isActive('code'), run: () => chain().toggleCode().run() },
+    { key: 'code', group: 'format', icon: <InlineCodeIcon />, label: 'Inline Code', isActive: editor.isActive('code'), run: () => chain().toggleCode().run() },
     { key: 'strike', group: 'format', icon: <span className="tb-glyph tb-strike">S</span>, label: 'Strikethrough', isActive: editor.isActive('strike'), run: () => chain().toggleStrike().run() },
     { key: 'underline', group: 'format', icon: <span className="tb-glyph tb-underline">U</span>, label: 'Underline', isActive: editor.isActive('underline'), run: () => chain().toggleUnderline().run() },
     { key: 'italic', group: 'format', icon: <span className="tb-glyph tb-italic">I</span>, label: 'Italic', isActive: editor.isActive('italic'), run: () => chain().toggleItalic().run() },
@@ -130,9 +130,9 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
   const show = (key: string) => !overflowed.has(key)
 
   const alignOptions = [
-    { key: 'left', label: 'Align left', icon: <AlignLeftIcon />, isActive: editor.isActive({ textAlign: 'left' }) || !editor.isActive({ textAlign: 'center' }) && !editor.isActive({ textAlign: 'right' }) && !editor.isActive({ textAlign: 'justify' }), onSelect: () => chain().setTextAlign('left').run() },
-    { key: 'center', label: 'Align center', icon: <AlignCenterIcon />, isActive: editor.isActive({ textAlign: 'center' }), onSelect: () => chain().setTextAlign('center').run() },
-    { key: 'right', label: 'Align right', icon: <AlignRightIcon />, isActive: editor.isActive({ textAlign: 'right' }), onSelect: () => chain().setTextAlign('right').run() },
+    { key: 'left', label: 'Align Left', icon: <AlignLeftIcon />, isActive: editor.isActive({ textAlign: 'left' }) || !editor.isActive({ textAlign: 'center' }) && !editor.isActive({ textAlign: 'right' }) && !editor.isActive({ textAlign: 'justify' }), onSelect: () => chain().setTextAlign('left').run() },
+    { key: 'center', label: 'Align Center', icon: <AlignCenterIcon />, isActive: editor.isActive({ textAlign: 'center' }), onSelect: () => chain().setTextAlign('center').run() },
+    { key: 'right', label: 'Align Right', icon: <AlignRightIcon />, isActive: editor.isActive({ textAlign: 'right' }), onSelect: () => chain().setTextAlign('right').run() },
     // Was reachable only by Mod-Shift-J.
     { key: 'justify', label: 'Justify', icon: <AlignJustifyIcon />, isActive: editor.isActive({ textAlign: 'justify' }), onSelect: () => chain().setTextAlign('justify').run() },
   ]
@@ -142,7 +142,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
       current={editor.getAttributes('highlight').color as string | undefined}
       onPick={(color) => { chain().setHighlight({ color }).run(); close() }}
       onClear={() => { chain().unsetHighlight().run(); close() }}
-      clearLabel="No highlight"
+      clearLabel="No Highlight"
     />
   )
   const textColorPalette = (close: () => void) => (
@@ -151,7 +151,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
       current={isTextColor(editor.getAttributes('textColor').color) ? editor.getAttributes('textColor').color : null}
       onPick={(color) => { if (isTextColor(color)) chain().setTextColor(color).run(); close() }}
       onClear={() => { chain().unsetTextColor().run(); close() }}
-      clearLabel="Default color"
+      clearLabel="Default Color"
     />
   )
 
@@ -197,7 +197,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
           overflow={overflowActions}
           styles={[
             // The trigger reads "Normal text ⌄", as Confluence's does.
-            { key: 'p', label: 'Normal text', isActive: !headingLevel, onSelect: () => chain().setParagraph().run() },
+            { key: 'p', label: 'Normal Text', isActive: !headingLevel, onSelect: () => chain().setParagraph().run() },
             { key: 'h1', label: 'Heading 1', isActive: headingLevel === 1, onSelect: () => chain().setHeading({ level: 1 }).run() },
             { key: 'h2', label: 'Heading 2', isActive: headingLevel === 2, onSelect: () => chain().setHeading({ level: 2 }).run() },
             { key: 'h3', label: 'Heading 3', isActive: headingLevel === 3, onSelect: () => chain().setHeading({ level: 3 }).run() },

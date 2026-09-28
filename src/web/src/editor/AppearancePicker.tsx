@@ -2,7 +2,7 @@ import { APPEARANCES, APPEARANCE_LABELS, isAppearance } from './appearance'
 
 /**
  * The "Style" choice on a status, chart, diagram or code block (0.8.1):
- * Theme default, Flat or Glass. A plain select, like the chart's Type.
+ * Theme default, Minimal or Glass. A plain select, like the chart's Type.
  */
 export function AppearancePicker({
   value, onChange, className,

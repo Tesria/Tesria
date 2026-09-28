@@ -29,7 +29,7 @@ export function SiteExportSection({ spaceKey }: { spaceKey: string }) {
       <div className="setup__cards">
         <button type="button" className={`setup__card${audience === 'anonymous' ? ' is-chosen' : ''}`}
           onClick={() => setAudience('anonymous')}>
-          <strong>As the public sees it</strong>
+          <strong>As the Public Sees It</strong>
           <span className="muted small">
             Only what a reader with no account can already read. The space has to be
             published. Nothing private can get in by accident, whatever you can see.
@@ -37,7 +37,7 @@ export function SiteExportSection({ spaceKey }: { spaceKey: string }) {
         </button>
         <button type="button" className={`setup__card${audience === 'me' ? ' is-chosen' : ''}`}
           onClick={() => setAudience('me')}>
-          <strong>As me</strong>
+          <strong>As Me</strong>
           <span className="muted small">
             Everything you can read, including restricted pages. For a site you will
             put behind your own access control.
@@ -47,7 +47,7 @@ export function SiteExportSection({ spaceKey }: { spaceKey: string }) {
 
       <div className="row-gap" style={{ marginTop: '0.75rem' }}>
         <button type="button" className="btn btn--primary" disabled={exporting.busy} onClick={run}>
-          {exporting.busy ? 'Building the site…' : 'Export as a site'}
+          {exporting.busy ? 'Building the Site…' : 'Export as a Site'}
         </button>
       </div>
       <ExportProgressView state={exporting} noun="site" />

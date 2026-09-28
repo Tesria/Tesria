@@ -170,9 +170,11 @@ export function applyAccent(accent: AccentName): void {
 
 /*
  * A third axis beside the theme and the accent: how the chrome is drawn.
- * Flat is Tesria as it has always looked; glass is tesria.com's frosted
+ * Minimal is Tesria as it has always looked; glass is tesria.com's frosted
  * style (docs/brand, the glass guide). Expressed as `data-style="glass"` on
- * <html>; absent means flat. Per browser, like the theme, and applied before
+ * <html>; absent means minimal. Minimal was called Flat until 2026-09-28 and
+ * is still stored and keyed as 'flat' (browsers' saved choices, blocks'
+ * data-appearance): only the name people see changed. Per browser, like the theme, and applied before
  * first paint by the script in index.html.
  */
 export type StylePreference = 'flat' | 'glass'
@@ -180,7 +182,7 @@ export type StylePreference = 'flat' | 'glass'
 export const STYLE_STORAGE_KEY = 'tesria-style'
 
 export const STYLES: { name: StylePreference; label: string; hint: string }[] = [
-  { name: 'flat', label: 'Flat', hint: 'Solid surfaces, as Tesria has always looked' },
+  { name: 'flat', label: 'Minimal', hint: 'Solid surfaces, as Tesria has always looked' },
   { name: 'glass', label: 'Glass', hint: 'Frosted bars and buttons, like tesria.com' },
 ]
 
@@ -205,6 +207,40 @@ export function applyStyle(style: StylePreference): void {
   const root = document.documentElement
   if (style === 'glass') root.setAttribute('data-style', 'glass')
   else root.removeAttribute('data-style')
+}
+
+/*
+ * Reduce motion, a switch shown with the glass style (the owner, 2026-09-28):
+ * glass animates (the sidebar and the menus open and close, the bar docks,
+ * cards lift), and this stops all of it, as the system's own "reduce motion"
+ * already does. `data-motion="reduce"` on <html>, per browser, applied before
+ * first paint by the script in index.html.
+ */
+export const MOTION_STORAGE_KEY = 'tesria-reduce-motion'
+
+export function readReduceMotion(): boolean {
+  try { return localStorage.getItem(MOTION_STORAGE_KEY) === '1' } catch { return false }
+}
+
+export function saveReduceMotion(reduce: boolean): void {
+  try {
+    if (reduce) localStorage.setItem(MOTION_STORAGE_KEY, '1')
+    else localStorage.removeItem(MOTION_STORAGE_KEY)
+  } catch {
+    // Ignore: it still applies for this page's lifetime.
+  }
+}
+
+export function applyReduceMotion(reduce: boolean): void {
+  const root = document.documentElement
+  if (reduce) root.setAttribute('data-motion', 'reduce')
+  else root.removeAttribute('data-motion')
+}
+
+/** Whether to leave things still: this switch, or the system's setting. */
+export function motionReduced(): boolean {
+  return document.documentElement.getAttribute('data-motion') === 'reduce'
+    || window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
 /* ---- favicon ------------------------------------------------------------ */

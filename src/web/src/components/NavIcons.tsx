@@ -145,3 +145,18 @@ export function SidebarIcon() {
     </NavIcon>
   )
 }
+
+/**
+ * Download: an arrow down onto a tray. It replaced the "↓" character on the
+ * export links (the owner, 2026-09-28), which drew in the text's color and
+ * the platform's glyph rather than this set's stroke and the accent.
+ */
+export function DownloadIcon() {
+  return (
+    <NavIcon>
+      <path d="M12 4v11" />
+      <path d="m7 10 5 5 5-5" />
+      <path d="M5 20h14" />
+    </NavIcon>
+  )
+}

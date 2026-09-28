@@ -66,7 +66,7 @@ export function PageEmoji({ emoji, canEdit, onChange }: {
         </button>
       ) : (
         <button type="button" className="link-btn page-emoji__add" onClick={() => setOpen((v) => !v)}>
-          Add emoji
+          Add Emoji
         </button>
       )}
       {open && (
@@ -96,7 +96,7 @@ export function PageEmoji({ emoji, canEdit, onChange }: {
             <button type="submit" className="btn btn--sm" disabled={!pasted.trim()}>Use</button>
           </form>
           {error && <p className="alert alert--error">{error}</p>}
-          {emoji && <button type="button" className="link-btn link-btn--danger" onClick={() => void choose(null)}>Remove the emoji</button>}
+          {emoji && <button type="button" className="link-btn link-btn--danger" onClick={() => void choose(null)}>Remove the Emoji</button>}
         </div>
       )}
     </div>

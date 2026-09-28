@@ -56,7 +56,7 @@ export function HistoryPanel({
     // Not destructive, so the affirmative button is the ordinary one.
     const ok = await ask({
       title: `Restore version ${n}?`,
-      confirmLabel: `Restore version ${n}`,
+      confirmLabel: `Restore Version ${n}`,
       body: <p>This adds a new version with that content on top. Nothing in the history is lost.</p>,
     })
     if (!ok) return

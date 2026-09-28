@@ -52,6 +52,14 @@
         if (stored('tesria-style') === 'glass') {
           root.setAttribute('data-style', 'glass');
         }
+        if (stored('tesria-reduce-motion') === '1') {
+          root.setAttribute('data-motion', 'reduce');
+        }
+        // Windows draws the UI in Segoe UI, whose metrics sit capitals about
+        // 1px below a box's center; index.css nudges button text up there.
+        if (/Windows/.test(navigator.userAgent)) {
+          root.setAttribute('data-os', 'windows');
+        }
       })();
     </script>
   </head>

@@ -47,7 +47,7 @@ export function AdminSpacesPage() {
       ? {
         title: `Publish "${s.name}" to the internet?`,
         danger: true,
-        confirmLabel: 'Publish the space',
+        confirmLabel: 'Publish the Space',
         body: (
           <>
             <p>
@@ -61,7 +61,7 @@ export function AdminSpacesPage() {
       }
       : {
         title: `Withdraw "${s.name}" from public reading?`,
-        confirmLabel: 'Withdraw the space',
+        confirmLabel: 'Withdraw the Space',
         body: <p>Anonymous readers lose access to <strong>{s.key}</strong> within a minute.</p>,
       })
     if (!ok) return
@@ -85,7 +85,7 @@ export function AdminSpacesPage() {
   async function recoverAccess(s: AdminSpace) {
     const ok = await ask({
       title: `Give yourself access to "${s.name}"?`,
-      confirmLabel: 'Give me access',
+      confirmLabel: 'Give Me Access',
       body: (
         <>
           <p>You will be added to the space as an administrator, so you can read it and manage its permissions.</p>
@@ -180,7 +180,7 @@ export function AdminSpacesPage() {
               <td>
                 <div className="admin-table__actions">
                   <button type="button" className="link-btn" disabled={busy === s.id} onClick={() => recoverAccess(s)}>
-                    Get access
+                    Get Access
                   </button>
                 </div>
               </td>

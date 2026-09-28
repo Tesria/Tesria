@@ -90,10 +90,10 @@ export function LoginPage() {
             <input value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" required autoFocus />
           </label>
           <button type="submit" className="btn btn--primary" disabled={busy}>
-            {busy ? 'Checking…' : 'Sign in'}
+            {busy ? 'Checking…' : 'Sign In'}
           </button>
           <p className="muted small">
-            <button type="button" className="link-btn" onClick={() => { setChallenge(null); setCode(''); setError(null) }}>Start over</button>
+            <button type="button" className="link-btn" onClick={() => { setChallenge(null); setCode(''); setError(null) }}>Start Over</button>
           </p>
         </form>
       </AuthPage>
@@ -114,13 +114,13 @@ export function LoginPage() {
           <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
         </label>
         <button type="submit" className="btn btn--primary" disabled={busy}>
-          {busy ? 'Signing in…' : 'Sign in'}
+          {busy ? 'Signing In…' : 'Sign In'}
         </button>
         {oidc?.enabled && (
           <>
             <p className="muted small" style={{ textAlign: 'center', margin: '0.75rem 0 0' }}>or</p>
             <button type="button" className="btn btn--ghost" onClick={ssoLogin}>
-              Sign in with {oidc.displayName}
+              Sign In With {oidc.displayName}
             </button>
           </>
         )}

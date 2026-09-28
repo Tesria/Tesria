@@ -102,7 +102,7 @@ export function TocMenu({ editor }: { editor: TiptapEditor }) {
           </label>
 
           <button type="button" className="link-btn toc-menu__advanced" onClick={() => setAdvanced((v) => !v)} aria-expanded={advanced}>
-            {advanced ? 'Hide advanced' : 'Advanced'}
+            {advanced ? 'Hide Advanced' : 'Advanced'}
           </button>
           {advanced && (
             <>

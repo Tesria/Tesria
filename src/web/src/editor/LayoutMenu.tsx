@@ -79,7 +79,7 @@ export function LayoutMenu({ editor }: { editor: TiptapEditor }) {
           />
         ))}
         <span className="toolbar__sep" />
-        <ToolbarButton label="Remove layout" isActive={false} onClick={() => chain().removeLayout().run()} title="Remove the columns, keeping their content" />
+        <ToolbarButton label="Remove Layout" isActive={false} onClick={() => chain().removeLayout().run()} title="Remove the columns, keeping their content" />
       </div>
     </BubbleMenu>
   )

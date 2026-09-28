@@ -39,7 +39,7 @@ export type DynamicKind = {
 export const DYNAMIC_KINDS: DynamicKind[] = [
   {
     kind: 'children',
-    title: 'Children display',
+    title: 'Children Display',
     description: 'The pages beneath this one, kept up to date',
     icon: ChildrenBlockIcon,
     keywords: ['child', 'subpages', 'tree'],
@@ -57,7 +57,7 @@ export const DYNAMIC_KINDS: DynamicKind[] = [
   },
   {
     kind: 'recently-updated',
-    title: 'Recently updated',
+    title: 'Recently Updated',
     description: 'What changed most recently, and who changed it',
     icon: ClockIcon,
     keywords: ['recent', 'activity', 'changes'],
@@ -71,7 +71,7 @@ export const DYNAMIC_KINDS: DynamicKind[] = [
   },
   {
     kind: 'content-by-label',
-    title: 'Content by label',
+    title: 'Content by Label',
     description: 'Pages carrying the labels you name',
     icon: LabelIcon,
     keywords: ['label', 'tag', 'by label'],
@@ -98,7 +98,7 @@ export const DYNAMIC_KINDS: DynamicKind[] = [
   },
   {
     kind: 'change-history',
-    title: 'Change history',
+    title: 'Change History',
     description: 'This page\'s versions, newest first',
     icon: HistoryIcon,
     keywords: ['versions', 'history', 'revisions'],
@@ -119,7 +119,7 @@ export const DYNAMIC_KINDS: DynamicKind[] = [
   },
   {
     kind: 'include-page',
-    title: 'Include page',
+    title: 'Include Page',
     description: 'Show another page\'s content here',
     icon: IncludeIcon,
     keywords: ['include', 'embed', 'transclude'],
@@ -127,7 +127,7 @@ export const DYNAMIC_KINDS: DynamicKind[] = [
   },
   {
     kind: 'excerpt-include',
-    title: 'Excerpt include',
+    title: 'Excerpt Include',
     description: 'Show the excerpt marked on another page',
     icon: ExcerptIcon,
     keywords: ['excerpt', 'summary', 'include'],
@@ -135,7 +135,7 @@ export const DYNAMIC_KINDS: DynamicKind[] = [
   },
   {
     kind: 'page-properties-report',
-    title: 'Page properties report',
+    title: 'Page Properties Report',
     description: 'A table of the properties on every labeled page',
     icon: PropertiesIcon,
     keywords: ['properties', 'report', 'metadata'],
@@ -146,7 +146,7 @@ export const DYNAMIC_KINDS: DynamicKind[] = [
   },
   {
     kind: 'labels',
-    title: 'Labels list',
+    title: 'Labels List',
     description: 'This page\'s labels, the popular ones, or related ones',
     icon: LabelIcon,
     keywords: ['labels', 'tags', 'popular', 'related'],
@@ -164,7 +164,7 @@ export const DYNAMIC_KINDS: DynamicKind[] = [
   },
   {
     kind: 'task-report',
-    title: 'Task report',
+    title: 'Task Report',
     description: 'Action items across pages, by assignee and state',
     icon: TaskListIcon,
     keywords: ['tasks', 'action items', 'todo', 'assigned'],
@@ -194,7 +194,7 @@ export const DYNAMIC_KINDS: DynamicKind[] = [
   },
   {
     kind: 'page-tree',
-    title: 'Page tree',
+    title: 'Page Tree',
     description: 'The page tree, from here or from the space root',
     icon: TocIcon,
     keywords: ['tree', 'index', 'sitemap', 'navigation'],

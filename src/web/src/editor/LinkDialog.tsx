@@ -119,7 +119,7 @@ export function LinkDialog({ editor, open, onClose }: { editor: TiptapEditor; op
         <div className="row-gap link-dialog__actions">
           <button type="submit" className="btn btn--primary" disabled={!href.trim()}>Save</button>
           {existing && (
-            <button type="button" className="btn btn--danger" onClick={remove}>Remove link</button>
+            <button type="button" className="btn btn--danger" onClick={remove}>Remove Link</button>
           )}
           <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
         </div>

@@ -145,16 +145,16 @@ export function TableCellMenu({ editor }: { editor: TiptapEditor }) {
               delete it that is not "select every cell and press Backspace". */}
           <p className="cell-menu__heading">Table</p>
           <div className="cell-menu__actions">
-            <TableAction editor={editor} label="Header row" active={headerRowOn(editor)}
+            <TableAction editor={editor} label="Header Row" active={headerRowOn(editor)}
               run={() => editor.chain().focus().toggleHeaderRow().run()} />
-            <TableAction editor={editor} label="Header column" active={headerColumnOn(editor)}
+            <TableAction editor={editor} label="Header Column" active={headerColumnOn(editor)}
               run={() => editor.chain().focus().toggleHeaderColumn().run()} />
-            <TableAction editor={editor} label="Merge cells" disabled={!editor.can().mergeCells()}
+            <TableAction editor={editor} label="Merge Cells" disabled={!editor.can().mergeCells()}
               title="Select two or more cells first, by dragging across them"
               run={() => editor.chain().focus().mergeCells().run()} />
-            <TableAction editor={editor} label="Split cell" disabled={!editor.can().splitCell()}
+            <TableAction editor={editor} label="Split Cell" disabled={!editor.can().splitCell()}
               run={() => editor.chain().focus().splitCell().run()} />
-            <TableAction editor={editor} label="Delete table" danger
+            <TableAction editor={editor} label="Delete Table" danger
               run={() => { setOpen(false); editor.chain().focus().deleteTable().run() }} />
           </div>
           <p className="cell-menu__heading">Background color</p>
@@ -176,7 +176,7 @@ export function TableCellMenu({ editor }: { editor: TiptapEditor }) {
             current={current}
             onPick={(v) => applyBackground(v)}
             onClear={() => applyBackground(null)}
-            clearLabel="No color"
+            clearLabel="No Color"
           />
         </div>
       )}

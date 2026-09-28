@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
+import { OverflowTabs } from '../components/OverflowTabs'
 import { useSpaceContext } from './SpacePage'
 
 /**
@@ -19,19 +20,18 @@ import { useSpaceContext } from './SpacePage'
 export function SpaceSettingsLayout() {
   const context = useSpaceContext()
   const { space } = context
-  const tab = ({ isActive }: { isActive: boolean }) => (isActive ? 'tab is-active' : 'tab')
   const base = `/spaces/${space.key}/settings`
 
   return (
-    <div className="page-wrap">
-      <h1>Space settings</h1>
-      <nav className="tabs">
-        <NavLink to={base} end className={tab}>Details</NavLink>
-        <NavLink to={`${base}/permissions`} className={tab}>Permissions</NavLink>
-        <NavLink to={`${base}/templates`} className={tab}>Templates</NavLink>
-        <NavLink to={`${base}/webhooks`} className={tab}>Webhooks</NavLink>
-        <NavLink to={`${base}/trash`} className={tab}>Trash</NavLink>
-      </nav>
+    <div className="page-wrap page-wrap--space-settings">
+      <h1>Space Settings</h1>
+      <OverflowTabs items={[
+        { key: 'details', label: 'Details', to: base, end: true },
+        { key: 'permissions', label: 'Permissions', to: `${base}/permissions` },
+        { key: 'templates', label: 'Templates', to: `${base}/templates` },
+        { key: 'webhooks', label: 'Webhooks', to: `${base}/webhooks` },
+        { key: 'trash', label: 'Trash', to: `${base}/trash` },
+      ]} />
       <div className="tab-panel">
         <Outlet context={context} />
       </div>

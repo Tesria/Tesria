@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { NavLink, Outlet, useMatch, useOutletContext, useParams, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { api, type PageTreeNode, type Space } from '../api/client'
@@ -6,6 +6,8 @@ import { OverflowMenu } from '../components/OverflowMenu'
 import { PageTree } from '../components/PageTree'
 import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
 import { SpaceIcon } from '../components/SpaceIcon'
+import { WatchToggle } from '../components/WatchToggle'
+import { motionReduced } from '../theme'
 import { SettingsIcon, SidebarIcon } from '../components/NavIcons'
 import { usePublishSpaceNav } from '../components/spaceNav'
 import { useTitleSpace } from '../components/DocumentTitle'
@@ -27,6 +29,31 @@ function writeCollapsed(value: boolean) {
     else localStorage.removeItem(SIDEBAR_KEY)
   } catch { /* the choice lasts until the page is reloaded */ }
 }
+
+/**
+ * Hiding and showing the sidebar is animated in the glass style (the owner,
+ * 2026-09-28): the panel's top-left corner is where the round show-sidebar
+ * button appears, so hiding draws the panel's right and bottom edges in to
+ * that corner, leaving a circle the button's size, which bounces; showing
+ * opens the panel back out of it, settling with a slight overshoot. Minimal
+ * keeps its instant switch, and so does anyone who asks for reduced motion.
+ */
+function sidebarMotion(): boolean {
+  return document.documentElement.getAttribute('data-style') === 'glass'
+    && typeof Element.prototype.animate === 'function'
+    && !motionReduced()
+}
+/**
+ * The clip that leaves only the button-sized circle at the panel's top-left
+ * corner. The right and bottom edges come in while that corner keeps its
+ * shape (the owner, 2026-09-28): scaling the panel instead squashed it.
+ */
+function clipToButton(panel: HTMLElement): string {
+  const r = panel.getBoundingClientRect()
+  const size = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ctl-page')) || 38
+  return `inset(0 ${r.width - size}px ${r.height - size}px 0 round ${size / 2}px)`
+}
+const PANEL_CLIP = 'inset(0 0 0 0 round 18px)'
 
 export type SpaceOutletContext = {
   space: Space
@@ -50,6 +77,44 @@ export function SpacePage() {
   const [tree, setTree] = useState<PageTreeNode[]>([])
   const [error, setError] = useState<string | null>(null)
   const [collapsed, setCollapsed] = useState(readCollapsed)
+  const sidebarRef = useRef<HTMLElement>(null)
+  const railButtonRef = useRef<HTMLButtonElement>(null)
+  // Which way the toggle just went, for the element that has just appeared
+  // to finish the motion; and the shrink, held at its end until the panel is
+  // hidden, then let go.
+  const motion = useRef<'hide' | 'show' | null>(null)
+  const shrink = useRef<Animation | null>(null)
+  const [layoutMoving, setLayoutMoving] = useState(false)
+  // A layout effect, so a panel shown again is small before it is first painted.
+  useLayoutEffect(() => {
+    const m = motion.current
+    motion.current = null
+    shrink.current?.cancel()
+    shrink.current = null
+    if (m === 'hide') {
+      railButtonRef.current?.animate(
+        [
+          // It takes over from the panel's last circle at the same size.
+          { transform: 'scale(1)', opacity: 0.2 },
+          { transform: 'scale(1.14)', opacity: 1, offset: 0.45 },
+          { transform: 'scale(0.95)', offset: 0.75 },
+          { transform: 'scale(1)' },
+        ],
+        { duration: 440, easing: 'ease-out' },
+      )
+    }
+    if (m === 'show' && sidebarRef.current) {
+      const panel = sidebarRef.current
+      panel.animate(
+        [
+          { clipPath: clipToButton(panel), transform: 'none' },
+          { clipPath: PANEL_CLIP, transform: 'scale(1.012)', offset: 0.78 },
+          { clipPath: PANEL_CLIP, transform: 'none' },
+        ],
+        { duration: 420, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' },
+      )
+    }
+  }, [collapsed])
   const { width: sidebarWidth, set: setSidebarWidth } = useSidebarWidth()
   // "+ New" is contextual, matching Confluence: creating from an open page
   // makes a subpage of it, creating from anywhere else (the space landing,
@@ -128,13 +193,39 @@ export function SpacePage() {
   if (!space) return <p className="muted page-wrap">Loading…</p>
 
   const context: SpaceOutletContext = { space, tree, reloadTree, onSpaceChanged: setSpace }
-  const toggleSidebar = () => {
+  const flipSidebar = () => {
     setCollapsed((c) => { writeCollapsed(!c); return !c })
+  }
+  const toggleSidebar = () => {
+    const panel = sidebarRef.current
+    if (!collapsed && panel && sidebarMotion()) {
+      const a = panel.animate(
+        [
+          // The contents fade in the last stretch, so the circle hands over
+          // to the button, not a sliver of the space's icon.
+          { clipPath: PANEL_CLIP, opacity: 1 },
+          { opacity: 1, offset: 0.55 },
+          { clipPath: clipToButton(panel), opacity: 0.1 },
+        ],
+        { duration: 260, easing: 'cubic-bezier(0.55, 0, 0.8, 0.2)', fill: 'forwards' },
+      )
+      shrink.current = a
+      a.onfinish = () => {
+        motion.current = 'hide'
+        // The page's column slides over while the button bounces in.
+        setLayoutMoving(true)
+        window.setTimeout(() => setLayoutMoving(false), 340)
+        flipSidebar()
+      }
+      return
+    }
+    if (collapsed && sidebarMotion()) motion.current = 'show'
+    flipSidebar()
   }
 
   return (
     <div
-      className={collapsed ? 'space-layout space-layout--collapsed' : 'space-layout'}
+      className={['space-layout', collapsed && 'space-layout--collapsed', layoutMoving && 'is-moving'].filter(Boolean).join(' ')}
       style={{ '--sidebar-width': `${sidebarWidth}px` } as CSSProperties}
     >
       {/* Mobile only (hidden >640px): the sidebar below is always visible
@@ -142,10 +233,9 @@ export function SpacePage() {
           substitute for it. Back-to-space-home navigation lives in the
           breadcrumb now, not here, so this is just a label. */}
       <div className={isPageRoute ? 'space-actionbar space-actionbar--hidden-on-page' : 'space-actionbar'}>
-        <span className="space-actionbar__pages">
-          <SpaceIcon space={space} size={20} />
-          {space.name}
-        </span>
+        {/* No name here (the owner, 2026-09-28): the space home shows its
+            icon beside the big title just below, and elsewhere the
+            breadcrumb names the space. */}
         {user && (
           <div className="space-actionbar__actions">
             <NavLink to={newPageHref} className="btn btn--primary btn--sm">
@@ -154,7 +244,16 @@ export function SpacePage() {
             <OverflowMenu label="Space actions">
               {/* Permissions, webhooks and trash are tabs of Settings now,
                   so one entry reaches all four. */}
-              <NavLink to={`/spaces/${space.key}/settings`} className="btn"><SettingsIcon /> Space settings</NavLink>
+              {/* On a phone the watch toggle lives here, not beside the title,
+                  so the title and the tree sit higher. */}
+              <WatchToggle
+                watchKey={space.id}
+                label="Space"
+                fetchStatus={() => api.spaceWatch.status(space.key)}
+                watch={() => api.spaceWatch.watch(space.key)}
+                unwatch={() => api.spaceWatch.unwatch(space.key)}
+              />
+              <NavLink to={`/spaces/${space.key}/settings`} className="btn"><SettingsIcon /> Space Settings</NavLink>
             </OverflowMenu>
           </div>
         )}
@@ -166,13 +265,13 @@ export function SpacePage() {
           + New page button and its settings off the top of the screen. */}
       {collapsed && (
         <div className="sidebar-rail">
-          <button type="button" className="sidebar__toggle" onClick={toggleSidebar}
+          <button type="button" className="sidebar__toggle" onClick={toggleSidebar} ref={railButtonRef}
             title="Show the sidebar" aria-label="Show the sidebar" aria-expanded="false">
             <SidebarIcon />
           </button>
         </div>
       )}
-      <aside className="sidebar" hidden={collapsed}>
+      <aside className="sidebar" hidden={collapsed} ref={sidebarRef}>
         <SidebarResizer width={sidebarWidth} onResize={setSidebarWidth} />
         <div className="sidebar__top">
           <div className="sidebar__head">
@@ -192,7 +291,7 @@ export function SpacePage() {
           </div>
           {user && (
             <NavLink to={newPageHref} className="btn btn--primary btn--block">
-              + New page
+              + New Page
             </NavLink>
           )}
         </div>
@@ -208,7 +307,7 @@ export function SpacePage() {
               to={`/spaces/${space.key}/settings`}
               className={({ isActive }) => (isActive ? 'sidebar__trash is-active' : 'sidebar__trash')}
             >
-              <SettingsIcon /> Space settings
+              <SettingsIcon /> Space Settings
             </NavLink>
           </div>
         )}

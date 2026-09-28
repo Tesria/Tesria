@@ -87,14 +87,14 @@ export function ImageHoverMenu({ editor, getPageId, onCommentError }: Props) {
           <ToolbarButton key={value} label={label} isActive={align === value} onClick={() => setAlign(value)} title={title} />
         ))}
         {attrs.width != null && align !== 'full' && (
-          <ToolbarButton label="Original size" isActive={false}
+          <ToolbarButton label="Original Size" isActive={false}
             onClick={() => editor.chain().focus().updateAttributes('image', { width: null }).run()}
             title="Back to the picture's own size" />
         )}
         <span className="toolbar__sep" aria-hidden="true" />
         <div className="toolbar__link">
           <ToolbarButton label="Caption" isActive={Boolean(attrs.caption)} onClick={() => openText('caption')} title="A caption under the picture" />
-          <ToolbarButton label="Alt text" isActive={false} onClick={() => openText('alt')} title="What the picture shows, for people who cannot see it" />
+          <ToolbarButton label="Alt Text" isActive={false} onClick={() => openText('alt')} title="What the picture shows, for people who cannot see it" />
           {textField && (
             <form
               className="toolbar__link-popover"

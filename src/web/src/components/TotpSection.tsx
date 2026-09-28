@@ -96,7 +96,7 @@ export function TotpSection() {
                 Or a code from the app
                 <input value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" />
               </label>
-              <button type="submit" className="btn btn--ghost" disabled={busy || (!password && !code)}>Turn off</button>
+              <button type="submit" className="btn btn--ghost" disabled={busy || (!password && !code)}>Turn Off</button>
             </>
           )}
         </form>
@@ -111,7 +111,7 @@ export function TotpSection() {
             <input value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" required autoFocus />
           </label>
           <div className="row-gap">
-            <button type="submit" className="btn btn--primary" disabled={busy}>Turn on</button>
+            <button type="submit" className="btn btn--primary" disabled={busy}>Turn On</button>
             <button type="button" className="btn btn--ghost" onClick={() => setSetup(null)}>Cancel</button>
           </div>
         </form>
@@ -127,7 +127,7 @@ export function TotpSection() {
             <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
             <span className="muted small">Not needed within a few minutes of signing in.</span>
           </label>
-          <button type="submit" className="btn btn--primary" disabled={busy}>Set up two-factor</button>
+          <button type="submit" className="btn btn--primary" disabled={busy}>Set Up Two-Factor</button>
         </form>
       )}
     </>

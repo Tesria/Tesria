@@ -95,7 +95,7 @@ export function RecoveryCodesSection() {
           {error && <p className="alert alert--error">{error}</p>}
           <div className="row-gap">
             <button type="submit" className="btn btn--primary" disabled={busy}>
-              {busy ? 'Generating…' : 'Generate new codes'}
+              {busy ? 'Generating…' : 'Generate New Codes'}
             </button>
             <button
               type="button"
@@ -112,7 +112,7 @@ export function RecoveryCodesSection() {
         </form>
       ) : (
         <button type="button" className="btn btn--ghost" onClick={() => setConfirming(true)}>
-          {none ? 'Generate recovery codes' : 'Generate new codes'}
+          {none ? 'Generate Recovery Codes' : 'Generate New Codes'}
         </button>
       )}
     </>

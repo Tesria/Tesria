@@ -76,7 +76,7 @@ export function AdminDashboardPage() {
             className={r === range ? 'cell-menu__scope is-active' : 'cell-menu__scope'}
             onClick={() => setRange(r)}
           >
-            {r} days
+            {r} Days
           </button>
         ))}
       </div>
@@ -152,7 +152,7 @@ export function AdminDashboardPage() {
 
           <div className="dash__tables">
             <section className="dash__panel">
-              <h3 className="stat__label">Most viewed</h3>
+              <h3 className="stat__label">Most Viewed</h3>
               {data.usage.topPages.length === 0 ? (
                 <p className="muted small">No page views recorded yet.</p>
               ) : (
@@ -186,7 +186,7 @@ export function AdminDashboardPage() {
             </section>
 
             <section className="dash__panel">
-              <h3 className="stat__label">Most active editors</h3>
+              <h3 className="stat__label">Most Active Editors</h3>
               {data.usage.topEditors.length === 0 ? (
                 <p className="muted small">No edits in this range.</p>
               ) : (

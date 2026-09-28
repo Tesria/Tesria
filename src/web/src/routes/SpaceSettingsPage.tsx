@@ -149,7 +149,7 @@ export function SpaceSettingsPage() {
       </section>
 
       <section className="profile__section profile__section--wide" id="page-tree">
-        <h2>Page tree</h2>
+        <h2>Page Tree</h2>
         <p className="muted small">
           How the sidebar marks this space&rsquo;s pages. Numbers and bullets are only drawn beside the titles: they
           are not part of any title or address, and they follow the tree as pages are added and moved.
@@ -211,14 +211,14 @@ export function SpaceSettingsPage() {
 
       {can(Permission.PagesExport) && space.exports.site && (
         <section className="profile__section profile__section--wide" id="export">
-          <h2>Export as a site</h2>
+          <h2>Export as a Site</h2>
           <SiteExportSection spaceKey={space.key} />
         </section>
       )}
 
       {can(Permission.PagesExport) && space.exports.pack && (
         <section className="profile__section profile__section--wide" id="pack">
-          <h2>Export as a pack</h2>
+          <h2>Export as a Pack</h2>
           <PackExportSection spaceKey={space.key} />
         </section>
       )}
@@ -231,7 +231,7 @@ export function SpaceSettingsPage() {
             : 'Keeps the space and everything in it, out of the way: an archived space is hidden from the spaces list and from public reading, and Admin → Spaces still lists it. Reversible at any time.'}
         </p>
         <button type="button" className="btn" disabled={busy} onClick={() => setArchived(!space.archived)}>
-          {space.archived ? 'Unarchive this space' : 'Archive this space'}
+          {space.archived ? 'Unarchive This Space' : 'Archive This Space'}
         </button>
       </section>
 
@@ -240,14 +240,14 @@ export function SpaceSettingsPage() {
           space's own administrator sees only archiving. */}
       {can(Permission.SpacesDelete) && (
         <section className="profile__section profile__section--wide danger-zone">
-          <h2>Danger zone</h2>
+          <h2>Danger Zone</h2>
           <p className="muted small">
             Deleting <code>{space.key}</code> destroys every page in it, with all
             versions, comments and attachments. It cannot be undone from inside
             Tesria: only a backup taken beforehand would still hold the content.
           </p>
           <button type="button" className="btn btn--danger" onClick={() => setDeleting(true)}>
-            Delete this space
+            Delete This Space
           </button>
         </section>
       )}

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, type AppNotification } from '../api/client'
 import { ALERT_KIND_LABEL } from '../routes/admin/alertKinds'
+import { usePopoverMotion } from './popoverMotion'
 
 /** Same stroke-icon language as the editor toolbar (editor/icons.tsx) (flat,
  *  currentColor, 1.8px stroke) instead of the platform's own emoji bell,
@@ -75,6 +76,7 @@ function describe(n: AppNotification): string {
 export function NotificationBell() {
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
+  const panel = usePopoverMotion<HTMLDivElement>(open)
   const [count, setCount] = useState(0)
   const [items, setItems] = useState<AppNotification[] | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -142,16 +144,16 @@ export function NotificationBell() {
 
   return (
     <div className="notif" ref={rootRef}>
-      <button type="button" className="notif__bell" onClick={toggle} aria-label="Notifications">
+      <button type="button" className={open ? 'notif__bell is-open' : 'notif__bell'} onClick={toggle} aria-label="Notifications" aria-expanded={open}>
         <BellIcon />
         {count > 0 && <span className="notif__badge">{count > 99 ? '99+' : count}</span>}
       </button>
-      {open && (
-        <div className="notif__dropdown">
+      {panel.shown && (
+        <div className="notif__dropdown" ref={panel.ref}>
           <div className="notif__header">
-            <span>Notifications</span>
+            <span className="notif__title">Notifications</span>
             <span className="row-gap" style={{ alignItems: 'center' }}>
-              <button type="button" className="link-btn" onClick={markAllRead}>Mark all read</button>
+              <button type="button" className="link-btn" onClick={markAllRead}>Mark All Read</button>
               <button type="button" className="popover__close" aria-label="Close" onClick={() => setOpen(false)}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>

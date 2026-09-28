@@ -109,7 +109,7 @@ export function RestoreDialog({
   return (
     <div className="recovery-prompt" role="dialog" aria-modal="true" aria-label={`Restore the backup ${backup.label}`}>
       <form className="recovery-prompt__card recovery-prompt__card--roomy danger-form" onSubmit={submit}>
-        <h2>Restore this backup?</h2>
+        <h2>Restore This Backup?</h2>
 
         <div className="confirm__body">
           {!preview ? (
@@ -199,7 +199,7 @@ export function RestoreDialog({
 
         <div className="row-gap">
           <button type="submit" className="btn btn--danger" disabled={busy || !answered || !allowed}>
-            {busy ? 'Starting…' : 'Restore now'}
+            {busy ? 'Starting…' : 'Restore Now'}
           </button>
           <button type="button" className="btn btn--ghost" onClick={onClose} disabled={busy}>Cancel</button>
         </div>
@@ -232,8 +232,8 @@ export function RestoreProgress({ restore, onCancel }: {
   }, [restore.startedAt])
 
   return (
-    <section className="profile__section profile__section--wide">
-      <h2>A restore is in progress</h2>
+    <section className="profile__section profile__section--wide backups__section">
+      <h2>A Restore Is in Progress</h2>
       <p>
         The wiki is read-only for everyone until it finishes. Started {when(restore.startedAt)},
         {' '}{elapsed} ago.
@@ -248,7 +248,7 @@ export function RestoreProgress({ restore, onCancel }: {
           it is then the way back.
         </p>
       ) : (
-        <button type="button" className="btn btn--ghost" onClick={onCancel}>Stop the restore</button>
+        <button type="button" className="btn btn--ghost" onClick={onCancel}>Stop the Restore</button>
       )}
     </section>
   )
@@ -300,8 +300,8 @@ export function KeptCopyCard({ restore, onChanged }: {
   }
 
   return (
-    <section className="profile__section profile__section--wide">
-      <h2>The copy kept before the last restore</h2>
+    <section className="profile__section profile__section--wide backups__section">
+      <h2>The Copy Kept Before the Last Restore</h2>
       <p>
         The wiki was restored from <code>{restore.lastRestoreFrom}</code>{' '}
         {relative(restore.lastRestoredAt ?? kept.restoredAt)}.
@@ -322,8 +322,8 @@ export function KeptCopyCard({ restore, onChanged }: {
 
       {action === null ? (
         <div className="row-gap">
-          <button type="button" className="btn" onClick={() => setAction('undo')}>Undo the restore</button>
-          <button type="button" className="btn btn--ghost" onClick={() => setAction('discard')}>Remove the copy</button>
+          <button type="button" className="btn" onClick={() => setAction('undo')}>Undo the Restore</button>
+          <button type="button" className="btn btn--ghost" onClick={() => setAction('discard')}>Remove the Copy</button>
         </div>
       ) : (
         <form className="danger-form" onSubmit={submit}>
@@ -353,7 +353,7 @@ export function KeptCopyCard({ restore, onChanged }: {
           )}
           <div className="row-gap">
             <button type="submit" className="btn btn--danger" disabled={busy || !answered}>
-              {action === 'undo' ? 'Undo the restore' : 'Remove the copy'}
+              {action === 'undo' ? 'Undo the Restore' : 'Remove the Copy'}
             </button>
             <button type="button" className="btn btn--ghost" onClick={() => setAction(null)} disabled={busy}>
               Cancel

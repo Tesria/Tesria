@@ -160,7 +160,7 @@ export function Layout() {
   return (
     <SpaceNavContext.Provider value={spaceNavContext}>
     <div className="app">
-      <header ref={headerRef} className={`topbar${docked ? ' is-docked' : ''}${collapsed ? ' is-collapsed' : ''}`} data-fit={fit}>
+      <header ref={headerRef} className={`topbar${docked ? ' is-docked' : ''}${collapsed ? ' is-collapsed' : ''}${collapsed && navOpen ? ' is-menu-open' : ''}`} data-fit={fit}>
         {/* What the bar would hold if nothing were collapsed, laid out the
             same way but invisible, for useTopbarFit to measure. */}
         <div className="topbar__ruler" ref={rulerRef} aria-hidden="true">
@@ -182,7 +182,7 @@ export function Layout() {
                 </span>
               </>
             ) : (
-              <span className="btn btn--primary" data-r="signin">Sign in</span>
+              <span className="btn btn--primary" data-r="signin">Sign In</span>
             )}
           </span>
         </div>
@@ -249,7 +249,7 @@ export function Layout() {
               </div>
               {user && (
                 <NavLink to={spaceNav.newPageHref} className="btn btn--primary btn--block" onClick={closeNav}>
-                  + New page
+                  + New Page
                 </NavLink>
               )}
               {/* readOnly: no reorder pencil and no dragging inside a menu
@@ -257,7 +257,7 @@ export function Layout() {
               <PageTree tree={spaceNav.tree} spaceKey={spaceNav.space.key} readOnly onNavigate={closeNav} treeStyle={spaceNav.space.treeStyle} />
               {user && (
                 <NavLink to={`/spaces/${spaceNav.space.key}/settings`} className="sidebar__trash" onClick={closeNav}>
-                  <SettingsIcon /> Space settings
+                  <SettingsIcon /> Space Settings
                 </NavLink>
               )}
             </div>
@@ -279,7 +279,7 @@ export function Layout() {
             // Anonymous reader (dev-plan 5.3): the theme menu works without
             // a session; everything personal is replaced by a way in.
             <Link to="/login" state={{ from: location.pathname }} className="btn btn--primary">
-              Sign in
+              Sign In
             </Link>
           )}
         </div>

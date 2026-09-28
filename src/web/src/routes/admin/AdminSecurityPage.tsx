@@ -199,9 +199,9 @@ export function AdminSecurityPage() {
       : a.kind === 'admin.promoted' ? a.key : null
     if (userId) {
       actions.push(
-        { label: 'Sign out everywhere', run: () => api.admin.users.revokeSessions(userId), done: 'Sessions revoked.',
+        { label: 'Sign Out Everywhere', run: () => api.admin.users.revokeSessions(userId), done: 'Sessions revoked.',
           ask: 'Every browser signed in to this account is signed out. They can sign in again.' },
-        { label: 'Revoke tokens', run: () => api.admin.users.revokeTokens(userId), done: 'Tokens revoked.',
+        { label: 'Revoke Tokens', run: () => api.admin.users.revokeTokens(userId), done: 'Tokens revoked.',
           ask: 'Every API token of this account is deleted; scripts and assistants using them stop working.' },
         { label: 'Suspend', run: () => api.admin.users.setStatus(userId, UserStatus.Suspended), done: 'Account suspended.',
           ask: 'The account is signed out and cannot sign in or use its tokens until someone reactivates it.' },
@@ -239,12 +239,19 @@ export function AdminSecurityPage() {
         </div>
       </div>
 
-      <section className="profile__section profile__section--wide">
+      <section className="profile__section profile__section--wide security__section">
         <h2>Alerts</h2>
-        <label className="admin__toggle admin__toggle--inline">
-          <input type="checkbox" checked={showResolved} onChange={(e) => setShowResolved(e.target.checked)} />
-          <span>Show resolved</span>
-        </label>
+        {/* A switch, as Reduce Motion in the appearance menu (the owner, 2026-09-28). */}
+        <button
+          type="button"
+          role="switch"
+          aria-checked={showResolved}
+          className="switch-row admin__toggle--inline"
+          onClick={() => setShowResolved((v) => !v)}
+        >
+          <span className={showResolved ? 'switch is-on' : 'switch'} aria-hidden="true"><span className="switch__knob" /></span>
+          <span>Show Resolved</span>
+        </button>
         {alerts.length === 0 ? (
           <p className="muted small">Nothing needs attention.</p>
         ) : (
@@ -329,8 +336,8 @@ export function AdminSecurityPage() {
         )}
       </section>
 
-      <section className="profile__section profile__section--wide">
-        <h2>Kill switches</h2>
+      <section className="profile__section profile__section--wide security__section">
+        <h2>Kill Switches</h2>
         <p className="muted small">Instance-wide, immediate, audited. Each is also on the Settings page.</p>
         <label className="admin__toggle">
           <input type="checkbox" checked={overview.allowPublicSpaces} disabled={busy}
@@ -355,8 +362,8 @@ export function AdminSecurityPage() {
         </label>
       </section>
 
-      <section className="profile__section profile__section--wide">
-        <h2>Blocked networks</h2>
+      <section className="profile__section profile__section--wide security__section">
+        <h2>Blocked Networks</h2>
         <form onSubmit={addBlock} className="block-form">
           <input name="cidr" placeholder="203.0.113.7 or 203.0.113.0/24" required />
           <input name="reason" placeholder="Reason (optional)" />
@@ -394,8 +401,8 @@ export function AdminSecurityPage() {
         )}
       </section>
 
-      <section className="profile__section profile__section--wide">
-        <h2>Recent events</h2>
+      <section className="profile__section profile__section--wide security__section">
+        <h2>Recent Events</h2>
         {events.length === 0 ? (
           <p className="muted small">No security events recorded.</p>
         ) : (
@@ -416,8 +423,8 @@ export function AdminSecurityPage() {
         )}
       </section>
 
-      <section className="profile__section profile__section--wide">
-        <h2>Brute-force protection</h2>
+      <section className="profile__section profile__section--wide security__section">
+        <h2>Brute-Force Protection</h2>
         <form onSubmit={saveLimits} className="limits-form">
           {LIMIT_FIELDS.map((f) => (
             <label key={f.key}>
@@ -426,12 +433,12 @@ export function AdminSecurityPage() {
               {f.hint && <span className="muted small">{f.hint}</span>}
             </label>
           ))}
-          <button type="submit" className="btn btn--primary" disabled={busy}>Save limits</button>
+          <button type="submit" className="btn btn--primary" disabled={busy}>Save Limits</button>
         </form>
       </section>
 
-      <section className="profile__section profile__section--wide">
-        <h2>Active lockouts</h2>
+      <section className="profile__section profile__section--wide security__section">
+        <h2>Active Lockouts</h2>
         {limits.activeLockouts.length === 0 ? (
           <p className="muted small">No accounts are locked out.</p>
         ) : (
@@ -459,15 +466,15 @@ export function AdminSecurityPage() {
         )}
       </section>
 
-      <section className="profile__section profile__section--wide">
-        <h2>Audit log integrity</h2>
+      <section className="profile__section profile__section--wide security__section">
+        <h2>Audit Log Integrity</h2>
         <p className="muted small">
           Every audit entry is linked to the one before it by a hash. Verifying walks
           the whole chain and names the first entry that was altered or removed. It
           also runs automatically once a day.
         </p>
         <button type="button" className="btn btn--ghost" disabled={busy} onClick={verify}>
-          {busy ? 'Verifying…' : 'Verify now'}
+          {busy ? 'Verifying…' : 'Verify Now'}
         </button>
         {report && (
           <p className={report.ok ? 'muted small' : 'alert alert--error'}>

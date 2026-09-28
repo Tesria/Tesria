@@ -69,7 +69,7 @@ export function TourAndTipsSection() {
             navigate('/welcome')
           }}
         >
-          Show the tour again
+          Show the Tour Again
         </button>
         <button
           type="button"
@@ -81,7 +81,7 @@ export function TourAndTipsSection() {
             'Dismissed tips will appear again.',
           )}
         >
-          Reset dismissed tips{dismissed > 0 ? ` (${dismissed})` : ''}
+          Reset Dismissed Tips{dismissed > 0 ? ` (${dismissed})` : ''}
         </button>
       </div>
     </>

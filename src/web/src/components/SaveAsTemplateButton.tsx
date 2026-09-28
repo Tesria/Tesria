@@ -45,7 +45,7 @@ export function SaveAsTemplateButton({ spaceId, contentJson, defaultName }: Prop
   return (
     <>
       <button type="button" className="btn btn--ghost" onClick={() => setOpen((v) => !v)}>
-        {open ? 'Cancel' : 'Save as template'}
+        {open ? 'Cancel' : 'Save as Template'}
       </button>
       {open && (
         <form className="card principal-picker template-form" onSubmit={submit}>

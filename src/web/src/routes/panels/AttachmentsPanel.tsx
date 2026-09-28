@@ -48,7 +48,7 @@ export function AttachmentsPanel({ pageId }: { pageId: string }) {
     const ok = await ask({
       title: 'Delete this attachment?',
       danger: true,
-      confirmLabel: 'Delete the attachment',
+      confirmLabel: 'Delete the Attachment',
       body: <p>The file goes with it. Anywhere it is embedded in this page stops rendering.</p>,
     })
     if (!ok) return
@@ -66,7 +66,7 @@ export function AttachmentsPanel({ pageId }: { pageId: string }) {
     <div className="attachments">
       {error && <p className="alert alert--error">{error}</p>}
       <label className="btn btn--ghost btn--sm upload-btn">
-        {uploading ? 'Uploading…' : 'Upload file'}
+        {uploading ? 'Uploading…' : 'Upload File'}
         <input ref={fileInput} type="file" hidden onChange={onUpload} disabled={uploading} />
       </label>
       {items && items.length === 0 && <p className="muted small">No attachments.</p>}
