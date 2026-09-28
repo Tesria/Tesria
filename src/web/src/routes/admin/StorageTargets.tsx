@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { api, ApiError, type BackupJob, type BackupTarget } from '../../api/client'
 import { DonutChart } from '../../components/PieChart'
 
@@ -309,11 +309,12 @@ function Composition({ rows }: { rows: BackupTarget[] }) {
     label: KIND_LABEL[r.kind] ?? r.kind,
     value: r.bytesStored ?? 0,
     color: i === 0 ? 'var(--chart-wiki)' : 'var(--chart-backups)',
+    glassColor: i === 0 ? 'var(--chart-wiki-glass)' : 'var(--chart-backups-glass)',
   }))
   const total = stored.reduce((sum, s) => sum + s.value, 0)
   const left = budget ? budget - total : null
   const slices = left != null && left > 0
-    ? [...stored, { label: 'Left in Budget', value: left, color: 'var(--chart-free)' }]
+    ? [...stored, { label: 'Left in Budget', value: left, color: 'var(--chart-free)', glassColor: 'var(--chart-free-glass)' }]
     : stored
 
   return (
@@ -328,7 +329,7 @@ function Composition({ rows }: { rows: BackupTarget[] }) {
         {slices.map((s) => (
           <li key={s.label} className="disk-chart__row">
             <span className="disk-chart__name">
-              <span className="disk-chart__key" style={{ background: s.color }} aria-hidden="true" />
+              <span className="disk-chart__key" style={{ background: s.color, '--glass-key': s.glassColor } as CSSProperties} aria-hidden="true" />
               {s.label}
             </span>
             <span className="disk-chart__value">{bytes(s.value)}</span>

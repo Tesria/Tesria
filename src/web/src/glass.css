@@ -635,6 +635,23 @@
 :root[data-style="glass"] .chart:not([data-appearance="flat"]) .chart__swatch, .chart[data-appearance="glass"] .chart__swatch { border-radius: 50%; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5); }
 /* A pie's or a donut's key in its glass colors (ChartView.tsx). */
 :root[data-style="glass"] .chart:not([data-appearance="flat"]) .chart__swatch[style*="--glass-swatch"], .chart[data-appearance="glass"] .chart__swatch[style*="--glass-swatch"] { background: var(--glass-swatch) !important; }
+
+/* The Backups page's donuts (disk space, storage targets) as the glass chart
+   (the owner, 2026-09-28): the chart's bright palette, round glass keys and
+   its drop shadow. Their slices already take the chart's gradients and rim
+   light from PieChart.tsx. */
+:root {
+  --chart-wiki-glass: #1f7bff; --chart-backups-glass: #ec4899;
+  --chart-other-glass: #ff7a1a; --chart-free-glass: #00b86b;
+}
+:root[data-style="glass"] .disk-chart__key {
+  width: 0.8rem; height: 0.8rem; border-radius: 50%; outline: none;
+  background: var(--glass-key) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+:root[data-style="glass"] .disk-chart svg {
+  overflow: visible; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.25)) drop-shadow(0 8px 12px rgba(0, 0, 0, 0.3));
+}
 /* The pie and donut sheen (components/PieChart.tsx) is drawn always and shown only here. */
 .chart-sheen { display: none; }
 :root[data-style="glass"] .chart-sheen, [data-appearance="glass"] .chart-sheen { display: inline; }

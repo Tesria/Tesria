@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { DonutChart } from '../../components/PieChart'
 import type { DiskChart } from '../../api/client'
 
@@ -50,10 +51,10 @@ function DiskCard({ disk }: { disk: DiskChart }) {
   // rather than as a slice, and two blues for the wiki and its backups were
   // taken for the same thing.
   const slices = [
-    { label: 'The Wiki', value: disk.wikiBytes, color: 'var(--chart-wiki)' },
-    { label: 'Its Backups', value: disk.backupBytes, color: 'var(--chart-backups)' },
-    { label: 'Everything Else', value: disk.otherBytes, color: 'var(--chart-other)' },
-    { label: 'Free', value: disk.freeBytes, color: 'var(--chart-free)' },
+    { label: 'The Wiki', value: disk.wikiBytes, color: 'var(--chart-wiki)', glassColor: 'var(--chart-wiki-glass)' },
+    { label: 'Its Backups', value: disk.backupBytes, color: 'var(--chart-backups)', glassColor: 'var(--chart-backups-glass)' },
+    { label: 'Everything Else', value: disk.otherBytes, color: 'var(--chart-other)', glassColor: 'var(--chart-other-glass)' },
+    { label: 'Free', value: disk.freeBytes, color: 'var(--chart-free)', glassColor: 'var(--chart-free-glass)' },
   ]
 
   return (
@@ -71,7 +72,7 @@ function DiskCard({ disk }: { disk: DiskChart }) {
           {slices.map((s) => (
             <li key={s.label} className="disk-chart__row">
               <span className="disk-chart__name">
-                <span className="disk-chart__key" style={{ background: s.color }} aria-hidden="true" />
+                <span className="disk-chart__key" style={{ background: s.color, '--glass-key': s.glassColor } as CSSProperties} aria-hidden="true" />
                 {s.label}
               </span>
               <span className="disk-chart__value">
