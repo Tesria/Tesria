@@ -66,7 +66,8 @@ section with the owner.
   it fits on one line; otherwise it is the first line of the page. A deep
   trail is shortened only when it has to be, to the space, "...", the
   parent and the page, and the ... opens a menu of the levels in between.
-  The tree toggle in the page filter is flat (a solid circle when on, just
+  Editing on a phone in Glass, the top bar and the editor's toolbar are one
+  frosted strip. The tree toggle in the page filter is flat (a solid circle when on, just
   its icon when off), and so are Glass drop-downs: the fill and edge of the
   list they open, with a button's shadow.
 - **Exported sites:** in Glass the top bar is the frosted strip from the

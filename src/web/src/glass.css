@@ -1211,6 +1211,32 @@ label.code-block__appearance > select {
   }
 }
 
+/* ---- The editor on a phone: one strip with the top bar -------------------- */
+
+/* The top bar (docked from the start, Layout.tsx) and the toolbar under it
+   are one frosted strip (the owner, 2026-09-28): the toolbar takes the
+   docked bar's frost, reaching up behind the top bar, and the strip's lower
+   edge and shadow move from the top bar to the toolbar. The frost is a layer behind the toolbar, not the
+   toolbar itself, so its Style and Insert menus stay frosted against the
+   page (a backdrop-filter would make the toolbar a backdrop root). */
+@media (max-width: 640px) {
+  :root[data-style="glass"] .topbar.is-docked.is-with-toolbar { border-bottom-color: transparent; box-shadow: none; }
+  /* One frost for both, drawn by the toolbar and reaching up behind the top
+     bar (whose own is off): two blurs meeting left a seam. */
+  :root[data-style="glass"] .topbar.is-docked.is-with-toolbar::before { content: none; }
+  :root[data-style="glass"] .space-content > .page-actionbar--editor {
+    background: transparent; border-bottom-color: transparent; isolation: isolate;
+  }
+  :root[data-style="glass"] .space-content > .page-actionbar--editor::before {
+    content: ""; position: absolute; inset: calc(-1 * var(--topbar-h)) 0 0; z-index: -1; pointer-events: none;
+    background: color-mix(in srgb, var(--bg) 60%, transparent);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+    box-shadow: 0 1px 2px rgba(10, 20, 34, 0.12), 0 6px 18px rgba(10, 20, 34, 0.24);
+  }
+}
+
 /* ---- The editor: a pane inset beside the sidebar ------------------------- */
 
 /* Editing a page on a computer (the owner, 2026-09-28): the toolbar and the

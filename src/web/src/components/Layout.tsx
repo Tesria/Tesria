@@ -156,6 +156,20 @@ export function Layout() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  // Editing on a phone, the top bar and the editor's toolbar under it are one
+  // frosted strip from the start (the owner, 2026-09-28): the bar is docked
+  // whether or not the page has scrolled, and is-with-toolbar lets the
+  // toolbar carry the strip's lower edge and shadow (glass.css).
+  const editing = /^\/spaces\/[^/]+\/(new|pages\/[^/]+\/edit)$/.test(location.pathname)
+  const [phone, setPhone] = useState(() => window.matchMedia('(max-width: 640px)').matches)
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 640px)')
+    const onChange = () => setPhone(query.matches)
+    query.addEventListener('change', onChange)
+    return () => query.removeEventListener('change', onChange)
+  }, [])
+  const withToolbar = editing && phone
+
   function onSearch(e: FormEvent) {
     e.preventDefault()
     if (query.trim()) {
@@ -167,7 +181,7 @@ export function Layout() {
   return (
     <SpaceNavContext.Provider value={spaceNavContext}>
     <div className="app">
-      <header ref={headerRef} className={`topbar${docked ? ' is-docked' : ''}${collapsed ? ' is-collapsed' : ''}${collapsed && navOpen ? ' is-menu-open' : ''}`} data-fit={fit}>
+      <header ref={headerRef} className={`topbar${docked || withToolbar ? ' is-docked' : ''}${withToolbar ? ' is-with-toolbar' : ''}${collapsed ? ' is-collapsed' : ''}${collapsed && navOpen ? ' is-menu-open' : ''}`} data-fit={fit}>
         {/* What the bar would hold if nothing were collapsed, laid out the
             same way but invisible, for useTopbarFit to measure. */}
         <div className="topbar__ruler" ref={rulerRef} aria-hidden="true">
