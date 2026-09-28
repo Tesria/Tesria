@@ -29,8 +29,8 @@ section with the owner.
 - **Frosted surfaces**: the space sidebar floats as a frosted panel, the one
   surface tinted with the accent, and hides into a round button with an
   animation (switchable off with **Reduce Motion**, shown with Glass in the
-  appearance menu). The appearance menu, notifications and ... menus open
-  and close from their buttons. Space cards, every Administration and Space
+  appearance menu). The appearance menu and notifications open and
+  close from their buttons. Space cards, every Administration and Space
   Settings section, alerts, the backup and branding cards are frosted. A
   selected item on a frosted surface has a 1px accent stroke.
 - **Tab bars never scroll sideways** (both styles): the tabs that fit, and
@@ -43,7 +43,7 @@ section with the owner.
   their rims; a code block is a dark console with a drop shadow; a diagram
   sits on a frosted panel in the console, and redraws in the right colors
   when the theme changes. Each follows the reader's style unless it has a
-  **Style** of its own (Theme default, Minimal or Glass), kept in exports.
+  **Style** of its own (Theme Default, Minimal or Glass), kept in exports.
 - **Both styles**: button labels and headings in Title Case; the bar's link
   text, the username, PAGES and Space Settings in the text color, not gray;
   download icons in place of the arrow characters on exports; on Windows,

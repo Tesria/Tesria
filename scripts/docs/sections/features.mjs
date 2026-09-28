@@ -93,7 +93,7 @@ export const shots = ({ demo }) => [
   // ---- Sharing and publishing
   {
     name: 'feat-export', url: demo('Launch plan'), viewport: NARROW, phone: false,
-    steps: [{ wait: 2500 }, { click: 'button[title="More actions"]' }, { wait: 400 }],
+    steps: [{ wait: 2500 }, { click: 'button[title="More Actions"]' }, { wait: 400 }],
     clipTo: ['.page-actionbar', '.overflow-menu__dropdown'], clipPad: 8,
     annotate: [{ type: 'box', target: '.overflow-menu__dropdown > a:first-of-type', pad: 3 }],
   },
@@ -103,7 +103,7 @@ export const shots = ({ demo }) => [
 
   // ---- Accounts and security
   { name: 'feat-invites', url: '/admin/invites', viewport: NARROW, phone: false, steps: [{ wait: 2500 }], clipTo: 'form.form-inline', clipPad: 10 },
-  { name: 'feat-two-factor', url: '/profile', viewport: NARROW, phone: false, steps: [{ wait: 2500 }], clipTo: section('Two-factor sign-in'), clipPad: 8 },
+  { name: 'feat-two-factor', url: '/profile', viewport: NARROW, phone: false, steps: [{ wait: 2500 }], clipTo: section('Two-Factor Sign-In'), clipPad: 8 },
   { name: 'feat-groups', url: '/admin/groups', viewport: NARROW, phone: false, steps: [{ wait: 2500 }], clipTo: 'ul.version-list', clipPad: 10 },
   { name: 'feat-protection', url: '/admin/security', viewport: NARROW, phone: false, steps: [{ wait: 2500 }], clipTo: section('Brute-Force Protection'), clipPad: 8 },
 
@@ -121,7 +121,7 @@ export const shots = ({ demo }) => [
   // Only this section is shown: it is the last on the profile, and when the
   // Sessions list above it listed every ended session (fixed 2026-09-24) it sat
   // past the 16,000 pixels Chromium can capture, and came out blank.
-  { name: 'feat-api', url: '/profile', viewport: NARROW, phone: false, steps: [{ wait: 2500 }, { css: '.profile__section:not(#api-tokens) { display: none !important; }' }, { wait: 500 }], clipTo: section('API tokens'), clipPad: 8 },
+  { name: 'feat-api', url: '/profile', viewport: NARROW, phone: false, steps: [{ wait: 2500 }, { css: '.profile__section:not(#api-tokens) { display: none !important; }' }, { wait: 500 }], clipTo: section('API Tokens'), clipPad: 8 },
   { name: 'feat-webhooks', url: '/spaces/DEMO/settings/webhooks', viewport: NARROW, phone: false, steps: [{ wait: 2500 }], clip: { x: 0, y: 52, width: 480, height: 560 } },
 
   // ---- On a phone: the one picture taken on a phone.
@@ -190,7 +190,7 @@ export async function build({ page, ensure, doc, p, h, text, bold, italic, panel
 
     h(2, 'Running it'),
     ...(await feature('Installs with one command', 'Tesria runs in Docker. A guided setup on first start creates the owner’s account and walks through the important settings.', 'Installing with Docker Compose')),
-    ...(await feature('Secure connections without the fuss', 'HTTPS is automatic: a free certificate for a real web address, or one of its own on a home or office network, with a built-in guide that sets each device up to trust it.', 'Trusting the local certificate', pic('feat-trust', 'The Trust this device guide'))),
+    ...(await feature('Secure connections without the fuss', 'HTTPS is automatic: a free certificate for a real web address, or one of its own on a home or office network, with a built-in guide that sets each device up to trust it.', 'Trusting the local certificate', pic('feat-trust', 'The Trust This Device guide'))),
     ...(await feature('Backups you can count on', 'Continuous backups of the database, daily copies of everything, encrypted copies to a cloud bucket, a network drive or a removable drive, and a restore from the admin pages that can itself be undone.', 'Backups and recovery')),
     ...(await feature('An admin area', 'A dashboard of activity, and screens for people, spaces, invites, security, backups, roles, groups, settings and the audit log.', 'Administration', pic('feat-dashboard', 'Sign-in activity on the administration dashboard'))),
     ...(await feature('Your name and colors', 'Replace the Tesria name and logo with your own, set the accent color, and choose light or dark for everyone. Each person can also pick a look of their own from the appearance menu in the top bar: Minimal, Tesria’s classic look, or Glass, the frosted look of tesria.com.', 'Administration')),

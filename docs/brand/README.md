@@ -76,14 +76,13 @@ A PNG or `.ico` can't switch shades the way the SVG can, so pick the set for whe
 
 ## Updating Tesria
 
-In the app, the mark is drawn in three places that have to change together:
+In the app, the mark is drawn in two places that have to change together:
 
 1. `src/web/src/components/BrandMark.tsx`: the header mark. Four paths, each with its color.
-2. `src/web/public/favicon.svg`: replace it with `svg/tesria-mark.svg`.
-3. `faviconSvg()` in `src/web/src/theme.ts`: today it repaints the favicon in the user's accent.
-   With official colors it can draw the four-color mark instead, or be removed so the static
-   favicon stands. That's a product decision: keep an accent-colored favicon, or use the
-   official colors everywhere.
+2. `src/web/public/favicon.svg`: replace it with `svg/tesria-mark.svg`. Nothing repaints it
+   (since 0.7.4 the favicon no longer follows the accent), so the file is the whole change.
+
+How the app looks in its two styles, Minimal and Glass, is in [style-guide.md](style-guide.md).
 
 Two things to keep as they are:
 - **Instance branding:** an uploaded logo or favicon still replaces the mark. That's

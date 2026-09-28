@@ -249,7 +249,7 @@ export async function build({
     p('While it starts, a few things happen on their own: the ', c('init'), ' service makes Tesria’s passwords and keys and stops, the database starts, the ', c('pgbackrest'), ' service prepares its backup store, Tesria creates its tables and a restricted database account for itself, and Caddy makes a certificate for your address.'),
     panel('note', p(b('Start the whole set, not only the database.'), ' On a new install, ', c('docker compose up -d db'), ' on its own makes the database restart every few seconds, because it waits for the ', c('pgbackrest'), ' service to prepare the backup store. If you ever need the database without the rest, start the two together: ', c('docker compose up -d db pgbackrest'), '.')),
 
-    step(3, 'Save your backup key'),
+    step(3, 'Save Your Backup Key'),
     p('Tesria has written the key that encrypts your backups to a file called ', c('backup-key.txt'), ' in the Tesria folder, next to ', c('docker-compose.yml'), '. Open it, and copy the key into your password manager, or anywhere that is not this computer.'),
     panel('warning', p(b('Without this key, no backup can be restored, by anyone.'), ' Once it is saved somewhere else, you may delete the file. While the computer is running, this prints the key again:'),
       codeBlock('bash', 'docker compose run --rm init show-backup-key')),
@@ -313,7 +313,7 @@ export async function build({
     h(2, 'Address and HTTPS'),
     p('See ', pageLink('HTTPS and domains'), ' for which to choose.'),
     ul(
-      setting('DOMAIN', 'the name people reach Tesria by, such as ', c('wiki.example.com'), ', or ', c('localhost'), ' to try it on one computer. A real domain gets a free certificate from Let’s Encrypt; anything else uses a certificate Tesria makes itself. Links in emails use this address too, unless you set ', b('Public address'), ' in ', b('Admin'), ', ', b('Settings'), '.'),
+      setting('DOMAIN', 'the name people reach Tesria by, such as ', c('wiki.example.com'), ', or ', c('localhost'), ' to try it on one computer. A real domain gets a free certificate from Let’s Encrypt; anything else uses a certificate Tesria makes itself. Links in emails use this address too, unless you set ', b('Public Address'), ' in ', b('Admin'), ', ', b('Settings'), '.'),
       setting('ACME_EMAIL', 'optional. An email address Let’s Encrypt can write to about your certificate. Let’s Encrypt works without one.'),
       setting('CADDYFILE', 'which web server configuration to use. Leave it out on a private network. Set it to ', c('deploy/Caddyfile.public'), ' when the server can be reached from the internet.'),
       setting('PROXY_TRUSTED_NETWORKS', 'only if you put a proxy of your own in front of Tesria: that proxy’s address, such as ', c('10.0.0.5/32'), '. Tesria then believes the visitor addresses it passes on.'),
@@ -476,8 +476,8 @@ export async function build({
     h(2, 'The easy way: the Trust this device guide'),
     p('Tesria has a guide built in that asks which device you are on, fills your address into the commands, and tells you exactly what to click. There are three ways to open it:'),
     ul(
-      li(p(b('From your profile.'), ' Once you are signed in, open ', ...profileAt(), ' and choose ', b('Set Up This Device'), ' under ', b('Trust this device'), '.')),
-      li(p(b('From the sign-in page.'), ' Choose ', b('Trust this device'), ' under ', i('Did your browser warn that this site is not secure?'), '.')),
+      li(p(b('From your profile.'), ' Once you are signed in, open ', ...profileAt(), ' and choose ', b('Set Up This Device'), ' under ', b('Trust This Device'), '.')),
+      li(p(b('From the sign-in page.'), ' Choose ', b('Trust This Device'), ' under ', i('Did your browser warn that this site is not secure?'), '.')),
       li(p(b('By its address.'), ' Type ', c('http://your-server/trust'), ' into the browser. Note ', c('http'), ', not ', c('https'), ': the guide is served without encryption on purpose, so a device that does not trust the server yet can open it with no warning. This is the easiest way on a phone.')),
     ),
     panel('warning', p(b('This page is the reference, not the guide.'), ' The guide reaches your device over the same unprotected connection as the certificate, so on a network someone else controls, it could have been changed too. If the guide and this page ever differ, follow this page. The guide never shows a fingerprint of its own, and its commands never fetch a script from your server: the Mac and Windows ones are typed lines, and the Linux one fetches Tesria’s script from GitHub.')),
@@ -486,18 +486,18 @@ export async function build({
     h(3, 'First, open the guide'),
     p('Open it any of the three ways above. It starts by explaining the warning and what trusting it means, then has four numbered steps and the optional fingerprint check. The steps below have the same numbers, so you can follow along.'),
 
-    step(1, 'Which device are you on?'),
+    step(1, 'Which Device Are You On?'),
     p('The guide guesses your device from your browser. If it guessed wrong, choose the right one. Everything below changes to match.'),
     ...(await picture(trust, 'trust-device', 'Choosing the device in the guide', 'The highlighted button is the device the steps are for.')),
 
-    step(2, 'What address do you open Tesria at?'),
+    step(2, 'What Address Do You Open Tesria At?'),
     p('The guide fills in the address you used to reach it. It has to be the address you normally open Tesria at, because that is the address the command will trust. If you type a numeric address such as 192.168.1.50, the guide explains how to find your computer’s name instead, since certificates are issued for names.'),
     ...(await picture(trust, 'trust-address', 'The address box in the guide', 'Your server’s address, without https://.')),
 
     h(3, 'Optional: check the fingerprint first'),
-    p('Open ', b('Optional: check the fingerprint first'), ' and paste the SHA-256 fingerprint you got from the server (see ', b('The fingerprint'), ' above). The commands in the next step change to ones that trust nothing unless the certificate matches. Skip it on a network you run yourself.'),
+    p('Open ', b('Optional: Check the Fingerprint First'), ' and paste the SHA-256 fingerprint you got from the server (see ', b('The fingerprint'), ' above). The commands in the next step change to ones that trust nothing unless the certificate matches. Skip it on a network you run yourself.'),
 
-    step(3, 'Trust the certificate'),
+    step(3, 'Trust the Certificate'),
     p('This is the part that does the work, and it differs a little by device. On a phone the guide takes you through the Settings app; see ', b('On a phone'), ' below.'),
     p(b('On a Mac,'), ' you copy one line into Terminal. It downloads the certificate from your server, shows its fingerprint, and trusts it; nothing is installed, and it works with no internet. It asks for your password, because adding a trusted certificate changes a setting for the whole computer.'),
     p(b('On Linux,'), ' the line downloads Tesria’s script from GitHub, which does the same for your distribution. With no internet, use ', c('deploy/scripts/trust-ca.sh'), ' from the Tesria folder on the server instead.'),
@@ -506,7 +506,7 @@ export async function build({
     panel('info', p(b('Why a line and not a script on Windows?'), ' Windows refuses to run script files downloaded from the internet unless you change a security setting, and on a work computer that setting is often locked. A line you paste in yourself is not affected, and it needs no administrator, because it trusts the server for your own Windows account.')),
     panel('success', p(b('Typing your password shows nothing.'), ' In Terminal, and in most command windows, the password you type is hidden completely, not even as dots. That is normal: type it and press Return.')),
 
-    step(4, 'Check it worked'),
+    step(4, 'Check It Worked'),
     p('Quit your browser completely and open it again. Closing its windows is not always enough, because some browsers keep running in the background: in Chrome or Edge, type ', c('chrome://restart'), ' or ', c('edge://restart'), ' into the address bar; in Safari, press ', b('⌘ Q'), '. Then choose ', b('Open Tesria Securely'), ' at the end of the guide. If Tesria opens with no warning and the address bar shows a padlock, you are done on this device.'),
     p('Still says “Not secure”? Check that you opened Tesria by its name, such as ', c('wiki-server.local'), ', and not a number such as 192.168.1.50. A number never matches the certificate, however it is trusted. The guide’s last step lists the other causes.'),
 
@@ -637,7 +637,7 @@ export async function build({
 
     h(2, 'Once you have settled on a name'),
     ul(
-      li(p('Put it in ', b('Admin, Settings, Public address'), ', such as ', c('https://wiki.home.arpa'), '. Links in emails use it, and the ', b('Trust this device'), ' guide suggests it to anyone who opens Tesria by number.')),
+      li(p('Put it in ', b('Admin, Settings, Public Address'), ', such as ', c('https://wiki.home.arpa'), '. Links in emails use it, and the ', b('Trust This Device'), ' guide suggests it to anyone who opens Tesria by number.')),
       li(p('Tell everyone the new address, and bookmark it on each device.')),
     ),
   ))
@@ -810,7 +810,7 @@ export async function build({
     ul(
       li(p(b('Someone who has signed in with SSO before'), ' gets the same account every time, even if their email address changes at the provider.')),
       li(p(b('Someone who already has a Tesria account'), ' with the same email address is connected to it, but only if the provider says it has confirmed that address. Otherwise anyone who could claim the address at the provider could take over the account.')),
-      li(p(b('Someone new'), ' gets a new account with no Tesria password, as long as ', b('Allow public registration'), ' is on (', b('Admin'), ', ', b('Settings'), ', ', b('Access'), '). When it is off, they are turned away: send them an invite, let them create their account from it, and from then on SSO signs them in to that account. See ', pageLink('Invites'), '.')),
+      li(p(b('Someone new'), ' gets a new account with no Tesria password, as long as ', b('Allow Public Registration'), ' is on (', b('Admin'), ', ', b('Settings'), ', ', b('Access'), '). When it is off, they are turned away: send them an invite, let them create their account from it, and from then on SSO signs them in to that account. See ', pageLink('Invites'), '.')),
     ),
     panel('note', p(b('Two-factor sign-in is the provider’s job'), ' for people who use SSO. Tesria’s own two-factor applies when someone signs in with a Tesria password.')),
     p('Testing with a provider on plain HTTP on the same machine? Add ', c('OIDC_REQUIRE_HTTPS_METADATA=false'), '. Never leave it that way for a real provider.'),
@@ -836,7 +836,7 @@ export async function build({
 
   // The settings tables come from the app's own presets (dev-plan 18.1),
   // fetched in prepare(), so a page and the Provider list cannot disagree.
-  const TLS = ['None', 'STARTTLS', 'SSL on connect']
+  const TLS = ['None', 'STARTTLS', 'SSL on Connect']
   const preset = (id) => {
     const found = (mailProviders ?? []).find((x) => x.id === id)
     if (!found) throw new Error(`no mail provider preset ${id}`)
@@ -847,26 +847,26 @@ export async function build({
     return table([
       ['Setting', 'Value'],
       ['Provider', x.name],
-      ['SMTP host', p(c(host ?? x.host))],
+      ['SMTP Host', p(c(host ?? x.host))],
       ['Port', p(c(String(x.port)))],
       ['Encryption', TLS[x.tls]],
       ['Username', username ?? x.username],
       ['Password', password ?? x.password],
-      ['From address', from ?? 'The same address'],
+      ['From Address', from ?? 'The same address'],
     ], [140, 300])
   }
   const fillIn = () => p('Choose ', b('Admin'), ', then ', b('Settings'), '. In the ', b('Email'), ' section, choose your provider under ', b('Provider'), ': that fills in the server for you. Then fill in the rest:')
   const testIt = () => [
-    p('Choose ', b('Save Mail Settings'), ', turn on ', b('Send email'), ', then choose ', b('Send Test Email to Me'), ' and check that it arrived, including in the spam folder. The full walk-through is on ', pageLink('Email (SMTP)'), '.'),
+    p('Choose ', b('Save Mail Settings'), ', turn on ', b('Send Email'), ', then choose ', b('Send Test Email to Me'), ' and check that it arrived, including in the spam folder. The full walk-through is on ', pageLink('Email (SMTP)'), '.'),
   ]
-  const signInTest = () => p('Turn on ', b('Send email'), ' at the top of the section if it is off, choose ', b('Send Test Email to Me'), ', and check that the message arrived, including in the spam folder.')
+  const signInTest = () => p('Turn on ', b('Send Email'), ' at the top of the section if it is off, choose ', b('Send Test Email to Me'), ', and check that the message arrived, including in the spam folder.')
 
   await page('Sending with Gmail', email, doc(
     p('No mail server of your own? A Gmail account can send Tesria’s email. It suits a small team: a handful of password resets, invitations and notifications a day.'),
     p('Gmail will not let a program like Tesria use your everyday password. There are two other ways, and you can switch between them at any time:'),
     ul(
       li(p(b('An app password'), ': a separate, 16-letter password that works only for the program you give it to. About five minutes, and the quickest start. If it ever leaks, you delete it and nothing else is affected.')),
-      li(p(b('Sign in with Google'), ': you sign in once, on Google’s own page, and Tesria never holds a password at all. It needs a small Google Cloud project, about fifteen minutes the first time, and it keeps working when the Gmail password changes, which ends every app password.')),
+      li(p(b('Sign In With Google'), ': you sign in once, on Google’s own page, and Tesria never holds a password at all. It needs a small Google Cloud project, about fifteen minutes the first time, and it keeps working when the Gmail password changes, which ends every app password.')),
     ),
     panel('success', p(b('Use an account made for the wiki.'), ' A new Gmail address such as ', c('ourteam.wiki@gmail.com'), ' keeps the wiki’s email out of your own inbox and sent folder, and means nobody’s personal account is tied to it. The emails people receive come from this address.')),
 
@@ -875,7 +875,7 @@ export async function build({
       li(p(b('A Gmail account'), ' you can sign in to.')),
       li(p(b('For an app password: 2-Step Verification turned on'), ' for that account. Google only offers app passwords when it is. If it is off, turn it on at ', c('myaccount.google.com/security'), ', under ', b('How you sign in to Google'), '.')),
     ),
-    panel('note', p(b('A work or school Google account'), ' (Google Workspace) may not offer app passwords, because the organization’s administrator decides. Sign in with Google works there, or ask the administrator.')),
+    panel('note', p(b('A work or school Google account'), ' (Google Workspace) may not offer app passwords, because the organization’s administrator decides. Sign In With Google works there, or ask the administrator.')),
 
     h(2, 'The quick way: an app password'),
     step(1, 'Make an app password'),
@@ -887,13 +887,13 @@ export async function build({
 
     step(2, 'Fill in Tesria’s email settings'),
     fillIn(),
-    ...(await picture(email, 'email-provider-gmail', 'The Provider list set to Gmail, with what goes in the username and password, and App password chosen',
-      'Choosing Gmail fills in the server. Choose App password, then fill in the fields below it.')),
+    ...(await picture(email, 'email-provider-gmail', 'The Provider list set to Gmail, with what goes in the username and password, and App Password chosen',
+      'Choosing Gmail fills in the server. Choose App Password, then fill in the fields below it.')),
     presetTable('gmail', { username: 'The full Gmail address', password: 'The app password, without the spaces', from: 'The same Gmail address' }),
-    p('Under ', b('How Tesria Signs In'), ', choose ', b('App password'), '. Then choose ', b('Save Mail Settings'), '.'),
+    p('Under ', b('How Tesria Signs In'), ', choose ', b('App Password'), '. Then choose ', b('Save Mail Settings'), '.'),
 
     step(3, 'Turn it on and send a test'),
-    p('Turn on ', b('Send email'), ' at the top of the section, then choose ', b('Send Test Email to Me'), '. The test goes to the email address on your own Tesria account. Check that it arrived, including in the spam folder.'),
+    p('Turn on ', b('Send Email'), ' at the top of the section, then choose ', b('Send Test Email to Me'), '. The test goes to the email address on your own Tesria account. Check that it arrived, including in the spam folder.'),
 
     h(2, 'The lasting way: sign in with Google'),
     p('Here you make a small “app” of your own in Google Cloud, tell Google that Tesria is allowed to come back to it, and then sign in once. It is your own because every Tesria has its own address, and Google only sends a sign-in back to addresses the app has registered. It costs nothing.'),
@@ -916,13 +916,13 @@ export async function build({
     ol(
       li(p('Under ', b('Clients'), ', choose ', b('Create client'), '.')),
       li(p('For the application type, choose ', b('Web application'), ' and name it ', c('Tesria'), '.')),
-      li(p('Under ', b('Authorized redirect URIs'), ', choose ', b('Add URI'), ' and paste the address Tesria shows in its email settings, under ', b('Redirect address to register with Google'), ' (step 5 shows where).')),
-      li(p('Choose ', b('Create'), ', then copy the ', b('Client ID'), ' and the ', b('Client secret'), '.')),
+      li(p('Under ', b('Authorized redirect URIs'), ', choose ', b('Add URI'), ' and paste the address Tesria shows in its email settings, under ', b('Redirect Address to Register With Google'), ' (step 5 shows where).')),
+      li(p('Choose ', b('Create'), ', then copy the ', b('Client ID'), ' and the ', b('Client Secret'), '.')),
     ),
     panel('note', p(b('Tesria on a local name,'), ' such as ', c('wiki.local'), ' or ', c('192.168.1.50'), '? Google only returns to addresses on public domains, so Tesria’s settings say to choose ', b('Desktop app'), ' as the type instead. That needs no redirect address; step 7 is the extra step it takes.')),
     step(5, 'Sign in from Tesria'),
-    p('In ', b('Admin'), ', ', b('Settings'), ', ', b('Email'), ', choose ', b('Gmail or Google Workspace'), ' under ', b('Provider'), ' and leave ', b('Sign in with Google'), ' chosen. Paste the client ID and secret, then choose ', b('Sign In With Google'), '.'),
-    ...(await picture(email, 'email-google-signin', 'Sign in with Google chosen, with the redirect address to register, the client ID and secret, and the sign-in button',
+    p('In ', b('Admin'), ', ', b('Settings'), ', ', b('Email'), ', choose ', b('Gmail or Google Workspace'), ' under ', b('Provider'), ' and leave ', b('Sign In With Google'), ' chosen. Paste the client ID and secret, then choose ', b('Sign In With Google'), '.'),
+    ...(await picture(email, 'email-google-signin', 'Sign In With Google chosen, with the redirect address to register, the client ID and secret, and the sign-in button',
       'The redirect address to register in step 4, the client ID and secret from it, and Sign In With Google.')),
     step(6, 'Allow it on Google’s page'),
     ol(
@@ -930,7 +930,7 @@ export async function build({
       li(p('Google says ', i('Google hasn’t verified this app'), '. That is expected: the app is the one you made a few minutes ago. Choose ', b('Advanced'), ', then ', b('Go to Tesria'), '.')),
       li(p('Google asks to let the app read, compose, send and delete your email. That is how Google describes the only permission that allows sending from another program, which is one more reason to use an account made for the wiki. Tesria only sends. Choose ', b('Continue'), ' or ', b('Allow'), '.')),
     ),
-    p('Google returns you to Tesria, which says ', i('Signed in. Email now goes out from'), ' and the address. Tesria has filled in the server, the username and the From address itself.'),
+    p('Google returns you to Tesria, which says ', i('Signed in. Email now goes out from'), ' and the address. Tesria has filled in the server, the username and the From Address itself.'),
     step(7, 'Only on a local name: paste the address back'),
     p('With a ', b('Desktop app'), ' client, Google cannot return to Tesria, so after you allow it your browser opens a page that does not load, at an address starting with ', c('http://127.0.0.1'), '. That is expected. Copy the whole address from the address bar, go back to Tesria’s tab, paste it into ', b('Paste the address of the page that did not load'), ', and choose ', b('Finish Signing In'), '.'),
     step(8, 'Send a test'),
@@ -939,7 +939,7 @@ export async function build({
     h(2, 'If the test fails'),
     ul(
       li(p(b('“Username and Password not accepted”'), ' with an app password means Gmail refused it. Check that the username is the whole address, and paste the app password again. Your everyday Gmail password does not work here.')),
-      li(p(b('The email arrives from a different address'), ' than the From address. Gmail sends only as the account that signs in, so use that address.')),
+      li(p(b('The email arrives from a different address'), ' than the From Address. Gmail sends only as the account that signs in, so use that address.')),
       li(p(b('An app password worked, then stopped.'), ' Changing the Gmail account’s password deletes all of its app passwords. Make a new one and enter it in the ', b('Password'), ' box.')),
       li(p(b('A signed-in Tesria stopped sending after a week.'), ' The app was still in ', b('Testing'), ' (step 3). Publish it, then choose ', b('Sign In Again With Google'), '.')),
       li(p(b('Administrators get the alert'), ' ', i('Email stopped: the mail sign-in was refused'), '. Google ended the sign-in, for example because someone removed Tesria’s access in the Google account. The email settings show Google’s reason; choose ', b('Sign In Again With Google'), '.')),
@@ -975,11 +975,11 @@ export async function build({
       li(p('Go to ', c('entra.microsoft.com'), ' and sign in. Open ', b('App registrations'), ' (search for it at the top) and choose ', b('New registration'), '.')),
       li(p('Name it ', c('Tesria'), '.')),
       li(p('Under ', b('Supported account types'), ', choose the one that includes personal Microsoft accounts to send from an Outlook.com address (or from either kind). To allow only your organization’s mailboxes, choose ', b('this organizational directory only'), '.')),
-      li(p('Under ', b('Redirect URI'), ', choose ', b('Web'), ' and paste the address Tesria shows in its email settings, under ', b('Redirect address to register with Microsoft'), ' (step 5 shows where). Choose ', b('Register'), '.')),
+      li(p('Under ', b('Redirect URI'), ', choose ', b('Web'), ' and paste the address Tesria shows in its email settings, under ', b('Redirect Address to Register With Microsoft'), ' (step 5 shows where). Choose ', b('Register'), '.')),
     ),
     panel('note', p(b('Microsoft only returns to https addresses.'), ' Tesria always has one, but the address in its settings must be the https address people use: see ', b('Instance'), ' in ', pageLink('Settings (administration)', 'Settings'), '.')),
     step(2, 'Copy its IDs'),
-    p('On the registration’s ', b('Overview'), ', copy the ', b('Application (client) ID'), '. If you chose ', b('this organizational directory only'), ', copy the ', b('Directory (tenant) ID'), ' too.'),
+    p('On the registration’s ', b('Overview'), ', copy the ', b('Application (Client) ID'), '. If you chose ', b('this organizational directory only'), ', copy the ', b('Directory (tenant) ID'), ' too.'),
     step(3, 'Make a client secret'),
     ol(
       li(p('Open ', b('Certificates & secrets'), ', then ', b('Client secrets'), ', then ', b('New client secret'), '.')),
@@ -989,10 +989,10 @@ export async function build({
     step(4, 'Allow it to send email'),
     p('Open ', b('API permissions'), ', choose ', b('Add a permission'), ', then ', b('Microsoft Graph'), ', then ', b('Delegated permissions'), '. Tick ', b('SMTP.Send'), ', and under OpenId permissions ', b('email'), ', ', b('offline_access'), ' and ', b('openid'), '. Choose ', b('Add permissions'), '. In an organization, an administrator may also need to choose ', b('Grant admin consent'), '.'),
     step(5, 'Sign in from Tesria'),
-    p('In ', b('Admin'), ', ', b('Settings'), ', ', b('Email'), ', choose ', b('Outlook or Microsoft 365'), ' under ', b('Provider'), ' and leave ', b('Sign in with Microsoft'), ' chosen. Paste the client ID and the secret’s value, and the directory ID if you copied one. Then choose ', b('Sign In With Microsoft'), '.'),
-    ...(await picture(email, 'email-microsoft-signin', 'Sign in with Microsoft chosen, with the redirect address to register, the application ID, secret and directory ID, and the sign-in button',
+    p('In ', b('Admin'), ', ', b('Settings'), ', ', b('Email'), ', choose ', b('Outlook or Microsoft 365'), ' under ', b('Provider'), ' and leave ', b('Sign In With Microsoft'), ' chosen. Paste the client ID and the secret’s value, and the directory ID if you copied one. Then choose ', b('Sign In With Microsoft'), '.'),
+    ...(await picture(email, 'email-microsoft-signin', 'Sign In With Microsoft chosen, with the redirect address to register, the application ID, secret and directory ID, and the sign-in button',
       'The redirect address to register in step 1, the IDs and secret from steps 2 and 3, and Sign In With Microsoft.')),
-    p('Microsoft asks which account to use and whether to allow Tesria to send email as it. Choose the mailbox the wiki will send from, and allow it. You come back to Tesria, which says ', i('Signed in. Email now goes out from'), ' and the address. Tesria has filled in the server, the username and the From address itself.'),
+    p('Microsoft asks which account to use and whether to allow Tesria to send email as it. Choose the mailbox the wiki will send from, and allow it. You come back to Tesria, which says ', i('Signed in. Email now goes out from'), ' and the address. Tesria has filled in the server, the username and the From Address itself.'),
     step(6, 'Send a test'),
     signInTest(),
 
@@ -1069,7 +1069,7 @@ export async function build({
 
     h(2, 'If the test fails'),
     ul(
-      li(p(b('“Relaying Disallowed”'), ' means the From address does not belong to the account signing in. Use the account’s own address, or one of its aliases.')),
+      li(p(b('“Relaying Disallowed”'), ' means the From Address does not belong to the account signing in. Use the account’s own address, or one of its aliases.')),
       li(p(b('The sign-in is refused.'), ' Check the server address against Zoho’s settings (the region matters), and that the password is the application-specific one if two-factor sign-in is on.')),
     ),
   ))
@@ -1146,22 +1146,22 @@ export async function build({
 
     step(1, 'Open the email settings'),
     p('Choose ', b('Admin'), ' at the top of any page, then the ', b('Settings'), ' tab. The ', b('Email'), ' section has everything, and the steps below use the boxed controls in order.'),
-    ...(await picture(email, 'email-steps', 'The Email settings, filled in with example values', 'Provider, Save Mail Settings, Send email and Send Test Email to Me are boxed.')),
+    ...(await picture(email, 'email-steps', 'The Email settings, filled in with example values', 'Provider, Save Mail Settings, Send Email and Send Test Email to Me are boxed.')),
 
     step(2, 'Choose your provider'),
     p('The ', b('Provider'), ' list names the common email accounts and sending services. Choosing one fills in the server, the port and the encryption, and says in a line what goes in the username and password, which is often not the password you sign in with. For anything else, leave it on ', b('Other'), ' and fill the server in yourself.'),
 
     step(3, 'Fill in the rest'),
     ul(
-      li(p(b('SMTP host'), ' and ', b('Port'), ': the mail server. Port 587 with STARTTLS is the usual choice; port 465 goes with SSL on connect.')),
-      li(p(b('Encryption'), ': STARTTLS, SSL on connect, or None. Use None only for a mail server on the same private network.')),
+      li(p(b('SMTP Host'), ' and ', b('Port'), ': the mail server. Port 587 with STARTTLS is the usual choice; port 465 goes with SSL on Connect.')),
+      li(p(b('Encryption'), ': STARTTLS, SSL on Connect, or None. Use None only for a mail server on the same private network.')),
       li(p(b('Username'), ' and ', b('Password'), ': the account Tesria signs in to the mail server with. The password is stored encrypted and never shown again; to keep it when you change something else, leave the field empty.')),
-      li(p(b('From address'), ': who the email appears to come from. Most providers only send from the account that signs in, and sending services only from a domain you have verified with them.')),
+      li(p(b('From Address'), ': who the email appears to come from. Most providers only send from the account that signs in, and sending services only from a domain you have verified with them.')),
     ),
 
     step(4, 'Choose Save Mail Settings'),
 
-    step(5, 'Turn on Send email'),
+    step(5, 'Turn on Send Email'),
     p('The switch at the top of the section. It takes effect straight away. While it is off, Tesria does not try to send anything.'),
 
     step(6, 'Send yourself a test'),
@@ -1169,7 +1169,7 @@ export async function build({
 
     h(2, 'If the test fails'),
     ul(
-      li(p(b('Check the port and encryption together.'), ' 587 goes with STARTTLS and 465 with SSL on connect; a mismatch usually fails without a clear reason.')),
+      li(p(b('Check the port and encryption together.'), ' 587 goes with STARTTLS and 465 with SSL on Connect; a mismatch usually fails without a clear reason.')),
       li(p(b('Check the username and password.'), ' Many providers want a password made for apps rather than your everyday one. The provider’s page says which.')),
       li(p(b('Check the from address.'), ' A sending service refuses an address on a domain you have not verified with it.')),
     ),
@@ -1201,7 +1201,7 @@ export async function build({
     ol(
       li(p(b('You prove the domain is yours.'), ' The service gives you a few records to add to your domain’s DNS, where your domain is registered. Until they check out, it sends little or nothing. Some let you verify a single address instead, by clicking a link sent to it.')),
       li(p(b('You make SMTP credentials,'), ' a username and password (or key) for sending, separate from your account’s password. Most show the password only once.')),
-      li(p(b('You fill them in Tesria.'), ' In ', b('Admin'), ', ', b('Settings'), ', ', b('Email'), ', choose the service under ', b('Provider'), ', which fills in the server, then add the credentials and a From address on your domain. See ', pageLink('Email (SMTP)'), '.')),
+      li(p(b('You fill them in Tesria.'), ' In ', b('Admin'), ', ', b('Settings'), ', ', b('Email'), ', choose the service under ', b('Provider'), ', which fills in the server, then add the credentials and a From Address on your domain. See ', pageLink('Email (SMTP)'), '.')),
     ),
     panel('note', p(b('Free tiers change.'), ' What each offers for free was checked on September 24, 2026. Look at the service’s pricing page before you decide.')),
     ...service('ses', 'Amazon’s service, and the cheapest at volume. It suits you if you already use AWS; its setup is the most involved.',
@@ -1426,8 +1426,8 @@ export async function build({
 
     h(2, 'The two choices'),
     ul(
-      li(p(b('Keep every backup forever.'), ' Nothing is ever removed. Keep an eye on the disk space on the Backups tab.')),
-      li(p(b('Prune old backups:'), ' keep the newest ', i('N'), ' backups and everything from the last ', i('D'), ' days.')),
+      li(p(b('Keep Every Backup Forever.'), ' Nothing is ever removed. Keep an eye on the disk space on the Backups tab.')),
+      li(p(b('Prune Old Backups:'), ' keep the newest ', i('N'), ' backups and everything from the last ', i('D'), ' days.')),
     ),
     p('With pruning, a backup is removed only when it is outside ', b('both'), ': older than ', i('D'), ' days, and not among the newest ', i('N'), '. For example, with 7 backups and 14 days, a backup from a month ago is removed, unless it is one of the last 7. So even if backups stopped for a while, the last 7 are always there, however old.'),
 
@@ -1436,7 +1436,7 @@ export async function build({
     p('Choose ', b('Admin'), ', then ', b('Backups'), ', and scroll to ', b('Retention Policy'), '.'),
     ...(await picture(retention, 'retention-review', 'The retention policy', 'The rule, and Review Change.')),
     step(2, 'Choose the policy'),
-    p('Pick one of the two choices, and with ', b('Prune old backups'), ', the number of backups and of days.'),
+    p('Pick one of the two choices, and with ', b('Prune Old Backups'), ', the number of backups and of days.'),
     step(3, 'Review the change'),
     p('Choose ', b('Review Change'), '. Before anything happens, Tesria lists exactly which backups the new policy would remove today, and how far back you could still restore. If it looks right, choose ', b('Save Policy'), '. Unless you signed in in the last few minutes, Tesria asks for your password first.'),
 
@@ -1599,7 +1599,7 @@ export async function build({
       li(p(b('Every 30 days'), ' (', c('OFFSITE_DRILL_DAYS'), '), each offsite copy is restored for real: the newest dump is taken out of it, loaded into a temporary database, counted and thrown away. Nothing live is touched.')),
       li(p(b('Test Restore'), ' on the Backups tab does the same for the backups on this computer, whenever you ask.')),
     ),
-    p('The first asks whether the copy is intact; the drill asks whether it still turns back into a wiki. A copy can pass the first and fail the second, which is why a failed drill is a critical alert for every administrator. Each target’s card shows ', b('Last restore drill'), '.'),
+    p('The first asks whether the copy is intact; the drill asks whether it still turns back into a wiki. A copy can pass the first and fail the second, which is why a failed drill is a critical alert for every administrator. Each target’s card shows ', b('Last Restore Drill'), '.'),
     panel('success', p(b('Rehearse it yourself, once or twice a year.'), ' Follow ', pageLink('When the machine is gone'), ' on a spare computer. It is the one procedure you should not be reading for the first time when you need it.')),
   ))
 
@@ -1682,10 +1682,10 @@ export async function build({
     h(2, 'Accounts'),
     tasks(
       task(false, 'The owner has two-factor sign-in on and has saved their recovery codes. Nobody else can reset the owner, so losing both locks the owner out. See ', pageLink('Two-factor and recovery codes'), '.'),
-      task(false, 'Every administrator has two-factor on, and ', b('Require two-factor for administrators'), ' is on (', b('Admin'), ', ', b('Security'), ', ', b('Kill Switches'), ').'),
+      task(false, 'Every administrator has two-factor on, and ', b('Require Two-Factor for Administrators'), ' is on (', b('Admin'), ', ', b('Security'), ', ', b('Kill Switches'), ').'),
       task(false, 'Each role has only what it needs: review ', b('Admin'), ', ', pageLink('Roles'), '.'),
-      task(false, b('Allow public registration'), ' is off, so new accounts need an invite, unless you mean to run an open community.'),
-      task(false, b('Allow public spaces'), ' stays off until you mean to publish a space to people who are not signed in.'),
+      task(false, b('Allow Public Registration'), ' is off, so new accounts need an invite, unless you mean to run an open community.'),
+      task(false, b('Allow Public Spaces'), ' stays off until you mean to publish a space to people who are not signed in.'),
     ),
 
     h(2, 'Operations'),

@@ -99,7 +99,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'Before you run them'),
     step(1, 'Make a token'),
-    p('Open ', ...profileAt('API tokens'), ', and make a token with full access (not read-only), since the scripts write. See ', pageLink('Getting started with the API'), ' for each step.'),
+    p('Open ', ...profileAt('API Tokens'), ', and make a token with full access (not read-only), since the scripts write. See ', pageLink('Getting started with the API'), ' for each step.'),
     step(2, 'Tell the script where and as whom'),
     p('The scripts read three settings from the environment rather than from the code, so a token never ends up in a file you might share. On a Mac or Linux:'),
     codeBlock('bash', 'export TESRIA_URL=https://your-server\nexport TESRIA_TOKEN=cct_your_token\nexport TESRIA_SPACE=SANDBOX'),

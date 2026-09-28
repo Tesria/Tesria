@@ -331,9 +331,9 @@ export async function build(helpers) {
     p('While you are editing, four controls sit above the chart:'),
     ul(
       li(p(b('Table'), ' chooses which table on the page to draw: Table 1 is the first.')),
-      li(p(b('Type'), ' switches between Column (vertical), Bar (horizontal), Line, Pie and Donut. The table is not touched.')),
-      li(p(b('Style'), ' decides how this one looks. ', b('Theme default'), ' follows each reader’s own style, Minimal or Glass, from the appearance menu. ', b('Minimal'), ' or ', b('Glass'), ' keeps it that way for everyone, whatever their style, and in PDF, HTML and website exports too. An export has no reader’s style, so a ', b('Theme default'), ' one comes out as Minimal.')),
-      li(p(b('Chart title (optional)'), ' is a line shown above the chart.')),
+      li(p(b('Type'), ' switches between Column (Vertical), Bar (Horizontal), Line, Pie and Donut. The table is not touched.')),
+      li(p(b('Style'), ' decides how this one looks. ', b('Theme Default'), ' follows each reader’s own style, Minimal or Glass, from the appearance menu. ', b('Minimal'), ' or ', b('Glass'), ' keeps it that way for everyone, whatever their style, and in PDF, HTML and website exports too. An export has no reader’s style, so a ', b('Theme Default'), ' one comes out as Minimal.')),
+      li(p(b('Chart Title (Optional)'), ' is a line shown above the chart.')),
     ),
     p('If there is no table on the page yet, the chart says so; if its table has no numbers, it says that instead. To remove a chart, click its edge to select it and press ', b('Delete'), '. The table stays.'),
     panel('warning', p(b('Adding a table above a chart renumbers the tables.'), ' A chart pointing at Table 2 then draws the new one. After adding or removing a table, check the Table menu of every chart below it.')),
@@ -533,7 +533,7 @@ export async function build(helpers) {
     h(2, 'Changing and removing it'),
     ul(
       li(p(b('File'), ' switches to another of the page’s attachments; ', b('Upload'), ' adds a new one and shows it.')),
-      li(p(b('Show as'), ', for a video, chooses ', b('A video with controls'), ' or ', b('An animation: silent, looping, no controls'), '.')),
+      li(p(b('Show As'), ', for a video, chooses ', b('A Video With Controls'), ' or ', b('An Animation: Silent, Looping, No Controls'), '.')),
       li(p(b('To remove it,'), ' click its edge to select it and press ', b('Delete'), '. The file stays among the page’s attachments.')),
     ),
     p('If the file is later deleted from the page’s attachments, the block says ', i('That file is no longer attached to this page'), ' instead.'),
@@ -582,7 +582,7 @@ export async function build(helpers) {
 
     h(2, 'Changing and removing it'),
     ul(
-      li(p(b('Show as'), ' switches between ', b('An animation: silent, looping, no controls'), ' and ', b('A video with controls'), '.')),
+      li(p(b('Show As'), ' switches between ', b('An Animation: Silent, Looping, No Controls'), ' and ', b('A Video With Controls'), '.')),
       li(p(b('File'), ' chooses another video; ', b('Upload'), ' adds one.')),
       li(p(b('To remove it,'), ' click its edge to select it and press ', b('Delete'), '. The video stays among the page’s attachments.')),
     ),
@@ -633,7 +633,7 @@ export async function build(helpers) {
       li(p(b('CodePen:'), ' a pen.')),
       li(p(b('Google Docs and Google Drive:'), ' a document, spreadsheet, presentation or file, shown in Google’s preview. Readers see it only if its sharing settings in Google let them.')),
     ),
-    p('An administrator can change the list in ', b('Admin'), ', ', b('Settings'), ', under ', b('Embeds'), ' (', b('Allowed embed hosts'), '). See ', pageLink('Settings (administration)'), '. A site added there that is not one of the above is shown at the address you paste.'),
+    p('An administrator can change the list in ', b('Admin'), ', ', b('Settings'), ', under ', b('Embeds'), ' (', b('Allowed Embed Hosts'), '). See ', pageLink('Settings (administration)'), '. A site added there that is not one of the above is shown at the address you paste.'),
 
     h(2, 'When a site is not allowed'),
     p('An address from any other site is not shown. Readers see why, and a link to open it in a new tab instead. This is an embed of ', c('https://www.example.com/'), ', which is not on the list:'),
@@ -721,7 +721,7 @@ export async function build(helpers) {
     ], [200, 500]),
     insertNote('Status', 'If you had text selected, the status takes its place.'),
     p('Its menu opens under it, with the cursor in the label: replace STATUS with your own words, then choose a color.'),
-    p('Its menu also has a ', b('Style'), ', which decides how this one looks. ', b('Theme default'), ' follows each reader’s own style, Minimal or Glass, from the appearance menu. ', b('Minimal'), ' or ', b('Glass'), ' keeps it that way for everyone, whatever their style, and in PDF, HTML and website exports too. An export has no reader’s style, so a ', b('Theme default'), ' one comes out as Minimal.'),
+    p('Its menu also has a ', b('Style'), ', which decides how this one looks. ', b('Theme Default'), ' follows each reader’s own style, Minimal or Glass, from the appearance menu. ', b('Minimal'), ' or ', b('Glass'), ' keeps it that way for everyone, whatever their style, and in PDF, HTML and website exports too. An export has no reader’s style, so a ', b('Theme Default'), ' one comes out as Minimal.'),
     ...(await animation(ids.Status, 'status-insert', 'Typing /status makes a status; type its label and choose a color.')),
 
     h(2, 'The six colors, and when to use each'),
@@ -950,7 +950,7 @@ export async function build(helpers) {
     p('It lists every heading, from Heading 1 to Heading 6, each under the heading before it that is a level higher. Click it to change its settings.'),
 
     h(2, 'Bullet styles'),
-    p('Each example here lists only the four headings of ', b('Choosing which headings'), ', further down, to keep it short: that is the ', b('Include headings with'), ' setting, described there.'),
+    p('Each example here lists only the four headings of ', b('Choosing which headings'), ', further down, to keep it short: that is the ', b('Include Headings With'), ' setting, described there.'),
     ...bullet('bullet', 'Bullet,', 'where it starts. The browser picks the marks, usually a dot, then a circle, then a square as the levels go down. Right for most pages.'),
     ...bullet('mixed', 'Mixed:', 'always a dot, then a circle, then a square, going down the levels. The same pattern as Bullet usually gives, fixed so that it cannot vary.'),
     ...bullet('circle', 'Circle:', 'circles at every level. A lighter look.'),
@@ -959,20 +959,20 @@ export async function build(helpers) {
     ...bullet('none', 'None:', 'no marks, only the indents. A clean look for a short list.'),
 
     h(2, 'Section numbers'),
-    p(b('Include section numbers'), ' numbers the outline, 1, 2, 2.1, 2.2, 3, so readers can say “see 4.2”. Use it on long reference pages people cite. With the ', b('Numbered'), ' style, the section numbers take the place of the list’s own. This one lists the whole page:'),
+    p(b('Include Section Numbers'), ' numbers the outline, 1, 2, 2.1, 2.2, 3, so readers can say “see 4.2”. Use it on long reference pages people cite. With the ', b('Numbered'), ' style, the section numbers take the place of the list’s own. This one lists the whole page:'),
     tocWith({ sectionNumbers: true, bulletStyle: 'numbered' }),
     p('Only the table of contents is numbered; the headings on the page are not.'),
 
     h(2, 'A horizontal list'),
-    p(b('Display as Horizontal list'), ' puts the links on one line, separated by bars. Use it across the top of a page as a strip of links, or on a short page. Bullet styles do not apply. This one lists only this page’s main sections, using the heading levels below:'),
+    p(b('Display As Horizontal List'), ' puts the links on one line, separated by bars. Use it across the top of a page as a strip of links, or on a short page. Bullet styles do not apply. This one lists only this page’s main sections, using the heading levels below:'),
     tocWith({ display: 'horizontal', minLevel: 2, maxLevel: 2 }),
 
     h(2, 'Choosing which headings'),
     h(3, 'By level'),
-    p(b('Heading levels'), ' sets the highest and lowest level listed, from 1 to 6. Levels 2 to 2 lists only the main sections, as the horizontal list above does. Levels 3 to 4 lists only the smaller headings:'),
+    p(b('Heading Levels'), ' sets the highest and lowest level listed, from 1 to 6. Levels 2 to 2 lists only the main sections, as the horizontal list above does. Levels 3 to 4 lists only the smaller headings:'),
     tocWith({ minLevel: 3, maxLevel: 4 }),
     h(3, 'By name'),
-    p('Under ', b('Advanced'), ', ', b('Include headings with'), ' lists only the headings that match, and ', b('Exclude headings with'), ' leaves out the ones that match. This one leaves out the sections every element page has, with ', c('Insert it|Good practice|Related elements'), ':'),
+    p('Under ', b('Advanced'), ', ', b('Include Headings With'), ' lists only the headings that match, and ', b('Exclude Headings With'), ' leaves out the ones that match. This one leaves out the sections every element page has, with ', c('Insert it|Good practice|Related elements'), ':'),
     tocWith({ maxLevel: 2, exclude: 'Insert it|Good practice|Related elements' }),
     h(4, 'Patterns'),
     ul(
@@ -985,11 +985,11 @@ export async function build(helpers) {
     h(2, 'Changing its settings'),
     p('Click the table of contents while you are editing and its settings open under it:'),
     ul(
-      li(p(b('Display as:'), ' Vertical list or Horizontal list.')),
-      li(p(b('Bullet style:'), ' Bullet, Mixed, Circle, Square, Numbered or None.')),
-      li(p(b('Heading levels:'), ' the highest and lowest level to list.')),
-      li(p(b('Include section numbers.'))),
-      li(p(b('Advanced:'), ' ', b('Indent headings'), ' (how far each level steps in, such as 10px or 2em), ', b('Include headings with'), ', ', b('Exclude headings with'), ', a ', b('CSS class name'), ' for a site’s own styles, and ', b('Exclude in PDF export'), ', which leaves it out of PDFs and printouts.')),
+      li(p(b('Display As:'), ' Vertical List or Horizontal List.')),
+      li(p(b('Bullet Style:'), ' Bullet, Mixed, Circle, Square, Numbered or None.')),
+      li(p(b('Heading Levels:'), ' the highest and lowest level to list.')),
+      li(p(b('Include Section Numbers.'))),
+      li(p(b('Advanced:'), ' ', b('Indent Headings'), ' (how far each level steps in, such as 10px or 2em), ', b('Include Headings With'), ', ', b('Exclude Headings With'), ', a ', b('CSS Class Name'), ' for a site’s own styles, and ', b('Exclude in PDF Export'), ', which leaves it out of PDFs and printouts.')),
     ),
     p('Changes show at once. To remove it, click it and press ', b('Delete'), '.'),
 

@@ -41,10 +41,10 @@ const PANEL_INSERT = {
     { typeSlowly: '/info', delay: 110 }, { wait: 900 },
     { press: 'Enter', selector: '.ProseMirror' }, { wait: 300 },
     { typeSlowly: 'The office is closed on Monday.', delay: 45 }, { wait: 1100 },
-    { moveTo: '.floating-menu button[title="Warning panel"]' }, { wait: 500 },
-    { click: '.floating-menu button[title="Warning panel"]' }, { wait: 1300 },
-    { moveTo: '.floating-menu button[title="Tip panel"]' }, { wait: 500 },
-    { click: '.floating-menu button[title="Tip panel"]' }, { wait: 800 },
+    { moveTo: '.floating-menu button[title="Warning Panel"]' }, { wait: 500 },
+    { click: '.floating-menu button[title="Warning Panel"]' }, { wait: 1300 },
+    { moveTo: '.floating-menu button[title="Tip Panel"]' }, { wait: 500 },
+    { click: '.floating-menu button[title="Tip Panel"]' }, { wait: 800 },
   ],
 }
 
@@ -71,8 +71,8 @@ const TABLE_CELL_OPTIONS = {
     { click: '.cell-menu__action:has-text("Header column")' }, { wait: 1100 },
     { moveTo: '.cell-menu__scope:has-text("Row")' }, { wait: 300 },
     { click: '.cell-menu__scope:has-text("Row")' }, { wait: 600 },
-    { moveTo: '.cell-menu__panel .swatch[title="Light blue"]' }, { wait: 400 },
-    { click: '.cell-menu__panel .swatch[title="Light blue"]' }, { wait: 900 },
+    { moveTo: '.cell-menu__panel .swatch[title="Light Blue"]' }, { wait: 400 },
+    { click: '.cell-menu__panel .swatch[title="Light Blue"]' }, { wait: 900 },
   ],
 }
 
@@ -574,8 +574,8 @@ export async function build({
     p('A link turns words into a way to somewhere else: another page in the wiki, a website, an email address, or a section further down the same page. Good links keep a page short. Instead of explaining again how to book a room, link to the page that already does.'),
 
     h(2, 'Insert it'),
-    commands(['/link', 'The Add link dialog'], ['/url', 'The Add link dialog']),
-    p('The dialog has two boxes. ', b('Address'), ' is where the link goes, and ', b('Display text'), ' is the words readers see and click. Fill in both and choose ', b('Save'), '. If you leave ', b('Display text'), ' empty, the address itself is shown. Or choose ', b('+'), ' on the toolbar, then ', b('Link'), ': with words selected, they become the display text.'),
+    commands(['/link', 'The Add Link dialog'], ['/url', 'The Add Link dialog']),
+    p('The dialog has two boxes. ', b('Address'), ' is where the link goes, and ', b('Display Text'), ' is the words readers see and click. Fill in both and choose ', b('Save'), '. If you leave ', b('Display Text'), ' empty, the address itself is shown. Or choose ', b('+'), ' on the toolbar, then ', b('Link'), ': with words selected, they become the display text.'),
     ul(
       li(p(b('Keyboard:'), ' Ctrl+K', mac('⌘+K'), ' opens the same dialog.')),
       li(p(b('Select some words'), ' and choose the link button in the small bar that appears above them. The words become the display text.')),
@@ -604,7 +604,7 @@ export async function build({
     p('While you edit, clicking a link does not follow it. It puts the cursor there and shows a small bar under it (on a phone, tap the link):'),
     ul(
       li(p(b('The address'), ' opens the link in a new tab, so you can check where it goes.')),
-      li(p(b('Edit'), ' opens the dialog as ', b('Edit link'), ', to change the address, the words, or both, and ', b('Save'), '. It also has ', b('Remove Link'), '.')),
+      li(p(b('Edit'), ' opens the dialog as ', b('Edit Link'), ', to change the address, the words, or both, and ', b('Save'), '. It also has ', b('Remove Link'), '.')),
       li(p(b('Remove'), ' takes the link away and keeps the words.')),
     ),
     p('When a reader clicks a link, it opens in a new tab, so they keep their place on your page. A link to a heading on the same page scrolls there instead.'),
@@ -838,7 +838,7 @@ export async function build({
     h(2, 'Changing and removing a layout'),
     p('Click in any column and a bar appears above the layout:'),
     ul(
-      li(p(b('The five shape buttons'), ' (', b('Two columns'), ', ', b('Three columns'), ', ', b('Left sidebar'), ', ', b('Right sidebar'), ' and ', b('Three with sidebars'), ') change the shape. Content stays where it is; going from three columns to two moves what was in the third into the second.')),
+      li(p(b('The five shape buttons'), ' (', b('Two Columns'), ', ', b('Three Columns'), ', ', b('Left Sidebar'), ', ', b('Right Sidebar'), ' and ', b('Three With Sidebars'), ') change the shape. Content stays where it is; going from three columns to two moves what was in the third into the second.')),
       li(p(b('Centered'), ', ', b('Wide'), ' and ', b('Full Width'), ' set how wide it is.')),
       li(p(b('Remove Layout'), ' takes the columns away and keeps their contents, one after another, in column order.')),
     ),
@@ -865,7 +865,7 @@ export async function build({
   // Optional: the page stands without its animation if a run did not make it.
   let cellOptions = []
   try {
-    cellOptions = await animation(tableId, 'table-cell-options', 'Typing /table makes a table. Cell options, the arrow at the top right of the cell you are in, turns on a header column and colors a row.')
+    cellOptions = await animation(tableId, 'table-cell-options', 'Typing /table makes a table. Cell Options, the arrow at the top right of the cell you are in, turns on a header column and colors a row.')
   } catch (err) {
     console.warn(`  (Table: no cell options animation, ${err.message})`)
   }
@@ -878,7 +878,7 @@ export async function build({
     ...cellOptions,
 
     h(2, 'Table options, and when to use each'),
-    p('Headers, merging and colors are all in ', b('Cell options'), ': the small arrow at the top right of the cell you are in, while you edit. Each option is shown here live.'),
+    p('Headers, merging and colors are all in ', b('Cell Options'), ': the small arrow at the top right of the cell you are in, while you edit. Each option is shown here live.'),
     h(3, 'Header row'),
     table([
       ['Week of', 'On call', 'Backup'],
@@ -886,7 +886,7 @@ export async function build({
       ['October 5', 'Mei Chen', 'Sam Okafor'],
       ['October 12', 'Jordan Brooks', 'Mei Chen'],
     ]),
-    p('The first row names the columns, in bold on a shaded background. Almost every table wants one, and a new table starts with it on. Turn it off or on with ', b('Header Row'), ' in Cell options.'),
+    p('The first row names the columns, in bold on a shaded background. Almost every table wants one, and a new table starts with it on. Turn it off or on with ', b('Header Row'), ' in Cell Options.'),
     h(3, 'Header column'),
     tableOf(null,
       row(th('Owner'), td('Priya Natarajan')),
@@ -894,7 +894,7 @@ export async function build({
       row(th('Launch'), td('October 14')),
       row(th('Budget'), td('$40,000')),
     ),
-    p('The first column names the rows instead. Use it for a short list of facts, one to a row, like this one. ', b('Header Column'), ' in Cell options turns it on and off.'),
+    p('The first column names the rows instead. Use it for a short list of facts, one to a row, like this one. ', b('Header Column'), ' in Cell Options turns it on and off.'),
     h(3, 'Header row and header column together'),
     tableOf(null,
       row(th(''), th('Starter'), th('Team'), th('Company')),
@@ -910,7 +910,7 @@ export async function build({
       row(th('10:00'), td('Security basics (two hours)', { rowspan: 2 }), td('Design review')),
       row(th('11:00'), td('Hiring panel')),
     ),
-    p('One cell stretched across several columns or rows, for something that spans them: a talk in both rooms, a session that runs two hours. To merge, drag across the cells to select them, then choose ', b('Merge Cells'), ' in Cell options. ', b('Split Cell'), ' turns a merged cell back into separate ones. Merge sparingly: a table with many merged cells is hard for readers to follow.'),
+    p('One cell stretched across several columns or rows, for something that spans them: a talk in both rooms, a session that runs two hours. To merge, drag across the cells to select them, then choose ', b('Merge Cells'), ' in Cell Options. ', b('Split Cell'), ' turns a merged cell back into separate ones. Merge sparingly: a table with many merged cells is hard for readers to follow.'),
     h(3, 'Colored cells'),
     tableOf(null,
       row(th('Room'), th('Monday'), th('Tuesday'), th('Wednesday')),
@@ -919,7 +919,7 @@ export async function build({
       row(th('Cedar'), td('Free', { bg: LIGHT.green }), td('Free', { bg: LIGHT.green }), td('Booked', { bg: LIGHT.red })),
     ),
     p('Green is free, yellow is on hold, red is booked.'),
-    p('A background color for a cell, a whole row or a whole column. In Cell options, under ', b('Background color'), ', choose ', b('Cell'), ', ', b('Row'), ' or ', b('Column'), ', then a color from the palette of light, medium and bold shades; ', b('No Color'), ' takes it off. Use color to make a pattern jump out, as here, and always say in words what each color means, because not everyone can tell colors apart.'),
+    p('A background color for a cell, a whole row or a whole column. In Cell Options, under ', b('Background Color'), ', choose ', b('Cell'), ', ', b('Row'), ' or ', b('Column'), ', then a color from the palette of light, medium and bold shades; ', b('No Color'), ' takes it off. Use color to make a pattern jump out, as here, and always say in words what each color means, because not everyone can tell colors apart.'),
     h(3, 'Column widths'),
     table([
       ['Term', 'What it means'],
@@ -949,7 +949,7 @@ export async function build({
       li(p(b('+'), ' above the table and down its left side adds a column or a row at that point.')),
       li(p(b('×'), ' on the strip above each column, or beside each row, deletes that column or row.')),
       li(p(b('Column borders'), ' and ', b('the right edge'), ' drag to change widths, as above; ', b('⤢'), ' makes the table full width.')),
-      li(p(b('Cell options'), ', the arrow at the top right of the cell you are in, has ', b('Header Row'), ', ', b('Header Column'), ', ', b('Merge Cells'), ', ', b('Split Cell'), ', the background colors, and ', b('Delete Table'), ', which removes the whole table.')),
+      li(p(b('Cell Options'), ', the arrow at the top right of the cell you are in, has ', b('Header Row'), ', ', b('Header Column'), ', ', b('Merge Cells'), ', ', b('Split Cell'), ', the background colors, and ', b('Delete Table'), ', which removes the whole table.')),
     ),
     p('On a phone, readers see every column at a readable width, and the table scrolls sideways rather than squeezing its columns into a word a line.'),
 
@@ -984,11 +984,11 @@ export async function build({
     ),
 
     h(2, 'Minimal or Glass'),
-    p('A code block’s ', b('Style'), ', in the bar at the top of the block while you edit, decides how this one looks. ', b('Theme default'), ' follows each reader’s own style, Minimal or Glass, from the appearance menu. ', b('Minimal'), ' or ', b('Glass'), ' keeps it that way for everyone, whatever their style, and in PDF, HTML and website exports too. An export has no reader’s style, so a ', b('Theme default'), ' one comes out as Minimal.'),
+    p('A code block’s ', b('Style'), ', in the bar at the top of the block while you edit, decides how this one looks. ', b('Theme Default'), ' follows each reader’s own style, Minimal or Glass, from the appearance menu. ', b('Minimal'), ' or ', b('Glass'), ' keeps it that way for everyone, whatever their style, and in PDF, HTML and website exports too. An export has no reader’s style, so a ', b('Theme Default'), ' one comes out as Minimal.'),
     p('As Glass, a code block is a dark console: a title bar along its top shows the language and ', b('Copy'), ', and a drop shadow lifts it off the page.'),
 
     h(2, 'Languages, and when to use each'),
-    p('Choose the language from the menu at the top left of the block. It colors the code the way that language is usually shown, and readers see its name as a label, so they know what they are looking at. The languages are Plain text, JavaScript, TypeScript, Python, C#, Bash / Shell, JSON, YAML, SQL, HTML, CSS, Go, Rust, Java, Dockerfile and Markdown. One more, Mermaid diagram, draws a diagram instead: see ', pageLink('Diagram (Mermaid)'), '.'),
+    p('Choose the language from the menu at the top left of the block. It colors the code the way that language is usually shown, and readers see its name as a label, so they know what they are looking at. The languages are Plain Text, JavaScript, TypeScript, Python, C#, Bash / Shell, JSON, YAML, SQL, HTML, CSS, Go, Rust, Java, Dockerfile and Markdown. One more, Mermaid Diagram, draws a diagram instead: see ', pageLink('Diagram (Mermaid)'), '.'),
     h(3, 'Commands to run: Bash / Shell'),
     codeBlock('bash', 'cd ~/Downloads\nls -l *.pdf'),
     p('Commands someone types into Terminal or a command prompt. Put each command on its own line, and say in the text around it which computer to run it on.'),
@@ -1004,7 +1004,7 @@ export async function build({
     p('A database query to run or to review. Put each part of the query on its own line, as here, so it can be read at a glance.'),
     h(3, 'Plain text'),
     codeBlock('plaintext', '2026-09-24 09:14:02  Import started\n2026-09-24 09:14:09  3 pictures were too large and were skipped\n2026-09-24 09:14:11  Import finished'),
-    p('Text that must stay exact but is not code: log lines, an error message to search for, output to compare against. Plain text is not colored.'),
+    p('Text that must stay exact but is not code: log lines, an error message to search for, output to compare against. Plain Text is not colored.'),
     h(3, 'With line numbers'),
     code2('javascript', 'const settings = {\n  retries: 3,\n  timeout: 30,\n  offline: true,\n}\n\nexport default settings', { lineNumbers: true }),
     p('Choose ', b('#'), ' at the top right of a block, while you edit, to number its lines; readers see the numbers too. Use them when the text refers to lines (line 3 sets the timeout, in seconds) or when the block is long. ', b('Copy'), ' takes only the code, never the numbers.'),
@@ -1013,7 +1013,7 @@ export async function build({
     p('While you edit, the bar at the top of the block has:'),
     ul(
       li(p(b('The language menu'), ', at the left.')),
-      li(p(b('Style'), ': ', b('Theme default'), ', ', b('Minimal'), ' or ', b('Glass'), ', as described above.')),
+      li(p(b('Style'), ': ', b('Theme Default'), ', ', b('Minimal'), ' or ', b('Glass'), ', as described above.')),
       li(p(b('#'), ', which turns line numbers on and off.')),
       li(p(b('Copy'), ', which copies the code. Readers have this button too.')),
     ),
@@ -1048,7 +1048,7 @@ export async function build({
       ['/sequence', 'The same'],
     ),
     p('Type the command and press ', b('Enter'), ', or choose ', b('+'), ' on the toolbar, then ', b('Diagram (Mermaid)'), '. You get a small example flowchart to change. If text is selected, the diagram takes its place.'),
-    p('A diagram is a code block whose language is Mermaid diagram, so you can also make one from any ', pageLink('Code block'), ' by choosing ', b('Mermaid diagram'), ' in its language menu, or by typing ', c('```mermaid'), ' at the start of a line and pressing ', b('Enter'), '.'),
+    p('A diagram is a code block whose language is Mermaid Diagram, so you can also make one from any ', pageLink('Code block'), ' by choosing ', b('Mermaid Diagram'), ' in its language menu, or by typing ', c('```mermaid'), ' at the start of a line and pressing ', b('Enter'), '.'),
     p('To change the text, choose ', b('Source'), ' at the top right of the diagram; choose ', b('Diagram'), ' to see the drawing again.'),
 
     h(2, 'Kinds of diagram, and when to use each'),
@@ -1200,7 +1200,7 @@ export async function build({
     p('The Mermaid in this version of Tesria also draws XY charts, Sankey diagrams, Kanban boards, block diagrams, packet diagrams, requirement diagrams and C4 architecture diagrams, among others. Mermaid’s own documentation, at ', text('mermaid.js.org', link('https://mermaid.js.org')), ', shows how to write every kind.'),
 
     h(2, 'Changing and removing a diagram'),
-    p('A diagram has a ', b('Style'), ' too, beside ', b('Source'), ' while you edit. ', b('Theme default'), ' follows each reader’s own style, Minimal or Glass; ', b('Minimal'), ' or ', b('Glass'), ' keeps it that way for everyone, and in exports, where ', b('Theme default'), ' comes out as Minimal. As Glass, the diagram sits on a frosted panel inside the same dark console as a code block.'),
+    p('A diagram has a ', b('Style'), ' too, beside ', b('Source'), ' while you edit. ', b('Theme Default'), ' follows each reader’s own style, Minimal or Glass; ', b('Minimal'), ' or ', b('Glass'), ' keeps it that way for everyone, and in exports, where ', b('Theme Default'), ' comes out as Minimal. As Glass, the diagram sits on a frosted panel inside the same dark console as a code block.'),
     ul(
       li(p(b('Source'), ' and ', b('Diagram'), ', at the top right, switch between the text and the drawing. While you edit, change the text in Source, then choose Diagram to check the result. Readers can open Source too, to see how it is made.')),
       li(p(b('Copy'), ' copies the text.')),

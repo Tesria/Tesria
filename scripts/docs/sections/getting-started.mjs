@@ -237,7 +237,7 @@ export async function build({
     p('While it starts, Tesria makes its passwords and keys, sets up its database, and starts backing itself up. There is nothing else to install.'),
     panel('warning', p(b('Always start everything together.'), ' On a new install, starting only the database with ', c('docker compose up -d db'), ' makes it restart over and over, because its backups wait for the backup service that starts alongside it.')),
 
-    step(3, 'Save your backup key'),
+    step(3, 'Save Your Backup Key'),
     p('Tesria has written the key that encrypts your backups to a file called ', c('backup-key.txt'), ' in the ', c('tesria'), ' folder. Open it, and copy the key into your password manager, or anywhere that is not this computer.'),
     panel('error', p(b('Without this key, no backup can be restored, by anyone.'), ' If this computer is lost before the key is saved somewhere else, the backups go with it, including the copies on a network drive or in the cloud.')),
     p('Once it is saved, you may delete the file. While the computer is running, this prints the key again:'),
@@ -290,27 +290,27 @@ export async function build({
     step(1, 'Welcome'),
     p('A short summary of what is ahead. Choose ', b('Start'), '.'),
 
-    step(2, 'Your account'),
-    p('This makes the first account, which becomes the ', b('owner'), ': the one account that can hand the instance over to someone else, and the one that nobody else can suspend or reset. Enter your ', b('Email'), ', ', b('Your name'), ' (as others will see it) and a ', b('Password'), ', then choose ', b('Create the Owner Account'), '.'),
+    step(2, 'Your Account'),
+    p('This makes the first account, which becomes the ', b('owner'), ': the one account that can hand the instance over to someone else, and the one that nobody else can suspend or reset. Enter your ', b('Email'), ', ', b('Your Name'), ' (as others will see it) and a ', b('Password'), ', then choose ', b('Create the Owner Account'), '.'),
     p('Tesria then shows your ', b('recovery codes'), '. Each one signs you in once if you ever lose your password. Save them somewhere other than this computer, tick ', b('I have saved these somewhere safe'), ', and choose ', b('Continue'), '.'),
     panel('error', p(b('Do not skip saving the codes.'), ' Nobody can reset the owner’s password, not even an administrator. Losing both the password and the recovery codes means losing the instance.')),
 
-    step(3, 'This instance'),
+    step(3, 'This Instance'),
     ul(
-      li(p(b('What is it called:'), ' the name of your Tesria, such as ', i('Acme wiki'), '. It appears in the browser tab, in emails Tesria sends, and in your authenticator app.')),
-      li(p(b('Its address:'), ' the address people reach Tesria at. It starts as the one you are using now. Links in emails use it, so if people will reach Tesria by a different name, such as ', c('https://wiki.example.com'), ' or ', c('https://studio.local'), ', put that here.')),
+      li(p(b('What Is It Called:'), ' the name of your Tesria, such as ', i('Acme wiki'), '. It appears in the browser tab, in emails Tesria sends, and in your authenticator app.')),
+      li(p(b('Its Address:'), ' the address people reach Tesria at. It starts as the one you are using now. Links in emails use it, so if people will reach Tesria by a different name, such as ', c('https://wiki.example.com'), ' or ', c('https://studio.local'), ', put that here.')),
     ),
     p('Choose ', b('Continue'), '.'),
 
-    step(4, 'Who can join'),
+    step(4, 'Who Can Join'),
     p('Pick one of the two cards; you cannot continue until you do.'),
     ul(
       li(p(b('Invite Only:'), ' nobody can sign up on their own. You create an invite link for each person and send it to them however you like. The safer choice, and right for most teams.')),
       li(p(b('Open:'), ' anyone who can reach the address can create an account. Only choose this if everyone who can reach it should be able to join, for example on a private home network.')),
     ),
-    p(b('Allow anonymous reading'), ' decides whether people can read without signing in. Off, every visitor has to sign in. On, spaces you mark as public can be read by anyone, which suits a help site or public documentation. Turning it on publishes nothing by itself: nothing is public until you mark a space. See ', pageLink('Public reading'), '.'),
+    p(b('Allow Anonymous Reading'), ' decides whether people can read without signing in. Off, every visitor has to sign in. On, spaces you mark as public can be read by anyone, which suits a help site or public documentation. Turning it on publishes nothing by itself: nothing is public until you mark a space. See ', pageLink('Public reading'), '.'),
 
-    step(5, 'What roles may do'),
+    step(5, 'What Roles May Do'),
     p('Every account has a ', b('role'), ': owner, administrator or user. This step shows what each role is allowed to do, one right per row, such as creating spaces or deleting other people’s pages, with a column for each role.'),
     ...(await picture(wizard, 'setup-permissions', 'The table of what each role may do',
       'Each row is a right, and each column a role. A tick means the role has that right.')),
@@ -318,8 +318,8 @@ export async function build({
 
     step(6, 'Backups'),
     p('Tesria is already backing itself up: a daily copy of the database and every uploaded file, plus a continuous backup that can rewind the database to any moment. This step decides how much of that history to keep.'),
-    p('The suggestion is to keep the newest 3 backups, and everything from the last 14 days. Keeping more uses more disk space. ', b('Keep every backup forever'), ' never removes any, which is only wise with plenty of disk to spare.'),
-    p(b('Save your backup key.'), ' The backups are encrypted with a key Tesria made when it was installed, and this step asks where it went. It is in the file ', c('backup-key.txt'), ' in the Tesria folder on the server, or printed by ', c('docker compose run --rm init show-backup-key'), ' there. Choose one:'),
+    p('The suggestion is to keep the newest 3 backups, and everything from the last 14 days. Keeping more uses more disk space. ', b('Keep Every Backup Forever'), ' never removes any, which is only wise with plenty of disk to spare.'),
+    p(b('Save Your Backup Key.'), ' The backups are encrypted with a key Tesria made when it was installed, and this step asks where it went. It is in the file ', c('backup-key.txt'), ' in the Tesria folder on the server, or printed by ', c('docker compose run --rm init show-backup-key'), ' there. Choose one:'),
     ul(
       li(p(b('I saved it somewhere that is not the server:'), ' once you have copied it to your password manager, or anywhere off the server.')),
       li(p(b('Someone else runs the server; they will save it:'), ' when you are setting Tesria up from another computer and somebody else looks after the server. Administration, ', b('Backups'), ' keeps asking until one of you says it is saved.')),
@@ -329,19 +329,19 @@ export async function build({
     p('To keep a copy of your backups somewhere else, which is what saves you if the server itself is lost, see ', pageLink('Offsite copies'), '.'),
 
     step(7, 'Email'),
-    p('Tesria sends password resets, invitations and notifications by email, through an email server (SMTP) such as your email provider’s. If you have its details, fill in the ', b('SMTP host'), ', ', b('Port'), ' (587 is the usual one), ', b('Username'), ' and ', b('From address'), ', and choose ', b('Continue'), '. The password and a test email are in Administration, under ', b('Settings'), '.'),
+    p('Tesria sends password resets, invitations and notifications by email, through an email server (SMTP) such as your email provider’s. If you have its details, fill in the ', b('SMTP Host'), ', ', b('Port'), ' (587 is the usual one), ', b('Username'), ' and ', b('From Address'), ', and choose ', b('Continue'), '. The password and a test email are in Administration, under ', b('Settings'), '.'),
     p('No email server? Choose ', b('Skip for Now'), '. Tesria works fine without one: when someone forgets their password, you give them a one-time reset link from Administration instead. See ', pageLink('Email (SMTP)'), ' when you are ready.'),
 
-    step(8, 'Two-factor'),
-    p(b('Two-factor sign-in'), ' means signing in takes your password ', i('and'), ' a six-digit code from an app on your phone, so a stolen password alone is not enough. It is recommended for the owner in particular, because nobody can reset that account.'),
+    step(8, 'Two-Factor'),
+    p(b('Two-Factor Sign-In'), ' means signing in takes your password ', i('and'), ' a six-digit code from an app on your phone, so a stolen password alone is not enough. It is recommended for the owner in particular, because nobody can reset that account.'),
     ol(
-      li(p('If you signed in more than a few minutes ago, enter your ', b('Current password'), ' first. Then choose ', b('Set Up Two-Factor'), '.')),
+      li(p('If you signed in more than a few minutes ago, enter your ', b('Current Password'), ' first. Then choose ', b('Set Up Two-Factor'), '.')),
       li(p('Scan the code it shows with an authenticator app, such as Aegis, 1Password, Google Authenticator or Authy.')),
       li(p('Enter the six digits the app shows, and choose ', b('Turn On'), '.')),
     ),
     p('Then choose ', b('Continue'), '. Or choose ', b('Skip for Now'), ' and do it later from your profile; see ', pageLink('Two-factor and recovery codes'), '.'),
 
-    step(9, 'A first space'),
+    step(9, 'A First Space'),
     p('A ', b('space'), ' holds the pages for one team, project or topic. Type a ', b('Name'), ', such as ', i('Team handbook'), ', and a short ', b('Key'), ', such as ', c('TEAM'), '. Tesria starts the key for you from the name; check it and make it what you want, at least two letters and digits. The key is part of the address of every page in the space and cannot be changed later. Choose ', b('Continue'), ', or ', b('Skip for Now'), ' to make spaces later. ', pageLink('Creating a space'), ' helps you decide what deserves a space of its own.'),
 
     step(10, 'Done'),
@@ -384,7 +384,7 @@ export async function build({
     panel('warning', p(b('Close on a new page throws it away.'), ' It does not ask first. To keep what you have written, choose ', b('Publish'), '.')),
     p('To change the page later, open it and choose ', b('Edit'), '; when you are done, choose ', b('Update'), '. Every update is kept in the page’s history, so nothing is ever lost. See ', pageLink('Drafts, Publish and Update'), '.'),
 
-    step(5, 'Invite people'),
+    step(5, 'Invite People'),
     p('A wiki gets useful once other people read it and write in it. If you chose ', b('Invite Only'), ' in the setup wizard, invite each person with a link:'),
     ol(
       li(p('Choose ', b('Admin'), ' at the top of the screen, then the ', b('Invites'), ' tab. In a narrower window, or on a phone, Admin is in the ', b('☰'), ' menu at the top left.')),

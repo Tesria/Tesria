@@ -49,7 +49,7 @@ export const shots = ({ demo }) => [
   { name: 'phone-space-home', desktop: false, url: '/spaces/DEMO', settle: 1500, steps: [{ wait: 2500 }] },
   {
     name: 'phone-space-actions', desktop: false, url: '/spaces/DEMO', settle: 800,
-    steps: [{ wait: 2500 }, { click: 'button[title="Space actions"]' }, { wait: 500 }],
+    steps: [{ wait: 2500 }, { click: 'button[title="Space Actions"]' }, { wait: 500 }],
   },
 
   // ---- The editor, on one new page: its toolbar, both menus, a table and
@@ -58,7 +58,7 @@ export const shots = ({ demo }) => [
     name: 'phone-editor', desktop: false, url: '/spaces/DEMO/new', settle: 800,
     steps: [
       { wait: 3500 },
-      { type: 'Release notes', selector: 'input[placeholder="Page title"]' },
+      { type: 'Release notes', selector: 'input[placeholder="Page Title"]' },
       { click: '.ProseMirror' },
       { keys: 'What changed in this release, and why.' },
     ],
@@ -128,14 +128,14 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Open Tesria in the phone’s browser at the same address you use on your computer, such as ', c('https://wiki-server.local'), '. If Tesria runs on your own network, the phone has to be on that network too, and the name matters: opened by a number such as 192.168.1.50, the secure connection does not work. See ', pageLink('Opening Tesria by name'), '.'),
 
     step(2, 'Trust the server, if the browser warns you'),
-    p('If the browser says the connection is not private, your Tesria makes its own certificate, and the phone has to be told to trust it. The ', b('Trust this device'), ' guide walks you through it. On the phone, open ', c('http://your-server/trust'), ' (with ', c('http'), ', not ', c('https'), '), where ', c('your-server'), ' is your Tesria’s address, and choose your kind of phone.'),
-    ...(await phonePicture(setup, 'phone-trust', 'The Trust this device guide on an iPhone', 'The guide’s fourth step on an iPhone: download the certificate, compare its fingerprint, then switch trust on in Settings.')),
+    p('If the browser says the connection is not private, your Tesria makes its own certificate, and the phone has to be told to trust it. The ', b('Trust This Device'), ' guide walks you through it. On the phone, open ', c('http://your-server/trust'), ' (with ', c('http'), ', not ', c('https'), '), where ', c('your-server'), ' is your Tesria’s address, and choose your kind of phone.'),
+    ...(await phonePicture(setup, 'phone-trust', 'The Trust This Device guide on an iPhone', 'The guide’s fourth step on an iPhone: download the certificate, compare its fingerprint, then switch trust on in Settings.')),
     p('You also need the server’s ', b('fingerprint'), ', a long code that only your server’s certificate has, so you can check that the certificate your phone received is really your server’s. Whoever runs your Tesria can read it on the server; ', pageLink('Trusting the local certificate'), ' says where.'),
     ul(
       li(p(b('On an iPhone or iPad,'), ' use ', b('Safari'), ': other browsers there cannot install certificates. It takes three parts: installing the certificate, comparing its fingerprint in the Settings app, and then switching on trust for it.')),
       li(p(b('On Android,'), ' the certificate is installed from Settings, and trusted at once, so compare its fingerprint straight afterwards. The menus differ a little between phone makers; the guide says where to look.')),
     ),
-    p('Every step, with what to tap, is in ', pageLink('Trusting the local certificate'), ', under ', b('On a phone'), '. Once you are signed in, the same guide is on your profile, under ', b('Trust this device'), '.'),
+    p('Every step, with what to tap, is in ', pageLink('Trusting the local certificate'), ', under ', b('On a phone'), '. Once you are signed in, the same guide is on your profile, under ', b('Trust This Device'), '.'),
 
     step(3, 'Sign in'),
     p('Sign in as on a computer. If you use two-factor sign-in, the code comes from the authenticator app as usual, even when that app is on the same phone.'),
@@ -153,7 +153,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Tap ☰ and the menu opens under the top bar:'),
     ul(
       li(p(b('The sun, moon or screen button and the bell,'), ' at the top, if they did not fit in the top bar.')),
-      li(p(b('Spaces,'), ' and ', b('Admin'), ' or ', b('Invite people'), ' if your role has them.')),
+      li(p(b('Spaces,'), ' and ', b('Admin'), ' or ', b('Invite People'), ' if your role has them.')),
       li(p(b('Search pages…'), ', the search box. Type and tap ', b('Go'), ' or ', b('Enter'), ' on the keyboard.')),
       li(p(b('The space you are in:'), ' its name, ', b('+ New Page'), ', its whole page tree with the ', b('Filter pages'), ' box above it, and ', b('Space Settings'), '. Tap a page to go to it. Once you type in the filter, a ', b('×'), ' at the end of the box clears it.')),
     ),

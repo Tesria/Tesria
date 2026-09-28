@@ -158,16 +158,16 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     h(3, 'Email never arrives'),
     p('Password resets, invitations, alerts and notifications all need Tesria to be able to send email. Work down this list:'),
     ol(
-      li(p(b('Is sending switched on?'), ' In ', ...adminAt('Settings'), ', under ', b('Email'), ', ', b('Send email'), ' must be ticked. When it is off, no email is even attempted.')),
+      li(p(b('Is sending switched on?'), ' In ', ...adminAt('Settings'), ', under ', b('Email'), ', ', b('Send Email'), ' must be ticked. When it is off, no email is even attempted.')),
       li(p(b('Send a test.'), ' Choose ', b('Send Test Email to Me'), '. It says straight away either ', i('Sent: check your inbox'), ', or ', i('Not sent'), ' with the mail server’s own reason, such as a wrong password.')),
-      li(p(b('Check the port and encryption together.'), ' Port 587 goes with ', b('STARTTLS'), ', and port 465 with ', b('SSL on connect'), '. A mismatch usually fails with a timeout.')),
-      li(p(b('Check the From address.'), ' Most mail services only send from an address or domain you have verified with them, and refuse or quietly drop anything else.')),
+      li(p(b('Check the port and encryption together.'), ' Port 587 goes with ', b('STARTTLS'), ', and port 465 with ', b('SSL on Connect'), '. A mismatch usually fails with a timeout.')),
+      li(p(b('Check the From Address.'), ' Most mail services only send from an address or domain you have verified with them, and refuse or quietly drop anything else.')),
       li(p(b('Look in the spam folder.'), ' Mail from a new sender often lands there at first. Marking it as not spam helps the next one.')),
     ),
     p('See ', pageLink('Email (SMTP)'), ' for every setting.'),
 
     h(3, 'Notifications arrive in the app but not by email'),
-    p('Everyone starts with notification emails off; each person chooses on their own profile, under ', b('Email notifications'), ': immediately or as a daily digest. See ', pageLink('Email notifications'), '.'),
+    p('Everyone starts with notification emails off; each person chooses on their own profile, under ', b('Email Notifications'), ': immediately or as a daily digest. See ', pageLink('Email notifications'), '.'),
 
     // --------------------------------------------------------------- backups
     h(2, 'Backups and exports'),
@@ -252,7 +252,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     q('Can AI assistants use it?',
       p('Yes, through MCP, with a token you make. An assistant sees and changes only what you can, can be kept to reading only, and what it writes shows up in the page’s history. See ', pageLink('MCP'), '.')),
     q('I forgot my password. What now?',
-      p('Choose ', b('Forgot your password?'), ' on the sign-in page, or ask an administrator for a reset link. See ', pageLink('Resetting a password'), '.')),
+      p('Choose ', b('Forgot Your Password?'), ' on the sign-in page, or ask an administrator for a reset link. See ', pageLink('Resetting a password'), '.')),
   ))
 
   // ============================================================== Glossary
@@ -384,9 +384,47 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
   const notes = top['Release notes']
   await page('Release notes', null, doc(
     p('What each version of Tesria brought. Read these before you upgrade, to know what will be different afterwards; ', pageLink('Upgrading'), ' explains the upgrade itself.'),
-    p('To see which version you are running, open ', b('Administration'), ', then ', b('Dashboard'), ': the ', b('Tesria version'), ' card shows it, with the version you upgraded from, and so does ', b('About'), '. Signed in, ', c('https://your-server/api/health'), ' (', c('your-server'), ' being your Tesria’s address) includes it too, as ', c('"version"'), '; to anyone not signed in it says only that Tesria is running, so the version is not advertised.'),
+    p('To see which version you are running, open ', b('Administration'), ', then ', b('Dashboard'), ': the ', b('Tesria Version'), ' card shows it, with the version you upgraded from, and so does ', b('About'), '. Signed in, ', c('https://your-server/api/health'), ' (', c('your-server'), ' being your Tesria’s address) includes it too, as ', c('"version"'), '; to anyone not signed in it says only that Tesria is running, so the version is not advertised.'),
     p('Versions are numbered like ', c('0.5.0'), ': the last number changes for fixes, the middle one for new features. Every page on this site ends with a table saying which version it applies to.'),
     live('children', { depth: '1', sort: 'position' }),
+  ))
+  await page('Tesria 0.8', notes, doc(
+    p('Tesria 0.8, released September 27, 2026, installs with one command: Tesria makes its own passwords and keys, and asks you to save the one that unlocks your backups. 0.8.1 adds a second look, Glass, beside the one Tesria has always had, now called Minimal.'),
+    toc(),
+
+    h(2, 'Before you upgrade'),
+    p('Upgrading from 0.7 needs nothing new: the usual steps in ', pageLink('Upgrading'), ' are all there is.'),
+    ul(
+      li(p(b('Your settings file keeps working.'), ' If you have a ', c('.env'), ', every value in it is used and kept. Tesria only makes up a password or key that is missing, and never one for a database or backups that already exist.')),
+      li(p(b('Still using the example passwords?'), ' If your ', c('.env'), ' still has the ', c('change-me'), ' values from the example file, Tesria starts, but warns at every start and raises a security alert, because those passwords are public. ', pageLink('Security hardening'), ' explains changing each one.')),
+      li(p(b('An iPhone that showed a black page'), ' when opening Tesria may need one more step after the upgrade: in the Settings app, ', b('Apps'), ', ', b('Safari'), ', ', b('Advanced'), ', ', b('Website Data'), ', remove your Tesria’s address. See below for why.')),
+    ),
+
+    h(2, 'What is new in 0.8'),
+    ul(
+      li(p(b('No settings to write.'), ' A new install is ', c('docker compose up -d'), ' in the unzipped folder. Tesria makes each of its passwords and keys the first time it starts, keeps each one only where it is needed, and never shows them to the parts of Tesria that do not need them. See ', pageLink('Quick start'), '.')),
+      li(p(b('Save the backup key.'), ' Your backups are encrypted with a key Tesria made for you, and a backup is no use without it. Tesria writes it to ', c('backup-key.txt'), ' in the Tesria folder, asks during setup where you have kept it, and shows a reminder on the Backups page until someone says it is saved. See ', pageLink('Backups and recovery'), '.')),
+      li(p(b('Live editing and PDF export are on from the start,'), ' since the keys they need are made for you.')),
+      li(p(b('Trusting a device is simpler.'), ' The ', c('/trust'), ' page gives each computer one command, which shows the certificate’s fingerprint and trusts it. Checking the fingerprint against the server’s first is optional, as it is when you first connect to a server with SSH: on a network you run yourself, it is fine to skip. See ', pageLink('Trusting the local certificate'), '.')),
+      li(p(b('No more black page on iPhones.'), ' Tesria no longer offers a newer kind of connection that Safari on an iPhone would take up and then hang on.')),
+      li(p(b('Donut charts.'), ' The chart element has a Donut type beside Pie, with the total in the middle, and the Backups page shows each disk as one. See ', pageLink('Chart'), '.')),
+      li(p(b('Settings one card to a row'), ' in Administration, like every other administration page.')),
+      li(p(b('Complete license notices'), ' for everything Tesria is built from, in the About tab and inside every image.')),
+    ),
+
+    h(2, '0.8.1'),
+    p('Released September 28, 2026. A new look to choose, and a tidier top bar in both looks. Nothing to do when you upgrade: everyone starts in Minimal, which is Tesria as it has always looked.'),
+    ul(
+      li(p(b('Minimal or Glass.'), ' The appearance menu (the sun, moon or screen button at the top right) has a ', b('Style'), ': ', b('Minimal'), ', the look Tesria has always had, or ', b('Glass'), ', the frosted look of tesria.com, with a floating sidebar, glass buttons and frosted menus. Each person chooses for themselves, and the choice is kept in the browser, like light and dark. See ', pageLink('Theme and accent'), '.')),
+      li(p(b('Reduce Motion.'), ' Glass animates a little: the sidebar folds into a button when you hide it, and menus open out of their buttons. The ', b('Reduce Motion'), ' switch under Style turns that off, and your device’s own setting is followed too.')),
+      li(p(b('A look for each element.'), ' A status, a chart, a code block and a diagram each have a ', b('Style'), ': ', b('Theme Default'), ' follows each reader’s choice, and ', b('Minimal'), ' or ', b('Glass'), ' keeps it that way for everyone, in exports too. See ', pageLink('Status'), ', ', pageLink('Chart'), ', ', pageLink('Code block'), ' and ', pageLink('Diagram (Mermaid)'), '.')),
+      li(p(b('The top bar makes room.'), ' When its contents do not fit, it folds into the ', b('☰'), ' menu at its left instead of a More menu, and on a narrow screen the theme button and the bell move into that menu too. ', b('Sign Out'), ' has moved to the top right of your profile page. See ', pageLink('Finding your way around'), '.')),
+      li(p(b('Tabs never scroll sideways.'), ' Tabs that do not fit, in Administration, Space Settings and under a page, go into a ', b('•••'), ' menu at the end of the row.')),
+      li(p(b('Names in Title Case.'), ' Buttons, tabs, headings and labels are capitalized the same way everywhere: ', b('Watch This Space'), ', ', b('+ New Page'), ', ', b('Space Settings'), '.')),
+      li(p(b('On a phone,'), ' a space’s buttons float at the top right, with ', b('Watch This Space'), ' in its ', b('⋮'), ' menu; the page list in the ☰ menu scrolls on its own, fills the screen, and keeps its place when the keyboard closes; and the ', b('Filter pages'), ' box has a button to clear it.')),
+      li(p(b('Diagrams follow light and dark'), ' when you switch while a page is open, instead of keeping the colors they were drawn in.')),
+      li(p(b('Fixed:'), ' a horizontal bar chart’s bars had shrunk to thin lines; the page could scroll sideways on some phones.')),
+    ),
   ))
   await page('Tesria 0.7', notes, doc(
     p('Tesria 0.7, released September 24, 2026, is the first release you install without building anything: it comes as ready-made images, and a small download with the few files needed to run them.'),
@@ -474,7 +512,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     h(3, 'Reaching Tesria'),
     ul(
       li(p(b('From anywhere, with Tailscale.'), ' An optional part joins your tailnet and gives Tesria a private address with a real certificate, reachable only from your own devices. See ', pageLink('Reaching Tesria from anywhere with Tailscale'), '.')),
-      li(p(b('Trust this device:'), ' a page that walks any computer or phone through trusting a server on your own network, so the browser stops warning.')),
+      li(p(b('Trust This Device:'), ' a page that walks any computer or phone through trusting a server on your own network, so the browser stops warning.')),
     ),
     h(3, 'Security'),
     ul(

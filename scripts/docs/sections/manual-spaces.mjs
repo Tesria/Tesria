@@ -56,7 +56,7 @@ const HIDE_CONTENT = { css: '.space-content { visibility: hidden !important; }' 
 // in half.
 const TREE_ROWS = (row) => ({ css: `aside.sidebar .tree > ${row}:nth-of-type(n+7), aside.sidebar .sidebar__top { visibility: hidden !important; }` })
 // Opens a page's ⋮ menu, in the narrow window.
-const OPEN_MENU = [{ wait: 2500 }, { click: 'button[title="More actions"]' }, { wait: 400 }]
+const OPEN_MENU = [{ wait: 2500 }, { click: 'button[title="More Actions"]' }, { wait: 400 }]
 // Opens one of the tabs under a page and brings it into view. A tab that
 // does not fit the row is in its ••• menu (OverflowTabs, 0.8.1), opened first.
 const OPEN_TAB = (tab) => [
@@ -188,14 +188,14 @@ export const shots = ({ demo }) => [
   // Meeting notes template (prepare, above).
   {
     name: 'template-menu', url: demo('Kickoff, September 2'), viewport: NARROW, phone: false,
-    steps: [{ wait: 2500 }, { click: 'button[title="More actions"]' }, { wait: 400 }, { eval: TAG_SAVE_TEMPLATE }],
+    steps: [{ wait: 2500 }, { click: 'button[title="More Actions"]' }, { wait: 400 }, { eval: TAG_SAVE_TEMPLATE }],
     clipTo: ['.page-actionbar', '.overflow-menu__dropdown'], clipPad: 8,
     annotate: [{ type: 'box', target: '[data-shot="save-template"]', pad: 4 }],
   },
   {
     name: 'template-form', url: demo('Kickoff, September 2'), viewport: NARROW, phone: false,
     steps: [
-      { wait: 2500 }, { click: 'button[title="More actions"]' }, { wait: 400 }, { eval: TAG_SAVE_TEMPLATE },
+      { wait: 2500 }, { click: 'button[title="More Actions"]' }, { wait: 400 }, { eval: TAG_SAVE_TEMPLATE },
       { click: '[data-shot="save-template"]' }, { wait: 300 },
       { type: 'Meeting notes', selector: '.template-form input' },
       { eval: 'document.activeElement && document.activeElement.blur()' },
@@ -224,7 +224,7 @@ export const shots = ({ demo }) => [
   },
   {
     name: 'tree-reorder', url: demo('Launch plan'), phone: false,
-    steps: [{ wait: 2500 }, { click: 'aside.sidebar button[title="Reorder pages"]' }, { wait: 500 }, TREE_ROWS('div')],
+    steps: [{ wait: 2500 }, { click: 'aside.sidebar button[title="Reorder Pages"]' }, { wait: 500 }, TREE_ROWS('div')],
     clipTo: ['aside.sidebar .tree-section__heading', 'aside.sidebar .tree > div:nth-of-type(6)'], clipPad: 10,
     annotate: [{ type: 'box', target: 'aside.sidebar .tree-section__actions', pad: 3 }],
   },
@@ -239,7 +239,7 @@ export const shots = ({ demo }) => [
   {
     name: 'page-menu', url: demo('Launch plan'), viewport: NARROW, phone: false, steps: OPEN_MENU,
     clipTo: ['.page-actionbar', '.overflow-menu__dropdown'], clipPad: 8,
-    annotate: [{ type: 'box', target: 'button[title="More actions"]', pad: 3 }],
+    annotate: [{ type: 'box', target: 'button[title="More Actions"]', pad: 3 }],
   },
   {
     name: 'page-move-menu', url: demo('Launch plan'), viewport: NARROW, phone: false,
@@ -554,8 +554,8 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Whatever you choose is saved straight away; there is no Save button. You have three kinds to choose from:'),
     ul(
       li(p(b('A picture of your own:'), ' choose ', b('Upload Picture'), ' and pick a PNG, JPEG or WebP file. Tesria trims it to a square from the middle, so a logo with space around it works best. Once there is one, the button reads ', b('Replace Picture'), '.')),
-      li(p(b('An emoji:'), ' choose one under ', b('Or pick an emoji'), '. For one that is not offered, paste it into ', b('Any other emoji'), ' and choose ', b('Use It'), '. It has to be a single emoji, not letters.')),
-      li(p(b('A different tile color:'), ' choose a color under ', b('Tile color'), '. It changes the tile behind the letter or the emoji. A picture has no tile, so remove the picture first to choose one.')),
+      li(p(b('An emoji:'), ' choose one under ', b('Or Pick an Emoji'), '. For one that is not offered, paste it into ', b('Any Other Emoji'), ' and choose ', b('Use It'), '. It has to be a single emoji, not letters.')),
+      li(p(b('A different tile color:'), ' choose a color under ', b('Tile Color'), '. It changes the tile behind the letter or the emoji. A picture has no tile, so remove the picture first to choose one.')),
     ),
 
     h(2, 'Going back to the letter'),
@@ -613,7 +613,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ...(await picture(newPage, 'page-new-button', 'The + New Page button in the sidebar', '+ New Page, under the space’s name.')),
 
     step(3, 'Give it a title'),
-    p('Type the title in the ', i('Page title'), ' box at the top. Press ', b('Enter'), ' to move down to the body. If the space has templates, you can start from one instead of a blank page; see ', pageLink('Templates'), '.'),
+    p('Type the title in the ', i('Page Title'), ' box at the top. Press ', b('Enter'), ' to move down to the body. If the space has templates, you can start from one instead of a blank page; see ', pageLink('Templates'), '.'),
 
     step(4, 'Write'),
     p('Type as you would anywhere else. To add something other than text, such as a table, a picture or a colored panel, type ', c('/'), ' on a new line and choose from the list. See ', pageLink('The slash menu'), ' and ', pageLink('The editor'), '.'),
@@ -651,14 +651,14 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Give the template a name people will recognize when they create a page, such as ', i('Meeting notes'), '. Then choose where it is offered, and choose ', b('Save'), '.'),
     ...(await picture(templates, 'template-form', 'Naming a template', 'The name, and where the template is offered.')),
     ul(
-      li(p(b('This space only'), ' offers it when someone creates a page in this space. Most templates belong here.')),
-      li(p(b('Every space (instance-wide)'), ' offers it in every space. Use it for something the whole organization shares, such as an incident report. This choice appears only for people with the right ', b('Manage instance-wide templates'), ', which administrators have; everyone else saves templates for their space.')),
+      li(p(b('This Space Only'), ' offers it when someone creates a page in this space. Most templates belong here.')),
+      li(p(b('Every Space (Instance-Wide)'), ' offers it in every space. Use it for something the whole organization shares, such as an incident report. This choice appears only for people with the right ', b('Manage instance-wide templates'), ', which administrators have; everyone else saves templates for their space.')),
     ),
     p('The template is a copy of the page as it is now. Changing the page later does not change the template; save it as a template again if you want the new version.'),
 
     h(2, 'Starting a page from a template'),
-    p('Create a page as usual, with ', b('+ New Page'), '. Above the title, ', b('Start from a template (optional)'), ' lists the space’s templates and the instance-wide ones. Choose one and the page fills in with it; then give it a title and write.'),
-    ...(await picture(templates, 'template-pick', 'Choosing a template for a new page', 'Start from a template appears above the title of a new page.')),
+    p('Create a page as usual, with ', b('+ New Page'), '. Above the title, ', b('Start From a Template (Optional)'), ' lists the space’s templates and the instance-wide ones. Choose one and the page fills in with it; then give it a title and write.'),
+    ...(await picture(templates, 'template-pick', 'Choosing a template for a new page', 'Start From a Template appears above the title of a new page.')),
     p('This menu only appears when there is at least one template to offer. If you have already written something, Tesria asks first, because the template replaces everything on the page so far.'),
 
     h(2, 'Renaming and deleting templates'),
@@ -684,7 +684,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'Changing a page: Edit and Update'),
     p('To change a published page, choose ', b('Edit'), ' above it. When you are done, the button at the top right says ', b('Update'), ' instead of Publish. Each update adds a new version to the page’s history, so nothing that was there before is lost; see ', pageLink('History and restoring'), '.'),
-    p('Below the page, ', b('What changed? (optional)'), ' takes a few words about the change, such as ', i('fixed the dates'), ' or ', i('added the budget'), '. They are shown beside the version in the history, which makes it much easier to find a change later.'),
+    p('Below the page, ', b('What Changed? (Optional)'), ' takes a few words about the change, such as ', i('fixed the dates'), ' or ', i('added the budget'), '. They are shown beside the version in the history, which makes it much easier to find a change later.'),
 
     h(2, 'Leaving the editor'),
     ul(
@@ -756,7 +756,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     step(1, 'Choose ⋮, then Move…'),
     p('Open the page you want to move first. ', b('Move…'), ' is only in the menu if you can edit the page.'),
     step(2, 'Choose where it goes'),
-    p('Choose the ', b('Space'), ', then the page to ', b('Put it under'), ', or ', b('The top of the space'), '. The page itself and its sub-pages are not offered, since a page cannot go under itself.'),
+    p('Choose the ', b('Space'), ', then the page to ', b('Put It Under'), ', or ', b('The Top of the Space'), '. The page itself and its sub-pages are not offered, since a page cannot go under itself.'),
     ...(await picture(moving, 'page-move-dialog', 'The Move dialog', 'Choose the space, and the page to put it under.')),
     step(3, 'Choose Move'),
     p('The page and everything under it move together, and Tesria opens the page in its new place. It goes after the pages already there; drag it in the tree if it should be higher up.'),
@@ -768,9 +768,9 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     step(1, 'Choose ⋮, then Copy…'),
     p('Open the page you want to copy first.'),
     step(2, 'Choose where the copy goes'),
-    p('Choose the ', b('Space'), ' and the page to ', b('Put it under'), ', as for moving. It can go anywhere you can edit, even beside the original.'),
+    p('Choose the ', b('Space'), ' and the page to ', b('Put It Under'), ', as for moving. It can go anywhere you can edit, even beside the original.'),
     step(3, 'Choose whether to copy the pages under it'),
-    p(b('Copy the pages under it too'), ' is ticked to begin with, which copies the whole branch. Untick it to copy just this one page.'),
+    p(b('Copy the Pages Under It Too'), ' is ticked to begin with, which copies the whole branch. Untick it to copy just this one page.'),
     step(4, 'Choose Copy'),
     p('Tesria opens the copy. It is titled ', i('Copy of'), ' and the original’s title, so the two cannot be mixed up; rename it by editing it. Its sub-pages keep their own titles.'),
     p('What a copy brings, and what it does not:'),
@@ -872,7 +872,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     h(2, 'Finding pages by label'),
     ul(
       li(p(b('Choose a label'), ' on any page to list every page that has it, with the key of the space each is in.')),
-      li(p(b('All labels,'), ' at the top of that list, shows every label in use and how many pages have it, with a box to filter them. Its address is ', c('/labels'), ', so you can bookmark it.')),
+      li(p(b('All Labels,'), ' at the top of that list, shows every label in use and how many pages have it, with a box to filter them. Its address is ', c('/labels'), ', so you can bookmark it.')),
     ),
     p('Both only count and list pages you can see.'),
 
