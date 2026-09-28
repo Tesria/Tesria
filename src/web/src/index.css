@@ -827,7 +827,6 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 /* Space settings, in the sidebar's foot, as tall as the PAGES heading: a
    little larger, since PAGES is bold capitals and this is lowercase. */
 .sidebar .sidebar__trash { font-size: 17px; gap: 0.55rem; color: var(--text); }
-.sidebar .sidebar__trash.is-active { color: var(--primary-dark); }
 .sidebar .sidebar__trash svg { width: 22px; height: 22px; }
 .sidebar .tree {
   flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
@@ -909,7 +908,6 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
   padding: 0.35rem 0.5rem; border-radius: 4px; color: var(--text); font-size: 0.9rem;
 }
 .sidebar__trash:hover { background: var(--hover); text-decoration: none; }
-.sidebar__trash.is-active { background: var(--primary-soft); color: var(--primary-dark); font-weight: 600; }
 
 /* The navigation icons carry the accent while their labels stay quiet, the
    same split .brand__mark uses in the topbar. Because they are drawn in
@@ -918,7 +916,6 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .nav-icon { flex-shrink: 0; color: var(--primary); }
 /* Except when the row is already the accent color, then the icon joins the
    label rather than sitting a shade apart from it. */
-.sidebar__trash.is-active .nav-icon { color: inherit; }
 /* Inside a button (the mobile overflow menu) the icon needs the same gap the
    sidebar rows get from flex. */
 .btn .nav-icon { margin-right: 0.1rem; }

@@ -305,7 +305,9 @@ export function SpacePage() {
           <div className="sidebar__foot">
             <NavLink
               to={`/spaces/${space.key}/settings`}
-              className={({ isActive }) => (isActive ? 'sidebar__trash is-active' : 'sidebar__trash')}
+              // The same whether or not Space Settings is open (the owner,
+              // 2026-09-28): the page's own title and breadcrumb say so.
+              className="sidebar__trash"
             >
               <SettingsIcon /> Space Settings
             </NavLink>
