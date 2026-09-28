@@ -60,6 +60,11 @@ Read first, in this order:
   its shape changes: the rules are at the top of `docs/roadmap.md`. On every
   release, rename `Shipped in` to the new version and move what shipped
   into it.
+- **Keep `README.md` current as work lands**, not only at release: a
+  change to what Tesria does, how it installs, or a button's name updates
+  the README in the same commit, and every release updates its status line.
+  It is the repository's public front page, so it follows the voice and the
+  true-today claims of `docs/brand/messaging.md`.
 - **Frontend tests are for logic, never for rendering** (`npm test`, vitest,
   added 2026-09-20 for the 8.6 block diff). What belongs there is pure
   functions with edge cases a walk cannot cover honestly. Components,
