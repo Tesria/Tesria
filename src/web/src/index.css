@@ -1495,9 +1495,15 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   background: color-mix(in srgb, var(--text) 14%, transparent); color: var(--text);
 }
 .tree-filter__clear:hover { background: color-mix(in srgb, var(--text) 24%, transparent); }
-/* While the top bar's menu is open over the page, the page stays put
-   (Layout.tsx): a swipe in the menu no longer scrolls the page behind it. */
-html.is-menu-locked, html.is-menu-locked body { overflow: hidden; overscroll-behavior: none; }
+/* While the top bar's menu is open over the page, the page stays put: a
+   swipe on the menu pans nothing, a swipe on its page tree scrolls the tree,
+   and the tree's end does not hand the swipe on to the page. The
+   no-panning rule is on the parts around the tree only, so it cannot reach
+   the tree. */
+.topbar.is-collapsed > .topbar__collapsible.is-open > :not(.topbar__space),
+.topbar.is-collapsed > .topbar__collapsible.is-open .topbar__space > :not(.tree-section),
+.topbar.is-collapsed > .topbar__collapsible.is-open .tree-section > :not(.tree) { touch-action: none; }
+.topbar.is-collapsed > .topbar__collapsible.is-open .tree { overscroll-behavior: contain; }
 .tree-filter__children {
   flex: none; display: inline-flex; align-items: center; justify-content: center; width: 2rem;
   border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--muted); cursor: pointer;

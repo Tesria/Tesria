@@ -136,15 +136,6 @@ export function Layout() {
   const rulerRef = useRef<HTMLDivElement>(null)
   const fit = useTopbarFit(headerRef, rulerRef)
   const collapsed = fit >= 1
-  // While the menu is open over the page, the page does not scroll (the
-  // owner, 2026-09-28): on a phone a swipe in the menu that did not land on
-  // its page tree, or reached the tree's end, scrolled the page behind it.
-  const menuOver = navOpen && collapsed
-  useEffect(() => {
-    if (!menuOver) return
-    document.documentElement.classList.add('is-menu-locked')
-    return () => document.documentElement.classList.remove('is-menu-locked')
-  }, [menuOver])
   // Back to a full bar: a menu left open would have nothing in it.
   useEffect(() => { if (!collapsed) setNavOpen(false) }, [collapsed])
 

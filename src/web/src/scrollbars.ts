@@ -10,6 +10,17 @@
  * sb-refresh class), which repaints the bar. The scroll position is kept.
  */
 const HIDE_AFTER_MS = 900
+
+/**
+ * Only for a mouse, in the glass style. A touch screen draws its own overlay
+ * scrollbars, and the repaint below (overflow off for a moment) at the start
+ * of a swipe or during one stopped iOS scrolling the phone menu's page tree
+ * (the owner, 2026-09-28).
+ */
+const fine = window.matchMedia('(hover: hover) and (pointer: fine)')
+function active(): boolean {
+  return fine.matches && document.documentElement.getAttribute('data-style') === 'glass'
+}
 const hovered = new Set<Element>()
 const scrolling = new Map<Element, number>()
 
@@ -40,6 +51,7 @@ function scrollersFrom(target: EventTarget | null): Set<Element> {
 }
 
 function onPointerOver(e: PointerEvent) {
+  if (e.pointerType !== 'mouse' || !active()) return
   const now = scrollersFrom(e.target)
   for (const el of [...hovered]) if (!now.has(el)) { hovered.delete(el); update(el) }
   for (const el of now) if (!hovered.has(el)) { hovered.add(el); update(el) }
@@ -50,6 +62,7 @@ function onLeaveWindow() {
 }
 
 function onScroll(e: Event) {
+  if (!active()) return
   if (!(e.target instanceof Element) || e.target === document.documentElement) return
   const el = e.target
   const pending = scrolling.get(el)
