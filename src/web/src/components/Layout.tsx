@@ -136,8 +136,15 @@ export function Layout() {
   const rulerRef = useRef<HTMLDivElement>(null)
   const fit = useTopbarFit(headerRef, rulerRef)
   const collapsed = fit >= 1
-  // Back to a full bar: a menu left open would have nothing in it.
-  useEffect(() => { if (!collapsed) setNavOpen(false) }, [collapsed])
+  // Back to a full bar: a menu left open would have nothing in it. Only
+  // once the bar has stayed full for a moment: as a phone's keyboard closes,
+  // the bar measures as fitting for an instant, and closing on that shut the
+  // menu under the reader's finger (the owner, 2026-09-28).
+  useEffect(() => {
+    if (collapsed) return
+    const t = window.setTimeout(() => setNavOpen(false), 400)
+    return () => window.clearTimeout(t)
+  }, [collapsed])
 
   // The glass style's top bar floats at the top of the page and docks into
   // a frosted strip once it scrolls (0.8.1, glass.css). Flat ignores it.

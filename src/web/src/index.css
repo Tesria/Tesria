@@ -499,9 +499,10 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 }
 /* The ruler lays the bar out at its natural width, which can be wider than
    the window (a phone, or a window with a classic scrollbar), and must not
-   widen the page: the bar clips sideways. Only sideways: its menus hang
-   below it. */
-.topbar { overflow-x: clip; }
+   widen the page: the ruler clips itself to nothing, and its parts still lay
+   out, and measure, at full width. (The bar clipping sideways instead made
+   iOS Safari stop drawing the open menu once the keyboard had closed.) */
+.topbar__ruler { width: 0; overflow: hidden; }
 .topbar__ruler > * { flex: none; }
 .topbar__ruler .topbar__hamburger { display: inline-flex; }
 .topbar__ruler .topbar__search { flex: none; }
@@ -529,6 +530,13 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
   max-height: calc(100dvh - var(--topbar-h)); overflow: hidden; overscroll-behavior: contain;
 }
 .topbar.is-collapsed > .topbar__collapsible.is-open { display: flex; }
+/* With a space's pages in it, the open menu always reaches the bottom of the
+   screen (the owner, 2026-09-28): sized to its content, a filtered tree of a
+   few rows left it ending halfway down, the page showing below it and only a
+   sliver to scroll. */
+@media (max-width: 640px) { /* keep in sync with --bp-mobile: where the menu shows the tree */
+  .topbar.is-collapsed > .topbar__collapsible.is-open:has(.topbar__space .tree-section) { height: calc(100dvh - var(--topbar-h)); }
+}
 .topbar.is-collapsed .topbar__close {
   display: inline-flex; align-items: center; justify-content: center;
   position: absolute; top: 0.5rem; right: 0.6rem; width: 2.25rem; height: 2.25rem;
