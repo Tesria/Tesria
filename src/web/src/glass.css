@@ -461,19 +461,7 @@
   -webkit-backdrop-filter: none; backdrop-filter: none;
 }
 :root[data-style="glass"] .topbar.is-docked .topbar__me::before { content: none; }
-/* Docked, with no pill round them, the avatar and name grow to the theme and
-   bell buttons' height (the owner, 2026-09-28): the avatar fills the pill's
-   48px, and the name scales with it. */
-:root[data-style="glass"] .topbar__me { transition: padding 0.2s ease; }
-:root[data-style="glass"] .topbar__me .avatar { transition: width 0.2s ease, height 0.2s ease; }
-:root[data-style="glass"] .topbar__me .topbar__username { transition: font-size 0.2s ease; }
-:root[data-style="glass"] .topbar.is-docked .topbar__me { padding: 0; }
-:root[data-style="glass"] .topbar.is-docked .topbar__me .avatar { width: var(--ctl); height: var(--ctl); }
-:root[data-style="glass"] .topbar.is-docked .topbar__me .topbar__username { font-size: 17px; padding-right: 0; }
-@media (prefers-reduced-motion: reduce) {
-  :root[data-style="glass"] .topbar__me, :root[data-style="glass"] .topbar__me .avatar,
-  :root[data-style="glass"] .topbar__me .topbar__username { transition: none; }
-}
+
 
 /* ---- Buttons: pills. Secondary is clear glass; primary and danger are tinted. -- */
 
@@ -1243,3 +1231,18 @@ label.code-block__appearance > select {
 }
 :root[data-style="glass"] .overflow-menu__trigger:not(.topbar *):not(.sidebar *)::before { content: none; }
 :root[data-style="glass"] .overflow-menu__trigger:not(.topbar *):not(.sidebar *):hover { background: color-mix(in srgb, var(--primary) 10%, transparent); }
+/* Buttons that were filled stay filled, flat (the owner, 2026-09-28): the
+   primary and danger buttons are a solid fill with a matching 2px stroke,
+   no sheen or shadow. */
+:root[data-style="glass"] .btn--primary:not(.topbar .btn):not(.sidebar .btn):not(.overflow-menu__dropdown .btn):not(.alerts__actions .btn):not(.tabs__menu .btn) {
+  background: var(--primary); border-color: var(--primary); color: var(--on-primary);
+}
+:root[data-style="glass"] .btn--primary:not(.topbar .btn):not(.sidebar .btn):not(.overflow-menu__dropdown .btn):not(.alerts__actions .btn):not(.tabs__menu .btn):hover:not(:disabled) {
+  background: var(--primary-dark); border-color: var(--primary-dark);
+}
+:root[data-style="glass"] .btn--danger:not(.topbar .btn):not(.sidebar .btn):not(.overflow-menu__dropdown .btn):not(.alerts__actions .btn):not(.tabs__menu .btn) {
+  background: var(--danger); border-color: var(--danger); color: var(--on-danger);
+}
+:root[data-style="glass"] .btn--danger:not(.topbar .btn):not(.sidebar .btn):not(.overflow-menu__dropdown .btn):not(.alerts__actions .btn):not(.tabs__menu .btn):hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 85%, #000); border-color: color-mix(in srgb, var(--danger) 85%, #000);
+}

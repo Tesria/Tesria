@@ -27,7 +27,7 @@ section with the owner.
   as soon as its contents do not fit, then moves the theme button and the
   bell into the menu, and never cuts the brand short. Sign out moved to the
   top of the profile page. In glass the bar docks into a frosted strip as
-  you scroll, and the avatar and name grow to the buttons' height there.
+  you scroll.
 - **Glass buttons**: 48px in the top bar, 38px below it. Round and pill
   buttons lit on a diagonal, with a gradient stroke: from the top-left in
   dark, the mirror in light. Accent buttons get the diagonal from their own

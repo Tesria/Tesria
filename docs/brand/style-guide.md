@@ -445,7 +445,7 @@ on the profile page, opposite its heading.
 | Spaces and Admin | Plain links, `4px` corners; current one `--primary-soft` | One glass pill, 48px, `4px` padding; links fill it; current one a tinted lens |
 | Search | 48px pill on `--bg-alt` | 48px glass pill |
 | Theme and bell | 20px icons in a 48px round box, no circle drawn; hover fills the circle with `--hover` | Glass circles with sheen and gradient stroke |
-| Avatar | 38px avatar and your name | The same in a glass pill; docked, the avatar grows to 48px and the name to 17px |
+| Avatar | 38px avatar and your name | The same in a glass pill; docked, the pill drops its glass |
 | Menu open (`.is-menu-open`) | Solid `--surface` menu under the bar | Bar and menu share the page's `--ground`, no frost, no seam; the menu has `10px` bottom corners and `--hdr-shadow` below only |
 
 In Minimal, with no circles drawn, the theme and bell icons are spaced by
@@ -805,7 +805,6 @@ Minimal has, such as the switch knob, if the attribute stays set).
 | What | How | Timing | Where |
 |---|---|---|---|
 | Top bar docks | Frost, edge and shadow fade in once the page scrolls 4px | `0.2s` | `glass.css`, `Layout.tsx` |
-| Avatar and name grow when docked | Pill padding goes, avatar to 48px, name to 17px | `0.2s ease` | `glass.css` |
 | Appearance and notification panels open | Start as a circle the button's size under the button, slide down onto the panel's place, open out to the full panel with a 1% overshoot | `380ms`, `cubic-bezier(0.2, 0.8, 0.2, 1)` | `popoverMotion.ts` |
 | ...and close | Far sides draw in to the circle, which slides up onto the button and fades | `300ms`, `cubic-bezier(0.55, 0, 0.6, 1)`; removed by the clock after 450ms if the browser pauses it | `popoverMotion.ts` |
 | Sidebar hides | The right and bottom edges draw in to a 38px circle at the top-left corner, which keeps its shape (a clip, never a scale); the contents fade over the last stretch | `260ms`, `cubic-bezier(0.55, 0, 0.8, 0.2)` | `SpacePage.tsx` |
@@ -950,7 +949,7 @@ and 28. The website team may want to bring some of them back to the site.
 | Primary button | A flat tint (`--cta-tint`) with a whitish `--accent-rim` border | A diagonal gradient from its own color, a stroke mixed from that color, mirrored between themes | A white sheen over the color turned it milky |
 | Button size | Padding `11px 22px`, small `6px 12px`; header 48px, 44px below 1180px | Fixed heights: 48px in the bar at every width, 38px below it (small too) | One height per zone; the bar collapses rather than shrinking |
 | Button shadow | `--glass-shadow` | `--btn-shadow`, a close shadow plus a soft one, heavier in light | Buttons read as floating faintly otherwise |
-| Docked header | Pads from 22px to 12px; single buttons keep their glass | Fixed 64px bar; the avatar pill drops its glass and the avatar and name grow to 48px; frost on a `::before` layer | No glass on glass; a frosted bar would stop its menus blurring the page |
+| Docked header | Pads from 22px to 12px; single buttons keep their glass | Fixed 64px bar; the avatar pill, the Spaces and Admin pill and the theme and bell buttons drop their glass; frost on a `::before` layer | No glass on glass; a frosted bar would stop its menus blurring the page |
 | `--ground` | The page color | The page color plus two soft radial accent washes | Glass needs something to be glass over |
 | Code blocks | Light and dark consoles; window dots; `--glass` Copy pill; `--box-shadow`; `backdrop-filter` | Dark console in both themes; no window dots; Copy and line numbers as `--term-glass` pills; `--code-shadow`; no blur on the frame | Code blocks were already dark in both themes; the owner removed the dots |
 | Status badges | Top-to-bottom gradient, a glow in its own color | Diagonal gradient, plain drop shadow, no glow | A glow read as an alarm |
