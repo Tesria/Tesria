@@ -134,8 +134,8 @@ export function TableCellMenu({ editor }: { editor: TiptapEditor }) {
         style={{ left: rect.right - 20 - o.x, top: rect.top + 3 - o.y }}
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => setOpen((v) => !v)}
-        title="Cell options"
-        aria-label="Cell options"
+        title="Cell Options"
+        aria-label="Cell Options"
       >
         <ChevronDownIcon />
       </button>
@@ -157,7 +157,7 @@ export function TableCellMenu({ editor }: { editor: TiptapEditor }) {
             <TableAction editor={editor} label="Delete Table" danger
               run={() => { setOpen(false); editor.chain().focus().deleteTable().run() }} />
           </div>
-          <p className="cell-menu__heading">Background color</p>
+          <p className="cell-menu__heading">Background Color</p>
           <div className="cell-menu__scopes">
             {SCOPES.map((s) => (
               <button

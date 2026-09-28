@@ -95,11 +95,11 @@ export function AttachmentView({ node, editor, selected, updateAttributes }: Rea
       {uploadError && <p className="attachment-block__note alert alert--error">{uploadError}</p>}
       {editor.isEditable && (!current || kindOf(current.contentType) === 'video') && (
         <label className="attachment-block__picker">
-          <span>Show as</span>
+          <span>Show As</span>
           <select value={animation ? 'animation' : 'player'}
             onChange={(e) => updateAttributes({ playback: e.target.value })}>
-            <option value="player">A video with controls</option>
-            <option value="animation">An animation: silent, looping, no controls</option>
+            <option value="player">A Video With Controls</option>
+            <option value="animation">An Animation: Silent, Looping, No Controls</option>
           </select>
         </label>
       )}
@@ -194,7 +194,7 @@ function Animation({ href, label }: { href: string; label: string }) {
       />
       <button type="button" className="animation__toggle" data-animation-toggle
         onMouseDown={(e) => e.preventDefault()} onClick={toggle}
-        aria-label={paused ? 'Play the animation' : 'Pause the animation'} aria-pressed={paused}>
+        aria-label={paused ? 'Play the Animation' : 'Pause the Animation'} aria-pressed={paused}>
         {paused
           ? <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5v14l12-7z" fill="currentColor" /></svg>
           : <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor" /></svg>}

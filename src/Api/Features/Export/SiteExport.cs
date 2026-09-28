@@ -192,8 +192,8 @@ public static partial class SiteExport
     public static string NotFound(
         Space space, string css, SiteChrome.Brand brand, SiteChrome.SpaceHead head,
         IReadOnlyList<Placed> pages, string footer) =>
-        Shell(Infrastructure.Branding.BrandTitle.Format(brand.Instance, space.Name, "Not found"),
-            "<h1>Not found</h1><p class=\"site-lede\">That page is not part of this site.</p>",
+        Shell(Infrastructure.Branding.BrandTitle.Format(brand.Instance, space.Name, "Not Found"),
+            "<h1>Not Found</h1><p class=\"site-lede\">That page is not part of this site.</p>",
             // No current page: nothing in the tree is marked, which is honest
             // for a page that is not in the site.
             //

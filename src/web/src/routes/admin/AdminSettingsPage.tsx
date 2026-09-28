@@ -73,7 +73,7 @@ export function AdminSettingsPage() {
           <input value={instanceName} onChange={(e) => setInstanceName(e.target.value)} />
         </label>
         <label>
-          Public address
+          Public Address
           <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder={settings.effectiveBaseUrl} />
           <span className="muted small">
             Where links in email point. Blank uses the deploy-time value ({settings.effectiveBaseUrl}).
@@ -102,7 +102,7 @@ export function AdminSettingsPage() {
           empty to turn embeds off entirely.
         </p>
         <label>
-          Allowed embed hosts
+          Allowed Embed Hosts
           <textarea
             rows={6}
             value={embedAllowlist}
@@ -142,11 +142,11 @@ export function AdminSettingsPage() {
             )}
           />
           <span>
-            <strong>Only show pictures from this wiki and the listed hosts</strong>
+            <strong>Only Show Pictures From This Wiki and the Listed Hosts</strong>
           </span>
         </label>
         <label>
-          Allowed image hosts
+          Allowed Image Hosts
           <textarea
             rows={4}
             value={imageAllowlist}
@@ -184,7 +184,7 @@ export function AdminSettingsPage() {
             )}
           />
           <span>
-            <strong>Allow public registration</strong>
+            <strong>Allow Public Registration</strong>
             <br />
             <span className="muted small">
               When off, new accounts need an invite link. The very first account
@@ -204,7 +204,7 @@ export function AdminSettingsPage() {
             )}
           />
           <span>
-            <strong>Allow public spaces</strong>
+            <strong>Allow Public Spaces</strong>
             <br />
             <span className="muted small">
               Instance-wide switch for anonymous read access. With it on, publish

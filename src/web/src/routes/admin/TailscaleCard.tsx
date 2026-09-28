@@ -48,12 +48,12 @@ export function TailscaleCard() {
             </li>
             {status.address && (
               <li>
-                <strong>Address on your tailnet:</strong>{' '}
+                <strong>Address on Your Tailnet:</strong>{' '}
                 <a href={status.address} target="_blank" rel="noreferrer">{status.address}</a>
               </li>
             )}
             <li>
-              <strong>Device key:</strong>{' '}
+              <strong>Device Key:</strong>{' '}
               {status.keyExpiry
                 ? <>expires {new Date(status.keyExpiry).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</>
                 : 'does not expire'}

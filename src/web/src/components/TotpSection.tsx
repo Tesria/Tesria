@@ -89,11 +89,11 @@ export function TotpSection() {
           ) : (
             <>
               <label>
-                Current password
+                Current Password
                 <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
               </label>
               <label>
-                Or a code from the app
+                Or a Code From the App
                 <input value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" />
               </label>
               <button type="submit" className="btn btn--ghost" disabled={busy || (!password && !code)}>Turn Off</button>
@@ -107,7 +107,7 @@ export function TotpSection() {
             Can&rsquo;t scan? Enter this key by hand: <code className="totp-secret">{setup.secret}</code>
           </p>
           <label>
-            Six-digit code
+            Six-Digit Code
             <input value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" required autoFocus />
           </label>
           <div className="row-gap">
@@ -123,7 +123,7 @@ export function TotpSection() {
               : 'Add a second step to sign-in: a code from an authenticator app such as Aegis, 1Password, Google Authenticator or Authy.'}
           </p>
           <label>
-            Current password
+            Current Password
             <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
             <span className="muted small">Not needed within a few minutes of signing in.</span>
           </label>

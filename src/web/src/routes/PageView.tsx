@@ -195,7 +195,7 @@ export function PageView() {
             type="button"
             className="btn btn--ghost page-actionbar__fullwidth-toggle"
             onClick={toggleFullWidth}
-            title={page.fullWidth ? 'Switch to normal width' : 'Switch to full width'}
+            title={page.fullWidth ? 'Switch to Normal Width' : 'Switch to Full Width'}
           >
             {page.fullWidth ? '⤡ Normal Width' : '⤢ Full Width'}
           </button>

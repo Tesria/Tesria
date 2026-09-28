@@ -49,7 +49,7 @@ export function TourAndTipsSection() {
           )}
         />
         <span>
-          <strong>Show tips as I go</strong>
+          <strong>Show Tips as I Go</strong>
           <span className="muted small">
             One at a time, at most three a day, and each one only once.
           </span>

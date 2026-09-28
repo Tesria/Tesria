@@ -73,7 +73,7 @@ export function AdminUsersPage() {
       setResetLink({
         name: u.displayName,
         links: issued.tailnetUrl && issued.tailnetUrl !== here
-          ? [{ label: 'At this address', url: here }, { label: 'Through Tailscale', url: issued.tailnetUrl }]
+          ? [{ label: 'At This Address', url: here }, { label: 'Through Tailscale', url: issued.tailnetUrl }]
           : [{ label: null, url: here }],
       })
     }, 'Could not issue a reset link.')
@@ -119,7 +119,7 @@ export function AdminUsersPage() {
             <th>Role</th>
             <th>Status</th>
             <th>Codes</th>
-            <th>Last seen</th>
+            <th>Last Seen</th>
             <th>Actions</th>
           </tr>
         </thead>

@@ -80,8 +80,8 @@ export function AdminAboutPage() {
         )}
         <p className="about-card__links">
           <a href={TESRIA_SITE} target="_blank" rel="noopener noreferrer">tesria.com</a>
-          <a href={TESRIA_SOURCE} target="_blank" rel="noopener noreferrer">Source code</a>
-          <a href="/api/admin/about/notices" target="_blank" rel="noopener noreferrer">Third-party licenses</a>
+          <a href={TESRIA_SOURCE} target="_blank" rel="noopener noreferrer">Source Code</a>
+          <a href="/api/admin/about/notices" target="_blank" rel="noopener noreferrer">Third-Party Licenses</a>
         </p>
       </section>
 
@@ -146,7 +146,7 @@ export function AdminAboutPage() {
         )}
         <p className="muted small">
           This covers the packages below. The container images Tesria runs on are checked with Docker’s
-          own tools: see <a href="#container-images">Container images</a>.
+          own tools: see <a href="#container-images">Container Images</a>.
         </p>
       </section>
 
@@ -185,7 +185,7 @@ export function AdminAboutPage() {
       <div className="row-gap about-filter">
         <input type="search" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filter by package or license" aria-label="Filter by package or license" />
         <span className="glass-select-wrap"><select className="glass-select" value={component} onChange={(e) => setComponent(e.target.value)} aria-label="Part of Tesria">
-          <option value="all">All parts</option>
+          <option value="all">All Parts</option>
           {components.map(([c]) => <option key={c} value={c}>{c}</option>)}
         </select></span>
       </div>

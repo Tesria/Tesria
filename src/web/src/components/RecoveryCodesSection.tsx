@@ -83,7 +83,7 @@ export function RecoveryCodesSection() {
             Generating a new set immediately invalidates your existing codes.
           </p>
           <label>
-            Current password
+            Current Password
             <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}

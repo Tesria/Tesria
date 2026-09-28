@@ -155,7 +155,7 @@ export function RestoreDialog({
 
         {isPitr && preview && (
           <label>
-            <span>Roll forward to</span>
+            <span>Roll Forward To</span>
             <input
               type="datetime-local"
               value={at || (preview.targetAt ? toLocalInput(preview.targetAt) : '')}
@@ -185,13 +185,13 @@ export function RestoreDialog({
 
         {byCode ? (
           <label>
-            <span>A code from your authenticator</span>
+            <span>A Code From Your Authenticator</span>
             <input value={code} onChange={(e) => setCode(e.target.value)}
               inputMode="numeric" autoComplete="one-time-code" placeholder="123456" />
           </label>
         ) : (
           <label>
-            <span>Your password</span>
+            <span>Your Password</span>
             <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password" />
           </label>
@@ -311,10 +311,10 @@ export function KeptCopyCard({ restore, onChanged }: {
       </p>
 
       <dl className="backup-card__facts">
-        <div><dt>Kept since</dt><dd>{when(kept.restoredAt)}</dd></div>
+        <div><dt>Kept Since</dt><dd>{when(kept.restoredAt)}</dd></div>
         {kept.databaseBytes !== null && <div><dt>Size</dt><dd>{bytes(kept.databaseBytes)}</dd></div>}
         <div>
-          <dt>Removed by the policy</dt>
+          <dt>Removed by the Policy</dt>
           <dd>{restore.keptCopyExpiresAt ? when(restore.keptCopyExpiresAt) : 'Not while retention is off'}</dd>
         </div>
       </dl>
@@ -340,13 +340,13 @@ export function KeptCopyCard({ restore, onChanged }: {
           </label>
           {byCode ? (
             <label>
-              <span>A code from your authenticator</span>
+              <span>A Code From Your Authenticator</span>
               <input value={code} onChange={(e) => setCode(e.target.value)}
                 inputMode="numeric" autoComplete="one-time-code" placeholder="123456" />
             </label>
           ) : (
             <label>
-              <span>Your password</span>
+              <span>Your Password</span>
               <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password" />
             </label>

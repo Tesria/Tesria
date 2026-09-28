@@ -70,7 +70,7 @@ export function CodeBlockView({ node, updateAttributes, editor }: ReactNodeViewP
             className={lineNumbers ? 'code-block__linenum-toggle is-active' : 'code-block__linenum-toggle'}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => updateAttributes({ lineNumbers: !lineNumbers })}
-            title={lineNumbers ? 'Hide line numbers' : 'Show line numbers'}
+            title={lineNumbers ? 'Hide Line Numbers' : 'Show Line Numbers'}
           >
             #
           </button>

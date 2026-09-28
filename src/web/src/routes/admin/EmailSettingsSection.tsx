@@ -180,7 +180,7 @@ export function EmailSettingsSection({
           })}
         />
         <span>
-          <strong>Send email</strong>
+          <strong>Send Email</strong>
           <br />
           <span className="muted small">
             Password-reset links, invitations, security alerts to administrators, and
@@ -207,7 +207,7 @@ export function EmailSettingsSection({
           <label className="admin__toggle admin__toggle--inline">
             <input type="radio" name="mail-signin" checked={useSignIn} onChange={() => setUseSignIn(true)} />
             <span>
-              <strong>Sign in with {signInName}</strong> (recommended)
+              <strong>Sign In With {signInName}</strong> (Recommended)
               <br />
               <span className="muted small">
                 {signInKind === MailSignIn.Microsoft
@@ -219,7 +219,7 @@ export function EmailSettingsSection({
           <label className="admin__toggle admin__toggle--inline">
             <input type="radio" name="mail-signin" checked={!useSignIn} onChange={() => setUseSignIn(false)} />
             <span>
-              <strong>{signInKind === MailSignIn.Microsoft ? 'Password' : 'App password'}</strong>
+              <strong>{signInKind === MailSignIn.Microsoft ? 'Password' : 'App Password'}</strong>
               <br />
               <span className="muted small">
                 {signInKind === MailSignIn.Microsoft
@@ -246,7 +246,7 @@ export function EmailSettingsSection({
             </p>
           )}
           <label>
-            <span>Redirect address to register with {signInName}</span>
+            <span>Redirect Address to Register With {signInName}</span>
             <span className="mail-signin__redirect">
               <code>{redirect}</code>
               <button
@@ -266,11 +266,11 @@ export function EmailSettingsSection({
             </p>
           )}
           <label>
-            <span>{signInKind === MailSignIn.Microsoft ? 'Application (client) ID' : 'Client ID'}</span>
+            <span>{signInKind === MailSignIn.Microsoft ? 'Application (Client) ID' : 'Client ID'}</span>
             <input value={clientId} onChange={(e) => setClientId(e.target.value)} autoComplete="off" />
           </label>
           <label>
-            <span>Client secret</span>
+            <span>Client Secret</span>
             <PasswordInput value={clientSecret} onChange={(e) => setClientSecret(e.target.value)} autoComplete="off" />
           </label>
           <p className="muted small">
@@ -279,7 +279,7 @@ export function EmailSettingsSection({
           </p>
           {signInKind === MailSignIn.Microsoft && (
             <label>
-              <span>Directory (tenant) ID, optional</span>
+              <span>Directory (Tenant) ID, Optional</span>
               <input
                 value={tenant}
                 placeholder="Leave empty for any account"
@@ -323,7 +323,7 @@ export function EmailSettingsSection({
       ) : (
         <form onSubmit={savePasswordSettings}>
           <label>
-            <span>SMTP host</span>
+            <span>SMTP Host</span>
             <input name="smtpHost" value={host} onChange={(e) => setHost(e.target.value)} />
           </label>
           <label>
@@ -335,7 +335,7 @@ export function EmailSettingsSection({
             <select name="smtpTls" value={tls} onChange={(e) => setTls(Number(e.target.value))}>
               <option value={0}>None</option>
               <option value={1}>STARTTLS</option>
-              <option value={2}>SSL on connect</option>
+              <option value={2}>SSL on Connect</option>
             </select>
           </label>
           <label>
@@ -350,7 +350,7 @@ export function EmailSettingsSection({
             {settings.smtpPasswordSet ? 'A password is stored. Leave blank to keep it.' : 'No password stored.'}
           </p>
           <label>
-            <span>From address</span>
+            <span>From Address</span>
             <input name="smtpFromAddress" type="email" value={from} onChange={(e) => setFrom(e.target.value)} />
           </label>
           {signedIn && (
@@ -369,7 +369,7 @@ export function EmailSettingsSection({
           type="button"
           className="btn btn--ghost"
           disabled={busy || !settings.emailEnabled}
-          title={settings.emailEnabled ? undefined : 'Turn on Send email first.'}
+          title={settings.emailEnabled ? undefined : 'Turn on Send Email first.'}
           onClick={async () => {
             setTestResult(null)
             try {

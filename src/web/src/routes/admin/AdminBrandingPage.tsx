@@ -225,7 +225,7 @@ export function AdminBrandingPage() {
       <section className="profile__section profile__section--wide">
         <h2>Name and Logo</h2>
         <label className="branding__field">
-          <span>Brand name</span>
+          <span>Brand Name</span>
           <input
             value={form.brandName}
             placeholder="Tesria"
@@ -241,9 +241,9 @@ export function AdminBrandingPage() {
         <fieldset className="branding__choice">
           <legend>What to Show</legend>
           {([
-            ['logo-and-name', 'Logo and name'],
-            ['logo', 'Logo only, for a logo that already contains the name'],
-            ['name', 'Name only'],
+            ['logo-and-name', 'Logo and Name'],
+            ['logo', 'Logo Only, for a Logo That Already Contains the Name'],
+            ['name', 'Name Only'],
           ] as const).map(([value, label]) => (
             <label key={value} className="admin__toggle admin__toggle--inline">
               <input type="radio" name="display" checked={form.display === value} onChange={() => set('display', value)} />
@@ -258,8 +258,8 @@ export function AdminBrandingPage() {
         <fieldset className="branding__choice" disabled={!bothShown}>
           <legend>On the Sign-In Page</legend>
           {([
-            ['side-by-side', 'Logo and name side by side'],
-            ['stacked', 'Logo above the name'],
+            ['side-by-side', 'Logo and Name Side by Side'],
+            ['stacked', 'Logo Above the Name'],
           ] as const).map(([value, label]) => (
             <label key={value} className="admin__toggle admin__toggle--inline">
               <input type="radio" name="arrangement" checked={form.signInArrangement === value}
@@ -307,9 +307,9 @@ export function AdminBrandingPage() {
         <fieldset className="branding__choice">
           <legend>Theme</legend>
           {([
-            ['any', 'Let people choose light, dark or their system setting'],
-            ['light', 'Light only'],
-            ['dark', 'Dark only'],
+            ['any', 'Let People Choose Light, Dark or Their System Setting'],
+            ['light', 'Light Only'],
+            ['dark', 'Dark Only'],
           ] as const).map(([value, label]) => (
             <label key={value} className="admin__toggle admin__toggle--inline">
               <input type="radio" name="theme" checked={form.themePolicy === value} onChange={() => set('themePolicy', value)} />
@@ -346,11 +346,11 @@ export function AdminBrandingPage() {
           {custom && (
             <div className="branding__colors">
               {needsLight && (
-                <ColorField label="Light mode" value={form.accentLight} onChange={(v) => set('accentLight', v)}
+                <ColorField label="Light Mode" value={form.accentLight} onChange={(v) => set('accentLight', v)}
                   check={checks.find((c) => c.mode === 'light')} />
               )}
               {needsDark && (
-                <ColorField label="Dark mode" value={form.accentDark} onChange={(v) => set('accentDark', v)}
+                <ColorField label="Dark Mode" value={form.accentDark} onChange={(v) => set('accentDark', v)}
                   check={checks.find((c) => c.mode === 'dark')} />
               )}
             </div>

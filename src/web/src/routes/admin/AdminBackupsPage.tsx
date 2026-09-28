@@ -125,17 +125,17 @@ function AgentCard({
       <h2 className="backup-card__title">{AGENT_TITLE[agent.name]}</h2>
       <p className="backup-card__state"><Dot tone={state.tone} /> {state.text}</p>
       <dl className="backup-card__facts">
-        <dt>Last backup</dt>
+        <dt>Last Backup</dt>
         <dd>
           {newest
             ? <>{relative(newest.completedAt ?? newest.startedAt)} · {bytes(newest.sizeBytes)}</>
             : 'None yet'}
         </dd>
-        <dt>Next run</dt>
+        <dt>Next Run</dt>
         <dd>{agent.nextRunAt ? `${relative(agent.nextRunAt)} (${when(agent.nextRunAt)})` : 'Not scheduled'}</dd>
         {agent.name === 'physical' ? (
           <>
-            <dt>Restore to any moment</dt>
+            <dt>Restore to Any Moment</dt>
             <dd>
               {agent.oldestRestorePoint
                 ? <>{when(agent.oldestRestorePoint)} → {agent.walArchivedAt ? when(agent.walArchivedAt) : 'now'}</>
@@ -144,25 +144,25 @@ function AgentCard({
           </>
         ) : (
           <>
-            <dt>Oldest restore point</dt>
+            <dt>Oldest Restore Point</dt>
             <dd>{when(agent.oldestRestorePoint)}</dd>
           </>
         )}
         <dt>Kept</dt>
         <dd>{agent.presentCount} backup{agent.presentCount === 1 ? '' : 's'} · {bytes(agent.presentBytes)}</dd>
-        <dt>Disk free</dt>
+        <dt>Disk Free</dt>
         <dd>
           {agent.volumeFreeBytes != null && agent.volumeTotalBytes
             ? `${bytes(agent.volumeFreeBytes)} of ${bytes(agent.volumeTotalBytes)}`
             : 'Not reported'}
         </dd>
-        <dt>Last restore test</dt>
+        <dt>Last Restore Test</dt>
         <dd>
           {agent.lastVerifiedAt
             ? <>{relative(agent.lastVerifiedAt)} · {agent.lastVerifyOk ? 'passed' : <span className="backup-text--bad">failed</span>}</>
             : 'Never'}
         </dd>
-        <dt>Success (30 days)</dt>
+        <dt>Success (30 Days)</dt>
         <dd>{agent.successRate30Days == null ? 'No runs yet' : `${Math.round(agent.successRate30Days * 100)}%`}</dd>
       </dl>
       {agent.lastRunFailed && agent.lastFailure?.error && (
@@ -370,13 +370,13 @@ export function AdminBackupsPage() {
           <label className="admin__toggle">
             <input type="radio" name="mode" checked={!draft.enabled} disabled={!mayEditPolicy}
               onChange={() => setDraft({ ...draft, enabled: false })} />
-            <span><strong>Keep every backup forever</strong><br />
+            <span><strong>Keep Every Backup Forever</strong><br />
               <span className="muted small">Nothing is ever removed. Watch the disk space above.</span></span>
           </label>
           <label className="admin__toggle">
             <input type="radio" name="mode" checked={draft.enabled} disabled={!mayEditPolicy}
               onChange={() => setDraft({ ...draft, enabled: true })} />
-            <span><strong>Prune old backups</strong></span>
+            <span><strong>Prune Old Backups</strong></span>
           </label>
           <p className="backup-policy__rule">
             Keep the newest{' '}
@@ -494,7 +494,7 @@ export function AdminBackupsPage() {
         )}
         <label className="admin__toggle admin__toggle--inline backup-removed-toggle">
           <input type="checkbox" checked={showRemoved} onChange={(e) => setShowRemoved(e.target.checked)} />
-          <span>Show backups removed in the last 30 days</span>
+          <span>Show Backups Removed in the Last 30 Days</span>
         </label>
         {showRemoved && (
           data.removed.length === 0 ? (

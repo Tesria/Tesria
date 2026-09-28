@@ -82,7 +82,7 @@ export function LoginPage() {
     return (
       <AuthPage>
         <form className="authcard" onSubmit={onSubmitCode}>
-          <h1>One more step</h1>
+          <h1>One More Step</h1>
           <p className="muted small">Enter the six-digit code from your authenticator app, or one of your recovery codes.</p>
           {error && <p className="alert alert--error">{error}</p>}
           <label>
@@ -103,7 +103,7 @@ export function LoginPage() {
   return (
     <AuthPage>
       <form className="authcard" onSubmit={onSubmit}>
-        <h1>Sign in</h1>
+        <h1>Sign In</h1>
         {error && <p className="alert alert--error">{error}</p>}
         <label>
           Email
@@ -125,7 +125,7 @@ export function LoginPage() {
           </>
         )}
         <p className="muted">
-          <Link to="/recover">Forgot your password?</Link>
+          <Link to="/recover">Forgot Your Password?</Link>
         </p>
         {/* Somebody who reached sign-in on an instance nobody has claimed
             yet (dev-plan 10.2). */}
@@ -138,7 +138,7 @@ export function LoginPage() {
           <p className="muted small">
             No account?{' '}
             <Link to={invited ? `/register?invite=${encodeURIComponent(searchParams.get('invite') ?? '')}` : '/register'}>
-              Create one
+              Create One
             </Link>
           </p>
         )}
@@ -146,7 +146,7 @@ export function LoginPage() {
             publish something should not be stranded here (dev-plan 5.5). */}
         {instance?.publicReading && (
           <p className="muted small">
-            <Link to="/spaces">Browse what is public</Link>
+            <Link to="/spaces">Browse What Is Public</Link>
           </p>
         )}
         {/* The browser's certificate warning is the first thing anyone on a
@@ -156,7 +156,7 @@ export function LoginPage() {
         {instance?.ownCertificate && (
           <p className="muted small">
             Did your browser warn that this site is not secure?{' '}
-            <a href="/trust">Trust this device</a>
+            <a href="/trust">Trust This Device</a>
           </p>
         )}
       </form>

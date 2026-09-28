@@ -1,7 +1,8 @@
 /*
  * Tesria's glass style (0.8.1, dev-plan 26.1): tesria.com's frosted look,
- * from its glass guide, as the "Glass" choice beside "Flat" in the
- * appearance menu. Flat is everything in index.css, untouched: every rule
+ * from its glass guide, as the "Glass" choice beside "Minimal" (once called
+ * Flat, still stored as flat) in the appearance menu. Minimal is everything
+ * in index.css, untouched: every rule
  * here applies only under :root[data-style="glass"], or to a block that
  * asks for glass itself with data-appearance="glass".
  *
@@ -39,8 +40,9 @@
   --glass-sheen: linear-gradient(160deg, rgba(10, 20, 34, 0.24), rgba(10, 20, 34, 0.04) 45%, rgba(255, 255, 255, 1));
   --btn-in-top: rgba(10, 20, 34, 0.08);
   /* Glass status colors: more saturated than the flat badges' inks (the
-     owner, 2026-09-28); grey (Not Started) keeps the theme's own. */
-  --sg-red: #e0321c; --sg-yellow: #c96a04; --sg-green: #0b9a55; --sg-blue: #1766f2; --sg-purple: #6f3ae0;
+     owner, 2026-09-28); grey (Not Started) keeps the theme's own. In light,
+     each keeps white text at 4.5:1 or better (WCAG AA). */
+  --sg-red: #e0321c; --sg-yellow: #b85c00; --sg-green: #07804a; --sg-blue: #1766f2; --sg-purple: #6f3ae0;
   /* Under a code block: a close shadow and a deeper soft one (the owner,
      2026-09-28, the frame's own box-shadow read as none). */
   --code-shadow: 0 4px 10px -2px rgba(10, 20, 34, 0.3), 0 16px 36px -10px rgba(10, 20, 34, 0.45);
@@ -488,7 +490,7 @@
 :root[data-style="glass"] .btn--sm { padding-inline: 0.95rem; }
 /* Windows: button text 1px up (see index.css); here the height is fixed, so
    2px of bottom padding moves the centered label up by 1px. */
-:root[data-os="windows"][data-style="glass"] .btn:not(.overflow-menu__dropdown .btn, .topbar__more-menu .btn) { padding-top: 0; padding-bottom: 2px; }
+:root[data-os="windows"][data-style="glass"] .btn:not(.overflow-menu__dropdown .btn) { padding-top: 0; padding-bottom: 2px; }
 :root[data-style="glass"] .btn:hover {
   filter: none;
   background: var(--glass-sheen), color-mix(in srgb, var(--glass-hover) 60%, var(--glass));
@@ -523,21 +525,18 @@
   outline: 2px solid var(--primary); outline-offset: 2px;
 }
 
-/* Menus hold lists people read: solid, and their items stay rows, not pills. */
-:root[data-style="glass"] .overflow-menu__dropdown .btn,
-:root[data-style="glass"] .topbar__more-menu .btn {
+/* A menu's items stay rows, not pills. */
+:root[data-style="glass"] .overflow-menu__dropdown .btn {
   min-height: 0; padding: 0.45rem 0.85rem;
   border-radius: 3px; background: transparent; border-color: transparent;
   box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
 }
 :root[data-style="glass"] .overflow-menu__dropdown .btn:hover { background: var(--glass-hover); }
-:root[data-style="glass"] .overflow-menu__dropdown .btn::before,
-:root[data-style="glass"] .topbar__more-menu .btn::before { content: none; }
+:root[data-style="glass"] .overflow-menu__dropdown .btn::before { content: none; }
+/* The current tab in a tab bar's ••• menu: the 1px accent stroke of a
+   selected item on a frosted surface. */
+:root[data-style="glass"] .tabs__menu .btn.is-active { box-shadow: inset 0 0 0 1px var(--primary); }
 :root[data-style="glass"] .overflow-menu__dropdown .btn--danger { color: var(--danger); }
-:root[data-style="glass"] .topbar__more-menu {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
-  box-shadow: var(--box-shadow);
-}
 /* The appearance menu, the notifications and a page's ... menu: frosted
    panels, as the sidebar, over a denser base than the sidebar's, since they
    sit over the page's text and must stay readable. */
@@ -711,7 +710,13 @@ label.code-block__appearance > select {
   :root { --glass: color-mix(in srgb, var(--surface) 88%, transparent); }
 }
 @media (prefers-reduced-transparency: reduce) {
-  :root { --glass: var(--surface); }
+  /* :root three times: more specific than the dark theme's own tokens. */
+  :root:root:root {
+    --glass: var(--surface);
+    --panel-bg: linear-gradient(var(--surface), var(--surface));
+    --sidebar-bg: linear-gradient(var(--surface), var(--surface));
+    --diagram-bg: linear-gradient(var(--surface), var(--surface));
+  }
   :root[data-style="glass"] .topbar.is-docked,
   :root[data-style="glass"] .topbar.is-menu-open,
   :root[data-style="glass"] .topbar.is-collapsed > .topbar__collapsible { background: var(--surface); }
@@ -1107,6 +1112,7 @@ label.code-block__appearance > select {
   :root[data-style="glass"] select.glass-select option:focus-visible { background: var(--glass-hover); outline: none; }
   :root[data-style="glass"] select.glass-select option:checked {
     background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--text); font-weight: 600;
+    box-shadow: inset 0 0 0 1px var(--primary);
   }
   :root[data-style="glass"] select.glass-select option::checkmark { color: var(--primary); }
 }

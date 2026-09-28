@@ -68,15 +68,15 @@ function Severity({ level }: { level: SecuritySeverity }) {
 }
 
 const LIMIT_FIELDS: Array<{ key: keyof Omit<SecurityLimits, 'activeLockouts'>; label: string; hint: string }> = [
-  { key: 'loginRateLimitPerMinute', label: 'Credential attempts per address per minute',
+  { key: 'loginRateLimitPerMinute', label: 'Credential Attempts per Address per Minute',
     hint: 'Sign-in, registration and recovery share this budget. Raise it if many users sit behind one NAT.' },
-  { key: 'anonymousRateLimitPerMinute', label: 'Anonymous requests per address per minute',
+  { key: 'anonymousRateLimitPerMinute', label: 'Anonymous Requests per Address per Minute',
     hint: 'Applies to callers with no session. Signed-in users are not limited this way.' },
-  { key: 'tokenMintLimitPerHour', label: 'API tokens per account per hour', hint: '' },
-  { key: 'lockoutThreshold', label: 'Failed sign-ins before lockout', hint: '' },
-  { key: 'lockoutBaseSeconds', label: 'First lockout (seconds)',
+  { key: 'tokenMintLimitPerHour', label: 'API Tokens per Account per Hour', hint: '' },
+  { key: 'lockoutThreshold', label: 'Failed Sign-Ins Before Lockout', hint: '' },
+  { key: 'lockoutBaseSeconds', label: 'First Lockout (Seconds)',
     hint: 'Doubles with each further failure, up to the maximum. Never permanent.' },
-  { key: 'lockoutMaxSeconds', label: 'Maximum lockout (seconds)', hint: '' },
+  { key: 'lockoutMaxSeconds', label: 'Maximum Lockout (Seconds)', hint: '' },
 ]
 
 /** Admin → Security (dev-plan 3.2; 3.3 adds events, alerts and mitigations). */
@@ -219,7 +219,7 @@ export function AdminSecurityPage() {
 
       <div className="dash__grid">
         <div className="stat">
-          <p className="stat__label">Open alerts</p>
+          <p className="stat__label">Open Alerts</p>
           <p className="stat__value">{overview.openAlerts}</p>
           {overview.criticalOpen > 0 && <p className="alert alert--error small">{overview.criticalOpen} critical</p>}
         </div>
@@ -228,7 +228,7 @@ export function AdminSecurityPage() {
           <p className="stat__value">{overview.eventsLast24h}</p>
         </div>
         <div className="stat">
-          <p className="stat__label">Blocked networks</p>
+          <p className="stat__label">Blocked Networks</p>
           <p className="stat__value">{overview.blockedNetworks}</p>
           <p className="muted small">{overview.blockedHits} requests refused since start</p>
         </div>
@@ -305,7 +305,7 @@ export function AdminSecurityPage() {
                           )
                         }}
                       >
-                        <input name="note" placeholder="Resolution note (optional)" autoFocus
+                        <input name="note" placeholder="Resolution Note (Optional)" autoFocus
                           onKeyDown={(e) => e.key === 'Escape' && setResolving(null)} />
                         <button type="submit" className="btn btn--ghost btn--sm" disabled={busy}>Resolve</button>
                         <button type="button" className="btn btn--ghost btn--sm" disabled={busy}
@@ -343,21 +343,21 @@ export function AdminSecurityPage() {
           <input type="checkbox" checked={overview.allowPublicSpaces} disabled={busy}
             onChange={(e) => act(() => api.admin.settings.update({ allowPublicSpaces: e.target.checked } as never),
               e.target.checked ? 'Public spaces enabled.' : 'All public spaces disabled.', 'Could not change the setting.')} />
-          <span><strong>Allow public spaces</strong><br />
+          <span><strong>Allow Public Spaces</strong><br />
             <span className="muted small">Off hides every public space from anonymous readers at once.</span></span>
         </label>
         <label className="admin__toggle">
           <input type="checkbox" checked={overview.allowPublicRegistration} disabled={busy}
             onChange={(e) => act(() => api.admin.settings.update({ allowPublicRegistration: e.target.checked } as never),
               e.target.checked ? 'Registration opened.' : 'Registration closed.', 'Could not change the setting.')} />
-          <span><strong>Allow public registration</strong><br />
+          <span><strong>Allow Public Registration</strong><br />
             <span className="muted small">Off means new accounts need an invite link.</span></span>
         </label>
         <label className="admin__toggle">
           <input type="checkbox" checked={overview.requireTotpForAdmins} disabled={busy}
             onChange={(e) => act(() => api.admin.settings.update({ requireTotpForAdmins: e.target.checked } as never),
               e.target.checked ? 'Administrators must use two-factor sign-in.' : 'Two-factor no longer required.', 'Could not change the setting.')} />
-          <span><strong>Require two-factor for administrators</strong><br />
+          <span><strong>Require Two-Factor for Administrators</strong><br />
             <span className="muted small">An administrator without two-factor sign-in sees the setup page instead of the admin tabs until they turn it on.</span></span>
         </label>
       </section>
@@ -366,8 +366,8 @@ export function AdminSecurityPage() {
         <h2>Blocked Networks</h2>
         <form onSubmit={addBlock} className="block-form">
           <input name="cidr" placeholder="203.0.113.7 or 203.0.113.0/24" required />
-          <input name="reason" placeholder="Reason (optional)" />
-          <input name="expiresInHours" type="number" min={0} placeholder="Hours (blank = until removed)" />
+          <input name="reason" placeholder="Reason (Optional)" />
+          <input name="expiresInHours" type="number" min={0} placeholder="Hours (Blank = Until Removed)" />
           <button type="submit" className="btn btn--primary" disabled={busy}>Block</button>
         </form>
         {blocks.length === 0 ? (
@@ -444,7 +444,7 @@ export function AdminSecurityPage() {
         ) : (
           <table className="admin-table">
             <thead>
-              <tr><th>Account</th><th>Failures</th><th>Locked until</th><th></th></tr>
+              <tr><th>Account</th><th>Failures</th><th>Locked Until</th><th></th></tr>
             </thead>
             <tbody>
               {limits.activeLockouts.map((l) => (

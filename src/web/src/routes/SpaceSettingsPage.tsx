@@ -155,7 +155,7 @@ export function SpaceSettingsPage() {
           are not part of any title or address, and they follow the tree as pages are added and moved.
         </p>
         <fieldset className="tree-style" disabled={busy}>
-          <legend className="sr-only">Page tree style</legend>
+          <legend className="sr-only">Page Tree Style</legend>
           {TREE_STYLES.map((option) => (
             <label key={option.value} className={(space.treeStyle ?? SpaceTreeStyle.Plain) === option.value ? 'tree-style__option is-active' : 'tree-style__option'}>
               <input
@@ -187,7 +187,7 @@ export function SpaceSettingsPage() {
               ['html', 'HTML', 'A page as a single HTML file.'],
               ['pdf', 'PDF', 'A page as a PDF.'],
               ['site', 'Website', 'The whole space as a static website.'],
-              ['pack', 'Wiki pack', 'The whole space with its history, for moving it to another Tesria.'],
+              ['pack', 'Wiki Pack', 'The whole space with its history, for moving it to another Tesria.'],
             ] as const).map(([key, label, hint]) => (
               <label key={key} className="admin__toggle">
                 <input

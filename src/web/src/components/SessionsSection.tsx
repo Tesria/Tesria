@@ -37,7 +37,7 @@ export function SessionsSection() {
       </p>
       {error && <p className="alert alert--error">{error}</p>}
       <table className="admin-table">
-        <thead><tr><th>Where</th><th>Last active</th><th>Signed in</th><th></th></tr></thead>
+        <thead><tr><th>Where</th><th>Last Active</th><th>Signed In</th><th></th></tr></thead>
         <tbody>
           {sessions.map((s) => (
             <tr key={s.id} className={s.revokedAt ? 'muted' : undefined}>

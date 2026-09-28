@@ -596,7 +596,7 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 /* On a phone the toggle sits mid-bar, and a panel hung off its right edge
    ran off the left of the screen. Pin it to the viewport instead. */
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
-  .theme-menu__panel { position: fixed; left: 1rem; right: 1rem; top: 60px; width: auto; }
+  .theme-menu__panel { position: fixed; left: 1rem; right: 1rem; top: var(--topbar-h); width: auto; }
 }
 .theme-menu__panel {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
@@ -702,7 +702,7 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
    bell it ran off the edge of the screen. Placed after the base rule above
    on purpose: the same specificity, so order decides. */
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
-  .notif__dropdown { position: fixed; left: 1rem; right: 1rem; top: 60px; width: auto; }
+  .notif__dropdown { position: fixed; left: 1rem; right: 1rem; top: var(--topbar-h); width: auto; }
 }
 .notif__header { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 0.9rem; }
 /* The panel's title in the same style as THEME in the appearance menu and
@@ -859,7 +859,7 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .tree-section__heading {
   display: flex; align-items: center; justify-content: space-between; gap: 0.35rem;
   font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
-  color: var(--muted); margin-bottom: 0.4rem;
+  color: var(--text); margin-bottom: 0.4rem;
 }
 /* Undo the heading's label styling for the button(s) sharing its row. */
 .tree-section__reorder {
@@ -906,7 +906,7 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .space-home-tree .tree__link.is-active { color: var(--primary-dark); }
 .sidebar__trash {
   display: flex; align-items: center; gap: 0.5rem;
-  padding: 0.35rem 0.5rem; border-radius: 4px; color: var(--muted); font-size: 0.9rem;
+  padding: 0.35rem 0.5rem; border-radius: 4px; color: var(--text); font-size: 0.9rem;
 }
 .sidebar__trash:hover { background: var(--hover); text-decoration: none; }
 .sidebar__trash.is-active { background: var(--primary-soft); color: var(--primary-dark); font-weight: 600; }

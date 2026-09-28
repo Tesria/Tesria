@@ -22,7 +22,7 @@ type Screen = {
 const SCREENS: Screen[] = [
   {
     clip: 'spaces',
-    title: 'Spaces and pages',
+    title: 'Spaces and Pages',
     lines: [
       'A space is a home for related pages: a team, a project, a handbook.',
       'Pages nest inside each other as deep as you like.',
@@ -40,7 +40,7 @@ const SCREENS: Screen[] = [
   },
   {
     clip: 'inline-comment',
-    title: 'Working together',
+    title: 'Working Together',
     lines: [
       'Two people can edit the same page at once and see each other do it.',
       'Select any text to comment on exactly that, rather than the whole page.',
@@ -49,7 +49,7 @@ const SCREENS: Screen[] = [
   },
   {
     clip: 'search',
-    title: 'Finding things',
+    title: 'Finding Things',
     lines: [
       'Search covers everything you are allowed to see, and nothing else.',
       'It looks at titles, the text itself, and labels.',
@@ -123,7 +123,7 @@ export function WelcomePage() {
           {last && (
             <label className="tour__tips">
               <input type="checkbox" checked={tips} onChange={(e) => setTips(e.target.checked)} />
-              Show me tips as I go
+              Show Me Tips as I Go
             </label>
           )}
 

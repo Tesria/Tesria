@@ -123,7 +123,7 @@ export function DeleteSpaceDialog({
 
         {byCode ? (
           <label>
-            <span>A code from your authenticator</span>
+            <span>A Code From Your Authenticator</span>
             <input
               value={code}
               onChange={(e) => setCode(e.target.value)}
@@ -134,7 +134,7 @@ export function DeleteSpaceDialog({
           </label>
         ) : (
           <label>
-            <span>Your password</span>
+            <span>Your Password</span>
             <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}

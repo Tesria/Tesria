@@ -24,7 +24,7 @@ const SLOT_TITLE: Record<string, string> = {
 
 const KIND_LABEL: Record<string, string> = {
   database: 'Database',
-  files: 'Uploads and dumps',
+  files: 'Uploads and Dumps',
 }
 
 function bytes(n: number | null | undefined): string {
@@ -205,7 +205,7 @@ function TargetCard({
         {rows.map((row) => (
           <RepositoryLine key={row.kind} row={row} />
         ))}
-        <dt>Last restore drill</dt>
+        <dt>Last Restore Drill</dt>
         <dd>
           {primary.lastDrillAt
             ? <>
@@ -224,7 +224,7 @@ function TargetCard({
         </dd>
         {primary.keyFingerprint && (
           <>
-            <dt>Storage key</dt>
+            <dt>Storage Key</dt>
             <dd><code>{primary.keyFingerprint}</code></dd>
           </>
         )}
@@ -313,7 +313,7 @@ function Composition({ rows }: { rows: BackupTarget[] }) {
   const total = stored.reduce((sum, s) => sum + s.value, 0)
   const left = budget ? budget - total : null
   const slices = left != null && left > 0
-    ? [...stored, { label: 'Left in budget', value: left, color: 'var(--chart-free)' }]
+    ? [...stored, { label: 'Left in Budget', value: left, color: 'var(--chart-free)' }]
     : stored
 
   return (

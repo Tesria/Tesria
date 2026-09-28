@@ -15,11 +15,11 @@ import { TextSelection, type Transaction } from '@tiptap/pm/state'
  * the gap between them and the numbers need not sum to exactly 100.
  */
 export const LAYOUT_PRESETS = {
-  'two-equal': { label: 'Two columns', widths: [50, 50] },
-  'three-equal': { label: 'Three columns', widths: [33.33, 33.34, 33.33] },
-  'left-sidebar': { label: 'Left sidebar', widths: [33.33, 66.67] },
-  'right-sidebar': { label: 'Right sidebar', widths: [66.67, 33.33] },
-  'three-sidebars': { label: 'Three with sidebars', widths: [25, 50, 25] },
+  'two-equal': { label: 'Two Columns', widths: [50, 50] },
+  'three-equal': { label: 'Three Columns', widths: [33.33, 33.34, 33.33] },
+  'left-sidebar': { label: 'Left Sidebar', widths: [33.33, 66.67] },
+  'right-sidebar': { label: 'Right Sidebar', widths: [66.67, 33.33] },
+  'three-sidebars': { label: 'Three With Sidebars', widths: [25, 50, 25] },
 } as const satisfies Record<string, { label: string; widths: readonly number[] }>
 
 export type LayoutPreset = keyof typeof LAYOUT_PRESETS

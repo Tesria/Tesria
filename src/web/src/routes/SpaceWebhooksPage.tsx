@@ -45,7 +45,7 @@ export function SpaceWebhooksPage() {
 
   async function remove(id: string) {
     const ok = await ask({
-      title: 'Delete this webhook?',
+      title: 'Delete This Webhook?',
       danger: true,
       confirmLabel: 'Delete the Webhook',
       body: <p>This space stops sending events to it. The receiving end is not told.</p>,

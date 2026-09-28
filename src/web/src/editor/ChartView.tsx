@@ -99,7 +99,7 @@ export function ChartView({ node, editor, selected, updateAttributes }: ReactNod
           <input
             className="chart__title-input"
             value={title}
-            placeholder="Chart title (optional)"
+            placeholder="Chart Title (Optional)"
             onChange={(e) => updateAttributes({ title: e.target.value })}
           />
         </div>

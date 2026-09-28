@@ -83,7 +83,7 @@ export function SidebarResizer({ width, onResize }: { width: number; onResize: (
       className={dragging ? 'sidebar__resize is-dragging' : 'sidebar__resize'}
       role="separator"
       aria-orientation="vertical"
-      aria-label="Resize the sidebar"
+      aria-label="Resize the Sidebar"
       aria-valuemin={SIDEBAR_MIN}
       aria-valuemax={SIDEBAR_MAX}
       aria-valuenow={width}

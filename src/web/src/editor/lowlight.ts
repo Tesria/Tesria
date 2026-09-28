@@ -26,7 +26,7 @@ lowlight.register({
 
 /** Language picker options: TipTap's stored `language` attr value → display label. */
 export const codeLanguages: { value: string; label: string }[] = [
-  { value: 'plaintext', label: 'Plain text' },
+  { value: 'plaintext', label: 'Plain Text' },
   { value: 'javascript', label: 'JavaScript' },
   { value: 'typescript', label: 'TypeScript' },
   { value: 'python', label: 'Python' },
@@ -46,7 +46,7 @@ export const codeLanguages: { value: string; label: string }[] = [
   // rendered diagram (CodeBlockView / MermaidView, dev-plan Phase 7 Wave F).
   // Kept in this list because "what is in this code block" is one decision,
   // and Confluence's diagram macro is likewise just a fenced block.
-  { value: 'mermaid', label: 'Mermaid diagram' },
+  { value: 'mermaid', label: 'Mermaid Diagram' },
 ]
 
 /** The one language that renders rather than highlights. */

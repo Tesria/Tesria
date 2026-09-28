@@ -130,7 +130,7 @@ export function AvatarPicker() {
 
       <fieldset className="avatar-picker__variants" disabled={busy}>
         <legend className="muted small">
-          {hasUpload ? 'Remove your picture to use a generated avatar' : 'Generated avatar'}
+          {hasUpload ? 'Remove your picture to use a generated avatar' : 'Generated Avatar'}
         </legend>
         {AVATAR_COLORS.map((color, index) => {
           const selected = !hasUpload && index === activeVariant
@@ -140,7 +140,7 @@ export function AvatarPicker() {
               type="button"
               className={selected ? 'avatar-picker__swatch is-active' : 'avatar-picker__swatch'}
               style={{ background: color }}
-              aria-label={`Avatar color ${index + 1}`}
+              aria-label={`Avatar Color ${index + 1}`}
               aria-pressed={selected}
               onClick={() => withBusy(() => api.avatar.setVariant(index), 'Could not change your avatar.')}
             />

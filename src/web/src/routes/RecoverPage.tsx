@@ -75,7 +75,7 @@ export function RecoverPage() {
     return (
       <AuthPage>
         <div className="authcard">
-          <h1>Password reset</h1>
+          <h1>Password Reset</h1>
           <p className="muted small">
             Your password has been changed, and every other device signed in to
             this account has been signed out.
@@ -92,7 +92,7 @@ export function RecoverPage() {
     return (
       <AuthPage>
         <form className="authcard" onSubmit={requestLink}>
-          <h1>Reset your password</h1>
+          <h1>Reset Your Password</h1>
           {emailSent ? (
             <p className="profile__ok">{emailSent}</p>
           ) : (
@@ -110,7 +110,7 @@ export function RecoverPage() {
           )}
           <p className="muted small">
             <button type="button" className="link-btn" onClick={() => setMethod('code')}>Use a Recovery Code Instead</button>
-            {' · '}<Link to="/login">Back to sign in</Link>
+            {' · '}<Link to="/login">Back to Sign In</Link>
           </p>
         </form>
       </AuthPage>
@@ -120,7 +120,7 @@ export function RecoverPage() {
   return (
     <AuthPage>
       <form className="authcard" onSubmit={submit}>
-        <h1>{token ? 'Choose a new password' : 'Reset your password'}</h1>
+        <h1>{token ? 'Choose a New Password' : 'Reset Your Password'}</h1>
 
         {!token && (
           <>
@@ -140,7 +140,7 @@ export function RecoverPage() {
               />
             </label>
             <label>
-              Recovery code
+              Recovery Code
               <input
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
@@ -155,7 +155,7 @@ export function RecoverPage() {
         )}
 
         <label>
-          New password
+          New Password
           <PasswordInput
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
@@ -166,7 +166,7 @@ export function RecoverPage() {
           />
         </label>
         <label>
-          Confirm new password
+          Confirm New Password
           <PasswordInput
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
@@ -186,7 +186,7 @@ export function RecoverPage() {
           {!token && emailOffered && (
             <><button type="button" className="link-btn" onClick={() => setMethod('email')}>Email Me a Link Instead</button>{' · '}</>
           )}
-          <Link to="/login">Back to sign in</Link>
+          <Link to="/login">Back to Sign In</Link>
           {!token && !emailOffered && ' · Lost your codes? Ask an administrator to issue a reset link.'}
         </p>
       </form>

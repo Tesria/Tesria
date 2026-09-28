@@ -42,7 +42,7 @@ export function PageEditor() {
 
   const [title, setTitle] = useState('')
   // The title as it is being typed, or "New page" for a page that has none yet.
-  useTitlePage(title.trim() || (pageId ? null : 'New page'))
+  useTitlePage(title.trim() || (pageId ? null : 'New Page'))
   const [content, setContent] = useState(EMPTY_DOC)
   /**
    * The published version `content` came from (dev-plan 8.6), handed to the
@@ -109,7 +109,7 @@ export function PageEditor() {
     // it, so say so first (it used to go without a word, 2026-09-23).
     if (editorInstance && editorInstance.getText().trim().length > 0) {
       const ok = await ask({
-        title: 'Replace what you have written?',
+        title: 'Replace What You Have Written?',
         confirmLabel: 'Use the Template',
         body: <p>Starting from a template replaces everything on this page so far.</p>,
       })
@@ -327,8 +327,8 @@ export function PageEditor() {
             type="button"
             className="btn btn--ghost page-actionbar__fullwidth-toggle"
             onClick={toggleFullWidth}
-            title={fullWidth ? 'Switch to normal width' : 'Switch to full width'}
-            aria-label={fullWidth ? 'Switch to normal width' : 'Switch to full width'}
+            title={fullWidth ? 'Switch to Normal Width' : 'Switch to Full Width'}
+            aria-label={fullWidth ? 'Switch to Normal Width' : 'Switch to Full Width'}
           >
             <span aria-hidden="true">{fullWidth ? '⤡' : '⤢'}</span>
             <span className="page-actionbar__fullwidth-label">{fullWidth ? 'Normal Width' : 'Full Width'}</span>
@@ -383,12 +383,12 @@ export function PageEditor() {
       {error && <p className="alert alert--error">{error}</p>}
       {!isEdit && templates.length > 0 && (
         <label className="change-comment">
-          Start from a template (optional)
+          Start From a Template (Optional)
           <select value={templateId} onChange={(e) => onPickTemplate(e.target.value)}>
-            <option value="">Blank page</option>
+            <option value="">Blank Page</option>
             {templates.map((t) => (
               <option key={t.id} value={t.id}>
-                {t.name}{t.spaceId ? '' : ' (instance-wide)'}
+                {t.name}{t.spaceId ? '' : ' (Instance-Wide)'}
               </option>
             ))}
           </select>
@@ -400,7 +400,7 @@ export function PageEditor() {
           className="title-input"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Page title"
+          placeholder="Page Title"
           required
           autoFocus={!isEdit}
           // Return in the title goes to the first line of the body. Without
@@ -447,7 +447,7 @@ export function PageEditor() {
       </div>
       {isEdit && (
         <label className="change-comment">
-          What changed? (optional)
+          What Changed? (Optional)
           <input value={changeComment} onChange={(e) => setChangeComment(e.target.value)} placeholder="e.g. fixed typo" />
         </label>
       )}

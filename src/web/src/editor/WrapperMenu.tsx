@@ -91,7 +91,7 @@ export function WrapperMenu({ editor }: { editor: TiptapEditor }) {
                   label={<Icon />}
                   isActive={current.panelType === t}
                   onClick={() => setPanelType(t)}
-                  title={`${PANEL_LABELS[t]} panel`}
+                  title={`${PANEL_LABELS[t]} Panel`}
                 />
               )
             })}

@@ -5,7 +5,7 @@ import { useAuth } from '../auth/AuthContext'
 const OPTIONS: Array<{ value: EmailNotificationMode; label: string; hint: string }> = [
   { value: EmailNotificationMode.Off, label: 'Off', hint: 'Only the bell in the app.' },
   { value: EmailNotificationMode.Immediate, label: 'Immediately', hint: 'An email for each update, within a minute.' },
-  { value: EmailNotificationMode.DailyDigest, label: 'Daily digest', hint: 'One email a day, when something changed.' },
+  { value: EmailNotificationMode.DailyDigest, label: 'Daily Digest', hint: 'One email a day, when something changed.' },
 ]
 
 /** Profile → Email notifications (dev-plan 4.3). */

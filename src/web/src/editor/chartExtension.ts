@@ -9,8 +9,8 @@ export const CHART_TYPES = ['bar', 'column', 'line', 'pie', 'donut'] as const
 export type ChartType = (typeof CHART_TYPES)[number]
 
 export const CHART_TYPE_LABELS: Record<ChartType, string> = {
-  bar: 'Bar (horizontal)',
-  column: 'Column (vertical)',
+  bar: 'Bar (Horizontal)',
+  column: 'Column (Vertical)',
   line: 'Line',
   pie: 'Pie',
   donut: 'Donut',

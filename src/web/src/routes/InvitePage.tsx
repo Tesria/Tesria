@@ -15,7 +15,7 @@ export function InvitePage() {
   if (!can(Permission.InvitesCreate)) return <Navigate to="/spaces" replace />
   return (
     <div className="page-wrap">
-      <h1>Invite people</h1>
+      <h1>Invite People</h1>
       <AdminInvitesPage />
     </div>
   )

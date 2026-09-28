@@ -92,7 +92,7 @@ export function TableWidthControls({ editor }: { editor: TiptapEditor }) {
         style={{ left: tableRect.right - 34 - o.x, top: tableRect.top - 30 - o.y }}
         onMouseDown={stop}
         onClick={toggleFullWidth}
-        title={layout === 'full-width' ? 'Switch to normal width' : 'Switch to full width'}
+        title={layout === 'full-width' ? 'Switch to Normal Width' : 'Switch to Full Width'}
       >
         ⤢
       </button>

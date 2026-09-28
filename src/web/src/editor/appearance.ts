@@ -1,5 +1,5 @@
 /**
- * A block's own style (0.8.1): follow the reader's theme, or always flat, or
+ * A block's own style (0.8.1): follow the reader's theme, or always Minimal (stored as 'flat'), or
  * always glass. On status, charts, diagrams and code blocks.
  *
  * Stored as `appearance` on the node and rendered as `data-appearance` only
@@ -13,7 +13,7 @@ export const APPEARANCES = ['theme', 'flat', 'glass'] as const
 export type Appearance = (typeof APPEARANCES)[number]
 
 export const APPEARANCE_LABELS: Record<Appearance, string> = {
-  theme: 'Theme default',
+  theme: 'Theme Default',
   flat: 'Minimal', // stored as 'flat', its name until 2026-09-28
   glass: 'Glass',
 }

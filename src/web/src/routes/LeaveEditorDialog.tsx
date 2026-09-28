@@ -28,7 +28,7 @@ export function LeaveEditorDialog({ isNew, keepsDraft, busy, error, onStay, onLe
   return createPortal(
     <div className="recovery-prompt leave-dialog" role="dialog" aria-modal="true" aria-labelledby="leave-dialog-title">
       <div className="recovery-prompt__card leave-dialog__card">
-        <h2 id="leave-dialog-title">You are leaving the editor</h2>
+        <h2 id="leave-dialog-title">You Are Leaving the Editor</h2>
         <p className="muted">{detail}</p>
         {error && <p className="alert alert--error">{error}</p>}
         <div className="leave-dialog__actions">

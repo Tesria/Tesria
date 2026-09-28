@@ -351,13 +351,13 @@
           "wait": 1000
         },
         {
-          "moveTo": ".toolbar--bubble button[title='Comment on this selection']"
+          "moveTo": ".toolbar--bubble button[title='Comment on This Selection']"
         },
         {
           "wait": 600
         },
         {
-          "click": ".toolbar--bubble button[title='Comment on this selection']"
+          "click": ".toolbar--bubble button[title='Comment on This Selection']"
         },
         {
           "waitFor": ".toolbar__comment-popover"

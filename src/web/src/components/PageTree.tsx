@@ -292,7 +292,7 @@ export function PageTree({
             </button>
           </span>
         ) : readOnly ? null : (
-          <button type="button" className="btn btn--ghost btn--sm tree-section__reorder" aria-label="Reorder pages" title="Reorder pages" onClick={startEditing}>
+          <button type="button" className="btn btn--ghost btn--sm tree-section__reorder" aria-label="Reorder Pages" title="Reorder Pages" onClick={startEditing}>
             <PencilIcon />
           </button>
         )
@@ -344,7 +344,7 @@ export function PageTree({
             }}
           />
           {filter && (
-            <button type="button" className="tree-filter__clear" aria-label="Clear the filter" title="Clear the filter"
+            <button type="button" className="tree-filter__clear" aria-label="Clear the Filter" title="Clear the Filter"
               onClick={() => setFilter('')}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
             </button>
@@ -354,8 +354,8 @@ export function PageTree({
             type="button"
             className={withChildren ? 'tree-filter__children is-on' : 'tree-filter__children'}
             aria-pressed={withChildren}
-            title={withChildren ? 'Showing the pages under each match' : 'Show the pages under each match'}
-            aria-label="Show the pages under each match"
+            title={withChildren ? 'Showing the Pages Under Each Match' : 'Show the Pages Under Each Match'}
+            aria-label="Show the Pages Under Each Match"
             onClick={() => { const next = !withChildren; setWithChildren(next); writeWithChildren(next) }}
           >
             <ChildrenIcon />

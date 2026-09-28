@@ -123,20 +123,20 @@ export function AdminApiTokensPage() {
           <div className="dash__grid">
             <Stat label="Tokens" value={summary.tokens}
               hint={summary.neverUsed ? `${summary.neverUsed} never used` : undefined} />
-            <Stat label="In use (7 days)" value={summary.activeLast7Days} />
-            <Stat label="API requests (7 days)" value={summary.last7Days.reads + summary.last7Days.writes}
+            <Stat label="In Use (7 Days)" value={summary.activeLast7Days} />
+            <Stat label="API Requests (7 Days)" value={summary.last7Days.reads + summary.last7Days.writes}
               hint={changes(summary.last7Days.writes)} />
-            <Stat label="Assistant tool calls (7 days)" value={summary.last7Days.mcpReads + summary.last7Days.mcpWrites}
+            <Stat label="Assistant Tool Calls (7 Days)" value={summary.last7Days.mcpReads + summary.last7Days.mcpWrites}
               hint={changes(summary.last7Days.mcpWrites)} />
-            <Stat label="Expiring within a week" value={summary.expiringWithinWeek} />
+            <Stat label="Expiring Within a Week" value={summary.expiringWithinWeek} />
           </div>
           <div className="dash__grid">
             <div className="stat stat--wide">
-              <p className="stat__label">API requests per day</p>
+              <p className="stat__label">API Requests per Day</p>
               <Sparkline points={summary.apiPerDay} label="API requests" />
             </div>
             <div className="stat stat--wide">
-              <p className="stat__label">Assistant tool calls per day</p>
+              <p className="stat__label">Assistant Tool Calls per Day</p>
               <Sparkline points={summary.mcpPerDay} label="Assistant tool calls" />
             </div>
           </div>
@@ -155,8 +155,8 @@ export function AdminApiTokensPage() {
             <tr>
               <th>Person</th>
               <th>Token</th>
-              <th>Last used</th>
-              <th>Last 7 days</th>
+              <th>Last Used</th>
+              <th>Last 7 Days</th>
               <th>Expires</th>
               <th />
             </tr>

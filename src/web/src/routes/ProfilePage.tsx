@@ -126,7 +126,7 @@ export function ProfilePage() {
       {/* Sign out, opposite the heading (the owner, 2026-09-27): it left the
           top bar, and this is where people look for their own account. */}
       <div className="profile__heading">
-        <h1>Your profile</h1>
+        <h1>Your Profile</h1>
         <button type="button" className="btn btn--ghost" onClick={async () => { await logout(); navigate('/login') }}>
           Sign Out
         </button>
@@ -141,11 +141,11 @@ export function ProfilePage() {
         </section>
 
         <section className="profile__section">
-          <h2>Display name</h2>
+          <h2>Display Name</h2>
           <p className="muted small">Shown on your pages, comments and version history.</p>
           <form onSubmit={saveName}>
             <label>
-              Display name
+              Display Name
               <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
             </label>
             {note(nameStatus)}
@@ -156,7 +156,7 @@ export function ProfilePage() {
         </section>
 
         <section className="profile__section">
-          <h2>Email address</h2>
+          <h2>Email Address</h2>
           {ssoOnly ? (
             <p className="muted small">
               This account signs in through your identity provider, which owns its email address.
@@ -164,11 +164,11 @@ export function ProfilePage() {
           ) : (
             <form onSubmit={saveEmail}>
               <label>
-                Email address
+                Email Address
                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
               </label>
               <label>
-                Current password
+                Current Password
                 <PasswordInput
                   value={emailPassword}
                   onChange={(e) => setEmailPassword(e.target.value)}
@@ -196,7 +196,7 @@ export function ProfilePage() {
                 Changing your password signs out every other device using this account.
               </p>
               <label>
-                Current password
+                Current Password
                 <PasswordInput
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
@@ -205,7 +205,7 @@ export function ProfilePage() {
                 />
               </label>
               <label>
-                New password
+                New Password
                 <PasswordInput
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -215,7 +215,7 @@ export function ProfilePage() {
                 />
               </label>
               <label>
-                Confirm new password
+                Confirm New Password
                 <PasswordInput
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -233,13 +233,13 @@ export function ProfilePage() {
         </section>
 
         <section className="profile__section" id="two-factor">
-          <h2>Two-factor sign-in</h2>
+          <h2>Two-Factor Sign-In</h2>
           <TotpSection />
         </section>
 
         {!ssoOnly && (
           <section className="profile__section">
-            <h2>Recovery codes</h2>
+            <h2>Recovery Codes</h2>
             <RecoveryCodesSection />
           </section>
         )}
@@ -255,7 +255,7 @@ export function ProfilePage() {
             unreachable from a Windows machine in testing (2026-09-23). */}
         {instance?.ownCertificate && (
           <section className="profile__section" id="trust-this-device">
-            <h2>Trust this device</h2>
+            <h2>Trust This Device</h2>
             <p className="muted">
               This server makes its own security certificate, so each browser warns about it until the device is told to
               trust it. If you see "Not secure" beside the address, or had to click past a warning to get here, a short
@@ -268,12 +268,12 @@ export function ProfilePage() {
         )}
 
         <section className="profile__section" id="notifications">
-          <h2>Email notifications</h2>
+          <h2>Email Notifications</h2>
           <NotificationPreferences />
         </section>
 
         <section className="profile__section" id="tour-and-tips">
-          <h2>Tour and tips</h2>
+          <h2>Tour and Tips</h2>
           <TourAndTipsSection />
         </section>
 
@@ -284,12 +284,12 @@ export function ProfilePage() {
 
         {can(Permission.TokensUse) ? (
           <section className="profile__section profile__section--wide" id="api-tokens">
-            <h2>API tokens</h2>
+            <h2>API Tokens</h2>
             <ApiTokensSection />
           </section>
         ) : (
           <section className="profile__section profile__section--wide" id="api-tokens">
-            <h2>API tokens</h2>
+            <h2>API Tokens</h2>
             <p className="muted small">
               Your role does not allow API tokens. An administrator can grant it under
               Administration, Roles.

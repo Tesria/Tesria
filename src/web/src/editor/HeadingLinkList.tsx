@@ -16,7 +16,7 @@ export function HeadingLinkList({ editor, onPick }: { editor: TiptapEditor; onPi
 
   return (
     <div className="link-anchors">
-      <p className="link-anchors__title">Headings on this page</p>
+      <p className="link-anchors__title">Headings on This Page</p>
       {headings.map((h) => (
         <button
           key={h.id}

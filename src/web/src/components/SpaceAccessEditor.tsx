@@ -22,7 +22,7 @@ export function SpaceAccessEditor({ spaceKey }: { spaceKey: string }) {
   // grant, so opening it again is its own, deliberate step (dev-plan 15.3).
   async function makeOpen() {
     const ok = await ask({
-      title: 'Make this space open again?',
+      title: 'Make This Space Open Again?',
       danger: true,
       confirmLabel: 'Make It Open',
       body: (

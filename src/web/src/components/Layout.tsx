@@ -38,7 +38,7 @@ const SECONDARY_NAV: { to: string; label: string; adminOnly?: boolean; nonAdminO
   // and the admin area turns those away, so the right has its own page.
   // Administrators reach the same form from the Invites tab, so only those
   // who cannot see the admin area get the link.
-  { to: '/invite', label: 'Invite people', permission: Permission.InvitesCreate, nonAdminOnly: true },
+  { to: '/invite', label: 'Invite People', permission: Permission.InvitesCreate, nonAdminOnly: true },
 ]
 
 /**
@@ -196,7 +196,7 @@ export function Layout() {
         <button
           type="button"
           className="topbar__hamburger"
-          aria-label="Toggle navigation"
+          aria-label="Toggle Navigation"
           aria-expanded={navOpen}
           onClick={() => setNavOpen((v) => !v)}
         >
@@ -211,7 +211,7 @@ export function Layout() {
               collapsed; otherwise this element is display: contents).
               Tapping outside or Escape also closes it; a visible way out
               is for the person who does not know that. */}
-          <button type="button" className="topbar__close" aria-label="Close menu" onClick={closeNav}>
+          <button type="button" className="topbar__close" aria-label="Close Menu" onClick={closeNav}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M6 6l12 12M18 6L6 18" />
@@ -275,7 +275,7 @@ export function Layout() {
           {user ? (
             <>
               {fit < 3 && <NotificationBell />}
-              <Link to="/profile" className="topbar__me" title="Your profile">
+              <Link to="/profile" className="topbar__me" title="Your Profile">
                 <Avatar subject={user} size={24} />
                 {fit === 0 && <span className="muted topbar__username">{user.displayName}</span>}
               </Link>

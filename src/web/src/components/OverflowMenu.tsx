@@ -6,7 +6,7 @@ import { useDismissable } from '../hooks/useDismissable'
  * marked `data-menu-close` closes the menu when chosen, for actions that open
  * a dialog of their own; other items (a form that expands in place) keep it.
  */
-export function OverflowMenu({ children, label = 'More actions' }: { children: ReactNode; label?: string }) {
+export function OverflowMenu({ children, label = 'More Actions' }: { children: ReactNode; label?: string }) {
   const [open, setOpen] = useState(false)
   const ref = useDismissable<HTMLDivElement>(open, () => setOpen(false))
 

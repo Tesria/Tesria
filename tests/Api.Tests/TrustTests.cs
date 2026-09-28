@@ -28,7 +28,7 @@ public class TrustTests
         Assert.Equal(HttpStatusCode.OK, res.StatusCode);
         Assert.StartsWith("text/html", res.Content.Headers.ContentType!.MediaType);
         var html = await res.Content.ReadAsStringAsync();
-        Assert.Contains("Trust this server on your device", html);
+        Assert.Contains("Trust This Server on Your Device", html);
         Assert.Contains("value=\"wiki-server.local\"", html);
         Assert.Contains("https://wiki-server.local/", html);
         // Everything it needs comes from /trust, so it works over plain HTTP.
@@ -144,7 +144,7 @@ public class TrustTests
     {
         using var factory = new TestAppFactory(new Dictionary<string, string?> { ["Tls:Caddyfile"] = "deploy/Caddyfile.public" });
         var html = await Client(factory).GetStringAsync("/trust");
-        Assert.Contains("Nothing to set up", html);
+        Assert.Contains("Nothing to Set Up", html);
         Assert.DoesNotContain("trust-ca.sh", html);
 
         var instance = await Client(factory).GetFromJsonAsync<System.Text.Json.JsonElement>("/api/instance");

@@ -23,7 +23,7 @@ unchanged.
   "url": "/spaces/MANUAL/pages/<id>/edit",
   "viewport": { "width": 1440, "height": 1400 },
   "settle": 4500,
-  "steps": [{ "click": "[title='Insert an element']" }, { "wait": 900 }],
+  "steps": [{ "click": "[title='Insert an Element']" }, { "wait": 900 }],
   "clipTo": ".toolbar-dropdown__menu",
   "clipPad": 14,
   "annotate": [{ "type": "circle", "target": ".btn--primary", "pad": 5 }]

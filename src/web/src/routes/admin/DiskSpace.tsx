@@ -50,9 +50,9 @@ function DiskCard({ disk }: { disk: DiskChart }) {
   // rather than as a slice, and two blues for the wiki and its backups were
   // taken for the same thing.
   const slices = [
-    { label: 'The wiki', value: disk.wikiBytes, color: 'var(--chart-wiki)' },
-    { label: 'Its backups', value: disk.backupBytes, color: 'var(--chart-backups)' },
-    { label: 'Everything else', value: disk.otherBytes, color: 'var(--chart-other)' },
+    { label: 'The Wiki', value: disk.wikiBytes, color: 'var(--chart-wiki)' },
+    { label: 'Its Backups', value: disk.backupBytes, color: 'var(--chart-backups)' },
+    { label: 'Everything Else', value: disk.otherBytes, color: 'var(--chart-other)' },
     { label: 'Free', value: disk.freeBytes, color: 'var(--chart-free)' },
   ]
 

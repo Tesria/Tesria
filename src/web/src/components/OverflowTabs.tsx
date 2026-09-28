@@ -88,7 +88,7 @@ export function OverflowTabs({ items }: { items: TabItem[] }) {
       {hidden.length > 0 && (
         <div className="tabs__more" ref={menu}>
           <button type="button" className={hiddenCurrent ? 'tab tabs__more-btn is-active' : 'tab tabs__more-btn'}
-            aria-label="More tabs" aria-expanded={open} aria-haspopup="menu" onClick={() => setOpen((v) => !v)}>
+            aria-label="More Tabs" aria-expanded={open} aria-haspopup="menu" onClick={() => setOpen((v) => !v)}>
             <DotsIcon />
           </button>
           {open && <div className="overflow-menu__dropdown tabs__menu" role="menu">{hidden.map((t) => tab(t, true))}</div>}

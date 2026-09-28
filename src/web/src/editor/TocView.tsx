@@ -54,7 +54,7 @@ export function TocView({ editor, node }: ReactNodeViewProps) {
 
   return (
     <NodeViewWrapper className={classes.join(' ')} contentEditable={false}>
-      <p className="toc__title">On this page</p>
+      <p className="toc__title">On This Page</p>
       {tree.length === 0 ? (
         <p className="toc__empty">
           {headings.length === 0 ? 'Headings on this page will be listed here.' : 'No headings match this table of contents’ settings.'}

@@ -53,7 +53,7 @@ export function MaintenanceOverlay() {
   return (
     <div className="maintenance" role="alertdialog" aria-modal="true" aria-labelledby="maintenance-title">
       <div className="maintenance__card">
-        <h2 id="maintenance-title">A restore is in progress</h2>
+        <h2 id="maintenance-title">A Restore Is in Progress</h2>
         <p>
           The wiki is read-only while an administrator restores it from a backup. You can keep reading,
           but nothing can be saved until it finishes.

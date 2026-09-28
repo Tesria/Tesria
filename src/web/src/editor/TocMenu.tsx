@@ -66,16 +66,16 @@ export function TocMenu({ editor }: { editor: TiptapEditor }) {
     >
       {o && (
         <div className="chip-menu dynamic-block-menu toc-menu">
-          <p className="dynamic-block-menu__title">Table of contents</p>
+          <p className="dynamic-block-menu__title">Table of Contents</p>
           <label className="dynamic-block-menu__field">
-            <span>Display as</span>
+            <span>Display As</span>
             <select value={o.display} onChange={(e) => set({ display: e.target.value as TocOptions['display'] })}>
-              <option value="vertical">Vertical list</option>
-              <option value="horizontal">Horizontal list</option>
+              <option value="vertical">Vertical List</option>
+              <option value="horizontal">Horizontal List</option>
             </select>
           </label>
           <label className="dynamic-block-menu__field">
-            <span>Bullet style</span>
+            <span>Bullet Style</span>
             <select
               value={o.bulletStyle}
               disabled={o.display === 'horizontal'}
@@ -85,7 +85,7 @@ export function TocMenu({ editor }: { editor: TiptapEditor }) {
             </select>
           </label>
           <div className="dynamic-block-menu__field toc-menu__levels">
-            <span>Heading levels</span>
+            <span>Heading Levels</span>
             <span className="toc-menu__range">
               <select aria-label="From heading level" value={o.minLevel} onChange={(e) => set({ minLevel: Number(e.target.value), maxLevel: Math.max(Number(e.target.value), o.maxLevel) })}>
                 {LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
@@ -98,7 +98,7 @@ export function TocMenu({ editor }: { editor: TiptapEditor }) {
           </div>
           <label className="toc-menu__check">
             <input type="checkbox" checked={o.sectionNumbers} onChange={(e) => set({ sectionNumbers: e.target.checked })} />
-            <span>Include section numbers</span>
+            <span>Include Section Numbers</span>
           </label>
 
           <button type="button" className="link-btn toc-menu__advanced" onClick={() => setAdvanced((v) => !v)} aria-expanded={advanced}>
@@ -107,25 +107,25 @@ export function TocMenu({ editor }: { editor: TiptapEditor }) {
           {advanced && (
             <>
               <label className="dynamic-block-menu__field">
-                <span>Indent headings</span>
+                <span>Indent Headings</span>
                 {text('indent', '10px')}
               </label>
               <label className="dynamic-block-menu__field">
-                <span>Include headings with</span>
+                <span>Include Headings With</span>
                 {text('include', 'Step*|Setup')}
               </label>
               <label className="dynamic-block-menu__field">
-                <span>Exclude headings with</span>
+                <span>Exclude Headings With</span>
                 {text('exclude', 'Appendix*')}
               </label>
               <p className="toc-menu__hint">Case sensitive. <code>*</code> matches anything, <code>|</code> separates alternatives.</p>
               <label className="dynamic-block-menu__field">
-                <span>CSS class name</span>
+                <span>CSS Class Name</span>
                 {text('cssClass', 'my-toc')}
               </label>
               <label className="toc-menu__check">
                 <input type="checkbox" checked={o.excludeInPdf} onChange={(e) => set({ excludeInPdf: e.target.checked })} />
-                <span>Exclude in PDF export</span>
+                <span>Exclude in PDF Export</span>
               </label>
             </>
           )}

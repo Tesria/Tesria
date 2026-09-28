@@ -51,7 +51,7 @@ export function SaveAsTemplateButton({ spaceId, contentJson, defaultName }: Prop
         <form className="card principal-picker template-form" onSubmit={submit}>
           {error && <p className="alert alert--error">{error}</p>}
           <label>
-            Template name
+            Template Name
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -61,10 +61,10 @@ export function SaveAsTemplateButton({ spaceId, contentJson, defaultName }: Prop
           </label>
           {mayOfferEverywhere && (
             <label>
-              Offer it in
+              Offer It In
               <select value={scope} onChange={(e) => setScope(e.target.value as 'space' | 'instance')}>
-                <option value="space">This space only</option>
-                <option value="instance">Every space (instance-wide)</option>
+                <option value="space">This Space Only</option>
+                <option value="instance">Every Space (Instance-Wide)</option>
               </select>
             </label>
           )}

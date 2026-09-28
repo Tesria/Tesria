@@ -46,7 +46,7 @@ export function AttachmentsPanel({ pageId }: { pageId: string }) {
 
   async function remove(id: string) {
     const ok = await ask({
-      title: 'Delete this attachment?',
+      title: 'Delete This Attachment?',
       danger: true,
       confirmLabel: 'Delete the Attachment',
       body: <p>The file goes with it. Anywhere it is embedded in this page stops rendering.</p>,

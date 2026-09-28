@@ -30,7 +30,7 @@ export function AdminLayout() {
           ask an administrator of this instance to make the change or to grant you
           the administrator role.
         </p>
-        <p><Link to="/spaces">Back to spaces</Link></p>
+        <p><Link to="/spaces">Back to Spaces</Link></p>
       </div>
     )
   }
@@ -113,7 +113,7 @@ function VersionLine() {
       <a href={TESRIA_SITE} target="_blank" rel="noopener noreferrer">Tesria</a>
       {version && <> {version.split('+')[0]}</>}
       {' · '}
-      <a href={TESRIA_SOURCE} target="_blank" rel="noopener noreferrer">Source code</a>
+      <a href={TESRIA_SOURCE} target="_blank" rel="noopener noreferrer">Source Code</a>
     </p>
   )
 }

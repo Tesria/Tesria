@@ -38,7 +38,7 @@ export function ApiTokensSection() {
 
   async function revoke(id: string) {
     const ok = await ask({
-      title: 'Revoke this token?',
+      title: 'Revoke This Token?',
       danger: true,
       confirmLabel: 'Revoke the Token',
       body: <p>Anything using it stops working immediately. Revoking cannot be undone; issue a new token instead.</p>,
@@ -80,16 +80,16 @@ export function ApiTokensSection() {
         <label className="api-tokens__expiry">
           Expires
           <select value={days} onChange={(e) => setDays(Number(e.target.value))}>
-            <option value={30}>In 30 days</option>
-            <option value={90}>In 90 days</option>
-            <option value={365}>In a year</option>
+            <option value={30}>In 30 Days</option>
+            <option value={90}>In 90 Days</option>
+            <option value={365}>In a Year</option>
             <option value={0}>Never</option>
           </select>
         </label>
         <label className="admin__toggle api-tokens__scope">
           <input type="checkbox" checked={readOnly} onChange={(e) => setReadOnly(e.target.checked)} />
           <span>
-            <strong>Read-only</strong>
+            <strong>Read-Only</strong>
             <br />
             <span className="muted small">
               Can read pages and search, but change nothing: the right choice for

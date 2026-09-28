@@ -64,7 +64,7 @@ export function TableControls({ editor }: { editor: TiptapEditor }) {
           style={{ left: x - 8 - o.x, top: tableRect.top - 30 - o.y }}
           onMouseDown={stop}
           onClick={() => insertColumn(i)}
-          title={i === colBoundaries.length - 1 ? 'Add column' : 'Insert column before'}
+          title={i === colBoundaries.length - 1 ? 'Add Column' : 'Insert Column Before'}
         >
           +
         </button>
@@ -77,7 +77,7 @@ export function TableControls({ editor }: { editor: TiptapEditor }) {
           style={{ left: r.left - o.x, top: tableRect.top - 16 - o.y, width: r.width }}
           onMouseDown={stop}
           onClick={() => deleteColumn(i)}
-          title="Delete column"
+          title="Delete Column"
         >
           ×
         </button>
@@ -90,7 +90,7 @@ export function TableControls({ editor }: { editor: TiptapEditor }) {
           style={{ top: y - 8 - o.y, left: rowAddLeft - o.x }}
           onMouseDown={stop}
           onClick={() => insertRow(i)}
-          title={i === rowBoundaries.length - 1 ? 'Add row' : 'Insert row above'}
+          title={i === rowBoundaries.length - 1 ? 'Add Row' : 'Insert Row Above'}
         >
           +
         </button>
@@ -103,7 +103,7 @@ export function TableControls({ editor }: { editor: TiptapEditor }) {
           style={{ top: r.top - o.y, left: tableRect.left - 16 - o.x, height: r.height }}
           onMouseDown={stop}
           onClick={() => deleteRow(i)}
-          title="Delete row"
+          title="Delete Row"
         >
           ×
         </button>

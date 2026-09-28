@@ -171,7 +171,7 @@ export function AdminSpacesPage() {
                     <label className="small nowrap">
                       <input type="checkbox" checked={s.publicComments} disabled={busy === s.id}
                         onChange={(e) => setComments(s, e.target.checked)} />{' '}
-                      comments
+                      Comments
                     </label>
                   )}
                 </div>

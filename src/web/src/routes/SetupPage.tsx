@@ -29,14 +29,14 @@ type Step = { key: StepKey; title: string; blurb: string; required?: boolean }
 
 const STEPS: Step[] = [
   { key: 'welcome', title: 'Welcome', blurb: 'What this covers' },
-  { key: 'account', title: 'Your account', blurb: 'The owner of this instance', required: true },
-  { key: 'instance', title: 'This instance', blurb: 'Name and address', required: true },
-  { key: 'registration', title: 'Who can join', blurb: 'And who can read', required: true },
-  { key: 'permissions', title: 'What roles may do', blurb: 'Review the defaults', required: true },
+  { key: 'account', title: 'Your Account', blurb: 'The owner of this instance', required: true },
+  { key: 'instance', title: 'This Instance', blurb: 'Name and address', required: true },
+  { key: 'registration', title: 'Who Can Join', blurb: 'And who can read', required: true },
+  { key: 'permissions', title: 'What Roles May Do', blurb: 'Review the defaults', required: true },
   { key: 'backups', title: 'Backups', blurb: 'How much history to keep', required: true },
   { key: 'email', title: 'Email', blurb: 'Optional' },
-  { key: 'two-factor', title: 'Two-factor', blurb: 'Recommended' },
-  { key: 'first-space', title: 'A first space', blurb: 'Optional' },
+  { key: 'two-factor', title: 'Two-Factor', blurb: 'Recommended' },
+  { key: 'first-space', title: 'A First Space', blurb: 'Optional' },
   { key: 'done', title: 'Done', blurb: '' },
 ]
 
@@ -59,7 +59,7 @@ export function SetupPage() {
   if (instance && !instance.needsOwner && !user) {
     return (
       <div className="setup setup--notice">
-        <h1>This instance already has an owner</h1>
+        <h1>This Instance Already Has an Owner</h1>
         <p className="muted">Setup was finished by whoever created the first account.</p>
         <Link className="btn btn--primary" to="/login">Sign In</Link>
       </div>
@@ -68,7 +68,7 @@ export function SetupPage() {
   if (user && !user.setupRequired) {
     return (
       <div className="setup setup--notice">
-        <h1>Setup is already finished</h1>
+        <h1>Setup Is Already Finished</h1>
         <p className="muted">Everything here lives in Administration now.</p>
         <Link className="btn btn--primary" to="/spaces">Go to the Wiki</Link>
       </div>
@@ -130,7 +130,7 @@ export function SetupPage() {
     <div className="setup">
       <aside className="setup__rail">
         <AuthBrand />
-        <h1 className="setup__brand">Set up {instance?.instanceName ?? 'Tesria'}</h1>
+        <h1 className="setup__brand">Set Up {instance?.instanceName ?? 'Tesria'}</h1>
         <ol>
           {STEPS.map((s, i) => (
             <li key={s.key}>
@@ -200,7 +200,7 @@ export function SetupPage() {
 
         {at === 'permissions' && (
           <Panel
-            title="What roles may do"
+            title="What Roles May Do"
             onNext={() => advance('permissions', () => api.admin.roles.review())}
             busy={busy}
             nextLabel="Keep These Defaults"
@@ -234,7 +234,7 @@ export function SetupPage() {
 
         {at === 'two-factor' && (
           <Panel
-            title="Two-factor"
+            title="Two-Factor"
             onNext={() => advance('two-factor')}
             onSkip={() => advance('two-factor', undefined, true)}
             busy={busy}
@@ -335,7 +335,7 @@ function AccountStep({
   // checkbox on its own rather than a second registration form.
   if (hasAccount && !codes) {
     return (
-      <Panel title="Your account" busy={busy} onNext={onDone} nextLabel="Continue">
+      <Panel title="Your Account" busy={busy} onNext={onDone} nextLabel="Continue">
         <p className="muted">
           This account owns the instance. If you have not saved your recovery
           codes, do that from your profile before going on.
@@ -346,7 +346,7 @@ function AccountStep({
 
   if (codes) {
     return (
-      <Panel title="Save your recovery codes" busy={busy} onNext={onDone} nextDisabled={!saved}>
+      <Panel title="Save Your Recovery Codes" busy={busy} onNext={onDone} nextDisabled={!saved}>
         <p className="muted">
           These are the only way back in if you lose your password. Each works
           once. The owner cannot be reset by anyone else, so losing these and
@@ -363,7 +363,7 @@ function AccountStep({
 
   return (
     <form className="setup__step-panel" onSubmit={submit}>
-      <h2>Your account</h2>
+      <h2>Your Account</h2>
       <p className="muted">
         The first account becomes the owner: the one account that can transfer
         the instance, and the one nobody else can suspend or reset.
@@ -374,7 +374,7 @@ function AccountStep({
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
       </label>
       <label>
-        <span>Your name</span>
+        <span>Your Name</span>
         <input value={name} onChange={(e) => setName(e.target.value)} required />
       </label>
       <label>
@@ -397,13 +397,13 @@ function InstanceStep({ busy, onNext }: { busy: boolean; onNext: (name: string, 
   const [baseUrl, setBaseUrl] = useState(window.location.origin)
   return (
     <form className="setup__step-panel" onSubmit={(e) => { e.preventDefault(); onNext(name, baseUrl) }}>
-      <h2>This instance</h2>
+      <h2>This Instance</h2>
       <label>
-        <span>What is it called</span>
+        <span>What Is It Called</span>
         <input value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
       </label>
       <label>
-        <span>Its address</span>
+        <span>Its Address</span>
         <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} required />
         <span className="muted small">Links in email use this, so it has to be the address people reach you on.</span>
       </label>
@@ -421,7 +421,7 @@ function RegistrationStep({ busy, onNext }: { busy: boolean; onNext: (open: bool
   const [anonymous, setAnonymous] = useState(false)
   return (
     <Panel
-      title="Who can join"
+      title="Who Can Join"
       busy={busy}
       nextDisabled={open === null}
       onNext={() => open !== null && onNext(open, anonymous)}
@@ -441,7 +441,7 @@ function RegistrationStep({ busy, onNext }: { busy: boolean; onNext: (open: bool
       <label className="setup__check">
         <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} />
         <span>
-          <strong>Allow anonymous reading</strong>
+          <strong>Allow Anonymous Reading</strong>
           <span className="muted small">
             Off: every visitor must sign in. On: spaces you mark public can be read
             without an account, and nothing is public until you mark a space.
@@ -485,7 +485,7 @@ function BackupsStep({
       </p>
       {askAboutKey ? (
         <div className="setup__key">
-          <h3>Save your backup key</h3>
+          <h3>Save Your Backup Key</h3>
           <p className="small">
             Your backups are encrypted with a key Tesria made when it was installed. Without it, no
             backup can be restored, by anyone. Right now it may exist only on the server, so save a copy
@@ -519,7 +519,7 @@ function BackupsStep({
       ) : null}
       <label className="setup__check">
         <input type="checkbox" checked={!enabled} onChange={(e) => setEnabled(!e.target.checked)} />
-        Keep every backup forever
+        Keep Every Backup Forever
       </label>
       {enabled && (
         <p className="setup__inline">
@@ -591,14 +591,14 @@ function EmailStep({
           password, skip this step and use Administration &rarr; Settings &rarr; Email once the wizard is done.
         </p>
       )}
-      <label><span>SMTP host</span><input value={host} onChange={(e) => setHost(e.target.value)} /></label>
+      <label><span>SMTP Host</span><input value={host} onChange={(e) => setHost(e.target.value)} /></label>
       <label><span>Port</span><input type="number" value={port} onChange={(e) => setPort(Number(e.target.value))} /></label>
       <label>
         <span>Encryption</span>
         <select value={tls} onChange={(e) => setTls(Number(e.target.value))}>
           <option value={0}>None</option>
           <option value={1}>STARTTLS</option>
-          <option value={2}>SSL on connect</option>
+          <option value={2}>SSL on Connect</option>
         </select>
       </label>
       <label><span>Username</span><input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="off" /></label>
@@ -606,7 +606,7 @@ function EmailStep({
         <span>Password</span>
         <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="off" />
       </label>
-      <label><span>From address</span><input type="email" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
+      <label><span>From Address</span><input type="email" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
       <p className="muted small">
         A test send is on Administration &rarr; Settings, once the wizard is done.
       </p>
@@ -629,7 +629,7 @@ function FirstSpaceStep({
   const [keyEdited, setKeyEdited] = useState(false)
   return (
     <Panel
-      title="A first space"
+      title="A First Space"
       busy={busy}
       onSkip={onSkip}
       nextDisabled={!name || key.length < 2}
@@ -665,7 +665,7 @@ function DoneStep({
 }) {
   return (
     <section className="setup__step-panel">
-      <h2>Your instance is ready</h2>
+      <h2>Your Instance Is Ready</h2>
       <p className="muted">
         Everything here lives in Administration now, including whatever you
         skipped.

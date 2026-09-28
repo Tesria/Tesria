@@ -35,8 +35,8 @@ describe('sectionFor', () => {
   it('knows the sections', () => {
     expect(sectionFor('/spaces')).toBe('Spaces')
     expect(sectionFor('/admin/branding')).toBe('Administration')
-    expect(sectionFor('/login')).toBe('Sign in')
-    expect(sectionFor('/reset')).toBe('Reset your password')
+    expect(sectionFor('/login')).toBe('Sign In')
+    expect(sectionFor('/reset')).toBe('Reset Your Password')
   })
   it('leaves spaces to the space', () => {
     expect(sectionFor('/spaces/ENG/pages/1')).toBeNull()

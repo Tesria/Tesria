@@ -117,7 +117,7 @@ export function HistoryPanel({
       {preview && (
         <div className="version-preview paper">
           <div className="row-between">
-            <h3>Preview: version {preview.versionNumber}</h3>
+            <h3>Preview: Version {preview.versionNumber}</h3>
             <button type="button" className="link-btn" onClick={() => setPreview(null)}>Close</button>
           </div>
           <div className="page-body">
@@ -129,7 +129,7 @@ export function HistoryPanel({
       {comparison && (
         <div className="version-preview paper">
           <div className="row-between">
-            <h3>Version {comparison.older} compared with version {comparison.newer}</h3>
+            <h3>Version {comparison.older} Compared With Version {comparison.newer}</h3>
             <button type="button" className="link-btn" onClick={() => setComparison(null)}>Close</button>
           </div>
           <p className="muted small">Highlighted: added in version {comparison.newer}. Struck through: removed since version {comparison.older}. Paragraphs are compared whole.</p>

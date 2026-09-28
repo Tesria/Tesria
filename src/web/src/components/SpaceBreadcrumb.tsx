@@ -43,7 +43,7 @@ export function SpaceBreadcrumb({ space, tree }: { space: Space; tree: PageTreeN
     parentPath?.forEach((node) => {
       crumbs.push({ label: node.title, to: `/spaces/${space.key}/pages/${node.id}` })
     })
-    crumbs.push({ label: 'New page' })
+    crumbs.push({ label: 'New Page' })
   } else if (matchSettings) {
     const tab = matchSettings.params['*'] ?? ''
     crumbs.push(tab ? { label: 'Space Settings', to: `/spaces/${space.key}/settings` } : { label: 'Space Settings' })

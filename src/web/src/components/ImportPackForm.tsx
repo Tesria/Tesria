@@ -88,7 +88,7 @@ export function ImportPackForm({ onImported }: { onImported: () => void }) {
         )}
         {/* Straight on to access (dev-plan 15.1): the space starts private to
             whoever imported it, and this is the moment to say who else. */}
-        <h2 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>Who should have access?</h2>
+        <h2 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>Who Should Have Access?</h2>
         <p className="muted small">
           For now only you can see {result.name}. Give access to people or groups: the Users group
           is everyone with an account. You can change this later in the space’s settings, under Permissions.
@@ -104,7 +104,7 @@ export function ImportPackForm({ onImported }: { onImported: () => void }) {
   return (
     <form className="card" onSubmit={submit}>
       <label>
-        Pack file
+        Pack File
         <input ref={fileRef} type="file" accept=".zip,application/zip" required />
       </label>
       <label>
@@ -117,7 +117,7 @@ export function ImportPackForm({ onImported }: { onImported: () => void }) {
         />
       </label>
       <label>
-        Name <span className="muted small">(optional)</span>
+        Name <span className="muted small">(Optional)</span>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}

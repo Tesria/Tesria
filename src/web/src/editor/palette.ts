@@ -29,13 +29,13 @@ export type Swatch = {
 export const CELL_BACKGROUND_TIERS: Swatch[][] = [
   [
     { name: 'White', value: '#ffffff' },
-    { name: 'Light gray', value: '#f4f5f7' },
-    { name: 'Light blue', value: '#deebff' },
-    { name: 'Light teal', value: '#e6fcff' },
-    { name: 'Light green', value: '#e3fcef' },
-    { name: 'Light yellow', value: '#fffae6' },
-    { name: 'Light red', value: '#ffebe6' },
-    { name: 'Light purple', value: '#eae6ff' },
+    { name: 'Light Gray', value: '#f4f5f7' },
+    { name: 'Light Blue', value: '#deebff' },
+    { name: 'Light Teal', value: '#e6fcff' },
+    { name: 'Light Green', value: '#e3fcef' },
+    { name: 'Light Yellow', value: '#fffae6' },
+    { name: 'Light Red', value: '#ffebe6' },
+    { name: 'Light Purple', value: '#eae6ff' },
   ],
   [
     { name: 'Gray', value: '#dfe1e6' },
@@ -47,13 +47,13 @@ export const CELL_BACKGROUND_TIERS: Swatch[][] = [
     { name: 'Purple', value: '#c0b6f2' },
   ],
   [
-    { name: 'Bold gray', value: '#b3bac5' },
-    { name: 'Bold blue', value: '#4c9aff' },
-    { name: 'Bold teal', value: '#79e2f2' },
-    { name: 'Bold green', value: '#57d9a3' },
-    { name: 'Bold yellow', value: '#ffc400' },
-    { name: 'Bold red', value: '#ff8f73' },
-    { name: 'Bold purple', value: '#998dd9' },
+    { name: 'Bold Gray', value: '#b3bac5' },
+    { name: 'Bold Blue', value: '#4c9aff' },
+    { name: 'Bold Teal', value: '#79e2f2' },
+    { name: 'Bold Green', value: '#57d9a3' },
+    { name: 'Bold Yellow', value: '#ffc400' },
+    { name: 'Bold Red', value: '#ff8f73' },
+    { name: 'Bold Purple', value: '#998dd9' },
   ],
 ]
 

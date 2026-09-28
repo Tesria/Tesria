@@ -116,14 +116,14 @@ export function RecoveryCodesPrompt() {
       <div className="recovery-prompt__card">
         {codes ? (
           <>
-            <h2>Save your recovery codes</h2>
+            <h2>Save Your Recovery Codes</h2>
             <RecoveryCodes codes={codes} onDone={doneWithCodes} doneLabel="Done" />
           </>
         ) : (
           <form onSubmit={generate}>
             {unsaved ? (
               <>
-                <h2>Do you have your recovery codes?</h2>
+                <h2>Do You Have Your Recovery Codes?</h2>
                 <p className="muted small">
                   This account has recovery codes, but they were never confirmed as saved,
                   so they may never have been shown to you. If you have them somewhere safe,
@@ -132,7 +132,7 @@ export function RecoveryCodesPrompt() {
               </>
             ) : (
               <>
-                <h2>Set up account recovery</h2>
+                <h2>Set Up Account Recovery</h2>
                 <p className="muted small">
                   This account has no recovery codes. Without them, losing your
                   password means an administrator has to let you back in. Generating
@@ -143,7 +143,7 @@ export function RecoveryCodesPrompt() {
             {error && <p className="alert alert--error">{error}</p>}
             {password !== null && (
               <label>
-                Current password
+                Current Password
                 <PasswordInput
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

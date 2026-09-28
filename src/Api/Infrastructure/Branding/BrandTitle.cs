@@ -43,10 +43,10 @@ public static class BrandTitle
         if (p.StartsWith("/labels")) return "Labels";
         if (p.StartsWith("/profile")) return "Profile";
         if (p.StartsWith("/admin")) return "Administration";
-        if (p == "/login") return "Sign in";
-        if (p == "/register") return "Create account";
-        if (p is "/recover" or "/reset") return "Reset your password";
-        if (p == "/setup") return "Set up";
+        if (p == "/login") return "Sign In";
+        if (p == "/register") return "Create Account";
+        if (p is "/recover" or "/reset") return "Reset Your Password";
+        if (p == "/setup") return "Set Up";
         if (p == "/welcome") return "Welcome";
         return null;
     }

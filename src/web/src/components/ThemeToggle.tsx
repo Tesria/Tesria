@@ -234,7 +234,7 @@ export function ThemeToggle() {
           </div>
 
           {!accentLocked && (<>
-          <p className="theme-menu__heading">Accent color</p>
+          <p className="theme-menu__heading">Accent Color</p>
           <div className="theme-menu__accents">
             {swatches.map((a) => (
               <button

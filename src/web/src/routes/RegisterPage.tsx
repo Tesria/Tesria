@@ -29,7 +29,7 @@ export function RegisterPage() {
     return (
       <AuthPage>
         <div className="authcard authcard--wide">
-          <h1>Save your recovery codes</h1>
+          <h1>Save Your Recovery Codes</h1>
           <RecoveryCodes
             codes={codes}
             onDone={() => {
@@ -61,13 +61,13 @@ export function RegisterPage() {
   return (
     <AuthPage>
       <form className="authcard" onSubmit={onSubmit}>
-        <h1>Create account</h1>
+        <h1>Create Account</h1>
         {inviteToken && (
           <p className="muted small">You were invited to this instance.</p>
         )}
         {error && <p className="alert alert--error">{error}</p>}
         <label>
-          Display name
+          Display Name
           <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} required autoFocus />
         </label>
         <label>
@@ -82,7 +82,7 @@ export function RegisterPage() {
           {busy ? 'Creating…' : 'Create Account'}
         </button>
         <p className="muted">
-          Already have an account? <Link to="/login">Sign in</Link>
+          Already have an account? <Link to="/login">Sign In</Link>
         </p>
       </form>
     </AuthPage>

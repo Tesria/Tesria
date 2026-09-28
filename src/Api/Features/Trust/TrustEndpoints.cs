@@ -93,7 +93,7 @@ public static partial class TrustEndpoints
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="robots" content="noindex" />
-        <title>Trust this device · {{name}}</title>
+        <title>Trust This Device · {{name}}</title>
         <link rel="stylesheet" href="/trust/app.css" />
         <link rel="stylesheet" href="/trust/trust.css" />
         <script src="/trust/trust.js" defer></script>
@@ -206,13 +206,13 @@ public static partial class TrustEndpoints
           """;
 
     private static string NothingToDo(string address) => $$"""
-        <h1>Nothing to set up</h1>
+        <h1>Nothing to Set Up</h1>
         <p class="trust-lead">This server uses a certificate from a public certificate authority, the same kind every website uses, so every device already trusts it.</p>
         <p><a class="btn btn--primary" href="https://{{address}}/">Open Tesria</a></p>
         """;
 
     private static string TrustBody(string address, string? serverName) => $$"""
-        <h1>Trust this server on your device</h1>
+        <h1>Trust This Server on Your Device</h1>
         <p class="trust-lead">A few minutes, once per device, and your browser stops warning you about this server.</p>
 
         <div class="alert alert--warning trust-channel">
@@ -220,21 +220,21 @@ public static partial class TrustEndpoints
         </div>
 
         <details class="trust-why">
-        <summary>Why am I seeing a security warning?</summary>
+        <summary>Why Am I Seeing a Security Warning?</summary>
         <p>Browsers keep web traffic private with <strong>certificates</strong>: a certificate proves to your browser that it is talking to the real server and not an impostor. Public websites get theirs from certificate authorities every browser already trusts.</p>
         <p>A Tesria server on your own network cannot get one of those, so it becomes its own certificate authority. Your browser has never heard of it, so it warns you. The connection is still encrypted; the browser just cannot vouch for who is on the other end.</p>
         <p>The fix is to tell your device, once, "this server's certificate authority is mine, trust it". This page walks you through that. You will need to be an administrator of the device.</p>
         </details>
 
         <details class="trust-why">
-        <summary>What does trusting it mean?</summary>
+        <summary>What Does Trusting It Mean?</summary>
         <p>A device that trusts a certificate authority believes it about <strong>every</strong> website, not only Tesria. That is fine while the authority's key stays on your server, where Tesria keeps it.</p>
         <p>On a network you run yourself, such as your home or your own office, trusting it is all there is to do. On one someone else controls, such as a shared office or a café, someone could answer in your server's place the first time. There, check the fingerprint first (the optional step below), so that what your device trusts is your server's.</p>
         <p>Two ways need nothing trusted on each device: reaching Tesria through <strong>Tailscale</strong>, whose addresses have public certificates, or giving it a <strong>real domain</strong> with a public certificate. Both are in the <a href="{{DocsUrl}}">docs</a>.</p>
         </details>
 
         <section class="trust-step" data-step="1">
-        <h2><span class="trust-step__num">1</span> Which device are you on?</h2>
+        <h2><span class="trust-step__num">1</span> Which Device Are You On?</h2>
         <p class="muted">We guessed from your browser. Choose another if it is wrong.</p>
         <div class="trust-devices" role="radiogroup" aria-label="Your device">
           <button type="button" class="trust-device" data-device="windows" role="radio">Windows</button>
@@ -246,7 +246,7 @@ public static partial class TrustEndpoints
         </section>
 
         <section class="trust-step" data-step="2">
-        <h2><span class="trust-step__num">2</span> What address do you open Tesria at?</h2>
+        <h2><span class="trust-step__num">2</span> What Address Do You Open Tesria At?</h2>
         <p class="muted">What you type into the browser's address bar, without <code>https://</code>. We filled in the address you used to reach this page.</p>
         <label class="trust-address">
           <span class="trust-address__prefix">https://</span>
@@ -261,7 +261,7 @@ public static partial class TrustEndpoints
         </section>
 
         <details class="trust-step trust-check" id="trust-check">
-        <summary><strong>Optional: check the fingerprint first</strong> <span class="muted">(worth it on a network you do not control)</span></summary>
+        <summary><strong>Optional: Check the Fingerprint First</strong> <span class="muted">(worth it on a network you do not control)</span></summary>
         <p>The <strong>fingerprint</strong> is a code that only your server's certificate has, like <code>4B:1E:09:…</code>. Paste it here and the commands below trust nothing unless the certificate matches it. Get it from the server, not from this page, which could have been changed on the way:</p>
         <ul>
           <li><strong>On the server computer,</strong> open <code>https://localhost</code>, then Administration, Settings, <strong>Certificate</strong>.</li>
@@ -279,7 +279,7 @@ public static partial class TrustEndpoints
         </details>
 
         <section class="trust-step" data-step="3">
-        <h2><span class="trust-step__num">3</span> Trust the certificate</h2>
+        <h2><span class="trust-step__num">3</span> Trust the Certificate</h2>
 
         <div class="trust-guide" data-for="mac">
           <p>One line in Terminal downloads your server's certificate, shows its fingerprint, and trusts it. Nothing to install, and it works with no internet.</p>
@@ -291,7 +291,7 @@ public static partial class TrustEndpoints
             <li>If you checked the fingerprint and it says the certificate <strong>does not match</strong>, stop: nothing was trusted. Check the fingerprint and the address.</li>
             <li>Quit your browser completely (<kbd>⌘</kbd> <kbd>Q</kbd>) and open it again.</li>
           </ol>
-          <details class="trust-manual"><summary>Rather do it by hand?</summary>
+          <details class="trust-manual"><summary>Rather Do It by Hand?</summary>
             <ol>
               <li><a data-cert href="/ca.crt">Download the certificate</a>, then double-click it in your Downloads folder. <strong>Keychain Access</strong> opens and adds it to your login keychain.</li>
               <li>In Keychain Access, find the certificate named <em>Caddy Local Authority</em> and double-click it.</li>
@@ -310,7 +310,7 @@ public static partial class TrustEndpoints
             <li>If you checked the fingerprint and it says the certificate <strong>does not match</strong>, stop: nothing was trusted. Otherwise Windows shows a <strong>Security Warning</strong> about a certificate from <em>Caddy Local Authority</em>: that is your server's. Choose <strong>Yes</strong>.</li>
             <li>Close every browser window and open your browser again.</li>
           </ol>
-          <details class="trust-manual"><summary>Setting it up for every user on this computer?</summary>
+          <details class="trust-manual"><summary>Setting It Up for Every User on This Computer?</summary>
             <p>The line above trusts the server for your Windows account. To trust it for everyone who signs in to this computer, use Tesria's script from GitHub instead. It needs an administrator, and asks.</p>
             <ol>
               <li>In PowerShell, run:
@@ -319,7 +319,7 @@ public static partial class TrustEndpoints
             </ol>
             <p class="muted">On a work computer your IT department may block scripts completely, and then this does not run at all. The line at the top still works, or ask IT to add the certificate for you.</p>
           </details>
-          <details class="trust-manual"><summary>Rather do it by hand?</summary>
+          <details class="trust-manual"><summary>Rather Do It by Hand?</summary>
             <p>Windows' certificate window shows only the <strong>SHA-1</strong> fingerprint, which it calls the Thumbprint. The server shows that one too, beside the SHA-256.</p>
             <ol>
               <li><a data-cert href="/ca.crt">Download the certificate</a>, then double-click <code>tesria-ca.crt</code> in your Downloads folder.</li>
@@ -373,10 +373,10 @@ public static partial class TrustEndpoints
         </section>
 
         <section class="trust-step" data-step="4">
-        <h2><span class="trust-step__num">4</span> Check it worked</h2>
+        <h2><span class="trust-step__num">4</span> Check It Worked</h2>
         <p>Open Tesria with this link. If it opens with no warning, and your browser shows the usual padlock or "secure" sign by the address, you are done on this device.</p>
         <p><a class="btn btn--primary" id="trust-open" href="https://{{address}}/">Open Tesria Securely</a></p>
-        <details class="trust-manual" open><summary>Still says "Not secure"?</summary>
+        <details class="trust-manual" open><summary>Still Says "Not secure"?</summary>
           <ul>
             <li><strong>Quit the browser completely.</strong> Closing its windows is not always enough: Chrome can keep running in the background. In Chrome or Edge, type <code>chrome://restart</code> (or <code>edge://restart</code>) into the address bar and press Enter.</li>
             <li><strong>Open Tesria by its name,</strong> not a number like 192.168.1.50. A number can never match the certificate, however it is trusted.</li>

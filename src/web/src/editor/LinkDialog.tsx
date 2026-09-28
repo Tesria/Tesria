@@ -88,9 +88,9 @@ export function LinkDialog({ editor, open, onClose }: { editor: TiptapEditor; op
   // toolbar) is translated while a phone keyboard is up, which would make
   // the bar the overlay's containing block.
   return createPortal(
-    <div className="recovery-prompt link-dialog" role="dialog" aria-modal="true" aria-label={existing ? 'Edit link' : 'Add link'}>
+    <div className="recovery-prompt link-dialog" role="dialog" aria-modal="true" aria-label={existing ? 'Edit Link' : 'Add Link'}>
       <form className="recovery-prompt__card link-dialog__card" onSubmit={save}>
-        <h2>{existing ? 'Edit link' : 'Add link'}</h2>
+        <h2>{existing ? 'Edit Link' : 'Add Link'}</h2>
         <label>
           Address
           <input
@@ -104,7 +104,7 @@ export function LinkDialog({ editor, open, onClose }: { editor: TiptapEditor; op
           />
         </label>
         <label>
-          Display text
+          Display Text
           <input
             type="text"
             value={text}

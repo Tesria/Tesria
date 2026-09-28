@@ -26,12 +26,12 @@ export function MailProviderPicker({
       >
         <option value="">Other (fill in the server yourself)</option>
         {mail.length > 0 && (
-          <optgroup label="Email accounts">
+          <optgroup label="Email Accounts">
             {mail.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </optgroup>
         )}
         {services.length > 0 && (
-          <optgroup label="Sending services">
+          <optgroup label="Sending Services">
             {services.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </optgroup>
         )}

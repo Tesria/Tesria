@@ -241,7 +241,7 @@ export function SpacePage() {
             <NavLink to={newPageHref} className="btn btn--primary btn--sm">
               + New
             </NavLink>
-            <OverflowMenu label="Space actions">
+            <OverflowMenu label="Space Actions">
               {/* Permissions, webhooks and trash are tabs of Settings now,
                   so one entry reaches all four. */}
               {/* On a phone the watch toggle lives here, not beside the title,
@@ -266,7 +266,7 @@ export function SpacePage() {
       {collapsed && (
         <div className="sidebar-rail">
           <button type="button" className="sidebar__toggle" onClick={toggleSidebar} ref={railButtonRef}
-            title="Show the sidebar" aria-label="Show the sidebar" aria-expanded="false">
+            title="Show the Sidebar" aria-label="Show the Sidebar" aria-expanded="false">
             <SidebarIcon />
           </button>
         </div>
@@ -285,7 +285,7 @@ export function SpacePage() {
               <div className="sidebar__name">{space.name}</div>
             </div>
             <button type="button" className="sidebar__toggle sidebar__toggle--hide" onClick={toggleSidebar}
-              title="Hide the sidebar" aria-label="Hide the sidebar" aria-expanded="true">
+              title="Hide the Sidebar" aria-label="Hide the Sidebar" aria-expanded="true">
               <SidebarIcon />
             </button>
           </div>

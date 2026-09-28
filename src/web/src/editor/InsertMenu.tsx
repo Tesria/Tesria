@@ -43,7 +43,7 @@ export function InsertMenu({ editor }: { editor: TiptapEditor }) {
         className="toolbar__btn toolbar-dropdown__trigger toolbar-dropdown__trigger--menu toolbar__insert"
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => setOpen((v) => !v)}
-        title="Insert an element"
+        title="Insert an Element"
         aria-haspopup="true"
         aria-expanded={open}
       >
@@ -67,7 +67,7 @@ export function InsertMenu({ editor }: { editor: TiptapEditor }) {
               <item.icon /><span>{item.title}</span>
             </button>
           ))}
-          <p className="toolbar-dropdown__heading">Live content</p>
+          <p className="toolbar-dropdown__heading">Live Content</p>
           {dynamic.map((item) => (
             <button key={item.title} type="button" className="toolbar-dropdown__item"
               onMouseDown={(e) => e.preventDefault()} onClick={() => insert(item)} title={item.description}>

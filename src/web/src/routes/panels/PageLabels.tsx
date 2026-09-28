@@ -50,7 +50,7 @@ export function PageLabels({ pageId, readOnly = false }: { pageId: string; readO
         <span key={l.id} className="label-chip">
           {readOnly ? <span>{l.name}</span> : <Link to={`/labels/${encodeURIComponent(l.name)}`}>{l.name}</Link>}
           {!readOnly && (
-            <button type="button" onClick={() => remove(l.name)} aria-label={`Remove label ${l.name}`}>
+            <button type="button" onClick={() => remove(l.name)} aria-label={`Remove Label ${l.name}`}>
               ×
             </button>
           )}

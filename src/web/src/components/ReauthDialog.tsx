@@ -49,7 +49,7 @@ export function ReauthDialog() {
   return (
     <div className="recovery-prompt" role="dialog" aria-modal="true">
       <form className="recovery-prompt__card" onSubmit={confirm}>
-        <h2>Confirm it&rsquo;s you</h2>
+        <h2>Confirm It&rsquo;s You</h2>
         <p className="muted small">
           This action is irreversible or changes who can administer the instance,
           so it needs your password again.
@@ -61,7 +61,7 @@ export function ReauthDialog() {
         </label>
         {user?.totpEnabled && (
           <label>
-            Or a code from your authenticator
+            Or a Code From Your Authenticator
             <input value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" placeholder="123456" />
           </label>
         )}

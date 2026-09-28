@@ -281,7 +281,7 @@ public static partial class SiteChrome
         </div></div></div>
         <div class="tree-section">
         <div class="tree-section__heading"><span>{PagesIcon} Pages</span></div>
-        <div class="tree-filter"><input type="search" class="tree-filter__input" placeholder="Filter pages" aria-label="Filter pages" /><button type="button" class="tree-filter__children is-on" aria-pressed="true" aria-label="Show the pages under each match" title="Show the pages under each match">{ChildrenIcon}</button></div>
+        <div class="tree-filter"><input type="search" class="tree-filter__input" placeholder="Filter pages" aria-label="Filter pages" /><button type="button" class="tree-filter__children is-on" aria-pressed="true" aria-label="Show the Pages Under Each Match" title="Show the Pages Under Each Match">{ChildrenIcon}</button></div>
         {Tree(pages, currentPath, space.TreeStyle)}
         <p class="muted small tree-filter__none" style="display:none">No pages match.</p>
         </div>
@@ -460,7 +460,7 @@ public static partial class SiteChrome
         <div class="theme-menu__modes">{modes}</div>
         """;
         var accentSection = accentLocked ? "" : $"""
-        <p class="theme-menu__heading">Accent color</p>
+        <p class="theme-menu__heading">Accent Color</p>
         <div class="theme-menu__accents">{accents}</div>
         """;
 
@@ -790,7 +790,7 @@ public static partial class SiteChrome
               // A cross while it is open, as in the app (2026-09-24), in the top bar, which
               // stays on screen however far the list has scrolled.
               button.textContent = open ? '\u2715' : '\u2630';
-              button.setAttribute('aria-label', open ? 'Close pages' : 'Pages');
+              button.setAttribute('aria-label', open ? 'Close Pages' : 'Pages');
               if (open) {
                 // The tree now scrolls with the page: bring the open page's
                 // entry into view rather than restoring the tree's own scroll.
@@ -854,7 +854,7 @@ public static partial class SiteChrome
               function show() {
                 if (!b) return;
                 b.setAttribute('aria-pressed', v.paused ? 'true' : 'false');
-                b.setAttribute('aria-label', v.paused ? 'Play the animation' : 'Pause the animation');
+                b.setAttribute('aria-label', v.paused ? 'Play the Animation' : 'Pause the Animation');
                 b.innerHTML = v.paused ? PLAY : PAUSE;
               }
               if (reduce) { v.removeAttribute('autoplay'); v.pause(); }

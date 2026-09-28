@@ -13,7 +13,7 @@ export function AppearancePicker({
 }) {
   const current = isAppearance(value) ? value : 'theme'
   return (
-    <label className={className ? `appearance-picker ${className}` : 'appearance-picker'} title="This block's style: follow the reader's theme, or always flat, or always glass">
+    <label className={className ? `appearance-picker ${className}` : 'appearance-picker'} title="This block's style: follow the reader's theme, or always Minimal, or always Glass">
       <span>Style</span>
       <select value={current} onChange={(e) => onChange(e.target.value)}>
         {APPEARANCES.map((a) => <option key={a} value={a}>{APPEARANCE_LABELS[a]}</option>)}

@@ -142,13 +142,13 @@ export function SpaceIconPicker({ space, onChanged }: { space: Space; onChanged:
       {error && <p className="alert alert--error">{error}</p>}
 
       <fieldset className="icon-picker__emoji" disabled={busy}>
-        <legend className="muted small">Or pick an emoji</legend>
+        <legend className="muted small">Or Pick an Emoji</legend>
         {SUGGESTED.map((emoji) => (
           <button
             key={emoji}
             type="button"
             className={space.iconValue === emoji ? 'icon-picker__emoji-btn is-active' : 'icon-picker__emoji-btn'}
-            aria-label={`Use ${emoji} as the icon`}
+            aria-label={`Use ${emoji} as the Icon`}
             aria-pressed={space.iconValue === emoji}
             onClick={() => setIcon(SpaceIconKind.Emoji, emoji)}
           >
@@ -159,7 +159,7 @@ export function SpaceIconPicker({ space, onChanged }: { space: Space; onChanged:
 
       <form className="icon-picker__custom" onSubmit={onCustom}>
         <label className="small">
-          Any other emoji
+          Any Other Emoji
           <input
             value={custom}
             onChange={(e) => setCustom(e.target.value)}
@@ -173,7 +173,7 @@ export function SpaceIconPicker({ space, onChanged }: { space: Space; onChanged:
 
       <fieldset className="icon-picker__colors" disabled={busy || isImage}>
         <legend className="muted small">
-          {isImage ? 'Remove the picture to choose a tile color' : 'Tile color'}
+          {isImage ? 'Remove the picture to choose a tile color' : 'Tile Color'}
         </legend>
         {SPACE_ICON_COLORS.map((color, index) => {
           const selected = !isImage && index === activeColor
@@ -183,7 +183,7 @@ export function SpaceIconPicker({ space, onChanged }: { space: Space; onChanged:
               type="button"
               className={selected ? 'avatar-picker__swatch is-active' : 'avatar-picker__swatch'}
               style={{ background: color, borderRadius: 6 }}
-              aria-label={`Tile color ${index + 1}`}
+              aria-label={`Tile Color ${index + 1}`}
               aria-pressed={selected}
               onClick={() => setIcon(space.iconKind, space.iconValue, index)}
             />

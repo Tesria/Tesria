@@ -212,12 +212,12 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
       {sep('sep-marks', ['bold', 'italic', 'underline', 'strike', 'code', 'highlight', 'textcolor'])}
       {['bold', 'italic', 'underline', 'strike', 'code'].map(item)}
       <span data-tb-item="highlight" className={show('highlight') ? 'tb-item' : 'tb-item tb-item--hidden'}>
-        <ToolbarPopover icon={<HighlightIcon />} title="Highlight color" isActive={editor.isActive('highlight')}>
+        <ToolbarPopover icon={<HighlightIcon />} title="Highlight Color" isActive={editor.isActive('highlight')}>
           {highlightPalette}
         </ToolbarPopover>
       </span>
       <span data-tb-item="textcolor" className={show('textcolor') ? 'tb-item' : 'tb-item tb-item--hidden'}>
-        <ToolbarPopover icon={<TextColorIcon />} title="Text color" isActive={editor.isActive('textColor')}>
+        <ToolbarPopover icon={<TextColorIcon />} title="Text Color" isActive={editor.isActive('textColor')}>
           {textColorPalette}
         </ToolbarPopover>
       </span>

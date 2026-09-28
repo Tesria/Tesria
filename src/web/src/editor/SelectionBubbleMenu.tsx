@@ -68,12 +68,12 @@ export function SelectionBubbleMenu({ editor, getPageId, onCommentError }: Props
         <ToolbarButton label={<span className="tb-glyph tb-italic">I</span>} isActive={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()} title="Italic" />
         <ToolbarButton label={<span className="tb-glyph tb-underline">U</span>} isActive={editor.isActive('underline')} onClick={() => editor.chain().focus().toggleUnderline().run()} title="Underline" />
         <ToolbarButton label={<span className="tb-glyph tb-strike">S</span>} isActive={editor.isActive('strike')} onClick={() => editor.chain().focus().toggleStrike().run()} title="Strikethrough" />
-        <ToolbarButton label={<InlineCodeIcon />} isActive={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()} title="Inline code" />
-        <ToolbarButton label={<HighlightIcon />} isActive={editor.isActive('highlight')} onClick={() => editor.chain().focus().toggleHighlight().run()} title="Highlight selected text" />
-        <ToolbarButton label={<LinkIcon />} isActive={false} onClick={() => triggerLinkDialog(editor)} title="Add link" />
+        <ToolbarButton label={<InlineCodeIcon />} isActive={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()} title="Inline Code" />
+        <ToolbarButton label={<HighlightIcon />} isActive={editor.isActive('highlight')} onClick={() => editor.chain().focus().toggleHighlight().run()} title="Highlight Selected Text" />
+        <ToolbarButton label={<LinkIcon />} isActive={false} onClick={() => triggerLinkDialog(editor)} title="Add Link" />
         {getPageId && (
           <div className="toolbar__link">
-            <ToolbarButton label={<CommentIcon />} isActive={false} onClick={openCommentPopover} title="Comment on this selection" />
+            <ToolbarButton label={<CommentIcon />} isActive={false} onClick={openCommentPopover} title="Comment on This Selection" />
             {commentPopoverOpen && (
               <form
                 ref={commentAlign.ref}

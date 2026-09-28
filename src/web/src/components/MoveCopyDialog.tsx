@@ -79,9 +79,9 @@ export function MoveCopyDialog({ mode, pageId, pageTitle, spaceId, onClose, onDo
           </select>
         </label>
         <label>
-          Put it under
+          Put It Under
           <select value={parent} onChange={(e) => setParent(e.target.value)} disabled={!tree}>
-            <option value="">The top of the space</option>
+            <option value="">The Top of the Space</option>
             {places.map((p) => (
               <option key={p.id} value={p.id}>{' '.repeat(p.depth)}{p.title}</option>
             ))}
@@ -90,7 +90,7 @@ export function MoveCopyDialog({ mode, pageId, pageTitle, spaceId, onClose, onDo
         {mode === 'copy' ? (
           <label className="setup__check">
             <input type="checkbox" checked={includeChildren} onChange={(e) => setIncludeChildren(e.target.checked)} />
-            <span>Copy the pages under it too</span>
+            <span>Copy the Pages Under It Too</span>
           </label>
         ) : (
           <p className="muted small">The pages under it move with it.</p>

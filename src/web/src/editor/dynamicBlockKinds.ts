@@ -46,11 +46,11 @@ export const DYNAMIC_KINDS: DynamicKind[] = [
     params: [
       { key: 'depth', label: 'Depth', type: 'number', min: 1, max: 3, default: 1 },
       {
-        key: 'sort', label: 'Sort by', type: 'select', default: 'position',
+        key: 'sort', label: 'Sort By', type: 'select', default: 'position',
         options: [
-          { value: 'position', label: 'Tree order' },
+          { value: 'position', label: 'Tree Order' },
           { value: 'title', label: 'Title' },
-          { value: 'updated', label: 'Recently updated' },
+          { value: 'updated', label: 'Recently Updated' },
         ],
       },
     ],
@@ -63,8 +63,8 @@ export const DYNAMIC_KINDS: DynamicKind[] = [
     keywords: ['recent', 'activity', 'changes'],
     params: [
       {
-        key: 'scope', label: 'Look in', type: 'select', default: 'space',
-        options: [{ value: 'space', label: 'This space' }, { value: 'tree', label: 'This page and below' }],
+        key: 'scope', label: 'Look In', type: 'select', default: 'space',
+        options: [{ value: 'space', label: 'This Space' }, { value: 'tree', label: 'This Page and Below' }],
       },
       { key: 'limit', label: 'Show', type: 'number', min: 1, max: 50, default: 10 },
     ],
@@ -79,11 +79,11 @@ export const DYNAMIC_KINDS: DynamicKind[] = [
       { key: 'labels', label: 'Labels', type: 'labels' },
       {
         key: 'match', label: 'Match', type: 'select', default: 'any',
-        options: [{ value: 'any', label: 'Any label' }, { value: 'all', label: 'All labels' }],
+        options: [{ value: 'any', label: 'Any Label' }, { value: 'all', label: 'All Labels' }],
       },
       {
-        key: 'scope', label: 'Look in', type: 'select', default: 'space',
-        options: [{ value: 'space', label: 'This space' }, { value: 'all', label: 'Everywhere' }],
+        key: 'scope', label: 'Look In', type: 'select', default: 'space',
+        options: [{ value: 'space', label: 'This Space' }, { value: 'all', label: 'Everywhere' }],
       },
       { key: 'limit', label: 'Show', type: 'number', min: 1, max: 100, default: 25 },
     ],
@@ -112,8 +112,8 @@ export const DYNAMIC_KINDS: DynamicKind[] = [
     keywords: ['authors', 'who', 'editors'],
     params: [
       {
-        key: 'scope', label: 'Count edits on', type: 'select', default: 'page',
-        options: [{ value: 'page', label: 'This page' }, { value: 'tree', label: 'This page and below' }],
+        key: 'scope', label: 'Count Edits On', type: 'select', default: 'page',
+        options: [{ value: 'page', label: 'This Page' }, { value: 'tree', label: 'This Page and Below' }],
       },
     ],
   },
@@ -154,9 +154,9 @@ export const DYNAMIC_KINDS: DynamicKind[] = [
       {
         key: 'mode', label: 'List', type: 'select', default: 'page',
         options: [
-          { value: 'page', label: "This page's labels" },
-          { value: 'popular', label: 'Popular in this space' },
-          { value: 'related', label: 'Related labels' },
+          { value: 'page', label: "This Page's Labels" },
+          { value: 'popular', label: 'Popular in This Space' },
+          { value: 'related', label: 'Related Labels' },
         ],
       },
       { key: 'limit', label: 'Show', type: 'number', min: 1, max: 100, default: 20 },
@@ -170,23 +170,23 @@ export const DYNAMIC_KINDS: DynamicKind[] = [
     keywords: ['tasks', 'action items', 'todo', 'assigned'],
     params: [
       {
-        key: 'scope', label: 'Look in', type: 'select', default: 'tree',
+        key: 'scope', label: 'Look In', type: 'select', default: 'tree',
         options: [
-          { value: 'tree', label: 'This page and below' },
-          { value: 'space', label: 'This space' },
+          { value: 'tree', label: 'This Page and Below' },
+          { value: 'space', label: 'This Space' },
           { value: 'all', label: 'Everywhere' },
         ],
       },
       {
         key: 'status', label: 'State', type: 'select', default: 'open',
         options: [
-          { value: 'open', label: 'Not done' },
+          { value: 'open', label: 'Not Done' },
           { value: 'done', label: 'Done' },
           { value: 'all', label: 'All' },
         ],
       },
       {
-        key: 'assignee', label: 'Assigned to', type: 'select', default: 'any',
+        key: 'assignee', label: 'Assigned To', type: 'select', default: 'any',
         options: [{ value: 'any', label: 'Anyone' }, { value: 'me', label: 'Me' }],
       },
       { key: 'limit', label: 'Show', type: 'number', min: 1, max: 100, default: 25 },
@@ -200,8 +200,8 @@ export const DYNAMIC_KINDS: DynamicKind[] = [
     keywords: ['tree', 'index', 'sitemap', 'navigation'],
     params: [
       {
-        key: 'root', label: 'Start at', type: 'select', default: 'host',
-        options: [{ value: 'host', label: 'This page' }, { value: 'space', label: 'Space root' }],
+        key: 'root', label: 'Start At', type: 'select', default: 'host',
+        options: [{ value: 'host', label: 'This Page' }, { value: 'space', label: 'Space Root' }],
       },
       { key: 'depth', label: 'Depth', type: 'number', min: 1, max: 6, default: 3 },
     ],

@@ -185,8 +185,8 @@ public class BrandingTests
     {
         Assert.Equal("Spaces", BrandTitle.SectionFor("/spaces"));
         Assert.Equal("Administration", BrandTitle.SectionFor("/admin/branding"));
-        Assert.Equal("Sign in", BrandTitle.SectionFor("/login"));
-        Assert.Equal("Reset your password", BrandTitle.SectionFor("/reset"));
+        Assert.Equal("Sign In", BrandTitle.SectionFor("/login"));
+        Assert.Equal("Reset Your Password", BrandTitle.SectionFor("/reset"));
         Assert.Null(BrandTitle.SectionFor("/spaces/ENG/pages/1"));
         Assert.Null(BrandTitle.SectionFor("/"));
     }

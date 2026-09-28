@@ -215,9 +215,9 @@ export function AdminRolesPage({ inSetup = false }: { inSetup?: boolean } = {}) 
               </select>
             </label>
             <label>
-              Copy rights from
+              Copy Rights From
               <select name="copyFrom" defaultValue="">
-                <option value="">The tier's built-in role</option>
+                <option value="">The Tier's Built-In Role</option>
                 {matrix.roles.filter((r) => r.tier < UserRole.Owner).map((r) => (
                   <option key={r.id} value={r.id}>{r.name}</option>
                 ))}
@@ -282,7 +282,7 @@ export function AdminRolesPage({ inSetup = false }: { inSetup?: boolean } = {}) 
               />
             ))}
             <tr className="roles-table__area">
-              <th colSpan={matrix.roles.length + 1}>Always the owner</th>
+              <th colSpan={matrix.roles.length + 1}>Always the Owner</th>
             </tr>
             {matrix.reserved.map((p) => (
               <tr key={p.key}>

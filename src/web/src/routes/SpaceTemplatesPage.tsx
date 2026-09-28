@@ -114,9 +114,9 @@ export function SpaceTemplatesPage() {
         <ol>
           <li>Write a page the way you want new ones to start: its headings, a table to fill in, and hints such as &ldquo;Owner: who?&rdquo;.</li>
           <li>On that page, open the <strong>&#8942;</strong> menu at the top right and choose <strong>Save as Template</strong>.</li>
-          <li>Give it a name, choose <strong>This space only</strong> or <strong>Every space (instance-wide)</strong>, and choose <strong>Save</strong>.</li>
+          <li>Give it a name, choose <strong>This Space Only</strong> or <strong>Every Space (Instance-Wide)</strong>, and choose <strong>Save</strong>.</li>
         </ol>
-        <p className="muted small">It is then offered under <strong>Start from a template</strong> whenever someone creates a page here.</p>
+        <p className="muted small">It is then offered under <strong>Start From a Template</strong> whenever someone creates a page here.</p>
       </section>
       {error && <p className="alert alert--error">{error}</p>}
       {templates === null ? <p className="muted">Loading…</p> : (

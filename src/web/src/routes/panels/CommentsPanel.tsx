@@ -89,7 +89,7 @@ export function CommentItem({ node, pageId, onChanged, readOnly = false, canEdit
 
   async function remove() {
     const ok = await ask({
-      title: 'Delete this comment?',
+      title: 'Delete This Comment?',
       danger: true,
       confirmLabel: 'Delete the Comment',
       body: <p>Replies to it stay, under a note saying this one was deleted.</p>,

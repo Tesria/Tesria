@@ -130,7 +130,7 @@
     },
     {
      "type": "circle",
-     "target": "[title='Insert an element']",
+     "target": "[title='Insert an Element']",
      "pad": 5
     }
    ]
@@ -157,7 +157,7 @@
    "settle": 1800,
    "steps": [
     {
-     "click": "[title='Insert an element']"
+     "click": "[title='Insert an Element']"
     },
     {
      "wait": 700
@@ -429,7 +429,7 @@
    "settle": 1400,
    "steps": [
     {
-     "eval": "[...document.querySelectorAll('h2')].find(h=>h.textContent.includes('Two-factor'))?.scrollIntoView({block:'center'})"
+     "eval": "[...document.querySelectorAll('h2')].find(h=>h.textContent.includes('Two-Factor'))?.scrollIntoView({block:'center'})"
     },
     {
      "wait": 500
@@ -444,7 +444,7 @@
    "settle": 1400,
    "steps": [
     {
-     "eval": "[...document.querySelectorAll('h2')].find(h=>h.textContent.includes('API tokens'))?.scrollIntoView({block:'center'})"
+     "eval": "[...document.querySelectorAll('h2')].find(h=>h.textContent.includes('API Tokens'))?.scrollIntoView({block:'center'})"
     },
     {
      "wait": 500

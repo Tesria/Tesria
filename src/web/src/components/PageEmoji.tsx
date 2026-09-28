@@ -61,7 +61,7 @@ export function PageEmoji({ emoji, canEdit, onChange }: {
   return (
     <div className="page-emoji-picker" ref={ref}>
       {emoji ? (
-        <button type="button" className="page-emoji page-emoji--button" title="Change the emoji" aria-label={`Emoji ${emoji}: change it`} onClick={() => setOpen((v) => !v)}>
+        <button type="button" className="page-emoji page-emoji--button" title="Change the Emoji" aria-label={`Emoji ${emoji}: change it`} onClick={() => setOpen((v) => !v)}>
           {emoji}
         </button>
       ) : (

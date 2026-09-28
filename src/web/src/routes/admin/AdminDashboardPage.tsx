@@ -18,8 +18,8 @@ function Stat({ label, value, hint }: { label: string; value: string | number; h
 }
 
 const BACKUP_TILE: Record<string, string> = {
-  logical: 'Last database dump',
-  physical: 'Last physical backup',
+  logical: 'Last Database Dump',
+  physical: 'Last Physical Backup',
 }
 
 /**
@@ -88,19 +88,19 @@ export function AdminDashboardPage() {
           <h2 className="dash__heading">People</h2>
           <div className="dash__grid">
             <Stat label="Users" value={data.people.total} hint={`${data.people.admins} ${data.people.admins === 1 ? 'administrator' : 'administrators'}`} />
-            <Stat label="Active (7 days)" value={data.people.activeLast7Days} />
-            <Stat label="Active (30 days)" value={data.people.activeLast30Days} />
+            <Stat label="Active (7 Days)" value={data.people.activeLast7Days} />
+            <Stat label="Active (30 Days)" value={data.people.activeLast30Days} />
             <Stat
-              label="New in range"
+              label="New in Range"
               value={data.people.newInRange}
               hint={data.people.suspended > 0 ? `${data.people.suspended} suspended` : undefined}
             />
             <div className="stat stat--wide">
-              <p className="stat__label">Sign-ins</p>
+              <p className="stat__label">Sign-Ins</p>
               <Sparkline points={data.people.loginsPerDay} label="Sign-ins" />
             </div>
             <div className="stat stat--wide">
-              <p className="stat__label">Failed sign-ins</p>
+              <p className="stat__label">Failed Sign-Ins</p>
               {/* On the front page on purpose: a spike here is the first sign
                   of a brute-force attempt, and dev-plan 3.3 turns it into an
                   alert. Until then, someone has to be able to see it. */}
@@ -119,16 +119,16 @@ export function AdminDashboardPage() {
               hint={bytes(data.content.storageBytes)}
             />
             <div className="stat stat--wide">
-              <p className="stat__label">Pages created</p>
+              <p className="stat__label">Pages Created</p>
               <Sparkline points={data.content.pagesCreatedPerDay} label="Pages created" />
             </div>
           </div>
 
           <h2 className="dash__heading">Usage</h2>
           <div className="dash__grid">
-            <Stat label="Page views" value={data.usage.viewsInRange} hint={`in ${range} days`} />
+            <Stat label="Page Views" value={data.usage.viewsInRange} hint={`in ${range} days`} />
             <div className="stat stat--wide">
-              <p className="stat__label">Views per day</p>
+              <p className="stat__label">Views per Day</p>
               <Sparkline points={data.usage.viewsPerDay} label="Views per day" />
             </div>
           </div>
@@ -137,7 +137,7 @@ export function AdminDashboardPage() {
           <div className="dash__grid">
             {data.version && (
               <div className="stat">
-                <p className="stat__label">Tesria version</p>
+                <p className="stat__label">Tesria Version</p>
                 <p className="stat__value">{data.version.current}</p>
                 {data.version.previous && data.version.changedAt && (
                   <p className="muted small">

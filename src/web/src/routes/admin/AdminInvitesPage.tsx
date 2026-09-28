@@ -67,7 +67,7 @@ export function AdminInvitesPage() {
       // does know, from the Tailscale sidecar.
       const here = `${window.location.origin}${invite.path}`
       setIssued(invite.tailnetUrl && invite.tailnetUrl !== here
-        ? [{ label: 'At this address', url: here }, { label: 'Through Tailscale', url: invite.tailnetUrl }]
+        ? [{ label: 'At This Address', url: here }, { label: 'Through Tailscale', url: invite.tailnetUrl }]
         : [{ label: null, url: here }])
       setEmailed(!emailing ? null : invite.emailed ? { to: invite.email ?? email.trim() } : { failed: invite.emailError ?? 'the mail server did not say why' })
       setEmail('')
@@ -90,7 +90,7 @@ export function AdminInvitesPage() {
 
       {canCreate && <form className="form-inline invite-form" onSubmit={create}>
         <label>
-          Email (optional)
+          Email (Optional)
           <input
             type="email"
             value={email}
@@ -99,7 +99,7 @@ export function AdminInvitesPage() {
           />
         </label>
         <label>
-          Expires in (days)
+          Expires in (Days)
           <input
             type="number"
             min={1}
@@ -112,7 +112,7 @@ export function AdminInvitesPage() {
           <div className="invite-email">
             <label className="admin__toggle admin__toggle--inline">
               <input type="checkbox" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} />
-              <span>Email the invite to {email.trim()}</span>
+              <span>Email the Invite to {email.trim()}</span>
             </label>
             {sendEmail && (
               <>
@@ -214,7 +214,7 @@ export function AdminInvitesPage() {
                     className="link-btn link-btn--danger"
                     onClick={async () => {
                       // Asked first (dev-plan 15.4): the link may already be in someone's inbox.
-                      if (!await ask({ title: 'Revoke this invite?', confirmLabel: 'Revoke the Invite', danger: true,
+                      if (!await ask({ title: 'Revoke This Invite?', confirmLabel: 'Revoke the Invite', danger: true,
                         body: <p>The link stops working. Anyone you sent it to will need a new one.</p> })) return
                       api.admin.invites.revoke(i.id).then(load).catch(() => setError('Could not revoke that invite.'))
                     }}
