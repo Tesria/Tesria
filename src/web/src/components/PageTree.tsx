@@ -324,6 +324,9 @@ export function PageTree({
         {heading}
         {error && <p className="alert alert--error">{error}</p>}
         <div className="tree-filter">
+          {/* The clear button is ours: a phone's browser shows none on a
+              search field (the owner, 2026-09-28). */}
+          <span className="tree-filter__field">
           <input
             type="search"
             className="tree-filter__input"
@@ -340,6 +343,13 @@ export function PageTree({
               }
             }}
           />
+          {filter && (
+            <button type="button" className="tree-filter__clear" aria-label="Clear the filter" title="Clear the filter"
+              onClick={() => setFilter('')}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+          )}
+          </span>
           <button
             type="button"
             className={withChildren ? 'tree-filter__children is-on' : 'tree-filter__children'}

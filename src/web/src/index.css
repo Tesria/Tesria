@@ -1483,7 +1483,21 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
    under the Pages heading and stays put while the rows scroll; a parent shown
    only because a page under it matched is dimmed, and the match is marked. */
 .tree-filter { flex: 0 0 auto; margin: 0.1rem 0 0.4rem; display: flex; gap: 0.3rem; align-items: stretch; }
+.tree-filter__field { position: relative; flex: 1 1 auto; min-width: 0; display: flex; }
+.tree-filter__field > .tree-filter__input { flex: 1 1 auto; min-width: 0; padding-right: 2rem; }
 .tree-filter__input { flex: 1 1 auto; min-width: 0; }
+.tree-filter__input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; display: none; }
+/* Clear the filter: inside the field, at its right end. */
+.tree-filter__clear {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 22px; height: 22px; padding: 0; border: none; border-radius: 50%; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--text) 14%, transparent); color: var(--text);
+}
+.tree-filter__clear:hover { background: color-mix(in srgb, var(--text) 24%, transparent); }
+/* While the top bar's menu is open over the page, the page stays put
+   (Layout.tsx): a swipe in the menu no longer scrolls the page behind it. */
+html.is-menu-locked, html.is-menu-locked body { overflow: hidden; overscroll-behavior: none; }
 .tree-filter__children {
   flex: none; display: inline-flex; align-items: center; justify-content: center; width: 2rem;
   border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--muted); cursor: pointer;

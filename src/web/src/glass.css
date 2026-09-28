@@ -782,7 +782,10 @@ label.code-block__appearance > select {
 /* The filter spans the panel, and the "with children" toggle sits inside its
    right end, as the avatar sits in its pill: 4px in, 8px smaller. */
 :root[data-style="glass"] .sidebar .tree-filter { position: relative; display: block; margin-bottom: 0.5rem; }
-:root[data-style="glass"] .sidebar .tree-filter__input { width: 100%; padding-right: calc(var(--ctl-page) + 0.25rem); }
+:root[data-style="glass"] .sidebar .tree-filter__field { display: block; width: 100%; }
+:root[data-style="glass"] .sidebar .tree-filter__input { width: 100%; padding-right: calc(var(--ctl-page) + 1.9rem); }
+/* The clear button sits just left of the inset toggle. */
+:root[data-style="glass"] .sidebar .tree-filter__clear { right: calc(var(--ctl-page) + 2px); }
 :root[data-style="glass"] .sidebar .tree-filter__children {
   position: absolute; top: 4px; right: 4px;
   width: calc(var(--ctl-page) - 8px); height: calc(var(--ctl-page) - 8px);
