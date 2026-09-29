@@ -382,7 +382,7 @@ export async function build({
 
     step(4, 'Publish'),
     p('Until you publish it, the page is a ', b('draft'), ' that only you can see. When it is ready, choose ', b('Publish'), ' at the top right. The page appears in the space’s tree, and anyone watching the space hears about it.'),
-    panel('warning', p(b('Close on a new page throws it away.'), ' It does not ask first. To keep what you have written, choose ', b('Publish'), '.')),
+    panel('warning', p(b('Close on a new page throws it away.'), ' It asks first, with ', b('Discard Page'), ' and ', b('Cancel'), '. To keep what you have written, choose ', b('Publish'), '.')),
     p('To change the page later, open it and choose ', b('Edit'), '; when you are done, choose ', b('Update'), '. Every update is kept in the page’s history, so nothing is ever lost. See ', pageLink('Drafts, Publish and Update'), '.'),
 
     step(5, 'Invite People'),

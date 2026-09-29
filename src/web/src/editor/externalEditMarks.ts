@@ -172,39 +172,35 @@ type Op =
  *
  * The case worth the extra pass is a block the write removed *entirely*. The
  * diff re-inserts it with every character marked, so deleting only the marked
- * text would accept the change and leave an empty paragraph behind. Such a
- * block is removed whole instead.
+ * text would accept the change and leave an empty paragraph behind. The
+ * outermost node whose text is all going is removed whole instead: a whole
+ * list or table, not the paragraphs inside its items. Removing those
+ * paragraphs one by one left a list of empty bullets, or, where ProseMirror
+ * would not empty a list item, the old list untouched beside the new one,
+ * and Update published it (QA T5-002). A node is only removed whole where its
+ * parent stays valid without it; otherwise its children are tried, and at
+ * worst only its marked text goes.
  */
 function plan(doc: import('@tiptap/pm/model').Node, mode: 'accept' | 'reject'): Op[] {
   const doomed: ExternalMarkName = mode === 'accept' ? 'externalDelete' : 'externalInsert'
   const spared: ExternalMarkName = mode === 'accept' ? 'externalInsert' : 'externalDelete'
   const ops: Op[] = []
-  const wholeBlocks: number[] = []
+  const wholeNodes: Array<{ from: number; to: number }> = []
 
-  doc.descendants((node, pos) => {
-    if (!node.isTextblock || node.content.size === 0) return true
-    let marked = false
-    let unmarked = false
-    node.forEach((child) => {
-      if (child.isText && child.marks.some((m) => m.type.name === doomed)) marked = true
-      else unmarked = true
-    })
-    if (marked && !unmarked) {
+  doc.descendants((node, pos, parent, index) => {
+    if (node.isText || node.isLeaf) return false
+    if (parent && allTextMarked(node, doomed) && parent.canReplace(index, index + 1)) {
       ops.push({ from: pos, to: pos + node.nodeSize, kind: 'delete' })
-      wholeBlocks.push(pos)
-      return false // its inline content goes with it
+      wholeNodes.push({ from: pos, to: pos + node.nodeSize })
+      return false // its content goes with it
     }
     return true
   })
 
-  const inWholeBlock = (from: number) =>
-    wholeBlocks.some((pos) => {
-      const node = doc.nodeAt(pos)
-      return node !== null && from > pos && from < pos + node.nodeSize
-    })
+  const inWholeNode = (from: number) => wholeNodes.some((range) => from >= range.from && from < range.to)
 
   for (const edit of findPendingExternalEdits(doc)) {
-    if (inWholeBlock(edit.range.from)) continue
+    if (inWholeNode(edit.range.from)) continue
     ops.push(
       edit.name === doomed
         ? { ...edit.range, kind: 'delete' }
@@ -212,6 +208,40 @@ function plan(doc: import('@tiptap/pm/model').Node, mode: 'accept' | 'reject'): 
     )
   }
   return ops
+}
+
+/** Whether a node has text, and every piece of it carries the mark. */
+function allTextMarked(node: import('@tiptap/pm/model').Node, name: ExternalMarkName): boolean {
+  let marked = false
+  let unmarked = false
+  node.descendants((child) => {
+    if (!child.isText) return true
+    if (child.marks.some((m) => m.type.name === name)) marked = true
+    else unmarked = true
+    return false
+  })
+  return marked && !unmarked
+}
+
+/**
+ * Accepts or rejects every pending outside change into `tr`, and says whether
+ * there was anything to do. The editor commands below are this plus a
+ * dispatch; it stands alone so the logic can be tested without an editor.
+ */
+export function resolveExternalEdits(
+  tr: import('@tiptap/pm/state').Transaction,
+  mode: 'accept' | 'reject',
+): boolean {
+  const ops = plan(tr.doc, mode)
+  if (ops.length === 0) return false
+  const { schema } = tr.doc.type
+  // Back to front, so each edit's positions are still the ones measured
+  // against the original document.
+  for (const op of ops.sort((a, b) => b.from - a.from)) {
+    if (op.kind === 'delete') tr.delete(op.from, op.to)
+    else tr.removeMark(op.from, op.to, schema.marks[op.mark])
+  }
+  return true
 }
 
 declare module '@tiptap/core' {
@@ -235,15 +265,8 @@ export const ExternalEditCommands = Extension.create({
         tr: import('@tiptap/pm/state').Transaction
         dispatch?: (tr: import('@tiptap/pm/state').Transaction) => void
       }) => {
-        const ops = plan(state.doc, mode)
-        if (ops.length === 0) return false
-        if (!dispatch) return true
-        // Back to front, so each edit's positions are still the ones measured
-        // against the original document.
-        for (const op of ops.sort((a, b) => b.from - a.from)) {
-          if (op.kind === 'delete') tr.delete(op.from, op.to)
-          else tr.removeMark(op.from, op.to, state.schema.marks[op.mark])
-        }
+        if (!dispatch) return plan(state.doc, mode).length > 0
+        if (!resolveExternalEdits(tr, mode)) return false
         dispatch(tr)
         return true
       }

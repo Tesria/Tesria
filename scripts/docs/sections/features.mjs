@@ -16,7 +16,12 @@ const NARROW = { width: 480, height: 900 }
 const section = (title) => `section.profile__section:has(> h2:text-is("${title}"))`
 const tag = (selector, text, name) =>
   `[...document.querySelectorAll('${selector}')].find((b) => b.textContent.trim() === '${text}')?.setAttribute('data-shot', '${name}')`
-const closeNewPage = (name) => ({ name, skipCapture: true, phone: false, steps: [{ click: '.page-actionbar button:has-text("Close")' }, { wait: 1200 }] })
+const closeNewPage = (name) => ({ name, skipCapture: true, phone: false, steps: [{ click: '.page-actionbar button:has-text("Close")' }, { wait: 500 }, { eval: ANSWER_CLOSE }, { wait: 1200 }] })
+
+// Close asks when there is something to lose (0.8.2): a new page is
+// discarded, an existing page's changes are kept in its draft, as Close
+// did without asking before.
+const ANSWER_CLOSE = "(() => { const d = document.querySelector('[role=dialog]'); if (!d) return; const keep = [...d.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Keep as Draft'); (keep ?? d.querySelector('.btn--danger'))?.click() })()"
 
 export const shots = ({ demo }) => [
   // ---- Writing pages

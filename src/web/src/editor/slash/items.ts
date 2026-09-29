@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react'
 import type { Editor } from '@tiptap/react'
-import { uploadAndInsertImage } from '../imageUpload'
+import { uploadAndInsertImages } from '../imageUpload'
 import { PANEL_TYPES, PANEL_LABELS } from '../panelExtension'
 import { rankMatches } from './match'
 import { DYNAMIC_KINDS, defaultParams } from '../dynamicBlockKinds'
@@ -61,10 +61,12 @@ function imageCommand(editor: Editor, range: { from: number; to: number }): void
   const input = document.createElement('input')
   input.type = 'file'
   input.accept = 'image/*'
+  // Several at once, each its own picture in order: in a gallery, a tile each.
+  input.multiple = true
   input.onchange = () => {
-    const file = input.files?.[0]
-    if (!file) return
-    uploadAndInsertImage(editor, file, getUploadPageId).catch((err: unknown) => {
+    const files = Array.from(input.files ?? [])
+    if (files.length === 0) return
+    uploadAndInsertImages(editor, files, getUploadPageId).catch((err: unknown) => {
       storage?.onUploadError?.(err instanceof Error ? err.message : 'Image upload failed.')
     })
   }

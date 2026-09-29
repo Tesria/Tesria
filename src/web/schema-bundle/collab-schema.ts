@@ -16,21 +16,33 @@
 import { getSchema } from '@tiptap/core'
 import type { JSONContent } from '@tiptap/core'
 import { getSharedExtensions } from '../src/editor/extensions'
-import { reconcileYDoc, type ExternalEditOrigin } from '../src/editor/externalEdits'
+import { reconcileYDoc, resetYDoc, type ExternalEditOrigin } from '../src/editor/externalEdits'
 
 /** The one schema, from the one place it is declared. */
 export const schema = getSchema(getSharedExtensions({ collaborative: true }))
 
 /**
- * Reconciles a shared document against what has been published, marking the
- * difference as tracked changes. See `externalEdits.ts` for the rules; this
- * only binds the schema so the caller does not have to know about it.
+ * Reconciles a shared document against what has been published, marking what
+ * the write changed as tracked changes. `base` is the published version the
+ * draft was last brought up to date with, which makes it a three-way merge
+ * (0.8.2); null falls back to the plain comparison. See `externalEdits.ts`
+ * for the rules; this only binds the schema so the caller does not have to
+ * know about it.
  */
 export function reconcile(
   ydoc: Parameters<typeof reconcileYDoc>[0],
   published: JSONContent,
   origin: ExternalEditOrigin,
+  base: JSONContent | null = null,
 ): boolean {
-  return reconcileYDoc(ydoc, schema, published, origin)
+  return reconcileYDoc(ydoc, schema, published, origin, { base })
+}
+
+/**
+ * Makes a shared document exactly the published page, in place (0.8.2:
+ * Discard, and an API or MCP publish while nobody is editing).
+ */
+export function reset(ydoc: Parameters<typeof resetYDoc>[0], published: JSONContent): boolean {
+  return resetYDoc(ydoc, schema, published)
 }
 

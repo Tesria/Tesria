@@ -97,6 +97,11 @@ export async function prepare({ lib, author, demoId }) {
   return {}
 }
 
+// Close asks when there is something to lose (0.8.2): a new page is
+// discarded, an existing page's changes are kept in its draft, as Close
+// did without asking before.
+const ANSWER_CLOSE = "(() => { const d = document.querySelector('[role=dialog]'); if (!d) return; const keep = [...d.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Keep as Draft'); (keep ?? d.querySelector('.btn--danger'))?.click() })()"
+
 export const shots = ({ demo }) => [
   // ---- What a space is: the sidebar, with the four things in it.
   {
@@ -181,7 +186,7 @@ export const shots = ({ demo }) => [
     annotate: [{ type: 'box', target: 'button[form="page-editor-form"]', pad: 4 }],
   },
   // Closes that new page without saving, which discards its draft.
-  { name: 'page-publish-closed', settle: 300, skipCapture: true, phone: false, steps: [{ click: '.page-actionbar button:has-text("Close")' }, { wait: 1200 }] },
+  { name: 'page-publish-closed', settle: 300, skipCapture: true, phone: false, steps: [{ click: '.page-actionbar button:has-text("Close")' }, { wait: 500 }, { eval: ANSWER_CLOSE }, { wait: 1200 }] },
 
   // ---- Templates: where Save as Template is, its form, and where a new
   // page offers one. From a meeting page in Tesria Demo, whose space has a
@@ -210,7 +215,7 @@ export const shots = ({ demo }) => [
     annotate: [{ type: 'box', target: '.editor-form label.change-comment select', pad: 4 }],
   },
   // Closes that new page without saving, which discards its draft.
-  { name: 'template-pick-closed', settle: 300, skipCapture: true, phone: false, steps: [{ click: '.page-actionbar button:has-text("Close")' }, { wait: 1200 }] },
+  { name: 'template-pick-closed', settle: 300, skipCapture: true, phone: false, steps: [{ click: '.page-actionbar button:has-text("Close")' }, { wait: 500 }, { eval: ANSWER_CLOSE }, { wait: 1200 }] },
 
   // ---- The page tree: the filter and the pencil, reorder mode, and the
   // tree style setting.
@@ -688,11 +693,11 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'Leaving the editor'),
     ul(
-      li(p(b('Close,'), ' beside Publish or Update, leaves without saving. On a new page it throws the draft away. On a page you are changing, it goes back to the page as it was.')),
-      li(p(b('Leaving any other way,'), ' such as a link, the back button or another page in the tree, stops to ask what you want: ', b('Publish and Leave'), ' (or ', b('Update and Leave'), '), ', b('Discard Page'), ' (or ', b('Leave Unpublished'), '), or ', b('Stay in the Editor'), '.')),
-      li(p(b('Closing the tab or the browser'), ' makes the browser ask whether you really want to leave.')),
+      li(p(b('Close,'), ' beside Publish or Update, leaves without publishing. With nothing unpublished it just leaves; otherwise it asks first. On a new page: ', b('Discard Page'), ' throws the draft away, or ', b('Cancel'), ' goes back. On a page you are changing: ', b('Keep as Draft'), ' keeps your changes for later, ', b('Discard'), ' puts the page’s draft back to the page as it was, or ', b('Stay in the Editor'), '.')),
+      li(p(b('Leaving any other way,'), ' such as a link, the back button or another page in the tree, stops to ask what you want when there is something unpublished: ', b('Publish and Leave'), ' (or ', b('Update and Leave'), '), ', b('Discard Page'), ' (or ', b('Leave Unpublished'), '), or ', b('Stay in the Editor'), '.')),
+      li(p(b('Closing the tab or the browser'), ' with something unpublished makes the browser ask whether you really want to leave.')),
     ),
-    panel('info', p(b('Changes kept for later.'), ' Where several people can edit a page at once, changes you have not published yet are kept in a shared draft when you leave, and are waiting for you the next time you edit. See ', pageLink('Editing at the same time'), '.')),
+    panel('info', p(b('Changes kept for later.'), ' Where several people can edit a page at once, changes you keep as a draft are waiting in the page’s shared draft the next time anyone edits it. Whoever opens it next is told whose they are, and can publish them with their own or discard them. Publishing the page from outside the editor while nobody is editing (an assistant, the API, or restoring an old version) starts the draft again from that version. See ', pageLink('Editing at the same time'), '.')),
 
     h(2, 'If the page changed while you were editing'),
     p('If someone else updated the page after you started, Tesria does not overwrite their work. It stops, highlights the difference in the editor, and asks you to accept or reject it; then choose ', b('Update'), ' again.'),

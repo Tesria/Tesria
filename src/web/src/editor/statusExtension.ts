@@ -32,7 +32,7 @@ declare module '@tiptap/core' {
   }
 }
 
-export const Status = Node.create({
+export const Status = Node.create<Record<string, never>, { insertedAt: number }>({
   name: 'status',
   group: 'inline',
   inline: true,
@@ -71,12 +71,19 @@ export const Status = Node.create({
     return ['span', mergeAttributes(HTMLAttributes, { 'data-type': 'status', class: `status status--${color}` }), text]
   },
 
+  addStorage() {
+    // When a status was last inserted, so its menu can put the cursor in the
+    // label as it opens (StatusMenu). Clicking an existing status does not.
+    return { insertedAt: 0 }
+  },
+
   addCommands() {
     return {
       insertStatus:
         (range, attrs) =>
-        ({ chain, state }) => {
+        ({ chain, state, dispatch }) => {
           const at = range ?? { from: state.selection.from, to: state.selection.to }
+          if (dispatch) this.storage.insertedAt = Date.now()
           return chain()
             .insertContentAt(at, { type: this.name, attrs: { text: attrs?.text ?? 'STATUS', color: attrs?.color ?? 'grey' } })
             .setNodeSelection(at.from)

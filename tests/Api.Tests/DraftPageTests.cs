@@ -161,7 +161,7 @@ public class DraftPageTests
     }
 
     [Fact]
-    public async Task DeleteDraft_removes_an_unpublished_draft_but_refuses_a_published_page()
+    public async Task DeleteDraft_removes_an_unpublished_draft_but_only_discards_a_published_pages_draft()
     {
         var (factory, client, spaceId) = await NewClientWithSpace();
         using var _ = factory;
@@ -179,12 +179,14 @@ public class DraftPageTests
             (await client.PostAsJsonAsync($"/api/pages/{draft.Id}/publish",
                 new { Title = "Too Late", ContentJson = Doc })).StatusCode);
 
-        // A published page is a real page, not a draft: delete-draft must refuse it.
+        // A published page is a real page, not a draft: delete-draft discards
+        // its shared live draft (0.8.2), and the page itself stays.
         var page = await (await client.PostAsJsonAsync("/api/pages",
             new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = "Real", ContentJson = Doc }))
             .Content.ReadFromJsonAsync<PageDetail>();
-        Assert.Equal(HttpStatusCode.NotFound,
+        Assert.Equal(HttpStatusCode.NoContent,
             (await client.DeleteAsync($"/api/pages/{page!.Id}/draft")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync($"/api/pages/{page.Id}")).StatusCode);
     }
 
     [Fact]

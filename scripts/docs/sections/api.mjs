@@ -226,7 +226,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     h(2, 'Updating without overwriting someone'),
     p(c('PUT https://your-server/api/pages/<page-id>'), ' changes a page. It takes a ', c('title'), ', a ', c('contentJson'), ' and a ', c('changeComment'), ' (what changed, shown in the page’s history). Leave out ', c('contentJson'), ' to rename a page without touching what it says. Every update adds a new version, so nothing is lost: the history can always bring back the old one.'),
     p('If a person might be changing the same page, send ', c('baseVersion'), ' too: the ', c('currentVersionNumber'), ' you read before making your change. If the page has moved on since, Tesria refuses with ', c('409'), ' and sends the page as it is now, instead of writing over the other person’s work. Read it again, make your change to the new version, and send that.'),
-    p('Anyone who has the page open in the editor when your update arrives sees it highlighted, to accept or reject. See ', pageLink('Changes from assistants and the API'), '.'),
+    p('Anyone who has the page open in the editor when your update arrives sees it highlighted, to accept or reject. If nobody is editing it, the page’s shared draft starts again from your version, so the next person to edit it starts from what you published. See ', pageLink('Changes from assistants and the API'), '.'),
 
     h(2, 'When a request is refused'),
     p('The status code says what kind of problem it is. Where there is more to say, the body explains, often with a ', c('code'), ' a script can check.'),
@@ -255,7 +255,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ul(
       li(p(b('Spaces:'), ' list, create, read, rename, archive, delete, choose which exports are allowed, and import a wiki pack.')),
       li(p(b('Pages:'), ' the page tree, create, read, update, move (also to another space), copy, full width, delete, restore from the trash, and delete permanently.')),
-      li(p(b('Drafts:'), ' start a new page as a draft, publish it, or throw it away.')),
+      li(p(b('Drafts:'), ' start a new page as a draft, publish it, or throw it away; and discard a published page’s shared draft (', c('DELETE /api/pages/{id}/draft'), '), which puts it back to the published page.')),
       li(p(b('Versions:'), ' a page’s history, any one version, and restoring one.')),
       li(p(b('Attachments:'), ' upload, list, download and delete a page’s files.')),
       li(p(b('Comments:'), ' list, add, edit, delete, resolve and reopen.')),
@@ -393,7 +393,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'When an assistant writes'),
     p('A page an assistant creates or changes is published straight away, as a new version credited to you, the token’s owner, with the assistant’s note on what it changed in the page’s history. Watchers are told, and webhooks fire, exactly as if you had done it.'),
-    p('If someone has that page open in the editor at the time, they see the assistant’s change highlighted as tracked changes, marked as coming from MCP, with ', b('Accept All'), ' and ', b('Reject All'), ' above the page. Rejecting takes it out of their draft, so their ', b('Update'), ' publishes the page without it; the assistant’s version stays in the history either way. See ', pageLink('Changes from assistants and the API'), '.'),
+    p('If someone has that page open in the editor at the time, they see the assistant’s change highlighted as tracked changes, marked as coming from MCP, with ', b('Accept All'), ' and ', b('Reject All'), ' above the page. Rejecting takes it out of their draft, so their ', b('Update'), ' publishes the page without it; the assistant’s version stays in the history either way. Their own unpublished writing is never marked as removed by it. If nobody has the page open, its draft starts again from the assistant’s version. See ', pageLink('Changes from assistants and the API'), '.'),
     p('Next: ', pageLink('What an assistant can do'), ' lists its ten tools.'),
   ))
 

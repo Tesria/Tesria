@@ -2,6 +2,7 @@ import { BubbleMenu } from '@tiptap/react/menus'
 import { useEditorState, type Editor as TiptapEditor } from '@tiptap/react'
 import { isIsoDate } from './dateExtension'
 import { updateSelectedNode } from './selectedNode'
+import { continueAfterSelectedNode } from './inlineAtomTyping'
 
 /** A date picker for the selected date chip. */
 export function DateMenu({ editor }: { editor: TiptapEditor }) {
@@ -27,7 +28,11 @@ export function DateMenu({ editor }: { editor: TiptapEditor }) {
             if (isIsoDate(e.target.value)) updateSelectedNode(editor, 'date', { date: e.target.value })
           }}
           onKeyDown={(e) => {
-            if (e.key === 'Escape' || e.key === 'Enter') editor.commands.focus()
+            // Back to writing, after the date. Enter is also canceled here:
+            // this box sits in the page's own form, where Enter published
+            // the page (QA t4-014; the page form stops it too).
+            if (e.key === 'Enter') e.preventDefault()
+            if (e.key === 'Escape' || e.key === 'Enter') continueAfterSelectedNode(editor)
           }}
         />
       </div>

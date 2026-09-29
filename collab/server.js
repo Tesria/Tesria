@@ -16,7 +16,7 @@ import * as Y from 'yjs'
 // The editor's own schema and reconciliation, built from src/web at image
 // build time (dev-plan 8.6). Not a copy: a node declared in extensions.ts
 // and missing here would be dropped from every document this touched.
-import { reconcile } from './vendor/collab-schema.js'
+import { reconcile, reset } from './vendor/collab-schema.js'
 
 /**
  * A secret from the environment, or else from the file the init service
@@ -129,6 +129,96 @@ async function currentVersion(documentName) {
 }
 
 /**
+ * What one published version of a page said: the base of a three-way merge
+ * (0.8.2). The draft's `meta.version` names the version it was last brought
+ * up to date with, so comparing the draft with *that* is what separates the
+ * human's unpublished typing from what a later write changed. Null when the
+ * version cannot be found, which makes the merge fall back to the plain
+ * two-way comparison.
+ */
+async function versionContent(documentName, version) {
+  if (!UUID.test(documentName) || typeof version !== 'number') return null
+  try {
+    const result = await pool.query(
+      `SELECT "ContentJson"::text AS content FROM "PageVersions"
+       WHERE "PageId" = $1::uuid AND "VersionNumber" = $2`,
+      [documentName, version],
+    )
+    const row = result.rows[0]
+    return row ? JSON.parse(row.content) : null
+  } catch (err) {
+    console.warn(`[collab] ${documentName}: could not read version ${version} as a base`, err.message)
+    return null
+  }
+}
+
+/** Whether a page has a stored draft at all. A page nobody has opened has none. */
+async function hasStoredDocument(documentName) {
+  const result = await pool.query('SELECT 1 FROM "CollabDocuments" WHERE "DocumentName" = $1', [documentName])
+  return result.rowCount > 0
+}
+
+/**
+ * Who has typed in a draft since it was last published or discarded (0.8.2):
+ * user id to display name, written by each editor on its first change. The
+ * editor names them in a banner to the next person who opens a draft holding
+ * someone else's unpublished work. Emptied here whenever the draft stops
+ * holding unpublished work.
+ */
+function clearDrafters(doc) {
+  const drafters = doc.getMap('drafters')
+  for (const key of [...drafters.keys()]) drafters.delete(key)
+}
+
+/**
+ * When each document last had a person connected, so a write that lands a
+ * moment after someone's connection dropped is still treated as a write to a
+ * draft being edited (merged, never reset). A network blip unloads the
+ * document; without this grace, an API publish during it would reset the
+ * draft under the person about to reconnect.
+ */
+const EDIT_GRACE_MS = Number(process.env.COLLAB_EDIT_GRACE_MS ?? 120000)
+const lastEdited = new Map()
+
+/** Whether somebody is editing this document now, or was a moment ago. */
+function isBeingEdited(documentName) {
+  const document = server.hocuspocus.documents.get(documentName)
+  if (document && document.getConnections().length > 0) return true
+  const at = lastEdited.get(documentName)
+  return at !== undefined && Date.now() - at < EDIT_GRACE_MS
+}
+
+/**
+ * Brings a document that somebody has open up to the page's current version,
+ * as tracked changes against its base (0.8.2). Asked for by an editor whose
+ * Update was refused because the page moved on (the 409), which used to
+ * reconcile in the browser instead: done offline, that and the load-time
+ * reconcile on reconnect both inserted the same change, and the page showed
+ * it twice (QA T5-015). Here there is one reconciler, and the version check
+ * inside the transaction makes a second request a no-op.
+ */
+async function reconcileOpenDocument(documentName) {
+  const page = await currentVersion(documentName)
+  if (!page) return
+  const connection = await server.hocuspocus.openDirectConnection(documentName, { write: true })
+  try {
+    const seen = connection.document?.getMap('meta').get('version')
+    if (typeof seen === 'number' && seen >= page.version) return
+    const base = await versionContent(documentName, seen)
+    await connection.transact((doc) => {
+      const meta = doc.getMap('meta')
+      const now = meta.get('version')
+      if (typeof now === 'number' && now >= page.version) return
+      const changed = reconcile(doc, JSON.parse(page.contentJson), { source: 'page', actor: page.author ?? null }, base)
+      meta.set('version', page.version)
+      if (changed) console.log(`[collab] ${documentName} reconciled to version ${page.version} on an editor's request`)
+    })
+  } finally {
+    await connection.disconnect()
+  }
+}
+
+/**
  * Brings a stored document up to date with the page before anyone opens it
  * (dev-plan 8.6, the "no session open" case).
  *
@@ -144,6 +234,13 @@ async function currentVersion(documentName) {
  * unpublished edits are not changes an assistant made. Marking them all up on
  * the first load after a deploy would be noise, and noise in exactly the
  * feature whose whole job is to be believed.
+ *
+ * **A three-way merge against the draft's base** (0.8.2): the version
+ * `meta.version` names is fetched and compared too, so unpublished typing in
+ * the stored draft stays the human's and only what the page changed is
+ * highlighted. This path is what runs after the sidecar was down for a write
+ * (the app could not tell it), and a person may be about to reconnect with
+ * offline edits, so it always merges rather than resetting.
  *
  * Failure is never fatal: the stored state is returned untouched. Refusing to
  * reconcile costs the reader a highlight, while writing a half-understood
@@ -166,10 +263,11 @@ async function reconcileStored(documentName, state) {
     return adopted
   }
 
+  const base = await versionContent(documentName, seen)
   const changed = reconcile(ydoc, JSON.parse(page.contentJson), {
     source: 'page',
     actor: page.author ?? null,
-  })
+  }, base)
   meta.set('version', page.version)
   const next = Y.encodeStateAsUpdate(ydoc)
   // Written now, not when the session next happens to save. Hocuspocus only
@@ -315,51 +413,97 @@ async function readJson(request, limit = 8 * 1024 * 1024) {
 }
 
 /**
- * Applies a page write to a document somebody currently has open (dev-plan
- * 8.6, the live case). The app posts here after it commits.
+ * Applies a page write to the page's shared draft (dev-plan 8.6). The app
+ * posts here after it commits.
  *
- * `openDirectConnection` would *load* a document that is not open, which is
- * deliberately not wanted: a page nobody is editing needs no live update, and
- * loading every written page into memory would make this sidecar's footprint
- * a function of how busy the API is rather than of how many people are
- * editing. Such a page is reconciled on its next load instead, by the same
- * code, which is the path step 3 built.
+ * What happens depends on whether anybody is editing (0.8.2, the owner's
+ * decision after the QA run):
+ *
+ * - **Somebody is editing** (connected now, or within the last two minutes):
+ *   the write is merged in as tracked changes against the draft's base, so
+ *   only what the write changed is highlighted and their typing is untouched.
+ * - **Nobody is**: the draft is reset to what was just published. Unpublished
+ *   changes left behind with Close used to survive an API or MCP publish and
+ *   come back, struck through, to the next person, who could publish them by
+ *   pressing Update (QA cal-001, T3-001, T5-008, T5-031). The next editor now
+ *   starts from the page.
+ *
+ * A page nobody has ever opened has no draft, and nothing is loaded for it.
+ * Otherwise the document is opened with a direct connection, which loads it
+ * if nobody has it open and unloads it again afterwards; the load is told
+ * this is a write (`context.write`), so it does not reconcile on its own
+ * account first.
  *
  * A write from the editor itself carries no content worth showing: the
  * document already *is* that content, the human made it. Only the version is
- * recorded, so the next load does not mistake their own publish for somebody
- * else's change.
- *
- * Reconciling those too would look safer and is worse. Publishing and then
- * carrying on typing is ordinary, and by the time this notification arrives
- * the draft is legitimately ahead of the page; a diff would strike through
- * the words the human is still writing and attribute them to somebody else.
- * The gap that leaves is a cookie-session write that did *not* come from the
- * open editor, which the application has no flow for.
+ * recorded, and the list of people with unpublished changes is emptied,
+ * since Update publishes everyone's. Reconciling those too would look safer
+ * and is worse: publishing and then carrying on typing is ordinary, and a
+ * diff would strike through the words the human is still writing.
  */
 async function applyWrite(documentName, { contentJson, source, version }) {
   if (!UUID.test(documentName)) return { status: 404, body: 'unknown document' }
-  if (!server.hocuspocus.documents.has(documentName)) {
-    // Not open. Nothing to do now; the next load reconciles.
-    return { status: 202, body: 'not open' }
+  if (!server.hocuspocus.documents.has(documentName) && !(await hasStoredDocument(documentName))) {
+    return { status: 202, body: 'no draft' }
   }
 
-  const connection = await server.hocuspocus.openDirectConnection(documentName)
+  const editing = isBeingEdited(documentName)
+  const published = JSON.parse(contentJson)
+  const connection = await server.hocuspocus.openDirectConnection(documentName, { write: true })
   try {
+    const seen = connection.document?.getMap('meta').get('version')
+    const base = source !== 'editor' && editing ? await versionContent(documentName, seen) : null
     await connection.transact((doc) => {
       const meta = doc.getMap('meta')
+      const current = meta.get('version')
+      // Already there: a request for the same write arrived twice, or an
+      // editor's own reconcile request got in first.
+      if (typeof version === 'number' && typeof current === 'number' && current >= version) return
       if (source === 'editor') {
-        if (typeof version === 'number') meta.set('version', version)
-        return
+        clearDrafters(doc)
+      } else if (editing) {
+        const changed = reconcile(doc, published, { source, actor: null }, base)
+        if (changed) console.log(`[collab] ${documentName} took a live ${source} write (version ${version})`)
+      } else {
+        const changed = reset(doc, published)
+        clearDrafters(doc)
+        if (changed) console.log(`[collab] ${documentName}: draft reset to the ${source} write (version ${version})`)
       }
-      const changed = reconcile(doc, JSON.parse(contentJson), { source, actor: null })
       if (typeof version === 'number') meta.set('version', version)
-      if (changed) console.log(`[collab] ${documentName} took a live ${source} write (version ${version})`)
     })
   } finally {
     await connection.disconnect()
   }
   return { status: 200, body: 'applied' }
+}
+
+/**
+ * Discard (0.8.2): makes the shared draft exactly the published page, for
+ * everyone with it open, and forgets who had unpublished changes in it. The
+ * app checks the caller may edit the page before asking.
+ *
+ * In place, never by starting a new document: an editor that is offline
+ * still holds the old one, and reconnecting has to merge with this rather
+ * than put every block on the page twice.
+ */
+async function resetDraft(documentName, { contentJson, version }) {
+  if (!UUID.test(documentName)) return { status: 404, body: 'unknown document' }
+  if (!server.hocuspocus.documents.has(documentName) && !(await hasStoredDocument(documentName))) {
+    return { status: 202, body: 'no draft' }
+  }
+  const published = JSON.parse(contentJson)
+  const connection = await server.hocuspocus.openDirectConnection(documentName, { write: true })
+  try {
+    await connection.transact((doc) => {
+      reset(doc, published)
+      clearDrafters(doc)
+      if (typeof version === 'number') doc.getMap('meta').set('version', version)
+    })
+  } finally {
+    await connection.disconnect()
+  }
+  console.log(`[collab] ${documentName}: draft discarded (back to version ${version})`)
+  return { status: 200, body: 'reset' }
 }
 
 const server = new Server({
@@ -375,9 +519,10 @@ const server = new Server({
   async onRequest({ request, response }) {
     const path = (request.url ?? '').split('?')[0]
     const match = /^\/pages\/([^/]+)\/reconcile$/.exec(path)
+    const discard = /^\/pages\/([^/]+)\/reset$/.exec(path)
     const maintenance = path === '/maintenance'
     const revoke = path === '/revoke'
-    if (request.method !== 'POST' || (!match && !maintenance && !revoke)) return
+    if (request.method !== 'POST' || (!match && !discard && !maintenance && !revoke)) return
 
     const provided = request.headers['x-collab-secret']
     // Constant-time, and length-checked first, as timingSafeEqual requires.
@@ -408,6 +553,18 @@ const server = new Server({
         response.writeHead(200).end('ok')
       } catch (err) {
         console.error('[collab] maintenance request failed', err)
+        response.writeHead(500).end('failed')
+      }
+      return handled()
+    }
+
+    // Discarding a page's shared draft (0.8.2).
+    if (discard) {
+      try {
+        const result = await resetDraft(discard[1], await readJson(request))
+        response.writeHead(result.status).end(result.body)
+      } catch (err) {
+        console.error(`[collab] discard request failed for ${discard[1]}`, err)
         response.writeHead(500).end('failed')
       }
       return handled()
@@ -468,14 +625,43 @@ const server = new Server({
     return { user: { id: payload.userId, name: payload.displayName }, exp: payload.exp, claims }
   },
 
+  /** Remembers when a person was last connected; see isBeingEdited. */
+  async onDisconnect({ documentName, context }) {
+    if (context?.user) lastEdited.set(documentName, Date.now())
+  },
+
+  /**
+   * An editor asking for its document to be brought up to date with the
+   * page (0.8.2): sent after its Update was refused because the page moved
+   * on. Only an authenticated editor of this document can send one, and it
+   * carries no content: the sidecar reads the page itself.
+   */
+  async onStateless({ documentName, payload }) {
+    let message
+    try {
+      message = JSON.parse(payload)
+    } catch {
+      return
+    }
+    if (message?.type !== 'reconcile') return
+    try {
+      await reconcileOpenDocument(documentName)
+    } catch (err) {
+      console.error(`[collab] ${documentName}: an editor's reconcile request failed`, err)
+    }
+  },
+
   extensions: [
     new Database({
-      fetch: async ({ documentName }) => {
+      fetch: async ({ documentName, context }) => {
         const result = await pool.query(
           'SELECT "State" FROM "CollabDocuments" WHERE "DocumentName" = $1',
           [documentName],
         )
         const state = result.rows[0]?.State ?? null
+        // Loaded for a write, a discard or an editor's request, each of which
+        // decides for itself what happens to the draft (see applyWrite).
+        if (context?.write) return state
         try {
           return await reconcileStored(documentName, state)
         } catch (err) {
@@ -620,6 +806,12 @@ async function recheckConnections() {
   if (closed) console.log(`[collab] closed ${closed} connection(s): the app no longer allows them`)
 }
 
+/** Keeps the last-connected times to the grace period they are read for. */
+function forgetOldConnections() {
+  const now = Date.now()
+  for (const [name, at] of lastEdited) if (now - at >= EDIT_GRACE_MS) lastEdited.delete(name)
+}
+
 /** Ends connections whose token has expired; the editor reconnects with a fresh one (dev-plan 14.3). */
 function closeExpired() {
   const now = Date.now() / 1000
@@ -638,6 +830,7 @@ server.listen().then(() => {
       exitIfRestored()
         .then(dropDeletedDocuments)
         .then(closeExpired)
+        .then(forgetOldConnections)
         .catch((err) => console.error('[collab] sweep failed', err)),
     SWEEP_MS,
   )

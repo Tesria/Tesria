@@ -3,6 +3,7 @@ using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Audit;
 using Tesria.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure.Collab;
 using Tesria.Api.Infrastructure.Mentions;
 using Tesria.Api.Infrastructure.Notifications;
 using Tesria.Api.Infrastructure.Permissions;
@@ -204,13 +205,24 @@ public static class PageEndpoints
         return Results.Ok(ToDetail(page, version));
     }
 
+    /// <summary>
+    /// Discards a draft. For a new page that was never published, the page
+    /// itself goes. For a published page (0.8.2), its shared live draft is
+    /// reset to what is published, throwing away everyone's unpublished
+    /// changes: the editor's Discard, and the answer to a draft somebody left
+    /// behind with Close (QA cal-001). This used to be 404 for a published
+    /// page, so nothing, not even the API, could clear such a draft.
+    /// </summary>
     private static async Task<IResult> DeleteDraft(
         Guid id, AppDbContext db, CurrentUser current, IPermissionService perms,
-        IAttachmentStorage storage, ILoggerFactory logs)
+        IAttachmentStorage storage, ILoggerFactory logs, ICollabNotifier collab, IAuditLogger audit,
+        CancellationToken ct)
     {
         var page = await db.Pages.IgnoreQueryFilters()
-            .FirstOrDefaultAsync(p => p.Id == id && p.Status == PageStatus.Draft && p.DeletedAt == null);
+            .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt == null, ct);
         if (page is null) return Results.NotFound();
+        if (page.Status != PageStatus.Draft)
+            return await DiscardLiveDraftAsync(page, db, perms, collab, audit, ct);
 
         // The draft's creator, or anyone who may edit its space; for anyone
         // else it does not exist (dev-plan 14.1).
@@ -225,6 +237,33 @@ public static class PageEndpoints
         db.Pages.Remove(page);
         await db.SaveChangesAsync();
         DeleteFiles(storage, logs, storageKeys, "discarding a draft");
+        return Results.NoContent();
+    }
+
+    /// <summary>
+    /// Resets a published page's shared draft to the published page. Needs
+    /// edit rights, like typing in the draft does; a reader cannot see the
+    /// draft, so for them it does not exist.
+    /// </summary>
+    private static async Task<IResult> DiscardLiveDraftAsync(
+        Page page, AppDbContext db, IPermissionService perms, ICollabNotifier collab, IAuditLogger audit,
+        CancellationToken ct)
+    {
+        if (!await perms.CanViewPageAsync(page.Id)) return Results.NotFound();
+        if (!await perms.CanEditPageAsync(page.Id)) return Results.Forbid();
+
+        var published = await db.PageVersions.AsNoTracking()
+            .FirstOrDefaultAsync(v => v.Id == page.CurrentVersionId, ct);
+        if (published is null) return Results.NotFound();
+
+        var result = await collab.ResetDraftAsync(page.Id, published.ContentJson, published.VersionNumber, ct);
+        if (result == DraftResetResult.Unavailable)
+            return Results.Problem(
+                "Live editing is not reachable right now, so the draft was not discarded. Try again in a moment.",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+
+        audit.Record("page.draft_discarded", "page", page.Id, new { page.Title, Version = published.VersionNumber });
+        await db.SaveChangesAsync(ct);
         return Results.NoContent();
     }
 

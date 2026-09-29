@@ -1875,7 +1875,60 @@ The source is decided by how the caller authenticated, never by what it says:
 a browser session is `editor`, an API token is `api`, and the same token at
 `/mcp` is `mcp`. An `editor` write records the version and draws nothing,
 because publishing and then carrying on typing is ordinary and a diff would
-strike through the words the human is still writing.
+strike through the words the human is still writing. Since 0.8.2 a browser
+session counts as `editor` only when it names the version its draft was
+based on (`baseVersion`), which the editor's Update always does; a restore
+from History, or a script signed in with a session, is `page`, an outside
+change like any other. Recording only the version for those left the draft
+stale, and the next Update wrote over the restore.
+
+**Merge or reset** (0.8.2, the owner's decision after the QA run). The
+sidecar decides per write. If somebody is editing (a websocket connection
+now, or one that closed within two minutes, `COLLAB_EDIT_GRACE_MS`, so a
+network blip does not count as leaving), the write is **merged** as tracked
+changes. If nobody is, the draft is **reset** to what was published: changes
+someone left behind with Close used to survive an API publish and come back,
+struck through, for the next person to publish under their own name. A page
+nobody has ever opened has no stored draft and is not loaded at all. A reset
+is written *into* the existing Yjs document with `updateYFragment`, never as
+a new document: an editor that is offline still holds the old one, and a
+fresh document merged with it would put every block on the page twice. The
+load of a document for a write is told so (`context.write` on
+`openDirectConnection`), so the load-time reconcile does not run first.
+
+**The merge is three-way.** `mergeDocument(base, draft, published)` takes
+the version `meta.version` names as the base (read from `PageVersions` by
+the sidecar), so the human's unpublished typing is theirs and only what the
+write changed against the base is highlighted. Where both changed the same
+block, the human's version stays untouched and the write's follows it as an
+inserted suggestion; accepting keeps both. The first version diffed the
+draft against the new page directly, so every unpublished word in a changed
+block read as the write's deletion and Update threw it away (QA T5-032).
+Pending changes from an earlier write are kept as they are: struck blocks
+are set aside and put back in place, and a highlighted block the new write
+removes again simply goes. Accept and reject remove the *outermost* node
+whose text is all going (a whole list or table), not the paragraphs inside
+it, which left empty bullets or the old list beside the new one (QA T5-002).
+
+**Discard.** `DELETE /api/pages/{id}/draft` on a published page (edit rights)
+asks the sidecar's `POST /pages/{id}/reset` to make the draft exactly the
+published page and forget who had unpublished changes; it answers 503 rather
+than pretending when the sidecar cannot be reached. The editor's Close asks
+Keep as Draft or Discard when the draft differs from the page
+(`hasUnpublishedChanges`, which ignores the empty paragraph the editor keeps
+after a trailing list). Each editor writes itself into the document's
+`drafters` map (user id to name) on its first local change; a publish or a
+discard empties it, and the next person to open a draft holding someone
+else's changes is shown their names, with Discard.
+
+**One reconciler.** A refused Update (409) no longer reconciles in the
+browser: it sends a Hocuspocus stateless message, `{ type: 'reconcile' }`,
+and the sidecar reconciles the open document against the page itself,
+checking `meta.version` inside the transaction. Reconciling in a browser
+that was offline, while the sidecar reconciled the same change on its
+reload, put the change in twice when they merged (QA T5-015). If the
+connection is down the request waits for the next sync, and the next Update
+is refused again until then.
 
 **`meta.version`** is a `Y.Map` in the shared document naming the page version
 that document was last reconciled to. The client seeds it on first open; the
@@ -1889,8 +1942,9 @@ last thing before sending, so pressing Update accepts whatever is pending;
 the banner above the editor (counting pending runs, with Accept all and
 Reject all) is for deciding first. It also sends `baseVersion`, the
 `meta.version` its draft was reconciled to, and the API answers **409** if
-the page has moved past it. That 409 carries the page as it stands, because
-the editor reconciles against the body to show the difference. `baseVersion`
+the page has moved past it. That 409 carries the page as it stands, though
+since 0.8.2 the editor asks the sidecar to reconcile rather than using the
+body itself (see "One reconciler" above). `baseVersion`
 is optional: API and MCP callers hold no draft that could be stale, so
 last-write-wins stays right for them.
 
@@ -2063,7 +2117,13 @@ ProseMirror JSON in `PageVersion.ContentJson`.
   any popover `<form>` inside one of them must call `e.stopPropagation()` in
   its submit handler, or the submit event bubbles through React's synthetic
   event system (which follows the component tree, not BubbleMenu's DOM
-  portal) and also submits the outer page-save form.
+  portal) and also submits the outer page-save form. Since 0.8.2 the page
+  form also guards itself (QA t4-014): its `onSubmit` ignores a submit whose
+  target is not the form itself, and an `onKeyDownCapture` cancels Enter's
+  implicit submission for every `<input>` whose `form` is the page form
+  (a date box, a chart title, a live block's settings, a caption), whatever
+  handled the key first. What Changed? opts back in with
+  `data-submits-page`. Keep the `stopPropagation` anyway; it is cheap.
 - **Table hover controls** (`TableControls.tsx` for row/column insert-delete,
   `TableWidthControls.tsx` for the width edge-drag handle + full-width
   toggle): fixed-position overlays that track proximity to each `<table>`
@@ -2159,6 +2219,14 @@ ProseMirror JSON in `PageVersion.ContentJson`.
     markup and a `NodeSelection` does not survive that: it collapses to a
     text cursor, which would close the very menu doing the editing on every
     keystroke.
+  - **A selected chip is typed past, not over** (`inlineAtomTyping.ts`,
+    0.8.2). Inserting a status, date or math leaves it selected so its menu
+    opens, and in a node selection the first key typed replaces the node
+    (QA t4-010, t4-011). An editor-only plugin sends typed text after the
+    chip instead; Backspace and Delete still remove it. A new status's label
+    is focused in the bubble menu's `onShow`, not when the selection
+    changes: the menu is only put into the page when shown, and focusing a
+    box outside the page does nothing.
 - **Mentions, and the permission seam they needed** (dev-plan Phase 7 Wave
   C). The `mention` node stores the user's id *and* a snapshot of their
   display name; `Infrastructure/Mentions` reads the ids straight out of the

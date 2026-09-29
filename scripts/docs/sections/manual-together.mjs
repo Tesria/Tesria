@@ -109,6 +109,11 @@ export const changes = {
   'API tokens': '0.6: where to find them, revoking one step by step, and how many requests each has made.',
 }
 
+// Close asks when there is something to lose (0.8.2): a new page is
+// discarded, an existing page's changes are kept in its draft, as Close
+// did without asking before.
+const ANSWER_CLOSE = "(() => { const d = document.querySelector('[role=dialog]'); if (!d) return; const keep = [...d.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Keep as Draft'); (keep ?? d.querySelector('.btn--danger'))?.click() })()"
+
 export const shots = ({ demo }) => [
   // ---- Comments: where the inline comment button is (on a new page, so
   // no real page is touched; the next shot discards its draft), the @
@@ -125,7 +130,7 @@ export const shots = ({ demo }) => [
     clipTo: ['.editor__content', 'button[title="Comment on This Selection"]'], clipPad: 16,
     annotate: [{ type: 'box', target: 'button[title="Comment on This Selection"]', pad: 4 }],
   },
-  { name: 'comment-selection-closed', settle: 300, skipCapture: true, phone: false, steps: [{ click: '.page-actionbar button:has-text("Close")' }, { wait: 1200 }] },
+  { name: 'comment-selection-closed', settle: 300, skipCapture: true, phone: false, steps: [{ click: '.page-actionbar button:has-text("Close")' }, { wait: 500 }, { eval: ANSWER_CLOSE }, { wait: 1200 }] },
   {
     name: 'comment-mention', url: demo('Launch plan'), viewport: NARROW, phone: false, settle: 800,
     steps: [...COMMENTS_TAB, { click: '.comment-form textarea' }, { keys: 'Thanks @Sam' }, { wait: 1000 }, { eval: ONLY_EXAMPLE_PEOPLE }],
@@ -310,7 +315,8 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('If there is no such line at all, live editing is off for your Tesria. See ', b('Without live editing'), ' below.'),
     h(2, 'How publishing works with others in the page'),
     ul(
-      li(p(b('Changes to an existing page are kept in a shared draft.'), ' You can leave the editor and come back later, and so can everyone else: the draft is still there, with everyone’s changes in it.')),
+      li(p(b('Changes to an existing page are kept in a shared draft.'), ' Choose ', b('Keep as Draft'), ' when you close, and you can come back later, and so can everyone else: the draft is still there, with everyone’s changes in it. ', b('Discard'), ' puts it back to the published page instead.')),
+      li(p(b('Whoever opens a draft next is told whose changes are in it.'), ' A bar above the page names the people who left unpublished changes there, with ', b('Discard'), ' to start again from the published page.')),
       li(p(b('Update publishes everyone’s changes at once,'), ' as one new version of the page. Whoever presses it, the version has all of them.')),
       li(p(b('A brand-new page is written by one person'), ' until it is published for the first time. After that, anyone who can edit it can join in.')),
       li(p(b('If the page changed while you were editing'), ' (someone published it another way, or restored an older version), Tesria does not publish over it. It says ', i('This page changed while you were editing'), ', highlights the difference, and lets you accept or reject it before you publish again.')),
@@ -448,7 +454,13 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('A bar above the page'), ' counts the changes, with ', b('Accept All'), ' and ', b('Reject All'), '. Changes are accepted or rejected together, not one by one.')),
       li(p(b('Update accepts anything still waiting,'), ' so publishing never throws a change away without you choosing to.')),
     ),
-    p('Changes are compared paragraph by paragraph, so an edited paragraph shows as the old one struck through with the new one after it. If nobody has the page open, the change is simply there the next time someone opens it.'),
+    p('Changes are compared paragraph by paragraph, against the version your draft started from, so only what the assistant or script changed is highlighted:'),
+    ul(
+      li(p(b('A paragraph they changed and you did not'), ' shows as the old one struck through with the new one after it.')),
+      li(p(b('A paragraph you changed and they did not'), ' stays exactly as you wrote it. Your unpublished writing is never shown as removed.')),
+      li(p(b('A paragraph you both changed'), ' keeps your version, with theirs highlighted after it as a suggestion. Accepting keeps both, for you to finish; rejecting drops theirs.')),
+    ),
+    p('If nobody is editing the page when the change is published, there is nothing to highlight: the page’s draft starts again from the new version, and the next person to edit it starts from what is published.'),
     p('See ', pageLink('REST API'), ' and ', pageLink('MCP'), ' for what scripts and assistants can do.'),
   ))
 

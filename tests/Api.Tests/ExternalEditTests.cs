@@ -1,8 +1,13 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Tesria.Api.Features.Pages;
 using Tesria.Api.Infrastructure.Auth;
 using Tesria.Api.Infrastructure.Collab;
@@ -348,5 +353,139 @@ public class PublishConflictTests
             new { Title = "Page", ContentJson = Doc("third, no version sent") });
 
         Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+    }
+}
+
+/// <summary>
+/// Discarding a published page's shared draft, and telling the live-editing
+/// service which writes are outside changes (0.8.2, after QA cal-001 and
+/// T5-032).
+/// </summary>
+public class DraftDiscardTests
+{
+    private record PageDetail(Guid Id, Guid SpaceId, string Title, string ContentJson, int CurrentVersionNumber);
+
+    private static string Doc(string text) =>
+        $$"""{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"{{text}}"}]}]}""";
+
+    /// <summary>Remembers what the live-editing service was told, and answers discards as set.</summary>
+    private sealed class RecordingCollab : ICollabNotifier
+    {
+        public DraftResetResult Answer = DraftResetResult.Done;
+        public ConcurrentQueue<(Guid PageId, WriteSource Source, int Version)> Writes = new();
+        public ConcurrentQueue<(Guid PageId, string Content, int Version)> Resets = new();
+
+        public Task NotifyAsync(Guid pageId, string contentJson, WriteSource source, int version, CancellationToken ct = default)
+        {
+            Writes.Enqueue((pageId, source, version));
+            return Task.CompletedTask;
+        }
+
+        public Task MaintenanceAsync(bool on, CancellationToken ct = default) => Task.CompletedTask;
+        public Task RevokeAsync(CollabRevocation revocation, CancellationToken ct = default) => Task.CompletedTask;
+
+        public Task<DraftResetResult> ResetDraftAsync(Guid pageId, string contentJson, int version, CancellationToken ct = default)
+        {
+            Resets.Enqueue((pageId, contentJson, version));
+            return Task.FromResult(Answer);
+        }
+    }
+
+    private sealed record Setup(TestAppFactory Factory, WebApplicationFactory<Program> App, HttpClient Client, PageDetail Page) : IDisposable
+    {
+        public void Dispose()
+        {
+            App.Dispose();
+            Factory.Dispose();
+        }
+    }
+
+    private static async Task<Setup> NewPage(RecordingCollab collab)
+    {
+        var factory = new TestAppFactory();
+        var app = factory.WithWebHostBuilder(b => b.ConfigureServices(s =>
+        {
+            s.RemoveAll<ICollabNotifier>();
+            s.AddSingleton<ICollabNotifier>(collab);
+        }));
+        var client = app.CreateClient();
+        await client.RegisterAndSignInAsync();
+        var spaceId = await client.CreateSpaceAsync();
+        var page = await (await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = "Page", ContentJson = Doc("first") }))
+            .Content.ReadFromJsonAsync<PageDetail>();
+        return new Setup(factory, app, client, page!);
+    }
+
+    [Fact]
+    public async Task Discarding_resets_the_draft_to_what_is_published()
+    {
+        var collab = new RecordingCollab();
+        using var s = await NewPage(collab);
+        (await s.Client.PutAsJsonAsync($"/api/pages/{s.Page.Id}",
+            new { Title = "Page", ContentJson = Doc("second"), BaseVersion = s.Page.CurrentVersionNumber })).EnsureSuccessStatusCode();
+
+        var res = await s.Client.DeleteAsync($"/api/pages/{s.Page.Id}/draft");
+
+        Assert.Equal(HttpStatusCode.NoContent, res.StatusCode);
+        var reset = Assert.Single(collab.Resets);
+        Assert.Equal(s.Page.Id, reset.PageId);
+        Assert.Equal(2, reset.Version);
+        Assert.Contains("second", reset.Content);
+        // The page itself is untouched: only the unpublished draft goes.
+        var after = await s.Client.GetFromJsonAsync<PageDetail>($"/api/pages/{s.Page.Id}");
+        Assert.Equal(2, after!.CurrentVersionNumber);
+    }
+
+    [Fact]
+    public async Task A_discard_the_live_editing_service_could_not_take_is_reported_not_swallowed()
+    {
+        var collab = new RecordingCollab { Answer = DraftResetResult.Unavailable };
+        using var s = await NewPage(collab);
+
+        var res = await s.Client.DeleteAsync($"/api/pages/{s.Page.Id}/draft");
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task Someone_who_may_only_read_the_page_cannot_discard_its_draft()
+    {
+        var collab = new RecordingCollab();
+        using var s = await NewPage(collab);
+        var alice = s.Client;
+        var aliceId = (await alice.GetFromJsonAsync<JsonElement>("/api/auth/me")).GetProperty("id").GetGuid();
+        var spaceKey = (await alice.GetFromJsonAsync<List<JsonElement>>("/api/spaces"))!
+            .First(x => x.GetProperty("id").GetGuid() == s.Page.SpaceId)
+            .GetProperty("key").GetString();
+
+        var bob = s.App.CreateClient();
+        var bobId = await bob.RegisterAndSignInAsync();
+        // Alice takes admin; Bob gets view only. (User = 0; View = 0, Admin = 2.)
+        await alice.PostAsJsonAsync($"/api/spaces/{spaceKey}/permissions", new { PrincipalType = 0, PrincipalId = aliceId, Operation = 2 });
+        await alice.PostAsJsonAsync($"/api/spaces/{spaceKey}/permissions", new { PrincipalType = 0, PrincipalId = bobId, Operation = 0 });
+        Assert.Equal(HttpStatusCode.OK, (await bob.GetAsync($"/api/pages/{s.Page.Id}")).StatusCode);
+
+        var res = await bob.DeleteAsync($"/api/pages/{s.Page.Id}/draft");
+
+        Assert.Equal(HttpStatusCode.Forbidden, res.StatusCode);
+        Assert.Empty(collab.Resets);
+    }
+
+    [Fact]
+    public async Task The_editors_own_update_is_the_editors_but_a_restore_from_history_is_an_outside_change()
+    {
+        var collab = new RecordingCollab();
+        using var s = await NewPage(collab);
+
+        // The editor's Update names the version its draft is based on.
+        (await s.Client.PutAsJsonAsync($"/api/pages/{s.Page.Id}",
+            new { Title = "Page", ContentJson = Doc("second"), BaseVersion = 1 })).EnsureSuccessStatusCode();
+        // Restoring version 1 from History does not: it did not come from the draft.
+        (await s.Client.PostAsync($"/api/pages/{s.Page.Id}/versions/1/restore", null)).EnsureSuccessStatusCode();
+
+        var writes = collab.Writes.Where(w => w.PageId == s.Page.Id).ToList();
+        Assert.Contains(writes, w => w.Version == 2 && w.Source == WriteSource.Editor);
+        Assert.Contains(writes, w => w.Version == 3 && w.Source == WriteSource.Page);
     }
 }

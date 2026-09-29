@@ -17,6 +17,26 @@ public enum WriteSource
     Api,
     /// <summary>An MCP tool, which is to say an assistant.</summary>
     Mcp,
+    /// <summary>
+    /// A browser session that did not come from the open editor (0.8.2):
+    /// restoring an old version from History, or a script signed in with a
+    /// session rather than a token. The editor's own Update always says which
+    /// version its draft is based on, and these do not, so they are an outside
+    /// change like any other; recording only the version, as for the editor,
+    /// left the draft stale and the next Update wrote over them.
+    /// </summary>
+    Page,
+}
+
+/// <summary>What became of a request to discard a page's shared draft.</summary>
+public enum DraftResetResult
+{
+    /// <summary>The draft is now the published page (or there was none).</summary>
+    Done,
+    /// <summary>Live editing is not set up, so there are no shared drafts.</summary>
+    NotConfigured,
+    /// <summary>The live-editing service could not be reached; nothing changed.</summary>
+    Unavailable,
 }
 
 public interface ICollabNotifier
@@ -56,6 +76,18 @@ public interface ICollabNotifier
     /// Best effort; the token's ten-minute expiry is the backstop.
     /// </summary>
     Task RevokeAsync(CollabRevocation revocation, CancellationToken ct = default);
+
+    /// <summary>
+    /// Discards a page's shared draft (0.8.2): the sidecar makes it exactly
+    /// the published page, for everyone who has it open, and forgets who had
+    /// unpublished changes in it.
+    ///
+    /// Not best effort, unlike the others: the person pressed Discard and is
+    /// owed an honest answer, so an unreachable sidecar is reported rather
+    /// than swallowed. The default is for fakes that have no sidecar.
+    /// </summary>
+    Task<DraftResetResult> ResetDraftAsync(Guid pageId, string contentJson, int version, CancellationToken ct = default) =>
+        Task.FromResult(DraftResetResult.NotConfigured);
 }
 
 /// <summary>Whose live-editing connections to close. Exactly one is set.</summary>
@@ -99,6 +131,7 @@ public sealed class CollabNotifier(
                 {
                     WriteSource.Mcp => "mcp",
                     WriteSource.Api => "api",
+                    WriteSource.Page => "page",
                     _ => "editor",
                 },
                 version,
@@ -119,6 +152,33 @@ public sealed class CollabNotifier(
             // Deliberately swallowed. The page is saved; this only decides
             // whether an open editor finds out now or on its next load.
             log.LogWarning(ex, "Collab sidecar unreachable; page {PageId} will reconcile on next load", pageId);
+        }
+    }
+
+    public async Task<DraftResetResult> ResetDraftAsync(
+        Guid pageId, string contentJson, int version, CancellationToken ct = default)
+    {
+        if (!Available) return DraftResetResult.NotConfigured;
+        try
+        {
+            var client = http.CreateClient("collab");
+            using var request = new HttpRequestMessage(
+                HttpMethod.Post, $"{Endpoint!.TrimEnd('/')}/pages/{pageId}/reset")
+            {
+                Content = new StringContent(
+                    JsonSerializer.Serialize(new { contentJson, version }),
+                    Encoding.UTF8, new MediaTypeHeaderValue("application/json")),
+            };
+            request.Headers.Add("X-Collab-Secret", Secret);
+            using var response = await client.SendAsync(request, ct);
+            if (response.IsSuccessStatusCode) return DraftResetResult.Done;
+            log.LogWarning("Collab sidecar returned {Status} discarding the draft of page {PageId}", (int)response.StatusCode, pageId);
+            return DraftResetResult.Unavailable;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
+        {
+            log.LogWarning(ex, "Collab sidecar unreachable; the draft of page {PageId} was not discarded", pageId);
+            return DraftResetResult.Unavailable;
         }
     }
 
