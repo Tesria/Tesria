@@ -1,6 +1,7 @@
 import { Node, mergeAttributes } from '@tiptap/core'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import { ExpandView } from './ExpandView'
+import { markNewExpand } from './expandTitleFocus'
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -51,8 +52,20 @@ export const Expand = Node.create({
     return {
       setExpand:
         () =>
-        ({ commands }) =>
-          commands.wrapIn(this.name, { title: '' }),
+        ({ commands, tr, editor, dispatch }) => {
+          if (!commands.wrapIn(this.name, { title: '' })) return false
+          if (dispatch) {
+            // The new expand is the innermost one around the cursor.
+            const { $from } = tr.selection
+            for (let d = $from.depth; d > 0; d--) {
+              if ($from.node(d).type.name === this.name) {
+                markNewExpand(editor, $from.before(d))
+                break
+              }
+            }
+          }
+          return true
+        },
       unsetExpand:
         () =>
         ({ commands }) =>

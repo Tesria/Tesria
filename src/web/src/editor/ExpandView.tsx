@@ -1,15 +1,28 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { NodeViewContent, NodeViewWrapper, type ReactNodeViewProps } from '@tiptap/react'
 import { ChevronDownIcon } from './icons'
+import { takeTitleFocus } from './expandTitleFocus'
 
 /**
  * Expand node view: a toggle + title row above the collapsible body.
  * Starts open while editing (hidden content is unreachable content) and
  * closed for readers, which is what an expand is for.
  */
-export function ExpandView({ node, editor, updateAttributes }: ReactNodeViewProps) {
+export function ExpandView({ node, editor, updateAttributes, getPos }: ReactNodeViewProps) {
   const [open, setOpen] = useState(editor.isEditable)
   const title = (node.attrs.title as string | undefined) ?? ''
+  const titleRef = useRef<HTMLInputElement>(null)
+
+  // A new expand starts with the cursor in its title (t4-007). A frame's
+  // wait, because the insert command's own focus() moves focus back into
+  // the editor on the next frame.
+  useEffect(() => {
+    if (!editor.isEditable || !takeTitleFocus(editor, getPos())) return
+    const frame = requestAnimationFrame(() => titleRef.current?.focus())
+    return () => cancelAnimationFrame(frame)
+    // Mount only: a new expand is new once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <NodeViewWrapper className={open ? 'expand is-open' : 'expand'} data-type="expand">
@@ -26,6 +39,7 @@ export function ExpandView({ node, editor, updateAttributes }: ReactNodeViewProp
         </button>
         {editor.isEditable ? (
           <input
+            ref={titleRef}
             className="expand__title"
             value={title}
             placeholder="Give this expand a title…"
