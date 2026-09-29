@@ -326,6 +326,15 @@ set the instance default is a small decision to make with it. Exports
 
 ### Follow-ups found after 0.8.1
 
+- **Bug to look into (reported 2026-09-29): the Disk Space donut on
+  Administration, Backups looks wrong.** Seen by the owner on 0.8.2 in
+  Chrome on Windows, Minimal, light, at a wide desktop size: the "This
+  Machine" chart (35% free) draws oddly. Things to check: whether the
+  glass slice shading and rim highlights show in Minimal, where the chart
+  should be flat; how the tiny slices (the wiki and its backups, under 1%
+  each) are drawn next to the large ones; and whether the "free" caption
+  under 35% is too small to read. Compare with the same card in Glass and
+  in dark, and with the donut element in a page.
 - **From the 0.8.2 fixes (2026-09-29), smaller follow-ups:**
   - A webhook made by an account that is later suspended still delivers on
     spaces open to everyone (default-open access ignores account status).
