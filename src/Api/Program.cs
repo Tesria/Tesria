@@ -45,6 +45,11 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// A start that fails (the database not up yet, say) exits, so Docker starts
+// it again, instead of hanging as process 1 (0.8.1 QA, T1-036). Not in the
+// tests, which host this in their own process.
+if (!builder.Environment.IsEnvironment("Testing")) ExitOnCrash.Install();
+
 // The secrets the init service generated (dev-plan 25.1), for any setting
 // the environment leaves empty. Before anything below reads configuration.
 builder.Configuration.AddTesriaSecretFiles();
@@ -75,8 +80,15 @@ if (args.Contains("--migrate"))
         using var term = System.Runtime.InteropServices.PosixSignalRegistration.Create(
             System.Runtime.InteropServices.PosixSignal.SIGTERM, ctx => { ctx.Cancel = true; stopping.Cancel(); });
         Console.CancelKeyPress += (_, e) => { e.Cancel = true; stopping.Cancel(); };
+        // The passwords as init's files say now: a secret changed in .env
+        // reaches the file while this keeps running (0.8.1 QA, T1-029).
+        var ownerPasswordFile = builder.Configuration[SecretFiles.OwnerPasswordFileKey];
+        var appPasswordFile = builder.Configuration[SecretFiles.AppPasswordFileKey];
         Environment.ExitCode = await MigrateCommand.WatchAsync(
-            ownerConnectionString, appConnectionString, migrateLog, stopping.Token);
+            ownerConnectionString, appConnectionString, migrateLog, stopping.Token,
+            current: () => (
+                SecretFiles.WithCurrentPassword(ownerConnectionString, ownerPasswordFile),
+                appConnectionString is null ? null : SecretFiles.WithCurrentPassword(appConnectionString, appPasswordFile)));
     }
     else
     {
@@ -99,8 +111,23 @@ var runtimeConnectionString = DatabaseRoles.ChooseRuntimeConnection(
     LoggerFactory.Create(l => l.AddConsole()).CreateLogger("Startup"));
 // Live-editing connections end when access changes (dev-plan 14.3).
 builder.Services.AddSingleton<Tesria.Api.Infrastructure.Collab.CollabRevocationInterceptor>();
-builder.Services.AddDbContext<AppDbContext>((sp, options) => options
-    .UseNpgsql(runtimeConnectionString)
+// Under Compose the password is init's file, read again for each new
+// connection, so a changed APP_DB_PASSWORD reaches the running app once
+// migrate has given it to the role (0.8.1 QA, T1-029). One data source for
+// the process, built here, so there is one pool.
+var runtimePasswordFile = runtimeConnectionString == appConnectionString
+    ? builder.Configuration[SecretFiles.AppPasswordFileKey]
+    : builder.Configuration[SecretFiles.OwnerPasswordFileKey];
+Npgsql.NpgsqlDataSource? runtimeDataSource = null;
+if (!string.IsNullOrEmpty(runtimePasswordFile))
+{
+    var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(runtimeConnectionString);
+    SecretFiles.ReadPasswordFromFile(dataSourceBuilder, runtimePasswordFile);
+    runtimeDataSource = dataSourceBuilder.Build();
+}
+builder.Services.AddDbContext<AppDbContext>((sp, options) => (runtimeDataSource is null
+        ? options.UseNpgsql(runtimeConnectionString)
+        : options.UseNpgsql(runtimeDataSource))
     .AddInterceptors(sp.GetRequiredService<Tesria.Api.Infrastructure.Collab.CollabRevocationInterceptor>()));
 
 // A background job that fails must never stop the wiki. .NET's default,

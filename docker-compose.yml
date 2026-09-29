@@ -160,6 +160,9 @@ services:
     # every thirty seconds it checks the live database needs neither.
     command: ["--migrate", "--watch"]
     restart: unless-stopped
+    # A small init process as PID 1, so a crash ends the container and the
+    # restart policy applies (see the app below).
+    init: true
     depends_on:
       db:
         condition: service_healthy
@@ -194,6 +197,12 @@ services:
       args:
         TESRIA_VERSION: ${TESRIA_VERSION:-}
     restart: unless-stopped
+    # A small init process as PID 1. The runtime ends a crashed .NET process
+    # with SIGABRT, which Linux never delivers to a PID 1 without a handler:
+    # the app used to spin at full CPU instead of exiting, and was never
+    # restarted (0.8.1 QA, T1-036). The app also exits by itself on an
+    # unhandled exception; this covers the crashes no handler sees.
+    init: true
     depends_on:
       init:
         condition: service_completed_successfully
@@ -365,6 +374,9 @@ services:
       context: .
       dockerfile: collab/Dockerfile
     restart: unless-stopped
+    # Node as PID 1 has the same blind spot as the app: a fatal error ends
+    # in SIGABRT, which PID 1 never receives (see the app).
+    init: true
     depends_on:
       db:
         condition: service_healthy
@@ -402,6 +414,8 @@ services:
       context: .
       dockerfile: pdf/Dockerfile
     restart: unless-stopped
+    # As for collab: a crash ends the container, so it is restarted.
+    init: true
     depends_on:
       init:
         condition: service_completed_successfully

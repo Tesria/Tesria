@@ -136,7 +136,28 @@ a database init script: init scripts run only on a fresh volume, which would hav
 every existing install on the superuser, and re-running the grants after
 `Migrate()` means tables added by later migrations are covered without
 anyone remembering to. Rotation is "change `APP_DB_PASSWORD`, then
-`docker compose up -d`". A production app refuses to run as the owner.
+`docker compose up -d`": that reruns only `init`, which rewrites the
+password file, so the services that use it read the file again rather
+than trusting what they read at startup (0.8.2, the 0.8.1 QA's T1-029).
+`migrate --watch` rereads it every few seconds and runs a pass when it
+changed, which gives the role the new password; the app's data source
+(`SecretFiles.ReadPasswordFromFile`) and the collab sidecar's pool read it
+for each new connection. The watch's thirty-second check also runs a pass
+when the role refuses its password, as after a physical restore from a
+machine with another one. A production app refuses to run as the owner.
+
+**A failed start exits** (0.8.2, the 0.8.1 QA's T1-036). The runtime ends
+a crashed .NET process with SIGABRT, and Linux does not deliver a signal
+that has no handler to PID 1, so a start that threw (database down,
+migration pending, wrong password) left `dotnet` spinning at full CPU in a
+container Docker considered running, and the restart policy never fired.
+`ExitOnCrash` turns an unhandled exception into `Environment.Exit(1)`, and
+Compose runs the app, migrate, collab and pdf with `init: true` for the
+crashes no handler sees. Background services cannot stop the host either:
+`BackgroundServiceExceptionBehavior` is `Ignore`, and each loop catches its
+own failures, letting only the host's stopping token end it (a timeout
+from HttpClient is an `OperationCanceledException` too, which is how one
+slow webhook receiver used to take the site down, T5-027).
 
 **Where the secrets come from (0.8.0, dev-plan 25.1).** A one-shot `init`
 service runs before everything else at every `docker compose up`: for each of

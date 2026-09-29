@@ -123,7 +123,9 @@ mv -f "$SECRETS_ROOT/postgres-password/.pgpass.tmp" "$SECRETS_ROOT/postgres-pass
 unset owner_password escaped
 
 # The app role's password is set by migrate on every pass (ALTER ROLE), so a
-# new one is safe even on an existing database.
+# new one is safe even on an existing database. A running migrate rereads
+# this file every few seconds and runs a pass when it changed, and the app
+# and collab read it for each new connection, so nothing needs restarting.
 resolve app-db-password APP_DB_PASSWORD "${APP_DB_PASSWORD:-}" never "" 24
 
 resolve backup-key BACKUP_ENCRYPTION_KEY "${BACKUP_ENCRYPTION_KEY:-}" repo_exists \

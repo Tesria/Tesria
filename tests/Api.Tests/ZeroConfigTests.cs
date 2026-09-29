@@ -80,6 +80,50 @@ public class ZeroConfigTests
         Assert.Empty(SecretFiles.Resolve(Config(), Path.Combine(Path.GetTempPath(), "no-such-" + Guid.NewGuid())));
     }
 
+    [Fact]
+    public void A_password_from_a_file_is_read_again_from_it()
+    {
+        // 0.8.1 QA, T1-029: a new APP_DB_PASSWORD reaches only the file,
+        // while the services that read it at startup keep running.
+        var dir = Secrets(("postgres-password", "owner-pw"), ("app-db-password", "old-pw"));
+        var values = SecretFiles.Resolve(Config(("Database:OwnerUser", "tesria")), dir);
+        var appFile = values[SecretFiles.AppPasswordFileKey];
+        Assert.Equal(Path.Combine(dir, "app-db-password", "value"), appFile);
+        Assert.Equal(Path.Combine(dir, "postgres-password", "value"), values[SecretFiles.OwnerPasswordFileKey]);
+
+        var app = values["ConnectionStrings:App"]!;
+        Assert.Same(app, SecretFiles.WithCurrentPassword(app, appFile));
+
+        File.WriteAllText(appFile!, "new-pw\n");
+        var now = new NpgsqlConnectionStringBuilder(SecretFiles.WithCurrentPassword(app, appFile));
+        Assert.Equal(("tesria_app", "new-pw"), (now.Username, now.Password));
+
+        // No file, or one that cannot be read: the value from startup stands.
+        Assert.Same(app, SecretFiles.WithCurrentPassword(app, null));
+        File.Delete(appFile!);
+        Assert.Same(app, SecretFiles.WithCurrentPassword(app, appFile));
+    }
+
+    [Fact]
+    public void A_configured_connection_names_no_password_file()
+    {
+        var dir = Secrets(("app-db-password", "from-file"));
+        var values = SecretFiles.Resolve(Config(("ConnectionStrings:App", "Host=elsewhere")), dir);
+        Assert.False(values.ContainsKey(SecretFiles.AppPasswordFileKey));
+    }
+
+    [Fact]
+    public void A_crash_says_what_happens_next_and_what_to_check()
+    {
+        // 0.8.1 QA, T1-036: the line after the stack trace, for the usual
+        // causes of a failed start.
+        var wrongPassword = new Npgsql.PostgresException("password authentication failed", "FATAL", "FATAL", "28P01");
+        Assert.Contains("APP_DB_PASSWORD", Tesria.Api.Infrastructure.ExitOnCrash.Explain(wrongPassword));
+        var unreachable = new NpgsqlException("Failed to connect", new System.Net.Sockets.SocketException(111));
+        Assert.Contains("could not be reached", Tesria.Api.Infrastructure.ExitOnCrash.Explain(unreachable));
+        Assert.StartsWith("Tesria stopped.", Tesria.Api.Infrastructure.ExitOnCrash.Explain(new InvalidOperationException("pending migration")));
+    }
+
     private static string Status(params (string Name, string Content)[] files)
     {
         var dir = Path.Combine(Path.GetTempPath(), "tesria-status-" + Guid.NewGuid().ToString("N"));

@@ -50,7 +50,13 @@ if (!DATABASE_URL && !APP_DB_PASSWORD) {
   process.exit(1)
 }
 
-const pool = new pg.Pool(DATABASE_URL ? { connectionString: DATABASE_URL } : { password: APP_DB_PASSWORD })
+// The password is read again for each new connection: a new APP_DB_PASSWORD
+// in .env reaches only the file (through init), and the migrate service then
+// gives it to the database account while this keeps running (0.8.1 QA,
+// T1-029). Read once, it went stale and live editing stopped.
+const pool = new pg.Pool(DATABASE_URL
+  ? { connectionString: DATABASE_URL }
+  : { password: () => secret('APP_DB_PASSWORD', 'app-db-password') ?? APP_DB_PASSWORD })
 
 // A document name is a page id. Checked before it is ever cast to uuid in
 // SQL, so a malformed name is ignored rather than throwing.

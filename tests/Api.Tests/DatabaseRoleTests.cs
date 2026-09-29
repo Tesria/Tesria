@@ -252,6 +252,97 @@ public class MigrateWatchTests
         }
     }
 
+    [PostgresFact]
+    public async Task A_new_app_password_in_its_file_reaches_the_role_and_the_app()
+    {
+        // 0.8.1 QA, T1-029: changing APP_DB_PASSWORD rewrote init's file and
+        // nothing else, so the role kept the old password and the app's next
+        // start was refused. Now the watch gives the role the file's value,
+        // and the app reads the file for each new connection.
+        using var pg = new PostgresTestDatabase();
+        var oldPassword = new NpgsqlConnectionStringBuilder(pg.AppConnection).Password!;
+        var file = Path.Combine(Path.GetTempPath(), $"tesria-app-db-password-{Guid.NewGuid():N}");
+        await File.WriteAllTextAsync(file, oldPassword);
+        var marker = Path.Combine(Path.GetTempPath(), $"tesria-migrated-{Guid.NewGuid():N}");
+        using var stop = new CancellationTokenSource();
+        var watch = Task.Run(() => MigrateCommand.WatchAsync(
+            pg.OwnerConnection, pg.AppConnection, NullLogger.Instance, stop.Token, TimeSpan.FromSeconds(1), marker,
+            current: () => (pg.OwnerConnection, SecretFiles.WithCurrentPassword(pg.AppConnection, file))));
+
+        var appSource = new NpgsqlDataSourceBuilder(pg.AppConnection);
+        SecretFiles.ReadPasswordFromFile(appSource, file);
+        await using var app = appSource.Build();
+        try
+        {
+            await WaitForAsync(() => Task.FromResult(File.Exists(marker)));
+            await File.WriteAllTextAsync(file, "a-new-password");
+
+            var withNew = new NpgsqlConnectionStringBuilder(pg.AppConnection) { Password = "a-new-password", Pooling = false };
+            await WaitForAsync(async () => await SignsInAsync(withNew.ConnectionString));
+            Assert.False(await SignsInAsync(new NpgsqlConnectionStringBuilder(pg.AppConnection) { Pooling = false }.ConnectionString));
+
+            // The app's data source, built before the change, signs in with the new one.
+            await using var conn = await app.OpenConnectionAsync();
+            Assert.Equal(0L, await new NpgsqlCommand("SELECT count(*) FROM \"Pages\"", conn).ExecuteScalarAsync());
+        }
+        finally
+        {
+            stop.Cancel();
+            await watch;
+            await ResetAppPasswordAsync(oldPassword);
+        }
+    }
+
+    [PostgresFact]
+    public async Task A_role_that_no_longer_accepts_its_password_is_repaired()
+    {
+        // As after a physical restore from a machine with another
+        // APP_DB_PASSWORD: the grants are fine, the password is not.
+        using var pg = new PostgresTestDatabase();
+        var oldPassword = new NpgsqlConnectionStringBuilder(pg.AppConnection).Password!;
+        var marker = Path.Combine(Path.GetTempPath(), $"tesria-migrated-{Guid.NewGuid():N}");
+        using var stop = new CancellationTokenSource();
+        var watch = Task.Run(() => MigrateCommand.WatchAsync(
+            pg.OwnerConnection, pg.AppConnection, NullLogger.Instance, stop.Token, TimeSpan.FromSeconds(1), marker));
+        var asApp = new NpgsqlConnectionStringBuilder(pg.AppConnection) { Pooling = false }.ConnectionString;
+        try
+        {
+            await WaitForAsync(() => Task.FromResult(File.Exists(marker)));
+            await ResetAppPasswordAsync("some-other-password");
+            Assert.False(await SignsInAsync(asApp));
+
+            await WaitForAsync(async () => await SignsInAsync(asApp));
+        }
+        finally
+        {
+            stop.Cancel();
+            await watch;
+            await ResetAppPasswordAsync(oldPassword);
+        }
+    }
+
+    private static async Task<bool> SignsInAsync(string connection)
+    {
+        try
+        {
+            await using var conn = new NpgsqlConnection(connection);
+            await conn.OpenAsync();
+            return true;
+        }
+        catch (PostgresException e) when (e.SqlState == PostgresErrorCodes.InvalidPassword)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>The app role is shared by every test database, so a test that changes its password puts it back.</summary>
+    private static async Task ResetAppPasswordAsync(string password)
+    {
+        await using var conn = new NpgsqlConnection(PostgresTestDatabase.Server);
+        await conn.OpenAsync();
+        await new NpgsqlCommand($"ALTER ROLE tesria_test_app PASSWORD '{password}'", conn).ExecuteNonQueryAsync();
+    }
+
     private static async Task Comment(PostgresTestDatabase pg, string db, string text)
     {
         await using var conn = new NpgsqlConnection(PostgresTestDatabase.Server);

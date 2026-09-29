@@ -18,7 +18,8 @@ namespace Tesria.Api.Infrastructure.Security;
 /// init scripts only run on a fresh volume: every existing install would have
 /// been left on the superuser. Re-run on every start, the grants also cover
 /// tables that later migrations add. Rotation is "change the password in
-/// .env and restart".
+/// .env and run docker compose up -d": the migrate service's watch sees the
+/// new password file and gives it to the role (see <see cref="MigrateCommand"/>).
 /// </summary>
 public static partial class DatabaseRoles
 {

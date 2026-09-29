@@ -27,9 +27,15 @@ namespace Tesria.Api.Infrastructure.Security;
 /// already hold the owner's connection, and the signal lives on the very
 /// database it is about.</item>
 /// <item>Every thirty seconds it checks the live database (migrations
-/// pending, or the app role unable to read <c>Pages</c>) and runs a pass
-/// when either is so. That covers a point-in-time restore, a restore run by
-/// hand, and a request that was lost.</item>
+/// pending, the app role unable to read <c>Pages</c>, or the app role not
+/// accepting its password) and runs a pass when any is so. That covers a
+/// point-in-time restore, a restore run by hand, and a request that was
+/// lost.</item>
+/// <item>Every few seconds it reads the password files again (0.8.1 QA,
+/// T1-029). A new <c>APP_DB_PASSWORD</c> in <c>.env</c> reaches only the
+/// file, through <c>init</c>; this is what gives it to the role, at once,
+/// so the app and the collab sidecar (which read the file for each new
+/// connection) can sign in with it.</item>
 /// </list>
 /// Its only inputs are a database comment only the owner can set and the
 /// live database's own state; its only action is the pass it runs at start.
@@ -83,11 +89,17 @@ public static class MigrateCommand
     /// first pass that fails ends the process with a failure, so
     /// <c>docker compose up</c> reports it rather than the app waiting on it.
     /// </summary>
+    /// <param name="current">
+    /// The connection strings as their password files say now; null when
+    /// they do not come from files. Read at every turn of the loop.
+    /// </param>
     public static async Task<int> WatchAsync(
         string ownerConnection, string? appConnection, ILogger log, CancellationToken ct,
-        TimeSpan? selfCheck = null, string readyMarker = ReadyMarker)
+        TimeSpan? selfCheck = null, string readyMarker = ReadyMarker,
+        Func<(string Owner, string? App)>? current = null)
     {
         var every = selfCheck ?? SelfCheck;
+        if (current is not null) (ownerConnection, appConnection) = current();
         if (await RunAsync(ownerConnection, appConnection, log, ct) != 0) return 1;
         await File.WriteAllTextAsync(readyMarker, DateTimeOffset.UtcNow.ToString("O"), ct);
         log.LogInformation("Watching for restores and for a database that needs a pass");
@@ -101,6 +113,21 @@ public static class MigrateCommand
         {
             try
             {
+                if (current is not null)
+                {
+                    // The owner's password is changed in the database first
+                    // (the docs' order), so the new one is simply used. The
+                    // app's is ours to set: a pass gives it to the role, and
+                    // is tried again next time round until it succeeds.
+                    var (owner, app) = current();
+                    ownerConnection = owner;
+                    if (app != appConnection)
+                    {
+                        log.LogWarning("APP_DB_PASSWORD changed; giving the app's database account the new password");
+                        await PassAsync(ownerConnection, app, log, ct);
+                        appConnection = app;
+                    }
+                }
                 await ServeRequestAsync(ownerConnection, appConnection, restoreDb, log, ct);
                 if (DateTimeOffset.UtcNow >= nextCheck)
                 {
@@ -173,7 +200,21 @@ public static class MigrateCommand
             "WHEN to_regclass('public.\"Pages\"') IS NULL THEN false " +
             "ELSE has_table_privilege(@role, 'public.\"Pages\"', 'SELECT') END", conn);
         cmd.Parameters.AddWithValue("role", role);
-        return await cmd.ExecuteScalarAsync(ct) is true ? null : $"the {role} role cannot read Pages";
+        if (await cmd.ExecuteScalarAsync(ct) is not true) return $"the {role} role cannot read Pages";
+
+        // The role's password in the database is not the one the app has: a
+        // physical restore brought back an older one, say, or it was changed
+        // by hand.
+        try
+        {
+            await using var asApp = new NpgsqlConnection(Unpooled(appConnection!));
+            await asApp.OpenAsync(ct);
+        }
+        catch (PostgresException e) when (e.SqlState == PostgresErrorCodes.InvalidPassword)
+        {
+            return $"the {role} role does not accept its password";
+        }
+        return null;
     }
 
     private static async Task<string?> CommentAsync(string ownerConnection, string database, CancellationToken ct)
