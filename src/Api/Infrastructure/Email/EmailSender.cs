@@ -8,7 +8,13 @@ using MimeKit;
 namespace Tesria.Api.Infrastructure.Email;
 
 public record EmailMessage(string To, string Subject, string Text);
-public record EmailResult(bool Sent, string? Error = null);
+/// <summary>
+/// What became of one email. <paramref name="Permanent"/> marks a failure that
+/// trying again cannot fix (the address is malformed, or the mail server
+/// refused the recipient or the message for good); every other failure, such
+/// as a server that does not answer, is worth another try later (t2-013).
+/// </summary>
+public record EmailResult(bool Sent, string? Error = null, bool Permanent = false);
 
 /// <summary>Sends one email. Returns rather than throws: callers decide what a failure means.</summary>
 public interface IEmailSender
@@ -44,9 +50,12 @@ public sealed class SmtpEmailSender(
         if (string.IsNullOrWhiteSpace(s.SmtpHost)) return new EmailResult(false, "No SMTP host is configured.");
         if (string.IsNullOrWhiteSpace(s.SmtpFromAddress)) return new EmailResult(false, "No From address is configured.");
 
+        if (!MailboxAddress.TryParse(message.To, out var to))
+            return new EmailResult(false, "The recipient is not an email address.", Permanent: true);
+
         var mime = new MimeMessage();
         mime.From.Add(new MailboxAddress(s.InstanceName, s.SmtpFromAddress));
-        mime.To.Add(MailboxAddress.Parse(message.To));
+        mime.To.Add(to);
         mime.Subject = message.Subject;
         mime.Body = new BodyBuilder
         {
@@ -94,9 +103,18 @@ public sealed class SmtpEmailSender(
             audit.RecordAs(null, "email.failed", "instance", null,
                 new { message.To, message.Subject, Error = ex.Message });
             try { await db.SaveChangesAsync(ct); } catch (Exception) { /* the audit row is best-effort here */ }
-            return new EmailResult(false, ex.Message);
+            return new EmailResult(false, ex.Message, Permanent: IsPermanent(ex));
         }
     }
+
+    /// <summary>
+    /// A 5xx refusal of this recipient or this message: the same message
+    /// would be refused again. Anything else (no connection, a timeout, a
+    /// 4xx "try later", a refused sign-in) may clear up on its own.
+    /// </summary>
+    private static bool IsPermanent(Exception ex) =>
+        ex is SmtpCommandException { ErrorCode: SmtpErrorCode.RecipientNotAccepted or SmtpErrorCode.MessageNotAccepted } c
+        && (int)c.StatusCode >= 500;
 }
 
 /// <summary>The one shape every email takes: the instance name, the text, a footer.</summary>

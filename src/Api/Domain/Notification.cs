@@ -32,9 +32,10 @@ public class Notification
     public DateTimeOffset? ReadAt { get; set; }
 
     /// <summary>
-    /// When this was sent (or attempted) by email, or null while it waits in
-    /// the outbox (dev-plan 4.3). Set on the attempt, not on success: a dead
-    /// mail server should produce one audited failure, not one a minute.
+    /// When this left the email outbox (dev-plan 4.3), or null while it waits:
+    /// sent, refused for good, not wanted, or too old to send. A mail server
+    /// that does not answer leaves it null, to be tried again with a growing
+    /// wait between tries (t2-013).
     /// </summary>
     public DateTimeOffset? EmailedAt { get; set; }
 }

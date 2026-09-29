@@ -1183,6 +1183,16 @@ export async function build({
       li(p(b('Check the username and password.'), ' Many providers want a password made for apps rather than your everyday one. The provider’s page says which.')),
       li(p(b('Check the From Address.'), ' A sending service refuses an address on a domain you have not verified with it.')),
     ),
+
+    h(2, 'If the mail server stops answering'),
+    p('Email that goes out in the background (notifications, security alerts and password reset links) is not lost. Tesria tries again after a minute, then waits longer between tries, up to half an hour. Once the server answers, what was waiting is sent.'),
+    ul(
+      li(p(b('Administrators get the alert'), ' ', i('Email is not getting through to the mail server'), ', in the bell and on the ', b('Security'), ' tab.')),
+      li(p(b('A notification waits up to a day.'), ' After that it is old news, and only the bell keeps it.')),
+      li(p(b('A reset link is tried for about half an hour.'), ' It only works for an hour, so after that the person asks for a new one.')),
+    ),
+    p('An invite and the test email say straight away whether they were sent, so they are not tried again.'),
+
     p('The setup wizard’s Email step fills in the same settings, with the same provider list. Changing them needs the ', b('Change the email server'), ' right, which administrators have unless the owner takes it away (see ', pageLink('Roles'), ').'),
   ))
 

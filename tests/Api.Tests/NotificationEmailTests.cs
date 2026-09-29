@@ -167,4 +167,106 @@ public class NotificationEmailTests
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         Assert.True(await db.Notifications.AnyAsync(n => n.EmailedAt == null));
     }
+
+    // t2-013: a notification whose email failed during a mail outage was
+    // marked sent and never tried again, and nobody was told.
+    [Fact]
+    public async Task A_mail_outage_keeps_notifications_waiting_and_tells_administrators()
+    {
+        using var factory = new TestAppFactory();
+        var editor = await InstanceWithEmailAsync(factory);
+        var watcher = factory.CreateClient();
+        await RegisterAsync(watcher, "watcher@example.com");
+        (await watcher.PutAsJsonAsync("/api/auth/me/notifications", new { EmailNotifications = Immediate })).EnsureSuccessStatusCode();
+        Outbox(factory).Sent.Clear();
+
+        await WatchedPageEditedAsync(factory, watcher, editor);
+        Outbox(factory).Fail = true;
+        Assert.Equal(0, await RunAsync(factory));
+
+        var service = factory.Services.GetRequiredService<NotificationEmailService>();
+        Assert.NotNull(service.RetryAfter);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            Assert.True(await db.Notifications.AnyAsync(n => n.User!.Email == "watcher@example.com" && n.EmailedAt == null));
+            Assert.True(await db.SecurityAlerts.AnyAsync(a => a.Kind == "mail.send_failed"));
+        }
+
+        // The server answers again: the waiting email goes, and so does the
+        // administrator's alert about the outage.
+        Outbox(factory).Fail = false;
+        await RunAsync(factory);
+        Assert.Single(Outbox(factory).Sent, m => m.To == "watcher@example.com");
+        Assert.Contains(Outbox(factory).Sent, m => m.To == "admin@example.com" && m.Text.Contains("Email is not getting through"));
+        Assert.Null(service.RetryAfter);
+
+        // Once: the next pass sends nothing more.
+        await RunAsync(factory);
+        Assert.Single(Outbox(factory).Sent, m => m.To == "watcher@example.com");
+    }
+
+    [Fact]
+    public async Task A_recipient_refused_for_good_is_not_tried_again()
+    {
+        using var factory = new TestAppFactory();
+        var editor = await InstanceWithEmailAsync(factory);
+        var watcher = factory.CreateClient();
+        await RegisterAsync(watcher, "watcher@example.com");
+        (await watcher.PutAsJsonAsync("/api/auth/me/notifications", new { EmailNotifications = Immediate })).EnsureSuccessStatusCode();
+
+        await WatchedPageEditedAsync(factory, watcher, editor);
+        Outbox(factory).FailPermanently = true;
+        await RunAsync(factory);
+        Assert.Equal(1, Outbox(factory).Attempts.Count(m => m.To == "watcher@example.com"));
+
+        Outbox(factory).FailPermanently = false;
+        await RunAsync(factory);
+        Assert.Equal(1, Outbox(factory).Attempts.Count(m => m.To == "watcher@example.com"));
+        Assert.Null(factory.Services.GetRequiredService<NotificationEmailService>().RetryAfter);
+    }
+
+    [Fact]
+    public void Retries_wait_longer_each_time_up_to_half_an_hour()
+    {
+        Assert.Equal(TimeSpan.FromMinutes(1), NotificationEmailService.RetryDelay(1));
+        Assert.Equal(TimeSpan.FromMinutes(2), NotificationEmailService.RetryDelay(2));
+        Assert.Equal(TimeSpan.FromMinutes(16), NotificationEmailService.RetryDelay(5));
+        Assert.Equal(TimeSpan.FromMinutes(30), NotificationEmailService.RetryDelay(6));
+        Assert.Equal(TimeSpan.FromMinutes(30), NotificationEmailService.RetryDelay(500));
+    }
+
+    // t2-013: a reset link queued during an outage was lost with only a log line.
+    [Fact]
+    public async Task A_queued_email_is_tried_again_after_a_failure()
+    {
+        using var factory = new TestAppFactory();
+        await InstanceWithEmailAsync(factory);
+        var outbox = Outbox(factory);
+        outbox.Sent.Clear();
+        outbox.Fail = true;
+
+        var queue = ActivatorUtilities.CreateInstance<EmailQueue>(factory.Services);
+        queue.RetryUnit = TimeSpan.FromMilliseconds(100);
+        await queue.StartAsync(CancellationToken.None);
+        try
+        {
+            queue.Enqueue(new EmailMessage("reset@example.com", "Reset your password", "link"));
+            for (var i = 0; i < 50 && outbox.Attempts.Count(m => m.To == "reset@example.com") < 2; i++) await Task.Delay(50);
+            Assert.True(outbox.Attempts.Count(m => m.To == "reset@example.com") >= 2);
+            Assert.Empty(outbox.Sent);
+
+            outbox.Fail = false;
+            for (var i = 0; i < 100 && outbox.Sent.IsEmpty; i++) await Task.Delay(50);
+            Assert.Single(outbox.Sent, m => m.To == "reset@example.com");
+        }
+        finally
+        {
+            await queue.StopAsync(CancellationToken.None);
+        }
+
+        using var scope = factory.Services.CreateScope();
+        Assert.True(await scope.ServiceProvider.GetRequiredService<AppDbContext>().SecurityAlerts
+            .AnyAsync(a => a.Kind == "mail.send_failed"));
+    }
 }

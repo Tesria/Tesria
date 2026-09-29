@@ -476,9 +476,15 @@ and applies three rules in order: security alerts to an administrator go
 immediately whatever their preference; `Immediate` recipients get the
 pass's rows in one message; `DailyDigest` recipients get one message per
 24 h (`User.LastDigestAt`). `Off` retires the email copy and keeps the
-in-app one. `EmailedAt` is set on the *attempt*, so a dead server yields
-one audited failure per row rather than one a minute; rows older than 24 h
-are retired unsent so turning email on never replays history. With
+in-app one. `EmailedAt` is set when a row's email is sent or refused for
+good (`EmailResult.Permanent`: a 5xx refusal of the recipient or message).
+A server that does not answer leaves the rows waiting, ends the pass,
+raises `mail.send_failed` (one alert an hour at most) and holds the next
+pass back 1, 2, 4 ... up to 30 minutes (`RetryAfter`), so an outage is a
+few audited failures and nothing is lost once mail flows again (t2-013);
+rows older than 24 h are retired unsent so turning email on never replays
+history. `EmailQueue` (reset links) retries the same way for about half an
+hour, then gives up. With
 `EmailEnabled` off the pass does nothing and marks nothing. Links are
 built from `SiteUrl.Resolve` and the page's space key.
 

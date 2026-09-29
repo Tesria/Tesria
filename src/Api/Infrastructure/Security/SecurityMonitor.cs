@@ -182,6 +182,13 @@ public interface ISecurityDetector
     /// these alerts' own emails. Keyed by provider, with the usual cooldown.
     /// </summary>
     Task MailSignInFailedAsync(string provider, string reason);
+    /// <summary>
+    /// Email that nobody watched being sent (notifications, alerts, reset
+    /// links) could not be sent, and is waiting to be tried again (t2-013).
+    /// Keyed by instance, with the usual cooldown: an outage is one alert an
+    /// hour, not one per message.
+    /// </summary>
+    Task MailSendFailedAsync(string reason);
     /// <summary>An administrator saved a backup policy that can remove more than the last one. Always an alert.</summary>
     Task BackupRetentionReducedAsync(Guid actorId, object metadata);
     /// <summary>Secrets in .env still set to the published example values (dev-plan 25.1).</summary>
@@ -345,6 +352,10 @@ public sealed class SecurityDetector(AppDbContext db, SecurityCounters counters,
     public Task MailSignInFailedAsync(string provider, string reason) =>
         RaiseAsync("mail.signin_failed", SecuritySeverity.Warning, key: provider, alert: true,
             metadata: new { Provider = provider, Reason = reason });
+
+    public Task MailSendFailedAsync(string reason) =>
+        RaiseAsync("mail.send_failed", SecuritySeverity.Warning, key: "instance", alert: true,
+            metadata: new { Reason = reason });
 
     public Task BackupRetentionReducedAsync(Guid actorId, object metadata) =>
         RaiseAsync("backup.retention_reduced", SecuritySeverity.Critical, key: "instance", alert: true,

@@ -25,6 +25,13 @@ namespace Tesria.Api.Infrastructure.Email;
 /// Nothing is attempted while <c>EmailEnabled</c> is off, and nothing older
 /// than a day is ever sent) turning email on must not flood inboxes with
 /// last month's history.
+///
+/// A row leaves the outbox when its email is sent, or refused for good. When
+/// the mail server cannot be reached the rows stay, the pass stops there,
+/// administrators get a <c>mail.send_failed</c> alert, and the next try waits
+/// longer each time (1, 2, 4 ... up to 30 minutes), so an outage is a handful
+/// of failures rather than one a minute, and nothing is lost once the server
+/// answers again (t2-013).
 /// </summary>
 public sealed class NotificationEmailService(
     IServiceScopeFactory scopes, IConfiguration config, ILogger<NotificationEmailService> logger)
@@ -32,6 +39,16 @@ public sealed class NotificationEmailService(
 {
     public static readonly TimeSpan MaxAge = TimeSpan.FromHours(24);
     public static readonly TimeSpan DigestInterval = TimeSpan.FromHours(24);
+    public static readonly TimeSpan MaxRetryDelay = TimeSpan.FromMinutes(30);
+
+    private int _failedPasses;
+
+    /// <summary>When the next pass may send, after a failed one; null when mail is going through.</summary>
+    public DateTimeOffset? RetryAfter { get; private set; }
+
+    /// <summary>How long to wait after the <paramref name="failures"/>th failed pass in a row.</summary>
+    public static TimeSpan RetryDelay(int failures) =>
+        TimeSpan.FromMinutes(Math.Min(Math.Pow(2, Math.Clamp(failures, 1, 16) - 1), MaxRetryDelay.TotalMinutes));
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -40,7 +57,11 @@ public sealed class NotificationEmailService(
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            try { await RunOnceAsync(stoppingToken); }
+            try
+            {
+                if (RetryAfter is not { } after || DateTimeOffset.UtcNow >= after)
+                    await RunOnceAsync(stoppingToken);
+            }
             catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
             {
                 logger.LogError(ex, "Notification email pass failed");
@@ -91,9 +112,28 @@ public sealed class NotificationEmailService(
 
         var pageInfo = await PageLinksAsync(db, pending, ct);
         var sent = 0;
+        EmailResult? outage = null;
+
+        // Sends one message for these rows. They leave the outbox if it went,
+        // or was refused for good; otherwise they wait for the next try.
+        async Task<bool> SendAsync(string to, string subject, string text, List<Notification> rows)
+        {
+            var result = await sender.SendAsync(new EmailMessage(to, subject, text), ct);
+            if (!result.Sent && !result.Permanent)
+            {
+                outage = result;
+                return false;
+            }
+            foreach (var n in rows) n.EmailedAt = now;
+            if (result.Sent) sent++;
+            return true;
+        }
 
         foreach (var group in pending.GroupBy(n => n.UserId))
         {
+            // The server did not answer: stop here rather than try everyone.
+            if (outage is not null) break;
+
             var user = group.First().User!;
             var alerts = group.Where(n => n.Action == "security.alert").ToList();
             var rest = group.Except(alerts).ToList();
@@ -103,9 +143,7 @@ public sealed class NotificationEmailService(
                 var text = Describe(settings.InstanceName, baseUrl, alerts, pageInfo,
                     alerts.Count == 1 ? "A security alert needs your attention." : $"{alerts.Count} security alerts need your attention.");
                 var subject = $"[{settings.InstanceName}] Security alert" + (alerts.Count > 1 ? $"s ({alerts.Count})" : "");
-                await sender.SendAsync(new EmailMessage(user.Email, subject, text), ct);
-                foreach (var n in alerts) n.EmailedAt = now;
-                sent++;
+                if (!await SendAsync(user.Email, subject, text, alerts)) break;
             }
             else
             {
@@ -117,21 +155,17 @@ public sealed class NotificationEmailService(
             switch (user.EmailNotifications)
             {
                 case EmailNotificationMode.Immediate:
-                    await sender.SendAsync(new EmailMessage(user.Email,
+                    await SendAsync(user.Email,
                         $"[{settings.InstanceName}] " + (rest.Count == 1 ? Headline(rest[0]) : $"{rest.Count} updates"),
-                        Describe(settings.InstanceName, baseUrl, rest, pageInfo, null)), ct);
-                    foreach (var n in rest) n.EmailedAt = now;
-                    sent++;
+                        Describe(settings.InstanceName, baseUrl, rest, pageInfo, null), rest);
                     break;
 
                 case EmailNotificationMode.DailyDigest:
                     if (user.LastDigestAt is { } last && now - last < DigestInterval) break;
-                    await sender.SendAsync(new EmailMessage(user.Email,
-                        $"[{settings.InstanceName}] Daily digest: {rest.Count} update{(rest.Count == 1 ? "" : "s")}",
-                        Describe(settings.InstanceName, baseUrl, rest, pageInfo, "Here is what changed since your last digest.")), ct);
-                    foreach (var n in rest) n.EmailedAt = now;
-                    user.LastDigestAt = now;
-                    sent++;
+                    if (await SendAsync(user.Email,
+                            $"[{settings.InstanceName}] Daily digest: {rest.Count} update{(rest.Count == 1 ? "" : "s")}",
+                            Describe(settings.InstanceName, baseUrl, rest, pageInfo, "Here is what changed since your last digest."), rest))
+                        user.LastDigestAt = now;
                     break;
 
                 default:
@@ -139,6 +173,22 @@ public sealed class NotificationEmailService(
                     foreach (var n in rest) n.EmailedAt = now;
                     break;
             }
+        }
+
+        if (outage is not null)
+        {
+            _failedPasses++;
+            var wait = RetryDelay(_failedPasses);
+            RetryAfter = now + wait;
+            logger.LogWarning("Notification email is waiting: the mail server did not accept a message ({Error}). Trying again in {Minutes} min.",
+                outage.Error, wait.TotalMinutes);
+            await scope.ServiceProvider.GetRequiredService<Security.ISecurityDetector>()
+                .MailSendFailedAsync(outage.Error ?? "The mail server did not accept the message.");
+        }
+        else if (sent > 0)
+        {
+            _failedPasses = 0;
+            RetryAfter = null;
         }
 
         await db.SaveChangesAsync(ct);
