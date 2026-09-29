@@ -269,7 +269,9 @@ export function PageEditor() {
    * stays where it is either way, because the page is not saved.
    */
   function handleConflict(err: unknown): boolean {
-    if (!(err instanceof ApiError) || err.status !== 409) return false
+    // A new page that was published already (T5-006) is not a changed page:
+    // its own message says so, and there is nothing to reconcile.
+    if (!(err instanceof ApiError) || err.status !== 409 || err.code === 'already_published') return false
     collabRef.current?.requestReconcile()
     setError(
       'This page changed while you were editing, so it was not published. '

@@ -170,10 +170,27 @@ public static class PageEndpoints
         // for someone who may read the page: this answered with any page's
         // title and content, restricted or not, before any check (found in
         // the 14.1 review).
+        //
+        // Only a retry, though: the same title and content that were
+        // published. A publish that would change the page used to answer 200
+        // with the page unchanged, so a script believed its edit had landed
+        // (T5-006). Changing a published page is PUT /api/pages/{id}.
         if (page.Status != PageStatus.Draft)
-            return await perms.CanReadPageAsync(page.Id)
-                ? Results.Ok(ToDetail(page, page.CurrentVersion))
-                : Results.NotFound();
+        {
+            if (!await perms.CanReadPageAsync(page.Id)) return Results.NotFound();
+            var sameTitle = string.Equals((req.Title ?? "").Trim(), page.Title, StringComparison.Ordinal);
+            var sameContent = PageContent.TryNormalize(req.ContentJson, out var asSent)
+                && JsonSame(asSent, page.CurrentVersion.ContentJson);
+            if (sameTitle && sameContent) return Results.Ok(ToDetail(page, page.CurrentVersion));
+            return Results.Json(new
+            {
+                title = "Conflict",
+                status = StatusCodes.Status409Conflict,
+                code = "already_published",
+                message = "This page is already published, so publishing it again changes nothing. "
+                    + "To change its title or content, send PUT /api/pages/{id}.",
+            }, statusCode: StatusCodes.Status409Conflict);
+        }
 
         var userId = current.RequireId();
         // Ownership guard: the draft's own creator, or anyone with edit rights
@@ -186,6 +203,8 @@ public static class PageEndpoints
             return Results.ValidationProblem(Error("title", "Title is required."));
         if (!PageContent.TryNormalize(req.ContentJson, out var content))
             return Results.ValidationProblem(Error("contentJson", "Content must be valid JSON."));
+        if (PageContent.Problem(content) is { } problem)
+            return Results.ValidationProblem(Error("contentJson", problem));
 
         // Nothing was ever "really" saved yet, so the published page starts
         // clean at v1 with the real content: mutate it in place rather than
@@ -894,4 +913,19 @@ public static class PageEndpoints
 
     private static Dictionary<string, string[]> Error(string field, string message) =>
         new() { [field] = [message] };
+
+    /// <summary>Whether two documents say the same thing, whatever their spacing or property order.</summary>
+    private static bool JsonSame(string a, string b)
+    {
+        try
+        {
+            using var left = JsonDocument.Parse(a);
+            using var right = JsonDocument.Parse(b);
+            return JsonElement.DeepEquals(left.RootElement, right.RootElement);
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
 }

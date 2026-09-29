@@ -76,6 +76,8 @@ public sealed class PageWriter(
         if (trimmed.Length == 0) return PageWriteResult.Invalid("title", "Title is required.");
         if (!PageContent.TryNormalize(contentJson, out var content))
             return PageWriteResult.Invalid("contentJson", "Content must be valid JSON.");
+        if (PageContent.Problem(content) is { } createProblem)
+            return PageWriteResult.Invalid("contentJson", createProblem);
 
         if (!await db.Spaces.AnyAsync(s => s.Id == spaceId, ct))
             return PageWriteResult.Invalid("spaceId", "Space not found.");
@@ -160,6 +162,8 @@ public sealed class PageWriter(
             content = page.CurrentVersion?.ContentJson ?? PageContent.EmptyDoc;
         else if (!PageContent.TryNormalize(contentJson, out content))
             return PageWriteResult.Invalid("contentJson", "Content must be valid JSON.");
+        else if (PageContent.Problem(content) is { } updateProblem)
+            return PageWriteResult.Invalid("contentJson", updateProblem);
 
         if (title is not null)
         {

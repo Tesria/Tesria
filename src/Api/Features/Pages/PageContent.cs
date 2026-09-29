@@ -53,6 +53,81 @@ public static class PageContent
         }
     }
 
+    private sealed record SchemaNames(string[] Nodes, string[] Marks);
+
+    private static readonly Lazy<(HashSet<string> Nodes, HashSet<string> Marks)> Schema = new(() =>
+    {
+        using var stream = typeof(PageContent).Assembly.GetManifestResourceStream("Tesria.editor-schema.json")
+            ?? throw new InvalidOperationException("The editor schema resource is missing from the build.");
+        var names = JsonSerializer.Deserialize<SchemaNames>(stream, new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+        return (new HashSet<string>(names.Nodes, StringComparer.Ordinal), new HashSet<string>(names.Marks, StringComparer.Ordinal));
+    });
+
+    /// <summary>
+    /// Why a document is not one the editor can show, or null when it is
+    /// (T5-023). A document the editor cannot load showed as an empty page,
+    /// and the next Update from the editor saved it empty, so whatever the
+    /// caller sent was lost without a word. This checks what makes the
+    /// editor refuse a whole document: the root is a <c>doc</c>, every
+    /// element and mark is one the editor has, text is text, and content
+    /// and marks are lists. It does not check which element may hold which;
+    /// the editor is forgiving about that.
+    /// </summary>
+    public static string? Problem(string normalized)
+    {
+        try
+        {
+            using var parsed = JsonDocument.Parse(normalized);
+            var root = parsed.RootElement;
+            if (root.ValueKind != JsonValueKind.Object
+                || !root.TryGetProperty("type", out var type) || type.ValueKind != JsonValueKind.String
+                || type.GetString() != "doc")
+                return "Content must be a document: {\"type\":\"doc\",\"content\":[...]}.";
+            return NodeProblem(root, Schema.Value.Nodes, Schema.Value.Marks, depth: 0);
+        }
+        catch (JsonException)
+        {
+            return "Content must be valid JSON.";
+        }
+    }
+
+    private static string? NodeProblem(JsonElement node, HashSet<string> nodes, HashSet<string> marks, int depth)
+    {
+        // Deeper than any page anyone has written; also keeps a hostile
+        // document from walking the stack.
+        if (depth > 200) return "Content is nested too deeply.";
+        if (node.ValueKind != JsonValueKind.Object
+            || !node.TryGetProperty("type", out var typeElement) || typeElement.ValueKind != JsonValueKind.String)
+            return "Every element in the content needs a \"type\".";
+        var type = typeElement.GetString()!;
+        if (!nodes.Contains(type)) return $"Content has an element Tesria does not know: \"{type}\".";
+        if (type == "doc" && depth > 0) return "Content has a document inside a document.";
+        if (type == "text"
+            && (!node.TryGetProperty("text", out var text) || text.ValueKind != JsonValueKind.String || text.GetString()!.Length == 0))
+            return "Every text element needs a non-empty \"text\".";
+
+        if (node.TryGetProperty("marks", out var markList))
+        {
+            if (markList.ValueKind != JsonValueKind.Array) return $"The marks of a \"{type}\" must be a list.";
+            foreach (var mark in markList.EnumerateArray())
+            {
+                if (mark.ValueKind != JsonValueKind.Object
+                    || !mark.TryGetProperty("type", out var markType) || markType.ValueKind != JsonValueKind.String)
+                    return "Every mark in the content needs a \"type\".";
+                if (!marks.Contains(markType.GetString()!))
+                    return $"Content has a mark Tesria does not know: \"{markType.GetString()}\".";
+            }
+        }
+
+        if (node.TryGetProperty("content", out var content))
+        {
+            if (content.ValueKind != JsonValueKind.Array) return $"The content of a \"{type}\" must be a list.";
+            foreach (var child in content.EnumerateArray())
+                if (NodeProblem(child, nodes, marks, depth + 1) is { } problem) return problem;
+        }
+        return null;
+    }
+
     private static bool MayHaveExternalMarks(string json) =>
         json.Contains("external", StringComparison.Ordinal);
 
