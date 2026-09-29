@@ -9,6 +9,7 @@ import {
 import { useAuth } from '../../auth/AuthContext'
 import { PasswordInput } from '../../components/PasswordInput'
 import { bytes, relative } from './format'
+import { outsideRange, restoreTimeRange } from './restoreTime'
 
 /**
  * Restoring the wiki from the admin page (dev-plan 9.4): the dialog that asks
@@ -23,13 +24,6 @@ import { bytes, relative } from './format'
 
 function when(iso: string | null | undefined): string {
   return iso ? new Date(iso).toLocaleString() : 'Unknown'
-}
-
-/** A local datetime string the `datetime-local` input accepts. */
-function toLocalInput(iso: string): string {
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 /**
@@ -81,11 +75,19 @@ export function RestoreDialog({
   }, [busy, onClose])
 
   const isPitr = preview?.mode === 'pitr'
+  const range = preview ? restoreTimeRange(preview.earliestTarget, preview.latestTarget, preview.targetAt) : null
   const answered = confirmLabel === backup.label && (byCode ? code.length > 0 : password.length > 0)
   const allowed = preview !== null && preview.blockedBy.length === 0
 
   async function submit(e: FormEvent) {
     e.preventDefault()
+    // The form does not use the browser's own validation (noValidate): a
+    // time outside the range was refused by a bubble that said nothing a
+    // person could act on, or by nothing at all (KI-19). Said here instead.
+    if (isPitr && range && outsideRange(at, range)) {
+      setError(`Choose a time between ${when(preview?.earliestTarget)} and ${when(preview?.latestTarget)}.`)
+      return
+    }
     setBusy(true)
     setError(null)
     try {
@@ -93,7 +95,10 @@ export function RestoreDialog({
         confirmLabel,
         password: password || undefined,
         code: code || undefined,
-        at: isPitr && at ? new Date(at).toISOString() : null,
+        // The moment the field shows, edited or not. Left untouched it used
+        // to send nothing, and the server then used the backup's end to the
+        // second, a little later than the minute on the screen.
+        at: isPitr && (at || range?.initial) ? new Date(at || range!.initial).toISOString() : null,
       })
       onQueued(res.jobId)
     } catch (err) {
@@ -108,7 +113,7 @@ export function RestoreDialog({
 
   return (
     <div className="recovery-prompt" role="dialog" aria-modal="true" aria-label={`Restore the backup ${backup.label}`}>
-      <form className="recovery-prompt__card recovery-prompt__card--roomy danger-form" onSubmit={submit}>
+      <form className="recovery-prompt__card recovery-prompt__card--roomy danger-form" onSubmit={submit} noValidate>
         <h2>Restore This Backup?</h2>
 
         <div className="confirm__body">
@@ -158,10 +163,12 @@ export function RestoreDialog({
             <span>Roll Forward To</span>
             <input
               type="datetime-local"
-              value={at || (preview.targetAt ? toLocalInput(preview.targetAt) : '')}
-              min={preview.earliestTarget ? toLocalInput(preview.earliestTarget) : undefined}
-              max={preview.latestTarget ? toLocalInput(preview.latestTarget) : undefined}
-              onChange={(e) => setAt(e.target.value)}
+              value={at || range?.initial || ''}
+              min={range?.min}
+              max={range?.max}
+              step={60}
+              aria-invalid={range ? outsideRange(at, range) : undefined}
+              onChange={(e) => { setAt(e.target.value); setError(null) }}
             />
             <span className="muted small">
               Anywhere between {when(preview.earliestTarget)} and {when(preview.latestTarget)}.

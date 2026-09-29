@@ -387,18 +387,31 @@ public static class RestoreEndpoints
 
     /// <summary>
     /// How far back and forward a point-in-time restore can reach: from the
-    /// end of the oldest physical backup that is still present, to the last
-    /// WAL segment the archive has taken.
+    /// end of the oldest physical backup that is still present, to the later
+    /// of the last WAL segment the archive has taken and the end of the
+    /// newest backup.
+    ///
+    /// <para>The end of a backup always counts (KI-19): pgBackRest finishes a
+    /// backup only once the WAL it needs is in the repository, so its end is
+    /// reachable even before the next heartbeat reports the archive. Without
+    /// it, for a minute after every backup the dialog's default, the end of
+    /// the newest backup, lay past its own maximum and the form would not
+    /// submit.</para>
     /// </summary>
     public static async Task<(DateTimeOffset? Earliest, DateTimeOffset? Latest)> BoundsAsync(
         AppDbContext db, List<BackupAgent> agents)
     {
-        var fulls = await db.Backups.AsNoTracking()
-            .Where(b => b.Agent == BackupNames.Physical && b.RemovedAt == null && b.Error == null && b.Type == "full")
-            .Select(b => b.CompletedAt ?? b.StartedAt)
+        var present = await db.Backups.AsNoTracking()
+            .Where(b => b.Agent == BackupNames.Physical && b.RemovedAt == null && b.Error == null)
+            .Select(b => new { b.Type, End = b.CompletedAt ?? b.StartedAt })
             .ToListAsync();
+        var fulls = present.Where(b => b.Type == "full").Select(b => b.End).ToList();
         var physical = agents.FirstOrDefault(a => a.Name == BackupNames.Physical);
-        return (fulls.Count == 0 ? null : fulls.Min(), physical?.WalArchivedAt);
+        if (fulls.Count == 0) return (null, physical?.WalArchivedAt);
+
+        var newestEnd = present.Max(b => b.End);
+        DateTimeOffset latest = physical?.WalArchivedAt is { } wal && wal > newestEnd ? wal : newestEnd;
+        return (fulls.Min(), latest);
     }
 
     public static KeptCopy? KeptCopyOf(SiteSettings s) =>

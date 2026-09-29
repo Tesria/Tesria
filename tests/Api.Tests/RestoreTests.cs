@@ -306,6 +306,54 @@ public class RestoreTests
         Assert.Contains(at.UtcDateTime.ToString("yyyy-MM-dd"), job.OptionsJson);
     }
 
+    /// <summary>
+    /// KI-19: for about a minute after every physical backup the archive's
+    /// last reported segment is older than the backup's end, and the dialog's
+    /// default, that end, lay past its own maximum, so the form would not
+    /// submit. The end of a backup is always reachable, so it is always
+    /// inside the range, and asking for it is accepted.
+    /// </summary>
+    [Fact]
+    public async Task The_end_of_the_newest_backup_is_inside_the_range_before_the_archive_reports_it()
+    {
+        using var factory = new TestAppFactory();
+        var owner = await InstanceAsync(factory, physical: true);
+        var end = DateTimeOffset.UtcNow.AddSeconds(-20);
+        await SeedAsync(factory, db =>
+        {
+            db.BackupAgents.Single(a => a.Name == BackupNames.Physical).WalArchivedAt = end.AddSeconds(-62);
+            db.Backups.Add(new Backup
+            {
+                Id = Guid.NewGuid(), Agent = BackupNames.Physical, Label = "20260920-030000F_20260922-115900I",
+                Type = "incr", Prior = "20260920-030000F",
+                StartedAt = end.AddSeconds(-5), CompletedAt = end, SizeBytes = 100_000,
+                FirstSeenAt = end, LastSeenAt = end,
+            });
+        });
+
+        var preview = await owner.GetFromJsonAsync<PreviewDto>(
+            "/api/admin/backups/20260920-030000F_20260922-115900I/restore-preview");
+        Assert.NotNull(preview!.LatestTarget);
+        Assert.True(preview.TargetAt <= preview.LatestTarget,
+            $"the default {preview.TargetAt:O} is past the maximum {preview.LatestTarget:O}");
+        Assert.Empty(preview.BlockedBy);
+
+        (await RestoreAsync(owner, "20260920-030000F_20260922-115900I", at: end)).EnsureSuccessStatusCode();
+    }
+
+    [Fact]
+    public async Task The_archive_still_extends_the_range_past_the_newest_backup()
+    {
+        using var factory = new TestAppFactory();
+        var owner = await InstanceAsync(factory, physical: true);
+        var wal = await ReadAsync(factory, db => db.BackupAgents
+            .Where(a => a.Name == BackupNames.Physical).Select(a => a.WalArchivedAt).SingleAsync());
+
+        var preview = await owner.GetFromJsonAsync<PreviewDto>("/api/admin/backups/20260920-030000F/restore-preview");
+
+        Assert.Equal(wal, preview!.LatestTarget);
+    }
+
     // --- The preview --------------------------------------------------------
 
     [Fact]
