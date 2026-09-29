@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type TextareaHTMLAttributes } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type TextareaHTMLAttributes } from 'react'
 import { api, type Directory } from '../api/client'
 
 /**
@@ -15,6 +15,21 @@ export function MentionTextarea({ value, onValueChange, ...rest }: {
   const [people, setPeople] = useState<Directory[] | null>(null)
   const [query, setQuery] = useState<string | null>(null)
   const [active, setActive] = useState(0)
+  // Where the caret goes once the text with a new mention is on screen.
+  const caretAfterPick = useRef<number | null>(null)
+
+  // Placed in the same commit that writes the new text, before the next
+  // key can arrive (T5-012). It used to wait a frame, and a fast typist's
+  // next few keys landed first, so the late caret move put the rest of what
+  // they typed ahead of those keys: "se check. plea".
+  useLayoutEffect(() => {
+    const at = caretAfterPick.current
+    const el = ref.current
+    if (at === null || !el) return
+    caretAfterPick.current = null
+    if (document.activeElement !== el) el.focus()
+    el.setSelectionRange(at, at)
+  }, [value])
 
   useEffect(() => {
     if (query === null || people) return
@@ -41,13 +56,9 @@ export function MentionTextarea({ value, onValueChange, ...rest }: {
     const before = value.slice(0, caret).replace(/@[^\s@[\]()]{0,30}$/, '')
     const token = `@[${person.displayName.replace(/[\][]/g, '')}](user:${person.id}) `
     const next = before + token + value.slice(caret)
+    caretAfterPick.current = (before + token).length
     onValueChange(next)
     setQuery(null)
-    requestAnimationFrame(() => {
-      el.focus()
-      const at = (before + token).length
-      el.setSelectionRange(at, at)
-    })
   }
 
   return (
