@@ -415,7 +415,8 @@ policy, so the way out is always open. Such an admin cannot turn TOTP
 back off while the rule stands.
 
 **Sudo mode.** Destructive administration (changing who is an admin,
-flipping the public-spaces switch, purging a page, removing a block)
+flipping the public-spaces switch, purging a page, removing a block,
+turning off someone's two-factor, issuing someone a password reset link)
 calls `AuthEndpoints.RequireSudo`, which passes only if the session
 authenticated within `Auth:SudoMinutes` (5; shorter than the fresh-login
 window on purpose). Otherwise the endpoint returns 403 with

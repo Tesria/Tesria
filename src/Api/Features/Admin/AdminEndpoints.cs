@@ -670,11 +670,16 @@ public static class AdminEndpoints
 
     private static async Task<IResult> IssuePasswordReset(
         Guid userId, AppDbContext db, CurrentUser current,
-        IAuditLogger audit, IAccountRecoveryService recovery, IInstancePermissions rights, IConfiguration config)
+        IAuditLogger audit, IAccountRecoveryService recovery, IInstancePermissions rights, IConfiguration config,
+        HttpContext http)
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Results.NotFound();
         if (await RefuseIfProtectedAccountAsync(user, current, rights) is { } refused) return refused;
+        // A reset link is the account itself, so this is sudo territory like
+        // turning off someone's two-factor: an unattended browser, or an API
+        // token (which can never be freshly signed in), cannot issue one.
+        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
 
         if (user.PasswordHash is null)
             return Results.ValidationProblem(new Dictionary<string, string[]>
