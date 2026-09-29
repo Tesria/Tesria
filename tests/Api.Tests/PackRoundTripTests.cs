@@ -379,6 +379,74 @@ public class PackRoundTripTests
         }
     }
 
+    /// <summary>
+    /// t6-013: the importer read pages in zip entry order (sorted by id) and
+    /// numbered them in that order, so every level of the tree came in
+    /// scrambled. This pack's files are deliberately out of order, and its
+    /// stored positions have gaps and start above zero, so the test fails
+    /// on both "count as read" and "copy the number as is".
+    /// </summary>
+    [Fact]
+    public async Task Pages_keep_their_order_among_siblings_whatever_order_the_pack_lists_them_in()
+    {
+        await using var app = new TestAppFactory();
+        var importer = app.CreateClient();
+        await importer.RegisterAndSignInAsync();
+
+        // Ids chosen so that sorting by id (the zip's entry order) is the
+        // reverse of the tree order at each level.
+        var first = Guid.Parse("cccccccc-0000-0000-0000-000000000000");
+        var second = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000000");
+        var third = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000000");
+        var childA = Guid.Parse("99999999-0000-0000-0000-000000000000");
+        var childB = Guid.Parse("88888888-0000-0000-0000-000000000000");
+        var childC = Guid.Parse("77777777-0000-0000-0000-000000000000");
+        var when = new DateTimeOffset(2026, 9, 29, 12, 0, 0, TimeSpan.Zero);
+
+        WikiPack.PackPage Page(Guid id, Guid? parent, int position, string title) => new(
+            id, parent, position, title, false, when, null, 1,
+            [new WikiPack.PackVersion(1, when, null, null, System.Text.Json.Nodes.JsonNode.Parse(Doc(title))!)],
+            [], [], []);
+
+        var model = new WikiPack.Model(
+            new WikiPack.Manifest(
+                WikiPack.Format, "Tesria", when, "Tesria 0.8.1",
+                new WikiPack.ManifestSpace("SRC", "Source"),
+                new WikiPack.Counts(6, 6, 0, 0, 0, 0),
+                new WikiPack.Omitted(0),
+                new WikiPack.Restrictions(0, 0)),
+            new WikiPack.PackSpace("SRC", "Source", null, null, new WikiPack.PackIcon(0, null, null, null), []),
+            new Dictionary<Guid, WikiPack.Author>(),
+            // Listed, and so written into the zip, in no useful order.
+            [
+                Page(childB, first, 4, "Child B"),
+                Page(third, null, 7, "Third"),
+                Page(childC, first, 9, "Child C"),
+                Page(first, null, 3, "First"),
+                Page(childA, first, 2, "Child A"),
+                Page(second, null, 5, "Second"),
+            ]);
+        using var buffer = new MemoryStream();
+        await WikiPack.WriteAsync(buffer, model, (_, _) => Task.FromResult<Stream?>(null));
+
+        var res = await ImportAsync(importer, buffer.ToArray(), "DEST");
+        Assert.True(res.StatusCode == HttpStatusCode.Created, await res.Content.ReadAsStringAsync());
+
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var space = await db.Spaces.SingleAsync(s => s.Key == "DEST");
+        var pages = await db.Pages.Where(p => p.SpaceId == space.Id).ToListAsync();
+
+        var top = pages.Where(p => p.ParentPageId is null).OrderBy(p => p.Position).ToList();
+        Assert.Equal(["First", "Second", "Third"], top.Select(p => p.Title));
+        Assert.Equal([0, 1, 2], top.Select(p => p.Position));
+
+        var firstId = top[0].Id;
+        var children = pages.Where(p => p.ParentPageId == firstId).OrderBy(p => p.Position).ToList();
+        Assert.Equal(["Child A", "Child B", "Child C"], children.Select(p => p.Title));
+        Assert.Equal([0, 1, 2], children.Select(p => p.Position));
+    }
+
     [Fact]
     public async Task A_zip_with_a_path_that_escapes_the_pack_is_refused()
     {
