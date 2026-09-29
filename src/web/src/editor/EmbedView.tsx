@@ -86,6 +86,20 @@ export function EmbedView({ node, editor, selected, updateAttributes }: ReactNod
           />
         </div>
       )}
+      {/* The card that stands in for the frame on paper, where an iframe is
+          a blank rectangle and the print rules hide it. Without it a PDF
+          said nothing at all about the video that was there (t6-003).
+          Hidden on screen, where the frame is the thing. */}
+      {state.status === 'ok' && (
+        <a href={url} target="_blank" rel="noreferrer noopener" className="smart-link__body embed__card">
+          <span className="smart-link__text">
+            <span className="smart-link__title">
+              {state.embed.provider ? `Embedded from ${state.embed.provider}` : 'Embedded content'}
+            </span>
+            <span className="smart-link__site embed__card-url">{url}</span>
+          </span>
+        </a>
+      )}
     </NodeViewWrapper>
   )
 }

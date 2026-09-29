@@ -546,7 +546,8 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'What goes in'),
     ul(
-      li(p(b('The title and the content,'), ' nothing else: comments, labels, attachments and history stay in Tesria.')),
+      li(p(b('The title and the content,'), ' nothing else: comments, labels, the Attachments tab and history stay in Tesria.')),
+      li(p(b('Pictures, files and videos shown in the page,'), ' copied into the HTML file so they work wherever it is opened. A video over 25 MB links to Tesria instead, and so does a link to another page.')),
       li(p(b('Live content as it was at that moment.'), ' A list of recently updated pages, for example, is frozen as it stood when you exported.')),
       li(p(b('Expand blocks open,'), ' so nothing is hidden on paper, and embedded videos and sites as a card with their link.')),
     ),
@@ -656,6 +657,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ul(
       li(p(b('An import always makes a new space.'), ' Importing the same pack twice gives two spaces; it never merges into an existing one.')),
       li(p(b('A pack can be up to 500 MB,'), ' and each person can import 10 packs an hour.')),
+      li(p(b('A pack with something this Tesria cannot show is refused,'), ' whole, with the name of the page and the element. It most likely came from a newer Tesria: update this one, then import it again.')),
       li(p(b('Importing needs the right to create spaces,'), ' which everyone has unless an administrator has turned it off for their role.')),
     ),
   ))

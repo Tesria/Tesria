@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Tesria.Api.Features.Export;
 
-public static class ExportEndpoints
+public static partial class ExportEndpoints
 {
     public static IEndpointRouteBuilder MapExportEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -89,7 +89,8 @@ public static class ExportEndpoints
             ? (await BrandExport.PackAsync(s, brandAssets, env, inline: true, ct)).Brand
             : new SiteChrome.Brand(Infrastructure.Branding.BrandView.From(s).Name) { Instance = s.InstanceName };
         var title = Infrastructure.Branding.BrandTitle.Format(s.InstanceName, page.Space?.Name, page.Title);
-        return await CaptureAsync(page.Id, page.Title, title, safeName, wanted, brand, current, renderTokens, pdf, config, ct);
+        return await CaptureAsync(page.Id, page.Title, title, safeName, wanted, brand, SiteUrl.Resolve(s, config),
+            current, renderTokens, pdf, config, ct);
     }
 
     /// <summary>
@@ -100,7 +101,7 @@ public static class ExportEndpoints
     /// </summary>
     private static async Task<IResult> CaptureAsync(
         Guid pageId, string title, string documentTitle, string safeName, string format, SiteChrome.Brand brand,
-        Infrastructure.Auth.CurrentUser current, Infrastructure.Export.IRenderTokens renderTokens,
+        string baseUrl, Infrastructure.Auth.CurrentUser current, Infrastructure.Export.IRenderTokens renderTokens,
         IPdfRenderer pdf, IConfiguration config, CancellationToken ct)
     {
         if (!pdf.Available || !renderTokens.IsConfigured)
@@ -126,7 +127,7 @@ public static class ExportEndpoints
         // from (requested 2026-09-20). No sidebar: one page has no
         // tree to show, and the brand links nowhere because there is nowhere
         // in a single file to go.
-        var html = Encoding.UTF8.GetString(bytes);
+        var html = AbsoluteAddresses(Encoding.UTF8.GetString(bytes), baseUrl);
         // Title, favicon, accent and theme locks, whatever the capture brought
         // with it (dev-plan 13.1), then the export's own theme script, which
         // reads the locks.
@@ -137,6 +138,20 @@ public static class ExportEndpoints
             SiteChrome.Topbar(brand, homeHref: null) + "<div class=\"export export--file\">");
         return Results.File(Encoding.UTF8.GetBytes(html), "text/html", $"{safeName}.html");
     }
+
+    /// <summary>
+    /// Makes every address that is relative to the instance a full one. A
+    /// file opened from disk resolves <c>/spaces/…</c> against the disk, so a
+    /// link to another page, or a video too big to carry, went nowhere
+    /// (t6-004). Pictures, attached files and videos up to a size are inside
+    /// the file by now; what is left is somewhere to go, and the instance is
+    /// the only place it can be, as the Markdown export already says.
+    /// </summary>
+    public static string AbsoluteAddresses(string html, string baseUrl) =>
+        RootRelative().Replace(html, m => $"{m.Groups["attr"].Value}=\"{baseUrl.TrimEnd('/')}/");
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"(?<attr>\s(?:href|src|poster))=""/(?!/)")]
+    private static partial System.Text.RegularExpressions.Regex RootRelative();
 
     /// <summary>
     /// Where the sidecar reaches this app. Inside the compose network that is

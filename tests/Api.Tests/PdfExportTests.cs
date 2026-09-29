@@ -77,6 +77,31 @@ public class PdfExportTests
     }
 
     [Fact]
+    public void A_single_file_links_to_the_instance_by_its_full_address()
+    {
+        // t6-004: opened from disk, /spaces/… is a path on the disk. Links to
+        // other pages, and a video too big to carry, go to the instance.
+        var page = Guid.NewGuid();
+        var html = $"""
+            <a href="/spaces/DOCS/pages/{page}#setup">Setup</a>
+            <video src="/api/attachments/{page}/download#t=0.1" poster="/p.png"></video>
+            <a href="#top">Top</a><a href="https://example.com/">Out</a>
+            <img src="data:image/png;base64,AAAA" /><a href="//cdn.example.com/x">Cdn</a>
+            """;
+
+        var rewritten = Tesria.Api.Features.Export.ExportEndpoints.AbsoluteAddresses(html, "https://wiki.example.org/");
+
+        Assert.Contains($"href=\"https://wiki.example.org/spaces/DOCS/pages/{page}#setup\"", rewritten);
+        Assert.Contains($"src=\"https://wiki.example.org/api/attachments/{page}/download#t=0.1\"", rewritten);
+        Assert.Contains("poster=\"https://wiki.example.org/p.png\"", rewritten);
+        // Everything that was not relative to the instance is left alone.
+        Assert.Contains("href=\"#top\"", rewritten);
+        Assert.Contains("href=\"https://example.com/\"", rewritten);
+        Assert.Contains("src=\"data:image/png;base64,AAAA\"", rewritten);
+        Assert.Contains("href=\"//cdn.example.com/x\"", rewritten);
+    }
+
+    [Fact]
     public async Task Markdown_keeps_its_attachment_urls()
     {
         // The half of the old inlining test that still means something: a

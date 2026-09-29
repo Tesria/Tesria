@@ -34,6 +34,10 @@ const SECRET = process.env.PDF_SHARED_SECRET || readSecretFile('/run/tesria/pdf-
 // runaway, not a slow document.
 const RENDER_TIMEOUT_MS = Number(process.env.PDF_TIMEOUT_MS ?? 20_000)
 const MAX_BODY_BYTES = Number(process.env.PDF_MAX_BODY_BYTES ?? 64 * 1024 * 1024)
+// The largest video or sound a single-file HTML export carries inside
+// itself. Past this it links to the instance instead: a file of a few
+// hundred megabytes is not something anybody wants emailed to them.
+const MAX_INLINE_MEDIA_BYTES = Number(process.env.PDF_MAX_INLINE_MEDIA_BYTES ?? 25 * 1024 * 1024)
 // The one origin a capture may load. Anything else is aborted, so a document
 // that somehow carries an external reference cannot make this service fetch
 // it, and a caller cannot point the renderer at somewhere of its choosing.
@@ -194,17 +198,21 @@ async function renderPdf(url, token, title) {
  */
 async function renderHtml(url, token, { inlineAssets = true } = {}) {
   return withCapturedPage(url, token, async (page) => {
-    const html = await page.evaluate(async (inline) => {
+    const html = await page.evaluate(async ({ inline, MAX_INLINE_MEDIA_BYTES }) => {
       // Make the file work on its own. Every image and file link still points
       // at the instance it came from, which is no use once the file has been
       // emailed to somebody; the page is authenticated, so it can fetch its
       // own assets and carry them. The site export turns this off: it writes
       // real files into assets/ instead, which keeps the pages small.
       if (inline) {
-        const asDataUri = async (href) => {
-          const res = await fetch(href, { credentials: 'include' })
+        const asDataUri = async (href, max = Infinity) => {
+          const abort = new AbortController()
+          const res = await fetch(href, { credentials: 'include', signal: abort.signal })
           if (!res.ok) return null
+          // Too big to carry: stop before downloading it rather than after.
+          if (Number(res.headers.get('content-length') ?? 0) > max) { abort.abort(); return null }
           const blob = await res.blob()
+          if (blob.size > max) return null
           return await new Promise((resolve) => {
             const reader = new FileReader()
             reader.onload = () => resolve(reader.result)
@@ -222,6 +230,28 @@ async function renderHtml(url, token, { inlineAssets = true } = {}) {
           const uri = await asDataUri(a.getAttribute('href'))
           if (uri) { a.setAttribute('href', uri); a.setAttribute('download', a.textContent?.trim() || 'file') }
         }
+        // A video or a sound placed in the page is page content too, and it
+        // played from nowhere once the file left the instance (t6-004). Up
+        // to a size a file can reasonably carry; a bigger one keeps its
+        // address, which the app makes a full one, so it still plays for
+        // anyone who can reach the instance.
+        for (const media of document.querySelectorAll('video[src^="/"], audio[src^="/"], source[src^="/"]')) {
+          const src = media.getAttribute('src')
+          const hash = src.indexOf('#')
+          const uri = await asDataUri(hash < 0 ? src : src.slice(0, hash), MAX_INLINE_MEDIA_BYTES)
+          if (uri) media.setAttribute('src', hash < 0 ? uri : uri + src.slice(hash))
+        }
+        // The browser's own PDF viewer, framed from the instance, is an empty
+        // box in a file (t6-004): a page opened from disk cannot frame the
+        // wiki. The file's own link beside it, inlined above, is what works.
+        for (const frame of document.querySelectorAll('.attachment-block__pdf iframe[src^="/"]')) frame.remove()
+      }
+
+      // A checkbox's state is a property, and outerHTML writes attributes, so
+      // every done task was exported unticked (t6-001). The property is
+      // written back as the attribute before the copy is taken.
+      for (const input of document.querySelectorAll('input[type="checkbox"], input[type="radio"]')) {
+        input.toggleAttribute('checked', input.checked)
       }
 
       // Inline every stylesheet the page is using. Same-origin, so the rules
@@ -252,7 +282,7 @@ async function renderHtml(url, token, { inlineAssets = true } = {}) {
       doc.head.appendChild(style)
 
       return '<!doctype html>\n' + doc.documentElement.outerHTML
-    }, inlineAssets)
+    }, { inline: inlineAssets, MAX_INLINE_MEDIA_BYTES })
     return Buffer.from(html, 'utf8')
   })
 }
