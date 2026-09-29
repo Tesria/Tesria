@@ -31,6 +31,7 @@ import { LayoutColumn, LayoutSection } from './layoutExtension'
 import { TextColorMark } from './textColorMark'
 import { TextIndent } from './textFormatting'
 import { LinkShortcut } from './linkShortcut'
+import { WordPaste } from './wordPaste'
 import { Mention } from './mentionExtension'
 import { MentionSuggestion } from './suggest/MentionSuggestion'
 import { EmojiSuggestion } from './suggest/EmojiSuggestion'
@@ -313,6 +314,7 @@ export function getSharedExtensions({ collaborative = false, editable = true }: 
     // mounting the plugins entirely rather than just hiding their output.
     // InlineAtomTyping is behavior, not schema: typing with a status, date or
     // math selected continues after it rather than replacing it (0.8.2).
-    ...(editable ? [SlashCommand, LinkShortcut, MentionSuggestion, EmojiSuggestion, InlineAtomTyping] : []),
+    // WordPaste turns Word's list paragraphs into real lists on paste.
+    ...(editable ? [SlashCommand, LinkShortcut, MentionSuggestion, EmojiSuggestion, InlineAtomTyping, WordPaste] : []),
   ]
 }
