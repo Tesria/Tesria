@@ -155,10 +155,34 @@ export function stripExternalMarks(node: Block): Block {
   return next
 }
 
-/** The block as accepting would leave it: struck text removed, highlights unwrapped. */
+/**
+ * Attributes the editor derives from a node's content as soon as it opens a
+ * document (`taskAssignee.ts` copies a task's first mention into
+ * `assigneeId`/`assigneeName`). A page written through the API has none, so
+ * an editor that merely opened it holds a "different" task list. They are
+ * left out of every comparison: the content they come from is compared
+ * anyway, and counting them made untouched pages ask about unpublished
+ * changes on Close and read as the human's edits in a merge.
+ */
+const DERIVED_ATTRS: Record<string, readonly string[]> = {
+  taskItem: ['assigneeId', 'assigneeName'],
+}
+
+function withoutDerivedAttrs(node: Block): Block {
+  const derived = node.type ? DERIVED_ATTRS[node.type] : undefined
+  if (!derived || !node.attrs) return node
+  const attrs = { ...node.attrs }
+  for (const name of derived) delete attrs[name]
+  return { ...node, attrs }
+}
+
+/**
+ * The block as accepting would leave it: struck text removed, highlights
+ * unwrapped, and attributes the editor derives left out (for comparing only).
+ */
 export function acceptBlock(block: Block): Block {
   const visit = (node: Block): Block => {
-    const next = stripExternalMarks({ ...node, content: undefined })
+    const next = stripExternalMarks({ ...withoutDerivedAttrs(node), content: undefined })
     if (!node.content) return next
     const content = node.content
       .filter((child) => !(child.type === 'text' && hasMark(child, 'externalDelete')))

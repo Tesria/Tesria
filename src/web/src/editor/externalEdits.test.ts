@@ -424,6 +424,21 @@ describe('knowing whether a draft holds unpublished work', () => {
     expect(hasUnpublishedChanges(reconcileDocument(doc(p('a')), doc(p('b')), ORIGIN), doc(p('b')))).toBe(true)
   })
 
+  it('ignores the assignee the editor copies onto a task from its mention', () => {
+    const mention = { type: 'mention', attrs: { userId: 'u1', label: 'Sam' } }
+    const task = (attrs: Record<string, unknown>): JSONContent => ({
+      type: 'taskList',
+      content: [{ type: 'taskItem', attrs, content: [{ type: 'paragraph', content: [mention, { type: 'text', text: ' ship it' }] }] }],
+    })
+    const asStored = doc(task({ checked: false }))
+    const asOpened = doc(task({ checked: false, assigneeId: 'u1', assigneeName: 'Sam' }))
+
+    expect(differsFromPage(asOpened, asStored)).toBe(false)
+    // Nor is it the human's change in a merge: the write's edit applies cleanly.
+    const page = doc(p('new first line'), task({ checked: false }))
+    expect(outline(mergeDocument(asStored, asOpened, page, ORIGIN))).toEqual(['+new first line', ' ship it'])
+  })
+
   it('does not count undecided outside changes as a person\'s unpublished work', () => {
     const pending = reconcileDocument(doc(p('a')), doc(p('b')), ORIGIN)
 
