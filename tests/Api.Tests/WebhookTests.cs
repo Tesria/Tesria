@@ -127,6 +127,55 @@ public class WebhookTests
     }
 
     [Fact]
+    public async Task A_webhook_hears_nothing_about_a_page_its_creator_cannot_read()
+    {
+        using var factory = new TestAppFactory();
+        var alice = factory.CreateClient();
+        var aliceId = await alice.RegisterAndSignInAsync();
+        var (spaceId, key) = await NewSpace(alice); // no permission rows: open to every member
+
+        // Bob can manage webhooks on the open space and makes one for everything.
+        var bob = factory.CreateClient();
+        await bob.RegisterAndSignInAsync();
+        (await bob.PostAsJsonAsync($"/api/spaces/{key}/webhooks",
+            new { Url = "https://example.com/bob", Events = "*" })).EnsureSuccessStatusCode();
+        (await alice.PostAsJsonAsync($"/api/spaces/{key}/webhooks",
+            new { Url = "https://example.com/alice", Events = "*" })).EnsureSuccessStatusCode();
+
+        var sender = factory.Services.GetRequiredService<RecordingWebhookSender>();
+        var page = await (await alice.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = "Plans", ContentJson = (string?)null }))
+            .Content.ReadFromJsonAsync<PageDetail>();
+        // Readable by both, so both hear about it.
+        Assert.Contains(sender.Deliveries, d => d.Url == "https://example.com/bob");
+        Assert.Contains(sender.Deliveries, d => d.Url == "https://example.com/alice");
+
+        (await alice.PostAsJsonAsync($"/api/pages/{page!.Id}/restrictions",
+            new { PrincipalType = User, PrincipalId = aliceId, Operation = 0 })).EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.NotFound, (await bob.GetAsync($"/api/pages/{page.Id}")).StatusCode);
+        var before = sender.Deliveries.Count(d => d.Url == "https://example.com/bob");
+
+        (await alice.PutAsJsonAsync($"/api/pages/{page.Id}",
+            new { Title = "Plans, restricted", ContentJson = "{\"type\":\"doc\",\"content\":[]}", ChangeComment = (string?)null }))
+            .EnsureSuccessStatusCode();
+        (await alice.PostAsJsonAsync($"/api/pages/{page.Id}/comments",
+            new { Body = "private remark", ParentCommentId = (Guid?)null, AnchorJson = (string?)null })).EnsureSuccessStatusCode();
+        var child = await (await alice.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = page.Id, Title = "Under it", ContentJson = (string?)null }))
+            .Content.ReadFromJsonAsync<PageDetail>();
+        Assert.NotNull(child);
+
+        // Bob's webhook heard none of it; Alice's, whose creator can read the page, heard all three.
+        Assert.Equal(before, sender.Deliveries.Count(d => d.Url == "https://example.com/bob"));
+        Assert.DoesNotContain(sender.Deliveries, d => d.Url == "https://example.com/bob" && d.PayloadJson.Contains("restricted"));
+        Assert.DoesNotContain(sender.Deliveries, d => d.Url == "https://example.com/bob" && d.PayloadJson.Contains("private remark"));
+        var aliceHeard = sender.Deliveries.Where(d => d.Url == "https://example.com/alice").Select(d => d.PayloadJson).ToList();
+        Assert.Contains(aliceHeard, p => p.Contains("page.updated"));
+        Assert.Contains(aliceHeard, p => p.Contains("private remark"));
+        Assert.Contains(aliceHeard, p => p.Contains(child!.Id.ToString()));
+    }
+
+    [Fact]
     public async Task Wildcard_subscription_receives_every_event_type()
     {
         using var factory = new TestAppFactory();

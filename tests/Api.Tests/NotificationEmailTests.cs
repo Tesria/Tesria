@@ -111,6 +111,32 @@ public class NotificationEmailTests
     }
 
     [Fact]
+    public async Task A_page_restricted_before_the_email_goes_is_left_out_of_it()
+    {
+        using var factory = new TestAppFactory();
+        var admin = await InstanceWithEmailAsync(factory);
+        var watcher = factory.CreateClient();
+        await RegisterAsync(watcher, "watcher@example.com");
+        (await watcher.PutAsJsonAsync("/api/auth/me/notifications", new { EmailNotifications = Immediate })).EnsureSuccessStatusCode();
+        var editor = factory.CreateClient();
+        var editorId = (await RegisterAsync(editor, "editor@example.com")).Id;
+        Outbox(factory).Sent.Clear();
+
+        // Queued while the watcher could read the page, then restricted before the mail went.
+        var pageId = await WatchedPageEditedAsync(factory, watcher, editor);
+        (await editor.PutAsJsonAsync($"/api/pages/{pageId}",
+            new { Title = "Secret title", ContentJson = Doc, ChangeComment = "rename" })).EnsureSuccessStatusCode();
+        (await editor.PostAsJsonAsync($"/api/pages/{pageId}/restrictions",
+            new { PrincipalType = 0, PrincipalId = editorId, Operation = 0 })).EnsureSuccessStatusCode();
+
+        await RunAsync(factory);
+        Assert.DoesNotContain(Outbox(factory).Sent, m => m.To == "watcher@example.com");
+        // Retired, not left waiting: a later pass sends nothing either.
+        await RunAsync(factory);
+        Assert.DoesNotContain(Outbox(factory).Sent, m => m.To == "watcher@example.com");
+    }
+
+    [Fact]
     public async Task Off_means_off_and_the_in_app_copy_stays()
     {
         using var factory = new TestAppFactory();
