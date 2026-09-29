@@ -5,6 +5,16 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Donut charts draw clean edges** (reported by the owner, 2026-09-29): on
+  the Backups page the "Free" segment's edge was jagged where it met the
+  chart's start, in Minimal and Glass alike. Each segment was a dash of a
+  whole circle, and dashes that are tiny, or end where the circle's path
+  begins, are drawn with a stepped edge. Each segment is now its own arc,
+  running slightly under the next so no seam shows, and a slice under 1%
+  (the wiki and its backups, beside a whole disk) is drawn as a thin
+  visible sliver of at least 1% of the ring; the legend keeps the true
+  numbers. The donut element in pages gets the same drawing.
+
 ## [0.8.2] - 2026-09-30
 
 The fixes from a full manual test of 0.8.1 before the public launch: ten

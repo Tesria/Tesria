@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { donutFontSize, donutSegments } from './donut'
+import { donutArcPath, donutFontSize, donutSegments } from './donut'
 
 describe('donutSegments', () => {
   it('turns values into percentages of the ring, clockwise from the top', () => {
@@ -30,6 +30,38 @@ describe('donutSegments', () => {
     const segments = donutSegments([3, 7, 11, 13])
     const last = segments[segments.length - 1]
     expect(last.start + last.length).toBeCloseTo(100, 10)
+  })
+})
+
+describe('donutSegments with a minimum', () => {
+  it('gives a tiny slice a visible sliver, taken from the others in proportion', () => {
+    // The Backups page's disk: the wiki and its backups are far under 1%.
+    const seg = donutSegments([0.2, 1.5, 1200, 656], 1)
+    expect(seg[0].length).toBe(1)
+    expect(seg[1].length).toBe(1)
+    expect(seg[2].length / seg[3].length).toBeCloseTo(1200 / 656, 6)
+    const last = seg[seg.length - 1]
+    expect(last.start + last.length).toBeCloseTo(100, 10)
+  })
+
+  it('leaves slices at or above the minimum, and zeros, alone', () => {
+    expect(donutSegments([1, 3, 0], 1).map((s) => s.length)).toEqual([25, 75, 0])
+  })
+
+  it('gives up the minimum when there are too many tiny slices to fit', () => {
+    const seg = donutSegments(Array(120).fill(1), 1)
+    expect(seg[0].length).toBeCloseTo(100 / 120, 10)
+  })
+})
+
+describe('donutArcPath', () => {
+  it('draws a quarter clockwise from the positive x axis', () => {
+    expect(donutArcPath(0, 0, 10, 0, 25)).toBe('M 10.0000 0.0000 A 10.0000 10.0000 0 0 1 0.0000 10.0000')
+  })
+
+  it('uses the large-arc flag past half the ring', () => {
+    expect(donutArcPath(0, 0, 10, 0, 75)).toContain(' 0 1 1 ')
+    expect(donutArcPath(0, 0, 10, 0, 50)).toContain(' 0 0 1 ')
   })
 })
 

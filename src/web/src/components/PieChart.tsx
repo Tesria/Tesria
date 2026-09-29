@@ -1,5 +1,5 @@
 import { useId, type CSSProperties } from 'react'
-import { DONUT_RADIUS, DONUT_STROKE, DONUT_VIEW, donutFontSize, donutSegments } from './donut'
+import { DONUT_RADIUS, DONUT_STROKE, DONUT_VIEW, donutArcPath, donutFontSize, donutSegments } from './donut'
 
 /**
  * The one pie in the product.
@@ -138,8 +138,8 @@ export function PieChart({
  * editor's chart offers it as a type of its own beside pie, so pages that
  * chose pie keep their pies.
  *
- * Stroked circles on a ring whose circumference is 100 (see donut.ts), so
- * each segment's dash is its percentage. The text is outside the rotated
+ * Stroked arcs on a ring whose circumference is 100 (see donut.ts), one
+ * per segment, so a segment's length is its percentage. The text is outside the rotated
  * group, so it reads upright.
  */
 export function DonutChart({
@@ -153,7 +153,14 @@ export function DonutChart({
   /** A word under it, such as "free". Left out on small donuts, where it would be unreadable. */
   caption?: string
 }) {
-  const segments = donutSegments(slices.map((s) => s.value))
+  // A nonzero slice gets at least 1% of the ring, so it is a visible sliver.
+  const segments = donutSegments(slices.map((s) => s.value), 1)
+  // Adjacent arcs meeting at one angle leave a hairline of the track between
+  // them where their anti-aliased edges overlap. Each arc runs a little into
+  // the next, which is drawn over it; the first also starts a little early,
+  // under the last. So no seam shows, and no slice covers another's color.
+  const drawn = segments.map((seg, i) => ({ ...seg, index: i })).filter((seg) => seg.length > 0)
+  const OVERLAP = 0.25
   const mid = DONUT_VIEW / 2
   const sheenId = useId().replace(/:/g, '')
   const showCaption = caption && size >= 96
@@ -167,19 +174,31 @@ export function DonutChart({
           ))}
         </defs>
         <circle className="donut__track" cx={mid} cy={mid} r={DONUT_RADIUS} />
-        {segments.map((segment, i) => segment.length > 0 && (
+        {drawn.length === 1 ? (
           <circle
-            key={slices[i].label}
+            key={slices[drawn[0].index].label}
             className="chart-slice chart-slice--ring"
-            style={glassFill(`donut-fill-${sheenId}-${i}`)}
+            style={glassFill(`donut-fill-${sheenId}-${drawn[0].index}`)}
             cx={mid}
             cy={mid}
             r={DONUT_RADIUS}
-            stroke={slices[i].color}
-            strokeDasharray={`${segment.length.toFixed(3)} ${(100 - segment.length).toFixed(3)}`}
-            strokeDashoffset={(-segment.start).toFixed(3)}
+            stroke={slices[drawn[0].index].color}
           />
-        ))}
+        ) : drawn.map((segment, k) => {
+          const last = k === drawn.length - 1
+          const start = k === 0 ? segment.start - OVERLAP : segment.start
+          const length = segment.length + (last ? 0 : OVERLAP) + (k === 0 ? OVERLAP : 0)
+          return (
+            <path
+              key={slices[segment.index].label}
+              className="chart-slice chart-slice--ring"
+              style={glassFill(`donut-fill-${sheenId}-${segment.index}`)}
+              d={donutArcPath(mid, mid, DONUT_RADIUS, start, Math.min(length, 99.9))}
+              stroke={slices[segment.index].color}
+              strokeLinecap="butt"
+            />
+          )
+        })}
       </g>
       {/* Outside the rotated group, so the light still falls from the top-left. */}
       <Sheen cx={mid} cy={mid} r={DONUT_RADIUS} id={`donut-sheen-${sheenId}`} ring={DONUT_STROKE} unit={size / DONUT_VIEW} />
