@@ -553,6 +553,48 @@ public class InstancePermissionTests
     }
 
     [Fact]
+    public async Task Deleting_your_own_page_does_not_take_other_peoples_pages_under_it()
+    {
+        using var factory = new TestAppFactory();
+        var ownerClient = factory.CreateClient();
+        await RegisterAsync(ownerClient, "owner@example.com");
+        var memberClient = factory.CreateClient();
+        await RegisterAsync(memberClient, "member@example.com");
+
+        // No permission rows: every member may edit, and administers the space implicitly.
+        var space = (await (await ownerClient.PostAsJsonAsync("/api/spaces",
+            new { Key = "OPEN", Name = "Open" })).Content.ReadFromJsonAsync<SpaceDto>())!;
+        var parent = (await (await memberClient.PostAsJsonAsync("/api/pages",
+            new { SpaceId = space.Id, Title = "Member parent", ContentJson = Doc })).Content.ReadFromJsonAsync<PageDto>())!;
+        (await memberClient.PostAsJsonAsync("/api/pages",
+            new { SpaceId = space.Id, ParentPageId = parent.Id, Title = "Member child", ContentJson = Doc })).EnsureSuccessStatusCode();
+        var theirs = (await (await ownerClient.PostAsJsonAsync("/api/pages",
+            new { SpaceId = space.Id, ParentPageId = parent.Id, Title = "Owner child", ContentJson = Doc })).Content.ReadFromJsonAsync<PageDto>())!;
+
+        // Refused as a whole, naming the page in the way; nothing is trashed.
+        var refused = await memberClient.DeleteAsync($"/api/pages/{parent.Id}");
+        Assert.Equal(HttpStatusCode.Forbidden, refused.StatusCode);
+        var body = await refused.Content.ReadAsStringAsync();
+        Assert.Contains("pages.delete_any", body);
+        Assert.Contains("Owner child", body);
+        Assert.DoesNotContain("Member child", body);
+        (await ownerClient.GetAsync($"/api/pages/{theirs.Id}")).EnsureSuccessStatusCode();
+        (await memberClient.GetAsync($"/api/pages/{parent.Id}")).EnsureSuccessStatusCode();
+
+        // The owner (delete_any) trashes the whole tree; the member may not
+        // then purge it by owning its top page.
+        (await ownerClient.DeleteAsync($"/api/pages/{parent.Id}")).EnsureSuccessStatusCode();
+        var purge = await memberClient.DeleteAsync($"/api/pages/{parent.Id}/purge");
+        Assert.Equal(HttpStatusCode.Forbidden, purge.StatusCode);
+        Assert.Contains("Owner child", await purge.Content.ReadAsStringAsync());
+
+        // With the other person's page moved out, their own tree goes as before.
+        (await ownerClient.PostAsync($"/api/pages/{parent.Id}/restore", null)).EnsureSuccessStatusCode();
+        (await ownerClient.DeleteAsync($"/api/pages/{theirs.Id}")).EnsureSuccessStatusCode();
+        (await memberClient.DeleteAsync($"/api/pages/{parent.Id}")).EnsureSuccessStatusCode();
+    }
+
+    [Fact]
     public async Task Creating_spaces_and_tokens_follows_the_user_role()
     {
         using var factory = new TestAppFactory();

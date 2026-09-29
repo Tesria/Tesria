@@ -474,6 +474,7 @@ public static class PageEndpoints
         var now = DateTimeOffset.UtcNow;
         var userId = current.RequireId();
         var subtree = await CollectLiveSubtreeAsync(db, page.SpaceId, id);
+        if (await DeniedForDescendantsAsync(rights, current, perms, subtree, id) is { } blocked) return blocked;
         foreach (var p in subtree)
         {
             p.DeletedAt = now;
@@ -512,6 +513,50 @@ public static class PageEndpoints
                 ? "Your role does not allow deleting pages."
                 : "Your role only allows deleting pages you created.",
         }, statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    /// <summary>
+    /// The same right, for every page under the one being deleted: deleting
+    /// a page takes its whole subtree with it, so a role that may delete only
+    /// its own pages must not remove someone else's by deleting a parent it
+    /// wrote. Refused as a whole, naming the pages in the way, rather than
+    /// deleting part of the tree.
+    /// </summary>
+    private static async Task<IResult?> DeniedForDescendantsAsync(
+        Infrastructure.Permissions.IInstancePermissions rights, CurrentUser current,
+        IPermissionService perms, IReadOnlyCollection<Page> subtree, Guid rootId)
+    {
+        var descendants = subtree.Where(p => p.Id != rootId).ToList();
+        foreach (var (key, pages) in new[]
+        {
+            (Infrastructure.Permissions.InstancePermissions.PagesDeleteAny, descendants.Where(p => p.CreatedById != current.Id).ToList()),
+            (Infrastructure.Permissions.InstancePermissions.PagesDeleteOwn, descendants.Where(p => p.CreatedById == current.Id).ToList()),
+        })
+        {
+            if (pages.Count == 0 || await rights.HasAsync(key)) continue;
+
+            // Named only where the caller may open them; the rest are counted.
+            var named = new List<string>();
+            foreach (var p in pages)
+                if (named.Count < 5 && await perms.CanViewPageAsync(p.Id)) named.Add($"\u201c{p.Title}\u201d");
+            var more = pages.Count - named.Count;
+            var list = named.Count == 0
+                ? $"{pages.Count} page{(pages.Count == 1 ? "" : "s")}"
+                : string.Join(", ", named) + (more > 0 ? $" and {more} more" : "");
+            var why = key == Infrastructure.Permissions.InstancePermissions.PagesDeleteAny
+                ? "Your role only allows deleting pages you created, and pages under this one were created by someone else"
+                : "Your role does not allow deleting pages you created, and pages under this one are yours";
+            return Results.Json(new
+            {
+                title = "Forbidden",
+                status = 403,
+                code = "permission_required",
+                permission = key,
+                message = $"{why}: {list}. Move them out from under it first, or ask someone who may delete them.",
+                blockingPageCount = pages.Count,
+            }, statusCode: StatusCodes.Status403Forbidden);
+        }
+        return null;
     }
 
     private static async Task<IResult> Restore(
@@ -553,6 +598,7 @@ public static class PageEndpoints
         if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
 
         var subtree = await CollectTrashedSubtreeAsync(db, page.SpaceId, id);
+        if (await DeniedForDescendantsAsync(rights, current, perms, subtree, id) is { } blocked) return blocked;
         var storageKeys = await StorageKeysOfAsync(db, subtree.Select(p => p.Id).ToList());
         // Clear current-version pointers so the cascade to versions is not blocked
         // by the restrict FK, then hard-delete the subtree (versions, attachments,
