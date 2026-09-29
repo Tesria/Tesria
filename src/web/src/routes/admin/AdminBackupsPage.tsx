@@ -37,6 +37,7 @@ const JOB_KIND: Record<string, string> = {
   'restore-undo': 'undo of a restore',
   'restore-discard': 'removal of the kept copy',
   'test-target': 'connection test',
+  'restore-uploads': 'check of attachment files',
 }
 
 function when(iso: string | null): string {
@@ -64,6 +65,9 @@ function summary(job: BackupJob): string {
     const tables = typeof r.tablesRestored === 'number' ? `, ${r.tablesRestored} tables` : ''
     return `Restored ${job.target ?? 'the newest backup'} cleanly${tables}.`
   }
+  // After a point-in-time restore: the attachment files the restored wiki
+  // refers to, put back from the uploads archives (T8-017).
+  if (job.kind === 'restore-uploads' && typeof r.summary === 'string' && r.summary) return r.summary
   if (job.kind === 'test-target') {
     // The sidecar's own sentence, the same one the Storage targets card shows.
     if (typeof r.summary === 'string' && r.summary) return r.summary

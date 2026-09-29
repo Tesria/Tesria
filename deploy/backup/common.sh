@@ -292,11 +292,18 @@ SQL
 # `id|kind|target|options`. The options are the job's OptionsJson with the
 # pipes stripped, since this is a pipe-delimited line and a restore's options
 # are a small flat object (dev-plan 9.4).
+#
+# CLAIM_SKIP_SLOTS names targets whose copy and test jobs another container
+# answers: the network and removable drives have services of their own, so
+# that a drive that is missing cannot stop this one (T8-026). Those jobs
+# stay the logical agent's, and are left for that container.
 claim_job() {
-  q <<'SQL'
+  q -v skip="${CLAIM_SKIP_SLOTS:-}" <<'SQL'
 UPDATE "BackupJobs" SET "Status" = 'running', "StartedAt" = now()
  WHERE "Id" = (SELECT "Id" FROM "BackupJobs"
                 WHERE "Agent" = :'agent' AND "Status" = 'requested'
+                  AND NOT ("Kind" IN ('copy-offsite', 'test-target')
+                           AND coalesce("Target" = ANY (string_to_array(:'skip', ' ')), false))
                 ORDER BY "RequestedAt" LIMIT 1
                   FOR UPDATE SKIP LOCKED)
 RETURNING "Id" || '|' || "Kind" || '|' || coalesce("Target", '')
@@ -721,6 +728,27 @@ SQL
 
 # Default hooks; the sidecars override what they need.
 after_backup() { echo '{}'; }
+# Once, when the agent has registered.
+agent_started_hook() { :; }
+# Putting back attachment files after a point-in-time restore (T8-017): only
+# the agent with the uploads can.
+do_restore_uploads() { echo "This agent has no attachments to put back."; return 1; }
+
+run_restore_uploads_job() {
+  local id="$1" log=/tmp/restore-uploads.log status=succeeded err="" summary extra
+  : > "$log"
+  if ! do_restore_uploads >>"$log" 2>&1; then
+    status=failed
+    err="$(tail -n 1 "$log" | cut -c1-500)"
+  fi
+  cat "$log"
+  summary="$(tail -n 1 "$log")"
+  extra="$(q -v s="$summary" <<'SQL'
+SELECT jsonb_build_object('summary', left(:'s', 500))::text;
+SQL
+)" || extra=""
+  finish_job "$id" "$status" "$err" "$log" "$extra"
+}
 # Offsite targets (dev-plan 9.2). Each sidecar defines what it can do.
 offsite_tick() { :; }
 do_copy_offsite() { echo "This agent has no target to copy to."; return 1; }
@@ -781,6 +809,7 @@ run_agent() {
         if agent_start; then
           started=1
           log "registered; interval ${INTERVAL_HOURS}h"
+          agent_started_hook || true
         fi
       fi
       if [ "$started" = 1 ]; then
@@ -799,6 +828,7 @@ run_agent() {
             restore)         run_restore_wiki_job "$id" "$target" "$options" ;;
             restore-undo)    run_restore_undo_job "$id" "$target" "$options" ;;
             restore-discard) run_restore_discard_job "$id" "$target" "$options" ;;
+            restore-uploads) run_restore_uploads_job "$id" ;;
             # Anything else is a kind this sidecar predates. Failing loudly is
             # the whole point: until 9.4 an unknown kind fell through to
             # `run_backup_job`, so an older sidecar handed a `restore` would

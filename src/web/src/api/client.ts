@@ -812,8 +812,8 @@ export type Backup = {
 export type BackupJob = {
   id: string
   agent: BackupAgentName
-  kind: 'backup' | 'restore-test' | 'copy-offsite' | 'restore' | 'restore-undo' | 'restore-discard' | 'test-target'
-  trigger: 'scheduled' | 'manual' | 'startup' | 'retention'
+  kind: 'backup' | 'restore-test' | 'copy-offsite' | 'restore' | 'restore-undo' | 'restore-discard' | 'test-target' | 'restore-uploads'
+  trigger: 'scheduled' | 'manual' | 'startup' | 'retention' | 'restore'
   status: 'requested' | 'running' | 'succeeded' | 'failed'
   target: string | null
   requestedAt: string

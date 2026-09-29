@@ -6294,6 +6294,24 @@ questions are in `roadmap.md`.
     `docker compose up -d` when a drive returns, or a host helper to do
     that) and documenting a mount point that always exists.
 
+  **Done 2026-09-29 for 0.8.2 (QA's T8-026): a service per drive.**
+  `backup-nas` and `backup-removable` (`deploy/backup/drive.sh`, the
+  backup image) each mount one drive, with `backups` and `uploads`
+  read-only, and do what `backup` did for that slot: the network drive's
+  scheduled copy and drill, the removable drive's Copy Now, each slot's
+  Test Connection (claimed from the logical agent's queue, which `backup`
+  now leaves to them). `backup` mounts no drive. A drive missing at start
+  stops only its own service; `backup` notices its heartbeat (the slot's
+  row, touched every minute) has gone quiet for three minutes, marks the
+  drive absent with the reason and `docker compose up -d`, and answers
+  that slot's queued jobs. The monitor no longer raises `offsite_failed`
+  as well for an absent target. Both drives are now checked every minute,
+  so a NAS that comes back shows as back within a minute. Verified on
+  Docker Desktop for Mac with a missing `/Volumes/...` path. Not solved:
+  a drive plugged in after its service started may still be invisible to
+  it (the Docker Desktop question above); the docs say plug in first,
+  then `docker compose up -d`.
+
 ## Phase 25: Installing without a settings file (Keep)
 
 ### 25.1 Zero-config first start · `M` · Model: Opus 5.5 · ✅ **shipped 2026-09-27 in 0.8.0**

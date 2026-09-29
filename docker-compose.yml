@@ -147,11 +147,17 @@ services:
       - pgsocket:/var/run/postgresql
       - *secret-owner
       - *secret-backup-key
+    # Not healthy while a restore by hand is still resetting the owner's
+    # password (see the entrypoint), so migrate does not try to sign in
+    # with this machine's password before the database has it.
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "test ! -f /var/lib/postgresql/.tesria-reset-owner-password && pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      # Replaying WAL after a restore takes as long as it takes; until it is
+      # done the check fails, and that is not a database that is broken.
+      start_period: 5m
     # Not published to the host: only the app and backup services reach it.
     expose:
       - "5432"
@@ -359,14 +365,9 @@ services:
       # database restored without its attachments is a wiki full of broken
       # links.
       - uploads:/data/uploads
-      # A bind mount, not a cifs/nfs volume, and that is the decision: a
-      # named network volume stops the container starting while the share is
-      # down, which would take the LOCAL backups down with it. A bind mount
-      # always starts, and the sentinel file inside decides whether anything
-      # is written. Defaults to a directory with no sentinel, so an instance
-      # with no network drive reports it absent and copies nothing.
-      - ${OFFSITE_NAS_PATH:-./deploy/backup/no-target}:/mnt/nas
-      - ${OFFSITE_REMOVABLE_PATH:-./deploy/backup/no-target}:/mnt/removable
+      # No drive is mounted here (dev-plan 24.2): the network and removable
+      # drives have services of their own, below, so that a drive that is
+      # not there when the stack starts cannot stop this one.
       - *secret-owner
     # The loop touches this every minute, even in the middle of a long backup.
     healthcheck:
@@ -375,6 +376,70 @@ services:
       timeout: 10s
       retries: 3
       start_period: 120s
+
+  # The network drive (dev-plan 9.2 step 3) and the removable drive (step 4),
+  # each copied to by a service of its own (deploy/backup/drive.sh).
+  #
+  # A bind mount, not a cifs/nfs volume: a named network volume stops the
+  # container starting while the share is down. And on Docker Desktop for
+  # Mac even a bind mount does, when its folder is missing: Docker cannot
+  # create a folder under /Volumes, so a share that is not connected, or a
+  # drive that is not plugged in, stops the container from starting. That is
+  # why each drive has its own container (T8-026): a missing drive stops
+  # only its own, the local backups carry on, and the `backup` service
+  # reports it on the drive's card. `docker compose up -d` once the drive is
+  # back starts it. Where the folder is there, the sentinel file inside
+  # decides whether anything is written. With no drive configured, the path
+  # defaults to a directory with no sentinel, and the service idles.
+  backup-nas: &drive-service
+    image: ${TESRIA_IMAGES:-brianintheloop/tesria}-backup:${TESRIA_IMAGE_TAG:-latest}
+    pull_policy: missing
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment: &drive-environment
+      OFFSITE_SLOT: nas
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER:-tesria}
+      PGPASSFILE: /run/tesria/postgres-password/pgpass
+      PGDATABASE: ${POSTGRES_DB:-tesria}
+      OFFSITE_NAS_PATH: ${OFFSITE_NAS_PATH:-}
+      OFFSITE_NAS_PASSPHRASE: ${OFFSITE_NAS_PASSPHRASE:-}
+      OFFSITE_REMOVABLE_PATH: ${OFFSITE_REMOVABLE_PATH:-}
+      OFFSITE_REMOVABLE_PASSPHRASE: ${OFFSITE_REMOVABLE_PASSPHRASE:-}
+      OFFSITE_RETRY_MINUTES: ${OFFSITE_RETRY_MINUTES:-15}
+      OFFSITE_DRILL_DAYS: ${OFFSITE_DRILL_DAYS:-30}
+    entrypoint: ["/bin/bash", "/scripts/drive.sh"]
+    volumes:
+      - ./deploy/backup:/scripts:ro
+      - ./deploy/backup/common.sh:/opt/tesria/common.sh:ro
+      - ./deploy/pgbackrest/offsite.sh:/opt/tesria/offsite.sh:ro
+      # What is copied: read only, since this service never writes a backup.
+      - backups:/backups:ro
+      - uploads:/data/uploads:ro
+      - ${OFFSITE_NAS_PATH:-./deploy/backup/no-target}:/mnt/nas
+      - *secret-owner
+    healthcheck:
+      test: ["CMD-SHELL", "find /tmp/heartbeat -mmin -5 | grep -q ."]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  backup-removable:
+    <<: *drive-service
+    environment:
+      <<: *drive-environment
+      OFFSITE_SLOT: removable
+    volumes:
+      - ./deploy/backup:/scripts:ro
+      - ./deploy/backup/common.sh:/opt/tesria/common.sh:ro
+      - ./deploy/pgbackrest/offsite.sh:/opt/tesria/offsite.sh:ro
+      - backups:/backups:ro
+      - uploads:/data/uploads:ro
+      - ${OFFSITE_REMOVABLE_PATH:-./deploy/backup/no-target}:/mnt/removable
+      - *secret-owner
 
   collab:
     # Real-time co-editing (Yjs/Hocuspocus). The editor engine is JS-only, so

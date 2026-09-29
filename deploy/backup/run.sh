@@ -294,52 +294,77 @@ offsite_tick() {
     offsite_files_disable cloud
   fi
 
-  # The network drive (step 3). Scheduled like the cloud, and its absence is
-  # worth an alert, because a share that should always be there and is not is
-  # a problem rather than a fact of life.
-  if [ -n "${OFFSITE_NAS_PASSPHRASE:-}" ]; then
-    if offsite_path_present /mnt/nas; then
-      offsite_copy_slot nas "${en:-f}" "${kc:-0}" "${kd:-0}"
-    else
-      offsite_files_absent nas "The network drive is not mounted, or has not been claimed with claim-target.sh."
-    fi
-  else
-    offsite_files_disable nas
-  fi
-
-  # The removable drive is only ever reported here, never copied to: that
-  # happens on demand, in do_copy_offsite. Its absence is normal and raises
-  # nothing, which is the difference between a drawer and a fault.
-  if [ -n "${OFFSITE_REMOVABLE_PASSPHRASE:-}" ]; then
-    if offsite_path_present /mnt/removable; then
-      offsite_files_seen removable
-    else
-      offsite_files_absent removable "The drive is not plugged in. The last copy it holds is shown above."
-    fi
-  else
-    offsite_files_disable removable
-  fi
+  # The network and removable drives are copied to by services of their own,
+  # backup-nas and backup-removable (deploy/backup/drive.sh). A drive that is
+  # not there when the stack starts can stop the container it is mounted in
+  # from starting at all (Docker Desktop cannot create the missing folder
+  # under /Volumes), and before 0.8.2 that container was this one, so a
+  # missing NAS took the local backups down with it (T8-026). What is left
+  # here is noticing when one of those services is not running.
+  drive_service_watch nas "${OFFSITE_NAS_PASSPHRASE:-}" "${OFFSITE_NAS_PATH:-}"
+  drive_service_watch removable "${OFFSITE_REMOVABLE_PASSPHRASE:-}" "${OFFSITE_REMOVABLE_PATH:-}"
 
   # Last, and at most one per pass: proving a copy restores costs a full
   # read of it, and that must never delay the backups themselves.
-  offsite_drill_tick
+  offsite_drill_tick cloud
 }
 
-# The job the Copy now button queues (dev-plan 9.2 step 4).
-do_copy_offsite() {
-  local slot="$1" line en kc kd
-  if [ "$slot" != removable ]; then
-    echo "Only a removable target is copied on demand."
-    return 1
+# The drives' jobs are theirs to claim (see offsite_tick).
+CLAIM_SKIP_SLOTS="nas removable"
+AGENT_STARTED_AT="$(date +%s)"
+# How long a drive's service may be silent before it counts as not running.
+# Its heartbeat is a minute; this is three missed ones.
+DRIVE_SILENT_SECONDS=180
+
+# A drive's service writes its card's row at least once a minute, even in
+# the middle of a long copy. A row that has gone quiet means the service is
+# not running, which on Docker Desktop is what a drive missing at start
+# does: the container is created and never starts. The card then says so,
+# the drive counts as absent (an alert for a network drive, nothing for a
+# removable one, as ever), and the jobs queued for it are answered here
+# rather than left waiting for ever.
+drive_service_watch() {
+  local slot="$1" passphrase="$2" path="$3" stale service what msg
+  [ -n "$passphrase" ] || return 0
+  # Not in the first minutes after this one starts: the drive's service
+  # starts at the same time and has not written yet.
+  (( $(date +%s) - AGENT_STARTED_AT < DRIVE_SILENT_SECONDS )) && return 0
+  stale="$(q -v slot="$slot" -v secs="$DRIVE_SILENT_SECONDS" 2>/dev/null <<'SQL'
+SELECT CASE WHEN max("UpdatedAt") IS NULL
+              OR max("UpdatedAt") < now() - make_interval(secs => :'secs'::int)
+            THEN 't' ELSE 'f' END
+  FROM "BackupTargets" WHERE "Slot" = :'slot' AND "Kind" = 'files';
+SQL
+)" || return 0
+  [ "$stale" = t ] || return 0
+
+  service="backup-$slot"
+  if [ "$slot" = nas ]; then
+    what="the network drive"
+    msg="The service that copies to the network drive ($service) is not running, usually because the share at ${path:-OFFSITE_NAS_PATH} was not connected when Tesria started. Connect it, then run: docker compose up -d"
+  else
+    what="the removable drive"
+    msg="The service that copies to this drive ($service) is not running, usually because the drive was not plugged in when Tesria started. Plug it in, then run: docker compose up -d"
   fi
-  if ! offsite_path_present /mnt/removable; then
-    echo "The drive is not plugged in, or has not been claimed with claim-target.sh."
-    return 1
-  fi
-  if line="$(observe_policy)"; then
-    IFS='|' read -r en kc kd _ <<<"$line"
-  fi
-  restic_run_removable "${kc:-10}" "${en:-f}"
+  log "offsite: $service has not reported for over $(( DRIVE_SILENT_SECONDS / 60 )) minutes; marking $what absent"
+  # UpdatedAt is left alone on purpose: it is the other service's heartbeat.
+  q -v slot="$slot" -v msg="$msg" -v loc="$path" >/dev/null 2>&1 <<'SQL' || true
+INSERT INTO "BackupTargets" ("Slot", "Kind", "Type", "Location", "Prefix", "Enabled", "Present", "Message", "UpdatedAt")
+VALUES (:'slot', 'files', 'path', NULLIF(:'loc', ''), 'restic', true, false, :'msg', now())
+ON CONFLICT ("Slot", "Kind") DO UPDATE
+   SET "Enabled" = true, "Present" = false, "Message" = EXCLUDED."Message",
+       "Location" = coalesce(EXCLUDED."Location", "BackupTargets"."Location");
+UPDATE "BackupJobs"
+   SET "Status" = 'failed', "StartedAt" = coalesce("StartedAt", now()), "FinishedAt" = now(),
+       "Error" = left(:'msg', 500), "ResultJson" = jsonb_build_object('summary', left(:'msg', 500))
+ WHERE "Agent" = 'logical' AND "Status" = 'requested'
+   AND "Kind" IN ('copy-offsite', 'test-target') AND "Target" = :'slot';
+SQL
+}
+
+# Putting back attachment files after a point-in-time restore (T8-017).
+do_restore_uploads() {
+  /scripts/restore-uploads.sh
 }
 
 run_agent

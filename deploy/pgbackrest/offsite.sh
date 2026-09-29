@@ -115,6 +115,46 @@ offsite_write_conf() {
   return 0
 }
 
+# Whether the cloud repository refuses this instance for a reason that only a
+# change to .env can fix, printing the reason: the provider refuses the key
+# or the secret, the bucket is not there, the passphrase does not open the
+# repository, or the repository belongs to another database cluster (a new
+# machine pointed at the old one's cloud copy). Nothing when it answers, and
+# nothing when it merely cannot be reached: an outage is not a setting, and
+# WAL held through one reaches the cloud when it is back.
+#
+# Used by the db entrypoint to leave such a repository out of WAL archiving
+# (T8-008). pgBackRest acknowledges a segment only once every repository has
+# it, and does not push later segments to the local repository while an
+# earlier one is refused by the cloud, so a wrong cloud secret stopped every
+# local backup ("WAL segment ... was not archived before the timeout") and
+# froze the local restore window, until archive-push-queue-max dropped WAL
+# from both.
+OFFSITE_STATE_DIR="${OFFSITE_STATE_DIR:-/var/lib/pgbackrest}"
+offsite_cloud_refusal() {
+  local out pgdata="${1:-}" repo_id local_id
+  out="$(timeout 60 gosu postgres pgbackrest --stanza=main --repo=2 --log-level-console=off --output=json info 2>&1 \
+         | LC_ALL=C tr -d '\000-\011\013-\037\177-\377')" || return 1
+  case "$out" in
+    *SignatureDoesNotMatch*) echo "the storage provider refused the secret for this key (check OFFSITE_CLOUD_SECRET)"; return 0 ;;
+    *InvalidAccessKeyId*)    echo "the storage provider does not recognize the key (check OFFSITE_CLOUD_KEY)"; return 0 ;;
+    *AccessDenied*)          echo "the key was refused access to the bucket (check OFFSITE_CLOUD_KEY and the key's rights)"; return 0 ;;
+    *NoSuchBucket*)          echo "the bucket ${OFFSITE_CLOUD_BUCKET:-} does not exist (check OFFSITE_CLOUD_BUCKET)"; return 0 ;;
+    *CryptoError*|*FormatError*|*"outside of section"*)
+                             echo "the passphrase does not open the repository (check OFFSITE_CLOUD_PASSPHRASE)"; return 0 ;;
+  esac
+  # A repository made by another cluster: its system identifier is not this
+  # data directory's.
+  [ -n "$pgdata" ] && [ -f "$pgdata/global/pg_control" ] || return 1
+  repo_id="$(printf '%s' "$out" | tr ',{}' '\n\n\n' | sed -n 's/.*"system-id":\([0-9]*\).*/\1/p' | tail -1)"
+  local_id="$(gosu postgres pg_controldata "$pgdata" 2>/dev/null | sed -n 's/^Database system identifier: *//p')"
+  if [ -n "$repo_id" ] && [ -n "$local_id" ] && [ "$repo_id" != "$local_id" ]; then
+    echo "the repository at ${OFFSITE_CLOUD_PATH:-/tesria} belongs to a different database (point OFFSITE_CLOUD_PATH somewhere new, or restore from it as the runbook says)"
+    return 0
+  fi
+  return 1
+}
+
 # A short, stable fingerprint of a secret, for showing on a screen. Never the
 # value: the app must have no way to read one back (9.2's whole reason for
 # keeping these in .env). Same shape as the avatar hashes: SHA-256, 16 hex.

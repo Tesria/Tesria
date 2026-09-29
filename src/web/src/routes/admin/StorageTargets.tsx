@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from 'react'
 import { api, ApiError, type BackupJob, type BackupTarget } from '../../api/client'
 import { DonutChart } from '../../components/PieChart'
+import { targetState } from './targetState'
 
 /**
  * Administration → Backups → Storage targets (dev-plan 9.2 step 5).
@@ -47,27 +48,6 @@ function relative(iso: string | null | undefined): string {
     unit = name
   }
   return `${value} ${unit}${value === 1 ? '' : 's'} ago`
-}
-
-/** What the card says at a glance, and the color it says it in. */
-function state(target: BackupTarget): { tone: 'ok' | 'warn' | 'bad'; text: string } {
-  // First, because it outranks everything else here: a copy that exists,
-  // passes its own integrity check and will not turn back into a database
-  // is the failure all of this is meant to prevent.
-  if (target.lastDrillOk === false)
-    return { tone: 'bad', text: 'The last restore drill failed' }
-  if (target.problem) return { tone: 'bad', text: target.problem }
-  if (target.present === false) {
-    // For a drive this is the ordinary state, not a fault; for a share it is
-    // a fault, which is why only the NAS raises an alert elsewhere.
-    return target.slot === 'removable'
-      ? { tone: 'warn', text: 'Not plugged in' }
-      : { tone: 'bad', text: 'Not reachable' }
-  }
-  if (target.walBacklogFiles != null && target.walBacklogFiles >= 3)
-    return { tone: 'bad', text: `${target.walBacklogFiles} WAL segments waiting` }
-  if (!target.lastBackupAt) return { tone: 'warn', text: 'Nothing copied yet' }
-  return { tone: 'ok', text: 'Healthy' }
 }
 
 function Dot({ tone }: { tone: 'ok' | 'warn' | 'bad' }) {
@@ -160,7 +140,7 @@ function TargetCard({
   const database = rows.find((r) => r.kind === 'database')
   const primary = files ?? database
   if (!primary) return null
-  const tone = state(primary)
+  const tone = targetState(rows)
 
   async function copyNow() {
     setBusy(true)
@@ -232,7 +212,12 @@ function TargetCard({
 
       <Composition rows={rows} />
 
-      {primary.message && <p className="backup-card__pending small">{primary.message}</p>}
+      {rows.filter((r) => r.message).map((r) => (
+        <p key={r.kind} className="backup-card__pending small">
+          {rows.length > 1 && <strong>{KIND_LABEL[r.kind] ?? r.kind}: </strong>}
+          {r.message}
+        </p>
+      ))}
       <TestResult tests={tests} />
       {error && <p className="alert alert--error small">{error}</p>}
 

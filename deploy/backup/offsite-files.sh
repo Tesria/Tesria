@@ -297,7 +297,7 @@ restic_run_removable() {
     # operating system will eject cleanly, because this container holds a
     # bind mount on the drive and that keeps it busy until the sidecar is
     # stopped. The runbook says which one you want.
-    offsite_files_message removable "Copy complete and verified. The data is flushed, so the drive can be removed. To eject it cleanly first: docker compose stop backup."
+    offsite_files_message removable "Copy complete and verified. The data is flushed, so the drive can be removed. To eject it cleanly first: docker compose stop backup-removable."
   else
     note "removable: copied and flushed, but verification did not pass"
     offsite_files_message removable "Copied and flushed to the drive, but verification did not pass. The copy is on the drive; check it before relying on it."
