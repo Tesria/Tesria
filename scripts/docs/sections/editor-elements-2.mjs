@@ -275,7 +275,16 @@ export async function build(helpers) {
     ['Activity', 'Hours'],
     ['Building', '18'], ['Meetings', '8'], ['Reviews', '6'], ['Support', '5'], ['Other', '3'],
   ], [240, 160])
-  const chartOf = (tbl, chartType, title) => ({ type: 'chart', attrs: { chartType, title, source: tbl } })
+  const chartOf = (tbl, chartType, title, options = {}) => ({ type: 'chart', attrs: { chartType, title, source: tbl, ...options } })
+  // One table drawn again and again under Every option, one table (the
+  // owner, 2026-09-29): plain numbers, so Currency has something to add, far
+  // from zero, so Fit to Data shows, and Online not in order, so Largest
+  // Slice First moves a slice.
+  const sales = table([
+    ['Quarter', 'Online', 'In store'],
+    ['Q1', '42,000', '61,000'], ['Q2', '48,000', '58,000'],
+    ['Q3', '71,000', '55,000'], ['Q4', '57,000', '64,000'],
+  ], [200, 160, 160])
 
   await page('Chart', elements, numberCharts(doc(
     p('A chart draws the numbers in a table on the same page as columns, bars, a line, a pie or a donut. The table stays the one place the numbers live: change a number and the chart redraws, so the two can never disagree. Use a chart when the shape of the numbers matters more than the numbers themselves: which month was best, how fast something is growing, what share each part takes.'),
@@ -294,7 +303,7 @@ export async function build(helpers) {
       li(p(b('The first row names the series.'), ' Each column after the first becomes one color, listed in the legend under the chart. A column with no numbers at all, such as a Notes column, is left out.')),
       li(p(b('The first column labels the rows.'), ' Each row becomes a group of columns, a bar, a point on the line, or a slice.')),
       li(p(b('The other cells are the numbers.'), ' Values written the way people write them count: ', c('1,234'), ', ', c('45%'), ', ', c('$9.50'), '. A row with no numbers at all is skipped.')),
-      li(p(b('Tables are numbered from the top of the page,'), ' every table counted. On this page the table under ', b('Insert it'), ' is Table 1, so the four charts below draw Tables 2 to 5.')),
+      li(p(b('Tables are numbered from the top of the page,'), ' every table counted. On this page the table under ', b('Insert it'), ' is Table 1, so the charts under ', b('The five types'), ' draw Tables 2 to 5.')),
     ),
 
     h(2, 'The five types, and when to use each'),
@@ -335,7 +344,7 @@ export async function build(helpers) {
       li(p(b('Type'), ' switches between Column (Vertical), Bar (Horizontal), Line, Pie and Donut. The table is not touched.')),
       li(p(b('Style'), ' decides how this one looks. ', b('Theme Default'), ' follows each reader’s own style, Minimal or Glass, from the appearance menu. ', b('Minimal'), ' or ', b('Glass'), ' keeps it that way for everyone, whatever their style, and in PDF, HTML and website exports too. An export has no reader’s style, so a ', b('Theme Default'), ' one comes out as Minimal.')),
       li(p(b('Chart Title (Optional)'), ' is a line shown above the chart.')),
-      li(p(b('More Options'), ' opens the rest, described below. It shows only the options that apply to the chart’s type; the others keep their settings, so switching type and back loses nothing.')),
+      li(p(b('More Options'), ' opens the rest, described below and each one drawn under ', b('Every option, one table'), '. It shows only the options that apply to the chart’s type; the others keep their settings, so switching type and back loses nothing.')),
     ),
 
     h(3, 'More Options for every chart'),
@@ -366,6 +375,52 @@ export async function build(helpers) {
     ),
     p('If there is no table on the page yet, the chart says so; if its table has no numbers, it says that instead. To remove a chart, click its edge to select it and press ', b('Delete'), '. The table stays.'),
     panel('warning', p(b('Adding a table above a chart renumbers the tables.'), ' A chart pointing at Table 2 then draws the new one. After adding or removing a table, check the Table menu of every chart below it.')),
+
+    h(2, 'Every option, one table'),
+    p('The same four quarters of sales, drawn again and again with an option or two changed each time, so you can see what each one does before you try it. Every chart below reads this table:'),
+    sales,
+    p('As it comes, a new chart of this table is a column chart with its axes and gridlines, and the legend below:'),
+    chartOf(sales, 'column', 'Sales by quarter'),
+
+    h(3, 'Column and bar options'),
+    p(b('X Axis Title'), ' “Quarter” and ', b('Y Axis Title'), ' “Sales”, with the legend ', b('Beside'), ' the chart:'),
+    chartOf(sales, 'column', 'Sales by quarter', { categoryTitle: 'Quarter', valueTitle: 'Sales', legend: 'right' }),
+    p(b('Value Labels'), ' on, with ', b('Number Format'), ' set to ', b('Currency'), '. The table has no currency symbol, so ', b('Auto'), ' would write plain numbers; Currency writes dollars:'),
+    chartOf(sales, 'column', 'Sales by quarter', { valueLabels: true, numberFormat: 'currency' }),
+    p(b('Stacked'), ', so each column is the quarter’s total, online and in store together:'),
+    chartOf(sales, 'column', 'Sales by quarter', { stacked: true }),
+    p('The same chart as a bar chart, stacked, with its axis titles. The titles moved round with the axes:'),
+    chartOf(sales, 'bar', 'Sales by quarter', { stacked: true, categoryTitle: 'Quarter', valueTitle: 'Sales' }),
+    p(b('Axes and Gridlines'), ' off, and the legend ', b('Hidden'), ': only the columns and the quarters are left, for when the chart is a sketch rather than a reference:'),
+    chartOf(sales, 'column', 'Sales by quarter', { axes: false, legend: 'none' }),
+    p(b('Swap Rows and Columns'), ': each quarter becomes a series, and Online and In store are named along the bottom edge, so the chart compares the two ways of selling rather than the four quarters:'),
+    chartOf(sales, 'column', 'Sales by quarter', { transpose: true }),
+    p(b('Colors'), ': Online in teal and In store in orange, in place of the usual colors:'),
+    chartOf(sales, 'column', 'Sales by quarter', { seriesColors: JSON.stringify({ Online: '#0f766e', 'In store': '#ea580c' }) }),
+    p(b('Size'), ' set to ', b('Small'), ':'),
+    chartOf(sales, 'column', 'Sales by quarter', { chartSize: 'small' }),
+
+    h(3, 'Line options'),
+    p('A line chart of the table as it comes: the Y axis starts at zero.'),
+    chartOf(sales, 'line', 'Sales by quarter'),
+    p(b('Points'), ' and ', b('Smooth Curve'), ' on:'),
+    chartOf(sales, 'line', 'Sales by quarter', { points: true, smooth: true }),
+    p(b('Filled Area'), ' on:'),
+    chartOf(sales, 'line', 'Sales by quarter', { area: true }),
+    p(b('Y Axis'), ' set to ', b('Fit to Data'), ', with ', b('Points'), ' on. The axis now runs from just under 42,000 to just over 71,000, so the rise and fall between quarters is easier to see. Say so when you use it: the gap between the lines looks larger than it is.'),
+    chartOf(sales, 'line', 'Sales by quarter', { fromZero: false, points: true }),
+
+    h(3, 'Pie and donut options'),
+    p('A pie of the table as it comes: the first column of numbers, Online, one slice per quarter in the table’s order.'),
+    chartOf(sales, 'pie', 'Online sales by quarter'),
+    p(b('Largest Slice First'), ': Q3, the largest, now starts at the top, and the others follow clockwise from the largest down. Each slice keeps its color:'),
+    chartOf(sales, 'pie', 'Online sales by quarter', { largestFirst: true }),
+    p(b('Column'), ' set to In store, with ', b('Values in Legend'), ' off, so the legend gives only the names:'),
+    chartOf(sales, 'pie', 'In-store sales by quarter', { dataColumn: 2, legendValues: false }),
+    p('A donut with ', b('Center'), ' set to ', b('Largest Slice'), ': the middle gives Q3’s share, with its name under it, instead of the total:'),
+    chartOf(sales, 'donut', 'Online sales by quarter', { donutCenter: 'largest' }),
+    p('A donut with ', b('Center'), ' set to ', b('Custom Text'), ', and ', b('Center Text'), ' “Online”:'),
+    chartOf(sales, 'donut', 'Sales by quarter', { donutCenter: 'custom', centerText: 'Online' }),
 
     h(2, 'Good practice'),
     ul(

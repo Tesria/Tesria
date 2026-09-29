@@ -31,6 +31,9 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   Under More Options, **Colors** gives each series (each slice, on a pie or
   a donut) a color of its own, with Reset back to the palette; a color
   belongs to the series' name, so it follows the series when rows move.
+  The Chart docs page gained **Every option, one table**: one table of four
+  quarters drawn 18 times, an option or two changed each time, so every
+  option is seen live before it is tried (asked for by the owner).
 - **Exported sites move like the app in Glass**: the sidebar hides into a
   button and comes back as it does in Tesria, and the appearance menu opens
   out of its button. Reduce Motion now stills both (before, it had nothing to
