@@ -23,13 +23,13 @@ if (phase !== 'before' && phase !== 'after') {
 }
 
 const primary = '.setup__step-panel .setup__actions .btn--primary'
-const skip = '.setup__step-panel .setup__actions button:has-text("Skip for now")'
+const skip = '.setup__step-panel .setup__actions button:has-text("Skip for Now")'
 const rail = (title) => ({ click: `.setup__step:has-text("${title}")` })
 const settle = { wait: 900 }
 
 // The address field starts as the address the browser used, which here is
 // the inside of a container; a reader should see an address like theirs.
-const address = { type: 'https://wiki.example.com', selector: '.setup__step-panel label:has-text("Its address") input' }
+const address = { type: 'https://wiki.example.com', selector: '.setup__step-panel label:has-text("Its Address") input' }
 const NO_REVIEWER = "document.querySelectorAll('p').forEach((el) => { if (el.textContent.includes('Last reviewed')) el.textContent = el.textContent.replace(/\\s*Last reviewed[^.]*\\./, '') })"
 const inviteOnly = { click: '.setup__cards .setup__card >> nth=0' }
 
@@ -46,20 +46,20 @@ const before = [
   ['setup-welcome', [], []],
   ['setup-account', [{ click: primary }, settle,
     { type: 'alex@example.com', selector: '.setup__step-panel input[type="email"]' },
-    { type: 'Alex Rivera', selector: '.setup__step-panel label:has-text("Your name") input' },
+    { type: 'Alex Rivera', selector: '.setup__step-panel label:has-text("Your Name") input' },
     { type: 'not-a-real-password', selector: '.setup__step-panel input[autocomplete="new-password"]' }]],
 ]
 const after = [
   // Start, then Continue past the account the owner has already made.
-  ['setup-instance', [{ click: primary }, settle, { click: primary }, settle, address], [rail('This instance'), settle, address]],
-  ['setup-registration', [{ click: primary }, settle, inviteOnly], [rail('Who can join'), settle, inviteOnly]],
-  ['setup-permissions', [{ click: primary }, { wait: 2000 }], [rail('What roles may do'), { wait: 2000 }]],
+  ['setup-instance', [{ click: primary }, settle, { click: primary }, settle, address], [rail('This Instance'), settle, address]],
+  ['setup-registration', [{ click: primary }, settle, inviteOnly], [rail('Who Can Join'), settle, inviteOnly]],
+  ['setup-permissions', [{ click: primary }, { wait: 2000 }], [rail('What Roles May Do'), { wait: 2000 }]],
   ['setup-backups', [{ click: primary }, settle], [rail('Backups'), settle]],
   ['setup-email', [{ click: primary }, settle], [rail('Email'), settle]],
-  ['setup-two-factor', [{ click: skip }, { wait: 1500 }], [rail('Two-factor'), { wait: 1500 }]],
-  ['setup-first-space', [{ click: skip }, settle], [rail('A first space'), settle]],
+  ['setup-two-factor', [{ click: skip }, { wait: 1500 }], [rail('Two-Factor'), { wait: 1500 }]],
+  ['setup-first-space', [{ click: skip }, settle], [rail('A First Space'), settle]],
   // Done is never recorded as a step, so the list cannot jump to it.
-  ['setup-done', [{ click: skip }, settle], [rail('A first space'), settle, { click: skip }, settle]],
+  ['setup-done', [{ click: skip }, settle], [rail('A First Space'), settle, { click: skip }, settle]],
 ]
 const list = phase === 'before' ? before : after
 
