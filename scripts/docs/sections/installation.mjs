@@ -328,6 +328,7 @@ export async function build({
       setting('PROXY_TRUSTED_NETWORKS', 'only if you put a proxy of your own in front of Tesria: that proxy’s address, such as ', c('10.0.0.5/32'), '. Tesria then believes the visitor addresses it passes on.'),
       setting('COMPOSE_FILE', 'set by the Docker Desktop setup in ', pageLink('Real visitor addresses with Docker Desktop'), ', which adds its own file to the list. Leave it alone otherwise.'),
       setting('PROXY_PROTOCOL_FROM', 'optional, and set by that same setup: which addresses Tesria’s web server believes when they attach a visitor’s real address. Left out, nothing is believed, which is right for every other install.'),
+      setting('TESRIA_LOOPBACK_HTTP_PORT', 'and ', c('TESRIA_LOOPBACK_HTTPS_PORT'), ': set by the Windows setup in that same page. The ports, reachable only from this computer, where Tesria’s web server waits for visitors handed on with their real addresses: ', c('18080'), ' and ', c('18443'), ' for a Tesria on 80 and 443, and 20000 above its own ports for any other. Leave them alone unless the setup says those are taken.'),
       setting('TESRIA_TAILSCALE_ADDRESS', 'optional. The fixed address of the Tailscale container, ', c('10.203.0.250'), ' unless you set another; Tesria believes the visitor address Tailscale passes on only from there. Change it only together with ', c('TESRIA_SUBNET'), ', to an address inside it.'),
       setting('TESRIA_SUBNET', 'optional. The private network Tesria’s own services talk to each other on, ', c('10.203.0.0/24'), ' unless you set another. Change it only if that range is already used by a VPN or your own network, or for a second Tesria on the same computer. After changing it, run ', c('docker compose down'), ' and then ', c('docker compose up -d'), '.'),
       setting('TESRIA_HTTP_PORT', 'optional. The port Tesria answers plain HTTP on, ', c('80'), ' unless you set another.'),
@@ -771,6 +772,7 @@ export async function build({
     p('Go to the Tesria folder, then run:'),
     codeBlock('powershell', 'powershell -ExecutionPolicy Bypass -File deploy\\docker-desktop\\install-windows.ps1'),
     p('It does the same as on a Mac, with a Windows Firewall rule, and a Task Scheduler task that runs in the background from startup, with no window.'),
+    panel('note', p(b('Two Tesrias on one PC?'), ' Run the setup in each one’s folder. Each gets its own task, firewall rule and ports, and undoing it in one folder leaves the other alone. The second Tesria’s ports must be set with ', c('TESRIA_HTTP_PORT'), ' and ', c('TESRIA_HTTPS_PORT'), ' in its ', c('.env'), ', as ', pageLink('Installing with Docker Compose'), ' describes under ', b('A second Tesria on the same computer'), ': the setup reads them from there. If something is in the way, it says so and changes nothing. On a Mac, the setup handles one Tesria per computer.')),
 
     h(2, 'Check it'),
     p('Sign in to Tesria from another device, such as your phone on the same Wi-Fi. Then open ', ...adminAt('Audit'), ': the sign-in shows that device’s own address, such as ', c('192.168.1.50'), ', instead of ', c('192.168.65.1'), '.'),

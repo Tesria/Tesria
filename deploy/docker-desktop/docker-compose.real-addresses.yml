@@ -12,10 +12,15 @@
 # (TESRIA_SUBNET; found testing, 2026-09-24), and Docker Desktop's gateway
 # is listed too in case a version delivers it from there. Both are addresses
 # only this Mac and this stack's containers can connect from.
+#
+# A second Tesria on the same computer (WIN-007) needs loopback ports of its
+# own: install-windows.ps1 sets TESRIA_LOOPBACK_HTTP_PORT and
+# TESRIA_LOOPBACK_HTTPS_PORT in .env, and its forwarder listens on that
+# Tesria's TESRIA_HTTP_PORT and TESRIA_HTTPS_PORT.
 services:
   caddy:
     ports: !override
-      - "127.0.0.1:18080:80"
-      - "127.0.0.1:18443:443"
+      - "127.0.0.1:${TESRIA_LOOPBACK_HTTP_PORT:-18080}:80"
+      - "127.0.0.1:${TESRIA_LOOPBACK_HTTPS_PORT:-18443}:443"
     environment:
       PROXY_PROTOCOL_FROM: ${PROXY_PROTOCOL_FROM:-${TESRIA_SUBNET:-10.203.0.0/24} 192.168.65.0/24}
