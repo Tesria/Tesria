@@ -8,6 +8,7 @@ import {
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import Highlight from '@tiptap/extension-highlight'
+import BaseLink from '@tiptap/extension-link'
 import TextAlign from '@tiptap/extension-text-align'
 import Subscript from '@tiptap/extension-subscript'
 import Superscript from '@tiptap/extension-superscript'
@@ -203,6 +204,13 @@ const cellBackgroundAttribute = {
   },
 }
 
+// TipTap makes a link inclusive whenever autolink is on (its default), so
+// the mark grows over whatever is typed at its end: "LINKTEXT and more
+// words" all became the link (t4-005). A link ends where it was made, as in
+// every other editor; autolink still links an address when a space follows
+// it. Same mark name and attributes, so stored documents are unaffected.
+const Link = BaseLink.extend({ inclusive: false })
+
 // Same idiom as the extended Table above: TableKit can't take a customized
 // node in place of its built-in one, so its `tableCell`/`tableHeader` are
 // disabled and these extended equivalents registered alongside. Identical node
@@ -234,12 +242,13 @@ export function getSharedExtensions({ collaborative = false, editable = true }: 
     StarterKit.configure({
       codeBlock: false,
       document: false,
-      link: { openOnClick: !editable },
+      link: false,
       ...(collaborative ? { undoRedo: false } : {}),
     }),
     // Layout sections live only at the top level (layoutExtension.ts): they
     // are not `block`s, so this is the one place the schema admits them.
     Document.extend({ content: '(block | layoutSection)+' }),
+    Link.configure({ openOnClick: !editable }),
     CodeBlock,
     TableKit.configure({ table: false, tableCell: false, tableHeader: false }),
     Table,
