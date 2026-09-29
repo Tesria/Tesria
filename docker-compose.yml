@@ -13,6 +13,13 @@
 #   backup      scheduled logical backups (pg_dump) + uploads archives
 #   pgbackrest  continuous physical backups + point-in-time recovery
 
+# The Compose project, and so the prefix of every volume (tesria_pgdata and
+# the rest). Kept for every install made so far. A second Tesria on the same
+# computer needs its own: set COMPOSE_PROJECT_NAME (which wins over this),
+# TESRIA_SUBNET and the two ports in that folder's .env before its first
+# start (.env.example, "A second Tesria on this computer"). Without them it
+# would be this same project, so init refuses to start a project from a
+# folder other than the one it was installed from (deploy/init/init.sh).
 name: tesria
 
 # Each secret's volume, mounted read-only where a service reads it. Which
@@ -57,6 +64,8 @@ services:
     restart: "no"
     entrypoint: ["/bin/bash", "/opt/tesria/init.sh"]
     environment:
+      # Which install this is, to tell its own folder from another's.
+      TESRIA_PROJECT: ${COMPOSE_PROJECT_NAME:-tesria}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
       APP_DB_PASSWORD: ${APP_DB_PASSWORD:-}
       BACKUP_ENCRYPTION_KEY: ${BACKUP_ENCRYPTION_KEY:-}
@@ -271,8 +280,9 @@ services:
       # believes (real addresses for tailnet visitors, 2026-09-24).
       TESRIA_TAILSCALE_ADDRESS: ${TESRIA_TAILSCALE_ADDRESS:-10.203.0.250}
     ports:
-      - "80:80"
-      - "443:443"
+      # 80 and 443 unless set; a second Tesria on this computer needs others.
+      - "${TESRIA_HTTP_PORT:-80}:80"
+      - "${TESRIA_HTTPS_PORT:-443}:443"
     volumes:
       # deploy/Caddyfile is the LAN/dev configuration (internal CA, catch-all
       # for LAN IPs). Set CADDYFILE=deploy/Caddyfile.public in .env when the

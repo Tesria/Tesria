@@ -231,9 +231,15 @@ Copy the whole `backups` volume off the box periodically (or enable offsite,
 below):
 
 ```bash
-docker run --rm -v tesria_backups:/b -v "$PWD":/out alpine \
-  tar czf /out/tesria-backups.tgz -C /b .
+docker compose exec backup tar czf /tmp/tesria-backups.tgz -C /backups .
+docker compose cp backup:/tmp/tesria-backups.tgz tesria-backups.tgz
+docker compose exec backup rm /tmp/tesria-backups.tgz
 ```
+
+Through Compose rather than `docker run -v tesria_backups:...`: the volume's
+prefix is the project name, which is not `tesria` for a second install
+(`COMPOSE_PROJECT_NAME`), and `"$PWD":` needs `"${PWD}:"` in PowerShell.
+These commands are the same in every shell.
 
 ---
 

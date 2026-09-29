@@ -55,6 +55,102 @@ if [ "${1:-}" = "show-backup-key" ]; then
   exit 0
 fi
 
+# --- Which folder this install belongs to (0.8.2, WIN-001) -------------------
+#
+# docker-compose.yml names its project `tesria`, and installs made before
+# 0.8.2 keep that name so they keep their volumes (tesria_pgdata and the
+# rest). Its cost: a second copy of Tesria unzipped into another folder is
+# the same Compose project, and without this check it silently took over the
+# first one's containers and data, so that a `docker compose down -v` in the
+# test folder deleted the real wiki.
+#
+# So the install remembers its folder. The first start writes one line,
+# "<project> <id>", to .tesria-install in the folder, and the same id to the
+# project's status volume. A later start from a folder whose line is missing,
+# or names another project or id, is refused before any secret or data is
+# written.
+# `use-this-folder` makes the folder it runs in the install's own, for an
+# owner who moved or re-downloaded Tesria on purpose; `check-folder` only
+# reports, for the uninstall steps.
+PROJECT="${TESRIA_PROJECT:-tesria}"
+MARKER="$INSTALL_ROOT/.tesria-install"
+STORED_ID="$STATUS_DIR/install-id"
+
+folder_id() {
+  [ -r "$MARKER" ] || return 0
+  # One line, "<project> <id>"; a Windows editor may have added a \r.
+  tr -d '\r' <"$MARKER" | awk -v p="$PROJECT" '$1 == p { print $2; exit }'
+}
+stored_id() { [ -r "$STORED_ID" ] && tr -d ' \r\n' <"$STORED_ID"; }
+
+claim_folder() {
+  mkdir -p "$STATUS_DIR"
+  chmod 0755 "$STATUS_DIR"
+  printf '%s\n' "$1" >"$STATUS_DIR/.install-id.tmp"
+  chmod 0444 "$STATUS_DIR/.install-id.tmp"
+  mv -f "$STATUS_DIR/.install-id.tmp" "$STORED_ID"
+  printf '%s %s\n' "$PROJECT" "$1" >"$MARKER"
+  chmod 0644 "$MARKER"
+  chown "$(stat -c '%u:%g' "$INSTALL_ROOT")" "$MARKER" 2>/dev/null || true
+}
+
+refuse_folder() {
+  cat >&2 <<EOF
+[init] ERROR: this folder is not the one Tesria "$PROJECT" was installed from.
+[init]
+[init] Docker Compose already has a Tesria named "$PROJECT", started from another
+[init] folder. Its data has not been touched, but it may now be stopped: to
+[init] bring it back, run docker compose up -d in its own folder.
+[init]
+[init] Do not run docker compose down -v here: it would delete that wiki.
+[init]
+[init] To run a second, separate Tesria from this folder, give it its own name,
+[init] network and ports in this folder's .env, then run docker compose up -d:
+[init]     COMPOSE_PROJECT_NAME=tesria2
+[init]     TESRIA_SUBNET=10.204.0.0/24
+[init]     TESRIA_HTTP_PORT=8080
+[init]     TESRIA_HTTPS_PORT=8443
+[init]
+[init] If this folder is meant to replace the old one (you moved Tesria, or
+[init] unzipped it again somewhere else), run this here, then docker compose up -d:
+[init]     docker compose run --rm init use-this-folder
+[init] See the docs page Uninstalling and moving.
+EOF
+  exit 1
+}
+
+if [ -d "$INSTALL_ROOT" ]; then
+  stored="$(stored_id || true)"
+  here="$(folder_id || true)"
+  case "${1:-}" in
+    use-this-folder)
+      # A new id, so the folder it replaces no longer starts this install.
+      claim_folder "$(head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+      log "this folder now runs the Tesria named \"$PROJECT\"; start it with: docker compose up -d"
+      exit 0
+      ;;
+    check-folder)
+      if [ -z "$stored" ]; then
+        echo "Tesria \"$PROJECT\" has not started since 0.8.2, so it cannot tell which folder it belongs to. Run docker compose ls instead: its CONFIG FILES column names the folder it was last started from." >&2
+        exit 2
+      elif [ "$here" = "$stored" ]; then
+        echo "This folder is the one Tesria \"$PROJECT\" was installed from."
+        exit 0
+      fi
+      echo "This folder is NOT the one Tesria \"$PROJECT\" was installed from. Do not run docker compose down -v here: it would delete that wiki." >&2
+      exit 1
+      ;;
+  esac
+  if [ -z "$stored" ]; then
+    # A new install, or the first start of one made before 0.8.2: this
+    # folder is where it lives from now on.
+    claim_folder "$(head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+    log "remembered this folder as Tesria \"$PROJECT\"'s own"
+  elif [ "$here" != "$stored" ]; then
+    refuse_folder
+  fi
+fi
+
 # The database exists once initdb has run. Checked for the version file two
 # levels down, where postgres:18 puts its data directory (18/docker).
 db_exists() { [ -n "$(find "$PGDATA_ROOT" -maxdepth 3 -name PG_VERSION -print -quit 2>/dev/null)" ]; }

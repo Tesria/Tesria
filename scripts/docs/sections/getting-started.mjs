@@ -227,6 +227,7 @@ export async function build({
     p('On Windows, in PowerShell:'),
     codeBlock('powershell', 'Invoke-WebRequest https://github.com/Tesria/Tesria/releases/latest/download/tesria-deploy.zip -OutFile tesria-deploy.zip\nExpand-Archive tesria-deploy.zip -DestinationPath tesria; cd tesria'),
     p('That makes a folder called ', c('tesria'), ' with Tesria’s settings and scripts, about 100 KB, and moves into it. Tesria itself comes as ready-made images, downloaded in step 2. Run the rest of the commands on this page from that folder.'),
+    panel('note', p(b('Already have a Tesria on this computer?'), ' A second one needs its own name, network and ports in its ', c('.env'), ' before it first starts, or it is the first Tesria again. See ', pageLink('Installing with Docker Compose'), ', under ', b('A second Tesria on the same computer'), '.')),
 
     step(2, 'Start Tesria'),
     panel('note', p(b('Have a web address pointed at this computer,'), ' such as ', c('wiki.example.com'), '? Tell Tesria before the first start, so it can get a certificate for it. Otherwise skip this. On a Mac or Linux:'),
