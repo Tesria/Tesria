@@ -42,12 +42,12 @@ TABLES="$(psql --dbname="${VERIFY_DB}" -tAc \
 # before Tesria had set up its database restores perfectly and holds nothing,
 # and one with no accounts is refused by restore.sh. Either used to pass.
 if [ "${TABLES:-0}" -lt 1 ]; then
-  log "ERROR: the dump has no tables in it: it was taken before Tesria had set up its database, so it cannot bring the wiki back"
+  echo "ERROR: the dump has no tables in it: it was taken before Tesria had set up its database, so it cannot bring the wiki back"
   exit 1
 fi
 ACCOUNTS="$(psql --dbname="${VERIFY_DB}" -tAc 'SELECT count(*) FROM "Users";' 2>/dev/null || echo 0)"
 if [ "${ACCOUNTS:-0}" -lt 1 ]; then
-  log "ERROR: the dump has no accounts in it: it was taken before the setup wizard was finished, and a restore refuses it"
+  echo "ERROR: the dump has no accounts in it: it was taken before the setup wizard was finished, and a restore refuses it"
   exit 1
 fi
 
