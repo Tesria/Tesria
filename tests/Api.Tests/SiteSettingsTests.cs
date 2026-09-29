@@ -45,14 +45,14 @@ public class SiteSettingsTests
     [Fact]
     public async Task Settings_have_working_defaults_before_anyone_saves_them()
     {
-        using var factory = new TestAppFactory();
+        using var factory = new TestAppFactory { OpenRegistration = false };
         var admin = await AdminClientAsync(factory);
 
         var settings = await admin.GetFromJsonAsync<SettingsDto>("/api/admin/settings");
 
         Assert.Equal("Tesria", settings!.InstanceName);
-        // Preserves the behavior that existed before the setting did.
-        Assert.True(settings.AllowPublicRegistration);
+        // Closed until the owner answers Who Can Join (T1-020).
+        Assert.False(settings.AllowPublicRegistration);
         // Exposing content to the internet must be a deliberate act.
         Assert.False(settings.AllowPublicSpaces);
         Assert.False(settings.EmailEnabled);

@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 
 namespace Tesria.Api.Tests;
 
@@ -54,6 +55,27 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
     {
         _postgres = postgres;
         _settings = settings;
+    }
+
+    /// <summary>
+    /// Whether the instance takes open registration, as though its owner had
+    /// chosen Open in the setup wizard. A new instance starts closed
+    /// (T1-020), but most tests register several people and are not about
+    /// who may join, so it is on unless a test sets it to false to see what
+    /// a new instance does.
+    /// </summary>
+    public bool OpenRegistration { get; init; } = true;
+
+    protected override IHost CreateHost(IHostBuilder builder)
+    {
+        var host = base.CreateHost(builder);
+        if (OpenRegistration)
+        {
+            using var scope = host.Services.CreateScope();
+            scope.ServiceProvider.GetRequiredService<Tesria.Api.Infrastructure.Settings.ISiteSettingsService>()
+                .UpdateAsync(s => s.AllowPublicRegistration = true, actorId: null).GetAwaiter().GetResult();
+        }
+        return host;
     }
 
     /// <summary>

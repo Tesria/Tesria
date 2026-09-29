@@ -855,7 +855,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'Access'),
     ul(
-      li(p(b('Allow Public Registration:'), ' on for a new instance, so anyone who can reach it can make an account. Off, new people need an ', pageLink('Invites', 'invite'), '. The very first account on an empty instance can always register, so this cannot lock you out.')),
+      li(p(b('Allow Public Registration:'), ' on means anyone who can reach Tesria can make an account. Off, new people need an ', pageLink('Invites', 'invite'), '. It is off for a new instance until you answer ', b('Who Can Join'), ' in the setup wizard, so nobody can sign up while you are still setting up. The very first account on an empty instance can always register, so this cannot lock you out.')),
       li(p(b('Allow Public Spaces:'), ' off for a new instance. On, you can publish spaces from ', pageLink('Spaces (administration)', 'Spaces'), ' for anyone to read. Off again, every published space is hidden at once and keeps its setting. It asks for your password and alerts every administrator. Before turning it on for an instance on the internet, work through ', pageLink('Security hardening'), '.')),
     ),
     p('Both take effect the moment you click them, and both are also on the Security tab.'),
