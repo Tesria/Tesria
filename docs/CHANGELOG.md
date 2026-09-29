@@ -18,6 +18,9 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   used options are under More Options. Bars and columns are now drawn as SVG
   like the line, at their real width, so text stays readable on a phone; a
   table column with no numbers is left out rather than drawn as zeros.
+  Under More Options, **Colors** gives each series (each slice, on a pie or
+  a donut) a color of its own, with Reset back to the palette; a color
+  belongs to the series' name, so it follows the series when rows move.
 - **Exported sites move like the app in Glass**: the sidebar hides into a
   button and comes back as it does in Tesria, and the appearance menu opens
   out of its button. Reduce Motion now stills both (before, it had nothing to

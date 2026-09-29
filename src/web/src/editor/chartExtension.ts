@@ -166,6 +166,9 @@ export const Chart = Node.create({
       /** The middle of a donut: the total (as before), the largest slice's share, or custom text. */
       donutCenter: choice('donutCenter', 'data-donut-center', DONUT_CENTERS, 'total'),
       centerText: words('centerText', 'data-center-text'),
+      // A color per series or slice, chosen under More Options (the owner,
+      // 2026-09-29): JSON of name to #rrggbb. Empty means the palette.
+      seriesColors: words('seriesColors', 'data-series-colors'),
     }
   },
 

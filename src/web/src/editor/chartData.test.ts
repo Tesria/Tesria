@@ -279,3 +279,26 @@ describe('describeChart', () => {
     expect(describeChart('pie', '', data, PLAIN, { slices, locale: L })).toBe('Pie chart, total 4: A 3 (75%), B 1 (25%).')
   })
 })
+
+describe('series colors', () => {
+  it('reads only names to six-digit hex colors', async () => {
+    const { parseSeriesColors } = await import('./chartData')
+    expect(parseSeriesColors('{"Free":"#FF0000","Team":"red","X":"#12345"}')).toEqual({ Free: '#ff0000' })
+    expect(parseSeriesColors('not json')).toEqual({})
+    expect(parseSeriesColors('')).toEqual({})
+    expect(parseSeriesColors('["#ff0000"]')).toEqual({})
+  })
+
+  it('stores nothing when no color is chosen, and sorted keys otherwise', async () => {
+    const { serializeSeriesColors } = await import('./chartData')
+    expect(serializeSeriesColors({})).toBe('')
+    expect(serializeSeriesColors({ b: '#00FF00', a: '#0000ff' })).toBe('{"a":"#0000ff","b":"#00ff00"}')
+  })
+
+  it('uses the chosen color, else the palette by place', async () => {
+    const { seriesColor } = await import('./chartData')
+    const palette = ['#111111', '#222222']
+    expect(seriesColor({ Team: '#abcdef' }, 'Team', 0, palette)).toBe('#abcdef')
+    expect(seriesColor({}, 'Free', 3, palette)).toBe('#222222')
+  })
+})

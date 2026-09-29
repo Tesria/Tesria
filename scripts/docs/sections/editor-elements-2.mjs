@@ -343,6 +343,7 @@ export async function build(helpers) {
       li(p(b('Legend'), ' puts the key ', b('Below'), ' the chart, ', b('Beside'), ' it (below again on a narrow screen such as a phone), or ', b('Hidden'), '.')),
       li(p(b('Size'), ' is ', b('Small'), ', ', b('Medium'), ' (the usual size) or ', b('Large'), '. A chart always shrinks to fit a narrow screen.')),
       li(p(b('Number Format'), ' decides how numbers are written on the chart: in its axis, its value labels, its legend and the middle of a donut. ', b('Auto'), ' follows the table: when most of its numbers end in ', c('%'), ' the chart writes percentages, and when most carry a currency symbol such as ', c('$'), ', ', c('£'), ' or ', c('€'), ' it writes money with that symbol. ', b('Plain'), ', ', b('Percent'), ' and ', b('Currency'), ' choose for it; currency uses the symbol in the table, or $ when there is none.')),
+      li(p(b('Colors'), ' lists every series (every slice, on a pie or a donut) with its color. Choose one to give that series a color of your own; ', b('Reset'), ' puts back the usual one. A color belongs to the series’ name, so it stays with the series when you move its row, and it is used in both Minimal and Glass.')),
       li(p(b('Swap Rows and Columns'), ' charts the table the other way round: each row becomes a series (one color), and the columns are named along the bottom edge. For example, the sign-ups table above, swapped, sets July against December for each plan.')),
     ),
 

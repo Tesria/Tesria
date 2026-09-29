@@ -3001,6 +3001,23 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .chart__check { display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer; white-space: nowrap; color: var(--text); }
 .chart__check input { width: auto; margin: 0; padding: 0; flex: none; }
 .chart__hint { color: var(--muted); font-size: 0.8rem; }
+/* A color per series (or slice): its own row across the whole panel. */
+.chart__colors { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.9rem;
+  padding-top: 0.45rem; border-top: 1px solid var(--border); }
+.chart__colors-title { font-weight: 600; color: var(--text); }
+.chart__color { display: inline-flex; align-items: center; gap: 0.35rem; }
+.chart__color input[type="color"] {
+  width: 1.6rem; height: 1.6rem; flex: none; margin: 0; padding: 0; cursor: pointer;
+  border: 1px solid var(--border); border-radius: 50%; background: none; overflow: hidden;
+}
+.chart__color input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.chart__color input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
+.chart__color input[type="color"]::-moz-color-swatch { border: none; border-radius: 50%; }
+.chart__color label { max-width: 12rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chart__color-reset {
+  font: inherit; font-size: 0.78rem; padding: 0.05rem 0.4rem; cursor: pointer; color: var(--primary);
+  background: none; border: 1px solid var(--border); border-radius: 999px;
+}
 
 /* Admin → Backups (dev-plan 9.1). The status dot uses the danger color for
    failure only; "no backup yet" is idle grey, not red. */

@@ -9,7 +9,7 @@ import {
 } from './chartExtension'
 import {
   DONUT_CENTERS, DONUT_CENTER_LABELS, NUMBER_FORMATS, NUMBER_FORMAT_LABELS, detectFormat, isDonutCenter,
-  isNumberFormatChoice, resolveFormat, tableToChart,
+  isNumberFormatChoice, parseSeriesColors, resolveFormat, serializeSeriesColors, seriesColor, tableToChart, COLORS,
 } from './chartData'
 import { ChartPlot, type PlotOptions } from './ChartPlot'
 
@@ -84,6 +84,7 @@ export function ChartView({ node, editor, selected, updateAttributes }: ReactNod
     largestFirst: Boolean(attrs.largestFirst),
     donutCenter: isDonutCenter(attrs.donutCenter) ? attrs.donutCenter : 'total',
     centerText: String(attrs.centerText ?? ''),
+    colors: parseSeriesColors(attrs.seriesColors),
   }
 
   return (
@@ -130,7 +131,7 @@ export function ChartView({ node, editor, selected, updateAttributes }: ReactNod
           {moreOpen && (
             <div className="chart__options" id={moreId} role="group" aria-label="More Chart Options">
               <MoreOptions type={type} options={options} numberFormat={numberFormat} transpose={transpose}
-                seriesNames={data?.series.map((s) => s.name) ?? []} update={updateAttributes} />
+                seriesNames={data?.series.map((s) => s.name) ?? []} categories={data?.categories ?? []} update={updateAttributes} />
             </div>
           )}
         </>
@@ -153,12 +154,13 @@ export function ChartView({ node, editor, selected, updateAttributes }: ReactNod
  * tidy line. Only the options that apply to the chart's type are shown;
  * the others keep their values, so switching type and back loses nothing.
  */
-function MoreOptions({ type, options, numberFormat, transpose, seriesNames, update }: {
+function MoreOptions({ type, options, numberFormat, transpose, seriesNames, categories, update }: {
   type: ChartType
   options: PlotOptions
   numberFormat: string
   transpose: boolean
   seriesNames: string[]
+  categories: string[]
   update: (attrs: Record<string, unknown>) => void
 }) {
   const round = type === 'pie' || type === 'donut'
@@ -259,6 +261,12 @@ function MoreOptions({ type, options, numberFormat, transpose, seriesNames, upda
         <Check label="Stacked" checked={options.stacked} onChange={(v) => update({ stacked: v })} />
       )}
       {(type === 'bar' || type === 'column') && <span className="chart__hint">Bars always start at zero.</span>}
+
+      {/* A color per series, or per slice on a pie or a donut (the owner,
+          2026-09-29). Keyed by name, so a color stays with its series when
+          rows move; Reset goes back to the palette. */}
+      <SeriesColors names={round ? categories : seriesNames} chosen={options.colors}
+        onChange={(colors) => update({ seriesColors: serializeSeriesColors(colors) })} />
     </>
   )
 }
@@ -279,5 +287,45 @@ function Check({ label, checked, onChange }: { label: string; checked: boolean; 
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
       <span>{label}</span>
     </label>
+  )
+}
+
+function SeriesColors({ names, chosen, onChange }: {
+  names: string[]
+  chosen: Record<string, string>
+  onChange: (colors: Record<string, string>) => void
+}) {
+  if (names.length === 0) return null
+  return (
+    <div className="chart__colors" role="group" aria-label="Colors">
+      <span className="chart__colors-title">Colors</span>
+      {names.map((name, i) => (
+        <SeriesColor key={`${i}-${name}`} name={name} value={seriesColor(chosen, name, i, COLORS)} custom={name in chosen}
+          onChange={(color) => onChange({ ...chosen, [name]: color })}
+          onReset={() => { const next = { ...chosen }; delete next[name]; onChange(next) }} />
+      ))}
+    </div>
+  )
+}
+
+function SeriesColor({ name, value, custom, onChange, onReset }: {
+  name: string
+  value: string
+  custom: boolean
+  onChange: (color: string) => void
+  onReset: () => void
+}) {
+  const id = useId()
+  const label = name || 'Unnamed'
+  return (
+    <span className="chart__color">
+      <input id={id} type="color" value={value} onChange={(e) => onChange(e.target.value)} aria-label={`Color for ${label}`} />
+      <label htmlFor={id}>{label}</label>
+      {custom && (
+        <button type="button" className="chart__color-reset" onClick={onReset} aria-label={`Reset the color for ${label}`} title="Back to the palette color">
+          Reset
+        </button>
+      )}
+    </span>
   )
 }

@@ -2,8 +2,7 @@ import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type Reac
 import { DonutChart, PieChart } from '../components/PieChart'
 import {
   categoryLabelLayout, describeChart, donutCenter, formatValue, legendValue, linePath, niceScale, pieSlices,
-  stackSeries, stepDecimals, truncate, valueRange, type ChartData, type NumberFormat, type Point,
-} from './chartData'
+  stackSeries, stepDecimals, truncate, valueRange, type ChartData, type NumberFormat, type Point, COLORS, GLASS_SLICE_COLORS, seriesColor } from './chartData'
 import type { ChartSize, ChartType, LegendPosition } from './chartExtension'
 
 /**
@@ -19,11 +18,6 @@ import type { ChartSize, ChartType, LegendPosition } from './chartExtension'
  * turned, or thinned) and the margins are worked out for it.
  */
 
-// The chart palette: readable on both themes, and distinguishable without
-// relying on hue alone (the legend names every series).
-const COLORS = ['#0c66e4', '#00875a', '#a54800', '#5e4db2', '#ae4787', '#206a83', '#946f00', '#bf2600']
-/** A pie's and a donut's colors in the glass style: brighter and more saturated (the owner, 2026-09-28). */
-const GLASS_SLICE_COLORS = ['#1f7bff', '#00b86b', '#ff7a1a', '#8b5cf6', '#ec4899', '#06b6d4', '#f5b800', '#ef4444']
 
 export type PlotOptions = {
   legend: LegendPosition
@@ -42,6 +36,8 @@ export type PlotOptions = {
   largestFirst: boolean
   donutCenter: string
   centerText: string
+  /** Chosen colors by series (or slice) name; the palette fills the rest. */
+  colors: Record<string, string>
 }
 
 /**
@@ -67,8 +63,9 @@ export function ChartPlot({ data, type, options, format, title }: {
   format: NumberFormat
   title: string
 }) {
-  const colorOf = (i: number) => COLORS[i % COLORS.length]
-  const glassOf = (i: number) => GLASS_SLICE_COLORS[i % GLASS_SLICE_COLORS.length]
+  // A chosen color is used in both styles; Glass derives its shading from it.
+  const colorOf = (i: number, name: string) => seriesColor(options.colors, name, i, COLORS)
+  const glassOf = (i: number, name: string) => seriesColor(options.colors, name, i, GLASS_SLICE_COLORS)
   const size = SIZES[options.size] ?? SIZES.medium
 
   if (type === 'pie' || type === 'donut') {
@@ -76,13 +73,13 @@ export function ChartPlot({ data, type, options, format, title }: {
     // The drawing itself lives in components/PieChart (dev-plan 9.3), so the
     // editor and the backups page share one pie rather than two that drift.
     const slices = pieSlices(data, options.dataColumn, options.largestFirst)
-    const drawn = slices.map((s) => ({ label: s.label, value: s.value, color: colorOf(s.index), glassColor: glassOf(s.index) }))
+    const drawn = slices.map((s) => ({ label: s.label, value: s.value, color: colorOf(s.index, s.label), glassColor: glassOf(s.index, s.label) }))
     const total = slices.reduce((sum, s) => sum + s.value, 0)
     const label = describeChart(type, title, data, format, { slices })
     const center = donutCenter(options.donutCenter, slices, format, options.centerText)
     return (
       <Frame legend={options.legend} items={slices.map((s) => ({
-        label: s.label, color: colorOf(s.index), glassColor: glassOf(s.index),
+        label: s.label, color: colorOf(s.index, s.label), glassColor: glassOf(s.index, s.label),
         value: options.legendValues ? legendValue(s.value, total, format) : undefined,
       }))}>
         <div className="chart__pie" style={{ maxWidth: size.pie }}>
@@ -96,7 +93,7 @@ export function ChartPlot({ data, type, options, format, title }: {
   }
 
   return (
-    <Frame legend={options.legend} items={data.series.map((s, i) => ({ label: s.name, color: colorOf(i), line: type === 'line' }))}>
+    <Frame legend={options.legend} items={data.series.map((s, i) => ({ label: s.name, color: colorOf(i, s.name), line: type === 'line' }))}>
       <Measured maxWidth={size.maxWidth}>
         {(width) => type === 'bar'
           ? <BarChart data={data} options={options} format={format} width={width} thickness={size.bar} label={describeChart(type, title, data, format)} />
@@ -247,7 +244,7 @@ function ColumnOrLine({ data, type, options, format, width, height, label }: {
   const x0 = left, y0 = top, x1 = left + plotW, y1 = top + plotH
   const y = (v: number) => y1 - ((v - scale.min) / (scale.max - scale.min || 1)) * plotH
   const zero = y(Math.min(Math.max(0, scale.min), scale.max))
-  const color = (j: number) => COLORS[j % COLORS.length]
+  const color = (j: number) => seriesColor(options.colors, data.series[j]?.name ?? '', j, COLORS)
   const value = (v: number) => formatValue(v, format)
 
   const sheen = `chart-sheen-${uid}`
@@ -426,7 +423,7 @@ function BarChart({ data, options, format, width, thickness, label }: {
   const plotW = x1 - x0
   const x = (v: number) => x0 + ((v - scale.min) / (scale.max - scale.min || 1)) * plotW
   const zero = x(Math.min(Math.max(0, scale.min), scale.max))
-  const color = (j: number) => COLORS[j % COLORS.length]
+  const color = (j: number) => seriesColor(options.colors, data.series[j]?.name ?? '', j, COLORS)
   const sheen = `chart-sheen-${uid}`
 
   const segments = stacked ? stackSeries(data.series).segments : null

@@ -368,3 +368,40 @@ export function describeChart(
   const series = data.series.length === 1 ? `1 series, ${names}` : `${data.series.length} series, ${names}`
   return `${head}: ${series}; ${span}; values from ${formatValue(lo, format, { locale })} to ${formatValue(hi, format, { locale })}.`
 }
+
+/**
+ * The colors chosen per series (or per slice, on a pie or a donut), keyed by
+ * the series' name so a color stays with its series when rows move. Stored
+ * as JSON; anything that is not a name to a six-digit hex color is ignored.
+ */
+export function parseSeriesColors(raw: unknown): Record<string, string> {
+  if (typeof raw !== 'string' || !raw) return {}
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
+    const out: Record<string, string> = {}
+    for (const [name, color] of Object.entries(parsed as Record<string, unknown>)) {
+      if (typeof color === 'string' && /^#[0-9a-f]{6}$/i.test(color)) out[name] = color.toLowerCase()
+    }
+    return out
+  } catch {
+    return {}
+  }
+}
+
+/** The stored form: sorted keys, and nothing at all when no color is chosen. */
+export function serializeSeriesColors(colors: Record<string, string>): string {
+  const keys = Object.keys(colors).filter((k) => /^#[0-9a-f]{6}$/i.test(colors[k])).sort()
+  return keys.length ? JSON.stringify(Object.fromEntries(keys.map((k) => [k, colors[k].toLowerCase()]))) : ''
+}
+
+/** The color a series is drawn in: the chosen one, else the palette's for its place. */
+export function seriesColor(chosen: Record<string, string>, name: string, index: number, palette: readonly string[]): string {
+  return chosen[name] ?? palette[index % palette.length]
+}
+
+// The chart palette: readable on both themes, and distinguishable without
+// relying on hue alone (the legend names every series).
+export const COLORS = ['#0c66e4', '#00875a', '#a54800', '#5e4db2', '#ae4787', '#206a83', '#946f00', '#bf2600']
+/** A pie's and a donut's colors in the glass style: brighter and more saturated (the owner, 2026-09-28). */
+export const GLASS_SLICE_COLORS = ['#1f7bff', '#00b86b', '#ff7a1a', '#8b5cf6', '#ec4899', '#06b6d4', '#f5b800', '#ef4444']
