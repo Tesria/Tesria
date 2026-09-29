@@ -175,4 +175,20 @@ public class TrustTests
         Assert.Contains("Not checked, as no -Fingerprint was given", ps1);
         Assert.True(ps1.IndexOf("elseif ($actual -ne $expected)", StringComparison.Ordinal) < ps1.IndexOf("Import-Certificate -FilePath", StringComparison.Ordinal));
     }
+
+    [Fact]
+    public void Both_scripts_refuse_a_given_fingerprint_with_no_hex_digits()
+    {
+        // T1-003: a fingerprint that was given but holds no hexadecimal
+        // digits (an empty variable, "zz") is refused, not taken as "none".
+        // Whether one was given is tracked apart from its value.
+        var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../deploy/scripts"));
+        var sh = File.ReadAllText(Path.Combine(root, "trust-ca.sh"));
+        Assert.Contains("if [ \"$FINGERPRINT_GIVEN\" -eq 1 ] && [ \"${#EXPECTED}\" -ne 64 ]; then", sh);
+        Assert.Contains("if [ \"$FINGERPRINT_GIVEN\" -eq 0 ]; then", sh);
+        Assert.DoesNotContain("if [ -z \"$EXPECTED\" ]; then", sh);
+        var ps1 = File.ReadAllText(Path.Combine(root, "trust-ca.ps1")).Replace("\r\n", "\n");
+        Assert.Contains("$fingerprintGiven = $PSBoundParameters.ContainsKey('Fingerprint')", ps1);
+        Assert.Contains("if ($fingerprintGiven -and $expected.Length -ne 64) {", ps1);
+    }
 }
