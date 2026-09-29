@@ -103,6 +103,13 @@ builder.Services.AddDbContext<AppDbContext>((sp, options) => options
     .UseNpgsql(runtimeConnectionString)
     .AddInterceptors(sp.GetRequiredService<Tesria.Api.Infrastructure.Collab.CollabRevocationInterceptor>()));
 
+// A background job that fails must never stop the wiki. .NET's default,
+// StopHost, ended the whole process when one webhook receiver was slow
+// (0.8.1 QA, T5-027). Each service's loop catches its own failures; this is
+// the backstop, so a bug in one of them costs that job, not the site.
+builder.Services.Configure<HostOptions>(o =>
+    o.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore);
+
 // Auth: cookie-based sessions for the same-origin SPA. Argon2id hashing.
 builder.Services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();
 builder.Services.AddHttpContextAccessor();

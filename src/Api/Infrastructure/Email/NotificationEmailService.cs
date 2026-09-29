@@ -40,7 +40,7 @@ public sealed class NotificationEmailService(
         while (!stoppingToken.IsCancellationRequested)
         {
             try { await RunOnceAsync(stoppingToken); }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
             {
                 logger.LogError(ex, "Notification email pass failed");
             }

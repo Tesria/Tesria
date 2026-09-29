@@ -71,6 +71,12 @@ public sealed class LocalAuthority(
                 // there is nothing to fetch.
                 logger.LogDebug("Could not read the local certificate authority yet: {Error}", ex.Message);
             }
+            catch (Exception ex)
+            {
+                // Anything else is unexpected, but still no reason to stop
+                // checking (or to stop the app): try again later.
+                logger.LogWarning(ex, "Reading the local certificate authority failed");
+            }
             try { await Task.Delay(wait, stoppingToken); } catch (OperationCanceledException) { return; }
         }
     }

@@ -22,7 +22,7 @@ public sealed class TokenExpiryNotifier(IServiceScopeFactory scopes, ILogger<Tok
         while (!stoppingToken.IsCancellationRequested)
         {
             try { await RunOnceAsync(stoppingToken); }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
             {
                 logger.LogWarning(ex, "Checking for API tokens about to expire failed");
             }
@@ -33,7 +33,7 @@ public sealed class TokenExpiryNotifier(IServiceScopeFactory scopes, ILogger<Tok
                 using var scope = scopes.CreateScope();
                 await TokenUsage.PruneAsync(scope.ServiceProvider.GetRequiredService<AppDbContext>(), stoppingToken);
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
             {
                 logger.LogWarning(ex, "Removing old API token use failed");
             }

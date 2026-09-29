@@ -305,7 +305,7 @@ public sealed class AuditChainMonitor(IServiceScopeFactory scopes, ILogger<Audit
                 report.BrokenAtSequence, report.Problem);
             if (OnBroken is { } onBroken) await onBroken(scope.ServiceProvider, report);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception ex) when (!ct.IsCancellationRequested)
         {
             logger.LogError(ex, "Audit chain verification failed to run");
         }

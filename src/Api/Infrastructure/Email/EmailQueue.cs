@@ -40,7 +40,7 @@ public sealed class EmailQueue(IServiceScopeFactory scopes, ILogger<EmailQueue> 
                 using var scope = scopes.CreateScope();
                 await scope.ServiceProvider.GetRequiredService<IEmailSender>().SendAsync(message, stoppingToken);
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
             {
                 // The sender reports its own failures; this is anything else.
                 logger.LogWarning(ex, "Email to {To} could not be sent", message.To);

@@ -202,7 +202,7 @@ public sealed class BackupMonitor(IServiceScopeFactory scopes, ILogger<BackupMon
                 logger.LogWarning("Backup monitor raised {Count} alert(s)", raised);
             }
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception ex) when (!ct.IsCancellationRequested)
         {
             logger.LogError(ex, "Backup monitor failed to run");
         }
