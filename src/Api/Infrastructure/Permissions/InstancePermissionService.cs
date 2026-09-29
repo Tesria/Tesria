@@ -26,8 +26,8 @@ public interface IInstancePermissions
 /// are read on nearly every request and change rarely, and every write
 /// invalidates, so the TTL only bounds staleness across replicas.
 ///
-/// The three reserved keys are added for an owner rather than stored, so no
-/// configuration can take them away.
+/// The owner's rights are not read from a role at all: they are every right
+/// plus the three reserved keys, so no configuration can take them away.
 /// </summary>
 public sealed class InstancePermissionService(
     AppDbContext db, CurrentUser current, PermissionCache cache, Settings.ISiteSettingsService settings)
@@ -79,12 +79,13 @@ public sealed class InstancePermissionService(
         // but an API token or a race should not outlive the suspension.
         if (account is null || account.Status != UserStatus.Active) return new HashSet<string>();
 
-        var granted = await GrantsAsync(account.RoleId, account.Role, ct);
-        if (account.Role != UserRole.Owner) return granted;
+        // The owner can do everything, always (T7-021): every right in the
+        // catalog and the reserved three, whatever the Owner role's stored row
+        // says. The row used to be editable, and an owner who cleared a box
+        // lost the Users tab, backups or branding until they reset it.
+        if (account.Role == UserRole.Owner) return InstancePermissions.OwnerHolds;
 
-        var withReserved = new HashSet<string>(granted);
-        foreach (var reserved in InstancePermissions.Reserved) withReserved.Add(reserved.Key);
-        return withReserved;
+        return await GrantsAsync(account.RoleId, account.Role, ct);
     }
 
     public async Task<bool> AnonymousHasAsync(string key, CancellationToken ct = default) =>

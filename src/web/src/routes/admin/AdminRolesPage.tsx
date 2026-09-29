@@ -9,21 +9,7 @@ import {
 } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import { useConfirm } from '../../components/ConfirmDialog'
-
-/** Draft state: role id to the set of keys it would hold after Save. */
-type Draft = Record<string, Set<string>>
-
-function toDraft(roles: InstanceRole[]): Draft {
-  return Object.fromEntries(roles.map((r) => [r.id, new Set(r.permissions)]))
-}
-
-function changes(role: InstanceRole, draft: Set<string>): { added: string[]; removed: string[] } {
-  const held = new Set(role.permissions)
-  return {
-    added: [...draft].filter((k) => !held.has(k)).sort(),
-    removed: [...held].filter((k) => !draft.has(k)).sort(),
-  }
-}
+import { changes, type Draft, rebase, toDraft } from './roleDraft'
 
 function label(catalog: InstancePermissionDto[], key: string): string {
   return catalog.find((p) => p.key === key)?.label ?? key
@@ -143,12 +129,41 @@ export function AdminRolesPage({ inSetup = false }: { inSetup?: boolean } = {}) 
   }
 
   async function save() {
-    await run(
-      () => Promise.all(pending.map((c) => api.admin.roles.savePermissions(c.role.id, [...draft[c.role.id]]))),
-      'Roles saved.',
-      'Could not save the roles.',
-    )
-    setReviewing(false)
+    if (!matrix) return
+    const loaded = matrix.roles
+    setBusy(true)
+    setError(null)
+    setStatus(null)
+    try {
+      // Each save says what the grid showed, so one made from a stale grid
+      // is refused instead of undoing someone else's change (T7-024).
+      await Promise.all(pending.map((c) =>
+        api.admin.roles.savePermissions(c.role.id, [...draft[c.role.id]], c.role.permissions)))
+      setStatus('Roles saved.')
+      setReviewing(false)
+      load()
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'role_changed') {
+        // Show the roles as they are now with this person's changes carried
+        // over, and keep the review open: it now lists what saving would do.
+        try {
+          const fresh = await api.admin.roles.matrix()
+          setMatrix(fresh)
+          setDraft(rebase(loaded, draft, fresh.roles))
+          setError(`${err.message} The grid now shows their change, with yours on top. Review it and save again.`)
+        } catch {
+          setError(`${err.message} Reload the page to see it.`)
+        }
+      } else {
+        setError(err instanceof ApiError ? err.message : 'Could not save the roles.')
+        setReviewing(false)
+      }
+    } finally {
+      // Rights may have changed for the person doing this, even when only
+      // some of the roles saved.
+      await refresh()
+      setBusy(false)
+    }
   }
 
   if (!matrix) return <p className="muted">{error ?? 'Loading…'}</p>
@@ -242,7 +257,10 @@ export function AdminRolesPage({ inSetup = false }: { inSetup?: boolean } = {}) 
                     )}
                     {role.members} {role.members === 1 ? 'account' : 'accounts'}
                   </div>
-                  {!role.editable && <div className="muted small">Only the owner edits this role</div>}
+                  {/* The owner can do everything, always (T7-021): nobody edits that column. */}
+                  {role.tier === UserRole.Owner
+                    ? <div className="muted small">Holds every right, always</div>
+                    : !role.editable && <div className="muted small">Only the owner edits this role</div>}
                   {role.editable && !role.builtIn && (
                     renaming === role.id ? (
                       <form
