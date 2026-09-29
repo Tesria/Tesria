@@ -604,23 +604,23 @@
   border: 1px solid var(--panel-border);
   box-shadow: var(--panel-rim), var(--box-shadow);
 }
-:root[data-style="glass"] .chart:not([data-appearance="flat"]) .chart__bar, .chart[data-appearance="glass"] .chart__bar {
-  position: relative;
-  /* Each bar its own drop shadow, vertical or horizontal (the owner,
-     2026-09-28). Literal values: an export has no theme tokens for glass. */
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 2px 4px rgba(0, 0, 0, 0.28), 0 6px 14px -4px rgba(0, 0, 0, 0.38);
+/* Bars (SVG since the chart options, 2026-09-29; ChartPlot.tsx): the light
+   at the top of each bar, as before, and a drop shadow under them (the
+   owner, 2026-09-28). Literal values: an export has no theme tokens for glass. */
+:root[data-style="glass"] .chart:not([data-appearance="flat"]) .chart-bar-sheen, .chart[data-appearance="glass"] .chart-bar-sheen { display: inline; }
+:root[data-style="glass"] .chart:not([data-appearance="flat"]) .chart-bars, .chart[data-appearance="glass"] .chart-bars {
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.28)) drop-shadow(0 5px 6px rgba(0, 0, 0, 0.22));
 }
-:root[data-style="glass"] .chart:not([data-appearance="flat"]) .chart__bar::after, .chart[data-appearance="glass"] .chart__bar::after {
-  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0) 65%);
-}
-:root[data-style="glass"] .chart:not([data-appearance="flat"]) polyline, .chart[data-appearance="glass"] polyline { filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.45)) drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3)); }
+:root[data-style="glass"] .chart:not([data-appearance="flat"]) .chart-lines, .chart[data-appearance="glass"] .chart-lines { filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.45)) drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3)); }
+/* A filled area in glass: its color deepest along the line, fading to the axis. */
+:root[data-style="glass"] .chart:not([data-appearance="flat"]) .chart-area, .chart[data-appearance="glass"] .chart-area { fill: var(--glass-fill); fill-opacity: 1; }
+:root[data-style="glass"] .chart:not([data-appearance="flat"]) .chart-point, .chart[data-appearance="glass"] .chart-point { stroke: rgba(255, 255, 255, 0.85); }
 /* A pie or a donut (the charts with a sheen) sits on the frame with a drop shadow. */
 :root[data-style="glass"] .chart:not([data-appearance="flat"]) svg:has(.chart-sheen), .chart[data-appearance="glass"] svg:has(.chart-sheen) {
   overflow: visible; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.25)) drop-shadow(0 8px 12px rgba(0, 0, 0, 0.3));
 }
 :root[data-style="glass"] .chart:not([data-appearance="flat"]) .chart__swatch, .chart[data-appearance="glass"] .chart__swatch { border-radius: 50%; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5); }
-/* A pie's or a donut's key in its glass colors (ChartView.tsx). */
+/* A pie's or a donut's key in its glass colors (ChartPlot.tsx). */
 :root[data-style="glass"] .chart:not([data-appearance="flat"]) .chart__swatch[style*="--glass-swatch"], .chart[data-appearance="glass"] .chart__swatch[style*="--glass-swatch"] { background: var(--glass-swatch) !important; }
 
 /* The Backups page's donuts (disk space, storage targets) as the glass chart

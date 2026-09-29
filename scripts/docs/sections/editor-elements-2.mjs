@@ -291,13 +291,13 @@ export async function build(helpers) {
 
     h(2, 'How a chart reads a table'),
     ul(
-      li(p(b('The first row names the series.'), ' Each column after the first becomes one color, listed in the legend under the chart.')),
+      li(p(b('The first row names the series.'), ' Each column after the first becomes one color, listed in the legend under the chart. A column with no numbers at all, such as a Notes column, is left out.')),
       li(p(b('The first column labels the rows.'), ' Each row becomes a group of columns, a bar, a point on the line, or a slice.')),
       li(p(b('The other cells are the numbers.'), ' Values written the way people write them count: ', c('1,234'), ', ', c('45%'), ', ', c('$9.50'), '. A row with no numbers at all is skipped.')),
       li(p(b('Tables are numbered from the top of the page,'), ' every table counted. On this page the table under ', b('Insert it'), ' is Table 1, so the four charts below draw Tables 2 to 5.')),
     ),
 
-    h(2, 'The four types, and when to use each'),
+    h(2, 'The five types, and when to use each'),
     h(3, 'Column: compare amounts across a few groups'),
     p('Upright columns, one group for each row, one color for each series. Use it to compare a handful of periods or groups side by side, and to set two or three series against each other. For example, sign-ups on the free and team plans, month by month:'),
     signups,
@@ -313,27 +313,55 @@ export async function build(helpers) {
     p('One line for each series, joining the rows in order from left to right. Use it for something measured again and again over time, where the trend matters more than any one point. For example, weekly readers on a computer and on a phone:'),
     readers,
     chartOf(readers, 'line', 'Weekly readers'),
-    p('A line chart has no labels along its bottom edge: the first point is the table’s first row, and the last point its last row. Keep the table beside the chart, as here, so readers can find a week.'),
+    p('The rows are named along the bottom edge. When they are too long to fit side by side they turn at an angle, and when there are too many for even that, only every second or third is written: point at a line to see which row it is.'),
 
     h(3, 'Pie: parts of a whole'),
     p('One slice for each row, sized by its share of the total. Use it only when the rows add up to a whole that means something, such as a budget or a week, and there are five slices or fewer. For example, where a team’s 40-hour week goes:'),
     week,
     chartOf(week, 'pie', 'Where a 40-hour week goes'),
-    panel('note', p(b('A pie uses the first column of numbers only.'), ' A table with more series draws just the first of them as a pie. Choose Column to see them all.')),
+    panel('note', p(b('A pie uses one column of numbers.'), ' The first, unless you choose another under ', b('More Options'), '. To see every column at once, make it a column chart instead.')),
 
     h(3, 'Donut: parts of a whole, with the total'),
     p('The same slices as a pie, drawn as a ring, with the total of the column in the middle. Use it where a pie fits and the total is worth showing too. The same week as a donut:'),
     chartOf(week, 'donut', 'Where a 40-hour week goes'),
-    p('Like a pie, a donut uses the first column of numbers only. A large total is shortened in the middle, such as 1.2K for 1,234.'),
-    p('Point at a column or a bar to see its value. Negative numbers count as zero in columns, bars, pies and donuts; a line goes below its starting level for them.'),
+    p('Like a pie, a donut uses one column of numbers. A large total is shortened in the middle, such as 1.2K for 1,234. The middle can show the largest slice’s share, or your own words, instead: see ', b('More Options for pies and donuts'), ' below.'),
+    p('Point at a column, a bar or a point on a line to see its value. Negative numbers go below zero in columns, bars and lines, where the axis shows zero as a line of its own; in pies and donuts they count as nothing.'),
+    p('Every chart has a legend, below it unless you choose otherwise. A pie’s or a donut’s legend gives each slice’s number and its share beside its name, such as ', c('Building 18 (45%)'), '.'),
 
     h(2, 'Changing and removing it'),
-    p('While you are editing, four controls sit above the chart:'),
+    p('While you are editing, these controls sit above the chart:'),
     ul(
       li(p(b('Table'), ' chooses which table on the page to draw: Table 1 is the first.')),
       li(p(b('Type'), ' switches between Column (Vertical), Bar (Horizontal), Line, Pie and Donut. The table is not touched.')),
       li(p(b('Style'), ' decides how this one looks. ', b('Theme Default'), ' follows each reader’s own style, Minimal or Glass, from the appearance menu. ', b('Minimal'), ' or ', b('Glass'), ' keeps it that way for everyone, whatever their style, and in PDF, HTML and website exports too. An export has no reader’s style, so a ', b('Theme Default'), ' one comes out as Minimal.')),
       li(p(b('Chart Title (Optional)'), ' is a line shown above the chart.')),
+      li(p(b('More Options'), ' opens the rest, described below. It shows only the options that apply to the chart’s type; the others keep their settings, so switching type and back loses nothing.')),
+    ),
+
+    h(3, 'More Options for every chart'),
+    ul(
+      li(p(b('Legend'), ' puts the key ', b('Below'), ' the chart, ', b('Beside'), ' it (below again on a narrow screen such as a phone), or ', b('Hidden'), '.')),
+      li(p(b('Size'), ' is ', b('Small'), ', ', b('Medium'), ' (the usual size) or ', b('Large'), '. A chart always shrinks to fit a narrow screen.')),
+      li(p(b('Number Format'), ' decides how numbers are written on the chart: in its axis, its value labels, its legend and the middle of a donut. ', b('Auto'), ' follows the table: when most of its numbers end in ', c('%'), ' the chart writes percentages, and when most carry a currency symbol such as ', c('$'), ', ', c('£'), ' or ', c('€'), ' it writes money with that symbol. ', b('Plain'), ', ', b('Percent'), ' and ', b('Currency'), ' choose for it; currency uses the symbol in the table, or $ when there is none.')),
+      li(p(b('Swap Rows and Columns'), ' charts the table the other way round: each row becomes a series (one color), and the columns are named along the bottom edge. For example, the sign-ups table above, swapped, sets July against December for each plan.')),
+    ),
+
+    h(3, 'More Options for column, bar and line charts'),
+    ul(
+      li(p(b('Axes and Gridlines'), ' is on unless you turn it off: the numbers up the side (or along the bottom of a bar chart) and light lines across the chart at each of them. Off, the chart is only its bars or lines and the row names.')),
+      li(p(b('X Axis Title'), ' and ', b('Y Axis Title'), ' name the bottom edge and the side, such as “Month” and “Sign-ups”. Each title stays with what its axis shows, so switching a column chart to a bar chart moves them round with the axes.')),
+      li(p(b('Value Labels'), ' writes each column’s, bar’s or point’s number on the chart. In a stacked chart the number sits inside its piece when it fits.')),
+      li(p(b('Stacked'), ' (column and bar) piles each row’s series into one column instead of standing them side by side, so the column’s height is the row’s total. Negative numbers pile downward from zero.')),
+      li(p(b('Points'), ', ', b('Smooth Curve'), ' and ', b('Filled Area'), ' (line) mark each row with a dot, round the line off between the points (never past them), and shade the area under each line.')),
+      li(p(b('Y Axis'), ' (line) starts ', b('From Zero'), ', as usual, or is ', b('Fit to Data'), ', from just under the smallest number to just over the largest, which shows small changes in large numbers. Columns and bars always start at zero: a bar’s length is its number, and a bar cut short would say something the numbers do not.')),
+    ),
+
+    h(3, 'More Options for pies and donuts'),
+    ul(
+      li(p(b('Column'), ' chooses which column of numbers the pie is cut from, when the table has more than one: the first unless you choose another. With rows and columns swapped it is ', b('Row'), ' instead.')),
+      li(p(b('Values in Legend'), ' is on unless you turn it off: each slice’s number and share beside its name.')),
+      li(p(b('Largest Slice First'), ' sorts the slices from the largest down, clockwise from the top, whatever the order of the table. Each slice keeps its color.')),
+      li(p(b('Center'), ' (donut) chooses what the middle says: the ', b('Total'), ', as usual; the ', b('Largest Slice'), ', as its share with its name under it; or ', b('Custom Text'), ', a few words of your own typed in ', b('Center Text'), '.')),
     ),
     p('If there is no table on the page yet, the chart says so; if its table has no numbers, it says that instead. To remove a chart, click its edge to select it and press ', b('Delete'), '. The table stays.'),
     panel('warning', p(b('Adding a table above a chart renumbers the tables.'), ' A chart pointing at Table 2 then draws the new one. After adding or removing a table, check the Table menu of every chart below it.')),
@@ -342,7 +370,7 @@ export async function build(helpers) {
     ul(
       li(p(b('Say what the chart shows in its title,'), ' including when: “Sign-ups by month, 2026”, not “Chart”.')),
       li(p(b('Put the chart right after its table,'), ' so readers who want an exact number find it at once.')),
-      li(p(b('Few series.'), ' Two or three colors compare well; eight become a puzzle.')),
+      li(p(b('Few series.'), ' Two or three colors compare well; eight become a puzzle. Stacked columns handle a few more, when the total is what matters.')),
       li(p(b('Pick the type by the question.'), ' Comparing: column or bar. Over time: line. Share of a whole: pie.')),
     ),
 
