@@ -147,6 +147,25 @@ public class ThreatDetectionTests
     }
 
     [Fact]
+    public async Task Saving_public_spaces_at_the_value_it_had_raises_no_alert()
+    {
+        // T1-016: the setup wizard sends the switch on every pass through
+        // Who Can Join; an unchanged value is not a flip.
+        using var factory = new TestAppFactory();
+        var admin = await AdminAsync(factory);
+
+        for (var i = 0; i < 3; i++)
+            (await admin.PutAsJsonAsync("/api/admin/settings",
+                new { AllowPublicRegistration = false, AllowPublicSpaces = false })).EnsureSuccessStatusCode();
+        Assert.Empty(await AlertsAsync(admin, "settings.public_spaces_toggled"));
+
+        (await admin.PutAsJsonAsync("/api/admin/settings", new { AllowPublicSpaces = true })).EnsureSuccessStatusCode();
+        (await admin.PutAsJsonAsync("/api/admin/settings", new { AllowPublicSpaces = true })).EnsureSuccessStatusCode();
+        var alert = Assert.Single(await AlertsAsync(admin, "settings.public_spaces_toggled"));
+        Assert.Equal(2, alert.Severity);
+    }
+
+    [Fact]
     public async Task Trashing_many_pages_quickly_alerts()
     {
         using var factory = new TestAppFactory();
