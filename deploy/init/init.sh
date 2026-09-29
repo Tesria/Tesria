@@ -151,6 +151,22 @@ if [ -d "$INSTALL_ROOT" ]; then
   fi
 fi
 
+# --- Drive paths that .env quoting has changed (WIN-005) ---------------------
+#
+# In .env, a value in double quotes has its backslash escapes read: in
+# "C:\tesria\usb" the \t becomes a tab, and in "E:\Backups\new" the \n a
+# line break. The path Docker is then given is not the folder, and nothing
+# said so. No real folder name has such a character in it, so one here is
+# always this, and it is said before anything starts.
+for setting in OFFSITE_NAS_PATH OFFSITE_REMOVABLE_PATH; do
+  value="${!setting:-}"
+  case "$value" in
+    *[[:cntrl:]]*)
+      fail "$setting in .env has a tab or a line break in it, which is what a Windows path in double quotes turns into: \\t and \\n inside \"...\" are read as those characters. Write the path without the quotes, as $setting=C:\\TesriaBackups, or with forward slashes, as $setting=C:/TesriaBackups."
+      ;;
+  esac
+done
+
 # The database exists once initdb has run. Checked for the version file two
 # levels down, where postgres:18 puts its data directory (18/docker).
 db_exists() { [ -n "$(find "$PGDATA_ROOT" -maxdepth 3 -name PG_VERSION -print -quit 2>/dev/null)" ]; }

@@ -120,4 +120,17 @@ fresh
 run 'POSTGRES_PASSWORD=a:b\c'
 check "escaped" '[ "$(cat "$T/secrets/postgres-password/pgpass")" = "*:*:*:*:a\\:b\\\\c" ]'
 
+echo "== a drive path that double quotes in .env mangled is refused (WIN-005)"
+fresh
+run "OFFSITE_REMOVABLE_PATH=C:$(printf '\t')esria-qa-win\\usb"; code=$?
+check "exits non-zero" '[ "$code" -ne 0 ]'
+check "names the setting and the fix" 'grep -q "OFFSITE_REMOVABLE_PATH in .env has a tab or a line break" "$T/out" && grep -q "OFFSITE_REMOVABLE_PATH=C:/TesriaBackups" "$T/out"'
+check "stores nothing" '[ ! -s "$T/secrets/postgres-password/value" ]'
+fresh
+run $'OFFSITE_NAS_PATH=E:\\Backups\new'; code=$?
+check "a line break too" '[ "$code" -ne 0 ] && grep -q "OFFSITE_NAS_PATH in .env has a tab" "$T/out"'
+fresh
+run 'OFFSITE_REMOVABLE_PATH=C:\TesriaBackups' 'OFFSITE_NAS_PATH=D:/My Backups/Tesria'
+check "a plain Windows path is fine" '[ $? -eq 0 ]'
+
 [ "$FAILED" -eq 0 ] && echo "all passed" || { echo "some checks failed"; exit 1; }

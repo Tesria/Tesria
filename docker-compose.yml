@@ -71,6 +71,9 @@ services:
       BACKUP_ENCRYPTION_KEY: ${BACKUP_ENCRYPTION_KEY:-}
       COLLAB_SHARED_SECRET: ${COLLAB_SHARED_SECRET:-}
       PDF_SHARED_SECRET: ${PDF_SHARED_SECRET:-}
+      # Only checked, for a Windows path that double quotes in .env mangled.
+      OFFSITE_NAS_PATH: ${OFFSITE_NAS_PATH:-}
+      OFFSITE_REMOVABLE_PATH: ${OFFSITE_REMOVABLE_PATH:-}
     volumes:
       - ./deploy/init/init.sh:/opt/tesria/init.sh:ro
       - secret_postgres_password:/run/tesria/postgres-password
