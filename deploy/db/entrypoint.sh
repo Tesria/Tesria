@@ -65,7 +65,25 @@ fi
 if [ -r /scripts/offsite.sh ]; then
   . /scripts/offsite.sh
   if offsite_write_conf; then
-    :
+    # A cloud repository that refuses this instance for good (a wrong
+    # secret, a wrong passphrase, another cluster's repository) is left out
+    # of WAL archiving until .env is fixed, so that the local backups carry
+    # on (T8-008). The sidecar still has it, reports why on the cloud card,
+    # and takes a new full cloud backup once it is back, since WAL from the
+    # time it was left out never reached it. An outage is not a refusal: WAL
+    # waits for the cloud, as before, behind archive-push-queue-max.
+    state="$OFFSITE_STATE_DIR/.tesria-cloud-archiving"
+    if [ -n "${OFFSITE_CLOUD_TYPE:-}" ] && reason="$(offsite_cloud_refusal "$PGDATA_PATH")"; then
+      rm -f "$OFFSITE_CONF"
+      log "WARNING: the cloud repository is left out of WAL archiving: $reason."
+      log "WARNING: WAL goes to the local repository only until .env is fixed and this container restarts."
+      printf 'excluded\n%s\n' "$reason" >"$state"
+      [ -f "$OFFSITE_STATE_DIR/.tesria-cloud-gap" ] || date -u +%FT%TZ >"$OFFSITE_STATE_DIR/.tesria-cloud-gap"
+    elif [ -n "${OFFSITE_CLOUD_TYPE:-}" ]; then
+      printf 'included\n' >"$state"
+    else
+      rm -f "$state" "$OFFSITE_STATE_DIR/.tesria-cloud-gap"
+    fi
   else
     log "WARNING: the offsite repository is configured but unusable;"
     log "WARNING: WAL will go to the local repository only until this is fixed."
@@ -176,6 +194,51 @@ handle_request() {
   fi
 }
 
+# --- After a restore by hand: this machine's owner password ----------------
+
+# deploy/pgbackrest/restore.sh leaves this file behind. A restored cluster
+# keeps the role passwords it had when it was backed up, which after a
+# restore onto a new machine are the old machine's, so nothing could sign in
+# (T8-018). Once the database is open for writing, the owner's password is
+# set to the one stored on this machine; migrate sets the app's, as it does
+# on every start. Over the local socket, which the image trusts, so the old
+# password is not needed. The database reports healthy only once this is
+# done (the healthcheck looks for the file), so migrate does not try first.
+RESET_MARKER=/var/lib/postgresql/.tesria-reset-owner-password
+reset_owner_password() {
+  [ -f "$RESET_MARKER" ] || return 0
+  local user="${POSTGRES_USER:-postgres}" file=/run/tesria/postgres-password/value waited=0
+  until [ "$(psql -h /var/run/postgresql -U "$user" -d postgres -XtAc 'SELECT NOT pg_is_in_recovery()' 2>/dev/null)" = t ]; do
+    sleep 2
+    waited=$(( waited + 2 ))
+    # Recovery can take a long while on a large cluster; give up only after a
+    # day, and say how to do it by hand.
+    if [ "$waited" -gt 86400 ]; then
+      log "ERROR: the restored database never opened for writing; the owner password was not reset"
+      return 1
+    fi
+  done
+  if [ -n "${POSTGRES_PASSWORD:-}" ] || [ -r "$file" ]; then
+    # The password never goes on a command line: psql reads it from the file
+    # (or the environment) itself.
+    if PGPW_FILE="$file" psql -h /var/run/postgresql -U "$user" -d postgres -X -q -v ON_ERROR_STOP=1 \
+         -v owner="$user" >/dev/null 2>&1 <<'SQL'
+\set pw `if [ -n "$POSTGRES_PASSWORD" ]; then printf '%s' "$POSTGRES_PASSWORD"; else cat "$PGPW_FILE"; fi`
+ALTER ROLE :"owner" PASSWORD :'pw';
+SQL
+    then
+      log "restored cluster: the owner's password is now this machine's"
+      rm -f "$RESET_MARKER"
+    else
+      log "ERROR: could not set the owner's password on the restored database; see docs/backup-recovery.md"
+      return 1
+    fi
+  else
+    log "WARNING: no owner password is stored here; the restored database keeps its own"
+    rm -f "$RESET_MARKER"
+  fi
+}
+
 # --- The loop ---------------------------------------------------------------
 
 mkdir -p "$RESTORE_ROOT"
@@ -184,6 +247,7 @@ chmod 770 "$RESTORE_ROOT" 2>/dev/null || true
 rm -f "$RESTORE_ROOT/request" "$RESTORE_ROOT/done"
 
 start_postgres "$@"
+reset_owner_password &
 
 while true; do
   # `wait -n` would be tidier, but the trap has to be able to interrupt this,

@@ -126,9 +126,59 @@ unset owner_password escaped
 # new one is safe even on an existing database.
 resolve app-db-password APP_DB_PASSWORD "${APP_DB_PASSWORD:-}" never "" 24
 
+# Whether a key opens the pgBackRest repository that is already here: 0 it
+# does, 1 it does not, 2 there is nothing here that can tell. pgBackRest's
+# info files are encrypted with the key itself (OpenSSL's salted format,
+# SHA-1 key derivation), and decrypted they begin "[backrest]"; a wrong key
+# fails, or once in a while yields bytes that do not begin so.
+key_opens_repo() {
+  local info="" f out
+  for f in "$REPO_ROOT/backup/main/backup.info" "$REPO_ROOT/archive/main/archive.info"; do
+    [ -s "$f" ] && { info="$f"; break; }
+  done
+  [ -n "$info" ] || return 2
+  [ "$(head -c 8 "$info")" = "Salted__" ] || return 2
+  command -v openssl >/dev/null 2>&1 || return 2
+  f="$(mktemp)"
+  printf '%s' "$1" >"$f"
+  out="$(openssl enc -d -aes-256-cbc -md sha1 -pass "file:$f" -in "$info" 2>/dev/null | head -c 10)"
+  rm -f "$f"
+  [ "$out" = "[backrest]" ] && return 0
+  return 1
+}
+
+# A key in .env that does not open the backups already here is refused
+# (T1-030), as a missing one is. Taken, it replaced the stored key, the only
+# copy of the right one on this machine, and pgBackRest could no longer read
+# its own repository while the Backups page still said Healthy. Nothing is
+# written before the check.
+if [ -n "${BACKUP_ENCRYPTION_KEY:-}" ] && ! is_placeholder "$BACKUP_ENCRYPTION_KEY" && repo_exists \
+   && [ "$(value_of backup-key || true)" != "$BACKUP_ENCRYPTION_KEY" ]; then
+  opens=0; key_opens_repo "$BACKUP_ENCRYPTION_KEY" || opens=$?
+  if [ "$opens" = 1 ]; then
+    stored="$(value_of backup-key || true)"
+    if [ -n "$stored" ] && key_opens_repo "$stored"; then
+      fail "BACKUP_ENCRYPTION_KEY in .env does not open the backups on this machine, and the key stored here does. Nothing was changed. Remove that line from .env to keep using the stored key, or correct it: the right key is in backup-key.txt if Tesria made it, or wherever you saved it."
+    fi
+    fail "BACKUP_ENCRYPTION_KEY in .env does not open the backups on this machine: they were made with a different key. Nothing was changed. Set it to the key these backups were made with: it is in backup-key.txt if Tesria made it, or wherever you saved it."
+  fi
+fi
+
 resolve backup-key BACKUP_ENCRYPTION_KEY "${BACKUP_ENCRYPTION_KEY:-}" repo_exists \
   "Backups already exist, encrypted with a key that is not set. Set BACKUP_ENCRYPTION_KEY in .env to that key. It is in backup-key.txt if Tesria made it, or wherever you saved it." 32
 key_source="$SOURCE"
+
+# A stored key that does not open the backups here (put there by an earlier
+# version, which took any key from .env): refusing would take the wiki down
+# for a problem it cannot fix, so it is said loudly instead, and the Backups
+# page shows the physical backups failing with the same words.
+if [ "$key_source" = stored ] && repo_exists; then
+  opens=0; key_opens_repo "$(value_of backup-key)" || opens=$?
+  if [ "$opens" = 1 ]; then
+    log "WARNING: the stored backup key does not open the backups on this machine, so no physical backup can be taken or restored."
+    log "WARNING: set BACKUP_ENCRYPTION_KEY in .env to the key they were made with (backup-key.txt, if Tesria made it) and run: docker compose up -d"
+  fi
+fi
 
 resolve collab-secret COLLAB_SHARED_SECRET "${COLLAB_SHARED_SECRET:-}" never "" 32
 resolve pdf-secret PDF_SHARED_SECRET "${PDF_SHARED_SECRET:-}" never "" 32
