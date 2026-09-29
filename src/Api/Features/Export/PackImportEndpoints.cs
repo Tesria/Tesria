@@ -219,6 +219,10 @@ public static partial class PackImportEndpoints
                 foreach (var packedVersion in (packed.Versions ?? []).OrderBy(v => v.CreatedAt).ThenBy(v => v.Number))
                 {
                     var rewritten = PackRewriter.Rewrite(packedVersion.Content, maps);
+                    // Before it is stored: the editor shows a document with
+                    // one element it does not know as a blank page (t6-015).
+                    if (EditorSchema.FirstUnknownType(rewritten) is { } unknown)
+                        return Problem("file", UnknownElement($"The page '{Describe(packed.Title)}'", unknown));
                     // The one door every stored page goes through: it
                     // validates the shape and, since 8.6, strips tracked
                     // changes. A pack cannot smuggle either past it.
@@ -284,6 +288,8 @@ public static partial class PackImportEndpoints
             {
                 if (!PageContent.TryNormalize(template.Content, out var content))
                     return Problem("file", $"A template in this pack could not be read: '{Describe(template.Name)}'.");
+                if (EditorSchema.FirstUnknownType(System.Text.Json.Nodes.JsonNode.Parse(content)) is { } unknown)
+                    return Problem("file", UnknownElement($"The template '{Describe(template.Name)}'", unknown));
                 db.PageTemplates.Add(new PageTemplate
                 {
                     Id = Guid.NewGuid(),
@@ -481,6 +487,17 @@ public static partial class PackImportEndpoints
         }
         return true;
     }
+
+    /// <summary>
+    /// The refusal for a document the editor could not show. It names the
+    /// page and the element, because the likeliest cause is a pack from a
+    /// newer Tesria, and the fix is on the reader's side.
+    /// </summary>
+    private static string UnknownElement(string where, string type) =>
+        type == EditorSchema.Untyped
+            ? $"{where} in this pack has an element with no type, so it cannot be shown. Nothing was imported."
+            : $"{where} in this pack uses an element this Tesria does not know: '{Describe(type)}'. "
+              + "The pack may come from a newer Tesria; update this one, then import it again. Nothing was imported.";
 
     private static IResult Problem(string field, string message) =>
         Results.ValidationProblem(new Dictionary<string, string[]> { [field] = [message] });

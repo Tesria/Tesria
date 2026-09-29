@@ -350,6 +350,51 @@ public class PackRoundTripTests
         Assert.Contains("Upgrade Tesria to import it", body);
     }
 
+    [Fact]
+    public async Task A_page_with_an_element_this_Tesria_does_not_know_is_refused_by_name()
+    {
+        // t6-015: it was imported, and the page then showed blank, because the
+        // editor drops a whole document it cannot parse. A pack from a newer
+        // Tesria that added an element type is the likely way to get one.
+        await using var app = new TestAppFactory();
+        var author = app.CreateClient();
+        await author.RegisterAndSignInAsync();
+
+        var seeded = await SeedAsync(author);
+        var pack = Repack(await ExportAsync(author, "SRC"), WikiPack.PageEntry(seeded.Child),
+            json => System.Text.RegularExpressions.Regex.Replace(
+                json, "\"type\":\\s*\"paragraph\"", "\"type\": \"notARealNode\""));
+
+        var res = await ImportAsync(author, pack, "DEST");
+
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+        var body = await res.Content.ReadAsStringAsync();
+        Assert.Contains("Onboarding", body);
+        Assert.Contains("notARealNode", body);
+        // Nothing half imported.
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<Tesria.Api.Infrastructure.AppDbContext>();
+        Assert.False(await db.Spaces.AnyAsync(s => s.Key == "DEST"));
+    }
+
+    [Fact]
+    public async Task A_mark_this_Tesria_does_not_know_is_refused_too()
+    {
+        await using var app = new TestAppFactory();
+        var author = app.CreateClient();
+        await author.RegisterAndSignInAsync();
+
+        var seeded = await SeedAsync(author);
+        var pack = Repack(await ExportAsync(author, "SRC"), WikiPack.PageEntry(seeded.Parent),
+            json => System.Text.RegularExpressions.Regex.Replace(
+                json, "\"type\":\\s*\"link\"", "\"type\": \"sparkle\""));
+
+        var res = await ImportAsync(author, pack, "DEST");
+
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+        Assert.Contains("sparkle", await res.Content.ReadAsStringAsync());
+    }
+
     /// <summary>
     /// The compatibility promise (dev-plan 16.3): every pack under
     /// <c>Packs/</c> was made by a real release, and each must still import.
