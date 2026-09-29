@@ -73,9 +73,9 @@
   },
   "Administration / Settings (administration)": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "4cf5a81fa195cf77"
+    "hash": "d8764b3e8959f4d3"
   },
   "Administration / Spaces (administration)": {
     "appliesTo": "0.5",
@@ -85,9 +85,9 @@
   },
   "Administration / Users": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "0.6: a Tailscale reset link, when Tesria is on a tailnet.",
-    "hash": "11c06791835a8313"
+    "hash": "8b3b4df7e643abe0"
   },
   "Backups and recovery / How backups work": {
     "appliesTo": "0.5",
@@ -97,9 +97,9 @@
   },
   "Backups and recovery / Offsite copies": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "1e1619bd48aab6af"
+    "hash": "4a68421292c20c56"
   },
   "Backups and recovery / Restore drills": {
     "appliesTo": "0.5",
@@ -109,9 +109,9 @@
   },
   "Backups and recovery / Restoring and undo": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "a2a90eeb7ce5f70a"
+    "hash": "5c51589ba1172b09"
   },
   "Backups and recovery / Retention": {
     "appliesTo": "0.5",
@@ -325,9 +325,9 @@
   },
   "Elements / Gallery": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "c650c3a2292467d8"
+    "hash": "dc5ebb518e98ba42"
   },
   "Elements / Headings": {
     "appliesTo": "0.5",
@@ -337,9 +337,9 @@
   },
   "Elements / Image": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "576d6b6e1990bad0"
+    "hash": "192d6713b9041552"
   },
   "Elements / Layout": {
     "appliesTo": "0.5",
@@ -541,9 +541,9 @@
   },
   "Getting started / Quick start": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "ea6e6ce634cee636"
+    "hash": "307909c58697ebab"
   },
   "Getting started / System requirements": {
     "appliesTo": "0.5",
@@ -559,9 +559,9 @@
   },
   "Getting started / Your first space and page": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "afa899e24c0a4a51"
+    "hash": "5895a0a5753f9394"
   },
   "Glossary": {
     "appliesTo": "0.5",
@@ -613,9 +613,9 @@
   },
   "Installation and operations / Configuration reference": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "f3c1fe8b24905bb2"
+    "hash": "cbed2416fb6a8565"
   },
   "Installation and operations / Email (SMTP)": {
     "appliesTo": "0.5",
@@ -625,9 +625,9 @@
   },
   "Installation and operations / Health checks and monitoring": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "e7a812a8c7c7cc36"
+    "hash": "8438a6de7aed1ae1"
   },
   "Installation and operations / HTTPS and domains": {
     "appliesTo": "0.5",
@@ -637,9 +637,9 @@
   },
   "Installation and operations / Installing with Docker Compose": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "fbf2f40446f842bf"
+    "hash": "e4ecdb3036d4f0f1"
   },
   "Installation and operations / Opening Tesria by name": {
     "appliesTo": "0.5",
@@ -661,9 +661,9 @@
   },
   "Installation and operations / Security hardening": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "57703e850bcf99f8"
+    "hash": "5e015460a66ccc72"
   },
   "Installation and operations / Single sign-on (OIDC)": {
     "appliesTo": "0.5",
@@ -679,9 +679,9 @@
   },
   "Installation and operations / Uninstalling and moving": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "a3269980a8f5aeaf"
+    "hash": "9e931f8c46295db1"
   },
   "Installation and operations / Upgrading": {
     "appliesTo": "0.5",
@@ -781,9 +781,9 @@
   },
   "MCP / Connecting an assistant": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "364d5dd58aecc0e3"
+    "hash": "d809fd9515c748c5"
   },
   "MCP / What an assistant can do": {
     "appliesTo": "0.5",
@@ -805,9 +805,9 @@
   },
   "Pages / Drafts, Publish and Update": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "fd95907f2c280dbe"
+    "hash": "6bf57ef9a1529295"
   },
   "Pages / History and restoring": {
     "appliesTo": "0.5",
@@ -829,9 +829,9 @@
   },
   "Pages / Page actions": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "b41fd756a57a30a3"
+    "hash": "a041d3a796dcb884"
   },
   "Pages / Page emoji": {
     "appliesTo": "0.5",
@@ -907,9 +907,9 @@
   },
   "Release notes / Tesria 0.8": {
     "appliesTo": "0.8",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "2d588331e3a35c89"
+    "hash": "5403fd21ba7225a8"
   },
   "REST API": {
     "appliesTo": "0.5",
@@ -937,21 +937,21 @@
   },
   "REST API / Requests and responses": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "df972cd8c9f03ef8"
+    "hash": "25aabe11f5776d74"
   },
   "REST API / Webhooks": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "d859d0392f007c93"
+    "hash": "78c49efd1eabc534"
   },
   "REST API / What the API covers": {
     "appliesTo": "0.5",
-    "updated": "2026-09-24",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "0ea85cbf41e36a34"
+    "hash": "f7c58d2fd9a3f01a"
   },
   "Security": {
     "appliesTo": "0.5",
@@ -1051,9 +1051,9 @@
   },
   "The editor / Editor tour": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "0d55e2b111ee4ec7"
+    "hash": "3d221255b839b2d1"
   },
   "The editor / Elements": {
     "appliesTo": "0.5",
@@ -1147,9 +1147,9 @@
   },
   "User manual / The editor": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "3c7c5ef1feffcb23"
+    "hash": "c0da6b2c49cd8988"
   },
   "User manual / Working together": {
     "appliesTo": "0.5",
@@ -1171,9 +1171,9 @@
   },
   "Working together / Changes from assistants and the API": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "c736b77320022b9b"
+    "hash": "bbf74d053907d653"
   },
   "Working together / Comments": {
     "appliesTo": "0.5",
@@ -1183,9 +1183,9 @@
   },
   "Working together / Editing at the same time": {
     "appliesTo": "0.5",
-    "updated": "2026-09-27",
+    "updated": "2026-09-29",
     "note": "Revised.",
-    "hash": "ba44b43e2655ddeb"
+    "hash": "a9e43fbcc6a3dec8"
   },
   "Working together / Mentions and notifications": {
     "appliesTo": "0.5",
