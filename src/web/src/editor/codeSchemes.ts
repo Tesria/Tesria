@@ -46,3 +46,21 @@ export const codeSchemeAttribute = {
 export function codeSchemeData(value: unknown): { 'data-color-scheme'?: CodeScheme } {
   return isCodeScheme(value) && value !== 'default' ? { 'data-color-scheme': value } : {}
 }
+
+/**
+ * The colors this person's next new code block starts with: the last they
+ * chose on any block (the owner, 2026-09-29). Kept on their account
+ * (`codeBlockScheme`, PUT /api/auth/me/editor) and set here from it when they
+ * sign in, so the editor's insert commands can read it without React.
+ * Only a starting point: the block stores its own colors, so every reader
+ * sees what was chosen.
+ */
+let preferred: CodeScheme = 'default'
+
+export function preferredCodeScheme(): CodeScheme {
+  return preferred
+}
+
+export function setPreferredCodeScheme(value: unknown): void {
+  preferred = isCodeScheme(value) ? value : 'default'
+}

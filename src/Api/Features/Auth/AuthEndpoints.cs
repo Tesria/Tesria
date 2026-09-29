@@ -93,8 +93,19 @@ public static class AuthEndpoints
         /// instance that requires it), so turning it off is refused. The SPA
         /// used to offer "Turn off" anyway, which could only fail (2026-09-23).
         /// </summary>
-        bool TotpMandatory);
+        bool TotpMandatory,
+        /// <summary>The colors a new code block starts with; null is Default (2026-09-29).</summary>
+        string? CodeBlockScheme);
     public record NotificationPreferenceRequest(EmailNotificationMode EmailNotifications);
+    public record EditorPreferenceRequest(string? CodeBlockScheme);
+
+    /// <summary>
+    /// The code block schemes a preference may name, the same list as the
+    /// editor's (src/web/src/editor/codeSchemes.ts) less Default, which is
+    /// stored as null.
+    /// </summary>
+    public static readonly string[] CodeBlockSchemes =
+        ["github-light", "github-dark", "dracula", "monokai", "nord", "solarized-light", "solarized-dark"];
 
     /// <summary>The password was right; a one-time code is still needed.</summary>
     public record TotpChallengeResponse(bool RequiresTotp, string Challenge);
@@ -148,6 +159,7 @@ public static class AuthEndpoints
         group.MapPost("/reauth", Reauthenticate).RequireAuthorization().RequireRateLimiting(RateLimits.AuthPolicy);
         group.MapPut("/me/notifications", SetNotificationPreference).RequireAuthorization();
         group.MapPut("/me/onboarding", UpdateOnboarding).RequireAuthorization();
+        group.MapPut("/me/editor", SetEditorPreference).RequireAuthorization();
         group.MapGet("/me/sessions", ListSessions).RequireAuthorization();
         group.MapDelete("/me/sessions/others", RevokeOtherSessions).RequireAuthorization();
         group.MapDelete("/me/sessions/{id:guid}", RevokeSession).RequireAuthorization();
@@ -522,6 +534,28 @@ public static class AuthEndpoints
         return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user, rights));
     }
 
+    /// <summary>
+    /// Remembers the colors this person chose for a code block, so their next
+    /// new one starts with them (2026-09-29). The editor calls it whenever a
+    /// block's Colors change; Default clears it.
+    /// </summary>
+    private static async Task<IResult> SetEditorPreference(
+        EditorPreferenceRequest req, AppDbContext db, CurrentUser current,
+        IAccountRecoveryService recovery, ISiteSettingsService siteSettings,
+        Infrastructure.Permissions.IInstancePermissions rights)
+    {
+        var scheme = req.CodeBlockScheme is null or "default" ? null : req.CodeBlockScheme;
+        if (scheme is not null && !CodeBlockSchemes.Contains(scheme, StringComparer.Ordinal))
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["codeBlockScheme"] = [$"Not a code block color scheme: use default or one of {string.Join(", ", CodeBlockSchemes)}."],
+            });
+        var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
+        user.CodeBlockScheme = scheme;
+        await db.SaveChangesAsync();
+        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user, rights));
+    }
+
     /// <summary>How many ended sessions the Sessions list keeps, for context.</summary>
     public const int RecentlyEndedShown = 5;
 
@@ -763,7 +797,8 @@ public static class AuthEndpoints
         var setupRequired = await Features.Setup.SetupEndpoints.RequiredForAsync(user, siteSettings);
         return new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.AvatarVariant,
             user.PasswordHash != null, remaining, enabled, required, user.EmailNotifications, held, roleName,
-            setupRequired, Onboarding.SummaryFor(user), user.RecoveryCodesAcknowledgedAt != null, mandatory);
+            setupRequired, Onboarding.SummaryFor(user), user.RecoveryCodesAcknowledgedAt != null, mandatory,
+            user.CodeBlockScheme);
     }
 
     private static async Task<IResult> UpdateProfile(

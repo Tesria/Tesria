@@ -11,10 +11,10 @@ import Highlight from '@tiptap/extension-highlight'
 import TextAlign from '@tiptap/extension-text-align'
 import Subscript from '@tiptap/extension-subscript'
 import Superscript from '@tiptap/extension-superscript'
-import type { AnyExtension } from '@tiptap/core'
+import { textblockTypeInputRule, type AnyExtension } from '@tiptap/core'
 import { lowlight } from './lowlight'
 import { CodeBlockView } from './CodeBlockView'
-import { codeSchemeAttribute } from './codeSchemes'
+import { codeSchemeAttribute, preferredCodeScheme } from './codeSchemes'
 import { SlashCommand } from './slash/SlashCommand'
 import { Image } from './imageExtension'
 import { CommentMark } from './commentMark'
@@ -72,6 +72,29 @@ const CodeBlock = CodeBlockLowlight.extend({
       // Its colors: Default, or a common editor scheme (2026-09-29).
       colorScheme: codeSchemeAttribute,
     }
+  },
+  // A new block starts in the colors its author last chose (2026-09-29):
+  // the slash menu, the + menu and the shortcut all insert through these
+  // two commands, and ``` or ~~~ through the input rules. Pasted and
+  // imported blocks keep their own.
+  addCommands() {
+    return {
+      ...this.parent?.(),
+      setCodeBlock: (attributes) => ({ commands }) =>
+        commands.setNode(this.name, { colorScheme: preferredCodeScheme(), ...attributes }),
+      toggleCodeBlock: (attributes) => ({ commands }) =>
+        commands.toggleNode(this.name, 'paragraph', { colorScheme: preferredCodeScheme(), ...attributes }),
+    }
+  },
+  addInputRules() {
+    // The base extension's two patterns, with the colors added.
+    return [/^```([a-z]+)?[\s\n]$/, /^~~~([a-z]+)?[\s\n]$/].map((find) =>
+      textblockTypeInputRule({
+        find,
+        type: this.type,
+        getAttributes: (match) => ({ language: match[1], colorScheme: preferredCodeScheme() }),
+      }),
+    )
   },
   addNodeView() {
     return ReactNodeViewRenderer(CodeBlockView)

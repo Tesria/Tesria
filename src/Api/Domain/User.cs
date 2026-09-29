@@ -135,6 +135,15 @@ public class User
     /// <summary>How this person wants their own notifications by email (dev-plan 4.3). Security alerts to administrators ignore this.</summary>
     public EmailNotificationMode EmailNotifications { get; set; } = EmailNotificationMode.Off;
 
+    /// <summary>
+    /// The colors this person last chose for a code block, which their next
+    /// new code block starts with (the owner, 2026-09-29). Only a starting
+    /// point: each block stores its own colors, and every reader sees those.
+    /// Null means Default. One of the editor's scheme names
+    /// (codeSchemes.ts), checked in <c>AuthEndpoints.CodeBlockSchemes</c>.
+    /// </summary>
+    public string? CodeBlockScheme { get; set; }
+
     // --- Onboarding (dev-plan 10.3).
 
     /// <summary>Whether the in-app tips may appear. Turned off from a tip itself, or from the profile.</summary>

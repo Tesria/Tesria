@@ -1011,6 +1011,17 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 }
 .code-block__lang:focus { outline: none; }
 .code-block__lang option { color: initial; }
+/* The editing picker: the name and its chevron, the select over them unseen
+   (CodeBlockView). */
+.code-block__lang--picker { position: relative; display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer; }
+.code-block__lang-chevron { flex: none; opacity: 0.8; }
+.code-block__lang-select {
+  /* Past the name on every side: the tap area, near a finger's height,
+     without moving anything (Glass sets this control's margins). */
+  position: absolute; inset: -0.6rem -0.5rem; width: auto; height: auto; min-width: 0; margin: 0; padding: 0;
+  opacity: 0; cursor: pointer; appearance: none; border: 0;
+}
+.code-block__lang--picker:has(.code-block__lang-select:focus-visible) { outline: 2px solid var(--code-dim); outline-offset: 2px; border-radius: 4px; }
 .code-block__copy {
   background: transparent; border: 1px solid var(--code-btn-rim); color: var(--code-dim); border-radius: 4px;
   font-size: 0.75rem; padding: 0.15rem 0.5rem; cursor: pointer;
@@ -3315,6 +3326,7 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
     appearance: none; border: 0 !important; background: none !important;
     padding: 0 !important; font: inherit;
   }
+  .code-block__lang-chevron, .code-block__lang-select { display: none !important; }
 
   /* A diagram needs no caption saying it is a diagram. */
   .code-block:has(.mermaid) .code-block__header { display: none !important; }

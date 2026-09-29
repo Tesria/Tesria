@@ -1,5 +1,6 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { api, ApiError, type TotpChallenge, type User } from '../api/client'
+import { setPreferredCodeScheme } from '../editor/codeSchemes'
 
 type AuthState = {
   /** undefined while the initial session check is in flight. */
@@ -100,6 +101,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (permission: string) => user?.permissions?.includes(permission) ?? false,
     [user],
   )
+
+  // The colors a new code block starts with, where the editor's insert
+  // commands can read them (codeSchemes.ts, 2026-09-29).
+  useEffect(() => { setPreferredCodeScheme(user?.codeBlockScheme) }, [user])
 
   const value = useMemo<AuthState>(
     () => ({ user, login, completeTotp, register, logout, refresh, can }),

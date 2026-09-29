@@ -15,6 +15,17 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   values, the Glass console takes it too, and exports keep it. A Mermaid
   diagram has no Colors. The bar wraps on a phone instead of cutting off
   Copy. The Code block docs page shows the same lines in every scheme.
+  **A new block starts in its author's last choice** (the owner, same
+  day): choosing Colors on any block saves it to the account
+  (`Users.CodeBlockScheme`, migration `CodeBlockScheme`, `PUT
+  /api/auth/me/editor`, returned with `/api/auth/me`), and the slash menu,
+  the + menu, Ctrl+Alt+C and a ``` or ~~~ fence start the new block in it.
+  Default clears it. Pasted and imported blocks keep their own colors, and
+  a block's stored colors are still what every reader sees.
+  The language menu shows its name with a chevron right beside it, the
+  real select laid over them unseen: a select is as wide as its longest
+  option, which left the chevron far from "Python" (most visibly on an
+  iPhone). A tap still opens each device's own picker, over a larger area.
 - **Fixed: docs scripts left stale text in the live draft.** The docs
   tooling signs in like a browser and sent `baseVersion`, which the app
   takes for the editor's own Update, so the sidecar kept the draft's old

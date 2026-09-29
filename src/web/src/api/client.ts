@@ -39,6 +39,8 @@ export type User = {
   totpMandatory: boolean
   /** 0 off, 1 immediate, 2 daily digest (dev-plan 4.3). */
   emailNotifications: EmailNotificationMode
+  /** The colors this person's next new code block starts with; null is Default (2026-09-29). */
+  codeBlockScheme: string | null
   /** Instance rights this account holds (dev-plan 11.1). The UI renders from
    *  these; every one is enforced server-side as well. */
   permissions: string[]
@@ -1353,6 +1355,8 @@ export const api = {
       request<void>('POST', '/api/auth/reauth', input),
     setNotificationPreference: (emailNotifications: EmailNotificationMode) =>
       request<User>('PUT', '/api/auth/me/notifications', { emailNotifications }),
+    setEditorPreference: (codeBlockScheme: string) =>
+      request<User>('PUT', '/api/auth/me/editor', { codeBlockScheme }),
     sessions: {
       list: () => request<Session[]>('GET', '/api/auth/me/sessions'),
       revoke: (id: string) => request<void>('DELETE', `/api/auth/me/sessions/${id}`),

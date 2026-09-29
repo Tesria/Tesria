@@ -4,7 +4,8 @@ import { codeLanguages, MERMAID_LANGUAGE } from './lowlight'
 import { MermaidDiagram } from './MermaidView'
 import { AppearancePicker } from './AppearancePicker'
 import { appearanceData } from './appearance'
-import { CODE_SCHEMES, CODE_SCHEME_LABELS, codeSchemeData, isCodeScheme } from './codeSchemes'
+import { CODE_SCHEMES, CODE_SCHEME_LABELS, codeSchemeData, isCodeScheme, preferredCodeScheme, setPreferredCodeScheme } from './codeSchemes'
+import { api } from '../api/client'
 
 /** Code-block node view: a language picker + line-number/copy buttons above the code. */
 export function CodeBlockView({ node, updateAttributes, editor }: ReactNodeViewProps) {
@@ -37,15 +38,27 @@ export function CodeBlockView({ node, updateAttributes, editor }: ReactNodeViewP
     >
       <div className="code-block__header" contentEditable={false}>
         {editable ? (
-          <select
-            className="code-block__lang"
-            value={language}
-            onChange={(e) => updateAttributes({ language: e.target.value })}
-          >
-            {codeLanguages.map((l) => (
-              <option key={l.value} value={l.value}>{l.label}</option>
-            ))}
-          </select>
+          // The name and a chevron beside it, with the real select laid over
+          // them unseen. A select is as wide as its longest option (Mermaid
+          // Diagram), which left the chevron far from a short name like
+          // Python, most visibly on an iPhone (the owner, 2026-09-29). A tap
+          // still lands on the select, so each device opens its own picker.
+          <span className="code-block__lang code-block__lang--picker">
+            <span aria-hidden="true">{codeLanguages.find((l) => l.value === language)?.label ?? language}</span>
+            <svg className="code-block__lang-chevron" viewBox="0 0 10 6" width="10" height="6" aria-hidden="true">
+              <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <select
+              className="code-block__lang-select"
+              aria-label="Language"
+              value={language}
+              onChange={(e) => updateAttributes({ language: e.target.value })}
+            >
+              {codeLanguages.map((l) => (
+                <option key={l.value} value={l.value}>{l.label}</option>
+              ))}
+            </select>
+          </span>
         ) : (
           <span className="code-block__lang code-block__lang--label">
             {codeLanguages.find((l) => l.value === language)?.label ?? language}
@@ -57,7 +70,16 @@ export function CodeBlockView({ node, updateAttributes, editor }: ReactNodeViewP
               <span>Colors</span>
               <select
                 value={isCodeScheme(node.attrs.colorScheme) ? node.attrs.colorScheme : 'default'}
-                onChange={(e) => updateAttributes({ colorScheme: e.target.value })}
+                onChange={(e) => {
+                  const scheme = e.target.value
+                  updateAttributes({ colorScheme: scheme })
+                  // Remembered for this person's next new block. A failure
+                  // costs only that: this block has its colors either way.
+                  if (scheme !== preferredCodeScheme()) {
+                    setPreferredCodeScheme(scheme)
+                    api.auth.setEditorPreference(scheme).catch(() => {})
+                  }
+                }}
               >
                 {CODE_SCHEMES.map((c) => <option key={c} value={c}>{CODE_SCHEME_LABELS[c]}</option>)}
               </select>

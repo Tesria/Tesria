@@ -988,7 +988,9 @@ export async function build({
     p('As Glass, a code block is a console: a title bar along its top shows the language and ', b('Copy'), ', and a drop shadow lifts it off the page. It takes the block’s ', b('Colors'), ', below.'),
 
     h(2, 'Colors'),
-    p('A code block’s ', b('Colors'), ', in the bar at the top of the block while you edit, choose the scheme it is colored in. ', b('Default'), ' is Tesria’s own, dark on every page. The others are schemes many people know from their own code editors, so a team can match the one it works in, or a page can use a light scheme to sit quietly among its text. The colors are the same for every reader, in Minimal and in Glass, and in PDF, HTML and website exports. The same few lines of Python in each:'),
+    p('A code block’s ', b('Colors'), ', in the bar at the top of the block while you edit, choose the scheme it is colored in. ', b('Default'), ' is Tesria’s own, dark on every page. The others are schemes many people know from their own code editors, so a team can match the one it works in, or a page can use a light scheme to sit quietly among its text. The colors are the same for every reader, in Minimal and in Glass, and in PDF, HTML and website exports.'),
+    p('Tesria remembers the last colors you chose, on your account, so the next code block you insert starts in them, on any device. Choosing ', b('Default'), ' on a block goes back to starting in Default. It only decides where your new blocks start: a block keeps the colors it was given, whoever reads it, and other people’s new blocks start in their own choice.'),
+    p('The same few lines of Python in each scheme:'),
     ...[
       ['default', 'Default'], ['github-light', 'GitHub Light'], ['github-dark', 'GitHub Dark'], ['dracula', 'Dracula'],
       ['monokai', 'Monokai'], ['nord', 'Nord'], ['solarized-light', 'Solarized Light'], ['solarized-dark', 'Solarized Dark'],
