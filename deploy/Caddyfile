@@ -162,7 +162,15 @@
 			header_up X-Forwarded-For {client_ip}
 		}
 	}
-	handle {
+	# To the HTTPS port this Tesria is published on (TESRIA_HTTPS_PORT,
+	# docker-compose.yml). {host} carries no port, so a second Tesria on
+	# 8080 and 8443 was sent to 443, which is the first one (WIN-002).
+	# The standard port stays out of the address.
+	@standardPort expression `"{$TESRIA_HTTPS_PORT:443}" == "443"`
+	handle @standardPort {
 		redir https://{host}{uri} permanent
+	}
+	handle {
+		redir https://{host}:{$TESRIA_HTTPS_PORT:443}{uri} permanent
 	}
 }

@@ -39,8 +39,25 @@
     if (firefox) firefox.hidden = device === 'ios';
   }
 
-  function clean(value) {
-    return value.trim().toLowerCase().replace(/^[a-z]+:\/\//, '').replace(/[/:].*$/, '');
+  // What was typed, as a name and a port (WIN-002): a Tesria on ports of
+  // its own is opened at, say, localhost:8443, and its certificate is
+  // downloaded from its plain-HTTP port, which the server gives on the
+  // input. A port that is the plain-HTTP one (someone typed this page's own
+  // address) means the HTTPS one. null when it is not an address.
+  function parse(value, input) {
+    var text = value.trim().toLowerCase().replace(/^[a-z]+:\/\//, '').replace(/[/?#].*$/, '');
+    var m = /^([^:]*)(?::(\d{1,5}))?$/.exec(text);
+    if (!m || !ADDRESS.test(m[1])) return null;
+    var httpPort = Number(input.getAttribute('data-http-port')) || 80;
+    var httpsPort = Number(input.getAttribute('data-https-port')) || 443;
+    var port = m[2] === undefined ? 443 : Number(m[2]);
+    if (port < 1 || port > 65535) return null;
+    if (port === httpPort && port !== httpsPort) port = httpsPort;
+    return {
+      host: m[1],
+      address: m[1] + (port === 443 ? '' : ':' + port),
+      http: m[1] + (httpPort === 80 ? '' : ':' + httpPort),
+    };
   }
 
   // 64 hex digits, whatever separators and case it was pasted with.
@@ -58,20 +75,21 @@
 
   function update() {
     var input = d.getElementById('trust-address');
-    var address = clean(input.value);
-    var ok = ADDRESS.test(address);
-    d.getElementById('trust-address-error').hidden = ok || address === '';
-    d.getElementById('trust-ip').hidden = !(ok && IPV4.test(address));
+    var typed = input.value.trim();
+    var where = parse(typed, input);
+    d.getElementById('trust-address-error').hidden = !!where || typed === '';
+    d.getElementById('trust-ip').hidden = !(where && IPV4.test(where.host));
+    var http = (where || parse('your-server', input)).http;
     var fp = fingerprint();
     d.querySelectorAll('[data-template]').forEach(function (el) {
       var checked = fp && el.getAttribute('data-template-checked');
       el.textContent = (checked || el.getAttribute('data-template'))
-        .split('{address}').join(ok ? address : 'your-server')
+        .split('{http}').join(http)
         .split('{fingerprint}').join(fp ? fp.pairs : PLACEHOLDER)
         .split('{hex}').join(fp ? fp.hex : PLACEHOLDER);
     });
     var open = d.getElementById('trust-open');
-    if (open) open.href = ok ? 'https://' + address + '/' : '#';
+    if (open) open.href = where ? 'https://' + where.address + '/' : '#';
   }
 
   // navigator.clipboard needs a secure page, and this one is usually plain

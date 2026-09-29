@@ -264,6 +264,11 @@ services:
       # Which Caddyfile is in use: the default one makes its own certificate,
       # and then the app offers /trust to each device (dev-plan 15.5).
       Tls__Caddyfile: ${CADDYFILE:-deploy/Caddyfile}
+      # The ports Caddy is published on, for the addresses /trust writes
+      # into its commands (WIN-002): a second Tesria on its own ports must
+      # not send a device to the first one's certificate.
+      Tls__HttpPort: ${TESRIA_HTTP_PORT:-80}
+      Tls__HttpsPort: ${TESRIA_HTTPS_PORT:-443}
       # Where the app reads the public root of Caddy's own certificate
       # authority, to show its fingerprint (dev-plan 14.4). The compose
       # network only; the app never sees the authority's key.
@@ -297,6 +302,8 @@ services:
       # The Tailscale container's fixed address, whose X-Forwarded-For Caddy
       # believes (real addresses for tailnet visitors, 2026-09-24).
       TESRIA_TAILSCALE_ADDRESS: ${TESRIA_TAILSCALE_ADDRESS:-10.203.0.250}
+      # Where plain HTTP redirects to (WIN-002).
+      TESRIA_HTTPS_PORT: ${TESRIA_HTTPS_PORT:-443}
     ports:
       # 80 and 443 unless set; a second Tesria on this computer needs others.
       - "${TESRIA_HTTP_PORT:-80}:80"

@@ -280,7 +280,7 @@ export async function build({
     p('Docker Compose knows each Tesria by a ', b('project name'), ', which is ', c('tesria'), ' for every Tesria folder unless its ', c('.env'), ' says otherwise. Two folders with the same name are one Tesria, not two: the second would take over the first one’s containers and data, and removing “the test copy” with ', c('docker compose down -v'), ' would delete the real wiki. Since 0.8.2 Tesria refuses to start a Tesria from a folder other than the one it was installed from, and says what to do.'),
     p('For a second, separate Tesria, for example to try a new version beside the real one, unzip it into a folder of its own and, ', b('before its first start'), ', give it its own name, network and ports in that folder’s ', c('.env'), ':'),
     codeBlock('bash', 'COMPOSE_PROJECT_NAME=tesria2\nTESRIA_SUBNET=10.204.0.0/24\nTESRIA_HTTP_PORT=8080\nTESRIA_HTTPS_PORT=8443'),
-    p('Then start it as above, and open it at ', c('https://localhost:8443'), '. It has its own volumes (', c('tesria2_pgdata'), ' and the rest), its own passwords, its own backup key and its own certificate authority, so a device that trusts the first one trusts this one separately. All four settings are in the ', pageLink('Configuration reference'), '.'),
+    p('Then start it as above, and open it at ', c('https://localhost:8443'), '. It has its own volumes (', c('tesria2_pgdata'), ' and the rest), its own passwords, its own backup key and its own certificate authority, so a device that trusts the first one trusts this one separately, from its own guide at ', c('http://localhost:8080/trust'), '. All four settings are in the ', pageLink('Configuration reference'), '.'),
   ))
 
   // ============================================================ Configuration
@@ -477,7 +477,8 @@ export async function build({
 
     h(2, 'Before you start'),
     panel('note',
-      p(b('Throughout this page, '), c('your-server'), b(' stands for your server’s address:'), ' whatever you type into the browser to open Tesria, without ', c('https://'), '. For example, if you open Tesria at ', c('https://wiki-server.local'), ', then ', c('http://your-server/trust'), ' means ', c('http://wiki-server.local/trust'), '.')),
+      p(b('Throughout this page, '), c('your-server'), b(' stands for your server’s address:'), ' whatever you type into the browser to open Tesria, without ', c('https://'), '. For example, if you open Tesria at ', c('https://wiki-server.local'), ', then ', c('http://your-server/trust'), ' means ', c('http://wiki-server.local/trust'), '.'),
+      p(b('A Tesria on ports of its own,'), ' such as a second one on the same computer (see ', pageLink('Installing with Docker Compose'), ', under ', b('A second Tesria on the same computer'), '), has two addresses: you open it at its HTTPS port, such as ', c('https://localhost:8443'), ', and its guide and certificate are at its HTTP port, such as ', c('http://localhost:8080/trust'), '. Put the HTTP one after ', c('http://'), ' on this page, and give it to the scripts, as ', c('localhost:8080'), '. The guide fills in both for you.')),
     ul(
       li(p(b('About three minutes'), ' per device.')),
       li(p(b('Optionally, the server’s fingerprint,'), ' from above, on a network you do not control.')),
@@ -503,7 +504,7 @@ export async function build({
     ...(await picture(trust, 'trust-device', 'Choosing the device in the guide', 'The highlighted button is the device the steps are for.')),
 
     step(2, 'What Address Do You Open Tesria At?'),
-    p('The guide fills in the address you used to reach it. It has to be the address you normally open Tesria at, because that is the address the command will trust. If you type a numeric address such as 192.168.1.50, the guide explains how to find your computer’s name instead, since certificates are issued for names.'),
+    p('The guide fills in the address you used to reach it. It has to be the address you normally open Tesria at, because that is the address the command will trust. For a Tesria on ports of its own, it includes the HTTPS port, such as ', c('localhost:8443'), ', and its commands download the certificate from the HTTP port. If you type a numeric address such as 192.168.1.50, the guide explains how to find your computer’s name instead, since certificates are issued for names.'),
     ...(await picture(trust, 'trust-address', 'The address box in the guide', 'Your server’s address, without https://.')),
 
     h(3, 'Optional: check the fingerprint first'),

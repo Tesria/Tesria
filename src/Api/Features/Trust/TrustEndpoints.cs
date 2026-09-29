@@ -80,10 +80,43 @@ public static partial class TrustEndpoints
         var s = await settings.GetAsync(context.RequestAborted);
         var name = WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(s.InstanceName) ? "Tesria" : s.InstanceName);
         var host = context.Request.Host.Host.ToLowerInvariant();
-        var address = Address().IsMatch(host) ? host : "";
+        var ports = Ports.Of(context, config);
+        var address = Address().IsMatch(host) ? host + ports.HttpsSuffix : "";
         context.Response.Headers.CacheControl = "no-cache";
-        var body = OwnCertificate(config) ? TrustBody(address, ServerName(s, config)) : NothingToDo(address);
+        var body = OwnCertificate(config) ? TrustBody(address, ports, ServerName(s, config)) : NothingToDo(address);
         return Results.Content(Shell(name, body), "text/html; charset=utf-8");
+    }
+
+    /// <summary>
+    /// The ports this Tesria answers plain HTTP and HTTPS on (WIN-002). The
+    /// port the page was reached at is the one for its own scheme, since that
+    /// is what the device used; the other comes from TESRIA_HTTP_PORT or
+    /// TESRIA_HTTPS_PORT, which Compose passes as <c>Tls:HttpPort</c> and
+    /// <c>Tls:HttpsPort</c>. A suffix is empty for the standard port.
+    /// </summary>
+    public sealed record Ports(int Http, int Https)
+    {
+        public string HttpSuffix => Http == 80 ? "" : ":" + Http;
+        public string HttpsSuffix => Https == 443 ? "" : ":" + Https;
+
+        public static Ports Of(HttpContext context, IConfiguration config)
+        {
+            var reached = context.Request.Host.Port;
+            var https = context.Request.IsHttps;
+            return new Ports(
+                !https ? reached ?? 80 : Configured(config["Tls:HttpPort"], 80),
+                https ? reached ?? 443 : Configured(config["Tls:HttpsPort"], 443));
+        }
+
+        /// <summary>A port, or the text after the last colon (compose also accepts <c>127.0.0.1:8443</c>).</summary>
+        public static int Configured(string? value, int fallback)
+        {
+            var text = (value ?? "").Trim();
+            var colon = text.LastIndexOf(':');
+            if (colon >= 0) text = text[(colon + 1)..];
+            return int.TryParse(text, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var port)
+                && port is > 0 and <= 65535 ? port : fallback;
+        }
     }
 
     private static string Shell(string name, string body) => $$"""
@@ -112,7 +145,8 @@ public static partial class TrustEndpoints
 
     /// <summary>
     /// The commands the page shows, as templates its script fills in as the
-    /// address and fingerprint are typed: <c>{address}</c>, <c>{fingerprint}</c>
+    /// address and fingerprint are typed: <c>{http}</c> (the name and the
+    /// plain-HTTP port, where the certificate is downloaded), <c>{fingerprint}</c>
     /// (colon pairs) and <c>{hex}</c> (bare). Rendered once here, with
     /// placeholders, for a page read without its script.
     /// </summary>
@@ -123,21 +157,21 @@ public static partial class TrustEndpoints
     /// fingerprint is pasted, trusts nothing unless it matches.
     /// </summary>
     internal const string MacLine =
-        "curl -fsS http://{address}/ca.crt -o /tmp/tesria-ca.crt && openssl x509 -in /tmp/tesria-ca.crt -noout -fingerprint -sha256 && "
+        "curl -fsS http://{http}/ca.crt -o /tmp/tesria-ca.crt && openssl x509 -in /tmp/tesria-ca.crt -noout -fingerprint -sha256 && "
         + "sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain /tmp/tesria-ca.crt";
 
     internal const string MacLineChecked =
-        "curl -fsS http://{address}/ca.crt -o /tmp/tesria-ca.crt && "
+        "curl -fsS http://{http}/ca.crt -o /tmp/tesria-ca.crt && "
         + "if [ \"$(openssl x509 -in /tmp/tesria-ca.crt -noout -fingerprint -sha256 | cut -d= -f2 | tr -d :)\" = \"{hex}\" ]; "
         + "then sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain /tmp/tesria-ca.crt; "
         + "else echo \"The certificate does not match the fingerprint. Nothing was trusted.\"; fi";
 
     /// <summary>Linux: the script, from the release, because distributions keep trusted certificates in different places.</summary>
     internal const string LinuxCommand =
-        "curl -fsSLO " + ReleaseDownload + "trust-ca.sh && bash trust-ca.sh {address}";
+        "curl -fsSLO " + ReleaseDownload + "trust-ca.sh && bash trust-ca.sh {http}";
 
     internal const string LinuxCommandChecked =
-        "curl -fsSLO " + ReleaseDownload + "trust-ca.sh && bash trust-ca.sh --fingerprint {fingerprint} {address}";
+        "curl -fsSLO " + ReleaseDownload + "trust-ca.sh && bash trust-ca.sh --fingerprint {fingerprint} {http}";
 
     /// <summary>
     /// Windows, as one typed line: typed commands are not subject to
@@ -148,13 +182,13 @@ public static partial class TrustEndpoints
     /// the checked form imports nothing unless it matches.
     /// </summary>
     internal const string WindowsLine =
-        "$c = \"$env:TEMP\\tesria-ca.crt\"; Invoke-WebRequest -UseBasicParsing -Uri \"http://{address}/ca.crt\" -OutFile $c; "
+        "$c = \"$env:TEMP\\tesria-ca.crt\"; Invoke-WebRequest -UseBasicParsing -Uri \"http://{http}/ca.crt\" -OutFile $c; "
         + "$x = New-Object Security.Cryptography.X509Certificates.X509Certificate2($c); "
         + "Write-Host (\"SHA-256: \" + ([BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($x.RawData)) -replace '-', ':')); "
         + "Import-Certificate -FilePath $c -CertStoreLocation Cert:\\CurrentUser\\Root";
 
     internal const string WindowsLineChecked =
-        "$c = \"$env:TEMP\\tesria-ca.crt\"; Invoke-WebRequest -UseBasicParsing -Uri \"http://{address}/ca.crt\" -OutFile $c; "
+        "$c = \"$env:TEMP\\tesria-ca.crt\"; Invoke-WebRequest -UseBasicParsing -Uri \"http://{http}/ca.crt\" -OutFile $c; "
         + "$x = New-Object Security.Cryptography.X509Certificates.X509Certificate2($c); "
         + "$h = [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($x.RawData)) -replace '-', ''; "
         + "if ($h -eq \"{hex}\") { Import-Certificate -FilePath $c -CertStoreLocation Cert:\\CurrentUser\\Root } "
@@ -163,7 +197,7 @@ public static partial class TrustEndpoints
     /// <summary>Windows, for everyone on the computer: the script, from the release.</summary>
     internal const string WindowsScript =
         "Invoke-WebRequest -UseBasicParsing " + ReleaseDownload + "trust-ca.ps1 -OutFile \"$env:TEMP\\trust-ca.ps1\"; "
-        + "powershell -ExecutionPolicy Bypass -File \"$env:TEMP\\trust-ca.ps1\" {address}";
+        + "powershell -ExecutionPolicy Bypass -File \"$env:TEMP\\trust-ca.ps1\" {http}";
 
     internal const string WindowsScriptChecked = WindowsScript + " -Fingerprint {hex}";
 
@@ -172,13 +206,18 @@ public static partial class TrustEndpoints
     /// checked form, which its script swaps in once a fingerprint is pasted
     /// (2026-09-27: checking is optional, SSH-style, by the owner's decision).
     /// </summary>
-    internal static string Command(string template, string checkedTemplate, string address) =>
-        $$"""<div class="trust-cmd"><code data-template="{{WebUtility.HtmlEncode(template)}}" data-template-checked="{{WebUtility.HtmlEncode(checkedTemplate)}}">{{WebUtility.HtmlEncode(Fill(template, address))}}</code><button type="button" class="btn btn--sm" data-copy>Copy</button></div>""";
+    internal static string Command(string template, string checkedTemplate, string address, Ports ports) =>
+        $$"""<div class="trust-cmd"><code data-template="{{WebUtility.HtmlEncode(template)}}" data-template-checked="{{WebUtility.HtmlEncode(checkedTemplate)}}">{{WebUtility.HtmlEncode(Fill(template, address, ports))}}</code><button type="button" class="btn btn--sm" data-copy>Copy</button></div>""";
 
-    internal static string Fill(string template, string address) => template
-        .Replace("{address}", address.Length == 0 ? "your-server" : address)
-        .Replace("{fingerprint}", "PASTE-THE-FINGERPRINT")
-        .Replace("{hex}", "PASTE-THE-FINGERPRINT");
+    /// <summary><paramref name="address"/> is what the browser opens, the name and any HTTPS port.</summary>
+    internal static string Fill(string template, string address, Ports ports)
+    {
+        var name = address.Length == 0 ? "your-server" : address.Split(':')[0];
+        return template
+            .Replace("{http}", name + ports.HttpSuffix)
+            .Replace("{fingerprint}", "PASTE-THE-FINGERPRINT")
+            .Replace("{hex}", "PASTE-THE-FINGERPRINT");
+    }
 
     /// <summary>
     /// The server's own name, from Admin → Settings → Public address, when it
@@ -193,8 +232,8 @@ public static partial class TrustEndpoints
     }
 
     /// <summary>Where to find the name to use instead of a number.</summary>
-    private static string NameHelp(string? serverName) => serverName is not null
-        ? $$"""<p>This server's name is <strong>{{WebUtility.HtmlEncode(serverName)}}</strong>. When you have finished, open <a href="https://{{WebUtility.HtmlEncode(serverName)}}/">https://{{WebUtility.HtmlEncode(serverName)}}</a>, and bookmark it.</p>"""
+    private static string NameHelp(string? serverName, Ports ports) => serverName is not null
+        ? $$"""<p>This server's name is <strong>{{WebUtility.HtmlEncode(serverName)}}</strong>. When you have finished, open <a href="https://{{WebUtility.HtmlEncode(serverName + ports.HttpsSuffix)}}/">https://{{WebUtility.HtmlEncode(serverName + ports.HttpsSuffix)}}</a>, and bookmark it.</p>"""
         : """
           <p>The name is the server computer's name followed by <code>.local</code>, on most home and office networks. On the server computer:</p>
           <ul>
@@ -211,7 +250,7 @@ public static partial class TrustEndpoints
         <p><a class="btn btn--primary" href="https://{{address}}/">Open Tesria</a></p>
         """;
 
-    private static string TrustBody(string address, string? serverName) => $$"""
+    private static string TrustBody(string address, Ports ports, string? serverName) => $$"""
         <h1>Trust This Server on Your Device</h1>
         <p class="trust-lead">A few minutes, once per device, and your browser stops warning you about this server.</p>
 
@@ -250,13 +289,13 @@ public static partial class TrustEndpoints
         <p class="muted">What you type into the browser's address bar, without <code>https://</code>. We filled in the address you used to reach this page.</p>
         <label class="trust-address">
           <span class="trust-address__prefix">https://</span>
-          <input id="trust-address" type="text" aria-label="Your Tesria address" value="{{address}}" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url" placeholder="wiki-server.local" />
+          <input id="trust-address" type="text" aria-label="Your Tesria address" value="{{address}}" data-http-port="{{ports.Http}}" data-https-port="{{ports.Https}}" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url" placeholder="wiki-server.local" />
         </label>
-        <p class="trust-address__error alert alert--error" id="trust-address-error" hidden>That does not look like an address. Use letters, numbers, dots and hyphens, like <code>wiki-server.local</code>, with no <code>https://</code>, port or slash.</p>
+        <p class="trust-address__error alert alert--error" id="trust-address-error" hidden>That does not look like an address. Use letters, numbers, dots and hyphens, like <code>wiki-server.local</code>, with no <code>https://</code> or slash, and a port only if Tesria has its own, like <code>localhost:8443</code>.</p>
         <div class="trust-ip alert alert--warning" id="trust-ip" hidden>
           <p><strong>Open Tesria by its name, not by this number.</strong> A certificate is issued for a name, such as <code>studio.local</code>. A browser keeps warning about an address like 192.168.1.50 even after the device trusts the server, so the address bar keeps saying "Not secure".</p>
           <p>The steps below still work from here: the certificate they install covers every name the server answers on. Afterwards, open Tesria by its name.</p>
-          {{NameHelp(serverName)}}
+          {{NameHelp(serverName, ports)}}
         </div>
         </section>
 
@@ -264,7 +303,7 @@ public static partial class TrustEndpoints
         <summary><strong>Optional: Check the Fingerprint First</strong> <span class="muted">(worth it on a network you do not control)</span></summary>
         <p>The <strong>fingerprint</strong> is a code that only your server's certificate has, like <code>4B:1E:09:…</code>. Paste it here and the commands below trust nothing unless the certificate matches it. Get it from the server, not from this page, which could have been changed on the way:</p>
         <ul>
-          <li><strong>On the server computer,</strong> open <code>https://localhost</code>, then Administration, Settings, <strong>Certificate</strong>.</li>
+          <li><strong>On the server computer,</strong> open <code>https://localhost{{ports.HttpsSuffix}}</code>, then Administration, Settings, <strong>Certificate</strong>.</li>
           <li><strong>In a terminal on the server,</strong> in the Tesria folder: <code>docker compose logs app | grep -i fingerprint</code> <span class="muted">(on Windows, <code>| Select-String fingerprint</code>)</span>.</li>
           <li><strong>Through Tailscale,</strong> if your Tesria has it: Administration, Settings, Certificate, at its <code>ts.net</code> address.</li>
           <li>Or ask whoever runs your Tesria.</li>
@@ -286,7 +325,7 @@ public static partial class TrustEndpoints
           <ol class="trust-list">
             <li>Open <strong>Terminal</strong>: press <kbd>⌘</kbd> <kbd>Space</kbd>, type <em>Terminal</em>, and press <kbd>Return</kbd>.</li>
             <li>Copy this line, paste it into Terminal, and press <kbd>Return</kbd>:
-              {{Command(MacLine, MacLineChecked, address)}}</li>
+              {{Command(MacLine, MacLineChecked, address, ports)}}</li>
             <li>Type your Mac's login password when asked, and press <kbd>Return</kbd>. <span class="muted">Nothing appears while you type; that is normal.</span></li>
             <li>If you checked the fingerprint and it says the certificate <strong>does not match</strong>, stop: nothing was trusted. Check the fingerprint and the address.</li>
             <li>Quit your browser completely (<kbd>⌘</kbd> <kbd>Q</kbd>) and open it again.</li>
@@ -306,7 +345,7 @@ public static partial class TrustEndpoints
           <ol class="trust-list">
             <li>Open <strong>PowerShell</strong>: press the <kbd>Windows</kbd> key, type <em>PowerShell</em>, and press <kbd>Enter</kbd>.</li>
             <li>Copy this line, paste it into PowerShell (right-click pastes), and press <kbd>Enter</kbd>:
-              {{Command(WindowsLine, WindowsLineChecked, address)}}</li>
+              {{Command(WindowsLine, WindowsLineChecked, address, ports)}}</li>
             <li>If you checked the fingerprint and it says the certificate <strong>does not match</strong>, stop: nothing was trusted. Otherwise Windows shows a <strong>Security Warning</strong> about a certificate from <em>Caddy Local Authority</em>: that is your server's. Choose <strong>Yes</strong>.</li>
             <li>Close every browser window and open your browser again.</li>
           </ol>
@@ -314,7 +353,7 @@ public static partial class TrustEndpoints
             <p>The line above trusts the server for your Windows account. To trust it for everyone who signs in to this computer, use Tesria's script from GitHub instead. It needs an administrator, and asks.</p>
             <ol>
               <li>In PowerShell, run:
-                {{Command(WindowsScript, WindowsScriptChecked, address)}}</li>
+                {{Command(WindowsScript, WindowsScriptChecked, address, ports)}}</li>
               <li>Choose <strong>Yes</strong> when Windows asks to allow changes.</li>
             </ol>
             <p class="muted">On a work computer your IT department may block scripts completely, and then this does not run at all. The line at the top still works, or ask IT to add the certificate for you.</p>
@@ -336,7 +375,7 @@ public static partial class TrustEndpoints
           <ol class="trust-list">
             <li>Open a terminal. On most systems, press <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>T</kbd>.</li>
             <li>Copy this line, paste it into the terminal, and press <kbd>Enter</kbd>:
-              {{Command(LinuxCommand, LinuxCommandChecked, address)}}</li>
+              {{Command(LinuxCommand, LinuxCommandChecked, address, ports)}}</li>
             <li>Type your password when asked. <span class="muted">Nothing appears while you type; that is normal.</span></li>
             <li>If you checked the fingerprint and it says the certificate <strong>does not match</strong>, stop: nothing was trusted. Otherwise close your browser completely and open it again.</li>
           </ol>
