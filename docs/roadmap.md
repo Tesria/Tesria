@@ -332,12 +332,15 @@ set the instance default is a small decision to make with it. Exports
   most visible where it meets the orange "Everything Else" segment at the
   top and bottom, while the orange segment's edges are smooth. Seen by
   the owner on 0.8.2 in Chrome on Windows, light theme, desktop size, with
-  the shaded (glass-style) slices. Likely in how the slice gradients and
-  rim highlights are clipped (`PieChart.tsx`'s `Sheen` and
-  `SliceGradient`): a clip path or mask without anti-aliasing, or two
-  overlapping shapes along the seam. Check the same chart in Minimal and
-  Glass, light and dark, on a high-DPI and a standard screen, and the donut
-  element in a page.
+  the shaded (glass-style) slices, and the same in Minimal with flat
+  colors, so the shading is not the cause. The jagged spot is at the top,
+  where "Free" (the last slice) meets the first ones: "The Wiki" and "Its
+  Backups", each under 1% of the disk. Likely those two slivers are drawn
+  as tiny wedges at the seam (sub-pixel arcs, or gaps and overlaps between
+  neighboring paths), stepping the edge. Look at how `PieChart.tsx` draws
+  slices under about 1% (a minimum visible size, or merging them into one
+  small slice), and whether each slice's arc ends exactly where the next
+  begins.
 - **From the 0.8.2 fixes (2026-09-29), smaller follow-ups:**
   - A webhook made by an account that is later suspended still delivers on
     spaces open to everyone (default-open access ignores account status).
