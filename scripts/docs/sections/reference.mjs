@@ -412,6 +412,17 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
       li(p(b('Complete license notices'), ' for everything Tesria is built from, in the About tab and inside every image.')),
     ),
 
+    h(2, '0.8.2'),
+    p('Released September 30, 2026. The fixes from a full test of 0.8.1 before the public launch: every serious problem the testers found, and five security issues. Download the new ', c('tesria-deploy.zip'), ' and unzip it over your folder as usual; see ', pageLink('Upgrading'), '.'),
+    ul(
+      li(p(b('Backups.'), ' The cloud copy of the database gets its backups; restoring to a chosen moment works from the admin page and brings attachments back; the runbook’s point-in-time steps work as written; a missing network drive or a wrong cloud setting no longer stops backups, and each card says what is wrong. See ', pageLink('Backups and recovery'), '.')),
+      li(p(b('Staying up.'), ' A slow webhook receiver no longer restarts Tesria, Tesria restarts itself if it starts before its database, and a changed ', c('APP_DB_PASSWORD'), ' takes effect by itself.')),
+      li(p(b('Unpublished work.'), ' ', b('Close'), ' asks before leaving unpublished changes (', b('Keep as Draft'), ' or ', b('Discard'), '), a shared draft says whose changes it holds, and an assistant’s change no longer overwrites what you are typing. See ', pageLink('Drafts, Publish and Update'), '.')),
+      li(p(b('The editor.'), ' Enter in a popup no longer publishes the page, a status keeps its label as you type, and a gallery holds as many pictures as you add.')),
+      li(p(b('A second Tesria on one computer'), ' can no longer take over the first: each install remembers its folder. See ', pageLink('Installing with Docker Compose'), '.')),
+      li(p(b('Content.'), ' Imported wiki packs keep their page order (import an earlier import again to fix it), and Markdown keeps statuses, dates and mentions in tables.')),
+      li(p(b('Security.'), ' Webhooks and emails say nothing about pages the recipient cannot see, issuing a password reset link asks for your password again, deleting a page checks every page under it, and the allowlists and the sign-in page accept only what they should.')),
+    ),
     h(2, '0.8.1'),
     p('Released September 28, 2026. A new look to choose, and a tidier top bar in both looks. Nothing to do when you upgrade: everyone starts in Minimal, which is Tesria as it has always looked.'),
     ul(

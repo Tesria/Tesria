@@ -58,8 +58,9 @@ Read first, in this order:
   then `TESRIA_TEST_POSTGRES='Host=127.0.0.1;Port=55432;Username=postgres;Password=tesria-test'`.
 - **`docs/roadmap-public.md` is read by tesria.com's build**, which fails if
   its shape changes: the rules are at the top of `docs/roadmap.md`. On every
-  release, rename `Shipped in` to the new version and move what shipped
-  into it.
+  release, add a `### <version> (<date>)` list at the top of `Shipped`
+  saying what it added and fixed (fixes start with `Fixed: `), keep at
+  least the last three releases there, and drop the oldest past five.
 - **Keep `README.md` current as work lands**, not only at release: a
   change to what Tesria does, how it installs, or a button's name updates
   the README in the same commit, and every release updates its status line.

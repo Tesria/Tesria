@@ -1,17 +1,32 @@
 # Tesria roadmap
 <!-- Read by tesria.com at build time. One line per item, written for visitors. -->
 
-## Shipped in 0.8.1
-- An MCP server: AI assistants' edits show as tracked changes you keep or reject
-- Real-time editing together, with a slash menu for tables, panels, charts including donuts, diagrams and more
-- A REST API and webhooks, with read-only or full-access tokens and a record of what each token did
-- Spaces with roles, groups and page restrictions, and public spaces anyone can read
-- Export a space as a website, a PDF, or a wiki pack that imports into another Tesria
-- Automated backups with one-click restore and undo, and copies to a NAS, a removable drive or the cloud
-- Private access from anywhere through the optional Tailscale integration
-- A tamper-evident audit log, two-factor sign-in and security alerts
-- One command installs Tesria for Intel, AMD or ARM, making its own passwords and keys; devices trust it in a minute
+## Shipped
+
+### 0.8.2 (September 30, 2026)
+- Fixed: backups to the cloud now happen, and restoring to a chosen moment works from the admin page, with attachments
+- Fixed: a missing network drive or a wrong cloud setting no longer stops backups; each card says what is wrong
+- Fixed: a slow webhook receiver no longer restarts the wiki, and Tesria restarts itself if it starts before its database
+- Fixed: Close asks before leaving unpublished changes, and a shared draft shows whose changes it holds, with Discard
+- Fixed: an AI assistant's change no longer overwrites what you are typing in the same paragraph
+- Fixed: a second Tesria on the same computer can no longer take over the first
+- Fixed: imported wiki packs keep their page order, and Markdown keeps statuses, dates and mentions in tables
+- Fixed: five security issues found in testing, including webhooks and password reset links
+
+### 0.8.1 (September 28, 2026)
 - Two looks, chosen by each person: Minimal, or Glass, a frosted design with a floating sidebar
+- Reduce Motion for Glass, and a Minimal, Glass or Theme Default style for statuses, charts, code blocks and diagrams
+- A tidier top bar that folds into one menu when space runs short, and tabs that never scroll sideways
+- The breadcrumb stays at the top of a page, and a deep trail folds into a menu
+- Exported sites offer Glass too, and keep their folder names short enough for Windows
+- Fixed: the page list in the phone menu scrolls, and keeps its place when the keyboard closes
+
+### 0.8.0 (September 27, 2026)
+- One command installs Tesria with no settings file: it makes its own passwords and keys
+- Donut charts, in pages and on the Backups page
+- Trusting a device's certificate takes a minute, with an optional fingerprint check
+- Fixed: Safari on an iPhone or iPad no longer hangs on a black page
+- Fixed: issues from an independent review, including device trust, third-party notices and restores
 
 ## Next
 - Default groups for every space, and guided setup for new spaces and new people

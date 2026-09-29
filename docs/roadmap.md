@@ -27,12 +27,16 @@ This file is the internal ideas log. The short, visitor-facing version is
 [`roadmap-public.md`](./roadmap-public.md), which tesria.com reads at build
 time for its Roadmap page, and whose build fails if its shape changes:
 
-- exactly three `##` sections, in order: `Shipped in <version>` (the
-  release the list describes, updated when a release goes out), `Next`,
-  `Ideas`;
+- exactly three `##` sections, in order: `Shipped`, `Next`, `Ideas`
+  (the shape since 0.8.2; tesria.com still accepts the old
+  `Shipped in <version>` one);
+- `Shipped` holds one `### <version> (<Month D, YYYY>)` heading per
+  release, newest first, 3 to 5 releases of 2 to 8 items each; an item
+  that fixes something starts with `Fixed: `; no `###` headings anywhere
+  else;
 - each item one `- ` line of plain text, up to about 120 characters, with
   at most one Markdown link and nothing else (no bold, nested lists or
-  continuation lines); 3 to 10 items per section;
+  continuation lines); `Next` and `Ideas` hold 3 to 10 items;
 - written for the public: no dev-plan numbers, file paths, model names,
   review codes, suggestion dates, quotations or security-gap references;
 - ideas phrased as possibilities, not promises; when an item ships, it
@@ -321,6 +325,24 @@ set the instance default is a small decision to make with it. Exports
 (site, PDF) stay flat.
 
 ### Follow-ups found after 0.8.1
+
+- **From the 0.8.2 fixes (2026-09-29), smaller follow-ups:**
+  - A webhook made by an account that is later suspended still delivers on
+    spaces open to everyone (default-open access ignores account status).
+  - `COLLAB_SHARED_SECRET` and `PDF_SHARED_SECRET` are read once at start
+    by both sides; the docs now say to restart app, collab and pdf after
+    changing one, but Tesria could pick a change up by itself, as it now
+    does for `APP_DB_PASSWORD`.
+  - Adding pictures to a gallery one at a time puts each after the
+    selected tile, so the second added lands before the first.
+  - Once a gallery has tiles there is no text cursor inside it; `/image`
+    there needs Enter first.
+  - The physical backup card's "Restore to Any Moment" range can end
+    earlier than it starts for a minute after a backup (display only).
+  - On Docker Desktop, a removable drive plugged in after its service
+    started may stay invisible to it until `docker compose up -d`.
+  - The 243 Medium and Low bugs from the 0.8.1 QA run (the run's own
+    records, not in the repository) wait for triage.
 
 - **Bug (reported 2026-09-28): an exported site's Reduce Motion switch does
   nothing.** In Glass, the export's appearance menu shows the switch

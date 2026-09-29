@@ -5,7 +5,7 @@
 Write, keep and share your team's knowledge on your own server. Connect any
 AI assistant through MCP, and see every change it makes.
 
-**Latest release:** [0.8.1](https://github.com/Tesria/Tesria/releases/latest).
+**Latest release:** [0.8.2](https://github.com/Tesria/Tesria/releases/latest).
 **Website and docs:** [tesria.com](https://tesria.com). Free and open source
 under the [Apache License 2.0](./LICENSE).
 

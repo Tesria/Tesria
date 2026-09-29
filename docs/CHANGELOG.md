@@ -5,6 +5,116 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-09-30
+
+The fixes from a full manual test of 0.8.1 before the public launch: ten
+testers, each on a throwaway install of their own, with phones, tablets and
+desktops in three browser engines, plus a pass on Windows and in Safari on
+an iPhone. Every Critical and High bug they found is fixed here, along with
+five security issues. Nothing to do when you upgrade, except as noted under
+Upgrading.
+
+### Backups
+- **The cloud copy of the database now gets its backups.** The cloud card
+  took its time and size from the local backups, so Tesria believed the
+  cloud already had one and never sent a full backup there. It now counts
+  only the cloud's own backups, and a failed cloud backup waits 15 minutes
+  before trying again.
+- **Restoring to a chosen moment works from the admin page.** Every
+  point-in-time restore failed: the time reached pgBackRest in a form it
+  could not use to pick a backup. The dialog also kept its default time
+  outside its own range for a minute after each backup, so Restore Now did
+  nothing; it now stays in range and says so when a time is not.
+- **Attachments come back after a restore to a moment.** A new step puts
+  back every file the restored wiki refers to from the newest uploads
+  archive holding it, and names any that no archive has. It runs by itself
+  after a restore from the admin page, and is step 5 of the runbook.
+- **The runbook's point-in-time recovery works as written**, from this
+  machine and from the cloud onto a new one; the new machine's stack now
+  starts afterwards.
+- **A missing network drive or a wrong cloud setting no longer stops
+  backups.** Each drive has its own small service (`backup-nas`,
+  `backup-removable`), so a drive that is not there takes only its own copy
+  down, and its card says so. A cloud that refuses Tesria's settings is left
+  out of the database's archiving until fixed, and its card names the
+  problem, while local backups carry on.
+- **A backup key that does not open the backups on this machine is
+  refused** at start, instead of silently replacing the stored one.
+
+### Staying up
+- **A slow webhook receiver no longer restarts the wiki.** A delivery that
+  took longer than 5 seconds ended the whole app; it now counts as a failed
+  attempt, is retried as documented, and is logged. No background task can
+  stop the app any more.
+- **Tesria restarts itself if it starts before its database.** A failed start
+  hung at full CPU forever, so Docker never restarted it, and the wiki stayed
+  down after a reboot. It now exits, and Docker brings it back once the
+  database answers.
+- **Changing APP_DB_PASSWORD takes effect by itself**, with nothing to
+  restart; before, the next restart failed.
+
+### Writing together
+- **Close asks before leaving unpublished changes.** Keep as Draft, Discard
+  or Stay in the Editor; Discard puts the shared draft back to the published
+  page. Anyone opening a draft with someone else's unpublished changes sees
+  whose they are, with Discard. Before, changes left with Close waited in the
+  shared draft and were published by whoever pressed Update next, under
+  their name.
+- **Closing a new page with work in it asks first**, and the leave prompt
+  appears only when something is unpublished.
+- **An assistant's or a script's change no longer overwrites your typing.**
+  Outside changes are compared with the version your draft started from, so
+  only what they changed is highlighted; where both of you changed the same
+  paragraph, yours stays and theirs is offered beside it. Accept All and
+  Reject All leave no copy of a list or table behind, and reconnecting after
+  "This page changed while you were editing" keeps your edit.
+- **Publishing through the API or MCP resets an idle draft** to what was
+  published, and restoring a version from History counts as an outside
+  change.
+- **Enter in a date box, a chart title or a live content setting no longer
+  publishes the page.**
+- **Typing a status label keeps the status**, and typing after a status, date
+  or math continues the text instead of replacing it.
+- **A gallery holds as many pictures as you add**, one by one or several at
+  once, and dropping several pictures inserts all of them.
+
+### Installing, content and exports
+- **A second Tesria on the same computer can no longer take over the
+  first.** Each install remembers its folder (`.tesria-install`), and a start
+  from another folder is refused before anything is written, with the
+  settings a second install needs: its own `COMPOSE_PROJECT_NAME`,
+  `TESRIA_SUBNET`, and the new `TESRIA_HTTP_PORT` and `TESRIA_HTTPS_PORT`.
+  `docker compose run --rm init check-folder` confirms the folder, and
+  `init use-this-folder` moves an install to a new one on purpose.
+  "Uninstalling and moving" checks the folder before `down -v`, works in
+  PowerShell, and restores the old computer's newest dump, not the new one's.
+- **The setup wizard asks for your password when a step needs it**, instead
+  of sticking on "Saving…".
+- **Imported wiki packs keep their page order.** Every import put pages in
+  the order it read them from the file. Spaces imported before 0.8.2 keep
+  their order until imported again.
+- **Markdown keeps statuses, dates and mentions inside tables**, in the
+  export and for AI assistants.
+
+### Security
+Found by the release's own security testing; each affects 0.6.0 to 0.8.1.
+- Image and embed allowlist entries must be host names, and are encoded
+  wherever they are written.
+- Webhooks and notification emails say nothing about a page the recipient
+  cannot see.
+- Issuing a password reset link for another account asks for your password
+  again, and cannot be done with an API token.
+- Deleting a page checks your right to delete every page under it.
+- The sign-in page shows only fixed messages for single sign-on errors, and
+  no email address goes in the link.
+
+### Upgrading
+- Download the new `tesria-deploy.zip` and unzip it over your folder as
+  usual. It adds two small services for the offsite drives, and `init` now
+  records the folder on the first start (the hidden `.tesria-install`).
+- A space imported from a pack before 0.8.2 keeps its scrambled order; import
+  the pack again to fix it.
+
 ## [0.8.1] - 2026-09-28
 
 A second look to choose: Glass, tesria.com's frosted design, beside
