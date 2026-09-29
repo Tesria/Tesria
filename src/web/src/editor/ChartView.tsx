@@ -1,28 +1,24 @@
-import { useMemo, type CSSProperties } from 'react'
-import { DonutChart, PieChart } from '../components/PieChart'
+import { useId, useMemo, useState, type ReactNode } from 'react'
 import { AppearancePicker } from './AppearancePicker'
 import { appearanceData } from './appearance'
 import { NodeViewWrapper, useEditorState, type ReactNodeViewProps } from '@tiptap/react'
 import type { Node as PMNode } from '@tiptap/pm/model'
-import { CHART_TYPES, CHART_TYPE_LABELS, isChartType, type ChartType } from './chartExtension'
-
-type Series = { label: string; values: number[] }
-type TableData = { headers: string[]; series: Series[] }
-
-/** A number as a person would write one in a table: "1,234", "45%", "£9.50". */
-function parseNumber(text: string): number | null {
-  const cleaned = text.replace(/[^0-9.,\-+eE]/g, '').replace(/,/g, '')
-  if (!cleaned || !/\d/.test(cleaned)) return null
-  const value = Number(cleaned)
-  return Number.isFinite(value) ? value : null
-}
+import {
+  CHART_SIZES, CHART_SIZE_LABELS, CHART_TYPES, CHART_TYPE_LABELS, LEGEND_LABELS, LEGEND_POSITIONS, isChartType,
+  type ChartSize, type ChartType, type LegendPosition,
+} from './chartExtension'
+import {
+  DONUT_CENTERS, DONUT_CENTER_LABELS, NUMBER_FORMATS, NUMBER_FORMAT_LABELS, detectFormat, isDonutCenter,
+  isNumberFormatChoice, resolveFormat, tableToChart,
+} from './chartData'
+import { ChartPlot, type PlotOptions } from './ChartPlot'
 
 /**
- * Reads the nth table on the page into rows of numbers. The first column is
- * the label; every other column is a series. A row with no numbers at all is
- * skipped rather than charted as zero: a spacer row is not data.
+ * The cells of the nth table on the page, as text, row by row. The chart
+ * works from these (chartData.ts), so the table stays the one place the
+ * numbers live.
  */
-function readTable(doc: PMNode, ordinal: number): TableData | null {
+function readTableCells(doc: PMNode, ordinal: number): string[][] | null {
   let found: PMNode | null = null
   let seen = 0
   doc.descendants((node) => {
@@ -31,41 +27,33 @@ function readTable(doc: PMNode, ordinal: number): TableData | null {
     if (seen === ordinal) found = node
   })
   if (!found) return null
-
   const rows: string[][] = []
   ;(found as PMNode).forEach((row) => {
     const cells: string[] = []
     row.forEach((cell) => cells.push(cell.textContent.trim()))
     if (cells.length > 0) rows.push(cells)
   })
-  if (rows.length < 2) return null
-
-  const [head, ...body] = rows
-  const headers = head.slice(1)
-  const series: Series[] = body
-    .map((cells) => ({ label: cells[0] ?? '', values: cells.slice(1).map((c) => parseNumber(c) ?? 0) }))
-    // A spacer row with no numbers at all is not data, so it is dropped
-    // rather than charted as a run of zeroes.
-    .filter((_, i) => body[i].slice(1).some((c) => parseNumber(c) !== null))
-  return series.length === 0 ? null : { headers, series }
+  return rows
 }
 
-// The chart palette: readable on both themes, and distinguishable without
-// relying on hue alone (the legend names every series).
-const COLORS = ['#0c66e4', '#00875a', '#a54800', '#5e4db2', '#ae4787', '#206a83', '#946f00', '#bf2600']
-/** A pie's and a donut's colors in the glass style: brighter and more saturated (the owner, 2026-09-28). */
-const GLASS_SLICE_COLORS = ['#1f7bff', '#00b86b', '#ff7a1a', '#8b5cf6', '#ec4899', '#06b6d4', '#f5b800', '#ef4444']
+const oneOf = <T extends string>(values: readonly T[], value: unknown, fallback: T): T =>
+  typeof value === 'string' && (values as readonly string[]).includes(value) ? (value as T) : fallback
 
 export function ChartView({ node, editor, selected, updateAttributes }: ReactNodeViewProps) {
-  const source = Number(node.attrs.source) || 1
-  const type: ChartType = isChartType(node.attrs.chartType) ? node.attrs.chartType : 'column'
-  const title = String(node.attrs.title ?? '')
+  const attrs = node.attrs
+  const source = Number(attrs.source) || 1
+  const type: ChartType = isChartType(attrs.chartType) ? attrs.chartType : 'column'
+  const title = String(attrs.title ?? '')
+  const transpose = Boolean(attrs.transpose)
+  const numberFormat = isNumberFormatChoice(attrs.numberFormat) ? attrs.numberFormat : 'auto'
+  const [moreOpen, setMoreOpen] = useState(false)
+  const moreId = useId()
 
   // Re-read whenever the document changes, so editing the table redraws the
   // chart: the whole reason the data is not copied in.
-  const data = useEditorState({
+  const cells = useEditorState({
     editor,
-    selector: ({ editor }) => readTable(editor.state.doc, source),
+    selector: ({ editor }) => readTableCells(editor.state.doc, source),
     equalityFn: (a, b) => b !== null && JSON.stringify(a) === JSON.stringify(b),
   })
   const tableCount = useEditorState({
@@ -76,33 +64,76 @@ export function ChartView({ node, editor, selected, updateAttributes }: ReactNod
       return n
     },
   })
+  const data = useMemo(() => (cells ? tableToChart(cells, transpose) : null), [cells, transpose])
+  const format = useMemo(() => resolveFormat(numberFormat, detectFormat(cells ?? [])), [cells, numberFormat])
+
+  const options: PlotOptions = {
+    legend: oneOf<LegendPosition>(LEGEND_POSITIONS, attrs.legend, 'below'),
+    size: oneOf<ChartSize>(CHART_SIZES, attrs.chartSize, 'medium'),
+    axes: attrs.axes !== false,
+    categoryTitle: String(attrs.categoryTitle ?? ''),
+    valueTitle: String(attrs.valueTitle ?? ''),
+    valueLabels: Boolean(attrs.valueLabels),
+    points: Boolean(attrs.points),
+    smooth: Boolean(attrs.smooth),
+    area: Boolean(attrs.area),
+    fromZero: attrs.fromZero !== false,
+    stacked: Boolean(attrs.stacked),
+    legendValues: attrs.legendValues !== false,
+    dataColumn: Math.max(1, Number(attrs.dataColumn) || 1),
+    largestFirst: Boolean(attrs.largestFirst),
+    donutCenter: isDonutCenter(attrs.donutCenter) ? attrs.donutCenter : 'total',
+    centerText: String(attrs.centerText ?? ''),
+  }
 
   return (
-    <NodeViewWrapper className={selected ? 'chart is-selected' : 'chart'} contentEditable={false} {...appearanceData(node.attrs.appearance)}>
+    <NodeViewWrapper
+      className={selected ? 'chart is-selected' : 'chart'}
+      contentEditable={false}
+      {...appearanceData(attrs.appearance)}
+    >
       {editor.isEditable && (
-        <div className="chart__controls">
-          <label>
-            <span>Table</span>
-            <select value={String(source)} onChange={(e) => updateAttributes({ source: Number(e.target.value) })}>
-              {Array.from({ length: Math.max(tableCount, 1) }, (_, i) => (
-                <option key={i + 1} value={i + 1}>{`Table ${i + 1}`}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>Type</span>
-            <select value={type} onChange={(e) => updateAttributes({ chartType: e.target.value })}>
-              {CHART_TYPES.map((t) => <option key={t} value={t}>{CHART_TYPE_LABELS[t]}</option>)}
-            </select>
-          </label>
-          <AppearancePicker value={node.attrs.appearance} onChange={(appearance) => updateAttributes({ appearance })} />
-          <input
-            className="chart__title-input"
-            value={title}
-            placeholder="Chart Title (Optional)"
-            onChange={(e) => updateAttributes({ title: e.target.value })}
-          />
-        </div>
+        <>
+          <div className="chart__controls">
+            <label>
+              <span>Table</span>
+              <select value={String(source)} onChange={(e) => updateAttributes({ source: Number(e.target.value) })}>
+                {Array.from({ length: Math.max(tableCount, 1) }, (_, i) => (
+                  <option key={i + 1} value={i + 1}>{`Table ${i + 1}`}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>Type</span>
+              <select value={type} onChange={(e) => updateAttributes({ chartType: e.target.value })}>
+                {CHART_TYPES.map((t) => <option key={t} value={t}>{CHART_TYPE_LABELS[t]}</option>)}
+              </select>
+            </label>
+            <AppearancePicker value={attrs.appearance} onChange={(appearance) => updateAttributes({ appearance })} />
+            <input
+              className="chart__title-input"
+              value={title}
+              placeholder="Chart Title (Optional)"
+              aria-label="Chart Title"
+              onChange={(e) => updateAttributes({ title: e.target.value })}
+            />
+            <button
+              type="button"
+              className={moreOpen ? 'chart__more is-open' : 'chart__more'}
+              aria-expanded={moreOpen}
+              aria-controls={moreId}
+              onClick={() => setMoreOpen((open) => !open)}
+            >
+              More Options
+            </button>
+          </div>
+          {moreOpen && (
+            <div className="chart__options" id={moreId} role="group" aria-label="More Chart Options">
+              <MoreOptions type={type} options={options} numberFormat={numberFormat} transpose={transpose}
+                seriesNames={data?.series.map((s) => s.name) ?? []} update={updateAttributes} />
+            </div>
+          )}
+        </>
       )}
       {title && <p className="chart__title">{title}</p>}
       {!data && (
@@ -112,113 +143,141 @@ export function ChartView({ node, editor, selected, updateAttributes }: ReactNod
             : `Table ${source} has no numbers to chart.`}
         </p>
       )}
-      {data && <Plot data={data} type={type} />}
+      {data && <ChartPlot data={data} type={type} options={options} format={format} title={title} />}
     </NodeViewWrapper>
   )
 }
 
 /**
- * Plain SVG rather than a charting library: five chart types over one table
- * is a few dozen lines, and the alternative is another ~150KB in the bundle
- * for a feature most pages never use.
+ * The less-used options, behind "More Options" so the row above stays one
+ * tidy line. Only the options that apply to the chart's type are shown;
+ * the others keep their values, so switching type and back loses nothing.
  */
-function Plot({ data, type }: { data: TableData; type: ChartType }) {
-  const flat = useMemo(() => data.series.flatMap((s) => s.values), [data])
-  const max = Math.max(...flat, 0)
-  const min = Math.min(...flat, 0)
-
-  if (type === 'donut') {
-    // The same one column as the pie, as a ring with the column's total in
-    // the middle (0.8.0).
-    const slices = data.series.map((s, i) => ({ label: s.label, value: Math.max(s.values[0] ?? 0, 0), color: COLORS[i % COLORS.length], glassColor: GLASS_SLICE_COLORS[i % GLASS_SLICE_COLORS.length] }))
-    const total = slices.reduce((sum, s) => sum + s.value, 0)
-    const shown = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(total)
-    return (
-      <div className="chart__plot">
-        <DonutChart slices={slices} size={120} label={`Donut chart, total ${shown}`} center={shown} caption="total" />
-        <Legend items={slices.map((s) => ({ label: s.label, color: s.color, glassColor: s.glassColor }))} />
-      </div>
-    )
-  }
-
-  if (type === 'pie') {
-    // A pie charts one column: the first, which is what people mean.
-    // The drawing itself lives in components/PieChart (dev-plan 9.3), so the
-    // editor and the backups page share one pie rather than two that drift.
-    const slices = data.series.map((s, i) => ({ label: s.label, value: Math.max(s.values[0] ?? 0, 0), color: COLORS[i % COLORS.length], glassColor: GLASS_SLICE_COLORS[i % GLASS_SLICE_COLORS.length] }))
-    return (
-      <div className="chart__plot">
-        <PieChart slices={slices} size={120} label="Pie chart" />
-        <Legend items={slices.map((s) => ({ label: s.label, color: s.color, glassColor: s.glassColor }))} />
-      </div>
-    )
-  }
-
-  if (type === 'line') {
-    const width = 320, height = 160, pad = 4
-    const span = max - min || 1
-    return (
-      <div className="chart__plot">
-        <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Line chart">
-          {data.headers.map((_, column) => (
-            <polyline
-              key={column}
-              fill="none"
-              stroke={COLORS[column % COLORS.length]}
-              strokeWidth="2"
-              points={data.series.map((s, i) => {
-                const x = pad + (i * (width - pad * 2)) / Math.max(data.series.length - 1, 1)
-                const y = height - pad - (((s.values[column] ?? 0) - min) / span) * (height - pad * 2)
-                return `${x.toFixed(1)},${y.toFixed(1)}`
-              }).join(' ')}
-            />
-          ))}
-        </svg>
-        <Legend items={data.headers.map((h, i) => ({ label: h, color: COLORS[i % COLORS.length] }))} />
-      </div>
-    )
-  }
-
-  // Bars: one group per row, one bar per column. Horizontal or vertical.
-  const horizontal = type === 'bar'
+function MoreOptions({ type, options, numberFormat, transpose, seriesNames, update }: {
+  type: ChartType
+  options: PlotOptions
+  numberFormat: string
+  transpose: boolean
+  seriesNames: string[]
+  update: (attrs: Record<string, unknown>) => void
+}) {
+  const round = type === 'pie' || type === 'donut'
+  const line = type === 'line'
+  // The axis along the bottom is the categories' on a column or line chart,
+  // and the values' on a horizontal bar chart. Stored by what each axis
+  // holds, so switching between column and bar keeps each title with its axis.
+  const xKey = type === 'bar' ? 'valueTitle' : 'categoryTitle'
+  const yKey = type === 'bar' ? 'categoryTitle' : 'valueTitle'
   return (
-    <div className="chart__plot">
-      <div className={horizontal ? 'chart__bars chart__bars--h' : 'chart__bars'}>
-        {data.series.map((s) => (
-          <div className="chart__group" key={s.label}>
-            <span className="chart__group-label">{s.label}</span>
-            <div className="chart__group-bars">
-              {s.values.map((v, column) => (
-                <div
-                  key={column}
-                  className="chart__bar"
-                  style={{
-                    [horizontal ? 'width' : 'height']: `${max > 0 ? (Math.max(v, 0) / max) * 100 : 0}%`,
-                    background: COLORS[column % COLORS.length],
-                  }}
-                  title={`${data.headers[column] ?? ''}: ${v}`}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-      <Legend items={data.headers.map((h, i) => ({ label: h, color: COLORS[i % COLORS.length] }))} />
-    </div>
+    <>
+      <Field label="Legend">
+        {(id) => (
+          <select id={id} value={options.legend} onChange={(e) => update({ legend: e.target.value })}>
+            {LEGEND_POSITIONS.map((p) => <option key={p} value={p}>{LEGEND_LABELS[p]}</option>)}
+          </select>
+        )}
+      </Field>
+      <Field label="Size">
+        {(id) => (
+          <select id={id} value={options.size} onChange={(e) => update({ chartSize: e.target.value })}>
+            {CHART_SIZES.map((s) => <option key={s} value={s}>{CHART_SIZE_LABELS[s]}</option>)}
+          </select>
+        )}
+      </Field>
+      <Field label="Number Format">
+        {(id) => (
+          <select id={id} value={numberFormat} onChange={(e) => update({ numberFormat: e.target.value })}
+            title="Auto uses a % or a currency symbol when the table's numbers have one">
+            {NUMBER_FORMATS.map((f) => <option key={f} value={f}>{NUMBER_FORMAT_LABELS[f]}</option>)}
+          </select>
+        )}
+      </Field>
+      <Check label="Swap Rows and Columns" checked={transpose} onChange={(v) => update({ transpose: v })} />
+
+      {round && seriesNames.length > 1 && (
+        <Field label={transpose ? 'Row' : 'Column'}>
+          {(id) => (
+            <select id={id} value={String(Math.min(options.dataColumn, seriesNames.length))}
+              onChange={(e) => update({ dataColumn: Number(e.target.value) })}>
+              {seriesNames.map((name, i) => <option key={i} value={i + 1}>{name}</option>)}
+            </select>
+          )}
+        </Field>
+      )}
+      {round && <Check label="Values in Legend" checked={options.legendValues} onChange={(v) => update({ legendValues: v })} />}
+      {round && <Check label="Largest Slice First" checked={options.largestFirst} onChange={(v) => update({ largestFirst: v })} />}
+      {type === 'donut' && (
+        <Field label="Center">
+          {(id) => (
+            <select id={id} value={options.donutCenter} onChange={(e) => update({ donutCenter: e.target.value })}>
+              {DONUT_CENTERS.map((c) => <option key={c} value={c}>{DONUT_CENTER_LABELS[c]}</option>)}
+            </select>
+          )}
+        </Field>
+      )}
+      {type === 'donut' && options.donutCenter === 'custom' && (
+        <Field label="Center Text">
+          {(id) => (
+            <input id={id} className="chart__short-input" value={options.centerText} maxLength={16} placeholder="Such as Q3"
+              onChange={(e) => update({ centerText: e.target.value })} />
+          )}
+        </Field>
+      )}
+
+      {!round && <Check label="Axes and Gridlines" checked={options.axes} onChange={(v) => update({ axes: v })} />}
+      {!round && <Check label="Value Labels" checked={options.valueLabels} onChange={(v) => update({ valueLabels: v })} />}
+      {!round && (
+        <Field label="X Axis Title">
+          {(id) => (
+            <input id={id} className="chart__short-input" value={options[xKey]} placeholder="Optional"
+              onChange={(e) => update({ [xKey]: e.target.value })} />
+          )}
+        </Field>
+      )}
+      {!round && (
+        <Field label="Y Axis Title">
+          {(id) => (
+            <input id={id} className="chart__short-input" value={options[yKey]} placeholder="Optional"
+              onChange={(e) => update({ [yKey]: e.target.value })} />
+          )}
+        </Field>
+      )}
+      {line && <Check label="Points" checked={options.points} onChange={(v) => update({ points: v })} />}
+      {line && <Check label="Smooth Curve" checked={options.smooth} onChange={(v) => update({ smooth: v })} />}
+      {line && <Check label="Filled Area" checked={options.area} onChange={(v) => update({ area: v })} />}
+      {line && (
+        <Field label="Y Axis">
+          {(id) => (
+            <select id={id} value={options.fromZero ? 'zero' : 'fit'} onChange={(e) => update({ fromZero: e.target.value === 'zero' })}>
+              <option value="zero">From Zero</option>
+              <option value="fit">Fit to Data</option>
+            </select>
+          )}
+        </Field>
+      )}
+      {(type === 'bar' || type === 'column') && (
+        <Check label="Stacked" checked={options.stacked} onChange={(v) => update({ stacked: v })} />
+      )}
+      {(type === 'bar' || type === 'column') && <span className="chart__hint">Bars always start at zero.</span>}
+    </>
   )
 }
 
-function Legend({ items }: { items: { label: string; color: string; glassColor?: string }[] }) {
-  if (items.length === 0) return null
+function Field({ label, children }: { label: string; children: (id: string) => ReactNode }) {
+  const id = useId()
   return (
-    <ul className="chart__legend">
-      {items.map((item) => (
-        <li key={item.label}>
-          <span className="chart__swatch"
-            style={{ background: item.color, ...(item.glassColor ? { '--glass-swatch': item.glassColor } : {}) } as CSSProperties} />
-          {item.label}
-        </li>
-      ))}
-    </ul>
+    <span className="chart__field">
+      <label htmlFor={id}>{label}</label>
+      {children(id)}
+    </span>
+  )
+}
+
+function Check({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
+  return (
+    <label className="chart__check">
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <span>{label}</span>
+    </label>
   )
 }

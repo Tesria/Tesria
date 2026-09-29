@@ -705,9 +705,24 @@ The same trap applies to every future setting.
   copied into the chart, so editing the table redraws it. Deliberately *not*
   a Wave D dynamic block: the table is in the document, so a server round
   trip would be slower, would miss unsaved edits, and would need a fourth
-  result shape the contract does not have. The chart is plain SVG and
-  flexbox rather than a charting library: four types over one table is a
-  few dozen lines against another ~150KB in the bundle.
+  result shape the contract does not have. The chart is plain SVG rather
+  than a charting library: five types over one table is a few hundred
+  lines against another ~150KB in the bundle.
+- **Chart options (2026-09-29) are plain node attributes with defaults**
+  (`legend`, `transpose`, `chartSize`, `numberFormat`, `axes`,
+  `categoryTitle`, `valueTitle`, `valueLabels`, `points`, `smooth`, `area`,
+  `fromZero`, `stacked`, `legendValues`, `dataColumn`, `largestFirst`,
+  `donutCenter`, `centerText`), each written as a `data-*` attribute only
+  when it differs from its default, so an older chart reads as before
+  apart from the two new defaults (axes on, legend values on). They are in
+  the collaboration sidecar's schema bundle like every attribute, so its
+  image is rebuilt with them. The arithmetic (reading and transposing the
+  table, number detection and format, the nice scale, stacking, slices,
+  legend values, the aria summary) is `editor/chartData.ts`, with vitest
+  tests; `ChartPlot.tsx` draws. Column, bar and line charts are drawn at
+  the width they are measured to have, in real pixels, not scaled from a
+  fixed canvas, so their text stays readable on a phone; the category
+  labels turn 45 degrees and then thin out when they do not fit level.
 - **Exports stay readable outside the app, and reach nothing.** An embed
   and a smart link become plain links (never an iframe; a `javascript:` URL
   becomes no link at all: document JSON is stored as the client sent it).
