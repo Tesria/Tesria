@@ -1,4 +1,5 @@
 import { requestReauth } from '../auth/reauth'
+import { mayMeanSignedOut, SESSION_CHECK_EVENT } from '../auth/sessionCheck'
 import type { SpaceIconKind } from '../components/spaceIconIdentity'
 import type { SpaceTreeStyle } from '../components/treeMarkers'
 
@@ -1254,7 +1255,16 @@ async function request<T>(method: string, path: string, body?: Body): Promise<T>
       await requestReauth()
       return handle<T>(await send())
     }
+    noticeSignedOut(err, path)
     throw err
+  }
+}
+
+/** Asks the auth provider to check the session after an answer that may
+ *  mean it ended in another tab or on another device (t2-024). */
+function noticeSignedOut(err: unknown, path: string) {
+  if (err instanceof ApiError && mayMeanSignedOut(err.status, path)) {
+    window.dispatchEvent(new Event(SESSION_CHECK_EVENT))
   }
 }
 
@@ -1277,6 +1287,7 @@ async function upload<T>(method: string, path: string, file: Blob, name = 'file'
       await requestReauth()
       return handle<T>(await send())
     }
+    noticeSignedOut(err, path)
     throw err
   }
 }

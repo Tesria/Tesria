@@ -1,6 +1,7 @@
-import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, use, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { api, ApiError, type TotpChallenge, type User } from '../api/client'
 import { setPreferredCodeScheme } from '../editor/codeSchemes'
+import { SESSION_CHECK_EVENT } from './sessionCheck'
 
 type AuthState = {
   /** undefined while the initial session check is in flight. */
@@ -28,12 +29,18 @@ type AuthState = {
   /** Whether the signed-in account holds an instance right (dev-plan 11.1).
    *  False while the session check is in flight and for anonymous readers. */
   can: (permission: string) => boolean
+  /** When this tab found its session ended elsewhere (t2-024), or null. Set
+   *  as the tab signs itself out; cleared by the next sign-in. */
+  sessionEndedAt: number | null
 }
 
 const AuthContext = createContext<AuthState | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null | undefined>(undefined)
+  const [sessionEndedAt, setSessionEndedAt] = useState<number | null>(null)
+  const userRef = useRef(user)
+  useEffect(() => { userRef.current = user }, [user])
 
   useEffect(() => {
     let canceled = false
@@ -51,15 +58,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // A session ended in another tab or on another device (t2-024): the API
+  // client asks for a check after a 401 or 404, and a signed-in tab whose
+  // session is gone signs itself out instead of showing "Not found."
+  useEffect(() => {
+    let checking = false
+    const check = () => {
+      if (checking || !userRef.current) return
+      checking = true
+      api.auth
+        .me()
+        .then((u) => {
+          if (u.id !== userRef.current?.id) setUser(u)
+        })
+        .catch((err: unknown) => {
+          if (err instanceof ApiError && err.status === 401 && userRef.current) {
+            setUser(null)
+            setSessionEndedAt(Date.now())
+          }
+        })
+        .finally(() => { checking = false })
+    }
+    window.addEventListener(SESSION_CHECK_EVENT, check)
+    return () => window.removeEventListener(SESSION_CHECK_EVENT, check)
+  }, [])
+
   const login = useCallback(async (email: string, password: string) => {
     const result = await api.auth.login(email, password)
     if ('requiresTotp' in result) return result
     setUser(result)
+    setSessionEndedAt(null)
     return null
   }, [])
 
   const completeTotp = useCallback(async (challenge: string, code: string) => {
     setUser(await api.auth.loginTotp(challenge, code))
+    setSessionEndedAt(null)
   }, [])
 
   const register = useCallback(async (
@@ -107,8 +141,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => { setPreferredCodeScheme(user?.codeBlockScheme) }, [user])
 
   const value = useMemo<AuthState>(
-    () => ({ user, login, completeTotp, register, logout, refresh, can }),
-    [user, login, completeTotp, register, logout, refresh, can],
+    () => ({ user, login, completeTotp, register, logout, refresh, can, sessionEndedAt }),
+    [user, login, completeTotp, register, logout, refresh, can, sessionEndedAt],
   )
   return <AuthContext value={value}>{children}</AuthContext>
 }

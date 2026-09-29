@@ -2,6 +2,7 @@ import { DocumentTitleProvider } from './components/DocumentTitle'
 import { MaintenanceOverlay } from './components/MaintenanceOverlay'
 import { ReauthDialog } from './components/ReauthDialog'
 import { ScrollToTop } from './components/ScrollToTop'
+import { SessionEndedRedirect } from './components/SessionEndedRedirect'
 import { SetupGate } from './components/SetupGate'
 import { TipHost } from './components/TipHost'
 
@@ -29,6 +30,8 @@ export function Root() {
           request there waited for a prompt that never opened, leaving its
           button on "Saving…" (T1-001). */}
       <ReauthDialog />
+      {/* Signed out in another tab or on another device (t2-024). */}
+      <SessionEndedRedirect />
     </>
   )
 }

@@ -8,7 +8,7 @@ import { AuthPage } from '../components/Brand'
 import { ssoErrorMessage } from '../auth/ssoError'
 
 export function LoginPage() {
-  const { user, login, completeTotp } = useAuth()
+  const { user, login, completeTotp, sessionEndedAt } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   // Back to the public page the reader was on, if that is where they came from.
@@ -106,6 +106,9 @@ export function LoginPage() {
       <form className="authcard" onSubmit={onSubmit}>
         <h1>Sign In</h1>
         {error && <p className="alert alert--error">{error}</p>}
+        {!error && sessionEndedAt !== null && (
+          <p className="alert alert--warning">You were signed out, because this session was ended somewhere else. Sign in again to carry on where you were.</p>
+        )}
         <label>
           Email
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />

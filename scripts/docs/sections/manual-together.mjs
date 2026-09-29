@@ -745,7 +745,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ...(await picture(sessions, 'sessions', 'The Sessions card', 'Each browser signed in to your account. The one you are using is marked this browser.')),
     p('Each row shows the network address it signed in from, the browser and system (such as ', i('Safari on iOS'), '), when it was last active, and when it signed in. The one you are using is marked ', b('this browser'), '.'),
     ul(
-      li(p(b('Sign Out'), ' beside a session ends it. That browser is signed out the next time it does anything.')),
+      li(p(b('Sign Out'), ' beside a session ends it. That browser is signed out the next time it does anything, and shows the sign-in page; signing in again goes back to the page it was on.')),
       li(p(b('Sign Out All Other Sessions'), ' ends every session but the one you are using.')),
     ),
     h(2, 'When sessions end by themselves'),
