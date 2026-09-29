@@ -53,7 +53,10 @@ export function TocView({ editor, node }: ReactNodeViewProps) {
   if (options.cssClass) classes.push(options.cssClass)
 
   return (
-    <NodeViewWrapper className={classes.join(' ')} contentEditable={false}>
+    <NodeViewWrapper className={classes.join(' ')} contentEditable={false}
+      // The whole element is the drag handle: the editor then moves it as one
+      // node rather than the browser dragging its rendered text (2026-09-29).
+      data-drag-handle="">
       <p className="toc__title">On This Page</p>
       {tree.length === 0 ? (
         <p className="toc__empty">

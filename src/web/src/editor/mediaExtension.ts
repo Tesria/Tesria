@@ -27,6 +27,10 @@ export const AttachmentBlock = Node.create({
   name: 'attachmentBlock',
   group: 'block',
   atom: true,
+  // Dragged as a whole by the editor. Without it a drag that starts inside
+  // the element's view is the browser's, and drops the view's rendered text
+  // (menus, labels, numbers) into the page as paragraphs (2026-09-29).
+  draggable: true,
   selectable: true,
 
   addAttributes() {

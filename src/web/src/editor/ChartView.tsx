@@ -9,7 +9,7 @@ import {
 } from './chartExtension'
 import {
   DONUT_CENTERS, DONUT_CENTER_LABELS, NUMBER_FORMATS, NUMBER_FORMAT_LABELS, detectFormat, isDonutCenter,
-  isNumberFormatChoice, parseSeriesColors, resolveFormat, serializeSeriesColors, seriesColor, tableToChart, COLORS,
+  alreadyLargestFirst, isNumberFormatChoice, parseSeriesColors, resolveFormat, serializeSeriesColors, seriesColor, tableToChart, COLORS,
 } from './chartData'
 import { ChartPlot, type PlotOptions } from './ChartPlot'
 
@@ -91,6 +91,9 @@ export function ChartView({ node, editor, selected, updateAttributes }: ReactNod
     <NodeViewWrapper
       className={selected ? 'chart is-selected' : 'chart'}
       contentEditable={false}
+      // The whole element is the drag handle: the editor then moves it as one
+      // node rather than the browser dragging its rendered text (2026-09-29).
+      data-drag-handle=""
       {...appearanceData(attrs.appearance)}
     >
       {editor.isEditable && (
@@ -131,7 +134,8 @@ export function ChartView({ node, editor, selected, updateAttributes }: ReactNod
           {moreOpen && (
             <div className="chart__options" id={moreId} role="group" aria-label="More Chart Options">
               <MoreOptions type={type} options={options} numberFormat={numberFormat} transpose={transpose}
-                seriesNames={data?.series.map((s) => s.name) ?? []} categories={data?.categories ?? []} update={updateAttributes} />
+                seriesNames={data?.series.map((s) => s.name) ?? []} categories={data?.categories ?? []}
+                sorted={data ? alreadyLargestFirst(data, options.dataColumn) : false} update={updateAttributes} />
             </div>
           )}
         </>
@@ -154,13 +158,15 @@ export function ChartView({ node, editor, selected, updateAttributes }: ReactNod
  * tidy line. Only the options that apply to the chart's type are shown;
  * the others keep their values, so switching type and back loses nothing.
  */
-function MoreOptions({ type, options, numberFormat, transpose, seriesNames, categories, update }: {
+function MoreOptions({ type, options, numberFormat, transpose, seriesNames, categories, sorted, update }: {
   type: ChartType
   options: PlotOptions
   numberFormat: string
   transpose: boolean
   seriesNames: string[]
   categories: string[]
+  /** The chosen column is already largest first, so the option would change nothing. */
+  sorted: boolean
   update: (attrs: Record<string, unknown>) => void
 }) {
   const round = type === 'pie' || type === 'donut'
@@ -207,7 +213,9 @@ function MoreOptions({ type, options, numberFormat, transpose, seriesNames, cate
         </Field>
       )}
       {round && <Check label="Values in Legend" checked={options.legendValues} onChange={(v) => update({ legendValues: v })} />}
-      {round && <Check label="Largest Slice First" checked={options.largestFirst} onChange={(v) => update({ largestFirst: v })} />}
+      {round && <Check label="Largest Slice First" checked={options.largestFirst} disabled={sorted && !options.largestFirst}
+        onChange={(v) => update({ largestFirst: v })} />}
+      {round && sorted && <span className="chart__hint">The table is already in this order.</span>}
       {type === 'donut' && (
         <Field label="Center">
           {(id) => (
@@ -281,10 +289,10 @@ function Field({ label, children }: { label: string; children: (id: string) => R
   )
 }
 
-function Check({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
+function Check({ label, checked, disabled, onChange }: { label: string; checked: boolean; disabled?: boolean; onChange: (value: boolean) => void }) {
   return (
-    <label className="chart__check">
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+    <label className={disabled ? 'chart__check is-disabled' : 'chart__check'}>
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
       <span>{label}</span>
     </label>
   )

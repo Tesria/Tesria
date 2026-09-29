@@ -73,7 +73,10 @@ export function AttachmentView({ node, editor, selected, updateAttributes }: Rea
   const href = useMemo(() => (attachmentId ? attachmentDownloadUrl(attachmentId) : null), [attachmentId])
 
   return (
-    <NodeViewWrapper className={selected ? 'attachment-block is-selected' : 'attachment-block'} contentEditable={false}>
+    <NodeViewWrapper className={selected ? 'attachment-block is-selected' : 'attachment-block'} contentEditable={false}
+      // The whole element is the drag handle: the editor then moves it as one
+      // node rather than the browser dragging its rendered text (2026-09-29).
+      data-drag-handle="">
       {editor.isEditable && (
         <label className="attachment-block__picker">
           <span>File</span>

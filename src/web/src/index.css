@@ -3000,6 +3000,7 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .chart__short-input { width: 9rem; padding: 0.2rem 0.4rem; }
 .chart__check { display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer; white-space: nowrap; color: var(--text); }
 .chart__check input { width: auto; margin: 0; padding: 0; flex: none; }
+.chart__check.is-disabled { color: var(--muted); cursor: default; }
 .chart__hint { color: var(--muted); font-size: 0.8rem; }
 /* A color per series (or slice): its own row across the whole panel. */
 .chart__colors { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.9rem;

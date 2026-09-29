@@ -53,7 +53,10 @@ export function DynamicBlockView({ node, editor, selected }: ReactNodeViewProps)
 
   const title = meta?.title ?? kind
   return (
-    <NodeViewWrapper className={selected ? 'dynamic-block is-selected' : 'dynamic-block'} data-kind={kind} contentEditable={false}>
+    <NodeViewWrapper className={selected ? 'dynamic-block is-selected' : 'dynamic-block'} data-kind={kind} contentEditable={false}
+      // The whole element is the drag handle: the editor then moves it as one
+      // node rather than the browser dragging its rendered text (2026-09-29).
+      data-drag-handle="">
       <div className="dynamic-block__head">
         <span className="dynamic-block__kind">{title}</span>
         {state.status === 'loaded' && (

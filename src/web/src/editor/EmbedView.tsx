@@ -40,7 +40,10 @@ export function EmbedView({ node, editor, selected, updateAttributes }: ReactNod
   }, [url, resolve])
 
   return (
-    <NodeViewWrapper className={selected ? 'embed is-selected' : 'embed'} contentEditable={false}>
+    <NodeViewWrapper className={selected ? 'embed is-selected' : 'embed'} contentEditable={false}
+      // The whole element is the drag handle: the editor then moves it as one
+      // node rather than the browser dragging its rendered text (2026-09-29).
+      data-drag-handle="">
       {editor.isEditable && (
         <form
           className="embed__form"

@@ -38,7 +38,10 @@ export function InlineSmartLinkView({ node, editor, selected, updateAttributes, 
 
   const title = preview?.title ?? url
   return (
-    <NodeViewWrapper as="span" className={selected ? 'smart-link-inline is-selected' : 'smart-link-inline'} contentEditable={false}>
+    <NodeViewWrapper as="span" className={selected ? 'smart-link-inline is-selected' : 'smart-link-inline'} contentEditable={false}
+      // The whole element is the drag handle: the editor then moves it as one
+      // node rather than the browser dragging its rendered text (2026-09-29).
+      data-drag-handle="">
       <a href={url} target="_blank" rel="noreferrer noopener" className="smart-link-inline__link">{title || 'Link'}</a>
       {editor.isEditable && selected && (
         <span className="smart-link-inline__edit">

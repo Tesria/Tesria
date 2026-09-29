@@ -61,7 +61,10 @@ export function MathView({ node, editor, selected, updateAttributes }: ReactNode
   ].filter(Boolean).join(' ')
 
   return (
-    <NodeViewWrapper as={display ? 'div' : 'span'} className={className} contentEditable={false}>
+    <NodeViewWrapper as={display ? 'div' : 'span'} className={className} contentEditable={false}
+      // The whole element is the drag handle: the editor then moves it as one
+      // node rather than the browser dragging its rendered text (2026-09-29).
+      data-drag-handle="">
       {editing && editor.isEditable ? (
         <span className="math__editor">
         <input

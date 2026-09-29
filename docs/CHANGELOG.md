@@ -5,6 +5,16 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Fixed: dragging a chart dropped its text into the page** (reported by the
+  owner, 2026-09-29). A drag that started inside a chart (or a live content
+  block, a table of contents, an embed, a link card, a file or math) was the
+  browser's rather than the editor's, and dropped the element's rendered
+  text, its menus, numbers and labels, as paragraphs. These elements now
+  move as a whole when dragged, as pictures always did.
+- **Largest Slice First says when it has nothing to do**: when the chosen
+  column is already largest first, the option is dimmed with "The table is
+  already in this order."
+
 - **Chart options** (asked for by the owner, 2026-09-29). Line, bar and
   column charts have axes with tick values and gridlines (on by default,
   so existing charts gain them), optional axis titles, value labels,

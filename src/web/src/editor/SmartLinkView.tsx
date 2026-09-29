@@ -51,7 +51,10 @@ export function SmartLinkView({ node, editor, selected, updateAttributes, getPos
   try { host = url ? new URL(url).host : '' } catch { host = url }
 
   return (
-    <NodeViewWrapper className={className} contentEditable={false}>
+    <NodeViewWrapper className={className} contentEditable={false}
+      // The whole element is the drag handle: the editor then moves it as one
+      // node rather than the browser dragging its rendered text (2026-09-29).
+      data-drag-handle="">
       {editing && (
         <form
           className="embed__form smart-link__form"

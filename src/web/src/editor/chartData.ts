@@ -405,3 +405,9 @@ export function seriesColor(chosen: Record<string, string>, name: string, index:
 export const COLORS = ['#0c66e4', '#00875a', '#a54800', '#5e4db2', '#ae4787', '#206a83', '#946f00', '#bf2600']
 /** A pie's and a donut's colors in the glass style: brighter and more saturated (the owner, 2026-09-28). */
 export const GLASS_SLICE_COLORS = ['#1f7bff', '#00b86b', '#ff7a1a', '#8b5cf6', '#ec4899', '#06b6d4', '#f5b800', '#ef4444']
+
+/** Whether a pie's slices are already largest first in the table's order, so sorting would change nothing. */
+export function alreadyLargestFirst(data: ChartData, column: number): boolean {
+  const slices = pieSlices(data, column)
+  return slices.every((s, i) => i === 0 || slices[i - 1].value >= s.value)
+}

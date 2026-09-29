@@ -302,3 +302,12 @@ describe('series colors', () => {
     expect(seriesColor({}, 'Free', 3, palette)).toBe('#222222')
   })
 })
+
+describe('alreadyLargestFirst', () => {
+  it('knows when sorting would change nothing', async () => {
+    const { alreadyLargestFirst } = await import('./chartData')
+    const data = { categories: ['a', 'b', 'c'], series: [{ name: 'x', values: [18, 8, 6] }, { name: 'y', values: [1, 5, 2] }] }
+    expect(alreadyLargestFirst(data, 1)).toBe(true)
+    expect(alreadyLargestFirst(data, 2)).toBe(false)
+  })
+})
