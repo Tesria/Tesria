@@ -65,8 +65,9 @@ under the [Apache License 2.0](./LICENSE).
   see. A read-only token cannot change anything.
 - **Agents never silently overwrite you:** every change an agent makes is a
   new version in the page's history, which anyone can restore, and
-  administrators see what each token did. When someone edits the page, the
-  change is highlighted, with **Accept All** and **Reject All**.
+  administrators see what each token did. When someone is editing the page,
+  only what the agent changed is highlighted, with **Accept All** and
+  **Reject All**, and their own unpublished writing is left as it is.
 - A REST API with an OpenAPI reference, and webhooks when pages change.
 
 Approving an agent's changes before they go live (review mode) is planned.

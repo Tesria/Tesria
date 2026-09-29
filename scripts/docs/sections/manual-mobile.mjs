@@ -22,6 +22,11 @@
 // New page: "Setting up a phone or tablet", placed first in the chapter by
 // cleanup(). No page is proposed for removal.
 
+// Close asks when there is something to lose (0.8.2): a new page is
+// discarded, an existing page's changes are kept in its draft, as Close
+// did without asking before.
+const ANSWER_CLOSE = "(() => { const d = document.querySelector('[role=dialog]'); if (!d) return; const keep = [...d.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Keep as Draft'); (keep ?? d.querySelector('.btn--danger'))?.click() })()"
+
 export const shots = ({ demo }) => [
   // ---- Setting up a phone: the device choice and the download button in
   // the Trust this device guide, as a phone shows it.
@@ -95,7 +100,7 @@ export const shots = ({ demo }) => [
     name: 'phone-cell-menu', desktop: false, settle: 600,
     steps: [{ click: '.cell-menu__trigger' }, { wait: 500 }],
   },
-  { name: 'phone-discarded', desktop: false, settle: 300, skipCapture: true, steps: [{ press: 'Escape', selector: 'body' }, { click: '.page-actionbar button:has-text("Close")' }, { wait: 1200 }] },
+  { name: 'phone-discarded', desktop: false, settle: 300, skipCapture: true, steps: [{ press: 'Escape', selector: 'body' }, { click: '.page-actionbar button:has-text("Close")' }, { wait: 500 }, { eval: ANSWER_CLOSE }, { wait: 1200 }] },
 ]
 
 export async function build({ top, page, ensure, doc, p, h, text, bold, italic, code, ul, ol, li, panel, table, live, phonePicture, pageLink }) {

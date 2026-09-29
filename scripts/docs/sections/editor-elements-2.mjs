@@ -369,7 +369,7 @@ export async function build(helpers) {
       ['/image', 'Your computer’s file picker, to choose a picture'],
     ], [200, 500]),
     insertNote('Image', 'If you had text selected, the picture takes its place.'),
-    p('Two quicker ways: ', b('paste'), ' a picture you have copied, or ', b('drag'), ' one or more picture files onto the page. Each is uploaded and appears where the cursor is. And typing ', c('![description](https://…)'), ' shows a picture from a web address without uploading it. Your administrator may allow pictures only from certain sites; if so, a note under a picture from anywhere else says it will not show.'),
+    p('Two quicker ways: ', b('paste'), ' a picture you have copied, or ', b('drag'), ' one or more picture files onto the page. Each is uploaded; pasted pictures appear where the cursor is, dropped ones where you drop them, one after another. And typing ', c('![description](https://…)'), ' shows a picture from a web address without uploading it. Your administrator may allow pictures only from certain sites; if so, a note under a picture from anywhere else says it will not show.'),
 
     h(2, 'Sizes'),
     h(3, 'Its own size'),
@@ -443,7 +443,7 @@ export async function build(helpers) {
       ['/gallery', 'An empty gallery, ready for pictures'],
     ], [200, 500]),
     insertNote('Gallery', 'If you had text selected, the gallery takes its place.'),
-    p('While you are editing, the gallery is a dashed box. With the cursor inside it, paste pictures, drag picture files into it, or type ', c('/image'), ', and each one becomes a tile.'),
+    p('While you are editing, the gallery is a dashed box. With the cursor inside it, paste pictures, drag picture files into it, or type ', c('/image'), ' (which takes several files at once), and each one becomes a tile. To add more later, click a tile and paste, or drop files onto the gallery: they go after that tile, or where you drop them.'),
 
     h(2, 'How it looks'),
     h(3, 'A row of pictures'),

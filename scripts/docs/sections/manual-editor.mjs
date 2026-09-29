@@ -153,12 +153,17 @@ const NARROW = { width: 480, height: 900 }
 // Tips cover what a picture shows; the template picker above the title is
 // not what these pictures are about.
 const QUIET = '.tip, .onboarding-tip { display: none !important; } .editor-form > label.change-comment { display: none !important; }'
-const CLOSE_NEW_PAGE = (name) => ({ name, settle: 300, skipCapture: true, phone: false, steps: [{ click: '.page-actionbar button:has-text("Close")' }, { wait: 1200 }] })
+const CLOSE_NEW_PAGE = (name) => ({ name, settle: 300, skipCapture: true, phone: false, steps: [{ click: '.page-actionbar button:has-text("Close")' }, { wait: 500 }, { eval: ANSWER_CLOSE }, { wait: 1200 }] })
 
 const BOLD = '.floating-menu button[title="Bold"]'
 const HIGHLIGHT = '.floating-menu button[title="Highlight Selected Text"]'
 // The + menu's items carry their description as a title.
 const DECISION = '.toolbar-dropdown__menu--insert button[title="Record something that was agreed"]'
+
+// Close asks when there is something to lose (0.8.2): a new page is
+// discarded, an existing page's changes are kept in its draft, as Close
+// did without asking before.
+const ANSWER_CLOSE = "(() => { const d = document.querySelector('[role=dialog]'); if (!d) return; const keep = [...d.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Keep as Draft'); (keep ?? d.querySelector('.btn--danger'))?.click() })()"
 
 export const shots = () => [
   // ---- Editor tour: where the style menu, + and Publish are. A window wide
@@ -278,7 +283,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   await page('The editor', manual, doc(
     p('The editor is where pages are written. It works much like a word processor: type, select words to format them, and choose ', b('Publish'), ' when you are done. What makes it more than a word processor is what you can add. Type ', c('/'), ' on any line and you can put in a table, a colored panel, a checklist, a diagram, a chart, a video, or a list of pages that keeps itself up to date.'),
     p('You do not need to learn it all before you start. Most pages need only headings, lists and the odd table; the rest is here for when a page calls for it.'),
-    panel('success', p(b('The safest place to practice is a new page.'), ' Choose ', b('+ New Page'), ' in a space, try anything you like, and choose ', b('Close'), ' when you are done. Close throws a new page away, so nothing is left behind and nobody sees it.')),
+    panel('success', p(b('The safest place to practice is a new page.'), ' Choose ', b('+ New Page'), ' in a space, try anything you like, and choose ', b('Close'), ' when you are done, then ', b('Discard Page'), '. Nothing is left behind and nobody sees it.')),
 
     h(2, 'Start here'),
     ul(
@@ -347,13 +352,18 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ul(
       li(p(b('Publish'), ', on a new page. Until you publish it, a new page is yours alone: it is not in the page tree, search or anyone’s notifications, even if you have added pictures to it. Publishing makes it version 1, where everyone who can see the space can read it. A page needs a title first.')),
       li(p(b('Update'), ', on a page that is already published. Your changes become a new version, which readers see straight away, and the page’s history keeps the one before.')),
-      li(p(b('Close'), ' leaves the editor without publishing.')),
+      li(p(b('Close'), ' leaves the editor without publishing. If there is nothing unpublished, it just leaves.')),
     ),
     p('Either way, anyone you have just mentioned with ', c('@'), ' is told about the page. More on versions in ', pageLink('Drafts, Publish and Update'), '.'),
-    panel('warning', p(b('Close does not ask first.'), ' On a new page it throws the page away, which is handy when you were only trying something out. If you meant to keep it, choose ', b('Publish'), '. On a page that is already published, Close leaves the published page as it was; what happens to your changes depends on live editing, below.')),
+    p('When there is something to lose, ', b('Close'), ' asks first:'),
+    ul(
+      li(p(b('On a new page'), ' with a title or anything written, it asks ', b('Discard This Page?'), ' Choose ', b('Discard Page'), ' to throw it away, which is handy when you were only trying something out, or ', b('Cancel'), ' to go back and ', b('Publish'), ' it.')),
+      li(p(b('On a published page'), ' with live editing, it asks ', b('Keep Your Unpublished Changes?'), ' ', b('Keep as Draft'), ' leaves them in the page’s shared draft to finish later. ', b('Discard'), ' puts the draft back to the page as it is published, and says so if someone else is editing it at that moment, since their unpublished changes go too. ', b('Stay in the Editor'), ' goes back.')),
+      li(p(b('On a published page without live editing,'), ' it asks ', b('Discard Your Changes?'), ', because there is no draft to keep them in.')),
+    ),
 
     h(3, 'If you leave some other way'),
-    p('Leaving the editor by anything other than those buttons, such as a link at the top of the screen, a page in the page tree or your browser’s Back button, stops you with ', b('You Are Leaving the Editor'), ', so a stray click never costs you a page. It offers three ways out:'),
+    p('Leaving the editor by anything other than those buttons, such as a link at the top of the screen, a page in the page tree or your browser’s Back button, stops you with ', b('You Are Leaving the Editor'), ' when there is something unpublished, so a stray click never costs you a page. It offers three ways out:'),
     ul(
       li(p(b('Publish and Leave'), ' (', b('Update and Leave'), ' on a published page).')),
       li(p(b('Discard Page'), ' on a new page, or ', b('Leave Unpublished'), ' on a published one.')),
@@ -369,11 +379,13 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('Connecting to collaboration…'), ' Just opened, or finding the server again.')),
       li(p(b('Offline: your changes are local until reconnected.'), ' Keep writing: what you type is shared once the connection is back.')),
     ),
-    p('With live editing, changes to a published page wait in a ', b('shared draft'), ' until someone chooses ', b('Update'), '. You can close the editor today and find your changes, and everyone else’s, still there tomorrow. Update publishes all of them as one new version.'),
+    p('With live editing, changes to a published page wait in a ', b('shared draft'), ' until someone chooses ', b('Update'), '. Choose ', b('Keep as Draft'), ' when you close, and you will find your changes, and everyone else’s, still there tomorrow. Update publishes all of them as one new version.'),
     ul(
       li(p(b('A new page is written by one person.'), ' Live editing starts once it has been published.')),
       li(p(b('Undo takes back only your own changes'), ', never someone else’s.')),
-      li(p(b('Changes made by an assistant or through the API'), ' while you edit appear highlighted in your draft, with ', b('Accept All'), ' and ', b('Reject All'), ' above the page. Update accepts any you have not decided on. See ', pageLink('Changes from assistants and the API'), '.')),
+      li(p(b('Someone else’s unpublished changes are named.'), ' If the draft holds changes that another person made and left, a bar above the page says whose they are, and that Update publishes them too. ', b('Discard'), ' there puts the draft back to the published page; ', b('Keep Them'), ' hides the bar.')),
+      li(p(b('Changes made by an assistant or through the API'), ' while you edit appear highlighted in your draft, with ', b('Accept All'), ' and ', b('Reject All'), ' above the page. Only what they changed is highlighted; your own unpublished writing is never marked as removed. Update accepts any you have not decided on. See ', pageLink('Changes from assistants and the API'), '.')),
+      li(p(b('A change published while nobody is editing'), ' (by an assistant, the API, or restoring an old version) starts the draft again from that version, so unpublished changes someone kept in it are gone and the next person starts from what is published.')),
       li(p(b('If the page was updated some other way while you were editing,'), ' Update is refused rather than overwrite it. The difference is highlighted for you to accept or reject, and then you update again.')),
     ),
     panel('note', p(b('Without live editing,'), ' there is no shared draft: changes you leave unpublished are lost when you leave the editor, so choose ', b('Update'), ' before you go. If two people edit the same page at once, the last to choose Update wins. See ', pageLink('Editing at the same time'), '.')),

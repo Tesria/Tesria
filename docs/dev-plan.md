@@ -1406,6 +1406,16 @@ Then the no-session case: close every editor, write via MCP, reopen: the
 change is highlighted with source `page`. Then the 409 case with the
 sidecar stopped.
 
+**Revised in 0.8.2, after the QA run** (the owner's decisions, 2026-09-29).
+The diff above compared the draft with the new page, so a human's
+unpublished typing in a changed block read as the write's deletion (QA
+T5-032); it is now a three-way merge against the version the draft started
+from, with the human's version kept and the write's offered after it where
+both changed one block. A write while nobody is editing resets the draft
+instead of marking it, Close asks Keep as Draft or Discard, and a refused
+Update asks the sidecar to reconcile rather than doing it in the browser.
+The details are in `architecture.md`, "Writes from outside the editor".
+
 **Not decided here, deliberately:** whether a page *view* should show
 pending tracked changes to a reader (recommend no: the page is what was
 published), and whether an assistant should be able to mark its own write
