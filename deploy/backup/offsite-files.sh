@@ -299,8 +299,12 @@ restic_run_removable() {
     # stopped. The runbook says which one you want.
     offsite_files_message removable "Copy complete and verified. The data is flushed, so the drive can be removed. To eject it cleanly first: docker compose stop backup-removable."
   else
-    note "removable: copied and flushed, but verification did not pass"
     offsite_files_message removable "Copied and flushed to the drive, but verification did not pass. The copy is on the drive; check it before relying on it."
+    # A failed Copy Now, so it raises an alert: the card's message is only a
+    # note, and the monitor does not alert on it (T8-009). Last, because the
+    # job's error is the last line it printed.
+    note "removable: copied and flushed, but verification did not pass"
+    return 1
   fi
 }
 

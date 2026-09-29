@@ -185,7 +185,15 @@ public sealed class BackupMonitor(IServiceScopeFactory scopes, ILogger<BackupMon
                 // drive has its own alert for that, above; a removable drive
                 // that is not plugged in has none, by design (T8-026: the
                 // drive's own service not starting is reported that way).
-                if (!string.IsNullOrWhiteSpace(target.Message) && target.Present != false)
+                //
+                // Not for a removable drive at all (T8-009). Its card's
+                // message is a note for the person holding the drive ("safe
+                // to remove"), written after a copy that worked, and alerting
+                // on it told every administrator a good copy had failed. A
+                // copy to the drive that fails, or does not verify, fails its
+                // Copy Now job instead, which raises backup.failed above.
+                if (!string.IsNullOrWhiteSpace(target.Message) && target.Present != false
+                    && target.Slot != "removable")
                     await Raise("backup.offsite_failed", SecuritySeverity.Warning, target.Slot,
                         new { target.Slot, target.Message, target.LastBackupAt, target.LastVerifyAt });
             }

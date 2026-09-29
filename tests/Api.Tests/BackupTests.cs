@@ -464,6 +464,48 @@ public class BackupTests
         Assert.Equal(["backup.offsite_absent|nas", "backup.offsite_failed|cloud"], kinds);
     }
 
+    /// <summary>
+    /// T8-009: a Copy Now that worked leaves "safe to remove" on the removable
+    /// drive's card, and that note raised "An offsite backup failed". A copy
+    /// to the drive that does not work fails its job, which is the alert.
+    /// </summary>
+    [Fact]
+    public async Task A_removable_drives_note_is_not_an_alert_and_its_failed_copy_is()
+    {
+        using var factory = new TestAppFactory();
+        var admin = await AdminAsync(factory);
+        var now = DateTimeOffset.UtcNow;
+        await SeedAsync(factory, db =>
+        {
+            var removable = Target("removable", "files");
+            removable.Present = true;
+            removable.LastBackupAt = now;
+            removable.LastVerifyAt = now;
+            removable.Message = "Copy complete and verified. The data is flushed, so the drive can be removed.";
+            db.BackupTargets.Add(removable);
+        });
+
+        await RunMonitorAsync(factory, processAge: TimeSpan.FromMinutes(1));
+        Assert.DoesNotContain(await AlertsAsync(admin), a => a.Kind is "backup.offsite_failed" or "backup.failed");
+
+        await SeedAsync(factory, db =>
+        {
+            db.BackupAgents.Add(new BackupAgent
+            {
+                Name = BackupNames.Logical, StartedAt = now.AddDays(-5), LastSeenAt = now, IntervalHours = 24,
+            });
+            var copy = Job(BackupNames.Logical, "failed", DateTimeOffset.UtcNow);
+            copy.Kind = BackupNames.KindCopyOffsite;
+            copy.Target = "removable";
+            copy.Error = "removable: copied and flushed, but verification did not pass";
+            db.BackupJobs.Add(copy);
+        });
+        await RunMonitorAsync(factory, processAge: TimeSpan.FromMinutes(1), sinceLastCheck: TimeSpan.FromMinutes(5));
+        var kinds = (await AlertsAsync(admin)).Where(a => a.Kind is "backup.offsite_failed" or "backup.failed")
+            .Select(a => a.Kind).ToList();
+        Assert.Equal(["backup.failed"], kinds);
+    }
+
     [Fact]
     public async Task The_cloud_budget_reaches_the_screen_as_published()
     {
@@ -646,7 +688,8 @@ public class BackupTests
         // loops did. A failed job finished when it finished, so that one
         // is still reported.
         await RunMonitorAsync(factory, processAge: TimeSpan.FromHours(2), sinceLastCheck: TimeSpan.FromHours(1));
-        var kinds = (await AlertsAsync(admin)).Where(a => a.Kind.StartsWith("backup.")).Select(a => a.Kind).ToList();
+        var kinds = (await AlertsAsync(admin)).Where(a => a.Kind is "backup.offsite_failed" or "backup.failed")
+            .Select(a => a.Kind).ToList();
         Assert.Equal(["backup.failed"], kinds);
 
         // The sidecars have caught up by the next pass: still nothing.
