@@ -326,15 +326,18 @@ set the instance default is a small decision to make with it. Exports
 
 ### Follow-ups found after 0.8.1
 
-- **Bug to look into (reported 2026-09-29): the Disk Space donut on
-  Administration, Backups looks wrong.** Seen by the owner on 0.8.2 in
-  Chrome on Windows, Minimal, light, at a wide desktop size: the "This
-  Machine" chart (35% free) draws oddly. Things to check: whether the
-  glass slice shading and rim highlights show in Minimal, where the chart
-  should be flat; how the tiny slices (the wiki and its backups, under 1%
-  each) are drawn next to the large ones; and whether the "free" caption
-  under 35% is too small to read. Compare with the same card in Glass and
-  in dark, and with the donut element in a page.
+- **Bug (reported 2026-09-29): the Disk Space donut's green segment has
+  jagged edges.** On Administration, Backups, the "This Machine" donut
+  (35% free) draws the green "Free" segment with stepped, jagged edges,
+  most visible where it meets the orange "Everything Else" segment at the
+  top and bottom, while the orange segment's edges are smooth. Seen by
+  the owner on 0.8.2 in Chrome on Windows, light theme, desktop size, with
+  the shaded (glass-style) slices. Likely in how the slice gradients and
+  rim highlights are clipped (`PieChart.tsx`'s `Sheen` and
+  `SliceGradient`): a clip path or mask without anti-aliasing, or two
+  overlapping shapes along the seam. Check the same chart in Minimal and
+  Glass, light and dark, on a high-DPI and a standard screen, and the donut
+  element in a page.
 - **From the 0.8.2 fixes (2026-09-29), smaller follow-ups:**
   - A webhook made by an account that is later suspended still delivers on
     spaces open to everyone (default-open access ignores account status).
