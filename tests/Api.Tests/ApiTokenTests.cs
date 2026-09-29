@@ -73,6 +73,37 @@ public class ApiTokenTests
     }
 
     [Fact]
+    public async Task A_token_that_is_no_good_is_refused_even_where_anyone_may_read()
+    {
+        // T5-018: on endpoints open to anonymous readers, a revoked or
+        // mistyped token was served as nobody: 200 and an empty list.
+        using var factory = new TestAppFactory();
+        var cookieClient = factory.CreateClient();
+        await cookieClient.RegisterAndSignInAsync();
+        await cookieClient.CreateSpaceAsync();
+        var created = await (await cookieClient.PostAsJsonAsync("/api/api-tokens", new { Name = "Retired" }))
+            .Content.ReadFromJsonAsync<CreatedToken>();
+        await cookieClient.DeleteAsync($"/api/api-tokens/{created!.Id}");
+
+        foreach (var token in new[] { created.Token, "cct_0000.bogus", "not-even-close" })
+        {
+            var client = factory.CreateClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            foreach (var path in new[] { "/api/spaces", "/api/search?q=launch", "/api/pages/tree?spaceId=" + Guid.NewGuid() })
+            {
+                var res = await client.GetAsync(path);
+                Assert.Equal(HttpStatusCode.Unauthorized, res.StatusCode);
+                Assert.Contains("invalid_token", res.Headers.WwwAuthenticate.ToString());
+                var body = await res.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+                Assert.Equal("invalid_token", body.GetProperty("code").GetString());
+            }
+        }
+
+        // No token at all is still an anonymous reader, as before.
+        Assert.Equal(HttpStatusCode.OK, (await factory.CreateClient().GetAsync("/api/spaces")).StatusCode);
+    }
+
+    [Fact]
     public async Task Bearer_auth_respects_the_same_permission_model_as_cookies()
     {
         using var factory = new TestAppFactory();

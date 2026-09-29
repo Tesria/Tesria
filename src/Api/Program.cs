@@ -234,7 +234,7 @@ builder.Services.AddMcpServer(o =>
         o.ServerInstructions =
             "Tesria is a self-hosted wiki. Pages live in spaces and form a tree; content is returned as Markdown. " +
             "'Not found' can mean the page does not exist or that this token's owner may not see it. " +
-            "Write tools need a token minted with write access.";
+            "Write tools need a token with write access.";
     })
     .WithHttpTransport(o => o.Stateless = true)
     .WithTools<Tesria.Api.Features.Mcp.TesriaTools>()
@@ -699,6 +699,9 @@ app.UseMiddleware<CsrfHeaderMiddleware>();
 // After authentication so the global limiter can tell a session from a
 // stranger; before authorization so a rejected request does no more work.
 app.UseRateLimiter();
+// A request that sends a token that is no good is refused, not served as
+// anonymous (T5-018). After the rate limiter, so guessing is still limited.
+app.UseMiddleware<Tesria.Api.Infrastructure.Auth.InvalidTokenMiddleware>();
 app.UseAuthorization();
 // After authorization so it only ever stamps callers who got through it.
 app.UseMiddleware<LastSeenMiddleware>();
