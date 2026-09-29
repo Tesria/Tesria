@@ -29,6 +29,9 @@ public static class ImagePolicy
     {
         if (!s.RestrictImageHosts) return "";
         var sources = CspSources(s);
-        return $"<meta http-equiv=\"Content-Security-Policy\" content=\"img-src 'self' data: blob:{(sources.Length > 0 ? " " + sources : "")}\" />";
+        // Entries are host names by the time they get here (Parse drops
+        // anything else); encoded all the same, since this is an attribute.
+        var content = Features.Export.SiteExport.Escape($"img-src 'self' data: blob:{(sources.Length > 0 ? " " + sources : "")}");
+        return $"<meta http-equiv=\"Content-Security-Policy\" content=\"{content}\" />";
     }
 }

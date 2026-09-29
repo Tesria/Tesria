@@ -846,7 +846,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Change either and choose ', b('Save'), '. Once you have settled on the address everyone uses, put it here; see ', pageLink('Opening Tesria by name'), ' and ', pageLink('Trusting the local certificate'), '.'),
 
     h(2, 'Embeds'),
-    p('Which sites a page may show inside itself, such as a YouTube video or a Figma design. One site per line; a leading dot, as in ', c('.youtube.com'), ', also allows everything under it. An address on no line is refused when the page is saved and blocked by the browser. Leave the box empty to turn embeds off.'),
+    p('Which sites a page may show inside itself, such as a YouTube video or a Figma design. One site per line; a leading dot, as in ', c('.youtube.com'), ', also allows everything under it. Write only the site’s name, such as ', c('www.figma.com'), ', with no ', c('https://'), ', port or path: Tesria refuses to save a line that is not a site name and says which one. An address on no line is refused when the page is saved and blocked by the browser. Leave the box empty to turn embeds off.'),
     p('It starts with YouTube, Vimeo, Loom, Figma, Miro, CodePen, Google Docs and Google Drive. Choose ', b('Save'), ' after changing it. It needs the ', b('Change security settings'), ' right.'),
 
     h(2, 'Images'),

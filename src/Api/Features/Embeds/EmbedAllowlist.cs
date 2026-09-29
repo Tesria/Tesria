@@ -7,14 +7,62 @@ namespace Tesria.Api.Features.Embeds;
 /// </summary>
 public static class EmbedAllowlist
 {
-    /// <summary>Entries from the stored setting: one per line or comma-separated, blanks dropped, lower-cased.</summary>
-    public static string[] Parse(string? raw) =>
-        (raw ?? "")
-            .Split(['\n', '\r', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(e => e.ToLowerInvariant().TrimEnd('.'))
-            .Where(e => e.Length > 0)
-            .Distinct()
-            .ToArray();
+    /// <summary>
+    /// Entries from the stored setting: one per line or comma-separated,
+    /// blanks dropped, lower-cased. Anything that is not a host name is left
+    /// out, so a value stored before entries were checked (or written to the
+    /// database by hand) can never reach the CSP or an exported page.
+    /// </summary>
+    public static string[] Parse(string? raw) => Read(raw).Valid;
+
+    /// <summary>
+    /// The same reading, keeping what was refused, for the settings form:
+    /// a save with any refused entry is refused as a whole, naming them.
+    /// </summary>
+    public static (string[] Valid, string[] Invalid) Read(string? raw)
+    {
+        var valid = new List<string>();
+        var invalid = new List<string>();
+        foreach (var item in (raw ?? "").Split(['\n', '\r', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (Normalize(item) is { } entry)
+            {
+                if (!valid.Contains(entry)) valid.Add(entry);
+            }
+            else if (!invalid.Contains(item))
+            {
+                invalid.Add(item);
+            }
+        }
+        return (valid.ToArray(), invalid.ToArray());
+    }
+
+    /// <summary>
+    /// One entry as it is stored and matched, or null when it is not a host
+    /// name: letters, digits and hyphens in dot-separated labels, with an
+    /// optional leading <c>.</c> for "and its subdomains" (<c>*.</c> is
+    /// read as the same thing). No scheme, port, path, spaces or quotes:
+    /// these entries are written into the CSP and into exported pages.
+    /// </summary>
+    public static string? Normalize(string item)
+    {
+        var e = item.Trim().ToLowerInvariant();
+        if (e.StartsWith("*.", StringComparison.Ordinal)) e = e[1..];
+        var subdomains = e.StartsWith('.');
+        var host = (subdomains ? e[1..] : e).TrimEnd('.');
+        if (host.Length is 0 or > 253) return null;
+        if (host.Any(c => c > 127))
+        {
+            try { host = new System.Globalization.IdnMapping().GetAscii(host); }
+            catch (ArgumentException) { return null; }
+        }
+        if (!HostName.IsMatch(host)) return null;
+        return subdomains ? "." + host : host;
+    }
+
+    private static readonly System.Text.RegularExpressions.Regex HostName = new(
+        @"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$",
+        System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
     /// <summary>
     /// Whether a host is allowed. An entry beginning with <c>.</c> matches the

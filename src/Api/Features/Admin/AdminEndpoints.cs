@@ -440,6 +440,24 @@ public static class AdminEndpoints
         if (req.GoogleClientId is not null) changed.Add(nameof(req.GoogleClientId));
         if (req.GoogleClientSecret is not null) changed.Add(nameof(req.GoogleClientSecret));
         if (req.RequireTotpForAdmins is not null) changed.Add(nameof(req.RequireTotpForAdmins));
+        // Allowlist entries are written into the CSP and into exported pages,
+        // so each must be a host name; a list with anything else is refused
+        // whole, naming the entries, rather than saved without them.
+        foreach (var (field, value) in new[]
+        {
+            ("embedAllowlist", req.EmbedAllowlist),
+            ("imageAllowlist", req.ImageAllowlist),
+        })
+        {
+            if (value is null) continue;
+            var refused = Embeds.EmbedAllowlist.Read(value).Invalid;
+            if (refused.Length > 0)
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    [field] = [$"{(refused.Length == 1 ? "This is not a host name" : "These are not host names")}: {string.Join(", ", refused.Take(5))}{(refused.Length > 5 ? ", ..." : "")}. " +
+                        "Enter one host per line, such as images.example.com, or .example.com for it and its subdomains, with no https://, port or path."],
+                });
+        }
         if (req.EmbedAllowlist is not null) changed.Add(nameof(req.EmbedAllowlist));
         if (req.RestrictImageHosts is not null) changed.Add(nameof(req.RestrictImageHosts));
         if (req.ImageAllowlist is not null) changed.Add(nameof(req.ImageAllowlist));
