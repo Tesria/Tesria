@@ -136,10 +136,18 @@ export function RestoreDialog({
                 <p className="muted">Nothing has been written since that backup was taken.</p>
               )}
 
-              <p>
-                A backup of the wiki as it is now is taken first, always, and the copy this
-                replaces is kept so you can undo it.
-              </p>
+              {isPitr ? (
+                <p>
+                  A backup of the wiki as it is now is taken first, always. No copy of what this
+                  replaces is kept: to undo it, restore again to the moment this one began, which
+                  the page offers afterwards.
+                </p>
+              ) : (
+                <p>
+                  A backup of the wiki as it is now is taken first, always, and the copy this
+                  replaces is kept so you can undo it.
+                </p>
+              )}
 
               {preview.sessionsEnding > 0 && (
                 <p className="muted small">
