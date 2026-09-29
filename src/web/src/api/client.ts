@@ -297,6 +297,19 @@ export type Branding = {
 }
 
 /** Tesria, unbranded: what the page shows before /api/instance answers, and if it never does. */
+/**
+ * The longest text the server keeps in these fields (the database's own
+ * columns). The boxes stop there, and the server says so if a longer one
+ * reaches it anyway (QA T3-005: it answered with a bare 500).
+ */
+export const LIMITS = {
+  spaceName: 200,
+  pageTitle: 500,
+  changeComment: 500,
+  templateName: 200,
+  templateDescription: 500,
+} as const
+
 export const DEFAULT_BRANDING: Branding = {
   name: 'Tesria',
   hasCustomName: false,

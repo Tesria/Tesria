@@ -346,6 +346,35 @@ public class PageTests
         Assert.Equal(HttpStatusCode.OK, res.StatusCode);
     }
 
+    [Fact]
+    public async Task A_title_over_the_limit_is_a_400_on_every_way_in()
+    {
+        // QA T3-005 and T5-022: the database refused it, and the answer was a bare 500.
+        var (factory, client, spaceId) = await NewClientWithSpace();
+        using var _ = factory;
+        var tooLong = new string('t', 501);
+
+        var create = await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = tooLong, ContentJson = Doc });
+        Assert.Equal(HttpStatusCode.BadRequest, create.StatusCode);
+        Assert.Contains("at most 500 characters", await create.Content.ReadAsStringAsync());
+
+        var page = await NewPage(client, spaceId, new string('t', 500));
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await client.PutAsJsonAsync($"/api/pages/{page.Id}", new { Title = tooLong, ContentJson = Doc })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PutAsJsonAsync($"/api/pages/{page.Id}",
+            new { Title = "Fine", ContentJson = Doc, ChangeComment = new string('c', 501) })).StatusCode);
+
+        var draft = await (await client.PostAsJsonAsync("/api/pages/draft", new { SpaceId = spaceId }))
+            .Content.ReadFromJsonAsync<PageDetail>();
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync($"/api/pages/{draft!.Id}/publish",
+            new { Title = tooLong, ContentJson = Doc })).StatusCode);
+
+        // A copy of a title already at the limit is cut to fit, not refused.
+        var copy = await client.PostAsJsonAsync($"/api/pages/{page.Id}/copy", new { SpaceId = spaceId });
+        Assert.Equal(HttpStatusCode.OK, copy.StatusCode);
+    }
+
     private static async Task<PageDetail> NewPage(HttpClient client, Guid spaceId, string title, Guid? parent = null) =>
         (await (await client.PostAsJsonAsync("/api/pages",
             new { SpaceId = spaceId, ParentPageId = parent, Title = title, ContentJson = Doc }))

@@ -204,7 +204,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         b.Entity<Space>(e =>
         {
             e.Property(s => s.Key).HasMaxLength(50);
-            e.Property(s => s.Name).HasMaxLength(200);
+            e.Property(s => s.Name).HasMaxLength(Space.MaxNameLength);
             e.HasIndex(s => s.Key).IsUnique();
 
             e.HasOne(s => s.CreatedBy)
@@ -221,7 +221,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 
         b.Entity<Page>(e =>
         {
-            e.Property(p => p.Title).HasMaxLength(500);
+            e.Property(p => p.Title).HasMaxLength(Page.MaxTitleLength);
             e.Property(p => p.Emoji).HasMaxLength(Features.Spaces.SpaceIcons.MaxEmojiLength);
 
             // Trashed pages, and pages still in the invisible Draft state (created
@@ -270,7 +270,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         b.Entity<PageVersion>(e =>
         {
             e.Property(v => v.ContentJson).HasColumnType("jsonb");
-            e.Property(v => v.ChangeComment).HasMaxLength(500);
+            e.Property(v => v.ChangeComment).HasMaxLength(PageVersion.MaxChangeCommentLength);
 
             e.HasOne(v => v.Page)
                 .WithMany(p => p.Versions)
@@ -406,8 +406,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 
         b.Entity<PageTemplate>(e =>
         {
-            e.Property(t => t.Name).HasMaxLength(200);
-            e.Property(t => t.Description).HasMaxLength(500);
+            e.Property(t => t.Name).HasMaxLength(PageTemplate.MaxNameLength);
+            e.Property(t => t.Description).HasMaxLength(PageTemplate.MaxDescriptionLength);
             e.Property(t => t.ContentJson).HasColumnType("jsonb");
 
             e.HasOne(t => t.Space)

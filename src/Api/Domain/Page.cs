@@ -21,6 +21,9 @@ public class Page
     public Page? ParentPage { get; set; }
     public ICollection<Page> Children { get; set; } = new List<Page>();
 
+    /// <summary>The longest title the database holds; checked before saving, so a longer one is a 400 and not a 500.</summary>
+    public const int MaxTitleLength = 500;
+
     public required string Title { get; set; }
 
     /// <summary>The version currently displayed. Null only before the first save.</summary>

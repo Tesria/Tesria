@@ -184,6 +184,8 @@ public static class PageEndpoints
         var title = (req.Title ?? "").Trim();
         if (title.Length == 0)
             return Results.ValidationProblem(Error("title", "Title is required."));
+        if (title.Length > Page.MaxTitleLength)
+            return Results.ValidationProblem(Error("title", PageWriter.TitleTooLong));
         if (!PageContent.TryNormalize(req.ContentJson, out var content))
             return Results.ValidationProblem(Error("contentJson", "Content must be valid JSON."));
 

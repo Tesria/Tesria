@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, ApiError, Permission, type Space, type SpaceExports } from '../api/client'
+import { api, ApiError, LIMITS, Permission, type Space, type SpaceExports } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { SpaceIconPicker } from '../components/SpaceIconPicker'
 import { DeleteSpaceDialog } from './DeleteSpaceDialog'
@@ -129,7 +129,7 @@ export function SpaceSettingsPage() {
         <form onSubmit={saveDetails}>
           <label>
             Name
-            <input value={name} onChange={(e) => setName(e.target.value)} required />
+            <input value={name} onChange={(e) => setName(e.target.value)} required maxLength={LIMITS.spaceName} />
           </label>
           <label>
             Description

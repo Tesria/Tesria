@@ -88,6 +88,9 @@ public static partial class SpaceEndpoints
         return Results.Ok(spaces.Where(s => viewable.Contains(s.Id)).Select(ToResponse));
     }
 
+    /// <summary>The database's limit, said before the database refuses it (QA T3-005).</summary>
+    internal static readonly string NameTooLong = $"Name can be at most {Space.MaxNameLength} characters.";
+
     private static async Task<IResult> Create(
         CreateSpaceRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit)
     {
@@ -99,6 +102,8 @@ public static partial class SpaceEndpoints
                 "Key must be 2–50 characters, start with a letter, and contain only letters and digits."));
         if (name.Length == 0)
             return Results.ValidationProblem(Error("name", "Name is required."));
+        if (name.Length > Space.MaxNameLength)
+            return Results.ValidationProblem(Error("name", NameTooLong));
 
         if (await db.Spaces.AnyAsync(s => s.Key == key))
             return Results.Conflict(new { message = $"A space with key '{key}' already exists." });
@@ -142,6 +147,8 @@ public static partial class SpaceEndpoints
         var name = (req.Name ?? "").Trim();
         if (name.Length == 0)
             return Results.ValidationProblem(Error("name", "Name is required."));
+        if (name.Length > Space.MaxNameLength)
+            return Results.ValidationProblem(Error("name", NameTooLong));
 
         if (SpaceIcons.ValidateColor(req.IconColor) is { } colorError)
             return Results.ValidationProblem(Error("iconColor", colorError));

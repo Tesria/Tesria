@@ -1,7 +1,7 @@
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from 'react'
 import { useBlocker, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import type { Editor as TiptapEditor } from '@tiptap/react'
-import { api, ApiError, type CollabToken, type PageTemplate } from '../api/client'
+import { api, ApiError, LIMITS, type CollabToken, type PageTemplate } from '../api/client'
 import { Editor } from '../editor/Editor'
 import { CollaborativeEditor, type CollabHandle, type DraftState } from '../editor/CollaborativeEditor'
 import { differsFromPage, normalize } from '../editor/externalEdits'
@@ -585,6 +585,7 @@ export function PageEditor() {
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Page Title"
           required
+          maxLength={LIMITS.pageTitle}
           autoFocus={!isEdit}
           // Return in the title goes to the first line of the body. Without
           // this, the title being the form's only text input means Return
@@ -638,6 +639,7 @@ export function PageEditor() {
             value={changeComment}
             onChange={(e) => setChangeComment(e.target.value)}
             placeholder="e.g. fixed typo"
+            maxLength={LIMITS.changeComment}
             // Enter here publishes, as it always has: see onFormKeyDown.
             data-submits-page="true"
           />

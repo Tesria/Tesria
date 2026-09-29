@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from 'react'
-import { api, ApiError, Permission } from '../api/client'
+import { api, ApiError, LIMITS, Permission } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 
 type Props = {
@@ -57,6 +57,7 @@ export function SaveAsTemplateButton({ spaceId, contentJson, defaultName }: Prop
               onChange={(e) => setName(e.target.value)}
               placeholder="Such as Meeting notes"
               required
+              maxLength={LIMITS.templateName}
             />
           </label>
           {mayOfferEverywhere && (

@@ -29,6 +29,13 @@ public static class PageCopy
     public record CopyPageRequest(Guid? SpaceId, Guid? ParentPageId, bool IncludeChildren = false);
     public record CopyPageResponse(Guid Id, Guid SpaceId, string Title, int Pages);
 
+    /// <summary>"Copy of …", cut to the title limit: a title already at the limit has no room for the prefix (QA T3-005).</summary>
+    private static string CopyTitle(string title)
+    {
+        var copy = $"Copy of {title}";
+        return copy.Length > Page.MaxTitleLength ? copy[..Page.MaxTitleLength].TrimEnd() : copy;
+    }
+
     public static async Task<IResult> CopyAsync(
         Guid id, CopyPageRequest req, AppDbContext db, IPermissionService perms, IPageWriter writer,
         IAttachmentStorage storage, CurrentUser current, IAuditLogger audit, CancellationToken ct)
@@ -56,7 +63,7 @@ public static class PageCopy
         async Task<Guid?> CopyOneAsync(Page page, Guid? parent, bool root)
         {
             var version = page.CurrentVersion ?? await db.PageVersions.AsNoTracking().FirstAsync(v => v.Id == page.CurrentVersionId, ct);
-            var title = root ? $"Copy of {page.Title}" : page.Title;
+            var title = root ? CopyTitle(page.Title) : page.Title;
             var created = await writer.CreateAsync(spaceId, parent, title, version.ContentJson, ct);
             if (created.Status != PageWriteStatus.Ok || created.Page is null) return null;
             copied++;
@@ -129,6 +136,6 @@ public static class PageCopy
 
         audit.Record("page.copied", "page", rootCopy.Value, new { From = source.Id, source.Title, Pages = copied });
         await db.SaveChangesAsync(ct);
-        return Results.Ok(new CopyPageResponse(rootCopy.Value, spaceId, $"Copy of {source.Title}", copied));
+        return Results.Ok(new CopyPageResponse(rootCopy.Value, spaceId, CopyTitle(source.Title), copied));
     }
 }

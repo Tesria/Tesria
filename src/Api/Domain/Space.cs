@@ -12,6 +12,9 @@ public class Space
     /// <summary>Short uppercase key, unique across the instance (e.g. "ENG").</summary>
     public required string Key { get; set; }
 
+    /// <summary>The longest name the database holds; checked before saving, so a longer one is a 400 and not a 500.</summary>
+    public const int MaxNameLength = 200;
+
     public required string Name { get; set; }
 
     public string? Description { get; set; }

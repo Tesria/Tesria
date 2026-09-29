@@ -2,7 +2,7 @@ import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { SpaceIcon } from '../components/SpaceIcon'
-import { api, ApiError, type Space, Permission } from '../api/client'
+import { api, ApiError, LIMITS, type Space, Permission } from '../api/client'
 import { ImportPackForm } from '../components/ImportPackForm'
 
 export function SpacesPage() {
@@ -119,7 +119,7 @@ function CreateSpaceForm({ onCreated }: { onCreated: (space: Space) => void }) {
       </label>
       <label>
         Name
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Engineering" required />
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Engineering" required maxLength={LIMITS.spaceName} />
       </label>
       <label>
         Description
