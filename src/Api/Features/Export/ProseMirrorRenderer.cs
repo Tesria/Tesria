@@ -33,6 +33,28 @@ public static class ProseMirrorRenderer
     }
 
     /// <summary>
+    /// The Markdown of each top-level block, in order, each written exactly
+    /// as <see cref="ToMarkdown"/> writes it inside the whole document
+    /// (heading anchors, dynamic-block snapshots and links all in step). The
+    /// MCP update tool compares these with what an assistant sends back, to
+    /// tell the blocks it changed from the ones it did not (T5-003).
+    /// </summary>
+    public static IReadOnlyList<string> ToMarkdownBlocks(
+        string contentJson, IReadOnlyList<BlockResult?>? blocks = null, string? baseUrl = null)
+    {
+        if (!TryParse(contentJson, out var root)) return [];
+        var ctx = new Ctx(root, blocks, baseUrl);
+        var result = new List<string>();
+        foreach (var child in Children(root))
+        {
+            var sb = new StringBuilder();
+            RenderMarkdown(child, sb, listDepth: 0, ctx);
+            result.Add(sb.ToString());
+        }
+        return result;
+    }
+
+    /// <summary>
     /// Per-document state: the heading anchors (dev-plan Phase 7 Wave A),
     /// handed out in document order as headings are rendered, the same
     /// order <see cref="HeadingAnchors.Collect"/> walked, so the nth

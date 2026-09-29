@@ -219,6 +219,91 @@ public class McpToolTests
     }
 
     [Fact]
+    public async Task Get_page_gives_the_content_alone_as_its_first_text()
+    {
+        // T5-005: the text was one JSON envelope, and sending it back as the
+        // content published the JSON as the page.
+        var w = await Build(); using var _ = w.F;
+        var mcp = await Mcp(w.F, w.Alice);
+
+        var result = await Call(mcp, "get_page", new { pageId = w.Open.Id });
+        var content = result.GetProperty("content");
+        Assert.Equal("pineapple notes\n", content[0].GetProperty("text").GetString());
+
+        // The description is the second item, without the content in it...
+        var about = JsonDocument.Parse(content[1].GetProperty("text").GetString()!).RootElement;
+        Assert.Equal("Open plan", about.GetProperty("title").GetString());
+        Assert.Equal(1, about.GetProperty("version").GetInt32());
+        Assert.False(about.TryGetProperty("content", out var _));
+
+        // ...and the whole record is structured content, for clients that read it.
+        var structured = result.GetProperty("structuredContent");
+        Assert.Equal("pineapple notes\n", structured.GetProperty("content").GetString());
+        Assert.Equal("markdown", structured.GetProperty("format").GetString());
+
+        // The naive round trip is now the right one.
+        Ok(await Call(mcp, "update_page", new { pageId = w.Open.Id, content = content[0].GetProperty("text").GetString() }));
+        var detail = await w.Alice.GetFromJsonAsync<JsonElement>($"/api/pages/{w.Open.Id}");
+        Assert.Contains("pineapple notes", detail.GetProperty("contentJson").GetString());
+        Assert.DoesNotContain("\\u0022title\\u0022", detail.GetProperty("contentJson").GetString());
+    }
+
+    [Fact]
+    public async Task Get_pages_whole_answer_sent_back_as_content_is_refused()
+    {
+        var w = await Build(); using var _ = w.F;
+        var mcp = await Mcp(w.F, w.Alice);
+
+        var envelope = JsonSerializer.Serialize((await Call(mcp, "get_page", new { pageId = w.Open.Id }))
+            .GetProperty("structuredContent"));
+        Assert.Contains("only its `content`", Error(await Call(mcp, "update_page", new { pageId = w.Open.Id, content = envelope })));
+        Assert.Contains("only its `content`", Error(await Call(mcp, "create_page",
+            new { spaceKey = "TOOLS", title = "Copy", content = envelope })));
+
+        var detail = await w.Alice.GetFromJsonAsync<JsonElement>($"/api/pages/{w.Open.Id}");
+        Assert.Equal(1, detail.GetProperty("currentVersionNumber").GetInt32());
+    }
+
+    [Fact]
+    public async Task A_markdown_round_trip_leaves_the_rich_parts_of_a_page_alone()
+    {
+        // T5-003: two words changed through get_page and update_page rewrote
+        // every block of a rich page (41 highlighted changes).
+        var w = await Build(); using var _ = w.F;
+        var mcp = await Mcp(w.F, w.Alice);
+        const string rich = """
+        {"type":"doc","content":[
+          {"type":"tableOfContents"},
+          {"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Status"}]},
+          {"type":"paragraph","content":[{"type":"text","text":"Now "},{"type":"status","attrs":{"text":"On track","color":"green"}}]},
+          {"type":"paragraph","content":[{"type":"text","text":"We launch on October 14, 2026."}]},
+          {"type":"children"}
+        ]}
+        """;
+        var page = (await (await w.Alice.PostAsJsonAsync("/api/pages",
+            new { SpaceId = w.Space.Id, Title = "Rich", ContentJson = rich.Replace("""{"type":"children"}""",
+                """{"type":"dynamicBlock","attrs":{"kind":"children","params":{"depth":"1"}}}""") }))
+            .Content.ReadFromJsonAsync<PageDetail>())!;
+        await NewPage(w.Alice, w.Space.Id, "A child", page.Id);
+
+        var markdown = (await Call(mcp, "get_page", new { pageId = page.Id })).GetProperty("content")[0].GetProperty("text").GetString()!;
+        Assert.Contains("A child", markdown);
+        Ok(await Call(mcp, "update_page", new { pageId = page.Id, content = markdown.Replace("October 14", "October 21") }));
+
+        var before = JsonDocument.Parse((await w.Alice.GetFromJsonAsync<JsonElement>($"/api/pages/{page.Id}/versions/1"))
+            .GetProperty("contentJson").GetString()!).RootElement.GetProperty("content").EnumerateArray().ToList();
+        var after = JsonDocument.Parse((await w.Alice.GetFromJsonAsync<JsonElement>($"/api/pages/{page.Id}"))
+            .GetProperty("contentJson").GetString()!).RootElement.GetProperty("content").EnumerateArray().ToList();
+
+        Assert.Equal(before.Count, after.Count);
+        var changed = Enumerable.Range(0, before.Count).Where(i => !JsonElement.DeepEquals(before[i], after[i])).ToList();
+        Assert.Equal([3], changed);
+        Assert.Contains("October 21", after[3].GetRawText());
+        // The live list of children is still live, not a pasted list of links.
+        Assert.Equal("dynamicBlock", after[4].GetProperty("type").GetString());
+    }
+
+    [Fact]
     public async Task A_read_only_token_cannot_use_any_write_tool_and_changes_nothing()
     {
         var w = await Build(); using var _ = w.F;
@@ -371,5 +456,142 @@ public class MarkdownToProseMirrorTests
         var json = Json("<script>alert(1)</script>\n\nafter\n");
         Assert.DoesNotContain("script", json);
         Assert.Contains("after", json);
+    }
+
+    /// <summary>All the text of a converted document, block by block.</summary>
+    private static List<string> BlockTexts(string markdown) =>
+        Convert(markdown).GetProperty("content").EnumerateArray()
+            .Select(b => string.Concat(Texts(b)))
+            .ToList();
+
+    private static IEnumerable<string> Texts(JsonElement node)
+    {
+        if (node.TryGetProperty("text", out var t)) yield return t.GetString()!;
+        if (node.TryGetProperty("type", out var type) && type.GetString() == "hardBreak") yield return "\n";
+        if (node.TryGetProperty("content", out var content))
+            foreach (var child in content.EnumerateArray())
+                foreach (var s in Texts(child)) yield return s;
+    }
+
+    [Fact]
+    public void Html_keeps_its_words_as_plain_text()
+    {
+        // T5-030: an HTML block vanished, text and all, though the docs say
+        // what Tesria does not recognize arrives as plain text.
+        var blocks = BlockTexts(
+            "<div class=\"custom\">raw html block</div>\n\n"
+            + "<details><summary>Summary text</summary>\n\nThe body.\n\n</details>\n\n"
+            + "Press <kbd>Ctrl</kbd>+<kbd>K</kbd> now.<br>Next line.\n\n"
+            + "A <span style=\"color:red\">red word</span> here.\n\n"
+            + "<!-- a note to self -->\n");
+
+        Assert.Equal(["raw html block", "Summary text", "The body.", "Press Ctrl+K now.\nNext line.", "A red word here."], blocks);
+        // The tags themselves are gone; only their words are left.
+        Assert.DoesNotContain(blocks, b => b.Contains('<'));
+    }
+
+    [Fact]
+    public void Html_entities_and_line_breaks_in_a_block_read_as_text()
+    {
+        Assert.Equal(["Fish & chips", "second line"], BlockTexts("<p>Fish &amp; chips<br/>second line</p>\n"));
+    }
+
+    [Fact]
+    public void A_heading_anchor_does_not_come_back_as_an_empty_paragraph()
+    {
+        // get_page writes <a id> anchors above headings when the page links
+        // to them; writing that Markdown back used to add a blank line each.
+        var doc = Convert("<a id=\"plan\"></a>\n## Plan\n\nText.\n");
+        Assert.Equal(["heading", "paragraph"],
+            doc.GetProperty("content").EnumerateArray().Select(b => b.GetProperty("type").GetString()));
+    }
+}
+
+/// <summary>
+/// Writing an assistant's Markdown back onto a rich page keeps every block it
+/// did not change exactly as it was (T5-003).
+/// </summary>
+public class MarkdownMergeTests
+{
+    private const string Rich = """
+    {"type":"doc","content":[
+      {"type":"tableOfContents"},
+      {"type":"pageProperties","content":[{"type":"table","content":[
+        {"type":"tableRow","content":[
+          {"type":"tableCell","attrs":{"colwidth":[180]},"content":[{"type":"paragraph","content":[{"type":"text","text":"Status"}]}]},
+          {"type":"tableCell","content":[{"type":"paragraph","content":[{"type":"status","attrs":{"text":"On track","color":"green"}}]}]}]},
+        {"type":"tableRow","content":[
+          {"type":"tableCell","content":[{"type":"paragraph","content":[{"type":"text","text":"Owner"}]}]},
+          {"type":"tableCell","content":[{"type":"paragraph","content":[{"type":"mention","attrs":{"userId":"11111111-1111-1111-1111-111111111111","label":"Priya"}}]}]}]}
+      ]}]},
+      {"type":"excerpt","content":[{"type":"paragraph","content":[{"type":"text","text":"The launch in one line."}]}]},
+      {"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Timeline"}]},
+      {"type":"paragraph","content":[{"type":"text","text":"We launch on October 14, 2026."}]},
+      {"type":"paragraph"},
+      {"type":"taskList","content":[{"type":"taskItem","attrs":{"checked":false},"content":[{"type":"paragraph","content":[
+        {"type":"text","text":"Brief "},{"type":"mention","attrs":{"userId":"22222222-2222-2222-2222-222222222222","label":"Sam"}}]}]}]},
+      {"type":"panel","attrs":{"panelType":"info"},"content":[{"type":"paragraph","content":[{"type":"text","text":"Shared folders a whole team can use."}]}]}
+    ]}
+    """;
+
+    private static List<JsonElement> Blocks(string json) =>
+        JsonDocument.Parse(json).RootElement.GetProperty("content").EnumerateArray().Select(b => b.Clone()).ToList();
+
+    private static string Merge(string current, Func<string, string> edit)
+    {
+        var markdown = Tesria.Api.Features.Export.ProseMirrorRenderer.ToMarkdown(current);
+        var blocks = Tesria.Api.Features.Export.ProseMirrorRenderer.ToMarkdownBlocks(current);
+        return MarkdownMerge.Merge(current, blocks, edit(markdown));
+    }
+
+    [Fact]
+    public void Two_edits_change_two_blocks_and_nothing_else()
+    {
+        var merged = Merge(Rich, md => md
+            .Replace("October 14, 2026", "October 21, 2026")
+            .Replace("a whole team", "an entire team"));
+
+        var before = Blocks(Rich);
+        var after = Blocks(merged);
+        Assert.Equal(before.Count, after.Count);
+        var changed = Enumerable.Range(0, before.Count).Where(i => !JsonElement.DeepEquals(before[i], after[i])).ToList();
+        // The paragraph and the panel; the panel is Markdown's quote now,
+        // since the assistant changed it, which is the documented cost.
+        Assert.Equal([4, 7], changed);
+        Assert.Contains("October 21, 2026", after[4].GetRawText());
+        Assert.Contains("an entire team", after[7].GetRawText());
+    }
+
+    [Fact]
+    public void Sent_back_unchanged_the_page_is_exactly_as_it_was()
+    {
+        var merged = Merge(Rich, md => md);
+        Assert.True(JsonElement.DeepEquals(
+            JsonDocument.Parse(Rich).RootElement, JsonDocument.Parse(merged).RootElement));
+    }
+
+    [Fact]
+    public void Added_and_removed_blocks_land_where_the_markdown_puts_them()
+    {
+        var merged = Merge(Rich, md => md
+            .Replace("We launch on October 14, 2026.\n\n", "")
+            .Replace("## Timeline\n", "## Timeline\n\nA new paragraph.\n"));
+
+        var types = Blocks(merged).Select(b => b.GetProperty("type").GetString()).ToList();
+        // The rich blocks are still the rich blocks.
+        Assert.Equal("tableOfContents", types[0]);
+        Assert.Equal("pageProperties", types[1]);
+        Assert.Equal("excerpt", types[2]);
+        Assert.Contains("A new paragraph.", merged);
+        Assert.DoesNotContain("October 14", merged);
+        Assert.Equal("taskList", types[^2]);
+        Assert.Equal("panel", types[^1]);
+    }
+
+    [Fact]
+    public void A_completely_new_page_is_simply_the_markdown()
+    {
+        var merged = Merge(Rich, _ => "# Something else\n\nEntirely.\n");
+        Assert.Equal(["heading", "paragraph"], Blocks(merged).Select(b => b.GetProperty("type").GetString()));
     }
 }

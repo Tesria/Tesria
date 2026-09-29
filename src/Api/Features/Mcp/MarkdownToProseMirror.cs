@@ -22,6 +22,7 @@ namespace Tesria.Api.Features.Mcp;
 ///
 /// Unsupported constructs degrade to their text rather than being dropped,
 /// because silently losing a paragraph is worse than rendering it plainly.
+/// That includes raw HTML: its tags go, its words stay (T5-030).
 /// </summary>
 public static partial class MarkdownToProseMirror
 {
@@ -38,12 +39,19 @@ public static partial class MarkdownToProseMirror
 
     public static string Convert(string markdown)
     {
-        var document = Markdown.Parse(markdown ?? "", Pipeline);
-        var content = new JsonArray();
-        foreach (var block in document) AppendBlock(block, content);
+        var content = ConvertBlocks(markdown);
         // ProseMirror's schema requires at least one block.
         if (content.Count == 0) content.Add(Paragraph(new JsonArray()));
         return new JsonObject { ["type"] = "doc", ["content"] = content }.ToJsonString();
+    }
+
+    /// <summary>The top-level blocks the Markdown becomes, possibly none.</summary>
+    public static JsonArray ConvertBlocks(string markdown)
+    {
+        var document = Markdown.Parse(markdown ?? "", Pipeline);
+        var content = new JsonArray();
+        foreach (var block in document) AppendBlock(block, content);
+        return content;
     }
 
     private static void AppendBlock(Block block, JsonArray into)
@@ -60,7 +68,21 @@ public static partial class MarkdownToProseMirror
                 break;
 
             case ParagraphBlock paragraph:
-                into.Add(Paragraph(Inlines(paragraph.Inline)));
+                var inlines = Inlines(paragraph.Inline);
+                // Markdown cannot write an empty paragraph, so one that comes
+                // out empty held only tags: the heading anchors get_page
+                // itself writes (<a id="..."></a>) came back as blank lines
+                // (T5-003). A list item or table cell that needs a paragraph
+                // gets its own empty one below.
+                if (inlines.Count > 0) into.Add(Paragraph(inlines));
+                break;
+
+            case HtmlBlock html:
+                // Raw HTML is not part of the contract, but what it says is:
+                // its text arrives as plain text, a paragraph per line, rather
+                // than vanishing with the tags (T5-030).
+                foreach (var line in HtmlBlockText(html))
+                    into.Add(Paragraph(TextRun(line)));
                 break;
 
             case ThematicBreakBlock:
@@ -306,6 +328,38 @@ public static partial class MarkdownToProseMirror
         var array = new JsonArray();
         if (text.Length > 0) array.Add(new JsonObject { ["type"] = "text", ["text"] = text });
         return array;
+    }
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"<br\s*/?>|</?(?:address|article|aside|blockquote|body|caption|center|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|h[1-6]|header|hr|html|legend|li|main|menu|nav|ol|p|pre|section|summary|table|tbody|td|tfoot|th|thead|tr|ul)\b[^>]*>", System.Text.RegularExpressions.RegexOptions.IgnoreCase)]
+    private static partial System.Text.RegularExpressions.Regex BlockTag();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"<[^>]*>")]
+    private static partial System.Text.RegularExpressions.Regex AnyTag();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"[ \t]+")]
+    private static partial System.Text.RegularExpressions.Regex Spaces();
+
+    /// <summary>
+    /// The words of a raw HTML block, a line for each line or block element
+    /// in it. Comments, scripts, styles and declarations are not words
+    /// anyone meant to show, so they give nothing.
+    /// </summary>
+    private static IEnumerable<string> HtmlBlockText(HtmlBlock html)
+    {
+        var raw = html.Lines.ToString();
+        if (html.Type is HtmlBlockType.Comment or HtmlBlockType.ProcessingInstruction
+                or HtmlBlockType.DocumentType or HtmlBlockType.CData)
+            yield break;
+        if (html.Type == HtmlBlockType.ScriptPreOrStyle
+            && !raw.TrimStart().StartsWith("<pre", StringComparison.OrdinalIgnoreCase))
+            yield break;
+
+        var text = AnyTag().Replace(BlockTag().Replace(raw, "\n"), "");
+        foreach (var line in System.Net.WebUtility.HtmlDecode(text).Split('\n'))
+        {
+            var clean = Spaces().Replace(line, " ").Trim();
+            if (clean.Length > 0) yield return clean;
+        }
     }
 
     private static string CodeText(LeafBlock block)
