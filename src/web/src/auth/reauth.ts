@@ -41,5 +41,9 @@ export function cancelReauth(err: unknown) {
 
 export function subscribeReauth(listener: Listener): () => void {
   listeners.add(listener)
+  // A prompt already waiting opens at once: a request can ask before the
+  // dialog has mounted, and it would otherwise wait for a prompt that never
+  // shows.
+  if (pending) listener(true)
   return () => listeners.delete(listener)
 }

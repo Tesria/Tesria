@@ -23,8 +23,11 @@ namespace Tesria.Api.Features.Mcp;
 /// Unsupported constructs degrade to their text rather than being dropped,
 /// because silently losing a paragraph is worse than rendering it plainly.
 /// </summary>
-public static class MarkdownToProseMirror
+public static partial class MarkdownToProseMirror
 {
+    [System.Text.RegularExpressions.GeneratedRegex(@"^<br\s*/?>$", System.Text.RegularExpressions.RegexOptions.IgnoreCase)]
+    private static partial System.Text.RegularExpressions.Regex BreakTag();
+
     private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
         .UseGridTables()
         .UsePipeTables()
@@ -261,6 +264,12 @@ public static class MarkdownToProseMirror
                     ["type"] = "link",
                     ["attrs"] = new JsonObject { ["href"] = auto.Url },
                 }]);
+                break;
+
+            case HtmlInline html when BreakTag().IsMatch(html.Tag ?? ""):
+                // The one tag the export writes itself: a table cell's
+                // blocks are joined with <br>, since a GFM cell is one line.
+                into.Add(new JsonObject { ["type"] = "hardBreak" });
                 break;
 
             case HtmlInline or HtmlEntityInline:

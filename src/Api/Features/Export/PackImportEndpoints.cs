@@ -173,7 +173,21 @@ public static partial class PackImportEndpoints
             });
 
             var versions = 0;
-            var position = 0;
+            // Each page's place among its siblings, renumbered from 0 under
+            // each parent. The pack's own positions are the order to keep
+            // (t6-013): the reader returns pages in zip entry order, which
+            // follows their ids, so counting in read order scrambled every
+            // level of the tree. Renumbered rather than carried as is,
+            // because the stored numbers were relative to siblings that may
+            // not have traveled; ties fall back to the title, as the tree does.
+            var positions = model.Pages
+                .GroupBy(p => p.Parent)
+                .SelectMany(siblings => siblings
+                    .OrderBy(p => p.Position)
+                    .ThenBy(p => p.Title, StringComparer.Ordinal)
+                    .ThenBy(p => p.Id)
+                    .Select((p, index) => (p.Id, Index: index)))
+                .ToDictionary(x => x.Id, x => x.Index);
             // A page points at its current version and a version points at its
             // page, so the two cannot be inserted in one statement batch. They
             // are paired up here and joined after the first save, which is the
@@ -191,11 +205,7 @@ public static partial class PackImportEndpoints
                     // Checked like one typed in: a pack is a file from anywhere.
                     Emoji = string.IsNullOrWhiteSpace(packed.Emoji) ? null
                         : Spaces.SpaceIcons.NormalizeEmoji(packed.Emoji).Value,
-                    // Renormalized rather than carried: the pack is in tree
-                    // order, so counting is more trustworthy than a number
-                    // that was only ever relative to pages that may not have
-                    // traveled.
-                    Position = position++,
+                    Position = positions[packed.Id],
                     Status = PageStatus.Current,
                     CreatedById = user,
                     CreatedAt = packed.CreatedAt,

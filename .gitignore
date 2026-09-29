@@ -3,6 +3,8 @@
 # The backup key init writes for the owner to save (dev-plan 25.1).
 backup-key.txt
 backup-key.old-*.txt
+# Which Compose project this folder runs (init.sh, 0.8.2).
+.tesria-install
 *.local
 
 # --- .NET ---

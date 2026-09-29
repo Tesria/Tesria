@@ -156,6 +156,15 @@ the instance.
 > **Never run `docker compose down -v`.** The `-v` deletes the volumes: the
 > wiki, its backups, and the generated secrets that open them.
 
+> **One Tesria per Compose project.** Every Tesria folder is the project
+> `tesria` unless its `.env` says otherwise, so a second copy in another
+> folder would be the first Tesria again. Since 0.8.2 `init` refuses to
+> start a Tesria from a folder other than the one it was installed from.
+> For a second, separate Tesria on the same computer, set
+> `COMPOSE_PROJECT_NAME`, `TESRIA_SUBNET`, `TESRIA_HTTP_PORT` and
+> `TESRIA_HTTPS_PORT` in its folder's `.env` before its first start (see
+> `.env.example`).
+
 > **Bring the whole stack up together** (`docker compose up -d`), not
 > `docker compose up -d db` on its own. On a fresh volume the database
 > crash-loops every ~10s if started alone, because WAL archiving fails

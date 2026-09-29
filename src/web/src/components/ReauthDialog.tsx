@@ -7,7 +7,8 @@ import { PasswordInput } from './PasswordInput'
 /**
  * Asks for the password (or a one-time code) when the server says a
  * destructive action needs a fresh confirmation (dev-plan 3.5). Mounted once
- * in the layout; the API client opens it through `auth/reauth.ts`.
+ * in Root, above every route (the setup wizard is outside the layout); the
+ * API client opens it through `auth/reauth.ts`.
  */
 export function ReauthDialog() {
   const { user } = useAuth()

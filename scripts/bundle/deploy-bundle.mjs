@@ -86,13 +86,26 @@ Tesria makes its own passwords and keys on the first start. A .env file is
 optional: see .env.example for what it can change, such as DOMAIN for a real
 hostname.
 
-Upgrading: unzip the newer tesria-deploy.zip over this folder (your .env and
-backup-key.txt are kept: they are not in the zip), then run
-"docker compose pull" and "docker compose up -d". Read the release notes
+Upgrading: unzip the newer tesria-deploy.zip over this folder (your .env,
+backup-key.txt and .tesria-install are kept: they are not in the zip), then
+run "docker compose pull" and "docker compose up -d". Read the release notes
 first: https://tesria.com/docs (Release notes).
 
 Never run "docker compose down -v": the -v deletes the wiki, its backups and
 the keys that open them.
+
+A second Tesria on this computer: unzip it into its own folder and, before
+its first start, give it its own name, network and ports in that folder's
+.env (see .env.example, "A second Tesria on this computer"):
+
+  COMPOSE_PROJECT_NAME=tesria2
+  TESRIA_SUBNET=10.204.0.0/24
+  TESRIA_HTTP_PORT=8080
+  TESRIA_HTTPS_PORT=8443
+
+Without them the second folder is the first Tesria under the same name:
+Tesria refuses to start it there, and "docker compose down -v" in that
+folder would delete the first wiki.
 
 Source code, issues and releases: https://github.com/Tesria/Tesria
 License: Apache 2.0 (LICENSE, NOTICE).

@@ -1,5 +1,6 @@
 import { DocumentTitleProvider } from './components/DocumentTitle'
 import { MaintenanceOverlay } from './components/MaintenanceOverlay'
+import { ReauthDialog } from './components/ReauthDialog'
 import { ScrollToTop } from './components/ScrollToTop'
 import { SetupGate } from './components/SetupGate'
 import { TipHost } from './components/TipHost'
@@ -23,6 +24,11 @@ export function Root() {
       {/* A restore makes the wiki read-only (dev-plan 9.4). Above every
           route, because a save can be attempted from anywhere. */}
       <MaintenanceOverlay />
+      {/* The password prompt for a 403 reauth_required. Above every route,
+          not in Layout: the setup wizard is outside the shell, and a
+          request there waited for a prompt that never opened, leaving its
+          button on "Saving…" (T1-001). */}
+      <ReauthDialog />
     </>
   )
 }

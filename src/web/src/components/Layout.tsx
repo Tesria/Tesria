@@ -7,7 +7,6 @@ import { ThemeToggle } from './ThemeToggle'
 import { BrandLockup } from './Brand'
 import { Avatar } from './Avatar'
 import { RecoveryCodesPrompt } from './RecoveryCodesPrompt'
-import { ReauthDialog } from './ReauthDialog'
 import { useDismissable } from '../hooks/useDismissable'
 import { useVisualViewportOffset } from '../hooks/useVisualViewportOffset'
 import { PageTree } from './PageTree'
@@ -311,7 +310,6 @@ export function Layout() {
       {/* Inside the authenticated shell so it follows the user to whichever
           page they land on after signing in, rather than only the one route. */}
       <RecoveryCodesPrompt />
-      <ReauthDialog />
     </div>
     </SpaceNavContext.Provider>
   )

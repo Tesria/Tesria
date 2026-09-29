@@ -51,6 +51,13 @@ public static class ProseMirrorRenderer
 
         public string? BaseUrl { get; } = baseUrl?.TrimEnd('/');
 
+        /// <summary>
+        /// Set while a table cell is rendered: a GFM cell is one line, so the
+        /// few blocks whose Markdown would break the row (a heading, a code
+        /// block) are written in a form that fits on it.
+        /// </summary>
+        public bool InTableCell { get; set; }
+
         /// <summary>Set while rendering if the document contains a Mermaid block, so the caller can decide whether to ship a renderer.</summary>
         public bool UsedMermaid { get; set; }
 
@@ -137,6 +144,17 @@ public static class ProseMirrorRenderer
             case "heading":
                 var level = int.TryParse(Attr(node, "level"), out var l) ? Math.Clamp(l, 1, 6) : 1;
                 var mdAnchor = ctx.NextHeading();
+                if (ctx.InTableCell)
+                {
+                    // A cell cannot hold a heading; its words in bold, with
+                    // its anchor beside them so a link to it still lands.
+                    if (ctx.MarkdownNeedsAnchors && mdAnchor is not null)
+                        sb.Append($"<a id=\"{Escape(mdAnchor.Id)}\"></a>");
+                    sb.Append("**");
+                    RenderMarkdownChildren(node, sb, listDepth, ctx);
+                    sb.Append("**\n\n");
+                    break;
+                }
                 if (ctx.MarkdownNeedsAnchors && mdAnchor is not null)
                     sb.Append($"<a id=\"{Escape(mdAnchor.Id)}\"></a>\n");
                 sb.Append(new string('#', level)).Append(' ');
@@ -214,6 +232,10 @@ public static class ProseMirrorRenderer
                     sb.Append("> ").Append(line).Append('\n');
                 sb.Append('\n');
                 break;
+            case "codeBlock" when ctx.InTableCell:
+                // A fence needs lines of its own; a code span is the nearest fit.
+                sb.Append('`').Append(PlainText(node).Trim().Replace('\n', ' ').Replace('`', '\'')).Append("`\n\n");
+                break;
             case "codeBlock":
                 sb.Append("```").Append(Attr(node, "language") ?? "").Append('\n');
                 sb.Append(PlainText(node).TrimEnd()).Append("\n```\n\n");
@@ -235,7 +257,7 @@ public static class ProseMirrorRenderer
                     sb.Append('*').Append(caption.Replace("*", "\\*")).Append("*\n\n");
                 break;
             case "table":
-                RenderMarkdownTable(node, sb);
+                RenderMarkdownTable(node, sb, ctx);
                 break;
             case "panel":
                 // GFM has no callout syntax that renders consistently (GitHub's
@@ -258,11 +280,11 @@ public static class ProseMirrorRenderer
     }
 
     /// <summary>A minimal, non-aligned GFM pipe table.</summary>
-    private static void RenderMarkdownTable(JsonElement tableNode, StringBuilder sb)
+    private static void RenderMarkdownTable(JsonElement tableNode, StringBuilder sb, Ctx ctx)
     {
         var rows = Children(tableNode)
             .Select(row => Children(row)
-                .Select(cell => EscapeTablePipes(PlainText(cell).Trim().Replace('\n', ' ')))
+                .Select(cell => TableCellMarkdown(cell, ctx))
                 .ToList())
             .ToList();
         if (rows.Count == 0) return;
@@ -285,6 +307,35 @@ public static class ProseMirrorRenderer
     }
 
     private static string EscapeTablePipes(string text) => text.Replace("|", "\\|");
+
+    /// <summary>
+    /// One cell, rendered the way the same content is outside a table, so a
+    /// status, a date, a mention or a mark reads the same in a cell as in a
+    /// paragraph (T5-001: cells were plain text, and every chip in a page
+    /// properties table came out blank). A GFM cell is a single line, so its
+    /// blocks are joined with &lt;br&gt;. Rendering through the one renderer
+    /// also keeps the heading anchors and dynamic-block snapshots in step
+    /// with the document order their collectors walked, tables included.
+    /// </summary>
+    private static string TableCellMarkdown(JsonElement cell, Ctx ctx)
+    {
+        var inner = new StringBuilder();
+        var wasInCell = ctx.InTableCell;
+        ctx.InTableCell = true;
+        try
+        {
+            RenderMarkdownChildren(cell, inner, listDepth: 0, ctx);
+        }
+        finally
+        {
+            ctx.InTableCell = wasInCell;
+        }
+        var lines = inner.ToString()
+            .Split('\n')
+            .Select(line => line.Trim())
+            .Where(line => line.Length > 0);
+        return EscapeTablePipes(string.Join("<br>", lines));
+    }
 
     /// <summary>
     /// A highlight mark, carrying its color when the editor set one

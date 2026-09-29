@@ -353,6 +353,17 @@ public class MarkdownToProseMirrorTests
     }
 
     [Fact]
+    public void A_br_in_a_table_cell_is_a_line_break_rather_than_lost()
+    {
+        // The export joins a cell's blocks with <br> (T5-001), so reading a
+        // page and writing it back keeps the two lines apart.
+        var table = Json("| Name | Value |\n| --- | --- |\n| a | first<br>second |\n");
+        Assert.Contains("\"hardBreak\"", table);
+        Assert.Contains("\"text\":\"first\"", table);
+        Assert.Contains("\"text\":\"second\"", table);
+    }
+
+    [Fact]
     public void Raw_html_is_not_a_way_to_smuggle_markup_in()
     {
         // The contract is Markdown, not HTML: a script tag is not a node type,
