@@ -39,6 +39,7 @@ import { Embed, SmartLink, InlineSmartLink } from './embedExtension'
 import { AttachmentBlock, Gallery } from './mediaExtension'
 import { Math as MathNode } from './mathExtension'
 import { Chart } from './chartExtension'
+import { InlineAtomTyping } from './inlineAtomTyping'
 import { appearanceAttribute } from './appearance'
 
 type SharedExtensionOptions = {
@@ -275,6 +276,8 @@ export function getSharedExtensions({ collaborative = false, editable = true }: 
     Chart,
     // Read-only rendering never needs "/" commands or a link shortcut: skip
     // mounting the plugins entirely rather than just hiding their output.
-    ...(editable ? [SlashCommand, LinkShortcut, MentionSuggestion, EmojiSuggestion] : []),
+    // InlineAtomTyping is behavior, not schema: typing with a status, date or
+    // math selected continues after it rather than replacing it (0.8.2).
+    ...(editable ? [SlashCommand, LinkShortcut, MentionSuggestion, EmojiSuggestion, InlineAtomTyping] : []),
   ]
 }

@@ -4,6 +4,7 @@ import { useEditorState, type Editor as TiptapEditor } from '@tiptap/react'
 import { STATUS_COLORS, STATUS_LABELS, isStatusColor, type StatusColor } from './statusExtension'
 import { updateSelectedNode } from './selectedNode'
 import { AppearancePicker } from './AppearancePicker'
+import { continueAfterSelectedNode } from './inlineAtomTyping'
 
 /**
  * Edits the selected status lozenge: its text and one of the six colors.
@@ -19,16 +20,25 @@ export function StatusMenu({ editor }: { editor: TiptapEditor }) {
   const [text, setText] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const color: StatusColor = isStatusColor(attrs?.color) ? attrs.color : 'grey'
-  const open = attrs !== null
 
-  // Re-seed the field whenever a (different) status is selected, and put
-  // the caret in it: insert, type the label, done.
+  // Re-seed the field whenever a (different) status is selected.
   useEffect(() => {
     setText(typeof attrs?.text === 'string' ? attrs.text : '')
   }, [attrs?.text])
-  useEffect(() => {
-    if (open) inputRef.current?.focus()
-  }, [open])
+
+  // A status just inserted opens with its label selected, so typing replaces
+  // STATUS: insert, type the label, done (QA t4-010). Done as the menu is
+  // shown, not when the selection changes: the menu is only put into the
+  // page then, and focusing a box that is not in the page does nothing,
+  // which left the status selected and the first letter typed deleted it.
+  // A status that is clicked or arrowed onto keeps the focus in the text.
+  const onShow = () => {
+    const storage = (editor.storage as unknown as Record<string, { insertedAt?: number } | undefined>).status
+    if (!storage?.insertedAt || Date.now() - storage.insertedAt > 3000) return
+    storage.insertedAt = 0
+    inputRef.current?.focus()
+    inputRef.current?.select()
+  }
 
   // Written on every keystroke, the lozenge updates as you type, and the
   // node is re-selected afterwards so the menu stays put (see selectedNode.ts).
@@ -42,16 +52,18 @@ export function StatusMenu({ editor }: { editor: TiptapEditor }) {
       editor={editor}
       pluginKey="statusMenu"
       shouldShow={({ editor }) => editor.isActive('status')}
-      options={{ placement: 'bottom' }}
+      options={{ placement: 'bottom', onShow }}
     >
       <form
         className="chip-menu"
         onSubmit={(e) => {
           // A popover form inside the page's own save form: see the
-          // architecture doc's editor gotcha. Enter returns to the text.
+          // architecture doc's editor gotcha. Enter returns to the text,
+          // after the status: with the status still selected, the next
+          // letter typed used to replace it.
           e.preventDefault()
           e.stopPropagation()
-          editor.commands.focus()
+          continueAfterSelectedNode(editor)
         }}
       >
         <input
@@ -64,7 +76,7 @@ export function StatusMenu({ editor }: { editor: TiptapEditor }) {
             commit({ text: e.target.value.trim() || 'STATUS' })
           }}
           onKeyDown={(e) => {
-            if (e.key === 'Escape') editor.commands.focus()
+            if (e.key === 'Escape') continueAfterSelectedNode(editor)
           }}
         />
         <div className="chip-menu__colors" role="group" aria-label="Color">
