@@ -158,6 +158,49 @@ public class ProseMirrorRendererTests
         Assert.Contains("Widget \\| Pro", md); // literal pipe in cell content is escaped
     }
 
+    // A page properties table, as the DEMO "Launch plan" has one: every value
+    // is a chip, and each came out blank before T5-001 was fixed.
+    private const string ChipsInCellsDoc = """
+    {"type":"doc","content":[
+      {"type":"paragraph","content":[{"type":"text","text":"Links to "},
+        {"type":"text","marks":[{"type":"link","attrs":{"href":"#after"}}],"text":"after"}]},
+      {"type":"table","content":[
+        {"type":"tableRow","content":[
+          {"type":"tableHeader","content":[{"type":"paragraph","content":[{"type":"text","text":"Status"}]}]},
+          {"type":"tableCell","content":[{"type":"paragraph","content":[{"type":"status","attrs":{"text":"On track","color":"green"}}]}]}]},
+        {"type":"tableRow","content":[
+          {"type":"tableHeader","content":[{"type":"paragraph","content":[{"type":"text","text":"Owner"}]}]},
+          {"type":"tableCell","content":[{"type":"paragraph","content":[{"type":"mention","attrs":{"userId":"11111111-1111-1111-1111-111111111111","label":"Priya Natarajan"}}]}]}]},
+        {"type":"tableRow","content":[
+          {"type":"tableHeader","content":[{"type":"paragraph","content":[{"type":"text","text":"Launch date"}]}]},
+          {"type":"tableCell","content":[{"type":"paragraph","content":[{"type":"date","attrs":{"date":"2026-10-14"}}]}]}]},
+        {"type":"tableRow","content":[
+          {"type":"tableHeader","content":[{"type":"heading","attrs":{"level":3},"content":[{"type":"text","text":"In a cell"}]}]},
+          {"type":"tableCell","content":[
+            {"type":"paragraph","content":[{"type":"text","marks":[{"type":"bold"}],"text":"first"}]},
+            {"type":"paragraph","content":[{"type":"text","text":"second | third"}]}]}]}
+      ]},
+      {"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"After"}]}
+    ]}
+    """;
+
+    [Fact]
+    public void Chips_and_marks_in_table_cells_render_as_they_do_outside_a_table()
+    {
+        var md = ProseMirrorRenderer.ToMarkdown(ChipsInCellsDoc);
+        Assert.Contains("| Status | `On track` |", md);
+        Assert.Contains("| Owner | @Priya Natarajan |", md);
+        Assert.Contains("| Launch date | 14 Oct 2026 |", md);
+        // Two blocks in one cell stay on the row's one line, and a pipe in
+        // the text is still escaped.
+        Assert.Contains("| **first**<br>second \\| third |", md);
+        // A heading in a cell cannot be one, but it keeps its anchor, and
+        // the heading after the table still gets its own (the anchors are
+        // handed out in document order, tables included).
+        Assert.Contains("<a id=\"in-a-cell\"></a>**In a cell**", md);
+        Assert.Contains("<a id=\"after\"></a>\n## After", md);
+    }
+
     [Fact]
     public void Table_width_and_layout_do_not_affect_markdown_export()
     {
