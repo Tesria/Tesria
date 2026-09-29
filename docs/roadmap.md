@@ -344,13 +344,6 @@ set the instance default is a small decision to make with it. Exports
   - The 243 Medium and Low bugs from the 0.8.1 QA run (the run's own
     records, not in the repository) wait for triage.
 
-- **Bug (reported 2026-09-28): an exported site's Reduce Motion switch does
-  nothing.** In Glass, the export's appearance menu shows the switch
-  (`SiteChrome.cs`, `data-theme-motion`), but an exported site has none of
-  the app's animations: its sidebar does not fold into a button, and its
-  menus do not open out of their buttons. Either hide the switch in exports,
-  or give the site the animations it would control.
-
 ## ZIM files: importing and exporting (suggested 2026-09-25, not scheduled)
 
 ZIM is the offline-wiki format of openZIM and Kiwix: Wikipedia,

@@ -3346,9 +3346,9 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
   [data-export-width-toggle] { display: none; }
 }
 
-/* An exported site is captured from the real page, so the hide button comes
-   with it; a static site cannot remember the choice, so it goes. */
-.space-layout--export .sidebar__toggle { display: none; }
+/* An exported site's sidebar hides and shows as the app's does
+   (SiteChrome.cs, 2026-09-29), with the same buttons and, in Glass, the same
+   motion; its script remembers the choice under the app's own key. */
 
 /* On a phone an export hides .sidebar behind the top bar's Pages button,
    as the application hides it behind its menu (2026-09-24: stacked
@@ -3368,6 +3368,10 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
     border-right: 0; border-bottom: 0;
   }
   .site-menu-open .space-layout--export .sidebar .tree { overflow: visible; }
+  /* The Pages button opens and closes it here, so it has no hide button
+     (the rail's show button is already hidden at this width). Specific
+     enough to beat Glass's sizing of the button, which sets its display. */
+  .site-menu-open .space-layout--export .sidebar .sidebar__toggle { display: none; }
 }
 
 @media print {

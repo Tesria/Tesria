@@ -774,7 +774,11 @@ paint: the reader's choice (`tesria-style`, `flat` stored too, since Minimal
 can be a choice against a Glass default), else the look it was exported in
 (`data-style-default="glass"`, set when the exporter was in Glass, and by the
 Docs export), else Minimal. It docks the bar, marks hovered scrollers
-(`data-sb`) and offers Reduce Motion, as the app does. In Glass the page
+(`data-sb`), hides and shows the sidebar (the app's buttons and its
+`tesria-sidebar-collapsed` key) and, in Glass, gives the appearance menu and
+the sidebar the app's motion, with Reduce Motion to still it, as the app
+does. Its script copies the keyframes from `popoverMotion.ts` and
+`SpacePage.tsx`; `SiteExportTests` fails if they drift. In Glass the page
 wrapper (`.export--site`) is transparent so the ground shows, the sidebar
 stops above the footer bar, and on a phone the unrolled page list is in the
 page's flow. The Pages button (`.site-menu`) always shows at 640px and below,

@@ -270,6 +270,15 @@ public static partial class SiteChrome
     /// "Pages" heading. The same three bands the application shows, minus the
     /// parts that only mean something signed in (+ New page, Space settings),
     /// which is also what a reader of a public space sees.
+    ///
+    /// <para>It hides and shows as the app's does (2026-09-29): the button
+    /// at the head's right hides it, leaving the rail's button that brings
+    /// it back, the same markup as <c>SpacePage.tsx</c>, and in Glass the
+    /// same motion (<see cref="ThemeScript"/>). The rail ships hidden; the
+    /// small script after the panel applies the reader's stored choice
+    /// before the page is first drawn, as the app's own key
+    /// (<c>tesria-sidebar-collapsed</c>) says. On a phone the Pages button
+    /// takes over and neither button shows.</para>
     /// </summary>
     public static string Sidebar(SpaceHead space, IReadOnlyList<SiteExport.Placed> pages, string currentPath)
     {
@@ -277,11 +286,12 @@ public static partial class SiteChrome
             ? """<span class="badge badge--public" title="Readable by anyone on the internet">public</span>"""
             : "";
         return $"""
+        <div class="sidebar-rail" data-sidebar-rail style="display: none"><button type="button" class="sidebar__toggle" data-sidebar-toggle title="Show the Sidebar" aria-label="Show the Sidebar" aria-expanded="false">{SidebarIcon}</button></div>
         <aside class="sidebar" id="site-pages">
         <div class="sidebar__top"><div class="sidebar__head">{SpaceIcon(space, 32, currentPath)}<div>
         <div class="sidebar__key">{SiteExport.Escape(space.Key)}{badge}</div>
         <div class="sidebar__name">{SiteExport.Escape(space.Name)}</div>
-        </div></div></div>
+        </div><button type="button" class="sidebar__toggle sidebar__toggle--hide" data-sidebar-toggle title="Hide the Sidebar" aria-label="Hide the Sidebar" aria-expanded="true">{SidebarIcon}</button></div></div>
         <div class="tree-section">
         <div class="tree-section__heading"><span>{PagesIcon} Pages</span></div>
         <div class="tree-filter"><input type="search" class="tree-filter__input" placeholder="Filter pages" aria-label="Filter pages" /><button type="button" class="tree-filter__children is-on" aria-pressed="true" aria-label="Show the Pages Under Each Match" title="Show the Pages Under Each Match">{ChildrenIcon}</button></div>
@@ -289,8 +299,14 @@ public static partial class SiteChrome
         <p class="muted small tree-filter__none" style="display:none">No pages match.</p>
         </div>
         </aside>
+        <script data-export-keep>window.__tesriaSidebar && window.__tesriaSidebar()</script>
         """;
     }
+
+    /// <summary>From <c>NavIcons.tsx</c>'s SidebarIcon: a panel with its left side marked.</summary>
+    private static readonly string SidebarIcon = Svg(16,
+        """<rect x="3.5" y="4.5" width="17" height="15" rx="2" /><path d="M9 4.5v15" />""")
+        .Replace("<svg ", "<svg class=\"nav-icon\" focusable=\"false\" ");
 
     /// <summary>
     /// The page tree, flattened with the same indentation the application
@@ -464,6 +480,10 @@ public static partial class SiteChrome
         """;
         // Minimal or Glass (0.8.1), as in the app's menu, with Reduce Motion
         // shown under it only while Glass is chosen (the script shows it).
+        // It stills what Glass moves in a site as in the app: this menu
+        // opening out of its button and the sidebar folding into its own
+        // (2026-09-29; before that a site had neither, and the switch did
+        // nothing).
         var styles = string.Concat(Styles.Select(st =>
             $"<button type=\"button\" class=\"theme-menu__mode\" data-theme-style=\"{st.Value}\" aria-pressed=\"false\">"
             + "<span class=\"theme-menu__mode-text\">"
@@ -512,8 +532,9 @@ public static partial class SiteChrome
     /// The one script an export carries. It applies the stored theme and
     /// accent before first paint (without it the file renders light for a
     /// frame and then flips), then drives the appearance menu, the
-    /// full-width toggle, animations, Expand blocks, code blocks' Copy and
-    /// the sidebar's page filter.
+    /// full-width toggle, animations, Expand blocks, code blocks' Copy,
+    /// hiding the sidebar and the sidebar's page filter, with Glass's
+    /// motion for the menu and the sidebar.
     /// Marked <c>data-export-keep</c>, which is how the capture knows to keep
     /// it when it strips the application's own scripts.
     ///
@@ -559,6 +580,42 @@ public static partial class SiteChrome
           function applyMotion(on) { if (on) root.setAttribute('data-motion', 'reduce'); else root.removeAttribute('data-motion') }
           applyStyle(styleNow());
           applyMotion(get(MOTION) === '1');
+
+          // Glass's motion (2026-09-29), as the app has it: the appearance
+          // menu opens out of its button and closes back into it
+          // (popoverMotion.ts), and the sidebar folds into its show button
+          // and unfolds from it (SpacePage.tsx). The keyframes, durations and
+          // easings are copied from those two files (SiteExportTests checks
+          // they still match). Minimal switches instantly, and so does
+          // anyone who asks for reduced motion: the switch in the menu, or
+          // the system (motionReduced() in theme.ts).
+          function moving() {
+            return root.getAttribute('data-style') === 'glass'
+              && typeof Element.prototype.animate === 'function'
+              && root.getAttribute('data-motion') !== 'reduce'
+              && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+          }
+
+          // The sidebar, hidden or shown: the app's own key, so the choice
+          // follows the reader from page to page as the theme does.
+          var SIDEBAR = 'tesria-sidebar-collapsed';
+          function sidebarParts() {
+            var panel = d.getElementById('site-pages');
+            return panel && {
+              panel: panel, layout: panel.parentElement,
+              rail: d.querySelector('[data-sidebar-rail]'),
+            };
+          }
+          function applySidebar(collapsed) {
+            var s = sidebarParts();
+            if (!s) return;
+            s.layout.classList.toggle('space-layout--collapsed', collapsed);
+            if (collapsed) s.panel.setAttribute('hidden', ''); else s.panel.removeAttribute('hidden');
+            if (s.rail) s.rail.style.display = collapsed ? '' : 'none';
+          }
+          // Called from just after the sidebar's markup, so a hidden sidebar
+          // is never drawn first.
+          window.__tesriaSidebar = function () { applySidebar(get(SIDEBAR) === '1') };
           // Windows draws Segoe UI low in a button (index.css nudges it up).
           if (/Windows/.test(navigator.userAgent)) root.setAttribute('data-os', 'windows');
 
@@ -637,10 +694,59 @@ public static partial class SiteChrome
             }
           }
 
+          // The appearance menu, opened and closed. In Glass, closing draws
+          // the panel's far sides in until only a button-sized circle is left
+          // under the button, which slides up onto it as it fades; opening
+          // runs that backwards and settles with a slight overshoot
+          // (popoverMotion.ts). The panel stays until the closing motion ends.
+          var PANEL_CLIP = 'inset(0 0 0 0 round 14px)', closing = null;
+          function toButton(panel) {
+            var button = panel.previousElementSibling;
+            if (!button) return null;
+            var p = panel.getBoundingClientRect(), b = button.getBoundingClientRect();
+            var r = b.height / 2;
+            var cx = Math.min(Math.max(b.left + b.width / 2 - p.left, r), p.width - r);
+            return {
+              clip: 'inset(0 ' + (p.width - cx - r) + 'px ' + (p.height - 2 * r) + 'px ' + (cx - r) + 'px round ' + r + 'px)',
+              lift: p.top - b.top,
+            };
+          }
+          function menuOpen() {
+            var panel = d.querySelector('[data-theme-panel]');
+            return !!panel && !panel.hidden && !closing;
+          }
+          function open() {
+            var panel = d.querySelector('[data-theme-panel]'), trigger = d.querySelector('[data-theme-trigger]');
+            if (!panel) return;
+            if (closing) { closing.cancel(); closing = null }
+            panel.hidden = false;
+            if (trigger) { trigger.setAttribute('aria-expanded', 'true'); trigger.classList.add('is-open') }
+            var to = moving() ? toButton(panel) : null;
+            if (!to) return;
+            panel.animate([
+              { clipPath: to.clip, transform: 'translateY(' + (-to.lift) + 'px)', opacity: 0.2 },
+              { clipPath: to.clip, transform: 'none', opacity: 1, offset: 0.25 },
+              { clipPath: PANEL_CLIP, transform: 'scale(1.01)', offset: 0.8 },
+              { clipPath: PANEL_CLIP, transform: 'none', opacity: 1 },
+            ], { duration: 380, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' });
+          }
           function close() {
             var panel = d.querySelector('[data-theme-panel]'), trigger = d.querySelector('[data-theme-trigger]');
-            if (panel) panel.hidden = true;
             if (trigger) { trigger.setAttribute('aria-expanded', 'false'); trigger.classList.remove('is-open') }
+            if (!panel || panel.hidden || closing) return;
+            var to = moving() ? toButton(panel) : null;
+            if (!to) { panel.hidden = true; return }
+            var a = panel.animate([
+              { clipPath: PANEL_CLIP, transform: 'none', opacity: 1 },
+              { clipPath: to.clip, transform: 'none', opacity: 1, offset: 0.7 },
+              { clipPath: to.clip, transform: 'translateY(' + (-to.lift) + 'px)', opacity: 0 },
+            ], { duration: 300, easing: 'cubic-bezier(0.55, 0, 0.6, 1)', fill: 'forwards' });
+            closing = a;
+            // A browser can slow or pause animations (a background tab), and
+            // then the panel would linger: it goes by the clock too.
+            function done() { if (closing !== a) return; closing = null; panel.hidden = true; a.cancel() }
+            a.onfinish = done;
+            setTimeout(done, 450);
           }
 
           // Kept for the markup shipped before the menu existed, and because
@@ -656,13 +762,10 @@ public static partial class SiteChrome
             if (trigger && panel) {
               trigger.addEventListener('click', function (e) {
                 e.stopPropagation();
-                var opening = panel.hidden;
-                panel.hidden = !opening;
-                trigger.setAttribute('aria-expanded', opening ? 'true' : 'false');
-                trigger.classList.toggle('is-open', opening);
+                if (menuOpen()) close(); else open();
               });
               d.addEventListener('click', function (e) {
-                if (!panel.hidden && !panel.contains(e.target) && !trigger.contains(e.target)) close();
+                if (menuOpen() && !panel.contains(e.target) && !trigger.contains(e.target)) close();
               });
               d.addEventListener('keydown', function (e) { if (e.key === 'Escape') close() });
             }
@@ -719,8 +822,74 @@ public static partial class SiteChrome
             wireCopy();
             wireTreeFilter();
             wireTreeScroll();
+            wireSidebar();
             wireSiteMenu();
             wireScrollbars();
+          }
+
+          // Hiding and showing the sidebar (SpacePage.tsx). In Glass, hiding
+          // draws the panel's right and bottom edges in to its top-left
+          // corner, where the show button appears, leaving a circle the
+          // button's size (a clip, so the corner keeps its shape rather than
+          // being squashed); the button then bounces in while the page's
+          // column slides over. Showing opens the panel back out of it.
+          function wireSidebar() {
+            var s = sidebarParts();
+            if (!s) return;
+            applySidebar(get(SIDEBAR) === '1');
+            var SIDE_CLIP = 'inset(0 0 0 0 round 18px)', shrink = null, timer = 0;
+            function clipToButton(panel) {
+              var r = panel.getBoundingClientRect();
+              var size = parseFloat(getComputedStyle(root).getPropertyValue('--ctl-page')) || 38;
+              return 'inset(0 ' + (r.width - size) + 'px ' + (r.height - size) + 'px 0 round ' + (size / 2) + 'px)';
+            }
+            function flip(collapsed) {
+              set(SIDEBAR, collapsed ? '1' : null);
+              applySidebar(collapsed);
+            }
+            function hide() {
+              if (shrink) return;
+              if (!moving()) { flip(true); return }
+              var a = s.panel.animate([
+                // The contents fade in the last stretch, so the circle hands
+                // over to the button, not a sliver of the space's icon.
+                { clipPath: SIDE_CLIP, opacity: 1 },
+                { opacity: 1, offset: 0.55 },
+                { clipPath: clipToButton(s.panel), opacity: 0.1 },
+              ], { duration: 260, easing: 'cubic-bezier(0.55, 0, 0.8, 0.2)', fill: 'forwards' });
+              shrink = a;
+              a.onfinish = function () {
+                shrink = null;
+                s.layout.classList.add('is-moving');
+                clearTimeout(timer);
+                timer = setTimeout(function () { s.layout.classList.remove('is-moving') }, 340);
+                flip(true);
+                a.cancel();
+                var b = s.rail && s.rail.querySelector('[data-sidebar-toggle]');
+                if (b) b.animate([
+                  // It takes over from the panel's last circle at the same size.
+                  { transform: 'scale(1)', opacity: 0.2 },
+                  { transform: 'scale(1.14)', opacity: 1, offset: 0.45 },
+                  { transform: 'scale(0.95)', offset: 0.75 },
+                  { transform: 'scale(1)' },
+                ], { duration: 440, easing: 'ease-out' });
+              };
+            }
+            function show() {
+              flip(false);
+              placeTree();
+              if (!moving()) return;
+              s.panel.animate([
+                { clipPath: clipToButton(s.panel), transform: 'none' },
+                { clipPath: SIDE_CLIP, transform: 'scale(1.012)', offset: 0.78 },
+                { clipPath: SIDE_CLIP, transform: 'none' },
+              ], { duration: 420, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' });
+            }
+            d.querySelectorAll('[data-sidebar-toggle]').forEach(function (b) {
+              b.addEventListener('click', function () {
+                if (s.panel.hasAttribute('hidden')) show(); else hide();
+              });
+            });
           }
 
           // Glass (0.8.1): a scroller's thin scrollbar shows while the mouse
