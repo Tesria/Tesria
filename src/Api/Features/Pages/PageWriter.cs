@@ -211,7 +211,7 @@ public sealed class PageWriter(
 
         await db.SaveChangesAsync(ct);
         await webhooks.DispatchAsync(page.SpaceId, "page.updated", "page", page.Id, new { page.Title });
-        await NotifyCollabAsync(page.Id, content, nextNumber, ct);
+        await NotifyCollabAsync(page.Id, content, nextNumber, ct, fromDraft: baseVersion is not null);
         return PageWriteResult.Ok(page, version);
     }
 
@@ -225,8 +225,18 @@ public sealed class PageWriter(
     /// cannot fail the write, and a sidecar that is down simply means the
     /// reconciliation waits for the document's next load.
     /// </summary>
-    private Task NotifyCollabAsync(Guid pageId, string content, int version, CancellationToken ct) =>
-        collab.NotifyAsync(pageId, content, WriteSources.Of(accessor), version, ct);
+    /// <param name="fromDraft">
+    /// Whether the write named the version its draft was based on, which the
+    /// editor's own Update always does. A browser-session write that did not
+    /// (a restore from History) is an outside change like an API one, not the
+    /// editor's own content (0.8.2).
+    /// </param>
+    private Task NotifyCollabAsync(Guid pageId, string content, int version, CancellationToken ct, bool fromDraft = true)
+    {
+        var source = WriteSources.Of(accessor);
+        if (source == WriteSource.Editor && !fromDraft) source = WriteSource.Page;
+        return collab.NotifyAsync(pageId, content, source, version, ct);
+    }
 
     /// <summary>
     /// Tells anyone newly mentioned that they were, checked with
