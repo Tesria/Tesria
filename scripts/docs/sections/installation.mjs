@@ -818,7 +818,7 @@ export async function build({
 
     h(2, 'Which account someone gets'),
     ul(
-      li(p(b('Someone who has signed in with SSO before'), ' gets the same account every time, even if their email address changes at the provider.')),
+      li(p(b('Someone who has signed in with SSO before'), ' gets the same account every time, even if their email address changes at the provider. An account with no Tesria password takes the new address when they next sign in, as long as the provider says it has confirmed it and no other account has it.')),
       li(p(b('Someone who already has a Tesria account'), ' with the same email address is connected to it, but only if the provider says it has confirmed that address. Otherwise anyone who could claim the address at the provider could take over the account.')),
       li(p(b('Someone new'), ' gets a new account with no Tesria password, as long as ', b('Allow Public Registration'), ' is on (', b('Admin'), ', ', b('Settings'), ', ', b('Access'), '). When it is off, they are turned away: send them an invite, let them create their account from it, and from then on SSO signs them in to that account. See ', pageLink('Invites'), '.')),
     ),

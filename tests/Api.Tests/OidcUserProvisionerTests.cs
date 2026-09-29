@@ -53,6 +53,46 @@ public class OidcUserProvisionerTests
         Assert.Equal(1, await db.Users.CountAsync(u => u.OidcSubject == "sub-2"));
     }
 
+    // t2-022: the provider changed someone's address and Tesria kept the old one.
+    [Fact]
+    public async Task A_passwordless_account_follows_the_address_the_provider_confirms()
+    {
+        var (factory, db, provisioner) = NewProvisioner();
+        using var _ = factory;
+
+        var first = await provisioner.ResolveOrProvisionAsync("sub-move", "old.address@example.com", true, "Mover");
+        var moved = await provisioner.ResolveOrProvisionAsync("sub-move", "New.Address@Example.com", true, "Mover");
+
+        Assert.Equal(first.Id, moved.Id);
+        Assert.Equal("new.address@example.com", (await db.Users.AsNoTracking().SingleAsync(u => u.Id == first.Id)).Email);
+        Assert.True(await db.AuditLogs.AnyAsync(a => a.Action == "user.email_changed" && a.TargetId == first.Id));
+    }
+
+    [Fact]
+    public async Task The_address_is_kept_when_the_new_one_is_unconfirmed_taken_or_the_account_has_a_password()
+    {
+        var (factory, db, provisioner) = NewProvisioner();
+        using var _ = factory;
+
+        var sso = await provisioner.ResolveOrProvisionAsync("sub-a", "a@example.com", true, "A");
+        await provisioner.ResolveOrProvisionAsync("sub-b", "b@example.com", true, "B");
+
+        // Not confirmed by the provider.
+        await provisioner.ResolveOrProvisionAsync("sub-a", "unconfirmed@example.com", false, "A");
+        Assert.Equal("a@example.com", (await db.Users.AsNoTracking().SingleAsync(u => u.Id == sso.Id)).Email);
+
+        // Another account's address.
+        await provisioner.ResolveOrProvisionAsync("sub-a", "b@example.com", true, "A");
+        Assert.Equal("a@example.com", (await db.Users.AsNoTracking().SingleAsync(u => u.Id == sso.Id)).Email);
+
+        // An account with a Tesria password: its owner sets the address on the profile.
+        var linked = await db.Users.SingleAsync(u => u.Id == sso.Id);
+        linked.PasswordHash = "not-a-real-hash";
+        await db.SaveChangesAsync();
+        await provisioner.ResolveOrProvisionAsync("sub-a", "elsewhere@example.com", true, "A");
+        Assert.Equal("a@example.com", (await db.Users.AsNoTracking().SingleAsync(u => u.Id == sso.Id)).Email);
+    }
+
     [Fact]
     public async Task Verified_email_match_links_to_the_existing_local_account()
     {

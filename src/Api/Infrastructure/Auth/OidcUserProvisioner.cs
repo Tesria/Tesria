@@ -77,9 +77,13 @@ public sealed class OidcUserProvisioner(AppDbContext db, ISiteSettingsService se
 
         // Returning user: already linked to this exact external identity.
         var existingBySubject = await db.Users.FirstOrDefaultAsync(u => u.OidcSubject == subject);
-        if (existingBySubject is not null) return existingBySubject;
-
         var normalizedEmail = (email ?? "").Trim().ToLowerInvariant();
+        if (existingBySubject is not null)
+        {
+            await FollowProviderEmailAsync(existingBySubject, normalizedEmail, emailVerified);
+            return existingBySubject;
+        }
+
         if (normalizedEmail.Length == 0)
             throw new OidcNoEmailException();
 
@@ -126,5 +130,26 @@ public sealed class OidcUserProvisioner(AppDbContext db, ISiteSettingsService se
         });
         await db.SaveChangesAsync();
         return user;
+    }
+
+    /// <summary>
+    /// An account with no Tesria password gets its email address from the
+    /// provider, which owns it (the profile says so, and offers no field):
+    /// when the provider now says another address, the account takes it
+    /// (t2-022). Only a confirmed address, only one no other account holds,
+    /// and never for an account with a password, whose owner sets the
+    /// address on the profile.
+    /// </summary>
+    private async Task FollowProviderEmailAsync(User user, string email, bool emailVerified)
+    {
+        if (user.PasswordHash is not null || email.Length == 0 || email == user.Email) return;
+        var at = email.IndexOf('@');
+        if (!emailVerified || at <= 0 || at == email.Length - 1 || email.Length > 320) return;
+        if (await db.Users.AnyAsync(u => u.Email == email && u.Id != user.Id)) return;
+
+        var previous = user.Email;
+        user.Email = email;
+        audit.RecordAs(user.Id, "user.email_changed", "user", user.Id, new { From = previous, To = email, How = "single sign-on" });
+        await db.SaveChangesAsync();
     }
 }

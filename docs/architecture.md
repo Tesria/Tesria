@@ -52,8 +52,10 @@ was used:
   (Keycloak, Authentik, Google, ...) via `Oidc:Authority`/`ClientId`/
   `ClientSecret`. A first login provisions a passwordless local account; a
   verified-email match links to an existing local account; an unverified-email
-  match is refused (would otherwise allow account takeover). With no Authority
-  configured the app behaves exactly as local-accounts-only.
+  match is refused (would otherwise allow account takeover). A returning
+  passwordless account takes a new verified address the provider sends, if
+  no other account holds it (t2-022). With no Authority configured the app
+  behaves exactly as local-accounts-only.
 
 A `Smart` policy scheme picks Cookie vs. API-token per request based on the
 `Authorization` header. Unauthenticated API calls receive `401` (no login
