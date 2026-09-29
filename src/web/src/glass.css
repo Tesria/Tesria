@@ -680,6 +680,27 @@
 :root[data-style="glass"] .code-block:not([data-appearance="flat"]) pre, .code-block[data-appearance="glass"] pre { padding: 16px 18px; line-height: 1.75; }
 :root[data-style="glass"] .code-block:not([data-appearance="flat"]) .code-block__gutter, .code-block[data-appearance="glass"] .code-block__gutter { padding-top: 16px; line-height: 1.75; border-right-color: var(--term-rule); }
 
+/* A block with Colors of its own (codeSchemes.ts) is a console in those
+   colors: its values stand in for the console's, on the block itself. */
+.code-block[data-color-scheme] {
+  --term: var(--code-bg); --term-ink: var(--code-ink); --term-dim: var(--code-dim); --term-rule: var(--code-rule);
+  --term-head: linear-gradient(135deg, var(--code-head), var(--code-bg) 70%);
+}
+/* On a light scheme the console's white-on-dark glass reads as nothing:
+   the buttons and rim are drawn in the scheme's ink instead. */
+.code-block[data-color-scheme="github-light"], .code-block[data-color-scheme="solarized-light"] {
+  --term-head-shadow: rgba(0, 0, 0, 0.12);
+  --term-glass: rgba(0, 0, 0, 0.04);
+  --term-glass-rim: rgba(0, 0, 0, 0.14);
+  --term-glass-hi: rgba(255, 255, 255, 0.7);
+  --term-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 50%);
+}
+:root[data-style="glass"] .code-block[data-color-scheme="github-light"]:not([data-appearance="flat"]) :is(.code-block__copy, .code-block__linenum-toggle):hover,
+:root[data-style="glass"] .code-block[data-color-scheme="solarized-light"]:not([data-appearance="flat"]) :is(.code-block__copy, .code-block__linenum-toggle):hover,
+.code-block[data-appearance="glass"]:is([data-color-scheme="github-light"], [data-color-scheme="solarized-light"]) :is(.code-block__copy, .code-block__linenum-toggle):hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
 /* ---- Diagrams: the same window, lit, with the diagram on the page's own surface -- */
 
 :root[data-style="glass"] .code-block--diagram:not([data-appearance="flat"]) .mermaid, .code-block--diagram[data-appearance="glass"] .mermaid {
@@ -700,9 +721,9 @@
 .appearance-picker { display: inline-flex; align-items: center; gap: 0.35rem; margin: 0; font-size: 0.85rem; }
 /* `label > select` is full width everywhere (index.css); this one is its own size. */
 label.appearance-picker > select { width: auto; min-width: 0; margin-top: 0; padding: 0.2rem 0.4rem; }
-.code-block__appearance { font-size: 0.75rem; color: #cbd5e1; }
+.code-block__appearance { font-size: 0.75rem; color: var(--code-dim); }
 label.code-block__appearance > select {
-  background: transparent; color: #cbd5e1; border: 1px solid #334066; border-radius: 4px;
+  background: transparent; color: var(--code-dim); border: 1px solid var(--code-btn-rim); border-radius: 4px;
   font-size: 0.75rem; padding: 0.1rem 0.3rem;
 }
 .code-block__appearance select option { color: initial; }

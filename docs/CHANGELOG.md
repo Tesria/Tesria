@@ -5,6 +5,24 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Code blocks: XML, and Colors** (asked for by the owner, 2026-09-29).
+  XML is in the language menu (highlight.js's XML grammar, which HTML
+  already used). **Colors**, in the block's bar while editing, colors one
+  block in Default (Tesria's own) or a common editor scheme: GitHub Light,
+  GitHub Dark, Dracula, Monokai, Nord, Solarized Light or Solarized Dark.
+  Stored as `colorScheme` and rendered as `data-color-scheme` only when not
+  Default; every color is now a custom property, so a scheme is one set of
+  values, the Glass console takes it too, and exports keep it. A Mermaid
+  diagram has no Colors. The bar wraps on a phone instead of cutting off
+  Copy. The Code block docs page shows the same lines in every scheme.
+- **Fixed: docs scripts left stale text in the live draft.** The docs
+  tooling signs in like a browser and sent `baseVersion`, which the app
+  takes for the editor's own Update, so the sidecar kept the draft's old
+  text under the new version number; pressing Update in the editor would
+  have put the old page back. `scripts/lib/tesria.mjs` no longer sends it,
+  so its writes are outside changes, and the eight stale drafts in the Docs
+  space on the owner's instance were discarded (their text is in each page's
+  history).
 - **Fixed: dragging a chart dropped its text into the page** (reported by the
   owner, 2026-09-29). A drag that started inside a chart (or a live content
   block, a table of contents, an embed, a link card, a file or math) was the

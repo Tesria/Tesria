@@ -986,29 +986,43 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .editor__content .ProseMirror p { margin: 0.5em 0; }
 .editor__content code { background: var(--bg-alt); padding: 0.1em 0.3em; border-radius: 4px; }
 
-/* syntax-highlighted code blocks (CodeBlockView.tsx) */
-.code-block { margin: 0.75rem 0; border-radius: var(--radius); overflow: hidden; border: 1px solid #1f2a44; }
+/* syntax-highlighted code blocks (CodeBlockView.tsx). Every color is a
+   custom property, so a block's Colors (codeSchemes.ts, data-color-scheme)
+   is one set of values below, and the Glass console (glass.css) reads the
+   same ones. */
+.code-block {
+  --code-bg: #0b1324; --code-ink: #e2e8f0; --code-head: #17203a; --code-rule: #1f2a44;
+  --code-dim: #cbd5e1; --code-gutter: #4b5f8f; --code-btn-rim: #334066; --code-btn-hover: #1f2a44;
+  --code-btn-on: #29365c; --code-btn-on-rim: #4b5f8f; --code-btn-on-ink: var(--on-primary);
+  /* highlight.js token colors (atom-one-dark-derived palette) */
+  --hl-comment: #7c88a3; --hl-keyword: #c678dd; --hl-name: #e06c75; --hl-literal: #56b6c2;
+  --hl-string: #98c379; --hl-number: #d19a66; --hl-title: #61aeee; --hl-builtin: #e6c07b;
+  margin: 0.75rem 0; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--code-rule);
+}
 .code-block__header {
-  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
-  padding: 0.3rem 0.5rem; background: #17203a; border-bottom: 1px solid #1f2a44;
+  /* Wraps rather than running past the block's edge: with Colors and Style
+     beside #, Copy was cut off on a phone (2026-09-29). */
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem;
+  padding: 0.3rem 0.5rem; background: var(--code-head); border-bottom: 1px solid var(--code-rule);
 }
 .code-block__lang {
-  width: auto; background: transparent; color: #cbd5e1; border: none; font-size: 0.78rem;
+  width: auto; background: transparent; color: var(--code-dim); border: none; font-size: 0.78rem;
   padding: 0.1rem 0.3rem;
 }
 .code-block__lang:focus { outline: none; }
+.code-block__lang option { color: initial; }
 .code-block__copy {
-  background: transparent; border: 1px solid #334066; color: #cbd5e1; border-radius: 4px;
+  background: transparent; border: 1px solid var(--code-btn-rim); color: var(--code-dim); border-radius: 4px;
   font-size: 0.75rem; padding: 0.15rem 0.5rem; cursor: pointer;
 }
-.code-block__copy:hover { background: #1f2a44; }
-.code-block__header-actions { display: flex; gap: 0.4rem; }
+.code-block__copy:hover { background: var(--code-btn-hover); }
+.code-block__header-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.4rem; margin-left: auto; min-width: 0; }
 .code-block__linenum-toggle {
-  background: transparent; border: 1px solid #334066; color: #cbd5e1; border-radius: 4px;
+  background: transparent; border: 1px solid var(--code-btn-rim); color: var(--code-dim); border-radius: 4px;
   font-size: 0.75rem; padding: 0.15rem 0.5rem; cursor: pointer; font-family: monospace;
 }
-.code-block__linenum-toggle:hover { background: #1f2a44; }
-.code-block__linenum-toggle.is-active { background: #29365c; color: var(--on-primary); border-color: #4b5f8f; }
+.code-block__linenum-toggle:hover { background: var(--code-btn-hover); }
+.code-block__linenum-toggle.is-active { background: var(--code-btn-on); color: var(--code-btn-on-ink); border-color: var(--code-btn-on-rim); }
 .code-block__body { display: flex; }
 /* `display: flex` out-specifies the user agent's `[hidden] { display: none }`,
    so hiding a Mermaid block's source needs saying explicitly. The source is
@@ -1019,27 +1033,79 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .code-block__gutter {
   flex: 0 0 auto; user-select: none; text-align: right; padding: 0.75rem 0.5rem 0.75rem 0.75rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85rem; line-height: 1.5;
-  color: #4b5f8f; background: #0b1324; border-right: 1px solid #1f2a44;
+  color: var(--code-gutter); background: var(--code-bg); border-right: 1px solid var(--code-rule);
 }
 .code-block__gutter span { display: block; }
 .code-block pre {
-  margin: 0; background: #0b1324; color: #e2e8f0; padding: 0.75rem; overflow-x: auto; border-radius: 0;
+  margin: 0; background: var(--code-bg); color: var(--code-ink); padding: 0.75rem; overflow-x: auto; border-radius: 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85rem; line-height: 1.5;
 }
 .code-block code { background: none; padding: 0; border-radius: 0; }
 
-/* highlight.js token colors (atom-one-dark-derived palette) */
-.code-block .hljs-comment, .code-block .hljs-quote { color: #7c88a3; font-style: italic; }
-.code-block .hljs-keyword, .code-block .hljs-selector-tag, .code-block .hljs-doctag, .code-block .hljs-formula { color: #c678dd; }
-.code-block .hljs-section, .code-block .hljs-name, .code-block .hljs-deletion, .code-block .hljs-subst { color: #e06c75; }
-.code-block .hljs-literal { color: #56b6c2; }
-.code-block .hljs-string, .code-block .hljs-regexp, .code-block .hljs-addition, .code-block .hljs-attribute, .code-block .hljs-meta-string { color: #98c379; }
+.code-block .hljs-comment, .code-block .hljs-quote { color: var(--hl-comment); font-style: italic; }
+.code-block .hljs-keyword, .code-block .hljs-selector-tag, .code-block .hljs-doctag, .code-block .hljs-formula { color: var(--hl-keyword); }
+.code-block .hljs-section, .code-block .hljs-name, .code-block .hljs-deletion, .code-block .hljs-subst { color: var(--hl-name); }
+.code-block .hljs-literal { color: var(--hl-literal); }
+.code-block .hljs-string, .code-block .hljs-regexp, .code-block .hljs-addition, .code-block .hljs-attribute, .code-block .hljs-meta-string { color: var(--hl-string); }
 .code-block .hljs-attr, .code-block .hljs-variable, .code-block .hljs-template-variable, .code-block .hljs-type,
-.code-block .hljs-selector-class, .code-block .hljs-selector-attr, .code-block .hljs-selector-pseudo, .code-block .hljs-number { color: #d19a66; }
-.code-block .hljs-symbol, .code-block .hljs-bullet, .code-block .hljs-link, .code-block .hljs-meta, .code-block .hljs-selector-id, .code-block .hljs-title { color: #61aeee; }
-.code-block .hljs-built_in, .code-block .hljs-builtin-name, .code-block .hljs-class .hljs-title { color: #e6c07b; }
+.code-block .hljs-selector-class, .code-block .hljs-selector-attr, .code-block .hljs-selector-pseudo, .code-block .hljs-number { color: var(--hl-number); }
+.code-block .hljs-symbol, .code-block .hljs-bullet, .code-block .hljs-link, .code-block .hljs-meta, .code-block .hljs-selector-id, .code-block .hljs-title { color: var(--hl-title); }
+.code-block .hljs-built_in, .code-block .hljs-builtin-name, .code-block .hljs-class .hljs-title { color: var(--hl-builtin); }
 .code-block .hljs-emphasis { font-style: italic; }
 .code-block .hljs-strong { font-weight: 700; }
+
+/* A block's Colors (codeSchemes.ts): the common editor schemes, each keyed
+   to the same custom properties. Values from each scheme's published
+   palette, mapped onto highlight.js's token classes. */
+.code-block[data-color-scheme="github-light"] {
+  --code-bg: #ffffff; --code-ink: #24292f; --code-head: #f6f8fa; --code-rule: #d0d7de;
+  --code-dim: #57606a; --code-gutter: #8c959f; --code-btn-rim: #d0d7de; --code-btn-hover: #eaeef2;
+  --code-btn-on: #ddf4ff; --code-btn-on-rim: #54aeff; --code-btn-on-ink: #0969da;
+  --hl-comment: #6e7781; --hl-keyword: #cf222e; --hl-name: #116329; --hl-literal: #0550ae;
+  --hl-string: #0a3069; --hl-number: #0550ae; --hl-title: #8250df; --hl-builtin: #953800;
+}
+.code-block[data-color-scheme="github-dark"] {
+  --code-bg: #0d1117; --code-ink: #c9d1d9; --code-head: #161b22; --code-rule: #30363d;
+  --code-dim: #8b949e; --code-gutter: #6e7681; --code-btn-rim: #30363d; --code-btn-hover: #21262d;
+  --code-btn-on: #1f6feb; --code-btn-on-rim: #388bfd; --code-btn-on-ink: #ffffff;
+  --hl-comment: #8b949e; --hl-keyword: #ff7b72; --hl-name: #7ee787; --hl-literal: #79c0ff;
+  --hl-string: #a5d6ff; --hl-number: #79c0ff; --hl-title: #d2a8ff; --hl-builtin: #ffa657;
+}
+.code-block[data-color-scheme="dracula"] {
+  --code-bg: #282a36; --code-ink: #f8f8f2; --code-head: #21222c; --code-rule: #44475a;
+  --code-dim: #bfc3d9; --code-gutter: #6272a4; --code-btn-rim: #44475a; --code-btn-hover: #343746;
+  --code-btn-on: #44475a; --code-btn-on-rim: #6272a4; --code-btn-on-ink: #f8f8f2;
+  --hl-comment: #6272a4; --hl-keyword: #ff79c6; --hl-name: #ff79c6; --hl-literal: #bd93f9;
+  --hl-string: #f1fa8c; --hl-number: #bd93f9; --hl-title: #50fa7b; --hl-builtin: #8be9fd;
+}
+.code-block[data-color-scheme="monokai"] {
+  --code-bg: #272822; --code-ink: #f8f8f2; --code-head: #1e1f1c; --code-rule: #3e3d32;
+  --code-dim: #cfcfc2; --code-gutter: #75715e; --code-btn-rim: #49483e; --code-btn-hover: #3e3d32;
+  --code-btn-on: #49483e; --code-btn-on-rim: #75715e; --code-btn-on-ink: #f8f8f2;
+  --hl-comment: #75715e; --hl-keyword: #f92672; --hl-name: #f92672; --hl-literal: #ae81ff;
+  --hl-string: #e6db74; --hl-number: #ae81ff; --hl-title: #a6e22e; --hl-builtin: #66d9ef;
+}
+.code-block[data-color-scheme="nord"] {
+  --code-bg: #2e3440; --code-ink: #d8dee9; --code-head: #3b4252; --code-rule: #434c5e;
+  --code-dim: #d8dee9; --code-gutter: #616e88; --code-btn-rim: #4c566a; --code-btn-hover: #434c5e;
+  --code-btn-on: #5e81ac; --code-btn-on-rim: #81a1c1; --code-btn-on-ink: #eceff4;
+  --hl-comment: #7b88a1; --hl-keyword: #81a1c1; --hl-name: #81a1c1; --hl-literal: #81a1c1;
+  --hl-string: #a3be8c; --hl-number: #b48ead; --hl-title: #88c0d0; --hl-builtin: #8fbcbb;
+}
+.code-block[data-color-scheme="solarized-light"] {
+  --code-bg: #fdf6e3; --code-ink: #586e75; --code-head: #eee8d5; --code-rule: #e0d9c3;
+  --code-dim: #586e75; --code-gutter: #93a1a1; --code-btn-rim: #d3cbb4; --code-btn-hover: #e6dfca;
+  --code-btn-on: #268bd2; --code-btn-on-rim: #268bd2; --code-btn-on-ink: #fdf6e3;
+  --hl-comment: #93a1a1; --hl-keyword: #859900; --hl-name: #268bd2; --hl-literal: #2aa198;
+  --hl-string: #2aa198; --hl-number: #d33682; --hl-title: #268bd2; --hl-builtin: #b58900;
+}
+.code-block[data-color-scheme="solarized-dark"] {
+  --code-bg: #002b36; --code-ink: #93a1a1; --code-head: #073642; --code-rule: #0d4452;
+  --code-dim: #93a1a1; --code-gutter: #586e75; --code-btn-rim: #1b5563; --code-btn-hover: #0d4452;
+  --code-btn-on: #268bd2; --code-btn-on-rim: #268bd2; --code-btn-on-ink: #fdf6e3;
+  --hl-comment: #657b83; --hl-keyword: #859900; --hl-name: #268bd2; --hl-literal: #2aa198;
+  --hl-string: #2aa198; --hl-number: #d33682; --hl-title: #268bd2; --hl-builtin: #b58900;
+}
 .editor__content blockquote { border-left: 3px solid var(--border); margin: 0.5em 0; padding-left: 0.8em; color: var(--muted); }
 .editor__content img { max-width: 100%; border-radius: 4px; }
 .editor__content img.img-border { border: 1px solid var(--border); padding: 2px; }

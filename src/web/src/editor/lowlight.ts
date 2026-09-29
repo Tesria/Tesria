@@ -4,7 +4,7 @@ import css from 'highlight.js/lib/languages/css'
 import csharp from 'highlight.js/lib/languages/csharp'
 import dockerfile from 'highlight.js/lib/languages/dockerfile'
 import go from 'highlight.js/lib/languages/go'
-import html from 'highlight.js/lib/languages/xml'
+import xml from 'highlight.js/lib/languages/xml'
 import java from 'highlight.js/lib/languages/java'
 import javascript from 'highlight.js/lib/languages/javascript'
 import json from 'highlight.js/lib/languages/json'
@@ -21,7 +21,7 @@ import yaml from 'highlight.js/lib/languages/yaml'
 export const lowlight = createLowlight()
 lowlight.register({
   javascript, typescript, python, csharp, bash, json, yaml, sql,
-  html, css, go, rust, java, dockerfile, markdown, plaintext,
+  html: xml, xml, css, go, rust, java, dockerfile, markdown, plaintext,
 })
 
 /** Language picker options: TipTap's stored `language` attr value → display label. */
@@ -36,6 +36,8 @@ export const codeLanguages: { value: string; label: string }[] = [
   { value: 'yaml', label: 'YAML' },
   { value: 'sql', label: 'SQL' },
   { value: 'html', label: 'HTML' },
+  // The same grammar as HTML, named for what it is (the owner, 2026-09-29).
+  { value: 'xml', label: 'XML' },
   { value: 'css', label: 'CSS' },
   { value: 'go', label: 'Go' },
   { value: 'rust', label: 'Rust' },

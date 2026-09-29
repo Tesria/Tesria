@@ -265,7 +265,14 @@ export async function site(author, spec, { editor } = {}) {
       await writer.call('PUT', `/api/pages/${id}`, {
         title, contentJson: JSON.stringify(content),
         changeComment: comment ?? (draft ? 'Updated after the review' : 'Updated'),
-        baseVersion: current.currentVersionNumber,
+        // No baseVersion. These scripts sign in like a browser, and a
+        // browser-session write that names its base is taken for the
+        // editor's own Update: the live draft then keeps its old text under
+        // the new version number, and the next person to press Update in
+        // the editor puts the old page back (found 2026-09-29, on the Code
+        // block docs page). Without it the write is an outside change, as it
+        // is: an idle draft is reset to it, and someone editing sees it as
+        // tracked changes.
       })
       if (existing) console.log(`  ~ ${title}`)
     }

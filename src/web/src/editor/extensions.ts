@@ -14,6 +14,7 @@ import Superscript from '@tiptap/extension-superscript'
 import type { AnyExtension } from '@tiptap/core'
 import { lowlight } from './lowlight'
 import { CodeBlockView } from './CodeBlockView'
+import { codeSchemeAttribute } from './codeSchemes'
 import { SlashCommand } from './slash/SlashCommand'
 import { Image } from './imageExtension'
 import { CommentMark } from './commentMark'
@@ -68,6 +69,8 @@ const CodeBlock = CodeBlockLowlight.extend({
       },
       // Flat or glass for this block alone, diagrams included (0.8.1).
       appearance: appearanceAttribute,
+      // Its colors: Default, or a common editor scheme (2026-09-29).
+      colorScheme: codeSchemeAttribute,
     }
   },
   addNodeView() {

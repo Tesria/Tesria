@@ -4,6 +4,7 @@ import { codeLanguages, MERMAID_LANGUAGE } from './lowlight'
 import { MermaidDiagram } from './MermaidView'
 import { AppearancePicker } from './AppearancePicker'
 import { appearanceData } from './appearance'
+import { CODE_SCHEMES, CODE_SCHEME_LABELS, codeSchemeData, isCodeScheme } from './codeSchemes'
 
 /** Code-block node view: a language picker + line-number/copy buttons above the code. */
 export function CodeBlockView({ node, updateAttributes, editor }: ReactNodeViewProps) {
@@ -28,7 +29,12 @@ export function CodeBlockView({ node, updateAttributes, editor }: ReactNodeViewP
   }
 
   return (
-    <NodeViewWrapper className={isMermaid ? 'code-block code-block--diagram' : 'code-block'} {...appearanceData(node.attrs.appearance)}>
+    <NodeViewWrapper
+      className={isMermaid ? 'code-block code-block--diagram' : 'code-block'}
+      {...appearanceData(node.attrs.appearance)}
+      // A diagram draws rather than highlights, so it has no colors to choose.
+      {...(isMermaid ? {} : codeSchemeData(node.attrs.colorScheme))}
+    >
       <div className="code-block__header" contentEditable={false}>
         {editable ? (
           <select
@@ -46,6 +52,17 @@ export function CodeBlockView({ node, updateAttributes, editor }: ReactNodeViewP
           </span>
         )}
         <div className="code-block__header-actions">
+          {editable && !isMermaid && (
+            <label className="appearance-picker code-block__appearance" title="This block's colors">
+              <span>Colors</span>
+              <select
+                value={isCodeScheme(node.attrs.colorScheme) ? node.attrs.colorScheme : 'default'}
+                onChange={(e) => updateAttributes({ colorScheme: e.target.value })}
+              >
+                {CODE_SCHEMES.map((c) => <option key={c} value={c}>{CODE_SCHEME_LABELS[c]}</option>)}
+              </select>
+            </label>
+          )}
           {editable && (
             <AppearancePicker
               className="code-block__appearance"
