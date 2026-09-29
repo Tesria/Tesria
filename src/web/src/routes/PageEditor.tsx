@@ -1,9 +1,11 @@
-import { type FormEvent, useEffect, useRef, useState } from 'react'
+import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from 'react'
 import { useBlocker, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import type { Editor as TiptapEditor } from '@tiptap/react'
 import { api, ApiError, type CollabToken, type PageTemplate } from '../api/client'
 import { Editor } from '../editor/Editor'
-import { CollaborativeEditor, type CollabHandle } from '../editor/CollaborativeEditor'
+import { CollaborativeEditor, type CollabHandle, type DraftState } from '../editor/CollaborativeEditor'
+import { differsFromPage, normalize } from '../editor/externalEdits'
+import { CloseEditorDialog } from './CloseEditorDialog'
 import { Toolbar } from '../editor/Toolbar'
 import { useAuth } from '../auth/AuthContext'
 import { CollabStatus, type CollabConnection } from '../editor/CollabStatus'
@@ -16,6 +18,12 @@ import { useTitlePage } from '../components/DocumentTitle'
 import { ResolvedCommentStyles } from '../components/ResolvedCommentStyles'
 
 const EMPTY_DOC = '{"type":"doc","content":[]}'
+
+/** "Sam", "Sam and Mei", "Sam, Mei and Priya". */
+function listNames(names: string[]): string {
+  if (names.length <= 1) return names[0] ?? ''
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
+}
 
 export function PageEditor() {
   const { key = '', pageId } = useParams()
@@ -49,6 +57,16 @@ export function PageEditor() {
    * collaborative editor so the shared document records what it is based on.
    */
   const [loadedVersion, setLoadedVersion] = useState<number | undefined>(undefined)
+  /**
+   * The page as published when it was opened. `content` follows the editor
+   * as it is typed in; this does not, so it is what "unpublished changes"
+   * are measured against (0.8.2).
+   */
+  const [loadedContent, setLoadedContent] = useState<string | undefined>(undefined)
+  /** Someone else's unpublished changes found in the shared draft on opening (0.8.2). */
+  const [draftState, setDraftState] = useState<DraftState | null>(null)
+  const [closing, setClosing] = useState(false)
+  const [closeError, setCloseError] = useState<string | null>(null)
   const [changeComment, setChangeComment] = useState('')
   const [loading, setLoading] = useState(isEdit)
   const [busy, setBusy] = useState(false)
@@ -130,6 +148,7 @@ export function PageEditor() {
         if (canceled) return
         setTitle(p.title)
         setContent(p.contentJson)
+        setLoadedContent(p.contentJson)
         setLoadedVersion(p.currentVersionNumber)
         setFullWidth(p.fullWidth)
       })
@@ -158,15 +177,39 @@ export function PageEditor() {
   // or Close), so the leave-the-editor prompt does not ask about a
   // navigation the person has already chosen.
   const leavingRef = useRef(false)
+
+  /**
+   * Whether leaving now would leave anything behind (0.8.2): a new page with
+   * a title or anything written, or an existing page whose draft says
+   * something the published page does not. Close asks only then, and so does
+   * leaving any other way; the prompt used to appear on every exit, changes
+   * or not (QA T3-013), while Close never asked at all.
+   */
+  function hasWork(): boolean {
+    if (!pageId) return title.trim().length > 0 || (editorInstance !== null && !editorInstance.isEmpty)
+    if (collab) return collabRef.current?.hasUnpublishedChanges() ?? false
+    if (!editorInstance || loadedContent === undefined) return false
+    try {
+      return differsFromPage(
+        normalize(editorInstance.schema, editorInstance.getJSON()),
+        normalize(editorInstance.schema, JSON.parse(loadedContent)),
+      )
+    } catch {
+      return true
+    }
+  }
+  const hasWorkRef = useRef(hasWork)
+  hasWorkRef.current = hasWork
+
   const blocker = useBlocker(({ currentLocation, nextLocation }) =>
-    !leavingRef.current && currentLocation.pathname !== nextLocation.pathname)
+    !leavingRef.current && currentLocation.pathname !== nextLocation.pathname && hasWorkRef.current())
   const [leaveError, setLeaveError] = useState<string | null>(null)
 
   // Reloading or closing the tab gets the browser's own prompt: the only
   // kind a page is allowed to show for that.
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (leavingRef.current) return
+      if (leavingRef.current || !hasWorkRef.current()) return
       e.preventDefault()
       e.returnValue = ''
     }
@@ -202,6 +245,10 @@ export function PageEditor() {
         // overwrite a change nobody here has seen.
         baseVersion: collabRef.current?.version() ?? null,
       })
+      // The draft is now the published page: record the version, and that
+      // nobody's changes are unpublished any more (Update publishes
+      // everyone's).
+      collabRef.current?.published(saved.currentVersionNumber)
     } else {
       const id = draftId ?? (await draftIdRef.current)
       if (!id) throw new Error('Still preparing this page: try again in a moment.')
@@ -214,16 +261,16 @@ export function PageEditor() {
   /**
    * A publish refused because the page moved on (dev-plan 8.6).
    *
-   * The answer carries the page as it now stands, so the draft is reconciled
-   * against it and the difference appears as tracked changes, exactly as a
-   * live write would have. Returns whether it handled the error; the caller
+   * The live-editing service is asked to bring the draft up to the page as
+   * it now stands, so the difference appears as tracked changes, exactly as
+   * a live write would have. If the connection is down, the request waits for
+   * it; the next Update is refused again until then, so nothing stale can be
+   * published meanwhile. Returns whether it handled the error; the caller
    * stays where it is either way, because the page is not saved.
    */
   function handleConflict(err: unknown): boolean {
     if (!(err instanceof ApiError) || err.status !== 409) return false
-    const page = err.details as { contentJson?: unknown; currentVersionNumber?: unknown }
-    if (typeof page.contentJson !== 'string' || typeof page.currentVersionNumber !== 'number') return false
-    collabRef.current?.reconcileTo(page.contentJson, page.currentVersionNumber)
+    collabRef.current?.requestReconcile()
     setError(
       'This page changed while you were editing, so it was not published. '
       + 'The difference is highlighted above: accept or reject it, then publish again.',
@@ -233,6 +280,10 @@ export function PageEditor() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
+    // A form inside the editor (a popover's own form) submitting: React
+    // bubbles that along the component tree, portals included, and it is not
+    // a request to publish. See onFormKeyDown for the other half.
+    if (e.target !== e.currentTarget) return
     setBusy(true)
     setError(null)
     try {
@@ -299,17 +350,124 @@ export function PageEditor() {
     }
   }
 
-  async function onCancel() {
+  /**
+   * Enter in a text box inside the page form must never publish (QA t4-014).
+   *
+   * The whole editor is one `<form>` whose submit publishes, and HTML
+   * submits a form when Enter is pressed in almost any single-line input in
+   * it ("implicit submission"). Every box inside the editor body and its
+   * menus is such an input: a date, a chart's title, a live block's settings,
+   * a caption. Some of them caught Enter and some did not, and one missed box
+   * published a half-written page to every reader. So it is stopped here,
+   * once, for every input whose form is this one, whatever handled the key
+   * before it. The input's own Enter behavior still runs (its handler came
+   * first); only the browser's submission is canceled.
+   *
+   * What Changed? is the exception: it sits under the editor beside Update,
+   * and Enter there publishing is what a person means. Inputs inside a
+   * popover's own form belong to that form, so they are left to it.
+   */
+  function onFormKeyDown(e: KeyboardEvent<HTMLFormElement>) {
+    if (e.key !== 'Enter' || e.nativeEvent.isComposing) return
+    const target = e.target
+    if (!(target instanceof HTMLInputElement)) return
+    if (target.form !== e.currentTarget || target.dataset.submitsPage === 'true') return
+    e.preventDefault()
+  }
+
+  /** Leaves the editor for the page (or the space, for a new page). */
+  function leave() {
     leavingRef.current = true
+    navigate(pageId ? `/spaces/${key}/pages/${pageId}` : `/spaces/${key}`)
+  }
+
+  async function onCancel() {
     if (pageId) {
-      navigate(`/spaces/${key}/pages/${pageId}`)
+      if (!hasWork()) {
+        leave()
+        return
+      }
+      if (collab) {
+        // Keep as Draft or Discard (0.8.2): the draft is shared and outlives
+        // this visit, so the choice is said out loud.
+        setCloseError(null)
+        setClosing(true)
+        return
+      }
+      // Without live editing there is no draft to keep: closing loses them.
+      const ok = await ask({
+        title: 'Discard Your Changes?',
+        body: <p>Your changes to this page have not been published. Closing now throws them away.</p>,
+        confirmLabel: 'Discard Changes',
+        danger: true,
+      })
+      if (ok) leave()
       return
+    }
+    // A new page: closing throws it away, so ask first if there is anything
+    // to lose (QA cal-002). It used to go with one click.
+    if (hasWork()) {
+      const ok = await ask({
+        title: 'Discard This Page?',
+        body: <p>This page has not been published. Closing now throws away its title and everything written in it.</p>,
+        confirmLabel: 'Discard Page',
+        danger: true,
+      })
+      if (!ok) return
     }
     // Best-effort: an abandoned draft is cleaned up immediately, but a failed
     // delete must never block navigating away.
     const id = draftId ?? (await draftIdRef.current?.catch(() => null))
     if (id) api.pages.deleteDraft(id).catch(() => {})
-    navigate(`/spaces/${key}`)
+    leave()
+  }
+
+  /**
+   * Discard (0.8.2): the shared draft goes back to the published page, for
+   * everyone. From the Close dialog and from the banner naming someone
+   * else's unpublished changes.
+   */
+  /** Returns null when it worked, or what went wrong. */
+  async function discardDraft(): Promise<string | null> {
+    if (!pageId) return null
+    setBusy(true)
+    try {
+      await api.pages.deleteDraft(pageId)
+      setDraftState(null)
+      return null
+    } catch (err) {
+      return err instanceof ApiError || err instanceof Error ? err.message : 'Could not discard the draft.'
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function discardAndClose() {
+    setCloseError(null)
+    const failed = await discardDraft()
+    if (failed) {
+      setCloseError(failed)
+      return
+    }
+    setClosing(false)
+    leave()
+  }
+
+  async function discardFromBanner() {
+    const ok = await ask({
+      title: 'Discard the Unpublished Changes?',
+      body: (
+        <p>
+          The draft goes back to the page as it is published. Every unpublished change in it goes, including any
+          you have made since opening it.
+        </p>
+      ),
+      confirmLabel: 'Discard',
+      danger: true,
+    })
+    if (!ok) return
+    const failed = await discardDraft()
+    if (failed) setError(failed)
   }
 
   if (loading) return <p className="muted page-wrap">Loading…</p>
@@ -379,7 +537,32 @@ export function PageEditor() {
           </span>
         </div>
       )}
-      <form id="page-editor-form" className={fullWidth ? 'page-wrap page-wrap--full editor-form' : 'page-wrap editor-form'} onSubmit={onSubmit}>
+      {/* Someone else's unpublished changes, found in the shared draft on
+          opening (0.8.2). They used to be there with no word about them,
+          and the next Update published them under the wrong name. */}
+      {draftState && (draftState.others.length > 0 || draftState.unattributed) && (
+        <div className="external-banner" role="status">
+          <span>
+            {draftState.others.length > 0
+              ? `This draft has unpublished changes by ${listNames(draftState.others)}. Update publishes them too.`
+              : 'This draft has unpublished changes from an earlier editing session. Update publishes them too.'}
+          </span>
+          <span className="external-banner__actions">
+            <button type="button" className="btn btn--ghost btn--sm" onClick={() => setDraftState(null)}>
+              Keep Them
+            </button>
+            <button type="button" className="btn btn--danger btn--sm" onClick={discardFromBanner} disabled={busy}>
+              Discard
+            </button>
+          </span>
+        </div>
+      )}
+      <form
+        id="page-editor-form"
+        className={fullWidth ? 'page-wrap page-wrap--full editor-form' : 'page-wrap editor-form'}
+        onSubmit={onSubmit}
+        onKeyDownCapture={onFormKeyDown}
+      >
       {error && <p className="alert alert--error">{error}</p>}
       {!isEdit && templates.length > 0 && (
         <label className="change-comment">
@@ -421,8 +604,11 @@ export function PageEditor() {
             token={collab.token}
             initialContent={content}
             initialVersion={loadedVersion}
+            publishedContent={loadedContent}
+            userId={user?.id}
             displayName={user?.displayName ?? 'Anonymous'}
             onChange={setContent}
+            onDraftState={setDraftState}
             getUploadPageId={resolveUploadPageId}
             onUploadError={setError}
             onEditorReady={setEditorInstance}
@@ -448,7 +634,13 @@ export function PageEditor() {
       {isEdit && (
         <label className="change-comment">
           What Changed? (Optional)
-          <input value={changeComment} onChange={(e) => setChangeComment(e.target.value)} placeholder="e.g. fixed typo" />
+          <input
+            value={changeComment}
+            onChange={(e) => setChangeComment(e.target.value)}
+            placeholder="e.g. fixed typo"
+            // Enter here publishes, as it always has: see onFormKeyDown.
+            data-submits-page="true"
+          />
         </label>
       )}
       </form>
@@ -462,6 +654,16 @@ export function PageEditor() {
           onStay={() => { setLeaveError(null); blocker.reset() }}
           onLeave={leaveUnpublished}
           onPublish={publishAndLeave}
+        />
+      )}
+      {closing && (
+        <CloseEditorDialog
+          editingNow={collabRef.current?.editingNow() ?? []}
+          busy={busy}
+          error={closeError}
+          onKeep={() => { setClosing(false); leave() }}
+          onDiscard={discardAndClose}
+          onStay={() => setClosing(false)}
         />
       )}
       {confirmDialog}

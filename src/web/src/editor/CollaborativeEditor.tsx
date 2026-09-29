@@ -16,7 +16,7 @@ import { LayoutMenu } from './LayoutMenu'
 import { WrapperMenu } from './WrapperMenu'
 import { getSharedExtensions } from './extensions'
 import { countPendingExternalEdits } from './externalEditMarks'
-import { reconcileYDoc } from './externalEdits'
+import { differsFromPage, hasUnpublishedChanges, normalize } from './externalEdits'
 import { handleImageDrop, handleImagePaste } from './imageUpload'
 import { setSlashCommandStorage } from './slash/items'
 import { setDynamicBlockStorage } from './dynamicBlock'
@@ -37,8 +37,21 @@ type Props = {
    * page has moved on underneath the draft.
    */
   initialVersion?: number
+  /**
+   * The page as published when the editor opened, which `initialContent`
+   * stops being as soon as anyone types (the page keeps it in step with the
+   * editor). What "unpublished changes" are measured against (0.8.2).
+   */
+  publishedContent?: string
+  /** Who is editing, so the draft can record whose unpublished changes it holds. */
+  userId?: string
   displayName: string
   onChange: (json: string) => void
+  /**
+   * Whose unpublished changes the draft held when it opened (0.8.2), for the
+   * banner that names them. Reported once, shortly after the document syncs.
+   */
+  onDraftState?: (state: DraftState) => void
   /** Resolves the page id image attachments should be uploaded against. */
   getUploadPageId?: () => Promise<string>
   /** Reports an image upload failure (paste/drop/toolbar), e.g. into a form's error banner. */
@@ -66,12 +79,32 @@ export type CollabHandle = {
   /** The published version this draft has been brought up to date with, if known. */
   version: () => number | null
   /**
-   * Shows what a published page says inside this draft, as tracked changes.
-   * Used when a publish is refused because the page moved on: the editor
-   * reconciles against the answer instead of overwriting it.
+   * Asks the live-editing service to show what the page now says inside this
+   * draft, as tracked changes. Used when a publish is refused because the
+   * page moved on. The service does it, not this browser (0.8.2): a browser
+   * that reconciled on its own while offline, and the service reconciling the
+   * same change on reconnect, put that change on the page twice (QA T5-015).
+   * Sent when the connection is next in step, if it is not now.
    */
-  reconcileTo: (publishedJson: string, version: number) => void
+  requestReconcile: () => void
+  /** Whether the draft says anything the published page does not (0.8.2: Close asks). */
+  hasUnpublishedChanges: () => boolean
+  /** Names of the other people with this page open in the editor right now. */
+  editingNow: () => string[]
+  /** Records a successful publish: the draft is now that version, and nobody's changes are unpublished. */
+  published: (version: number) => void
 }
+
+/** Whose unpublished changes a draft held when it was opened (0.8.2). */
+export type DraftState = {
+  /** People other than you, and not editing it now, who changed the draft since it was last published. */
+  others: string[]
+  /** The draft differs from the page but nobody is recorded as having changed it (drafts from before 0.8.2). */
+  unattributed: boolean
+}
+
+/** One entry per person in the shared document's `drafters` map: user id to display name. */
+const DRAFTERS = 'drafters'
 
 function parseDoc(value: string): object | undefined {
   try {
@@ -95,8 +128,9 @@ function colorFor(name: string): string {
  * StarterKit's own history is disabled to avoid the two fighting.
  */
 export function CollaborativeEditor({
-  pageId, token, initialContent, initialVersion, displayName, onChange, getUploadPageId,
-  onUploadError, onEditorReady, onStatusChange, onPendingExternalChange, onCollabReady,
+  pageId, token, initialContent, initialVersion, publishedContent, userId, displayName, onChange,
+  onDraftState, getUploadPageId, onUploadError, onEditorReady, onStatusChange, onPendingExternalChange,
+  onCollabReady,
 }: Props) {
   const [status, setStatus] = useState<CollabConnection>('connecting')
   useEffect(() => { onStatusChange?.(status) }, [status, onStatusChange])
@@ -172,7 +206,8 @@ export function CollaborativeEditor({
       Collaboration.configure({ document: ydoc }),
       CollaborationCaret.configure({
         provider,
-        user: { name: displayName, color: colorFor(displayName) },
+        // The id lets the draft banner leave out people editing right now.
+        user: { name: displayName, color: colorFor(displayName), id: userId ?? null },
       }),
     ],
     onUpdate: ({ editor }) => onChange(JSON.stringify(editor.getJSON())),
@@ -208,13 +243,19 @@ export function CollaborativeEditor({
 
   // Seed the shared document from stored content the first time anyone opens
   // it. Guarded on emptiness so we never clobber other people's live edits.
+  const seedingRef = useRef(false)
   useEffect(() => {
     if (!editor) return
     const seed = () => {
       const fragment = ydoc.getXmlFragment('default')
       if (fragment.length === 0) {
         const parsed = parseDoc(initialContent)
-        if (parsed) editor.commands.setContent(parsed)
+        seedingRef.current = true
+        try {
+          if (parsed) editor.commands.setContent(parsed)
+        } finally {
+          seedingRef.current = false
+        }
       }
       // Which published version this draft is built on (dev-plan 8.6). The
       // sidecar reads it on a later load to tell whether the page moved on
@@ -251,25 +292,149 @@ export function CollaborativeEditor({
     return () => { editor.off('transaction', report) }
   }, [editor])
 
+  // Who has changed the draft since it was last published (0.8.2), so the
+  // next person to open it can be told whose unpublished changes it holds.
+  // Written once per person, on their first change of their own: remote
+  // changes arrive marked as such by the sync plugin, and seeding is not a
+  // change anyone made.
+  useEffect(() => {
+    if (!editor || !userId) return
+    const onUpdate = ({ transaction }: { transaction: { getMeta: (key: string) => unknown } }) => {
+      if (!provider.isSynced || seedingRef.current) return
+      const sync = transaction.getMeta('y-sync$') as { isChangeOrigin?: boolean } | undefined
+      if (sync?.isChangeOrigin) return
+      const drafters = ydoc.getMap<string>(DRAFTERS)
+      if (drafters.get(userId) !== displayName) drafters.set(userId, displayName)
+    }
+    editor.on('update', onUpdate)
+    return () => { editor.off('update', onUpdate) }
+  }, [editor, provider, ydoc, userId, displayName])
+
+  // The page as published, for measuring unpublished changes against. When
+  // the draft is brought up to a newer version (an outside write, a
+  // Discard), the page is read again so the measure moves with it.
+  const publishedRef = useRef<{ version: number | null; doc: object | null }>({ version: null, doc: null })
+  useEffect(() => {
+    publishedRef.current = { version: initialVersion ?? null, doc: parseDoc(publishedContent ?? '') ?? null }
+  }, [publishedContent, initialVersion])
+  const refreshPublished = useRef<() => Promise<void>>(async () => {})
+  useEffect(() => {
+    const meta = ydoc.getMap('meta')
+    let canceled = false
+    const refresh = async () => {
+      const version = meta.get('version')
+      if (typeof version !== 'number' || version === publishedRef.current.version) return
+      try {
+        const page = await api.pages.get(pageId)
+        if (canceled || page.currentVersionNumber !== meta.get('version')) return
+        publishedRef.current = { version: page.currentVersionNumber, doc: parseDoc(page.contentJson) ?? null }
+      } catch {
+        // Measured against the older copy until the next change; the only
+        // cost is a Close that asks when it need not have.
+      }
+    }
+    refreshPublished.current = refresh
+    const onMeta = () => { void refresh() }
+    meta.observe(onMeta)
+    return () => {
+      canceled = true
+      meta.unobserve(onMeta)
+    }
+  }, [ydoc, pageId])
+
   const readyRef = useRef(onCollabReady)
   readyRef.current = onCollabReady
+  const draftStateRef = useRef(onDraftState)
+  draftStateRef.current = onDraftState
+  const statusRef = useRef(status)
+  statusRef.current = status
   useEffect(() => {
     if (!editor) return
+    const others = () => {
+      const names: string[] = []
+      provider.awareness?.getStates().forEach((state, clientId) => {
+        if (clientId === ydoc.clientID) return
+        const user = (state as { user?: { id?: string | null; name?: string } }).user
+        if (user?.name && user.id !== userId && !names.includes(user.name)) names.push(user.name)
+      })
+      return names
+    }
+    const unpublished = (humanOnly: boolean) => {
+      const page = publishedRef.current.doc
+      if (!page) return false
+      try {
+        const draft = normalize(editor.schema, editor.getJSON())
+        const published = normalize(editor.schema, page)
+        return humanOnly ? differsFromPage(draft, published) : hasUnpublishedChanges(draft, published)
+      } catch {
+        return true
+      }
+    }
+    let pendingReconcile = false
+    const sendReconcile = () => {
+      if (!pendingReconcile) return
+      pendingReconcile = false
+      provider.sendStateless(JSON.stringify({ type: 'reconcile' }))
+    }
+    const onSynced = () => sendReconcile()
+    provider.on('synced', onSynced)
+
     const handle: CollabHandle = {
       version: () => {
         const value = ydoc.getMap('meta').get('version')
         return typeof value === 'number' ? value : null
       },
-      reconcileTo: (publishedJson, version) => {
-        const parsed = parseDoc(publishedJson)
-        if (!parsed) return
-        reconcileYDoc(ydoc, editor.schema, parsed, { source: 'page', actor: null })
-        ydoc.getMap('meta').set('version', version)
+      requestReconcile: () => {
+        pendingReconcile = true
+        if (provider.isSynced && statusRef.current === 'connected') sendReconcile()
+      },
+      hasUnpublishedChanges: () => unpublished(false),
+      editingNow: others,
+      published: (version) => {
+        ydoc.transact(() => {
+          ydoc.getMap('meta').set('version', version)
+          const drafters = ydoc.getMap<string>(DRAFTERS)
+          for (const key of [...drafters.keys()]) drafters.delete(key)
+        })
       },
     }
     readyRef.current?.(handle)
-    return () => readyRef.current?.(null)
-  }, [editor, ydoc])
+
+    // Whose changes the draft held on opening: once, a moment after syncing,
+    // by which time the other people present have announced themselves and
+    // the page has been re-read if the draft was brought up to a newer
+    // version on load.
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const report = () => {
+      timer = setTimeout(async () => {
+        await refreshPublished.current()
+        if (!unpublished(true)) {
+          draftStateRef.current?.({ others: [], unattributed: false })
+          return
+        }
+        const present = new Set(others())
+        const names: string[] = []
+        ydoc.getMap<string>(DRAFTERS).forEach((name, id) => {
+          if (id !== userId && !present.has(name) && !names.includes(name)) names.push(name)
+        })
+        const recorded = ydoc.getMap<string>(DRAFTERS).size > 0
+        draftStateRef.current?.({ others: names, unattributed: !recorded })
+      }, 1500)
+    }
+    const reportOnce = () => {
+      provider.off('synced', reportOnce)
+      report()
+    }
+    if (provider.isSynced) report()
+    else provider.on('synced', reportOnce)
+
+    return () => {
+      clearTimeout(timer)
+      provider.off('synced', onSynced)
+      provider.off('synced', reportOnce)
+      readyRef.current?.(null)
+    }
+  }, [editor, ydoc, provider, userId])
 
   return (
     <div className="editor editor--editable">

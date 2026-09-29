@@ -1537,6 +1537,11 @@ export const api = {
       request<{ id: string }>('POST', '/api/pages/draft', input),
     publish: (id: string, input: { title: string; contentJson: string }) =>
       request<PageDetail>('POST', `/api/pages/${id}/publish`, input),
+    /**
+     * Discards a draft: a new page that was never published goes entirely; a
+     * published page's shared live draft is reset to what is published,
+     * everyone's unpublished changes with it (0.8.2).
+     */
     deleteDraft: (id: string) => request<void>('DELETE', `/api/pages/${id}/draft`),
     trash: (spaceId: string) => request<TrashedPage[]>('GET', `/api/pages/trash?spaceId=${spaceId}`),
     untrash: (id: string) => request<void>('POST', `/api/pages/${id}/restore`),
