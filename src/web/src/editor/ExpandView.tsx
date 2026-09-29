@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { NodeViewContent, NodeViewWrapper, type ReactNodeViewProps } from '@tiptap/react'
+import { Selection } from '@tiptap/pm/state'
 import { ChevronDownIcon } from './icons'
 import { takeTitleFocus } from './expandTitleFocus'
 
@@ -45,11 +46,18 @@ export function ExpandView({ node, editor, updateAttributes, getPos }: ReactNode
             placeholder="Give this expand a title…"
             onChange={(e) => updateAttributes({ title: e.target.value })}
             onKeyDown={(e) => {
-              // Enter moves on to the body instead of doing nothing.
+              // Enter moves on to the start of the body. Focused at once, not
+              // with focus(), which waits a frame: the next key typed would
+              // still land in the title (t4-007).
               if (e.key === 'Enter') {
                 e.preventDefault()
                 setOpen(true)
-                editor.commands.focus()
+                const pos = getPos()
+                const { state, view } = editor
+                if (typeof pos === 'number') {
+                  view.dispatch(state.tr.setSelection(Selection.near(state.doc.resolve(pos + 1))).scrollIntoView())
+                }
+                view.focus()
               }
             }}
           />
