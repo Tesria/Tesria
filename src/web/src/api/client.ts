@@ -675,6 +675,8 @@ export type SecurityEvent = {
   targetId: string | null
   metadataJson: string | null
   createdAt: string
+  /** The account the event is about, when its target is one ("Account locked"). */
+  targetName?: string | null
 }
 
 export type SecurityAlert = {
@@ -696,6 +698,9 @@ export type SecurityAlert = {
   metadataJson: string | null
   /** The address stands for many devices (Docker Desktop's gateway): it says nothing about who, and is never blocked. */
   ipShared?: boolean
+  /** The account the alert is about, for the kinds keyed by one; what Suspend, Sign Out and Revoke act on. */
+  accountId?: string | null
+  accountName?: string | null
 }
 
 export type BlockedNetwork = {

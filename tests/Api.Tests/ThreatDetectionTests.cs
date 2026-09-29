@@ -133,6 +133,66 @@ public class ThreatDetectionTests
         Assert.Equal(member.Id.ToString(), alert.Key);
     }
 
+    private record NamedAlertDto(Guid Id, string Kind, string Key, Guid? ActorId, string? ActorName, Guid? AccountId, string? AccountName);
+    private record NamedEventDto(Guid Id, string Kind, string? ActorName, string? TargetType, Guid? TargetId, string? TargetName);
+
+    /// <summary>
+    /// T7-013: "Account locked repeatedly" named nobody, so its Suspend acted
+    /// on an account the administrator was never shown. The alert now carries
+    /// the account's id and name, and the "Account locked" event its name.
+    /// </summary>
+    [Fact]
+    public async Task An_account_alert_names_the_account_it_is_about()
+    {
+        using var factory = new TestAppFactory();
+        var admin = await AdminAsync(factory);
+        var member = await RegisterAsync(factory.CreateClient(), "mei@example.com");
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var detector = scope.ServiceProvider.GetRequiredService<ISecurityDetector>();
+            var user = await db.Users.FirstAsync(u => u.Id == member.Id);
+            for (var i = 0; i < SecurityThresholds.LockoutsPerAccount; i++)
+                await detector.AccountLockedAsync(user, "203.0.113.20");
+            await db.SaveChangesAsync();
+        }
+
+        var alerts = await admin.GetFromJsonAsync<List<NamedAlertDto>>("/api/admin/security/alerts?status=all");
+        var alert = Assert.Single(alerts!, a => a.Kind == "account.repeated_lockouts");
+        Assert.Equal(member.Id, alert.AccountId);
+        Assert.Equal("mei@example.com", alert.AccountName);
+        Assert.Null(alert.ActorName);
+
+        var events = await admin.GetFromJsonAsync<List<NamedEventDto>>("/api/admin/security/events");
+        var locked = events!.Where(e => e.Kind == "account.locked").ToList();
+        Assert.Equal(SecurityThresholds.LockoutsPerAccount, locked.Count);
+        Assert.All(locked, e => Assert.Equal("mei@example.com", e.TargetName));
+
+        // Someone promoted: the actor is who did it, the account who it was done to.
+        (await admin.PutAsJsonAsync($"/api/admin/users/{member.Id}/role", new { Role = 1 })).EnsureSuccessStatusCode();
+        alerts = await admin.GetFromJsonAsync<List<NamedAlertDto>>("/api/admin/security/alerts?status=all");
+        var promoted = Assert.Single(alerts!, a => a.Kind == "admin.promoted");
+        Assert.Equal("admin@example.com", promoted.ActorName);
+        Assert.Equal(member.Id, promoted.AccountId);
+        Assert.Equal("mei@example.com", promoted.AccountName);
+    }
+
+    [Fact]
+    public async Task An_alert_keyed_by_an_address_is_about_no_account()
+    {
+        using var factory = new TestAppFactory();
+        var admin = await AdminAsync(factory);
+        var attacker = From(factory, "203.0.113.21");
+        for (var i = 0; i < SecurityThresholds.FailedLoginsPerAddress; i++)
+            await LoginAsync(attacker, "admin@example.com", "nope");
+
+        var alerts = await admin.GetFromJsonAsync<List<NamedAlertDto>>("/api/admin/security/alerts?status=all");
+        var alert = Assert.Single(alerts!, a => a.Kind == "login.failed_burst_ip");
+        Assert.Null(alert.AccountId);
+        Assert.Null(alert.AccountName);
+    }
+
     [Fact]
     public async Task Toggling_public_spaces_is_a_critical_alert_in_both_directions()
     {
