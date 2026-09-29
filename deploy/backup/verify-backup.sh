@@ -38,4 +38,17 @@ pg_restore --no-owner --no-privileges --dbname="${VERIFY_DB}" "${DUMP}"
 TABLES="$(psql --dbname="${VERIFY_DB}" -tAc \
   "SELECT count(*) FROM information_schema.tables WHERE table_schema='public';")"
 
-log "OK: restored cleanly, ${TABLES} public table(s) present"
+# Loading is not the test; bringing the wiki back is (T8-004). A dump taken
+# before Tesria had set up its database restores perfectly and holds nothing,
+# and one with no accounts is refused by restore.sh. Either used to pass.
+if [ "${TABLES:-0}" -lt 1 ]; then
+  log "ERROR: the dump has no tables in it: it was taken before Tesria had set up its database, so it cannot bring the wiki back"
+  exit 1
+fi
+ACCOUNTS="$(psql --dbname="${VERIFY_DB}" -tAc 'SELECT count(*) FROM "Users";' 2>/dev/null || echo 0)"
+if [ "${ACCOUNTS:-0}" -lt 1 ]; then
+  log "ERROR: the dump has no accounts in it: it was taken before the setup wizard was finished, and a restore refuses it"
+  exit 1
+fi
+
+log "OK: restored cleanly, ${TABLES} public table(s) present, ${ACCOUNTS} account(s)"

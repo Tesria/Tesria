@@ -527,6 +527,33 @@ public class BackupTests
     // --- Status.
 
     [Fact]
+    public async Task A_backup_that_failed_its_test_restore_is_not_the_oldest_restore_point()
+    {
+        // T8-004: the dump taken before setup had no tables, failed nothing,
+        // and became the Oldest Restore Point. Once a Test Restore fails it,
+        // it is no longer counted as somewhere a restore can go.
+        using var factory = new TestAppFactory();
+        var admin = await AdminAsync(factory);
+        var now = DateTimeOffset.UtcNow;
+        var empty = Logical(3, 979, now);
+        empty.LastVerifiedAt = now;
+        empty.LastVerifyOk = false;
+        var passed = Logical(2, 100, now);
+        passed.LastVerifiedAt = now;
+        passed.LastVerifyOk = true;
+        await SeedAsync(factory, db =>
+        {
+            db.BackupAgents.Add(new BackupAgent { Name = BackupNames.Logical, StartedAt = now.AddDays(-5), LastSeenAt = now, IntervalHours = 24 });
+            db.Backups.AddRange(empty, passed, Logical(1, 100, now));
+        });
+
+        var overview = await admin.GetFromJsonAsync<OverviewDto>("/api/admin/backups");
+        var logical = overview!.Agents.Single(a => a.Name == BackupNames.Logical);
+        Assert.Equal(now.AddDays(-2), logical.OldestRestorePoint!.Value, TimeSpan.FromSeconds(1));
+        Assert.Equal(3, logical.PresentCount);
+    }
+
+    [Fact]
     public async Task The_overview_reports_health_counts_and_the_restore_window()
     {
         using var factory = new TestAppFactory();

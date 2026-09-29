@@ -392,6 +392,32 @@ public class RestoreTests
         Assert.Contains(preview!.BlockedBy, b => b.Contains("free space", StringComparison.OrdinalIgnoreCase));
     }
 
+    /// <summary>
+    /// T8-004: a backup whose Test Restore failed (the dump taken before
+    /// setup, with no tables) was still offered for a restore.
+    /// </summary>
+    [Fact]
+    public async Task A_backup_that_failed_its_test_restore_is_not_offered()
+    {
+        using var factory = new TestAppFactory();
+        var owner = await InstanceAsync(factory);
+        await SeedAsync(factory, db =>
+        {
+            var b = db.Backups.Single(x => x.Label == Label);
+            b.LastVerifiedAt = DateTimeOffset.UtcNow;
+            b.LastVerifyOk = false;
+        });
+
+        var preview = await owner.GetFromJsonAsync<PreviewDto>($"/api/admin/backups/{Label}/restore-preview");
+        Assert.Contains(preview!.BlockedBy, b => b.Contains("Test Restore", StringComparison.Ordinal));
+        Assert.Equal(HttpStatusCode.Conflict, (await RestoreAsync(owner, Label)).StatusCode);
+
+        // Tested again and passed, it is offered again.
+        await SeedAsync(factory, db => db.Backups.Single(x => x.Label == Label).LastVerifyOk = true);
+        preview = await owner.GetFromJsonAsync<PreviewDto>($"/api/admin/backups/{Label}/restore-preview");
+        Assert.Empty(preview!.BlockedBy);
+    }
+
     [Fact]
     public async Task The_preview_blocks_a_restore_while_one_is_running()
     {

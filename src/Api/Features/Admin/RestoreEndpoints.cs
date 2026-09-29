@@ -132,6 +132,8 @@ public static class RestoreEndpoints
 
         var blocked = new List<string>();
         if (backup.Error is not null) blocked.Add("That backup is marked as failed.");
+        else if (backup.LastVerifyOk == false)
+            blocked.Add("That backup failed its last Test Restore, so it may not bring the wiki back. Test it again, or choose another.");
         if (agent is null || !BackupStatus.For(backup.Agent, await BackupStatus.LoadAsync(db)).Online)
             blocked.Add($"The {backup.Agent} backup agent is not reporting, so nothing can run the restore.");
         if (state.InProgress || s.RestoreJobId is not null)
@@ -172,6 +174,8 @@ public static class RestoreEndpoints
         if (backup is null) return Results.NotFound();
         if (backup.Error is not null)
             return Results.Conflict(new { message = "That backup is marked as failed and cannot be restored." });
+        if (backup.LastVerifyOk == false)
+            return Results.Conflict(new { message = "That backup failed its last Test Restore. Test it again, or choose another." });
 
         // Case-sensitive, against the label the page displays: this step is
         // here to prove the right backup is on screen, exactly as typing a
