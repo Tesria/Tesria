@@ -964,7 +964,7 @@ export async function build(helpers) {
     p('Only the table of contents is numbered; the headings on the page are not.'),
 
     h(2, 'A horizontal list'),
-    p(b('Display As Horizontal List'), ' puts the links on one line, separated by bars. Use it across the top of a page as a strip of links, or on a short page. Bullet styles do not apply. This one lists only this page’s main sections, using the heading levels below:'),
+    p(b('Horizontal List'), ', under ', b('Display As'), ', puts the links on one line, separated by bars. Use it across the top of a page as a strip of links, or on a short page. Bullet styles do not apply. This one lists only this page’s main sections, using the heading levels below:'),
     tocWith({ display: 'horizontal', minLevel: 2, maxLevel: 2 }),
 
     h(2, 'Choosing which headings'),

@@ -483,7 +483,7 @@ export async function build({
       li(p(b('The device on the same network as the server'), ', the same as when you use Tesria.')),
     ),
 
-    h(2, 'The easy way: the Trust this device guide'),
+    h(2, 'The easy way: the Trust This Device guide'),
     p('Tesria has a guide built in that asks which device you are on, fills your address into the commands, and tells you exactly what to click. There are three ways to open it:'),
     ul(
       li(p(b('From your profile.'), ' Once you are signed in, open ', ...profileAt(), ' and choose ', b('Set Up This Device'), ' under ', b('Trust This Device'), '.')),
@@ -663,7 +663,7 @@ export async function build({
   await page('Reaching Tesria from anywhere with Tailscale', install, doc(
     image(squircle, 'Tailscale', { width: 10, align: 'left' }),
     p(b('Tailscale'), ' joins your own devices (laptop, phone, the computer Tesria runs on) into one private network, called a ', b('tailnet'), ', that works wherever each of them is: at home, at the office, on a phone’s data plan. If your devices already use it, Tesria can join too, and then you can open it from anywhere, with no port opened to the internet and no router settings changed.'),
-    p('Why this rather than putting Tesria on the internet? Nothing outside your tailnet can even reach it, so there is nothing for strangers to try passwords against. And because Tailscale gives Tesria a real certificate for its tailnet address, no device needs the ', pageLink('Trusting the local certificate', 'trust this device'), ' step.'),
+    p('Why this rather than putting Tesria on the internet? Nothing outside your tailnet can even reach it, so there is nothing for strangers to try passwords against. And because Tailscale gives Tesria a real certificate for its tailnet address, no device needs the ', pageLink('Trusting the local certificate', 'Trust This Device'), ' step.'),
     panel('info', p(b('What it costs.'), ' Tailscale has a free plan for personal use, which is plenty for this. Check its pricing page for a team.')),
 
     h(2, 'Before you start'),
@@ -1181,7 +1181,7 @@ export async function build({
     ul(
       li(p(b('Check the port and encryption together.'), ' 587 goes with STARTTLS and 465 with SSL on Connect; a mismatch usually fails without a clear reason.')),
       li(p(b('Check the username and password.'), ' Many providers want a password made for apps rather than your everyday one. The provider’s page says which.')),
-      li(p(b('Check the from address.'), ' A sending service refuses an address on a domain you have not verified with it.')),
+      li(p(b('Check the From Address.'), ' A sending service refuses an address on a domain you have not verified with it.')),
     ),
     p('The setup wizard’s Email step fills in the same settings, with the same provider list. Changing them needs the ', b('Change the email server'), ' right, which administrators have unless the owner takes it away (see ', pageLink('Roles'), ').'),
   ))

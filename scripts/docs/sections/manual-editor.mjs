@@ -485,8 +485,8 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'Highlight'),
     p('A highlight colors the background behind the words, like a marker pen. Select the words, choose ', b('Highlight Color'), ' on the toolbar, and pick one of twelve, six light and six stronger:'),
-    p(hl('Light blue', '#deebff'), ', ', hl('light teal', '#e6fcff'), ', ', hl('light green', '#e3fcef'), ', ', hl('light yellow', '#fffae6'), ', ', hl('light red', '#ffebe6'), ', ', hl('light purple', '#eae6ff'), '.'),
-    p(hl('Blue', '#b3d4ff'), ', ', hl('teal', '#b3f5ff'), ', ', hl('green', '#abf5d1'), ', ', hl('yellow', '#fff0b3'), ', ', hl('red', '#ffbdad'), ', ', hl('purple', '#c0b6f2'), '.'),
+    p(hl('Light Blue', '#deebff'), ', ', hl('Light Teal', '#e6fcff'), ', ', hl('Light Green', '#e3fcef'), ', ', hl('Light Yellow', '#fffae6'), ', ', hl('Light Red', '#ffebe6'), ', ', hl('Light Purple', '#eae6ff'), '.'),
+    p(hl('Blue', '#b3d4ff'), ', ', hl('Teal', '#b3f5ff'), ', ', hl('Green', '#abf5d1'), ', ', hl('Yellow', '#fff0b3'), ', ', hl('Red', '#ffbdad'), ', ', hl('Purple', '#c0b6f2'), '.'),
     p(b('No Highlight'), ' takes it off. For a quick one, the highlight button in the menu over selected text, or ', b('Ctrl+Shift+H'), ', adds ', mark('a plain yellow highlight', 'highlight'), ' without asking for a color.'),
 
     h(2, 'In the dark theme'),
