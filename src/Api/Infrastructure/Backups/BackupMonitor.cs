@@ -179,8 +179,13 @@ public sealed class BackupMonitor(IServiceScopeFactory scopes, ILogger<BackupMon
                         new { target.Slot, target.LastDrillAt, target.Message });
 
                 // Anything the sidecar could not do: a failed offsite backup,
-                // a failed verify, a repository it could not read.
-                if (!string.IsNullOrWhiteSpace(target.Message))
+                // a failed verify, a repository it could not read. Not for a
+                // target that is absent: its absence is the one fact, and the
+                // card's message only says what to do about it. A network
+                // drive has its own alert for that, above; a removable drive
+                // that is not plugged in has none, by design (T8-026: the
+                // drive's own service not starting is reported that way).
+                if (!string.IsNullOrWhiteSpace(target.Message) && target.Present != false)
                     await Raise("backup.offsite_failed", SecuritySeverity.Warning, target.Slot,
                         new { target.Slot, target.Message, target.LastBackupAt, target.LastVerifyAt });
             }

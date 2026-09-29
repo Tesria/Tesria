@@ -433,6 +433,37 @@ public class BackupTests
         Assert.False(overview!.Agents.Single(a => a.Name == BackupNames.Logical).LastRunFailed);
     }
 
+    /// <summary>
+    /// T8-026: a drive whose service could not start (it was missing when the
+    /// stack started) is marked absent, with a message saying what to do. The
+    /// absence is the one alert: a network drive raises offsite_absent and not
+    /// also offsite_failed, and a removable drive in a drawer raises nothing.
+    /// A present target's message is still reported as before.
+    /// </summary>
+    [Fact]
+    public async Task An_absent_drive_is_one_alert_and_its_message_is_not_a_second()
+    {
+        using var factory = new TestAppFactory();
+        var admin = await AdminAsync(factory);
+        await SeedAsync(factory, db =>
+        {
+            var nas = Target("nas", "files");
+            nas.Present = false;
+            nas.Message = "The service that copies to the network drive (backup-nas) is not running.";
+            var removable = Target("removable", "files");
+            removable.Present = false;
+            removable.Message = "The service that copies to this drive (backup-removable) is not running.";
+            var cloud = Target("cloud", "database");
+            cloud.Message = "The storage provider refused the secret for this key. Check OFFSITE_CLOUD_SECRET.";
+            db.BackupTargets.AddRange(nas, removable, cloud);
+        });
+
+        await RunMonitorAsync(factory, processAge: TimeSpan.FromMinutes(1));
+        var kinds = (await AlertsAsync(admin)).Where(a => a.Kind.StartsWith("backup.offsite"))
+            .Select(a => $"{a.Kind}|{a.Key}").OrderBy(k => k).ToList();
+        Assert.Equal(["backup.offsite_absent|nas", "backup.offsite_failed|cloud"], kinds);
+    }
+
     [Fact]
     public async Task The_cloud_budget_reaches_the_screen_as_published()
     {

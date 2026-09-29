@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Claims a mounted path as a Tesria backup target (dev-plan 9.2 step 3).
 #
-#   docker compose exec backup /scripts/claim-target.sh nas
-#   docker compose exec backup /scripts/claim-target.sh removable
+#   docker compose exec backup-nas /scripts/claim-target.sh nas
+#   docker compose exec backup-removable /scripts/claim-target.sh removable
 #
 # Writes .tesria-backup-target into the mount, and that file is the whole
 # safety mechanism. A network share that is offline, or a drive that is
@@ -29,8 +29,9 @@ SLOT_UPPER="$(printf '%s' "$SLOT" | tr '[:lower:]' '[:upper:]')"
 SENTINEL="$MOUNT/.tesria-backup-target"
 
 if [ ! -d "$MOUNT" ]; then
-  echo "There is no $MOUNT in this container. Set OFFSITE_${SLOT_UPPER}_PATH in .env" >&2
-  echo "and restart the backup sidecar." >&2
+  echo "There is no $MOUNT in this container. Run this in the drive's own service:" >&2
+  echo "  docker compose exec backup-$SLOT /scripts/claim-target.sh $SLOT" >&2
+  echo "after setting OFFSITE_${SLOT_UPPER}_PATH in .env and running docker compose up -d." >&2
   exit 1
 fi
 

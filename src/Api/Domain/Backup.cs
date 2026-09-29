@@ -50,10 +50,18 @@ public static class BackupNames
     /// </summary>
     public const string KindTestTarget = "test-target";
 
+    /// <summary>
+    /// Put back the attachment files the database refers to and the uploads
+    /// volume lacks, from the uploads archives. Queued for the logical agent
+    /// by the physical one after a point-in-time restore, because a physical
+    /// backup holds the database only (T8-017).
+    /// </summary>
+    public const string KindRestoreUploads = "restore-uploads";
+
     /// <summary>Every kind a sidecar may be asked to run. An unknown kind fails loudly.</summary>
     public static readonly string[] Kinds =
         [KindBackup, KindRestoreTest, KindCopyOffsite, KindRestore, KindRestoreUndo, KindRestoreDiscard,
-         KindTestTarget];
+         KindTestTarget, KindRestoreUploads];
 
     public const string TriggerScheduled = "scheduled";
     public const string TriggerManual = "manual";
@@ -61,6 +69,9 @@ public static class BackupNames
 
     /// <summary>The retention policy removed something on its own (dev-plan 9.4).</summary>
     public const string TriggerRetention = "retention";
+
+    /// <summary>Queued by a restore, to finish it (dev-plan 9.4, T8-017).</summary>
+    public const string TriggerRestore = "restore";
 
     public const string StatusRequested = "requested";
     public const string StatusRunning = "running";

@@ -100,11 +100,13 @@ UPDATE "BackupTargets"
 SQL
 }
 
-# Called once per pass. At most one drill per pass, so a slow restore never
-# delays the next backup by more than one target's worth.
+# Called once per pass, with the slots this container copies to (the cloud
+# here, the network drive in its own container). At most one drill per pass,
+# so a slow restore never delays the next backup by more than one target's
+# worth.
 offsite_drill_tick() {
   local slot logf ok
-  for slot in cloud nas; do
+  for slot in "$@"; do
     restic_env_for "$slot" >/dev/null 2>&1 || continue
     offsite_drill_due "$slot" || continue
 
