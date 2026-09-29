@@ -5,6 +5,28 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Chart options** (asked for by the owner, 2026-09-29). Line, bar and
+  column charts have axes with tick values and gridlines (on by default,
+  so existing charts gain them), optional axis titles, value labels,
+  points, a smooth curve and a filled area for lines, stacked bars, and a Y
+  axis from zero or fitted to the data. Pies and donuts show each slice's
+  value and percentage in the legend, can chart any column, sort largest
+  first, and a donut's center shows the total, the largest slice's share or
+  text you type. Every chart can place its legend below, beside or nowhere,
+  swap the table's rows and columns, come in three sizes, and format numbers
+  as plain, percent or currency (Auto reads it from the table). The less
+  used options are under More Options. Bars and columns are now drawn as SVG
+  like the line, at their real width, so text stays readable on a phone; a
+  table column with no numbers is left out rather than drawn as zeros.
+- **Exported sites move like the app in Glass**: the sidebar hides into a
+  button and comes back as it does in Tesria, and the appearance menu opens
+  out of its button. Reduce Motion now stills both (before, it had nothing to
+  stop), and so does the device's own setting. Minimal exports do not move.
+- **Fixed:** in Glass, hiding the sidebar on a computer squeezed the page on
+  a phone into a narrow strip.
+- **The docs name every button as the app shows it**, in Title Case, and
+  call the style Minimal throughout.
+
 - **Donut charts draw clean edges** (reported by the owner, 2026-09-29): on
   the Backups page the "Free" segment's edge was jagged where it met the
   chart's start, in Minimal and Glass alike. Each segment was a dash of a
