@@ -1624,6 +1624,7 @@ export const api = {
       /** Sudo; never the owner; another administrator only by the owner (dev-plan 15.1). */
       disableTwoFactor: (id: string) =>
         request<void>('POST', `/api/admin/users/${id}/disable-two-factor`),
+      /** Sudo, like disableTwoFactor: a reset link is the account itself. */
       issueReset: (id: string) =>
         request<{ token: string; path: string; expiresAt: string; tailnetUrl: string | null }>(
           'POST', `/api/admin/users/${id}/reset-password`),

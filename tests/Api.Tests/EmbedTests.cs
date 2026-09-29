@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Tesria.Api.Features.Embeds;
 using Tesria.Api.Features.Export;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Tesria.Api.Tests;
@@ -56,6 +57,40 @@ public class EmbedAllowlistTests
     public void Csp_sources_mirror_the_entries()
     {
         Assert.Equal(["https://*.youtube.com", "https://docs.google.com"], EmbedAllowlist.CspSources(Entries));
+    }
+
+    [Theory]
+    [InlineData("images.example.com", "images.example.com")]
+    [InlineData(".Example.com.", ".example.com")]
+    [InlineData("*.example.com", ".example.com")]
+    [InlineData("a-b.c1.example", "a-b.c1.example")]
+    [InlineData("10.0.0.5", "10.0.0.5")]
+    [InlineData("b\u00fccher.example", "xn--bcher-kva.example")]
+    public void Entries_that_are_host_names_are_kept(string entry, string stored) =>
+        Assert.Equal(stored, EmbedAllowlist.Normalize(entry));
+
+    [Theory]
+    [InlineData("https://example.com")]
+    [InlineData("example.com/path")]
+    [InlineData("example.com:8443")]
+    [InlineData("example.com; frame-ancestors *")]
+    [InlineData("exa mple.com")]
+    [InlineData("example.com\"")]
+    [InlineData("<b>example.com")]
+    [InlineData("'self'")]
+    [InlineData("*")]
+    [InlineData(".")]
+    [InlineData("-example.com")]
+    [InlineData("example-.com")]
+    [InlineData("a..b")]
+    public void Anything_else_is_not_an_entry(string entry)
+    {
+        Assert.Null(EmbedAllowlist.Normalize(entry));
+        var (valid, invalid) = EmbedAllowlist.Read("good.example\n" + entry);
+        Assert.Equal(["good.example"], valid);
+        Assert.Single(invalid);
+        // Reading a stored value leaves it out, so it cannot reach a CSP.
+        Assert.Equal(["good.example"], EmbedAllowlist.Parse("good.example\n" + entry));
     }
 }
 
@@ -153,6 +188,54 @@ public class EmbedEndpointTests
         var after = (await admin.GetAsync("/api/health")).Headers.GetValues("Content-Security-Policy").Single();
         Assert.Contains("frame-src 'self' https://example.test", after);
         Assert.DoesNotContain("youtube", after);
+    }
+
+    [Fact]
+    public async Task An_allowlist_entry_that_is_not_a_host_name_is_refused_and_never_reaches_the_csp()
+    {
+        using var factory = new TestAppFactory();
+        var admin = factory.CreateClient();
+        await admin.RegisterAndSignInAsync();
+
+        foreach (var field in new[] { "EmbedAllowlist", "ImageAllowlist" })
+        {
+            var res = await admin.PutAsJsonAsync("/api/admin/settings", new Dictionary<string, object>
+            {
+                [field] = "ok.example\nbad.example; frame-ancestors *",
+                ["RestrictImageHosts"] = true,
+            });
+            Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+            Assert.Contains("not a host name", await res.Content.ReadAsStringAsync());
+        }
+        var csp = (await admin.GetAsync("/api/health")).Headers.GetValues("Content-Security-Policy").Single();
+        Assert.DoesNotContain("ok.example", csp);
+        Assert.Single(csp.Split("; "), d => d.StartsWith("frame-ancestors "));
+
+        // A value stored before entries were checked is read without its bad
+        // entries: in the header, and in an exported page's meta tag.
+        using (var scope = factory.Services.CreateScope())
+        {
+            var settings = scope.ServiceProvider.GetRequiredService<Tesria.Api.Infrastructure.Settings.ISiteSettingsService>();
+            await settings.UpdateAsync(s =>
+            {
+                s.EmbedAllowlist = "frames.example\nx; frame-ancestors *";
+                s.RestrictImageHosts = true;
+                s.ImageAllowlist = "pics.example\nx\"><script>alert(1)</script>";
+            }, null);
+        }
+        csp = (await admin.GetAsync("/api/health")).Headers.GetValues("Content-Security-Policy").Single();
+        Assert.Contains("frame-src 'self' https://frames.example;", csp);
+        Assert.Contains("img-src 'self' data: blob: https://pics.example;", csp);
+        Assert.Single(csp.Split("; "), d => d.StartsWith("frame-ancestors "));
+        Assert.Contains("frame-ancestors 'none'", csp);
+        Assert.DoesNotContain("<", csp);
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var stored = await scope.ServiceProvider.GetRequiredService<Tesria.Api.Infrastructure.Settings.ISiteSettingsService>().GetAsync();
+            var meta = Tesria.Api.Infrastructure.Security.ImagePolicy.ExportMeta(stored);
+            Assert.Equal("<meta http-equiv=\"Content-Security-Policy\" content=\"img-src 'self' data: blob: https://pics.example\" />", meta);
+        }
     }
 
     [Fact]

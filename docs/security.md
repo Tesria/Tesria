@@ -42,7 +42,7 @@ service by sheer volume, which is the network's job, not the app's.
 | Layer (plan item) | Defends against | Does not defend against |
 |---|---|---|
 | Proxy trust + secure cookie (3.0) | Per-address limits keying on Caddy's address; the session cookie ever traveling over plain HTTP | A proxy on a *public* address that the operator has not named in `PROXY_TRUSTED_NETWORKS`; publishing port 8080 to a LAN, where any client could then set forwarded headers |
-| Security headers + CSP (3.0) | Clickjacking, MIME sniffing, injected inline script, the site being framed or embedded | Injected inline *styles* (allowed, the editor needs them); images loaded from arbitrary `https:` hosts (allowed, authors paste image URLs; a tracking pixel can learn a reader's address) |
+| Security headers + CSP (3.0) | Clickjacking, MIME sniffing, injected inline script, the site being framed or embedded; the policy being altered through the embed and image host lists, whose entries must be host names (anything else is refused when saved and left out if found stored) | Injected inline *styles* (allowed, the editor needs them); images loaded from arbitrary `https:` hosts (allowed, authors paste image URLs; a tracking pixel can learn a reader's address) |
 | The owner role (10.1) | An administrator, or a stolen admin session, promoting itself or anyone else, unseating the owner, or getting at the owner's account through a password reset or a session revoke | An attacker who takes the *owner's* session within the sudo window; the owner's own mistakes, which is why the transfer is confirmed, audited and alerted |
 | Instance rights (11.1) | An administrator doing something this instance has decided administrators should not do (changing retention, opening registration, reading the audit log); a user deleting other people's pages; automation through a token whose owner has lost the right | An administrator with `permissions.edit_user_tier` widening *user* roles, which is theirs to do; the owner, who holds everything; anything the space permissions allow (rights are additive over them, never a bypass) |
 | Least-privilege DB role (3.1) | A compromised app deleting or rewriting `AuditLogs`, `PageViews`, `SecurityEvents` | The same app writing *misleading new* audit rows; anyone holding the owner password |
@@ -86,7 +86,10 @@ older references still point at the right item.
    (off by default) limits pictures to this instance and a list of hosts:
    the CSP's `img-src` follows it, exported pages carry it as a
    `<meta>` CSP, and the editor tells an author when a picture's host is
-   not allowed. Off, any https picture shows, as before.
+   not allowed. Off, any https picture shows, as before. Each listed
+   entry, as on the embed list, must be a host name (`.example.com` for
+   it and its subdomains); the save refuses anything else, and the
+   exported `<meta>` tag is HTML-encoded as well.
 3. ~~Registration is not an audit entry.~~ **Fixed.** Every new account is
    recorded as `user.registered`, with how it was made (first account,
    invite, open registration or single sign-on) and the address it came

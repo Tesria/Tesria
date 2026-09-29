@@ -825,6 +825,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('Delete pages you created:'), ' everyone has it by default.')),
       li(p(b('Delete pages created by others:'), ' administrators have it by default.')),
     ),
+    p('Sub-pages count too. If someone else wrote a page under yours and you may delete only your own, Tesria refuses and names that page: move it out from under yours first, or ask someone who may delete it.'),
     p('See ', pageLink('Roles'), ' for how an administrator changes these.'),
   ))
 

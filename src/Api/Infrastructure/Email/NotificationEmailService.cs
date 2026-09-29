@@ -2,6 +2,7 @@ using System.Text.Json;
 using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
+using Tesria.Api.Infrastructure.Permissions;
 
 namespace Tesria.Api.Infrastructure.Email;
 
@@ -75,6 +76,18 @@ public sealed class NotificationEmailService(
         var stale = pending.Where(n => now - n.CreatedAt > MaxAge).ToList();
         foreach (var n in stale) n.EmailedAt = now; // too old to be news; retired unsent
         pending = pending.Except(stale).ToList();
+
+        // Checked again at sending: a notification was allowed when it was
+        // made, but a digest waits up to a day, and a page restricted in the
+        // meantime must not have its title or a comment mailed to someone
+        // who can no longer open it. The in-app copy stays, and the bell
+        // hides it as before.
+        var perms = scope.ServiceProvider.GetRequiredService<IPermissionService>();
+        var hidden = new List<Notification>();
+        foreach (var n in pending.Where(n => n.TargetType == "page"))
+            if (!await perms.AsUser(n.UserId).CanViewPageAsync(n.TargetId)) hidden.Add(n);
+        foreach (var n in hidden) n.EmailedAt = now;
+        pending = pending.Except(hidden).ToList();
 
         var pageInfo = await PageLinksAsync(db, pending, ct);
         var sent = 0;

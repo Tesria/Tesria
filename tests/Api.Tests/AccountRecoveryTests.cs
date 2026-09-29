@@ -250,6 +250,29 @@ public class AccountRecoveryTests
     }
 
     [Fact]
+    public async Task Issuing_a_reset_link_asks_for_the_password_again_and_is_closed_to_tokens()
+    {
+        using var factory = new TestAppFactory(new Dictionary<string, string?> { ["Auth:SudoMinutes"] = "0" });
+        var admin = factory.CreateClient();
+        await RegisterAsync(admin, "admin@example.com");
+        var member = await RegisterAsync(factory.CreateClient(), "member@example.com");
+
+        // Past the sudo window (zero minutes here): refused until the password is confirmed.
+        var denied = await admin.PostAsync($"/api/admin/users/{member.Id}/reset-password", null);
+        Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
+        Assert.Contains("reauth_required", await denied.Content.ReadAsStringAsync());
+
+        // An API token can never be freshly signed in, so it is always refused.
+        var token = (await (await admin.PostAsJsonAsync("/api/api-tokens", new { Name = "Full", ReadOnly = false }))
+            .Content.ReadFromJsonAsync<Dictionary<string, object>>())!["token"].ToString();
+        var bearer = factory.CreateClient();
+        bearer.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        Assert.Equal(HttpStatusCode.Forbidden,
+            (await bearer.PostAsync($"/api/admin/users/{member.Id}/reset-password", null)).StatusCode);
+        // The positive path, inside the window, is An_admin_can_issue_a_one_time_reset_link.
+    }
+
+    [Fact]
     public async Task An_admin_can_issue_a_one_time_reset_link()
     {
         using var factory = new TestAppFactory();

@@ -308,6 +308,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(c('*'), ': all of the above.')),
     ),
     p('Drafts send nothing: a page is only news once it is published. Neither does moving, reordering or deleting a page.'),
+    p('A webhook sends only what the person who added it can read. A page restricted so that they cannot open it sends nothing through their webhook, and neither do its comments.'),
 
     h(2, 'What arrives'),
     p('Each message is a ', c('POST'), ' request with a JSON body like this:'),

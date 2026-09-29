@@ -5,6 +5,7 @@ import { api, ApiError } from '../api/client'
 import { PasswordInput } from '../components/PasswordInput'
 import { useInstance } from '../InstanceContext'
 import { AuthPage } from '../components/Brand'
+import { ssoErrorMessage } from '../auth/ssoError'
 
 export function LoginPage() {
   const { user, login, completeTotp } = useAuth()
@@ -17,7 +18,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [challenge, setChallenge] = useState<string | null>(null)
   const [code, setCode] = useState('')
-  const [error, setError] = useState<string | null>(searchParams.get('ssoError'))
+  const [error, setError] = useState<string | null>(ssoErrorMessage(searchParams.get('ssoError')))
   const [busy, setBusy] = useState(false)
   const [oidc, setOidc] = useState<{ enabled: boolean; displayName: string } | null>(null)
   const instance = useInstance()
