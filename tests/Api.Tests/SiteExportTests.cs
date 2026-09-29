@@ -168,6 +168,46 @@ public class SiteExportTests
     }
 
     [Fact]
+    public void An_attachment_keeps_its_own_name_after_its_id()
+    {
+        var file = Guid.NewGuid();
+
+        Assert.Equal($"{file:N}-diagram.png", SiteExport.AssetName(file, "diagram.png"));
+        Assert.Equal($"{file:N}-Q3-plan--final-.pdf", SiteExport.AssetName(file, "Q3 plan (final).pdf"));
+    }
+
+    [Theory]
+    // t6-012: a 240-character name made an asset of 273, and an 85-character
+    // Japanese one 280 bytes; no unzip tool would write either.
+    [InlineData(240, "n", ".txt")]
+    [InlineData(85, "日", ".txt")]
+    [InlineData(300, "é", ".docx")]
+    public void An_attachment_with_a_long_name_gets_a_file_name_every_filesystem_accepts(
+        int repeat, string letter, string extension)
+    {
+        var file = Guid.NewGuid();
+
+        var name = SiteExport.AssetName(file, string.Concat(Enumerable.Repeat(letter, repeat)) + extension);
+
+        Assert.StartsWith($"{file:N}-{letter}", name);
+        Assert.EndsWith(extension, name);
+        // A single name: 255 bytes everywhere. A path on Windows: 260
+        // characters, of which the page folders keep 140 for themselves.
+        Assert.True(System.Text.Encoding.UTF8.GetByteCount(name) <= 200, $"{name} is too long");
+        Assert.True(("assets/" + name).Length <= 110, $"{name} is too long");
+    }
+
+    [Fact]
+    public void An_extension_that_is_not_one_is_not_kept_whole()
+    {
+        var file = Guid.NewGuid();
+
+        var name = SiteExport.AssetName(file, "notes." + new string('x', 200));
+
+        Assert.True(name.Length <= 33 + SiteExport.MaxAssetStemChars, name);
+    }
+
+    [Fact]
     public void A_framed_PDF_becomes_the_file_beside_the_page()
     {
         // The file block frames a PDF at its view address, not its download.
@@ -216,6 +256,39 @@ public class SiteExportTests
         var rewritten = SiteExport.RewriteLinks(html, "guides", new Dictionary<Guid, string>(), new Dictionary<Guid, string>());
 
         Assert.Equal(html, rewritten);
+    }
+
+    [Fact]
+    public void The_not_found_page_finds_the_site_root_before_it_loads_anything()
+    {
+        // t6-011: a static host serves 404.html at whatever missing address
+        // was asked for, so its relative links resolved against that address
+        // and the page came out unstyled, with a tree of dead links.
+        var space = new Space { Id = Guid.NewGuid(), Key = "DOCS", Name = "Docs" };
+        var placed = SiteExport.Place([Node("Guides", Node("Install"))]);
+
+        var html = SiteExport.NotFound(space, "", new SiteChrome.Brand("Tesria"),
+            SiteChrome.HeadOf(space, null), placed, "");
+
+        var script = html.IndexOf("assets/site.css', false", StringComparison.Ordinal);
+        Assert.True(script > 0, "no root probe in the 404 page");
+        Assert.True(script < html.IndexOf("<link", StringComparison.Ordinal), "the probe must come before the stylesheet");
+        Assert.Contains("data-export-keep", html[..script]);
+        // Still relative, so the page works opened from disk.
+        Assert.Contains("href=\"./assets/site.css\"", html);
+        Assert.Contains("href=\"./guides/index.html\"", html);
+    }
+
+    [Fact]
+    public void Only_the_not_found_page_looks_for_the_root()
+    {
+        var space = new Space { Id = Guid.NewGuid(), Key = "DOCS", Name = "Docs" };
+        var placed = SiteExport.Place([Node("Guides")]);
+
+        var index = SiteExport.Index(space, placed, "", new SiteChrome.Brand("Tesria"),
+            SiteChrome.HeadOf(space, null), "");
+
+        Assert.DoesNotContain("XMLHttpRequest", index);
     }
 
     // --- The chrome around a page.
