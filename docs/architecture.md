@@ -549,7 +549,7 @@ visitor with no session to `/login` whenever `publicReading` is false,
 carrying `from` so a deep link still arrives where it meant to once they
 sign in. A link to a public page on an instance that publishes nothing
 therefore lands on sign-in, which is the truthful answer: nothing is
-public. The login page offers "Browse what is public" only when there is
+public. The login page offers "Browse What Is Public" only when there is
 something to browse, and hides the sign-up link when registration is
 closed (an `?invite=` token shows it regardless, because the invite is its
 own authorization).
@@ -1028,8 +1028,8 @@ content. `BlockDocuments` holds the three content readers they share.
 | `page-tree` | list | `root=host` (host\|space), `depth=3` (1–6) | The visible tree under the host or the space, same filtering as `/api/pages/tree`. |
 
 **Naming.** Kinds are kebab-case in URLs and documents; the client
-catalog's display titles are Confluence's ("Children display",
-"Recently updated"…) so a Confluence user finds what they expect.
+catalog's display titles are Confluence's ("Children Display",
+"Recently Updated"…) so a Confluence user finds what they expect.
 
 ### Roles and administrators (spec, dev-plan 0.1, designed 2026-09-08)
 
@@ -1542,7 +1542,7 @@ every backup along with the means to decrypt it: each backup would carry the
 key to delete itself. The sidecars read `.env`; the app never holds a value
 and has no code path that could return one. What reaches the database is a
 row per target with secrets reduced to a 16-character fingerprint, which is
-what the Storage targets screen renders.
+what the Storage Targets card renders.
 
 **Two tools, split by what each is for.** pgBackRest carries the *database*
 to the cloud slot as `repo2`, with WAL streaming continuously so
@@ -1939,8 +1939,8 @@ deploy.
 
 **Publishing is a decision.** The editor runs `acceptExternalEdits` as the
 last thing before sending, so pressing Update accepts whatever is pending;
-the banner above the editor (counting pending runs, with Accept all and
-Reject all) is for deciding first. It also sends `baseVersion`, the
+the banner above the editor (counting pending runs, with Accept All and
+Reject All) is for deciding first. It also sends `baseVersion`, the
 `meta.version` its draft was reconciled to, and the API answers **409** if
 the page has moved past it. That 409 carries the page as it stands, though
 since 0.8.2 the editor asks the sidecar to reconcile rather than using the
@@ -2155,7 +2155,7 @@ ProseMirror JSON in `PageVersion.ContentJson`.
   the natural touch equivalent.
 - **Table cell backgrounds** (`TableCellMenu.tsx`): Confluence's per-cell
   chevron, in the top-right of whichever cell holds the cursor, opening a
-  "Background color" palette. Cursor-driven rather than hover-driven, so
+  "Background Color" palette. Cursor-driven rather than hover-driven, so
   deliberately *not* sharing `useHoveredTable` with the two controls above:
   the menu belongs to the cell being edited, not whichever one the mouse
   passed over. The color is a `backgroundColor` attr on both `tableCell` and

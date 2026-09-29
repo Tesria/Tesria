@@ -33,16 +33,16 @@ PNG only.
 | File | Shows | Used by | Shot |
 |---|---|---|---|
 | `spaces` | The spaces list, opening a space, the page tree | 10.3 tour | `spaces` |
-| `new-page` | New page, a title, typing a paragraph, Publish | 10.3 tour | `new-page` |
+| `new-page` | + New Page, a title, typing a paragraph, Publish | 10.3 tour | `new-page` |
 | `editor-slash` | Typing `/`, the menu filtering, inserting a table | 10.3 tour, tip | `editor-slash` |
 | `editor-toolbar` | Selecting text, the bubble menu, a heading from the toolbar | 10.3 tour | `editor-toolbar` |
 | `mention` | Typing `@`, picking a person | tip | `mention` |
 | `inline-comment` | Selecting text, Comment, writing one | 10.3 tour, tip | `inline-comment` |
 | `page-tree-drag` | Reorder mode, dragging a page to a new position, saving | tip | `page-tree-drag` |
 | `search` | The search box, results, a snippet | 10.3 tour | `search` |
-| `templates` | Save as template from the page menu | tip | `templates` |
+| `templates` | Save as Template from the page menu | tip | `templates` |
 | `link-shortcut` | Ctrl/Cmd+K on a selection | tip | `link-shortcut` |
-| `watch` | Watch this page, then the bell | tip | `watch` |
+| `watch` | Watch This Page, then the bell | tip | `watch` |
 | `profile` | Avatar, two-factor, notifications | 10.3 tour | `profile` |
 | `admin-overview` | The Administration dashboard (still) | 10.2 Done screen | `admin-overview` |
 | `admin-backups` | The Backups tab (still) | 10.2 Done screen | `admin-backups` |
@@ -172,14 +172,14 @@ need to be: every step is a page in Administration.
 
 | Step | Where it lives afterwards |
 |---|---|
-| Your account | Profile |
-| This instance | Administration → Settings |
-| Who can join | Administration → Settings |
-| What roles may do | Administration → Roles |
+| Your Account | Profile |
+| This Instance | Administration → Settings |
+| Who Can Join | Administration → Settings |
+| What Roles May Do | Administration → Roles |
 | Backups | Administration → Backups |
 | Email | Administration → Settings |
-| Two-factor | Profile |
-| A first space | Spaces → New space |
+| Two-Factor | Profile |
+| A First Space | Spaces → New Space |
 
 ### Testing it
 
@@ -212,10 +212,10 @@ twice. The profile can reopen it.
 
 | Screen | Clip | Covers |
 |---|---|---|
-| Spaces and pages | `spaces` | What a space is, that pages nest, where the tree is |
-| Writing | `new-page` | New page, publish, drafts are private |
-| Working together | `inline-comment` | Live editing, comments on a selection, @, Watch |
-| Finding things | `search` | Search covers what you may see; labels |
+| Spaces and Pages | `spaces` | What a space is, that pages nest, where the tree is |
+| Writing | `new-page` | + New Page, Publish, drafts are private |
+| Working Together | `inline-comment` | Live editing, comments on a selection, @, Watch |
+| Finding Things | `search` | Search covers what you may see; labels |
 | You | `profile` | Avatar, two-factor, email, where to turn tips off |
 
 Accounts that existed before this shipped were marked as having skipped the
@@ -252,10 +252,10 @@ they should hold across devices.
 | `search-scope` | search | the second search |
 | `two-factor` | profile | two-factor off, third profile visit |
 
-Each tip has **Got it**, which retires it for good, and **Turn off tips**,
+Each tip has **Got It**, which retires it for good, and **Turn Off Tips**,
 which stops all of them and offers ten seconds of undo. Profile → Tour and
-tips has the same switch, **Show the tour again**, and **Reset dismissed
-tips**.
+Tips has the same switch, **Show the Tour Again**, and **Reset Dismissed
+Tips**.
 
 ### Adding one
 
