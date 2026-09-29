@@ -109,8 +109,19 @@ public class OidcUserProvisionerTests
         var (factory, _, provisioner) = NewProvisioner();
         using var _dispose = factory;
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        await Assert.ThrowsAsync<OidcNoEmailException>(() =>
             provisioner.ResolveOrProvisionAsync("sub-no-email", null, true, "No Email"));
+    }
+
+    [Fact]
+    public void A_refusal_reaches_the_sign_in_page_as_a_code_without_the_address()
+    {
+        Assert.Equal("/login?ssoError=invite_only", SsoErrors.LoginPath(new OidcRegistrationClosedException("stranger@example.com")));
+        Assert.Equal("/login?ssoError=email_not_verified", SsoErrors.LoginPath(new OidcEmailNotVerifiedException("bob@example.com")));
+        Assert.Equal("/login?ssoError=no_email", SsoErrors.LoginPath(new OidcNoEmailException()));
+        // Anything else, the provider's own failures included, is one fixed code.
+        Assert.Equal("/login?ssoError=failed", SsoErrors.LoginPath(new Exception("Message contains error: 'access_denied'")));
+        Assert.Equal("/login?ssoError=failed", SsoErrors.LoginPath(null));
     }
 
     [Fact]

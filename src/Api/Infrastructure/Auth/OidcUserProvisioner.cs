@@ -24,6 +24,36 @@ public sealed class OidcRegistrationClosedException(string email)
     : Exception($"There is no account for {email}, and this instance is invite only. Ask an administrator " +
                 "for an invite, create your account from it, then sign in with SSO.");
 
+/// <summary>The identity provider returned no email address, which sign-in needs.</summary>
+public sealed class OidcNoEmailException()
+    : InvalidOperationException("The identity provider did not return an email address.");
+
+/// <summary>
+/// What the sign-in page is told when single sign-on turns someone away: a
+/// short code in <c>/login?ssoError=</c>, never the message itself. The page
+/// holds the text for each code and ignores any other value, so a link
+/// cannot put words of its choosing in the real sign-in page's error box,
+/// and the person's email address stays out of the URL. Keep the codes in
+/// step with <c>src/web/src/auth/ssoError.ts</c>.
+/// </summary>
+public static class SsoErrors
+{
+    public const string InviteOnly = "invite_only";
+    public const string EmailNotVerified = "email_not_verified";
+    public const string NoEmail = "no_email";
+    public const string Failed = "failed";
+
+    public static string CodeFor(Exception? ex) => ex switch
+    {
+        OidcRegistrationClosedException => InviteOnly,
+        OidcEmailNotVerifiedException => EmailNotVerified,
+        OidcNoEmailException => NoEmail,
+        _ => Failed,
+    };
+
+    public static string LoginPath(Exception? ex) => "/login?ssoError=" + CodeFor(ex);
+}
+
 /// <summary>
 /// Resolves an external OIDC identity (the "sub" claim, plus email/name) to a
 /// local <see cref="User"/> row: signing in a returning user, linking to an
@@ -51,7 +81,7 @@ public sealed class OidcUserProvisioner(AppDbContext db, ISiteSettingsService se
 
         var normalizedEmail = (email ?? "").Trim().ToLowerInvariant();
         if (normalizedEmail.Length == 0)
-            throw new InvalidOperationException("The identity provider did not return an email address.");
+            throw new OidcNoEmailException();
 
         var existingByEmail = await db.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail);
         if (existingByEmail is not null)

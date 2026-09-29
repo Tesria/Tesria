@@ -431,7 +431,11 @@ if (!string.IsNullOrWhiteSpace(oidcAuthority))
                     // principal: write the rejection ourselves and mark the
                     // response handled, the same explicit pattern OnRemoteFailure
                     // uses below, so no session is ever established on failure.
-                    ctx.HttpContext.Response.Redirect("/login?ssoError=" + Uri.EscapeDataString(ex.Message));
+                    // A code, not the message: see SsoErrors. The detail goes
+                    // to the log for whoever runs the instance.
+                    ctx.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("Tesria.Sso").LogWarning("Single sign-on refused: {Reason}", ex.Message);
+                    ctx.HttpContext.Response.Redirect(SsoErrors.LoginPath(ex));
                     ctx.HandleResponse();
                     return;
                 }
@@ -444,10 +448,13 @@ if (!string.IsNullOrWhiteSpace(oidcAuthority))
                     ctx.HttpContext, ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>(), user);
             },
             // Land back on the login page with a readable error instead of an
-            // unhandled-exception page if the provider or provisioning fails.
+            // unhandled-exception page if the provider or provisioning fails
+            // (a code the page turns into its own text, as above).
             OnRemoteFailure = ctx =>
             {
-                ctx.Response.Redirect("/login?ssoError=" + Uri.EscapeDataString(ctx.Failure?.Message ?? "Sign-in failed."));
+                ctx.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                    .CreateLogger("Tesria.Sso").LogWarning("Single sign-on failed: {Reason}", ctx.Failure?.Message);
+                ctx.Response.Redirect(SsoErrors.LoginPath(ctx.Failure));
                 ctx.HandleResponse();
                 return Task.CompletedTask;
             },
