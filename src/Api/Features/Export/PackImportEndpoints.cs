@@ -35,7 +35,7 @@ public static partial class PackImportEndpoints
 {
     public static IEndpointRouteBuilder MapPackImportEndpoints(this IEndpointRouteBuilder routes)
     {
-        routes.MapPost("/spaces/import", Import)
+        routes.MapPost("/spaces/import", Import).Produces<ImportResponse>(StatusCodes.Status201Created)
             .WithTags("Export")
             .DisableAntiforgery()
             // Both of these default to far less than a pack may be: Kestrel

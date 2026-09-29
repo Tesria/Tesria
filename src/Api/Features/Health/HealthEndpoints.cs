@@ -41,6 +41,7 @@ public static class HealthEndpoints
             });
         })
         .WithName("Health")
+        .WithTags("Health")
         .WithSummary("Liveness probe");
 
         return group;

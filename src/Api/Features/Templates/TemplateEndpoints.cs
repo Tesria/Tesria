@@ -23,10 +23,10 @@ public static class TemplateEndpoints
     public static IEndpointRouteBuilder MapTemplateEndpoints(this IEndpointRouteBuilder routes)
     {
         var group = routes.MapGroup("/templates").WithTags("Templates").RequireAuthorization();
-        group.MapGet("/", List);
-        group.MapPost("/", Create);
-        group.MapPut("/{id:guid}", Update);
-        group.MapDelete("/{id:guid}", Delete);
+        group.MapGet("/", List).Produces<List<TemplateResponse>>();
+        group.MapPost("/", Create).Produces<TemplateResponse>(StatusCodes.Status201Created);
+        group.MapPut("/{id:guid}", Update).Produces<TemplateResponse>();
+        group.MapDelete("/{id:guid}", Delete).Produces(StatusCodes.Status204NoContent);
         return routes;
     }
 

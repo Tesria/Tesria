@@ -27,19 +27,19 @@ public static class GroupEndpoints
         var groups = routes.MapGroup("/groups").WithTags("Groups").RequireAuthorization();
         // Anyone signed in may see groups: the permission picker needs the
         // list. Shaping them is instance administration.
-        groups.MapGet("/", List);
-        groups.MapGet("/{id:guid}/members", Members);
+        groups.MapGet("/", List).Produces<List<GroupResponse>>();
+        groups.MapGet("/{id:guid}/members", Members).Produces<List<MemberResponse>>();
         var manage = groups.MapGroup("")
             .RequireAuthorization(Infrastructure.Permissions.PermissionPolicyProvider.Prefix
                 + Infrastructure.Permissions.InstancePermissions.GroupsManage);
-        manage.MapPost("/", Create);
-        manage.MapPut("/{id:guid}", Update);
-        manage.MapDelete("/{id:guid}", Delete);
-        manage.MapPost("/{id:guid}/members", AddMember);
-        manage.MapDelete("/{id:guid}/members/{userId:guid}", RemoveMember);
+        manage.MapPost("/", Create).Produces<GroupResponse>(StatusCodes.Status201Created);
+        manage.MapPut("/{id:guid}", Update).Produces<GroupResponse>();
+        manage.MapDelete("/{id:guid}", Delete).Produces(StatusCodes.Status204NoContent);
+        manage.MapPost("/{id:guid}/members", AddMember).Produces(StatusCodes.Status204NoContent);
+        manage.MapDelete("/{id:guid}/members/{userId:guid}", RemoveMember).Produces(StatusCodes.Status204NoContent);
 
         // Directory of accounts, used when picking permission principals.
-        routes.MapGet("/users", ListUsers).WithTags("Groups").RequireAuthorization();
+        routes.MapGet("/users", ListUsers).WithTags("Users").RequireAuthorization().Produces<List<UserResponse>>();
 
         return routes;
     }

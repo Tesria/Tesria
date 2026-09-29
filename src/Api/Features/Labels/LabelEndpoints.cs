@@ -21,14 +21,14 @@ public static partial class LabelEndpoints
     public static IEndpointRouteBuilder MapLabelEndpoints(this IEndpointRouteBuilder routes)
     {
         var labels = routes.MapGroup("/labels").WithTags("Labels").RequireAuthorization();
-        labels.MapGet("/", ListAll);
-        labels.MapGet("/{name}/pages", PagesForLabel);
+        labels.MapGet("/", ListAll).Produces<List<LabelUsageResponse>>();
+        labels.MapGet("/{name}/pages", PagesForLabel).Produces<List<LabeledPageResponse>>();
 
         var pageScoped = routes.MapGroup("/pages/{pageId:guid}/labels")
             .WithTags("Labels").RequireAuthorization();
-        pageScoped.MapGet("/", ListForPage).AllowAnonymous(); // dev-plan 5.2
-        pageScoped.MapPost("/", AddToPage);
-        pageScoped.MapDelete("/{name}", RemoveFromPage);
+        pageScoped.MapGet("/", ListForPage).AllowAnonymous().Produces<List<LabelResponse>>(); // dev-plan 5.2
+        pageScoped.MapPost("/", AddToPage).Produces<LabelResponse>();
+        pageScoped.MapDelete("/{name}", RemoveFromPage).Produces(StatusCodes.Status204NoContent);
 
         return routes;
     }

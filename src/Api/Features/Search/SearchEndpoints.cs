@@ -14,7 +14,7 @@ public static class SearchEndpoints
     public static IEndpointRouteBuilder MapSearchEndpoints(this IEndpointRouteBuilder routes)
     {
         // Anonymous callers search public spaces only (dev-plan 5.2).
-        routes.MapGet("/search", SearchAsync).WithTags("Search").AllowAnonymous();
+        routes.MapGet("/search", SearchAsync).WithTags("Search").AllowAnonymous().Produces<List<SearchResult>>();
         return routes;
     }
 

@@ -194,18 +194,18 @@ public static class AdminEndpoints
         group.MapPost("/users/{userId:guid}/transfer-ownership", TransferOwnership)
             .RequirePermission(InstancePermissions.OwnershipTransfer);
         group.MapPut("/users/{userId:guid}/status", SetStatus).RequirePermission(InstancePermissions.UsersManage);
-        group.MapPost("/users/{userId:guid}/revoke-sessions", RevokeSessions).RequirePermission(InstancePermissions.UsersManage);
-        group.MapPost("/users/{userId:guid}/revoke-tokens", RevokeTokens).RequirePermission(InstancePermissions.UsersManage);
-        group.MapPost("/users/{userId:guid}/disable-two-factor", DisableTwoFactor).RequirePermission(InstancePermissions.UsersManage);
+        group.MapPost("/users/{userId:guid}/revoke-sessions", RevokeSessions).Produces(StatusCodes.Status204NoContent).RequirePermission(InstancePermissions.UsersManage);
+        group.MapPost("/users/{userId:guid}/revoke-tokens", RevokeTokens).Produces(StatusCodes.Status204NoContent).RequirePermission(InstancePermissions.UsersManage);
+        group.MapPost("/users/{userId:guid}/disable-two-factor", DisableTwoFactor).Produces(StatusCodes.Status204NoContent).RequirePermission(InstancePermissions.UsersManage);
         group.MapGet("/spaces", ListSpaces).RequirePermission(InstancePermissions.SpacesManage);
         group.MapPut("/spaces/{key}/public", SetSpacePublic).RequirePermission(InstancePermissions.SpacesPublish);
         group.MapGet("/invites", ListInvites).RequirePermission(InstancePermissions.InvitesManage);
         group.MapPost("/invites", CreateInvite).RequirePermission(InstancePermissions.InvitesCreate)
             .RequireRateLimiting(Infrastructure.Security.RateLimits.InvitePolicy);
         group.MapGet("/invites/email", InviteEmail).RequirePermission(InstancePermissions.InvitesCreate);
-        group.MapDelete("/invites/{id:guid}", RevokeInvite).RequirePermission(InstancePermissions.InvitesManage);
+        group.MapDelete("/invites/{id:guid}", RevokeInvite).Produces(StatusCodes.Status204NoContent).RequirePermission(InstancePermissions.InvitesManage);
         group.MapPost("/audit/verify", VerifyAuditChain).RequirePermission(InstancePermissions.AuditView);
-        group.MapPost("/users/{userId:guid}/unlock", Unlock).RequirePermission(InstancePermissions.UsersManage);
+        group.MapPost("/users/{userId:guid}/unlock", Unlock).Produces(StatusCodes.Status204NoContent).RequirePermission(InstancePermissions.UsersManage);
         group.MapGet("/security/limits", GetLimits).RequirePermission(InstancePermissions.SecurityView);
 
         return routes;

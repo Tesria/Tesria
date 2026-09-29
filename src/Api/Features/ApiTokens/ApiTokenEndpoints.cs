@@ -24,10 +24,10 @@ public static class ApiTokenEndpoints
     public static IEndpointRouteBuilder MapApiTokenEndpoints(this IEndpointRouteBuilder routes)
     {
         var group = routes.MapGroup("/api-tokens").WithTags("ApiTokens").RequireAuthorization();
-        group.MapGet("/", List);
-        group.MapPost("/", Create).RequireRateLimiting(Infrastructure.Security.RateLimits.TokenMintPolicy)
+        group.MapGet("/", List).Produces<List<TokenResponse>>();
+        group.MapPost("/", Create).Produces<CreatedTokenResponse>(StatusCodes.Status201Created).RequireRateLimiting(Infrastructure.Security.RateLimits.TokenMintPolicy)
             .RequirePermission(Infrastructure.Permissions.InstancePermissions.TokensUse);
-        group.MapDelete("/{id:guid}", Revoke);
+        group.MapDelete("/{id:guid}", Revoke).Produces(StatusCodes.Status204NoContent);
         return routes;
     }
 

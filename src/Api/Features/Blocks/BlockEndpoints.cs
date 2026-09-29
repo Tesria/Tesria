@@ -12,7 +12,7 @@ public static class BlockEndpoints
 {
     public static IEndpointRouteBuilder MapBlockEndpoints(this IEndpointRouteBuilder routes)
     {
-        routes.MapGet("/pages/{hostId:guid}/blocks/{kind}", Render)
+        routes.MapGet("/pages/{hostId:guid}/blocks/{kind}", Render).Produces<BlockResult>()
             .WithTags("Blocks")
             .AllowAnonymous();
         return routes;

@@ -49,7 +49,7 @@ public static class AdminTokenEndpoints
         group.MapGet("/", List).RequirePermission(InstancePermissions.UsersView);
         group.MapGet("/summary", Summary).RequirePermission(InstancePermissions.UsersView);
         group.MapGet("/activity", Activity).RequirePermission(InstancePermissions.UsersView);
-        group.MapDelete("/{id:guid}", Revoke).RequirePermission(InstancePermissions.UsersManage);
+        group.MapDelete("/{id:guid}", Revoke).Produces(StatusCodes.Status204NoContent).RequirePermission(InstancePermissions.UsersManage);
         return routes;
     }
 

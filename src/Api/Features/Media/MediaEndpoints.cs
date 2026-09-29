@@ -26,15 +26,15 @@ public static class MediaEndpoints
         group.MapGet("/avatars/{userId:guid}", GetAvatar);
         // Framework form-token check off; the CsrfHeaderMiddleware covers this (dev-plan 3.4).
         group.MapPut("/avatars/me", UploadOwnAvatar).DisableAntiforgery();
-        group.MapDelete("/avatars/me", DeleteOwnAvatar);
-        group.MapPut("/avatars/me/variant", SetOwnAvatarVariant);
+        group.MapDelete("/avatars/me", DeleteOwnAvatar).Produces(StatusCodes.Status204NoContent);
+        group.MapPut("/avatars/me/variant", SetOwnAvatarVariant).Produces(StatusCodes.Status204NoContent);
 
         // Space icons (dev-plan 6). Addressed by space key, the way spaces are
         // addressed everywhere else; reading follows the space's own
         // visibility, so a public space's icon is readable by anyone (5.3).
         group.MapGet("/space-icons/{key}", GetSpaceIcon).AllowAnonymous();
         group.MapPut("/space-icons/{key}", UploadSpaceIcon).DisableAntiforgery();
-        group.MapDelete("/space-icons/{key}", DeleteSpaceIcon);
+        group.MapDelete("/space-icons/{key}", DeleteSpaceIcon).Produces(StatusCodes.Status204NoContent);
 
         return routes;
     }

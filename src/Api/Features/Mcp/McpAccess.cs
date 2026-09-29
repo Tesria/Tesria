@@ -17,7 +17,7 @@ public static class McpAccess
         if (user is null || !current.IsAuthenticated)
             throw new McpException("Sign in with an API token to use this tool.");
         if (TokenScope.IsReadOnly(user))
-            throw new McpException("This API token is read-only. Mint one with write access at Profile → API tokens.");
+            throw new McpException("This API token is read-only. Create one with write access under Profile, API Tokens.");
     }
 
     /// <summary>The same words REST uses: a thing you may not see does not exist.</summary>

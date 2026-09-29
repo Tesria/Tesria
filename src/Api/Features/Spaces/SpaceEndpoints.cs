@@ -46,31 +46,31 @@ public static partial class SpaceEndpoints
         var group = routes.MapGroup("/spaces").WithTags("Spaces").RequireAuthorization();
 
         // Readable without a session (dev-plan 5.2); the permission service decides what an anonymous caller sees.
-        group.MapGet("/", List).AllowAnonymous();
-        group.MapPost("/", Create)
+        group.MapGet("/", List).AllowAnonymous().Produces<List<SpaceResponse>>();
+        group.MapPost("/", Create).Produces<SpaceResponse>(StatusCodes.Status201Created).ProducesProblem(StatusCodes.Status409Conflict)
             .RequirePermission(Infrastructure.Permissions.InstancePermissions.SpacesCreate);
-        group.MapGet("/{key}", GetByKey).AllowAnonymous();
-        group.MapPut("/{key}", Update);
+        group.MapGet("/{key}", GetByKey).AllowAnonymous().Produces<SpaceResponse>();
+        group.MapPut("/{key}", Update).Produces<SpaceResponse>();
         group.MapPost("/{key}/archive",
             (string key, AppDbContext db, IAuditLogger audit, IPermissionService perms)
-                => ArchiveEndpoint(key, true, db, audit, perms));
+                => ArchiveEndpoint(key, true, db, audit, perms)).Produces<SpaceResponse>();
         group.MapPost("/{key}/unarchive",
             (string key, AppDbContext db, IAuditLogger audit, IPermissionService perms)
-                => ArchiveEndpoint(key, false, db, audit, perms));
+                => ArchiveEndpoint(key, false, db, audit, perms)).Produces<SpaceResponse>();
 
         // Deleting a space is an instance right, not a space permission
         // (dev-plan 11.3): a space's own administrator archives, which is
         // reversible; destroying one is the instance's decision.
-        group.MapGet("/{key}/deletion-preview", DeletionPreview)
+        group.MapGet("/{key}/deletion-preview", DeletionPreview).Produces<DeletionPreviewResponse>()
             .RequirePermission(InstancePermissions.SpacesDelete);
-        group.MapDelete("/{key}", Delete)
+        group.MapDelete("/{key}", Delete).Produces(StatusCodes.Status204NoContent)
             .RequirePermission(InstancePermissions.SpacesDelete);
 
         // Which exports a space allows (dev-plan 12.3). An instance right,
         // like deleting: the setting exists for spaces more sensitive than
         // the rest, and that judgment belongs to the instance's
         // administrators rather than to whoever created the space.
-        group.MapPut("/{key}/exports", UpdateExports)
+        group.MapPut("/{key}/exports", UpdateExports).Produces<SpaceResponse>()
             .RequirePermission(InstancePermissions.SpacesExports);
 
         return routes;

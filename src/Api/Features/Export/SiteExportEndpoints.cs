@@ -34,6 +34,7 @@ public static class SiteExportEndpoints
         // token should be able to do it. The design said POST; this is the
         // same request with the audience in the query string.
         routes.MapGet("/spaces/{key}/export/site", ExportSite)
+            .Produces(StatusCodes.Status200OK, contentType: "application/zip")
             .WithTags("Export")
             .RequirePermission(InstancePermissions.PagesExport);
         return routes;

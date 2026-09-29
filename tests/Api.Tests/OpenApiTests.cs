@@ -79,6 +79,75 @@ public class OpenApiTests
     }
 
     [Fact]
+    public async Task Each_operation_says_what_it_answers_not_only_200()
+    {
+        // T5-021: every operation was documented as "200 OK" with no body.
+        using var factory = new TestAppFactory();
+        var spec = await SpecAsync(factory.CreateClient());
+        var paths = spec.GetProperty("paths");
+
+        static JsonElement Responses(JsonElement paths, string path, string verb) =>
+            paths.GetProperty(path).GetProperty(verb).GetProperty("responses");
+        static string? BodyRef(JsonElement response) =>
+            response.GetProperty("content").GetProperty("application/json").GetProperty("schema")
+                .TryGetProperty("$ref", out var r) ? r.GetString() : null;
+
+        var create = Responses(paths, "/api/pages", "post");
+        Assert.False(create.TryGetProperty("200", out _));
+        Assert.EndsWith("PageDetailResponse", BodyRef(create.GetProperty("201")));
+        Assert.True(create.TryGetProperty("400", out _));
+        Assert.True(create.TryGetProperty("401", out _));
+
+        var update = Responses(paths, "/api/pages/{id}", "put");
+        Assert.EndsWith("PageDetailResponse", BodyRef(update.GetProperty("200")));
+        Assert.EndsWith("PageDetailResponse", BodyRef(update.GetProperty("409")));
+        Assert.True(update.TryGetProperty("404", out _));
+
+        Assert.True(Responses(paths, "/api/pages/{id}", "delete").TryGetProperty("204", out _));
+        Assert.True(Responses(paths, "/api/api-tokens", "post").TryGetProperty("201", out _));
+        Assert.True(Responses(paths, "/api/pages/{pageId}/labels/{name}", "delete").TryGetProperty("204", out _));
+        Assert.True(Responses(paths, "/api/pages/{id}/layout", "put").TryGetProperty("204", out _));
+        Assert.True(Responses(paths, "/api/pages/{id}/publish", "post").TryGetProperty("409", out _));
+
+        // Refusals carry a described body, and every protected operation can say 401.
+        Assert.True(spec.GetProperty("components").GetProperty("schemas").TryGetProperty("Error", out _));
+        foreach (var path in paths.EnumerateObject())
+            foreach (var op in path.Value.EnumerateObject())
+            {
+                var responses = op.Value.GetProperty("responses");
+                Assert.True(responses.EnumerateObject().Any(r => r.Name != "200"),
+                    $"{op.Name.ToUpperInvariant()} {path.Name} documents nothing but 200");
+                var open = op.Value.TryGetProperty("security", out var s) && s.GetArrayLength() == 0;
+                if (!open)
+                    Assert.True(responses.TryGetProperty("401", out _), $"{op.Name.ToUpperInvariant()} {path.Name} has no 401");
+            }
+    }
+
+    [Fact]
+    public async Task Optional_fields_are_not_marked_required()
+    {
+        using var factory = new TestAppFactory();
+        var schemas = (await SpecAsync(factory.CreateClient())).GetProperty("components").GetProperty("schemas");
+
+        // "Leave out contentJson to rename": none of an update's fields is required.
+        var update = schemas.GetProperty("UpdatePageRequest");
+        Assert.False(update.TryGetProperty("required", out var required) && required.GetArrayLength() > 0);
+
+        var create = schemas.GetProperty("CreatePageRequest").GetProperty("required");
+        Assert.Equal(["spaceId", "title"], create.EnumerateArray().Select(r => r.GetString()).Order());
+    }
+
+    [Fact]
+    public async Task The_introduction_does_not_promise_404_for_everything()
+    {
+        using var factory = new TestAppFactory();
+        var info = (await SpecAsync(factory.CreateClient())).GetProperty("info").GetProperty("description").GetString()!;
+        Assert.DoesNotContain("never `403`", info);
+        Assert.DoesNotContain("mint", info, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("` :", info);
+    }
+
+    [Fact]
     public async Task The_reader_is_served_at_api_docs()
     {
         using var factory = new TestAppFactory();

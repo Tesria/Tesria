@@ -25,17 +25,17 @@ public static partial class CommentEndpoints
     {
         var pageScoped = routes.MapGroup("/pages/{pageId:guid}/comments")
             .WithTags("Comments").RequireAuthorization();
-        pageScoped.MapGet("/", ListForPage).AllowAnonymous(); // dev-plan 5.2: only with PublicComments
-        pageScoped.MapPost("/", Create);
+        pageScoped.MapGet("/", ListForPage).AllowAnonymous().Produces<List<CommentResponse>>(); // dev-plan 5.2: only with PublicComments
+        pageScoped.MapPost("/", Create).Produces<CommentResponse>(StatusCodes.Status201Created);
 
         var byId = routes.MapGroup("/comments/{id:guid}")
             .WithTags("Comments").RequireAuthorization();
-        byId.MapPut("/", Update);
-        byId.MapDelete("/", Delete);
+        byId.MapPut("/", Update).Produces<CommentResponse>();
+        byId.MapDelete("/", Delete).Produces(StatusCodes.Status204NoContent);
         byId.MapPost("/resolve", (Guid id, AppDbContext db, CurrentUser current, IPermissionService perms) =>
-            SetResolved(id, true, db, current, perms));
+            SetResolved(id, true, db, current, perms)).Produces<CommentResponse>();
         byId.MapPost("/reopen", (Guid id, AppDbContext db, CurrentUser current, IPermissionService perms) =>
-            SetResolved(id, false, db, current, perms));
+            SetResolved(id, false, db, current, perms)).Produces<CommentResponse>();
 
         return routes;
     }

@@ -156,13 +156,13 @@ public static class AuthEndpoints
         group.MapPost("/register", Register).RequireRateLimiting(RateLimits.AuthPolicy);
         group.MapPost("/login", Login).RequireRateLimiting(RateLimits.AuthPolicy);
         group.MapPost("/login/totp", LoginWithTotp).RequireRateLimiting(RateLimits.AuthPolicy);
-        group.MapPost("/reauth", Reauthenticate).RequireAuthorization().RequireRateLimiting(RateLimits.AuthPolicy);
+        group.MapPost("/reauth", Reauthenticate).Produces(StatusCodes.Status204NoContent).RequireAuthorization().RequireRateLimiting(RateLimits.AuthPolicy);
         group.MapPut("/me/notifications", SetNotificationPreference).RequireAuthorization();
         group.MapPut("/me/onboarding", UpdateOnboarding).RequireAuthorization();
         group.MapPut("/me/editor", SetEditorPreference).RequireAuthorization();
         group.MapGet("/me/sessions", ListSessions).RequireAuthorization();
-        group.MapDelete("/me/sessions/others", RevokeOtherSessions).RequireAuthorization();
-        group.MapDelete("/me/sessions/{id:guid}", RevokeSession).RequireAuthorization();
+        group.MapDelete("/me/sessions/others", RevokeOtherSessions).Produces(StatusCodes.Status204NoContent).RequireAuthorization();
+        group.MapDelete("/me/sessions/{id:guid}", RevokeSession).Produces(StatusCodes.Status204NoContent).RequireAuthorization();
         group.MapPost("/me/totp/setup", TotpSetup).RequireAuthorization();
         group.MapPost("/me/totp/enable", TotpEnable).RequireAuthorization();
         group.MapPost("/me/totp/disable", TotpDisable).RequireAuthorization();
@@ -175,11 +175,11 @@ public static class AuthEndpoints
         group.MapPut("/me/password", ChangePassword).RequireAuthorization();
         group.MapGet("/me/recovery-codes", RecoveryStatus).RequireAuthorization();
         group.MapPost("/me/recovery-codes", RegenerateCodes).RequireAuthorization();
-        group.MapPost("/me/recovery-codes/acknowledge", AcknowledgeCodes).RequireAuthorization();
+        group.MapPost("/me/recovery-codes/acknowledge", AcknowledgeCodes).Produces(StatusCodes.Status204NoContent).RequireAuthorization();
         group.MapGet("/recovery-options", RecoveryOptions);
-        group.MapPost("/recover/email", RecoverByEmail).RequireRateLimiting(RateLimits.AuthPolicy);
-        group.MapPost("/recover/code", RecoverWithCode).RequireRateLimiting(RateLimits.AuthPolicy);
-        group.MapPost("/recover/token", ResetWithToken).RequireRateLimiting(RateLimits.AuthPolicy);
+        group.MapPost("/recover/email", RecoverByEmail).Produces(StatusCodes.Status202Accepted).RequireRateLimiting(RateLimits.AuthPolicy);
+        group.MapPost("/recover/code", RecoverWithCode).Produces(StatusCodes.Status204NoContent).RequireRateLimiting(RateLimits.AuthPolicy);
+        group.MapPost("/recover/token", ResetWithToken).Produces(StatusCodes.Status204NoContent).RequireRateLimiting(RateLimits.AuthPolicy);
 
         group.MapGet("/oidc/status", OidcStatus);
         // A full-page browser redirect, not a fetch call: the IdP needs to

@@ -18,9 +18,9 @@ public static class WebhookEndpoints
     public static IEndpointRouteBuilder MapWebhookEndpoints(this IEndpointRouteBuilder routes)
     {
         var group = routes.MapGroup("/spaces/{key}/webhooks").WithTags("Webhooks").RequireAuthorization();
-        group.MapGet("/", List);
-        group.MapPost("/", Create);
-        group.MapDelete("/{id:guid}", Delete);
+        group.MapGet("/", List).Produces<List<WebhookResponse>>();
+        group.MapPost("/", Create).Produces<CreatedWebhookResponse>(StatusCodes.Status201Created);
+        group.MapDelete("/{id:guid}", Delete).Produces(StatusCodes.Status204NoContent);
         return routes;
     }
 

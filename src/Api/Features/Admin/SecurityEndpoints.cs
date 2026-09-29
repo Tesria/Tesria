@@ -45,8 +45,8 @@ public static class SecurityEndpoints
         group.MapPost("/alerts/{id:guid}/acknowledge", Acknowledge).RequirePermission(InstancePermissions.SecurityRespond);
         group.MapPost("/alerts/{id:guid}/resolve", Resolve).RequirePermission(InstancePermissions.SecurityRespond);
         group.MapGet("/blocks", ListBlocks).RequirePermission(InstancePermissions.SecurityView);
-        group.MapPost("/blocks", AddBlock).RequirePermission(InstancePermissions.SecurityRespond);
-        group.MapDelete("/blocks/{id:guid}", RemoveBlock).RequirePermission(InstancePermissions.SecurityRespond);
+        group.MapPost("/blocks", AddBlock).Produces(StatusCodes.Status201Created).RequirePermission(InstancePermissions.SecurityRespond);
+        group.MapDelete("/blocks/{id:guid}", RemoveBlock).Produces(StatusCodes.Status204NoContent).RequirePermission(InstancePermissions.SecurityRespond);
         return routes;
     }
 

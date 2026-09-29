@@ -47,12 +47,12 @@ public static class RoleEndpoints
         // row", and the owner's edit right is reserved, so their way back is
         // never closed. Each handler still checks the row it touches.
         group.MapGet("", GetMatrix);
-        group.MapPost("", CreateRole);
+        group.MapPost("", CreateRole).Produces(StatusCodes.Status201Created);
         group.MapPut("/{roleId:guid}", UpdateRole);
-        group.MapDelete("/{roleId:guid}", DeleteRole);
+        group.MapDelete("/{roleId:guid}", DeleteRole).Produces(StatusCodes.Status204NoContent);
         group.MapPut("/{roleId:guid}/permissions", UpdatePermissions);
         group.MapPost("/{roleId:guid}/reset", ResetPermissions);
-        group.MapPost("/review", MarkReviewed);
+        group.MapPost("/review", MarkReviewed).Produces(StatusCodes.Status204NoContent);
         return routes;
     }
 

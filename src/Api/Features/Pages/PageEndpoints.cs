@@ -19,14 +19,21 @@ public static class PageEndpoints
     // An empty ProseMirror document; used when a page is created without content.
     private const string EmptyDoc = PageContent.EmptyDoc;
 
-    public record CreatePageRequest(Guid SpaceId, Guid? ParentPageId, string Title, string? ContentJson);
+    /// <summary>Only the space and the title are needed; a page without content starts empty.</summary>
+    public record CreatePageRequest(Guid SpaceId, string Title, Guid? ParentPageId = null, string? ContentJson = null);
     /// <param name="BaseVersion">
     /// Which published version this edit started from (dev-plan 8.6). The
     /// editor sends it so a write that would overwrite an unseen change is
     /// refused with 409 rather than silently winning. Optional: API and MCP
     /// callers omit it and keep last-write-wins.
     /// </param>
-    public record UpdatePageRequest(string? Title, string ContentJson, string? ChangeComment, int? BaseVersion = null);
+    /// <remarks>
+    /// Every field is optional (T5-021: the reference marked them all
+    /// required): leave out <c>contentJson</c> to rename, <c>title</c> to keep
+    /// the title.
+    /// </remarks>
+    public record UpdatePageRequest(
+        string? Title = null, string? ContentJson = null, string? ChangeComment = null, int? BaseVersion = null);
     /// <summary><paramref name="SpaceId"/>: another space to move to, with the pages under it (dev-plan 15.3).</summary>
     public record MovePageRequest(Guid? ParentPageId, int Index, Guid? SpaceId = null);
     public record CreateDraftRequest(Guid SpaceId, Guid? ParentPageId);
@@ -65,24 +72,25 @@ public static class PageEndpoints
         var group = routes.MapGroup("/pages").WithTags("Pages").RequireAuthorization();
 
         // Open to anonymous readers (dev-plan 5.2); the permission service masks what they may not see.
-        group.MapGet("/tree", Tree).AllowAnonymous();
-        group.MapGet("/trash", Trash);
-        group.MapPost("/", Create);
-        group.MapPost("/draft", CreateDraft);
-        group.MapPost("/{id:guid}/publish", Publish);
-        group.MapDelete("/{id:guid}/draft", DeleteDraft);
-        group.MapGet("/{id:guid}", Get).AllowAnonymous();
-        group.MapPut("/{id:guid}", Update);
-        group.MapPut("/{id:guid}/move", Move);
-        group.MapPost("/{id:guid}/copy", PageCopy.CopyAsync);
-        group.MapPut("/{id:guid}/layout", SetLayout);
-        group.MapPut("/{id:guid}/emoji", SetEmoji);
-        group.MapDelete("/{id:guid}", Delete);
-        group.MapPost("/{id:guid}/restore", Restore);
-        group.MapDelete("/{id:guid}/purge", Purge);
-        group.MapGet("/{id:guid}/versions", ListVersions);
-        group.MapGet("/{id:guid}/versions/{number:int}", GetVersion);
-        group.MapPost("/{id:guid}/versions/{number:int}/restore", RestoreVersion);
+        group.MapGet("/tree", Tree).AllowAnonymous().Produces<List<PageTreeNode>>();
+        group.MapGet("/trash", Trash).Produces<List<TrashedPageResponse>>();
+        group.MapPost("/", Create).Produces<PageDetailResponse>(StatusCodes.Status201Created);
+        group.MapPost("/draft", CreateDraft).Produces<DraftResponse>();
+        group.MapPost("/{id:guid}/publish", Publish).Produces<PageDetailResponse>().ProducesProblem(StatusCodes.Status409Conflict);
+        group.MapDelete("/{id:guid}/draft", DeleteDraft).Produces(StatusCodes.Status204NoContent).ProducesProblem(StatusCodes.Status503ServiceUnavailable);
+        group.MapGet("/{id:guid}", Get).AllowAnonymous().Produces<PageDetailResponse>();
+        // 409 carries the page as it now is (dev-plan 8.6).
+        group.MapPut("/{id:guid}", Update).Produces<PageDetailResponse>().Produces<PageDetailResponse>(StatusCodes.Status409Conflict);
+        group.MapPut("/{id:guid}/move", Move).Produces(StatusCodes.Status204NoContent);
+        group.MapPost("/{id:guid}/copy", PageCopy.CopyAsync).Produces<PageCopy.CopyPageResponse>();
+        group.MapPut("/{id:guid}/layout", SetLayout).Produces(StatusCodes.Status204NoContent);
+        group.MapPut("/{id:guid}/emoji", SetEmoji).Produces(StatusCodes.Status204NoContent);
+        group.MapDelete("/{id:guid}", Delete).Produces(StatusCodes.Status204NoContent);
+        group.MapPost("/{id:guid}/restore", Restore).Produces(StatusCodes.Status204NoContent);
+        group.MapDelete("/{id:guid}/purge", Purge).Produces(StatusCodes.Status204NoContent);
+        group.MapGet("/{id:guid}/versions", ListVersions).Produces<List<PageVersionResponse>>();
+        group.MapGet("/{id:guid}/versions/{number:int}", GetVersion).Produces<PageVersionContentResponse>();
+        group.MapPost("/{id:guid}/versions/{number:int}/restore", RestoreVersion).Produces<PageDetailResponse>();
 
         return routes;
     }
