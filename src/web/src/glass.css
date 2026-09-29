@@ -760,7 +760,12 @@ label.code-block__appearance > select {
 
 /* Hidden, the sidebar leaves one round glass button, as the theme and bell
    buttons are, at the page's button size, in line with the logo. */
-:root[data-style="glass"] .space-layout--collapsed { grid-template-columns: calc(var(--ctl-page) + 1rem + 0.5rem + var(--safe-left)) 1fr; }
+/* Wider than a phone only: a phone held upright has no rail (index.css), and
+   this column squeezed the page into a sliver there when the sidebar had
+   been hidden on a computer (found 2026-09-29, in an exported site). */
+@media (min-width: 641px) {
+  :root[data-style="glass"] .space-layout--collapsed { grid-template-columns: calc(var(--ctl-page) + 1rem + 0.5rem + var(--safe-left)) 1fr; }
+}
 :root[data-style="glass"] .sidebar-rail {
   top: calc(var(--topbar-h) + 0.75rem); height: auto;
   margin: 0.75rem 0 0 calc(1rem + var(--safe-left)); padding: 0;
