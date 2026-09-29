@@ -36,11 +36,20 @@ public static class ResticRetention
         if (!policy.Enabled) return [];
 
         var count = Math.Clamp(policy.KeepCount, BackupRetention.MinKeepCount, BackupRetention.MaxKeepCount);
-        if (!windowed) return ["--keep-last", count.ToString()];
+        if (!windowed) return ["--keep-last", count.ToString(), "--group-by", GroupBy];
 
         var days = Math.Clamp(policy.KeepDays, BackupRetention.MinKeepDays, BackupRetention.MaxKeepDays);
-        return ["--keep-last", count.ToString(), "--keep-within", $"{days}d"];
+        return ["--keep-last", count.ToString(), "--keep-within", $"{days}d", "--group-by", GroupBy];
     }
+
+    /// <summary>
+    /// How snapshots are grouped before the policy is applied: by what they
+    /// hold, never by host (T8-027). restic's default groups by host, which
+    /// is the backup container's ID and changes whenever the container is
+    /// recreated, so each container's snapshots were a group of their own
+    /// and nothing an earlier container copied was ever removed.
+    /// </summary>
+    public const string GroupBy = "paths,tags";
 
     /// <summary>Whether a forget pass should run at all under this policy.</summary>
     public static bool Removes(BackupPolicy policy) => policy.Enabled;

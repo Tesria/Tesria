@@ -21,7 +21,7 @@ public class ResticRetentionTests
     [Fact]
     public void Keeps_the_newest_count_and_everything_inside_the_window()
     {
-        Assert.Equal(["--keep-last", "10", "--keep-within", "30d"],
+        Assert.Equal(["--keep-last", "10", "--keep-within", "30d", "--group-by", "paths,tags"],
             ResticRetention.ForgetArguments(Policy(count: 10, days: 30)));
     }
 
@@ -41,7 +41,7 @@ public class ResticRetentionTests
     {
         // A drive in a drawer has not failed; it has been in a drawer. A time
         // window would prune it for that, so a removable target keeps a count.
-        Assert.Equal(["--keep-last", "10"],
+        Assert.Equal(["--keep-last", "10", "--group-by", "paths,tags"],
             ResticRetention.ForgetArguments(Policy(count: 10, days: 30), windowed: false));
     }
 
@@ -98,5 +98,20 @@ public class ResticRetentionTests
         Assert.Contains("--keep-last", args);
         Assert.Equal(policy.KeepCount.ToString(), args[Array.IndexOf(args, "--keep-last") + 1]);
         Assert.Equal($"{policy.KeepDays}d", args[Array.IndexOf(args, "--keep-within") + 1]);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Snapshots_are_grouped_by_what_they_hold_and_never_by_host(bool windowed)
+    {
+        // T8-027: restic groups by host unless told otherwise, and the host
+        // is the backup container's ID. Every recreated container started a
+        // group of its own that the policy never pruned, so the drives and
+        // the cloud grew without limit.
+        var args = ResticRetention.ForgetArguments(Policy(), windowed);
+        var groupBy = args[Array.IndexOf(args, "--group-by") + 1];
+        Assert.Equal("paths,tags", groupBy);
+        Assert.DoesNotContain("host", groupBy);
     }
 }
