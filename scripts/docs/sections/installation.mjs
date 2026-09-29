@@ -215,6 +215,7 @@ export async function build({
       li(p(c('pdf'), ': turns pages into PDF files.')),
       li(p(c('backup'), ': copies the database and every attachment on a schedule, and sends copies offsite if you set that up.')),
       li(p(c('pgbackrest'), ': keeps physical backups of the database and a running record of every change, which is what lets you restore to any moment.')),
+      li(p(c('backup-nas'), ' and ', c('backup-removable'), ': copy the backups to a network drive or a removable drive, if you set those up. Each drive has a service of its own, so a drive that is missing stops only its own service, never the backups on this computer.')),
     ),
 
     h(2, 'Where your data lives'),
@@ -257,7 +258,7 @@ export async function build({
 
     step(4, 'Check it is running'),
     codeBlock('bash', 'docker compose ps'),
-    p('Every line should say ', c('Up'), '. The ', c('db'), ', ', c('app'), ', ', c('backup'), ' and ', c('pgbackrest'), ' lines add ', c('(healthy)'), ' once their own checks pass, which can take a couple of minutes for the backup services. ', pageLink('Health checks and monitoring'), ' has more ways to check.'),
+    p('Every line should say ', c('Up'), '. The ', c('db'), ', ', c('app'), ', ', c('backup'), ', ', c('backup-nas'), ', ', c('backup-removable'), ' and ', c('pgbackrest'), ' lines add ', c('(healthy)'), ' once their own checks pass, which can take a couple of minutes for the backup services. ', pageLink('Health checks and monitoring'), ' has more ways to check.'),
 
     step(5, 'Open it and create the owner'),
     yourServer(),
@@ -299,7 +300,7 @@ export async function build({
     ul(
       setting('POSTGRES_PASSWORD', 'the password of the database’s owner account. Only two things hold it: a short setup step that updates the database each time Tesria starts and then stops, and the backup services, which use it for backups and restores. Tesria itself never has it.'),
       setting('APP_DB_PASSWORD', 'the password of the restricted account Tesria runs as day to day, which cannot change or delete the audit log. Tesria creates that account itself.'),
-      setting('BACKUP_ENCRYPTION_KEY', 'encrypts the physical backups. They cannot be restored without it. When Tesria makes it, it also writes it to ', c('backup-key.txt'), ' in the Tesria folder for you to save somewhere else, and ', c('docker compose run --rm init show-backup-key'), ' prints it at any time. Set it yourself to restore backups from another machine with their key: see ', pageLink('When the machine is gone'), '.'),
+      setting('BACKUP_ENCRYPTION_KEY', 'encrypts the physical backups. They cannot be restored without it. When Tesria makes it, it also writes it to ', c('backup-key.txt'), ' in the Tesria folder for you to save somewhere else, and ', c('docker compose run --rm init show-backup-key'), ' prints it at any time. Set it yourself to restore backups from another machine with their key: see ', pageLink('When the machine is gone'), '. A key that does not open the backups already on this computer is refused, and Tesria does not start until it is corrected: ', c('docker compose logs init'), ' says so.'),
       setting('COLLAB_SHARED_SECRET', 'lets the service for editing a page with several people at once trust Tesria.'),
       setting('PDF_SHARED_SECRET', 'lets the service that makes PDF files trust Tesria.'),
     ),
@@ -1485,6 +1486,7 @@ export async function build({
 
     h(2, 'To a moment in time'),
     p('A physical backup’s row restores to any second it covers: its ', b('Restore'), ' also asks for the time to roll forward to, between the earliest and latest it can reach. Use it when you know when things went wrong, for example to just before a mass deletion. It keeps no copy of what it replaces; its undo is another restore, to the moment the first one began, which the page offers.'),
+    p('This kind of backup holds the database only, so afterwards Tesria puts back, from the attachment archives, any attachment the restored wiki refers to that is no longer on the server, such as those of a space deleted after that moment. Recent Runs shows it as a check of attachment files. An attachment added after the newest archive was never archived, and the check names it.'),
 
     h(2, 'Undo'),
     p('After a restore from a dump, the Backups tab shows ', b('The Copy Kept Before the Last Restore'), ', with two buttons:'),
@@ -1555,8 +1557,9 @@ export async function build({
     codeBlock('bash', 'OFFSITE_NAS_PATH=/Volumes/my-nas/tesria-backups\nOFFSITE_NAS_PASSPHRASE=a-new-long-random-passphrase'),
     p('Then run ', c('docker compose up -d'), '.'),
     step(3, 'Mark the share as Tesria’s'),
-    codeBlock('bash', 'docker compose exec backup /scripts/claim-target.sh nas'),
+    codeBlock('bash', 'docker compose exec backup-nas /scripts/claim-target.sh nas'),
     p('This leaves a small marker file on the share, and Tesria only copies to a folder that has it. Here is why: when a share is not connected, its folder is still there on the server’s own disk, empty. Without the marker, backups would quietly fill the server’s disk instead of reaching the NAS. If the command warns that the folder is empty, the share is probably not connected.'),
+    panel('note', p(b('If the share is not connected when Tesria starts,'), ' the service that copies to it, ', c('backup-nas'), ', cannot start, and the ', b('Network Drive'), ' card says so a few minutes later. Everything else carries on. Connect the share, then run ', c('docker compose up -d'), '.')),
     panel('success', p(b('Turn on your NAS’s own snapshots'), ' for that folder too. A snapshot the Tesria server cannot delete protects the copies even if the server itself is broken into.')),
 
     h(2, 'A removable drive'),
@@ -1564,11 +1567,12 @@ export async function build({
     codeBlock('bash', 'OFFSITE_REMOVABLE_PATH=/Volumes/my-backup-drive\nOFFSITE_REMOVABLE_PASSPHRASE=a-new-long-random-passphrase'),
     p('Plug the drive in, then run ', c('docker compose up -d'), '.'),
     step(2, 'Mark the drive as Tesria’s, once'),
-    codeBlock('bash', 'docker compose exec backup /scripts/claim-target.sh removable'),
+    codeBlock('bash', 'docker compose exec backup-removable /scripts/claim-target.sh removable'),
     step(3, 'Copy to it'),
     p('Whenever the drive is plugged in, choose ', b('Copy Now'), ' on its card under ', b('Storage Targets'), '. When the card says it is safe to remove, every byte is on the drive.'),
-    p('The computer may still refuse to eject the drive, because the backup service is using it. To eject it cleanly, stop the service, eject, and start it again:'),
-    codeBlock('bash', 'docker compose stop backup\n# eject the drive\ndocker compose up -d backup'),
+    p('The computer may still refuse to eject the drive, because the service that copies to it is using it. To eject it cleanly, stop that service first. Nothing else stops with it:'),
+    codeBlock('bash', 'docker compose stop backup-removable\n# eject the drive'),
+    p('The next time, plug the drive in first, then run ', c('docker compose up -d'), ' so the service starts with the drive there. Until you do, its card says the drive is not plugged in.'),
     ul(
       li(p(b('Format the drive as exFAT,'), ' not FAT32, which cannot hold files over 4 GB.')),
       li(p(b('A removable drive alone is not an offsite backup.'), ' Between the times someone plugs it in, there is no copy anywhere else, and the Backups tab says so.')),
@@ -1711,7 +1715,7 @@ export async function build({
     codeBlock('bash', 'docker compose exec db psql -U tesria -d tesria -c "ALTER ROLE tesria PASSWORD \'the-new-password\'"'),
     p('Put the same value in ', c('.env'), ' as ', c('POSTGRES_PASSWORD'), ', then run ', c('docker compose up -d'), '. If you changed ', c('POSTGRES_USER'), ' or ', c('POSTGRES_DB'), ' from ', c('tesria'), ', use those names in the command instead.'),
     h(3, 'BACKUP_ENCRYPTION_KEY'),
-    p('This one cannot simply be changed. Every backup Tesria has taken stays encrypted with the old key, so changing it means starting a new backup history: a job to plan, not a one-line change. Until then, keep the old key safe, because every existing backup needs it. The steps are in ', c('docs/backup-recovery.md'), ' in Tesria’s source code, at github.com/Tesria/Tesria.'),
+    p('This one cannot simply be changed. A different key in ', c('.env'), ' is refused when it does not open the backups already on the server: Tesria does not start, changes nothing, and ', c('docker compose logs init'), ' says which key is wrong. Every backup Tesria has taken stays encrypted with the old key, so changing it means starting a new backup history: a job to plan, not a one-line change. Until then, keep the old key safe, because every existing backup needs it. The steps are in ', c('docs/backup-recovery.md'), ' in Tesria’s source code, at github.com/Tesria/Tesria.'),
     h(3, 'Afterwards'),
     p('Once you have changed a secret, resolve its alert in ', ...adminAt('Security'), '.'),
 

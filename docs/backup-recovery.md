@@ -27,8 +27,15 @@ generates it on a new install, stores it on the `secret_backup_key` volume
 (mounted only into `db` and `pgbackrest`), and writes a copy for the owner to
 `backup-key.txt` in the Tesria folder. `docker compose run --rm init
 show-backup-key` prints it while the machine runs. A `BACKUP_ENCRYPTION_KEY`
-in `.env` always wins over the stored one, which is how an install from before
-0.8.0 keeps its key and how a new machine reads old backups. pgBackRest reads
+in `.env` wins over the stored one, which is how an install from before
+0.8.0 keeps its key and how a new machine reads old backups, **provided it
+opens the backups already on this machine**. Since 0.8.2 `init` checks, and
+refuses a key that does not, changing nothing (`docker compose logs init`
+says which key is wrong): before, a typo replaced the stored key, the only
+copy of the right one on the machine, and pgBackRest could no longer read
+its own repository. If the Physical card ever says the backup key does not
+open the local repository, put the right key in `.env`, `docker compose up
+-d`, then `docker compose restart db pgbackrest`. pgBackRest reads
 it from `/etc/pgbackrest/conf.d/tesria-cipher.conf`, which each of the two
 containers writes at start, so `docker compose exec ... pgbackrest` commands
 have it too.
@@ -124,6 +131,10 @@ cluster rather than one database, so the database container stops and starts
 its own Postgres to do it. There is no kept copy afterwards: its undo is
 another point-in-time restore, to the moment the first one began, which the
 safety backup and a WAL switch make reachable. The page offers exactly that.
+A physical backup holds the database only, so afterwards the dumps agent
+puts back every attachment file the restored wiki refers to and the uploads
+volume no longer has, from the uploads archives (a **check of attachment
+files** in Recent Runs; see `restore-uploads.sh` under scenario B).
 
 **Canceling** works until the switch. After it, there is no cancel, only undo,
 and the screen says so rather than pretending.
@@ -282,6 +293,16 @@ key, the name, the page and attachment counts, the bytes and who did it, which
 gives you both the timestamp for a point-in-time target and a way to check
 afterwards that everything came back.
 
+**The attachments.** Deleting a space deletes its files too, and a
+point-in-time recovery rolls back the database only, so the space comes back
+with its files missing until they are put back from the uploads archives.
+From the admin page that happens by itself; by hand it is step 5 of scenario
+B. A file added after the newest uploads archive was never archived and
+cannot come back; `restore-uploads.sh` names any such file. If losing those
+matters more than the minutes since the last dump, restore the dump taken
+before the deletion instead (the attachments archived with it come back with
+it).
+
 **Orphaned files.** Attachment bytes are deleted after the database commits,
 best effort. A file that will not delete is logged with its storage key
 (`Orphaned attachment file after deleting space …`), and a crash between the
@@ -310,9 +331,26 @@ docker compose logs -f db      # watch for "database system is ready"
 
 # 4. Bring the rest back up.
 docker compose up -d
+
+# 5. Put back the attachment files the restored database refers to. A
+#    physical backup holds the database only, so a file deleted after the
+#    target time (a whole deleted space's, say) is not on the volume. This
+#    takes each from the newest uploads archive that has it, and never
+#    overwrites or deletes anything. RESTORE_DRY_RUN=1 (with -e) only lists.
+docker compose exec backup /scripts/restore-uploads.sh
 ```
 
-Timestamps use Postgres syntax with a timezone offset (e.g. `+00` for UTC).
+Timestamps use Postgres syntax with a timezone offset (e.g. `+00` for UTC);
+ISO 8601 (`2026-07-23T14:32:00Z`) is taken too. `restore.sh` writes the
+backup key into the one-off container's pgBackRest configuration itself,
+since `--entrypoint bash` skips the `db` entrypoint that normally does (before
+0.8.2 it did not, and the restore failed with `FormatError ... unable to find
+backup set`). If `db` was killed rather than stopped cleanly, it also removes
+the `postmaster.pid` left behind, after checking over the socket that no
+database answers. It leaves a note for the `db` entrypoint to set the owner's
+database password to this machine's once the database is open, so a cluster
+restored from another machine can be signed in to; `db` reports healthy only
+once that is done.
 
 ### C. Full disaster recovery on a new host
 
@@ -467,8 +505,31 @@ the host path in `OFFSITE_NAS_PATH`.
 Then claim it once:
 
 ```bash
-docker compose exec backup /scripts/claim-target.sh nas
+docker compose exec backup-nas /scripts/claim-target.sh nas
 ```
+
+**The network drive has a service of its own, `backup-nas`** (and the
+removable drive `backup-removable`), since 0.8.2. On Docker Desktop for Mac,
+a bind mount whose folder is missing stops the container from starting at
+all: Docker cannot create a folder under `/Volumes`, and says "error while
+creating mount source path ... permission denied". Until 0.8.2 the drives
+were mounted into `backup`, so a share that was not connected when the stack
+started took the local dumps down with it (dev-plan 24.2, T8-026). Now only
+`backup-nas` fails to start. The local backups carry on, and after three
+minutes `backup` notices that `backup-nas` has not reported, marks the
+network drive absent on its card with the reason (and the
+`backup.offsite_absent` alert), and answers any Test Connection queued for
+it. Connect the share, then:
+
+```bash
+docker compose up -d
+```
+
+A share that drops while `backup-nas` is running shows as absent within a
+minute and as back within a minute of returning. If Docker Desktop does not
+show it to the running container again, `docker compose restart backup-nas`
+does. Mounting a folder that always exists instead (`/Volumes` itself) was
+tried and rejected: while a container holds it, macOS cannot eject any drive.
 
 ### The sentinel, and why it exists
 
@@ -484,7 +545,9 @@ do this from inside a container, where a bind mount is always a mount point.
 
 This is also why the share is a **bind mount** rather than a Docker
 `cifs`/`nfs` volume. A named network volume stops the container starting
-while the share is down, which would take the *local* backups down with it.
+while the share is down; on Linux a bind mount always starts (Docker creates
+the missing folder, and the sentinel keeps anything from being written
+there), and on a Mac it stops only `backup-nas`, as above.
 
 Deleting the sentinel stops backups to that target and deletes nothing.
 
@@ -528,7 +591,7 @@ retention then has to be run separately with a key that can delete.
 ### Restoring from the network drive
 
 ```bash
-docker compose exec backup bash -lc 'export RESTIC_REPOSITORY=/mnt/nas/restic RESTIC_PASSWORD="$OFFSITE_NAS_PASSPHRASE"; restic snapshots'
+docker compose exec backup-nas bash -lc 'export RESTIC_REPOSITORY=/mnt/nas/restic RESTIC_PASSWORD="$OFFSITE_NAS_PASSPHRASE"; restic snapshots'
 ```
 
 Then `restic restore latest --target /tmp/restored`.
@@ -551,7 +614,7 @@ Set `OFFSITE_REMOVABLE_PATH` and `OFFSITE_REMOVABLE_PASSPHRASE`, then claim
 the drive once, exactly as for a network drive:
 
 ```bash
-docker compose exec backup /scripts/claim-target.sh removable
+docker compose exec backup-removable /scripts/claim-target.sh removable
 ```
 
 ### "Safe to remove" means the data, not the eject
@@ -560,15 +623,27 @@ When the copy reports safe to remove, `sync` has flushed every byte to the
 drive: pulling it out at that point cannot lose any of the backup.
 
 It is **not** a promise that the operating system will eject it cleanly. The
-backup sidecar holds a bind mount on the drive, which keeps it busy, so
-Finder or `umount` will refuse until that is released:
+drive's own service, `backup-removable`, holds a bind mount on it, which
+keeps it busy, so Finder or `umount` will refuse until that is released:
 
 ```bash
-docker compose stop backup
+docker compose stop backup-removable
 ```
 
-Then eject, then `docker compose up -d backup`. If you would rather just
-unplug it, the data is already safe.
+Then eject. Stopping it touches nothing else: the local backups and the other
+targets carry on. If you would rather just unplug it, the data is already
+safe.
+
+**Plugging it in again.** On Docker Desktop for Mac, `backup-removable`
+cannot start while the drive is not plugged in, and a drive plugged in after
+it started may not be visible to it. So plug the drive in first, then:
+
+```bash
+docker compose up -d
+```
+
+While the service is not running the card says so ("Not plugged in", with
+that command), and raises no alert: a drive in a drawer has not failed.
 
 ### One warning that does not work everywhere
 
@@ -591,7 +666,7 @@ the drive in, that is simply true, and a reassuring green card would not be.
 ### Restoring from the drive
 
 ```bash
-docker compose exec backup bash -lc 'export RESTIC_REPOSITORY=/mnt/removable/restic RESTIC_PASSWORD="$OFFSITE_REMOVABLE_PASSPHRASE"; restic snapshots'
+docker compose exec backup-removable bash -lc 'export RESTIC_REPOSITORY=/mnt/removable/restic RESTIC_PASSWORD="$OFFSITE_REMOVABLE_PASSPHRASE"; restic snapshots'
 ```
 
 ## Testing a target, and the cloud budget
@@ -706,36 +781,59 @@ the application, hence the restarts (see **By hand** above).
 ### 4. Point-in-time recovery instead, if you need it
 
 If you have the cloud slot and want a moment rather than a nightly dump,
-restore the pgBackRest repository instead of the dump. Set the
-`OFFSITE_CLOUD_*` block and `BACKUP_ENCRYPTION_KEY` in the new `.env` first,
-so `repo2` is configured.
+restore the pgBackRest repository from the cloud instead of the dump. Do
+step 2 first, with the old `BACKUP_ENCRYPTION_KEY` in `.env` and **without**
+the cloud settings: an empty install pointed at the old machine's cloud
+repository would try to archive its own WAL there, which pgBackRest refuses
+("do not match the database"), and the refused WAL is held on the new
+machine. Then:
 
-pgBackRest writes into the data directory, which only the `db` service
-mounts read-write (the `pgbackrest` sidecar has it read-only), and Postgres
-must be stopped while it does. So, as in scenario B, it runs in a one-off
-`db` container with everything stopped:
+1. **Take the attachments out of the cloud's files copy first**, with step
+   3's cloud command (`restic ... restore latest --target /out`). A
+   point-in-time restore brings back the database only; the uploads
+   archives in `restored/backups/` are what the attachments come back from.
+2. **Add the old machine's `OFFSITE_CLOUD_*` block to `.env`**, exactly as
+   it was (the same bucket, path and passphrase).
+3. **Stop everything and restore to the moment:**
 
-```bash
-docker compose stop
-docker compose run --rm --no-deps --entrypoint bash db -c \
-  '. /scripts/offsite.sh && offsite_write_conf && gosu postgres pgbackrest --stanza=main --repo=2 --type=time --target="2026-09-22 14:30:00+00" --target-action=promote --delta restore'
-docker compose up -d
-```
+   ```bash
+   docker compose stop
+   docker compose run --rm --no-deps --entrypoint bash db \
+     /scripts/restore.sh --repo=2 "2026-09-22 14:30:00+00"
+   docker compose up -d
+   ```
 
-The one-off container skips the `db` entrypoint, which is what normally
-writes the `repo2` settings, so the command writes them first. `--delta` is
-there because step 2 left an empty cluster in the data directory, and
-`--target-action=promote` opens the database at the target instead of
-pausing there; both match `deploy/pgbackrest/restore.sh`. Postgres replays
-WAL when `db` starts. This is the path that gets you to the minute before
-something went wrong, rather than to last night.
+   pgBackRest writes into the data directory, which only the `db` service
+   mounts read-write, with Postgres stopped, hence the one-off `db`
+   container. `restore.sh` writes the backup key and the cloud settings into
+   its pgBackRest configuration (the one-off container skips the entrypoint
+   that normally does), restores with `--delta` over the empty cluster from
+   step 2, and promotes at the target. It also moves the local repository
+   step 2 created aside (`main.before-restore-<time>` in the `pgbackrest`
+   volume), because it belongs to that empty cluster and pgBackRest would
+   refuse to use it for the restored one; the `pgbackrest` service makes a
+   new one when it starts. And it leaves a note for the `db` entrypoint to
+   set the database owner's password to this machine's once recovery ends:
+   the restored cluster has the old machine's passwords, which nothing here
+   knows. `db` reports healthy only after that, so `migrate` and the app
+   wait for it.
+4. **Put the attachments back:**
 
-**This step is untested.** Nothing in this repository has run a restore
-from `repo2` onto a new host, so rehearse it before you rely on it. One thing
-to expect: the local repository the `pgbackrest` sidecar created in step 2
-belongs to the empty cluster, not the restored one, so watch
-`docker compose logs db pgbackrest` for `archive-push` and stanza errors
-afterwards.
+   ```bash
+   docker compose cp restored/backups/. backup:/backups/
+   docker compose exec backup /scripts/restore-uploads.sh
+   ```
+
+   Each file the restored database refers to comes from the newest uploads
+   archive that has it. A file added after the newest archive is named as
+   missing: it was never copied off the old machine.
+
+If `docker compose stop` gave up on `db` and killed it (it waits ten seconds,
+and a database whose WAL archiving is failing can take longer), `restore.sh`
+removes the `postmaster.pid` it left behind, after checking that no database
+answers. Rehearsed for 0.8.2 against MinIO standing in for the cloud (T8-018).
+Take a new local backup as soon as the stack is up (step 6); until then this
+machine has none of the restored cluster.
 
 ### 5. Check it
 

@@ -216,7 +216,9 @@ test on demand, and sets the retention policy (keep the newest *N* and the last
 *D* days, or keep everything). `BACKUP_RETENTION_DAYS` only seeds that policy
 on the first start after upgrading. The same page restores a backup (with an
 undo), and can send copies offsite to cloud storage, a network drive or a
-removable drive.
+removable drive. Each drive is copied to by a service of its own
+(`backup-nas`, `backup-removable`), so a drive that is missing when the
+stack starts stops only that service, and its card says so.
 
 ```bash
 docker compose exec backup /scripts/backup.sh          # backup now
