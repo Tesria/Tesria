@@ -1,7 +1,7 @@
 # Security: threat model, defenses, and the internet-readiness checklist
 
 Written at the close of dev-plan Phase 3 (2026-09-09). This is the page
-the "Allow public spaces" switch will link to (Phase 5). Read the
+the "Allow Public Spaces" switch will link to (Phase 5). Read the
 checklist at the end before exposing an instance to the internet; read
 the rest to understand what you are relying on.
 
@@ -251,13 +251,13 @@ before DNS points at the box.
       what that role needs on this instance.
 - [ ] The owner account has two-factor on and its recovery codes saved:
       it is the one account that cannot be suspended or reset by anyone else.
-- [ ] Every administrator has two-factor on, and **Require two-factor for
-      administrators** is on (Admin → Security → Kill switches).
+- [ ] Every administrator has two-factor on, and **Require Two-Factor for
+      Administrators** is on (Admin → Security → Kill Switches).
 - [ ] Every administrator has saved their recovery codes.
-- [ ] Registration is closed (**Allow public registration** off) unless
+- [ ] Registration is closed (**Allow Public Registration** off) unless
       you mean to run an open community; if open, watch the registration
       alerts.
-- [ ] **Allow public spaces** stays off until you have read
+- [ ] **Allow Public Spaces** stays off until you have read
       `docs/architecture.md` → "Public read mode" and understand that a
       published space is readable, and its pages exportable, by anyone,
       with restricted pages, drafts, trash and history excluded. Publish
@@ -281,7 +281,7 @@ before DNS points at the box.
       and its exit status is monitored.
 - [ ] Someone reads the bell, or the Security page, daily until email
       alerting (Phase 4) is configured; then the SMTP settings are filled
-      in and **Send test email** works.
+      in and **Send Test Email to Me** works.
 - [ ] Dependabot (or a person) watches for updates; `scripts/audit.sh`
       runs after each one.
 

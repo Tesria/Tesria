@@ -15,7 +15,7 @@ so a single failure never loses data.
 
 Layers 1 to 3 report to the app and are managed from **Administration →
 Backups** (dev-plan 9.1): status, a retention policy that covers all three,
-**Back up now**, and **Test restore**. Start there; the commands below are for
+**Back Up Now**, and **Test Restore**. Start there; the commands below are for
 when the app is down or you are working on the host.
 
 The pgBackRest repository is **encrypted at rest** (AES-256-CBC) with the
@@ -56,7 +56,7 @@ automated. Plan it; until it is done, keep the old key.
   An agent that stops checking in, falls behind, fails a backup or a restore
   test, or runs low on disk raises an alert to every administrator (Security
   tab, and email when email is configured).
-- **Retention policy.** Either keep every backup forever, or keep the newest
+- **Retention Policy.** Either keep every backup forever, or keep the newest
   *N* backups and everything from the last *D* days: a backup is removed only
   when it is outside both. The policy applies to the database dumps with their
   uploads archives, and to pgBackRest's full backups with everything that
@@ -64,8 +64,8 @@ automated. Plan it; until it is done, keep the old key.
   first, needs your password, and is audited. **A change that could remove
   more waits 24 hours before it takes effect**, and every administrator is
   alerted when it is saved; loosening applies at once.
-- **Back up now** queues a backup on both agents; each picks it up within a
-  minute. **Test restore** restores that backup somewhere throwaway (a scratch
+- **Back Up Now** queues a backup on both agents; each picks it up within a
+  minute. **Test Restore** restores that backup somewhere throwaway (a scratch
   database, or a scratch directory for pgBackRest) and records the result.
 - **Restore** replaces the wiki with that backup. See the chapter below: it is
   the one button on this page that spends a backup rather than taking one.
@@ -75,7 +75,7 @@ automated. Plan it; until it is done, keep the old key.
 
 ---
 
-**The Disk space chart** shows what the machine's disk is holding: the live
+**The Disk Space chart** shows what the machine's disk is holding: the live
 wiki, the backups of it, everything else, and what is free.
 
 The free space is the **host's**, measured through a directory bind-mounted
@@ -92,7 +92,7 @@ one alike.
 
 ## Restoring from the admin page
 
-Every backup row has **Restore** beside Test restore. It replaces the whole
+Every backup row has **Restore** beside Test Restore. It replaces the whole
 wiki with that copy, and it is the most destructive thing this product can do
 from a web request, so it is gated accordingly.
 
@@ -139,10 +139,10 @@ files** in Recent Runs; see `restore-uploads.sh` under scenario B).
 **Canceling** works until the switch. After it, there is no cancel, only undo,
 and the screen says so rather than pretending.
 
-**Undoing.** While a kept copy exists the page shows a **copy kept before the
-last restore** card: its size, when the retention policy will remove it, and
-two buttons. **Undo the restore** puts it back (taking a safety backup of the
-current state first). **Remove the copy** destroys the undo, and asks for the
+**Undoing.** While a kept copy exists the page shows a card headed **The Copy
+Kept Before the Last Restore**: its size, when the retention policy will remove it, and
+two buttons. **Undo the Restore** puts it back (taking a safety backup of the
+current state first). **Remove the Copy** destroys the undo, and asks for the
 password to do it.
 
 **The kept copy ages out under the retention policy**, by the same rule as a
@@ -211,7 +211,7 @@ docker compose exec pgbackrest bash /scripts/verify.sh
 docker compose exec pgbackrest bash /scripts/pitr-selftest.sh
 ```
 
-Run `verify.sh` on a schedule you trust (or press **Test restore**); an
+Run `verify.sh` on a schedule you trust (or press **Test Restore**); an
 unverified backup is not a backup. `verify.sh --set=LABEL` tests one backup.
 
 Retention is not in `pgbackrest.conf` any more: `repo1-retention-full=9999999`
@@ -266,7 +266,7 @@ not exist. Two things worth knowing:
 * Start `app` before `collab` after a restore (compose does: collab depends
   on app being healthy), because collab signs in as the role the app creates.
 * After any restore, run `scripts/verify-audit-chain.sh` (or Admin →
-  Security → Verify). A restore legitimately shortens the audit chain to the
+  Security → Verify Now). A restore legitimately shortens the audit chain to the
   backup's moment; the chain will verify. A restore run from the admin page
   (9.4) records when it happened, and the monitor explains the shorter chain
   instead of warning about it, once. A restore run by hand does not set that,
@@ -609,7 +609,7 @@ It uses the same mechanism as a network drive, and differs in three ways,
 each because the drive is absent most of the time.
 
 - **It is never scheduled.** Nothing is copied until somebody asks, with
-  Copy now on the backups page. Its absence raises no alert: a drive in a
+  Copy Now on the Backups page. Its absence raises no alert: a drive in a
   drawer has not failed.
 - **Retention is a count with no time window.** A drive plugged in twice a
   year would otherwise be pruned to nothing for having been in a drawer.
@@ -677,7 +677,7 @@ docker compose exec backup-removable bash -lc 'export RESTIC_REPOSITORY=/mnt/rem
 
 ## Testing a target, and the cloud budget
 
-**Test connection** on a Storage targets card asks the backup agents to reach
+**Test Connection** on a Storage Targets card asks the backup agents to reach
 that target and open its repository, without changing anything. Use it
 after editing `.env`, and recreate the sidecars first (`docker compose up
 -d`): the test uses the settings the agents are running with, not the file.
@@ -847,12 +847,12 @@ Either path leaves the stack up. Check it in this order, because each one
 proves something different: sign in; open a page that has an image on it,
 which proves the uploads came back and not just the database; check
 Administration → Backups shows both agents healthy; and confirm Storage
-targets lists the copy you just restored from.
+Targets lists the copy you just restored from.
 
 ### 6. Before you call it done
 
 Take a fresh backup immediately, and set the retention policy again if you
-changed it. Then read the Storage targets card in a week and check the
+changed it. Then read the Storage Targets card in a week and check the
 restore drill has run on the new machine: the copy you just proved was the
 old machine's, and the new one has not proved anything yet.
 
@@ -867,7 +867,7 @@ That is deliberately a different question from the integrity check that runs
 after every backup. `restic check` asks whether the repository is internally
 consistent; the drill asks whether it still turns back into a database. A
 copy can pass the first and fail the second, and a copy that fails the
-second is worth nothing, which is why the card shows **Last restore drill**
+second is worth nothing, which is why the card shows **Last Restore Drill**
 next to the rest and why a failure raises a critical alert rather than a
 warning. A backup that fails is noticed. One that quietly will not restore
 looks healthy right up until the morning you need it.

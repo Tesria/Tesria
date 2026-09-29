@@ -55,7 +55,7 @@ under the [Apache License 2.0](./LICENSE).
 - Your own name, logo and colors on your instance.
 - Email through any SMTP server, with step-by-step guides for Gmail,
   Outlook and Microsoft 365, Apple iCloud Mail, Zoho, Fastmail and Proton
-  Mail, and **Sign in with Microsoft** or **Sign in with Google** in place
+  Mail, and **Sign In With Microsoft** or **Sign In With Google** in place
   of an app password.
 
 ### Automate: agents that work with you
