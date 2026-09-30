@@ -176,8 +176,8 @@ public static partial class AuthEndpoints
         group.MapPost("/logout", Logout).RequireAuthorization();
         group.MapGet("/me", Me);
         group.MapPut("/me", UpdateProfile).RequireAuthorization();
-        group.MapPut("/me/email", ChangeEmail).RequireAuthorization();
-        group.MapPost("/me/email/resend", ResendEmailChange).RequireAuthorization().RequireRateLimiting(RateLimits.AuthPolicy);
+        group.MapPut("/me/email", ChangeEmail).RequireAuthorization().RequireRateLimiting(RateLimits.EmailChangePolicy);
+        group.MapPost("/me/email/resend", ResendEmailChange).RequireAuthorization().RequireRateLimiting(RateLimits.EmailChangePolicy);
         group.MapDelete("/me/email/pending", CancelEmailChange).RequireAuthorization();
         group.MapPost("/email/confirm", ConfirmEmailChange).RequireRateLimiting(RateLimits.AuthPolicy);
         group.MapPut("/me/password", ChangePassword).RequireAuthorization();

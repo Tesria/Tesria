@@ -27,6 +27,7 @@ public static class RateLimits
     public const string TokenMintPolicy = "token-mint";
     public const string ImportPolicy = "import";
     public const string InvitePolicy = "invite";
+    public const string EmailChangePolicy = "email-change";
 
     /// <summary>Default when settings have not loaded yet: the same defaults <see cref="SiteSettings"/> declares.</summary>
     private static readonly SiteSettings Defaults = new();
@@ -80,6 +81,23 @@ public static class RateLimits
             return RateLimitPartition.GetSlidingWindowLimiter($"invite|{user}", _ => new()
             {
                 PermitLimit = 30,
+                Window = TimeSpan.FromHours(1),
+                SegmentsPerWindow = 12,
+                QueueLimit = 0,
+            });
+        });
+
+        // Changing a sign-in email and resending its link (t2-R01, the 0.8.3
+        // retest): each sends a confirmation to whatever address was typed,
+        // so, like invites, an unlimited one relays mail for any signed-in
+        // account. Ten an hour, shared by both, is more than anyone fixing a
+        // typo needs.
+        options.AddPolicy(EmailChangePolicy, http =>
+        {
+            var user = http.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Address(http);
+            return RateLimitPartition.GetSlidingWindowLimiter($"email-change|{user}", _ => new()
+            {
+                PermitLimit = 10,
                 Window = TimeSpan.FromHours(1),
                 SegmentsPerWindow = 12,
                 QueueLimit = 0,
