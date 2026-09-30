@@ -195,6 +195,11 @@ export function CollaborativeEditor({
       provider.off('status', onStatus)
       provider.off('authenticationFailed', onRefused)
       provider.off('disconnect', onRefused)
+      // Leaving on purpose (Close, or another page), so the sidecar treats
+      // the draft as idle at once rather than after its reconnect grace
+      // (T5-031). A dropped connection or a closed tab sends nothing and
+      // keeps the grace.
+      try { provider.sendStateless(JSON.stringify({ type: 'leaving' })) } catch { /* not connected */ }
       provider.destroy()
       ydoc.destroy()
     }

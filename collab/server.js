@@ -625,9 +625,24 @@ const server = new Server({
     return { user: { id: payload.userId, name: payload.displayName }, exp: payload.exp, claims }
   },
 
-  /** Remembers when a person was last connected; see isBeingEdited. */
-  async onDisconnect({ documentName, context }) {
-    if (context?.user) lastEdited.set(documentName, Date.now())
+  /**
+   * Remembers when a person was last connected; see isBeingEdited. Not for
+   * an editor that said it was leaving (T5-031, the 0.8.3 retest): the grace
+   * is for a dropped connection that may come back with unsaved typing, and a
+   * person who chose Close or went to another page will not. With it, an
+   * outside change in the next two minutes was merged as tracked changes
+   * instead of resetting the idle draft, and the next editor's Reject All
+   * then quietly reverted the published change.
+   */
+  async onDisconnect({ documentName, context, document }) {
+    if (!context?.user) return
+    if (context.leaving) {
+      // Forget an earlier dropped connection's grace too, unless someone else
+      // is still here (the count may still include this connection).
+      if ((document?.getConnectionsCount() ?? 0) <= 1) lastEdited.delete(documentName)
+      return
+    }
+    lastEdited.set(documentName, Date.now())
   },
 
   /**
@@ -636,11 +651,16 @@ const server = new Server({
    * on. Only an authenticated editor of this document can send one, and it
    * carries no content: the sidecar reads the page itself.
    */
-  async onStateless({ documentName, payload }) {
+  async onStateless({ documentName, payload, connection }) {
     let message
     try {
       message = JSON.parse(payload)
     } catch {
+      return
+    }
+    // The editor closing on purpose, just before it disconnects (T5-031).
+    if (message?.type === 'leaving') {
+      if (connection?.context) connection.context.leaving = true
       return
     }
     if (message?.type !== 'reconcile') return
