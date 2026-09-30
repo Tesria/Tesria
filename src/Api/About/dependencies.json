@@ -2416,11 +2416,11 @@
     {
       "ecosystem": "npm",
       "name": "dompurify",
-      "version": "3.4.15",
+      "version": "3.4.16",
       "license": "(MPL-2.0 OR Apache-2.0)",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/dompurify/v/3.4.15"
+      "url": "https://www.npmjs.com/package/dompurify/v/3.4.16"
     },
     {
       "ecosystem": "npm",

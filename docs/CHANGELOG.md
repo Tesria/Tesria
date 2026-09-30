@@ -5,6 +5,13 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Security: DOMPurify 3.4.16** (was 3.4.15), which Mermaid diagrams use to
+  clean their labels. It fixes GHSA-p98j-92pf-mc4p (Low, published
+  2026-09-30), which the About tab's vulnerability check now flags on 0.8.3.
+  That advisory needs DOMPurify's in-place mode with a hook that removes
+  elements; Mermaid uses neither (its hook only sets a link's target), so
+  Tesria was not exposed, but the check is clean again with this version.
+
 - **Fixed: undoing a restore to a moment always failed** (t8-R01, the 0.8.3
   retest). The undo was itself a restore to a moment: the moment the first
   restore began. pgBackRest followed the restore's newer timeline, which
