@@ -412,6 +412,13 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
       li(p(b('Complete license notices'), ' for everything Tesria is built from, in the About tab and inside every image.')),
     ),
 
+    h(2, '0.8.4'),
+    p('Released September 30, 2026, the same day as 0.8.3. Download the new ', c('tesria-deploy.zip'), ' and unzip it over your Tesria folder as usual; see ', pageLink('Upgrading'), '.'),
+    ul(
+      li(p(b('Undo works after restoring to a moment.'), ' Undoing a restore to a chosen moment failed every time; it now puts the wiki back exactly as it was when the restore began. See ', pageLink('Backups and recovery'), '.')),
+      li(p(b('A security update'), ' for the library that cleans diagram labels, which the vulnerability check in ', b('About'), ' flagged. Tesria was not exposed, but the check is clean again.')),
+      li(p(b('Every library brought up to date,'), ' including .NET, React, Mermaid, KaTeX and the live-editing server.')),
+    ),
     h(2, '0.8.3'),
     p('Released September 30, 2026. New chart options and code block colors, and the rest of the fixes from the full test of 0.8.1. Download the new ', c('tesria-deploy.zip'), ' and unzip it over your Tesria folder as usual; see ', pageLink('Upgrading'), ', which now says to upgrade in that folder rather than a new one.'),
     ul(

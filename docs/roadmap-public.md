@@ -3,6 +3,10 @@
 
 ## Shipped
 
+### 0.8.4 (September 30, 2026)
+- Every library brought up to date, including a security update the vulnerability check flagged
+- Fixed: undoing a restore to a chosen moment works again, and puts the wiki back exactly as it was
+
 ### 0.8.3 (September 30, 2026)
 - Charts with axes, titles, value labels, stacking, and a color of your own for each series
 - Code blocks in XML, and in color schemes such as GitHub, Dracula and Solarized

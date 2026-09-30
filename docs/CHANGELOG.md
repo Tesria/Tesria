@@ -5,6 +5,26 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.8.4] - 2026-09-30
+
+A same-day update for 0.8.3: a security update the About tab's
+vulnerability check flagged, the one serious bug the final pre-launch test
+found, and every pending dependency update.
+
+- **Dependencies brought up to date** (every open Dependabot update):
+  - .NET 10.0.12 and the API's libraries (MailKit, Markdig, Scalar,
+    SkiaSharp).
+  - The web app's libraries: React 19.3, TypeScript 7, Mermaid 12,
+    KaTeX 0.18, Vite 8.3 and the rest.
+  - Hocuspocus 4 for live editing.
+  - The GitHub Actions the release is built with.
+  - `lodash-es` is pinned to 4.18.1, because Mermaid 12 asks for a version
+    with two high-severity advisories.
+  - `@dnd-kit/sortable` stays at 9 until the page tree's drag to reorder
+    has been checked on 10.
+  - Checked live: typing is kept through a reload, an outside change
+    reaches an open editor, and diagrams and math render.
+
 - **Security: DOMPurify 3.4.16** (was 3.4.15), which Mermaid diagrams use to
   clean their labels. It fixes GHSA-p98j-92pf-mc4p (Low, published
   2026-09-30), which the About tab's vulnerability check now flags on 0.8.3.
