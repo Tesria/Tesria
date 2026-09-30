@@ -15,6 +15,13 @@ const DAILY_CAP = 3
 const UNDO_SECONDS = 10
 /** A breath after arriving, so a tip does not race the page it points at. */
 const SETTLE_MS = 1200
+/** Open menus. No tip starts while one is open, and a tip already showing
+ *  steps aside until it closes (index.css, beside .tip; keep the two lists
+ *  in step). */
+const MENUS = [
+  '.topbar.is-menu-open', '.overflow-menu__dropdown', '.notif__dropdown', '.theme-menu__panel',
+  '.toolbar-dropdown__menu', '.slash-menu', '.suggest-menu', '.page-emoji__panel', '.cell-menu__panel',
+].join(', ')
 
 /**
  * Shows one tip at a time (dev-plan 10.3).
@@ -66,7 +73,7 @@ export function TipHost() {
     if (!user || !user.onboarding?.tipsEnabled) return true
     if (user.setupRequired) return true
     if (document.querySelector('[role="dialog"]')) return true
-    if (document.querySelector('.slash-menu, .suggest-menu, .toolbar-dropdown__menu')) return true
+    if (document.querySelector(MENUS)) return true
     if ((window.getSelection()?.toString().length ?? 0) > 0
       && document.activeElement?.closest('.ProseMirror')) return true
     if (tipsShownToday() >= DAILY_CAP) return true

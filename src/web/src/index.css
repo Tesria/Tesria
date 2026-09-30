@@ -3304,6 +3304,13 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
 .tip__body p { margin: 0; }
 .tip__actions { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.4rem; }
 .tip--undo { display: flex; gap: 0.75rem; align-items: center; padding: 0.7rem 0.85rem; }
+/* A tip steps aside while a menu is open, and comes back when it closes
+   (T9-002). It cannot go under them instead: the menus live inside the
+   sticky bars, whose own stacking (z-index 10 and 8) caps them below the
+   tip, and on a phone the ☰ menu and a page's ⋮ menu reach the bottom
+   corner where the tip sits. Keep in step with MENUS in TipHost.tsx. */
+:root:has(.topbar.is-menu-open, .overflow-menu__dropdown, .notif__dropdown, .theme-menu__panel,
+  .toolbar-dropdown__menu, .slash-menu, .suggest-menu, .page-emoji__panel, .cell-menu__panel) .tip { display: none; }
 
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   .tour__card { grid-template-columns: 1fr; padding: 1rem; gap: 1rem; }
