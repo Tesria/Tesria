@@ -238,7 +238,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     q('How do I get my pages out?',
       p('Any page downloads as Markdown, HTML or PDF, and a whole space as a website or a wiki pack. Scripts can read everything through the REST API. See ', pageLink('Exporting and publishing'), '.')),
     q('Can I import from Confluence or another wiki?',
-      p('Not directly. Tesria imports its own wiki packs, so a space can move from one Tesria to another; and a script can create pages through the ', pageLink('REST API'), ', or an AI assistant through ', pageLink('MCP'), '.')),
+      p('Not yet. Tesria imports its own wiki packs, so a space can move from one Tesria to another; and a script can create pages through the ', pageLink('REST API'), ', or an AI assistant through ', pageLink('MCP'), '.')),
     q('Can I move a space to another Tesria?',
       p('Yes: export it as a wiki pack, with its history, comments and files, and import the pack on the other one. See ', pageLink('Wiki packs'), '.')),
 

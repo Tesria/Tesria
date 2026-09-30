@@ -43,6 +43,7 @@
 - Better search ranking (BM25), light enough for the smallest server
 - An Ask an agent button that tells your AI assistant what you want, and exactly where on the page
 - Review mode: changes from people, scripts or AI assistants wait for approval before going live
+- Importing a space from Confluence, with its page tree, attachments and comments
 - Published hardware requirements, and a lighter install for small servers
 
 ## Ideas

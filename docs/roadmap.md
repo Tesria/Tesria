@@ -344,6 +344,27 @@ set the instance default is a small decision to make with it. Exports
   - The 243 Medium and Low bugs from the 0.8.1 QA run (the run's own
     records, not in the repository) wait for triage.
 
+## Importing from Confluence (asked for by the owner, 2026-09-30, on the public roadmap's Next)
+
+Moving from Confluence is the first question many teams ask, and the
+answer today is "not yet": Tesria imports only its own wiki packs, and a
+script can create pages through the REST API or MCP.
+
+- **What it would do:** import a Confluence space export into a new
+  Tesria space: pages in their tree, with their attachments, comments,
+  labels and, where possible, their history; Confluence's own elements
+  (panels, status, expand, tables, the table of contents, mentions and
+  page links) mapped to Tesria's, which were modeled on them.
+- **Why:** it removes the biggest cost of switching, and the editor was
+  built for parity with Confluence's elements, so most content has a
+  direct equivalent.
+- **To settle:** which exports to read (Confluence Cloud and Data Center
+  both export a space as HTML or XML; the XML export carries history and
+  the storage format, which maps most faithfully); macros with no
+  equivalent (keep their text and mark them); people (match mentions to
+  Tesria accounts by email, or keep the name as text); and links between
+  spaces imported at different times.
+
 ## ZIM files: importing and exporting (suggested 2026-09-25, not scheduled)
 
 ZIM is the offline-wiki format of openZIM and Kiwix: Wikipedia,
