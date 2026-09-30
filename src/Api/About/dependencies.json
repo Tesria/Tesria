@@ -820,6 +820,16 @@
       "url": "https://www.nuget.org/packages/Scalar.AspNetCore/2.17.3"
     },
     {
+      "ecosystem": "Data",
+      "name": "SecLists: 10k-most-common.txt",
+      "version": "913b327",
+      "license": "MIT",
+      "component": "Server",
+      "direct": true,
+      "url": "https://github.com/danielmiessler/SecLists/blob/913b327317496d062bcc7cace524aaad8a693be2/Passwords/Common-Credentials/10k-most-common.txt",
+      "note": "The common passwords a new password may not be."
+    },
+    {
       "ecosystem": "NuGet",
       "name": "ShimSkiaSharp",
       "version": "5.2.3",

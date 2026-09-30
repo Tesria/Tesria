@@ -47,8 +47,8 @@ public static class AuthEndpoints
     private static TimeSpan FreshAuthWindow(IConfiguration config) =>
         TimeSpan.FromMinutes(config.GetValue("Auth:FreshLoginMinutes", DefaultFreshLoginMinutes));
 
-    /// <summary>Shared by registration and password change, so the two cannot drift apart.</summary>
-    public const int MinPasswordLength = 8;
+    /// <summary>The shortest new password; the whole rule is <see cref="PasswordRules"/>.</summary>
+    public const int MinPasswordLength = PasswordRules.MinLength;
 
     /// <summary>Which session row this cookie belongs to (dev-plan 3.5).</summary>
     public const string SessionClaim = "tesria:session";
@@ -236,9 +236,8 @@ public static class AuthEndpoints
             return Results.ValidationProblem(Error("email", "A valid email address is required."));
         if (displayName.Length == 0)
             return Results.ValidationProblem(Error("displayName", "Display name is required."));
-        if ((req.Password ?? "").Length < MinPasswordLength)
-            return Results.ValidationProblem(Error("password",
-                $"Password must be at least {MinPasswordLength} characters."));
+        if (PasswordRules.Problem(req.Password) is { } weak)
+            return Results.ValidationProblem(Error("password", weak));
 
         // Both the duplicate-email check and "is this the first account?" read the
         // table before writing to it, so they run in one serializable transaction:
@@ -867,10 +866,9 @@ public static class AuthEndpoints
         if (!hasher.Verify(req.CurrentPassword ?? "", user.PasswordHash))
             return Results.ValidationProblem(Error("currentPassword", "Current password is incorrect."));
 
-        // Same rule as registration, in one place rather than two.
-        if ((req.NewPassword ?? "").Length < MinPasswordLength)
-            return Results.ValidationProblem(Error("newPassword",
-                $"Password must be at least {MinPasswordLength} characters."));
+        // The same rule as every other path that sets a password (T1-026).
+        if (PasswordRules.Problem(req.NewPassword) is { } weak)
+            return Results.ValidationProblem(Error("newPassword", weak));
 
         user.PasswordHash = hasher.Hash(req.NewPassword!);
         // Rotating the stamp is what actually signs the other sessions out: a
@@ -1006,9 +1004,8 @@ public static class AuthEndpoints
             return Results.Problem(
                 "Too many attempts. Try again later.", statusCode: StatusCodes.Status429TooManyRequests);
 
-        if ((req.NewPassword ?? "").Length < MinPasswordLength)
-            return Results.ValidationProblem(Error("newPassword",
-                $"Password must be at least {MinPasswordLength} characters."));
+        if (PasswordRules.Problem(req.NewPassword) is { } weak)
+            return Results.ValidationProblem(Error("newPassword", weak));
 
         var user = await recovery.RedeemCodeAsync(email, req.Code ?? "");
         if (user is null)
@@ -1037,9 +1034,8 @@ public static class AuthEndpoints
             return Results.Problem(
                 "Too many attempts. Try again later.", statusCode: StatusCodes.Status429TooManyRequests);
 
-        if ((req.NewPassword ?? "").Length < MinPasswordLength)
-            return Results.ValidationProblem(Error("newPassword",
-                $"Password must be at least {MinPasswordLength} characters."));
+        if (PasswordRules.Problem(req.NewPassword) is { } weak)
+            return Results.ValidationProblem(Error("newPassword", weak));
 
         var user = await recovery.RedeemResetTokenAsync(token);
         if (user is null)
