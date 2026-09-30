@@ -427,5 +427,19 @@ if [ -n "$JOB_ID" ]; then
     "$STAMP" "$SAFETY_STAMP" "${R_PAGES:-0}" "${R_USERS:-0}" "$KEPT_DB" > "$DIR/result"
 fi
 
+if [ -z "$JOB_ID" ]; then
+  # Run by hand (t8-R06, the 0.8.3 retest): the backups page knows nothing of
+  # this restore, so it offers no Undo for it. Its card from an earlier
+  # restore would undo to that restore's copy, which was just replaced, so
+  # the card goes; and the way back is said here instead.
+  PGDATABASE="$LIVE_DB" q -c 'UPDATE "SiteSettings" SET "KeptCopyJson" = NULL;' >/dev/null 2>&1 || true
+fi
+
 log "restore complete from ${DUMP}"
-log "the previous wiki is kept as ${KEPT_DB}; Undo on the backups page puts it back"
+if [ -n "$JOB_ID" ]; then
+  log "the previous wiki is kept as ${KEPT_DB}; Undo on the backups page puts it back"
+elif [ -n "${SAFETY_STAMP:-}" ] && [ -e "${BACKUP_DIR:-/backups}/db-${SAFETY_STAMP}.dump" ]; then
+  log "to undo this restore, restore the safety backup taken just before it, the same way: /scripts/restore.sh db-${SAFETY_STAMP}.dump"
+else
+  log "the previous wiki is kept as ${KEPT_DB} until the next restore; a restore run by hand has no Undo on the backups page"
+fi
