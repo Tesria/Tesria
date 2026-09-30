@@ -95,7 +95,12 @@ public static partial class AuthEndpoints
         /// </summary>
         bool TotpMandatory,
         /// <summary>The colors a new code block starts with; null is Default (2026-09-29).</summary>
-        string? CodeBlockScheme);
+        string? CodeBlockScheme,
+        /// <summary>
+        /// A sign-in email change waiting for its link to be opened, and when
+        /// that link expires (t2-009). Null when there is none.
+        /// </summary>
+        string? PendingEmail = null, DateTimeOffset? PendingEmailExpiresAt = null);
     public record NotificationPreferenceRequest(EmailNotificationMode EmailNotifications);
     public record EditorPreferenceRequest(string? CodeBlockScheme);
 
@@ -172,6 +177,9 @@ public static partial class AuthEndpoints
         group.MapGet("/me", Me);
         group.MapPut("/me", UpdateProfile).RequireAuthorization();
         group.MapPut("/me/email", ChangeEmail).RequireAuthorization();
+        group.MapPost("/me/email/resend", ResendEmailChange).RequireAuthorization().RequireRateLimiting(RateLimits.AuthPolicy);
+        group.MapDelete("/me/email/pending", CancelEmailChange).RequireAuthorization();
+        group.MapPost("/email/confirm", ConfirmEmailChange).RequireRateLimiting(RateLimits.AuthPolicy);
         group.MapPut("/me/password", ChangePassword).RequireAuthorization();
         group.MapGet("/me/recovery-codes", RecoveryStatus).RequireAuthorization();
         group.MapPost("/me/recovery-codes", RegenerateCodes).RequireAuthorization();
@@ -392,6 +400,11 @@ public static partial class AuthEndpoints
         ITotpService totp,
         Infrastructure.Permissions.IInstancePermissions rights)
     {
+        // After single sign-on the challenge comes in a cookie instead, so it
+        // never sits in the address bar (t2-020); the page sends none.
+        var viaSso = string.IsNullOrEmpty(req.Challenge);
+        var challenge = viaSso ? http.Request.Cookies[SsoChallengeCookie] ?? "" : req.Challenge;
+
         // The challenge names its user; that user's live nonce decides whether
         // it is still good. Loaded first, then checked, in one lookup.
         User? user = null;
@@ -400,11 +413,6 @@ public static partial class AuthEndpoints
             user = db.Users.FirstOrDefault(u => u.Id == id);
             return user?.TotpChallengeNonce;
         });
-        // After single sign-on the challenge comes in a cookie instead, so it
-        // never sits in the address bar (t2-020); the page sends none.
-        var viaSso = string.IsNullOrEmpty(req.Challenge);
-        var challenge = viaSso ? http.Request.Cookies[SsoChallengeCookie] ?? "" : req.Challenge;
-
         if (userId is null) user = null;
         var now = DateTimeOffset.UtcNow;
 
@@ -808,7 +816,7 @@ public static partial class AuthEndpoints
         return new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.AvatarVariant,
             user.PasswordHash != null, remaining, enabled, required, user.EmailNotifications, held, roleName,
             setupRequired, Onboarding.SummaryFor(user), user.RecoveryCodesAcknowledgedAt != null, mandatory,
-            user.CodeBlockScheme);
+            user.CodeBlockScheme, user.PendingEmail, user.PendingEmail is null ? null : user.PendingEmailExpiresAt);
     }
 
     private static async Task<IResult> UpdateProfile(
@@ -828,38 +836,6 @@ public static partial class AuthEndpoints
 
         // The name is carried in the cookie's claims, so re-issue it: otherwise
         // the topbar would keep showing the old name until the next sign-in.
-        await SignIn(http, db, user, AuthTimeOf(http), SessionIdOf(http.User));
-        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user, rights));
-    }
-
-    private static async Task<IResult> ChangeEmail(
-        ChangeEmailRequest req, AppDbContext db, IPasswordHasher hasher, CurrentUser current,
-        IAuditLogger audit, HttpContext http, IAccountRecoveryService recovery, ISiteSettingsService siteSettings,
-        Infrastructure.Permissions.IInstancePermissions rights)
-    {
-        var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
-        if (user.PasswordHash is null)
-            return Results.ValidationProblem(Error("email",
-                "This account signs in through your identity provider, which owns its email address."));
-
-        if (!hasher.Verify(req.CurrentPassword ?? "", user.PasswordHash))
-            return Results.ValidationProblem(Error("currentPassword", "Current password is incorrect."));
-
-        var email = (req.Email ?? "").Trim().ToLowerInvariant();
-        if (!IsValidEmail(email))
-            return Results.ValidationProblem(Error("email", "A valid email address is required."));
-
-        if (email != user.Email && await db.Users.AnyAsync(u => u.Email == email))
-            return Results.Conflict(new { message = "An account with this email already exists." });
-
-        var previous = user.Email;
-        user.Email = email;
-        // The address is an identity, so the change is worth a record: the old
-        // value included, since "who used to be this address" is the question
-        // an operator will actually be asking.
-        audit.Record("user.email_changed", "user", user.Id, new { From = previous, To = email });
-        await db.SaveChangesAsync();
-
         await SignIn(http, db, user, AuthTimeOf(http), SessionIdOf(http.User));
         return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user, rights));
     }
@@ -886,6 +862,9 @@ public static partial class AuthEndpoints
         // stolen cookie stops working on its next request, which is the point of
         // changing a password you think someone else has.
         user.SecurityStamp = Guid.NewGuid().ToString("N");
+        // A waiting email change stops too: the notice to the old address
+        // says a new password is how to stop one that was not theirs (t2-009).
+        CancelPendingEmail(user, audit, "password changed");
         audit.Record("user.password_changed", "user", user.Id);
         await db.SaveChangesAsync();
 
@@ -1075,6 +1054,7 @@ public static partial class AuthEndpoints
         // Proving ownership through recovery ends any lockout: the person the
         // lock was protecting is the one standing here.
         AuthLockout.Reset(user);
+        CancelPendingEmail(user, audit, "password recovered");
         audit.RecordAs(user.Id, "user.password_recovered", "user", user.Id, new { Method = method });
         await db.SaveChangesAsync();
     }

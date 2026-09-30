@@ -306,6 +306,10 @@ Google's redirect may arrive without the session cookie. It acts only on a
 administrator who started the sign-in, and it checks that account still
 holds the email right before storing anything. Starting a sign-in needs
 sudo; the stored refresh token can send mail as that mailbox until
-revoked, and is never returned.) The findings that
+revoked, and is never returned. Since 0.8.3 the link that confirms a new
+sign-in email, `/api/auth/email/confirm`, is anonymous too, as a reset
+link is: its token is random, single-use, 24 hours long and stored only as
+a hash, and the address is checked again for another account when it is
+opened.) The findings that
 survived the pass are the "Known gaps" list. If you find something not on
 it, see `SECURITY.md` at the repository root.

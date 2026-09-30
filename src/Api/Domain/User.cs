@@ -14,6 +14,17 @@ public class User
 
     public required string DisplayName { get; set; }
 
+    // --- A sign-in email change waiting for its link to be opened (t2-009).
+    // One at a time: asking again replaces it.
+
+    /// <summary>The address asked for, lower-cased. <see cref="Email"/> stays the sign-in address until it is confirmed.</summary>
+    public string? PendingEmail { get; set; }
+
+    /// <summary>SHA-256 of the link's token, as password reset tokens are kept: the token itself is only in the email.</summary>
+    public string? PendingEmailTokenHash { get; set; }
+
+    public DateTimeOffset? PendingEmailExpiresAt { get; set; }
+
     /// <summary>Argon2id encoded hash. Null only for OIDC-provisioned users.</summary>
     public string? PasswordHash { get; set; }
 

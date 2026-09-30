@@ -40,6 +40,7 @@ export function sectionFor(pathname: string): string | null {
   if (p === '/login') return 'Sign In'
   if (p === '/register') return 'Create Account'
   if (p === '/recover' || p === '/reset') return 'Reset Your Password'
+  if (p === '/confirm-email') return 'Confirm Your Email'
   if (p === '/setup') return 'Set Up'
   if (p === '/welcome') return 'Welcome'
   return null

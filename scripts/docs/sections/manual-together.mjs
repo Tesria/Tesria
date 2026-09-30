@@ -723,7 +723,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('Sessions:'), ' every browser signed in to your account, and a way to sign any of them out.')),
       li(p(b('API Tokens:'), ' keys that let scripts and assistants use Tesria as you.')),
     ),
-    p('Each card saves on its own. Accounts that sign in through single sign-on have no Tesria password: their email, password and two-factor sign-in are managed by the organization’s sign-in service.'),
+    p('Each card saves on its own. Accounts that sign in through single sign-on have no Tesria password: their email and password are managed by the organization’s sign-in service, and usually their two-factor sign-in too.'),
     live('children', { depth: '1', sort: 'position' }),
   ))
 
@@ -737,7 +737,14 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     h(2, 'Display name'),
     p('The name shown on your pages, comments and version history, and the one people find when they type @ to mention you. Change it and choose ', b('Save Name'), '.'),
     h(2, 'Email address'),
-    p('Type the new address, enter your current password to show it is you, and choose ', b('Change Email'), '. You sign in with the new address from then on.'),
+    p('You sign in with your email address, and it is where a password reset link goes, so a change is checked first: Tesria sends a link to the new address, and nothing changes until it is opened. That way a typing mistake cannot lock you out, and nobody can move your account to their own address without you hearing of it.'),
+    step(1, 'Ask for the change'),
+    p('In the ', b('Email Address'), ' card, type the new address, enter your current password to show it is you, and choose ', b('Change Email'), '.'),
+    step(2, 'Open the link'),
+    p('Look in the new address’s inbox for ', i('Confirm your new email address'), '. Its link opens ', b('Confirm Your New Email Address'), ': choose ', b('Confirm'), '. It works on any device, signed in or not, once, for 24 hours. From then on you sign in with the new address.'),
+    p('Until you open it, the card shows the address ', b('Waiting for Confirmation'), ' and you still sign in with the old one. No email? ', b('Resend Link'), ' sends a new one (the earlier link stops working), and ', b('Cancel Change'), ' drops the change.'),
+    panel('warning', p(b('A change you did not ask for?'), ' Your old address is told whenever a change is asked for, in an email headed ', i('Your sign-in email is about to change'), '. If it was not you, someone may know your password: change it on your profile straight away. That stops the change and signs out every other device. See ', pageLink('Password'), ' and ', pageLink('Sessions'), '.')),
+    p(b('If your Tesria does not send email,'), ' no link can be sent, so the change happens as soon as you choose ', b('Change Email'), ', and the card says so beforehand. Check the new address carefully: you sign in with it from then on.'),
     p('If your account signs in through single sign-on, the card says so: your organization’s sign-in service owns your email address, and it is changed there.'),
   ))
 
@@ -820,10 +827,10 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('To get there, open ', ...profileAt('Password'), '.'),
     ol(
       li(p('In the ', b('Password'), ' card, enter your current password.')),
-      li(p('Enter the new one twice. It must be at least 8 characters; a few unrelated words make a long password that is still easy to type.')),
+      li(p('Enter the new one twice. It must be at least 8 characters, not only spaces, and not one of the most common passwords, such as ', i('password'), ' or ', i('12345678'), ', which are the first anyone guesses. A few unrelated words make a long password that is still easy to type.')),
       li(p('Choose ', b('Change Password'), '.')),
     ),
-    p('Every other device signed in to your account is signed out, so anyone who knew the old password is locked out. The browser you are using stays signed in.'),
+    p('Every other device signed in to your account is signed out, so anyone who knew the old password is locked out. The browser you are using stays signed in. An email change waiting for its link is canceled too.'),
     p('If you have forgotten your password, see ', pageLink('Resetting a password'), '. Accounts that sign in through single sign-on have no Tesria password.'),
   ))
 }
