@@ -131,7 +131,7 @@ jobs:
       matrix:
         image: [app, db, backup, collab, pdf]
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: ${{ runner.temp }}/digests
           pattern: digests-${{ matrix.image }}-*
