@@ -282,6 +282,10 @@ do_restore_wiki() {
   # stripped by claim_job. A time means point-in-time; no time means the end
   # of the named backup, which is --type=immediate against that set.
   at="$(printf '%s' "$options" | sed -n 's/.*"at" *: *"\([^"]*\)".*/\1/p')"
+  # An undo (do_restore_undo) goes back to the end of the timeline the last
+  # restore replaced, rather than to a moment on it.
+  local undo=""
+  printf '%s' "$options" | grep -Eq '"undo" *: *true' && undo=1
 
   # Both values end up on pgBackRest's command line, and the job row they
   # come from is one the app's database role may write. So each must be
@@ -296,7 +300,28 @@ do_restore_wiki() {
     return 1
   fi
 
-  if [ -n "$at" ]; then
+  if [ -n "$at" ] && [ -n "$undo" ]; then
+    # Undoing a point-in-time restore (t8-R01). The safety backup is the
+    # latest one before the moment that restore began, and the WAL switch
+    # after it put everything up to that moment in the archive. So the undo
+    # restores that backup and replays its own timeline to the end of what
+    # was archived. A time target cannot do this: nothing was written on
+    # that timeline after the moment, so Postgres never sees the target and
+    # stops with "recovery ended before configured recovery target was
+    # reached". Without --target-timeline=current it followed the restore's
+    # newer timeline instead, which forked earlier, and pgBackRest refused
+    # with error [058]. (No --target-action: a recovery with no target
+    # promotes by itself at the end.)
+    local set_line set_label set_stop at_epoch
+    set_line="$(restore_set_for "$at")"
+    read -r set_label set_stop at_epoch <<<"$set_line"
+    if [ -z "$set_label" ]; then
+      echo "ERROR: no backup in the local repository ends at or before $at, so there is nothing to go back to"
+      return 1
+    fi
+    args="--set=$set_label --type=default --target-timeline=current --delta"
+    echo "[undo] restoring backup $set_label and replaying its timeline to the moment the restore began ($at)"
+  elif [ -n "$at" ]; then
     # The backup set is chosen here, not by pgBackRest (KI-19, T8-002). Its
     # own choice parses the time, and it takes only "YYYY-MM-DD HH:MM:SS",
     # never the ISO 8601 the app sends: every point-in-time restore from the
@@ -311,18 +336,24 @@ do_restore_wiki() {
       echo "ERROR: no backup in the local repository ends at or before $at, so there is nothing to roll forward from"
       return 1
     fi
+    # Along the timeline of the backup restored from (t8-R01, the 0.8.3
+    # retest). pgBackRest otherwise follows the newest timeline, and after a
+    # point-in-time restore that one forked off earlier than the moments
+    # before it, the undo's target among them: every undo failed with error
+    # [058]. The backup chosen above is the latest one before the target, so
+    # its timeline is the history the target belongs to.
     if [ $(( at_epoch - set_stop )) -lt 2 ]; then
       # The end of that backup, exactly. A time target this close to it
       # could fall before the point the backup is consistent at, and
       # Postgres refuses to open a cluster stopped short of that.
-      args="--set=$set_label --type=immediate --target-action=promote --delta"
+      args="--set=$set_label --type=immediate --target-timeline=current --target-action=promote --delta"
       echo "[restore] restoring to the end of backup $set_label ($at)"
     else
-      args="--set=$set_label --type=time --target=$at --target-action=promote --delta"
+      args="--set=$set_label --type=time --target=$at --target-timeline=current --target-action=promote --delta"
       echo "[restore] point-in-time recovery to $at, from backup $set_label"
     fi
   elif [ -n "$target" ]; then
-    args="--set=$target --type=immediate --target-action=promote --delta"
+    args="--set=$target --type=immediate --target-timeline=current --target-action=promote --delta"
     echo "[restore] restoring to the end of backup $target"
   else
     echo "ERROR: neither a time nor a backup was given"
@@ -437,7 +468,7 @@ do_restore_undo() {
   at="$(printf '%s' "$options" | sed -n 's/.*"at" *: *"\([^"]*\)".*/\1/p')"
   [ -n "$at" ] || { echo "ERROR: there is no moment to go back to"; return 1; }
   echo "[undo] rolling back to $at, the moment the restore began"
-  do_restore_wiki "$id" "" "{\"mode\":\"pitr\",\"at\":\"$at\"}" "$dir"
+  do_restore_wiki "$id" "" "{\"mode\":\"pitr\",\"at\":\"$at\",\"undo\":true}" "$dir"
 }
 
 # --- The offsite repository (dev-plan 9.2) ---------------------------------

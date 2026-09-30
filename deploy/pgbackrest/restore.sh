@@ -82,9 +82,12 @@ REPO_ARG=()
 [ -n "$REPO" ] && REPO_ARG=(--repo="$REPO")
 
 if [ -n "$TARGET_TIME" ]; then
+  # Along the timeline of the backup pgBackRest picks for that time, not the
+  # newest one: after an earlier point-in-time restore, the newest timeline
+  # forked off before the moments that restore replaced (t8-R01).
   echo "[restore] point-in-time recovery to: $TARGET_TIME${REPO:+ (from repo$REPO)}"
   pgbr --pg1-path="$PGDATA_PATH" "${REPO_ARG[@]}" \
-    --type=time --target="$TARGET_TIME" --target-action=promote --delta restore
+    --type=time --target="$TARGET_TIME" --target-timeline=current --target-action=promote --delta restore
 else
   echo "[restore] restoring latest backup${REPO:+ from repo$REPO}, rolling forward to end of archived WAL"
   pgbr --pg1-path="$PGDATA_PATH" "${REPO_ARG[@]}" --delta restore

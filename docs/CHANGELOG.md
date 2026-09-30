@@ -5,6 +5,19 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Fixed: undoing a restore to a moment always failed** (t8-R01, the 0.8.3
+  retest). The undo was itself a restore to a moment: the moment the first
+  restore began. pgBackRest followed the restore's newer timeline, which
+  branched off earlier, and refused (error [058]). Pointed at the right
+  timeline, Postgres then never reached that moment, because nothing was
+  written on the old timeline after it. The undo now restores the safety
+  backup the first restore took and replays its own timeline to the end,
+  which is exactly the wiki as it was when the restore began. Every restore
+  to a moment, and `restore.sh` to a time, also follow the timeline of the
+  backup they start from (`--target-timeline=current`). Checked end to end
+  on a test stack: a restore removed a page written after its target, and
+  Undo brought it back.
+
 ## [0.8.3] - 2026-09-30
 
 New chart options and code block colors. It also has the rest of the pre-launch
