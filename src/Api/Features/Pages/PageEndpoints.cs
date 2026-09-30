@@ -184,6 +184,8 @@ public static class PageEndpoints
         var title = (req.Title ?? "").Trim();
         if (title.Length == 0)
             return Results.ValidationProblem(Error("title", "Title is required."));
+        if (title.Length > Page.MaxTitleLength)
+            return Results.ValidationProblem(Error("title", PageWriter.TitleTooLong));
         if (!PageContent.TryNormalize(req.ContentJson, out var content))
             return Results.ValidationProblem(Error("contentJson", "Content must be valid JSON."));
 
@@ -612,6 +614,8 @@ public static class PageEndpoints
         if (page.ParentPageId is { } pid && !await db.Pages.AnyAsync(p => p.Id == pid))
             page.ParentPageId = null;
 
+        // Only what was deleted with it: a sub-page someone deleted on its own
+        // earlier stays in the trash, as its own entry (QA T3-022).
         foreach (var p in await CollectTrashedSubtreeAsync(db, page.SpaceId, id))
         {
             p.DeletedAt = null;
@@ -638,6 +642,17 @@ public static class PageEndpoints
 
         var subtree = await CollectTrashedSubtreeAsync(db, page.SpaceId, id);
         if (await DeniedForDescendantsAsync(rights, current, perms, subtree, id) is { } blocked) return blocked;
+        // Pages under these that are not going with them (a sub-page deleted
+        // on its own before its parent, or an unpublished draft) lose their
+        // parent, so they come back at the top of the space: purging a
+        // parent used to destroy a sub-page from a different deletion
+        // (QA T3-022).
+        var purgedIds = subtree.Select(p => p.Id).ToList();
+        foreach (var orphan in await db.Pages.IgnoreQueryFilters()
+                     .Where(p => p.SpaceId == page.SpaceId && p.ParentPageId != null
+                         && purgedIds.Contains(p.ParentPageId.Value) && !purgedIds.Contains(p.Id))
+                     .ToListAsync())
+            orphan.ParentPageId = null;
         var storageKeys = await StorageKeysOfAsync(db, subtree.Select(p => p.Id).ToList());
         // Clear current-version pointers so the cascade to versions is not blocked
         // by the restrict FK, then hard-delete the subtree (versions, attachments,
@@ -677,12 +692,16 @@ public static class PageEndpoints
         var trashed = await db.Pages.IgnoreQueryFilters()
             .Where(p => p.SpaceId == spaceId && p.DeletedAt != null)
             .ToListAsync();
-        var trashedIds = trashed.Select(p => p.Id).ToHashSet();
+        var deletedAt = trashed.ToDictionary(p => p.Id, p => p.DeletedAt);
 
-        // List only "trash roots": the pages actually deleted (whose parent is
-        // not itself trashed); each stands for one restorable subtree.
+        // List only "trash roots": the pages actually deleted, each standing
+        // for one restorable subtree. A page under a trashed parent is one
+        // too when it was deleted on its own, earlier (QA T3-022): it went
+        // missing from the list once its parent followed it.
         var candidates = trashed
-            .Where(p => p.ParentPageId is null || !trashedIds.Contains(p.ParentPageId.Value))
+            .Where(p => p.ParentPageId is not { } parent
+                || !deletedAt.TryGetValue(parent, out var parentDeletedAt)
+                || parentDeletedAt != p.DeletedAt)
             .OrderByDescending(p => p.DeletedAt)
             .ToList();
         // Viewing the space is not viewing every page in it: a restricted
@@ -787,13 +806,21 @@ public static class PageEndpoints
     private static Task<List<Page>> CollectLiveSubtreeAsync(AppDbContext db, Guid spaceId, Guid rootId) =>
         CollectSubtreeAsync(db.Pages.Where(p => p.SpaceId == spaceId), rootId);
 
-    /// <summary>The trashed page <paramref name="rootId"/> and all its trashed descendants (tracked).</summary>
-    private static Task<List<Page>> CollectTrashedSubtreeAsync(AppDbContext db, Guid spaceId, Guid rootId) =>
-        CollectSubtreeAsync(
-            db.Pages.IgnoreQueryFilters().Where(p => p.SpaceId == spaceId && p.DeletedAt != null),
-            rootId);
+    /// <summary>
+    /// The trashed page <paramref name="rootId"/> and the descendants trashed
+    /// with it (tracked). Deleting a page stamps its whole live subtree with
+    /// one time, so a descendant with another time was deleted on its own,
+    /// earlier, and is its own trash entry: it and what is under it stay
+    /// out of this one (QA T3-022).
+    /// </summary>
+    private static async Task<List<Page>> CollectTrashedSubtreeAsync(AppDbContext db, Guid spaceId, Guid rootId)
+    {
+        var trashed = db.Pages.IgnoreQueryFilters().Where(p => p.SpaceId == spaceId && p.DeletedAt != null);
+        var root = await trashed.AsNoTracking().Where(p => p.Id == rootId).Select(p => p.DeletedAt).FirstOrDefaultAsync();
+        return await CollectSubtreeAsync(trashed, rootId, p => p.Id == rootId || p.DeletedAt == root);
+    }
 
-    private static async Task<List<Page>> CollectSubtreeAsync(IQueryable<Page> scope, Guid rootId)
+    private static async Task<List<Page>> CollectSubtreeAsync(IQueryable<Page> scope, Guid rootId, Func<Page, bool>? include = null)
     {
         var pages = await scope.ToListAsync();
         var byParent = pages.ToLookup(p => p.ParentPageId);
@@ -804,7 +831,7 @@ public static class PageEndpoints
         {
             var current = stack.Pop();
             var node = pages.FirstOrDefault(p => p.Id == current);
-            if (node is null) continue;
+            if (node is null || (include is not null && !include(node))) continue;
             result.Add(node);
             foreach (var child in byParent[current]) stack.Push(child.Id);
         }

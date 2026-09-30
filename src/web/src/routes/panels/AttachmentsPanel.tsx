@@ -8,7 +8,8 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export function AttachmentsPanel({ pageId }: { pageId: string }) {
+/** A page's files. Uploading and deleting are for someone who may edit the page (QA T3-012). */
+export function AttachmentsPanel({ pageId, canEdit = true }: { pageId: string; canEdit?: boolean }) {
   const [items, setItems] = useState<Attachment[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -65,10 +66,12 @@ export function AttachmentsPanel({ pageId }: { pageId: string }) {
   return (
     <div className="attachments">
       {error && <p className="alert alert--error">{error}</p>}
-      <label className="btn btn--ghost btn--sm upload-btn">
-        {uploading ? 'Uploading…' : 'Upload File'}
-        <input ref={fileInput} type="file" hidden onChange={onUpload} disabled={uploading} />
-      </label>
+      {canEdit && (
+        <label className="btn btn--ghost btn--sm upload-btn">
+          {uploading ? 'Uploading…' : 'Upload File'}
+          <input ref={fileInput} type="file" hidden onChange={onUpload} disabled={uploading} />
+        </label>
+      )}
       {items && items.length === 0 && <p className="muted small">No attachments.</p>}
       <ul className="attachment-list">
         {items?.map((a) => (
@@ -77,9 +80,11 @@ export function AttachmentsPanel({ pageId }: { pageId: string }) {
               {a.filename}
             </a>
             <span className="muted small">{formatSize(a.size)}</span>
-            <button type="button" className="link-btn link-btn--danger" onClick={() => remove(a.id)}>
-              Delete
-            </button>
+            {canEdit && (
+              <button type="button" className="link-btn link-btn--danger" onClick={() => remove(a.id)}>
+                Delete
+              </button>
+            )}
           </li>
         ))}
       </ul>

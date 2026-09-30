@@ -243,6 +243,13 @@ export type Space = {
   exports: SpaceExports
   /** How the page tree marks its pages: 0 plain, 1 numbered, 2 bulleted (dev-plan 15.8). */
   treeStyle?: SpaceTreeStyle
+  /**
+   * What the signed-in person may do here: add and change pages, and change
+   * the space itself. Only reading one space says (null or absent in lists),
+   * so the page can leave out what would only be refused (QA T3-012).
+   */
+  canEdit?: boolean | null
+  canAdmin?: boolean | null
 }
 
 export type SpaceExports = { markdown: boolean; html: boolean; pdf: boolean; site: boolean; pack: boolean }
@@ -298,6 +305,19 @@ export type Branding = {
 }
 
 /** Tesria, unbranded: what the page shows before /api/instance answers, and if it never does. */
+/**
+ * The longest text the server keeps in these fields (the database's own
+ * columns). The boxes stop there, and the server says so if a longer one
+ * reaches it anyway (QA T3-005: it answered with a bare 500).
+ */
+export const LIMITS = {
+  spaceName: 200,
+  pageTitle: 500,
+  changeComment: 500,
+  templateName: 200,
+  templateDescription: 500,
+} as const
+
 export const DEFAULT_BRANDING: Branding = {
   name: 'Tesria',
   hasCustomName: false,

@@ -174,11 +174,15 @@ export function PageView() {
     )
   }
 
+  // What a reader who may not edit is not offered: each of these was shown
+  // and refused only after use (QA T3-012, T7-001).
+  const mayEdit = page.canEdit !== false
+
   return (
     <>
       <div className="page-actionbar">
         <div className="page-actionbar__secondary">
-          {page.canEdit !== false && (
+          {mayEdit && (
             <>
               <Link className="btn btn--primary" to={`/spaces/${key}/pages/${page.id}/edit`}>
                 Edit
@@ -191,14 +195,16 @@ export function PageView() {
               </Link>
             </>
           )}
-          <button
-            type="button"
-            className="btn btn--ghost page-actionbar__fullwidth-toggle"
-            onClick={toggleFullWidth}
-            title={page.fullWidth ? 'Switch to Normal Width' : 'Switch to Full Width'}
-          >
-            {page.fullWidth ? '⤡ Normal Width' : '⤢ Full Width'}
-          </button>
+          {mayEdit && (
+            <button
+              type="button"
+              className="btn btn--ghost page-actionbar__fullwidth-toggle"
+              onClick={toggleFullWidth}
+              title={page.fullWidth ? 'Switch to Normal Width' : 'Switch to Full Width'}
+            >
+              {page.fullWidth ? '⤡ Normal Width' : '⤢ Full Width'}
+            </button>
+          )}
           <OverflowMenu>
             {/* Plain links so the browser downloads the file (auth cookie is sent). */}
             {allows.markdown && (
@@ -225,8 +231,9 @@ export function PageView() {
               watch={() => api.pageWatch.watch(page.id)}
               unwatch={() => api.pageWatch.unwatch(page.id)}
             />
-            <SaveAsTemplateButton spaceId={space.id} contentJson={page.contentJson} defaultName={page.title} />
-            {page.canEdit !== false && (
+            <SaveAsTemplateButton spaceId={space.id} contentJson={page.contentJson} defaultName={page.title}
+              canSaveToSpace={space.canEdit !== false} />
+            {mayEdit && (
               <button type="button" className="btn" data-menu-close onClick={() => setMoveCopy('move')}>Move…</button>
             )}
             <button type="button" className="btn" data-menu-close onClick={() => setMoveCopy('copy')}>Copy…</button>
@@ -253,13 +260,13 @@ export function PageView() {
       <article className={page.fullWidth ? 'page-wrap page-wrap--full' : 'page-wrap'}>
         <div className="paper">
           <div className="page-head">
-            <PageEmoji emoji={page.emoji} canEdit={page.canEdit !== false} onChange={setEmoji} />
+            <PageEmoji emoji={page.emoji} canEdit={mayEdit} onChange={setEmoji} />
             <h1>{page.title}</h1>
           </div>
           <p className="muted small">
             Version {page.currentVersionNumber} · updated {new Date(page.updatedAt).toLocaleString()}
           </p>
-          <PageLabels pageId={page.id} />
+          <PageLabels pageId={page.id} canEdit={mayEdit} />
 
           <ResolvedCommentStyles pageId={page.id} />
           <div className="page-body">
@@ -271,12 +278,13 @@ export function PageView() {
           .map(([value, label]) => ({ key: value, label, active: tab === value, onClick: () => setTab(value) }))} />
         <div className="tab-panel">
           {tab === 'comments' && <CommentsPanel pageId={page.id} canEdit={page.canEdit === true} />}
-          {tab === 'attachments' && <AttachmentsPanel pageId={page.id} />}
-          {tab === 'restrictions' && <RestrictionsPanel pageId={page.id} />}
+          {tab === 'attachments' && <AttachmentsPanel pageId={page.id} canEdit={mayEdit} />}
+          {tab === 'restrictions' && <RestrictionsPanel pageId={page.id} canEdit={mayEdit} />}
           {tab === 'history' && (
             <HistoryPanel
               pageId={page.id}
               currentVersion={page.currentVersionNumber}
+              canRestore={mayEdit}
               onRestored={() => {
                 reloadTree()
                 load()

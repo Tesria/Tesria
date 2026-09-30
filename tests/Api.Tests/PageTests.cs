@@ -346,4 +346,80 @@ public class PageTests
         Assert.Equal(HttpStatusCode.OK, res.StatusCode);
     }
 
+    [Fact]
+    public async Task A_title_over_the_limit_is_a_400_on_every_way_in()
+    {
+        // QA T3-005 and T5-022: the database refused it, and the answer was a bare 500.
+        var (factory, client, spaceId) = await NewClientWithSpace();
+        using var _ = factory;
+        var tooLong = new string('t', 501);
+
+        var create = await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = tooLong, ContentJson = Doc });
+        Assert.Equal(HttpStatusCode.BadRequest, create.StatusCode);
+        Assert.Contains("at most 500 characters", await create.Content.ReadAsStringAsync());
+
+        var page = await NewPage(client, spaceId, new string('t', 500));
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await client.PutAsJsonAsync($"/api/pages/{page.Id}", new { Title = tooLong, ContentJson = Doc })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PutAsJsonAsync($"/api/pages/{page.Id}",
+            new { Title = "Fine", ContentJson = Doc, ChangeComment = new string('c', 501) })).StatusCode);
+
+        var draft = await (await client.PostAsJsonAsync("/api/pages/draft", new { SpaceId = spaceId }))
+            .Content.ReadFromJsonAsync<PageDetail>();
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync($"/api/pages/{draft!.Id}/publish",
+            new { Title = tooLong, ContentJson = Doc })).StatusCode);
+
+        // A copy of a title already at the limit is cut to fit, not refused.
+        var copy = await client.PostAsJsonAsync($"/api/pages/{page.Id}/copy", new { SpaceId = spaceId });
+        Assert.Equal(HttpStatusCode.OK, copy.StatusCode);
+    }
+
+    private static async Task<PageDetail> NewPage(HttpClient client, Guid spaceId, string title, Guid? parent = null) =>
+        (await (await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, ParentPageId = parent, Title = title, ContentJson = Doc }))
+            .Content.ReadFromJsonAsync<PageDetail>())!;
+
+    private static bool InTree(List<TreeNode> nodes, Guid id) =>
+        nodes.Any(n => n.Id == id || InTree(n.Children, id));
+
+    [Fact]
+    public async Task A_sub_page_deleted_on_its_own_keeps_its_trash_entry_when_its_parent_follows()
+    {
+        // QA T3-022: it vanished from the trash, came back with its parent,
+        // and was destroyed when the parent was purged.
+        var (factory, client, spaceId) = await NewClientWithSpace();
+        using var _ = factory;
+        var parent = await NewPage(client, spaceId, "Parent");
+        var child = await NewPage(client, spaceId, "Child", parent.Id);
+        var grandchild = await NewPage(client, spaceId, "Grandchild", child.Id);
+        var sibling = await NewPage(client, spaceId, "Sibling", parent.Id);
+
+        await client.DeleteAsync($"/api/pages/{child.Id}");
+        await Task.Delay(20); // two deletions, two times
+        await client.DeleteAsync($"/api/pages/{parent.Id}");
+
+        var trash = await client.GetFromJsonAsync<List<TrashedPage>>($"/api/pages/trash?spaceId={spaceId}");
+        Assert.Equal(["Child", "Parent"], trash!.Select(t => t.Title).Order());
+
+        // Restoring the parent brings back what went with it, not the child.
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsync($"/api/pages/{parent.Id}/restore", null)).StatusCode);
+        var tree = (await client.GetFromJsonAsync<List<TreeNode>>($"/api/pages/tree?spaceId={spaceId}"))!;
+        Assert.True(InTree(tree, sibling.Id));
+        Assert.False(InTree(tree, child.Id));
+        Assert.False(InTree(tree, grandchild.Id));
+        trash = await client.GetFromJsonAsync<List<TrashedPage>>($"/api/pages/trash?spaceId={spaceId}");
+        Assert.Equal("Child", Assert.Single(trash!).Title);
+
+        // Purging the parent leaves the child in the trash, to come back at the top of the space.
+        await client.DeleteAsync($"/api/pages/{parent.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/api/pages/{parent.Id}/purge")).StatusCode);
+        trash = await client.GetFromJsonAsync<List<TrashedPage>>($"/api/pages/trash?spaceId={spaceId}");
+        Assert.Equal("Child", Assert.Single(trash!).Title);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsync($"/api/pages/{child.Id}/restore", null)).StatusCode);
+        tree = (await client.GetFromJsonAsync<List<TreeNode>>($"/api/pages/tree?spaceId={spaceId}"))!;
+        var top = Assert.Single(tree);
+        Assert.Equal(child.Id, top.Id);
+        Assert.Equal(grandchild.Id, Assert.Single(top.Children).Id);
+    }
 }

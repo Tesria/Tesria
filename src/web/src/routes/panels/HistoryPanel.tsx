@@ -8,10 +8,13 @@ import { reconcileDocument } from '../../editor/externalEdits'
 export function HistoryPanel({
   pageId,
   currentVersion,
+  canRestore = true,
   onRestored,
 }: {
   pageId: string
   currentVersion: number
+  /** Restoring writes a new version, so only for someone who may edit the page (QA T3-012). */
+  canRestore?: boolean
   onRestored: () => void
 }) {
   const [versions, setVersions] = useState<VersionMeta[] | null>(null)
@@ -104,7 +107,7 @@ export function HistoryPanel({
             {v.changeComment && <span className="version__comment">“{v.changeComment}”</span>}
             <span className="version__actions">
               <button type="button" className="link-btn" onClick={() => showPreview(v.versionNumber)}>Preview</button>
-              {v.versionNumber !== currentVersion && (
+              {canRestore && v.versionNumber !== currentVersion && (
                 <button type="button" className="link-btn" disabled={busy} onClick={() => restore(v.versionNumber)}>
                   Restore
                 </button>

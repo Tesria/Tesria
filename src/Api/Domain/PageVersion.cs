@@ -25,6 +25,9 @@ public class PageVersion
     public Guid AuthorId { get; set; }
     public User? Author { get; set; }
 
+    /// <summary>The longest change comment the database holds, checked before saving.</summary>
+    public const int MaxChangeCommentLength = 500;
+
     /// <summary>Optional "what changed" note supplied at save time.</summary>
     public string? ChangeComment { get; set; }
 

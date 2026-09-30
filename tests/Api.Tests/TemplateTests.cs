@@ -191,4 +191,27 @@ public class TemplateTests
         Assert.Equal(HttpStatusCode.NotFound,
             (await member.PutAsJsonAsync($"/api/templates/{Guid.NewGuid()}", new { Name = "x" })).StatusCode);
     }
+
+    [Fact]
+    public async Task A_name_or_description_over_the_limit_is_a_400()
+    {
+        // QA T3-005: both answered 500 with an empty body.
+        using var factory = new TestAppFactory();
+        var client = factory.CreateClient();
+        await client.RegisterAndSignInAsync();
+        var spaceId = await client.CreateSpaceAsync();
+
+        var name = await client.PostAsJsonAsync("/api/templates",
+            new { SpaceId = spaceId, Name = new string('n', 201), ContentJson = Doc });
+        Assert.Equal(HttpStatusCode.BadRequest, name.StatusCode);
+        Assert.Contains("at most 200 characters", await name.Content.ReadAsStringAsync());
+
+        var description = await client.PostAsJsonAsync("/api/templates",
+            new { SpaceId = spaceId, Name = "Notes", Description = new string('d', 501), ContentJson = Doc });
+        Assert.Equal(HttpStatusCode.BadRequest, description.StatusCode);
+        Assert.Contains("at most 500 characters", await description.Content.ReadAsStringAsync());
+
+        Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync("/api/templates",
+            new { SpaceId = spaceId, Name = new string('n', 200), Description = new string('d', 500), ContentJson = Doc })).StatusCode);
+    }
 }

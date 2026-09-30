@@ -145,10 +145,56 @@ export function SpacePage() {
   // breadcrumb is already the first thing on the page and this still owns it.
   const rendersOwnBreadcrumb = Boolean(matchPageView || matchPageEdit || matchNew)
 
+  // The space whose tree is wanted now, and a number for the newest request
+  // for it: only that one's answer is shown. A reload asked for just before
+  // moving a page to another space used to answer after the new space's
+  // tree, leaving the old space's pages under the new name (QA T3-015).
+  const openSpaceId = useRef<string | null>(null)
+  const treeRequest = useRef(0)
+  const showTree = useCallback((spaceId: string, request: number, next: PageTreeNode[]) => {
+    if (request !== treeRequest.current || openSpaceId.current !== spaceId) return
+    // The same tree again (most refreshes) keeps the one on screen, so
+    // nothing below redraws for nothing.
+    setTree((shown) => (JSON.stringify(shown) === JSON.stringify(next) ? shown : next))
+  }, [])
+
   const reloadTree = useCallback(() => {
-    if (!space) return
-    api.pages.tree(space.id).then(setTree).catch(() => {})
-  }, [space])
+    // Not while switching spaces: the route's key has moved on, and the new
+    // space's own load (below) brings its tree.
+    if (!space || space.key.toUpperCase() !== key.toUpperCase()) return
+    const request = ++treeRequest.current
+    api.pages.tree(space.id).then((t) => showTree(space.id, request, t)).catch(() => {})
+  }, [space, key, showTree])
+
+  // Other people's pages (QA cal-003, T3-003): the tree was loaded once and
+  // kept until a reload, so a page someone else made never appeared and one
+  // they deleted stayed, leading to "Not found." It is asked for again on
+  // every move within the space, when the window comes back into view, and
+  // every half minute while it is in view.
+  const reloadTreeRef = useRef(reloadTree)
+  reloadTreeRef.current = reloadTree
+  useEffect(() => { reloadTreeRef.current() }, [location.pathname])
+  useEffect(() => {
+    const refresh = () => { if (document.visibilityState === 'visible') reloadTreeRef.current() }
+    const timer = window.setInterval(refresh, 30_000)
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', refresh)
+    return () => {
+      window.clearInterval(timer)
+      window.removeEventListener('focus', refresh)
+      document.removeEventListener('visibilitychange', refresh)
+    }
+  }, [])
+
+  // Settings hands back the space it saved; what the reader may do in it
+  // comes only with reading it, so that part is kept (QA T3-012).
+  const onSpaceChanged = useCallback((updated: Space) => {
+    setSpace((shown) => ({
+      ...updated,
+      canEdit: updated.canEdit ?? shown?.canEdit,
+      canAdmin: updated.canAdmin ?? shown?.canAdmin,
+    }))
+  }, [])
 
   // Hand the tree to the app shell for the phone menu (spaceNav.ts). Memoised
   // so the shell's effect runs when the space or tree changes, not on every
@@ -162,18 +208,21 @@ export function SpacePage() {
     let canceled = false
     setSpace(null)
     setError(null)
+    openSpaceId.current = null
     api.spaces
       .get(key)
       .then((s) => {
         if (canceled) return
+        openSpaceId.current = s.id
         setSpace(s)
-        return api.pages.tree(s.id).then((t) => !canceled && setTree(t))
+        const request = ++treeRequest.current
+        return api.pages.tree(s.id).then((t) => !canceled && showTree(s.id, request, t))
       })
       .catch((err: unknown) => !canceled && setError(err instanceof Error ? err.message : 'Failed to load space.'))
     return () => {
       canceled = true
     }
-  }, [key])
+  }, [key, showTree])
 
   if (error) {
     // Anonymous readers get 404 for anything not public (dev-plan 5.1's
@@ -192,7 +241,10 @@ export function SpacePage() {
   }
   if (!space) return <p className="muted page-wrap">Loading…</p>
 
-  const context: SpaceOutletContext = { space, tree, reloadTree, onSpaceChanged: setSpace }
+  const context: SpaceOutletContext = { space, tree, reloadTree, onSpaceChanged }
+  // Adding pages and reordering them are for people who may edit the
+  // space; a reader was offered both and refused only afterwards (QA T3-012).
+  const mayEdit = Boolean(user) && space.canEdit !== false
   const flipSidebar = () => {
     setCollapsed((c) => { writeCollapsed(!c); return !c })
   }
@@ -238,9 +290,11 @@ export function SpacePage() {
             breadcrumb names the space. */}
         {user && (
           <div className="space-actionbar__actions">
-            <NavLink to={newPageHref} className="btn btn--primary btn--sm">
-              + New
-            </NavLink>
+            {mayEdit && (
+              <NavLink to={newPageHref} className="btn btn--primary btn--sm">
+                + New
+              </NavLink>
+            )}
             <OverflowMenu label="Space Actions">
               {/* Permissions, webhooks and trash are tabs of Settings now,
                   so one entry reaches all four. */}
@@ -289,7 +343,7 @@ export function SpacePage() {
               <SidebarIcon />
             </button>
           </div>
-          {user && (
+          {mayEdit && (
             <NavLink to={newPageHref} className="btn btn--primary btn--block">
               + New Page
             </NavLink>
@@ -300,7 +354,7 @@ export function SpacePage() {
             CSS (.sidebar .tree-section / .sidebar .tree) rather than with
             props, because PageTree renders the same markup here and in the
             mobile inline copy on the space home. */}
-        <PageTree tree={tree} spaceKey={space.key} onMoved={reloadTree} readOnly={!user} treeStyle={space.treeStyle} />
+        <PageTree tree={tree} spaceKey={space.key} onMoved={reloadTree} readOnly={!mayEdit} treeStyle={space.treeStyle} />
         {user && (
           <div className="sidebar__foot">
             <NavLink

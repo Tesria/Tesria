@@ -28,7 +28,14 @@ public static partial class SpaceEndpoints
         bool IsPublic, bool PublicComments,
         SpaceIconKind IconKind, string? IconValue, int? IconColor,
         SpaceExportsDto Exports,
-        SpaceTreeStyle TreeStyle = SpaceTreeStyle.Plain);
+        SpaceTreeStyle TreeStyle = SpaceTreeStyle.Plain,
+        /// <summary>
+        /// What the caller may do here, on the single-space read only (null
+        /// elsewhere): whether they may add and change pages, and whether
+        /// they may change the space itself. The page leaves out what would
+        /// only be refused (QA T3-012).
+        /// </summary>
+        bool? CanEdit = null, bool? CanAdmin = null);
 
     /// <summary>
     /// Which exports this space allows (dev-plan 12.3). Part of every space
@@ -88,6 +95,9 @@ public static partial class SpaceEndpoints
         return Results.Ok(spaces.Where(s => viewable.Contains(s.Id)).Select(ToResponse));
     }
 
+    /// <summary>The database's limit, said before the database refuses it (QA T3-005).</summary>
+    internal static readonly string NameTooLong = $"Name can be at most {Space.MaxNameLength} characters.";
+
     private static async Task<IResult> Create(
         CreateSpaceRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit)
     {
@@ -99,6 +109,8 @@ public static partial class SpaceEndpoints
                 "Key must be 2–50 characters, start with a letter, and contain only letters and digits."));
         if (name.Length == 0)
             return Results.ValidationProblem(Error("name", "Name is required."));
+        if (name.Length > Space.MaxNameLength)
+            return Results.ValidationProblem(Error("name", NameTooLong));
 
         if (await db.Spaces.AnyAsync(s => s.Key == key))
             return Results.Conflict(new { message = $"A space with key '{key}' already exists." });
@@ -119,7 +131,7 @@ public static partial class SpaceEndpoints
         return Results.Created($"/api/spaces/{space.Key}", ToResponse(space));
     }
 
-    private static async Task<IResult> GetByKey(string key, AppDbContext db, IPermissionService perms)
+    private static async Task<IResult> GetByKey(string key, AppDbContext db, IPermissionService perms, CurrentUser current)
     {
         var normalizedKey = key.ToUpperInvariant();
         var space = await db.Spaces.AsNoTracking()
@@ -127,7 +139,11 @@ public static partial class SpaceEndpoints
         if (space is null) return Results.NotFound();
         // 404 rather than 403 so a hidden space's existence isn't disclosed.
         if (!await perms.CanViewSpaceAsync(space.Id)) return Results.NotFound();
-        return Results.Ok(ToResponse(space));
+        return Results.Ok(ToResponse(space) with
+        {
+            CanEdit = current.Id is not null && await perms.CanEditSpaceAsync(space.Id),
+            CanAdmin = current.Id is not null && await perms.CanAdminSpaceAsync(space.Id),
+        });
     }
 
     private static async Task<IResult> Update(
@@ -142,6 +158,8 @@ public static partial class SpaceEndpoints
         var name = (req.Name ?? "").Trim();
         if (name.Length == 0)
             return Results.ValidationProblem(Error("name", "Name is required."));
+        if (name.Length > Space.MaxNameLength)
+            return Results.ValidationProblem(Error("name", NameTooLong));
 
         if (SpaceIcons.ValidateColor(req.IconColor) is { } colorError)
             return Results.ValidationProblem(Error("iconColor", colorError));

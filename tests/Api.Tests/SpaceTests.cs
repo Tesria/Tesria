@@ -81,4 +81,54 @@ public class SpaceTests
         await client.PostAsync("/api/spaces/DOCS/unarchive", null);
         Assert.Single((await client.GetFromJsonAsync<List<SpaceResponse>>("/api/spaces"))!);
     }
+
+    [Fact]
+    public async Task A_name_over_the_limit_is_a_400_naming_the_limit()
+    {
+        // QA T3-005: the database refused it, and the answer was a bare 500.
+        using var factory = new TestAppFactory();
+        var client = factory.CreateClient();
+        await client.RegisterAndSignInAsync();
+
+        var tooLong = await client.PostAsJsonAsync("/api/spaces", new { Key = "LONG", Name = new string('n', 201) });
+        Assert.Equal(HttpStatusCode.BadRequest, tooLong.StatusCode);
+        Assert.Contains("at most 200 characters", await tooLong.Content.ReadAsStringAsync());
+
+        Assert.Equal(HttpStatusCode.Created,
+            (await client.PostAsJsonAsync("/api/spaces", new { Key = "EXACT", Name = new string('n', 200) })).StatusCode);
+        var rename = await client.PutAsJsonAsync("/api/spaces/EXACT", new { Name = new string('m', 201) });
+        Assert.Equal(HttpStatusCode.BadRequest, rename.StatusCode);
+        Assert.Contains("at most 200 characters", await rename.Content.ReadAsStringAsync());
+    }
+
+    private record RightsResponse(string Key, bool? CanEdit, bool? CanAdmin);
+
+    [Fact]
+    public async Task Reading_a_space_says_what_the_caller_may_do_in_it()
+    {
+        // QA T3-012: a viewer was offered New Page, reordering and the
+        // space's settings, each refused only after use.
+        using var factory = new TestAppFactory();
+        var owner = factory.CreateClient();
+        var ownerId = await owner.RegisterAndSignInAsync();
+        await owner.PostAsJsonAsync("/api/spaces", new { Key = "RIGHTS", Name = "Rights" });
+        var viewer = factory.CreateClient();
+        var viewerId = await viewer.RegisterAndSignInAsync();
+        var editor = factory.CreateClient();
+        var editorId = await editor.RegisterAndSignInAsync();
+        // User = 0 | View = 0, Edit = 1, Admin = 2
+        await owner.PostAsJsonAsync("/api/spaces/RIGHTS/permissions", new { PrincipalType = 0, PrincipalId = ownerId, Operation = 2 });
+        await owner.PostAsJsonAsync("/api/spaces/RIGHTS/permissions", new { PrincipalType = 0, PrincipalId = viewerId, Operation = 0 });
+        await owner.PostAsJsonAsync("/api/spaces/RIGHTS/permissions", new { PrincipalType = 0, PrincipalId = editorId, Operation = 1 });
+
+        var asOwner = await owner.GetFromJsonAsync<RightsResponse>("/api/spaces/RIGHTS");
+        Assert.True(asOwner!.CanEdit);
+        Assert.True(asOwner.CanAdmin);
+        var asEditor = await editor.GetFromJsonAsync<RightsResponse>("/api/spaces/RIGHTS");
+        Assert.True(asEditor!.CanEdit);
+        Assert.False(asEditor.CanAdmin);
+        var asViewer = await viewer.GetFromJsonAsync<RightsResponse>("/api/spaces/RIGHTS");
+        Assert.False(asViewer!.CanEdit);
+        Assert.False(asViewer.CanAdmin);
+    }
 }

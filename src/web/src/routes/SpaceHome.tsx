@@ -39,7 +39,7 @@ export function SpaceHome() {
         {tree.length === 0 ? (
           <p>
             This space has no pages yet.
-            {user && <>{' '}<Link to={`/spaces/${space.key}/new`}>Create the first one</Link>.</>}
+            {user && space.canEdit !== false && <>{' '}<Link to={`/spaces/${space.key}/new`}>Create the first one</Link>.</>}
           </p>
         ) : (
           <>
@@ -52,7 +52,7 @@ export function SpaceHome() {
             {/* A phone has no sidebar, and the menu's tree is read-only: here
                 the whole tree, where pages can also be reordered. */}
             <div className="space-home-tree">
-              <PageTree tree={tree} spaceKey={space.key} onMoved={reloadTree} readOnly={!user} treeStyle={space.treeStyle} />
+              <PageTree tree={tree} spaceKey={space.key} onMoved={reloadTree} readOnly={!user || space.canEdit === false} treeStyle={space.treeStyle} />
             </div>
           </>
         )}

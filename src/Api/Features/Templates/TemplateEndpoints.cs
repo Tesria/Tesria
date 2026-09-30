@@ -85,10 +85,25 @@ public static class TemplateEndpoints
         var name = (req.Name ?? "").Trim();
         if (name.Length == 0)
             return Results.ValidationProblem(Error("name", "Name is required."));
+        if (TooLong(name, req.Description) is { } tooLong)
+            return tooLong;
         template.Name = name;
         template.Description = string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim();
         await db.SaveChangesAsync();
         return Results.Ok(ToResponse(template) with { CanManage = true });
+    }
+
+    /// <summary>
+    /// The database's limits, said before the database refuses them: a long
+    /// name or description answered 500 with an empty body (QA T3-005).
+    /// </summary>
+    private static IResult? TooLong(string name, string? description)
+    {
+        if (name.Length > PageTemplate.MaxNameLength)
+            return Results.ValidationProblem(Error("name", $"Name can be at most {PageTemplate.MaxNameLength} characters."));
+        if ((description ?? "").Trim().Length > PageTemplate.MaxDescriptionLength)
+            return Results.ValidationProblem(Error("description", $"Description can be at most {PageTemplate.MaxDescriptionLength} characters."));
+        return null;
     }
 
     private static async Task<IResult> Create(
@@ -98,6 +113,8 @@ public static class TemplateEndpoints
         var name = (req.Name ?? "").Trim();
         if (name.Length == 0)
             return Results.ValidationProblem(Error("name", "Name is required."));
+        if (TooLong(name, req.Description) is { } tooLong)
+            return tooLong;
         if (!TryNormalizeContent(req.ContentJson, out var content))
             return Results.ValidationProblem(Error("contentJson", "Content must be valid JSON."));
 

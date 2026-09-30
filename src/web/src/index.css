@@ -575,6 +575,18 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
      them a little more height here than the mouse needs. */
   .topbar__space .tree__link { padding: 0.45rem 0.5rem; }
   .topbar__space .tree-section { margin-top: 0.25rem; }
+  /* While the page filter has the keyboard, the tree gets the room (QA
+     T3-026, SIM-003): a phone's keyboard covers the lower half of the
+     screen, and the parts fixed above the tree left the results one or two
+     rows between the filter and the keyboard. Everything but the space's
+     name and the tree steps aside until the filter lets go; a tap in the
+     space's part of the menu keeps the filter's focus (Layout.tsx), so
+     nothing moves under a finger. */
+  .topbar.is-collapsed > .topbar__collapsible.is-open:has(.tree-filter__input:focus) > :not(.topbar__space, .topbar__close),
+  .topbar.is-collapsed .topbar__space:has(.tree-filter__input:focus) > :not(.topbar__space-head, .tree-section) { display: none; }
+  .topbar.is-collapsed .topbar__space:has(.tree-filter__input:focus) { border-top: 0; padding-top: 0; margin-top: 0; }
+  /* Room for the menu's close button beside the name, as the links have. */
+  .topbar.is-collapsed .topbar__space:has(.tree-filter__input:focus) > .topbar__space-head { padding-right: 2.5rem; min-height: 2.25rem; }
 }
 
 /* Theme toggle: same neutral-by-default, darker-on-hover treatment as

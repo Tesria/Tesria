@@ -63,6 +63,9 @@ public sealed class PageWriter(
     INotificationService notifications, IWebhookDispatcher webhooks,
     ICollabNotifier collab, IHttpContextAccessor accessor) : IPageWriter
 {
+    /// <summary>The database's limit, said before the database refuses it (QA T3-005).</summary>
+    internal static readonly string TitleTooLong = $"Title can be at most {Page.MaxTitleLength} characters.";
+
     public async Task<PageWriteResult> CreateAsync(
         Guid spaceId, Guid? parentPageId, string? title, string? contentJson, CancellationToken ct = default)
     {
@@ -74,6 +77,7 @@ public sealed class PageWriter(
 
         var trimmed = (title ?? "").Trim();
         if (trimmed.Length == 0) return PageWriteResult.Invalid("title", "Title is required.");
+        if (trimmed.Length > Page.MaxTitleLength) return PageWriteResult.Invalid("title", TitleTooLong);
         if (!PageContent.TryNormalize(contentJson, out var content))
             return PageWriteResult.Invalid("contentJson", "Content must be valid JSON.");
 
@@ -161,10 +165,14 @@ public sealed class PageWriter(
         else if (!PageContent.TryNormalize(contentJson, out content))
             return PageWriteResult.Invalid("contentJson", "Content must be valid JSON.");
 
+        if (changeComment is not null && changeComment.Trim().Length > PageVersion.MaxChangeCommentLength)
+            return PageWriteResult.Invalid("changeComment", $"A change comment can be at most {PageVersion.MaxChangeCommentLength} characters.");
+
         if (title is not null)
         {
             var trimmed = title.Trim();
             if (trimmed.Length == 0) return PageWriteResult.Invalid("title", "Title cannot be empty.");
+            if (trimmed.Length > Page.MaxTitleLength) return PageWriteResult.Invalid("title", TitleTooLong);
             page.Title = trimmed;
         }
 

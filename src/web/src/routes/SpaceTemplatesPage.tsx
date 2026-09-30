@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { api, ApiError, type PageTemplate } from '../api/client'
+import { api, ApiError, LIMITS, type PageTemplate } from '../api/client'
 import { useConfirm } from '../components/ConfirmDialog'
 import { useSpaceContext } from './SpacePage'
 
@@ -71,11 +71,11 @@ export function SpaceTemplatesPage() {
           <form className="form-inline group-edit" onSubmit={save}>
             <label>
               Name
-              <input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} required autoFocus />
+              <input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} required autoFocus maxLength={LIMITS.templateName} />
             </label>
             <label>
               Description
-              <input value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} placeholder="Optional" />
+              <input value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} placeholder="Optional" maxLength={LIMITS.templateDescription} />
             </label>
             <button type="submit" className="btn btn--primary btn--sm">Save</button>
             <button type="button" className="btn btn--ghost btn--sm" onClick={() => setEditing(null)}>Cancel</button>

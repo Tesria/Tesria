@@ -13,6 +13,10 @@ public class PageTemplate
     public Guid? SpaceId { get; set; }
     public Space? Space { get; set; }
 
+    /// <summary>The longest name and description the database holds, checked before saving.</summary>
+    public const int MaxNameLength = 200;
+    public const int MaxDescriptionLength = 500;
+
     public required string Name { get; set; }
 
     public string? Description { get; set; }
