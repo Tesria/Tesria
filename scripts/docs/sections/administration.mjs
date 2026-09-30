@@ -818,14 +818,25 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('It is not pictured here, because every entry names real people.'),
 
     h(2, 'Reading it'),
-    p('The tab shows the latest 50 entries, newest first. Each one has:'),
+    p('The tab opens on the latest 50 entries, newest first. Each one has:'),
     ul(
       li(p(b('What happened,'), ' by its internal name, such as ', c('user.role_changed'), ', ', c('user.status_changed'), ', ', c('user.totp_disabled'), ', ', c('settings.updated'), ', ', c('invite.created'), ', ', c('space.published'), ', ', c('space.access_recovered'), ' or ', c('permissions.changed'), '.')),
-      li(p(b('Who did it,'), ' or ', b('system'), ' for something Tesria did by itself.')),
+      li(p(b('Who did it,'), ' or ', b('system'), ' for something Tesria did by itself. Choose a name to see only that person’s entries.')),
       li(p(b('When.'))),
       li(p(b('The details'), ' as recorded, such as which account changed and its new role.')),
     ),
+    p('Three or more failed sign-ins in a row are folded into one line, such as “24 in a row”, with the time the first and last happened, so a burst of wrong passwords does not push everything else off the screen. Choose ', b('Show Them'), ' to see each one.'),
     p('Entries about a space or page you are not allowed to see are left out, because their details can name the page.'),
+
+    h(2, 'Finding an entry'),
+    p('On a busy day the latest 50 entries may cover only a few minutes. To look further back, or at one kind of change, use the filters above the list. They work together: every entry shown matches all of them.'),
+    ul(
+      li(p(b('Action:'), ' one kind of entry, such as ', c('settings.updated'), '. The list is grouped by what the actions are about (accounts and sign-in, spaces and pages, backups, and so on), and each group also offers a whole family at once: ', b('Every user.* action'), ' shows everything that happened to accounts.')),
+      li(p(b('Person:'), ' only what one person did. Entries shown as system have no person, so choosing someone leaves them out.')),
+      li(p(b('From'), ' and ', b('To:'), ' only entries made on those days, from the start of the first to the end of the last, in your own time zone. Either can be left empty.')),
+    ),
+    p('Choose ', b('Clear'), ' to go back to everything. At the foot of the list, ', b('Show Older'), ' adds the 50 entries before the last one shown, with the same filters, until there are no more.'),
+    panel('success', p(b('Answering “who turned this on?”'), ' Choose ', c('settings.updated'), ' under ', b('Action'), ' (or the family, such as ', b('Every space.* action'), '), set ', b('From'), ' to the day you think it changed, and read down. The filters are kept in the address in your browser, so you can reload the page or send it to another administrator and they see the same list, as far as they are allowed to.')),
 
     h(2, 'Why you can trust it'),
     p('Every entry is linked to the one before it by a hash, a kind of fingerprint of its contents, so an entry that is altered or removed breaks the chain. ', b('Verify Now'), ' on the ', pageLink('Security (administration)', 'Security'), ' tab checks the whole chain, and Tesria checks it once a day by itself, raising a critical alert if it is broken.'),
