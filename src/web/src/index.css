@@ -3445,6 +3445,37 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
 .admin-tokens__actions { white-space: nowrap; text-align: right; }
 .admin-tokens__actions .link-btn + .link-btn { margin-left: 0.75rem; }
 
+/* Administration → Audit (T7-019): a filter bar that wraps rather than
+   scrolls, a folded burst of failed sign-ins, and Show Older at the foot. */
+.audit-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.5rem 0.75rem; margin: 0.25rem 0 1rem; }
+.audit-filters__field { display: flex; flex-direction: column; gap: 0.25rem; margin: 0; min-width: 0; max-width: 100%; }
+.audit-filters__field--action { flex: 1 1 15rem; max-width: 22rem; }
+.audit-filters__field select,
+.audit-filters__field input {
+  box-sizing: border-box; height: var(--ctl-page); max-width: 100%; margin: 0; font: inherit; color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
+}
+.audit-filters__field select { padding: 0 0.5rem; min-width: 10rem; }
+.audit-filters__field--action select { width: 100%; }
+.audit-filters__field--action .glass-select-wrap { width: 100%; }
+/* iOS draws a date field at its own width; a plain appearance lets it take ours. */
+.audit-filters__field input[type="date"] { -webkit-appearance: none; appearance: none; width: 10.5rem; padding: 0 0.5rem; text-align: left; }
+.audit-filters__field input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+.audit-filters__clear { height: var(--ctl-page); }
+.audit__actor { font-size: inherit; color: var(--text); text-align: left; }
+.audit__actor:hover { color: var(--primary); }
+.audit__run-item { padding-left: 1rem; }
+.audit__more { margin-top: 1rem; }
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  /* Two dates side by side, and the pickers full width, on a phone. */
+  .audit-filters__field, .audit-filters__field--action { flex: 1 1 100%; max-width: none; }
+  .audit-filters__field select { width: 100%; min-width: 0; }
+  .audit-filters__field .glass-select-wrap { width: 100%; }
+  .audit-filters__field--date { flex: 1 1 calc(50% - 0.375rem); }
+  .audit-filters__field input[type="date"] { width: 100%; }
+  .audit-filters__clear { flex: 1 1 100%; }
+}
+
 /* An invite's links: one, or the usual one and the tailnet one, each with
    its own Copy. */
 .invite-link { margin-bottom: 0.75rem; }

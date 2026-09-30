@@ -1201,9 +1201,24 @@ export type AuditEntry = {
   actorName: string | null
   metadataJson: string | null
   createdAt: string
+  /** Its place in the hash chain: the cursor for older entries. */
+  sequence: number
 }
 
-export type Label = { id: string; name: string }
+/** Filters for `api.audit`; `action` ending in a dot is a prefix (`user.`). */
+export type AuditQuery = {
+  targetType?: string
+  targetId?: string
+  take?: number
+  before?: number
+  action?: string
+  actorId?: string
+  /** ISO times: `from` inclusive, `to` exclusive. */
+  from?: string
+  to?: string
+}
+
+export type Label ={ id: string; name: string }
 export type LabelUsage = { id: string; name: string; pageCount: number }
 export type LabeledPage = { pageId: string; spaceId: string; spaceKey: string; title: string }
 
@@ -1883,13 +1898,26 @@ export const api = {
     remove: (pageId: string, id: string) =>
       request<void>('DELETE', `/api/pages/${pageId}/restrictions/${id}`),
   },
-  audit: (params?: { targetType?: string; targetId?: string; take?: number }) => {
+  /**
+   * One page of the audit log, newest first (T7-019). `nextBefore` is what
+   * to pass as `before` for the page after it, or null when there is none:
+   * the server says so in a header, because a page shorter than `take` can
+   * still have older entries behind a stretch the caller may not see.
+   */
+  audit: async (params?: AuditQuery): Promise<{ entries: AuditEntry[]; nextBefore: number | null }> => {
     const q = new URLSearchParams()
-    if (params?.targetType) q.set('targetType', params.targetType)
-    if (params?.targetId) q.set('targetId', params.targetId)
-    if (params?.take) q.set('take', String(params.take))
+    for (const [k, v] of Object.entries(params ?? {})) if (v !== undefined && v !== null && v !== '') q.set(k, String(v))
     const suffix = q.toString()
-    return request<AuditEntry[]>('GET', `/api/audit${suffix ? `?${suffix}` : ''}`)
+    const path = `/api/audit${suffix ? `?${suffix}` : ''}`
+    try {
+      const res = await fetch(path, { method: 'GET', credentials: 'include', headers: CSRF_HEADER })
+      const next = res.headers.get('X-Audit-Next-Before')
+      const entries = await handle<AuditEntry[]>(res)
+      return { entries, nextBefore: next && /^\d+$/.test(next) ? Number(next) : null }
+    } catch (err) {
+      noticeSignedOut(err, path)
+      throw err
+    }
   },
   labels: {
     all: () => request<LabelUsage[]>('GET', '/api/labels'),

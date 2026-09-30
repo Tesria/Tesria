@@ -1146,6 +1146,11 @@ label.code-block__appearance > select {
 :root[data-style="glass"] .breadcrumb__more-btn:hover, :root[data-style="glass"] .breadcrumb__more-btn[aria-expanded="true"] { background: var(--glass-hover); }
 /* In the permissions picker: its own select rule is more specific. */
 :root[data-style="glass"] .principal-picker select.glass-select { height: var(--ctl-page); padding: 0 2.4rem 0 1rem; min-width: 130px; }
+/* The Audit tab's action picker fills its field; on a phone, both pickers do. */
+:root[data-style="glass"] .audit-filters__field--action select.glass-select { width: 100%; }
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  :root[data-style="glass"] .audit-filters__field select.glass-select { width: 100%; }
+}
 
 /* Open, the list is a frosted panel like the appearance menu, where the
    browser lets a select's list be styled (Chrome and Edge 135 and later);
