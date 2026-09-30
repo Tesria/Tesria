@@ -1,4 +1,4 @@
-import { type FormEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { type FormEvent, type MouseEvent as ReactMouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { Permission } from '../api/client'
@@ -105,6 +105,19 @@ function useTopbarFit(header: React.RefObject<HTMLElement | null>, ruler: React.
     return () => { resize.disconnect(); attrs.disconnect() }
   }, [header, ruler])
   return level
+}
+
+/**
+ * Keeps the page filter's focus through a tap elsewhere in the menu's space
+ * part (QA T3-026). The rows are links and the buttons act on click, so
+ * they still work; the filter itself, and any other box, take the focus as
+ * usual.
+ */
+function keepFilterFocus(e: ReactMouseEvent) {
+  const focused = document.activeElement
+  if (!(focused instanceof HTMLElement) || !focused.classList.contains('tree-filter__input')) return
+  if ((e.target as Element).closest('input, textarea, select')) return
+  e.preventDefault()
 }
 
 /** Authenticated app chrome: top bar + routed content. */
@@ -262,12 +275,16 @@ export function Layout() {
               own navigation, so moving between two pages of one space is
               menu → page rather than menu → Spaces → space → page. */}
           {spaceNav && (
-            <div className="topbar__space">
+            // While the page filter has the keyboard, the rest of the menu
+            // steps aside (index.css, QA T3-026). A tap here must not take
+            // the focus from the filter: the menu would come back and move
+            // what was under the finger before the tap landed.
+            <div className="topbar__space" onMouseDown={keepFilterFocus}>
               <div className="topbar__space-head">
                 <SpaceIcon space={spaceNav.space} size={22} />
                 <span className="topbar__space-name">{spaceNav.space.name}</span>
               </div>
-              {user && (
+              {user && spaceNav.space.canEdit !== false && (
                 <NavLink to={spaceNav.newPageHref} className="btn btn--primary btn--block" onClick={closeNav}>
                   + New Page
                 </NavLink>
