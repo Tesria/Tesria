@@ -1,8 +1,9 @@
-import { type FormEvent, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
+import { useBlocker, useNavigate } from 'react-router-dom'
 import { api, ApiError, LIMITS, Permission, type Space, type SpaceExports } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { SpaceIconPicker } from '../components/SpaceIconPicker'
+import { useConfirm } from '../components/ConfirmDialog'
 import { DeleteSpaceDialog } from './DeleteSpaceDialog'
 import { SiteExportSection } from '../components/SiteExportSection'
 import { PackExportSection } from '../components/PackExportSection'
@@ -36,14 +37,59 @@ export function SpaceSettingsPage() {
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [exports, setExports] = useState<SpaceExports>(space.exports)
+  const { ask, dialog } = useConfirm()
+  // The icon, the name and the page tree change the space itself, and so
+  // does archiving it: a space administrator's to do. Anyone else was shown
+  // all four and refused after using them (QA T3-012).
+  const mayChange = space.canAdmin !== false
 
-  function applied(updated: Space, message: string) {
+  /**
+   * After any save. Only Details' own Save puts the saved name and
+   * description back in their boxes: every other save (an icon, a tree
+   * style, the exports) used to do it too, silently throwing away a name
+   * typed and not yet saved (QA cal-004, T3-004).
+   */
+  function applied(updated: Space, message: string, details = false) {
     onSpaceChanged(updated)
-    setName(updated.name)
-    setDescription(updated.description ?? '')
+    if (details) {
+      setName(updated.name)
+      setDescription(updated.description ?? '')
+    }
     setStatus(message)
     setError(null)
   }
+
+  // A name or description typed and not saved is asked about before it is
+  // lost to another tab, another page or a reload (QA T3-004).
+  const unsaved = mayChange && (name.trim() !== space.name || description.trim() !== (space.description ?? ''))
+  const unsavedRef = useRef(unsaved)
+  unsavedRef.current = unsaved
+  const blocker = useBlocker(({ currentLocation, nextLocation }) =>
+    unsavedRef.current && currentLocation.pathname !== nextLocation.pathname)
+  const blockerRef = useRef(blocker)
+  blockerRef.current = blocker
+  useEffect(() => {
+    if (blocker.state !== 'blocked') return
+    void ask({
+      title: 'Leave Without Saving?',
+      body: <p>The name and description you typed are not saved. Leaving puts them back as they were.</p>,
+      confirmLabel: 'Leave Without Saving',
+    }).then((leave) => {
+      const b = blockerRef.current
+      if (b.state !== 'blocked') return
+      if (leave) b.proceed()
+      else b.reset()
+    })
+  }, [blocker.state, ask])
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!unsavedRef.current) return
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [])
 
   /** The reversible alternative to deleting, and the only one a space's own
    *  administrator has. The endpoint has existed since Phase 2 with nothing
@@ -102,7 +148,7 @@ export function SpaceSettingsPage() {
     setStatus(null)
     setError(null)
     try {
-      applied(await api.spaces.update(space.key, { name, description: description || null }), 'Saved.')
+      applied(await api.spaces.update(space.key, { name, description: description || null }), 'Saved.', true)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not save.')
     } finally {
@@ -114,7 +160,13 @@ export function SpaceSettingsPage() {
     <>
       {error && <p className="alert alert--error">{error}</p>}
       {status && <p className="profile__ok">{status}</p>}
+      {!mayChange && (
+        <p className="alert alert--error">
+          You need admin rights on this space to change its icon, name, description or page tree, or to archive it.
+        </p>
+      )}
 
+      {mayChange && (<>
       <section className="profile__section profile__section--wide">
         <h2>Icon</h2>
         <p className="muted small">
@@ -172,6 +224,7 @@ export function SpaceSettingsPage() {
           ))}
         </fieldset>
       </section>
+      </>)}
 
       {can(Permission.SpacesExports) && (
         <section className="profile__section profile__section--wide" id="exports">
@@ -223,6 +276,7 @@ export function SpaceSettingsPage() {
         </section>
       )}
 
+      {mayChange && (
       <section className="profile__section profile__section--wide" id="archive">
         <h2>Archive</h2>
         <p className="muted small">
@@ -234,6 +288,7 @@ export function SpaceSettingsPage() {
           {space.archived ? 'Unarchive This Space' : 'Archive This Space'}
         </button>
       </section>
+      )}
 
       {/* Last on the page and visually apart, because nothing else here is
           irreversible (dev-plan 11.3). The right is an instance one, so a
@@ -262,6 +317,7 @@ export function SpaceSettingsPage() {
           })}
         />
       )}
+      {dialog}
     </>
   )
 }
