@@ -1285,6 +1285,9 @@ export async function build({
     p('If you cloned the repository to build from source, run ', c('git pull'), ' in the Tesria folder instead.'),
     panel('note', p(b('Upgrading from a version before 0.8.0?'), ' There is nothing extra to do. Keep your ', c('.env'), ': its values win, and Tesria stores them for itself from then on. If it still has a ', c('change-me'), ' value from the old example settings, Tesria starts anyway and warns you; see ', pageLink('Security hardening'), ', under ', b('Changing a secret'), '.')),
 
+    panel('note', p(b('Upgrade in your Tesria folder, not a new one.'), ' A Tesria last started by a version before 0.8.2 does not know its folder yet. The first start of 0.8.2 or later records it, and only a folder that holds its ', c('backup-key.txt'), ' or its passwords in ', c('.env'), ' is accepted without asking. If you deleted ', c('backup-key.txt'), ' after saving the key, the start stops and says so: run ', c('docker compose run --rm init use-this-folder'), ' in your Tesria folder, then ', c('docker compose up -d'), '. To try a new version beside the old one, give the new copy its own name, network and ports first: see ', b('A second Tesria on the same computer'), ' in ', pageLink('Installing with Docker Compose'), '.')),
+    panel('note', p(b('Moved Tesria to other ports with a docker-compose.override.yml?'), ' Since 0.8.2, ', c('TESRIA_HTTP_PORT'), ' and ', c('TESRIA_HTTPS_PORT'), ' in ', c('.env'), ' do this, and only then do the Trust This Device page, the redirect from ', c('http'), ' to ', c('https'), ', links in email and the Windows real-addresses setup know the ports. Remove the ', c('ports'), ' lines from the override file, set the two settings to the same numbers, and run ', c('docker compose up -d'), '. See ', pageLink('Configuration reference'), '.')),
+
     step(3, 'Restart on the new version'),
     p('In the Tesria folder:'),
     codeBlock('bash', 'docker compose pull\ndocker compose up -d'),

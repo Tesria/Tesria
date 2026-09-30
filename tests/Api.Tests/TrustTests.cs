@@ -258,7 +258,11 @@ public class TrustTests
         Assert.DoesNotContain("\"https://$HostName/api/health\"", ps1);
         Assert.Contains("[System.Net.HttpWebRequest]::Create(\"http://$HostName/api/health\")", ps1);
         Assert.Contains("$request.AllowAutoRedirect = $false", ps1);
-        Assert.Contains("Invoke-WebRequest -Uri \"$origin/api/health\"", ps1);
+        // Checked in a fresh PowerShell, a few times over some seconds (R-002):
+        // the trusting process could keep its answer from before the import.
+        Assert.Contains("Invoke-WebRequest -Uri '$quoted/api/health'", ps1);
+        Assert.Contains("& \"$PSHOME\\powershell.exe\" -NoProfile -NonInteractive -Command", ps1);
+        Assert.Contains("foreach ($attempt in 1..5)", ps1);
         Assert.Contains("if (-not $origin -and $name -eq $HostName) { $origin = \"https://$HostName\" }", ps1);
     }
 

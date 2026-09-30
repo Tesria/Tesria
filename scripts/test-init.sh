@@ -33,6 +33,12 @@ run() {
   env -i PATH="$PATH" SECRETS_ROOT="$T/secrets" PGDATA_ROOT="$T/pgdata" REPO_ROOT="$T/repo" \
     INSTALL_ROOT="$T/install" "$@" bash /init/init.sh >"$T/out" 2>&1
 }
+# The same, with an init command (use-this-folder, check-folder) after the settings.
+cmd() {
+  local c="$1"; shift
+  env -i PATH="$PATH" SECRETS_ROOT="$T/secrets" PGDATA_ROOT="$T/pgdata" REPO_ROOT="$T/repo" \
+    INSTALL_ROOT="$T/install" "$@" bash /init/init.sh "$c" >"$T/out" 2>&1
+}
 val() { cat "$T/secrets/$1/value"; }
 mode() { stat -c '%a %u:%g' "$1"; }
 
@@ -97,6 +103,7 @@ check "the flag clears once they are changed" '[ ! -e "$T/secrets/status/placeho
 
 echo "== an existing database with no password known is refused"
 fresh; touch "$T/pgdata/PG_VERSION"
+cmd use-this-folder
 run; code=$?
 check "exits non-zero" '[ "$code" -ne 0 ]'
 check "says which setting" 'grep -q "Set POSTGRES_PASSWORD in .env" "$T/out"'
@@ -132,5 +139,45 @@ check "a line break too" '[ "$code" -ne 0 ] && grep -q "OFFSITE_NAS_PATH in .env
 fresh
 run 'OFFSITE_REMOVABLE_PATH=C:\TesriaBackups' 'OFFSITE_NAS_PATH=D:/My Backups/Tesria'
 check "a plain Windows path is fine" '[ $? -eq 0 ]'
+
+echo "== the folder check: a new install"
+fresh
+cmd check-folder; code=$?
+check "check-folder before the first start says nothing is there yet (R-005)" '[ "$code" -eq 0 ] && grep -q "has not started yet" "$T/out"'
+run
+check "the first start claims the folder" '[ -s "$T/install/.tesria-install" ] && [ -s "$T/secrets/status/install-id" ]'
+cmd check-folder
+check "check-folder then says it is this folder" 'grep -q "This folder is the one" "$T/out"'
+
+echo "== an install last started before 0.8.2, from another folder (R-001)"
+fresh; run; touch "$T/pgdata/PG_VERSION"
+rm -f "$T/secrets/status/install-id" "$T/install/.tesria-install"
+key="$(val backup-key)"; pw="$(val postgres-password)"
+mv "$T/install/backup-key.txt" "$T/keyfile"
+run; code=$?
+check "a folder without its key file or password is refused" '[ "$code" -ne 0 ] && grep -q "cannot show it is its own" "$T/out"'
+check "and nothing is claimed" '[ ! -e "$T/install/.tesria-install" ] && [ ! -e "$T/secrets/status/install-id" ]'
+cmd check-folder; code=$?
+check "check-folder there says it cannot tell" '[ "$code" -eq 2 ]'
+run BACKUP_ENCRYPTION_KEY=not-the-key; code=$?
+check "a different backup key in .env is no proof" '[ "$code" -ne 0 ] && [ ! -e "$T/install/.tesria-install" ]'
+
+echo "== the same install from its own folder, after the upgrade"
+cp "$T/keyfile" "$T/install/backup-key.txt"
+cmd check-folder; code=$?
+check "check-folder recognizes its backup-key.txt" '[ "$code" -eq 0 ] && grep -q "almost certainly its own folder" "$T/out"'
+run; code=$?
+check "its backup-key.txt lets it claim the folder" '[ "$code" -eq 0 ] && [ -s "$T/install/.tesria-install" ]'
+rm -f "$T/secrets/status/install-id" "$T/install/.tesria-install" "$T/install/backup-key.txt"
+run "POSTGRES_PASSWORD=$pw"
+check "so does its password in .env" '[ $? -eq 0 ] && [ -s "$T/install/.tesria-install" ]'
+rm -f "$T/secrets/status/install-id" "$T/install/.tesria-install"
+run "BACKUP_ENCRYPTION_KEY=$key"
+check "and its backup key in .env" '[ $? -eq 0 ] && [ -s "$T/install/.tesria-install" ]'
+rm -f "$T/secrets/status/install-id" "$T/install/.tesria-install"
+cmd use-this-folder
+check "use-this-folder claims it on purpose" '[ $? -eq 0 ] && [ -s "$T/install/.tesria-install" ]'
+run
+check "and it then starts" '[ $? -eq 0 ]'
 
 [ "$FAILED" -eq 0 ] && echo "all passed" || { echo "some checks failed"; exit 1; }

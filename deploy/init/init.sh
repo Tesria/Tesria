@@ -83,6 +83,35 @@ folder_id() {
 }
 stored_id() { [ -r "$STORED_ID" ] && tr -d ' \r\n' <"$STORED_ID"; }
 
+# An install that started before 0.8.2 never recorded its folder, so the
+# first folder to start 0.8.2 or later would claim it: a trial copy
+# unzipped elsewhere, as easily as its own folder (R-001, the 0.8.3 Windows
+# retest). Such an install is recognized by what it left behind: a
+# database, or the secrets init stored for it.
+has_install() {
+  [ -n "$(find "$PGDATA_ROOT" -maxdepth 3 -name PG_VERSION -print -quit 2>/dev/null)" ] \
+    || [ -s "$SECRETS_ROOT/postgres-password/value" ]
+}
+# Only its own folder is claimed without asking, and its own folder is the
+# one that holds what init gave it: backup-key.txt with the stored key, or
+# an .env that sets the install's backup key or database password.
+legacy_folder() {
+  key="$(value_of backup-key || true)"
+  if [ -n "$key" ] && [ -r "$INSTALL_ROOT/backup-key.txt" ] \
+    && tr -d '\r' <"$INSTALL_ROOT/backup-key.txt" | grep -qxF "$key"; then
+    return 0
+  fi
+  if [ -n "$key" ] && [ "${BACKUP_ENCRYPTION_KEY:-}" = "$key" ]; then
+    return 0
+  fi
+  if [ -n "${POSTGRES_PASSWORD:-}" ]; then
+    stored_pw="$(value_of postgres-password || true)"
+    [ -z "$stored_pw" ] || [ "$stored_pw" = "$POSTGRES_PASSWORD" ]
+    return
+  fi
+  return 1
+}
+
 claim_folder() {
   mkdir -p "$STATUS_DIR"
   chmod 0755 "$STATUS_DIR"
@@ -119,6 +148,30 @@ EOF
   exit 1
 }
 
+refuse_legacy_folder() {
+  cat >&2 <<EOF
+[init] ERROR: Tesria "$PROJECT" already exists, and this folder cannot show it is its own.
+[init]
+[init] It was last started by a version before 0.8.2, which did not record the
+[init] folder it runs from, and this folder has neither its backup-key.txt nor
+[init] its database password in .env. Nothing was changed.
+[init]
+[init] If this IS its folder (you upgraded it here, or deleted backup-key.txt
+[init] after saving the key), run this here, then docker compose up -d:
+[init]     docker compose run --rm init use-this-folder
+[init]
+[init] If this is a new copy you are trying out, do not run docker compose
+[init] down -v here: it would delete that wiki. Give this copy its own name,
+[init] network and ports in this folder's .env, then run docker compose up -d:
+[init]     COMPOSE_PROJECT_NAME=tesria2
+[init]     TESRIA_SUBNET=10.204.0.0/24
+[init]     TESRIA_HTTP_PORT=8080
+[init]     TESRIA_HTTPS_PORT=8443
+[init] See the docs page Uninstalling and moving.
+EOF
+  exit 1
+}
+
 if [ -d "$INSTALL_ROOT" ]; then
   stored="$(stored_id || true)"
   here="$(folder_id || true)"
@@ -130,8 +183,15 @@ if [ -d "$INSTALL_ROOT" ]; then
       exit 0
       ;;
     check-folder)
-      if [ -z "$stored" ]; then
-        echo "Tesria \"$PROJECT\" has not started since 0.8.2, so it cannot tell which folder it belongs to. Run docker compose ls instead: its CONFIG FILES column names the folder it was last started from." >&2
+      if [ -z "$stored" ] && ! has_install; then
+        # R-005: never started, so there is nothing here to lose yet.
+        echo "Tesria \"$PROJECT\" has not started yet, so there is nothing of it to delete."
+        exit 0
+      elif [ -z "$stored" ] && legacy_folder; then
+        echo "This folder holds the backup key or password of Tesria \"$PROJECT\", which last started before 0.8.2: it is almost certainly its own folder. Starting it here records that."
+        exit 0
+      elif [ -z "$stored" ]; then
+        echo "Tesria \"$PROJECT\" last started before 0.8.2, which did not record its folder, and this folder cannot show it is its own. Run docker compose ls: its CONFIG FILES column names the folder it was last started from. Do not run docker compose down -v here unless it is this one." >&2
         exit 2
       elif [ "$here" = "$stored" ]; then
         echo "This folder is the one Tesria \"$PROJECT\" was installed from."
@@ -141,9 +201,11 @@ if [ -d "$INSTALL_ROOT" ]; then
       exit 1
       ;;
   esac
-  if [ -z "$stored" ]; then
-    # A new install, or the first start of one made before 0.8.2: this
-    # folder is where it lives from now on.
+  if [ -z "$stored" ] && has_install && ! legacy_folder; then
+    refuse_legacy_folder
+  elif [ -z "$stored" ]; then
+    # A new install, or the first start of one made before 0.8.2 from its
+    # own folder: this folder is where it lives from now on.
     claim_folder "$(head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')"
     log "remembered this folder as Tesria \"$PROJECT\"'s own"
   elif [ "$here" != "$stored" ]; then

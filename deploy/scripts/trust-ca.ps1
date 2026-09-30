@@ -178,11 +178,21 @@ if (-not $origin) {
 }
 else {
     Write-Host "==> Checking $origin/ ..."
-    try {
-        Invoke-WebRequest -Uri "$origin/api/health" -UseBasicParsing -TimeoutSec 10 | Out-Null
+    # In a new PowerShell each time, and a few times over some seconds: this
+    # process can keep its first answer about the certificate, from before it
+    # was trusted, and said "Still failing" on the very run that trusted it
+    # (R-002, the 0.8.3 Windows retest).
+    $quoted = $origin -replace "'", "''"
+    $ok = $false
+    foreach ($attempt in 1..5) {
+        & "$PSHOME\powershell.exe" -NoProfile -NonInteractive -Command "try { Invoke-WebRequest -Uri '$quoted/api/health' -UseBasicParsing -TimeoutSec 10 | Out-Null; exit 0 } catch { exit 1 }"
+        if ($LASTEXITCODE -eq 0) { $ok = $true; break }
+        Start-Sleep -Seconds 2
+    }
+    if ($ok) {
         Write-Host "    Success: this computer now trusts $($origin.Substring(8))."
     }
-    catch {
+    else {
         Write-Host "    Still failing. Quit and reopen your browser. If the warning stays, see the Tesria docs, Trusting the local certificate."
     }
 }

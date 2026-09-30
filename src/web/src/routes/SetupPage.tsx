@@ -188,7 +188,16 @@ export function SetupPage() {
 
         {at === 'instance' && (
           <InstanceStep busy={busy} onNext={(name, baseUrl) =>
-            advance('instance', () => api.admin.settings.update({ instanceName: name, baseUrl }))} />
+            advance('instance', async () => {
+              // The address as it came, the one Tesria works out for itself
+              // (DOMAIN and TESRIA_HTTPS_PORT), is left blank rather than
+              // saved, so it keeps following them if they change (R-006, the
+              // 0.8.3 Windows retest). A different one is the owner's.
+              const current = await api.admin.settings.get()
+              const plain = (u: string) => u.trim().replace(/\/+$/, '').toLowerCase()
+              const deployed = !current.baseUrl && plain(baseUrl) === plain(current.effectiveBaseUrl)
+              return api.admin.settings.update({ instanceName: name, baseUrl: deployed ? '' : baseUrl })
+            })} />
         )}
 
         {at === 'registration' && (

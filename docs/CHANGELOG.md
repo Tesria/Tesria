@@ -5,6 +5,23 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Fixed: a trial copy could still take over an install from before 0.8.2**
+  (R-001, the 0.8.3 Windows retest). An install last started before 0.8.2
+  never recorded its folder, so the first folder to start 0.8.2 or later
+  claimed it: a new copy unzipped elsewhere to try, which then locked the
+  real folder out. Such an install is now claimed only from a folder that
+  holds its `backup-key.txt`, or its password or backup key in `.env`;
+  from any other folder the start stops, changes nothing, and says to run
+  `docker compose run --rm init use-this-folder` in the folder meant. The
+  Upgrading page says to upgrade in place. `check-folder` on an install
+  that never started now says so (R-005).
+- **Smaller fixes from the Windows retest:** `trust-ca.ps1` no longer says
+  "Still failing" on the run that trusts the certificate (it checks in a
+  fresh PowerShell, a few times; R-002). The setup wizard leaves Public
+  Address blank when it is the address Tesria works out itself, so links
+  keep following DOMAIN and TESRIA_HTTPS_PORT (R-006). The Upgrading page
+  says to move ports from a `docker-compose.override.yml` to
+  TESRIA_HTTP_PORT and TESRIA_HTTPS_PORT (R-003).
 - **Decided by the owner** (2026-09-29), from the QA run's questions:
   - *Changing your sign-in email waits for a link* (t2-009). With email on,
     the new address gets a confirmation link and the old one a notice; the
