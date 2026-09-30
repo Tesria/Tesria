@@ -33,4 +33,16 @@ public class RestoreTimelineTests
         var restore = Script("restore.sh");
         Assert.Contains("--type=time --target=\"$TARGET_TIME\" --target-timeline=current", restore);
     }
+
+    [Fact]
+    public void The_backup_service_leaves_the_drive_services_running_jobs_alone()
+    {
+        // t8-R04: at its start the backup service failed every running job of
+        // the logical agent, a drive's Copy Now still copying included.
+        var common = File.ReadAllText(Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory, "../../../../../deploy/backup/common.sh")));
+        var start = common.IndexOf("agent_start() {", StringComparison.Ordinal);
+        var body = common[start..common.IndexOf("INSERT INTO \"BackupAgents\"", start, StringComparison.Ordinal)];
+        Assert.Contains("AND NOT (\"Kind\" IN ('copy-offsite', 'test-target') AND coalesce(\"Target\", '') IN ('nas', 'removable'))", body);
+    }
 }
