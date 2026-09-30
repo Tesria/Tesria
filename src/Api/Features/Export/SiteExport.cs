@@ -88,6 +88,41 @@ public static partial class SiteExport
         return placed;
     }
 
+    /// <summary>
+    /// The most of an attachment's own name an asset keeps, before its
+    /// extension: in characters, and in UTF-8 bytes, which is what a
+    /// filesystem counts. Every mainstream one refuses a single name past 255
+    /// bytes, and a 240-character file name made an asset of 273, which no
+    /// unzip tool would write (t6-012). The page folders have been kept short
+    /// since 0.8.1 for Windows' path limit; this is the same care for files.
+    /// </summary>
+    public const int MaxAssetStemChars = 60, MaxAssetStemBytes = 120, MaxAssetExtensionChars = 10;
+
+    /// <summary>
+    /// An attachment's file name in <c>assets/</c>: its id, so two files
+    /// called "diagram.png" cannot collide, then its own name made safe for
+    /// any filesystem and kept short, with its extension, so the file still
+    /// opens in the right program. The id is what makes it unique, so a
+    /// shortened name can never clash with another.
+    /// </summary>
+    public static string AssetName(Guid id, string filename)
+    {
+        var safe = new string(filename.Select(c =>
+            char.IsLetterOrDigit(c) || c is '.' or '-' or '_' ? c : '-').ToArray());
+        var dot = safe.LastIndexOf('.');
+        var extension = dot > 0 && safe.Length - dot - 1 is > 0 and <= MaxAssetExtensionChars
+            && safe[(dot + 1)..].All(char.IsAsciiLetterOrDigit)
+            ? safe[dot..] : "";
+        var stem = safe[..(safe.Length - extension.Length)];
+
+        if (stem.Length > MaxAssetStemChars) stem = stem[..MaxAssetStemChars];
+        // No surrogate pairs to cut in half: the filter above has already
+        // turned each half of one into a hyphen.
+        while (Encoding.UTF8.GetByteCount(stem) > MaxAssetStemBytes) stem = stem[..^1];
+
+        return $"{id:N}-{stem}{extension}";
+    }
+
     /// <summary>A page in the tree, as this file needs it.</summary>
     public record PageNode(Guid Id, string Title, IReadOnlyList<PageNode> Children, string? Emoji = null);
 
@@ -222,11 +257,47 @@ public static partial class SiteExport
             // for a page that is not in the site.
             //
             // Relative links, like every other page, so 404.html also works
-            // opened straight off the filesystem. The one case they are wrong
-            // in is a host that serves this file for a missing path *below*
-            // the root, where the browser resolves them against that path;
-            // root-absolute links would fix that and break file:// instead.
-            css, brand, head, pages, footer, "", homeHref: "./index.html");
+            // opened straight off the filesystem; NotFoundBase makes them
+            // right when a host serves it for a missing address below the
+            // root.
+            css, brand, head, pages, footer, "", homeHref: "./index.html", headStart: NotFoundBase);
+
+    /// <summary>
+    /// Where the site's root is, for a 404 page shown at an address that is
+    /// not. A static host (Cloudflare Pages, Netlify, GitHub Pages) answers a
+    /// missing <c>/no/such/page/</c> with 404.html without redirecting, so its
+    /// relative links resolved against that address: no stylesheet, and a
+    /// tree of links that were all 404s too (t6-011). Root-absolute links
+    /// would break a site in a subfolder, and a file opened from disk.
+    ///
+    /// <para>So the page finds the root before anything else loads: the
+    /// nearest folder, from the top down, that has the site's stylesheet in
+    /// it, and makes that the base of every relative address. Synchronous on
+    /// purpose, because a base set later would come after the stylesheet had
+    /// already failed. A file on disk needs none of it.</para>
+    /// </summary>
+    public const string NotFoundBase =
+        """
+        <script data-export-keep>
+        (function () {
+          if (location.protocol === 'file:') return;
+          var dirs = location.pathname.split('/').slice(1, -1);
+          for (var i = 0; i <= dirs.length; i++) {
+            var root = '/' + dirs.slice(0, i).map(function (d) { return d + '/'; }).join('');
+            try {
+              var probe = new XMLHttpRequest();
+              probe.open('HEAD', root + 'assets/site.css', false);
+              probe.send();
+              if (probe.status !== 200) continue;
+            } catch (e) { return; }
+            var base = document.createElement('base');
+            base.href = root;
+            document.head.appendChild(base);
+            return;
+          }
+        })();
+        </script>
+        """;
 
     /// <summary>
     /// The page frame shared by the index and the 404. A captured page brings
@@ -237,7 +308,8 @@ public static partial class SiteExport
     /// </summary>
     private static string Shell(
         string title, string body, string css, SiteChrome.Brand brand, SiteChrome.SpaceHead head,
-        IReadOnlyList<Placed> pages, string footer, string currentPath, string? homeHref = null)
+        IReadOnlyList<Placed> pages, string footer, string currentPath, string? homeHref = null,
+        string headStart = "")
     {
         var stylesheet = Relative(currentPath, "assets/site.css");
         return $"""
@@ -246,6 +318,7 @@ public static partial class SiteExport
         <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {headStart}
         <title>{Escape(title)}</title>
         <link rel="stylesheet" href="{stylesheet}" />
         {SiteChrome.HeadExtras(brand, currentPath)}

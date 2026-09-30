@@ -269,9 +269,7 @@ public static class SiteExportEndpoints
         var keys = new Dictionary<Guid, string>();
         foreach (var row in rows)
         {
-            var safe = new string(row.Filename.Select(c =>
-                char.IsLetterOrDigit(c) || c is '.' or '-' or '_' ? c : '-').ToArray());
-            names[row.Id] = $"{row.Id:N}-{safe}";
+            names[row.Id] = SiteExport.AssetName(row.Id, row.Filename);
             keys[row.Id] = row.StorageKey;
         }
         return new Assets(names, keys);

@@ -2906,6 +2906,9 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
    without the page jumping once the frame loads. */
 .embed__frame { position: relative; width: 100%; background: var(--surface-sunken); border-radius: var(--radius); overflow: hidden; }
 .embed__frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+/* The paper stand-in for the frame (EmbedView); the print rules show it. */
+.embed .embed__card { display: none; }
+.embed__card-url { overflow-wrap: anywhere; }
 
 .smart-link { margin: 0.75rem 0; }
 /* The address and Card/Inline, while an empty or selected one is edited. */
@@ -3304,6 +3307,9 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
 .export .paper { margin: 0 auto; }
 .export--failed { display: grid; place-content: center; color: var(--muted); }
 .export__crumb { color: var(--muted); font-size: 0.85rem; margin-bottom: 0.75rem; }
+/* An exported task list is a record of what was done, not a form: its boxes
+   show their state and do not change when clicked (t6-001). */
+.export ul[data-type="taskList"] li > label { pointer-events: none; }
 
 /* Paper rules. These live beside the screen rules they modify rather than in
    a second stylesheet, which is the whole point of capturing the real page:
@@ -3354,6 +3360,7 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
   /* An iframe prints as a blank rectangle, so the card is what goes on the
      page. Both kinds keep their link, which is the useful part on paper. */
   .embed__frame, .embed iframe, .attachment-block iframe { display: none !important; }
+  .embed .embed__card { display: flex !important; }
 
   /* Marks that mean "somebody is working on this" are not part of the
      document: they read as highlighting to anyone holding the printout.
