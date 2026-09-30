@@ -61,8 +61,12 @@ $ErrorActionPreference = "Stop"
 
 function Get-Hex([string]$value) { return ($value -replace '[^0-9A-Fa-f]', '').ToUpperInvariant() }
 
+# Whether -Fingerprint was given at all, apart from its value: a value with
+# no hexadecimal digits in it (an empty variable, say) is refused rather
+# than taken as "no fingerprint".
+$fingerprintGiven = $PSBoundParameters.ContainsKey('Fingerprint')
 $expected = Get-Hex $Fingerprint
-if ($expected.Length -ne 0 -and $expected.Length -ne 64) {
+if ($fingerprintGiven -and $expected.Length -ne 64) {
     Write-Error "That is not a SHA-256 fingerprint (64 hexadecimal digits, usually in pairs like AB:CD:...)."
     exit 2
 }

@@ -83,6 +83,33 @@ public class SetupTests
     }
 
     [Fact]
+    public async Task Nobody_else_can_register_until_the_owner_answers_who_can_join()
+    {
+        // T1-020: registration used to be open from install until the Who
+        // Can Join step was saved, so anyone could sign up mid-wizard.
+        using var factory = new TestAppFactory { OpenRegistration = false };
+        var anon = factory.CreateClient();
+        Assert.False((await anon.GetFromJsonAsync<InstanceDto>("/api/instance"))!.AllowPublicRegistration);
+
+        var owner = factory.CreateClient();
+        Assert.Equal(Owner, (await RegisterAsync(owner, "owner@example.com")).Role);
+
+        var early = await factory.CreateClient().PostAsJsonAsync("/api/auth/register",
+            new { Email = "early@example.com", DisplayName = "Early", Password = "supersecret" });
+        Assert.Equal(HttpStatusCode.Forbidden, early.StatusCode);
+        Assert.False(await InScopeAsync(factory, db => db.Users.AnyAsync(u => u.Email == "early@example.com")));
+
+        // Choosing Open in the wizard opens it.
+        (await owner.PutAsJsonAsync("/api/admin/settings",
+            new { AllowPublicRegistration = true, AllowPublicSpaces = false })).EnsureSuccessStatusCode();
+        (await RecordAsync(owner, "registration")).EnsureSuccessStatusCode();
+        Assert.True((await anon.GetFromJsonAsync<InstanceDto>("/api/instance"))!.AllowPublicRegistration);
+        (await factory.CreateClient().PostAsJsonAsync("/api/auth/register",
+            new { Email = "later@example.com", DisplayName = "Later", Password = "supersecret" }))
+            .EnsureSuccessStatusCode();
+    }
+
+    [Fact]
     public async Task The_owner_of_a_fresh_instance_is_told_setup_is_required()
     {
         var (factory, owner) = await FreshAsync();

@@ -34,12 +34,16 @@ public class SiteSettings
 
     /// <summary>
     /// Whether anyone who can reach <c>/register</c> may create an account.
-    /// Defaults to true, which is the behavior before this setting existed.
+    /// Off on a new instance, so nobody else can sign up while the owner is
+    /// still in the setup wizard; its Who Can Join step sets it (T1-020; it
+    /// used to start on, the behavior from before this setting existed).
+    /// The row is created on first use and the value stored, so an existing
+    /// instance keeps what it has.
     /// Registration on a completely empty instance ignores this, see
-    /// AuthEndpoints.Register, so an operator cannot lock themselves out of a
-    /// fresh install by turning it off before the first account exists.
+    /// AuthEndpoints.Register, so the first account, the owner, can always
+    /// be created.
     /// </summary>
-    public bool AllowPublicRegistration { get; set; } = true;
+    public bool AllowPublicRegistration { get; set; }
 
     /// <summary>
     /// Instance-wide kill switch for anonymous read access (dev-plan Phase 5).

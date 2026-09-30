@@ -40,10 +40,14 @@ usage() {
 
 HOST=""
 EXPECTED=""
+# Whether --fingerprint was given at all, apart from its value: a value with
+# no hexadecimal digits in it (an empty shell variable, say) is refused
+# rather than taken as "no fingerprint".
+FINGERPRINT_GIVEN=0
 while [ $# -gt 0 ]; do
 	case "$1" in
-	--fingerprint) [ $# -ge 2 ] || usage; EXPECTED="$2"; shift 2 ;;
-	--fingerprint=*) EXPECTED="${1#*=}"; shift ;;
+	--fingerprint) [ $# -ge 2 ] || usage; EXPECTED="$2"; FINGERPRINT_GIVEN=1; shift 2 ;;
+	--fingerprint=*) EXPECTED="${1#*=}"; FINGERPRINT_GIVEN=1; shift ;;
 	-h | --help) usage ;;
 	-*) echo "Unknown option: $1" >&2; usage ;;
 	*) [ -z "$HOST" ] || usage; HOST="$1"; shift ;;
@@ -54,7 +58,7 @@ done
 # Compared as 64 hex digits, whatever the separators and case.
 normalize() { printf '%s' "$1" | tr -cd '0-9A-Fa-f' | tr 'a-f' 'A-F'; }
 EXPECTED="$(normalize "$EXPECTED")"
-if [ -n "$EXPECTED" ] && [ "${#EXPECTED}" -ne 64 ]; then
+if [ "$FINGERPRINT_GIVEN" -eq 1 ] && [ "${#EXPECTED}" -ne 64 ]; then
 	echo "ERROR: that is not a SHA-256 fingerprint (64 hexadecimal digits, usually in pairs like AB:CD:...)." >&2
 	exit 2
 fi
@@ -77,7 +81,7 @@ fi
 
 SUBJECT="$(openssl x509 -in "$TMP_CERT" -noout -subject | sed 's/^subject= *//')"
 ACTUAL="$(normalize "$(openssl x509 -in "$TMP_CERT" -noout -fingerprint -sha256 | cut -d= -f2)")"
-if [ -z "$EXPECTED" ]; then
+if [ "$FINGERPRINT_GIVEN" -eq 0 ]; then
 	echo "==> Its SHA-256 fingerprint: $(printf '%s' "$ACTUAL" | sed 's/../&:/g; s/:$//')"
 	echo "    Not checked, as no --fingerprint was given. On a network you do not"
 	echo "    control, compare it with the one on the server before relying on it."
@@ -89,7 +93,7 @@ elif [ "$ACTUAL" != "$EXPECTED" ]; then
 	echo "       server's place: do not trust it, and try from another network." >&2
 	exit 1
 fi
-[ -z "$EXPECTED" ] || echo "==> The certificate matches the fingerprint: ${SUBJECT}"
+[ "$FINGERPRINT_GIVEN" -eq 0 ] || echo "==> The certificate matches the fingerprint: ${SUBJECT}"
 
 OS="$(uname -s)"
 

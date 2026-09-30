@@ -482,6 +482,10 @@ public static class AdminEndpoints
         }
 
         var actorId = current.Id;
+        // Read before the change, so the alert below fires on a flip rather
+        // than on every save that carries the field (T1-016: the setup
+        // wizard sends it on every pass through Who Can Join).
+        var wasPublic = (await settings.GetAsync()).AllowPublicSpaces;
         var updated = await settings.UpdateAsync(s =>
         {
             if (name is not null) s.InstanceName = name;
@@ -562,8 +566,10 @@ public static class AdminEndpoints
         audit.Record("settings.updated", "instance", null, new { Changed = changed });
         // Any flip of the public-read kill switch is an alert, on or off:
         // turning it on exposes content, turning it off might be the
-        // attacker covering the mitigation an admin just applied.
-        if (req.AllowPublicSpaces is { } toggled) await detector.PublicSpacesToggledAsync(actorId, toggled);
+        // attacker covering the mitigation an admin just applied. Saving it
+        // at the value it already had is not a flip, and raises nothing.
+        if (req.AllowPublicSpaces is { } toggled && toggled != wasPublic)
+            await detector.PublicSpacesToggledAsync(actorId, toggled);
         await db.SaveChangesAsync();
 
         return Results.Ok(ToResponse(updated, config));
