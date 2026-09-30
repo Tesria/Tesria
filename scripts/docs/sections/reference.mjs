@@ -412,6 +412,18 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
       li(p(b('Complete license notices'), ' for everything Tesria is built from, in the About tab and inside every image.')),
     ),
 
+    h(2, '0.8.3'),
+    p('Released September 30, 2026. New chart options and code block colors, and the rest of the fixes from the full test of 0.8.1. Download the new ', c('tesria-deploy.zip'), ' and unzip it over your Tesria folder as usual; see ', pageLink('Upgrading'), ', which now says to upgrade in that folder rather than a new one.'),
+    ul(
+      li(p(b('Charts.'), ' Axes and gridlines, axis titles, value labels, stacked columns and bars, points, smooth curves and filled areas for lines, a Y axis fitted to the data, a legend beside or hidden, three sizes, number formats, a color of your own for each series, and more for pies and donuts. Donuts draw clean edges. See ', pageLink('Chart'), '.')),
+      li(p(b('Code blocks.'), ' XML, and a ', b('Colors'), ' menu with GitHub, Dracula, Monokai, Nord and Solarized schemes; your next block starts in the colors you chose last. See ', pageLink('Code block'), '.')),
+      li(p(b('Accounts.'), ' A changed sign-in email waits for a link sent to the new address; single sign-on asks for Tesria’s two-factor code when it is on; new passwords cannot be one of the most common; email that could not be sent during a mail outage is tried again.')),
+      li(p(b('Administration.'), ' The Audit tab filters by action, person and date and reads back to the first entry; security alerts name the account; the Owner role always holds every right; saving the Roles grid no longer undoes someone else’s change.')),
+      li(p(b('Everyday fixes.'), ' Dragging a chart or an embed moves it whole; the slash menu scrolls to its highlight; words typed after a link stay plain; lists pasted from Word stay lists; readers no longer see editing controls they cannot use; the page tree follows other people’s changes; the phone menu keeps its results in view while you type.')),
+      li(p(b('Backups and exports.'), ' Offsite retention prunes old copies as it should; Test Restore fails an empty backup; HTML exports keep done tasks ticked and carry their videos; an exported site’s Not Found page works at any address.')),
+      li(p(b('Installing.'), ' A new instance is invite-only until the owner chooses; a trial copy can no longer take over an install from before 0.8.2; a second Tesria’s own ports reach the trust page, the redirect and email links; Windows paths in ', c('.env'), ' that quotes would mangle are refused with a clear message.')),
+      li(p(b('For scripts and assistants.'), ' Bad API tokens get 401, documents the editor cannot show are refused, and an assistant saving one section of a page replaces only that section. See ', pageLink('What an assistant can do'), '.')),
+    ),
     h(2, '0.8.2'),
     p('Released September 30, 2026. The fixes from a full test of 0.8.1 before the public launch: every serious problem the testers found, and five security issues. Download the new ', c('tesria-deploy.zip'), ' and unzip it over your folder as usual; see ', pageLink('Upgrading'), '.'),
     ul(

@@ -3,6 +3,15 @@
 
 ## Shipped
 
+### 0.8.3 (September 30, 2026)
+- Charts with axes, titles, value labels, stacking, and a color of your own for each series
+- Code blocks in XML, and in color schemes such as GitHub, Dracula and Solarized
+- The Audit tab filters by action, person and date, and reads back to the first entry
+- A new sign-in email waits for a confirmation link, and single sign-on asks for your two-factor code
+- Fixed: every remaining issue of medium severity from the pre-launch test, across backups, editing, exports and the API
+- Fixed: dragging a chart or an embed no longer drops stray text into the page
+- Fixed: a trial copy of Tesria can no longer take over an install from before 0.8.2
+
 ### 0.8.2 (September 30, 2026)
 - Fixed: backups to the cloud now happen, and restoring to a chosen moment works from the admin page, with attachments
 - Fixed: a missing network drive or a wrong cloud setting no longer stops backups; each card says what is wrong

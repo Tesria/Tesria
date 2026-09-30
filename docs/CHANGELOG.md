@@ -5,6 +5,13 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.8.3] - 2026-09-30
+
+New chart options and code block colors. It also has the rest of the pre-launch
+test's fixes: every remaining Medium bug from the 0.8.1 test, the four
+questions it raised (answered by the owner), and a retest on Windows. See
+*Upgrading* at the end of this section before you upgrade.
+
 - **Fixed: a trial copy could still take over an install from before 0.8.2**
   (R-001, the 0.8.3 Windows retest). An install last started before 0.8.2
   never recorded its folder, so the first folder to start 0.8.2 or later
@@ -207,6 +214,40 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   (the wiki and its backups, beside a whole disk) is drawn as a thin
   visible sliver of at least 1% of the ring; the legend keeps the true
   numbers. The donut element in pages gets the same drawing.
+
+### Upgrading
+
+- Download the new `tesria-deploy.zip`, unzip it over your folder as
+  usual, then `docker compose pull` and `docker compose up -d`. Two small
+  database changes apply by themselves (`CodeBlockScheme`,
+  `PendingEmailChange`).
+- **Upgrade in your Tesria folder.** An install last started before 0.8.2
+  is now claimed only from a folder holding its `backup-key.txt`, or its
+  password or backup key in `.env`. If you deleted `backup-key.txt` after
+  saving the key, the first start stops and says so: run
+  `docker compose run --rm init use-this-folder` there, then
+  `docker compose up -d`.
+- **Ports from a `docker-compose.override.yml`:** move them to
+  `TESRIA_HTTP_PORT` and `TESRIA_HTTPS_PORT` in `.env`, so the trust page,
+  the redirect, email links and the Windows real-addresses setup know them.
+- **Things that behave differently:**
+  - Offsite retention now also prunes copies made by earlier backup
+    containers, so the next copy may free space on your drives and in the
+    cloud.
+  - A new instance is invite-only until the owner answers Who Can Join;
+    existing instances keep their setting.
+  - New passwords must pass the common-password rule; existing ones keep
+    working.
+  - With email on, a changed sign-in email waits for its confirmation link.
+  - Single sign-on asks for Tesria's two-factor code when it is on.
+- **For scripts and assistants:**
+  - A revoked, expired or mistyped API token now gets 401 instead of being
+    treated as anonymous.
+  - A document the editor cannot show is refused with 400.
+  - Publishing an already published page with changes answers 409.
+  - MCP `get_page` returns the Markdown alone as its first text.
+  - A section read with `section` must be saved with `update_page`'s
+    `section`.
 
 ## [0.8.2] - 2026-09-30
 
