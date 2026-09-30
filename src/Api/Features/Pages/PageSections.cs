@@ -48,6 +48,39 @@ public static class PageSections
     /// </summary>
     public static string? Extract(string contentJson, string anchorId)
     {
+        if (Locate(contentJson, anchorId) is not var (blocks, start, end)) return null;
+        var slice = new JsonArray();
+        for (var i = start; i < end; i++)
+            if (blocks[i] is { } block) slice.Add(block.DeepClone());
+        return new JsonObject { ["type"] = "doc", ["content"] = slice }.ToJsonString();
+    }
+
+    /// <summary>
+    /// The page with the section <paramref name="anchorId"/> replaced by
+    /// <paramref name="replacement"/>, and everything before and after it
+    /// kept as it is: the write half of <see cref="Extract"/>, so an
+    /// assistant that read one section can send back just that section.
+    /// Null when there is no such top-level section, as for Extract.
+    /// </summary>
+    public static string? Replace(string contentJson, string anchorId, JsonArray replacement)
+    {
+        if (Locate(contentJson, anchorId) is not var (blocks, start, end)) return null;
+        var content = new JsonArray();
+        for (var i = 0; i < start; i++) content.Add(blocks[i]?.DeepClone());
+        foreach (var block in replacement) content.Add(block?.DeepClone());
+        for (var i = end; i < blocks.Count; i++) content.Add(blocks[i]?.DeepClone());
+        // ProseMirror's schema requires at least one block.
+        if (content.Count == 0)
+            content.Add(new JsonObject { ["type"] = "paragraph", ["content"] = new JsonArray() });
+        return new JsonObject { ["type"] = "doc", ["content"] = content }.ToJsonString();
+    }
+
+    /// <summary>
+    /// Where the section is among the document's top-level blocks: from its
+    /// heading up to, not including, <c>End</c>.
+    /// </summary>
+    private static (JsonArray Blocks, int Start, int End)? Locate(string contentJson, string anchorId)
+    {
         JsonNode? root;
         try { root = JsonNode.Parse(contentJson); }
         catch (JsonException) { return null; }
@@ -58,37 +91,29 @@ public static class PageSections
         // them: a section id must mean the same thing everywhere.
         using var doc = JsonDocument.Parse(contentJson);
         var anchors = HeadingAnchors.Collect(doc.RootElement);
-        var wanted = anchors.FirstOrDefault(a => a.Id == anchorId);
-        if (wanted is null) return null;
+        if (anchors.All(a => a.Id != anchorId)) return null;
 
         // Walk the top level, tracking which heading each one is, so the
         // match is by id rather than by text (two headings can share text).
-        var seenHeadings = 0;
-        var startIndex = -1;
-        var startLevel = 0;
+        var start = -1;
+        var level = 0;
         for (var i = 0; i < blocks.Count; i++)
         {
             if (blocks[i]?["type"]?.GetValue<string>() != "heading") continue;
             // Only top-level headings advance a position we can slice at; the
             // anchor list includes nested ones, so match on identity instead.
-            var id = IdOfNthTopLevelHeading(anchors, blocks, i);
-            seenHeadings++;
-            if (id != anchorId) continue;
-            startIndex = i;
-            startLevel = Level(blocks[i]);
+            if (IdOfNthTopLevelHeading(anchors, blocks, i) != anchorId) continue;
+            start = i;
+            level = Level(blocks[i]);
             break;
         }
-        if (startIndex < 0) return null;
+        if (start < 0) return null;
 
-        var slice = new JsonArray();
-        for (var i = startIndex; i < blocks.Count; i++)
-        {
-            var block = blocks[i];
-            if (i > startIndex && block?["type"]?.GetValue<string>() == "heading" && Level(block) <= startLevel) break;
-            if (block is not null) slice.Add(block.DeepClone());
-        }
-        _ = seenHeadings;
-        return new JsonObject { ["type"] = "doc", ["content"] = slice }.ToJsonString();
+        var end = start + 1;
+        while (end < blocks.Count
+            && !(blocks[end]?["type"]?.GetValue<string>() == "heading" && Level(blocks[end]) <= level))
+            end++;
+        return (blocks, start, end);
     }
 
     private static int Level(JsonNode? heading)

@@ -303,6 +303,128 @@ public class McpToolTests
         Assert.Equal("dynamicBlock", after[4].GetProperty("type").GetString());
     }
 
+    private const string Sectioned = """
+    {"type":"doc","content":[
+      {"type":"paragraph","content":[{"type":"text","text":"An introduction."}]},
+      {"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Deployment"}]},
+      {"type":"paragraph","content":[{"type":"text","text":"Deploy on Tuesday."}]},
+      {"type":"panel","attrs":{"panelType":"warning"},"content":[{"type":"paragraph","content":[{"type":"text","text":"Never on Friday."}]}]},
+      {"type":"heading","attrs":{"level":3},"content":[{"type":"text","text":"Rollback"}]},
+      {"type":"paragraph","content":[{"type":"text","text":"Roll back with the script."}]},
+      {"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Support"}]},
+      {"type":"paragraph","content":[{"type":"text","text":"Ask the team."}]}
+    ]}
+    """;
+
+    private static async Task<Guid> SectionedPage(World w) =>
+        (await (await w.Alice.PostAsJsonAsync("/api/pages",
+            new { SpaceId = w.Space.Id, Title = "Runbook", ContentJson = Sectioned }))
+            .Content.ReadFromJsonAsync<PageDetail>())!.Id;
+
+    private static async Task<List<JsonElement>> CurrentBlocks(World w, Guid pageId) =>
+        JsonDocument.Parse((await w.Alice.GetFromJsonAsync<JsonElement>($"/api/pages/{pageId}"))
+            .GetProperty("contentJson").GetString()!).RootElement.GetProperty("content").EnumerateArray()
+            .Select(b => b.Clone()).ToList();
+
+    [Fact]
+    public async Task A_section_sent_back_with_its_section_replaces_only_that_section()
+    {
+        // An assistant that read one section and sent it back replaced the
+        // whole page with that section. Named, only that section changes.
+        var w = await Build(); using var _ = w.F;
+        var mcp = await Mcp(w.F, w.Alice);
+        var pageId = await SectionedPage(w);
+
+        var read = await Call(mcp, "get_page", new { pageId, section = "deployment" });
+        var markdown = read.GetProperty("content")[0].GetProperty("text").GetString()!;
+        Assert.StartsWith("<!-- tesria-section: deployment.", markdown);
+        Assert.Contains("update_page with section \"deployment\"", markdown);
+        Assert.DoesNotContain("An introduction", markdown);
+
+        Ok(await Call(mcp, "update_page",
+            new { pageId, section = "deployment", content = markdown.Replace("Tuesday", "Wednesday") }));
+
+        var before = JsonDocument.Parse(Sectioned).RootElement.GetProperty("content").EnumerateArray().ToList();
+        var after = await CurrentBlocks(w, pageId);
+        Assert.Equal(before.Count, after.Count);
+        var changed = Enumerable.Range(0, before.Count).Where(i => !JsonElement.DeepEquals(before[i], after[i])).ToList();
+        Assert.Equal([2], changed);
+        Assert.Contains("Wednesday", after[2].GetRawText());
+        // The panel it sent back unchanged is still a panel, and the note is not on the page.
+        Assert.Equal("panel", after[3].GetProperty("type").GetString());
+        Assert.DoesNotContain(after, b => b.GetRawText().Contains("tesria-section"));
+    }
+
+    [Fact]
+    public async Task A_section_sent_back_as_the_whole_page_is_refused_and_says_how()
+    {
+        var w = await Build(); using var _ = w.F;
+        var mcp = await Mcp(w.F, w.Alice);
+        var pageId = await SectionedPage(w);
+
+        var markdown = (await Call(mcp, "get_page", new { pageId, section = "deployment" }))
+            .GetProperty("content")[0].GetProperty("text").GetString()!;
+        Assert.Contains("section: \"deployment\"", Error(await Call(mcp, "update_page", new { pageId, content = markdown })));
+
+        var json = (await Call(mcp, "get_page", new { pageId, section = "deployment", format = "json" }))
+            .GetProperty("content")[0].GetProperty("text").GetString()!;
+        Assert.Equal("deployment", JsonDocument.Parse(json).RootElement.GetProperty("section").GetString());
+        Assert.Contains("section: \"deployment\"", Error(await Call(mcp, "update_page", new { pageId, contentJson = json })));
+
+        // A section named that is not the one the content came from.
+        Assert.Contains("section: \"deployment\"", Error(await Call(mcp, "update_page",
+            new { pageId, section = "support", content = markdown })));
+        // And a section the page does not have lists the ones it does.
+        Assert.Contains("rollback", Error(await Call(mcp, "update_page",
+            new { pageId, section = "nope", content = "## Nope\n" })));
+
+        var detail = await w.Alice.GetFromJsonAsync<JsonElement>($"/api/pages/{pageId}");
+        Assert.Equal(1, detail.GetProperty("currentVersionNumber").GetInt32());
+    }
+
+    [Fact]
+    public async Task A_section_in_the_editors_format_replaces_only_that_section_too()
+    {
+        var w = await Build(); using var _ = w.F;
+        var mcp = await Mcp(w.F, w.Alice);
+        var pageId = await SectionedPage(w);
+
+        var json = (await Call(mcp, "get_page", new { pageId, section = "rollback", format = "json" }))
+            .GetProperty("content")[0].GetProperty("text").GetString()!;
+        Ok(await Call(mcp, "update_page",
+            new { pageId, section = "rollback", contentJson = json.Replace("with the script", "by hand") }));
+
+        var after = await CurrentBlocks(w, pageId);
+        Assert.Equal(8, after.Count);
+        Assert.Contains("by hand", after[5].GetRawText());
+        Assert.Contains("An introduction.", after[0].GetRawText());
+        Assert.Contains("Ask the team.", after[7].GetRawText());
+    }
+
+    [Fact]
+    public async Task Whole_page_updates_and_new_pages_from_a_section_still_work()
+    {
+        var w = await Build(); using var _ = w.F;
+        var mcp = await Mcp(w.F, w.Alice);
+        var pageId = await SectionedPage(w);
+
+        // A section read is a fine start for a new page; its note is left behind.
+        var markdown = (await Call(mcp, "get_page", new { pageId, section = "support" }))
+            .GetProperty("content")[0].GetProperty("text").GetString()!;
+        var created = Ok(await Call(mcp, "create_page", new { spaceKey = "TOOLS", title = "Support copy", content = markdown }));
+        var copy = await w.Alice.GetFromJsonAsync<JsonElement>($"/api/pages/{created.GetProperty("id").GetGuid()}");
+        Assert.Contains("Ask the team.", copy.GetProperty("contentJson").GetString());
+        Assert.DoesNotContain("tesria-section", copy.GetProperty("contentJson").GetString());
+
+        // A whole page read and sent back is still the whole page.
+        var whole = (await Call(mcp, "get_page", new { pageId })).GetProperty("content")[0].GetProperty("text").GetString()!;
+        Assert.DoesNotContain("tesria-section", whole);
+        Ok(await Call(mcp, "update_page", new { pageId, content = whole.Replace("Ask the team.", "Ask anyone.") }));
+        var after = await CurrentBlocks(w, pageId);
+        Assert.Equal(8, after.Count);
+        Assert.Contains("Ask anyone.", after[7].GetRawText());
+    }
+
     [Fact]
     public async Task A_read_only_token_cannot_use_any_write_tool_and_changes_nothing()
     {

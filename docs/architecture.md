@@ -823,6 +823,17 @@ exactly what that person can do, and nothing more.
    JSON text, it was sent back whole and published as the page. The write
    tools refuse that record if it is sent back anyway.
 
+   A section goes back the way it came (0.8.3). `update_page` takes the
+   same `section` as `get_page` and replaces only that heading and what
+   is under it (`PageSections.Replace`, the write half of `Extract`), with
+   Markdown merged against that section as above. `get_page` with
+   `section` marks its answer (`SectionMark`: a first-line
+   `<!-- tesria-section: id. ... -->` comment in Markdown, a `section`
+   property on the JSON document), and `update_page` refuses a marked body
+   without `section`, or with a different one, saying which to pass: sent
+   as the whole page, one section replaced everything else on it.
+   `create_page` drops the mark, since a section is a fine new page.
+
 5. **One write path.** `create_page`/`update_page` do exactly what `POST`/
    `PUT /api/pages` do (validation, position, search text, audit,
    watcher notifications, mention notifications, webhooks) because they
@@ -847,7 +858,7 @@ expect. Read tools work with any token; write tools need a `write` one.
 | `find_pages_by_label` | read | `label`, `spaceKey?` | `{ id, spaceKey, title }[]` |
 | `list_labels` | read | `spaceKey` | `{ name, pages }[]` over visible pages only |
 | `create_page` | write | `spaceKey`, `title`, `content?` \| `contentJson?`, `parentPageId?` | the new page's `id` and URL |
-| `update_page` | write | `pageId`, `content?` \| `contentJson?`, `title?`, `changeComment?` | the new `version` |
+| `update_page` | write | `pageId`, `content?` \| `contentJson?`, `title?`, `changeComment?`, `section?` | the new `version` |
 | `add_page_label` / `remove_page_label` | write | `pageId`, `label` | the page's labels |
 
 **Deliberately not tools:** trash/purge (irreversible; a person's job),

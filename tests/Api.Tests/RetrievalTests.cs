@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Tesria.Api.Features.Pages;
 using Tesria.Api.Features.Search;
 using Xunit;
@@ -152,6 +153,29 @@ public class PageSectionTests
         Assert.Null(PageSections.Extract(Doc, "no-such-heading"));
         Assert.Null(PageSections.Extract("not json", "anything"));
         Assert.Empty(PageSections.Outline("not json"));
+        Assert.Null(PageSections.Replace(Doc, "no-such-heading", []));
+        Assert.Null(PageSections.Replace("not json", "anything", []));
+    }
+
+    private static string Texts(string json) => string.Join("|",
+        JsonNode.Parse(json)!["content"]!.AsArray().Select(b => b?["content"]?[0]?["text"]?.GetValue<string>() ?? b?["type"]?.GetValue<string>()));
+
+    private static JsonArray Paragraph(string text) =>
+        [new JsonObject { ["type"] = "paragraph", ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = text }) }];
+
+    [Fact]
+    public void Replacing_a_section_keeps_everything_around_it()
+    {
+        // Exactly the blocks Extract returns are replaced, sub-headings included.
+        Assert.Equal("Intro text.|New deployment.|Support|Who to ask.",
+            Texts(PageSections.Replace(Doc, "deployment", Paragraph("New deployment."))!));
+        Assert.Equal("Intro text.|Deployment|How to deploy.|New rollback.|Support|Who to ask.",
+            Texts(PageSections.Replace(Doc, "rollback", Paragraph("New rollback."))!));
+        // The last section runs to the end of the page.
+        Assert.Equal("Intro text.|Deployment|How to deploy.|Rollback|How to roll back.|Last.",
+            Texts(PageSections.Replace(Doc, "support", Paragraph("Last."))!));
+        // Nothing in its place removes the section.
+        Assert.Equal("Intro text.|Support|Who to ask.", Texts(PageSections.Replace(Doc, "deployment", [])!));
     }
 }
 
