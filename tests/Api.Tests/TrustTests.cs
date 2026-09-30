@@ -242,6 +242,27 @@ public class TrustTests
     }
 
     [Fact]
+    public void Both_scripts_check_the_https_address_the_http_one_sends_browsers_to()
+    {
+        // WIN-003: given localhost:8080, as the /trust page gives it, the
+        // final check tried https://localhost:8080 and said "Still failing"
+        // after a successful trust. The HTTPS address is where the HTTP one
+        // redirects, on the same host; with no port given, it is 443.
+        var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../deploy/scripts"));
+        var sh = File.ReadAllText(Path.Combine(root, "trust-ca.sh"));
+        Assert.DoesNotContain("\"https://${HOST}/api/health\"", sh);
+        Assert.Contains("-w '%{redirect_url}' \"http://${HOST}/api/health\"", sh);
+        Assert.Contains("curl -fsS --max-time 10 \"${ORIGIN}/api/health\"", sh);
+        Assert.Contains("if [ \"$NAME\" = \"$HOST\" ]; then ORIGIN=\"https://${HOST}\"; else ORIGIN=\"\"; fi", sh);
+        var ps1 = File.ReadAllText(Path.Combine(root, "trust-ca.ps1")).Replace("\r\n", "\n");
+        Assert.DoesNotContain("\"https://$HostName/api/health\"", ps1);
+        Assert.Contains("[System.Net.HttpWebRequest]::Create(\"http://$HostName/api/health\")", ps1);
+        Assert.Contains("$request.AllowAutoRedirect = $false", ps1);
+        Assert.Contains("Invoke-WebRequest -Uri \"$origin/api/health\"", ps1);
+        Assert.Contains("if (-not $origin -and $name -eq $HostName) { $origin = \"https://$HostName\" }", ps1);
+    }
+
+    [Fact]
     public void Both_scripts_refuse_a_given_fingerprint_with_no_hex_digits()
     {
         // T1-003: a fingerprint that was given but holds no hexadecimal

@@ -20,7 +20,9 @@
 #   bash trust-ca.sh [--fingerprint <SHA-256 fingerprint>] <address>
 #
 #   address   What you type into the browser to open Tesria, without
-#             https://, such as wiki-server.local.
+#             https://, such as wiki-server.local. For a Tesria on ports of
+#             its own, its plain HTTP port goes with it, such as
+#             localhost:8080: the /trust page fills this in.
 #
 # Get this script from Tesria's GitHub releases, or from the tesria-deploy.zip
 # you installed from, not from the server: a script fetched over the same
@@ -136,10 +138,34 @@ Linux)
 esac
 
 echo
-echo "==> Verifying: refetching https://${HOST}/ (should now succeed with no -k)..."
-if curl -fsS --max-time 10 "https://${HOST}/api/health" >/dev/null 2>&1; then
-	echo "    Success: this machine now trusts ${HOST}."
+# The address is the plain HTTP one, with its port on a Tesria that has
+# ports of its own (localhost:8080), so its HTTPS address is found where
+# that sends a browser: https://localhost:8443 (WIN-003). Only an address
+# on the same host is believed; with no port given, HTTPS is on 443.
+case "$HOST" in
+\[*\]:*) NAME="${HOST%:*}" ;;
+\[*\]) NAME="$HOST" ;;
+*:*) NAME="${HOST%:*}" ;;
+*) NAME="$HOST" ;;
+esac
+lower() { printf '%s' "$1" | tr 'A-Z' 'a-z'; }
+REDIRECT="$(curl -sS -o /dev/null --max-time 10 -w '%{redirect_url}' "http://${HOST}/api/health" 2>/dev/null || true)"
+ORIGIN="$(printf '%s' "$REDIRECT" | sed -E 's|^(https://[^/?#]+).*|\1|')"
+case "$(lower "$ORIGIN")" in
+"https://$(lower "$NAME")" | "https://$(lower "$NAME"):"[0-9]*) ;;
+*)
+	if [ "$NAME" = "$HOST" ]; then ORIGIN="https://${HOST}"; else ORIGIN=""; fi
+	;;
+esac
+if [ -z "$ORIGIN" ]; then
+	echo "==> Could not tell which HTTPS address ${HOST} sends browsers to, so this was"
+	echo "    not checked. Open Tesria in your browser: it should show no warning."
 else
-	echo "    Still failing. Fully quit and reopen your browser. If the warning stays,"
-	echo "    see the Tesria docs, Trusting the local certificate."
+	echo "==> Verifying: fetching ${ORIGIN}/ (should now succeed with no -k)..."
+	if curl -fsS --max-time 10 "${ORIGIN}/api/health" >/dev/null 2>&1; then
+		echo "    Success: this machine now trusts ${ORIGIN#https://}."
+	else
+		echo "    Still failing. Fully quit and reopen your browser. If the warning stays,"
+		echo "    see the Tesria docs, Trusting the local certificate."
+	fi
 fi
