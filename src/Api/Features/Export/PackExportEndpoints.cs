@@ -23,6 +23,7 @@ public static class PackExportEndpoints
     public static IEndpointRouteBuilder MapPackExportEndpoints(this IEndpointRouteBuilder routes)
     {
         routes.MapGet("/spaces/{key}/export/pack", ExportPack)
+            .Produces(StatusCodes.Status200OK, contentType: "application/zip")
             .WithTags("Export")
             .RequirePermission(InstancePermissions.PagesExport);
         return routes;

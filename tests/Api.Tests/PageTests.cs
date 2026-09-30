@@ -101,6 +101,56 @@ public class PageTests
     }
 
     [Fact]
+    public async Task A_document_the_editor_cannot_show_is_refused_naming_the_problem()
+    {
+        // T5-023: these were stored, and the page showed empty; the next
+        // Update from the editor then saved it empty.
+        var (factory, client, spaceId) = await NewClientWithSpace();
+        using var _ = factory;
+
+        foreach (var (content, expected) in new[]
+        {
+            ("""{"type":"banana"}""", "must be a document"),
+            ("""[1,2,3]""", "must be a document"),
+            ("""{"type":"doc","content":[{"type":"blink","content":[{"type":"text","text":"hi"}]}]}""", "\"blink\""),
+            ("""{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"hi","marks":[{"type":"sparkle"}]}]}]}""", "\"sparkle\""),
+            ("""{"type":"doc","content":{"type":"paragraph"}}""", "must be a list"),
+            ("""{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":""}]}]}""", "non-empty"),
+        })
+        {
+            var res = await client.PostAsJsonAsync("/api/pages",
+                new { SpaceId = spaceId, Title = "Bad", ContentJson = content });
+            Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+            var body = await res.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+            Assert.Contains(expected, body.GetProperty("errors").GetProperty("contentJson")[0].GetString());
+        }
+
+        // The same check on an update, which leaves the page as it was.
+        var page = await (await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, Title = "Good", ContentJson = Doc })).Content.ReadFromJsonAsync<PageDetail>();
+        var update = await client.PutAsJsonAsync($"/api/pages/{page!.Id}",
+            new { Title = "Good", ContentJson = """{"type":"doc","content":[{"type":"blink"}]}""" });
+        Assert.Equal(HttpStatusCode.BadRequest, update.StatusCode);
+        Assert.Equal(1, (await client.GetFromJsonAsync<PageDetail>($"/api/pages/{page.Id}"))!.CurrentVersionNumber);
+
+        // Every element the editor has is accepted, rich ones included.
+        var rich = """
+        {"type":"doc","content":[
+          {"type":"panel","attrs":{"panelType":"info"},"content":[{"type":"paragraph","content":[
+            {"type":"text","text":"Due ","marks":[{"type":"bold"},{"type":"textColor","attrs":{"color":"red"}}]},
+            {"type":"date","attrs":{"date":"2026-10-14"}},{"type":"status","attrs":{"text":"On track","color":"green"}}]}]},
+          {"type":"layoutSection","content":[{"type":"layoutColumn","content":[{"type":"paragraph"}]}]},
+          {"type":"dynamicBlock","attrs":{"kind":"children","params":{}}}
+        ]}
+        """;
+        Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, Title = "Rich", ContentJson = rich })).StatusCode);
+        // An empty document is still a document.
+        Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, Title = "Empty" })).StatusCode);
+    }
+
+    [Fact]
     public async Task Tree_reflects_parent_child_structure()
     {
         var (factory, client, spaceId) = await NewClientWithSpace();

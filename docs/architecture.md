@@ -806,6 +806,23 @@ exactly what that person can do, and nothing more.
    packs): exactly one of the two must be given. `get_page(format: json)`
    returns the JSON for that purpose.
 
+   A Markdown `update_page` is merged, not converted whole (0.8.3, T5-003):
+   `MarkdownMerge` writes each top-level block of the current page as
+   `get_page` would (`ProseMirrorRenderer.ToMarkdownBlocks`), runs both
+   sides through Markdown and back so they compare in one plain form, and
+   keeps every existing block the assistant sent back unchanged, with all
+   that Markdown could not carry (a table of contents, page properties,
+   mentions, statuses, column widths, live blocks). Only the blocks it
+   changed, added or moved are built from its Markdown. Raw HTML keeps its
+   words as plain text (T5-030); a paragraph that held only tags, like the
+   heading anchors the export writes, is dropped rather than kept blank.
+
+   `get_page` answers with the content alone as its first text item and a
+   JSON description (id, title, labels, version, url, outline) as its
+   second, with the whole record as structured content (T5-005): as one
+   JSON text, it was sent back whole and published as the page. The write
+   tools refuse that record if it is sent back anyway.
+
 5. **One write path.** `create_page`/`update_page` do exactly what `POST`/
    `PUT /api/pages` do (validation, position, search text, audit,
    watcher notifications, mention notifications, webhooks) because they
@@ -826,7 +843,7 @@ expect. Read tools work with any token; write tools need a `write` one.
 | `list_spaces` | read |: | spaces the user may view: `key`, `name`, `description`, `isPublic` |
 | `get_space_tree` | read | `spaceKey` | the page tree the user may see, nested `{ id, title, children }` |
 | `search_pages` | read | `query`, `spaceKey?`, `limit=20` (≤50) | `{ id, spaceKey, title, snippet }[]`, permission-filtered like `/api/search` |
-| `get_page` | read | `pageId`, `format=markdown\|json` | `title`, `spaceKey`, `parentPageId`, `labels`, `version`, `updatedAt`, `content` |
+| `get_page` | read | `pageId`, `format=markdown\|json`, `section?` | text 1: the `content` alone; text 2: `id`, `title`, `spaceKey`, `parentPageId`, `labels`, `version`, `updatedAt`, `url`, `outline`; all of it as structured content |
 | `find_pages_by_label` | read | `label`, `spaceKey?` | `{ id, spaceKey, title }[]` |
 | `list_labels` | read | `spaceKey` | `{ name, pages }[]` over visible pages only |
 | `create_page` | write | `spaceKey`, `title`, `content?` \| `contentJson?`, `parentPageId?` | the new page's `id` and URL |
@@ -2340,7 +2357,9 @@ ProseMirror JSON in `PageVersion.ContentJson`.
   gives image uploads (which need a real page id) somewhere to attach to
   before the user has saved anything. `POST /pages/{id}/publish` makes it
   real (fires the normal "page created" audit/notification/webhook side
-  effects, exactly once: a retried publish is a safe no-op) and mutates the
+  effects, exactly once: a retried publish, with the same title and content,
+  is a safe no-op, and one that would change a published page is refused
+  with 409 `already_published`, since that is `PUT`'s job) and mutates the
   existing version 1 in place rather than creating a confusing empty-v1/
   real-v2 pair. The global EF Core query filter on `Page` excludes drafts
   (`Status != PageStatus.Draft`), matching the existing soft-delete filter

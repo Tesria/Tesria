@@ -28,7 +28,7 @@ public sealed class TokenScopeMiddleware(RequestDelegate next)
             return context.Response.WriteAsJsonAsync(new
             {
                 code = "read_only_token",
-                message = "This API token is read-only. Mint one with write access at Profile → API tokens.",
+                message = "This API token is read-only. Create one with write access under Profile, API Tokens.",
             });
         }
         return next(context);

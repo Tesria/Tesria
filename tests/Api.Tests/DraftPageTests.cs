@@ -102,8 +102,21 @@ public class DraftPageTests
 
         // A retried/double-clicked publish is a safe no-op, not a second event.
         var again = await client.PostAsJsonAsync($"/api/pages/{draft.Id}/publish",
-            new { Title = "Hooked Again", ContentJson = Doc });
+            new { Title = "Hooked", ContentJson = Doc });
         Assert.Equal(HttpStatusCode.OK, again.StatusCode);
+        Assert.Single(sender.Deliveries, d => d.PayloadJson.Contains("page.created"));
+
+        // One that would change the page is not a retry, and is not quietly
+        // ignored either (T5-006): it says to use PUT.
+        var changed = await client.PostAsJsonAsync($"/api/pages/{draft.Id}/publish",
+            new { Title = "Hooked Again", ContentJson = Doc });
+        Assert.Equal(HttpStatusCode.Conflict, changed.StatusCode);
+        var refusal = await changed.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        Assert.Equal("already_published", refusal.GetProperty("code").GetString());
+        Assert.Contains("PUT /api/pages/{id}", refusal.GetProperty("message").GetString());
+        var page = await client.GetFromJsonAsync<PageDetail>($"/api/pages/{draft.Id}");
+        Assert.Equal("Hooked", page!.Title);
+        Assert.Equal(1, page.CurrentVersionNumber);
         Assert.Single(sender.Deliveries, d => d.PayloadJson.Contains("page.created"));
         using (var scope = factory.Services.CreateScope())
         {

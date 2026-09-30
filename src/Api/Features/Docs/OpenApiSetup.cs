@@ -35,13 +35,19 @@ public static class OpenApiSetup
                     Description =
                         "The REST API behind Tesria, a self-hosted wiki.\n\n"
                         + "**Authentication.** Scripts and integrations send an API token as "
-                        + "`Authorization: Bearer <token>` (mint one at *Profile → API tokens*). "
+                        + "`Authorization: Bearer <token>` (create one under *Profile, API Tokens*). "
+                        + "A token that is mistyped, revoked or expired is refused with `401`. "
                         + "The SPA uses a session cookie instead, and cookie-authenticated "
-                        + "requests that change anything must also send `X-Requested-With: Tesria` "
-                        + ": that header is the CSRF defense, and a browser cannot set it "
+                        + "requests that change anything must also send `X-Requested-With: Tesria`: "
+                        + "that header is the CSRF defense, and a browser cannot set it "
                         + "cross-origin.\n\n"
-                        + "**Permissions.** Anything you may not see is `404`, never `403`, so "
-                        + "restricted pages are not discoverable by probing.",
+                        + "**Permissions.** Anything you may not see is `404`, so restricted "
+                        + "pages are not discoverable by probing. Something you can see but may "
+                        + "not change is `403`, and so is any change made with a read-only token "
+                        + "(`read_only_token`) or one that needs a password in the browser "
+                        + "(`reauth_required`).\n\n"
+                        + "**Errors.** A refusal has a JSON body: `errors` names each field that "
+                        + "is wrong, and `code` and `message` say why, where there is more to say.",
                     License = new OpenApiLicense { Name = "Apache-2.0", Url = new Uri("https://www.apache.org/licenses/LICENSE-2.0") },
                 };
 
@@ -52,7 +58,7 @@ public static class OpenApiSetup
                 {
                     Type = SecuritySchemeType.Http,
                     Scheme = "bearer",
-                    Description = "An API token from *Profile → API tokens*. Shown once when minted.",
+                    Description = "An API token from *Profile, API Tokens*. Shown once, when it is created.",
                 };
                 document.Components.SecuritySchemes[SessionScheme] = new OpenApiSecurityScheme
                 {
@@ -87,9 +93,90 @@ public static class OpenApiSetup
                 var anonymous = metadata.OfType<Microsoft.AspNetCore.Authorization.IAllowAnonymous>().Any();
                 var guarded = metadata.OfType<Microsoft.AspNetCore.Authorization.IAuthorizeData>().Any();
                 if (anonymous || !guarded) operation.Security = [];
+                AddRefusals(operation, context, guarded && !anonymous);
                 return Task.CompletedTask;
             });
         });
+
+    private const string ErrorSchema = "Error";
+
+    /// <summary>
+    /// The refusals every operation of its kind can answer with, and what
+    /// their bodies hold (T5-021: every operation was documented as "200 OK"
+    /// and nothing else). Success answers, and refusals particular to one
+    /// request such as a 409, are declared where the endpoint is mapped
+    /// (<c>.Produces</c>); these are the ones that follow from what the
+    /// request is: it has a body, it names something by id, it needs a
+    /// token.
+    /// </summary>
+    private static void AddRefusals(OpenApiOperation operation, OpenApiOperationTransformerContext context, bool guarded)
+    {
+        var document = context.Document;
+        if (document is null) return;
+        document.Components ??= new OpenApiComponents();
+        document.Components.Schemas ??= new Dictionary<string, IOpenApiSchema>();
+        if (!document.Components.Schemas.ContainsKey(ErrorSchema))
+            document.Components.Schemas[ErrorSchema] = new OpenApiSchema
+            {
+                Type = JsonSchemaType.Object,
+                Description = "Why a request was refused. Which fields are present depends on the refusal.",
+                Properties = new Dictionary<string, IOpenApiSchema>
+                {
+                    ["title"] = new OpenApiSchema { Type = JsonSchemaType.String },
+                    ["status"] = new OpenApiSchema { Type = JsonSchemaType.Integer },
+                    ["code"] = new OpenApiSchema
+                    {
+                        Type = JsonSchemaType.String,
+                        Description = "A reason a script can check, such as `read_only_token` or `reauth_required`.",
+                    },
+                    ["message"] = new OpenApiSchema { Type = JsonSchemaType.String, Description = "The reason, in words." },
+                    ["detail"] = new OpenApiSchema { Type = JsonSchemaType.String, Description = "The reason, in words." },
+                    ["errors"] = new OpenApiSchema
+                    {
+                        Type = JsonSchemaType.Object,
+                        Description = "For each field that is wrong, what is wrong with it.",
+                        AdditionalProperties = new OpenApiSchema
+                        {
+                            Type = JsonSchemaType.Array,
+                            Items = new OpenApiSchema { Type = JsonSchemaType.String },
+                        },
+                    },
+                },
+            };
+
+        operation.Responses ??= new OpenApiResponses();
+        void Add(int status, string description)
+        {
+            var key = status.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (operation.Responses.ContainsKey(key)) return;
+            operation.Responses[key] = new OpenApiResponse
+            {
+                Description = description,
+                Content = new Dictionary<string, OpenApiMediaType>
+                {
+                    ["application/json"] = new OpenApiMediaType { Schema = new OpenApiSchemaReference(ErrorSchema, document) },
+                },
+            };
+        }
+
+        if (operation.RequestBody is not null)
+            Add(400, "Something in the request is wrong: `errors` names the field and why.");
+        if (guarded)
+        {
+            Add(401, "Not signed in: the token is missing, mistyped, revoked or expired.");
+            Add(403, "Not allowed: you can see it but may not change it, the token is read-only "
+                + "(`read_only_token`), or the action needs a password in the browser (`reauth_required`).");
+        }
+        else
+        {
+            // Open to anyone, and so to the limit on callers with no token or
+            // session, which an administrator sets (AnonymousRateLimitPerMinute).
+            Add(429, "Too many requests from this address without a token or session: "
+                + "wait the number of seconds in `Retry-After`.");
+        }
+        if (context.Description.ParameterDescriptions.Any(p => p.Source == Microsoft.AspNetCore.Mvc.ModelBinding.BindingSource.Path))
+            Add(404, "Not found, or you may not see it: the two are the same answer.");
+    }
 
     /// <summary>
     /// Serves the spec at <c>/api/openapi.json</c> and a reader at

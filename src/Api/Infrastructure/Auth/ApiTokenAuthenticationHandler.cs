@@ -30,6 +30,10 @@ public sealed class ApiTokenAuthenticationHandler(
     Export.IRenderTokens renderTokens)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
+    /// <summary>What a caller is told about a token that does not work (T5-018: they are now told).</summary>
+    private const string InvalidToken =
+        "This API token is not valid: it is mistyped, revoked or expired. Check it under Profile, API Tokens.";
+
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         if (!Request.Headers.TryGetValue("Authorization", out var header)) return AuthenticateResult.NoResult();
@@ -46,17 +50,17 @@ public sealed class ApiTokenAuthenticationHandler(
         // The address after the proxy-trust middleware has read the forwarded
         // headers: the caller's, not Caddy's.
         var token = await tokens.ValidateAsync(rawToken, Context.Connection.RemoteIpAddress?.ToString());
-        if (token is null) return AuthenticateResult.Fail("Invalid or expired API token.");
+        if (token is null) return AuthenticateResult.Fail(InvalidToken);
 
         var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == token.UserId);
-        if (user is null) return AuthenticateResult.Fail("Invalid or expired API token.");
+        if (user is null) return AuthenticateResult.Fail(InvalidToken);
 
         // A token is only as good as its owner's role (dev-plan 11.1). Taking
         // the right away makes existing tokens inert rather than deleting
         // them, so granting it back restores them; the MCP server rides on
         // tokens, so this covers it too.
         if (!(await rights.ForUserAsync(user.Id)).Contains(Permissions.InstancePermissions.TokensUse))
-            return AuthenticateResult.Fail("This account may not use API tokens.");
+            return AuthenticateResult.Fail("This account's role does not allow API tokens.");
 
         var claims = new List<Claim>
         {

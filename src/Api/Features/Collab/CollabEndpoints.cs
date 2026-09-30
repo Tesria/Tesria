@@ -57,7 +57,7 @@ public static class CollabEndpoints
             return Results.Json(new
             {
                 code = "read_only_token",
-                message = "This API token is read-only. Mint one with write access at Profile → API tokens.",
+                message = "This API token is read-only. Create one with write access under Profile, API Tokens.",
             }, statusCode: StatusCodes.Status403Forbidden);
 
         // Collaboration is optional: without a shared secret the SPA falls back

@@ -20,10 +20,10 @@ public static class NotificationEndpoints
     public static IEndpointRouteBuilder MapNotificationEndpoints(this IEndpointRouteBuilder routes)
     {
         var group = routes.MapGroup("/notifications").WithTags("Notifications").RequireAuthorization();
-        group.MapGet("/", List);
-        group.MapGet("/unread-count", UnreadCount);
-        group.MapPost("/{id:guid}/read", MarkRead);
-        group.MapPost("/read-all", MarkAllRead);
+        group.MapGet("/", List).Produces<List<NotificationResponse>>();
+        group.MapGet("/unread-count", UnreadCount).Produces<UnreadCountResponse>();
+        group.MapPost("/{id:guid}/read", MarkRead).Produces(StatusCodes.Status204NoContent);
+        group.MapPost("/read-all", MarkAllRead).Produces(StatusCodes.Status204NoContent);
         return routes;
     }
 

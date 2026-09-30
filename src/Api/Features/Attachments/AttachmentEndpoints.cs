@@ -24,15 +24,15 @@ public static class AttachmentEndpoints
         // endpoints; it is switched off because that scheme (form tokens) is
         // not the one in use. Cross-site protection for this endpoint is the
         // CsrfHeaderMiddleware (dev-plan 3.4), the same as for the JSON ones.
-        pageScoped.MapPost("/", Upload).DisableAntiforgery();
-        pageScoped.MapGet("/", ListForPage).AllowAnonymous(); // dev-plan 5.2: checked through the page
+        pageScoped.MapPost("/", Upload).DisableAntiforgery().Produces<AttachmentResponse>(StatusCodes.Status201Created);
+        pageScoped.MapGet("/", ListForPage).AllowAnonymous().Produces<List<AttachmentResponse>>(); // dev-plan 5.2: checked through the page
 
         var byId = routes.MapGroup("/attachments/{id:guid}")
             .WithTags("Attachments").RequireAuthorization();
-        byId.MapGet("/", GetMetadata).AllowAnonymous();
-        byId.MapGet("/download", Download).AllowAnonymous();
-        byId.MapGet("/view", View).AllowAnonymous();
-        byId.MapDelete("/", Delete);
+        byId.MapGet("/", GetMetadata).AllowAnonymous().Produces<AttachmentResponse>();
+        byId.MapGet("/download", Download).AllowAnonymous().Produces(StatusCodes.Status200OK, contentType: "application/octet-stream");
+        byId.MapGet("/view", View).AllowAnonymous().Produces(StatusCodes.Status200OK, contentType: "application/octet-stream");
+        byId.MapDelete("/", Delete).Produces(StatusCodes.Status204NoContent);
 
         return routes;
     }

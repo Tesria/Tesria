@@ -80,6 +80,8 @@ public sealed class PageWriter(
         if (trimmed.Length > Page.MaxTitleLength) return PageWriteResult.Invalid("title", TitleTooLong);
         if (!PageContent.TryNormalize(contentJson, out var content))
             return PageWriteResult.Invalid("contentJson", "Content must be valid JSON.");
+        if (PageContent.Problem(content) is { } createProblem)
+            return PageWriteResult.Invalid("contentJson", createProblem);
 
         if (!await db.Spaces.AnyAsync(s => s.Id == spaceId, ct))
             return PageWriteResult.Invalid("spaceId", "Space not found.");
@@ -164,6 +166,8 @@ public sealed class PageWriter(
             content = page.CurrentVersion?.ContentJson ?? PageContent.EmptyDoc;
         else if (!PageContent.TryNormalize(contentJson, out content))
             return PageWriteResult.Invalid("contentJson", "Content must be valid JSON.");
+        else if (PageContent.Problem(content) is { } updateProblem)
+            return PageWriteResult.Invalid("contentJson", updateProblem);
 
         if (changeComment is not null && changeComment.Trim().Length > PageVersion.MaxChangeCommentLength)
             return PageWriteResult.Invalid("changeComment", $"A change comment can be at most {PageVersion.MaxChangeCommentLength} characters.");

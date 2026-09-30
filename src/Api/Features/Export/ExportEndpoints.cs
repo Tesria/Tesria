@@ -13,6 +13,7 @@ public static partial class ExportEndpoints
     public static IEndpointRouteBuilder MapExportEndpoints(this IEndpointRouteBuilder routes)
     {
         routes.MapGet("/pages/{id:guid}/export", ExportPage)
+            .Produces(StatusCodes.Status200OK, typeof(byte[]), "text/markdown", "text/html", "application/pdf")
             .WithTags("Export").AllowAnonymous(); // dev-plan 5.2: readers may take their docs with them
         return routes;
     }

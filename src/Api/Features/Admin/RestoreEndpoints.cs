@@ -62,13 +62,13 @@ public static class RestoreEndpoints
     {
         group.MapGet("/{label}/restore-preview", Preview)
             .RequirePermission(InstancePermissions.BackupsRestore);
-        group.MapPost("/{label}/restore", Request)
+        group.MapPost("/{label}/restore", Request).Produces(StatusCodes.Status202Accepted)
             .RequirePermission(InstancePermissions.BackupsRestore);
         group.MapPost("/restore/cancel", Cancel)
             .RequirePermission(InstancePermissions.BackupsRestore);
-        group.MapPost("/restore/undo", Undo)
+        group.MapPost("/restore/undo", Undo).Produces(StatusCodes.Status202Accepted)
             .RequirePermission(InstancePermissions.BackupsRestore);
-        group.MapPost("/restore/discard-kept", DiscardKept)
+        group.MapPost("/restore/discard-kept", DiscardKept).Produces(StatusCodes.Status202Accepted)
             .RequirePermission(InstancePermissions.BackupsRestore);
         return group;
     }

@@ -1,4 +1,7 @@
 using System.ComponentModel;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using Tesria.Api.Domain;
 using Tesria.Api.Features.Blocks;
@@ -42,14 +45,16 @@ public sealed class TesriaTools
         return spaces;
     }
 
-    [McpServerTool(Name = "get_page"), Description(
+    [McpServerTool(Name = "get_page", UseStructuredContent = true, OutputSchemaType = typeof(PageContent)), Description(
         "A page by id. Returns its content as Markdown: the same Markdown the export produces, with live " +
         "blocks (children lists, recently-updated tables, task reports…) resolved as this token's owner would see " +
-        "them, plus an `outline` of its headings. Pass `section` with a heading id from that outline to get just " +
+        "them. The first text item is the content alone, exactly what update_page takes back as `content`; the " +
+        "second is JSON with the page's id, title, space, labels, version, url and an `outline` of its headings. " +
+        "Pass `section` with a heading id from that outline to get just " +
         "that heading and everything under it, which is usually what you want on a long page. Ask for format " +
-        "'json' to get the editor's ProseMirror document instead, e.g. to copy a page exactly. " +
+        "'json' to get the editor's ProseMirror document instead (for `contentJson`), e.g. to copy a page exactly. " +
         "'Not found' can mean the page does not exist or that you may not see it; the two are deliberately indistinguishable.")]
-    public static async Task<PageContent> GetPage(
+    public static async Task<CallToolResult> GetPage(
         [Description("The page id (a GUID).")] Guid pageId,
         AppDbContext db, IPermissionService perms, IDynamicBlockService blocks,
         ISiteSettingsService settings, IConfiguration config, CancellationToken ct,
@@ -91,13 +96,32 @@ public sealed class TesriaTools
             ? json
             : ProseMirrorRenderer.ToMarkdown(json, await PageSnapshots.BlocksAsync(page.Id, json, blocks, ct), baseUrl);
 
-        return new PageContent(
+        var result = new PageContent(
             page.Id, page.Title, page.Space.Key, page.ParentPageId, labels,
             page.CurrentVersion.VersionNumber, page.UpdatedAt,
             $"{baseUrl}/spaces/{page.Space.Key}/pages/{page.Id}",
             wantJson ? "json" : "markdown", content, outline,
             string.IsNullOrEmpty(wanted) ? null : wanted);
+
+        // The content alone first, then what describes it (T5-005). Both used
+        // to be one JSON text, and an assistant that sent that text back as
+        // the page's content published the JSON as the page. The whole record
+        // is still there, as structured content, for clients that read it.
+        var structured = JsonSerializer.SerializeToNode(result, StructuredJson)!.AsObject();
+        var about = (JsonObject)structured.DeepClone();
+        about.Remove("content");
+        return new CallToolResult
+        {
+            Content =
+            [
+                new TextContentBlock { Text = content },
+                new TextContentBlock { Text = about.ToJsonString(StructuredJson) },
+            ],
+            StructuredContent = JsonSerializer.SerializeToElement(structured, StructuredJson),
+        };
     }
+
+    private static readonly JsonSerializerOptions StructuredJson = new(JsonSerializerDefaults.Web);
 
     public sealed record TreeNode(Guid Id, string Title, IReadOnlyList<TreeNode> Children);
     /// <param name="Snippet">The passage that matched, with the matching words in **bold**.</param>
@@ -247,7 +271,7 @@ public sealed class TesriaTools
     [McpServerTool(Name = "create_page"), Description(
         "Create a page. Give `content` as Markdown (headings, lists, tables, code fences, links, bold/italic: " +
         "the same Markdown get_page returns), or `contentJson` if you already hold an editor document. Needs a " +
-        "token minted with write access.")]
+        "token with write access.")]
     public static async Task<WriteResult> CreatePage(
         [Description("The space key to create it in.")] string spaceKey,
         [Description("The page title.")] string title,
@@ -267,10 +291,11 @@ public sealed class TesriaTools
 
     [McpServerTool(Name = "update_page"), Description(
         "Replace a page's body, and optionally its title. This creates a new version, as an edit in the browser " +
-        "does: fetch the page first if you mean to change only part of it. Needs a token minted with write access.")]
+        "does: fetch the page first if you mean to change only part of it. Needs a token with write access.")]
     public static async Task<WriteResult> UpdatePage(
         [Description("The page id.")] Guid pageId,
         IPageWriter writer, AppDbContext db, CurrentUser current, IHttpContextAccessor accessor,
+        IPermissionService perms, IDynamicBlockService blocks,
         ISiteSettingsService settings, IConfiguration config, CancellationToken ct,
         [Description("New body as Markdown.")] string? content = null,
         [Description("New body as a ProseMirror JSON document.")] string? contentJson = null,
@@ -278,18 +303,45 @@ public sealed class TesriaTools
         [Description("A short note describing the change, shown in the page's history.")] string? changeComment = null)
     {
         McpAccess.RequireWrite(current, accessor);
-        var result = await writer.UpdateAsync(pageId, title, Body(content, contentJson), changeComment, ct);
+        var body = Body(content, contentJson);
+        if (content is not null)
+            body = await MergeAsync(pageId, content, db, perms, blocks, settings, config, ct) ?? body;
+        var result = await writer.UpdateAsync(pageId, title, body, changeComment, ct);
         return await ResultOf(result, db, settings, config, ct);
     }
 
-    [McpServerTool(Name = "add_page_label"), Description("Add a label to a page. Needs a token minted with write access.")]
+    /// <summary>
+    /// The Markdown written onto the page as it is, keeping every block the
+    /// assistant sent back unchanged (T5-003; see <see cref="MarkdownMerge"/>).
+    /// Null when there is nothing to merge with, or nothing the caller may
+    /// see: the writer then answers as it would have.
+    /// </summary>
+    private static async Task<string?> MergeAsync(
+        Guid pageId, string markdown, AppDbContext db, IPermissionService perms, IDynamicBlockService blocks,
+        ISiteSettingsService settings, IConfiguration config, CancellationToken ct)
+    {
+        if (!await perms.CanViewPageAsync(pageId)) return null;
+        var current = await db.Pages.AsNoTracking()
+            .Where(p => p.Id == pageId && p.CurrentVersion != null)
+            .Select(p => p.CurrentVersion!.ContentJson)
+            .FirstOrDefaultAsync(ct);
+        if (current is null) return null;
+
+        // Written exactly as get_page wrote it, live blocks and links
+        // included, so an unchanged block reads the same on both sides.
+        var baseUrl = SiteUrl.Resolve(await settings.GetAsync(ct), config);
+        var snapshots = await PageSnapshots.BlocksAsync(pageId, current, blocks, ct);
+        return MarkdownMerge.Merge(current, ProseMirrorRenderer.ToMarkdownBlocks(current, snapshots, baseUrl), markdown);
+    }
+
+    [McpServerTool(Name = "add_page_label"), Description("Add a label to a page. Needs a token with write access.")]
     public static Task<LabelsResult> AddPageLabel(
         [Description("The page id.")] Guid pageId,
         [Description("The label, lower-case: letters, digits, dot, dash or underscore.")] string label,
         AppDbContext db, IPermissionService perms, CurrentUser current, IHttpContextAccessor accessor, CancellationToken ct) =>
         SetLabelAsync(pageId, label, add: true, db, perms, current, accessor, ct);
 
-    [McpServerTool(Name = "remove_page_label"), Description("Remove a label from a page. Needs a token minted with write access.")]
+    [McpServerTool(Name = "remove_page_label"), Description("Remove a label from a page. Needs a token with write access.")]
     public static Task<LabelsResult> RemovePageLabel(
         [Description("The page id.")] Guid pageId,
         [Description("The label to remove.")] string label,
@@ -303,8 +355,37 @@ public sealed class TesriaTools
     {
         if (content is not null && contentJson is not null)
             throw new McpException("Give either `content` (Markdown) or `contentJson`, not both.");
+        if (IsGetPageAnswer(content) || IsGetPageAnswer(contentJson))
+            throw new McpException(
+                "That is get_page's whole answer (id, title, content and so on), not a page body. "
+                + "Send only its `content` value.");
         if (contentJson is not null) return contentJson;
         return content is null ? null : MarkdownToProseMirror.Convert(content);
+    }
+
+    /// <summary>
+    /// Whether a body is get_page's description of a page rather than a page
+    /// (T5-005): sent back whole, it used to be published as the page's text.
+    /// </summary>
+    private static bool IsGetPageAnswer(string? body)
+    {
+        if (body is null || !body.TrimStart().StartsWith('{')) return false;
+        try
+        {
+            using var parsed = JsonDocument.Parse(body);
+            var root = parsed.RootElement;
+            return root.ValueKind == JsonValueKind.Object
+                && HasAny(root, "content", "Content")
+                && HasAny(root, "format", "Format")
+                && HasAny(root, "title", "Title");
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+
+        static bool HasAny(JsonElement root, params string[] names) =>
+            names.Any(name => root.TryGetProperty(name, out _));
     }
 
     private static async Task<WriteResult> ResultOf(

@@ -19,14 +19,21 @@ public static class PageEndpoints
     // An empty ProseMirror document; used when a page is created without content.
     private const string EmptyDoc = PageContent.EmptyDoc;
 
-    public record CreatePageRequest(Guid SpaceId, Guid? ParentPageId, string Title, string? ContentJson);
+    /// <summary>Only the space and the title are needed; a page without content starts empty.</summary>
+    public record CreatePageRequest(Guid SpaceId, string Title, Guid? ParentPageId = null, string? ContentJson = null);
     /// <param name="BaseVersion">
     /// Which published version this edit started from (dev-plan 8.6). The
     /// editor sends it so a write that would overwrite an unseen change is
     /// refused with 409 rather than silently winning. Optional: API and MCP
     /// callers omit it and keep last-write-wins.
     /// </param>
-    public record UpdatePageRequest(string? Title, string ContentJson, string? ChangeComment, int? BaseVersion = null);
+    /// <remarks>
+    /// Every field is optional (T5-021: the reference marked them all
+    /// required): leave out <c>contentJson</c> to rename, <c>title</c> to keep
+    /// the title.
+    /// </remarks>
+    public record UpdatePageRequest(
+        string? Title = null, string? ContentJson = null, string? ChangeComment = null, int? BaseVersion = null);
     /// <summary><paramref name="SpaceId"/>: another space to move to, with the pages under it (dev-plan 15.3).</summary>
     public record MovePageRequest(Guid? ParentPageId, int Index, Guid? SpaceId = null);
     public record CreateDraftRequest(Guid SpaceId, Guid? ParentPageId);
@@ -65,24 +72,25 @@ public static class PageEndpoints
         var group = routes.MapGroup("/pages").WithTags("Pages").RequireAuthorization();
 
         // Open to anonymous readers (dev-plan 5.2); the permission service masks what they may not see.
-        group.MapGet("/tree", Tree).AllowAnonymous();
-        group.MapGet("/trash", Trash);
-        group.MapPost("/", Create);
-        group.MapPost("/draft", CreateDraft);
-        group.MapPost("/{id:guid}/publish", Publish);
-        group.MapDelete("/{id:guid}/draft", DeleteDraft);
-        group.MapGet("/{id:guid}", Get).AllowAnonymous();
-        group.MapPut("/{id:guid}", Update);
-        group.MapPut("/{id:guid}/move", Move);
-        group.MapPost("/{id:guid}/copy", PageCopy.CopyAsync);
-        group.MapPut("/{id:guid}/layout", SetLayout);
-        group.MapPut("/{id:guid}/emoji", SetEmoji);
-        group.MapDelete("/{id:guid}", Delete);
-        group.MapPost("/{id:guid}/restore", Restore);
-        group.MapDelete("/{id:guid}/purge", Purge);
-        group.MapGet("/{id:guid}/versions", ListVersions);
-        group.MapGet("/{id:guid}/versions/{number:int}", GetVersion);
-        group.MapPost("/{id:guid}/versions/{number:int}/restore", RestoreVersion);
+        group.MapGet("/tree", Tree).AllowAnonymous().Produces<List<PageTreeNode>>();
+        group.MapGet("/trash", Trash).Produces<List<TrashedPageResponse>>();
+        group.MapPost("/", Create).Produces<PageDetailResponse>(StatusCodes.Status201Created);
+        group.MapPost("/draft", CreateDraft).Produces<DraftResponse>();
+        group.MapPost("/{id:guid}/publish", Publish).Produces<PageDetailResponse>().ProducesProblem(StatusCodes.Status409Conflict);
+        group.MapDelete("/{id:guid}/draft", DeleteDraft).Produces(StatusCodes.Status204NoContent).ProducesProblem(StatusCodes.Status503ServiceUnavailable);
+        group.MapGet("/{id:guid}", Get).AllowAnonymous().Produces<PageDetailResponse>();
+        // 409 carries the page as it now is (dev-plan 8.6).
+        group.MapPut("/{id:guid}", Update).Produces<PageDetailResponse>().Produces<PageDetailResponse>(StatusCodes.Status409Conflict);
+        group.MapPut("/{id:guid}/move", Move).Produces(StatusCodes.Status204NoContent);
+        group.MapPost("/{id:guid}/copy", PageCopy.CopyAsync).Produces<PageCopy.CopyPageResponse>();
+        group.MapPut("/{id:guid}/layout", SetLayout).Produces(StatusCodes.Status204NoContent);
+        group.MapPut("/{id:guid}/emoji", SetEmoji).Produces(StatusCodes.Status204NoContent);
+        group.MapDelete("/{id:guid}", Delete).Produces(StatusCodes.Status204NoContent);
+        group.MapPost("/{id:guid}/restore", Restore).Produces(StatusCodes.Status204NoContent);
+        group.MapDelete("/{id:guid}/purge", Purge).Produces(StatusCodes.Status204NoContent);
+        group.MapGet("/{id:guid}/versions", ListVersions).Produces<List<PageVersionResponse>>();
+        group.MapGet("/{id:guid}/versions/{number:int}", GetVersion).Produces<PageVersionContentResponse>();
+        group.MapPost("/{id:guid}/versions/{number:int}/restore", RestoreVersion).Produces<PageDetailResponse>();
 
         return routes;
     }
@@ -170,10 +178,27 @@ public static class PageEndpoints
         // for someone who may read the page: this answered with any page's
         // title and content, restricted or not, before any check (found in
         // the 14.1 review).
+        //
+        // Only a retry, though: the same title and content that were
+        // published. A publish that would change the page used to answer 200
+        // with the page unchanged, so a script believed its edit had landed
+        // (T5-006). Changing a published page is PUT /api/pages/{id}.
         if (page.Status != PageStatus.Draft)
-            return await perms.CanReadPageAsync(page.Id)
-                ? Results.Ok(ToDetail(page, page.CurrentVersion))
-                : Results.NotFound();
+        {
+            if (!await perms.CanReadPageAsync(page.Id)) return Results.NotFound();
+            var sameTitle = string.Equals((req.Title ?? "").Trim(), page.Title, StringComparison.Ordinal);
+            var sameContent = PageContent.TryNormalize(req.ContentJson, out var asSent)
+                && JsonSame(asSent, page.CurrentVersion.ContentJson);
+            if (sameTitle && sameContent) return Results.Ok(ToDetail(page, page.CurrentVersion));
+            return Results.Json(new
+            {
+                title = "Conflict",
+                status = StatusCodes.Status409Conflict,
+                code = "already_published",
+                message = "This page is already published, so publishing it again changes nothing. "
+                    + "To change its title or content, send PUT /api/pages/{id}.",
+            }, statusCode: StatusCodes.Status409Conflict);
+        }
 
         var userId = current.RequireId();
         // Ownership guard: the draft's own creator, or anyone with edit rights
@@ -188,6 +213,8 @@ public static class PageEndpoints
             return Results.ValidationProblem(Error("title", PageWriter.TitleTooLong));
         if (!PageContent.TryNormalize(req.ContentJson, out var content))
             return Results.ValidationProblem(Error("contentJson", "Content must be valid JSON."));
+        if (PageContent.Problem(content) is { } problem)
+            return Results.ValidationProblem(Error("contentJson", problem));
 
         // Nothing was ever "really" saved yet, so the published page starts
         // clean at v1 with the real content: mutate it in place rather than
@@ -921,4 +948,19 @@ public static class PageEndpoints
 
     private static Dictionary<string, string[]> Error(string field, string message) =>
         new() { [field] = [message] };
+
+    /// <summary>Whether two documents say the same thing, whatever their spacing or property order.</summary>
+    private static bool JsonSame(string a, string b)
+    {
+        try
+        {
+            using var left = JsonDocument.Parse(a);
+            using var right = JsonDocument.Parse(b);
+            return JsonElement.DeepEquals(left.RootElement, right.RootElement);
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
 }

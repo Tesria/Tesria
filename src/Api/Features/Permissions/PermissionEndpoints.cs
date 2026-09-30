@@ -21,16 +21,16 @@ public static class PermissionEndpoints
     {
         var space = routes.MapGroup("/spaces/{key}/permissions")
             .WithTags("Permissions").RequireAuthorization();
-        space.MapGet("/", ListSpacePermissions);
-        space.MapPost("/", GrantSpacePermission);
-        space.MapDelete("/{id:guid}", RevokeSpacePermission);
-        space.MapDelete("/", MakeSpaceOpen);
+        space.MapGet("/", ListSpacePermissions).Produces<List<SpacePermissionResponse>>();
+        space.MapPost("/", GrantSpacePermission).Produces(StatusCodes.Status204NoContent);
+        space.MapDelete("/{id:guid}", RevokeSpacePermission).Produces(StatusCodes.Status204NoContent);
+        space.MapDelete("/", MakeSpaceOpen).Produces(StatusCodes.Status204NoContent);
 
         var page = routes.MapGroup("/pages/{pageId:guid}/restrictions")
             .WithTags("Permissions").RequireAuthorization();
-        page.MapGet("/", ListPageRestrictions);
-        page.MapPost("/", AddPageRestriction);
-        page.MapDelete("/{id:guid}", RemovePageRestriction);
+        page.MapGet("/", ListPageRestrictions).Produces<List<PageRestrictionResponse>>();
+        page.MapPost("/", AddPageRestriction).Produces(StatusCodes.Status204NoContent);
+        page.MapDelete("/{id:guid}", RemovePageRestriction).Produces(StatusCodes.Status204NoContent);
 
         return routes;
     }

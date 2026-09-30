@@ -15,20 +15,20 @@ public static class WatchEndpoints
         var page = routes.MapGroup("/pages/{pageId:guid}/watch")
             .WithTags("Watches").RequireAuthorization();
         page.MapGet("/", (Guid pageId, AppDbContext db, CurrentUser current, IPermissionService perms) =>
-            GetStatus(db, current, perms.CanViewPageAsync(pageId), "page", pageId));
+            GetStatus(db, current, perms.CanViewPageAsync(pageId), "page", pageId)).Produces<WatchStatusResponse>();
         page.MapPost("/", (Guid pageId, AppDbContext db, CurrentUser current, IPermissionService perms) =>
-            Add(db, current, perms.CanViewPageAsync(pageId), "page", pageId));
+            Add(db, current, perms.CanViewPageAsync(pageId), "page", pageId)).Produces(StatusCodes.Status204NoContent);
         page.MapDelete("/", (Guid pageId, AppDbContext db, CurrentUser current) =>
-            Remove(db, current, "page", pageId));
+            Remove(db, current, "page", pageId)).Produces(StatusCodes.Status204NoContent);
 
         var space = routes.MapGroup("/spaces/{key}/watch")
             .WithTags("Watches").RequireAuthorization();
         space.MapGet("/", (string key, AppDbContext db, CurrentUser current, IPermissionService perms) =>
-            GetSpaceStatus(key, db, current, perms));
+            GetSpaceStatus(key, db, current, perms)).Produces<WatchStatusResponse>();
         space.MapPost("/", (string key, AppDbContext db, CurrentUser current, IPermissionService perms) =>
-            AddSpace(key, db, current, perms));
+            AddSpace(key, db, current, perms)).Produces(StatusCodes.Status204NoContent);
         space.MapDelete("/", (string key, AppDbContext db, CurrentUser current) =>
-            RemoveSpace(key, db, current));
+            RemoveSpace(key, db, current)).Produces(StatusCodes.Status204NoContent);
 
         return routes;
     }
