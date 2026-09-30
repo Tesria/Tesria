@@ -676,6 +676,8 @@ export type SecurityEvent = {
   targetId: string | null
   metadataJson: string | null
   createdAt: string
+  /** The account the event is about, when its target is one ("Account locked"). */
+  targetName?: string | null
 }
 
 export type SecurityAlert = {
@@ -697,6 +699,9 @@ export type SecurityAlert = {
   metadataJson: string | null
   /** The address stands for many devices (Docker Desktop's gateway): it says nothing about who, and is never blocked. */
   ipShared?: boolean
+  /** The account the alert is about, for the kinds keyed by one; what Suspend, Sign Out and Revoke act on. */
+  accountId?: string | null
+  accountName?: string | null
 }
 
 export type BlockedNetwork = {
@@ -1683,9 +1688,13 @@ export const api = {
       request<Dashboard>('GET', `/api/admin/dashboard?rangeDays=${rangeDays}`),
     roles: {
       matrix: () => request<PermissionMatrix>('GET', '/api/admin/roles'),
-      /** Sudo: the client asks for the password if the session is past the window. */
-      savePermissions: (roleId: string, permissions: string[]) =>
-        request<{ id: string; permissions: string[] }>('PUT', `/api/admin/roles/${roleId}/permissions`, { permissions }),
+      /**
+       * Sudo: the client asks for the password if the session is past the window.
+       * `base` is what the page showed before the change: the server answers 409
+       * `role_changed` if the role has moved on since (T7-024).
+       */
+      savePermissions: (roleId: string, permissions: string[], base?: string[]) =>
+        request<{ id: string; permissions: string[] }>('PUT', `/api/admin/roles/${roleId}/permissions`, { permissions, base }),
       reset: (roleId: string) =>
         request<{ id: string; permissions: string[] }>('POST', `/api/admin/roles/${roleId}/reset`),
       review: () => request<void>('POST', '/api/admin/roles/review'),

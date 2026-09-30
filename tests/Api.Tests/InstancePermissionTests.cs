@@ -266,7 +266,9 @@ public class InstancePermissionTests
         var asOwner = await MatrixAsync(ownerClient);
         Assert.Equal(InstancePermissions.All.Count, asOwner.Catalog.Count);
         Assert.Equal(3, asOwner.Reserved.Count);
-        Assert.All(asOwner.Roles, r => Assert.True(r.Editable));
+        Assert.All(asOwner.Roles.Where(r => r.Key != "owner"), r => Assert.True(r.Editable));
+        // The Owner row is fixed, even for the owner (T7-021).
+        Assert.False(asOwner.Roles.Single(r => r.Key == "owner").Editable);
         Assert.Null(asOwner.ReviewedAt);
 
         // An administrator may shape user roles and not their own.
@@ -345,48 +347,116 @@ public class InstancePermissionTests
             (await MatrixAsync(ownerClient)).Roles.Single(r => r.Key == "user").Permissions);
     }
 
+    /// <summary>
+    /// T7-024: two administrators with the Roles tab open. The second save
+    /// sent the whole list as its page had it, and silently took back the
+    /// right the first had just given. A save that names what it started from
+    /// is now refused when the role has moved on.
+    /// </summary>
     [Fact]
-    public async Task The_owner_can_take_a_right_from_their_own_role_and_put_it_back()
+    public async Task A_save_from_a_stale_grid_is_refused_rather_than_undoing_another_change()
     {
         using var factory = new TestAppFactory();
         var ownerClient = factory.CreateClient();
         await RegisterAsync(ownerClient, "owner@example.com");
-        var matrix = await MatrixAsync(ownerClient);
-        var ownerRole = matrix.Roles.Single(r => r.Key == "owner");
-
-        (await ownerClient.PutAsJsonAsync($"/api/admin/roles/{ownerRole.Id}/permissions",
-            new { Permissions = ownerRole.Permissions.Where(p => p != InstancePermissions.BackupsPolicy).ToArray() }))
+        var adminClient = factory.CreateClient();
+        var admin = await RegisterAsync(adminClient, "admin@example.com");
+        (await ownerClient.PutAsJsonAsync($"/api/admin/users/{admin.Id}/role", new { Role = 1 }))
             .EnsureSuccessStatusCode();
 
-        Assert.Equal(HttpStatusCode.Forbidden, (await ownerClient.PutAsJsonAsync(
-            "/api/admin/backups/policy", new { Enabled = true, KeepCount = 5, KeepDays = 30 })).StatusCode);
+        // Both open the grid.
+        var userRole = (await MatrixAsync(adminClient)).Roles.Single(r => r.Key == "user");
+        var loaded = userRole.Permissions;
+        Assert.DoesNotContain(InstancePermissions.InvitesCreate, loaded);
+        Assert.DoesNotContain(InstancePermissions.PagesDeleteAny, loaded);
 
-        // The way back is never closed: editing the matrix is reserved.
-        (await ownerClient.PostAsync($"/api/admin/roles/{ownerRole.Id}/reset", null)).EnsureSuccessStatusCode();
+        // The owner gives User invite links.
+        (await ownerClient.PutAsJsonAsync($"/api/admin/roles/{userRole.Id}/permissions",
+            new { Permissions = loaded.Append(InstancePermissions.InvitesCreate).ToArray(), Base = loaded }))
+            .EnsureSuccessStatusCode();
+
+        // The administrator, from the page loaded before that, adds deleting others' pages.
+        var stale = await adminClient.PutAsJsonAsync($"/api/admin/roles/{userRole.Id}/permissions",
+            new { Permissions = loaded.Append(InstancePermissions.PagesDeleteAny).ToArray(), Base = loaded });
+        Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
+        var body = await stale.Content.ReadAsStringAsync();
+        Assert.Contains("role_changed", body);
+        Assert.Contains(InstancePermissions.InvitesCreate, body);
+
+        // Nothing was undone and nothing half-applied.
+        var now = (await MatrixAsync(ownerClient)).Roles.Single(r => r.Key == "user").Permissions;
+        Assert.Contains(InstancePermissions.InvitesCreate, now);
+        Assert.DoesNotContain(InstancePermissions.PagesDeleteAny, now);
+
+        // From the grid as it is now, the same change goes through.
+        (await adminClient.PutAsJsonAsync($"/api/admin/roles/{userRole.Id}/permissions",
+            new { Permissions = now.Append(InstancePermissions.PagesDeleteAny).ToArray(), Base = now }))
+            .EnsureSuccessStatusCode();
+        var after = (await MatrixAsync(ownerClient)).Roles.Single(r => r.Key == "user").Permissions;
+        Assert.Contains(InstancePermissions.InvitesCreate, after);
+        Assert.Contains(InstancePermissions.PagesDeleteAny, after);
+
+        // A save that changes nothing is never a conflict.
+        (await adminClient.PutAsJsonAsync($"/api/admin/roles/{userRole.Id}/permissions",
+            new { Permissions = after, Base = loaded })).EnsureSuccessStatusCode();
+    }
+
+    /// <summary>
+    /// T7-021: the owner could clear boxes in their own column and lose the
+    /// Users tab, backups or branding. The owner can do everything, always,
+    /// so the Owner role is not editable by anyone, the owner included.
+    /// </summary>
+    [Fact]
+    public async Task The_owner_role_cannot_be_changed_even_by_the_owner()
+    {
+        using var factory = new TestAppFactory();
+        var ownerClient = factory.CreateClient();
+        await RegisterAsync(ownerClient, "owner@example.com");
+        var ownerRole = (await MatrixAsync(ownerClient)).Roles.Single(r => r.Key == "owner");
+        Assert.Equal(InstancePermissions.All.Select(p => p.Key).Order(), ownerRole.Permissions);
+
+        var refused = await ownerClient.PutAsJsonAsync($"/api/admin/roles/{ownerRole.Id}/permissions",
+            new { Permissions = ownerRole.Permissions.Where(p => p != InstancePermissions.UsersView).ToArray() });
+        Assert.Equal(HttpStatusCode.Forbidden, refused.StatusCode);
+        Assert.Contains("Owner role cannot be changed", await refused.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.Forbidden,
+            (await ownerClient.PostAsync($"/api/admin/roles/{ownerRole.Id}/reset", null)).StatusCode);
+
+        (await ownerClient.GetAsync("/api/admin/users")).EnsureSuccessStatusCode();
         (await ownerClient.PutAsJsonAsync("/api/admin/backups/policy",
             new { Enabled = true, KeepCount = 5, KeepDays = 30 })).EnsureSuccessStatusCode();
     }
 
+    /// <summary>
+    /// An instance whose owner cleared rights from their row before T7-021
+    /// was fixed: the stored row no longer decides anything for the owner.
+    /// </summary>
     [Fact]
-    public async Task The_reserved_rights_cannot_be_removed_from_the_owner()
+    public async Task The_owner_holds_every_right_whatever_the_stored_row_says()
     {
         using var factory = new TestAppFactory();
         var ownerClient = factory.CreateClient();
         await RegisterAsync(ownerClient, "owner@example.com");
         var other = await RegisterAsync(factory.CreateClient(), "other@example.com");
-        var ownerRole = (await MatrixAsync(ownerClient)).Roles.Single(r => r.Key == "owner");
-
-        // An empty set strips every assignable right; the three reserved ones
-        // are not grants and survive.
-        (await ownerClient.PutAsJsonAsync($"/api/admin/roles/{ownerRole.Id}/permissions",
-            new { Permissions = Array.Empty<string>() })).EnsureSuccessStatusCode();
+        await InScopeAsync(factory, async db =>
+        {
+            var role = await db.Roles.Include(r => r.Permissions).FirstAsync(r => r.Key == Role.Keys.Owner);
+            role.Permissions.Clear();
+            await db.SaveChangesAsync();
+            return 0;
+        });
+        using (var scope = factory.Services.CreateScope())
+            scope.ServiceProvider.GetRequiredService<PermissionCache>().Invalidate();
 
         var me = await ownerClient.GetFromJsonAsync<UserDto>("/api/auth/me");
-        Assert.Contains(InstancePermissions.RolesAssignTier, me!.Permissions);
-        Assert.Contains(InstancePermissions.PermissionsEditAdminTier, me.Permissions);
+        Assert.All(InstancePermissions.All, p => Assert.Contains(p.Key, me!.Permissions));
+        Assert.All(InstancePermissions.Reserved, p => Assert.Contains(p.Key, me!.Permissions));
+
+        (await ownerClient.GetAsync("/api/admin/users")).EnsureSuccessStatusCode();
         var promote = await ownerClient.PutAsJsonAsync($"/api/admin/users/{other.Id}/role", new { Role = 1 });
         Assert.True(promote.IsSuccessStatusCode, await promote.Content.ReadAsStringAsync());
-        (await ownerClient.PostAsync($"/api/admin/roles/{ownerRole.Id}/reset", null)).EnsureSuccessStatusCode();
+        Assert.Equal(InstancePermissions.All.Select(p => p.Key).Order(),
+            (await MatrixAsync(ownerClient)).Roles.Single(r => r.Key == "owner").Permissions);
     }
 
     [Fact]

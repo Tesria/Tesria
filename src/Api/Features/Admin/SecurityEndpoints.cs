@@ -17,7 +17,9 @@ public static class SecurityEndpoints
 {
     public record EventRow(
         Guid Id, string Kind, SecuritySeverity Severity, string Key, string? Ip, Guid? ActorId,
-        string? ActorName, string? TargetType, Guid? TargetId, string? MetadataJson, DateTimeOffset CreatedAt);
+        string? ActorName, string? TargetType, Guid? TargetId, string? MetadataJson, DateTimeOffset CreatedAt,
+        /// <summary>The account an event is about, when its target is one ("Account locked").</summary>
+        string? TargetName = null);
 
     public record AlertRow(
         Guid Id, Guid EventId, string Kind, SecuritySeverity Severity, string Key, string? Ip, Guid? ActorId,
@@ -25,7 +27,14 @@ public static class SecurityEndpoints
         DateTimeOffset? AcknowledgedAt, string? AcknowledgedByName,
         DateTimeOffset? ResolvedAt, string? ResolvedByName, string? Note, string? MetadataJson,
         /// <summary>The address stands for many clients (Docker Desktop's gateway, say): not one to block.</summary>
-        bool IpShared = false);
+        bool IpShared = false,
+        /// <summary>
+        /// The account the alert is about, for the kinds keyed by one, so the
+        /// page can name it and its Suspend, Sign Out and Revoke act on
+        /// someone the administrator was told about (T7-013).
+        /// </summary>
+        Guid? AccountId = null,
+        string? AccountName = null);
 
     public record BlockRow(Guid Id, string Cidr, string? Reason, string? CreatedByName, DateTimeOffset CreatedAt, DateTimeOffset? ExpiresAt);
     public record BlockRequest(string Cidr, string? Reason, int? ExpiresInHours);
@@ -34,6 +43,18 @@ public static class SecurityEndpoints
     public record Overview(
         int OpenAlerts, int CriticalOpen, int EventsLast24h, int BlockedNetworks, long BlockedHits,
         bool AllowPublicSpaces, bool AllowPublicRegistration, bool RequireTotpForAdmins);
+
+    /// <summary>
+    /// Alert kinds whose key is the id of the account they are about: locked
+    /// repeatedly, an administrator signing in from a new address, a burst of
+    /// tokens or removals by one account, someone promoted.
+    /// </summary>
+    private static Guid? AccountOf(string kind, string key) =>
+        (kind.StartsWith("account.", StringComparison.Ordinal)
+            || kind is "login.admin_new_address" or "token.minting_burst" or "content.mass_removal" or "admin.promoted")
+        && Guid.TryParse(key, out var id)
+            ? id
+            : null;
 
     public static IEndpointRouteBuilder MapSecurityEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -87,10 +108,10 @@ public static class SecurityEndpoints
         else
             rows = (await query.ToListAsync()).OrderByDescending(e => e.CreatedAt).Take(limit).ToList();
 
-        var names = await NamesAsync(db, rows.Select(r => r.ActorId));
+        var names = await NamesAsync(db, rows.SelectMany(r => new[] { r.ActorId, UserTarget(r) }));
         return Results.Ok(rows.Select(e => new EventRow(
             e.Id, e.Kind, e.Severity, e.Key, e.Ip, e.ActorId, Name(names, e.ActorId),
-            e.TargetType, e.TargetId, e.MetadataJson, e.CreatedAt)));
+            e.TargetType, e.TargetId, e.MetadataJson, e.CreatedAt, Name(names, UserTarget(e)))));
     }
 
     private static async Task<IResult> ListAlerts(AppDbContext db, SharedClientAddresses shared, string? status)
@@ -100,7 +121,7 @@ public static class SecurityEndpoints
             query = query.Where(a => a.Status != SecurityAlertStatus.Resolved);
 
         var rows = (await query.Take(500).ToListAsync()).OrderByDescending(a => a.CreatedAt).ToList();
-        var names = await NamesAsync(db, rows.SelectMany(r => new[] { r.ActorId, r.AcknowledgedById, r.ResolvedById }));
+        var names = await NamesAsync(db, rows.SelectMany(r => new[] { r.ActorId, r.AcknowledgedById, r.ResolvedById, AccountOf(r.Kind, r.Key) }));
         return Results.Ok(rows.Select(a => ToRow(a, names, shared)));
     }
 
@@ -117,7 +138,7 @@ public static class SecurityEndpoints
         if (!string.IsNullOrWhiteSpace(req.Note)) alert.Note = req.Note.Trim();
         audit.Record("security.alert_acknowledged", "security", alert.Id, new { alert.Kind });
         await db.SaveChangesAsync();
-        return Results.Ok(ToRow(alert, await NamesAsync(db, [alert.ActorId, alert.AcknowledgedById, alert.ResolvedById]), shared));
+        return Results.Ok(ToRow(alert, await NamesAsync(db, [alert.ActorId, alert.AcknowledgedById, alert.ResolvedById, AccountOf(alert.Kind, alert.Key)]), shared));
     }
 
     private static async Task<IResult> Resolve(Guid id, NoteRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit, SharedClientAddresses shared)
@@ -132,7 +153,7 @@ public static class SecurityEndpoints
         if (!string.IsNullOrWhiteSpace(req.Note)) alert.Note = req.Note.Trim();
         audit.Record("security.alert_resolved", "security", alert.Id, new { alert.Kind, alert.Note });
         await db.SaveChangesAsync();
-        return Results.Ok(ToRow(alert, await NamesAsync(db, [alert.ActorId, alert.AcknowledgedById, alert.ResolvedById]), shared));
+        return Results.Ok(ToRow(alert, await NamesAsync(db, [alert.ActorId, alert.AcknowledgedById, alert.ResolvedById, AccountOf(alert.Kind, alert.Key)]), shared));
     }
 
     /// <summary>
@@ -228,7 +249,9 @@ public static class SecurityEndpoints
     private static AlertRow ToRow(SecurityAlert a, Dictionary<Guid, string> names, SharedClientAddresses shared) => new(
         a.Id, a.EventId, a.Kind, a.Severity, a.Key, a.Ip, a.ActorId, Name(names, a.ActorId), a.Status, a.CreatedAt,
         a.AcknowledgedAt, Name(names, a.AcknowledgedById), a.ResolvedAt, Name(names, a.ResolvedById), a.Note,
-        a.Event?.MetadataJson, shared.IsShared(a.Ip));
+        a.Event?.MetadataJson, shared.IsShared(a.Ip), AccountOf(a.Kind, a.Key), Name(names, AccountOf(a.Kind, a.Key)));
+
+    private static Guid? UserTarget(SecurityEvent e) => e.TargetType == "user" ? e.TargetId : null;
 
     private static async Task<Dictionary<Guid, string>> NamesAsync(AppDbContext db, IEnumerable<Guid?> ids)
     {

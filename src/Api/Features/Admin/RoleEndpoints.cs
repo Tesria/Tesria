@@ -33,7 +33,12 @@ public static class RoleEndpoints
         DateTimeOffset? ReviewedAt,
         string? ReviewedByName);
 
-    public record UpdatePermissionsRequest(string[] Permissions);
+    /// <summary>
+    /// <c>Base</c>, optional, is the list the caller's page showed before the
+    /// change: when given, the save is refused if the role no longer holds
+    /// exactly that (T7-024). Without it the list simply replaces the role's.
+    /// </summary>
+    public record UpdatePermissionsRequest(string[] Permissions, string[]? Base = null);
     public record CreateRoleRequest(string Name, string? Description, UserRole Tier, Guid? CopyFrom);
     public record UpdateRoleRequest(string Name, string? Description);
 
@@ -41,11 +46,11 @@ public static class RoleEndpoints
     {
         var group = routes.MapGroup("/admin/roles").WithTags("Admin").RequireAuthorization();
 
-        // Not RequirePermission(permissions.view): that right is assignable,
-        // and an owner who cleared their own row would have no way back to the
-        // matrix to undo it. Reaching this tab is "may see it, or may edit any
-        // row", and the owner's edit right is reserved, so their way back is
-        // never closed. Each handler still checks the row it touches.
+        // Not RequirePermission(permissions.view): reaching this tab is "may
+        // see it, or may edit any row", so an administrator role given only
+        // the right to edit user roles still reaches the grid it edits. (The
+        // owner holds every right regardless, T7-021.) Each handler still
+        // checks the row it touches.
         group.MapGet("", GetMatrix);
         group.MapPost("", CreateRole);
         group.MapPut("/{roleId:guid}", UpdateRole);
@@ -85,7 +90,10 @@ public static class RoleEndpoints
                 .OrderByDescending(r => r.Tier).ThenBy(r => r.BuiltIn ? 0 : 1).ThenBy(r => r.Name)
                 .Select(r => new RoleDto(
                     r.Id, r.Key, r.Name, r.Description, r.Tier, r.BuiltIn,
-                    [.. r.Permissions.Select(p => p.Key).Where(InstancePermissions.IsAssignable).Order()],
+                    // The owner holds every right whatever the row says (T7-021).
+                    r.Tier == UserRole.Owner
+                        ? [.. InstancePermissions.All.Select(p => p.Key).Order()]
+                        : [.. r.Permissions.Select(p => p.Key).Where(InstancePermissions.IsAssignable).Order()],
                     counts.GetValueOrDefault(r.Id),
                     MayEdit(r, held)))],
             site.PermissionsReviewedAt,
@@ -260,6 +268,22 @@ public static class RoleEndpoints
         if (added.Length == 0 && removed.Length == 0)
             return Results.Ok(new { role.Id, Permissions = wanted.Order().ToArray() });
 
+        // The request is the whole list as the caller's page had it. If the
+        // role has changed since that page loaded, saving it would silently
+        // undo someone else's change (T7-024), so a caller that says what it
+        // started from is refused instead, and told the role as it is now.
+        if (req.Base is { } seen
+            && !seen.Where(InstancePermissions.IsAssignable).ToHashSet()
+                .SetEquals(current_.Where(InstancePermissions.IsAssignable)))
+            return Results.Conflict(new
+            {
+                title = "Conflict",
+                status = 409,
+                code = "role_changed",
+                message = $"Someone else changed {role.Name} since you opened this page.",
+                permissions = current_.Where(InstancePermissions.IsAssignable).Order().ToArray(),
+            });
+
         role.Permissions.RemoveAll(p => !wanted.Contains(p.Key));
         foreach (var key in added) role.Permissions.Add(new RolePermission { RoleId = role.Id, Key = key });
 
@@ -311,13 +335,16 @@ public static class RoleEndpoints
 
     /// <summary>
     /// User-tier rows need <c>permissions.edit_user_tier</c>; administrator
-    /// and owner rows need the reserved <c>permissions.edit_admin_tier</c>,
-    /// which only the owner ever holds.
+    /// rows need the reserved <c>permissions.edit_admin_tier</c>, which only
+    /// the owner ever holds. The Owner row is nobody's to edit: the owner can
+    /// do everything, always (T7-021).
     /// </summary>
-    private static bool MayEdit(Role role, IReadOnlySet<string> held) =>
-        role.Tier >= UserRole.Admin
-            ? held.Contains(InstancePermissions.PermissionsEditAdminTier)
-            : held.Contains(InstancePermissions.PermissionsEditUserTier);
+    private static bool MayEdit(Role role, IReadOnlySet<string> held) => role.Tier switch
+    {
+        UserRole.Owner => false,
+        UserRole.Admin => held.Contains(InstancePermissions.PermissionsEditAdminTier),
+        _ => held.Contains(InstancePermissions.PermissionsEditUserTier),
+    };
 
     private static async Task<IResult?> Refused(UserRole tier, IInstancePermissions rights) =>
         (tier >= UserRole.Admin
@@ -342,7 +369,9 @@ public static class RoleEndpoints
                 title = "Forbidden",
                 status = 403,
                 code = "permission_required",
-                message = role.Tier >= UserRole.Admin
+                message = role.Tier == UserRole.Owner
+                    ? "The owner can do everything, always, so the Owner role cannot be changed."
+                    : role.Tier >= UserRole.Admin
                     ? "Only the owner changes what administrators may do."
                     : "You do not have the right to edit roles.",
             }, statusCode: StatusCodes.Status403Forbidden);

@@ -181,29 +181,32 @@ export function AdminSecurityPage() {
 
   /** The mitigations relevant to an alert's key, each asked first (dev-plan 15.4). */
   function mitigations(a: SecurityAlert) {
-    const actions: Array<{ label: string; run: () => Promise<unknown>; done: string; ask: string }> = []
+    const actions: Array<{ label: string; title: string; run: () => Promise<unknown>; done: string; ask: string }> = []
     // A shared address (every device behind Docker Desktop) is never one
     // caller; blocking it would lock everyone out, so it is not offered.
     if (a.ip && !a.ipShared) {
       actions.push({
         label: `Block ${a.ip}`,
+        title: `Block ${a.ip}?`,
         run: () => api.admin.security.blocks.add({ cidr: a.ip!, reason: `alert: ${a.kind}`, expiresInHours: 24 }),
         done: `${a.ip} blocked for 24 hours.`,
         ask: `Every request from ${a.ip} is refused for 24 hours, whoever it is.`,
       })
     }
-    // For account-keyed alerts the key is the user id; the actor may be the
-    // person who did it (promotion) or the account affected (new address).
-    const userId = a.kind.startsWith('account.') || a.kind === 'login.admin_new_address' || a.kind === 'token.minting_burst' || a.kind === 'content.mass_removal'
-      ? a.key
-      : a.kind === 'admin.promoted' ? a.key : null
+    // The server says which account an alert is about (T7-013), so each
+    // action and its question name the person it acts on, as on Users.
+    const userId = a.accountId
     if (userId) {
+      const who = a.accountName ?? 'this account'
       actions.push(
-        { label: 'Sign Out Everywhere', run: () => api.admin.users.revokeSessions(userId), done: 'Sessions revoked.',
+        { label: 'Sign Out Everywhere', title: `Sign ${who} out everywhere?`,
+          run: () => api.admin.users.revokeSessions(userId), done: `${who} signed out everywhere.`,
           ask: 'Every browser signed in to this account is signed out. They can sign in again.' },
-        { label: 'Revoke Tokens', run: () => api.admin.users.revokeTokens(userId), done: 'Tokens revoked.',
+        { label: 'Revoke Tokens', title: `Revoke every API token of ${who}?`,
+          run: () => api.admin.users.revokeTokens(userId), done: `Tokens of ${who} revoked.`,
           ask: 'Every API token of this account is deleted; scripts and assistants using them stop working.' },
-        { label: 'Suspend', run: () => api.admin.users.setStatus(userId, UserStatus.Suspended), done: 'Account suspended.',
+        { label: 'Suspend', title: `Suspend ${who}?`,
+          run: () => api.admin.users.setStatus(userId, UserStatus.Suspended), done: `${who} suspended.`,
           ask: 'The account is signed out and cannot sign in or use its tokens until someone reactivates it.' },
       )
     }
@@ -270,6 +273,9 @@ export function AdminSecurityPage() {
                   {/* Joined, so an alert with no details does not end in a
                       separator ("by Sam Okafor ·", found 2026-09-24). */}
                   {[
+                    // The account it is about, unless that is who did it
+                    // (a burst of tokens), which "by" already says.
+                    a.accountName && a.accountId !== a.actorId && <>account <strong>{a.accountName}</strong></>,
                     a.ip && <>address <code>{a.ip}</code></>,
                     a.actorName && <>by {a.actorName}</>,
                     ...plainDetails(a.metadataJson),
@@ -322,7 +328,7 @@ export function AdminSecurityPage() {
                     {mitigations(a).map((m) => (
                       <button key={m.label} type="button" className="btn btn--ghost btn--sm" disabled={busy}
                         onClick={async () => {
-                          if (await ask({ title: `${m.label}?`, confirmLabel: m.label, danger: true, body: <p>{m.ask}</p> }))
+                          if (await ask({ title: m.title, confirmLabel: m.label, danger: true, body: <p>{m.ask}</p> }))
                             await act(m.run, m.done, 'The action failed.')
                         }}>
                         {m.label}
@@ -415,7 +421,7 @@ export function AdminSecurityPage() {
                   <td><Severity level={e.severity} /></td>
                   <td>{ALERT_KIND_LABEL[e.kind] ?? e.kind}</td>
                   <td className="nowrap">{e.ip ? <code>{e.ip}</code> : <span className="muted">–</span>}</td>
-                  <td>{e.actorName ?? <span className="muted">–</span>}</td>
+                  <td>{e.actorName ?? e.targetName ?? <span className="muted">–</span>}</td>
                 </tr>
               ))}
             </tbody>

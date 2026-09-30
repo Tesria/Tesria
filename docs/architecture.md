@@ -1118,9 +1118,12 @@ tier always matches `User.Role`.
   29 assignable rights, each with a key, an area, a label, a description and
   the lowest tier that holds it by default. Three more are **reserved to the
   owner** and never stored as grants: changing tiers, transferring
-  ownership, and editing administrator or owner rows. They are added to the
-  owner's effective set in code, so no configuration can remove them and no
-  owner can lock themselves out.
+  ownership, and editing administrator rows. **The owner can do
+  everything, always:** their effective set is every catalog right plus the
+  reserved three, fixed in code (`InstancePermissions.OwnerHolds`) and
+  never read from the Owner role's row, which nobody may edit, the owner
+  included (T7-021, 0.8.3; before that the owner could clear boxes in
+  their own column and lose, say, the Users tab until they reset it).
 - **The grants are data**: `Roles` and `RolePermissions`, cached for 30
   seconds by `PermissionCache` and invalidated on every write, the same
   arrangement as `SiteSettingsCache` and for the same reason.
@@ -1132,8 +1135,7 @@ tier always matches `User.Role`.
   route names nothing, with two documented exceptions: the settings pair
   (the read needs any settings right, the write is checked **field by
   field**, since one request may touch several areas) and the roles routes
-  (reaching the matrix is "may see it or may edit any row", so an owner who
-  has taken `permissions.view` from their own role can still undo it).
+  (reaching the matrix is "may see it or may edit any row").
 - **Rights are additive over space permissions, never a bypass.**
   `pages.delete_any` says a person may delete other people's pages at all;
   the space's own Edit grant still decides where. Deleting a page checks
@@ -1152,11 +1154,15 @@ tier always matches `User.Role`.
   checked in the handler rather than by a route policy, and the
   endpoint-metadata test lists it as an exception.
 - **Who may edit what.** An administrator may shape user-tier roles
-  (`permissions.edit_user_tier`); only the owner may touch administrator or
-  owner rows. Every save is sudo, audited as a diff
+  (`permissions.edit_user_tier`); only the owner may touch administrator
+  rows, and nobody the Owner row. Every save is sudo, audited as a diff
   (`permissions.changed`), and raises `permissions.expanded` when a role
   gains rights: Critical for an administrator row, Warning for a user-tier
-  role gaining an administration right.
+  role gaining an administration right. A save sends the whole list and,
+  from the Roles tab, the list the page loaded as `base`; if the role no
+  longer holds exactly that, the save is refused with 409 `role_changed`
+  rather than undoing another administrator's change (T7-024), and the tab
+  reloads the grid with the person's own changes carried over.
 - **`RoleSeed`** creates the built-ins at startup and attaches every account
   to one. It never edits a role that already exists, so an owner's changes
   survive a restart.

@@ -260,6 +260,13 @@ public static class InstancePermissions
 
     public static bool IsReserved(string key) => ReservedKeys.Contains(key);
 
+    /// <summary>
+    /// What the owner holds: every right in the catalog and the reserved
+    /// three. Fixed, never read from the Owner role's row (T7-021).
+    /// </summary>
+    public static readonly IReadOnlySet<string> OwnerHolds =
+        new HashSet<string>([.. Known, .. ReservedKeys]);
+
     /// <summary>What a tier's built-in role holds before anyone edits it.</summary>
     public static IReadOnlyList<string> DefaultsFor(UserRole tier) =>
         [.. All.Where(p => tier >= p.DefaultFrom).Select(p => p.Key)];
