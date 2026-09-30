@@ -509,6 +509,13 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 /* The brand is never shrunk or cut short: the bar collapses first. */
 .topbar > .brand { flex-shrink: 0; }
 .topbar .brand__word { overflow: visible; text-overflow: clip; }
+/* ...except at the last level, where nothing is left to move into the menu:
+   a brand name too long for what remains beside the hamburger and the
+   avatar ends in an ellipsis rather than push the avatar (the way to your
+   profile and Sign Out) off the screen (T9-004). Only the real bar: the
+   ruler still measures the whole name. */
+.topbar[data-fit="3"] > .brand { flex-shrink: 1; margin-right: 0.75rem; }
+.topbar[data-fit="3"] > .brand .brand__word { overflow: hidden; text-overflow: ellipsis; }
 /* The theme button and bell, when the bar has no room for them (fit 2, 3). */
 .topbar__panel-tools { display: none; }
 
@@ -1425,16 +1432,8 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
    The threshold is where the full label, B, I, link and + no longer fit
    beside Update/Close. */
 .toolbar-dropdown__compact { display: none; align-items: center; gap: 0.35rem; font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
-/* The narrowest phones (400px and below): "Aa Style", "+ Insert",
-   Update and Close have to share one row, so the four buttons give up a
-   little padding rather than any label wrapping onto two lines. */
-@media (max-width: 400px) {
-  .page-actionbar--editor { gap: 0.35rem; padding-left: 0.5rem; padding-right: 0.5rem; }
-  .page-actionbar--editor .toolbar { gap: 0.25rem; }
-  .page-actionbar--editor .toolbar-dropdown__trigger--menu { padding-left: 0.4rem; padding-right: 0.4rem; }
-  .page-actionbar--editor .page-actionbar__secondary { gap: 0.35rem; }
-  .page-actionbar--editor .page-actionbar__secondary .btn { padding-left: 0.6rem; padding-right: 0.6rem; }
-}
+/* (The narrowest phones' tighter spacing is after .page-actionbar--editor's
+   own rules, further down, which it has to override.) */
 .toolbar-dropdown__compact-glyph { font-weight: 700; letter-spacing: -0.02em; font-size: 0.9rem; }
 /* "Insert" beside the + on a phone only; the + alone is enough where the
    row also carries every formatting button. */
@@ -1445,6 +1444,17 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 @container (max-width: 560px) {
   .toolbar-dropdown__label { display: none; }
   .toolbar-dropdown__compact { display: inline-flex; }
+}
+/* The narrowest phones (320px, T9-001): even with the tighter spacing below,
+   "Aa Style" and "+ Insert" can need more room than Update and Close leave
+   them, and Update was drawn over Insert. The toolbar's own width decides
+   again: the word "Style" goes first (Aa still says it), then "Insert"
+   (the + still says it), so the two menus never run under the buttons. */
+@container (max-width: 175px) {
+  .toolbar-dropdown__compact-word { display: none; }
+}
+@container (max-width: 137px) {
+  .toolbar__insert-word { display: none; }
 }
 /* An overflowed palette unfolded inside the Insert menu. */
 .toolbar-dropdown__group { display: flex; flex-direction: column; }
@@ -1705,6 +1715,18 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   /* The one-row toolbar handles narrow widths by measurement (buttons that
      do not fit move into the Style menu) and by the container queries on
      .page-actionbar__primary above, so nothing viewport-specific is needed. */
+}
+/* The narrowest phones (400px and below): "Aa Style", "+ Insert",
+   Update and Close have to share one row, so the four buttons give up a
+   little padding rather than any label wrapping onto two lines. After the
+   bar's own rules and the phone rule above: placed before them, the bar's
+   gap and padding here were overridden and never applied (T9-001). */
+@media (max-width: 400px) {
+  .page-actionbar--editor { gap: 0.35rem; padding-left: 0.5rem; padding-right: calc(0.5rem + var(--safe-right)); }
+  .page-actionbar--editor .toolbar { gap: 0.25rem; }
+  .page-actionbar--editor .toolbar-dropdown__trigger--menu { padding-left: 0.4rem; padding-right: 0.4rem; }
+  .page-actionbar--editor .page-actionbar__secondary { gap: 0.35rem; }
+  .page-actionbar--editor .page-actionbar__secondary .btn { padding-left: 0.6rem; padding-right: 0.6rem; }
 }
 /* Viewing a page, the bar's last button (the ... menu) ends where the top
    bar's avatar does, at every width (the owner, 2026-09-28). */
@@ -3308,6 +3330,13 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
 .tip__body p { margin: 0; }
 .tip__actions { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.4rem; }
 .tip--undo { display: flex; gap: 0.75rem; align-items: center; padding: 0.7rem 0.85rem; }
+/* A tip steps aside while a menu is open, and comes back when it closes
+   (T9-002). It cannot go under them instead: the menus live inside the
+   sticky bars, whose own stacking (z-index 10 and 8) caps them below the
+   tip, and on a phone the ☰ menu and a page's ⋮ menu reach the bottom
+   corner where the tip sits. Keep in step with MENUS in TipHost.tsx. */
+:root:has(.topbar.is-menu-open, .overflow-menu__dropdown, .notif__dropdown, .theme-menu__panel,
+  .toolbar-dropdown__menu, .slash-menu, .suggest-menu, .page-emoji__panel, .cell-menu__panel) .tip { display: none; }
 
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
   .tour__card { grid-template-columns: 1fr; padding: 1rem; gap: 1rem; }
