@@ -1075,11 +1075,11 @@
     {
       "ecosystem": "npm",
       "name": "@dnd-kit/sortable",
-      "version": "10.0.0",
+      "version": "9.0.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@dnd-kit/sortable/v/10.0.0"
+      "url": "https://www.npmjs.com/package/@dnd-kit/sortable/v/9.0.0"
     },
     {
       "ecosystem": "npm",
