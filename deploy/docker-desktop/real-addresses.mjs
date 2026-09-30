@@ -21,14 +21,23 @@
 // the Mac's network address was recorded with that address instead of
 // Docker Desktop's gateway.
 //
-// Settings (environment): LISTEN_HTTP (80), LISTEN_HTTPS (443),
-// TARGET_HOST (127.0.0.1), TARGET_HTTP (18080), TARGET_HTTPS (18443).
+// Settings: LISTEN_HTTP (80), LISTEN_HTTPS (443), TARGET_HOST (127.0.0.1),
+// TARGET_HTTP (18080), TARGET_HTTPS (18443), from the environment or as
+// NAME=value arguments, which win. Arguments are how Windows' scheduled task
+// gives a second Tesria its own ports (WIN-007): a task has no environment
+// of its own.
+//
+//   node deploy/docker-desktop/real-addresses.mjs LISTEN_HTTP=8080 LISTEN_HTTPS=8443 TARGET_HTTP=28080 TARGET_HTTPS=28443
 
 import net from 'node:net'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const env = (name, fallback) => process.env[name] || fallback
+const args = Object.fromEntries(process.argv.slice(2)
+  .map((arg) => /^([A-Z_]+)=(.*)$/.exec(arg))
+  .filter(Boolean)
+  .map(([, name, value]) => [name, value]))
+const env = (name, fallback) => args[name] || process.env[name] || fallback
 const TARGET_HOST = env('TARGET_HOST', '127.0.0.1')
 const ROUTES = [
   { listen: Number(env('LISTEN_HTTP', 80)), target: Number(env('TARGET_HTTP', 18080)) },

@@ -280,7 +280,7 @@ export async function build({
     p('Docker Compose knows each Tesria by a ', b('project name'), ', which is ', c('tesria'), ' for every Tesria folder unless its ', c('.env'), ' says otherwise. Two folders with the same name are one Tesria, not two: the second would take over the first one’s containers and data, and removing “the test copy” with ', c('docker compose down -v'), ' would delete the real wiki. Since 0.8.2 Tesria refuses to start a Tesria from a folder other than the one it was installed from, and says what to do.'),
     p('For a second, separate Tesria, for example to try a new version beside the real one, unzip it into a folder of its own and, ', b('before its first start'), ', give it its own name, network and ports in that folder’s ', c('.env'), ':'),
     codeBlock('bash', 'COMPOSE_PROJECT_NAME=tesria2\nTESRIA_SUBNET=10.204.0.0/24\nTESRIA_HTTP_PORT=8080\nTESRIA_HTTPS_PORT=8443'),
-    p('Then start it as above, and open it at ', c('https://localhost:8443'), '. It has its own volumes (', c('tesria2_pgdata'), ' and the rest), its own passwords, its own backup key and its own certificate authority, so a device that trusts the first one trusts this one separately. All four settings are in the ', pageLink('Configuration reference'), '.'),
+    p('Then start it as above, and open it at ', c('https://localhost:8443'), '. It has its own volumes (', c('tesria2_pgdata'), ' and the rest), its own passwords, its own backup key and its own certificate authority, so a device that trusts the first one trusts this one separately, from its own guide at ', c('http://localhost:8080/trust'), '. All four settings are in the ', pageLink('Configuration reference'), '.'),
   ))
 
   // ============================================================ Configuration
@@ -297,6 +297,8 @@ export async function build({
       li(p('Save the file, and run ', c('docker compose up -d'), '. It restarts the services whose settings changed and leaves the rest alone.')),
     ),
     codeBlock('bash', '# Off: the # at the start makes the line a comment\n# OFFSITE_RETRY_MINUTES=15\n\n# On\nOFFSITE_RETRY_MINUTES=30'),
+    panel('note', p(b('On Windows, write a folder without quotes,'), ' or with forward slashes. Inside double quotes, a backslash starts a special character: in ', c('"C:\\tesria\\usb"'), ' the ', c('\\t'), ' becomes a tab, and the folder is not the one you meant. Tesria refuses to start with a path like that and says which setting it is.'),
+      codeBlock('bash', '# Either of these\nOFFSITE_REMOVABLE_PATH=E:\\TesriaBackups\nOFFSITE_REMOVABLE_PATH=E:/TesriaBackups\n\n# Not this: the \\t becomes a tab\nOFFSITE_REMOVABLE_PATH="C:\\tesria\\backups"')),
     p('If you choose a password or a passphrase yourself, make a long random one with:'),
     codeBlock('bash', 'openssl rand -hex 32'),
     panel('warning', p(b('.env holds every secret you put in it.'), ' Never share it or put it in version control. Keep a copy of the backup key and passphrases somewhere that is not this machine: without them, the backups cannot be read.')),
@@ -326,6 +328,7 @@ export async function build({
       setting('PROXY_TRUSTED_NETWORKS', 'only if you put a proxy of your own in front of Tesria: that proxy’s address, such as ', c('10.0.0.5/32'), '. Tesria then believes the visitor addresses it passes on.'),
       setting('COMPOSE_FILE', 'set by the Docker Desktop setup in ', pageLink('Real visitor addresses with Docker Desktop'), ', which adds its own file to the list. Leave it alone otherwise.'),
       setting('PROXY_PROTOCOL_FROM', 'optional, and set by that same setup: which addresses Tesria’s web server believes when they attach a visitor’s real address. Left out, nothing is believed, which is right for every other install.'),
+      setting('TESRIA_LOOPBACK_HTTP_PORT', 'and ', c('TESRIA_LOOPBACK_HTTPS_PORT'), ': set by the Windows setup in that same page. The ports, reachable only from this computer, where Tesria’s web server waits for visitors handed on with their real addresses: ', c('18080'), ' and ', c('18443'), ' for a Tesria on 80 and 443, and 20000 above its own ports for any other. Leave them alone unless the setup says those are taken.'),
       setting('TESRIA_TAILSCALE_ADDRESS', 'optional. The fixed address of the Tailscale container, ', c('10.203.0.250'), ' unless you set another; Tesria believes the visitor address Tailscale passes on only from there. Change it only together with ', c('TESRIA_SUBNET'), ', to an address inside it.'),
       setting('TESRIA_SUBNET', 'optional. The private network Tesria’s own services talk to each other on, ', c('10.203.0.0/24'), ' unless you set another. Change it only if that range is already used by a VPN or your own network, or for a second Tesria on the same computer. After changing it, run ', c('docker compose down'), ' and then ', c('docker compose up -d'), '.'),
       setting('TESRIA_HTTP_PORT', 'optional. The port Tesria answers plain HTTP on, ', c('80'), ' unless you set another.'),
@@ -475,7 +478,8 @@ export async function build({
 
     h(2, 'Before you start'),
     panel('note',
-      p(b('Throughout this page, '), c('your-server'), b(' stands for your server’s address:'), ' whatever you type into the browser to open Tesria, without ', c('https://'), '. For example, if you open Tesria at ', c('https://wiki-server.local'), ', then ', c('http://your-server/trust'), ' means ', c('http://wiki-server.local/trust'), '.')),
+      p(b('Throughout this page, '), c('your-server'), b(' stands for your server’s address:'), ' whatever you type into the browser to open Tesria, without ', c('https://'), '. For example, if you open Tesria at ', c('https://wiki-server.local'), ', then ', c('http://your-server/trust'), ' means ', c('http://wiki-server.local/trust'), '.'),
+      p(b('A Tesria on ports of its own,'), ' such as a second one on the same computer (see ', pageLink('Installing with Docker Compose'), ', under ', b('A second Tesria on the same computer'), '), has two addresses: you open it at its HTTPS port, such as ', c('https://localhost:8443'), ', and its guide and certificate are at its HTTP port, such as ', c('http://localhost:8080/trust'), '. Put the HTTP one after ', c('http://'), ' on this page, and give it to the scripts, as ', c('localhost:8080'), '. The guide fills in both for you.')),
     ul(
       li(p(b('About three minutes'), ' per device.')),
       li(p(b('Optionally, the server’s fingerprint,'), ' from above, on a network you do not control.')),
@@ -501,7 +505,7 @@ export async function build({
     ...(await picture(trust, 'trust-device', 'Choosing the device in the guide', 'The highlighted button is the device the steps are for.')),
 
     step(2, 'What Address Do You Open Tesria At?'),
-    p('The guide fills in the address you used to reach it. It has to be the address you normally open Tesria at, because that is the address the command will trust. If you type a numeric address such as 192.168.1.50, the guide explains how to find your computer’s name instead, since certificates are issued for names.'),
+    p('The guide fills in the address you used to reach it. It has to be the address you normally open Tesria at, because that is the address the command will trust. For a Tesria on ports of its own, it includes the HTTPS port, such as ', c('localhost:8443'), ', and its commands download the certificate from the HTTP port. If you type a numeric address such as 192.168.1.50, the guide explains how to find your computer’s name instead, since certificates are issued for names.'),
     ...(await picture(trust, 'trust-address', 'The address box in the guide', 'Your server’s address, without https://.')),
 
     h(3, 'Optional: check the fingerprint first'),
@@ -768,6 +772,7 @@ export async function build({
     p('Go to the Tesria folder, then run:'),
     codeBlock('powershell', 'powershell -ExecutionPolicy Bypass -File deploy\\docker-desktop\\install-windows.ps1'),
     p('It does the same as on a Mac, with a Windows Firewall rule, and a Task Scheduler task that runs in the background from startup, with no window.'),
+    panel('note', p(b('Two Tesrias on one PC?'), ' Run the setup in each one’s folder. Each gets its own task, firewall rule and ports, and undoing it in one folder leaves the other alone. The second Tesria’s ports must be set with ', c('TESRIA_HTTP_PORT'), ' and ', c('TESRIA_HTTPS_PORT'), ' in its ', c('.env'), ', as ', pageLink('Installing with Docker Compose'), ' describes under ', b('A second Tesria on the same computer'), ': the setup reads them from there. If something is in the way, it says so and changes nothing. On a Mac, the setup handles one Tesria per computer.')),
 
     h(2, 'Check it'),
     p('Sign in to Tesria from another device, such as your phone on the same Wi-Fi. Then open ', ...adminAt('Audit'), ': the sign-in shows that device’s own address, such as ', c('192.168.1.50'), ', instead of ', c('192.168.65.1'), '.'),
@@ -1585,6 +1590,8 @@ export async function build({
     h(2, 'A removable drive'),
     step(1, 'Add the settings to .env'),
     codeBlock('bash', 'OFFSITE_REMOVABLE_PATH=/Volumes/my-backup-drive\nOFFSITE_REMOVABLE_PASSPHRASE=a-new-long-random-passphrase'),
+    p('On Windows, the path is the drive’s letter and a folder on it, written without quotes:'),
+    codeBlock('bash', 'OFFSITE_REMOVABLE_PATH=E:\\TesriaBackups\nOFFSITE_REMOVABLE_PASSPHRASE=a-new-long-random-passphrase'),
     p('Plug the drive in, then run ', c('docker compose up -d'), '.'),
     step(2, 'Mark the drive as Tesria’s, once'),
     codeBlock('bash', 'docker compose exec backup-removable /scripts/claim-target.sh removable'),

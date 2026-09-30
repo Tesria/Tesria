@@ -53,7 +53,7 @@ public class TrustTests
         Assert.Contains("-CertStoreLocation Cert:\\CurrentUser\\Root", html);
         Assert.DoesNotContain("PASTE-THE-FINGERPRINT", html);
         // The checked template, filled by the page's script.
-        Assert.Contains("http://{address}/ca.crt", html);
+        Assert.Contains("http://{http}/ca.crt", html);
         Assert.Contains("if ($h -eq \"{hex}\") { Import-Certificate", html);
     }
 
@@ -70,13 +70,78 @@ public class TrustTests
     }
 
     [Fact]
+    public async Task A_tesria_on_its_own_ports_sends_devices_to_its_own_certificate()
+    {
+        // WIN-002: a second Tesria on 28080 and 28443. The page lost the port,
+        // so every command downloaded the certificate of whatever answered on
+        // port 80, which on that computer is the first Tesria.
+        using var factory = new TestAppFactory(new Dictionary<string, string?> { ["Tls:HttpsPort"] = "28443" });
+        var html = System.Net.WebUtility.HtmlDecode(await Client(factory, "localhost:28080").GetStringAsync("/trust"));
+        Assert.Contains("value=\"localhost:28443\"", html);
+        Assert.Contains("data-http-port=\"28080\" data-https-port=\"28443\"", html);
+        Assert.Contains("curl -fsS http://localhost:28080/ca.crt", html);
+        Assert.Contains("-Uri \"http://localhost:28080/ca.crt\"", html);
+        Assert.Contains("bash trust-ca.sh localhost:28080", html);
+        Assert.Contains("trust-ca.ps1\" localhost:28080", html);
+        Assert.Contains("href=\"https://localhost:28443/\"", html);
+        Assert.Contains("open <code>https://localhost:28443</code>", html);
+        Assert.DoesNotContain("http://localhost/ca.crt", html);
+    }
+
+    [Fact]
+    public async Task Reached_over_https_the_page_takes_the_plain_http_port_from_the_settings()
+    {
+        using var factory = new TestAppFactory(new Dictionary<string, string?> { ["Tls:HttpPort"] = "8080", ["Tls:HttpsPort"] = "8443" });
+        var client = factory.CreateClient(new() { BaseAddress = new Uri("https://localhost:8443") });
+        var html = System.Net.WebUtility.HtmlDecode(await client.GetStringAsync("/trust"));
+        Assert.Contains("value=\"localhost:8443\"", html);
+        Assert.Contains("curl -fsS http://localhost:8080/ca.crt", html);
+    }
+
+    [Fact]
+    public async Task The_standard_ports_stay_out_of_every_address()
+    {
+        using var factory = new TestAppFactory(new Dictionary<string, string?> { ["Tls:HttpPort"] = "80", ["Tls:HttpsPort"] = "443" });
+        var html = System.Net.WebUtility.HtmlDecode(await Client(factory).GetStringAsync("/trust"));
+        Assert.Contains("value=\"wiki-server.local\"", html);
+        Assert.Contains("curl -fsS http://wiki-server.local/ca.crt", html);
+        Assert.DoesNotContain("wiki-server.local:", html);
+    }
+
+    [Theory]
+    [InlineData("8443", 8443)]
+    [InlineData("127.0.0.1:8443", 8443)]
+    [InlineData(" 443 ", 443)]
+    [InlineData("", 443)]
+    [InlineData(null, 443)]
+    [InlineData("https", 443)]
+    [InlineData("70000", 443)]
+    [InlineData("-1", 443)]
+    public void A_configured_port_is_read_as_compose_would_publish_it(string? value, int expected) =>
+        Assert.Equal(expected, Tesria.Api.Features.Trust.TrustEndpoints.Ports.Configured(value, 443));
+
+    [Fact]
+    public void Plain_http_redirects_to_the_https_port_tesria_is_published_on()
+    {
+        // WIN-002: http://localhost:28080/ went to https://localhost/, the
+        // first Tesria on that computer.
+        var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../.."));
+        var caddyfile = File.ReadAllText(Path.Combine(root, "deploy/Caddyfile"));
+        Assert.Contains("redir https://{host}:{$TESRIA_HTTPS_PORT:443}{uri} permanent", caddyfile);
+        var compose = File.ReadAllText(Path.Combine(root, "docker-compose.yml"));
+        Assert.Contains("TESRIA_HTTPS_PORT: ${TESRIA_HTTPS_PORT:-443}", compose);
+        Assert.Contains("Tls__HttpPort: ${TESRIA_HTTP_PORT:-80}", compose);
+        Assert.Contains("Tls__HttpsPort: ${TESRIA_HTTPS_PORT:-443}", compose);
+    }
+
+    [Fact]
     public async Task The_scripts_come_from_the_release_with_the_fingerprint_optional()
     {
         using var factory = new TestAppFactory();
         var html = System.Net.WebUtility.HtmlDecode(await Client(factory).GetStringAsync("/trust"));
         Assert.Contains("https://github.com/Tesria/Tesria/releases/latest/download/trust-ca.sh", html);
         Assert.Contains("bash trust-ca.sh wiki-server.local", html);
-        Assert.Contains("bash trust-ca.sh --fingerprint {fingerprint} {address}", html);
+        Assert.Contains("bash trust-ca.sh --fingerprint {fingerprint} {http}", html);
         Assert.Contains("https://github.com/Tesria/Tesria/releases/latest/download/trust-ca.ps1", html);
         Assert.Contains("-Fingerprint {hex}", html);
     }

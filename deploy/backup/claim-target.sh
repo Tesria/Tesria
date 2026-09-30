@@ -35,6 +35,18 @@ if [ ! -d "$MOUNT" ]; then
   exit 1
 fi
 
+# With no path set, the mount is Compose's stand-in, deploy/backup/no-target
+# in the Tesria folder, which is on the boot disk: claiming it would mark
+# exactly the place the sentinel exists to keep backups out of (WIN-006).
+# The variable is read from this container, so a path added to .env since
+# it started counts only once `docker compose up -d` has passed it on.
+PATH_VAR="OFFSITE_${SLOT_UPPER}_PATH"
+if [ -z "${!PATH_VAR:-}" ]; then
+  echo "$PATH_VAR is not set, so there is no $SLOT target to claim. Nothing was written." >&2
+  echo "Set $PATH_VAR in .env, run docker compose up -d, then run this again." >&2
+  exit 1
+fi
+
 # An empty directory here is the dangerous case, so say so plainly rather
 # than claiming it: it is what an unmounted share looks like.
 if [ -z "$(ls -A "$MOUNT" 2>/dev/null)" ]; then
