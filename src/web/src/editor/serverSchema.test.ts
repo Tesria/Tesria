@@ -22,6 +22,14 @@ function serverList(name: 'NodeTypes' | 'MarkTypes'): string[] {
   return [...block[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]).sort()
 }
 
+/** One of the file's string-to-string dictionaries, by its name. */
+function serverMap(name: 'Content' | 'Groups'): Record<string, string> {
+  const source = readFileSync(serverFile, 'utf8')
+  const block = new RegExp(`${name}\\s*=\\s*new Dictionary<string, string>\\([^)]*\\)\\s*\\{([\\s\\S]*?)\\n\\s*\\};`).exec(source)
+  if (!block) throw new Error(`${name} not found in EditorSchema.cs`)
+  return Object.fromEntries([...block[1].matchAll(/\["([^"]+)"\]\s*=\s*"([^"]*)"/g)].map((m) => [m[1], m[2]]))
+}
+
 describe("the server's copy of the editor schema", () => {
   for (const collaborative of [false, true]) {
     const schema = getSchema(getSharedExtensions({ collaborative }))
@@ -33,6 +41,16 @@ describe("the server's copy of the editor schema", () => {
 
     it(`names every mark type of the ${mode} editor, and no others`, () => {
       expect(serverList('MarkTypes')).toEqual(Object.keys(schema.marks).sort())
+    })
+
+    // Where each element may go (t5-R05): the server checks documents
+    // against these, so they must be the editor's own.
+    it(`copies every content rule of the ${mode} editor`, () => {
+      expect(serverMap('Content')).toEqual(Object.fromEntries(Object.values(schema.nodes).map((n) => [n.name, n.spec.content ?? ''])))
+    })
+
+    it(`copies every group of the ${mode} editor`, () => {
+      expect(serverMap('Groups')).toEqual(Object.fromEntries(Object.values(schema.nodes).map((n) => [n.name, n.spec.group ?? ''])))
     })
   }
 })
