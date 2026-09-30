@@ -51,8 +51,9 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
     (T9-001); a tip steps aside while a menu is open (T9-002); Trust This
     Device no longer scrolls sideways (T9-003); a long site name ends in an
     ellipsis instead of pushing the avatar off (T9-004); the Glass phone
-    menu no longer uses the clip that is thought to have made iPhone Safari
-    stop drawing it while typing (SIM-002, to be confirmed on an iPhone).
+    menu no longer uses the clip that made iPhone Safari stop drawing it
+    while typing (SIM-002; confirmed in Safari on the iPhone 18 Pro
+    Simulator, with T3-026, in Glass and Minimal).
   - *Spaces and pages.* Readers no longer see editing controls they cannot
     use (T3-012); the page tree follows other people's new and deleted
     pages and shows the right space after a move (cal-003, T3-015); Space
