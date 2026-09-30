@@ -14,6 +14,15 @@ describe('parseNumber', () => {
     expect(parseNumber('45%')).toBe(45)
     expect(parseNumber('£9.50')).toBe(9.5)
     expect(parseNumber('-3')).toBe(-3)
+    expect(parseNumber('1e3')).toBe(1000)
+  })
+  it('reads a number followed by a unit, whatever letters the unit has (t4-R01)', () => {
+    expect(parseNumber('30 minutes')).toBe(30)
+    expect(parseNumber('5 people')).toBe(5)
+    expect(parseNumber('1 week')).toBe(1)
+    expect(parseNumber('2 hours')).toBe(2)
+    expect(parseNumber('1,250 employees')).toBe(1250)
+    expect(parseNumber('$9.50 each')).toBe(9.5)
   })
   it('is null for text', () => {
     expect(parseNumber('n/a')).toBeNull()

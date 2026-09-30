@@ -15,9 +15,13 @@ export type ChartData = { categories: string[]; series: Series[] }
 
 /** A number as a person would write one in a table: "1,234", "45%", "£9.50". */
 export function parseNumber(text: string): number | null {
-  const cleaned = text.replace(/[^0-9.,\-+eE]/g, '').replace(/,/g, '')
-  if (!cleaned || !/\d/.test(cleaned)) return null
-  const value = Number(cleaned)
+  // The first number in the cell, with an exponent only when digits follow
+  // the "e" directly (1e3). Keeping every "e" in the cell turned
+  // "30 minutes" into "30e" and "5 people" into "5ee", which are no number,
+  // so the chart left those rows out (t4-R01, the 0.8.3 retest).
+  const match = /[-+]?(?:\d[\d,]*(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?/.exec(text)
+  if (!match) return null
+  const value = Number(match[0].replace(/,/g, ''))
   return Number.isFinite(value) ? value : null
 }
 
