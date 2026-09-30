@@ -509,6 +509,13 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 /* The brand is never shrunk or cut short: the bar collapses first. */
 .topbar > .brand { flex-shrink: 0; }
 .topbar .brand__word { overflow: visible; text-overflow: clip; }
+/* ...except at the last level, where nothing is left to move into the menu:
+   a brand name too long for what remains beside the hamburger and the
+   avatar ends in an ellipsis rather than push the avatar (the way to your
+   profile and Sign Out) off the screen (T9-004). Only the real bar: the
+   ruler still measures the whole name. */
+.topbar[data-fit="3"] > .brand { flex-shrink: 1; margin-right: 0.75rem; }
+.topbar[data-fit="3"] > .brand .brand__word { overflow: hidden; text-overflow: ellipsis; }
 /* The theme button and bell, when the bar has no room for them (fit 2, 3). */
 .topbar__panel-tools { display: none; }
 

@@ -426,7 +426,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ),
     p('To sign out, open your profile: ', b('Sign Out'), ' is at the top right of it.'),
     h(3, 'In a narrower window'),
-    p('Nothing in the top bar is ever squeezed or cut short. When the window is too narrow for all of it, a ', b('☰'), ' button appears at the left of the bar, and ', b('Spaces'), ', ', b('Admin'), ' (or ', b('Invite People'), ') and the search box move into the menu it opens. Narrower still, the sun, moon or screen button moves into that menu too, and then the bell. Your picture stays in the bar.'),
+    p('The top bar makes room by moving things into a menu, not by squeezing them. When the window is too narrow for all of it, a ', b('☰'), ' button appears at the left of the bar, and ', b('Spaces'), ', ', b('Admin'), ' (or ', b('Invite People'), ') and the search box move into the menu it opens. Narrower still, the sun, moon or screen button moves into that menu too, and then the bell. Your picture stays in the bar. If the site’s name is still too long for a phone, it ends in …, so your picture still fits.'),
     p('On a phone, the same menu also holds the page tree of the space you are in. See ', pageLink('The phone top bar and menu'), '.'),
 
     h(2, 'Search'),

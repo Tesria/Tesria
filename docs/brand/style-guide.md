@@ -468,7 +468,10 @@ changes, and when fonts load. The level is on the bar as `data-fit`.
 | 3 | Hamburger, brand, avatar | Bell too |
 
 This depends on the measured width, not the screen size: a long instance
-name or a larger style collapses the bar sooner. When the bar is full again
+name or a larger style collapses the bar sooner. Level 3 is the one
+exception to "never cuts short": with nothing left to move, a brand name
+too long for the room beside the hamburger and the avatar ends in an
+ellipsis, so the avatar stays on screen. When the bar is full again
 the menu closes, but only after it has stayed full for 400ms (a phone's
 keyboard closing briefly measures as "fits").
 
