@@ -689,10 +689,17 @@ SQL
 # how it ended, and the log in the directory is where to look.
 reconcile_stale_jobs() {
   local rows line id kind dir status err extra at
-  rows="$(q 2>/dev/null <<'SQL'
+  # Not the jobs a drive's own service runs (CLAIM_SKIP_SLOTS, as in
+  # claim_job): they are the logical agent's too, but that container is
+  # running them, and closing them here marked every Copy Now to the
+  # removable drive interrupted a few seconds in (found fixing T8-009).
+  # drive_service_watch in run.sh closes them if that service goes quiet.
+  rows="$(q -v skip="${CLAIM_SKIP_SLOTS:-}" 2>/dev/null <<'SQL'
 SELECT j."Id" || '|' || j."Kind"
   FROM "BackupJobs" j
  WHERE j."Agent" = :'agent' AND j."Status" = 'running'
+   AND NOT (j."Kind" IN ('copy-offsite', 'test-target')
+            AND coalesce(j."Target" = ANY (string_to_array(:'skip', ' ')), false))
    AND j."Id" IS DISTINCT FROM (SELECT "RestoreJobId" FROM "SiteSettings" LIMIT 1);
 SQL
 )" || return 0

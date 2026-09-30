@@ -369,7 +369,7 @@ ON CONFLICT ("Slot", "Kind") DO UPDATE
 UPDATE "BackupJobs"
    SET "Status" = 'failed', "StartedAt" = coalesce("StartedAt", now()), "FinishedAt" = now(),
        "Error" = left(:'msg', 500), "ResultJson" = jsonb_build_object('summary', left(:'msg', 500))
- WHERE "Agent" = 'logical' AND "Status" = 'requested'
+ WHERE "Agent" = 'logical' AND "Status" IN ('requested', 'running')
    AND "Kind" IN ('copy-offsite', 'test-target') AND "Target" = :'slot';
 SQL
 }
