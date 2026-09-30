@@ -5,6 +5,60 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+The fourteen Medium bugs from the 0.8.3 retest.
+
+- **Fixed: an outside change just after someone closed a page showed as
+  tracked changes** (T5-031, reopened). For two minutes after an editor
+  closed, even after Discard, an agent's or the API's change was merged
+  as "changes from outside this editor", and the next editor's Reject All
+  then quietly reverted it. Closing the editor, going to another page or
+  closing the tab now tells the live editing service the person has left,
+  so the idle draft simply takes the change. The two-minute grace stays
+  for a dropped connection, which may come back with unsaved typing.
+  Checked live, all four ways of leaving.
+- **Fixed: the API accepted a document with elements in impossible
+  places** (t5-R05). Text placed straight under the document passed the
+  check, opened empty, and Update then published an empty page. The
+  server's copy of the editor schema now also knows what each element may
+  contain, and a write that breaks it is refused with the reason. The Markdown
+  converter no longer puts pictures inside paragraphs.
+- **Fixed: MCP `update_page` with `section` took the whole page as the
+  section** (t5-R07), so the page ended up inside itself. The new content
+  must start with a heading of the section's level and hold no later
+  heading at that level or above; empty content removes the section.
+- **Fixed: MCP froze a live block whose results changed between reading
+  and saving** (t5-R02). `get_page` now marks live blocks in its Markdown,
+  and the save keeps them live whatever they showed.
+- **Fixed: charts dropped numbers with a unit containing an "e"**
+  (t4-R01), such as "30 minutes" or "5 people".
+- **Fixed: Change Email had no rate limit** (t2-R01), and each request
+  emails the typed address. It now allows 10 an hour per person.
+- **Fixed: a refused trial copy said "Nothing was changed"** after the
+  refused start had already stopped the wiki's containers (t1-R03). It now
+  says they may be stopped and how to start them again.
+- **Fixed: `restore.sh` run by hand pointed at an Undo that does not
+  exist** (t8-R06). It now names the safety backup to restore to undo it,
+  and no earlier restore's Undo shows instead.
+- **Fixed: the backup service still failed the drive services' running
+  jobs at its start** (t8-R04), so a running Copy Now or Test Connection
+  was marked failed.
+- **Fixed: the setup wizard's This Instance step overwrote a saved Public
+  Address** with the browser's address (t1-R01). It now starts from the
+  saved one.
+- **Fixed: deleting a `change-me` secret line from `.env` kept the public
+  example in use** on an existing install, and the warnings stopped
+  (t1-R04). It is flagged until it is replaced.
+- **Fixed: in Safari, a pointer resting where the slash menu opens took
+  its highlight** (t4-R04), so `/table` then Enter inserted a Table of
+  Contents. A menu's highlight now follows the pointer only when it moves.
+  Checked live in WebKit.
+- **Fixed: colored text on a highlight was light on light in the dark
+  theme** (t4-R05, contrast 1.3 to 2). It now uses the light theme's inks,
+  and measures the same as the light theme.
+- **Fixed: one slow webhook receiver held up every space's webhooks**
+  (t5-R09, 21 seconds an event). Each webhook now has its own delivery
+  queue, still in order.
+
 ## [0.8.4] - 2026-09-30
 
 A same-day update for 0.8.3: a security update the About tab's
