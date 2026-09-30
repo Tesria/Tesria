@@ -98,6 +98,8 @@ check "exits 0" '[ $? -eq 0 ]'
 check "flags both settings" '[ "$(cat "$T/secrets/status/placeholders")" = "$(printf "POSTGRES_PASSWORD\nBACKUP_ENCRYPTION_KEY")" ]'
 check "warns in the log" 'grep -q "WARNING: POSTGRES_PASSWORD is still the example value" "$T/out"'
 check "no backup-key.txt for a key from .env" '[ ! -e "$T/install/backup-key.txt" ]'
+run
+check "deleting the lines keeps the example values flagged (t1-R04)" '[ "$(cat "$T/secrets/status/placeholders")" = "$(printf "POSTGRES_PASSWORD\nBACKUP_ENCRYPTION_KEY")" ] && grep -q "WARNING: POSTGRES_PASSWORD is still the example value" "$T/out"'
 run POSTGRES_PASSWORD=real-one BACKUP_ENCRYPTION_KEY=real-key
 check "the flag clears once they are changed" '[ ! -e "$T/secrets/status/placeholders" ]'
 

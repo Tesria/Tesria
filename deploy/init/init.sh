@@ -272,6 +272,13 @@ resolve() {
     SOURCE=provided
   elif [ -s "$SECRETS_ROOT/$name/value" ]; then
     SOURCE=stored
+    # Kept from an earlier .env that had the example value, whose line has
+    # since been deleted: it is still the public example, so it is still
+    # flagged (t1-R04, the 0.8.3 retest). Deleting the line looked like
+    # fixing it, and silenced every warning while the value stayed in use.
+    if is_placeholder "$(value_of "$name" || true)"; then
+      PLACEHOLDERS="$PLACEHOLDERS $setting"
+    fi
   elif $exists; then
     fail "$missing"
   else
