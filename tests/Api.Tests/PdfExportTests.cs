@@ -121,8 +121,8 @@ public class PdfExportTests
         var attachment = await (await client.PostAsync($"/api/pages/{page.Id}/attachments", form))
             .Content.ReadFromJsonAsync<AttachmentDto>();
 
-        var withImage = "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"image\",\"attrs\":"
-            + "{\"src\":\"/api/attachments/" + attachment!.Id + "/download\",\"alt\":\"dot\"}}]}]}";
+        var withImage = "{\"type\":\"doc\",\"content\":[{\"type\":\"image\",\"attrs\":"
+            + "{\"src\":\"/api/attachments/" + attachment!.Id + "/download\",\"alt\":\"dot\"}}]}";
         (await client.PutAsJsonAsync($"/api/pages/{page.Id}", new { ContentJson = withImage })).EnsureSuccessStatusCode();
 
         var md = await (await client.GetAsync($"/api/pages/{page.Id}/export?format=markdown")).Content.ReadAsStringAsync();

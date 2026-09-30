@@ -92,7 +92,8 @@ public sealed class TesriaTools
         // display inside a section is still that page's children.
         var content = wantJson
             ? json
-            : ProseMirrorRenderer.ToMarkdown(json, await PageSnapshots.BlocksAsync(page.Id, json, blocks, ct), baseUrl);
+            : ProseMirrorRenderer.ToMarkdown(json, await PageSnapshots.BlocksAsync(page.Id, json, blocks, ct), baseUrl,
+                liveMarkers: true);
         // One section is marked as one, so it cannot be sent back as the
         // whole page and replace everything else.
         if (!string.IsNullOrEmpty(wanted))
