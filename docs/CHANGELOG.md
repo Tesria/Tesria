@@ -5,6 +5,76 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **The QA run's Medium bugs** (the owner, 2026-09-29): 53 of the 57 still
+  open after 0.8.2, fixed by area. Four are questions for the owner and are
+  unchanged: t2-009, t2-020, T7-019 and T1-026.
+  - *Accounts.* Email that could not be sent during a mail server outage is
+    no longer lost: notifications and reset links wait and are tried again,
+    and administrators get the alert "Email is not getting through to the
+    mail server" (t2-013). An account that signs in only through single
+    sign-on picks up an email change the provider confirms (t2-022). A
+    browser whose session was ended elsewhere goes to the sign-in page with
+    a note saying why, and back to the same page after (t2-024).
+  - *Administration.* Security alerts about an account name it, and their
+    actions ask about that person by name (T7-013). The owner can do
+    everything, always: the Owner role can no longer be changed, and an
+    owner who had cleared rights gets them back (T7-021). Saving the roles
+    grid no longer undoes a change someone else saved meanwhile (T7-024).
+  - *Backups.* Test Restore fails a dump with nothing in it, and such a
+    backup is no longer a restore point (T8-004). A successful Copy Now no
+    longer raises "An offsite backup failed" (T8-009). Offsite retention
+    prunes copies made before a container was recreated, so drives and the
+    cloud stop growing; a prune is logged (T8-027). `restore.sh` with no
+    name skips a new install's empty backup (T8-019) and restores a
+    hand-made dump with its attachments (T8-025). The point-in-time Restore
+    dialog no longer promises a kept copy (T8-028). The main backup service
+    no longer marks the drive services' running jobs as interrupted.
+  - *Editor.* The slash, @ and : menus scroll to the highlighted item
+    (t4-001); highlighted text is readable in the dark theme (t4-004);
+    words typed after a link stay plain (t4-005); a new expand starts in
+    its title (t4-007); the Task report takes each task's owner from its
+    first mention (t4-017); lists pasted from Word arrive as lists
+    (t4-021); typing straight after choosing a person in a comment no
+    longer scrambles it (T5-012).
+  - *Exports and packs.* Done tasks stay ticked in HTML and site exports
+    (t6-001); an embedded video prints as a card with its link (t6-003); a
+    single-file HTML export carries its videos and links other pages by
+    full address (t6-004); the exported site's Not Found page works at any
+    address (t6-011); long attachment names no longer stop the zip
+    unzipping (t6-012); a pack with an element this Tesria does not know is
+    refused naming the page (t6-015).
+  - *Install.* A new instance is invite-only until the owner answers Who
+    Can Join, so nobody else can register during setup (T1-020); passing
+    through Who Can Join raises no alert when nothing changed (T1-016); the
+    trust-ca scripts refuse a fingerprint with no hex digits (T1-003).
+  - *Look and feel.* At 320px the editor's Update no longer covers Insert
+    (T9-001); a tip steps aside while a menu is open (T9-002); Trust This
+    Device no longer scrolls sideways (T9-003); a long site name ends in an
+    ellipsis instead of pushing the avatar off (T9-004); the Glass phone
+    menu no longer uses the clip that is thought to have made iPhone Safari
+    stop drawing it while typing (SIM-002, to be confirmed on an iPhone).
+  - *Spaces and pages.* Readers no longer see editing controls they cannot
+    use (T3-012); the page tree follows other people's new and deleted
+    pages and shows the right space after a move (cal-003, T3-015); Space
+    Settings keeps an unsaved name through other saves and asks before
+    leaving (cal-004); over-long names and titles get a message naming the
+    limit, through the app and the API (T3-005, T5-022); a sub-page deleted
+    on its own keeps its Trash entry (T3-022); Reorder mode can move the
+    last page out a level (T3-023); the phone menu gives the page filter's
+    results the room while typing (T3-026).
+  - *API and MCP.* A revoked, expired or mistyped token gets 401 (T5-018);
+    a document the editor cannot show is refused naming the problem
+    (T5-023); publishing an already published page with changes is refused
+    with 409 (T5-006); the OpenAPI reference documents every operation's
+    status codes and refusals (T5-021); an assistant's Markdown update keeps
+    the parts it did not change (T5-003); `get_page` returns the Markdown on
+    its own (T5-005); raw HTML keeps its text (T5-030).
+  - *Windows and second installs.* /trust and the HTTP redirect keep a
+    Tesria's own ports (WIN-002); a Windows path mangled by double quotes is
+    refused with a clear message (WIN-005); `claim-target.sh` no longer
+    claims the placeholder (WIN-006); the Windows real-addresses setup
+    handles one Tesria per folder and puts everything back if it cannot
+    finish (WIN-007, checked by reading; needs a run on Windows).
 - **Code blocks: XML, and Colors** (asked for by the owner, 2026-09-29).
   XML is in the language menu (highlight.js's XML grammar, which HTML
   already used). **Colors**, in the block's bar while editing, colors one
