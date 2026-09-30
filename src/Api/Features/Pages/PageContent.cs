@@ -53,16 +53,6 @@ public static class PageContent
         }
     }
 
-    private sealed record SchemaNames(string[] Nodes, string[] Marks);
-
-    private static readonly Lazy<(HashSet<string> Nodes, HashSet<string> Marks)> Schema = new(() =>
-    {
-        using var stream = typeof(PageContent).Assembly.GetManifestResourceStream("Tesria.editor-schema.json")
-            ?? throw new InvalidOperationException("The editor schema resource is missing from the build.");
-        var names = JsonSerializer.Deserialize<SchemaNames>(stream, new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
-        return (new HashSet<string>(names.Nodes, StringComparer.Ordinal), new HashSet<string>(names.Marks, StringComparer.Ordinal));
-    });
-
     /// <summary>
     /// Why a document is not one the editor can show, or null when it is
     /// (T5-023). A document the editor cannot load showed as an empty page,
@@ -71,7 +61,9 @@ public static class PageContent
     /// editor refuse a whole document: the root is a <c>doc</c>, every
     /// element and mark is one the editor has, text is text, and content
     /// and marks are lists. It does not check which element may hold which;
-    /// the editor is forgiving about that.
+    /// the editor is forgiving about that. The names are the ones pack import
+    /// checks too (<see cref="Export.EditorSchema"/>, t6-015), which a web test
+    /// keeps in step with the editor.
     /// </summary>
     public static string? Problem(string normalized)
     {
@@ -83,7 +75,7 @@ public static class PageContent
                 || !root.TryGetProperty("type", out var type) || type.ValueKind != JsonValueKind.String
                 || type.GetString() != "doc")
                 return "Content must be a document: {\"type\":\"doc\",\"content\":[...]}.";
-            return NodeProblem(root, Schema.Value.Nodes, Schema.Value.Marks, depth: 0);
+            return NodeProblem(root, Export.EditorSchema.NodeTypes, Export.EditorSchema.MarkTypes, depth: 0);
         }
         catch (JsonException)
         {
@@ -91,7 +83,7 @@ public static class PageContent
         }
     }
 
-    private static string? NodeProblem(JsonElement node, HashSet<string> nodes, HashSet<string> marks, int depth)
+    private static string? NodeProblem(JsonElement node, IReadOnlySet<string> nodes, IReadOnlySet<string> marks, int depth)
     {
         // Deeper than any page anyone has written; also keeps a hostile
         // document from walking the stack.

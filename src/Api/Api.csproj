@@ -30,14 +30,6 @@
     <EmbeddedResource Include="Features\Trust\trust.css" LogicalName="trust/trust.css" />
   </ItemGroup>
 
-  <!-- The editor's element and mark names, which a page's document is
-       checked against (T5-023). Kept in step with the editor by
-       src/web/src/editor/serverSchema.test.ts. -->
-  <ItemGroup>
-    <Content Remove="Features\Pages\editor-schema.json" />
-    <EmbeddedResource Include="Features\Pages\editor-schema.json" LogicalName="Tesria.editor-schema.json" />
-  </ItemGroup>
-
   <ItemGroup>
     <!-- Data layer: EF Core 10 + PostgreSQL (Npgsql). Design package enables
          `dotnet ef` migrations at build/dev time. -->
