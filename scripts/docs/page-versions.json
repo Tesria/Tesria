@@ -19,9 +19,9 @@
   },
   "Administration / Audit": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-30",
     "note": "Revised.",
-    "hash": "fc98abeadc9640e9"
+    "hash": "836f2eb2bc47af3b"
   },
   "Administration / Backups (administration)": {
     "appliesTo": "0.5",
@@ -133,9 +133,9 @@
   },
   "Basics / Accounts and invites": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-30",
     "note": "Revised.",
-    "hash": "1289392f6aaa8561"
+    "hash": "1ffaff36dc385b73"
   },
   "Basics / Finding your way around": {
     "appliesTo": "0.5",
@@ -145,15 +145,15 @@
   },
   "Basics / Resetting a password": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-30",
     "note": "Revised.",
-    "hash": "2cc2f00bfee8c9e8"
+    "hash": "141e3bf60ab05e21"
   },
   "Basics / Signing in": {
     "appliesTo": "0.5",
-    "updated": "2026-09-29",
+    "updated": "2026-09-30",
     "note": "Revised.",
-    "hash": "f39b37815850f340"
+    "hash": "97f8b2f52f705112"
   },
   "Basics / The tour and tips": {
     "appliesTo": "0.5",
@@ -169,9 +169,9 @@
   },
   "Basics / Two-factor and recovery codes": {
     "appliesTo": "0.5",
-    "updated": "2026-09-29",
+    "updated": "2026-09-30",
     "note": "Revised.",
-    "hash": "97c0caf8acdcca56"
+    "hash": "9286caee76039211"
   },
   "Contributing / Building from source": {
     "appliesTo": "0.6",
@@ -529,9 +529,9 @@
   },
   "Getting started / First-run setup wizard": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-30",
     "note": "Revised.",
-    "hash": "656a5ac5c4cd9034"
+    "hash": "9de2abb2d802ba3f"
   },
   "Getting started / Prerequisites": {
     "appliesTo": "0.5",
@@ -615,7 +615,7 @@
     "appliesTo": "0.5",
     "updated": "2026-09-30",
     "note": "Revised.",
-    "hash": "bc5b84fbaec9ebd3"
+    "hash": "ded9708b1ebc79eb"
   },
   "Installation and operations / Email (SMTP)": {
     "appliesTo": "0.5",
@@ -639,7 +639,7 @@
     "appliesTo": "0.5",
     "updated": "2026-09-30",
     "note": "Revised.",
-    "hash": "eaff32a1d807de15"
+    "hash": "30e6db9eed884029"
   },
   "Installation and operations / Opening Tesria by name": {
     "appliesTo": "0.5",
@@ -669,7 +669,7 @@
     "appliesTo": "0.5",
     "updated": "2026-09-30",
     "note": "Revised.",
-    "hash": "bae7a12dc64f7911"
+    "hash": "1dbdea2d06ecf171"
   },
   "Installation and operations / Trusting the local certificate": {
     "appliesTo": "0.5",
@@ -789,7 +789,7 @@
     "appliesTo": "0.5",
     "updated": "2026-09-30",
     "note": "Revised.",
-    "hash": "78f45ef9fe65b8b8"
+    "hash": "e31c424ab7cd2a3d"
   },
   "Pages / Attachments": {
     "appliesTo": "0.5",
@@ -921,7 +921,7 @@
     "appliesTo": "0.6",
     "updated": "2026-09-30",
     "note": "Revised.",
-    "hash": "718c29780a71cf61"
+    "hash": "d9e4b34051bafb51"
   },
   "REST API / Code examples": {
     "appliesTo": "0.6",
@@ -1159,9 +1159,9 @@
   },
   "User manual / Your profile": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-30",
     "note": "Revised.",
-    "hash": "c7e2bd976b0b7c09"
+    "hash": "475674c5be83f541"
   },
   "Welcome to Tesria": {
     "appliesTo": "0.5",
@@ -1207,9 +1207,9 @@
   },
   "Your profile / Avatar, name and email": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-30",
     "note": "Revised.",
-    "hash": "3bf2c3a8b45bdd42"
+    "hash": "bf0271aae5e2c0f5"
   },
   "Your profile / Email notifications": {
     "appliesTo": "0.5",
@@ -1219,9 +1219,9 @@
   },
   "Your profile / Password": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-30",
     "note": "Revised.",
-    "hash": "4562004f394be44a"
+    "hash": "dabe71dc4bbb7011"
   },
   "Your profile / Sessions": {
     "appliesTo": "0.5",
