@@ -128,11 +128,34 @@ restic_ensure_repo() {
 # A slot that is present only now and then (a drive: step 4) gets the count
 # alone, because a time window would prune a repository that has simply not
 # been plugged in. Retention off removes nothing at all.
+#
+# Grouped by paths and tags, never by host (T8-027). restic groups by host
+# by default, and the host is the container's ID, which changes whenever the
+# container is recreated (an .env edit, an upgrade). Each container's
+# snapshots were then a group of their own, kept whole under the policy, so
+# nothing an earlier container copied was ever removed and every target grew
+# without limit. What a snapshot holds is its paths and tags, the same from
+# every container.
 restic_forget_args() {
   local enabled="$1" count="$2" days="$3" windowed="${4:-1}"
   [ "$enabled" != "t" ] && return 1
   printf -- '--keep-last %s' "$count"
   [ "$windowed" = "1" ] && printf -- ' --keep-within %sd' "$days"
+  printf -- ' --group-by paths,tags'
+}
+
+# Applies the policy to the repository RESTIC_* points at, and says in the
+# log what it removed or why it could not, rather than nothing either way.
+restic_forget() {
+  local who="$1" args out
+  shift
+  args="$(restic_forget_args "$@")" || return 0
+  # shellcheck disable=SC2086
+  if ! out="$(rst forget $args --prune 2>&1)"; then
+    note "$who: retention pass failed: $(printf '%s\n' "$out" | tail -n 2 | tr '\n' ' ')"
+    return 1
+  fi
+  note "$who: retention kept the policy; $(printf '%s\n' "$out" | grep -c '^remove ' || true) snapshot group(s) had snapshots removed"
 }
 
 # When a scheduled slot (cloud, NAS) is next copied to. Once per local
@@ -227,12 +250,7 @@ restic_run_for() {
   fi
   note "offsite files: $out"
 
-  local args
-  if args="$(restic_forget_args "$enabled" "$count" "$days" "$windowed")"; then
-    # shellcheck disable=SC2086
-    rst forget $args --prune >/dev/null 2>&1 \
-      || note "offsite files: retention pass failed; nothing removed"
-  fi
+  restic_forget "offsite files" "$enabled" "$count" "$days" "$windowed"
 
   # A subset rather than the whole repository: reading every byte back from
   # object storage every run would cost more than it is worth, and 5% of a
@@ -275,11 +293,7 @@ restic_run_removable() {
   note "removable: $out"
 
   # A count and no window: see above.
-  if [ "$enabled" = t ]; then
-    # shellcheck disable=SC2086
-    rst forget --keep-last "$count" --prune >/dev/null 2>&1 \
-      || note "removable: retention pass failed; nothing removed"
-  fi
+  restic_forget removable "$enabled" "$count" 0 0
 
   local verified=f
   rst check --read-data-subset=5% >/dev/null 2>&1 && verified=t
@@ -299,8 +313,12 @@ restic_run_removable() {
     # stopped. The runbook says which one you want.
     offsite_files_message removable "Copy complete and verified. The data is flushed, so the drive can be removed. To eject it cleanly first: docker compose stop backup-removable."
   else
-    note "removable: copied and flushed, but verification did not pass"
     offsite_files_message removable "Copied and flushed to the drive, but verification did not pass. The copy is on the drive; check it before relying on it."
+    # A failed Copy Now, so it raises an alert: the card's message is only a
+    # note, and the monitor does not alert on it (T8-009). Last, because the
+    # job's error is the last line it printed.
+    note "removable: copied and flushed, but verification did not pass"
+    return 1
   fi
 }
 

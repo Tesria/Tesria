@@ -238,6 +238,12 @@ docker compose exec backup /scripts/backup-files.sh    # uploads archive now
 docker compose exec backup /scripts/verify-backup.sh   # test-restore newest dump
 ```
 
+Run by hand, the dump and the archive each take their own timestamp, often a
+second or two apart. An archive with no dump of its own belongs to the dump
+taken up to five minutes before it: the admin page lists the two as one
+backup, and `restore.sh` restores them together. A test restore fails a dump
+with no tables or no accounts in it, since a restore refuses it.
+
 Copy the whole `backups` volume off the box periodically (or enable offsite,
 below):
 
@@ -377,17 +383,25 @@ once that is done.
 4. `docker compose up -d` to bring up the whole stack.
 
 If you only have the logical dumps, restore the newest instead. The script
-puts the attachments back too, from the archive that shares the dump's stamp.
+puts the attachments back too, from the archive of the dump's cycle.
 Bring the whole stack up first and wait until `docker compose ps` shows `app`
 healthy: `restore.sh` refuses a dump with more migrations than the live
 database has, and a database the app has never started against has none.
+Then copy the dumps onto the `backups` volume (as in step 3 of **The machine
+is gone** below) and restore:
 
 ```bash
 docker compose up -d
-docker compose exec backup /scripts/restore.sh          # newest cycle
+docker compose exec backup /scripts/restore.sh          # newest dump that holds a wiki
 docker compose restart app
 docker compose restart collab
 ```
+
+The new host backed itself up when it first started, so the newest dump in
+`ls /backups` is its own empty wiki, newer than every dump you copied in.
+Without a name, `restore.sh` passes over any dump that holds no accounts and
+restores the newest one that does, and says which it passed over. To restore
+a particular one, name it: `restore.sh db-<stamp>.dump`.
 
 ---
 
@@ -768,6 +782,11 @@ docker compose cp restored/backups/. backup:/backups/
 docker compose exec backup ls /backups
 ```
 
+Use the newest of the dumps you copied in, not the newest in the list: that
+one is the new instance's own backup of its empty wiki, taken when it first
+started. (`restore.sh` with no name passes over it and takes the newest dump
+that holds accounts.)
+
 ```bash
 docker compose exec backup /scripts/restore.sh db-<stamp>.dump
 docker compose restart app
@@ -777,7 +796,7 @@ docker compose restart collab
 `restore.sh` is the same script the admin page's Restore uses. It restores
 into a new database beside the live one and swaps it in, so it does not need
 the application to be down, and it puts the attachments back from the
-archive that shares the dump's stamp, so `restored/data/uploads/` is only
+archive of the dump's cycle, so `restored/data/uploads/` is only
 needed if that archive is missing (then copy it in with
 `docker compose cp restored/data/uploads/. backup:/data/uploads/`). On a
 fresh host the empty wiki from step 2 is what gets swapped out, and it is

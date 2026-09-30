@@ -67,11 +67,17 @@ SQL
 }
 
 # Once, at start: whatever `backup` said while this service was not running
-# is over now.
+# is over now. A copy or test this service was running when it stopped did
+# not finish; `backup` leaves this slot's jobs alone, so they are closed here.
 drive_started() {
   q -v slot="$SLOT" >/dev/null 2>&1 <<'SQL' || true
 UPDATE "BackupTargets" SET "Message" = NULL, "UpdatedAt" = now()
  WHERE "Slot" = :'slot' AND "Kind" = 'files' AND "Message" LIKE 'The service that copies to%';
+UPDATE "BackupJobs"
+   SET "Status" = 'failed', "FinishedAt" = now(),
+       "Error" = 'Interrupted: the drive''s service stopped before this finished, so how it ended was not recorded.'
+ WHERE "Agent" = 'logical' AND "Status" = 'running'
+   AND "Kind" IN ('copy-offsite', 'test-target') AND "Target" = :'slot';
 SQL
 }
 

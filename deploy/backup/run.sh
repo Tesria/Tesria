@@ -29,7 +29,19 @@ do_backup() {
   BACKUP_STAMP="$stamp" /scripts/backup.sh && BACKUP_STAMP="$stamp" /scripts/backup-files.sh
 }
 
-legacy_backup() { do_backup; }
+# Before the app has migrated. On a new install that means a database with
+# no tables at all, and a dump of it brings nothing back: it was listed as a
+# backup, passed Test Restore and became the Oldest Restore Point (T8-004).
+# The first real backup is the startup one, once the tables exist.
+legacy_backup() {
+  local tables
+  tables="$(q -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public';" 2>/dev/null)"
+  if [ "${tables:-0}" = 0 ]; then
+    log "the database has no tables yet (Tesria has not set it up); nothing to back up"
+    return 0
+  fi
+  do_backup
+}
 
 # A pg_dump that is interrupted leaves its .tmp behind. An hour is far longer
 # than any dump this sidecar takes, so an older one belongs to no running job.
@@ -357,7 +369,7 @@ ON CONFLICT ("Slot", "Kind") DO UPDATE
 UPDATE "BackupJobs"
    SET "Status" = 'failed', "StartedAt" = coalesce("StartedAt", now()), "FinishedAt" = now(),
        "Error" = left(:'msg', 500), "ResultJson" = jsonb_build_object('summary', left(:'msg', 500))
- WHERE "Agent" = 'logical' AND "Status" = 'requested'
+ WHERE "Agent" = 'logical' AND "Status" IN ('requested', 'running')
    AND "Kind" IN ('copy-offsite', 'test-target') AND "Target" = :'slot';
 SQL
 }

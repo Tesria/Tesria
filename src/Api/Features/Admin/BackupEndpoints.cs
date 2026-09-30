@@ -243,7 +243,7 @@ public static class BackupEndpoints
             var backups = snapshot.Backups.Where(b => b.Agent == name).ToList();
             var removed = BackupRetention.Plan(next, backups, snapshot.Now);
             var removedIds = removed.Select(b => b.Id).ToHashSet();
-            var remaining = backups.Where(b => b.RemovedAt is null && b.Error is null && !removedIds.Contains(b.Id)).ToList();
+            var remaining = backups.Where(b => b.RemovedAt is null && BackupStatus.RestorePoint(b) && !removedIds.Contains(b.Id)).ToList();
             var agent = snapshot.Agents.FirstOrDefault(a => a.Name == name);
             return new PreviewAgent(
                 name,

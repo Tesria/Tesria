@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Restore the wiki from a logical backup (dev-plan 9.4).
 #
-#   docker compose exec backup /scripts/restore.sh                # newest cycle
+#   docker compose exec backup /scripts/restore.sh                # newest dump with accounts
 #   docker compose exec backup /scripts/restore.sh db-2026....dump # one cycle
 #   docker compose exec -e RESTORE_DRY_RUN=1 backup /scripts/restore.sh …
 #
@@ -87,21 +87,77 @@ in_db() { local d="$1"; shift; psql -X -q -t -A -v ON_ERROR_STOP=1 --dbname="$d"
 
 # --- 1. Which backup, and can it be restored at all? -----------------------
 
+# How many accounts a dump holds, read from the dump itself without restoring
+# it: the rows of its "Users" table. 0 for a dump with no such table.
+dump_accounts() {
+  pg_restore --data-only --table=Users --file=- "$1" 2>/dev/null \
+    | awk '/^COPY /{rows=1; next} /^\\\.$/{rows=0} rows{n++} END{print n+0}'
+}
+
+# When a dump was taken, in seconds, from the stamp in its name.
+stamp_epoch() {
+  local s="$1"
+  date -u -d "${s:0:4}-${s:4:2}-${s:6:2} ${s:9:2}:${s:11:2}:${s:13:2}" +%s 2>/dev/null
+}
+
+# The attachments archive of a dump's cycle, by the rule the backups list
+# uses (sync_inventory in run.sh), so what the list calls one backup is what
+# this restores (T8-025). The archive with the dump's own stamp; otherwise,
+# for the dump and archive taken by hand, a second or two apart, the first
+# archive with no dump of its own taken up to five minutes after this dump
+# and before any later one.
+archive_for() {
+  local stamp="$1" exact="${BACKUP_DIR}/uploads-$1.tar.gz" taken next a astamp at
+  if [ -f "$exact" ]; then echo "$exact"; return 0; fi
+  taken="$(stamp_epoch "$stamp")" || return 0
+  [ -n "$taken" ] || return 0
+  next=""
+  for a in $(find "$BACKUP_DIR" -maxdepth 1 -type f -name 'db-*.dump' -printf '%f\n' | sort); do
+    at="$(stamp_epoch "$(sed -n 's/^db-\(.*\)\.dump$/\1/p' <<<"$a")")"
+    [ -n "$at" ] && [ "$at" -gt "$taken" ] && { next="$at"; break; }
+  done
+  for a in $(find "$BACKUP_DIR" -maxdepth 1 -type f -name 'uploads-*.tar.gz' -printf '%f\n' | sort); do
+    astamp="$(sed -n 's/^uploads-\(.*\)\.tar\.gz$/\1/p' <<<"$a")"
+    [ -f "${BACKUP_DIR}/db-${astamp}.dump" ] && continue
+    at="$(stamp_epoch "$astamp")"
+    [ -n "$at" ] || continue
+    [ "$at" -ge "$taken" ] && [ "$at" -le $(( taken + 300 )) ] || continue
+    [ -n "$next" ] && [ "$at" -ge "$next" ] && continue
+    echo "${BACKUP_DIR}/${a}"
+    return 0
+  done
+}
+
 ARG="${1:-}"
 if [ -n "$ARG" ]; then
   DUMP="${BACKUP_DIR}/$(basename "$ARG")"
 else
-  # shellcheck disable=SC2012  # controlled db-<timestamp>.dump names, mtime order is intended
-  DUMP="$(ls -1t "${BACKUP_DIR}"/db-*.dump 2>/dev/null | head -n1 || true)"
+  # The newest dump that holds a wiki (T8-019). A new install backs itself
+  # up when it first starts, so on a host being recovered the newest dump by
+  # far is its own empty wiki, newer than every dump copied in from the old
+  # machine; taking it meant the restore was refused. Newest by the stamp in
+  # the name, which is when it was taken: a copy keeps no reliable file time.
+  DUMP=""
+  for candidate in $(find "$BACKUP_DIR" -maxdepth 1 -type f -name 'db-*.dump' -printf '%f\n' | sort -r); do
+    if [ "$(dump_accounts "${BACKUP_DIR}/${candidate}")" -gt 0 ]; then
+      DUMP="${BACKUP_DIR}/${candidate}"
+      break
+    fi
+    log "passing over ${candidate}: it holds no accounts (a new install's own backup, taken before setup)"
+  done
 fi
-[ -n "${DUMP:-}" ] && [ -f "$DUMP" ] || die "no backup file found (looked for ${ARG:-newest db-*.dump})"
+[ -n "${DUMP:-}" ] && [ -f "$DUMP" ] || die "no backup file found (looked for ${ARG:-the newest db-*.dump that holds accounts})"
 
 STAMP="$(basename "$DUMP" | sed -n 's/^db-\(.*\)\.dump$/\1/p')"
-ARCHIVE="${BACKUP_DIR}/uploads-${STAMP}.tar.gz"
+ARCHIVE="$(archive_for "$STAMP")"
 
 step "checking ${DUMP}"
 pg_restore --list "$DUMP" >/dev/null 2>&1 || die "$DUMP is not a readable custom-format dump"
-[ -f "$ARCHIVE" ] || log "WARNING: no uploads archive for this cycle; attachments will be left as they are"
+if [ -z "$ARCHIVE" ]; then
+  log "WARNING: no uploads archive for this cycle; attachments will be left as they are"
+elif [ "$(basename "$ARCHIVE")" != "uploads-${STAMP}.tar.gz" ]; then
+  log "the attachments archive for this cycle is $(basename "$ARCHIVE"), taken just after the dump"
+fi
 
 # A restored database is bigger than the dump it came from, and the disk has
 # to hold both it and the live one at the same time. Four times is

@@ -36,6 +36,12 @@ public static class BackupStatus
 
     public static readonly TimeSpan JobHistory = TimeSpan.FromDays(30);
 
+    /// <summary>
+    /// Whether a backup that is present counts as somewhere a restore can go:
+    /// it did not fail, and its last Test Restore, if it had one, passed.
+    /// </summary>
+    public static bool RestorePoint(Backup b) => b.Error is null && b.LastVerifyOk != false;
+
     public sealed record Snapshot(
         List<BackupAgent> Agents, List<Backup> Backups, List<BackupJob> Jobs, DateTimeOffset Now);
 
@@ -91,8 +97,10 @@ public static class BackupStatus
             .OrderByDescending(b => b.LastVerifiedAt).FirstOrDefault();
 
         // The oldest point a restore can reach. Physical: the start of the
-        // oldest full still present (WAL before it is expired with it).
-        var presentGood = present.Where(b => b.Error is null).ToList();
+        // oldest full still present (WAL before it is expired with it). Not
+        // a backup whose last Test Restore failed: it has been tried, and it
+        // did not bring the wiki back (T8-004, the dump taken before setup).
+        var presentGood = present.Where(RestorePoint).ToList();
         DateTimeOffset? oldest = name == BackupNames.Physical
             ? presentGood.Where(b => b.Type == "full").Select(b => (DateTimeOffset?)b.StartedAt).Min()
             : presentGood.Select(b => (DateTimeOffset?)b.StartedAt).Min();

@@ -1663,9 +1663,10 @@ export async function build({
     step(4, 'Restore it'),
     p('Copy them into the new Tesria’s backup service, and list them:'),
     codeBlock('bash', 'docker compose cp restored/backups/. backup:/backups/\ndocker compose exec backup ls /backups'),
-    p('Restore the newest dump by its name, then restart Tesria so it picks it up:'),
+    p('Restore the newest of the dumps you copied in, by its name, then restart Tesria so it picks it up:'),
     codeBlock('bash', 'docker compose exec backup /scripts/restore.sh db-<time>.dump\ndocker compose restart app\ndocker compose restart collab'),
     p('Use the dump’s real name in place of ', c('db-<time>.dump'), '. The script also puts back the attachments archived with it.'),
+    panel('warning', p(b('Not the newest dump in the list.'), ' The new Tesria backed itself up when it first started, so the newest ', c('db-<time>.dump'), ' in the list is its own empty wiki. Restoring it by name restores nothing you want. Run without a name, ', c('restore.sh'), ' passes over it and restores the newest dump that holds accounts.')),
 
     step(5, 'Check it'),
     p('In this order, because each proves something different:'),
@@ -1778,7 +1779,7 @@ export async function build({
     codeBlock('bash', 'docker compose cp tesria-backups.tgz backup:/tmp/\ndocker compose exec backup tar xzf /tmp/tesria-backups.tgz -C /backups\ndocker compose exec backup ls /backups'),
     p('Then restore the dump you noted in step 2, by its name, and restart Tesria:'),
     codeBlock('bash', 'docker compose exec backup /scripts/restore.sh db-<time>.dump\ndocker compose restart app\ndocker compose restart collab'),
-    panel('warning', p(b('Not the newest dump in the list.'), ' The new computer backed itself up when it first started, so the newest ', c('db-<time>.dump'), ' in the list is its own empty wiki. Restoring that, or running ', c('restore.sh'), ' without a name, restores nothing you want.')),
+    panel('warning', p(b('Not the newest dump in the list.'), ' The new computer backed itself up when it first started, so the newest ', c('db-<time>.dump'), ' in the list is its own empty wiki. Restoring it by name restores nothing you want. Run without a name, ', c('restore.sh'), ' passes over it and restores the newest dump that holds accounts.')),
     step(5, 'Point people at the new computer'),
     p('If you use a domain, point it at the new server. If people use the local certificate, each device trusts the new one: see ', pageLink('Trusting the local certificate'), '. Then set up the offsite copies again, as in ', pageLink('Offsite copies'), '.'),
 
