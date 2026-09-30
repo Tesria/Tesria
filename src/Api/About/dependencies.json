@@ -1329,7 +1329,7 @@
       "version": "3.31.3",
       "license": "MIT",
       "component": "Web app",
-      "direct": false,
+      "direct": true,
       "url": "https://www.npmjs.com/package/@tiptap/extension-link/v/3.31.3"
     },
     {

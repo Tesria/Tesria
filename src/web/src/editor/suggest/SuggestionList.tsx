@@ -1,5 +1,6 @@
-import { forwardRef, useEffect, useImperativeHandle, useState, type ReactNode } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type ReactNode } from 'react'
 import type { SuggestionKeyDownProps } from '@tiptap/suggestion'
+import { keepHighlightInView } from './keepInView'
 
 export type SuggestionListRef = {
   onKeyDown: (props: SuggestionKeyDownProps) => boolean
@@ -26,6 +27,10 @@ function SuggestionListInner<T>(
   ref: React.Ref<SuggestionListRef>,
 ) {
   const [selected, setSelected] = useState(0)
+  const listRef = useRef<HTMLDivElement>(null)
+  // Set by the arrow keys only: a row picked by hovering is already under
+  // the pointer, and scrolling for it would slide the next row under it.
+  const fromKeys = useRef(false)
 
   // The list changes as the query narrows, never leave the highlight
   // pointing at an item that has been filtered away.
@@ -33,14 +38,22 @@ function SuggestionListInner<T>(
     setSelected(0)
   }, [items])
 
+  useEffect(() => {
+    if (!fromKeys.current) return
+    fromKeys.current = false
+    keepHighlightInView(listRef.current)
+  }, [selected])
+
   useImperativeHandle(ref, () => ({
     onKeyDown: ({ event }) => {
       if (items.length === 0) return false
       if (event.key === 'ArrowDown') {
+        fromKeys.current = true
         setSelected((s) => (s + 1) % items.length)
         return true
       }
       if (event.key === 'ArrowUp') {
+        fromKeys.current = true
         setSelected((s) => (s - 1 + items.length) % items.length)
         return true
       }
@@ -56,7 +69,7 @@ function SuggestionListInner<T>(
   if (items.length === 0) return <div className="slash-menu slash-menu--empty">{emptyLabel}</div>
 
   return (
-    <div className="slash-menu suggest-menu">
+    <div className="slash-menu suggest-menu" ref={listRef}>
       {items.map((item, i) => (
         <button
           key={keyOf(item)}

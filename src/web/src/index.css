@@ -2025,10 +2025,15 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
      tints from palette.ts: a theme cannot restyle them without discarding the
      author's choice. Left alone in dark mode they would be a light patch
      carrying light --text: invisible. Pin the ink dark instead, so a
-     highlighted or colored cell reads the same in both themes. */
-  :root:not([data-theme="light"]) .editor__content [data-background-color],
-  :root:not([data-theme="light"]) .editor__content mark[style*="background-color"] {
+     highlighted or colored cell reads the same in both themes. The highlight
+     mark writes `color: inherit` into its own style attribute (TipTap's
+     Highlight renderHTML), which beats any stylesheet rule, so its ink needs
+     !important (t4-004). */
+  :root:not([data-theme="light"]) .editor__content [data-background-color] {
     color: #172b4d;
+  }
+  :root:not([data-theme="light"]) .editor__content mark[style*="background-color"] {
+    color: #172b4d !important;
   }
   :root:not([data-theme="light"]) .editor__content [data-background-color] a,
   :root:not([data-theme="light"]) .editor__content mark[style*="background-color"] a {
@@ -2098,10 +2103,9 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   --text-color-yellow: #f5cd47; --text-color-orange: #fea362;
   --text-color-red: #fd9891;    --text-color-purple: #b8acf6;
 }
-:root[data-theme="dark"] .editor__content [data-background-color],
-:root[data-theme="dark"] .editor__content mark[style*="background-color"] {
-  color: #172b4d;
-}
+:root[data-theme="dark"] .editor__content [data-background-color] { color: #172b4d; }
+/* !important: the mark's own style attribute says `color: inherit` (t4-004). */
+:root[data-theme="dark"] .editor__content mark[style*="background-color"] { color: #172b4d !important; }
 :root[data-theme="dark"] .editor__content [data-background-color] a,
 :root[data-theme="dark"] .editor__content mark[style*="background-color"] a { color: #0055cc; }
 :root[data-theme="dark"] .editor__content [data-background-color] code { background: rgba(23, 43, 77, 0.1); }

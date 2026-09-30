@@ -1,6 +1,7 @@
-import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import type { SuggestionKeyDownProps, SuggestionProps } from '@tiptap/suggestion'
 import type { SlashItem } from './items'
+import { keepHighlightInView } from '../suggest/keepInView'
 
 export type SlashMenuRef = {
   onKeyDown: (props: SuggestionKeyDownProps) => boolean
@@ -10,6 +11,10 @@ export type SlashMenuRef = {
 export const SlashMenu = forwardRef<SlashMenuRef, SuggestionProps<SlashItem>>((props, ref) => {
   const { items, command } = props
   const [selected, setSelected] = useState(0)
+  const listRef = useRef<HTMLDivElement>(null)
+  // Set by the arrow keys only: a row picked by hovering is already under
+  // the pointer, and scrolling for it would slide the next row under it.
+  const fromKeys = useRef(false)
 
   // The item list changes as the user types the query: keep the highlighted
   // index in range rather than pointing at a since-filtered-out item.
@@ -17,14 +22,22 @@ export const SlashMenu = forwardRef<SlashMenuRef, SuggestionProps<SlashItem>>((p
     setSelected(0)
   }, [items])
 
+  useEffect(() => {
+    if (!fromKeys.current) return
+    fromKeys.current = false
+    keepHighlightInView(listRef.current)
+  }, [selected])
+
   useImperativeHandle(ref, () => ({
     onKeyDown: ({ event }) => {
       if (items.length === 0) return false
       if (event.key === 'ArrowDown') {
+        fromKeys.current = true
         setSelected((s) => (s + 1) % items.length)
         return true
       }
       if (event.key === 'ArrowUp') {
+        fromKeys.current = true
         setSelected((s) => (s - 1 + items.length) % items.length)
         return true
       }
@@ -42,7 +55,7 @@ export const SlashMenu = forwardRef<SlashMenuRef, SuggestionProps<SlashItem>>((p
   }
 
   return (
-    <div className="slash-menu">
+    <div className="slash-menu" ref={listRef}>
       {items.map((item, i) => (
         <button
           key={item.title}

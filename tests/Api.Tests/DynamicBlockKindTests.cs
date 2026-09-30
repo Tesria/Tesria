@@ -365,6 +365,34 @@ public class DynamicBlockKindTests
         GC.KeepAlive(done);
     }
 
+    // t4-017: a task written outside the editor (the API, MCP, a pack, the
+    // seeded Demo) has the mention but not the editor's stored copy of it.
+    private static string MentionTasksDoc(Guid person, string name, Guid subtaskPerson) =>
+        "{\"type\":\"doc\",\"content\":[{\"type\":\"taskList\",\"content\":[{\"type\":\"taskItem\",\"attrs\":{\"checked\":false},"
+        + "\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"mention\",\"attrs\":{\"userId\":\"" + person + "\",\"label\":\"" + name + "\"}},"
+        + "{\"type\":\"text\",\"text\":\" confirm the path\"}]},"
+        + "{\"type\":\"taskList\",\"content\":[{\"type\":\"taskItem\",\"attrs\":{\"checked\":false},\"content\":[{\"type\":\"paragraph\",\"content\":["
+        + "{\"type\":\"text\",\"text\":\"Sub for \"},{\"type\":\"mention\",\"attrs\":{\"userId\":\"" + subtaskPerson + "\",\"label\":\"Someone Else\"}}]}]}]}]},"
+        + "{\"type\":\"taskItem\",\"attrs\":{\"checked\":false},\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Nobody's\"}]}]}]}]}";
+
+    [Fact]
+    public async Task Task_report_takes_the_assignee_from_the_first_mention_when_none_is_stored()
+    {
+        var w = await Build(); using var _ = w.F;
+        var other = Guid.NewGuid();
+        await w.Alice.PutAsJsonAsync($"/api/pages/{w.Open.Id}", new { ContentJson = MentionTasksDoc(w.AliceId, "Alice", other) });
+
+        var all = await Block(w.Alice, w.Home.Id, "task-report", "scope=tree&status=all");
+        var who = all!.Items.ToDictionary(i => i.Cells!["task"].Text ?? "", i => i.Cells!["who"].Text ?? "");
+        Assert.Equal("Alice", Assert.Single(who, kv => kv.Key.StartsWith("@Alice")).Value);
+        // A subtask's person is the subtask's, not its parent's.
+        Assert.Equal("Someone Else", Assert.Single(who, kv => kv.Key.StartsWith("Sub for")).Value);
+        Assert.Equal("", who["Nobody's"]);
+
+        var mine = await Block(w.Alice, w.Home.Id, "task-report", "scope=tree&status=all&assignee=me");
+        Assert.StartsWith("@Alice", Assert.Single(mine!.Items).Cells!["task"].Text ?? "");
+    }
+
     [Fact]
     public async Task Task_report_never_reads_a_restricted_pages_tasks()
     {

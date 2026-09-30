@@ -48,7 +48,13 @@ public static class BlockDocuments
     public sealed record TaskRow(string Text, bool Checked, Guid? AssigneeId, string? AssigneeName);
 
     /// <summary>
-    /// Every `taskItem` in a document, with the Wave C assignee attributes.
+    /// Every `taskItem` in a document, with its assignee: the first person
+    /// mentioned in the task's own text (taskAssignee.ts keeps the same rule
+    /// in the editor). The editor also stores that as `assigneeId` and
+    /// `assigneeName`, but a task written anywhere else (the API, MCP, a
+    /// pack, the seeded Demo) carries only the mention, and read by the
+    /// stored attributes alone it belonged to nobody (t4-017). The stored
+    /// pair is kept as the fallback for a task with no mention in it.
     /// Walked in process: at wiki scale the candidate set is already small
     /// after the visibility filter. If it ever is not, the first optimization
     /// is a jsonb containment prefilter (<c>@&gt; '{"type":"taskItem"}'</c>)
@@ -84,11 +90,41 @@ public static class BlockDocuments
                     if (attrs.TryGetProperty("assigneeName", out var n) && n.ValueKind == JsonValueKind.String)
                         name = n.GetString();
                 }
+                if (FirstMention(node) is { } mention)
+                {
+                    assignee = mention.TryGetProperty("userId", out var u) && u.ValueKind == JsonValueKind.String
+                        && Guid.TryParse(u.GetString(), out var uid) ? uid : null;
+                    name = mention.TryGetProperty("label", out var l) && l.ValueKind == JsonValueKind.String
+                        ? l.GetString() : null;
+                }
                 rows.Add(new TaskRow(PlainText(node).Trim(), done, assignee, name));
                 // Task lists nest; keep walking for the children.
             }
 
             if (node.TryGetProperty("content", out var content)) Walk(content);
+        }
+    }
+
+    /// <summary>
+    /// The attributes of the first mention in a task's own text. A nested
+    /// task list is skipped: a subtask's person is the subtask's, not its
+    /// parent's.
+    /// </summary>
+    private static JsonElement? FirstMention(JsonElement taskItem)
+    {
+        foreach (var child in Children(taskItem))
+            if (Find(child) is { } hit) return hit;
+        return null;
+
+        static JsonElement? Find(JsonElement n)
+        {
+            var type = TypeOf(n);
+            if (type == "taskList") return null;
+            if (type == "mention")
+                return n.TryGetProperty("attrs", out var a) && a.ValueKind == JsonValueKind.Object ? a : null;
+            foreach (var c in Children(n))
+                if (Find(c) is { } hit) return hit;
+            return null;
         }
     }
 
