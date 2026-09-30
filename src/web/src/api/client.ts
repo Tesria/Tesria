@@ -1388,6 +1388,7 @@ export const api = {
       request<User>('POST', '/api/auth/login/totp', { challenge, code }),
     /** Confirms the password (or a code) for sudo mode. */
     reauth: (input: { password?: string; code?: string }) =>
+    /** An empty challenge after single sign-on: the server holds it in a cookie (t2-020). */
       request<void>('POST', '/api/auth/reauth', input),
     setNotificationPreference: (emailNotifications: EmailNotificationMode) =>
       request<User>('PUT', '/api/auth/me/notifications', { emailNotifications }),

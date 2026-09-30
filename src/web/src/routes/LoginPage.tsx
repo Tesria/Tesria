@@ -6,17 +6,25 @@ import { PasswordInput } from '../components/PasswordInput'
 import { useInstance } from '../InstanceContext'
 import { AuthPage } from '../components/Brand'
 import { ssoErrorMessage } from '../auth/ssoError'
+import { localPath } from '../auth/returnPath'
 
 export function LoginPage() {
   const { user, login, completeTotp, sessionEndedAt } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  // Back to the public page the reader was on, if that is where they came from.
-  const destination = (location.state as { from?: string } | null)?.from ?? '/spaces'
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
+  // After single sign-on, an account with Tesria two-factor comes back here
+  // for its code (t2-020): `/login?sso=code&returnUrl=…`. The challenge is
+  // in a cookie the server reads, so the page holds an empty one.
+  const ssoCode = searchParams.get('sso') === 'code'
+  // Back to the public page the reader was on, if that is where they came
+  // from, or to where single sign-on was started from.
+  const destination = ssoCode
+    ? localPath(searchParams.get('returnUrl'))
+    : (location.state as { from?: string } | null)?.from ?? '/spaces'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [challenge, setChallenge] = useState<string | null>(null)
+  const [challenge, setChallenge] = useState<string | null>(ssoCode ? '' : null)
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(ssoErrorMessage(searchParams.get('ssoError')))
   const [busy, setBusy] = useState(false)
@@ -61,7 +69,7 @@ export function LoginPage() {
     setBusy(true)
     setError(null)
     try {
-      await completeTotp(challenge!, code)
+      await completeTotp(challenge ?? '', code)
       navigate(destination)
     } catch (err) {
       setError(err instanceof ApiError && err.status === 401
@@ -79,7 +87,7 @@ export function LoginPage() {
     window.location.href = `/api/auth/oidc/login?returnUrl=${encodeURIComponent(destination)}`
   }
 
-  if (challenge) {
+  if (challenge !== null) {
     return (
       <AuthPage>
         <form className="authcard" onSubmit={onSubmitCode}>
@@ -94,7 +102,18 @@ export function LoginPage() {
             {busy ? 'Checking…' : 'Sign In'}
           </button>
           <p className="muted small">
-            <button type="button" className="link-btn" onClick={() => { setChallenge(null); setCode(''); setError(null) }}>Start Over</button>
+            <button
+              type="button"
+              className="link-btn"
+              onClick={() => {
+                setChallenge(null)
+                setCode('')
+                setError(null)
+                if (ssoCode) setSearchParams({}, { replace: true })
+              }}
+            >
+              Start Over
+            </button>
           </p>
         </form>
       </AuthPage>

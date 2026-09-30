@@ -232,6 +232,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('No phone to hand?'), ' Type one of your recovery codes instead. Each one works once.')),
       li(p(b('Finish within five minutes.'), ' After that the second step expires and you start again from your password. ', b('Start Over'), ' does the same at any time.')),
     ),
+    p('Signing in with single sign-on works the same way: after your organization’s sign-in page, an account with Tesria two-factor on comes back to ', b('One More Step'), ' for the code before it is signed in.'),
     p('To turn two-factor on, see ', pageLink('Two-factor and recovery codes'), '.'),
 
     h(2, 'Other links on the sign-in page'),
@@ -278,7 +279,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ul(
       li(p(b('Display Name:'), ' how you appear to everyone else, on pages, comments and history. Your full name is usual. You can change it later.')),
       li(p(b('Email:'), ' the address you will sign in with. If the invite was made for one address, it has to be that one.')),
-      li(p(b('Password:'), ' at least 8 characters. A few unrelated words make a password that is long, hard to guess and easy to remember.')),
+      li(p(b('Password:'), ' at least 8 characters, not only spaces, and not one of the most common passwords, such as ', i('password'), ' or ', i('12345678'), '. The form says so under the box. A few unrelated words make a password that is long, hard to guess and easy to remember.')),
     ),
     step(3, 'Choose Create Account'),
     p('You are signed in straight away.'),
@@ -307,7 +308,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('A password on its own is easy to lose control of. It can be guessed, reused from a site that was breached, or typed into a convincing fake page. ', b('Two-Factor Sign-In'), ' adds a second step: after your password, a six-digit code from an app on your phone. The code changes every 30 seconds and only your phone can make it, so someone who has your password still cannot get in.'),
     p(b('Recovery Codes'), ' are the other half. They are your spare keys: a few single-use codes you keep somewhere safe, which get you in if you lose your phone or forget your password. Every account with a password gets them when it is made, whether or not two-factor is on.'),
     p('This page shows how to turn two-factor on, what recovery codes are for and where to keep them, and what to do if you lose your phone.'),
-    panel('info', p(b('Sign in with single sign-on?'), ' Then your organization’s own sign-in handles two-factor, and your profile says so. You do not have recovery codes in Tesria, because you have no Tesria password to recover.')),
+    panel('info', p(b('Sign in with single sign-on?'), ' If your account also has a Tesria password and two-factor is on, single sign-on asks for your code too, at the same ', b('One More Step'), '. If your account has no Tesria password, your organization’s own sign-in handles two-factor, and your profile says so; you have no recovery codes in Tesria, because there is no Tesria password to recover. The exception is below, in ', i('When two-factor is required'), '.')),
 
     h(2, 'Turning on two-factor'),
     p('You need a phone with an ', b('authenticator app'), ': a free app that makes these codes. Tesria suggests Aegis, 1Password, Google Authenticator or Authy, and any app that shows six-digit codes that change every 30 seconds will do. Install one first if you do not have one.'),
@@ -361,6 +362,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'When two-factor is required'),
     p('An administrator can require two-factor for everyone with administrator rights. If that applies to you, the administration pages ask you to set it up before they open, and your profile does not offer to turn it off: it says ', i('Administrators on this instance must keep two-factor sign-in on'), '. To move to a new phone, sign in with a recovery code and ask the owner to turn your two-factor off in ', ...adminAt('Users'), ', then set it up again straight away.'),
+    p(b('Administrators who sign in with single sign-on and have no Tesria password'), ' set up Tesria’s own two-factor as well, from the same card: sign in, then choose ', b('Set Up Two-Factor'), ' within a few minutes (with no password to type, the recent sign-in is the proof). From then on single sign-on asks for the code too. Such an account has no recovery codes, so if the phone is lost, the owner turns two-factor off for it in ', ...adminAt('Users'), '.'),
   ))
 
   // =================================================== Resetting a password
@@ -381,7 +383,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     step(2, 'Open the email'),
     p('The message is headed ', i('Reset your password'), '. Its link works ', b('once'), ' and expires ', b('an hour'), ' after it was sent, so use it soon. No email after a few minutes? Check your spam folder, then ask again.'),
     step(3, 'Choose a new password'),
-    p('The link opens ', b('Choose a New Password'), '. Type it twice, at least 8 characters, and choose ', b('Reset Password'), '.'),
+    p('The link opens ', b('Choose a New Password'), '. Type it twice, at least 8 characters and not a common password, and choose ', b('Reset Password'), '.'),
 
     h(2, 'With a recovery code'),
     p('If the page offers email, choose ', b('Use a Recovery Code Instead'), ' under the form; otherwise the page opens here.'),

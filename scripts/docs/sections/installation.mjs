@@ -827,7 +827,12 @@ export async function build({
       li(p(b('Someone who already has a Tesria account'), ' with the same email address is connected to it, but only if the provider says it has confirmed that address. Otherwise anyone who could claim the address at the provider could take over the account.')),
       li(p(b('Someone new'), ' gets a new account with no Tesria password, as long as ', b('Allow Public Registration'), ' is on (', b('Admin'), ', ', b('Settings'), ', ', b('Access'), '). When it is off, they are turned away: send them an invite, let them create their account from it, and from then on SSO signs them in to that account. See ', pageLink('Invites'), '.')),
     ),
-    panel('note', p(b('Two-factor sign-in is the provider’s job'), ' for people who use SSO. Tesria’s own two-factor applies when someone signs in with a Tesria password.')),
+    h(2, 'Two-factor sign-in'),
+    ul(
+      li(p(b('For most people who use SSO it is the provider’s job.'), ' An account made by SSO has no Tesria password, and its profile says the provider handles two-factor.')),
+      li(p(b('An account with Tesria two-factor on is asked for its code after SSO too.'), ' Someone who had a Tesria account with two-factor, and was then connected to SSO, comes back from the provider to Tesria’s ', b('One More Step'), ' page and signs in only with a code from their authenticator app or a recovery code, exactly as after a password. SSO is another way in, not a way around the second step.')),
+      li(p(b('Require Two-Factor for Administrators'), ' (', ...adminAt('Security'), ') applies to administrators who sign in with SSO as well. One with no Tesria password sets up Tesria’s own two-factor from the profile within a few minutes of signing in, and until then the administration pages stay closed to them, as for anyone else.')),
+    ),
     p('Testing with a provider on plain HTTP on the same machine? Add ', c('OIDC_REQUIRE_HTTPS_METADATA=false'), '. Never leave it that way for a real provider.'),
   ))
 

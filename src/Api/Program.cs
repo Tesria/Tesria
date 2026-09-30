@@ -474,6 +474,16 @@ if (!string.IsNullOrWhiteSpace(oidcAuthority))
                     return;
                 }
 
+                // Tesria two-factor on: not signed in yet. The same challenge
+                // and code page as after a password (t2-020); no session and
+                // no cookie until the code is given.
+                if (await AuthEndpoints.AfterSingleSignOnAsync(ctx.HttpContext, user, ctx.ReturnUri) is { } secondStep)
+                {
+                    ctx.HttpContext.Response.Redirect(secondStep);
+                    ctx.HandleResponse();
+                    return;
+                }
+
                 // Replace the provider's claims with our own internal shape,
                 // exactly what local login produces (security stamp, sign-in
                 // time and a session row), before the handler signs into the

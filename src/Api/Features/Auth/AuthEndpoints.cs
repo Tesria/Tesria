@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Tesria.Api.Features.Auth;
 
-public static class AuthEndpoints
+public static partial class AuthEndpoints
 {
     /// <summary>
     /// Claim carrying <see cref="User.SecurityStamp"/>. Shared with
@@ -395,11 +395,16 @@ public static class AuthEndpoints
         // The challenge names its user; that user's live nonce decides whether
         // it is still good. Loaded first, then checked, in one lookup.
         User? user = null;
-        var userId = totp.RedeemChallenge(req.Challenge, ClientIp(http), id =>
+        var userId = totp.RedeemChallenge(challenge, ClientIp(http), id =>
         {
             user = db.Users.FirstOrDefault(u => u.Id == id);
             return user?.TotpChallengeNonce;
         });
+        // After single sign-on the challenge comes in a cookie instead, so it
+        // never sits in the address bar (t2-020); the page sends none.
+        var viaSso = string.IsNullOrEmpty(req.Challenge);
+        var challenge = viaSso ? http.Request.Cookies[SsoChallengeCookie] ?? "" : req.Challenge;
+
         if (userId is null) user = null;
         var now = DateTimeOffset.UtcNow;
 
@@ -427,20 +432,18 @@ public static class AuthEndpoints
 
         // Spent: the same challenge cannot sign in a second time.
         user.TotpChallengeNonce = null;
-        return await CompleteSignInAsync(db, http, audit, recovery, siteSettings, detector, user, totp: true, rights);
+        if (viaSso) http.Response.Cookies.Delete(SsoChallengeCookie, SsoChallengeCookieOptions(http));
+        return await CompleteSignInAsync(db, http, audit, recovery, siteSettings, detector, user, totp: true, rights, sso: viaSso);
     }
 
     /// <summary>What both sign-in paths share once identity is proven.</summary>
     private static async Task<IResult> CompleteSignInAsync(
         AppDbContext db, HttpContext http, IAuditLogger audit, IAccountRecoveryService recovery,
         ISiteSettingsService siteSettings, ISecurityDetector detector, User user, bool totp,
-        Infrastructure.Permissions.IInstancePermissions rights)
+        Infrastructure.Permissions.IInstancePermissions rights, bool sso = false)
     {
         AuthLockout.Reset(user);
-        // Before the login row is written, so the history it consults is the
-        // history *before* this sign-in.
-        await detector.SucceededLoginAsync(user, ClientIp(http));
-        audit.RecordAs(user.Id, "user.login", "user", user.Id, new { Ip = ClientIp(http), Totp = totp });
+        await RecordSignInAsync(http, audit, detector, user, totp, sso);
         await db.SaveChangesAsync();
 
         await SignIn(http, db, user);
@@ -604,12 +607,20 @@ public static class AuthEndpoints
     {
         var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
         if (user.PasswordHash is null)
-            return Results.ValidationProblem(Error("currentPassword",
-                "This account signs in through your identity provider, which handles two-factor."));
-
+        {
+            // An account with no Tesria password may still turn on Tesria's
+            // own two-factor, which single sign-on now asks for too (t2-020).
+            // It is how such an administrator meets Require Two-Factor for
+            // Administrators: before, the rule held their rights back and the
+            // profile refused to set it up, so they could never administer.
+            // With no password to ask for, a recent sign-in is the proof.
+            if (!IsFreshlyAuthenticated(http, FreshAuthWindow(config)))
+                return Results.ValidationProblem(Error("currentPassword",
+                    "Sign out, sign in again, then set up two-factor sign-in within a few minutes."));
+        }
         // The same rule as recovery codes: a supplied password must be right;
         // omitting it is allowed only inside the fresh-login window.
-        if (!string.IsNullOrEmpty(req.CurrentPassword))
+        else if (!string.IsNullOrEmpty(req.CurrentPassword))
         {
             if (!hasher.Verify(req.CurrentPassword, user.PasswordHash))
                 return Results.ValidationProblem(Error("currentPassword", "Current password is incorrect."));
