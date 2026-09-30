@@ -68,6 +68,10 @@ a.btn[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
 .trust-cmd .btn { flex: none; align-self: flex-start; }
 
 .trust-manual { margin: 0.75rem 0 0; border-top: 1px solid var(--border); padding-top: 0.75rem; }
+/* The browsers' error codes (NET::ERR_CERT_COMMON_NAME_INVALID) are one word
+   each, wider than a phone: they break where they must rather than run out
+   of their card and make the whole page scroll sideways (T9-003). */
+.trust em { overflow-wrap: anywhere; }
 .trust-manual ol, .trust-manual p { margin: 0.5rem 0 0; }
 .trust-firefox { margin-top: 1rem; }
 
