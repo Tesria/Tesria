@@ -4,38 +4,29 @@
     {
       "ecosystem": "npm",
       "name": "@hocuspocus/common",
-      "version": "3.4.4",
+      "version": "4.7.0",
       "license": "MIT",
       "component": "Collaboration service",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@hocuspocus/common/v/3.4.4"
+      "url": "https://www.npmjs.com/package/@hocuspocus/common/v/4.7.0"
     },
     {
       "ecosystem": "npm",
       "name": "@hocuspocus/extension-database",
-      "version": "3.4.4",
+      "version": "4.7.0",
       "license": "MIT",
       "component": "Collaboration service",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@hocuspocus/extension-database/v/3.4.4"
+      "url": "https://www.npmjs.com/package/@hocuspocus/extension-database/v/4.7.0"
     },
     {
       "ecosystem": "npm",
       "name": "@hocuspocus/server",
-      "version": "3.4.4",
+      "version": "4.7.0",
       "license": "MIT",
       "component": "Collaboration service",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@hocuspocus/server/v/3.4.4"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "async-lock",
-      "version": "1.4.1",
-      "license": "MIT",
-      "component": "Collaboration service",
-      "direct": false,
-      "url": "https://www.npmjs.com/package/async-lock/v/1.4.1"
+      "url": "https://www.npmjs.com/package/@hocuspocus/server/v/4.7.0"
     },
     {
       "ecosystem": "npm",
@@ -45,6 +36,15 @@
       "component": "Collaboration service",
       "direct": false,
       "url": "https://www.npmjs.com/package/async-mutex/v/0.5.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "crossws",
+      "version": "0.4.12",
+      "license": "MIT",
+      "component": "Collaboration service",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/crossws/v/0.4.12"
     },
     {
       "ecosystem": "npm",
@@ -246,15 +246,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "ws",
-      "version": "8.21.3",
-      "license": "MIT",
-      "component": "Collaboration service",
-      "direct": false,
-      "url": "https://www.npmjs.com/package/ws/v/8.21.3"
-    },
-    {
-      "ecosystem": "npm",
       "name": "xtend",
       "version": "4.0.2",
       "license": "MIT",
@@ -283,11 +274,11 @@
     {
       "ecosystem": "npm",
       "name": "yjs",
-      "version": "13.6.32",
+      "version": "13.6.33",
       "license": "MIT",
       "component": "Collaboration service",
       "direct": true,
-      "url": "https://www.npmjs.com/package/yjs/v/13.6.32"
+      "url": "https://www.npmjs.com/package/yjs/v/13.6.33"
     },
     {
       "ecosystem": "Container",
@@ -381,11 +372,11 @@
     {
       "ecosystem": "NuGet",
       "name": "BouncyCastle.Cryptography",
-      "version": "2.6.2",
+      "version": "2.7.0",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/BouncyCastle.Cryptography/2.6.2"
+      "url": "https://www.nuget.org/packages/BouncyCastle.Cryptography/2.7.0"
     },
     {
       "ecosystem": "NuGet",
@@ -471,38 +462,38 @@
     {
       "ecosystem": "NuGet",
       "name": "MailKit",
-      "version": "4.17.0",
+      "version": "4.18.1",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/MailKit/4.17.0"
+      "url": "https://www.nuget.org/packages/MailKit/4.18.1"
     },
     {
       "ecosystem": "NuGet",
       "name": "Markdig",
-      "version": "1.3.2",
+      "version": "1.4.0",
       "license": "BSD-2-Clause",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Markdig/1.3.2"
+      "url": "https://www.nuget.org/packages/Markdig/1.4.0"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.AspNetCore.Authentication.OpenIdConnect",
-      "version": "10.0.10",
+      "version": "10.0.12",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.OpenIdConnect/10.0.10"
+      "url": "https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.OpenIdConnect/10.0.12"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.AspNetCore.DataProtection.EntityFrameworkCore",
-      "version": "10.0.10",
+      "version": "10.0.12",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Microsoft.AspNetCore.DataProtection.EntityFrameworkCore/10.0.10"
+      "url": "https://www.nuget.org/packages/Microsoft.AspNetCore.DataProtection.EntityFrameworkCore/10.0.12"
     },
     {
       "ecosystem": "NuGet",
@@ -588,47 +579,47 @@
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.EntityFrameworkCore",
-      "version": "10.0.10",
+      "version": "10.0.12",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore/10.0.10"
+      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore/10.0.12"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.EntityFrameworkCore.Abstractions",
-      "version": "10.0.10",
+      "version": "10.0.12",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Abstractions/10.0.10"
+      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Abstractions/10.0.12"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.EntityFrameworkCore.Analyzers",
-      "version": "10.0.10",
+      "version": "10.0.12",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Analyzers/10.0.10"
+      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Analyzers/10.0.12"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.EntityFrameworkCore.Design",
-      "version": "10.0.10",
+      "version": "10.0.12",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Design/10.0.10"
+      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Design/10.0.12"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.EntityFrameworkCore.Relational",
-      "version": "10.0.10",
+      "version": "10.0.12",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Relational/10.0.10"
+      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Relational/10.0.12"
     },
     {
       "ecosystem": "NuGet",
@@ -642,20 +633,20 @@
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.Extensions.DependencyModel",
-      "version": "10.0.10",
+      "version": "10.0.12",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/Microsoft.Extensions.DependencyModel/10.0.10"
+      "url": "https://www.nuget.org/packages/Microsoft.Extensions.DependencyModel/10.0.12"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore",
-      "version": "10.0.10",
+      "version": "10.0.12",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore/10.0.10"
+      "url": "https://www.nuget.org/packages/Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore/10.0.12"
     },
     {
       "ecosystem": "NuGet",
@@ -732,11 +723,11 @@
     {
       "ecosystem": "NuGet",
       "name": "MimeKit",
-      "version": "4.17.0",
+      "version": "4.18.1",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/MimeKit/4.17.0"
+      "url": "https://www.nuget.org/packages/MimeKit/4.18.1"
     },
     {
       "ecosystem": "NuGet",
@@ -777,11 +768,11 @@
     {
       "ecosystem": "NuGet",
       "name": "Newtonsoft.Json",
-      "version": "13.0.3",
+      "version": "13.0.4",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/Newtonsoft.Json/13.0.3"
+      "url": "https://www.nuget.org/packages/Newtonsoft.Json/13.0.4"
     },
     {
       "ecosystem": "NuGet",
@@ -813,11 +804,11 @@
     {
       "ecosystem": "NuGet",
       "name": "Scalar.AspNetCore",
-      "version": "2.17.3",
+      "version": "2.17.11",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Scalar.AspNetCore/2.17.3"
+      "url": "https://www.nuget.org/packages/Scalar.AspNetCore/2.17.11"
     },
     {
       "ecosystem": "Data",
@@ -841,38 +832,38 @@
     {
       "ecosystem": "NuGet",
       "name": "SkiaSharp",
-      "version": "4.152.0",
+      "version": "4.153.1",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/SkiaSharp/4.152.0"
+      "url": "https://www.nuget.org/packages/SkiaSharp/4.153.1"
     },
     {
       "ecosystem": "NuGet",
       "name": "SkiaSharp.NativeAssets.Linux.NoDependencies",
-      "version": "4.152.0",
+      "version": "4.153.1",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/SkiaSharp.NativeAssets.Linux.NoDependencies/4.152.0"
+      "url": "https://www.nuget.org/packages/SkiaSharp.NativeAssets.Linux.NoDependencies/4.153.1"
     },
     {
       "ecosystem": "NuGet",
       "name": "SkiaSharp.NativeAssets.macOS",
-      "version": "4.152.0",
+      "version": "4.153.1",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/SkiaSharp.NativeAssets.macOS/4.152.0"
+      "url": "https://www.nuget.org/packages/SkiaSharp.NativeAssets.macOS/4.153.1"
     },
     {
       "ecosystem": "NuGet",
       "name": "SkiaSharp.NativeAssets.Win32",
-      "version": "4.152.0",
+      "version": "4.153.1",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/SkiaSharp.NativeAssets.Win32/4.152.0"
+      "url": "https://www.nuget.org/packages/SkiaSharp.NativeAssets.Win32/4.153.1"
     },
     {
       "ecosystem": "NuGet",
@@ -1020,12 +1011,48 @@
     },
     {
       "ecosystem": "npm",
+      "name": "@chevrotain/cst-dts-gen",
+      "version": "11.1.2",
+      "license": "Apache-2.0",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@chevrotain/cst-dts-gen/v/11.1.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@chevrotain/gast",
+      "version": "11.1.2",
+      "license": "Apache-2.0",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@chevrotain/gast/v/11.1.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@chevrotain/regexp-to-ast",
+      "version": "11.1.2",
+      "license": "Apache-2.0",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@chevrotain/regexp-to-ast/v/11.1.2"
+    },
+    {
+      "ecosystem": "npm",
       "name": "@chevrotain/types",
       "version": "11.1.2",
       "license": "Apache-2.0",
       "component": "Web app",
       "direct": false,
       "url": "https://www.npmjs.com/package/@chevrotain/types/v/11.1.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@chevrotain/utils",
+      "version": "11.1.2",
+      "license": "Apache-2.0",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/@chevrotain/utils/v/11.1.2"
     },
     {
       "ecosystem": "npm",
@@ -1048,11 +1075,11 @@
     {
       "ecosystem": "npm",
       "name": "@dnd-kit/sortable",
-      "version": "9.0.0",
+      "version": "10.0.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@dnd-kit/sortable/v/9.0.0"
+      "url": "https://www.npmjs.com/package/@dnd-kit/sortable/v/10.0.0"
     },
     {
       "ecosystem": "npm",
@@ -1102,20 +1129,20 @@
     {
       "ecosystem": "npm",
       "name": "@hocuspocus/common",
-      "version": "4.4.0",
+      "version": "4.7.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@hocuspocus/common/v/4.4.0"
+      "url": "https://www.npmjs.com/package/@hocuspocus/common/v/4.7.0"
     },
     {
       "ecosystem": "npm",
       "name": "@hocuspocus/provider",
-      "version": "4.4.0",
+      "version": "4.7.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@hocuspocus/provider/v/4.4.0"
+      "url": "https://www.npmjs.com/package/@hocuspocus/provider/v/4.7.0"
     },
     {
       "ecosystem": "npm",
@@ -1147,11 +1174,11 @@
     {
       "ecosystem": "npm",
       "name": "@mermaid-js/parser",
-      "version": "1.2.1",
+      "version": "2.0.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@mermaid-js/parser/v/1.2.1"
+      "url": "https://www.npmjs.com/package/@mermaid-js/parser/v/2.0.0"
     },
     {
       "ecosystem": "npm",
@@ -1831,11 +1858,11 @@
     {
       "ecosystem": "npm",
       "name": "@types/node",
-      "version": "24.13.3",
+      "version": "26.6.3",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@types/node/v/24.13.3"
+      "url": "https://www.npmjs.com/package/@types/node/v/26.6.3"
     },
     {
       "ecosystem": "npm",
@@ -1849,20 +1876,20 @@
     {
       "ecosystem": "npm",
       "name": "@types/react",
-      "version": "19.2.17",
+      "version": "19.3.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@types/react/v/19.2.17"
+      "url": "https://www.npmjs.com/package/@types/react/v/19.3.0"
     },
     {
       "ecosystem": "npm",
       "name": "@types/react-dom",
-      "version": "19.2.3",
+      "version": "19.3.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@types/react-dom/v/19.2.3"
+      "url": "https://www.npmjs.com/package/@types/react-dom/v/19.3.0"
     },
     {
       "ecosystem": "npm",
@@ -1929,6 +1956,15 @@
     },
     {
       "ecosystem": "npm",
+      "name": "chevrotain",
+      "version": "11.1.2",
+      "license": "Apache-2.0",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/chevrotain/v/11.1.2"
+    },
+    {
+      "ecosystem": "npm",
       "name": "cliui",
       "version": "6.0.0",
       "license": "ISC",
@@ -1953,6 +1989,15 @@
       "component": "Web app",
       "direct": false,
       "url": "https://www.npmjs.com/package/color-name/v/1.1.4"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "commander",
+      "version": "15.0.0",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/commander/v/15.0.0"
     },
     {
       "ecosystem": "npm",
@@ -2424,6 +2469,15 @@
     },
     {
       "ecosystem": "npm",
+      "name": "elkjs",
+      "version": "0.9.3",
+      "license": "EPL-2.0",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/elkjs/v/0.9.3"
+    },
+    {
+      "ecosystem": "npm",
       "name": "emoji-regex",
       "version": "8.0.0",
       "license": "MIT",
@@ -2448,15 +2502,6 @@
       "component": "Web app",
       "direct": false,
       "url": "https://www.npmjs.com/package/fast-equals/v/5.4.1"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "fastdom",
-      "version": "1.0.12",
-      "license": "MIT",
-      "component": "Web app",
-      "direct": false,
-      "url": "https://www.npmjs.com/package/fastdom/v/1.0.12"
     },
     {
       "ecosystem": "npm",
@@ -2488,11 +2533,20 @@
     {
       "ecosystem": "npm",
       "name": "highlight.js",
-      "version": "11.11.1",
+      "version": "11.11.2",
+      "license": "BSD-3-Clause",
+      "component": "Web app",
+      "direct": false,
+      "url": "https://www.npmjs.com/package/highlight.js/v/11.11.2"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "highlight.js",
+      "version": "11.12.0",
       "license": "BSD-3-Clause",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/highlight.js/v/11.11.1"
+      "url": "https://www.npmjs.com/package/highlight.js/v/11.12.0"
     },
     {
       "ecosystem": "npm",
@@ -2554,8 +2608,17 @@
       "version": "0.16.47",
       "license": "MIT",
       "component": "Web app",
-      "direct": true,
+      "direct": false,
       "url": "https://www.npmjs.com/package/katex/v/0.16.47"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "katex",
+      "version": "0.18.10",
+      "license": "MIT",
+      "component": "Web app",
+      "direct": true,
+      "url": "https://www.npmjs.com/package/katex/v/0.18.10"
     },
     {
       "ecosystem": "npm",
@@ -2641,11 +2704,11 @@
     {
       "ecosystem": "npm",
       "name": "mermaid",
-      "version": "11.17.2",
+      "version": "12.0.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/mermaid/v/11.17.2"
+      "url": "https://www.npmjs.com/package/mermaid/v/12.0.0"
     },
     {
       "ecosystem": "npm",
@@ -2866,38 +2929,38 @@
     {
       "ecosystem": "npm",
       "name": "react",
-      "version": "19.2.8",
+      "version": "19.3.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/react/v/19.2.8"
+      "url": "https://www.npmjs.com/package/react/v/19.3.0"
     },
     {
       "ecosystem": "npm",
       "name": "react-dom",
-      "version": "19.2.8",
+      "version": "19.3.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/react-dom/v/19.2.8"
+      "url": "https://www.npmjs.com/package/react-dom/v/19.3.0"
     },
     {
       "ecosystem": "npm",
       "name": "react-router",
-      "version": "7.18.3",
+      "version": "7.18.4",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/react-router/v/7.18.3"
+      "url": "https://www.npmjs.com/package/react-router/v/7.18.4"
     },
     {
       "ecosystem": "npm",
       "name": "react-router-dom",
-      "version": "7.18.3",
+      "version": "7.18.4",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/react-router-dom/v/7.18.3"
+      "url": "https://www.npmjs.com/package/react-router-dom/v/7.18.4"
     },
     {
       "ecosystem": "npm",
@@ -2965,11 +3028,11 @@
     {
       "ecosystem": "npm",
       "name": "scheduler",
-      "version": "0.27.0",
+      "version": "0.28.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/scheduler/v/0.27.0"
+      "url": "https://www.npmjs.com/package/scheduler/v/0.28.0"
     },
     {
       "ecosystem": "npm",
@@ -2988,15 +3051,6 @@
       "component": "Web app",
       "direct": false,
       "url": "https://www.npmjs.com/package/set-cookie-parser/v/2.7.2"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "strictdom",
-      "version": "1.0.1",
-      "license": "MIT",
-      "component": "Web app",
-      "direct": false,
-      "url": "https://www.npmjs.com/package/strictdom/v/1.0.1"
     },
     {
       "ecosystem": "npm",
@@ -3055,11 +3109,11 @@
     {
       "ecosystem": "npm",
       "name": "undici-types",
-      "version": "7.18.2",
+      "version": "8.9.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/undici-types/v/7.18.2"
+      "url": "https://www.npmjs.com/package/undici-types/v/8.9.0"
     },
     {
       "ecosystem": "npm",
@@ -3154,11 +3208,11 @@
     {
       "ecosystem": "npm",
       "name": "yjs",
-      "version": "13.6.31",
+      "version": "13.6.33",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/yjs/v/13.6.31"
+      "url": "https://www.npmjs.com/package/yjs/v/13.6.33"
     }
   ]
 }
