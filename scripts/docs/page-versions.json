@@ -685,9 +685,9 @@
   },
   "Installation and operations / Upgrading": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-09-30",
     "note": "Revised.",
-    "hash": "b1d5258c5d48c062"
+    "hash": "3ecf64e83ac5a8d9"
   },
   "License and credits": {
     "appliesTo": "0.5",
