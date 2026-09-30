@@ -5,6 +5,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.8.5] - 2026-09-30
+
 The fourteen Medium bugs from the 0.8.3 retest.
 
 - **Fixed: an outside change just after someone closed a page showed as
