@@ -4,8 +4,11 @@ import {
 } from '../../api/client'
 import { PrincipalPicker } from '../../components/PrincipalPicker'
 
-/** Manages who may view/edit a single page. Restrictions inherit to sub-pages. */
-export function RestrictionsPanel({ pageId }: { pageId: string }) {
+/**
+ * Manages who may view/edit a single page. Restrictions inherit to sub-pages.
+ * Someone who may not edit the page sees the list only (QA T3-012).
+ */
+export function RestrictionsPanel({ pageId, canEdit = true }: { pageId: string; canEdit?: boolean }) {
   const [rows, setRows] = useState<PageRestriction[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -46,14 +49,16 @@ export function RestrictionsPanel({ pageId }: { pageId: string }) {
         </p>
       )}
 
-      <PrincipalPicker
-        operationNames={pageOperationName}
-        addLabel="Restrict"
-        onAdd={async (input) => {
-          await api.pageRestrictions.add(pageId, input)
-          load()
-        }}
-      />
+      {canEdit && (
+        <PrincipalPicker
+          operationNames={pageOperationName}
+          addLabel="Restrict"
+          onAdd={async (input) => {
+            await api.pageRestrictions.add(pageId, input)
+            load()
+          }}
+        />
+      )}
 
       <ul className="version-list">
         {rows?.map((r) => (
@@ -61,11 +66,13 @@ export function RestrictionsPanel({ pageId }: { pageId: string }) {
             <span className="badge">{r.principalType === PrincipalType.User ? 'user' : 'group'}</span>
             <span className="version__num">{r.principalName ?? r.principalId}</span>
             <span className="muted small">{pageOperationName[r.operation]}</span>
-            <span className="version__actions">
-              <button type="button" className="link-btn link-btn--danger" onClick={() => remove(r)}>
-                Remove
-              </button>
-            </span>
+            {canEdit && (
+              <span className="version__actions">
+                <button type="button" className="link-btn link-btn--danger" onClick={() => remove(r)}>
+                  Remove
+                </button>
+              </span>
+            )}
           </li>
         ))}
       </ul>

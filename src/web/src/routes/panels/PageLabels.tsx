@@ -2,8 +2,12 @@ import { type FormEvent, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, ApiError, type Label } from '../../api/client'
 
-/** Label chips for a page, with inline add/remove. */
-export function PageLabels({ pageId, readOnly = false }: { pageId: string; readOnly?: boolean }) {
+/**
+ * Label chips for a page, with inline add/remove. `readOnly` is the signed-out
+ * reader's plain list; `canEdit` false keeps the links but leaves out adding
+ * and removing, which only someone who may edit the page can do (QA T3-012).
+ */
+export function PageLabels({ pageId, readOnly = false, canEdit = true }: { pageId: string; readOnly?: boolean; canEdit?: boolean }) {
   const [labels, setLabels] = useState<Label[]>([])
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -49,14 +53,14 @@ export function PageLabels({ pageId, readOnly = false }: { pageId: string; readO
       {labels.map((l) => (
         <span key={l.id} className="label-chip">
           {readOnly ? <span>{l.name}</span> : <Link to={`/labels/${encodeURIComponent(l.name)}`}>{l.name}</Link>}
-          {!readOnly && (
+          {!readOnly && canEdit && (
             <button type="button" onClick={() => remove(l.name)} aria-label={`Remove Label ${l.name}`}>
               ×
             </button>
           )}
         </span>
       ))}
-      {readOnly ? null : adding ? (
+      {readOnly || !canEdit ? null : adding ? (
         <form className="label-add" onSubmit={add}>
           <input
             value={name}

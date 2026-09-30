@@ -1,5 +1,5 @@
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from 'react'
-import { useBlocker, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useBlocker, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import type { Editor as TiptapEditor } from '@tiptap/react'
 import { api, ApiError, LIMITS, type CollabToken, type PageTemplate } from '../api/client'
 import { Editor } from '../editor/Editor'
@@ -72,6 +72,12 @@ export function PageEditor() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fullWidth, setFullWidth] = useState(false)
+  // Someone who may only read here is told so before writing anything: the
+  // editor used to open for them, and Publish or Update refused the finished
+  // page (QA T3-012, T7-001). The server refuses regardless.
+  const mayCreate = space.canEdit !== false
+  const [refused, setRefused] = useState<string | null>(
+    !isEdit && !mayCreate ? 'You can read this space but not add pages to it.' : null)
 
   // The formatting toolbar renders in the page-level top action bar (not
   // inside the paper card), same as view mode: the Editor/CollaborativeEditor
@@ -107,7 +113,7 @@ export function PageEditor() {
   // re-run if space.id/parentPageId happen to change identity, since this
   // must fire exactly once per visit to the "new page" form.
   useEffect(() => {
-    if (isEdit) return
+    if (isEdit || !mayCreate) return
     let canceled = false
     const promise = api.pages
       .createDraft({ spaceId: space.id, parentPageId })
@@ -146,6 +152,10 @@ export function PageEditor() {
       .get(pageId)
       .then((p) => {
         if (canceled) return
+        if (p.canEdit === false) {
+          setRefused('You can read this page but not edit it.')
+          return
+        }
         setTitle(p.title)
         setContent(p.contentJson)
         setLoadedContent(p.contentJson)
@@ -471,6 +481,18 @@ export function PageEditor() {
   }
 
   if (loading) return <p className="muted page-wrap">Loading…</p>
+  if (refused) {
+    return (
+      <div className="page-wrap">
+        <p className="alert alert--error">{refused} Ask an administrator of this space for edit access.</p>
+        <p>
+          <Link to={pageId ? `/spaces/${key}/pages/${pageId}` : `/spaces/${key}`}>
+            {pageId ? 'Back to the Page' : `Back to ${space.name}`}
+          </Link>
+        </p>
+      </div>
+    )
+  }
 
   return (
     <>

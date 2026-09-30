@@ -242,6 +242,13 @@ export type Space = {
   exports: SpaceExports
   /** How the page tree marks its pages: 0 plain, 1 numbered, 2 bulleted (dev-plan 15.8). */
   treeStyle?: SpaceTreeStyle
+  /**
+   * What the signed-in person may do here: add and change pages, and change
+   * the space itself. Only reading one space says (null or absent in lists),
+   * so the page can leave out what would only be refused (QA T3-012).
+   */
+  canEdit?: boolean | null
+  canAdmin?: boolean | null
 }
 
 export type SpaceExports = { markdown: boolean; html: boolean; pdf: boolean; site: boolean; pack: boolean }

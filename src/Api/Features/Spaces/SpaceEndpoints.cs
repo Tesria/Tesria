@@ -28,7 +28,14 @@ public static partial class SpaceEndpoints
         bool IsPublic, bool PublicComments,
         SpaceIconKind IconKind, string? IconValue, int? IconColor,
         SpaceExportsDto Exports,
-        SpaceTreeStyle TreeStyle = SpaceTreeStyle.Plain);
+        SpaceTreeStyle TreeStyle = SpaceTreeStyle.Plain,
+        /// <summary>
+        /// What the caller may do here, on the single-space read only (null
+        /// elsewhere): whether they may add and change pages, and whether
+        /// they may change the space itself. The page leaves out what would
+        /// only be refused (QA T3-012).
+        /// </summary>
+        bool? CanEdit = null, bool? CanAdmin = null);
 
     /// <summary>
     /// Which exports this space allows (dev-plan 12.3). Part of every space
@@ -124,7 +131,7 @@ public static partial class SpaceEndpoints
         return Results.Created($"/api/spaces/{space.Key}", ToResponse(space));
     }
 
-    private static async Task<IResult> GetByKey(string key, AppDbContext db, IPermissionService perms)
+    private static async Task<IResult> GetByKey(string key, AppDbContext db, IPermissionService perms, CurrentUser current)
     {
         var normalizedKey = key.ToUpperInvariant();
         var space = await db.Spaces.AsNoTracking()
@@ -132,7 +139,11 @@ public static partial class SpaceEndpoints
         if (space is null) return Results.NotFound();
         // 404 rather than 403 so a hidden space's existence isn't disclosed.
         if (!await perms.CanViewSpaceAsync(space.Id)) return Results.NotFound();
-        return Results.Ok(ToResponse(space));
+        return Results.Ok(ToResponse(space) with
+        {
+            CanEdit = current.Id is not null && await perms.CanEditSpaceAsync(space.Id),
+            CanAdmin = current.Id is not null && await perms.CanAdminSpaceAsync(space.Id),
+        });
     }
 
     private static async Task<IResult> Update(

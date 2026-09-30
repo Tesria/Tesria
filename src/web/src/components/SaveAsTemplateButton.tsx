@@ -6,16 +6,18 @@ type Props = {
   spaceId: string
   contentJson: string
   defaultName: string
+  /** A space's templates are for people who may edit the space (QA T3-012). */
+  canSaveToSpace?: boolean
 }
 
 /** Turns a page's current content into a reusable template. */
-export function SaveAsTemplateButton({ spaceId, contentJson, defaultName }: Props) {
+export function SaveAsTemplateButton({ spaceId, contentJson, defaultName, canSaveToSpace = true }: Props) {
   // Instance-wide templates take their own right (dev-plan 14.1); without
   // it the choice is not offered at all.
   const mayOfferEverywhere = useAuth().can(Permission.TemplatesInstance)
   const [open, setOpen] = useState(false)
   const [name, setName] = useState(defaultName)
-  const [scope, setScope] = useState<'space' | 'instance'>('space')
+  const [scope, setScope] = useState<'space' | 'instance'>(canSaveToSpace ? 'space' : 'instance')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
@@ -41,6 +43,8 @@ export function SaveAsTemplateButton({ spaceId, contentJson, defaultName }: Prop
   }
 
   if (done) return <span className="muted small">Saved as template ✓</span>
+  // Neither kind is open to this person: the button would only be refused.
+  if (!canSaveToSpace && !mayOfferEverywhere) return null
 
   return (
     <>
@@ -60,7 +64,7 @@ export function SaveAsTemplateButton({ spaceId, contentJson, defaultName }: Prop
               maxLength={LIMITS.templateName}
             />
           </label>
-          {mayOfferEverywhere && (
+          {mayOfferEverywhere && canSaveToSpace && (
             <label>
               Offer It In
               <select value={scope} onChange={(e) => setScope(e.target.value as 'space' | 'instance')}>
