@@ -29,7 +29,7 @@ export function findTreePath(tree: PageTreeNode[], pageId: string): PageTreeNode
   return null
 }
 
-type FlatNode = { id: string; title: string; emoji?: string | null; marker?: string | null; parentId: string | null; depth: number }
+export type FlatNode = { id: string; title: string; emoji?: string | null; marker?: string | null; parentId: string | null; depth: number }
 type PendingMove = { pageId: string; parentPageId: string | null; index: number }
 
 function flatten(nodes: PageTreeNode[], parentId: string | null = null, depth = 0): FlatNode[] {
@@ -95,9 +95,12 @@ const INDENT = 14
  *  that depth implies. Depth is projected from horizontal drag distance,
  *  then clamped between the previous row's depth+1 (can't skip a level) and
  *  the next row's depth (can't leave a gap): the standard "sortable tree"
- *  projection technique. `items` must already have the dragged row (and its
- *  own former subtree) excluded: see caller. */
-function project(items: FlatNode[], activeId: string, overId: string, dragOffsetX: number) {
+ *  projection technique. `items` must already have the dragged row's own
+ *  former subtree excluded: see caller. `overId` may be the dragged row
+ *  itself: dragged sideways over its own row, it moves in or out a level
+ *  where it is. Only a row with another below it could be moved out before,
+ *  so the last page of a tree never could (QA T3-023). */
+export function project(items: FlatNode[], activeId: string, overId: string, dragOffsetX: number) {
   const activeIndex = items.findIndex((i) => i.id === activeId)
   const overIndex = items.findIndex((i) => i.id === overId)
   if (activeIndex === -1 || overIndex === -1) return null
@@ -196,7 +199,10 @@ export function PageTree({
   const hidden = activeId ? descendantIdsOf(draftTree, activeId) : null
   const visible = useMemo(() => (hidden ? flat.filter((i) => !hidden.has(i.id)) : flat), [flat, hidden])
 
-  const projection = activeId && overId && activeId !== overId ? project(visible, activeId, overId, dragOffsetX) : null
+  const projected = activeId && overId ? project(visible, activeId, overId, dragOffsetX) : null
+  // Over its own row at its own depth, it would land where it is: no line.
+  const projection = projected && overId === activeId
+    && projected.depth === visible.find((i) => i.id === activeId)?.depth ? null : projected
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
 
@@ -222,7 +228,7 @@ export function PageTree({
     // same tick, before React has re-rendered: reading state here would
     // risk resolving against a stale projection from an earlier move.
     const overIdNow = event.over ? String(event.over.id) : null
-    const result = overIdNow && overIdNow !== draggedId ? project(visible, draggedId, overIdNow, event.delta.x) : null
+    const result = overIdNow ? project(visible, draggedId, overIdNow, event.delta.x) : null
     resetDrag()
     if (!result) return
 
