@@ -378,6 +378,18 @@ public class McpToolTests
         Assert.Contains("rollback", Error(await Call(mcp, "update_page",
             new { pageId, section = "nope", content = "## Nope\n" })));
 
+        // t5-R07: the whole page sent with a section's name, which put the
+        // rest of the page into it a second time; and a section without its
+        // heading, which silently dropped the heading.
+        var whole = (await Call(mcp, "get_page", new { pageId })).GetProperty("content")[0].GetProperty("text").GetString()!;
+        Assert.Contains("must start with that section's heading", Error(await Call(mcp, "update_page",
+            new { pageId, section = "deployment", content = whole })));
+        var body = markdown[(markdown.IndexOf("## Deployment", StringComparison.Ordinal))..];
+        Assert.Contains("goes past the section 'deployment'", Error(await Call(mcp, "update_page",
+            new { pageId, section = "deployment", content = body + "\n## Support\n\nAnother section.\n" })));
+        Assert.Contains("must start with that section's heading", Error(await Call(mcp, "update_page",
+            new { pageId, section = "deployment", content = "Deploy on Wednesday.\n" })));
+
         var detail = await w.Alice.GetFromJsonAsync<JsonElement>($"/api/pages/{pageId}");
         Assert.Equal(1, detail.GetProperty("currentVersionNumber").GetInt32());
     }
