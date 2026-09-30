@@ -40,7 +40,7 @@ export function TrashPage() {
       confirmLabel: 'Delete Permanently',
       body: (
         <>
-          <p>The page and any sub-pages go, with every version, comment and attachment.</p>
+          <p>The page and the sub-pages deleted with it go, with every version, comment and attachment.</p>
           <p>This is what the trash was protecting against, so there is nothing left to restore from afterwards.</p>
         </>
       ),
@@ -56,7 +56,7 @@ export function TrashPage() {
 
   return (
     <>
-      <p className="muted small">Deleted pages in {space.name}. Restoring brings back the page and its sub-pages.</p>
+      <p className="muted small">Deleted pages in {space.name}. Restoring brings back the page and the sub-pages deleted with it.</p>
       {error && <p className="alert alert--error">{error}</p>}
       {items && items.length === 0 && <p className="muted">Trash is empty.</p>}
       <ul className="version-list">
