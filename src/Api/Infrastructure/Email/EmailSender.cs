@@ -140,6 +140,38 @@ public static class SiteUrl
 {
     /// <summary>The setting wins over the deploy-time value; both trimmed of a trailing slash.</summary>
     public static string Resolve(Domain.SiteSettings settings, IConfiguration config) =>
-        (string.IsNullOrWhiteSpace(settings.BaseUrl) ? config["Site:BaseUrl"] : settings.BaseUrl)?.TrimEnd('/')
-        ?? "https://localhost";
+        string.IsNullOrWhiteSpace(settings.BaseUrl) ? Deployed(config) : settings.BaseUrl.Trim().TrimEnd('/');
+
+    /// <summary>
+    /// The deploy-time address, <c>Site:BaseUrl</c>, on the HTTPS port this
+    /// Tesria is published on. Compose writes it as <c>https://DOMAIN</c> and
+    /// cannot add a port only when it is not 443, so a second Tesria on 8443
+    /// sent email links to 443, which is another Tesria or nothing. The port
+    /// comes from <c>Tls:HttpsPort</c> (TESRIA_HTTPS_PORT) and is added only
+    /// to an https address that names none; an address given with a port,
+    /// and the owner's Public Address setting, are used as they are.
+    /// </summary>
+    public static string Deployed(IConfiguration config)
+    {
+        var configured = config["Site:BaseUrl"]?.Trim().TrimEnd('/');
+        if (string.IsNullOrEmpty(configured)) configured = "https://localhost";
+        var port = Features.Trust.TrustEndpoints.Ports.Configured(config["Tls:HttpsPort"], 443);
+        if (port == 443
+            || !Uri.TryCreate(configured, UriKind.Absolute, out var uri)
+            || uri.Scheme != Uri.UriSchemeHttps
+            || HasPort(configured, uri))
+            return configured;
+        return new UriBuilder(uri) { Port = port }.Uri.GetLeftPart(UriPartial.Path).TrimEnd('/');
+    }
+
+    /// <summary>Whether the address was written with a port, 443 included (which Uri reports as the default).</summary>
+    private static bool HasPort(string text, Uri uri)
+    {
+        if (!uri.IsDefaultPort) return true;
+        var authority = text[(text.IndexOf("://", StringComparison.Ordinal) + 3)..];
+        var end = authority.IndexOfAny(['/', '?', '#']);
+        if (end >= 0) authority = authority[..end];
+        var hostEnd = authority.LastIndexOf(']');
+        return authority.IndexOf(':', hostEnd + 1) >= 0;
+    }
 }
