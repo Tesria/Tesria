@@ -51,7 +51,10 @@ public sealed class TesriaTools
         "them. The first text item is the content alone, exactly what update_page takes back as `content`; the " +
         "second is JSON with the page's id, title, space, labels, version, url and an `outline` of its headings. " +
         "Pass `section` with a heading id from that outline to get just " +
-        "that heading and everything under it, which is usually what you want on a long page. Ask for format " +
+        "that heading and everything under it, which is usually what you want on a long page. A section comes " +
+        "marked as one (a first-line comment in Markdown, a `section` property in JSON): to save a change to it, " +
+        "send it back to update_page with the same `section`, which replaces that section and keeps the rest of " +
+        "the page. Ask for format " +
         "'json' to get the editor's ProseMirror document instead (for `contentJson`), e.g. to copy a page exactly. " +
         "'Not found' can mean the page does not exist or that you may not see it; the two are deliberately indistinguishable.")]
     public static async Task<CallToolResult> GetPage(
@@ -82,12 +85,7 @@ public sealed class TesriaTools
         var wanted = section?.Trim();
         if (!string.IsNullOrEmpty(wanted))
         {
-            var slice = PageSections.Extract(json, wanted);
-            if (slice is null)
-                throw new McpException(
-                    $"This page has no top-level section '{wanted}'. Its sections are: "
-                    + (outline.Count == 0 ? "(none)" : string.Join(", ", outline.Select(h => h.Id))) + ".");
-            json = slice;
+            json = PageSections.Extract(json, wanted) ?? throw NoSuchSection(wanted, outline);
         }
 
         // Blocks are resolved against the whole page either way: a children
@@ -95,6 +93,10 @@ public sealed class TesriaTools
         var content = wantJson
             ? json
             : ProseMirrorRenderer.ToMarkdown(json, await PageSnapshots.BlocksAsync(page.Id, json, blocks, ct), baseUrl);
+        // One section is marked as one, so it cannot be sent back as the
+        // whole page and replace everything else.
+        if (!string.IsNullOrEmpty(wanted))
+            content = wantJson ? SectionMark.Json(content, wanted) : SectionMark.Markdown(content, wanted);
 
         var result = new PageContent(
             page.Id, page.Title, page.Space.Key, page.ParentPageId, labels,
@@ -122,6 +124,10 @@ public sealed class TesriaTools
     }
 
     private static readonly JsonSerializerOptions StructuredJson = new(JsonSerializerDefaults.Web);
+
+    private static McpException NoSuchSection(string wanted, IReadOnlyList<PageSections.Heading> outline) =>
+        new($"This page has no top-level section '{wanted}'. Its sections are: "
+            + (outline.Count == 0 ? "(none)" : string.Join(", ", outline.Select(h => h.Id))) + ".");
 
     public sealed record TreeNode(Guid Id, string Title, IReadOnlyList<TreeNode> Children);
     /// <param name="Snippet">The passage that matched, with the matching words in **bold**.</param>
@@ -290,8 +296,12 @@ public sealed class TesriaTools
     }
 
     [McpServerTool(Name = "update_page"), Description(
-        "Replace a page's body, and optionally its title. This creates a new version, as an edit in the browser " +
-        "does: fetch the page first if you mean to change only part of it. Needs a token with write access.")]
+        "Replace a page's body, or one section of it, and optionally its title. This creates a new version, as an " +
+        "edit in the browser does: fetch the page first if you mean to change only part of it. Without `section`, " +
+        "`content` is the whole page. With `section` (a heading id from get_page's outline), `content` is just that " +
+        "section, heading included: it replaces that heading and everything under it, and the rest of the page is " +
+        "kept. A section read with get_page's `section` is refused without it, so it never replaces the whole " +
+        "page. Needs a token with write access.")]
     public static async Task<WriteResult> UpdatePage(
         [Description("The page id.")] Guid pageId,
         IPageWriter writer, AppDbContext db, CurrentUser current, IHttpContextAccessor accessor,
@@ -300,14 +310,91 @@ public sealed class TesriaTools
         [Description("New body as Markdown.")] string? content = null,
         [Description("New body as a ProseMirror JSON document.")] string? contentJson = null,
         [Description("New title; omit to keep the current one.")] string? title = null,
-        [Description("A short note describing the change, shown in the page's history.")] string? changeComment = null)
+        [Description("A short note describing the change, shown in the page's history.")] string? changeComment = null,
+        [Description("A heading id from the page's outline: the body replaces only that section.")] string? section = null)
     {
         McpAccess.RequireWrite(current, accessor);
-        var body = Body(content, contentJson);
-        if (content is not null)
-            body = await MergeAsync(pageId, content, db, perms, blocks, settings, config, ct) ?? body;
+        var wanted = section?.Trim();
+        string? body;
+        if (string.IsNullOrEmpty(wanted))
+        {
+            // One section sent as the whole page would replace everything
+            // else on it with that section.
+            if (SectionMark.Of(content ?? contentJson) is { } marked)
+                throw new McpException(
+                    $"That is only the section '{marked}' of the page, as get_page returned it with `section`, not the "
+                    + $"whole page. Send it again with section: \"{marked}\" to replace just that section and keep the "
+                    + "rest of the page. Sent as it is, it would have replaced the whole page.");
+            body = Body(content, contentJson);
+            if (content is not null)
+                body = await MergeAsync(pageId, content, db, perms, blocks, settings, config, ct) ?? body;
+        }
+        else
+        {
+            body = await SectionBodyAsync(pageId, wanted, content, contentJson, db, perms, blocks, settings, config, ct);
+        }
         var result = await writer.UpdateAsync(pageId, title, body, changeComment, ct);
         return await ResultOf(result, db, settings, config, ct);
+    }
+
+    /// <summary>
+    /// The whole page with one section replaced by what the assistant sent,
+    /// everything else as it is. Markdown is merged with that section as it
+    /// is merged with a whole page (<see cref="MergeAsync"/>), so the blocks
+    /// of the section it sent back unchanged keep what Markdown cannot say.
+    /// </summary>
+    private static async Task<string> SectionBodyAsync(
+        Guid pageId, string wanted, string? content, string? contentJson, AppDbContext db, IPermissionService perms,
+        IDynamicBlockService blocks, ISiteSettingsService settings, IConfiguration config, CancellationToken ct)
+    {
+        if (content is null && contentJson is null)
+            throw new McpException(
+                "`section` needs the section's new content, as `content` (Markdown) or `contentJson`. "
+                + "To change only the title, leave `section` out.");
+        // The same checks a whole body gets: one form, and not get_page's whole answer.
+        _ = Body(content, contentJson);
+        if (SectionMark.Of(content ?? contentJson) is { } marked && marked != wanted)
+            throw new McpException(
+                $"That content is the section '{marked}', but `section` names '{wanted}'. "
+                + $"To replace '{marked}', pass section: \"{marked}\".");
+
+        if (!await perms.CanViewPageAsync(pageId)) throw McpAccess.NotFound("Page");
+        var current = await db.Pages.AsNoTracking()
+            .Where(p => p.Id == pageId && p.CurrentVersion != null)
+            .Select(p => p.CurrentVersion!.ContentJson)
+            .FirstOrDefaultAsync(ct) ?? throw McpAccess.NotFound("Page");
+        var sectionJson = PageSections.Extract(current, wanted)
+            ?? throw NoSuchSection(wanted, PageSections.Outline(current));
+
+        JsonArray replacement;
+        if (content is not null)
+        {
+            var markdown = SectionMark.Strip(content);
+            if (string.IsNullOrWhiteSpace(markdown))
+            {
+                // Nothing at all: the section goes.
+                replacement = [];
+            }
+            else
+            {
+                // Written exactly as get_page wrote the section, so an
+                // unchanged block reads the same on both sides.
+                var baseUrl = SiteUrl.Resolve(await settings.GetAsync(ct), config);
+                var snapshots = await PageSnapshots.BlocksAsync(pageId, sectionJson, blocks, ct);
+                var merged = MarkdownMerge.Merge(
+                    sectionJson, ProseMirrorRenderer.ToMarkdownBlocks(sectionJson, snapshots, baseUrl), markdown);
+                replacement = (JsonNode.Parse(merged)?["content"] as JsonArray) ?? [];
+            }
+        }
+        else
+        {
+            JsonNode? doc;
+            try { doc = JsonNode.Parse(SectionMark.Strip(contentJson!)); }
+            catch (JsonException) { doc = null; }
+            replacement = doc?["content"] as JsonArray
+                ?? throw new McpException("`contentJson` must be a ProseMirror document: {\"type\":\"doc\",\"content\":[...]}.");
+        }
+        return PageSections.Replace(current, wanted, replacement)!;
     }
 
     /// <summary>
@@ -359,8 +446,10 @@ public sealed class TesriaTools
             throw new McpException(
                 "That is get_page's whole answer (id, title, content and so on), not a page body. "
                 + "Send only its `content` value.");
-        if (contentJson is not null) return contentJson;
-        return content is null ? null : MarkdownToProseMirror.Convert(content);
+        // A section read with get_page is a fine body for a new page; its
+        // note is not part of it. (update_page deals with the note itself.)
+        if (contentJson is not null) return SectionMark.Strip(contentJson);
+        return content is null ? null : MarkdownToProseMirror.Convert(SectionMark.Strip(content));
     }
 
     /// <summary>

@@ -56,6 +56,30 @@ public class EmailRecoveryTests
     }
 
     [Fact]
+    public async Task On_ports_of_its_own_the_link_goes_to_this_tesrias_port()
+    {
+        // A second Tesria on 8443 sent its links to 443: the first Tesria, or nothing.
+        using var factory = new TestAppFactory(new Dictionary<string, string?>
+        {
+            ["Site:BaseUrl"] = "https://localhost",
+            ["Tls:HttpsPort"] = "8443",
+        });
+        var admin = factory.CreateClient();
+        await RegisterAsync(admin, "admin@example.com");
+        (await admin.PutAsJsonAsync("/api/admin/settings", new { EmailEnabled = true, LoginRateLimitPerMinute = 1000 }))
+            .EnsureSuccessStatusCode();
+        var outbox = factory.Services.GetRequiredService<RecordingEmailSender>();
+
+        (await factory.CreateClient().PostAsJsonAsync("/api/auth/recover/email", new { Email = "admin@example.com" }))
+            .EnsureSuccessStatusCode();
+        Assert.Contains("https://localhost:8443/reset?token=", Assert.Single(outbox.Sent).Text);
+
+        // And the settings page shows that address as the one in use.
+        var settings = await admin.GetFromJsonAsync<System.Text.Json.JsonElement>("/api/admin/settings");
+        Assert.Equal("https://localhost:8443", settings.GetProperty("effectiveBaseUrl").GetString());
+    }
+
+    [Fact]
     public async Task An_unknown_address_gets_the_same_answer_and_no_email()
     {
         using var factory = new TestAppFactory();

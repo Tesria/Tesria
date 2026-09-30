@@ -33,7 +33,8 @@
 
 .PARAMETER HostName
     What you type into the browser to open Tesria, without https://, such as
-    wiki-server.local.
+    wiki-server.local. For a Tesria on ports of its own, its plain HTTP port
+    goes with it, such as localhost:8080: the /trust page fills this in.
 
 .PARAMETER Fingerprint
     Optional. The certificate's SHA-256 fingerprint, from the server; with
@@ -145,14 +146,45 @@ Write-Host "==> Done. Restart your browser (quit it completely and open it again
 Write-Host "    Chrome and Edge use Windows' trusted certificates, so both trust it now."
 Write-Host "    Firefox keeps its own list: see the Tesria docs, Trusting the local certificate."
 
-Write-Host ""
-Write-Host "==> Checking https://$HostName/ ..."
+# The address is the plain HTTP one, with its port on a Tesria that has
+# ports of its own (localhost:8080), so its HTTPS address is found where
+# that sends a browser: https://localhost:8443 (WIN-003). Only an address
+# on the same host is believed; with no port given, HTTPS is on 443.
+$name = if ($HostName -match '^(\[[^\]]+\]|[^:]+):\d+$') { $Matches[1] } else { $HostName }
+$origin = $null
 try {
-    Invoke-WebRequest -Uri "https://$HostName/api/health" -UseBasicParsing -TimeoutSec 10 | Out-Null
-    Write-Host "    Success: this computer now trusts $HostName."
+    $request = [System.Net.HttpWebRequest]::Create("http://$HostName/api/health")
+    $request.AllowAutoRedirect = $false
+    $request.Timeout = 10000
+    $response = $request.GetResponse()
+    $location = $response.Headers["Location"]
+    $response.Close()
+    if ($location -match '^(https://[^/?#]+)') {
+        $found = $Matches[1]
+        if ($found -eq "https://$name" -or $found.StartsWith("https://${name}:", [StringComparison]::OrdinalIgnoreCase)) {
+            $origin = $found
+        }
+    }
 }
 catch {
-    Write-Host "    Still failing. Quit and reopen your browser. If the warning stays, see the Tesria docs, Trusting the local certificate."
+    # No answer, or not a redirect: decided below.
+}
+if (-not $origin -and $name -eq $HostName) { $origin = "https://$HostName" }
+
+Write-Host ""
+if (-not $origin) {
+    Write-Host "==> Could not tell which HTTPS address $HostName sends browsers to, so this was not checked."
+    Write-Host "    Open Tesria in your browser: it should show no warning."
+}
+else {
+    Write-Host "==> Checking $origin/ ..."
+    try {
+        Invoke-WebRequest -Uri "$origin/api/health" -UseBasicParsing -TimeoutSec 10 | Out-Null
+        Write-Host "    Success: this computer now trusts $($origin.Substring(8))."
+    }
+    catch {
+        Write-Host "    Still failing. Quit and reopen your browser. If the warning stays, see the Tesria docs, Trusting the local certificate."
+    }
 }
 
 Write-Host ""

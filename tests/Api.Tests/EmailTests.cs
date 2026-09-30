@@ -80,4 +80,32 @@ public class EmailTests
         Assert.Equal("https://deploy.example.com", SiteUrl.Resolve(new SiteSettings(), config));
         Assert.Equal("https://other.example.com", SiteUrl.Resolve(new SiteSettings { BaseUrl = "https://other.example.com/" }, config));
     }
+
+    private static string Deployed(string? baseUrl, string? httpsPort, string? setting = null) =>
+        SiteUrl.Resolve(new SiteSettings { BaseUrl = setting }, new ConfigurationBuilder().AddInMemoryCollection(
+            new Dictionary<string, string?> { ["Site:BaseUrl"] = baseUrl, ["Tls:HttpsPort"] = httpsPort }).Build());
+
+    [Theory]
+    // A Tesria on ports of its own sends its own port (Compose writes the
+    // address as https://DOMAIN, with no port, whatever TESRIA_HTTPS_PORT is).
+    [InlineData("https://localhost", "8443", "https://localhost:8443")]
+    [InlineData("https://studio.local/", "127.0.0.1:8443", "https://studio.local:8443")]
+    [InlineData(null, "8443", "https://localhost:8443")]
+    // The standard port stays out of the address, as it always has.
+    [InlineData("https://localhost", "443", "https://localhost")]
+    [InlineData("https://localhost", null, "https://localhost")]
+    [InlineData("https://localhost", "not a port", "https://localhost")]
+    // An address given with a port, or over plain HTTP, is used as it is.
+    [InlineData("https://wiki.example.com:9443", "8443", "https://wiki.example.com:9443")]
+    [InlineData("https://wiki.example.com:443", "8443", "https://wiki.example.com:443")]
+    [InlineData("http://localhost:8099", "8443", "http://localhost:8099")]
+    public void Links_carry_the_https_port_tesria_is_published_on(string? baseUrl, string? httpsPort, string expected) =>
+        Assert.Equal(expected, Deployed(baseUrl, httpsPort));
+
+    [Fact]
+    public void The_owners_public_address_still_wins_over_the_port()
+    {
+        // A real domain behind a proxy on 443, with this Tesria on 8443 behind it.
+        Assert.Equal("https://wiki.example.com", Deployed("https://localhost", "8443", setting: "https://wiki.example.com/"));
+    }
 }

@@ -258,8 +258,10 @@ services:
       # proxy here instead.
       Proxy__TrustedNetworks: ${PROXY_TRUSTED_NETWORKS:-}
       Proxy__ComposeSubnet: ${TESRIA_SUBNET:-10.203.0.0/24}
-      # Where links in email point. Overridable at runtime in Admin → Settings.
       Pdf__Endpoint: "http://pdf:8091"
+      # Where links in email point. The app adds the HTTPS port
+      # (Tls__HttpsPort below) when it is not 443. Overridable at runtime in
+      # Admin → Settings.
       Site__BaseUrl: "https://${DOMAIN:-localhost}"
       # Which Caddyfile is in use: the default one makes its own certificate,
       # and then the app offers /trust to each device (dev-plan 15.5).
