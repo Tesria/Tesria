@@ -188,6 +188,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.HasOne(u => u.InstanceRole).WithMany().HasForeignKey(u => u.RoleId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.Property(u => u.Email).HasMaxLength(320);
+            e.Property(u => u.PendingEmail).HasMaxLength(320);
+            e.Property(u => u.PendingEmailTokenHash).HasMaxLength(64);
             e.Property(u => u.DisplayName).HasMaxLength(200);
             e.Property(u => u.OidcSubject).HasMaxLength(400);
             e.Property(u => u.AvatarKey).HasMaxLength(400);

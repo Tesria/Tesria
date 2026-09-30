@@ -1,10 +1,11 @@
-import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from 'react'
+import { type FormEvent, type ReactNode, useCallback, useEffect, useId, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, ApiError, MailSignIn, type BackupKeyStatus, type MailProvider, type SetupStatus } from '../api/client'
 import { MailProviderHint, MailProviderPicker } from '../components/MailProviderPicker'
 import { useAuth } from '../auth/AuthContext'
 import { useInstance } from '../InstanceContext'
 import { PasswordInput } from '../components/PasswordInput'
+import { PASSWORD_HINT, PASSWORD_MAX, PASSWORD_MIN, passwordProblem } from '../auth/passwordRule'
 import { RecoveryCodes } from '../components/RecoveryCodes'
 import { TotpSection } from '../components/TotpSection'
 import { AdminRolesPage } from './admin/AdminRolesPage'
@@ -322,10 +323,13 @@ function AccountStep({
   const [codes, setCodes] = useState<string[] | null>(null)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const hintId = useId()
 
   async function submit(e: FormEvent) {
     e.preventDefault()
-    setError(null)
+    const weak = passwordProblem(password)
+    setError(weak)
+    if (weak) return
     try { setCodes(await onRegister(email, name, password)) } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not create the account.')
     }
@@ -380,7 +384,8 @@ function AccountStep({
       <label>
         <span>Password</span>
         <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)}
-          autoComplete="new-password" required minLength={8} />
+          autoComplete="new-password" required minLength={PASSWORD_MIN} maxLength={PASSWORD_MAX} describedBy={hintId} />
+        <span className="muted small" id={hintId}>{PASSWORD_HINT}</span>
       </label>
       <div className="row-gap setup__actions">
         <button type="submit" className="btn btn--primary" disabled={busy}>

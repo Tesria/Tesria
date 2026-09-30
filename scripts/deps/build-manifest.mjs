@@ -202,9 +202,34 @@ function images() {
   }
 }
 
+/**
+ * Files Tesria ships that come from elsewhere but are not packages, each
+ * with its license text in a file beside it. The common password list new
+ * passwords are checked against (T1-026) is the first.
+ */
+const VENDORED = [
+  {
+    name: 'SecLists: 10k-most-common.txt', version: '913b327', license: 'MIT', component: 'Server',
+    url: 'https://github.com/danielmiessler/SecLists/blob/913b327317496d062bcc7cace524aaad8a693be2/Passwords/Common-Credentials/10k-most-common.txt',
+    note: 'The common passwords a new password may not be.',
+    licenseFile: 'src/Api/Infrastructure/Auth/CommonPasswords/LICENSE.txt',
+  },
+]
+
+function vendored() {
+  for (const v of VENDORED) {
+    deps.push({
+      ecosystem: 'Data', name: v.name, version: v.version, license: v.license, component: v.component,
+      direct: true, url: v.url, note: v.note,
+    })
+    licenseFiles.set(`data:${v.name}@${v.version}`, { license: readFileSync(join(ROOT, v.licenseFile), 'utf8').trim(), notices: [] })
+  }
+}
+
 for (const [dir, component] of NPM) npmPackages(dir, component)
 nugetPackages()
 images()
+vendored()
 
 // One entry per package, version and component, sorted, so the file only
 // changes when a dependency does.
@@ -284,7 +309,7 @@ const noticeIndex = new Map() // text -> number
 const failures = []
 for (const d of list) {
   if (d.ecosystem === 'Container') continue
-  const key = `${d.ecosystem === 'npm' ? 'npm' : 'nuget'}:${d.name}@${d.version}`
+  const key = `${d.ecosystem === 'npm' ? 'npm' : d.ecosystem === 'Data' ? 'data' : 'nuget'}:${d.name}@${d.version}`
   if (seen.has(key)) continue
   seen.add(key)
   lines.push('-'.repeat(78), `${d.name} ${d.version} (${d.ecosystem})`, `License: ${d.license}`, d.url ?? '', '')

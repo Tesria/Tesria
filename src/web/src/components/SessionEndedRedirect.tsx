@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 
 /** Pages someone signed out is already meant to be on. */
-const SIGNED_OUT_PAGES = new Set(['/login', '/register', '/recover', '/reset'])
+const SIGNED_OUT_PAGES = new Set(['/login', '/register', '/recover', '/reset', '/confirm-email'])
 
 /**
  * When the auth provider finds this tab's session ended elsewhere (t2-024),

@@ -31,14 +31,19 @@ export function PasswordInput({
   autoComplete,
   required,
   minLength,
+  maxLength,
   autoFocus,
+  describedBy,
 }: {
   value: string
   onChange: (e: ChangeEvent<HTMLInputElement>) => void
   autoComplete?: string
   required?: boolean
   minLength?: number
+  maxLength?: number
   autoFocus?: boolean
+  /** The id of the hint that says what a new password must be. */
+  describedBy?: string
 }) {
   const [visible, setVisible] = useState(false)
 
@@ -51,7 +56,9 @@ export function PasswordInput({
         autoComplete={autoComplete}
         required={required}
         minLength={minLength}
+        maxLength={maxLength}
         autoFocus={autoFocus}
+        aria-describedby={describedBy}
       />
       <button
         type="button"

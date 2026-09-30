@@ -1,7 +1,8 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useEffect, useId, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api, ApiError } from '../api/client'
 import { PasswordInput } from '../components/PasswordInput'
+import { PASSWORD_HINT, PASSWORD_MAX, PASSWORD_MIN, passwordProblem } from '../auth/passwordRule'
 import { AuthPage } from '../components/Brand'
 
 /**
@@ -28,6 +29,7 @@ export function RecoverPage() {
   const [emailOffered, setEmailOffered] = useState(false)
   const [method, setMethod] = useState<'code' | 'email'>('code')
   const [emailSent, setEmailSent] = useState<string | null>(null)
+  const hintId = useId()
 
   useEffect(() => {
     if (token) return
@@ -56,6 +58,11 @@ export function RecoverPage() {
     e.preventDefault()
     if (newPassword !== confirm) {
       setError('The new passwords do not match.')
+      return
+    }
+    const weak = passwordProblem(newPassword)
+    if (weak) {
+      setError(weak)
       return
     }
     setBusy(true)
@@ -160,10 +167,13 @@ export function RecoverPage() {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             autoComplete="new-password"
-            minLength={8}
+            minLength={PASSWORD_MIN}
+            maxLength={PASSWORD_MAX}
             required
             autoFocus={Boolean(token)}
+            describedBy={hintId}
           />
+          <span className="muted small" id={hintId}>{PASSWORD_HINT}</span>
         </label>
         <label>
           Confirm New Password
@@ -171,7 +181,8 @@ export function RecoverPage() {
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             autoComplete="new-password"
-            minLength={8}
+            minLength={PASSWORD_MIN}
+            maxLength={PASSWORD_MAX}
             required
           />
         </label>

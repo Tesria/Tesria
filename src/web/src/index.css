@@ -2347,6 +2347,9 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   border-radius: var(--radius); padding: 0.6rem 0.8rem; font-size: 0.9rem; margin: 0.5rem 0;
   background: var(--panel-success-bg); color: var(--panel-success-icon);
 }
+/* An email change waiting for its link (t2-009): the address can be long. */
+.profile__pending { overflow-wrap: anywhere; }
+.profile__pending p { margin: 0 0 0.5rem; }
 /* The username in the topbar is a link now, but should not read as one until
    hovered: it is a destination, not an action. */
 a.topbar__username:hover { color: var(--text); text-decoration: underline; }

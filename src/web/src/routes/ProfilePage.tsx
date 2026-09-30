@@ -1,8 +1,9 @@
-import { type FormEvent, useState , useEffect} from 'react'
+import { type FormEvent, useEffect, useId, useState } from 'react'
 import { api, ApiError, Permission } from '../api/client'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { PasswordInput } from '../components/PasswordInput'
+import { PASSWORD_HINT, PASSWORD_MAX, PASSWORD_MIN, passwordProblem } from '../auth/passwordRule'
 import { AvatarPicker } from '../components/AvatarPicker'
 import { RecoveryCodesSection } from '../components/RecoveryCodesSection'
 import { SessionsSection } from '../components/SessionsSection'
@@ -38,6 +39,13 @@ export function ProfilePage() {
   const [emailPassword, setEmailPassword] = useState('')
   const [emailStatus, setEmailStatus] = useState<Status>(null)
   const [emailBusy, setEmailBusy] = useState(false)
+  // Whether this instance sends email decides how a change works (t2-009):
+  // with email, a link to the new address confirms it; without, it is at once.
+  const [sendsEmail, setSendsEmail] = useState<boolean | null>(null)
+  useEffect(() => {
+    api.auth.recoveryOptions().then((o) => setSendsEmail(o.emailEnabled)).catch(() => setSendsEmail(null))
+  }, [])
+  const passwordHintId = useId()
 
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -73,12 +81,47 @@ export function ProfilePage() {
     setEmailBusy(true)
     setEmailStatus(null)
     try {
-      await api.auth.changeEmail({ currentPassword: emailPassword, email })
+      const updated = await api.auth.changeEmail({ currentPassword: emailPassword, email })
       await refresh()
       setEmailPassword('')
-      setEmailStatus({ kind: 'ok', message: 'Email address updated.' })
+      if (updated.pendingEmail) {
+        // Nothing has changed yet: the field goes back to the address that
+        // still signs in, and the waiting change is shown above it.
+        setEmail(updated.email)
+        setEmailStatus({ kind: 'ok', message: `We sent a link to ${updated.pendingEmail}. Open it to finish the change.` })
+      } else {
+        setEmailStatus({ kind: 'ok', message: 'Email address updated.' })
+      }
     } catch (err) {
       setEmailStatus({ kind: 'error', message: message(err, 'Could not update your email address.') })
+    } finally {
+      setEmailBusy(false)
+    }
+  }
+
+  async function resendEmail() {
+    setEmailBusy(true)
+    setEmailStatus(null)
+    try {
+      const updated = await api.auth.resendEmailChange()
+      await refresh()
+      setEmailStatus({ kind: 'ok', message: `We sent a new link to ${updated.pendingEmail}. Earlier links no longer work.` })
+    } catch (err) {
+      setEmailStatus({ kind: 'error', message: message(err, 'Could not send the link again.') })
+    } finally {
+      setEmailBusy(false)
+    }
+  }
+
+  async function cancelEmail() {
+    setEmailBusy(true)
+    setEmailStatus(null)
+    try {
+      await api.auth.cancelEmailChange()
+      await refresh()
+      setEmailStatus({ kind: 'ok', message: 'Email change canceled. The link no longer works.' })
+    } catch (err) {
+      setEmailStatus({ kind: 'error', message: message(err, 'Could not cancel the change.') })
     } finally {
       setEmailBusy(false)
     }
@@ -92,10 +135,17 @@ export function ProfilePage() {
       setPasswordStatus({ kind: 'error', message: 'The new passwords do not match.' })
       return
     }
+    const weak = passwordProblem(newPassword)
+    if (weak) {
+      setPasswordStatus({ kind: 'error', message: weak })
+      return
+    }
     setPasswordBusy(true)
     setPasswordStatus(null)
     try {
       await api.auth.changePassword({ currentPassword, newPassword })
+      // A waiting email change stops with a new password (t2-009).
+      await refresh()
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
@@ -163,9 +213,28 @@ export function ProfilePage() {
             </p>
           ) : (
             <form onSubmit={saveEmail}>
+              {user.pendingEmail && (
+                <div className="alert alert--warning profile__pending">
+                  <p className="small">
+                    <strong>Waiting for confirmation:</strong> {user.pendingEmail}.{' '}
+                    {user.pendingEmailExpiresAt && new Date(user.pendingEmailExpiresAt) < new Date()
+                      ? 'The link has expired: send a new one, or cancel the change.'
+                      : `Open the link we sent there to make it your sign-in email. Until then you sign in with ${user.email}.`}
+                  </p>
+                  <div className="row-gap">
+                    <button type="button" className="btn btn--ghost" onClick={resendEmail} disabled={emailBusy}>Resend Link</button>
+                    <button type="button" className="btn btn--ghost" onClick={cancelEmail} disabled={emailBusy}>Cancel Change</button>
+                  </div>
+                </div>
+              )}
               <label>
                 Email Address
                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <span className="muted small">
+                  {sendsEmail === false
+                    ? 'This instance does not send email, so a change takes effect at once. Check the new address carefully: you sign in with it.'
+                    : 'We send a link to the new address, and the change takes effect when it is opened. Your current address is told too.'}
+                </span>
               </label>
               <label>
                 Current Password
@@ -210,9 +279,12 @@ export function ProfilePage() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   autoComplete="new-password"
-                  minLength={8}
+                  minLength={PASSWORD_MIN}
+                  maxLength={PASSWORD_MAX}
                   required
+                  describedBy={passwordHintId}
                 />
+                <span className="muted small" id={passwordHintId}>{PASSWORD_HINT}</span>
               </label>
               <label>
                 Confirm New Password
@@ -220,7 +292,8 @@ export function ProfilePage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   autoComplete="new-password"
-                  minLength={8}
+                  minLength={PASSWORD_MIN}
+                  maxLength={PASSWORD_MAX}
                   required
                 />
               </label>

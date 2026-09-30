@@ -33,6 +33,7 @@ import { SpaceTemplatesPage } from './routes/SpaceTemplatesPage'
 import { SpaceWebhooksPage } from './routes/SpaceWebhooksPage'
 import { ProfilePage } from './routes/ProfilePage'
 import { RecoverPage } from './routes/RecoverPage'
+import { ConfirmEmailPage } from './routes/ConfirmEmailPage'
 import { AdminLayout } from './routes/admin/AdminLayout'
 import { AdminDashboardPage } from './routes/admin/AdminDashboardPage'
 import { AdminUsersPage } from './routes/admin/AdminUsersPage'
@@ -71,6 +72,8 @@ const router = createBrowserRouter(
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/recover" element={<RecoverPage />} />
           <Route path="/reset" element={<RecoverPage />} />
+          {/* The link that confirms a new sign-in email (t2-009): signed in or not, as /reset. */}
+          <Route path="/confirm-email" element={<ConfirmEmailPage />} />
           {/* The shell renders for anonymous readers too (dev-plan 5.3);
               the server decides what they can see. Routes that need an
               account sit under a nested ProtectedRoute. */}

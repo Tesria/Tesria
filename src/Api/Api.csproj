@@ -30,6 +30,13 @@
     <EmbeddedResource Include="Features\Trust\trust.css" LogicalName="trust/trust.css" />
   </ItemGroup>
 
+  <!-- The common passwords a new password may not be (T1-026). Its source
+       and license are in CommonPasswords/LICENSE.txt, and in the About tab's
+       notices (scripts/deps/build-manifest.mjs, VENDORED). -->
+  <ItemGroup>
+    <EmbeddedResource Include="Infrastructure\Auth\CommonPasswords\10k-most-common.txt" LogicalName="Tesria.CommonPasswords.txt" />
+  </ItemGroup>
+
   <ItemGroup>
     <!-- Data layer: EF Core 10 + PostgreSQL (Npgsql). Design package enables
          `dotnet ef` migrations at build/dev time. -->

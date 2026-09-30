@@ -42,6 +42,10 @@ export type User = {
   emailNotifications: EmailNotificationMode
   /** The colors this person's next new code block starts with; null is Default (2026-09-29). */
   codeBlockScheme: string | null
+  /** A sign-in email change waiting for its link to be opened, and when the
+   *  link expires (t2-009). Until then `email` is still the sign-in address. */
+  pendingEmail?: string | null
+  pendingEmailExpiresAt?: string | null
   /** Instance rights this account holds (dev-plan 11.1). The UI renders from
    *  these; every one is enforced server-side as well. */
   permissions: string[]
@@ -1399,6 +1403,7 @@ export const api = {
     me: () => request<User>('GET', '/api/auth/me'),
     login: (email: string, password: string) =>
       request<User | TotpChallenge>('POST', '/api/auth/login', { email, password }),
+    /** An empty challenge after single sign-on: the server holds it in a cookie (t2-020). */
     loginTotp: (challenge: string, code: string) =>
       request<User>('POST', '/api/auth/login/totp', { challenge, code }),
     /** Confirms the password (or a code) for sudo mode. */
@@ -1438,8 +1443,14 @@ export const api = {
       request<OnboardingSummary>('PUT', '/api/auth/me/onboarding', input),
     updateProfile: (input: { displayName: string }) =>
       request<User>('PUT', '/api/auth/me', input),
+    /** With email on, the change waits for a link sent to the new address (t2-009): see `pendingEmail`. */
     changeEmail: (input: { currentPassword: string; email: string }) =>
       request<User>('PUT', '/api/auth/me/email', input),
+    resendEmailChange: () => request<User>('POST', '/api/auth/me/email/resend'),
+    cancelEmailChange: () => request<User>('DELETE', '/api/auth/me/email/pending'),
+    /** The link's token; anonymous, as a reset link is. */
+    confirmEmail: (token: string) =>
+      request<{ email: string }>('POST', '/api/auth/email/confirm', { token }),
     changePassword: (input: { currentPassword: string; newPassword: string }) =>
       request<User>('PUT', '/api/auth/me/password', input),
     recoveryStatus: () =>

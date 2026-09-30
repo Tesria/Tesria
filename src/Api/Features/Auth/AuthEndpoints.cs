@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Tesria.Api.Features.Auth;
 
-public static class AuthEndpoints
+public static partial class AuthEndpoints
 {
     /// <summary>
     /// Claim carrying <see cref="User.SecurityStamp"/>. Shared with
@@ -47,8 +47,8 @@ public static class AuthEndpoints
     private static TimeSpan FreshAuthWindow(IConfiguration config) =>
         TimeSpan.FromMinutes(config.GetValue("Auth:FreshLoginMinutes", DefaultFreshLoginMinutes));
 
-    /// <summary>Shared by registration and password change, so the two cannot drift apart.</summary>
-    public const int MinPasswordLength = 8;
+    /// <summary>The shortest new password; the whole rule is <see cref="PasswordRules"/>.</summary>
+    public const int MinPasswordLength = PasswordRules.MinLength;
 
     /// <summary>Which session row this cookie belongs to (dev-plan 3.5).</summary>
     public const string SessionClaim = "tesria:session";
@@ -95,7 +95,12 @@ public static class AuthEndpoints
         /// </summary>
         bool TotpMandatory,
         /// <summary>The colors a new code block starts with; null is Default (2026-09-29).</summary>
-        string? CodeBlockScheme);
+        string? CodeBlockScheme,
+        /// <summary>
+        /// A sign-in email change waiting for its link to be opened, and when
+        /// that link expires (t2-009). Null when there is none.
+        /// </summary>
+        string? PendingEmail = null, DateTimeOffset? PendingEmailExpiresAt = null);
     public record NotificationPreferenceRequest(EmailNotificationMode EmailNotifications);
     public record EditorPreferenceRequest(string? CodeBlockScheme);
 
@@ -172,6 +177,9 @@ public static class AuthEndpoints
         group.MapGet("/me", Me);
         group.MapPut("/me", UpdateProfile).RequireAuthorization();
         group.MapPut("/me/email", ChangeEmail).RequireAuthorization();
+        group.MapPost("/me/email/resend", ResendEmailChange).RequireAuthorization().RequireRateLimiting(RateLimits.AuthPolicy);
+        group.MapDelete("/me/email/pending", CancelEmailChange).RequireAuthorization();
+        group.MapPost("/email/confirm", ConfirmEmailChange).RequireRateLimiting(RateLimits.AuthPolicy);
         group.MapPut("/me/password", ChangePassword).RequireAuthorization();
         group.MapGet("/me/recovery-codes", RecoveryStatus).RequireAuthorization();
         group.MapPost("/me/recovery-codes", RegenerateCodes).RequireAuthorization();
@@ -236,9 +244,8 @@ public static class AuthEndpoints
             return Results.ValidationProblem(Error("email", "A valid email address is required."));
         if (displayName.Length == 0)
             return Results.ValidationProblem(Error("displayName", "Display name is required."));
-        if ((req.Password ?? "").Length < MinPasswordLength)
-            return Results.ValidationProblem(Error("password",
-                $"Password must be at least {MinPasswordLength} characters."));
+        if (PasswordRules.Problem(req.Password) is { } weak)
+            return Results.ValidationProblem(Error("password", weak));
 
         // Both the duplicate-email check and "is this the first account?" read the
         // table before writing to it, so they run in one serializable transaction:
@@ -393,10 +400,15 @@ public static class AuthEndpoints
         ITotpService totp,
         Infrastructure.Permissions.IInstancePermissions rights)
     {
+        // After single sign-on the challenge comes in a cookie instead, so it
+        // never sits in the address bar (t2-020); the page sends none.
+        var viaSso = string.IsNullOrEmpty(req.Challenge);
+        var challenge = viaSso ? http.Request.Cookies[SsoChallengeCookie] ?? "" : req.Challenge;
+
         // The challenge names its user; that user's live nonce decides whether
         // it is still good. Loaded first, then checked, in one lookup.
         User? user = null;
-        var userId = totp.RedeemChallenge(req.Challenge, ClientIp(http), id =>
+        var userId = totp.RedeemChallenge(challenge, ClientIp(http), id =>
         {
             user = db.Users.FirstOrDefault(u => u.Id == id);
             return user?.TotpChallengeNonce;
@@ -428,20 +440,18 @@ public static class AuthEndpoints
 
         // Spent: the same challenge cannot sign in a second time.
         user.TotpChallengeNonce = null;
-        return await CompleteSignInAsync(db, http, audit, recovery, siteSettings, detector, user, totp: true, rights);
+        if (viaSso) http.Response.Cookies.Delete(SsoChallengeCookie, SsoChallengeCookieOptions(http));
+        return await CompleteSignInAsync(db, http, audit, recovery, siteSettings, detector, user, totp: true, rights, sso: viaSso);
     }
 
     /// <summary>What both sign-in paths share once identity is proven.</summary>
     private static async Task<IResult> CompleteSignInAsync(
         AppDbContext db, HttpContext http, IAuditLogger audit, IAccountRecoveryService recovery,
         ISiteSettingsService siteSettings, ISecurityDetector detector, User user, bool totp,
-        Infrastructure.Permissions.IInstancePermissions rights)
+        Infrastructure.Permissions.IInstancePermissions rights, bool sso = false)
     {
         AuthLockout.Reset(user);
-        // Before the login row is written, so the history it consults is the
-        // history *before* this sign-in.
-        await detector.SucceededLoginAsync(user, ClientIp(http));
-        audit.RecordAs(user.Id, "user.login", "user", user.Id, new { Ip = ClientIp(http), Totp = totp });
+        await RecordSignInAsync(http, audit, detector, user, totp, sso);
         await db.SaveChangesAsync();
 
         await SignIn(http, db, user);
@@ -605,12 +615,20 @@ public static class AuthEndpoints
     {
         var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
         if (user.PasswordHash is null)
-            return Results.ValidationProblem(Error("currentPassword",
-                "This account signs in through your identity provider, which handles two-factor."));
-
+        {
+            // An account with no Tesria password may still turn on Tesria's
+            // own two-factor, which single sign-on now asks for too (t2-020).
+            // It is how such an administrator meets Require Two-Factor for
+            // Administrators: before, the rule held their rights back and the
+            // profile refused to set it up, so they could never administer.
+            // With no password to ask for, a recent sign-in is the proof.
+            if (!IsFreshlyAuthenticated(http, FreshAuthWindow(config)))
+                return Results.ValidationProblem(Error("currentPassword",
+                    "Sign out, sign in again, then set up two-factor sign-in within a few minutes."));
+        }
         // The same rule as recovery codes: a supplied password must be right;
         // omitting it is allowed only inside the fresh-login window.
-        if (!string.IsNullOrEmpty(req.CurrentPassword))
+        else if (!string.IsNullOrEmpty(req.CurrentPassword))
         {
             if (!hasher.Verify(req.CurrentPassword, user.PasswordHash))
                 return Results.ValidationProblem(Error("currentPassword", "Current password is incorrect."));
@@ -798,7 +816,7 @@ public static class AuthEndpoints
         return new UserResponse(user.Id, user.Email, user.DisplayName, user.Role, user.AvatarHash, user.AvatarVariant,
             user.PasswordHash != null, remaining, enabled, required, user.EmailNotifications, held, roleName,
             setupRequired, Onboarding.SummaryFor(user), user.RecoveryCodesAcknowledgedAt != null, mandatory,
-            user.CodeBlockScheme);
+            user.CodeBlockScheme, user.PendingEmail, user.PendingEmail is null ? null : user.PendingEmailExpiresAt);
     }
 
     private static async Task<IResult> UpdateProfile(
@@ -822,38 +840,6 @@ public static class AuthEndpoints
         return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user, rights));
     }
 
-    private static async Task<IResult> ChangeEmail(
-        ChangeEmailRequest req, AppDbContext db, IPasswordHasher hasher, CurrentUser current,
-        IAuditLogger audit, HttpContext http, IAccountRecoveryService recovery, ISiteSettingsService siteSettings,
-        Infrastructure.Permissions.IInstancePermissions rights)
-    {
-        var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
-        if (user.PasswordHash is null)
-            return Results.ValidationProblem(Error("email",
-                "This account signs in through your identity provider, which owns its email address."));
-
-        if (!hasher.Verify(req.CurrentPassword ?? "", user.PasswordHash))
-            return Results.ValidationProblem(Error("currentPassword", "Current password is incorrect."));
-
-        var email = (req.Email ?? "").Trim().ToLowerInvariant();
-        if (!IsValidEmail(email))
-            return Results.ValidationProblem(Error("email", "A valid email address is required."));
-
-        if (email != user.Email && await db.Users.AnyAsync(u => u.Email == email))
-            return Results.Conflict(new { message = "An account with this email already exists." });
-
-        var previous = user.Email;
-        user.Email = email;
-        // The address is an identity, so the change is worth a record: the old
-        // value included, since "who used to be this address" is the question
-        // an operator will actually be asking.
-        audit.Record("user.email_changed", "user", user.Id, new { From = previous, To = email });
-        await db.SaveChangesAsync();
-
-        await SignIn(http, db, user, AuthTimeOf(http), SessionIdOf(http.User));
-        return Results.Ok(await ResponseForAsync(db, recovery, siteSettings, user, rights));
-    }
-
     private static async Task<IResult> ChangePassword(
         ChangePasswordRequest req, AppDbContext db, IPasswordHasher hasher, CurrentUser current,
         IAuditLogger audit, HttpContext http, IAccountRecoveryService recovery, ISiteSettingsService siteSettings,
@@ -867,16 +853,18 @@ public static class AuthEndpoints
         if (!hasher.Verify(req.CurrentPassword ?? "", user.PasswordHash))
             return Results.ValidationProblem(Error("currentPassword", "Current password is incorrect."));
 
-        // Same rule as registration, in one place rather than two.
-        if ((req.NewPassword ?? "").Length < MinPasswordLength)
-            return Results.ValidationProblem(Error("newPassword",
-                $"Password must be at least {MinPasswordLength} characters."));
+        // The same rule as every other path that sets a password (T1-026).
+        if (PasswordRules.Problem(req.NewPassword) is { } weak)
+            return Results.ValidationProblem(Error("newPassword", weak));
 
         user.PasswordHash = hasher.Hash(req.NewPassword!);
         // Rotating the stamp is what actually signs the other sessions out: a
         // stolen cookie stops working on its next request, which is the point of
         // changing a password you think someone else has.
         user.SecurityStamp = Guid.NewGuid().ToString("N");
+        // A waiting email change stops too: the notice to the old address
+        // says a new password is how to stop one that was not theirs (t2-009).
+        CancelPendingEmail(user, audit, "password changed");
         audit.Record("user.password_changed", "user", user.Id);
         await db.SaveChangesAsync();
 
@@ -1006,9 +994,8 @@ public static class AuthEndpoints
             return Results.Problem(
                 "Too many attempts. Try again later.", statusCode: StatusCodes.Status429TooManyRequests);
 
-        if ((req.NewPassword ?? "").Length < MinPasswordLength)
-            return Results.ValidationProblem(Error("newPassword",
-                $"Password must be at least {MinPasswordLength} characters."));
+        if (PasswordRules.Problem(req.NewPassword) is { } weak)
+            return Results.ValidationProblem(Error("newPassword", weak));
 
         var user = await recovery.RedeemCodeAsync(email, req.Code ?? "");
         if (user is null)
@@ -1037,9 +1024,8 @@ public static class AuthEndpoints
             return Results.Problem(
                 "Too many attempts. Try again later.", statusCode: StatusCodes.Status429TooManyRequests);
 
-        if ((req.NewPassword ?? "").Length < MinPasswordLength)
-            return Results.ValidationProblem(Error("newPassword",
-                $"Password must be at least {MinPasswordLength} characters."));
+        if (PasswordRules.Problem(req.NewPassword) is { } weak)
+            return Results.ValidationProblem(Error("newPassword", weak));
 
         var user = await recovery.RedeemResetTokenAsync(token);
         if (user is null)
@@ -1068,6 +1054,7 @@ public static class AuthEndpoints
         // Proving ownership through recovery ends any lockout: the person the
         // lock was protecting is the one standing here.
         AuthLockout.Reset(user);
+        CancelPendingEmail(user, audit, "password recovered");
         audit.RecordAs(user.Id, "user.password_recovered", "user", user.Id, new { Method = method });
         await db.SaveChangesAsync();
     }

@@ -1,8 +1,9 @@
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useId, useState } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { PasswordInput } from '../components/PasswordInput'
+import { PASSWORD_HINT, PASSWORD_MAX, PASSWORD_MIN, passwordProblem } from '../auth/passwordRule'
 import { RecoveryCodes } from '../components/RecoveryCodes'
 import { AuthPage } from '../components/Brand'
 
@@ -19,6 +20,7 @@ export function RegisterPage() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [codes, setCodes] = useState<string[] | null>(null)
+  const hintId = useId()
 
   // Registration signs the user straight in, so this guard would fire the
   // moment the account exists and redirect past the recovery codes, which are
@@ -47,6 +49,11 @@ export function RegisterPage() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
+    const weak = passwordProblem(password)
+    if (weak) {
+      setError(weak)
+      return
+    }
     setBusy(true)
     setError(null)
     try {
@@ -76,7 +83,9 @@ export function RegisterPage() {
         </label>
         <label>
           Password
-          <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required minLength={8} />
+          <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required
+            minLength={PASSWORD_MIN} maxLength={PASSWORD_MAX} describedBy={hintId} />
+          <span className="muted small" id={hintId}>{PASSWORD_HINT}</span>
         </label>
         <button type="submit" className="btn btn--primary" disabled={busy}>
           {busy ? 'Creating…' : 'Create Account'}
