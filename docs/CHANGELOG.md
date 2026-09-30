@@ -5,9 +5,47 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Decided by the owner** (2026-09-29), from the QA run's questions:
+  - *Changing your sign-in email waits for a link* (t2-009). With email on,
+    the new address gets a confirmation link and the old one a notice; the
+    change takes effect only when the link is opened, within 24 hours. The
+    profile shows the waiting address with Resend Link and Cancel Change,
+    and a password change or recovery cancels it. With email off the change
+    is still immediate, and the profile says so first. Migration
+    `PendingEmailChange` (three nullable columns on `Users`).
+  - *Single sign-on asks for Tesria's two-factor code* (t2-020) when the
+    account has it on, on the same One More Step page as after a password;
+    recovery codes work there. SSO sign-ins are now audited. An
+    administrator who signs in only through SSO can set up Tesria's
+    two-factor, so Require Two-Factor for Administrators no longer locks
+    them out.
+  - *A password rule* (T1-026). New passwords, the owner's included, must
+    be 8 to 1024 characters, not only spaces, and not one of the 10,000
+    most common (SecLists' list, MIT, bundled). Existing passwords keep
+    working until changed.
+  - *The Audit tab filters and reads further back* (T7-019): by action (one
+    or a whole family), person and date, with Show Older, and a run of
+    failed sign-ins folds into one line. `GET /api/audit` gains `before`,
+    `action`, `actorId`, `from`, `to` and an `X-Audit-Next-Before` header.
+  - *The Owner role stays fixed with every right* (T7-021, above): the
+    owner confirmed it; a less privileged account is the way to work day to
+    day.
+- **Fixed: an assistant's section save replaced the whole page.** Through
+  MCP, a section read with `get_page` and sent back with `update_page`
+  replaced the page with that section. `update_page` now takes the same
+  `section` option and replaces only that section; a section read is
+  marked, and refused as a whole-page body with a message naming the
+  `section` to pass.
+- **Fixed: email links on a non-default HTTPS port** (a second Tesria on
+  one computer) pointed at port 443. They now carry the port, unless the
+  owner has set a Public Address.
+- **Fixed: the trust scripts said "Still failing" after trusting** a
+  Tesria on ports of its own (WIN-003); they now check the HTTPS address
+  the server redirects to.
 - **The QA run's Medium bugs** (the owner, 2026-09-29): 53 of the 57 still
   open after 0.8.2, fixed by area. Four are questions for the owner and are
-  unchanged: t2-009, t2-020, T7-019 and T1-026.
+  unchanged at first; the owner then decided them, and they are fixed
+  below under *Decided by the owner*.
   - *Accounts.* Email that could not be sent during a mail server outage is
     no longer lost: notifications and reset links wait and are tried again,
     and administrators get the alert "Email is not getting through to the
