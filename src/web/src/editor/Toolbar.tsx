@@ -193,7 +193,7 @@ export function Toolbar({ editor, getUploadPageId, onUploadError }: Props) {
       <span data-tb-fixed="style">
         <TextStyleMenu
           title="Text"
-          compactLabel={<><span className="toolbar-dropdown__compact-glyph">Aa</span> Style</>}
+          compactLabel={<><span className="toolbar-dropdown__compact-glyph">Aa</span><span className="toolbar-dropdown__compact-word">Style</span></>}
           overflow={overflowActions}
           styles={[
             // The trigger reads "Normal text ⌄", as Confluence's does.
