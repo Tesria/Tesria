@@ -1,0 +1,73 @@
+# Keeps the About tab's dependency list current on Dependabot's PRs
+# (2026-10-01). CI fails an update whose src/Api/About/dependencies.json no
+# longer matches the lockfiles, and Dependabot cannot run the script that
+# writes it, so every update arrived red. This runs that script on the
+# update's own branch and commits the result, then starts CI on the new
+# commit: a push made with the workflow token starts no runs by itself.
+#
+# Dependabot stops rebasing a PR once someone else has committed to it. If
+# an update falls behind main, comment "@dependabot recreate" on it; this
+# runs again on the recreated branch.
+#
+# The token here can write, so nothing from the update is executed:
+# `npm ci --ignore-scripts` installs without running any package's install
+# scripts, which is all the license texts need.
+name: Dependabot manifest
+
+on:
+  pull_request:
+    paths:
+      - '**/package-lock.json'
+      - 'src/Api/*.csproj'
+      - '**/Dockerfile'
+      - 'docker-compose.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependabot-manifest-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  manifest:
+    name: Refresh the dependency manifest
+    if: >-
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Install packages without running their scripts
+        run: |
+          for dir in src/web collab pdf; do
+            (cd "$dir" && npm ci --ignore-scripts --no-audit --no-fund)
+          done
+          dotnet restore src/Api
+      - run: node scripts/deps/build-manifest.mjs
+      - name: Commit the manifest and start CI on it
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- src/Api/About; then
+            echo "The manifest is already current."
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/Api/About
+          git commit -m "Dependency manifest for this update"
+          git push origin "HEAD:$GITHUB_HEAD_REF"
+          gh workflow run ci.yml --ref "$GITHUB_HEAD_REF"

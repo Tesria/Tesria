@@ -24,11 +24,23 @@ namespace Tesria.Api.Features.Export;
 /// </summary>
 public static class ProseMirrorRenderer
 {
-    public static string ToMarkdown(string contentJson, IReadOnlyList<BlockResult?>? blocks = null, string? baseUrl = null)
+    /// <summary>Opens a live block's snapshot in Markdown written for an assistant (see <see cref="ToMarkdown"/>).</summary>
+    public const string LiveStart = "<!-- tesria-live: a live block; keep this and the closing comment to keep it live -->";
+    /// <summary>Closes a live block's snapshot.</summary>
+    public const string LiveEnd = "<!-- /tesria-live -->";
+
+    /// <param name="liveMarkers">
+    /// Wrap each live block's snapshot in <see cref="LiveStart"/> and
+    /// <see cref="LiveEnd"/>, for an assistant (MCP get_page): what comes back
+    /// between them is that live block, unchanged, whatever its results are
+    /// by then (t5-R02). Off for the Markdown export, which is a document.
+    /// </param>
+    public static string ToMarkdown(string contentJson, IReadOnlyList<BlockResult?>? blocks = null, string? baseUrl = null,
+        bool liveMarkers = false)
     {
         if (!TryParse(contentJson, out var root)) return string.Empty;
         var sb = new StringBuilder();
-        RenderMarkdownChildren(root, sb, listDepth: 0, new Ctx(root, blocks, baseUrl));
+        RenderMarkdownChildren(root, sb, listDepth: 0, new Ctx(root, blocks, baseUrl) { LiveMarkers = liveMarkers });
         return sb.ToString().TrimEnd() + "\n";
     }
 
@@ -72,6 +84,9 @@ public static class ProseMirrorRenderer
             blocks is not null && _nextBlock < blocks.Count ? blocks[_nextBlock++] : null;
 
         public string? BaseUrl { get; } = baseUrl?.TrimEnd('/');
+
+        /// <summary>See <see cref="ToMarkdown"/>'s liveMarkers.</summary>
+        public bool LiveMarkers { get; init; }
 
         /// <summary>
         /// Set while a table cell is rendered: a GFM cell is one line, so the
@@ -200,7 +215,9 @@ public static class ProseMirrorRenderer
                 sb.Append('@').Append(MentionLabel(node));
                 break;
             case "dynamicBlock":
+                if (ctx.LiveMarkers) sb.Append(LiveStart).Append("\n\n");
                 RenderMarkdownBlock(node, ctx.NextBlock(), ctx, sb, listDepth);
+                if (ctx.LiveMarkers) sb.Append(LiveEnd).Append("\n\n");
                 break;
             case "math":
                 var mdLatex = Attr(node, "latex") ?? "";

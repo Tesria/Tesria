@@ -92,7 +92,8 @@ public sealed class TesriaTools
         // display inside a section is still that page's children.
         var content = wantJson
             ? json
-            : ProseMirrorRenderer.ToMarkdown(json, await PageSnapshots.BlocksAsync(page.Id, json, blocks, ct), baseUrl);
+            : ProseMirrorRenderer.ToMarkdown(json, await PageSnapshots.BlocksAsync(page.Id, json, blocks, ct), baseUrl,
+                liveMarkers: true);
         // One section is marked as one, so it cannot be sent back as the
         // whole page and replace everything else.
         if (!string.IsNullOrEmpty(wanted))
@@ -394,8 +395,39 @@ public sealed class TesriaTools
             replacement = doc?["content"] as JsonArray
                 ?? throw new McpException("`contentJson` must be a ProseMirror document: {\"type\":\"doc\",\"content\":[...]}.");
         }
+        if (SectionShapeProblem(wanted, PageSections.Outline(current), replacement) is { } problem)
+            throw new McpException(problem);
         return PageSections.Replace(current, wanted, replacement)!;
     }
+
+    /// <summary>
+    /// Why this cannot be the section <paramref name="wanted"/>'s new content,
+    /// or null when it can (t5-R07, the 0.8.3 retest). A section is its
+    /// heading and what follows it up to the next heading of the same or a
+    /// higher level, so its content starts with a heading of its level and
+    /// holds no other heading that high. The whole page sent with a section's
+    /// name was accepted, and the page then held its other sections twice.
+    /// Empty content still removes the section.
+    /// </summary>
+    internal static string? SectionShapeProblem(string wanted, IReadOnlyList<PageSections.Heading> outline, JsonArray replacement)
+    {
+        if (replacement.Count == 0) return null;
+        var level = outline.FirstOrDefault(h => h.Id == wanted)?.Level ?? 1;
+        static int? LevelOf(JsonNode? block) =>
+            block?["type"]?.GetValue<string>() == "heading" ? (block["attrs"]?["level"]?.GetValue<int>() ?? 1) : null;
+        if (LevelOf(replacement[0]) != level)
+            return $"The content for section '{wanted}' must start with that section's heading, a level-{level} heading, "
+                + "as get_page returned it with `section`. To remove the section, send empty content.";
+        for (var i = 1; i < replacement.Count; i++)
+            if (LevelOf(replacement[i]) is { } found && found <= level)
+                return $"That content goes past the section '{wanted}': it also holds another heading of its level or higher "
+                    + $"(\"{HeadingText(replacement[i])}\"). Send only that section, from its heading up to the next one of its "
+                    + "level, or send the whole page without `section`.";
+        return null;
+    }
+
+    private static string HeadingText(JsonNode? heading) =>
+        string.Concat((heading?["content"] as JsonArray ?? []).Select(n => n?["text"]?.GetValue<string>() ?? ""));
 
     /// <summary>
     /// The Markdown written onto the page as it is, keeping every block the

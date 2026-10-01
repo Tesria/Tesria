@@ -116,6 +116,13 @@ public class PageTests
             ("""{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"hi","marks":[{"type":"sparkle"}]}]}]}""", "\"sparkle\""),
             ("""{"type":"doc","content":{"type":"paragraph"}}""", "must be a list"),
             ("""{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":""}]}]}""", "non-empty"),
+            // t5-R05: known names in places the editor cannot have them.
+            ("""{"type":"doc","content":[{"type":"text","text":"straight under the document"}]}""", "\"text\" cannot go inside a \"doc\""),
+            ("""{"type":"doc","content":[{"type":"paragraph","content":[{"type":"paragraph"}]}]}""", "\"paragraph\" cannot go inside a \"paragraph\""),
+            ("""{"type":"doc","content":[{"type":"bulletList","content":[{"type":"paragraph"}]}]}""", "cannot go inside a \"bulletList\""),
+            ("""{"type":"doc","content":[{"type":"bulletList"}]}""", "\"bulletList\" cannot be empty"),
+            ("""{"type":"doc","content":[{"type":"panel","content":[{"type":"layoutSection","content":[{"type":"layoutColumn","content":[{"type":"paragraph"}]},{"type":"layoutColumn","content":[{"type":"paragraph"}]}]}]}]}""", "\"layoutSection\" cannot go inside a \"panel\""),
+            ("""{"type":"doc","content":[{"type":"image","content":[{"type":"paragraph"}]}]}""", "holds no content"),
         })
         {
             var res = await client.PostAsJsonAsync("/api/pages",
@@ -139,7 +146,7 @@ public class PageTests
           {"type":"panel","attrs":{"panelType":"info"},"content":[{"type":"paragraph","content":[
             {"type":"text","text":"Due ","marks":[{"type":"bold"},{"type":"textColor","attrs":{"color":"red"}}]},
             {"type":"date","attrs":{"date":"2026-10-14"}},{"type":"status","attrs":{"text":"On track","color":"green"}}]}]},
-          {"type":"layoutSection","content":[{"type":"layoutColumn","content":[{"type":"paragraph"}]}]},
+          {"type":"layoutSection","content":[{"type":"layoutColumn","content":[{"type":"paragraph"}]},{"type":"layoutColumn","content":[{"type":"paragraph"}]}]},
           {"type":"dynamicBlock","attrs":{"kind":"children","params":{}}}
         ]}
         """;

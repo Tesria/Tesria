@@ -39,6 +39,52 @@ public class WebhookDeliveryTests
         new(Guid.NewGuid(), $"http://127.0.0.1:9{path}", "secret", "{}");
 
     [Fact]
+    public async Task A_slow_receiver_holds_up_only_its_own_webhook_and_keeps_its_order()
+    {
+        // t5-R09: one queue for everything, so one slow receiver held up every
+        // other space's webhooks, 21 seconds an event. Now another webhook's
+        // event goes at once, and one webhook's events still go in order.
+        var order = new ConcurrentQueue<string>();
+        var receiver = new Receiver(async (uri, ct) =>
+        {
+            if (uri.AbsolutePath == "/slow-first") await Task.Delay(TimeSpan.FromMilliseconds(600), ct);
+            order.Enqueue(uri.AbsolutePath);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+        var queue = new ChannelWebhookSender();
+        var egress = new EgressGuard(new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Egress:AllowedNetworks"] = "127.0.0.1/32" })
+            .Build());
+        using var service = new WebhookDeliveryBackgroundService(
+            queue, new Clients(receiver, TimeSpan.FromSeconds(5)),
+            NullLogger<WebhookDeliveryBackgroundService>.Instance, egress)
+        {
+            FirstRetryDelay = TimeSpan.FromMilliseconds(10),
+        };
+        var slowHook = Guid.NewGuid();
+
+        await service.StartAsync(CancellationToken.None);
+        try
+        {
+            queue.Enqueue(new(slowHook, "http://127.0.0.1:9/slow-first", "secret", "{}"));
+            queue.Enqueue(new(slowHook, "http://127.0.0.1:9/slow-second", "secret", "{}"));
+            queue.Enqueue(Delivery("/other-space"));
+
+            var deadline = DateTimeOffset.UtcNow.AddSeconds(20);
+            while (order.Count < 3 && DateTimeOffset.UtcNow < deadline) await Task.Delay(20);
+
+            var seen = order.ToArray();
+            Assert.Equal(3, seen.Length);
+            Assert.Equal("/other-space", seen[0]);
+            Assert.True(Array.IndexOf(seen, "/slow-first") < Array.IndexOf(seen, "/slow-second"));
+        }
+        finally
+        {
+            await service.StopAsync(CancellationToken.None);
+        }
+    }
+
+    [Fact]
     public async Task A_receiver_that_does_not_answer_in_time_is_retried_and_given_up_on_without_stopping_the_service()
     {
         // 0.8.1 QA, T5-027: HttpClient's timeout is a TaskCanceledException,
@@ -67,10 +113,13 @@ public class WebhookDeliveryTests
             queue.Enqueue(Delivery("/fine"));
 
             var deadline = DateTimeOffset.UtcNow.AddSeconds(20);
-            while (!receiver.Attempts.ContainsKey("/fine") && DateTimeOffset.UtcNow < deadline)
+            // Each webhook has its own lane (t5-R09), so the other delivery
+            // does not wait for this one's retries; wait for both.
+            while ((!receiver.Attempts.ContainsKey("/fine") || receiver.Attempts.GetValueOrDefault("/slow") < 3)
+                   && DateTimeOffset.UtcNow < deadline)
                 await Task.Delay(50);
 
-            // Three attempts, as documented, then on to the next delivery.
+            // Three attempts, as documented.
             Assert.Equal(3, receiver.Attempts.GetValueOrDefault("/slow"));
             Assert.Equal(1, receiver.Attempts.GetValueOrDefault("/fine"));
             Assert.False(service.ExecuteTask!.IsCompleted, "the delivery service stopped");
@@ -105,9 +154,13 @@ public class WebhookDeliveryTests
             queue.Enqueue(Delivery("/fine"));
 
             var deadline = DateTimeOffset.UtcNow.AddSeconds(20);
-            while (!receiver.Attempts.ContainsKey("/fine") && DateTimeOffset.UtcNow < deadline)
+            // Each webhook has its own lane (t5-R09), so the other delivery
+            // does not wait for this one's retries; wait for both.
+            while ((!receiver.Attempts.ContainsKey("/fine") || receiver.Attempts.GetValueOrDefault("/broken") < 3)
+                   && DateTimeOffset.UtcNow < deadline)
                 await Task.Delay(50);
 
+            // Three attempts, as documented.
             Assert.Equal(3, receiver.Attempts.GetValueOrDefault("/broken"));
             Assert.Equal(1, receiver.Attempts.GetValueOrDefault("/fine"));
             Assert.False(service.ExecuteTask!.IsCompleted, "the delivery service stopped");

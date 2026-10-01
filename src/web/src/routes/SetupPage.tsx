@@ -409,6 +409,16 @@ function InstanceStep({ busy, onNext }: { busy: boolean; onNext: (name: string, 
   const instance = useInstance()
   const [name, setName] = useState(instance?.instanceName ?? 'Tesria')
   const [baseUrl, setBaseUrl] = useState(window.location.origin)
+  // A Public Address already saved is what the box starts from, so passing
+  // this step again (resuming the wizard) keeps it rather than putting the
+  // browser's address over it (t1-R01, the 0.8.3 retest).
+  useEffect(() => {
+    let active = true
+    api.admin.settings.get()
+      .then((s) => { if (active && s.baseUrl) setBaseUrl(s.baseUrl) })
+      .catch(() => { /* the browser's address stays */ })
+    return () => { active = false }
+  }, [])
   return (
     <form className="setup__step-panel" onSubmit={(e) => { e.preventDefault(); onNext(name, baseUrl) }}>
       <h2>This Instance</h2>

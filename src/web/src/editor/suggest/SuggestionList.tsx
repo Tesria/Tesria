@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type ReactNode } from 'react'
 import type { SuggestionKeyDownProps } from '@tiptap/suggestion'
 import { keepHighlightInView } from './keepInView'
+import { pointerMoved } from './pointerMoved'
 
 export type SuggestionListRef = {
   onKeyDown: (props: SuggestionKeyDownProps) => boolean
@@ -28,6 +29,8 @@ function SuggestionListInner<T>(
 ) {
   const [selected, setSelected] = useState(0)
   const listRef = useRef<HTMLDivElement>(null)
+  // The last pointer position seen over the menu (t4-R04).
+  const lastPointer = useRef<{ x: number; y: number } | null>(null)
   // Set by the arrow keys only: a row picked by hovering is already under
   // the pointer, and scrolling for it would slide the next row under it.
   const fromKeys = useRef(false)
@@ -76,7 +79,11 @@ function SuggestionListInner<T>(
           type="button"
           className={i === selected ? 'suggest-menu__item is-selected' : 'suggest-menu__item'}
           onMouseDown={(e) => e.preventDefault()}
-          onMouseEnter={() => setSelected(i)}
+          onMouseMove={(e) => {
+            const now = { x: e.clientX, y: e.clientY }
+            if (pointerMoved(lastPointer.current, now)) setSelected(i)
+            lastPointer.current = now
+          }}
           onClick={() => onSelect(item)}
         >
           {render(item)}

@@ -191,10 +191,21 @@ export function CollaborativeEditor({
     provider.on('status', onStatus)
     provider.on('authenticationFailed', onRefused)
     provider.on('disconnect', onRefused)
+    // Leaving on purpose (Close, another page, or closing the tab), so the
+    // sidecar treats the draft as idle at once rather than after its
+    // reconnect grace (T5-031). The message follows every synced edit on the
+    // same socket, so an editor that can send it has nothing unsaved; a
+    // dropped connection sends nothing and keeps the grace.
+    const sayLeaving = () => {
+      try { provider.sendStateless(JSON.stringify({ type: 'leaving' })) } catch { /* not connected */ }
+    }
+    window.addEventListener('pagehide', sayLeaving)
     return () => {
+      window.removeEventListener('pagehide', sayLeaving)
       provider.off('status', onStatus)
       provider.off('authenticationFailed', onRefused)
       provider.off('disconnect', onRefused)
+      sayLeaving()
       provider.destroy()
       ydoc.destroy()
     }

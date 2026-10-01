@@ -111,13 +111,22 @@ public static class PageContent
             }
         }
 
+        var childTypes = new List<string>();
         if (node.TryGetProperty("content", out var content))
         {
             if (content.ValueKind != JsonValueKind.Array) return $"The content of a \"{type}\" must be a list.";
             foreach (var child in content.EnumerateArray())
+            {
                 if (NodeProblem(child, nodes, marks, depth + 1) is { } problem) return problem;
+                childTypes.Add(child.GetProperty("type").GetString()!);
+            }
         }
-        return null;
+        // Where each element may go, not only its name (t5-R05). An empty
+        // text block is fine; an empty list or table is not.
+        // A document with no blocks at all is left alone: the editor gives it
+        // an empty paragraph, and scripts have always been able to send one.
+        if (type == "doc" && childTypes.Count == 0) return null;
+        return Export.EditorSchema.ChildrenProblem(type, childTypes);
     }
 
     private static bool MayHaveExternalMarks(string json) =>

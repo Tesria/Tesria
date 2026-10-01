@@ -53,6 +53,25 @@ public class EmailChangeTests
         (await factory.CreateClient().PostAsJsonAsync("/api/auth/login", new { Email = email, Password = "supersecret" })).StatusCode;
 
     [Fact]
+    public async Task Asking_again_and_again_is_limited_so_the_instance_is_no_mail_relay()
+    {
+        // t2-R01: each request emails the typed address, and there was no
+        // limit, so any signed-in account could send the instance's mail to
+        // a stranger as fast as it liked. Ten an hour, changes and resends
+        // together.
+        using var factory = new TestAppFactory();
+        var (_, member, outbox) = await InstanceAsync(factory);
+        for (var i = 0; i < 9; i++)
+            (await ChangeAsync(member, $"sam{i}@example.com")).EnsureSuccessStatusCode();
+        (await member.PostAsync("/api/auth/me/email/resend", null)).EnsureSuccessStatusCode();
+        var sent = outbox.Sent.Count;
+        Assert.Equal(HttpStatusCode.TooManyRequests, (await ChangeAsync(member, "stranger@example.com")).StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, (await member.PostAsync("/api/auth/me/email/resend", null)).StatusCode);
+        Assert.Equal(sent, outbox.Sent.Count);
+        Assert.DoesNotContain(outbox.Sent, m => m.To == "stranger@example.com");
+    }
+
+    [Fact]
     public async Task The_change_waits_for_the_link_and_both_addresses_hear_of_it()
     {
         using var factory = new TestAppFactory();

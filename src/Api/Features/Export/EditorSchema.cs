@@ -59,6 +59,81 @@ public static class EditorSchema
         return null;
     }
 
+    /// <summary>
+    /// Each element type's content, as the editor declares it (ProseMirror
+    /// content expressions), and the groups those expressions name. Also
+    /// copied from the editor's schema and kept honest by
+    /// <c>serverSchema.test.ts</c>.
+    ///
+    /// <para>Names alone let through a document that puts things where the
+    /// editor cannot have them, such as text straight under the document:
+    /// accepted, then opened empty in the editor, where Update would have
+    /// published the empty page (t5-R05, the 0.8.3 retest).</para>
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, string> Content = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["attachmentBlock"] = "", ["blockquote"] = "block+", ["bulletList"] = "listItem+", ["chart"] = "",
+        ["codeBlock"] = "text*", ["date"] = "", ["decision"] = "block+", ["doc"] = "(block | layoutSection)+",
+        ["dynamicBlock"] = "", ["embed"] = "", ["excerpt"] = "block+", ["expand"] = "block+", ["gallery"] = "block+",
+        ["hardBreak"] = "", ["heading"] = "inline*", ["horizontalRule"] = "", ["image"] = "",
+        ["layoutColumn"] = "block+", ["layoutSection"] = "layoutColumn{2,3}", ["listItem"] = "paragraph block*",
+        ["math"] = "", ["mention"] = "", ["orderedList"] = "listItem+", ["pageProperties"] = "block+",
+        ["panel"] = "block+", ["paragraph"] = "inline*", ["smartLink"] = "", ["smartLinkInline"] = "",
+        ["status"] = "", ["table"] = "tableRow+", ["tableCell"] = "block+", ["tableHeader"] = "block+",
+        ["tableOfContents"] = "", ["tableRow"] = "(tableCell | tableHeader)*", ["taskItem"] = "paragraph block*",
+        ["taskList"] = "taskItem+", ["text"] = "",
+    };
+
+    /// <summary>Each element type's groups, space-separated, as the editor declares them.</summary>
+    public static readonly IReadOnlyDictionary<string, string> Groups = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["attachmentBlock"] = "block", ["blockquote"] = "block", ["bulletList"] = "block list", ["chart"] = "block",
+        ["codeBlock"] = "block", ["date"] = "inline", ["decision"] = "block", ["doc"] = "", ["dynamicBlock"] = "block",
+        ["embed"] = "block", ["excerpt"] = "block", ["expand"] = "block", ["gallery"] = "block", ["hardBreak"] = "inline",
+        ["heading"] = "block", ["horizontalRule"] = "block", ["image"] = "block", ["layoutColumn"] = "",
+        ["layoutSection"] = "", ["listItem"] = "", ["math"] = "inline", ["mention"] = "inline",
+        ["orderedList"] = "block list", ["pageProperties"] = "block", ["panel"] = "block", ["paragraph"] = "block",
+        ["smartLink"] = "block", ["smartLinkInline"] = "inline", ["status"] = "inline", ["table"] = "block",
+        ["tableCell"] = "", ["tableHeader"] = "", ["tableOfContents"] = "block", ["tableRow"] = "",
+        ["taskItem"] = "", ["taskList"] = "block list", ["text"] = "inline",
+    };
+
+    /// <summary>
+    /// Why <paramref name="type"/> cannot hold these children, in words, or
+    /// null when it can. The expressions above use only a small part of
+    /// ProseMirror's syntax (names, groups, <c>(a | b)</c>, and <c>*</c>,
+    /// <c>+</c> or <c>{m,n}</c>), so a greedy walk decides them.
+    /// </summary>
+    public static string? ChildrenProblem(string type, IReadOnlyList<string> children)
+    {
+        if (!Content.TryGetValue(type, out var expression)) return null;
+        if (expression.Length == 0)
+            return children.Count == 0 ? null : $"A \"{type}\" holds no content.";
+        var at = 0;
+        foreach (var term in System.Text.RegularExpressions.Regex.Matches(expression, @"(\([^)]*\)|[A-Za-z]+)(\*|\+|\{\d+,\d+\})?"))
+        {
+            var match = (System.Text.RegularExpressions.Match)term;
+            var names = match.Groups[1].Value.Trim('(', ')').Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            var (min, max) = match.Groups[2].Value switch
+            {
+                "*" => (0, int.MaxValue),
+                "+" => (1, int.MaxValue),
+                "" => (1, 1),
+                var range => (int.Parse(range[1..^1].Split(',')[0]), int.Parse(range[1..^1].Split(',')[1])),
+            };
+            var count = 0;
+            while (at < children.Count && count < max && names.Any(n => Fits(children[at], n))) { at++; count++; }
+            if (count < min)
+                return at < children.Count
+                    ? $"A \"{children[at]}\" cannot go inside a \"{type}\"."
+                    : $"A \"{type}\" cannot be empty.";
+        }
+        return at < children.Count ? $"A \"{children[at]}\" cannot go inside a \"{type}\"." : null;
+    }
+
+    private static bool Fits(string child, string name) =>
+        child == name || (Groups.TryGetValue(child, out var groups) && groups.Split(' ').Contains(name));
+
     /// <summary>What <see cref="FirstUnknownType"/> says of an element with no type.</summary>
     public const string Untyped = "(an element with no type)";
 

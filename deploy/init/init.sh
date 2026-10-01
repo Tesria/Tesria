@@ -154,7 +154,10 @@ refuse_legacy_folder() {
 [init]
 [init] It was last started by a version before 0.8.2, which did not record the
 [init] folder it runs from, and this folder has neither its backup-key.txt nor
-[init] its database password in .env. Nothing was changed.
+[init] its database password in .env. Its data has not been touched, but its
+[init] containers may now be stopped (docker compose up replaced them from
+[init] here before this check ran): to bring it back, run docker compose up -d
+[init] in its own folder.
 [init]
 [init] If this IS its folder (you upgraded it here, or deleted backup-key.txt
 [init] after saving the key), run this here, then docker compose up -d:
@@ -269,6 +272,13 @@ resolve() {
     SOURCE=provided
   elif [ -s "$SECRETS_ROOT/$name/value" ]; then
     SOURCE=stored
+    # Kept from an earlier .env that had the example value, whose line has
+    # since been deleted: it is still the public example, so it is still
+    # flagged (t1-R04, the 0.8.3 retest). Deleting the line looked like
+    # fixing it, and silenced every warning while the value stayed in use.
+    if is_placeholder "$(value_of "$name" || true)"; then
+      PLACEHOLDERS="$PLACEHOLDERS $setting"
+    fi
   elif $exists; then
     fail "$missing"
   else

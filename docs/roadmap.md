@@ -583,3 +583,35 @@ invite carries no groups.
   Viewers, presumably); how "everyone" and a space's own groups combine for
   a space open to all; and keeping the list usable with four groups per
   space on an instance with many spaces.
+
+## Exports that keep going after you leave the page (asked for 2026-09-30, not scheduled)
+
+*Asked for by the owner:* preparing an export should be queued and keep
+going when the person leaves the page they started it on. A space export
+is the case that matters, because it takes a while. The notifications bar
+should show a download queue with each export's progress, and the file
+waiting when it is done.
+
+Today (dev-plan 20.1, `ExportProgress.cs`) a site or pack export runs
+inside its own request, with an in-memory progress side channel. Closing
+the tab or leaving the page aborts the request and the work with it. 20.1
+chose that deliberately over a job table, as more than a progress bar was
+worth. This item is the job table:
+
+- **An export job**: queued, running, ready, failed or canceled, with who
+  started it, what it covers (page, space or site; HTML, pack, PDF or
+  Markdown) and its progress. Run by a background worker, one or two at a
+  time, so a large space does not starve the instance.
+- **Permissions at the start and at the download**: the export sees what
+  the person could see when they asked, and the finished file is theirs
+  alone. What the worker holds instead of the request's session (today the
+  PDF sidecar's render token comes from it) is the design question.
+- **The file is kept for a while** (a day, say) in the attachment storage,
+  then removed; cleared when the account is deactivated.
+- **The notifications bar gains a Downloads list**: each job's progress, a
+  Cancel, and Download once ready, and it survives a reload or another
+  device. A notification when it finishes.
+- **Survives a restart**: a job running when the app stops is queued
+  again or marked failed with a reason, never left spinning.
+- The single-page exports are quick and can stay in the request, or use
+  the same queue for one consistent place to find downloads.

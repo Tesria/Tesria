@@ -378,6 +378,18 @@ public class McpToolTests
         Assert.Contains("rollback", Error(await Call(mcp, "update_page",
             new { pageId, section = "nope", content = "## Nope\n" })));
 
+        // t5-R07: the whole page sent with a section's name, which put the
+        // rest of the page into it a second time; and a section without its
+        // heading, which silently dropped the heading.
+        var whole = (await Call(mcp, "get_page", new { pageId })).GetProperty("content")[0].GetProperty("text").GetString()!;
+        Assert.Contains("must start with that section's heading", Error(await Call(mcp, "update_page",
+            new { pageId, section = "deployment", content = whole })));
+        var body = markdown[(markdown.IndexOf("## Deployment", StringComparison.Ordinal))..];
+        Assert.Contains("goes past the section 'deployment'", Error(await Call(mcp, "update_page",
+            new { pageId, section = "deployment", content = body + "\n## Support\n\nAnother section.\n" })));
+        Assert.Contains("must start with that section's heading", Error(await Call(mcp, "update_page",
+            new { pageId, section = "deployment", content = "Deploy on Wednesday.\n" })));
+
         var detail = await w.Alice.GetFromJsonAsync<JsonElement>($"/api/pages/{pageId}");
         Assert.Equal(1, detail.GetProperty("currentVersionNumber").GetInt32());
     }
@@ -664,6 +676,45 @@ public class MarkdownMergeTests
         var markdown = Tesria.Api.Features.Export.ProseMirrorRenderer.ToMarkdown(current);
         var blocks = Tesria.Api.Features.Export.ProseMirrorRenderer.ToMarkdownBlocks(current);
         return MarkdownMerge.Merge(current, blocks, edit(markdown));
+    }
+
+    [Fact]
+    public void A_live_block_whose_results_changed_since_the_read_stays_live()
+    {
+        // t5-R02: the snapshot get_page wrote no longer matched the block's
+        // results by the time the assistant saved, and the block was rebuilt
+        // from it as a plain table. Between get_page's markers it is the
+        // same live block, whatever the snapshot says.
+        const string live = """
+        {"type":"doc","content":[
+          {"type":"paragraph","content":[{"type":"text","text":"Intro with alpha."}]},
+          {"type":"dynamicBlock","attrs":{"kind":"recent","params":{"limit":5}}},
+          {"type":"paragraph","content":[{"type":"text","text":"Closing."}]}
+        ]}
+        """;
+        var markdown = Tesria.Api.Features.Export.ProseMirrorRenderer.ToMarkdown(live, liveMarkers: true);
+        Assert.Contains(Tesria.Api.Features.Export.ProseMirrorRenderer.LiveStart, markdown);
+        Assert.DoesNotContain("tesria-live", Tesria.Api.Features.Export.ProseMirrorRenderer.ToMarkdown(live));
+
+        // What the assistant sends back: its edit, and a snapshot that now
+        // reads differently.
+        var start = markdown.IndexOf("<!-- tesria-live", StringComparison.Ordinal);
+        var end = markdown.IndexOf("<!-- /tesria-live -->", StringComparison.Ordinal);
+        var sent = markdown[..start].Replace("alpha", "gamma")
+            + markdown[start..end].Replace("dynamic content", "| Page | Updated |\n| --- | --- |\n| Newer page | today |\n")
+            + markdown[end..];
+        var merged = MarkdownMerge.Merge(live, Tesria.Api.Features.Export.ProseMirrorRenderer.ToMarkdownBlocks(live), sent);
+
+        var blocks = Blocks(merged);
+        Assert.Equal(3, blocks.Count);
+        Assert.Contains("gamma", blocks[0].GetRawText());
+        Assert.Equal(Blocks(live)[1].GetRawText(), blocks[1].GetRawText());
+        Assert.Equal(Blocks(live)[2].GetRawText(), blocks[2].GetRawText());
+
+        // Without the markers the block goes, as any block the assistant leaves out.
+        var dropped = MarkdownMerge.Merge(live, Tesria.Api.Features.Export.ProseMirrorRenderer.ToMarkdownBlocks(live),
+            "Intro with alpha.\n\nClosing.\n");
+        Assert.DoesNotContain(Blocks(dropped), b => b.GetRawText().Contains("dynamicBlock"));
     }
 
     [Fact]

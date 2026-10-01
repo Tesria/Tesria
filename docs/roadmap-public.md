@@ -3,6 +3,12 @@
 
 ## Shipped
 
+### 0.8.5 (September 30, 2026)
+- Fixed: every medium-severity issue from the final pre-launch test, across live editing, the API, backups, installs and webhooks
+- Fixed: an AI assistant's change right after someone closes a page is no longer shown as a change to review
+- Fixed: in Safari, typing /table and pressing Enter inserts a table, whatever the pointer rests on
+- Fixed: colored text on a highlight is readable in the dark theme
+
 ### 0.8.4 (September 30, 2026)
 - Every library brought up to date, including a security update the vulnerability check flagged
 - Fixed: undoing a restore to a chosen moment works again, and puts the wiki back exactly as it was
@@ -33,13 +39,6 @@
 - The breadcrumb stays at the top of a page, and a deep trail folds into a menu
 - Exported sites offer Glass too, and keep their folder names short enough for Windows
 - Fixed: the page list in the phone menu scrolls, and keeps its place when the keyboard closes
-
-### 0.8.0 (September 27, 2026)
-- One command installs Tesria with no settings file: it makes its own passwords and keys
-- Donut charts, in pages and on the Backups page
-- Trusting a device's certificate takes a minute, with an optional fingerprint check
-- Fixed: Safari on an iPhone or iPad no longer hangs on a black page
-- Fixed: issues from an independent review, including device trust, third-party notices and restores
 
 ## Next
 - Default groups for every space, and guided setup for new spaces and new people

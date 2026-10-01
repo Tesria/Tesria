@@ -59,12 +59,17 @@ public static partial class MarkdownToProseMirror
         switch (block)
         {
             case HeadingBlock heading:
+                var headingInlines = Inlines(heading.Inline);
+                var headingImages = headingInlines.Where(IsImage).ToList();
+                foreach (var image in headingImages) headingInlines.Remove(image);
                 into.Add(new JsonObject
                 {
                     ["type"] = "heading",
                     ["attrs"] = new JsonObject { ["level"] = Math.Clamp(heading.Level, 1, 6) },
-                    ["content"] = Inlines(heading.Inline),
+                    ["content"] = headingInlines,
                 });
+                // A picture cannot sit in a heading: it follows it instead.
+                foreach (var image in headingImages) into.Add(image);
                 break;
 
             case ParagraphBlock paragraph:
@@ -74,7 +79,7 @@ public static partial class MarkdownToProseMirror
                 // itself writes (<a id="..."></a>) came back as blank lines
                 // (T5-003). A list item or table cell that needs a paragraph
                 // gets its own empty one below.
-                if (inlines.Count > 0) into.Add(Paragraph(inlines));
+                if (inlines.Count > 0) AddParagraphs(into, inlines);
                 break;
 
             case HtmlBlock html:
@@ -125,7 +130,7 @@ public static partial class MarkdownToProseMirror
             default:
                 // Anything else keeps its text rather than vanishing.
                 if (block is LeafBlock leaf && leaf.Inline is not null)
-                    into.Add(Paragraph(Inlines(leaf.Inline)));
+                    AddParagraphs(into, Inlines(leaf.Inline));
                 break;
         }
     }
@@ -156,12 +161,14 @@ public static partial class MarkdownToProseMirror
                 {
                     check = task.Checked;
                     // Drop the checkbox marker itself; its state is an attribute.
-                    blocks.Add(Paragraph(Inlines(para.Inline, skipFirstTaskMarker: true)));
+                    AddParagraphs(blocks, Inlines(para.Inline, skipFirstTaskMarker: true), keepEmpty: true);
                     continue;
                 }
                 AppendBlock(child, blocks);
             }
-            if (blocks.Count == 0) blocks.Add(Paragraph(new JsonArray()));
+            // A list or task item starts with a paragraph (the editor's
+            // schema): one that begins with a picture gets an empty one.
+            if (blocks.Count == 0 || blocks[0]?["type"]?.GetValue<string>() != "paragraph") blocks.Insert(0, Paragraph(new JsonArray()));
 
             items.Add(isTask
                 ? new JsonObject { ["type"] = "taskItem", ["attrs"] = new JsonObject { ["checked"] = check }, ["content"] = blocks }
@@ -319,6 +326,33 @@ public static partial class MarkdownToProseMirror
     }
 
     private static JsonObject Mark(string type) => new() { ["type"] = type };
+
+    /// <summary>
+    /// A line's inline content as blocks: its text in paragraphs, and each
+    /// picture as a block of its own between them. In the editor's schema a
+    /// picture is a block and a paragraph holds only inline content, so a
+    /// paragraph with a picture in it made a document the editor could not
+    /// open (found with t5-R05's check, 2026-09-30).
+    /// </summary>
+    private static void AddParagraphs(JsonArray into, JsonArray inlines, bool keepEmpty = false)
+    {
+        var run = new JsonArray();
+        var added = false;
+        foreach (var node in inlines.ToList())
+        {
+            inlines.Remove(node);
+            if (IsImage(node))
+            {
+                if (run.Count > 0) { into.Add(Paragraph(run)); run = new JsonArray(); }
+                into.Add(node);
+                added = true;
+            }
+            else run.Add(node);
+        }
+        if (run.Count > 0 || (keepEmpty && !added)) into.Add(Paragraph(run));
+    }
+
+    private static bool IsImage(JsonNode? node) => node?["type"]?.GetValue<string>() == "image";
 
     private static JsonObject Paragraph(JsonArray content) =>
         new() { ["type"] = "paragraph", ["content"] = content };

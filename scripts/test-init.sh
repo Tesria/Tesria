@@ -98,6 +98,8 @@ check "exits 0" '[ $? -eq 0 ]'
 check "flags both settings" '[ "$(cat "$T/secrets/status/placeholders")" = "$(printf "POSTGRES_PASSWORD\nBACKUP_ENCRYPTION_KEY")" ]'
 check "warns in the log" 'grep -q "WARNING: POSTGRES_PASSWORD is still the example value" "$T/out"'
 check "no backup-key.txt for a key from .env" '[ ! -e "$T/install/backup-key.txt" ]'
+run
+check "deleting the lines keeps the example values flagged (t1-R04)" '[ "$(cat "$T/secrets/status/placeholders")" = "$(printf "POSTGRES_PASSWORD\nBACKUP_ENCRYPTION_KEY")" ] && grep -q "WARNING: POSTGRES_PASSWORD is still the example value" "$T/out"'
 run POSTGRES_PASSWORD=real-one BACKUP_ENCRYPTION_KEY=real-key
 check "the flag clears once they are changed" '[ ! -e "$T/secrets/status/placeholders" ]'
 
@@ -155,7 +157,7 @@ rm -f "$T/secrets/status/install-id" "$T/install/.tesria-install"
 key="$(val backup-key)"; pw="$(val postgres-password)"
 mv "$T/install/backup-key.txt" "$T/keyfile"
 run; code=$?
-check "a folder without its key file or password is refused" '[ "$code" -ne 0 ] && grep -q "cannot show it is its own" "$T/out"'
+check "a folder without its key file or password is refused" '[ "$code" -ne 0 ] && grep -q "cannot show it is its own" "$T/out" && grep -q "may now be stopped" "$T/out"'
 check "and nothing is claimed" '[ ! -e "$T/install/.tesria-install" ] && [ ! -e "$T/secrets/status/install-id" ]'
 cmd check-folder; code=$?
 check "check-folder there says it cannot tell" '[ "$code" -eq 2 ]'

@@ -1,22 +1,32 @@
-# Dependency update PRs (dev-plan 3.6). Grouped so a routine week is three
-# PRs, not thirty; security updates are never grouped and arrive as they do.
+# Dependency update PRs (dev-plan 3.6). Minor and patch updates are grouped
+# so a routine week is three PRs, not thirty. A major version arrives in a
+# PR of its own (2026-10-01), so one that needs checking (as
+# @dnd-kit/sortable 10 did) does not hold up the rest. Security updates are
+# never grouped and arrive as they do. dependabot-manifest.yml keeps the
+# About tab's dependency list current on each of these PRs.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /src/web
     schedule: { interval: weekly }
     groups:
-      web-dependencies: { patterns: ["*"] }
+      web-dependencies:
+        patterns: ["*"]
+        update-types: [minor, patch]
   - package-ecosystem: npm
     directory: /collab
     schedule: { interval: weekly }
     groups:
-      collab-dependencies: { patterns: ["*"] }
+      collab-dependencies:
+        patterns: ["*"]
+        update-types: [minor, patch]
   - package-ecosystem: nuget
     directory: /src/Api
     schedule: { interval: weekly }
     groups:
-      dotnet-dependencies: { patterns: ["*"] }
+      dotnet-dependencies:
+        patterns: ["*"]
+        update-types: [minor, patch]
   - package-ecosystem: docker
     directory: /deploy
     schedule: { interval: weekly }

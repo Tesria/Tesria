@@ -37,20 +37,31 @@ public static class MarkdownMerge
     /// <returns>The document to store.</returns>
     public static string Merge(string currentJson, IReadOnlyList<string> currentMarkdown, string incoming)
     {
-        var incomingBlocks = MarkdownToProseMirror.ConvertBlocks(incoming);
+        // A live block's snapshot, between get_page's markers, stands for that
+        // live block unchanged: its results may have moved on since the read,
+        // and then its Markdown no longer matched and it was rebuilt from the
+        // snapshot as a plain table (t5-R02, the 0.8.3 retest). Each marked
+        // span becomes one placeholder paragraph, and each old live block the
+        // same key, so they match whatever the results were.
+        incoming = LiveSpan.Replace(incoming, "\n\n" + LivePlaceholder + "\n\n");
+        var incomingBlocks = new JsonArray();
+        foreach (var block in MarkdownToProseMirror.ConvertBlocks(incoming)) incomingBlocks.Add(block?.DeepClone());
         var oldBlocks = TopLevel(currentJson);
         if (oldBlocks is null || oldBlocks.Count == 0 || oldBlocks.Count != currentMarkdown.Count)
-            return Doc(incomingBlocks);
+            return Doc(WithoutPlaceholders(incomingBlocks));
 
         // What each old block becomes after a trip through Markdown, as one
         // or more plain blocks, in the form the incoming side is compared in.
         var a = new List<(int Owner, string Key)>();
         for (var i = 0; i < oldBlocks.Count; i++)
+        {
+            if (oldBlocks[i]?["type"]?.GetValue<string>() == "dynamicBlock") { a.Add((i, LivePlaceholder)); continue; }
             foreach (var block in MarkdownToProseMirror.ConvertBlocks(currentMarkdown[i]))
                 a.Add((i, Key(block!)));
+        }
         var b = incomingBlocks.Select(block => Key(block!)).ToList();
         if (a.Count == 0 || b.Count == 0 || (long)a.Count * b.Count > MaxComparisons)
-            return Doc(incomingBlocks);
+            return Doc(WithoutPlaceholders(incomingBlocks));
 
         var matchOfB = LongestCommonSubsequence(a.Select(x => x.Key).ToList(), b);
 
@@ -115,9 +126,28 @@ public static class MarkdownMerge
                     foreach (var i in behind) output.Add(oldBlocks[i]!.DeepClone());
                 continue;
             }
+            // A placeholder with no live block to stand for (the assistant
+            // copied the markers) writes nothing.
+            if (b[j] == LivePlaceholder) continue;
             output.Add(incomingBlocks[j]!.DeepClone());
         }
         return Doc(output);
+    }
+
+    /// <summary>A marked live block's span in Markdown from get_page.</summary>
+    private static readonly System.Text.RegularExpressions.Regex LiveSpan = new(
+        @"<!--\s*tesria-live\b[^>]*-->[\s\S]*?<!--\s*/tesria-live\s*-->",
+        System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    /// <summary>What a live block's span is compared as. Not something anyone writes.</summary>
+    private const string LivePlaceholder = "TESRIALIVEBLOCKPLACEHOLDER";
+
+    private static JsonArray WithoutPlaceholders(JsonArray blocks)
+    {
+        var kept = new JsonArray();
+        foreach (var block in blocks)
+            if (block is not null && Key(block) != LivePlaceholder) kept.Add(block.DeepClone());
+        return kept;
     }
 
     /// <summary>A block's plain Markdown, the form both sides are compared in.</summary>

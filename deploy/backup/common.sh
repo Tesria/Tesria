@@ -84,7 +84,13 @@ UPDATE "BackupJobs"
    -- only thing that knows. Its truth is the restore directory on this
    -- sidecar's own volume, which restore_reconcile_on_start reads before
    -- anything else runs (dev-plan 9.4).
-   AND "Kind" NOT IN ('restore', 'restore-undo');
+   AND "Kind" NOT IN ('restore', 'restore-undo')
+   -- Nor a network or removable drive's Copy Now or Test Connection: those
+   -- run in the drive's own service (backup-nas, backup-removable), which
+   -- may well still be copying, and which closes its own leftovers when it
+   -- starts (t8-R04, the 0.8.3 retest). Failing them here showed a copy in
+   -- progress as failed, and could raise an alert, until it finished.
+   AND NOT ("Kind" IN ('copy-offsite', 'test-target') AND coalesce("Target", '') IN ('nas', 'removable'));
 INSERT INTO "BackupAgents" ("Name", "StartedAt", "LastSeenAt", "IntervalHours", "FullEveryDays", "ToolVersion", "Message")
 VALUES (:'agent', now(), now(), :'interval'::int, NULLIF(:'full_every', '')::int, :'version', 'Started.')
 ON CONFLICT ("Name") DO UPDATE

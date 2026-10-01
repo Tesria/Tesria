@@ -300,7 +300,7 @@ public class TechnicalContentExportTests
         {"type":"text","text":"where "},
         {"type":"math","attrs":{"latex":"e = mc^2","display":false}},
         {"type":"text","text":" holds."}]},
-      {"type":"math","attrs":{"latex":"\\sum_{i=1}^{n} i","display":true}},
+      {"type":"paragraph","content":[{"type":"math","attrs":{"latex":"\\sum_{i=1}^{n} i","display":true}}]},
       {"type":"chart","attrs":{"source":2,"chartType":"pie","title":"Spend"}}
     ]}
     """;

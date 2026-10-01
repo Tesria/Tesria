@@ -419,6 +419,18 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
       li(p(b('A security update'), ' for the library that cleans diagram labels, which the vulnerability check in ', b('About'), ' flagged. Tesria was not exposed, but the check is clean again.')),
       li(p(b('Every library brought up to date,'), ' including .NET, React, Mermaid, KaTeX and the live-editing server.')),
     ),
+
+    h(2, '0.8.5'),
+    p('Released September 30, 2026, the same day as 0.8.4. Download the new ', c('tesria-deploy.zip'), ' and unzip it over your Tesria folder as usual; see ', pageLink('Upgrading'), '.'),
+    ul(
+      li(p(b('Closing a page lets outside changes straight in.'), ' For two minutes after someone closed the editor, an AI assistant\'s or the API\'s change to that page showed as changes to review, and rejecting them undid it. Closing the editor, going to another page or closing the tab now ends that at once.')),
+      li(p(b('Safer API and AI assistant saves.'), ' A page with elements in impossible places is refused with the reason, a section save takes exactly one section, and a live block stays live through a Markdown save.')),
+      li(p(b('Charts count numbers with units,'), ' such as "30 minutes" or "5 people".')),
+      li(p(b('In Safari, the slash menu follows only a moving pointer,'), ' so ', c('/table'), ' then Enter inserts a table.')),
+      li(p(b('Colored text on a highlight is readable in the dark theme.'))),
+      li(p(b('One slow webhook receiver no longer holds up the others.'))),
+      li(p(b('Install and backup fixes:'), ' Change Email is rate limited, the setup wizard keeps a saved public address, an example secret stays flagged until it is replaced, and a hand-run restore says how to undo it.')),
+    ),
     h(2, '0.8.3'),
     p('Released September 30, 2026. New chart options and code block colors, and the rest of the fixes from the full test of 0.8.1. Download the new ', c('tesria-deploy.zip'), ' and unzip it over your Tesria folder as usual; see ', pageLink('Upgrading'), ', which now says to upgrade in that folder rather than a new one.'),
     ul(
