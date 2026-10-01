@@ -126,7 +126,8 @@ what it stored; it never replaces a stored secret with a new one.
 
 **Save the backup key.** Tesria writes it to `backup-key.txt` in the folder
 you started it from, and the setup wizard asks you to save it somewhere that
-is not this machine. Without it no backup can be restored, and a key that
+is not this machine. Without it the continuous backup (the one you can
+rewind to any moment) cannot be restored, and a key that
 lives only on the server is lost with it. `docker compose run --rm init
 show-backup-key` prints it again at any time.
 

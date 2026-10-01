@@ -511,9 +511,11 @@ function BackupsStep({
         <div className="setup__key">
           <h3>Save Your Backup Key</h3>
           <p className="small">
-            Your backups are encrypted with a key Tesria made when it was installed. Without it, no
-            backup can be restored, by anyone. Right now it may exist only on the server, so save a copy
-            somewhere else, such as a password manager.
+            Your continuous backup, the one you can rewind to any moment, is encrypted with a key Tesria
+            made when it was installed. Without it, that backup cannot be restored, by anyone. (The nightly
+            dumps are not encrypted on the server; copies sent off it are, with their own passphrase.)
+            Right now the key may exist only on the server, so save a copy somewhere else, such as a
+            password manager.
           </p>
           <p className="small"><strong>Where to find it</strong>, on the server:</p>
           <BackupKeyWhere />

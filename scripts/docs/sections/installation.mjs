@@ -252,7 +252,7 @@ export async function build({
 
     step(3, 'Save Your Backup Key'),
     p('Tesria has written the key that encrypts your backups to a file called ', c('backup-key.txt'), ' in the Tesria folder, next to ', c('docker-compose.yml'), '. Open it, and copy the key into your password manager, or anywhere that is not this computer.'),
-    panel('warning', p(b('Without this key, no backup can be restored, by anyone.'), ' Once it is saved somewhere else, you may delete the file. While the computer is running, this prints the key again:'),
+    panel('warning', p(b('Without this key, the continuous backup cannot be restored, by anyone.'), ' Once it is saved somewhere else, you may delete the file. While the computer is running, this prints the key again:'),
       codeBlock('bash', 'docker compose run --rm init show-backup-key')),
     p('The setup wizard asks about the key too, and Administration keeps reminding you until someone says it is saved. If you chose the key yourself, as ', c('BACKUP_ENCRYPTION_KEY'), ' in ', c('.env'), ', no file is written and nothing asks: you already have it.'),
 

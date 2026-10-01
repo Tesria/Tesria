@@ -53,8 +53,9 @@ export function BackupKeyNotice({
     <section className="profile__section profile__section--wide backup-key-notice backups__section" role="alert">
       <h2>Save the Backup Key</h2>
       <p>
-        Tesria made the key that encrypts your backups, and it may exist only on the server. If the
-        server is lost before the key is saved somewhere else, no backup can be restored, by anyone.
+        Tesria made the key that encrypts your continuous backup, the one you can rewind to any
+        moment, and it may exist only on the server. If the server is lost before the key is saved
+        somewhere else, that backup cannot be restored, by anyone.
       </p>
       <p className="small"><strong>Where to find it</strong>, on the server:</p>
       <BackupKeyWhere />

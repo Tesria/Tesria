@@ -240,7 +240,7 @@ export async function build({
 
     step(3, 'Save Your Backup Key'),
     p('Tesria has written the key that encrypts your backups to a file called ', c('backup-key.txt'), ' in the ', c('tesria'), ' folder. Open it, and copy the key into your password manager, or anywhere that is not this computer.'),
-    panel('error', p(b('Without this key, no backup can be restored, by anyone.'), ' If this computer is lost before the key is saved somewhere else, the backups go with it, including the copies on a network drive or in the cloud.')),
+    panel('error', p(b('Without this key, the continuous backup cannot be restored, by anyone.'), ' That is the backup you can rewind to any moment. If this computer is lost before the key is saved somewhere else, that backup is lost with it. The nightly dumps and attachment archives do not need the key, but their copies off this computer need the passphrase set for each place they go, so save those too.')),
     p('Once it is saved, you may delete the file. While the computer is running, this prints the key again:'),
     codeBlock('bash', 'docker compose run --rm init show-backup-key'),
     p('The setup wizard asks about the key too, and Administration keeps reminding you until someone says it is saved.'),
@@ -320,7 +320,7 @@ export async function build({
     step(6, 'Backups'),
     p('Tesria is already backing itself up: a daily copy of the database and every uploaded file, plus a continuous backup that can rewind the database to any moment. This step decides how much of that history to keep.'),
     p('The suggestion is to keep the newest 3 backups, and everything from the last 14 days. Keeping more uses more disk space. ', b('Keep Every Backup Forever'), ' never removes any, which is only wise with plenty of disk to spare.'),
-    p(b('Save Your Backup Key.'), ' The backups are encrypted with a key Tesria made when it was installed, and this step asks where it went. It is in the file ', c('backup-key.txt'), ' in the Tesria folder on the server, or printed by ', c('docker compose run --rm init show-backup-key'), ' there. Choose one:'),
+    p(b('Save Your Backup Key.'), ' The continuous backup is encrypted with a key Tesria made when it was installed, and this step asks where it went. It is in the file ', c('backup-key.txt'), ' in the Tesria folder on the server, or printed by ', c('docker compose run --rm init show-backup-key'), ' there. Choose one:'),
     ul(
       li(p(b('I saved it somewhere that is not the server:'), ' once you have copied it to your password manager, or anywhere off the server.')),
       li(p(b('Someone else runs the server; they will save it:'), ' when you are setting Tesria up from another computer and somebody else looks after the server. Administration, ', b('Backups'), ' keeps asking until one of you says it is saved.')),

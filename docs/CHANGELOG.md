@@ -22,6 +22,11 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 - **Fixed: live editing crashed when the database restarted** (T1-034),
   dropping every open editor until Docker started it again. A connection
   the database closes is now replaced quietly.
+- **Fixed: the setup wizard said every backup is encrypted** (T1-035). Only
+  the continuous backup is encrypted with the backup key; the nightly dumps
+  are plain files on the server, and copies sent off it use their own
+  passphrase. The wizard, the Backups page reminder, the README and the docs
+  now say which backup the key is for.
 - **Dependabot**: a major version arrives in a PR of its own, and a new
   workflow keeps the About tab's dependency list current on every Dependabot
   PR, so they no longer arrive failing CI. The build uses the GitHub Actions
