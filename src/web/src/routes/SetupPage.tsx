@@ -1,4 +1,4 @@
-import { type FormEvent, type ReactNode, useCallback, useEffect, useId, useState } from 'react'
+import { type FormEvent, type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, ApiError, MailSignIn, type BackupKeyStatus, type MailProvider, type SetupStatus } from '../api/client'
 import { MailProviderHint, MailProviderPicker } from '../components/MailProviderPicker'
@@ -50,8 +50,20 @@ export function SetupPage() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
+  // Coming back to the wizard goes to the first step still to answer, not to
+  // Welcome: walking through every finished step again saved each of them
+  // again (T1-013). Once, on the first status: after that the person moves.
+  const resumed = useRef(false)
   const loadStatus = useCallback(async () => {
-    try { setStatus(await api.setup.status()) } catch { /* not the owner yet */ }
+    let loaded: SetupStatus
+    try { loaded = await api.setup.status() } catch { return /* not the owner yet */ }
+    setStatus(loaded)
+    if (resumed.current) return
+    resumed.current = true
+    const answered = (key: StepKey) => loaded.steps?.[key] != null
+    if (!STEPS.some((s) => answered(s.key))) return
+    const first = STEPS.find((s) => s.key !== 'welcome' && s.key !== 'done' && !answered(s.key))
+    setAt(first?.key ?? 'done')
   }, [])
 
   useEffect(() => { if (user) void loadStatus() }, [user, loadStatus])
@@ -61,7 +73,10 @@ export function SetupPage() {
     return (
       <div className="setup setup--notice">
         <h1>This Instance Already Has an Owner</h1>
-        <p className="muted">Setup was finished by whoever created the first account.</p>
+        <p className="muted">
+          Whoever created the first account owns it, and is setting it up or has already. Sign in if
+          you have an account here.
+        </p>
         <Link className="btn btn--primary" to="/login">Sign In</Link>
       </div>
     )
@@ -177,6 +192,8 @@ export function SetupPage() {
         {at === 'account' && (
           <AccountStep
             hasAccount={!!user}
+            codesSaved={user?.recoveryCodesSaved === true}
+            onContinue={() => advance('account')}
             busy={busy}
             onRegister={async (email, name, password) => {
               setBusy(true); setError(null)
@@ -195,13 +212,15 @@ export function SetupPage() {
               // 0.8.3 Windows retest). A different one is the owner's.
               const current = await api.admin.settings.get()
               const plain = (u: string) => u.trim().replace(/\/+$/, '').toLowerCase()
-              const deployed = !current.baseUrl && plain(baseUrl) === plain(current.effectiveBaseUrl)
+              // Compared with the derived address whatever is saved, so a pass
+              // after an address was saved can still clear it (t1-R02).
+              const deployed = plain(baseUrl) === plain(current.deployedBaseUrl)
               return api.admin.settings.update({ instanceName: name, baseUrl: deployed ? '' : baseUrl })
             })} />
         )}
 
         {at === 'registration' && (
-          <RegistrationStep busy={busy} onNext={(open, anonymous) =>
+          <RegistrationStep busy={busy} answered={done('registration')} onNext={(open, anonymous) =>
             advance('registration', () => api.admin.settings.update({
               allowPublicRegistration: open,
               allowPublicSpaces: anonymous,
@@ -319,9 +338,13 @@ function Panel({
 }
 
 function AccountStep({
-  hasAccount, busy, onRegister, onDone,
+  hasAccount, codesSaved, onContinue, busy, onRegister, onDone,
 }: {
   hasAccount: boolean
+  /** The owner already confirmed a set of recovery codes as saved. */
+  codesSaved: boolean
+  /** Moves on without confirming any codes: for an owner who already has. */
+  onContinue: () => void
   busy: boolean
   onRegister: (email: string, name: string, password: string) => Promise<string[]>
   onDone: () => void
@@ -344,16 +367,53 @@ function AccountStep({
     }
   }
 
-  // Already signed in but the codes were never acknowledged: offer the
-  // checkbox on its own rather than a second registration form.
+  const [current, setCurrent] = useState('')
+  const [making, setMaking] = useState(false)
+  async function makeNewCodes(e: FormEvent) {
+    e.preventDefault()
+    setMaking(true)
+    setError(null)
+    try {
+      const made = await api.auth.regenerateRecoveryCodes(current ? { currentPassword: current } : {})
+      setCodes(made.codes)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not make new codes.')
+    } finally {
+      setMaking(false)
+    }
+  }
+
+  // Coming back to this step signed in. Continue used to confirm codes that
+  // were never shown (T1-017): now an owner who has not confirmed a set makes
+  // a new one here and sees it, and one who has simply goes on.
   if (hasAccount && !codes) {
+    if (codesSaved) {
+      return (
+        <Panel title="Your Account" busy={busy} onNext={onContinue} nextLabel="Continue">
+          <p className="muted">This account owns the instance, and its recovery codes are saved.</p>
+        </Panel>
+      )
+    }
     return (
-      <Panel title="Your Account" busy={busy} onNext={onDone} nextLabel="Continue">
+      <form className="setup__step-panel" onSubmit={makeNewCodes}>
+        <h2>Your Account</h2>
         <p className="muted">
-          This account owns the instance. If you have not saved your recovery
-          codes, do that from your profile before going on.
+          This account owns the instance, but its recovery codes were never confirmed as saved. Make
+          a new set now and save it: they are the only way back in if you lose your password. Any
+          older codes stop working.
         </p>
-      </Panel>
+        {error && <p className="alert alert--error">{error}</p>}
+        <label>
+          <span>Your Password</span>
+          <PasswordInput value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" />
+          <span className="muted small">Needed only if you signed in more than a few minutes ago.</span>
+        </label>
+        <div className="row-gap setup__actions">
+          <button type="submit" className="btn btn--primary" disabled={busy || making}>
+            {making ? 'Making…' : 'Make New Codes'}
+          </button>
+        </div>
+      </form>
     )
   }
 
@@ -440,9 +500,26 @@ function InstanceStep({ busy, onNext }: { busy: boolean; onNext: (name: string, 
   )
 }
 
-function RegistrationStep({ busy, onNext }: { busy: boolean; onNext: (open: boolean, anonymous: boolean) => void }) {
+function RegistrationStep({ busy, answered, onNext }: {
+  busy: boolean
+  /** Answered before: it starts from the saved choices (T1-014, WIN-011). */
+  answered: boolean
+  onNext: (open: boolean, anonymous: boolean) => void
+}) {
   const [open, setOpen] = useState<boolean | null>(null)
   const [anonymous, setAnonymous] = useState(false)
+  useEffect(() => {
+    if (!answered) return
+    let active = true
+    api.admin.settings.get()
+      .then((s) => {
+        if (!active) return
+        setOpen(s.allowPublicRegistration)
+        setAnonymous(s.allowPublicSpaces)
+      })
+      .catch(() => { /* asked afresh */ })
+    return () => { active = false }
+  }, [answered])
   return (
     <Panel
       title="Who Can Join"
@@ -580,8 +657,28 @@ function EmailStep({
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [from, setFrom] = useState('')
+  const [passwordSet, setPasswordSet] = useState(false)
   useEffect(() => {
     api.admin.settings.mailProviders().then(setProviders).catch(() => setProviders([]))
+  }, [])
+  // Settings saved on an earlier pass come back, so Continue keeps them
+  // rather than the step starting blank (T1-015). The password is never
+  // sent back: left empty, the saved one stays.
+  useEffect(() => {
+    let active = true
+    api.admin.settings.get()
+      .then((s) => {
+        if (!active || !s.smtpHost) return
+        setProviderId(s.mail?.provider ?? '')
+        setHost(s.smtpHost)
+        setPort(s.smtpPort)
+        setTls(s.smtpTls)
+        setUsername(s.smtpUsername ?? '')
+        setFrom(s.smtpFromAddress ?? '')
+        setPasswordSet(s.smtpPasswordSet)
+      })
+      .catch(() => { /* starts blank */ })
+    return () => { active = false }
   }, [])
   const provider = providers.find((p) => p.id === providerId) ?? null
   return (
@@ -631,6 +728,7 @@ function EmailStep({
       <label>
         <span>Password</span>
         <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="off" />
+        {passwordSet && !password && <span className="muted small">Saved. Leave it empty to keep it.</span>}
       </label>
       <label><span>From Address</span><input type="email" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
       <p className="muted small">

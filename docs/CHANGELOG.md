@@ -50,6 +50,20 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   symbols at either end, or look-alike letters ("password123",
   "Summer2026!", "P@ssw0rd"), which guessers try right after the plain
   ones. A common word inside a longer password is still fine.
+- **The setup wizard picks up where you left off** and keeps what you
+  answered:
+  - Coming back starts at the first step still to answer, not at Welcome,
+    so finished steps are not saved again (T1-013).
+  - Who Can Join comes back with your choices selected (T1-014, WIN-011),
+    and Email with its saved settings, keeping the saved password when the
+    box is left empty (T1-015).
+  - Your Account no longer confirms recovery codes that were never shown
+    (T1-017): an owner who has not confirmed a set makes a new one there and
+    saves it.
+  - This Instance leaves the address Tesria works out itself blank on every
+    pass, not only the first (t1-R02).
+  - A visitor who opens the wizard while the owner is still in it is no
+    longer told setup is finished (T1-010).
 - **Dependabot**: a major version arrives in a PR of its own, and a new
   workflow keeps the About tab's dependency list current on every Dependabot
   PR, so they no longer arrive failing CI. The build uses the GitHub Actions

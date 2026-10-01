@@ -97,6 +97,8 @@ public static class AdminEndpoints
         string InstanceName,
         string? BaseUrl,
         string EffectiveBaseUrl,
+        /// <summary>The address Tesria works out itself (DOMAIN, TESRIA_HTTPS_PORT), whatever is saved: the setup wizard leaves this one blank (t1-R02).</summary>
+        string DeployedBaseUrl,
         bool AllowPublicRegistration,
         bool AllowPublicSpaces,
         bool EmailEnabled,
@@ -596,6 +598,7 @@ public static class AdminEndpoints
         s.InstanceName,
         s.BaseUrl,
         Infrastructure.Email.SiteUrl.Resolve(s, config),
+        Infrastructure.Email.SiteUrl.Deployed(config),
         s.AllowPublicRegistration,
         s.AllowPublicSpaces,
         s.EmailEnabled,

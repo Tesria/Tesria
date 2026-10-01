@@ -517,6 +517,8 @@ export type SiteSettings = {
   baseUrl: string | null
   /** What links will actually use: the override or the deploy-time value. */
   effectiveBaseUrl: string
+  /** The deploy-time value, whatever is saved (t1-R02). */
+  deployedBaseUrl: string
   allowPublicRegistration: boolean
   allowPublicSpaces: boolean
   emailEnabled: boolean
@@ -617,7 +619,7 @@ export type MailProvider = {
 }
 
 /** Every field optional: an omitted field keeps its stored value. */
-export type SiteSettingsUpdate = Omit<SiteSettings, 'smtpPasswordSet' | 'updatedAt' | 'effectiveBaseUrl' | 'mail'> & {
+export type SiteSettingsUpdate = Omit<SiteSettings, 'smtpPasswordSet' | 'updatedAt' | 'effectiveBaseUrl' | 'deployedBaseUrl' | 'mail'> & {
   smtpPassword: string
   /** A preset's id, or '' for Other. */
   smtpProvider: string

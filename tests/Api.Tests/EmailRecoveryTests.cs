@@ -77,6 +77,13 @@ public class EmailRecoveryTests
         // And the settings page shows that address as the one in use.
         var settings = await admin.GetFromJsonAsync<System.Text.Json.JsonElement>("/api/admin/settings");
         Assert.Equal("https://localhost:8443", settings.GetProperty("effectiveBaseUrl").GetString());
+
+        // A saved address changes the one in use, not the derived one the
+        // setup wizard compares with (t1-R02).
+        (await admin.PutAsJsonAsync("/api/admin/settings", new { BaseUrl = "https://wiki.example.com" })).EnsureSuccessStatusCode();
+        settings = await admin.GetFromJsonAsync<System.Text.Json.JsonElement>("/api/admin/settings");
+        Assert.Equal("https://wiki.example.com", settings.GetProperty("effectiveBaseUrl").GetString());
+        Assert.Equal("https://localhost:8443", settings.GetProperty("deployedBaseUrl").GetString());
     }
 
     [Fact]
