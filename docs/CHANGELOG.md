@@ -34,6 +34,15 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   after a crash, a restart or a closed tab offers it back (Restore It,
   Discard It). Restoring keeps its pictures. Publishing or discarding it
   clears the copy.
+- **Fixed: an older Tesria started on a database a newer one had updated**
+  (T1-037), and could restore a backup a newer one made (T1-038). The
+  `migrate` service now compares the database's migrations with its own, by
+  name: on a newer database the app does not start (`docker compose logs
+  migrate` says why), and a restored copy from a newer version is refused.
+  It stays up meanwhile, so restoring a backup made by this version (the way
+  back) still works, and the app may start as soon as the database is one it
+  knows. This protects going back from 0.8.6 onward; earlier versions do not
+  have the check.
 - **Dependabot**: a major version arrives in a PR of its own, and a new
   workflow keeps the About tab's dependency list current on every Dependabot
   PR, so they no longer arrive failing CI. The build uses the GitHub Actions

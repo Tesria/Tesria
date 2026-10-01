@@ -60,11 +60,38 @@ public static class MigrateCommand
             await PassAsync(ownerConnection, appConnection, log, ct);
             return 0;
         }
+        catch (NewerDatabaseException ex)
+        {
+            log.LogCritical("{Message} The app will not start on it.", ex.Message);
+            return 1;
+        }
         catch (Exception ex)
         {
             log.LogCritical(ex, "Migrating the database failed; the app will not start until this succeeds.");
             return 1;
         }
+    }
+
+    /// <summary>
+    /// A database a newer Tesria has already updated (T1-037, T1-038): it
+    /// holds migrations this build has never heard of. Running on it means
+    /// an older app on a newer schema, which nothing repairs, so it is
+    /// refused: at start (the files of an older version put back over a
+    /// newer one), and for a restored copy (a backup made by a newer
+    /// version). Compared by name, which only this service can do: it is
+    /// the one that knows which migrations its build has.
+    /// </summary>
+    public sealed class NewerDatabaseException(string message) : Exception(message);
+
+    internal static async Task RefuseNewerAsync(AppDbContext owner, CancellationToken ct)
+    {
+        var known = owner.Database.GetMigrations().ToHashSet(StringComparer.Ordinal);
+        var unknown = (await owner.Database.GetAppliedMigrationsAsync(ct)).Where(m => !known.Contains(m)).Order().ToList();
+        if (unknown.Count == 0) return;
+        throw new NewerDatabaseException(
+            $"This database was last used by a newer version of Tesria: it has {unknown.Count} " +
+            $"{(unknown.Count == 1 ? "change" : "changes")} this version does not know (the newest is {unknown[^1]}). " +
+            "Use that newer version again, or restore a backup made by this one.");
     }
 
     /// <summary>One pass: migrations, the audit chain backfill, the app role and its grants.</summary>
@@ -75,6 +102,7 @@ public static class MigrateCommand
         // restore renaming it.
         await using var owner = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql(Unpooled(ownerConnection)).Options);
+        await RefuseNewerAsync(owner, ct);
         var pending = (await owner.Database.GetPendingMigrationsAsync(ct)).ToList();
         await owner.Database.MigrateAsync(ct);
         log.LogInformation("Migrations applied: {Count}", pending.Count);
@@ -100,8 +128,28 @@ public static class MigrateCommand
     {
         var every = selfCheck ?? SelfCheck;
         if (current is not null) (ownerConnection, appConnection) = current();
-        if (await RunAsync(ownerConnection, appConnection, log, ct) != 0) return 1;
-        await File.WriteAllTextAsync(readyMarker, DateTimeOffset.UtcNow.ToString("O"), ct);
+        // A database from a newer Tesria is not a failure to exit on: the way
+        // back is restoring a backup made by this version, and that restore
+        // needs this service to prepare its copy. So it stays up, unhealthy
+        // (the app waits for healthy, and does not start), serves restores,
+        // and tries the pass again every check until the database is one it
+        // knows.
+        var refusedNewer = false;
+        try
+        {
+            await PassAsync(ownerConnection, appConnection, log, ct);
+        }
+        catch (NewerDatabaseException ex)
+        {
+            log.LogCritical("{Message} The app will not start on it. Restoring a backup made by this version still works.", ex.Message);
+            refusedNewer = true;
+        }
+        catch (Exception ex)
+        {
+            log.LogCritical(ex, "Migrating the database failed; the app will not start until this succeeds.");
+            return 1;
+        }
+        if (!refusedNewer) await File.WriteAllTextAsync(readyMarker, DateTimeOffset.UtcNow.ToString("O"), ct);
         log.LogInformation("Watching for restores and for a database that needs a pass");
 
         var live = new NpgsqlConnectionStringBuilder(ownerConnection).Database
@@ -129,7 +177,19 @@ public static class MigrateCommand
                     }
                 }
                 await ServeRequestAsync(ownerConnection, appConnection, restoreDb, log, ct);
-                if (DateTimeOffset.UtcNow >= nextCheck)
+                if (refusedNewer && DateTimeOffset.UtcNow >= nextCheck)
+                {
+                    nextCheck = DateTimeOffset.UtcNow + every;
+                    try
+                    {
+                        await PassAsync(ownerConnection, appConnection, log, ct);
+                        refusedNewer = false;
+                        await File.WriteAllTextAsync(readyMarker, DateTimeOffset.UtcNow.ToString("O"), ct);
+                        log.LogInformation("The database is now one this version knows; the app may start (docker compose up -d)");
+                    }
+                    catch (NewerDatabaseException) { /* still the newer one: said once at start */ }
+                }
+                else if (DateTimeOffset.UtcNow >= nextCheck)
                 {
                     nextCheck = DateTimeOffset.UtcNow + every;
                     if (await NeedsPassAsync(ownerConnection, appConnection, ct) is { } why)

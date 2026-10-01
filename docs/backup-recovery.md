@@ -117,7 +117,13 @@ wrong answer counts toward locking the account, as a failed sign-in does.
 3. The dump is restored into a **new database beside the live one** and checked
    there: it must have tables, accounts, and no migrations this build has never
    run. A backup from a *newer* Tesria is refused, because that is a downgrade
-   and starting the application against it would not work.
+   and starting the application against it would not work. The script's
+   count against the live database is a first check; the `migrate` service,
+   which prepares the copy, compares the copy's migrations by name with the
+   ones its build has and refuses any it does not know (0.8.6, T1-038). It
+   refuses a live database with unknown ones at start the same way (T1-037),
+   staying up unhealthy so a restore can still bring back a database it
+   knows.
 4. **The switch**, two renames, milliseconds. The database it replaces is
    renamed rather than dropped, and the attachments are moved aside rather than
    deleted. That is the undo.

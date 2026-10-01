@@ -180,6 +180,58 @@ public class ZeroConfigRoleTests
 public class MigrateWatchTests
 {
     [PostgresFact]
+    public async Task A_database_a_newer_Tesria_has_updated_is_refused_and_says_why()
+    {
+        using var pg = new PostgresTestDatabase();
+        Assert.Equal(0, await MigrateCommand.RunAsync(pg.OwnerConnection, pg.AppConnection, NullLogger.Instance));
+
+        // What a newer version leaves behind: a migration this build lacks.
+        await using (var owner = new NpgsqlConnection(pg.OwnerConnection))
+        {
+            await owner.OpenAsync();
+            await new NpgsqlCommand(
+                "INSERT INTO \"__EFMigrationsHistory\" VALUES ('29991231000000_FromTheFuture', '10.0.0')", owner).ExecuteNonQueryAsync();
+        }
+        NpgsqlConnection.ClearAllPools();
+
+        // At start (T1-037): refused, so the app never starts on it.
+        Assert.Equal(1, await MigrateCommand.RunAsync(pg.OwnerConnection, pg.AppConnection, NullLogger.Instance));
+        var refused = await Assert.ThrowsAsync<MigrateCommand.NewerDatabaseException>(
+            () => MigrateCommand.PassAsync(pg.OwnerConnection, pg.AppConnection, NullLogger.Instance));
+        Assert.Contains("newer version of Tesria", refused.Message);
+        Assert.Contains("29991231000000_FromTheFuture", refused.Message);
+
+        // The watch stays up but not ready (so the app does not start), and
+        // becomes ready once the database is one it knows: what restoring a
+        // backup made by this version does.
+        var marker = Path.Combine(Path.GetTempPath(), $"tesria-migrated-{Guid.NewGuid():N}");
+        using var stop = new CancellationTokenSource();
+        var watch = Task.Run(() => MigrateCommand.WatchAsync(
+            pg.OwnerConnection, pg.AppConnection, NullLogger.Instance, stop.Token,
+            selfCheck: TimeSpan.FromMilliseconds(200), readyMarker: marker));
+        try
+        {
+            await Task.Delay(1500);
+            Assert.False(watch.IsCompleted);
+            Assert.False(File.Exists(marker));
+            await using (var owner = new NpgsqlConnection(pg.OwnerConnection))
+            {
+                await owner.OpenAsync();
+                await new NpgsqlCommand(
+                    "DELETE FROM \"__EFMigrationsHistory\" WHERE \"MigrationId\" = '29991231000000_FromTheFuture'", owner).ExecuteNonQueryAsync();
+            }
+            await WaitForAsync(() => Task.FromResult(File.Exists(marker)));
+        }
+        finally
+        {
+            stop.Cancel();
+            await watch;
+            File.Delete(marker);
+            NpgsqlConnection.ClearAllPools();
+        }
+    }
+
+    [PostgresFact]
     public async Task A_restored_copy_is_brought_up_to_date_and_granted_when_asked()
     {
         using var pg = new PostgresTestDatabase();

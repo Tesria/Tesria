@@ -1300,7 +1300,7 @@ export async function build({
     h(2, 'If something goes wrong'),
     p('The logs usually say why. The first shows the setup step that updates the database, the second Tesria itself:'),
     codeBlock('bash', 'docker compose logs migrate\ndocker compose logs app'),
-    p('Going back means restoring the backup you took in step 1 with the version you had before. A backup made by a newer Tesria cannot be restored into an older one: it is refused, because the older version would not understand the updated database. See ', pageLink('Restoring and undo'), '.'),
+    p('Going back means restoring the backup you took in step 1 with the version you had before. Putting back only the older files is not enough: the database has already been updated, so the older version will not start on it, and ', c('docker compose logs migrate'), ' says so. (Versions before 0.8.6 started on it anyway, which could go wrong in ways nothing repairs.) Restore the step 1 backup from the command line, as ', pageLink('Restoring and undo'), ' describes, then run ', c('docker compose up -d'), ' again. A backup made by a newer Tesria cannot be restored into an older one: it is refused, because the older version would not understand it.'),
   ))
 
   // ============================================================ Health
