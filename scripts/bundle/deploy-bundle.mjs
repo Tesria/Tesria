@@ -42,6 +42,8 @@ const FILES = [
   'deploy/tailscale/serve.json',
   'deploy/scripts',
   'deploy/docker-desktop',
+  // The docs tell owners to run it on a schedule (T8-024): it was missing.
+  'scripts/verify-audit-chain.sh',
 ]
 const SKIP = /(^|\/)Dockerfile$/
 

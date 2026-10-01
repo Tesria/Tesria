@@ -27,6 +27,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   are plain files on the server, and copies sent off it use their own
   passphrase. The wizard, the Backups page reminder, the README and the docs
   now say which backup the key is for.
+- **Fixed: `scripts/verify-audit-chain.sh` was not in `tesria-deploy.zip`**
+  (T8-024), although the docs tell owners to run it on a schedule.
 - **Dependabot**: a major version arrives in a PR of its own, and a new
   workflow keeps the About tab's dependency list current on every Dependabot
   PR, so they no longer arrive failing CI. The build uses the GitHub Actions
