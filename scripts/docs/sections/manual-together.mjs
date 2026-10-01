@@ -461,6 +461,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('A paragraph you both changed'), ' keeps your version, with theirs highlighted after it as a suggestion. Accepting keeps both, for you to finish; rejecting drops theirs.')),
     ),
     p('If nobody is editing the page when the change is published, there is nothing to highlight: the page’s draft starts again from the new version, and the next person to edit it starts from what is published.'),
+    p('Someone counts as editing as long as the page is open in their editor. When they close the editor, go to another page or close the tab, the page is idle straight away. If their connection drops instead, for example on a train, Tesria waits two minutes for them to come back before treating the page as idle, so a change published in that time is highlighted for them like any other and nothing they typed is lost.'),
     p('See ', pageLink('REST API'), ' and ', pageLink('MCP'), ' for what scripts and assistants can do.'),
   ))
 

@@ -1941,9 +1941,13 @@ stale, and the next Update wrote over the restore.
 
 **Merge or reset** (0.8.2, the owner's decision after the QA run). The
 sidecar decides per write. If somebody is editing (a websocket connection
-now, or one that closed within two minutes, `COLLAB_EDIT_GRACE_MS`, so a
+now, or one that dropped within two minutes, `COLLAB_EDIT_GRACE_MS`, so a
 network blip does not count as leaving), the write is **merged** as tracked
-changes. If nobody is, the draft is **reset** to what was published: changes
+changes. An editor that leaves on purpose (Close, another page, closing the
+tab: the `pagehide` event) sends a `leaving` stateless message first, and
+its disconnect ends the grace at once (0.8.5, T5-031): the message follows
+every synced edit on the same socket, so there is nothing unsaved to wait
+for. If nobody is, the draft is **reset** to what was published: changes
 someone left behind with Close used to survive an API publish and come back,
 struck through, for the next person to publish under their own name. A page
 nobody has ever opened has no stored draft and is not loaded at all. A reset
