@@ -19,6 +19,9 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   it on** without two-factor of their own, the owner included, and showed
   the switch as off (t2-R04). It is now refused until you have set up
   two-factor yourself, with the reason.
+- **Fixed: live editing crashed when the database restarted** (T1-034),
+  dropping every open editor until Docker started it again. A connection
+  the database closes is now replaced quietly.
 - **Dependabot**: a major version arrives in a PR of its own, and a new
   workflow keeps the About tab's dependency list current on every Dependabot
   PR, so they no longer arrive failing CI. The build uses the GitHub Actions

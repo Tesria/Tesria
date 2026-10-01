@@ -57,6 +57,13 @@ if (!DATABASE_URL && !APP_DB_PASSWORD) {
 const pool = new pg.Pool(DATABASE_URL
   ? { connectionString: DATABASE_URL }
   : { password: () => secret('APP_DB_PASSWORD', 'app-db-password') ?? APP_DB_PASSWORD })
+// An idle connection the database ends (a restart, 57P01) is reported here.
+// With no listener, Node treated it as an unhandled error and the whole
+// service crashed, dropping every editor (T1-034). The pool has already
+// discarded that connection and opens a new one for the next query.
+pool.on('error', (err) => {
+  console.error(`[collab] an idle database connection was closed (${err.code ?? err.message}); a new one opens when needed`)
+})
 
 // A document name is a page id. Checked before it is ever cast to uuid in
 // SQL, so a malformed name is ignored rather than throwing.
