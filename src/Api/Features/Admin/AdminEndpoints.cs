@@ -368,6 +368,19 @@ public static class AdminEndpoints
                     message = $"Your role does not have the right to {LabelOf(key)}.",
                 }, statusCode: StatusCodes.Status403Forbidden);
 
+        // Requiring two-factor of administrators applies to whoever turns it
+        // on, at once: without two-factor of their own, every admin page
+        // closed to them with the click, the owner included (t2-R04, the 0.8.3
+        // retest). Refused until they have it, saying so.
+        if (req.RequireTotpForAdmins == true
+            && !(await settings.GetAsync()).RequireTotpForAdmins
+            && !await db.Users.AsNoTracking().Where(u => u.Id == current.Id).Select(u => u.TotpEnabledAt != null).FirstOrDefaultAsync())
+            return Results.Conflict(new
+            {
+                code = "totp_required_first",
+                message = "Set up two-factor sign-in on your profile first. This applies to you too, so turning it on now would close the admin pages to you.",
+            });
+
         // The public-read switch in either direction is sudo territory
         // (dev-plan 3.5): exposing content, or undoing a mitigation.
         if (req.AllowPublicSpaces is not null && Auth.AuthEndpoints.RequireSudo(http, config) is { } denied)

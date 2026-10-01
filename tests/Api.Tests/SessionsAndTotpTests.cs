@@ -253,12 +253,33 @@ public class SessionsAndTotpTests
     }
 
     [Fact]
+    public async Task Requiring_two_factor_of_administrators_waits_until_you_have_it_yourself()
+    {
+        using var factory = new TestAppFactory();
+        var owner = factory.CreateClient();
+        await RegisterAsync(owner, "owner@example.com");
+
+        // Without two-factor, turning it on would close the admin pages to
+        // the person turning it on (t2-R04): refused, saying why.
+        var refused = await owner.PutAsJsonAsync("/api/admin/settings", new { RequireTotpForAdmins = true });
+        Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+        Assert.Contains("Set up two-factor sign-in on your profile first", await refused.Content.ReadAsStringAsync());
+        (await owner.GetAsync("/api/admin/users")).EnsureSuccessStatusCode();
+
+        await EnrollAsync(owner);
+        (await owner.PutAsJsonAsync("/api/admin/settings", new { RequireTotpForAdmins = true })).EnsureSuccessStatusCode();
+        (await owner.GetAsync("/api/admin/users")).EnsureSuccessStatusCode();
+    }
+
+    [Fact]
     public async Task Administrators_can_be_required_to_enroll_before_administering()
     {
         using var factory = new TestAppFactory();
         var admin = factory.CreateClient();
         await RegisterAsync(admin, "admin@example.com");
-        (await admin.PutAsJsonAsync("/api/admin/settings", new { RequireTotpForAdmins = true })).EnsureSuccessStatusCode();
+        using (var scope = factory.Services.CreateScope())
+            await scope.ServiceProvider.GetRequiredService<Tesria.Api.Infrastructure.Settings.ISiteSettingsService>()
+                .UpdateAsync(s => s.RequireTotpForAdmins = true, null);
 
         // Locked out of administration, but told why, and the way out is open.
         Assert.Equal(HttpStatusCode.Forbidden, (await admin.GetAsync("/api/admin/users")).StatusCode);

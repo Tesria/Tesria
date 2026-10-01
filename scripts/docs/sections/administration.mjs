@@ -656,7 +656,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ul(
       li(p(b('Allow Public Spaces:'), ' off hides every published space from people who are not signed in, straight away. Each space keeps its setting, so turning it back on publishes them again. Asks for your password, and alerts every administrator.')),
       li(p(b('Allow Public Registration:'), ' off means new accounts need an ', pageLink('Invites', 'invite'), '.')),
-      li(p(b('Require Two-Factor for Administrators:'), ' an administrator, the owner included, who has not set up two-factor sees a page asking them to, instead of the Administration tabs, until they do.')),
+      li(p(b('Require Two-Factor for Administrators:'), ' an administrator, the owner included, who has not set up two-factor sees a page asking them to, instead of the Administration tabs, until they do. You can turn it on only once you have two-factor yourself, so it never locks you out of these pages.')),
     ),
     panel('warning', p(b('Set up your own two-factor first.'), ' Otherwise, the moment you turn the requirement on, Administration sends you to your profile to set it up too.')),
 

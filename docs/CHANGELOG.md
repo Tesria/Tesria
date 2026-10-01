@@ -15,6 +15,10 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   The editing guides and the API page say when a page counts as being
   edited: while it is open in someone's editor, and for two minutes after a
   dropped connection, never after a Close or a closed tab.
+- **Fixed: Require Two-Factor for Administrators locked out whoever turned
+  it on** without two-factor of their own, the owner included, and showed
+  the switch as off (t2-R04). It is now refused until you have set up
+  two-factor yourself, with the reason.
 - **Dependabot**: a major version arrives in a PR of its own, and a new
   workflow keeps the About tab's dependency list current on every Dependabot
   PR, so they no longer arrive failing CI. The build uses the GitHub Actions

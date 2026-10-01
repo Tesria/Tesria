@@ -148,7 +148,9 @@ public class SsoTwoFactorTests
         var (owner, _) = await RegisterAsync(factory, "owner@example.com");
         var (admin, adminAccount) = await RegisterAsync(factory, "sso.admin@example.com");
         (await owner.PutAsJsonAsync($"/api/admin/users/{adminAccount.Id}/role", new { Role = 1 })).EnsureSuccessStatusCode();
-        (await owner.PutAsJsonAsync("/api/admin/settings", new { RequireTotpForAdmins = true })).EnsureSuccessStatusCode();
+        using (var scope = factory.Services.CreateScope())
+            await scope.ServiceProvider.GetRequiredService<Tesria.Api.Infrastructure.Settings.ISiteSettingsService>()
+                .UpdateAsync(s => s.RequireTotpForAdmins = true, null);
 
         // The shape of an account made by single sign-on: no Tesria password.
         using (var scope = factory.Services.CreateScope())

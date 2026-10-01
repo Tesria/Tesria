@@ -264,8 +264,11 @@ public class OwnerTests
 
         // Requiring two-factor for administrators binds the owner as well, and
         // says so on /auth/me so the SPA can send them to enroll.
-        (await ownerClient.PutAsJsonAsync("/api/admin/settings", new { RequireTotpForAdmins = true }))
-            .EnsureSuccessStatusCode();
+        // Turned on as another administrator with two-factor would (the owner
+        // may not turn it on without it: t2-R04).
+        using (var scope = factory.Services.CreateScope())
+            await scope.ServiceProvider.GetRequiredService<Tesria.Api.Infrastructure.Settings.ISiteSettingsService>()
+                .UpdateAsync(s => s.RequireTotpForAdmins = true, null);
         var me = await ownerClient.GetFromJsonAsync<MeDto>("/api/auth/me");
         Assert.True(me!.TotpRequired);
         Assert.Equal(HttpStatusCode.Forbidden, (await ownerClient.GetAsync("/api/admin/users")).StatusCode);
