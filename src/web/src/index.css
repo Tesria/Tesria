@@ -130,6 +130,20 @@
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
+
+/* Colored text on a highlight or a colored cell, in every theme (2026-10-01).
+   The usual inks fall to 2.1 to 4.2 on the highlight colors (teal on purple
+   is the worst), so here each ink is darkened just enough to reach 4.5 on
+   every highlight; blue and purple already do. The dark theme's rules for
+   the same elements repeat these values, because they out-rank this one. */
+.editor__content mark[style*="background-color"],
+.editor__content [data-background-color] {
+  --text-color-grey: #3e4d68;   --text-color-blue: #0747a6;
+  --text-color-teal: #005564;   --text-color-green: #00593b;
+  --text-color-yellow: #614900; --text-color-orange: #793d01;
+  --text-color-red: #961e00;    --text-color-purple: #403294;
+}
+
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--text); }
 a { color: var(--primary); text-decoration: none; }
@@ -2071,14 +2085,15 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
   }
   /* Colored text on a highlight or a colored cell (t4-R05, the 0.8.3
      retest): the background stays light in the dark theme, so its text
-     colors go back to the light theme's darker inks, or they were light on
-     light (contrast 1.3 to 2). */
+     colors use the same darker inks as the light theme does there, or they
+     were light on light (contrast 1.3 to 2). Keep in step with the rule
+     after :root. */
   :root:not([data-theme="light"]) .editor__content mark[style*="background-color"],
   :root:not([data-theme="light"]) .editor__content [data-background-color] {
-    --text-color-grey: #42526e;   --text-color-blue: #0747a6;
-    --text-color-teal: #008da6;   --text-color-green: #006644;
-    --text-color-yellow: #946f00; --text-color-orange: #b65c02;
-    --text-color-red: #bf2600;    --text-color-purple: #403294;
+    --text-color-grey: #3e4d68;   --text-color-blue: #0747a6;
+    --text-color-teal: #005564;   --text-color-green: #00593b;
+    --text-color-yellow: #614900; --text-color-orange: #793d01;
+    --text-color-red: #961e00;    --text-color-purple: #403294;
   }
   :root:not([data-theme="light"]) .editor__content [data-background-color] a,
   :root:not([data-theme="light"]) .editor__content mark[style*="background-color"] a {
@@ -2153,10 +2168,10 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 :root[data-theme="dark"] .editor__content mark[style*="background-color"] { color: #172b4d !important; }
 :root[data-theme="dark"] .editor__content mark[style*="background-color"],
 :root[data-theme="dark"] .editor__content [data-background-color] {
-  --text-color-grey: #42526e;   --text-color-blue: #0747a6;
-  --text-color-teal: #008da6;   --text-color-green: #006644;
-  --text-color-yellow: #946f00; --text-color-orange: #b65c02;
-  --text-color-red: #bf2600;    --text-color-purple: #403294;
+  --text-color-grey: #3e4d68;   --text-color-blue: #0747a6;
+  --text-color-teal: #005564;   --text-color-green: #00593b;
+  --text-color-yellow: #614900; --text-color-orange: #793d01;
+  --text-color-red: #961e00;    --text-color-purple: #403294;
 }
 :root[data-theme="dark"] .editor__content [data-background-color] a,
 :root[data-theme="dark"] .editor__content mark[style*="background-color"] a { color: #0055cc; }

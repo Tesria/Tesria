@@ -476,6 +476,7 @@ public static class ProseMirrorRenderer
         if (!textNode.TryGetProperty("marks", out var marks) || marks.ValueKind != JsonValueKind.Array)
             return text;
 
+        var inks = marks.EnumerateArray().Any(m => TypeOf(m) == "highlight") ? TextColorsOnHighlight : TextColors;
         foreach (var mark in marks.EnumerateArray())
         {
             text = TypeOf(mark) switch
@@ -489,7 +490,7 @@ public static class ProseMirrorRenderer
                 "highlight" => HighlightHtml(mark, text),
                 // GFM has no syntax for any of these three; most renderers
                 // pass inline raw HTML through untouched, so they degrade.
-                "textColor" => $"<span style=\"color: {TextColors[TextColorOf(mark)]}\">{text}</span>",
+                "textColor" => $"<span style=\"color: {inks[TextColorOf(mark)]}\">{text}</span>",
                 "subscript" => $"<sub>{text}</sub>",
                 "superscript" => $"<sup>{text}</sup>",
                 // Sanitized, not passed through: a Markdown file gets rendered
@@ -599,6 +600,23 @@ public static class ProseMirrorRenderer
         ["yellow"] = "#946f00",
         ["orange"] = "#b65c02",
         ["red"] = "#bf2600",
+        ["purple"] = "#403294",
+    };
+
+    /// <summary>
+    /// The same names on a highlight, darkened to reach a contrast of 4.5 on
+    /// every highlight color, as index.css does for highlights and colored
+    /// cells.
+    /// </summary>
+    private static readonly Dictionary<string, string> TextColorsOnHighlight = new()
+    {
+        ["grey"] = "#3e4d68",
+        ["blue"] = "#0747a6",
+        ["teal"] = "#005564",
+        ["green"] = "#00593b",
+        ["yellow"] = "#614900",
+        ["orange"] = "#793d01",
+        ["red"] = "#961e00",
         ["purple"] = "#403294",
     };
 

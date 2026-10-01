@@ -150,6 +150,19 @@ public class ProseMirrorRendererTests
     """;
 
     [Fact]
+    public void Colored_text_on_a_highlight_uses_the_darker_ink_that_stays_readable_there()
+    {
+        const string doc = """
+        {"type":"doc","content":[{"type":"paragraph","content":[
+          {"type":"text","marks":[{"type":"textColor","attrs":{"color":"teal"}}],"text":"plain"},
+          {"type":"text","marks":[{"type":"textColor","attrs":{"color":"teal"}},{"type":"highlight","attrs":{"color":"#c0b6f2"}}],"text":"marked"}]}]}
+        """;
+        var md = ProseMirrorRenderer.ToMarkdown(doc);
+        Assert.Contains("<span style=\"color: #008da6\">plain</span>", md);
+        Assert.Contains("<span style=\"color: #005564\">marked</span>", md);
+    }
+
+    [Fact]
     public void Renders_table_as_a_pipe_escaped_markdown_table()
     {
         var md = ProseMirrorRenderer.ToMarkdown(TableDoc);

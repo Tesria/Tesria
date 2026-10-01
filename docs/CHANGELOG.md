@@ -5,6 +5,21 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Colored text on a highlight is readable in every theme.** The text
+  colors fell to a contrast of 2.1 to 4.2 on the highlight colors (teal on
+  purple was the worst). On a highlight or a colored table cell each color
+  is now darkened just enough to reach 4.5 on every highlight; blue and
+  purple already did. The same goes for Markdown exports. Elsewhere the
+  colors are unchanged.
+- **Docs: the two-minute wait applies only to a dropped connection** (t3-R03).
+  The editing guides and the API page say when a page counts as being
+  edited: while it is open in someone's editor, and for two minutes after a
+  dropped connection, never after a Close or a closed tab.
+- **Dependabot**: a major version arrives in a PR of its own, and a new
+  workflow keeps the About tab's dependency list current on every Dependabot
+  PR, so they no longer arrive failing CI. The build uses the GitHub Actions
+  versions that run on Node 24.
+
 ## [0.8.5] - 2026-09-30
 
 The fourteen Medium bugs from the 0.8.3 retest.
