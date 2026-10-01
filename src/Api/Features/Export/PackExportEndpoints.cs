@@ -37,28 +37,7 @@ public static class PackExportEndpoints
     {
         var space = await db.Spaces.AsNoTracking()
             .FirstOrDefaultAsync(s => s.Key == key.ToUpperInvariant(), ct);
-        if (space is null) return Results.NotFound();
-        if (!await perms.CanViewSpaceAsync(space.Id)) return Results.NotFound();
-        // Turned off for this space (dev-plan 12.3), for everyone. A pack is
-        // the most complete export there is, history and all, so a space
-        // sensitive enough to lock down is one where this matters most.
-        if (!SpaceExports.Allows(space, ExportFormat.Pack)) return SpaceExports.Refused(space, ExportFormat.Pack);
-
-        var report = tracker.Start(current.Id, progress);
-        report.Stage("Checking which pages go in", 0);
-        WikiPack.Model model;
-        Dictionary<Guid, string> storageKeys;
-        try { (model, storageKeys) = await BuildAsync(db, perms, settings, space, ct); }
-        catch { report.Finish(); throw; }
-
-        audit.Record("space.exported", "space", space.Id, new
-        {
-            space.Key,
-            Format = WikiPack.Format,
-            model.Manifest.Counts.Pages,
-            model.Manifest.Omitted,
-        });
-        await db.SaveChangesAsync(ct);
+        if (await CheckAsync(space, perms) is { } refused) return refused.ToResult();
 
         // Spooled to a temporary file, then streamed from it.
         //
@@ -68,16 +47,14 @@ public static class PackExportEndpoints
         // to a response. A file absorbs that, and DeleteOnClose means the copy
         // lives exactly as long as the response does, including when the
         // response fails halfway.
+        var report = tracker.Start(current.Id, progress);
         var spool = new FileStream(
             Path.Combine(Path.GetTempPath(), $"tesria-pack-{Guid.NewGuid():N}.zip"),
             FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None,
             bufferSize: 64 * 1024, FileOptions.DeleteOnClose | FileOptions.Asynchronous);
         try
         {
-            await WikiPack.WriteAsync(
-                spool, model,
-                (name, _) => Task.FromResult(Open(name, storageKeys, storage, media, space)),
-                ct, report);
+            await WriteAsync(spool, space!, perms, current.Id, new PackServices(db, storage, media, settings, audit), report, ct);
             spool.Position = 0;
         }
         catch
@@ -90,7 +67,58 @@ public static class PackExportEndpoints
             report.Finish();
         }
 
-        return Results.Stream(spool, "application/zip", $"{space.Key.ToLowerInvariant()}-pack.zip");
+        return Results.Stream(spool, "application/zip", FileName(space!));
+    }
+
+    internal static string FileName(Space space) => $"{space.Key.ToLowerInvariant()}-pack.zip";
+
+    /// <summary>Whether this person may have this pack: for a request, and again when a job starts (dev-plan 20.2).</summary>
+    internal static async Task<ExportRefusal?> CheckAsync(Space? space, IPermissionService perms)
+    {
+        if (space is null || !await perms.CanViewSpaceAsync(space.Id)) return ExportRefusal.NoSpace;
+        // Turned off for this space (dev-plan 12.3), for everyone. A pack is
+        // the most complete export there is, history and all, so a space
+        // sensitive enough to lock down is one where this matters most.
+        if (!SpaceExports.Allows(space, ExportFormat.Pack)) return ExportRefusal.TurnedOff(space, ExportFormat.Pack);
+        return null;
+    }
+
+    /// <summary>What building a pack needs, from a request or from a job's own scope.</summary>
+    internal sealed record PackServices(
+        AppDbContext Db, IAttachmentStorage Storage, IProfileMediaService Media, ISiteSettingsService Settings, IAuditLogger Audit)
+    {
+        public static PackServices From(IServiceProvider sp) => new(
+            sp.GetRequiredService<AppDbContext>(), sp.GetRequiredService<IAttachmentStorage>(),
+            sp.GetRequiredService<IProfileMediaService>(), sp.GetRequiredService<ISiteSettingsService>(),
+            sp.GetRequiredService<IAuditLogger>());
+    }
+
+    /// <summary>
+    /// Writes the pack to <paramref name="output"/>, seeing what
+    /// <paramref name="perms"/> sees, and records the export against
+    /// <paramref name="actor"/>.
+    /// </summary>
+    internal static async Task WriteAsync(
+        Stream output, Space space, IPermissionService perms, Guid? actor, PackServices services,
+        ExportProgress.Reporter report, CancellationToken ct)
+    {
+        var (db, storage, media, settings, audit) = services;
+        report.Stage("Checking which pages go in", 0);
+        var (model, storageKeys) = await BuildAsync(db, perms, settings, space, ct);
+
+        audit.RecordAs(actor, "space.exported", "space", space.Id, new
+        {
+            space.Key,
+            Format = WikiPack.Format,
+            model.Manifest.Counts.Pages,
+            model.Manifest.Omitted,
+        });
+        await db.SaveChangesAsync(ct);
+
+        await WikiPack.WriteAsync(
+            output, model,
+            (name, _) => Task.FromResult(Open(name, storageKeys, storage, media, space)),
+            ct, report);
     }
 
     /// <summary>

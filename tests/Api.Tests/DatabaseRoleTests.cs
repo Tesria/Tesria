@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using Tesria.Api.Domain;
 using Tesria.Api.Infrastructure;
@@ -80,6 +81,30 @@ public class DatabaseRoleTests
         var ex = await Assert.ThrowsAsync<PostgresException>(() =>
             db.Database.ExecuteSqlRawAsync("UPDATE \"BackupJobs\" SET \"Status\" = 'failed'"));
         Assert.Equal(PostgresErrorCodes.InsufficientPrivilege, ex.SqlState);
+    }
+
+    [PostgresFact]
+    public async Task An_export_job_is_queued_run_and_removed_within_the_roles_grants()
+    {
+        // Dev-plan 20.2: the app writes the job, the runner its progress and
+        // file, and the owner's list removes it, all as the app's role.
+        using var pg = new PostgresTestDatabase();
+        using var factory = new TestAppFactory(pg);
+        var owner = factory.CreateClient();
+        await owner.RegisterAndSignInAsync();
+        var spaceId = await owner.CreateSpaceAsync("GRANTS");
+        (await owner.PostAsJsonAsync("/api/pages", new { SpaceId = spaceId, Title = "One",
+            ContentJson = """{"type":"doc","content":[]}""" })).EnsureSuccessStatusCode();
+
+        var queued = await owner.PostAsJsonAsync("/api/exports", new { SpaceKey = "GRANTS", Format = "pack" });
+        Assert.Equal(HttpStatusCode.Accepted, queued.StatusCode);
+        var id = (await queued.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>()).GetProperty("id").GetGuid();
+        await factory.Services.GetRequiredService<Tesria.Api.Features.Export.ExportJobRunner>().RunQueuedAsync(CancellationToken.None);
+
+        var job = await owner.GetFromJsonAsync<System.Text.Json.JsonElement>($"/api/exports/{id}");
+        Assert.Equal("ready", job.GetProperty("status").GetString());
+        (await owner.GetAsync($"/api/exports/{id}/file")).EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/api/exports/{id}")).StatusCode);
     }
 
     [PostgresFact]
@@ -205,6 +230,9 @@ public class MigrateWatchTests
         // becomes ready once the database is one it knows: what restoring a
         // backup made by this version does.
         var marker = Path.Combine(Path.GetTempPath(), $"tesria-migrated-{Guid.NewGuid():N}");
+        // A marker left by an earlier run (a restarted container keeps /tmp)
+        // must not count.
+        await File.WriteAllTextAsync(marker, "stale");
         using var stop = new CancellationTokenSource();
         var watch = Task.Run(() => MigrateCommand.WatchAsync(
             pg.OwnerConnection, pg.AppConnection, NullLogger.Instance, stop.Token,

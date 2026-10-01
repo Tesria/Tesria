@@ -123,6 +123,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Backup> Backups => Set<Backup>();
     public DbSet<BackupJob> BackupJobs => Set<BackupJob>();
     public DbSet<BackupTarget> BackupTargets => Set<BackupTarget>();
+    public DbSet<ExportJob> ExportJobs => Set<ExportJob>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
 
@@ -594,6 +595,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.PassphraseFingerprint).HasMaxLength(16);
             e.Property(x => x.Message).HasMaxLength(2000);
         });
+        b.Entity<ExportJob>(e =>
+        {
+            e.Property(x => x.Format).HasMaxLength(20);
+            e.Property(x => x.Audience).HasMaxLength(20);
+            e.Property(x => x.Style).HasMaxLength(20);
+            e.Property(x => x.Error).HasMaxLength(2000);
+            e.Property(x => x.FileName).HasMaxLength(300);
+            e.HasIndex(x => new { x.UserId, x.Status });
+            e.HasIndex(x => x.Status);
+            // A job goes with the person who asked and with its space.
+            e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Space).WithMany().HasForeignKey(x => x.SpaceId).OnDelete(DeleteBehavior.Cascade);
+        });
+
         b.Entity<BackupJob>(e =>
         {
             e.Property(x => x.Agent).HasMaxLength(20);

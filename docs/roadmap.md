@@ -584,7 +584,7 @@ invite carries no groups.
   a space open to all; and keeping the list usable with four groups per
   space on an instance with many spaces.
 
-## Exports that keep going after you leave the page (asked for 2026-09-30, not scheduled)
+## Exports that keep going after you leave the page (asked for 2026-09-30, built 2026-10-01 as dev-plan 20.2)
 
 *Asked for by the owner:* preparing an export should be queued and keep
 going when the person leaves the page they started it on. A space export

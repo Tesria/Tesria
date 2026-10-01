@@ -21,8 +21,8 @@ namespace Tesria.Api.Features.Export;
 /// </summary>
 public static class SiteExportEndpoints
 {
-    /// <summary>Above this a space needs a job with progress, which is not built until something needs it.</summary>
-    private const int MaxPages = 300;
+    /// <summary>The most pages a site may have (12.2).</summary>
+    internal const int MaxPages = 300;
 
     /// <summary>Where a space's uploaded icon lands in the site. Always webp, as stored.</summary>
     private const string SpaceIconAsset = "assets/space-icon.webp";
@@ -58,78 +58,16 @@ public static class SiteExportEndpoints
         CurrentUser current, IWebHostEnvironment env, Infrastructure.Branding.IBrandAssets brandAssets, CancellationToken ct)
     {
         var space = await db.Spaces.AsNoTracking().FirstOrDefaultAsync(s => s.Key == key.ToUpperInvariant(), ct);
-        if (space is null) return Results.NotFound();
-        if (!await perms.CanViewSpaceAsync(space.Id)) return Results.NotFound();
-        // Turned off for this space (dev-plan 12.3), for everyone.
-        if (!SpaceExports.Allows(space, ExportFormat.Site)) return SpaceExports.Refused(space, ExportFormat.Site);
-
         var anonymous = !string.Equals(audience, "me", StringComparison.OrdinalIgnoreCase);
+        if (await CheckAsync(space, anonymous, perms, renderer, renderTokens, ct) is { } refused) return refused.ToResult();
 
-        // An anonymous site of a space nobody can read anonymously would be an
-        // empty site, and silently shipping an empty zip is worse than saying
-        // so (dev-plan 12.2).
-        if (anonymous && !await perms.IsPubliclyViewableSpaceAsync(space.Id))
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["audience"] =
-                [
-                    "This space is not public, so an anonymous site would be empty. Publish it first "
-                    + "(Administration → Spaces), or export it for yourself instead.",
-                ],
-            });
-
-        // Checked after the request is: "this space is not public" is
-        // something the caller can act on, and a missing renderer is not, so
-        // the actionable answer goes first.
-        if (!renderer.Available || !renderTokens.IsConfigured)
-            return Results.Problem(
-                detail: "This instance has no export renderer configured, so a site cannot be built.",
-                statusCode: StatusCodes.Status503ServiceUnavailable);
-
-        // Which pages are in the site is decided by the audience, not by the
-        // exporter: the whole point of the anonymous default is that it cannot
-        // include something the public could not already read.
         var reader = anonymous ? perms.AsAnonymous() : perms;
         var report = tracker.Start(current.Id, progress);
         try
         {
             report.Stage("Checking which pages go in", 0);
-            var pages = await VisiblePagesAsync(db, reader, space.Id, ct);
-            if (pages.Count > MaxPages)
-                return Results.ValidationProblem(new Dictionary<string, string[]>
-                {
-                    ["pages"] = [$"This space has {pages.Count} pages and the limit is {MaxPages}."],
-                });
-
-            var placed = SiteExport.Place(pages);
-            var pagePaths = placed.ToDictionary(p => p.Id, p => p.Path);
-            var token = renderTokens.IssueForSpace(space.Id, anonymous || !current.IsAuthenticated ? null : current.RequireId());
-            var origin = ExportEndpoints.RenderOrigin(config);
-            var siteSettings = await settings.GetAsync(ct);
-            var instanceName = siteSettings.InstanceName;
-            var footer = Footer(instanceName);
-            var css = await StylesheetAsync(env, ct);
-
-            // The branding as it is now, with its files under assets/ (dev-plan
-            // 13.1). The name in the bar is the brand name, or Tesria; the
-            // instance name titles the pages and signs the footer.
-            var packed = await BrandExport.PackAsync(siteSettings, brandAssets, env, inline: false, ct);
-            var brand = packed.Brand;
-            // The look the site opens in (0.8.1): the app passes the
-            // exporter's own, so the site looks as they saw it; a reader
-            // can still switch in the site's appearance menu.
-            if (string.Equals(style, "glass", StringComparison.OrdinalIgnoreCase))
-                brand = brand with { Attributes = [.. brand.Attributes, ("data-style-default", "glass")] };
-
-            // A space with an uploaded icon needs that file in the site: the
-            // sidebar cannot reach back to the instance for it.
-            var icon = space.IconKind == SpaceIconKind.Image
-                ? media.OpenRead(media.KeyFor(ProfileMediaKind.SpaceIcon, space.Id))
-                : null;
-            var head = SiteChrome.HeadOf(space, icon is null ? null : SpaceIconAsset);
-
-            // Attachments referenced by the pages that are actually in the site.
-            var assets = await AssetsAsync(db, placed.Select(p => p.Id).ToList(), ct);
+            var pages = await VisiblePagesAsync(db, reader, space!.Id, ct);
+            if (PageLimit(pages.Count) is { } tooMany) return tooMany.ToResult();
 
             // Spooled to a temporary file, as the pack export is, not built in
             // memory: a space with many large attachments made a zip that
@@ -141,64 +79,8 @@ public static class SiteExportEndpoints
                 bufferSize: 64 * 1024, FileOptions.DeleteOnClose | FileOptions.Asynchronous);
             try
             {
-                using (var zip = new ZipArchive(buffer, ZipArchiveMode.Create, leaveOpen: true))
-                {
-                    await WriteTextAsync(zip, "assets/site.css", css, ct);
-                    foreach (var (path, bytes) in packed.Files)
-                    {
-                        var entry = zip.CreateEntry(path, CompressionLevel.Optimal);
-                        await using var target = entry.Open();
-                        await target.WriteAsync(bytes, ct);
-                    }
-                    await WriteTextAsync(zip, "index.html",
-                        SiteExport.Index(space, placed, css, brand, head, footer), ct);
-                    await WriteTextAsync(zip, "404.html",
-                        SiteExport.NotFound(space, css, brand, head, placed, footer), ct);
-
-                    if (icon is not null)
-                    {
-                        await using (icon)
-                        {
-                            var entry = zip.CreateEntry(SpaceIconAsset, CompressionLevel.Optimal);
-                            await using var target = entry.Open();
-                            await icon.CopyToAsync(target, ct);
-                        }
-                    }
-
-                    report.Stage("Capturing pages", placed.Count);
-                    foreach (var page in placed)
-                    {
-                        report.Working(page.Title);
-                        var url = $"{origin}/export/pages/{page.Id}?chrome=site";
-                        // Not inlined: the site ships real files under assets/, which
-                        // keeps each page small and lets a browser cache an image once
-                        // rather than once per page that shows it.
-                        var captured = await renderer.CaptureAsync(
-                            url, token, "html", page.Title, ct, inlineAssets: false);
-                        report.Step();
-                        if (captured is null) continue; // one page failing must not lose the rest
-
-                        var html = Encoding.UTF8.GetString(captured);
-                        html = SiteExport.RewriteLinks(html, page.Path, pagePaths, assets.Names);
-                        html = SiteChrome.ApplyToDocument(html, brand,
-                            Infrastructure.Branding.BrandTitle.Format(instanceName, space.Name, page.Title), page.Path);
-                        html = InjectSiteChrome(html, placed, page, brand, head, footer);
-                        await WriteTextAsync(zip, $"{page.Path}/index.html", html, ct);
-                    }
-
-                    report.Stage("Copying files", assets.Names.Count);
-                    foreach (var (id, name) in assets.Names)
-                    {
-                        report.Working(name[33..]);
-                        report.Step();
-                        if (!assets.Keys.TryGetValue(id, out var storageKey)) continue;
-                        await using var bytes = storage.OpenRead(storageKey);
-                        if (bytes is null) continue;
-                        var entry = zip.CreateEntry($"assets/{name}", CompressionLevel.Optimal);
-                        await using var target = entry.Open();
-                        await bytes.CopyToAsync(target, ct);
-                    }
-                }
+                await WriteAsync(buffer, space, anonymous, style, anonymous || !current.IsAuthenticated ? null : current.RequireId(), pages,
+                    new SiteServices(db, renderTokens, renderer, storage, media, settings, config, env, brandAssets), report, ct);
             }
             catch
             {
@@ -208,7 +90,7 @@ public static class SiteExportEndpoints
             }
 
             buffer.Position = 0;
-            return Results.File(buffer, "application/zip", $"{space.Key.ToLowerInvariant()}-site.zip");
+            return Results.File(buffer, "application/zip", FileName(space));
         }
         finally
         {
@@ -216,8 +98,158 @@ public static class SiteExportEndpoints
         }
     }
 
+    internal static string FileName(Space space) => $"{space.Key.ToLowerInvariant()}-site.zip";
+
+    /// <summary>
+    /// Whether this person may have this site at all: the same checks for a
+    /// request and for a job, which runs them again when it starts, as the
+    /// person who asked (dev-plan 20.2). Null when it may go ahead.
+    /// </summary>
+    internal static async Task<ExportRefusal?> CheckAsync(
+        Space? space, bool anonymous, IPermissionService perms, IPdfRenderer renderer,
+        Infrastructure.Export.IRenderTokens renderTokens, CancellationToken ct)
+    {
+        if (space is null || !await perms.CanViewSpaceAsync(space.Id)) return ExportRefusal.NoSpace;
+        // Turned off for this space (dev-plan 12.3), for everyone.
+        if (!SpaceExports.Allows(space, ExportFormat.Site)) return ExportRefusal.TurnedOff(space, ExportFormat.Site);
+
+        // An anonymous site of a space nobody can read anonymously would be an
+        // empty site, and silently shipping an empty zip is worse than saying
+        // so (dev-plan 12.2).
+        if (anonymous && !await perms.IsPubliclyViewableSpaceAsync(space.Id))
+            return new ExportRefusal(StatusCodes.Status400BadRequest,
+                "This space is not public, so an anonymous site would be empty. Publish it first "
+                + "(Administration → Spaces), or export it for yourself instead.", Field: "audience");
+
+        // Checked after the request is: "this space is not public" is
+        // something the caller can act on, and a missing renderer is not, so
+        // the actionable answer goes first.
+        if (!renderer.Available || !renderTokens.IsConfigured)
+            return new ExportRefusal(StatusCodes.Status503ServiceUnavailable,
+                "This instance has no export renderer configured, so a site cannot be built.");
+        return null;
+    }
+
+    internal static ExportRefusal? PageLimit(int pages) => pages > MaxPages
+        ? new ExportRefusal(StatusCodes.Status400BadRequest, $"This space has {pages} pages and the limit is {MaxPages}.", Field: "pages")
+        : null;
+
+    /// <summary>What building a site needs, from a request or from a job's own scope.</summary>
+    internal sealed record SiteServices(
+        AppDbContext Db, Infrastructure.Export.IRenderTokens RenderTokens, IPdfRenderer Renderer,
+        IAttachmentStorage Storage, IProfileMediaService Media, ISiteSettingsService Settings, IConfiguration Config,
+        IWebHostEnvironment Env, Infrastructure.Branding.IBrandAssets BrandAssets)
+    {
+        public static SiteServices From(IServiceProvider sp) => new(
+            sp.GetRequiredService<AppDbContext>(), sp.GetRequiredService<Infrastructure.Export.IRenderTokens>(),
+            sp.GetRequiredService<IPdfRenderer>(), sp.GetRequiredService<IAttachmentStorage>(),
+            sp.GetRequiredService<IProfileMediaService>(), sp.GetRequiredService<ISiteSettingsService>(),
+            sp.GetRequiredService<IConfiguration>(), sp.GetRequiredService<IWebHostEnvironment>(),
+            sp.GetRequiredService<Infrastructure.Branding.IBrandAssets>());
+    }
+
+    /// <summary>
+    /// Writes the site's zip to <paramref name="output"/>, which is left open.
+    /// <paramref name="pages"/> are the ones its audience may see; the render
+    /// token is issued for <paramref name="renderAs"/>, or for nobody.
+    /// </summary>
+    internal static async Task WriteAsync(
+        Stream output, Space space, bool anonymous, string? style, Guid? renderAs, List<SiteExport.PageNode> pages,
+        SiteServices services, ExportProgress.Reporter report, CancellationToken ct)
+    {
+        var (db, renderTokens, renderer, storage, media, settings, config, env, brandAssets) = services;
+        var placed = SiteExport.Place(pages);
+        var pagePaths = placed.ToDictionary(p => p.Id, p => p.Path);
+        var token = renderTokens.IssueForSpace(space.Id, anonymous ? null : renderAs);
+        var origin = ExportEndpoints.RenderOrigin(config);
+        var siteSettings = await settings.GetAsync(ct);
+        var instanceName = siteSettings.InstanceName;
+        var footer = Footer(instanceName);
+        var css = await StylesheetAsync(env, ct);
+
+        // The branding as it is now, with its files under assets/ (dev-plan
+        // 13.1). The name in the bar is the brand name, or Tesria; the
+        // instance name titles the pages and signs the footer.
+        var packed = await BrandExport.PackAsync(siteSettings, brandAssets, env, inline: false, ct);
+        var brand = packed.Brand;
+        // The look the site opens in (0.8.1): the app passes the
+        // exporter's own, so the site looks as they saw it; a reader
+        // can still switch in the site's appearance menu.
+        if (string.Equals(style, "glass", StringComparison.OrdinalIgnoreCase))
+            brand = brand with { Attributes = [.. brand.Attributes, ("data-style-default", "glass")] };
+
+        // A space with an uploaded icon needs that file in the site: the
+        // sidebar cannot reach back to the instance for it.
+        var icon = space.IconKind == SpaceIconKind.Image
+            ? media.OpenRead(media.KeyFor(ProfileMediaKind.SpaceIcon, space.Id))
+            : null;
+        var head = SiteChrome.HeadOf(space, icon is null ? null : SpaceIconAsset);
+
+        // Attachments referenced by the pages that are actually in the site.
+        var assets = await AssetsAsync(db, placed.Select(p => p.Id).ToList(), ct);
+
+        using (var zip = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            await WriteTextAsync(zip, "assets/site.css", css, ct);
+            foreach (var (path, bytes) in packed.Files)
+            {
+                var entry = zip.CreateEntry(path, CompressionLevel.Optimal);
+                await using var target = entry.Open();
+                await target.WriteAsync(bytes, ct);
+            }
+            await WriteTextAsync(zip, "index.html",
+                SiteExport.Index(space, placed, css, brand, head, footer), ct);
+            await WriteTextAsync(zip, "404.html",
+                SiteExport.NotFound(space, css, brand, head, placed, footer), ct);
+
+            if (icon is not null)
+            {
+                await using (icon)
+                {
+                    var entry = zip.CreateEntry(SpaceIconAsset, CompressionLevel.Optimal);
+                    await using var target = entry.Open();
+                    await icon.CopyToAsync(target, ct);
+                }
+            }
+
+            report.Stage("Capturing pages", placed.Count);
+            foreach (var page in placed)
+            {
+                report.Working(page.Title);
+                var url = $"{origin}/export/pages/{page.Id}?chrome=site";
+                // Not inlined: the site ships real files under assets/, which
+                // keeps each page small and lets a browser cache an image once
+                // rather than once per page that shows it.
+                var captured = await renderer.CaptureAsync(
+                    url, token, "html", page.Title, ct, inlineAssets: false);
+                report.Step();
+                if (captured is null) continue; // one page failing must not lose the rest
+
+                var html = Encoding.UTF8.GetString(captured);
+                html = SiteExport.RewriteLinks(html, page.Path, pagePaths, assets.Names);
+                html = SiteChrome.ApplyToDocument(html, brand,
+                    Infrastructure.Branding.BrandTitle.Format(instanceName, space.Name, page.Title), page.Path);
+                html = InjectSiteChrome(html, placed, page, brand, head, footer);
+                await WriteTextAsync(zip, $"{page.Path}/index.html", html, ct);
+            }
+
+            report.Stage("Copying files", assets.Names.Count);
+            foreach (var (id, name) in assets.Names)
+            {
+                report.Working(name[33..]);
+                report.Step();
+                if (!assets.Keys.TryGetValue(id, out var storageKey)) continue;
+                await using var bytes = storage.OpenRead(storageKey);
+                if (bytes is null) continue;
+                var entry = zip.CreateEntry($"assets/{name}", CompressionLevel.Optimal);
+                await using var target = entry.Open();
+                await bytes.CopyToAsync(target, ct);
+            }
+        }
+    }
+
     /// <summary>Every page the audience may see, as a tree, in tree order.</summary>
-    private static async Task<List<SiteExport.PageNode>> VisiblePagesAsync(
+    internal static async Task<List<SiteExport.PageNode>> VisiblePagesAsync(
         AppDbContext db, IPermissionService reader, Guid spaceId, CancellationToken ct)
     {
         var rows = await db.Pages.AsNoTracking()

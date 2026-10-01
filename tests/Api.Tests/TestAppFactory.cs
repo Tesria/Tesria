@@ -113,6 +113,8 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Storage:UploadsPath"] = _uploadsPath,
+                // Export jobs run when a test says so (ExportJobRunner.RunQueuedAsync).
+                ["Exports:RunInBackground"] = "false",
             })
             .AddInMemoryCollection(_settings));
         builder.ConfigureServices(services =>

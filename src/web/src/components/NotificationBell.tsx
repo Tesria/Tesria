@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { api, type AppNotification } from '../api/client'
 import { ALERT_KIND_LABEL } from '../routes/admin/alertKinds'
 import { usePopoverMotion } from './popoverMotion'
+import { ExportJobView } from './ExportJobView'
+import { isActive } from './exportJobLabel'
+import { useExportJobs } from './exportJobs'
 
 /** Same stroke-icon language as the editor toolbar (editor/icons.tsx) (flat,
  *  currentColor, 1.8px stroke) instead of the platform's own emoji bell,
@@ -47,6 +50,16 @@ function describe(n: AppNotification): string {
       return 'One of your API tokens expires soon'
     }
   }
+  // A space export prepared in the background (dev-plan 20.2).
+  if (n.action === 'export.ready' || n.action === 'export.failed') {
+    try {
+      const meta = JSON.parse(n.metadataJson ?? '{}') as { Title?: string; Format?: string }
+      const what = `${meta.Format === 'pack' ? 'pack' : 'site'} of ${meta.Title ?? 'a space'}`
+      return n.action === 'export.ready' ? `Your ${what} is ready to download` : `Your ${what} could not be prepared`
+    } catch {
+      return n.action === 'export.ready' ? 'An export is ready to download' : 'An export could not be prepared'
+    }
+  }
   // An administrator revoked one of your tokens (the admin API tokens tab).
   if (n.action === 'token.revoked') {
     try {
@@ -80,6 +93,10 @@ export function NotificationBell() {
   const [count, setCount] = useState(0)
   const [items, setItems] = useState<AppNotification[] | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
+  // Exports being prepared, or ready, shown above the notifications. The
+  // bell turns while one is still going.
+  const { jobs } = useExportJobs()
+  const preparing = jobs.some(isActive)
 
   function refreshCount() {
     api.notifications.unreadCount().then((r) => setCount(r.count)).catch(() => {})
@@ -114,11 +131,14 @@ export function NotificationBell() {
   }
 
   async function openNotification(n: AppNotification) {
-    setOpen(false)
     if (!n.readAt) {
       api.notifications.markRead(n.id).catch(() => {})
       setCount((c) => Math.max(0, c - 1))
+      setItems((prev) => prev?.map((m) => (m.id === n.id ? { ...m, readAt: new Date().toISOString() } : m)) ?? null)
     }
+    // An export's file is in Downloads, just above: the panel stays open.
+    if (n.targetType === 'export') return
+    setOpen(false)
     if (n.targetType === 'token') {
       navigate('/profile#api-tokens')
       return
@@ -144,7 +164,13 @@ export function NotificationBell() {
 
   return (
     <div className="notif" ref={rootRef}>
-      <button type="button" className={open ? 'notif__bell is-open' : 'notif__bell'} onClick={toggle} aria-label="Notifications" aria-expanded={open}>
+      <button
+        type="button"
+        className={`notif__bell${open ? ' is-open' : ''}${preparing ? ' is-preparing' : ''}`}
+        onClick={toggle}
+        aria-label={preparing ? 'Notifications (an export is being prepared)' : 'Notifications'}
+        aria-expanded={open}
+      >
         <BellIcon />
         {count > 0 && <span className="notif__badge">{count > 99 ? '99+' : count}</span>}
       </button>
@@ -159,6 +185,17 @@ export function NotificationBell() {
           </button>
             </span>
           </div>
+          {jobs.length > 0 && (
+            <section className="notif__downloads" aria-label="Downloads">
+              <h3 className="notif__section-title">Downloads</h3>
+              <ul className="notif__jobs">
+                {jobs.map((job) => (
+                  <li key={job.id}><ExportJobView job={job} compact /></li>
+                ))}
+              </ul>
+              <h3 className="notif__section-title">Notifications</h3>
+            </section>
+          )}
           {items === null && <p className="muted small" style={{ padding: '0.5rem' }}>Loading…</p>}
           {items?.length === 0 && <p className="muted small" style={{ padding: '0.5rem' }}>You're all caught up.</p>}
           <ul className="notif__list">

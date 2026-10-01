@@ -104,8 +104,8 @@ export async function prepare({ lib, author, demoId }) {
 
 /** What changed on these pages for a new version (dev-plan 16.2). */
 export const changes = {
-  'A space as a website': '0.6: a progress bar and Cancel while it builds.',
-  'Wiki packs': '0.6: a progress bar and Cancel while it packs.',
+  'A space as a website': '0.6: a progress bar and Cancel while it builds. 0.8.6: prepared in the background, and downloaded from Downloads in the notifications.',
+  'Wiki packs': '0.6: a progress bar and Cancel while it packs. 0.8.6: prepared in the background, and downloaded from Downloads in the notifications.',
   'API tokens': '0.6: where to find them, revoking one step by step, and how many requests each has made.',
 }
 
@@ -567,15 +567,22 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     step(1, 'Open the space’s settings'),
     p('In the space, choose ', b('Space Settings'), ' at the bottom of the sidebar. The ', b('Details'), ' tab opens; scroll down to ', b('Export as a Site'), '.'),
-    ...(await picture(site, 'site-export', 'Export as a Site in the space’s settings', 'Choose who the site is for, then Export as a Site.')),
+    ...(await picture(site, 'site-export', 'Export as a Site in the space’s settings', 'Choose who the site is for, then Prepare the Site.')),
     step(2, 'Choose who it is for'),
     ul(
       li(p(b('As the Public Sees It:'), ' only what someone with no account can already read. The space has to be published for public reading first (see ', pageLink('Public reading'), '). Nothing private can get in, whatever you yourself can see. Choose this for anything going on the internet.')),
       li(p(b('As Me:'), ' everything you can read, restricted pages included. Choose this for a copy you keep yourself, or a site behind your own sign-in. Treat it as private.')),
     ),
-    step(3, 'Choose Export as a Site'),
-    p('Each page takes about a second to build, so a large space takes a minute or two. A bar under the button shows how far along it is: the pages done out of the total, the page being built, and the time so far. Then the site downloads as a zip named after the space’s key, such as ', c('team-site.zip'), '.'),
-    p(b('Cancel'), ', beside the bar, stops the export; so does leaving the page before it finishes.'),
+    step(3, 'Choose Prepare the Site'),
+    p('Each page takes about a second to build, so a large space takes a minute or two. A bar under the button shows how far along it is: the pages done out of the total and the page being built. When it is ready, choose ', b('Download'), ': the site is a zip named after the space’s key, such as ', c('team-site.zip'), '.'),
+    step(4, 'Leave the page if you like'),
+    p('The export keeps going on the server. While it does, a ring turns around the bell at the top of the screen; open it, and ', b('Downloads'), ' shows the export with the same bar, above your notifications. When it is ready, the bell says so too, on any page and on any of your devices, and ', b('Download'), ' is there.'),
+    ul(
+      li(p(b('Cancel'), ' stops it, from under the button or from Downloads.')),
+      li(p(b('Remove'), ' takes a finished one out of the list, with its file.')),
+      li(p('A ready file is kept for a day, for you alone, then deleted. Prepare it again for a newer copy.')),
+      li(p('Exports are prepared one at a time for the whole wiki, so one may wait for another; Downloads says how many are ahead.')),
+    ),
 
     h(2, 'What the site looks like'),
     ul(
@@ -623,7 +630,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     panel('success', p(b('A pack can live in Git.'), ' The files inside are readable text, and the same space always packs to exactly the same file, so committing a pack after each change shows what actually changed.')),
 
     h(2, 'Exporting a pack'),
-    p('In the space, choose ', b('Space Settings'), ', scroll down the ', b('Details'), ' tab to ', b('Export as a Pack'), ', and choose the button of the same name. A bar shows how far along it is, with a ', b('Cancel'), ' button, and then it downloads as a zip named after the space’s key, such as ', c('team-pack.zip'), '.'),
+    p('In the space, choose ', b('Space Settings'), ', scroll down the ', b('Details'), ' tab to ', b('Export as a Pack'), ', and choose ', b('Prepare the Pack'), '. A bar shows how far along it is, with a ', b('Cancel'), ' button; when it is ready, choose ', b('Download'), ': a zip named after the space’s key, such as ', c('team-pack.zip'), '. Like a site, it keeps going if you leave the page, and waits for you in ', b('Downloads'), ' in your notifications for a day.'),
     p(b('What goes in:')),
     ul(
       li(p('Every page you can read, with every version of it, its comments, labels and attachments.')),

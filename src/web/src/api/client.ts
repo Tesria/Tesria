@@ -189,41 +189,33 @@ export type ImportedPack = {
   madeWith: string | null
 }
 
-/** How far along a site or pack export is (dev-plan 20.1). */
-export type ExportProgress = {
-  stage: string
+/**
+ * A site or pack export of a space, prepared in the background (dev-plan
+ * 20.2). Only the person who asked sees it.
+ */
+export type ExportJob = {
+  id: string
+  format: 'site' | 'pack'
+  spaceKey: string
+  spaceName: string
+  /** A site's audience; null for a pack. */
+  audience: 'anonymous' | 'me' | null
+  status: 'queued' | 'running' | 'ready' | 'failed' | 'canceled' | 'expired'
+  /** While running: what it is doing, and how far along. */
+  stage: string | null
   done: number
   total: number
   current: string | null
-  startedAt: string
-  /** Built: what is left is the download. */
-  finished: boolean
-}
-
-export type ExportOptions = {
-  /** Made up by the page, to ask the server how far along it is. */
-  progressId?: string
-  /** Aborting it cancels the export on the server too. */
-  signal?: AbortSignal
-  /** Bytes received of the finished file, once it is being sent. */
-  onDownload?: (received: number, total: number | null) => void
-}
-
-/** A response body as a Blob, telling `onDownload` how much has arrived. */
-async function readWithProgress(res: Response, onDownload?: ExportOptions['onDownload']): Promise<Blob> {
-  if (!onDownload || !res.body) return res.blob()
-  const length = Number(res.headers.get('Content-Length')) || null
-  const reader = res.body.getReader()
-  const chunks: BlobPart[] = []
-  let received = 0
-  for (;;) {
-    const { done, value } = await reader.read()
-    if (done) break
-    chunks.push(value)
-    received += value.length
-    onDownload(received, length)
-  }
-  return new Blob(chunks, { type: res.headers.get('Content-Type') ?? 'application/zip' })
+  /** While queued: how many are ahead of it. */
+  position: number | null
+  error: string | null
+  fileName: string | null
+  fileSize: number | null
+  createdAt: string
+  startedAt: string | null
+  finishedAt: string | null
+  /** When a ready file is deleted. */
+  expiresAt: string | null
 }
 
 export type Space = {
@@ -1189,7 +1181,7 @@ export type WatchStatus = { watching: boolean }
 export type AppNotification = {
   id: string
   action: string
-  targetType: 'page' | 'space' | 'security' | 'token'
+  targetType: 'page' | 'space' | 'security' | 'token' | 'export'
   targetId: string
   actorId: string | null
   actorName: string | null
@@ -1521,20 +1513,6 @@ export const api = {
     /** Irreversible. The key proves the space, the password proves the person. */
     remove: (key: string, input: { confirmKey: string; password?: string; code?: string }) =>
       request<void>('DELETE', `/api/spaces/${encodeURIComponent(key)}`, input),
-    /** The whole space as a static site, as a zip (dev-plan 12.2). */
-    exportSite: async (key: string, audience: 'anonymous' | 'me', options: ExportOptions = {}): Promise<Blob> => {
-      const progress = options.progressId ? `&progress=${options.progressId}` : ''
-      // The site opens in the look the exporter is using (0.8.1).
-      const style = document.documentElement.getAttribute('data-style') === 'glass' ? '&style=glass' : ''
-      const res = await fetch(
-        `/api/spaces/${encodeURIComponent(key)}/export/site?audience=${audience}${progress}${style}`,
-        { credentials: 'include', headers: CSRF_HEADER, signal: options.signal },
-      )
-      if (!res.ok) return handle<Blob>(res)
-      return readWithProgress(res, options.onDownload)
-    },
-    /** How far along an export is (dev-plan 20.1); 404 until it has started. */
-    exportProgress: (id: string) => request<ExportProgress>('GET', `/api/export-progress/${id}`),
     /** What an import turned out to contain, and what it could not carry. */
     importPack: async (file: File, key: string, name?: string): Promise<ImportedPack> => {
       const body = new FormData()
@@ -1549,22 +1527,16 @@ export const api = {
       })
       return handle<ImportedPack>(res)
     },
-    /**
-     * The whole space as a wiki pack, as a zip (dev-plan 8.5).
-     *
-     * No audience to choose, unlike a site: a pack is for reading back into
-     * Tesria, so it carries everything you can see and nothing you cannot.
-     */
-    exportPack: async (key: string, options: ExportOptions = {}): Promise<Blob> => {
-      const progress = options.progressId ? `?progress=${options.progressId}` : ''
-      const res = await fetch(`/api/spaces/${encodeURIComponent(key)}/export/pack${progress}`, {
-        credentials: 'include',
-        headers: CSRF_HEADER,
-        signal: options.signal,
-      })
-      if (!res.ok) return handle<Blob>(res)
-      return readWithProgress(res, options.onDownload)
-    },
+  },
+  /** Space exports prepared in the background (dev-plan 20.2). */
+  exports: {
+    start: (input: { spaceKey: string; format: 'site' | 'pack'; audience?: 'anonymous' | 'me'; style?: 'glass' | null }) =>
+      request<ExportJob>('POST', '/api/exports', input),
+    list: () => request<ExportJob[]>('GET', '/api/exports'),
+    cancel: (id: string) => request<ExportJob>('POST', `/api/exports/${id}/cancel`, {}),
+    remove: (id: string) => request<void>('DELETE', `/api/exports/${id}`),
+    /** A plain link: the browser downloads it with the session cookie. */
+    fileUrl: (id: string) => `/api/exports/${id}/file`,
   },
   pages: {
     tree: (spaceId: string) => request<PageTreeNode[]>('GET', `/api/pages/tree?spaceId=${spaceId}`),

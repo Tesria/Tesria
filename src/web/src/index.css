@@ -751,6 +751,24 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .notif__item:hover { background: var(--bg-alt); }
 .notif__item--unread { background: var(--primary-softer); }
 .notif__item--unread:hover { background: var(--primary-soft); }
+/* Downloads (dev-plan 20.2): exports being prepared or ready, above the
+   notifications, each with its bar and its buttons. */
+.notif__section-title {
+  margin: 0; padding: 0.5rem 0.75rem 0.25rem;
+  font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted);
+}
+.notif__jobs { list-style: none; margin: 0; padding: 0; }
+.notif__jobs > li { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+/* While an export is being prepared, a small ring turns around the bell. */
+.notif__bell.is-preparing::after {
+  content: ""; position: absolute; inset: -1px; border-radius: 50%;
+  border: 2px solid transparent; border-top-color: var(--primary);
+  animation: notif-preparing 1s linear infinite; pointer-events: none;
+}
+@keyframes notif-preparing { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .notif__bell.is-preparing::after { animation: none; border-color: var(--primary); opacity: 0.5; }
+}
 
 /* ---- labels --------------------------------------------------------------- */
 .labels { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 0.5rem 0 0; }
@@ -3542,6 +3560,19 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
   .export-progress__bar.is-indeterminate > span { animation: none; width: 100%; opacity: 0.4; }
 }
 .export-progress__detail { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* One export job (dev-plan 20.2), in Downloads and under its button. */
+.export-job { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.export-job:not(.export-job--compact) { margin-top: 0.75rem; max-width: 36rem; }
+.export-job__head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; }
+.export-job__title { font-size: 0.88rem; min-width: 0; overflow-wrap: anywhere; }
+.export-job__status { color: var(--muted); }
+.export-job--ready .export-job__status { color: var(--text); font-weight: 600; }
+.export-job--failed .export-job__status { color: var(--danger); font-weight: 600; }
+.export-job__detail { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.export-job__detail.is-error { color: var(--danger); white-space: normal; }
+.export-job__actions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.2rem; }
+.export-job .export-progress__bar { margin: 0.2rem 0; }
 
 /* Exported HTML (dev-plan 12.2). These rules ship inside the exported
    stylesheet, so they have to stand on their own: an export has no

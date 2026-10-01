@@ -6218,6 +6218,60 @@ the request, which stops the work. The one thing given up is coming back
 to a closed tab for the file; running exports outside a request to allow it
 would move them away from the permissions and render token they run with.
 
+### 20.2 Exports that keep going after you leave the page · `M` · Model: Opus 5.5 · ✅ **built 2026-10-01, for 0.8.6**
+
+Asked for 2026-09-30 (roadmap: "Exports that keep going after you leave
+the page"), scheduled 2026-10-01. A site or pack export of a space is
+queued as a job, keeps going when its page is left or closed, and shows in
+a **Downloads** list in the notifications panel with its progress, Cancel,
+and Download once ready. The single-page exports stay in their request:
+they take seconds.
+
+**Design.**
+- **A job table** (`ExportJobs`, a migration): who asked, the space, the
+  format (site or pack), the audience and style for a site, the status
+  (queued, running, ready, failed, canceled, expired), the error, the file
+  name and size, and when it was asked for, started, finished and expires.
+- **One background runner** works through the queue, **one job at a time**
+  for the instance: a site export drives the PDF sidecar's browser page by
+  page, and two at once would only halve each other's speed on a small
+  machine. Live progress (stage, pages done, the current page) stays in
+  20.1's in-memory tracker, keyed by the job; the table holds the status.
+- **Permissions, checked twice.** When the job is asked for, the same checks
+  as today's request (the space, its export switches, a public site's
+  space being public, the renderer, the page limit). When it starts
+  running, again, as the person who asked (`AsUser`), together with their
+  account being active and their role still allowing exports: a queue can
+  wait, and a right taken away meanwhile must not be used. The render token
+  is issued then too, for that person. A pack is built as that person, a
+  public site as the anonymous reader, exactly as now.
+- **The file is theirs alone**: downloadable only by the person who asked,
+  while their account is active, for **24 hours**, then deleted. Files live
+  in the app container's temporary folder, not the uploads volume, so
+  exports never end up in backups or offsite copies, and a restart or an
+  upgrade simply loses them (the list says so: prepare it again).
+- **A restart** marks a running job failed with the reason ("Tesria
+  restarted while this was being prepared"); queued jobs wait for the
+  runner as before. Never left spinning.
+- **Limits**: three unfinished jobs per person; finished rows are removed
+  after a week.
+- **A notification** when a job is ready or fails, so the bell says so on
+  any page and on another device.
+- The synchronous `GET /spaces/{key}/export/site` and `/export/pack` stay
+  for API callers and scripts, built by the same code.
+
+**Decisions worth a second opinion** (CLAUDE.local.md): the migration (a
+new table, easy to drop); running an export as the person who asked
+outside their request, with the rights re-checked when it starts rather
+than held from the request; and keeping files only in temporary storage.
+
+**As built (2026-10-01).** As designed. Two things the live check found:
+the runner's loop shares the tests' single SQLite connection with the
+requests, so the tests turn it off (`Exports:RunInBackground`) and run jobs
+themselves; and the bell is rendered twice when the top bar folds, so the
+jobs live in one store (`exportJobs.ts`) both read. The site's 300-page
+limit stays for now: a job could take more, but nothing has asked.
+
 ## Phases 21 to 24: delivering the promise (scheduled 2026-09-26)
 
 **Order:** first, 14.4's close-out (the outside review's remaining checks,

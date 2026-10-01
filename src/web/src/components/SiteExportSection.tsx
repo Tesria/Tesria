@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { api } from '../api/client'
-import { ExportProgressView } from './ExportProgress'
-import { useExportRun } from './useExportRun'
+import { ExportJobView } from './ExportJobView'
+import { useSpaceExport } from './useSpaceExport'
 
 /**
  * Space settings → Export as a site (dev-plan 12.2).
@@ -13,8 +12,7 @@ import { useExportRun } from './useExportRun'
  */
 export function SiteExportSection({ spaceKey }: { spaceKey: string }) {
   const [audience, setAudience] = useState<'anonymous' | 'me'>('anonymous')
-  const exporting = useExportRun(`${spaceKey.toLowerCase()}-site.zip`, 'The site could not be built.')
-  const run = () => exporting.run((options) => api.spaces.exportSite(spaceKey, audience, options))
+  const exporting = useSpaceExport(spaceKey, 'site')
 
   return (
     <>
@@ -46,14 +44,17 @@ export function SiteExportSection({ spaceKey }: { spaceKey: string }) {
       </div>
 
       <div className="row-gap" style={{ marginTop: '0.75rem' }}>
-        <button type="button" className="btn btn--primary" disabled={exporting.busy} onClick={run}>
-          {exporting.busy ? 'Building the Site…' : 'Export as a Site'}
+        <button type="button" className="btn btn--primary" disabled={exporting.preparing}
+          onClick={() => void exporting.start({ audience })}>
+          {exporting.preparing ? 'Preparing the Site…' : 'Prepare the Site'}
         </button>
       </div>
-      <ExportProgressView state={exporting} noun="site" />
+      {exporting.latest && <ExportJobView job={exporting.latest} />}
       <p className="muted small">
         A page takes about a second to render, so a large space takes a minute or
-        two. Live blocks are frozen as they were at the moment of export.
+        two. It keeps going if you leave this page: when it is ready, download it
+        here or from <strong>Downloads</strong> in your notifications (the bell). Live
+        blocks are frozen as they were at the moment of export.
       </p>
     </>
   )

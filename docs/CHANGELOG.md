@@ -5,6 +5,19 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Space exports keep going when you leave the page** (dev-plan 20.2).
+  Prepare the Site and Prepare the Pack in Space Settings queue the export
+  on the server, and it carries on while you go elsewhere or close the tab.
+  A new **Downloads** list in the notifications panel shows each one with
+  its progress bar, Cancel, and Download once it is ready; a ring turns
+  around the bell while one is being prepared, and the bell says when it is
+  ready or why it failed, on any page and any device. Exports run one at a
+  time, as the person who asked, with their rights checked again when it
+  starts. A ready file is theirs alone for a day, then deleted, and is kept
+  outside the uploads volume so it never ends up in a backup. The
+  `GET /export/site` and `/export/pack` endpoints still work for scripts.
+  Checked live: leaving the page mid-export, Cancel from the bell, and
+  downloads of a site and a pack.
 - **Colored text on a highlight is readable in every theme.** The text
   colors fell to a contrast of 2.1 to 4.2 on the highlight colors (teal on
   purple was the worst). On a highlight or a colored table cell each color

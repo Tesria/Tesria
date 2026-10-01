@@ -98,6 +98,12 @@ public sealed class NotificationEmailService(
         foreach (var n in stale) n.EmailedAt = now; // too old to be news; retired unsent
         pending = pending.Except(stale).ToList();
 
+        // An export's ready or failed is for the bell only (dev-plan 20.2): its
+        // file is kept for a day, and a digest can arrive after that.
+        var exports = pending.Where(n => n.Action.StartsWith("export.", StringComparison.Ordinal)).ToList();
+        foreach (var n in exports) n.EmailedAt = now;
+        pending = pending.Except(exports).ToList();
+
         // Checked again at sending: a notification was allowed when it was
         // made, but a digest waits up to a day, and a page restricted in the
         // meantime must not have its title or a comment mailed to someone

@@ -1,6 +1,5 @@
-import { api } from '../api/client'
-import { ExportProgressView } from './ExportProgress'
-import { useExportRun } from './useExportRun'
+import { ExportJobView } from './ExportJobView'
+import { useSpaceExport } from './useSpaceExport'
 
 /**
  * Space settings → Export as a pack (dev-plan 8.5).
@@ -15,8 +14,7 @@ import { useExportRun } from './useExportRun'
  * whole purpose is to be the copy that survives.
  */
 export function PackExportSection({ spaceKey }: { spaceKey: string }) {
-  const exporting = useExportRun(`${spaceKey.toLowerCase()}-pack.zip`, 'The pack could not be built.')
-  const run = () => exporting.run((options) => api.spaces.exportPack(spaceKey, options))
+  const exporting = useSpaceExport(spaceKey, 'pack')
 
   return (
     <>
@@ -34,11 +32,16 @@ export function PackExportSection({ spaceKey }: { spaceKey: string }) {
       {exporting.error && <p className="alert alert--error">{exporting.error}</p>}
 
       <div className="row-gap" style={{ marginTop: '0.75rem' }}>
-        <button type="button" className="btn btn--primary" disabled={exporting.busy} onClick={run}>
-          {exporting.busy ? 'Packing…' : 'Export as a Pack'}
+        <button type="button" className="btn btn--primary" disabled={exporting.preparing}
+          onClick={() => void exporting.start()}>
+          {exporting.preparing ? 'Preparing the Pack…' : 'Prepare the Pack'}
         </button>
       </div>
-      <ExportProgressView state={exporting} noun="pack" />
+      {exporting.latest && <ExportJobView job={exporting.latest} />}
+      <p className="muted small">
+        It keeps going if you leave this page: when it is ready, download it here
+        or from <strong>Downloads</strong> in your notifications (the bell).
+      </p>
       <p className="muted small">
         Everything you can read goes in, restricted pages included, so treat the
         file as you would the space. Who may read what does not travel with it:

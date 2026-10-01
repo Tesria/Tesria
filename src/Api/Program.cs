@@ -162,6 +162,10 @@ builder.Services.AddHttpClient(Tesria.Api.Features.Admin.OsvClient.HttpClientNam
 builder.Services.AddSingleton<Tesria.Api.Features.Admin.IOsvClient, Tesria.Api.Features.Admin.OsvClient>();
 // Export progress (dev-plan 20.1): in memory, like the counters above.
 builder.Services.AddSingleton(new Tesria.Api.Features.Export.ExportProgress(TimeProvider.System));
+// Space exports prepared in the background, one at a time (dev-plan 20.2).
+builder.Services.AddSingleton<Tesria.Api.Features.Export.ExportJobQueue>();
+builder.Services.AddSingleton<Tesria.Api.Features.Export.ExportJobRunner>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<Tesria.Api.Features.Export.ExportJobRunner>());
 builder.Services.AddSingleton<BlocklistCache>();
 builder.Services.AddScoped<ISecurityDetector, SecurityDetector>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<AuditChainMonitor>());
@@ -756,6 +760,7 @@ api.MapExportEndpoints();
 api.MapSiteExportEndpoints();
 api.MapPackExportEndpoints();
 api.MapExportProgressEndpoints();
+api.MapExportJobEndpoints();
 api.MapPackImportEndpoints();
 api.MapBlockEndpoints();
 api.MapEmbedEndpoints();

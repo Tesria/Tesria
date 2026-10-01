@@ -127,6 +127,10 @@ public static class MigrateCommand
         Func<(string Owner, string? App)>? current = null)
     {
         var every = selfCheck ?? SelfCheck;
+        // A restarted container keeps its /tmp, and with it the last run's
+        // marker: healthy before this run has proved anything (found
+        // 2026-10-01, a refused newer database still showed healthy).
+        try { File.Delete(readyMarker); } catch (IOException) { } catch (UnauthorizedAccessException) { }
         if (current is not null) (ownerConnection, appConnection) = current();
         // A database from a newer Tesria is not a failure to exit on: the way
         // back is restoring a backup made by this version, and that restore

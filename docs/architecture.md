@@ -1587,6 +1587,37 @@ export is one space; the app is untouched. And the PDF footer's page
 numbering is a single flex item, because as separate items `space-between`
 spread "1 of 4" across the whole page.
 
+### Space exports run as jobs (dev-plan 20.2)
+
+A site or pack export of a space is a row in `ExportJobs`, made by `POST
+/api/exports` after the same checks the export itself makes (refusals are
+answered at once). `ExportJobRunner`, a background service, takes queued
+jobs **one at a time** for the instance and runs them in a scope of its own,
+as the person who asked: their account still active, their role still
+allowing `PagesExport`, and the export's own checks again with
+`IPermissionService.AsUser`, because a queue can wait and a right taken away
+meanwhile must not be used. The render token is issued then, for them. The
+builders are the request handlers' own (`SiteExportEndpoints.WriteAsync`,
+`PackExportEndpoints.WriteAsync`), so the synchronous `GET` endpoints and a
+job make the same file.
+
+Live progress stays in 20.1's in-memory `ExportProgress`, keyed by the job's
+id; the row holds the status. The file goes to the container's temporary
+folder (`tesria-exports/`), not the uploads volume, so a prepared export never
+lands in a backup or an offsite copy. It is downloadable by the person who
+asked only, for a day, then deleted; finished rows go after a week. A
+restart marks a running job failed with the reason, and a ready one whose
+file the restart took as expired. Ready and failed raise a bell notification
+(`export.ready`, `export.failed`) that the email digest skips: the file
+would be gone before a daily digest.
+
+In the SPA, `components/exportJobs.ts` is one store for the bell's
+**Downloads** list and the buttons in Space Settings, polled every 1.5 s
+while a job is unfinished and every minute otherwise. The tests turn the
+runner's loop off (`Exports:RunInBackground`) and run jobs with
+`RunQueuedAsync`: their SQLite database is one connection a loop would share
+with the requests.
+
 ## Backups that leave the machine (dev-plan 9.2)
 
 Phase 9.1 made backups visible; 9.2 makes them survive the machine. Three

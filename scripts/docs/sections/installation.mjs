@@ -1771,7 +1771,7 @@ export async function build({
     p('Stops and removes the containers. Your data stays in its volumes, and ', c('docker compose up -d'), ' brings everything back as it was.'),
 
     h(2, 'Moving one space'),
-    p('A ', b('wiki pack'), ' carries one space, with its pages, history, comments and attachments, to another Tesria. Export it with ', b('Export as a Pack'), ' in the space’s settings, then import it on the other Tesria with ', b('Import a Pack'), ' on the Spaces page. See ', pageLink('Wiki packs'), '.'),
+    p('A ', b('wiki pack'), ' carries one space, with its pages, history, comments and attachments, to another Tesria. Export it with ', b('Prepare the Pack'), ' under ', b('Export as a Pack'), ' in the space’s settings, then import it on the other Tesria with ', b('Import a Pack'), ' on the Spaces page. See ', pageLink('Wiki packs'), '.'),
 
     h(2, 'Moving the Tesria folder'),
     p('On the same computer, to another place: stop Tesria with ', c('docker compose down'), ', move the whole folder, including the hidden file ', c('.tesria-install'), ' in it, and run ', c('docker compose up -d'), ' in its new place. That file is how Tesria knows the folder is its own.'),

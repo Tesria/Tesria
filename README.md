@@ -50,8 +50,10 @@ under the [Apache License 2.0](./LICENSE).
   invitations, or single sign-on through OpenID Connect (in beta).
 - Public spaces anyone can read, without an account.
 - Export a page as Markdown, HTML or PDF, and a whole space as a static
-  website or as a wiki pack that imports into another Tesria. The docs on
-  tesria.com are a Tesria export.
+  website or as a wiki pack that imports into another Tesria. A space
+  export is prepared in the background and waits for you in the
+  notifications, so you can leave the page. The docs on tesria.com are a
+  Tesria export.
 - Your own name, logo and colors on your instance.
 - Email through any SMTP server, with step-by-step guides for Gmail,
   Outlook and Microsoft 365, Apple iCloud Mail, Zoho, Fastmail and Proton
