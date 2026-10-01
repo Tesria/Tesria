@@ -5,6 +5,11 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Export as PDF says Preparing PDF… until the file arrives.** It was a
+  plain link, so for the seconds the PDF took nothing showed. The file
+  still arrives after going to another page in Tesria, and a PDF that
+  cannot be made says why under the button instead of opening an error
+  page. Checked live, staying and leaving.
 - **Space exports keep going when you leave the page** (dev-plan 20.2).
   Prepare the Site and Prepare the Pack in Space Settings queue the export
   on the server, and it carries on while you go elsewhere or close the tab.

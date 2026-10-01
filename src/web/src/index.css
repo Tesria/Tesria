@@ -3561,6 +3561,8 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
 }
 .export-progress__detail { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* Why a page's PDF could not be made, under its button. */
+.export-pdf__error { display: block; color: var(--danger); padding: 0.2rem 0.5rem; max-width: 22rem; }
 /* One export job (dev-plan 20.2), in Downloads and under its button. */
 .export-job { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
 .export-job:not(.export-job--compact) { margin-top: 0.75rem; max-width: 36rem; }

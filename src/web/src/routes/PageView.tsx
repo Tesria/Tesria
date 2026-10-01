@@ -14,6 +14,7 @@ import { SaveAsTemplateButton } from '../components/SaveAsTemplateButton'
 import { WatchToggle } from '../components/WatchToggle'
 import { OverflowTabs } from '../components/OverflowTabs'
 import { DownloadIcon } from '../components/NavIcons'
+import { PdfExportButton } from '../components/PdfExportButton'
 import { OverflowMenu } from '../components/OverflowMenu'
 import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
 import { useConfirm } from '../components/ConfirmDialog'
@@ -147,7 +148,7 @@ export function PageView() {
           <div className="page-actionbar__secondary">
             {allows.markdown && <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=markdown`}><DownloadIcon /> Markdown</a>}
             {allows.html && <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=html`}><DownloadIcon /> HTML</a>}
-            {allows.pdf && <a className="btn btn--ghost" href={`/api/pages/${page.id}/export?format=pdf`}><DownloadIcon /> PDF</a>}
+            {allows.pdf && <PdfExportButton pageId={page.id} className="btn btn--ghost">PDF</PdfExportButton>}
           </div>
         </div>
         <div className="page-column">
@@ -217,14 +218,10 @@ export function PageView() {
                 <DownloadIcon /> Export as HTML
               </a>
             )}
-            {/* Rendered by the PDF sidecar (dev-plan 8.1). Where no sidecar
-                is configured the API answers 503 with the "print the HTML"
-                advice, which is what this used to be. */}
-            {allows.pdf && (
-              <a className="btn" href={`/api/pages/${page.id}/export?format=pdf`}>
-                <DownloadIcon /> Export as PDF
-              </a>
-            )}
+            {/* Rendered by the PDF sidecar (dev-plan 8.1), with "Preparing
+                PDF…" while it is. Where no sidecar is configured the API
+                answers 503 with the "print the HTML" advice, shown under it. */}
+            {allows.pdf && <PdfExportButton pageId={page.id} className="btn">Export as PDF</PdfExportButton>}
             <WatchToggle
               watchKey={page.id}
               fetchStatus={() => api.pageWatch.status(page.id)}

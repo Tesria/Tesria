@@ -535,7 +535,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   await page('Exporting a page', exporting, doc(
     p('Exporting a page makes a copy of it as a file: to send to someone who has no account, to print, or to keep with other documents. The page in Tesria is not changed.'),
     h(2, 'Exporting'),
-    p('Open the page, then its ', b('⋮'), ' menu at the top right, and choose ', b('Export as Markdown'), ', ', b('Export as HTML'), ' or ', b('Export as PDF'), '. The file downloads, named after the page.'),
+    p('Open the page, then its ', b('⋮'), ' menu at the top right, and choose ', b('Export as Markdown'), ', ', b('Export as HTML'), ' or ', b('Export as PDF'), '. The file downloads, named after the page. A PDF takes a few seconds to make: the menu says ', b('Preparing PDF…'), ' until it arrives, and it still arrives if you go to another page meanwhile.'),
     ...(await picture(exportPage, 'export-menu', 'The page menu with the three exports', 'The three exports are at the top of the page’s ⋮ menu.')),
 
     h(2, 'Which format'),
