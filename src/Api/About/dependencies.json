@@ -804,11 +804,11 @@
     {
       "ecosystem": "NuGet",
       "name": "Scalar.AspNetCore",
-      "version": "2.17.11",
+      "version": "2.17.12",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Scalar.AspNetCore/2.17.11"
+      "url": "https://www.nuget.org/packages/Scalar.AspNetCore/2.17.12"
     },
     {
       "ecosystem": "Data",
