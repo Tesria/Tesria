@@ -219,6 +219,24 @@ older references still point at the right item.
     which browsers would accept only for this server's names, would limit
     the damage of a stolen authority key, and is noted for later.
 
+16. Backups on the server itself are not encrypted at rest (asked about
+    2026-10-01, T1-035). The continuous backup (pgBackRest) is encrypted
+    with the backup key, and every copy that leaves the machine is
+    encrypted with its own target's passphrase. The nightly dumps and the
+    attachment archives on the `backups` volume are plain files, as are the
+    live database and the uploads beside them. Only the backup services
+    mount that volume; the app does not. Encrypting the local dumps with a
+    key kept on the same machine would protect little, since whoever can
+    read them can read the live database, and it would take away the
+    fallback that matters most: when the backup key is lost, the dumps can
+    still be restored. What protects data at rest on the server is
+    **full-disk encryption** (FileVault, BitLocker, LUKS), which covers the
+    database, the uploads and the backups at once. Two consequences to
+    know: a dump copied off the server by hand is as sensitive as the
+    database and should be treated that way, and content deleted in the
+    wiki stays in the dumps until retention removes them. *Acceptable,* with
+    full-disk encryption on the checklist.
+
 ## Internet-readiness checklist
 
 Every item is something the software cannot do for you. Do all of them
@@ -274,6 +292,9 @@ before DNS points at the box.
 - [ ] Backups run and a restore has been rehearsed
       (`docs/backup-recovery.md`); the pgBackRest repo is encrypted with a
       key you have stored somewhere that is not this host.
+- [ ] The server's disk is encrypted (FileVault, BitLocker, LUKS): the
+      database, the uploads and the local backups are plain files on it
+      (known gap 16).
 - [ ] `docker compose logs app` is forwarded somewhere durable: that is
       the copy of the audit log an attacker with the database cannot
       reach.

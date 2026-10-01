@@ -1362,6 +1362,14 @@ export async function build({
       li(p(b('Keep the backup key and the offsite passphrases somewhere else,'), ' such as a password manager. If Tesria made the backup key, it is in ', c('backup-key.txt'), ' in the Tesria folder until you delete it, and ', c('docker compose run --rm init show-backup-key'), ' prints it at any time. A copy whose key or passphrase is lost cannot be read by anyone.')),
     ),
 
+    h(3, 'Encrypt the computer’s disk'),
+    p('The backups on this computer are plain files, like the wiki’s own database and attachments beside them. Only the continuous backup is encrypted, with the backup key, and every offsite copy is encrypted with its own passphrase before it leaves. The nightly backups are left plain on purpose: they are the way back if the backup key is ever lost.'),
+    ul(
+      li(p(b('Turn on disk encryption on the server'), ' (FileVault on a Mac, BitLocker on Windows, LUKS on Linux). It protects the wiki and its backups together if the computer or its disk is lost or thrown away.')),
+      li(p(b('Treat a backup file you copy off the server like the wiki itself:'), ' it holds everything in it.')),
+      li(p(b('Deleted pages stay in older backups'), ' until the retention policy removes them. Keep that in mind if you delete something for privacy reasons.')),
+    ),
+
     h(2, 'You may not need a backup at all'),
     p('For everyday mistakes, Tesria has safety nets of its own that put things right in seconds, without touching anyone else’s work: every page keeps its ', pageLink('History and restoring', 'history'), ', and deleted pages go to the space’s ', pageLink('Trash', 'trash'), '. A backup is for when the whole wiki needs to go back.'),
 

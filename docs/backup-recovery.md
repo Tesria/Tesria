@@ -22,6 +22,18 @@ The pgBackRest repository is **encrypted at rest** (AES-256-CBC) with the
 backup key. **Keep that key safe and off-box**: the repository cannot be
 restored without it.
 
+**What is encrypted, and what is not (2026-10-01, T1-035).** The
+continuous backup is, with the backup key; every offsite copy is, with its
+own target's passphrase. The nightly dumps and attachment archives on the
+`backups` volume are plain, on purpose: they sit beside the live database
+and uploads, which are plain too, so a key on the same machine would add
+little, and plain dumps can still be restored if the backup key is ever
+lost. Protect the server's disk with full-disk encryption (FileVault,
+BitLocker, LUKS). Treat any dump copied off the server by hand like the
+database itself, and remember that deleted content stays in the dumps
+until retention removes them. `docs/security.md`, known gap 16, has the
+reasoning.
+
 **Where the key is (0.8.0 and later, dev-plan 25.1).** The `init` service
 generates it on a new install, stores it on the `secret_backup_key` volume
 (mounted only into `db` and `pgbackrest`), and writes a copy for the owner to

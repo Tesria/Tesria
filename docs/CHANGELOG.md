@@ -5,6 +5,10 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Docs: what is encrypted on the server, and what is not** (T1-035
+  follow-up). The backup docs, the security doc and its checklist now say
+  that the nightly dumps are plain on purpose, beside a database and uploads
+  that are plain too, and recommend full-disk encryption on the server.
 - **Export as PDF says Preparing PDF… until the file arrives.** It was a
   plain link, so for the seconds the PDF took nothing showed. The file
   still arrives after going to another page in Tesria, and a PDF that
