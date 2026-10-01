@@ -43,6 +43,9 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   back) still works, and the app may start as soon as the database is one it
   knows. This protects going back from 0.8.6 onward; earlier versions do not
   have the check.
+- **Fixed: canceling a site export wrote about 2,700 log lines** (t6-R03),
+  an "Export sidecar unreachable" warning with a stack trace for every page
+  not yet captured. A canceled export now just stops.
 - **Dependabot**: a major version arrives in a PR of its own, and a new
   workflow keeps the About tab's dependency list current on every Dependabot
   PR, so they no longer arrive failing CI. The build uses the GitHub Actions

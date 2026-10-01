@@ -59,6 +59,14 @@ public sealed class PdfRenderer(IHttpClientFactory http, IConfiguration config, 
             }
             return await response.Content.ReadAsByteArrayAsync(ct);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // The export was canceled (or its request went away): that is not
+            // the sidecar's fault, and the export stops here. Logged as
+            // "unreachable", with a stack, once for every page not yet
+            // captured, it wrote about 2,700 lines per Cancel (t6-R03).
+            throw;
+        }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             // A missing or slow sidecar must degrade to "not available",
