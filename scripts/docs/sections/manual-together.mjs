@@ -828,7 +828,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('To get there, open ', ...profileAt('Password'), '.'),
     ol(
       li(p('In the ', b('Password'), ' card, enter your current password.')),
-      li(p('Enter the new one twice. It must be at least 8 characters, not only spaces, and not one of the most common passwords, such as ', i('password'), ' or ', i('12345678'), ', which are the first anyone guesses. A few unrelated words make a long password that is still easy to type.')),
+      li(p('Enter the new one twice. It must be at least 8 characters, not only spaces, and not one of the most common passwords, such as ', i('password'), ' or ', i('12345678'), ', even with numbers, symbols or look-alike letters added, which are the first anyone guesses. A few unrelated words make a long password that is still easy to type.')),
       li(p('Choose ', b('Change Password'), '.')),
     ),
     p('Every other device signed in to your account is signed out, so anyone who knew the old password is locked out. The browser you are using stays signed in. An email change waiting for its link is canceled too.'),

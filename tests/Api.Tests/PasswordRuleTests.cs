@@ -29,6 +29,30 @@ public class PasswordRuleTests
         Assert.Contains("most common", PasswordRules.Problem(password));
     }
 
+    [Theory]
+    [InlineData("password123")]
+    [InlineData("Password1!")]
+    [InlineData("Summer2026!")]
+    [InlineData("P@ssw0rd")]
+    [InlineData("p@$$w0rd99")]
+    [InlineData("!!letmein!!")]
+    [InlineData("2026dragon")]
+    [InlineData("w3lc0me123")]
+    public void A_common_password_with_numbers_symbols_or_swapped_letters_is_refused(string password)
+    {
+        Assert.False(PasswordRules.IsCommon(password));
+        Assert.Contains("common password with numbers, symbols or swapped letters", PasswordRules.Problem(password));
+    }
+
+    [Theory]
+    [InlineData("correct horse battery staple")]
+    [InlineData("supersecret")]
+    [InlineData("a-brand-new-secret")]
+    [InlineData("dragonfly-orchard-42")]
+    [InlineData("12345678-quokka-sunrise")]
+    public void A_password_that_only_contains_a_common_word_is_fine(string password) =>
+        Assert.Null(PasswordRules.Problem(password));
+
     [Fact]
     public void The_rule_in_full()
     {

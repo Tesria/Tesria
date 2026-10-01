@@ -10,7 +10,9 @@ namespace Tesria.Api.Infrastructure.Auth;
 ///
 /// At least <see cref="MinLength"/> characters, not only spaces, not one of
 /// the ten thousand most common passwords (compared ignoring case: those are
-/// the first anyone guesses), and at most <see cref="MaxLength"/>, which
+/// the first anyone guesses), not one of them dressed up with numbers or
+/// symbols at the ends or the usual letter swaps ("password123", "P@ssw0rd!":
+/// guessers try those next), and at most <see cref="MaxLength"/>, which
 /// bounds how long hashing one can take.
 /// </summary>
 public static class PasswordRules
@@ -40,6 +42,49 @@ public static class PasswordRules
     /// <summary>Whether this is on the bundled list of common passwords, ignoring case.</summary>
     public static bool IsCommon(string password) => Common.Value.Contains(password);
 
+    /// <summary>
+    /// Whether this is a common password with numbers or symbols added at
+    /// either end, or with letters swapped for look-alikes (@ for a, 0 for
+    /// o, 3 for e, 1 for i or l, $ or 5 for s, 7 for t): "password123",
+    /// "Summer2026!", "p@ssw0rd". Only a core of four or more letters counts,
+    /// so a short word inside a long password does not.
+    /// </summary>
+    public static bool IsDressedUpCommon(string password)
+    {
+        foreach (var core in Cores(password))
+            if (core.Length >= 4 && core.Any(char.IsLetter) && Common.Value.Contains(core)) return true;
+        return false;
+    }
+
+    private static IEnumerable<string> Cores(string password)
+    {
+        static bool Decoration(char c) => char.IsDigit(c) || char.IsPunctuation(c) || char.IsSymbol(c) || char.IsWhiteSpace(c);
+        var stripped = password.Trim();
+        var start = 0;
+        while (start < stripped.Length && Decoration(stripped[start])) start++;
+        var end = stripped.Length;
+        while (end > start && Decoration(stripped[end - 1])) end--;
+        var trimmed = stripped[start..end];
+        yield return trimmed;
+        // Swapped letters, read back both ways a 1 can stand for, in the
+        // whole password and in what is left once its ends are gone.
+        foreach (var one in new[] { 'i', 'l' })
+            foreach (var source in new[] { stripped, trimmed })
+            {
+                var swapped = new string(source.Select(c => c switch
+                {
+                    '@' or '4' => 'a', '0' => 'o', '3' => 'e', '$' or '5' => 's', '7' => 't', '1' or '!' or '|' => one,
+                    _ => c,
+                }).ToArray());
+                yield return swapped;
+                var s2 = 0;
+                while (s2 < swapped.Length && Decoration(swapped[s2])) s2++;
+                var e2 = swapped.Length;
+                while (e2 > s2 && Decoration(swapped[e2 - 1])) e2--;
+                yield return swapped[s2..e2];
+            }
+    }
+
     /// <summary>What is wrong with a new password, in words for the person choosing it, or null when it will do.</summary>
     public static string? Problem(string? password)
     {
@@ -49,6 +94,8 @@ public static class PasswordRules
         if (string.IsNullOrWhiteSpace(p)) return "Password cannot be only spaces.";
         if (IsCommon(p))
             return "That password is one of the most common ones, which are the first anyone guesses. Choose another.";
+        if (IsDressedUpCommon(p))
+            return "That is a common password with numbers, symbols or swapped letters added, which guessers try straight after the common ones. Choose another.";
         return null;
     }
 }

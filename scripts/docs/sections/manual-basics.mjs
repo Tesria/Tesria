@@ -279,7 +279,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ul(
       li(p(b('Display Name:'), ' how you appear to everyone else, on pages, comments and history. Your full name is usual. You can change it later.')),
       li(p(b('Email:'), ' the address you will sign in with. If the invite was made for one address, it has to be that one.')),
-      li(p(b('Password:'), ' at least 8 characters, not only spaces, and not one of the most common passwords, such as ', i('password'), ' or ', i('12345678'), '. The form says so under the box. A few unrelated words make a password that is long, hard to guess and easy to remember.')),
+      li(p(b('Password:'), ' at least 8 characters, not only spaces, and not one of the most common passwords, such as ', i('password'), ' or ', i('12345678'), ', or one of them with numbers, symbols or look-alike letters added, such as ', i('P@ssw0rd123'), '. The form says so under the box. A few unrelated words make a password that is long, hard to guess and easy to remember.')),
     ),
     step(3, 'Choose Create Account'),
     p('You are signed in straight away.'),

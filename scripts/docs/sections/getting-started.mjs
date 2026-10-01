@@ -276,7 +276,7 @@ export async function build({
 
     h(2, 'Before you start'),
     ul(
-      li(p(b('The email address and password'), ' you want to sign in with. The password needs at least 8 characters, and cannot be one of the most common passwords, such as ', i('password'), ': the owner is the one account nobody else can reset.')),
+      li(p(b('The email address and password'), ' you want to sign in with. The password needs at least 8 characters, and cannot be one of the most common passwords, such as ', i('password'), ', even with numbers or symbols added (', i('password123'), '): the owner is the one account nobody else can reset.')),
       li(p(b('Somewhere safe to keep recovery codes,'), ' such as a password manager. The wizard shows them once.')),
       li(p(b('Tesria’s address,'), ' the one people will type to reach it, such as ', c('https://wiki.example.com'), '.')),
       li(p(b('An authenticator app on your phone,'), ' if you want to turn on two-factor sign-in now (recommended).')),

@@ -46,6 +46,10 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 - **Fixed: canceling a site export wrote about 2,700 log lines** (t6-R03),
   an "Export sidecar unreachable" warning with a stack trace for every page
   not yet captured. A canceled export now just stops.
+- **The password rule catches a common password dressed up**: numbers or
+  symbols at either end, or look-alike letters ("password123",
+  "Summer2026!", "P@ssw0rd"), which guessers try right after the plain
+  ones. A common word inside a longer password is still fine.
 - **Dependabot**: a major version arrives in a PR of its own, and a new
   workflow keeps the About tab's dependency list current on every Dependabot
   PR, so they no longer arrive failing CI. The build uses the GitHub Actions
