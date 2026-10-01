@@ -16,6 +16,9 @@ import { useConfirm } from '../components/ConfirmDialog'
 import { clearPasted, noteEditorSession, notePastedFormatting } from '../onboarding/signals'
 import { useTitlePage } from '../components/DocumentTitle'
 import { ResolvedCommentStyles } from '../components/ResolvedCommentStyles'
+import {
+  forgetUnpublished, readUnpublished, unpublishedKey, writeUnpublished, type UnpublishedPage,
+} from '../editor/unpublishedPage'
 
 const EMPTY_DOC = '{"type":"doc","content":[]}'
 
@@ -112,9 +115,18 @@ export function PageEditor() {
   // Create the invisible draft once, on first mount of a new-page form. Not
   // re-run if space.id/parentPageId happen to change identity, since this
   // must fire exactly once per visit to the "new page" form.
+  // A new page is copied to this device as it is written, and a copy left by
+  // a crash is offered back (t4-025). `offer` is that copy until it is
+  // restored or discarded; while it waits, the copy is not overwritten.
+  const backupKey = isEdit ? null : unpublishedKey(space.id, parentPageId)
+  const [offer, setOffer] = useState<UnpublishedPage | null>(null)
+  const [restoreCount, setRestoreCount] = useState(0)
+  const restoredRef = useRef(false)
+
   useEffect(() => {
     if (isEdit || !mayCreate) return
     let canceled = false
+    if (backupKey) setOffer(readUnpublished(backupKey))
     const promise = api.pages
       .createDraft({ spaceId: space.id, parentPageId })
       .then((d) => {
@@ -127,6 +139,39 @@ export function PageEditor() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEdit])
+
+  useEffect(() => {
+    if (!backupKey || !draftId || offer) return
+    const timer = window.setTimeout(() => writeUnpublished(backupKey, {
+      draftId, title, contentJson: content, savedAt: new Date().toISOString(),
+    }), 400)
+    return () => window.clearTimeout(timer)
+  }, [backupKey, draftId, offer, title, content])
+
+  /** Forgets this page's copy, unless an older one is still on offer. */
+  function forgetCopy() {
+    if (backupKey && !offer) forgetUnpublished(backupKey)
+  }
+
+  async function restoreOffer() {
+    if (!offer) return
+    const fresh = draftId ?? (await draftIdRef.current?.catch(() => null))
+    if (fresh && fresh !== offer.draftId) api.pages.deleteDraft(fresh).catch(() => {})
+    draftIdRef.current = Promise.resolve(offer.draftId)
+    setDraftId(offer.draftId)
+    restoredRef.current = true
+    setTitle(offer.title)
+    setContent(offer.contentJson)
+    setRestoreCount((n) => n + 1)
+    setOffer(null)
+  }
+
+  function discardOffer() {
+    if (!offer || !backupKey) return
+    api.pages.deleteDraft(offer.draftId).catch(() => {})
+    forgetUnpublished(backupKey)
+    setOffer(null)
+  }
 
   async function onPickTemplate(id: string) {
     // A template replaces the whole page; what is already written goes with
@@ -262,7 +307,15 @@ export function PageEditor() {
     } else {
       const id = draftId ?? (await draftIdRef.current)
       if (!id) throw new Error('Still preparing this page: try again in a moment.')
-      saved = await api.pages.publish(id, { title, contentJson: body })
+      try {
+        saved = await api.pages.publish(id, { title, contentJson: body })
+      } catch (err) {
+        // A restored copy whose draft has gone since: publish into a new one.
+        if (!(restoredRef.current && err instanceof ApiError && err.status === 404)) throw err
+        const fresh = await api.pages.createDraft({ spaceId: space.id, parentPageId })
+        saved = await api.pages.publish(fresh.id, { title, contentJson: body })
+      }
+      forgetCopy()
     }
     reloadTree()
     return saved.id
@@ -338,6 +391,7 @@ export function PageEditor() {
     if (!pageId) {
       const id = draftId ?? (await draftIdRef.current?.catch(() => null))
       if (id) api.pages.deleteDraft(id).catch(() => {})
+      forgetCopy()
     }
     leavingRef.current = true
     blocker.proceed()
@@ -431,6 +485,7 @@ export function PageEditor() {
     // delete must never block navigating away.
     const id = draftId ?? (await draftIdRef.current?.catch(() => null))
     if (id) api.pages.deleteDraft(id).catch(() => {})
+    forgetCopy()
     leave()
   }
 
@@ -588,6 +643,18 @@ export function PageEditor() {
         onKeyDownCapture={onFormKeyDown}
       >
       {error && <p className="alert alert--error">{error}</p>}
+      {offer && (
+        <div className="alert alert--warning unpublished-offer" role="status">
+          <span>
+            A page you started here{offer.title.trim() ? <>, <strong>{offer.title.trim()}</strong>,</> : ''} was
+            not published. It was last saved on this device {new Date(offer.savedAt).toLocaleString()}.
+          </span>
+          <span className="unpublished-offer__actions">
+            <button type="button" className="btn btn--primary btn--sm" onClick={() => void restoreOffer()}>Restore It</button>
+            <button type="button" className="btn btn--ghost btn--sm" onClick={discardOffer}>Discard It</button>
+          </span>
+        </div>
+      )}
       {!isEdit && templates.length > 0 && (
         <label className="change-comment">
           Start From a Template (Optional)
@@ -646,7 +713,7 @@ export function PageEditor() {
              nowhere for an outside write to land, so this editor is always
              looking at exactly what it loaded. */
           <Editor
-            key={pageId ?? `new-${templateId || 'blank'}`}
+            key={pageId ?? `new-${templateId || 'blank'}-${restoreCount}`}
             value={content}
             editable
             onChange={setContent}

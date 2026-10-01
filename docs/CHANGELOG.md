@@ -29,6 +29,11 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   now say which backup the key is for.
 - **Fixed: `scripts/verify-audit-chain.sh` was not in `tesria-deploy.zip`**
   (T8-024), although the docs tell owners to run it on a schedule.
+- **A new page survives a crash** (t4-025). Its title and text are copied to
+  the device as they are written, and starting a new page in the same place
+  after a crash, a restart or a closed tab offers it back (Restore It,
+  Discard It). Restoring keeps its pictures. Publishing or discarding it
+  clears the copy.
 - **Dependabot**: a major version arrives in a PR of its own, and a new
   workflow keeps the About tab's dependency list current on every Dependabot
   PR, so they no longer arrive failing CI. The build uses the GitHub Actions

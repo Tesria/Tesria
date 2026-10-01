@@ -362,6 +362,9 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('On a published page without live editing,'), ' it asks ', b('Discard Your Changes?'), ', because there is no draft to keep them in.')),
     ),
 
+    h(3, 'If the browser closes before you publish'),
+    p('A new page is copied to your device as you write it, until you publish or discard it. If the browser crashes, the computer restarts or the tab closes first, start a new page in the same place (the same space, under the same page) on the same device and browser: Tesria offers it back with ', b('Restore It'), ' and ', b('Discard It'), '. Changes to a page that is already published are kept in its shared draft instead, on the server.'),
+
     h(3, 'If you leave some other way'),
     p('Leaving the editor by anything other than those buttons, such as a link at the top of the screen, a page in the page tree or your browser’s Back button, stops you with ', b('You Are Leaving the Editor'), ' when there is something unpublished, so a stray click never costs you a page. It offers three ways out:'),
     ul(
