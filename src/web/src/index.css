@@ -759,12 +759,16 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 }
 .notif__jobs { list-style: none; margin: 0; padding: 0; }
 .notif__jobs > li { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
-/* While an export is being prepared, a small ring turns around the bell. */
+/* While an export is being prepared, a small ring turns around the bell,
+   under the unread count rather than across it. */
+.notif__bell.is-preparing .notif__badge { z-index: 2; }
 .notif__bell.is-preparing::after {
   content: ""; position: absolute; inset: -1px; border-radius: 50%;
-  border: 2px solid transparent; border-top-color: var(--primary);
-  animation: notif-preparing 1s linear infinite; pointer-events: none;
+  border: 2px solid color-mix(in srgb, var(--primary) 20%, transparent); border-top-color: var(--primary);
+  animation: notif-preparing 1s linear infinite; pointer-events: none; z-index: 1;
 }
+/* Minimal draws no circle behind the bell, so the ring hugs the icon. */
+:root:not([data-style="glass"]) .notif__bell.is-preparing::after { inset: 7px; }
 @keyframes notif-preparing { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
   .notif__bell.is-preparing::after { animation: none; border-color: var(--primary); opacity: 0.5; }
