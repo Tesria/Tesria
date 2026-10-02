@@ -244,7 +244,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
 
     h(2, 'People and sharing'),
     q('Can I keep some spaces private?',
-      p('Yes. A new space is open to everyone signed in, and you can limit any space to particular people or groups, and any page further still. See ', pageLink('Who can see a space'), ' and ', pageLink('Restrictions'), '.')),
+      p('Yes. When you create a space you choose whether everyone signed in can see it or only the people in its groups, and you can limit any space to particular people or groups later, and any page further still. See ', pageLink('Who can see a space'), ' and ', pageLink('Restrictions'), '.')),
     q('Can people read without an account?',
       p('Yes, for spaces you choose to publish, such as public documentation. It takes two switches, one for the whole wiki and one for the space, so nothing is public by accident. See ', pageLink('Public reading'), '.')),
     q('Can several people edit a page at the same time?',
@@ -323,7 +323,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     h(2, 'O'),
     ul(
       term('Offsite copy', 'a copy of the backups kept somewhere other than the server: a cloud bucket, a network drive or a removable drive, so that losing the machine does not lose the wiki. See ', pageLink('Offsite copies'), '.'),
-      term('Open space', 'a space that has not been limited to particular people, which everyone signed in can read, edit and manage. Every new space starts open.'),
+      term('Open space', 'a space that has not been limited to particular people, which everyone signed in can read, edit and manage. Whoever creates a space chooses whether it starts open.'),
       term('Owner', 'the one account that owns the wiki. It can do everything, and nobody else can suspend it, reset it or take its place. Ownership can be handed over.'),
     ),
     h(2, 'P'),

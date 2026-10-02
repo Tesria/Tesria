@@ -1100,6 +1100,15 @@ label.code-block__appearance > select {
   box-shadow: var(--panel-rim), var(--box-shadow);
 }
 :root[data-style="glass"] .about-card--support { border-color: var(--primary); }
+/* The New Space and invite wizards (dev-plan 21.2, 21.3): one frosted panel. */
+:root[data-style="glass"] .wizard {
+  border: 1px solid var(--panel-border); border-radius: 18px;
+  background: var(--panel-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--panel-rim), var(--box-shadow);
+}
+:root[data-style="glass"] .wizard__rail { border-color: var(--panel-border); }
 :root[data-style="glass"] .page-wrap--admin .backups__section.backup-key-notice { border-left: 4px solid var(--danger); }
 
 /* An outlined button stays flat in glass: no fill, no sheen, no gradient

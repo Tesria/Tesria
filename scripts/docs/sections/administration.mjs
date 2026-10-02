@@ -174,22 +174,25 @@ export const shots = () => [
     ],
   },
 
-  // ---- Invites: the form, filled in. The list below it holds real
-  // people's addresses and is hidden.
+  // ---- Invites: the wizard's last step (dev-plan 21.3), with an address
+  // typed so the email option shows. The list below it holds real people's
+  // addresses and is hidden.
   {
     name: 'invites', url: '/admin/invites', viewport: NARROW, phone: false, settle: 1200,
     steps: [
       { wait: 2500 },
-      { type: 'new.colleague@example.com', selector: 'form.form-inline input[type="email"]' },
+      { type: 'new.colleague@example.com', selector: '.wizard input[type="email"]' },
+      { click: '.wizard__panel .setup__actions .btn--primary' }, { wait: 300 },
+      { click: '.wizard__panel .setup__actions .btn--primary' }, { wait: 300 },
+      { click: '.wizard__panel .setup__actions .btn--primary' }, { wait: 300 },
       { eval: BLUR },
       { css: '.tabs, .tab-panel > p.muted, table.admin-table { visibility: hidden !important; }' },
     ],
-    clipTo: 'form.form-inline', clipPad: 12,
+    clipTo: '.wizard', clipPad: 12,
     annotate: [
-      { type: 'box', target: 'form.form-inline label:nth-of-type(1)', pad: 5 },
-      { type: 'box', target: 'form.form-inline label:nth-of-type(2)', pad: 5 },
-      { type: 'box', target: 'form.form-inline .invite-email', pad: 5 },
-      { type: 'box', target: 'form.form-inline button[type="submit"]', pad: 5 },
+      { type: 'box', target: '.wizard__summary', pad: 5 },
+      { type: 'box', target: '.wizard .invite-email', pad: 5 },
+      { type: 'box', target: '.wizard__panel .setup__actions .btn--primary', pad: 5 },
     ],
   },
 
@@ -531,27 +534,31 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('If your Tesria sends email, it can email the invite for you, with a note in your own words, so there is nothing to copy and paste into a chat. Without email, you copy the link and send it however you like. See ', pageLink('Email (SMTP)'), ' to set email up.'),
 
     h(2, 'Creating an invite'),
-    ...(await picture(invites, 'invites', 'The invite form, filled in, with the email option showing', 'The address, how long the link lasts, the email and its message, and Create and Email Invite.')),
-    step(1, 'Enter their email address, if you know it'),
-    p('With an address, only someone registering with that address can use the link, so a forwarded link is no use to anyone else. Leave it empty for a link that works for whoever has it. Tesria refuses an address that already has an account.'),
-    step(2, 'Choose how long it lasts'),
-    p('From 1 to 90 days; 7 unless you change it.'),
-    step(3, 'Write a note, if Tesria is emailing it'),
-    p('Once you type an address, and your Tesria sends email, ', b('Email the Invite to'), ' appears, already ticked, with a ', b('Message'), ' box. The message starts as a short, friendly note saying who invited them and to what. Change it to anything you like: a welcome, what the wiki is for, where to start reading.'),
+    p('The invite is made with a short wizard, its four steps down the side. On a phone the steps fold into one line at the top, such as ', i('Step 1 of 4: Who'), '; choose it to see them all. ', b('Continue'), ' and ', b('Back'), ' move between them.'),
+    ...(await picture(invites, 'invites', 'The last step of the invite wizard, with the email option showing', 'What the invite gives, the email and its message, and Create and Email Invite.')),
+    step(1, 'Who: their address, and user or administrator'),
+    p('Enter their email address, if you know it. With an address, only someone registering with that address can use the link, so a forwarded link is no use to anyone else. Leave it empty for a link that works for whoever has it. Tesria refuses an address that already has an account.'),
+    p('Choose ', b('User'), ' (most people) or ', b('Administrator'), '. Administrator is offered only to people whose role may promote users to administrator, which out of the box is the owner alone. An invite that makes an administrator must name its address, and asks for your password again when you create it.'),
+    p('Then choose how long the link lasts: from 1 to 90 days, 7 unless you change it.'),
+    step(2, 'Global groups, if they need them'),
+    p(b('Global Viewers'), ' and ', b('Global Reviewers'), ' can read every space, archived ones included; page restrictions still apply to them. Only someone who may manage groups can choose them. An invite that gives either must name its address, asks for your password again, and every administrator is alerted when the account is made. Most invites leave both unticked.'),
+    step(3, 'A place in your spaces'),
+    p('Every space you are an admin of is listed (you are in its Admins group, or were given Admin on it). For any of them, choose ', b('Viewer'), ', ', b('Editor'), ', ', b('Reviewer'), ' or ', b('Admin'), ' to put the person in that space’s group of the same name. Leave the rest at ', b('No Place'), '. Spaces open to everyone need no place to be read.'),
+    step(4, 'Review, write a note, and create'),
+    p('The last step sums up what the invite gives. Once you have typed an address, and your Tesria sends email, ', b('Email the Invite to'), ' appears here, already ticked, with a ', b('Message'), ' box. The message starts as a short, friendly note saying who invited them and to what. Change it to anything you like: a welcome, what the wiki is for, where to start reading.'),
     p('You do not need to add the link. Tesria puts it below your message, with the address it works for and the date it expires, so it cannot be left out or mistyped. Leave the message empty to send the usual one. The subject line names you and your Tesria, so the email is easy to recognize.'),
     panel('success', p(b('Why a note helps.'), ' An email from a wiki someone has never heard of looks like spam. A line such as ', i('“This is where we keep the onboarding checklist, start with the Welcome page”'), ' tells them it is real and what to do first.')),
-    p('Untick it to make the invite without emailing it, for example to send the link in a chat instead.'),
-    step(4, 'Create the invite'),
-    p('Choose ', b('Create and Email Invite'), ' (or ', b('Create Invite'), ' without the email). The link appears once, above the list, whichever you chose. If it was emailed, a green note says so. Otherwise choose ', b('Copy'), ' and send it yourself. If you lose it, revoke the invite and make a new one.'),
+    p('Untick it to make the invite without emailing it, for example to send the link in a chat instead. Then choose ', b('Create and Email Invite'), ' (or ', b('Create Invite'), ' without the email). The link appears once, in place of the wizard, whichever you chose. If it was emailed, a green note says so. Otherwise choose ', b('Copy'), ' and send it yourself. If you lose it, revoke the invite and make a new one. ', b('Invite Someone Else'), ' starts a new one.'),
+    panel('info', p(b('The groups are given when the account is made.'), ' Tesria checks again then that you may still give each one. If you may not, for example because you are no longer an admin of that space, that part is skipped and the ', pageLink('Audit', 'audit log'), ' says so; the account is made all the same.')),
     panel('note', p(b('If the email could not be sent,'), ' the invite is still made, and a red note gives the mail server’s reason. Copy the link and send it another way, then see ', pageLink('Email (SMTP)'), ' to find out why.')),
     panel('note', p(b('The copied link starts with the address you are using.'), ' Make invites from Tesria opened at the address everyone uses, not at ', c('localhost'), ' on the server, or the link will not work for the person you send it to. An emailed link uses the address set in ', b('Settings'), ' instead.')),
     panel('note', p(b('With Tailscale, there are two links.'), ' If your Tesria is also on a tailnet (see ', pageLink('Reaching Tesria from anywhere with Tailscale'), '), the invite shows ', b('At This Address'), ' and ', b('Through Tailscale'), ', each with its own copy button, ', b('Copy the Usual Link'), ' and ', b('Copy the Tailscale Link'), '. They are the same invite, so it still works once: send whichever address the person can reach. An emailed invite carries both.')),
 
     h(2, 'Keeping track'),
-    p('The list below the form shows every invite: who it is for (or ', b('Anyone'), '), whether it is ', b('Unused'), ', ', b('used'), ' and by whom, or ', b('expired'), ', and when it expires. ', b('Revoke'), ' cancels an unused one after asking; whoever you sent it to will need a new one.'),
+    p('The list below the wizard shows every invite: who it is for (or ', b('Anyone'), '), with what an unused one gives under the address (Administrator, and its groups), whether it is ', b('Unused'), ', ', b('used'), ' and by whom, or ', b('expired'), ', and when it expires. A group in a space you cannot see is listed only as such. ', b('Revoke'), ' cancels an unused one after asking; whoever you sent it to will need a new one.'),
 
     h(2, 'Letting others invite'),
-    p('The right to ', b('Create invite links'), ' can be given to a user role on the ', pageLink('Roles'), ' tab, for example so team leads can bring in their own people. They get ', b('Invite People'), ' in their top bar, with the same form but without the list: they cannot see or revoke anyone else’s invites.'),
+    p('The right to ', b('Create invite links'), ' can be given to a user role on the ', pageLink('Roles'), ' tab, for example so team leads can bring in their own people. They get ', b('Invite People'), ' in their top bar, with the same wizard but without the list: they cannot see or revoke anyone else’s invites, and the spaces step offers only the spaces they are an admin of.'),
   ))
 
   // ================================================== Security (administration)

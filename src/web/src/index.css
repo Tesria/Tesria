@@ -3413,6 +3413,80 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
   .setup__rail ol.is-open { margin-top: 0.5rem; grid-template-columns: 1fr; }
 }
 
+/* A wizard inside the app (dev-plan 21.2 New Space, 21.3 invites): the
+   setup wizard's steps and step panel, in a card on the page rather than a
+   page of its own. The step buttons, marks and the phone's one-line
+   progress are setup's own classes. */
+.wizard {
+  display: grid; grid-template-columns: 14rem minmax(0, 1fr); margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-alt);
+  box-shadow: var(--shadow-card);
+}
+.wizard__rail { padding: 1rem 0.75rem; border-right: 1px solid var(--border); }
+.wizard__title { font-weight: 600; margin: 0 0 0.75rem; padding: 0 0.5rem; }
+.wizard__rail ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.15rem; }
+.wizard__panel { padding: 1.25rem 1.5rem; max-width: none; }
+.wizard__panel h2 { font-size: 1.2rem; }
+.wizard__panel h2:focus { outline: none; }
+.wizard__panel .setup__actions { flex-wrap: wrap; }
+.wizard__problem { color: var(--danger); }
+.wizard__group { border: 1px solid var(--border); border-radius: var(--radius); padding: 0.6rem 0.85rem 0.85rem; margin: 0; min-width: 0; }
+.wizard__group legend { font-weight: 600; padding: 0 0.3rem; overflow-wrap: anywhere; }
+.wizard__group > p { margin: 0 0 0.5rem; }
+.wizard__summary { display: grid; gap: 0.5rem; margin: 0; }
+.wizard__summary-row { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: 0.75rem; }
+.wizard__summary dt { color: var(--muted); }
+.wizard__summary dd { margin: 0; overflow-wrap: anywhere; }
+/* A space and the group to give in it (21.3): the name, then the choice. */
+.wizard__spaces { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.wizard__space { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.wizard__space > span { min-width: 0; overflow-wrap: anywhere; }
+.wizard__space select { width: auto; min-width: 9rem; }
+.wizard__days input { max-width: 8rem; }
+.wizard .invite-email { display: grid; gap: 0.6rem; }
+/* What a waiting invite gives (21.3), under its address in the list. */
+.invite-gives { display: block; margin-top: 0.15rem; overflow-wrap: anywhere; }
+
+/* Several people at once (dev-plan 21.2): chips, a search box, matches. */
+.people-picker { display: grid; gap: 0.4rem; }
+.people-picker__chosen, .people-picker__matches { list-style: none; margin: 0; padding: 0; }
+.people-picker__chosen { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.people-picker__chip {
+  display: inline-flex; align-items: center; gap: 0.3rem; max-width: 100%;
+  padding: 0.15rem 0.3rem 0.15rem 0.6rem; border: 1px solid var(--border); border-radius: 999px;
+  background: var(--surface); font-size: 0.9rem;
+}
+.people-picker__chip > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.people-picker__remove {
+  border: 0; background: transparent; color: var(--muted); cursor: pointer; font: inherit;
+  font-size: 1.1rem; line-height: 1; padding: 0 0.3rem; min-height: 1.6rem;
+}
+.people-picker__remove:hover { color: var(--danger); }
+.people-picker__matches { display: grid; gap: 0.1rem; }
+.people-picker__match {
+  width: 100%; text-align: left; border: 0; background: transparent; color: var(--text);
+  padding: 0.35rem 0.5rem; border-radius: 6px; cursor: pointer; font: inherit; overflow-wrap: anywhere;
+}
+.people-picker__match:hover, .people-picker__match:focus-visible { background: var(--bg); }
+
+@media (max-width: 860px) { /* keep in sync with --bp-tablet */
+  .wizard { grid-template-columns: minmax(0, 1fr); }
+  .wizard__rail { border-right: 0; border-bottom: 1px solid var(--border); }
+  .wizard__rail ol { grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); }
+}
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .wizard__rail ol:not(.is-open) { display: none; }
+  .wizard__rail ol.is-open { margin-top: 0.5rem; grid-template-columns: 1fr; }
+  .wizard__panel { padding: 1rem; }
+  .wizard__summary-row { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  /* Each space's name over its choice, rather than some rows wrapping and
+     some not, depending on how long the name is. */
+  .wizard__space { display: grid; gap: 0.25rem; }
+  .wizard__space .glass-select-wrap { display: block; width: 100%; }
+  .wizard__space select { width: 100%; }
+  .wizard__spaces { gap: 0.75rem; }
+}
+
 /* The welcome tour (dev-plan 10.3). Full-screen: it runs before the person
    has any use for a topbar. */
 .tour { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; background: var(--bg); }

@@ -1,7 +1,8 @@
-import { type FormEvent, useEffect, useState } from 'react'
-import { api, ApiError, Permission, type Invite } from '../../api/client'
+import { useEffect, useState } from 'react'
+import { api, Permission, UserRole, type Invite } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import { useConfirm } from '../../components/ConfirmDialog'
+import { InviteWizard, type CreatedInvite } from './InviteWizard'
 
 /**
  * Admin → Invites (dev-plan 1.4's management surface), and the "Invite
@@ -10,7 +11,8 @@ import { useConfirm } from '../../components/ConfirmDialog'
  * Two rights, and the page shows what each allows: creating a link needs
  * invites.create, seeing and revoking the existing ones needs
  * invites.manage. Someone with only the first can hand out links but cannot
- * see anybody else's.
+ * see anybody else's. Since 21.3 an invite is made with a wizard that can
+ * give a role and groups, and the list says what each waiting one gives.
  */
 export function AdminInvitesPage() {
   const { can } = useAuth()
@@ -18,66 +20,34 @@ export function AdminInvitesPage() {
   const canManage = can(Permission.InvitesManage)
   const { ask, dialog } = useConfirm()
   const [invites, setInvites] = useState<Invite[] | null>(null)
-  const [email, setEmail] = useState('')
-  const [days, setDays] = useState(7)
   // One link, or two when Tesria is also on a tailnet (the second for
   // people who reach it through Tailscale rather than this address).
   const [issued, setIssued] = useState<{ label: string | null; url: string }[] | null>(null)
-  // Emailing the invite (requested 2026-09-24): offered once an
-  // address is typed and the server sends email. The token is only known
-  // when the invite is made, so the email goes out then or not at all.
-  const [mail, setMail] = useState<{ enabled: boolean; subject: string; message: string } | null>(null)
-  const [sendEmail, setSendEmail] = useState(true)
-  const [message, setMessage] = useState('')
   const [emailed, setEmailed] = useState<{ to: string } | { failed: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  // A new wizard, empty, for the next invite once one is made.
+  const [round, setRound] = useState(0)
 
   async function load() {
     if (canManage) setInvites(await api.admin.invites.list())
   }
 
   useEffect(() => {
-    if (!canCreate) return
-    api.admin.invites.email()
-      .then((m) => { setMail(m); setMessage(m.message) })
-      .catch(() => setMail(null))
-  }, [canCreate])
-
-  const offerEmail = Boolean(mail?.enabled && email.trim())
-
-  useEffect(() => {
     load().catch(() => setError('Could not load invites.'))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canManage])
 
-  async function create(e: FormEvent) {
-    e.preventDefault()
-    setBusy(true)
-    setError(null)
-    try {
-      const emailing = offerEmail && sendEmail
-      const invite = await api.admin.invites.create({
-        email: email.trim() || undefined,
-        expiresInDays: days,
-        ...(emailing ? { sendEmail: true, message } : {}),
-      })
-      // Built from the current origin: the server is behind a proxy and does
-      // not reliably know its own public address. The tailnet address it
-      // does know, from the Tailscale sidecar.
-      const here = `${window.location.origin}${invite.path}`
-      setIssued(invite.tailnetUrl && invite.tailnetUrl !== here
-        ? [{ label: 'At This Address', url: here }, { label: 'Through Tailscale', url: invite.tailnetUrl }]
-        : [{ label: null, url: here }])
-      setEmailed(!emailing ? null : invite.emailed ? { to: invite.email ?? email.trim() } : { failed: invite.emailError ?? 'the mail server did not say why' })
-      setEmail('')
-      if (mail) setMessage(mail.message)
-      await load()
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not create an invite.')
-    } finally {
-      setBusy(false)
-    }
+  function created(invite: CreatedInvite, emailing: boolean) {
+    // Built from the current origin: the server is behind a proxy and does
+    // not reliably know its own public address. The tailnet address it
+    // does know, from the Tailscale sidecar.
+    const here = `${window.location.origin}${invite.path}`
+    setIssued(invite.tailnetUrl && invite.tailnetUrl !== here
+      ? [{ label: 'At This Address', url: here }, { label: 'Through Tailscale', url: invite.tailnetUrl }]
+      : [{ label: null, url: here }])
+    setEmailed(!emailing ? null : invite.emailed ? { to: invite.email ?? '' } : { failed: invite.emailError ?? 'the mail server did not say why' })
+    setRound((r) => r + 1)
+    load().catch(() => setError('Could not load invites.'))
   }
 
   return (
@@ -85,60 +55,9 @@ export function AdminInvitesPage() {
       <p className="muted small">
         Single-use registration links: the way to add someone while public registration
         is closed. Copy the link to send it yourself, or, when this server sends email,
-        have Tesria email it with a note from you.
+        have Tesria email it with a note from you. An invite can also make the person an
+        administrator and give them groups, which they get when they create their account.
       </p>
-
-      {canCreate && <form className="form-inline invite-form" onSubmit={create}>
-        <label>
-          Email (Optional)
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Binds the invite to one address"
-          />
-        </label>
-        <label>
-          Expires in (Days)
-          <input
-            type="number"
-            min={1}
-            max={90}
-            value={days}
-            onChange={(e) => setDays(Number(e.target.value))}
-          />
-        </label>
-        {offerEmail && (
-          <div className="invite-email">
-            <label className="admin__toggle admin__toggle--inline">
-              <input type="checkbox" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} />
-              <span>Email the Invite to {email.trim()}</span>
-            </label>
-            {sendEmail && (
-              <>
-                <label>
-                  Message
-                  <textarea
-                    rows={8}
-                    maxLength={2000}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                  />
-                </label>
-                <p className="muted small">
-                  Subject: {mail!.subject}. Tesria adds the link below your message, with the date it
-                  expires. Leave the message empty to send the usual one.
-                </p>
-              </>
-            )}
-          </div>
-        )}
-        {/* After the message, so it is written before it is sent; without
-            the email it takes the third column of the first row. */}
-        <button type="submit" className="btn btn--primary" disabled={busy}>
-          {busy ? 'Creating…' : offerEmail && sendEmail ? 'Create and Email Invite' : 'Create Invite'}
-        </button>
-      </form>}
 
       {error && <p className="alert alert--error">{error}</p>}
 
@@ -168,11 +87,15 @@ export function AdminInvitesPage() {
           ))}
           <div className="row-gap">
             <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setIssued(null); setEmailed(null) }}>
-              Dismiss
+              Invite Someone Else
             </button>
           </div>
         </div>
       )}
+
+      {/* The link replaces the wizard until it is dismissed, so it is not
+          left below a fresh, empty form where nobody looks. */}
+      {canCreate && !issued && <InviteWizard key={round} onCreated={created} />}
 
       {!canManage && (
         <p className="muted small">
@@ -193,7 +116,15 @@ export function AdminInvitesPage() {
         <tbody>
           {invites?.map((i) => (
             <tr key={i.id}>
-              <td>{i.email ?? <span className="muted">Anyone</span>}</td>
+              <td>
+                {i.email ?? <span className="muted">Anyone</span>}
+                {/* What a waiting invite gives when it is used (21.3). */}
+                {!i.usedAt && (i.role === UserRole.Admin || (i.groups?.length ?? 0) > 0) && (
+                  <span className="muted small invite-gives">
+                    {[...(i.role === UserRole.Admin ? ['Administrator'] : []), ...(i.groups ?? []).map((g) => g.name)].join(', ')}
+                  </span>
+                )}
+              </td>
               <td>
                 {i.usedAt
                   ? <>

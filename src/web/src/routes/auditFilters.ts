@@ -32,7 +32,7 @@ export const AUDIT_ACTION_GROUPS: AuditActionGroup[] = [
         ],
       },
       { prefix: 'owner.', actions: ['owner.assigned', 'owner.transferred'] },
-      { prefix: 'invite.', actions: ['invite.created', 'invite.revoked'] },
+      { prefix: 'invite.', actions: ['invite.created', 'invite.revoked', 'invite.assignment_skipped'] },
     ],
   },
   {
