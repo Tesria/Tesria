@@ -368,9 +368,34 @@ UPDATE "BackupAgents" SET "NextRunAt" = now() + make_interval(secs => :'secs'::i
 SQL
 }
 
+# What a full disk says, with the room left where the backups go (T8-023).
+# A full disk shows as whichever tool hit it, in its last words: the card,
+# Recent Runs and the alert all said "tar: Error is not recoverable: exiting
+# now", and the cause ("gzip: stdout: No space left on device") was a line
+# earlier. Measured inside this container, on the directory written to:
+# the card's Disk Free measures the host folder, which may be another disk.
+disk_full_message() {
+  local free size
+  read -r free size < <(df -B1 --output=avail,size "${VOLUME:-/backups}" 2>/dev/null | tail -1)
+  if [ -n "${free:-}" ] && [ -n "${size:-}" ]; then
+    echo "The backup disk is full: $(numfmt --to=iec --suffix=B "$free") free of $(numfmt --to=iec --suffix=B "$size"). Remove old backups or give the backups more room; Tesria tries again later, or choose Back Up Now."
+  else
+    echo "The backup disk is full. Remove old backups or give the backups more room; Tesria tries again later, or choose Back Up Now."
+  fi
+}
+
 # The first line of the log that says what went wrong, or its last line.
+# $2 "backup": the job was writing a backup, so a full disk is the backup disk.
 first_error() {
   local line
+  if grep -qiE 'No space left on device|ENOSPC' "$1"; then
+    if [ "${2:-}" = backup ]; then
+      disk_full_message
+    else
+      echo 'A disk filled up while this ran (No space left on device). Check the free space where the backups and the database are kept.'
+    fi
+    return
+  fi
   line="$(grep -m1 -iE 'error|fatal|fail' "$1" || true)"
   [ -n "$line" ] || line="$(tail -n 1 "$1")"
   echo "${line:-The backup failed without output.}"
@@ -397,7 +422,7 @@ run_backup_job() {
   else
     cat "$logf"
     local err backoff
-    err="$(first_error "$logf")"
+    err="$(first_error "$logf" backup)"
     finish_job "$id" failed "$err" "$logf" || log "WARN: could not record the job result"
     FAILURES=$(( FAILURES + 1 ))
     # 15 minutes, doubling, at most 6 hours. Before 9.1 a failure waited a
