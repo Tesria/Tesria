@@ -730,9 +730,17 @@ public static partial class AuthEndpoints
 
         // Turning the second factor off needs the second factor or the
         // password, never just a live session.
-        var ok = (!string.IsNullOrEmpty(req.Code) && totp.Verify(user, req.Code))
-            || (!string.IsNullOrEmpty(req.CurrentPassword) && user.PasswordHash is not null && hasher.Verify(req.CurrentPassword, user.PasswordHash));
-        if (!ok) return Results.ValidationProblem(Error("code", "Enter your current password or a code from your authenticator."));
+        var gavePassword = !string.IsNullOrEmpty(req.CurrentPassword);
+        var gaveCode = !string.IsNullOrEmpty(req.Code);
+        var ok = (gaveCode && totp.Verify(user, req.Code!))
+            || (gavePassword && user.PasswordHash is not null && hasher.Verify(req.CurrentPassword!, user.PasswordHash));
+        // Which one was wrong, rather than "Enter your current password or a
+        // code", which read as if nothing had been typed (t2-011).
+        if (!ok)
+            return Results.ValidationProblem(
+                gavePassword ? Error("currentPassword", "Current password is incorrect.")
+                : gaveCode ? Error("code", "That code is not right. Check the time on your device and try the next one.")
+                : Error("code", "Enter your current password or a code from your authenticator."));
 
         if ((await siteSettings.GetAsync()).RequireTotpForAdmins && user.Role >= UserRole.Admin)
             return Results.ValidationProblem(Error("code", "Administrators on this instance must keep two-factor on."));

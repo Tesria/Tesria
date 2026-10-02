@@ -247,6 +247,15 @@ public class SessionsAndTotpTests
 
         Assert.Equal(HttpStatusCode.BadRequest,
             (await client.PostAsJsonAsync("/api/auth/me/totp/disable", new { })).StatusCode);
+
+        // t2-011: a wrong one says which was wrong, not "enter one".
+        var wrongPassword = await client.PostAsJsonAsync("/api/auth/me/totp/disable", new { CurrentPassword = "not it at all" });
+        Assert.Equal(HttpStatusCode.BadRequest, wrongPassword.StatusCode);
+        Assert.Contains("Current password is incorrect", await wrongPassword.Content.ReadAsStringAsync());
+        var wrongCode = await client.PostAsJsonAsync("/api/auth/me/totp/disable", new { Code = "000000" });
+        Assert.Equal(HttpStatusCode.BadRequest, wrongCode.StatusCode);
+        Assert.Contains("That code is not right", await wrongCode.Content.ReadAsStringAsync());
+
         (await client.PostAsJsonAsync("/api/auth/me/totp/disable", new { CurrentPassword = "supersecret" }))
             .EnsureSuccessStatusCode();
         Assert.False((await client.GetFromJsonAsync<UserDto>("/api/auth/me"))!.TotpEnabled);
