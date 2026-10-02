@@ -13,7 +13,7 @@ using Tesria.Api.Infrastructure;
 namespace Tesria.Api.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261002044232_SpaceGroups")]
+    [Migration("20261002052734_SpaceGroups")]
     partial class SpaceGroups
     {
         /// <inheritdoc />
@@ -956,8 +956,7 @@ namespace Tesria.Api.Infrastructure.Migrations
                     b.Property<NpgsqlTsVector>("SearchVector")
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("tsvector")
-                        .HasAnnotation("Npgsql:TsVectorConfig", "english")
-                        .HasAnnotation("Npgsql:TsVectorProperties", new[] { "SearchText" });
+                        .HasComputedColumnSql("setweight(to_tsvector('english', normalize(regexp_replace(normalize(translate(\"Title\", '/', ' '), NFD), '[\\u0300-\\u036f]', '', 'g'), NFC)), 'A') || to_tsvector('english', normalize(regexp_replace(normalize(translate(\"SearchText\", '/', ' '), NFD), '[\\u0300-\\u036f]', '', 'g'), NFC))", true);
 
                     b.Property<Guid>("SpaceId")
                         .HasColumnType("uuid");
@@ -1560,6 +1559,9 @@ namespace Tesria.Api.Infrastructure.Migrations
 
                     b.Property<string>("RunningVersion")
                         .HasColumnType("text");
+
+                    b.Property<int>("SearchTextVersion")
+                        .HasColumnType("integer");
 
                     b.Property<string>("SeededPermissionKeys")
                         .HasColumnType("text");
