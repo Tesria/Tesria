@@ -11,7 +11,8 @@
 // PageWriter, WebhookEndpoints, WebhookDispatcher and
 // WebhookDeliveryBackgroundService (three attempts, 2 and 4 seconds apart, a
 // 5 second timeout, an in-memory queue), EgressGuard, Program.cs (/mcp,
-// tokens only, stateless), TesriaTools and McpAccess (the ten tools),
+// tokens only, stateless), TesriaTools and McpAccess (the thirteen tools; the
+// comment tools of 22.1 in TesriaTools.Comments.cs, through CommentWriter),
 // MarkdownToProseMirror, CollabNotifier (the MCP source in tracked changes),
 // and the web app's ApiTokensSection and SpaceWebhooksPage for the names of
 // buttons.
@@ -388,19 +389,19 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('The token decides what the assistant may do, so choose it for the job:'),
     ul(
       li(p(b('Read-Only'), ' for answering questions, summarizing and finding things. It can use every tool that reads, and every tool that writes is refused with a message saying the token is read-only. This is the right choice most of the time.')),
-      li(p(b('Not read-only'), ' when you want it to write: drafting pages, tidying labels, filling in a template. It can then change any page you can change, so give it to an assistant you are watching.')),
+      li(p(b('Not read-only'), ' when you want it to write: drafting pages, tidying labels, filling in a template, answering in comments. It can then change any page you can change, so give it to an assistant you are watching.')),
     ),
     panel('warning', p(b('The assistant can do whatever its token can.'), ' Make a separate token for each assistant, and when you stop using one, choose ', b('Revoke'), ' next to its token on your profile. It is cut off at once.')),
 
     h(2, 'When an assistant writes'),
     p('A page an assistant creates or changes is published straight away, as a new version credited to you, the token’s owner, with the assistant’s note on what it changed in the page’s history. Watchers are told, and webhooks fire, exactly as if you had done it.'),
     p('If someone has that page open in the editor at the time, they see the assistant’s change highlighted as tracked changes, marked as coming from MCP, with ', b('Accept All'), ' and ', b('Reject All'), ' above the page. Rejecting takes it out of their draft, so their ', b('Update'), ' publishes the page without it; the assistant’s version stays in the history either way. Their own unpublished writing is never marked as removed by it. If nobody has the page open, its draft starts again from the assistant’s version. See ', pageLink('Changes from assistants and the API'), '.'),
-    p('Next: ', pageLink('What an assistant can do'), ' lists its ten tools.'),
+    p('Next: ', pageLink('What an assistant can do'), ' lists its thirteen tools.'),
   ))
 
   // ------------------------------------------------- What an assistant can do
   await page('What an assistant can do', mcp, doc(
-    p('An assistant uses Tesria through ', b('tools'), ': ten small, named actions, such as “search pages” or “get a page”. You do not call them yourself: you ask in plain words, and the assistant picks the tools and reads the answers. Knowing what the tools are tells you what to ask for.'),
+    p('An assistant uses Tesria through ', b('tools'), ': thirteen small, named actions, such as “search pages” or “get a page”. You do not call them yourself: you ask in plain words, and the assistant picks the tools and reads the answers. Knowing what the tools are tells you what to ask for.'),
     p('Every tool works only within what its token’s owner may see and do. A page or space you cannot see answers “not found”, the same as one that does not exist.'),
 
     h(2, 'Finding things'),
@@ -427,6 +428,15 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ),
     p('An assistant can only write to pages and spaces you can edit. A page it writes arrives exactly as your own change would: a new version, watchers told, webhooks sent, and anyone editing the page at the time sees it highlighted to accept or reject. See ', pageLink('Connecting an assistant'), ', under ', i('When an assistant writes'), '.'),
 
+    h(2, 'Comments'),
+    p('An assistant can take part in a page’s discussion without touching its text: answer a question, suggest a change for someone to make, or explain one it made.'),
+    ul(
+      li(p(c('list_comments'), ': a page’s comments, each thread with its replies under it, oldest first. It sees who wrote each one and when, whether the thread is resolved, and, for a comment on highlighted text, the passage it is about. A deleted comment shows only that it was there. This works with any token, read-only included. ', i('“What is still open in the comments on the Launch plan?”'))),
+      li(p(c('add_comment'), ': a new comment on a page, about the page as a whole. ', i('“Read the Launch plan and leave a comment listing anything that looks out of date.”'))),
+      li(p(c('reply_to_comment'), ': a reply in an existing thread, under the comment it answers. ', i('“Answer the question in the comments on the Support FAQ.”'))),
+    ),
+    p('Commenting needs a token that is not read-only, and works on any page you can read. A comment or reply appears as yours, the token’s owner, exactly as if you had written it: the page’s watchers are told, anyone it mentions gets a notification, and webhooks fire. It can mention people who already appear in the page’s comments. It cannot yet comment on a highlighted passage, and it cannot edit, delete or resolve comments; do those in the browser.'),
+
     h(2, 'What Markdown can say'),
     p('Assistants write in Markdown, and Tesria turns it into the editor’s elements. These come through as the real thing:'),
     ul(
@@ -443,7 +453,8 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p('Deleting, restoring or permanently deleting pages.')),
       li(p('Moving pages, and changing permissions or restrictions.')),
       li(p('Creating, archiving or deleting spaces.')),
-      li(p('Uploading attachments, comments, and anything in Administration.')),
+      li(p('Uploading attachments, and anything in Administration.')),
+      li(p('Editing, deleting or resolving comments.')),
     ),
   ))
 }
