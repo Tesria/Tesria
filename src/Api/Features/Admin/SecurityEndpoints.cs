@@ -238,7 +238,7 @@ public static class SecurityEndpoints
         var block = await db.BlockedNetworks.FirstOrDefaultAsync(b => b.Id == id);
         if (block is null) return Results.NotFound();
         // Undoing a mitigation is sudo territory (dev-plan 3.5).
-        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
+        if (Auth.AuthEndpoints.RequireSudo(http, config, Auth.SudoReasons.Unblock) is { } denied) return denied;
         db.BlockedNetworks.Remove(block);
         audit.Record("security.network_unblocked", "security", block.Id, new { block.Cidr });
         await db.SaveChangesAsync();

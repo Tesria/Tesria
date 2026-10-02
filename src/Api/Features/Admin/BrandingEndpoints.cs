@@ -67,7 +67,7 @@ public static partial class BrandingEndpoints
         BrandingRequest req, ISiteSettingsService settings, AppDbContext db, CurrentUser current,
         IAuditLogger audit, HttpContext http, IConfiguration config)
     {
-        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
+        if (Auth.AuthEndpoints.RequireSudo(http, config, Auth.SudoReasons.Branding) is { } denied) return denied;
 
         var errors = new Dictionary<string, string[]>();
         var name = req.BrandName?.Trim();
@@ -181,7 +181,7 @@ public static partial class BrandingEndpoints
         ISiteSettingsService settings, AppDbContext db, CurrentUser current, IAuditLogger audit,
         IBrandAssets assets, HttpContext http, IConfiguration config)
     {
-        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
+        if (Auth.AuthEndpoints.RequireSudo(http, config, Auth.SudoReasons.Branding) is { } denied) return denied;
 
         var before = BrandView.From(await settings.GetAsync());
         var actorId = current.RequireId();

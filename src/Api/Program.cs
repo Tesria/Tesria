@@ -162,6 +162,8 @@ builder.Services.AddHttpClient(Tesria.Api.Features.Admin.OsvClient.HttpClientNam
 builder.Services.AddSingleton<Tesria.Api.Features.Admin.IOsvClient, Tesria.Api.Features.Admin.OsvClient>();
 // Export progress (dev-plan 20.1): in memory, like the counters above.
 builder.Services.AddSingleton(new Tesria.Api.Features.Export.ExportProgress(TimeProvider.System));
+// Imports counted per person, refused ones not included (t6-016).
+builder.Services.AddSingleton(new Tesria.Api.Features.Export.ImportAllowance(TimeProvider.System));
 // Space exports prepared in the background, one at a time (dev-plan 20.2).
 builder.Services.AddSingleton<Tesria.Api.Features.Export.ExportJobQueue>();
 builder.Services.AddSingleton<Tesria.Api.Features.Export.ExportJobRunner>();
@@ -674,6 +676,10 @@ app.UseForwardedHeaders();
 app.UseMiddleware<BlocklistMiddleware>();
 app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<DeniedResponseMiddleware>();
+// Every /api refusal says something a person can read: no bare 500, 413 or
+// 415 (T1-023, t2-026, T5-024). Inside the denied-response counter, so what
+// it counts is the status this writes.
+app.UseMiddleware<Tesria.Api.Infrastructure.ApiErrorMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

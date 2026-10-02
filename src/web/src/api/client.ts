@@ -1,5 +1,6 @@
 import { requestReauth } from '../auth/reauth'
 import { mayMeanSignedOut, SESSION_CHECK_EVENT } from '../auth/sessionCheck'
+import { fallbackMessage, isNetworkFailure, NETWORK_ERROR_MESSAGE } from './errorMessages'
 import type { SpaceIconKind } from '../components/spaceIconIdentity'
 import type { SpaceTreeStyle } from '../components/treeMarkers'
 
@@ -11,6 +12,10 @@ import type { SpaceTreeStyle } from '../components/treeMarkers'
 /** Owner is above Admin, and every check is "this or above" (dev-plan 10.1). */
 export const UserRole = { Member: 0, Admin: 1, Owner: 2 } as const
 export type UserRole = (typeof UserRole)[keyof typeof UserRole]
+
+/** The longest display name the server takes (T1-025). The browser counts
+ *  UTF-16 units, so an emoji uses two here and one there: stricter, never looser. */
+export const DISPLAY_NAME_MAX = 200
 
 export type User = {
   id: string
@@ -1277,21 +1282,37 @@ type Body = object | undefined
  *  custom header without a CORS preflight it will never pass. */
 const CSRF_HEADER = { 'X-Requested-With': 'Tesria' }
 
+/**
+ * `fetch`, with a request that got no answer at all turned into an ApiError
+ * that says so in Tesria's words (t4-024, T5-011). Every call in this file
+ * goes through here, so no form has to know what "Failed to fetch" means.
+ * Status 0 and the code `network` mark it, for a caller that wants to tell
+ * it apart from a refusal.
+ */
+async function send(path: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(path, init)
+  } catch (err) {
+    if (isNetworkFailure(err)) throw new ApiError(0, NETWORK_ERROR_MESSAGE, {}, 'network')
+    throw err
+  }
+}
+
 async function request<T>(method: string, path: string, body?: Body): Promise<T> {
-  const send = () => fetch(path, {
+  const attempt = () => send(path, {
     method,
     credentials: 'include',
     headers: body !== undefined ? { ...CSRF_HEADER, 'Content-Type': 'application/json' } : CSRF_HEADER,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
   try {
-    return await handle<T>(await send())
+    return await handle<T>(await attempt())
   } catch (err) {
     // Sudo mode (dev-plan 3.5): the server wants the password confirmed
     // before this action. Ask, then retry once; a cancel rejects as usual.
     if (err instanceof ApiError && err.code === 'reauth_required') {
-      await requestReauth()
-      return handle<T>(await send())
+      await requestReauth(typeof err.details.reason === 'string' ? err.details.reason : undefined)
+      return handle<T>(await attempt())
     }
     noticeSignedOut(err, path)
     throw err
@@ -1313,17 +1334,17 @@ function noticeSignedOut(err: unknown, path: string) {
  * through, not fail.
  */
 async function upload<T>(method: string, path: string, file: Blob, name = 'file'): Promise<T> {
-  const send = () => {
+  const attempt = () => {
     const body = new FormData()
     body.append('file', file, file instanceof File ? file.name : name)
-    return fetch(path, { method, credentials: 'include', headers: CSRF_HEADER, body })
+    return send(path, { method, credentials: 'include', headers: CSRF_HEADER, body })
   }
   try {
-    return await handle<T>(await send())
+    return await handle<T>(await attempt())
   } catch (err) {
     if (err instanceof ApiError && err.code === 'reauth_required') {
-      await requestReauth()
-      return handle<T>(await send())
+      await requestReauth(typeof err.details.reason === 'string' ? err.details.reason : undefined)
+      return handle<T>(await attempt())
     }
     noticeSignedOut(err, path)
     throw err
@@ -1348,11 +1369,12 @@ async function handle<T>(res: Response): Promise<T> {
       data && typeof data === 'object' && name in data && (data as Record<string, unknown>)[name]
         ? String((data as Record<string, unknown>)[name])
         : undefined
+    const retryAfter = Number(field('retryAfterSeconds') ?? res.headers.get('Retry-After') ?? NaN)
     const message =
       field('message') ??
       field('detail') ??
       firstFieldError(fieldErrors) ??
-      defaultMessage(res.status)
+      fallbackMessage(res.status, Number.isFinite(retryAfter) ? retryAfter : undefined)
     const code = data && typeof data === 'object' && 'code' in data
       ? String((data as { code: unknown }).code)
       : null
@@ -1380,16 +1402,6 @@ function safeJson(text: string): unknown {
 function firstFieldError(errors: Record<string, string[]>): string | undefined {
   for (const messages of Object.values(errors)) if (messages?.length) return messages[0]
   return undefined
-}
-
-function defaultMessage(status: number): string {
-  if (status === 401) return 'You need to sign in.'
-  if (status === 403) return 'You do not have permission to do that.'
-  if (status === 404) return 'Not found.'
-  if (status === 409) return 'Conflict.'
-  if (status === 413) return 'That file is too large to upload here.'
-  if (status === 429) return 'Too many attempts. Wait a minute and try again.'
-  return `Request failed (${status}).`
 }
 
 export const api = {
@@ -1420,6 +1432,10 @@ export const api = {
       disable: (input: { currentPassword?: string; code?: string }) =>
         request<User>('POST', '/api/auth/me/totp/disable', input),
     },
+    /** Whether an invite link can still be used, and if not why (t2-005). */
+    inviteStatus: (token: string) =>
+      request<{ problem: string | null; message: string | null }>(
+        'GET', `/api/auth/invite?token=${encodeURIComponent(token)}`),
     /** Returns the user plus the recovery codes: the one moment they exist. */
     register: (email: string, displayName: string, password: string, inviteToken?: string) =>
       request<User & { recoveryCodes: string[] }>('POST', '/api/auth/register', {
@@ -1490,7 +1506,7 @@ export const api = {
     uploadIcon: async (key: string, blob: Blob): Promise<{ iconHash: string }> => {
       const body = new FormData()
       body.append('file', blob, 'icon.png')
-      const res = await fetch(`/api/media/space-icons/${encodeURIComponent(key)}`, {
+      const res = await send(`/api/media/space-icons/${encodeURIComponent(key)}`, {
         method: 'PUT',
         credentials: 'include',
         headers: CSRF_HEADER,
@@ -1519,7 +1535,7 @@ export const api = {
       body.append('file', file, file.name)
       body.append('key', key)
       if (name) body.append('name', name)
-      const res = await fetch('/api/spaces/import', {
+      const res = await send('/api/spaces/import', {
         method: 'POST',
         credentials: 'include',
         headers: CSRF_HEADER,
@@ -1600,7 +1616,7 @@ export const api = {
     upload: async (pageId: string, file: File): Promise<Attachment> => {
       const form = new FormData()
       form.append('file', file)
-      const res = await fetch(`/api/pages/${pageId}/attachments`, {
+      const res = await send(`/api/pages/${pageId}/attachments`, {
         method: 'POST',
         credentials: 'include',
         headers: CSRF_HEADER,
@@ -1801,7 +1817,7 @@ export const api = {
     upload: async (blob: Blob): Promise<{ avatarHash: string }> => {
       const body = new FormData()
       body.append('file', blob, 'avatar.png')
-      const res = await fetch('/api/media/avatars/me', {
+      const res = await send('/api/media/avatars/me', {
         method: 'PUT',
         credentials: 'include',
         headers: CSRF_HEADER,
@@ -1895,7 +1911,7 @@ export const api = {
     const suffix = q.toString()
     const path = `/api/audit${suffix ? `?${suffix}` : ''}`
     try {
-      const res = await fetch(path, { method: 'GET', credentials: 'include', headers: CSRF_HEADER })
+      const res = await send(path, { method: 'GET', credentials: 'include', headers: CSRF_HEADER })
       const next = res.headers.get('X-Audit-Next-Before')
       const entries = await handle<AuditEntry[]>(res)
       return { entries, nextBefore: next && /^\d+$/.test(next) ? Number(next) : null }

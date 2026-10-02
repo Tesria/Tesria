@@ -5,6 +5,7 @@
 import { type ReactNode, useState } from 'react'
 import { DownloadIcon } from './NavIcons'
 import { downloadName } from './downloadName'
+import { isNetworkFailure, NETWORK_ERROR_MESSAGE } from '../api/errorMessages'
 
 export function PdfExportButton({ pageId, className, children }: { pageId: string; className: string; children: ReactNode }) {
   const [preparing, setPreparing] = useState(false)
@@ -29,7 +30,7 @@ export function PdfExportButton({ pageId, className, children }: { pageId: strin
       link.remove()
       window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
     } catch (err) {
-      setError(err instanceof Error && err.message !== 'Failed to fetch' ? err.message : 'The PDF could not be made.')
+      setError(isNetworkFailure(err) ? NETWORK_ERROR_MESSAGE : err instanceof Error ? err.message : 'The PDF could not be made.')
     } finally {
       setPreparing(false)
     }

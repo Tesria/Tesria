@@ -398,7 +398,7 @@ public static class RoleEndpoints
     }
 
     private static IResult? AuthEndpointsSudo(HttpContext http, IConfiguration config) =>
-        Auth.AuthEndpoints.RequireSudo(http, config);
+        Auth.AuthEndpoints.RequireSudo(http, config, Auth.SudoReasons.Roles);
 
     private static PermissionDto ToDto(InstancePermission p) =>
         new(p.Key, p.Area, p.Label, p.Description, p.Scope.ToString());

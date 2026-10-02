@@ -99,11 +99,14 @@ public sealed class SmtpEmailSender(
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
+            // The library's text goes to the log with the exception; people
+            // get a sentence that points at the fix (t2-012).
+            var reason = SmtpErrors.Explain(ex, s.SmtpHost!, s.SmtpPort, s.SmtpTls);
             logger.LogWarning(ex, "Email to {To} failed: {Subject}", message.To, message.Subject);
             audit.RecordAs(null, "email.failed", "instance", null,
-                new { message.To, message.Subject, Error = ex.Message });
+                new { message.To, message.Subject, Error = reason });
             try { await db.SaveChangesAsync(ct); } catch (Exception) { /* the audit row is best-effort here */ }
-            return new EmailResult(false, ex.Message, Permanent: IsPermanent(ex));
+            return new EmailResult(false, reason, Permanent: IsPermanent(ex));
         }
     }
 

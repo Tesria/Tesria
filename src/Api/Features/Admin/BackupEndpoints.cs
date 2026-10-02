@@ -198,7 +198,7 @@ public static class BackupEndpoints
         IAuditLogger audit, ISecurityDetector detector, HttpContext http, IConfiguration config)
     {
         // A policy removes backups; changing it is sudo territory (dev-plan 3.5).
-        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
+        if (Auth.AuthEndpoints.RequireSudo(http, config, Auth.SudoReasons.BackupPolicy) is { } denied) return denied;
         if (Validate(req) is { } invalid) return invalid;
 
         var actorId = current.RequireId();

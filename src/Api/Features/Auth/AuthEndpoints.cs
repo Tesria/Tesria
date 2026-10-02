@@ -66,6 +66,8 @@ public static partial class AuthEndpoints
     public const int DefaultSudoMinutes = 5;
 
     public record RegisterRequest(string Email, string DisplayName, string Password, string? InviteToken);
+    /// <summary>An invite link's state: <c>Problem</c> is null when it can be used.</summary>
+    public record InviteStatusResponse(string? Problem, string? Message);
     public record LoginRequest(string Email, string Password);
     /// <summary>
     /// <paramref name="HasPassword"/> is false for accounts provisioned through
@@ -159,6 +161,9 @@ public static partial class AuthEndpoints
 
         // The endpoints that take a credential share one per-address budget.
         group.MapPost("/register", Register).RequireRateLimiting(RateLimits.AuthPolicy);
+        // Whether an invite link can still be used, asked when it is opened,
+        // so a dead one says so before the form is filled in (t2-005).
+        group.MapGet("/invite", CheckInvite).RequireRateLimiting(RateLimits.AuthPolicy);
         group.MapPost("/login", Login).RequireRateLimiting(RateLimits.AuthPolicy);
         group.MapPost("/login/totp", LoginWithTotp).RequireRateLimiting(RateLimits.AuthPolicy);
         group.MapPost("/reauth", Reauthenticate).Produces(StatusCodes.Status204NoContent).RequireAuthorization().RequireRateLimiting(RateLimits.AuthPolicy);
@@ -232,6 +237,14 @@ public static partial class AuthEndpoints
             [OidcAuthenticationDefaults.Scheme]);
     }
 
+    private static async Task<IResult> CheckInvite(string? token, IInviteService invites)
+    {
+        var check = await invites.CheckAsync(token ?? "", email: null);
+        return Results.Ok(check.Problem is { } problem
+            ? new InviteStatusResponse(InviteCheck.Code(problem), InviteCheck.Message(problem))
+            : new InviteStatusResponse(null, null));
+    }
+
     private static async Task<IResult> Register(
         RegisterRequest req, AppDbContext db, IPasswordHasher hasher, HttpContext http,
         ISiteSettingsService settings, IAccountRecoveryService recovery, IInviteService invites,
@@ -244,92 +257,135 @@ public static partial class AuthEndpoints
             return Results.ValidationProblem(Error("email", "A valid email address is required."));
         if (displayName.Length == 0)
             return Results.ValidationProblem(Error("displayName", "Display name is required."));
+        if (DisplayNameTooLong(displayName) is { } longName)
+            return Results.ValidationProblem(Error("displayName", longName));
         if (PasswordRules.Problem(req.Password) is { } weak)
             return Results.ValidationProblem(Error("password", weak));
 
-        // Both the duplicate-email check and "is this the first account?" read the
-        // table before writing to it, so they run in one serializable transaction:
-        // without it, two simultaneous first registrations could each observe an
-        // empty table and both be created as admin.
-        await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
-
-        // The first account on an empty instance owns it (dev-plan 10.1):
-        // otherwise a fresh install has content and nobody able to manage it.
-        var isFirstAccount = !await db.Users.AnyAsync();
-
-        // Closed registration is deliberately ignored for that very first
-        // account: otherwise an operator who turns it off before anyone has
-        // signed up can never set the instance up at all.
-        //
-        // An invite presented is spent whether or not registration is open.
-        // It used to be looked at only when registration was closed, so with
-        // registration open an invite link created the account and the invite
-        // stayed "Unused", unlinked to the account and still usable (found in
-        // use, 2026-09-22). With registration open a token that does
-        // not match is simply ignored: anyone may register anyway.
+        bool? isFirstAccount = null;
         Invite? invite = null;
-        if (!isFirstAccount && !string.IsNullOrWhiteSpace(req.InviteToken))
-            invite = await invites.FindUsableAsync(req.InviteToken, email);
-        if (!isFirstAccount && !(await settings.GetAsync()).AllowPublicRegistration)
+        try
         {
-            if (invite is null)
-                return Results.Problem(
-                    "Registration is by invitation on this instance.",
-                    statusCode: StatusCodes.Status403Forbidden);
+            return await RegisterInTransaction();
+        }
+        catch (Exception ex) when (DbConflicts.IsConflict(ex))
+        {
+            // Another registration committed first (T1-023, t2-026). This one
+            // rolled back whole, so nothing was made; say what the other one
+            // did, in the words the same request would get a moment later.
+            db.ChangeTracker.Clear();
+            if (isFirstAccount == true)
+                return Results.Conflict(new
+                {
+                    message = "Someone else created the owner account a moment ago, so this one was not made. " +
+                              "Sign in if it was you; otherwise ask the owner for an invite.",
+                    code = "owner_exists",
+                });
+            if (invite is not null && await invites.CheckAsync(req.InviteToken!, email) is { Problem: { } problem })
+                return InviteRefused(problem);
+            if (await db.Users.AnyAsync(u => u.Email == email))
+                return Results.Conflict(new { message = "An account with this email already exists." });
+            return Results.Conflict(new
+            {
+                message = "Someone else registered at the same moment, so this account was not made. Try again.",
+            });
         }
 
-        // After the invitation check, not before: on an instance that only
-        // takes invited people, "this email already has an account" told
-        // anyone which addresses had one (the 14.1 review).
-        if (await db.Users.AnyAsync(u => u.Email == email))
-            return Results.Conflict(new { message = "An account with this email already exists." });
-
-        var user = new User
+        async Task<IResult> RegisterInTransaction()
         {
-            Id = Guid.NewGuid(),
-            Email = email,
-            DisplayName = displayName,
-            PasswordHash = hasher.Hash(req.Password!),
-            Status = UserStatus.Active,
-            Role = isFirstAccount ? UserRole.Owner : UserRole.Member,
-            RoleId = await Infrastructure.Permissions.RoleSeed.BuiltInIdAsync(
-                db, isFirstAccount ? UserRole.Owner : UserRole.Member),
-            CreatedAt = DateTimeOffset.UtcNow,
-        };
-        db.Users.Add(user);
+            // Both the duplicate-email check and "is this the first account?" read the
+            // table before writing to it, so they run in one serializable transaction:
+            // without it, two simultaneous first registrations could each observe an
+            // empty table and both be created as admin. The one that loses is
+            // answered by the catch above.
+            await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
 
-        // Issued here rather than on demand: codes are only useful if they
-        // exist before they are needed, and a prompt later is a prompt most
-        // people dismiss.
-        var codes = recovery.IssueCodes(user.Id);
+            // The first account on an empty instance owns it (dev-plan 10.1):
+            // otherwise a fresh install has content and nobody able to manage it.
+            isFirstAccount = !await db.Users.AnyAsync();
 
-        // Spent inside the same transaction as the account it created, so a
-        // failure part-way cannot burn an invite without producing a user.
-        if (invite is not null)
-        {
-            invite.UsedAt = DateTimeOffset.UtcNow;
-            invite.UsedByUserId = user.Id;
+            // Closed registration is deliberately ignored for that very first
+            // account: otherwise an operator who turns it off before anyone has
+            // signed up can never set the instance up at all.
+            //
+            // An invite presented is spent whether or not registration is open.
+            // It used to be looked at only when registration was closed, so with
+            // registration open an invite link created the account and the invite
+            // stayed "Unused", unlinked to the account and still usable (found in
+            // use, 2026-09-22). With registration open a token that does
+            // not match is simply ignored: anyone may register anyway.
+            InviteProblem? inviteProblem = null;
+            if (isFirstAccount == false && !string.IsNullOrWhiteSpace(req.InviteToken))
+            {
+                var check = await invites.CheckAsync(req.InviteToken, email);
+                invite = check.Usable;
+                inviteProblem = check.Problem;
+            }
+            if (isFirstAccount == false && !(await settings.GetAsync()).AllowPublicRegistration)
+            {
+                // Which of used, expired, revoked or another address it was
+                // (T7-005, t2-005), when a link was followed at all.
+                if (invite is null)
+                    return inviteProblem is { } problem
+                        ? InviteRefused(problem)
+                        : Results.Problem(
+                            "Registration is by invitation on this instance.",
+                            statusCode: StatusCodes.Status403Forbidden);
+            }
+
+            // After the invitation check, not before: on an instance that only
+            // takes invited people, "this email already has an account" told
+            // anyone which addresses had one (the 14.1 review).
+            if (await db.Users.AnyAsync(u => u.Email == email))
+                return Results.Conflict(new { message = "An account with this email already exists." });
+
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = email,
+                DisplayName = displayName,
+                PasswordHash = hasher.Hash(req.Password!),
+                Status = UserStatus.Active,
+                Role = isFirstAccount == true ? UserRole.Owner : UserRole.Member,
+                RoleId = await Infrastructure.Permissions.RoleSeed.BuiltInIdAsync(
+                    db, isFirstAccount == true ? UserRole.Owner : UserRole.Member),
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
+            db.Users.Add(user);
+
+            // Issued here rather than on demand: codes are only useful if they
+            // exist before they are needed, and a prompt later is a prompt most
+            // people dismiss.
+            var codes = recovery.IssueCodes(user.Id);
+
+            // Spent inside the same transaction as the account it created, so a
+            // failure part-way cannot burn an invite without producing a user.
+            if (invite is not null)
+            {
+                invite.UsedAt = DateTimeOffset.UtcNow;
+                invite.UsedByUserId = user.Id;
+            }
+
+            // Every account's creation is in the audit log, with how it came to be
+            // (dev-plan 14.3): an audit log that misses new accounts is not one a
+            // compliance review can rely on.
+            audit.RecordAs(user.Id, "user.registered", "user", user.Id, new
+            {
+                user.Email,
+                How = isFirstAccount == true ? "first account" : invite is not null ? "invite" : "open registration",
+                InviteId = invite?.Id,
+                Ip = ClientIp(http),
+            });
+
+            await detector.RegistrationAsync(ClientIp(http));
+            await db.SaveChangesAsync();
+            await tx.CommitAsync();
+
+            await SignIn(http, db, user);
+            return Results.Ok(new RegisteredResponse(
+                user.Id, user.Email, user.DisplayName, user.Role,
+                user.AvatarHash, user.AvatarVariant, user.PasswordHash != null, codes));
         }
-
-        // Every account's creation is in the audit log, with how it came to be
-        // (dev-plan 14.3): an audit log that misses new accounts is not one a
-        // compliance review can rely on.
-        audit.RecordAs(user.Id, "user.registered", "user", user.Id, new
-        {
-            user.Email,
-            How = isFirstAccount ? "first account" : invite is not null ? "invite" : "open registration",
-            InviteId = invite?.Id,
-            Ip = ClientIp(http),
-        });
-
-        await detector.RegistrationAsync(ClientIp(http));
-        await db.SaveChangesAsync();
-        await tx.CommitAsync();
-
-        await SignIn(http, db, user);
-        return Results.Ok(new RegisteredResponse(
-            user.Id, user.Email, user.DisplayName, user.Role,
-            user.AvatarHash, user.AvatarVariant, user.PasswordHash != null, codes));
     }
 
     private static async Task<IResult> Login(
@@ -674,9 +730,17 @@ public static partial class AuthEndpoints
 
         // Turning the second factor off needs the second factor or the
         // password, never just a live session.
-        var ok = (!string.IsNullOrEmpty(req.Code) && totp.Verify(user, req.Code))
-            || (!string.IsNullOrEmpty(req.CurrentPassword) && user.PasswordHash is not null && hasher.Verify(req.CurrentPassword, user.PasswordHash));
-        if (!ok) return Results.ValidationProblem(Error("code", "Enter your current password or a code from your authenticator."));
+        var gavePassword = !string.IsNullOrEmpty(req.CurrentPassword);
+        var gaveCode = !string.IsNullOrEmpty(req.Code);
+        var ok = (gaveCode && totp.Verify(user, req.Code!))
+            || (gavePassword && user.PasswordHash is not null && hasher.Verify(req.CurrentPassword!, user.PasswordHash));
+        // Which one was wrong, rather than "Enter your current password or a
+        // code", which read as if nothing had been typed (t2-011).
+        if (!ok)
+            return Results.ValidationProblem(
+                gavePassword ? Error("currentPassword", "Current password is incorrect.")
+                : gaveCode ? Error("code", "That code is not right. Check the time on your device and try the next one.")
+                : Error("code", "Enter your current password or a code from your authenticator."));
 
         if ((await siteSettings.GetAsync()).RequireTotpForAdmins && user.Role >= UserRole.Admin)
             return Results.ValidationProblem(Error("code", "Administrators on this instance must keep two-factor on."));
@@ -784,7 +848,14 @@ public static partial class AuthEndpoints
     /// sudo window (dev-plan 3.5). The 403 carries <c>code: reauth_required</c>
     /// so the SPA can ask for the password and retry, rather than fail.
     /// </summary>
-    public static IResult? RequireSudo(HttpContext http, IConfiguration config)
+    /// <remarks>
+    /// <paramref name="reason"/> is what the password box says this action
+    /// is (t2-017): it used to say every one "is irreversible or changes who
+    /// can administer the instance", which read as a warning of something
+    /// drastic when starting a mail sign-in. One sentence, ending "so it
+    /// needs your password again."
+    /// </remarks>
+    public static IResult? RequireSudo(HttpContext http, IConfiguration config, string? reason = null)
     {
         var window = TimeSpan.FromMinutes(config.GetValue("Auth:SudoMinutes", DefaultSudoMinutes));
         if (IsFreshlyAuthenticated(http, window)) return null;
@@ -794,6 +865,7 @@ public static partial class AuthEndpoints
             status = 403,
             code = "reauth_required",
             detail = "Confirm your password to continue.",
+            reason = reason ?? SudoReasons.Default,
         }, statusCode: StatusCodes.Status403Forbidden);
     }
 
@@ -827,8 +899,8 @@ public static partial class AuthEndpoints
         var displayName = (req.DisplayName ?? "").Trim();
         if (displayName.Length == 0)
             return Results.ValidationProblem(Error("displayName", "Display name is required."));
-        if (displayName.Length > 200)
-            return Results.ValidationProblem(Error("displayName", "Display name is too long."));
+        if (DisplayNameTooLong(displayName) is { } longName)
+            return Results.ValidationProblem(Error("displayName", longName));
 
         var user = await db.Users.FirstAsync(u => u.Id == current.RequireId());
         user.DisplayName = displayName;
@@ -1094,4 +1166,24 @@ public static partial class AuthEndpoints
 
     private static Dictionary<string, string[]> Error(string field, string message) =>
         new() { [field] = [message] };
+
+    /// <summary>The column's length (varchar(200)).</summary>
+    public const int MaxDisplayName = 200;
+
+    /// <summary>
+    /// Why a display name is too long, or null. Counted as the database counts
+    /// (characters, so an emoji is one), and checked before saving: a longer
+    /// name reached the column and answered a bare 500 (T1-025).
+    /// </summary>
+    public static string? DisplayNameTooLong(string name) =>
+        name.EnumerateRunes().Count() > MaxDisplayName
+            ? $"Display name can be at most {MaxDisplayName} characters."
+            : null;
+
+    /// <summary>An invite that cannot make an account, and why (T7-005, t2-005).</summary>
+    private static IResult InviteRefused(InviteProblem problem) =>
+        Results.Problem(
+            InviteCheck.Message(problem),
+            statusCode: StatusCodes.Status403Forbidden,
+            extensions: new Dictionary<string, object?> { ["code"] = InviteCheck.Code(problem) });
 }

@@ -665,7 +665,7 @@ public static class PageEndpoints
         if (!await perms.CanAdminSpaceAsync(page.SpaceId)) return Results.Forbid();
         if (await DeniedByInstanceRightAsync(db, rights, current, id) is { } refusal) return refusal;
         // ...and irreversible, so it is sudo territory (dev-plan 3.5).
-        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
+        if (Auth.AuthEndpoints.RequireSudo(http, config, Auth.SudoReasons.Purge) is { } denied) return denied;
 
         var subtree = await CollectTrashedSubtreeAsync(db, page.SpaceId, id);
         if (await DeniedForDescendantsAsync(rights, current, perms, subtree, id) is { } blocked) return blocked;

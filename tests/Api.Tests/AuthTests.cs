@@ -30,6 +30,29 @@ public class AuthTests
     }
 
     [Fact]
+    public async Task A_display_name_over_200_characters_is_refused_in_words()
+    {
+        // T1-025: 201 characters reached the varchar(200) column and answered 500.
+        using var factory = new TestAppFactory();
+        var client = factory.CreateClient();
+
+        var tooLong = await client.PostAsJsonAsync("/api/auth/register",
+            new RegisterRequest("long@example.com", new string('a', 201), "supersecret"));
+        Assert.Equal(HttpStatusCode.BadRequest, tooLong.StatusCode);
+        Assert.Contains("at most 200 characters", await tooLong.Content.ReadAsStringAsync());
+
+        // Counted as the database counts: 200 foxes are 200 characters (400 UTF-16 units).
+        var foxes = string.Concat(Enumerable.Repeat("🦊", 200));
+        var ok = await client.PostAsJsonAsync("/api/auth/register",
+            new RegisterRequest("fox@example.com", foxes, "supersecret"));
+        Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
+
+        var rename = await client.PutAsJsonAsync("/api/auth/me", new { DisplayName = foxes + "🦊" });
+        Assert.Equal(HttpStatusCode.BadRequest, rename.StatusCode);
+        Assert.Contains("at most 200 characters", await rename.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
     public async Task Register_rejects_duplicate_email()
     {
         using var factory = new TestAppFactory();
