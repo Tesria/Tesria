@@ -6291,51 +6291,70 @@ questions are in `roadmap.md`.
   review* (what existing spaces get, and how the groups sit with page
   restrictions and spaces open to all)
 
-  **Design (2026-10-02, Opus 5.5; reviewed by Fable 5.1 before building).**
-  The owner decided (2026-10-02): existing spaces get their four groups,
-  and **grants to individual people move into them** (View into Viewers,
-  Edit into Editors, Admin into Admins).
+  **Design (2026-10-02, Opus 5.5; reviewed by Fable 5.1, verdict "build
+  with changes", all adopted).** The owner decided (2026-10-02): existing
+  spaces get their four groups, and **grants to individual people move into
+  them** (View into Viewers, Edit into Editors, Admin into Admins).
   - **"Open to everyone" becomes a setting, not the absence of grants.**
     Today a space with no permission rows lets every signed-in user view,
     edit and administer it, without being an explicit admin (so page
-    restrictions still bind them). Adding the space's own groups would add
-    rows and quietly close every open space. So `Space.EveryoneAccess`
-    (null, View, Edit or Admin) says what every signed-in, active account
-    gets, as an implicit level: it never counts as an explicit admin grant,
-    exactly like default-open today. The migration sets it to Admin on every
-    space that had no grants, which keeps them exactly as open as they are,
-    and to null on every other space. "Make the space open" (15.3) sets it
-    rather than deleting grants; recovering access to a space (the admin
-    tool) adds the administrator to the space's Admins group.
-  - **A space's four groups are real groups** (`Group.SpaceId`,
-    `Group.SpaceRole`), named "<space name> Viewers" and so on, renamed with
-    the space and deleted with it. Their access is implied by their role,
-    not stored as grant rows: Viewers and Reviewers view, Editors edit,
-    Admins administer, and Admins membership **is** an explicit admin grant
-    (it bypasses page restrictions, as an Admin grant does today). The
-    permissions tab shows them first, with their members, and their level
-    cannot be changed or removed. Their members are managed by the space's
-    admins and by holders of Manage Groups. A space's groups may be named in
-    its own page restrictions; they cannot be granted on another space.
-  - **Global Viewers and Global Reviewers** are fixed groups beside Owner,
-    Admins and Users, with members added by hand (by holders of Manage
-    Groups). Both may view every space, as an implicit level: page
-    restrictions still bind them, so a restricted page stays restricted to
-    them. Reviewing itself arrives with review mode (22.4); until then
-    Reviewers, global or per space, can view.
-  - **Grants that stay grants:** to groups (Users, Admins, Owner, custom
-    groups), and any made later to a person. The last-admin rule now counts
-    the Admins group's members, Admin grants and an EveryoneAccess of Admin.
-  - **The move is recorded:** every person grant the migration moves is
-    written to `SpaceGrantMoves` (space, person, level, when), so it can be
-    reversed by hand, and the audit log records one entry per space.
+    restrictions still bind them). `Space.EveryoneAccess` (null, View, Edit
+    or Admin) says what every signed-in, active account gets, as an
+    implicit level that never counts as an explicit admin. Spaces that had
+    no grants get Admin, which keeps them exactly as open; every other
+    space gets null. Grants to the built-in Users group stay grants (an
+    explicit Admin grant to Users is not the same thing). Changing it is the
+    space admin's, keeps make-open's protections when it widens (the
+    password again, the `space.opened` audit and alert), refuses to leave
+    the actor without admin when it narrows from Admin, and revokes live
+    editors whose access it lowers. `DELETE /spaces/{key}/permissions`
+    stays as "set it to Admin".
+  - **A space's four groups are groups with ordinary grant rows**
+    (`Group.SpaceId`, `Group.SpaceRole`): Viewers View, Editors Edit,
+    Reviewers View (until review mode, 22.4), Admins Admin. Those four rows
+    cannot be revoked or changed. Their display name is derived ("<space
+    name> Viewers"), not stored, so two spaces of one name and renames need
+    nothing; the unique group-name index covers only other groups. They are
+    deleted with the space. A space's groups may be granted or named in
+    restrictions only within their own space, enforced on the server.
+  - **Who manages a space's groups:** its explicit admins (Admins members
+    or holders of an Admin grant), never the implicit Admin of an open
+    space, which would let anyone add themselves to Admins and bypass page
+    restrictions; Viewers, Editors and Reviewers may also be managed by an
+    implicit admin. **Manage Groups does not reach space groups**: the
+    administrative way in stays "recover access" (audited), which on an open
+    space still grants nothing.
+  - **Space groups are hidden from people who cannot view the space**, in
+    the group list, their members and the permission picker (which offers
+    only the current space's own groups, plus global and custom ones).
+  - **Global Viewers and Global Reviewers**: fixed ids beside Owner, Admins
+    and Users, with stored members. Both view every space, archived ones
+    included, as an implicit level: page restrictions bind them and drafts
+    stay hidden. Adding a member needs the password again, is audited and
+    raises an alert, and a space's permissions tab says that Global Viewers
+    can read it. Reviewing itself arrives with review mode (22.4).
+  - **The last-admin rule** counts active members of the Admins group,
+    other Admin grants and an EveryoneAccess of Admin, and runs on every
+    way to lose admin: revoking an Admin grant, removing an Admins member,
+    narrowing EveryoneAccess, and deleting a group that held Admin.
+  - **The move:** an EF migration adds the schema; a C# seed at start (like
+    the built-in groups') does the data, per space and in a transaction,
+    only for spaces that have no space groups yet, so it is idempotent and
+    never recomputes a migrated space. Each moved person grant is recorded
+    in `SpaceGrantMoves` (the original grant's id, level and time), and the
+    audit log records one entry per space. Undoing the migration is a
+    restore; the record allows reversing by hand.
   - **Creating a space** makes its four groups and puts the creator in its
-    Admins group; EveryoneAccess stays Admin for the API's plain create (as
-    open as a new space is today) until the wizard (21.2) asks. A pack
-    import makes the groups, puts the importer in Admins, and leaves
-    EveryoneAccess null (private to the importer, as today).
+    Admins group; EveryoneAccess stays Admin for the plain create (as open
+    as a new space is today) until the wizard (21.2) asks. A pack import
+    makes the groups, puts the importer in Admins and leaves EveryoneAccess
+    null, private to the importer as now.
   - **Anonymous readers** are unchanged: public reading is still the
     space's own switch.
+  - One deliberate tightening: an account that is suspended no longer
+    passes checks made on its behalf in an open space (it is not "signed
+    in"), for example mention notifications.
+
 - **21.2** Creating a space as a wizard: name and key, who may see it, who
   goes in each of its groups. · `M` · Model: Opus 5.5
 - **21.3** Inviting or creating a user as a wizard, with the role, global
