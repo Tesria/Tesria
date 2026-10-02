@@ -223,7 +223,7 @@ public static class PermissionEndpoints
             // Covers the last-admin rule too: the person doing it is one.
             return Results.Conflict(new
             {
-                message = "You would no longer administer this space. Add yourself to its Admins group first, or ask one of its administrators.",
+                message = "You would no longer administer this space. Ask someone in its Admins group to do it, or to add you; if the group is empty, a Tesria administrator can join it with Get Access, in Administration, Spaces.",
             });
         }
 

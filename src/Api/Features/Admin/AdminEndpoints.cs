@@ -234,16 +234,22 @@ public static class AdminEndpoints
         var space = await db.Spaces.FirstOrDefaultAsync(s => s.Key == normalizedKey);
         if (space is null) return Results.NotFound();
 
-        // A space everyone signed in may administer already lets the
-        // administrator in, and an explicit admin would pass the page
-        // restrictions everyone else is held to. So it grants nothing.
-        if (space.EveryoneAccess == SpaceOperation.Admin)
-            return Results.Ok(new RecoverAccessResponse(space.Id, space.Key, space.Name, true));
-
         // Idempotent: re-running it is a no-op rather than a duplicate
         // membership and a second audit entry, so a retried request doesn't
         // pollute the log. Any Admin grant counts, its Admins group included.
         if (await perms.IsExplicitSpaceAdminAsync(space.Id))
+            return Results.Ok(new RecoverAccessResponse(space.Id, space.Key, space.Name, true));
+
+        // A space everyone signed in may administer already lets the
+        // administrator in, and an explicit admin would pass the page
+        // restrictions everyone else is held to. So it grants nothing, as
+        // long as the space has explicit administrators of its own. One that
+        // has none (every space that was open before 21.1) could otherwise
+        // never be closed or given an administrator: nobody may add to its
+        // Admins group, and narrowing it needs an explicit admin. This is the
+        // way in the review names for it (audited, like any recovery).
+        if (space.EveryoneAccess == SpaceOperation.Admin
+            && await SpaceGroups.HasAdminAfterAsync(db, space.Id, new SpaceGroups.AdminLoss(LowersEveryone: true)))
             return Results.Ok(new RecoverAccessResponse(space.Id, space.Key, space.Name, true));
 
         var userId = current.RequireId();

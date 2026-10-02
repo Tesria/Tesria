@@ -517,7 +517,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Choose ', b('Give Me Access'), '. You are added to the space’s Admins group, so you can read it and change its permissions. It is recorded in the audit log.'),
     step(3, 'Remove yourself when you are done'),
     p('Once the space has new people to manage it, take yourself out of its Admins group, on its ', b('Permissions'), ' tab. Your place there is an ordinary membership, like anyone else’s.'),
-    p('A space that is open to everyone signed in already lets you in, and Get Access leaves it exactly as it is.'),
+    p('A space that is open to everyone signed in, and has people in its Admins group, already lets you in, and Get Access leaves it exactly as it is. One that is open but has nobody in Admins (as every space that was open before Tesria 0.9 starts out) cannot be closed or given an administrator by its own people: Get Access adds you to its Admins group, so you can add the right people and then take yourself out.'),
     panel('info', p(b('Why not just let administrators see everything?'), ' Because then any one administrator could quietly read every team’s private space. This way it is possible when needed, and never unnoticed.')),
 
     h(2, 'Archiving and deleting'),

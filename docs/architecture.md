@@ -1261,7 +1261,10 @@ space's Admins group (before, by an Admin grant to them). From then on the
 existing rules apply unchanged: an explicit space admin can view and edit
 the space and is not blocked by page restrictions (that rule already
 exists in `PermissionService`). On a space whose EveryoneAccess is Admin
-it grants nothing and says they already had access. Recovery is audited as
+it grants nothing and says they already had access, unless the space has
+no explicit administrator at all (every space that was open before 21.1):
+such a space could otherwise never be closed or given an administrator,
+since nobody may add to its Admins group, so recovery adds them there. Recovery is audited as
 `space.access_recovered` and, once dev-plan 3.3 exists, raises a security
 event visible to every other admin. The reasons:
 

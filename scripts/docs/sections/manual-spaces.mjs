@@ -544,7 +544,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'Making a space private, or open again'),
     ul(
-      li(p(b('To make it private,'), ' choose ', b('No Access'), ' under ', b('Everyone signed in can'), ', then ', b('Close It'), '. First check that the people who need the space are in its groups. You keep access as long as you are in its Admins group.')),
+      li(p(b('To make it private,'), ' choose ', b('No Access'), ' under ', b('Everyone signed in can'), ', then ', b('Close It'), '. First check that the people who need the space are in its groups. You keep access as long as you are in its Admins group; if nobody is in it yet, see the last section below.')),
       li(p(b('To open it again,'), ' choose ', b('Administer'), ', or ', b('View'), ' or ', b('Edit'), ', and confirm. Nothing in its groups or other access is removed.')),
     ),
 
@@ -552,7 +552,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('The last administrator of a space cannot be removed, whether by taking them out of Admins, revoking their access, or lowering what everyone signed in gets, because nobody would be left to manage it. Suspended accounts do not count.'),
 
     h(2, 'Administrators and private spaces'),
-    p('Being an administrator of Tesria does not let you into every private space. If a private space has lost all its administrators, a Tesria administrator can add themselves to its Admins group with ', b('Get Access'), ' in ', ...adminAt('Spaces'), ', and that is recorded in the audit log. See ', pageLink('Spaces (administration)'), '.'),
+    p('Being an administrator of Tesria does not let you into every private space. If a private space has lost all its administrators, or an open one has nobody in its Admins group (as every space that was open before Tesria 0.9 starts out), a Tesria administrator can add themselves to its Admins group with ', b('Get Access'), ' in ', ...adminAt('Spaces'), ', and that is recorded in the audit log. See ', pageLink('Spaces (administration)'), '.'),
     p('To keep one page, rather than a whole space, to a few people, see ', pageLink('Restrictions'), '.'),
   ))
 

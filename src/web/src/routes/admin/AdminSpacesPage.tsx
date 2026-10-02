@@ -91,7 +91,7 @@ export function AdminSpacesPage() {
         <>
           <p>You will be added to the space as an administrator, so you can read it and manage its permissions.</p>
           <p>This is recorded in the audit log. You join the space's Admins group: remove yourself from it in the space's Permissions tab when you are done.</p>
-          <p>A space that is open to everyone already lets you in, and is left exactly as it is.</p>
+          <p>A space that is open to everyone and has administrators of its own already lets you in, and is left exactly as it is.</p>
         </>
       ),
     })

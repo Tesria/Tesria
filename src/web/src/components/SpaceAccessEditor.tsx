@@ -267,6 +267,13 @@ function SpaceGroupCard({ group, users, mayManage, onChanged, ask }: {
           </select></span>
           <button type="submit" className="btn btn--primary btn--sm" disabled={!userId}>Add</button>
         </form>
+      ) : group.members.length === 0 ? (
+        // Every space that was open before 21.1 starts like this: nobody may
+        // add to Admins, so recover-access is the way in.
+        <p className="muted small">
+          Only the people in Admins, or given Admin here, can change who is in it. While it is empty, a Tesria
+          administrator can join it with Get Access, in Administration, Spaces.
+        </p>
       ) : (
         <p className="muted small">Only the people in Admins, or given Admin here, can change who is in it.</p>
       )}

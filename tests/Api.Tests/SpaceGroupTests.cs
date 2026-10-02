@@ -477,4 +477,28 @@ public class SpaceGroupTests
         Assert.Equal(1, Scoped(f, db => db.AuditLogs.CountAsync(a => a.Action == "space.access_recovered")));
         Assert.True((await owner.Client.GetFromJsonAsync<JsonElement>("/api/spaces/SHUTREC/permissions")).GetProperty("canManageAdmins").GetBoolean());
     }
+
+    [Fact]
+    public async Task An_open_space_nobody_administers_by_name_can_be_recovered()
+    {
+        // Every space that was open before 21.1 starts with an empty Admins
+        // group, and nobody may add to it; without this it could never be
+        // closed. Recovering puts the administrator in Admins, audited.
+        using var f = new TestAppFactory();
+        var owner = await PersonAsync(f);
+        var alice = await PersonAsync(f);
+        var spaceId = await SpaceAsync(alice, "ORPHAN");
+        var admins = await alice.Client.SpaceGroupAsync("ORPHAN", Admins);
+        // Allowed: everyone signed in still administers it.
+        Assert.Equal(HttpStatusCode.NoContent, (await alice.Client.DeleteAsync($"/api/groups/{admins}/members/{alice.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await EveryoneAsync(alice.Client, "ORPHAN", null)).StatusCode);
+
+        var res = await (await owner.Client.PostAsync("/api/admin/spaces/ORPHAN/recover-access", null)).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.False(res.GetProperty("alreadyHadAccess").GetBoolean());
+        Assert.True(Scoped(f, db => db.UserGroups.AnyAsync(ug => ug.UserId == owner.Id && ug.GroupId == admins)));
+        Assert.True(Scoped(f, db => db.AuditLogs.AnyAsync(a => a.Action == "space.access_recovered" && a.TargetId == spaceId)));
+        // Now the space can be given administrators, and closed.
+        Assert.Equal(HttpStatusCode.NoContent, (await AddAsync(owner.Client, admins, alice.Id)).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await EveryoneAsync(alice.Client, "ORPHAN", null)).StatusCode);
+    }
 }
