@@ -5,6 +5,33 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Fixed: long names and titles with no spaces no longer push pages
+  sideways** (t3-R04, t4-026, T3-010, cal-005, t6-018). A 500-letter page
+  title made a page about 10,000 px wide; a 200-letter space name or 50-letter
+  key did the same to the Spaces list, every page of the space and the
+  sidebar; a long query did it to Search. Titles, headings, descriptions and
+  messages now wrap. Crumbs, tree rows, keys and names in a row end in "…",
+  with the whole of it in a tooltip, and the tab title stops at 80
+  characters. The space key badge on search and label results is its text's
+  width again (t6-017, T3-018). Measured at 320, 375 and 1280 px, Minimal
+  and Glass, Chromium and WebKit: no page scrolls sideways.
+- **Space descriptions have a limit: 2,000 characters** (t3-R05). Longer
+  ones were accepted, 100,000 characters included. One saved before the
+  limit still loads and can be kept unchanged. The forms stop at the
+  server's limits for descriptions, display names (T1-025), keys and the
+  instance name, which the server now also refuses with a message rather
+  than a 500.
+- **A space icon or page emoji is one emoji** (cal-007, T3-008). Several at
+  once were accepted and spilled out of the icon tile; now they are refused
+  with "Pick a single emoji, not several." Flags, skin tones and joined
+  emoji count as one.
+- **Fixed on small phones:** the chart's Table and Type pickers stuck out
+  past the chart at 320 px (t9-R01), and so did the branding preview past its
+  card (T9-010). Each session's Sign Out was off screen in the Sessions table
+  (t2-025); on a phone each session is now a short block with Sign Out under
+  it. In the setup wizard, the list of steps folds into one line, "Step 3 of
+  10: Who Can Join" (T9-022), and the roles matrix becomes a list with a
+  labeled tick for each role (T1-024), as in Administration, Roles.
 - **Search puts the best match first** (dev-plan 23.1). Results are ranked
   by BM25 instead of PostgreSQL's ts_rank, the same for the search box,
   `GET /api/search` and the MCP `search_pages` tool. A page with your words
