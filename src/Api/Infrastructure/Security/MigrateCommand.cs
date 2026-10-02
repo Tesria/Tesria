@@ -94,7 +94,7 @@ public static class MigrateCommand
             "Use that newer version again, or restore a backup made by this one.");
     }
 
-    /// <summary>One pass: migrations, the audit chain backfill, the app role and its grants.</summary>
+    /// <summary>One pass: migrations, the audit chain and search text backfills, the app role and its grants.</summary>
     public static async Task PassAsync(string ownerConnection, string? appConnection, ILogger log, CancellationToken ct = default)
     {
         // Unpooled: nothing of the owner's connection outlives this step. A
@@ -108,6 +108,8 @@ public static class MigrateCommand
         log.LogInformation("Migrations applied: {Count}", pending.Count);
         var chained = await AuditChain.BackfillAsync(owner);
         if (chained > 0) log.LogInformation("Audit chain: linked {Count} pre-existing rows", chained);
+        var rebuilt = await Features.Search.SearchTextBackfill.RunAsync(owner, ct);
+        if (rebuilt > 0) log.LogInformation("Search: rebuilt the search text of {Count} pages", rebuilt);
         if (appConnection is not null)
             await DatabaseRoles.EnsureAppRoleAsync(owner, appConnection, log, ct);
     }

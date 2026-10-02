@@ -357,6 +357,13 @@ public class SiteSettings
     // asked, when, by whom, and what came back.
     public string? DependencyCheckJson { get; set; }
 
+    /// <summary>
+    /// Which <c>SearchableText.Version</c> every page's search text was last
+    /// built with (dev-plan 23.1). The migrate step rebuilds them all when the
+    /// app's is newer; a new instance starts current, with nothing to rebuild.
+    /// </summary>
+    public int SearchTextVersion { get; set; } = Features.Search.SearchableText.Version;
+
     public DateTimeOffset UpdatedAt { get; set; }
     public Guid? UpdatedById { get; set; }
 }

@@ -1,7 +1,4 @@
 using System.Net.Http.Json;
-using Tesria.Api.Infrastructure;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Tesria.Api.Tests;
@@ -72,26 +69,27 @@ public class SearchTests
     }
 
     [Fact]
-    public async Task Slash_joined_words_are_indexed_as_separate_terms()
+    public async Task A_mentioned_person_finds_the_page_and_shows_in_the_snippet()
     {
-        // Postgres's tsvector parser treats "word/word" (e.g. "Hocuspocus/Yjs")
-        // as one compound lexeme rather than splitting it, so a search for
-        // just "Hocuspocus" would otherwise find nothing. SearchText must have
-        // the slash replaced with a space so both halves tokenize normally:
-        // this can only be verified against the stored text directly since the
-        // SQLite test provider falls back to a plain LIKE match, which can't
-        // reproduce the tsvector-specific bug.
+        // T5-026: the text of mentions, dates and statuses was left out, so
+        // searching a name missed the pages that mention it and the snippet
+        // read "Attendees , , ,". Ranking is on PostgreSQL (SearchPostgresTests).
         using var factory = new TestAppFactory();
         var client = factory.CreateClient();
         await client.RegisterAndSignInAsync();
         var spaceId = await client.CreateSpaceAsync();
-        var page = await CreatePage(client, spaceId, "Collab", "A Node + Hocuspocus/Yjs sidecar");
+        const string content = """
+            {"type":"doc","content":[
+              {"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Attendees"}]},
+              {"type":"paragraph","content":[{"type":"mention","attrs":{"id":"x","label":"Priya Natarajan"}},{"type":"text","text":", on "},{"type":"date","attrs":{"date":"2026-09-02"}}]}
+            ]}
+            """;
+        (await client.PostAsJsonAsync("/api/pages",
+            new { SpaceId = spaceId, Title = "Kickoff", ContentJson = content })).EnsureSuccessStatusCode();
 
-        using var scope = factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var searchText = await db.Pages.Where(p => p.Id == page!.Id).Select(p => p.SearchText).SingleAsync();
-        Assert.DoesNotContain('/', searchText);
-        Assert.Contains("Hocuspocus Yjs", searchText);
+        var hit = Assert.Single((await client.GetFromJsonAsync<List<SearchResult>>("/api/search?q=Natarajan"))!);
+        Assert.Equal("Kickoff", hit.Title);
+        Assert.Equal("Attendees · @Priya **Natarajan**, on 2 Sep 2026", hit.Snippet);
     }
 
     [Fact]

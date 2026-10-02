@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using NpgsqlTypes;
@@ -12,9 +13,11 @@ using Tesria.Api.Infrastructure;
 namespace Tesria.Api.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261002050624_SearchStatistics")]
+    partial class SearchStatistics
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -683,21 +686,10 @@ namespace Tesria.Api.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<Guid?>("SpaceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int?>("SpaceRole")
-                        .HasColumnType("integer");
-
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedName")
-                        .IsUnique()
-                        .HasFilter("\"SpaceId\" IS NULL");
-
-                    b.HasIndex("SpaceId", "SpaceRole")
-                        .IsUnique()
-                        .HasFilter("\"SpaceId\" IS NOT NULL");
+                        .IsUnique();
 
                     b.ToTable("Groups");
                 });
@@ -1639,9 +1631,6 @@ namespace Tesria.Api.Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
-                    b.Property<int?>("EveryoneAccess")
-                        .HasColumnType("integer");
-
                     b.Property<bool>("ExportHtml")
                         .HasColumnType("boolean");
 
@@ -1701,40 +1690,6 @@ namespace Tesria.Api.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Spaces");
-                });
-
-            modelBuilder.Entity("Tesria.Api.Domain.SpaceGrantMove", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("GrantCreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("GrantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("GroupId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("MovedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Operation")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("SpaceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SpaceId");
-
-                    b.ToTable("SpaceGrantMoves");
                 });
 
             modelBuilder.Entity("Tesria.Api.Domain.SpacePermission", b =>
@@ -2082,16 +2037,6 @@ namespace Tesria.Api.Infrastructure.Migrations
                     b.Navigation("Space");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Tesria.Api.Domain.Group", b =>
-                {
-                    b.HasOne("Tesria.Api.Domain.Space", "Space")
-                        .WithMany()
-                        .HasForeignKey("SpaceId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.Navigation("Space");
                 });
 
             modelBuilder.Entity("Tesria.Api.Domain.Invite", b =>

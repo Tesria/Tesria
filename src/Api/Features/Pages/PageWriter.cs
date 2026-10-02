@@ -101,7 +101,7 @@ public sealed class PageWriter(
             SpaceId = spaceId,
             ParentPageId = parentPageId,
             Title = trimmed,
-            SearchText = PageContent.BuildSearchText(trimmed, content),
+            SearchText = PageContent.BuildSearchText(content),
             Status = PageStatus.Current,
             Position = await NextPositionAsync(spaceId, parentPageId, ct),
             CreatedById = userId,
@@ -215,7 +215,7 @@ public sealed class PageWriter(
             string.IsNullOrWhiteSpace(changeComment) ? null : changeComment.Trim(), now);
         db.PageVersions.Add(version);
         page.CurrentVersionId = version.Id;
-        page.SearchText = PageContent.BuildSearchText(page.Title, content);
+        page.SearchText = PageContent.BuildSearchText(content);
         page.UpdatedAt = now;
         audit.Record("page.updated", "page", page.Id, new { page.Title, Version = nextNumber });
         await notifications.NotifyPageWatchersAsync(page.Id, page.SpaceId, "page.updated", userId, new { page.Title });

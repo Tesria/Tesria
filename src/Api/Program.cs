@@ -164,6 +164,8 @@ builder.Services.AddSingleton<Tesria.Api.Features.Admin.IOsvClient, Tesria.Api.F
 builder.Services.AddSingleton(new Tesria.Api.Features.Export.ExportProgress(TimeProvider.System));
 // Imports counted per person, refused ones not included (t6-016).
 builder.Services.AddSingleton(new Tesria.Api.Features.Export.ImportAllowance(TimeProvider.System));
+// BM25's average page lengths, reused for a few minutes (dev-plan 23.1).
+builder.Services.AddSingleton(new Tesria.Api.Features.Search.SearchStatistics(TimeProvider.System));
 // Space exports prepared in the background, one at a time (dev-plan 20.2).
 builder.Services.AddSingleton<Tesria.Api.Features.Export.ExportJobQueue>();
 builder.Services.AddSingleton<Tesria.Api.Features.Export.ExportJobRunner>();

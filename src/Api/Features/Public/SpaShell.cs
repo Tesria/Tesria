@@ -159,7 +159,9 @@ public sealed partial class SpaShell(IWebHostEnvironment env)
 
     private static string? Excerpt(string text)
     {
-        var t = (text ?? "").Trim();
+        // A line per block in the search text (dev-plan 23.1), joined as a
+        // search snippet joins them.
+        var t = Features.Search.SearchSnippets.Present(text ?? "");
         if (t.Length == 0) return null;
         return t.Length <= 160 ? t : t[..157].TrimEnd() + "…";
     }
