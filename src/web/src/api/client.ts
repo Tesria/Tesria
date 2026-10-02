@@ -531,6 +531,85 @@ export type Group = {
  */
 export type GroupMember = { userId: string; email: string | null; displayName: string; active?: boolean }
 
+/** Which of the four kinds of group a row is (dev-plan 21.4). */
+export type GroupKind = 'builtin' | 'global' | 'custom' | 'space'
+
+/**
+ * A group as the Groups page lists it (dev-plan 21.4). `grants` only on
+ * spaces whose permissions you may see, `restrictions` only on pages you can
+ * read; `matches` are the members a search found in it.
+ */
+export type GroupOverview = {
+  id: string
+  name: string
+  description: string | null
+  kind: GroupKind
+  computed: boolean
+  spaceId: string | null
+  spaceKey: string | null
+  spaceName: string | null
+  spaceRole: number | null
+  activeMembers: number
+  suspendedMembers: number
+  canManageMembers: boolean
+  everySpace: boolean
+  grants: { spaceId: string; spaceKey: string; spaceName: string; operation: number }[]
+  restrictions: { pageId: string; pageTitle: string; spaceKey: string; operation: number }[]
+  matches: { userId: string; displayName: string; email: string | null }[]
+}
+
+/** A bulk add's report (dev-plan 21.4): `active` is false for a suspended account. */
+export type BulkPerson = { userId: string; displayName: string; email: string | null; active: boolean }
+export type BulkAddResult = {
+  added: BulkPerson[]
+  alreadyMembers: BulkPerson[]
+  refused: { input: string; reason: string }[]
+}
+
+/**
+ * Why someone can (or cannot) reach a space or page (dev-plan 21.4). `level`
+ * and the page's `canView`/`canEdit` are the real check made as them; the
+ * reasons say where it comes from. A reason with `counts` false is held but
+ * gives nothing (a suspended account).
+ */
+export type AccessReasonKind = 'everyone' | 'global' | 'group' | 'direct'
+export type AccessExplanation = {
+  person: { id: string; displayName: string; email: string | null; active: boolean }
+  space: { id: string; key: string; name: string; everyoneAccess: number | null; archived: boolean }
+  level: number | null
+  explicitAdmin: boolean
+  reasons: {
+    kind: AccessReasonKind
+    level: number
+    counts: boolean
+    label: string
+    groupId: string | null
+    groupKind: GroupKind | null
+    recoveredAt: string | null
+  }[]
+  page: {
+    id: string
+    title: string
+    canView: boolean
+    canEdit: boolean
+    draft: boolean
+    isAuthor: boolean
+    adminBypass: boolean
+    restrictions: {
+      pageId: string
+      pageTitle: string
+      inherited: boolean
+      operation: number
+      principalType: number
+      principalId: string
+      principalName: string
+      matches: boolean
+    }[]
+  } | null
+  canRecoverAccess: boolean
+  publiclyReadable: boolean
+}
+
 /** One of a space's own groups, with its members (dev-plan 21.1). */
 export type SpaceGroup = { id: string; role: number; name: string; operation: number; members: GroupMember[] }
 
@@ -1923,6 +2002,27 @@ export const api = {
       request<void>('POST', `/api/groups/${id}/members`, { userId }),
     removeMember: (id: string, userId: string) =>
       request<void>('DELETE', `/api/groups/${id}/members/${userId}`),
+    /** The Groups page's list (dev-plan 21.4); needs Manage Groups. */
+    overview: (filter: { q?: string; kind?: GroupKind | null; space?: string | null } = {}) => {
+      const query = new URLSearchParams()
+      if (filter.q) query.set('q', filter.q)
+      if (filter.kind) query.set('kind', filter.kind)
+      if (filter.space) query.set('space', filter.space)
+      const qs = query.toString()
+      return request<{ groups: GroupOverview[]; truncated: boolean }>('GET', `/api/groups/overview${qs ? `?${qs}` : ''}`)
+    },
+    /** Several people at once, chosen or by email; the same rights as one. */
+    addMembers: (id: string, input: { userIds?: string[]; emails?: string[] }) =>
+      request<BulkAddResult>('POST', `/api/groups/${id}/members/bulk`, input),
+  },
+  access: {
+    /** Why someone can see a space, or a page in it (dev-plan 21.4). */
+    explain: (input: { userId: string; space?: string; pageId?: string }) => {
+      const query = new URLSearchParams({ userId: input.userId })
+      if (input.pageId) query.set('pageId', input.pageId)
+      else if (input.space) query.set('space', input.space)
+      return request<AccessExplanation>('GET', `/api/access/explain?${query.toString()}`)
+    },
   },
   spacePermissions: {
     list: (key: string) =>

@@ -38,7 +38,8 @@ const ONLY_EXAMPLE_ACCOUNTS = "document.querySelectorAll('table.admin-table tbod
 const ONLY_DEMO_SPACE = "document.querySelectorAll('table.admin-table tbody tr').forEach((r) => { const key = r.querySelector('td:first-child .badge'); if (!key || key.textContent.trim() !== 'DEMO') { r.remove(); return } const who = r.querySelector('td:nth-child(2)'); if (who && !" + JSON.stringify(PEOPLE) + ".some((n) => who.textContent.includes(n))) who.textContent = '' })"
 // The Groups tab, down to the five built-in groups: any other group was
 // made on this instance and is not part of the example.
-const ONLY_BUILT_IN_GROUPS = "document.querySelectorAll('ul.version-list > li').forEach((li) => { if (!li.querySelector('.badge')) li.remove() })"
+// A section left empty (Custom) goes too.
+const ONLY_BUILT_IN_GROUPS = "document.querySelectorAll('.groups-list ul.version-list > li').forEach((li) => { if (!li.querySelector('.badge')) li.remove() }); document.querySelectorAll('.groups-section').forEach((s) => { if (!s.querySelector('li')) s.remove() })"
 // Names each settings card by its heading (data-shot="kill-switches"), so a
 // crop and an annotation can find it with plain CSS.
 const TAG_SECTIONS = "document.querySelectorAll('section.profile__section').forEach((s) => { const h = s.querySelector(':scope > h2'); if (h) s.setAttribute('data-shot', h.textContent.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')) })"
@@ -281,7 +282,7 @@ export const shots = () => [
       { eval: ONLY_BUILT_IN_GROUPS },
       { css: '.tabs, .tab-panel > div > p.muted { visibility: hidden !important; }' },
     ],
-    clipTo: ['form.card.form-inline', 'ul.version-list'], clipPad: 12,
+    clipTo: ['form.card.form-inline', '.groups-list'], clipPad: 12,
     annotate: [
       { type: 'box', target: 'form.card.form-inline button[type="submit"]', pad: 4 },
       { type: 'box', target: 'ul.version-list .badge', pad: 4 },
@@ -799,16 +800,28 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     step(2, 'Choose Create Group'),
     p('It appears in the list below.'),
     step(3, 'Add people'),
-    p('Choose ', b('Members'), ' in its row. Pick a person from the list and choose ', b('Add Member'), '. ', b('Remove'), ' takes someone out, after asking, since they lose anything they could reach only through the group.'),
+    p('Choose ', b('Members'), ' in its row. Tick everyone to add in the list (', b('Find people'), ' narrows it), or choose ', b('Paste email addresses'), ' and paste a list, separated by commas or one per line, the way your mail program copies them. Then choose ', b('Add Member'), ' (or ', b('Add 3 People'), ', and so on). Tesria says who was added, who was already in the group, and who was not added and why, such as an address with no account. ', b('Remove'), ' takes someone out, after asking, since they lose anything they could reach only through the group.'),
     step(4, 'Use it'),
     p('In a space’s ', b('Permissions'), ', or a page’s ', b('Restrictions'), ', choose ', b('Group'), ' and then the group. See ', pageLink('Who can see a space'), ' and ', pageLink('Restrictions'), '.'),
+
+    h(2, 'Finding a group'),
+    p('The list opens on the built-in groups, then the global ones, then the groups made here. Each group says how many members it has (suspended accounts counted apart, since they get nothing from it), and what it gives: ', i('Edit on Handbook'), ', for example, or how many page restrictions name it.'),
+    ul(
+      li(p(b('Search groups and members'), ' finds a group by its name, or by someone in it: type a name, or an email address if you may see the user list, to see every group that person is in.')),
+      li(p(b('Show'), ' narrows the list to one kind of group, or to one space’s own four groups. Those appear under the space’s name, marked with its key, so ', i('Handbook Admins'), ' never reads like the built-in Admins.')),
+    ),
+    p('A space’s groups appear only for spaces you can see, and what a group gives is shown only in spaces whose permissions you may see.'),
 
     h(2, 'The built-in groups'),
     p(b('Owner'), ', ', b('Admins'), ' and ', b('Users'), ' are listed first, marked ', b('built in'), '. Their members follow each account’s role, so they are always up to date: ', b('Users'), ' is everyone with an active account, ', b('Admins'), ' is the administrators and the owner, and ', b('Owner'), ' is the owner. Nobody can rename or delete them, or add and remove members by hand, and a suspended account drops out of them. They are handy for, say, letting the Admins group manage a space.'),
     p(b('Global Viewers'), ' and ', b('Global Reviewers'), ' come next. You choose their members, under ', b('Members'), ', and everyone in them can read every space, archived ones included, without being named in it. Page restrictions still apply to them, drafts stay hidden, and they cannot change anything. Because that reaches everything, adding someone asks for your password again, is recorded in the audit log and alerts every administrator, and each space’s Permissions tab says when anyone is in them. Global Reviewers are meant for the people who will review changes once Tesria has a review step.'),
 
     h(2, 'Each space’s own groups'),
-    p('Every space also has four groups of its own: its Admins, Editors, Viewers and Reviewers, named after the space. They are not listed here, and Manage Groups does not reach them: the space’s own administrators choose who is in them, on its ', b('Permissions'), ' tab. See ', pageLink('Who can see a space'), '. If nobody is left to manage a space, ', b('Get Access'), ' in ', ...adminAt('Spaces'), ' is the way in. See ', pageLink('Spaces (administration)'), '.'),
+    p('Every space also has four groups of its own: its Admins, Editors, Viewers and Reviewers, named after the space. Find them by searching, or under ', b('Show'), '. Manage Groups does not reach them: the space’s own administrators choose who is in them, here or on its ', b('Permissions'), ' tab, and only its own administrators may change who is in its Admins. See ', pageLink('Who can see a space'), '. If nobody is left to manage a space, ', b('Get Access'), ' in ', ...adminAt('Spaces'), ' is the way in. See ', pageLink('Spaces (administration)'), '.'),
+
+    h(2, 'Why can someone see a space?'),
+    p('At the foot of the tab, choose a person and a space, and a page in it if you like, then ', b('Check Access'), '. Tesria makes the same check it makes when they open it, and lists every reason: what everyone signed in gets, each group they are in that gives something there, access given to them by name, Global Viewers and Global Reviewers, and, for a page, each restriction on it or above it and whether it names them. It also says when they are suspended, when they hold Admin there (so restrictions do not stop them), and when they could give themselves access with ', b('Get Access'), '.'),
+    p('You can ask only about spaces and pages you can see yourself. A space’s administrators can ask the same question at the foot of its ', b('Permissions'), ' tab.'),
 
     h(2, 'Renaming and deleting a group'),
     p(b('Edit'), ' changes a group’s name and description. ', b('Delete'), ' removes the group, after asking, along with any access given to it in spaces and pages. Its members keep their accounts.'),
