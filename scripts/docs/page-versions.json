@@ -67,9 +67,9 @@
   },
   "Administration / Security (administration)": {
     "appliesTo": "0.5",
-    "updated": "2026-09-30",
+    "updated": "2026-10-02",
     "note": "Revised.",
-    "hash": "04d0669967a41337"
+    "hash": "7b0377c017f19950"
   },
   "Administration / Settings (administration)": {
     "appliesTo": "0.5",
@@ -133,9 +133,9 @@
   },
   "Basics / Accounts and invites": {
     "appliesTo": "0.5",
-    "updated": "2026-09-30",
+    "updated": "2026-10-02",
     "note": "Revised.",
-    "hash": "1ffaff36dc385b73"
+    "hash": "22a186e9aba34c48"
   },
   "Basics / Finding your way around": {
     "appliesTo": "0.5",
@@ -463,15 +463,15 @@
   },
   "Exporting and publishing / A space as a website": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
-    "note": "0.6: a progress bar and Cancel while it builds.",
-    "hash": "1e38485cf0441385"
+    "updated": "2026-10-02",
+    "note": "0.6: a progress bar and Cancel while it builds. 0.8.6: prepared in the background, and downloaded from Downloads in the notifications.",
+    "hash": "9bc05ed650544bc1"
   },
   "Exporting and publishing / Exporting a page": {
     "appliesTo": "0.5",
-    "updated": "2026-09-30",
+    "updated": "2026-10-02",
     "note": "Revised.",
-    "hash": "1b5b57b34ad2d841"
+    "hash": "6b8cf967562e4b0e"
   },
   "Exporting and publishing / Hosting an exported site": {
     "appliesTo": "0.5",
@@ -493,9 +493,9 @@
   },
   "Exporting and publishing / Wiki packs": {
     "appliesTo": "0.5",
-    "updated": "2026-09-30",
-    "note": "0.6: a progress bar and Cancel while it packs.",
-    "hash": "2136bf288174417c"
+    "updated": "2026-10-02",
+    "note": "0.6: a progress bar and Cancel while it packs. 0.8.6: prepared in the background, and downloaded from Downloads in the notifications.",
+    "hash": "3d4ae31a1973800e"
   },
   "FAQ": {
     "appliesTo": "0.5",
@@ -529,9 +529,9 @@
   },
   "Getting started / First-run setup wizard": {
     "appliesTo": "0.5",
-    "updated": "2026-09-30",
+    "updated": "2026-10-02",
     "note": "Revised.",
-    "hash": "9de2abb2d802ba3f"
+    "hash": "cb78ac7d52f067ae"
   },
   "Getting started / Prerequisites": {
     "appliesTo": "0.5",
@@ -541,9 +541,9 @@
   },
   "Getting started / Quick start": {
     "appliesTo": "0.5",
-    "updated": "2026-09-29",
+    "updated": "2026-10-02",
     "note": "Revised.",
-    "hash": "307909c58697ebab"
+    "hash": "a2267eb1a7cce703"
   },
   "Getting started / System requirements": {
     "appliesTo": "0.5",
@@ -607,9 +607,9 @@
   },
   "Installation and operations / Backups and recovery": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-10-02",
     "note": "Revised.",
-    "hash": "00783eab385939b2"
+    "hash": "a0cff10dcd8a1450"
   },
   "Installation and operations / Configuration reference": {
     "appliesTo": "0.5",
@@ -637,9 +637,9 @@
   },
   "Installation and operations / Installing with Docker Compose": {
     "appliesTo": "0.5",
-    "updated": "2026-09-30",
+    "updated": "2026-10-02",
     "note": "Revised.",
-    "hash": "30e6db9eed884029"
+    "hash": "b118496559565dd7"
   },
   "Installation and operations / Opening Tesria by name": {
     "appliesTo": "0.5",
@@ -679,15 +679,15 @@
   },
   "Installation and operations / Uninstalling and moving": {
     "appliesTo": "0.5",
-    "updated": "2026-09-30",
+    "updated": "2026-10-02",
     "note": "Revised.",
-    "hash": "81b14ff4ca611986"
+    "hash": "d4407c5270924b64"
   },
   "Installation and operations / Upgrading": {
     "appliesTo": "0.5",
-    "updated": "2026-09-30",
+    "updated": "2026-10-02",
     "note": "Revised.",
-    "hash": "3ecf64e83ac5a8d9"
+    "hash": "c2993042ef675f01"
   },
   "License and credits": {
     "appliesTo": "0.5",
@@ -907,9 +907,9 @@
   },
   "Release notes / Tesria 0.8": {
     "appliesTo": "0.8",
-    "updated": "2026-09-30",
+    "updated": "2026-10-02",
     "note": "Revised.",
-    "hash": "27b6156bdbefad62"
+    "hash": "ff35ff732bb04082"
   },
   "REST API": {
     "appliesTo": "0.5",
@@ -937,9 +937,9 @@
   },
   "REST API / Requests and responses": {
     "appliesTo": "0.5",
-    "updated": "2026-09-30",
+    "updated": "2026-10-02",
     "note": "Revised.",
-    "hash": "3fe94db4dfe85e54"
+    "hash": "db10e4e02126c08c"
   },
   "REST API / Webhooks": {
     "appliesTo": "0.5",
@@ -1051,9 +1051,9 @@
   },
   "The editor / Editor tour": {
     "appliesTo": "0.5",
-    "updated": "2026-09-29",
+    "updated": "2026-10-02",
     "note": "Revised.",
-    "hash": "3d221255b839b2d1"
+    "hash": "9ed0b494ed99ebce"
   },
   "The editor / Elements": {
     "appliesTo": "0.5",
@@ -1171,9 +1171,9 @@
   },
   "Working together / Changes from assistants and the API": {
     "appliesTo": "0.5",
-    "updated": "2026-09-29",
+    "updated": "2026-10-02",
     "note": "Revised.",
-    "hash": "bbf74d053907d653"
+    "hash": "50f9e907fa3fab1f"
   },
   "Working together / Comments": {
     "appliesTo": "0.5",
@@ -1201,9 +1201,9 @@
   },
   "Your profile / API tokens": {
     "appliesTo": "0.5",
-    "updated": "2026-09-28",
+    "updated": "2026-10-02",
     "note": "0.6: where to find them, revoking one step by step, and how many requests each has made.",
-    "hash": "3a603ecfa5f6a5bf"
+    "hash": "73640c8c65474bb4"
   },
   "Your profile / Avatar, name and email": {
     "appliesTo": "0.5",
@@ -1219,9 +1219,9 @@
   },
   "Your profile / Password": {
     "appliesTo": "0.5",
-    "updated": "2026-09-30",
+    "updated": "2026-10-02",
     "note": "Revised.",
-    "hash": "dabe71dc4bbb7011"
+    "hash": "4b4f4a8bbdc80fbf"
   },
   "Your profile / Sessions": {
     "appliesTo": "0.5",
