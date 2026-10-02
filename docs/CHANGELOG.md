@@ -5,6 +5,31 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Assistants can read and write comments over MCP** (dev-plan 22.1). Three
+  new tools: `list_comments` gives a page's threads with replies nested, who
+  wrote each and when, whether a thread is resolved, and, for an inline
+  comment, the passage it is on; `add_comment` and `reply_to_comment` write
+  a comment or a reply as the token's owner. They go through the same code
+  as a comment written in the browser, so watchers and mentioned people are
+  told and webhooks fire exactly as before; a read-only token is refused,
+  and a page the token's owner cannot read is "not found". A deleted
+  comment keeps its place without its text. The administrators' API Tokens
+  tab names the new tools.
+- **Assistants can comment on a passage, and the highlight appears on the
+  page** (dev-plan 22.2). `add_comment` over MCP and
+  `POST /api/pages/{id}/comments` over REST take a `quote`, and an
+  `occurrence` when the words appear more than once. The server finds the
+  passage in the page's live draft and highlights it as the editor does for
+  a person: anyone editing sees it at once, without their typing or cursor
+  moving, and readers see it once the page is next updated. It needs edit
+  rights on the page. A quote that is not there, appears more than once, is
+  too long or runs across two paragraphs is refused with a reason and a
+  count (422), and the request is refused with a 503 when live editing is
+  not running. Two comments can now cover the same words; highlights
+  survive Discard and changes made through the API or MCP; a highlight on
+  its own no longer counts as unpublished changes; the Comments panel shows
+  the passage each inline comment is about, a person's included; deleted
+  comments' highlights are hidden. Reviewed by Fable 5.1 before building.
 ## [0.8.7] - 2026-10-01
 
 A small update: the clear button an exported site's page filter was missing,

@@ -6366,10 +6366,11 @@ questions are in `roadmap.md`.
 ### Phase 22: Agents that work with you (Automate)
 
 - **22.1** Comment tools in the MCP server: add, reply, list. · `S` ·
-  Model: Opus 5.5
+  Model: Opus 5.5 · ✅ **built 2026-10-02, for 0.9**
 - **22.2** Inline comments from agents: the server finds the quoted passage
   and places the highlight in the live draft, for REST and MCP. · `M` ·
-  Model: Opus 5.5 · *design review* (writing into live documents)
+  Model: Opus 5.5 · *design review* (writing into live documents) · ✅
+  **built 2026-10-02, for 0.9**
 
   **Design (2026-10-02, Opus 5.5; reviewed by Fable 5.1, verdict "build
   with changes", all adopted).** The review's changes, in short: the mark
