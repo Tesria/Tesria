@@ -10,7 +10,14 @@ namespace Tesria.Api.Features.Comments;
 
 public static partial class CommentEndpoints
 {
-    public record CreateCommentRequest(string Body, Guid? ParentCommentId, string? AnchorJson);
+    /// <param name="Quote">
+    /// An inline comment on this passage (dev-plan 22.2): the words exactly as
+    /// the page reads, without Markdown. The server finds it in the page's
+    /// draft and highlights it there, as the editor does for a person; needs
+    /// edit rights on the page and live editing.
+    /// </param>
+    /// <param name="Occurrence">Which time the passage appears, from 1, when it appears more than once.</param>
+    public record CreateCommentRequest(string Body, Guid? ParentCommentId, string? AnchorJson, string? Quote = null, int? Occurrence = null);
     public record UpdateCommentRequest(string Body);
     public record CommentResponse(
         Guid Id, Guid PageId, Guid? ParentCommentId, string? Body, string? AnchorJson,
@@ -25,7 +32,8 @@ public static partial class CommentEndpoints
         var pageScoped = routes.MapGroup("/pages/{pageId:guid}/comments")
             .WithTags("Comments").RequireAuthorization();
         pageScoped.MapGet("/", ListForPage).AllowAnonymous().Produces<List<CommentResponse>>(); // dev-plan 5.2: only with PublicComments
-        pageScoped.MapPost("/", Create).Produces<CommentResponse>(StatusCodes.Status201Created);
+        pageScoped.MapPost("/", Create).Produces<CommentResponse>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity).ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
         var byId = routes.MapGroup("/comments/{id:guid}")
             .WithTags("Comments").RequireAuthorization();
@@ -84,11 +92,19 @@ public static partial class CommentEndpoints
     {
         // The checks, notifications and webhook live in the writer, which the
         // MCP comment tools share (dev-plan 22.1).
-        var result = await writer.CreateAsync(pageId, req.Body, req.ParentCommentId, req.AnchorJson);
+        var result = await writer.CreateAsync(pageId, req.Body, req.ParentCommentId, req.AnchorJson,
+            quote: req.Quote, occurrence: req.Occurrence);
         return result.Status switch
         {
             CommentWriteStatus.NotFound => Results.NotFound(),
             CommentWriteStatus.Invalid => Results.ValidationProblem(Error(result.Field!, result.Message!)),
+            CommentWriteStatus.Forbidden => Results.Problem(result.Message, statusCode: StatusCodes.Status403Forbidden),
+            // A quote that cannot be placed once (dev-plan 22.2): the code a
+            // script checks, and the count where that is the reason.
+            CommentWriteStatus.Unprocessable => Results.Problem(result.Message, statusCode: StatusCodes.Status422UnprocessableEntity,
+                extensions: new Dictionary<string, object?> { ["code"] = result.Code, ["count"] = result.Count }),
+            CommentWriteStatus.Unavailable => Results.Problem(result.Message, statusCode: StatusCodes.Status503ServiceUnavailable,
+                extensions: new Dictionary<string, object?> { ["code"] = result.Code }),
             _ => Results.Created($"/api/comments/{result.Comment!.Id}", ToResponse(result.Comment)),
         };
     }

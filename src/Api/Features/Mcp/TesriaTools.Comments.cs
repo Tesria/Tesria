@@ -29,23 +29,26 @@ public sealed partial class TesriaTools
     /// <param name="Quote">For an inline comment, the passage it is about, as the published page has it.</param>
     public sealed record PageComment(
         Guid Id, Guid AuthorId, string Author, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt,
-        bool Resolved, string? ResolvedBy, bool IsInline, string? Quote, bool IsDeleted, string? Body,
+        bool Resolved, DateTimeOffset? ResolvedAt, string? ResolvedBy, bool IsInline, string? Quote, bool IsDeleted, string? Body,
         IReadOnlyList<CommentMention> Mentions, IReadOnlyList<PageComment> Replies);
 
     public sealed record PageComments(Guid PageId, string Title, string SpaceKey, string Url, IReadOnlyList<PageComment> Threads);
 
+    /// <param name="Quote">For an inline comment, the passage it is on, as matched.</param>
+    /// <param name="Occurrence">For an inline comment, which time the passage appears on the page, from 1.</param>
     public sealed record CommentWritten(
         Guid Id, Guid PageId, Guid? ParentCommentId, Guid AuthorId, string Author, DateTimeOffset CreatedAt,
-        string Body, IReadOnlyList<CommentMention> Mentions, string Url);
+        string Body, IReadOnlyList<CommentMention> Mentions, string Url, bool IsInline = false, string? Quote = null,
+        int? Occurrence = null);
 
     [McpServerTool(Name = "list_comments"), Description(
         "The comments on a page, as `threads` in the order they were started, each with its `replies` nested " +
         "beneath it, oldest first. Each comment has its `id` (what reply_to_comment takes), the `author` and " +
         "`authorId`, `createdAt` and `updatedAt`, and its `body` as plain text with each mention shown as @Name; " +
         "the people it mentions, with their ids, are in `mentions`. A thread's first comment says whether the " +
-        "thread is `resolved`. An inline comment (`isInline`) is about one part of the page: its `quote` is that " +
-        "passage as the published page has it, left out when there is none to show (a comment on an image, a " +
-        "passage only in an unpublished draft, or one since removed). A deleted comment keeps its place, so its " +
+        "thread is `resolved`, and when (`resolvedAt`). An inline comment (`isInline`) is about one part of the " +
+        "page: its `quote` is that passage, left out when there is none to show (a comment on an image, or an older " +
+        "comment whose passage is no longer on the published page). A deleted comment keeps its place, so its " +
         "replies still make sense, with `isDeleted` true and no `body`. 'Not found' can mean the page does not " +
         "exist or that you may not see it; the two are deliberately indistinguishable.")]
     public static async Task<PageComments> ListComments(
@@ -69,8 +72,10 @@ public sealed partial class TesriaTools
         List<PageComment> Build(IEnumerable<CommentEndpoints.CommentResponse> level) => level
             .Select(c => new PageComment(
                 c.Id, c.AuthorId, c.AuthorName, c.CreatedAt, c.UpdatedAt,
-                c.ResolvedAt is not null, c.ResolvedByName, c.IsInline,
-                c.IsInline && !c.IsDeleted ? quotes.GetValueOrDefault(c.Id) : null,
+                c.ResolvedAt is not null, c.ResolvedAt, c.ResolvedByName, c.IsInline,
+                // The anchor's own copy of the passage (22.2), else the
+                // highlight's text in the published page (older comments).
+                c.IsInline && !c.IsDeleted ? CommentWriter.QuoteOf(c.AnchorJson) ?? quotes.GetValueOrDefault(c.Id) : null,
                 c.IsDeleted,
                 c.Body is null ? null : CommentEndpoints.Readable(c.Body),
                 [.. CommentEndpoints.MentionsIn(c.Body).Select(m => new CommentMention(m.Id, m.Name))],
@@ -86,19 +91,32 @@ public sealed partial class TesriaTools
         "Add a comment to a page: a remark, a suggestion or an answer that leaves the page's text alone. The " +
         "page's watchers and anyone it mentions are told, as for a comment written in the browser. Use " +
         "update_page instead when the text itself should change, and reply_to_comment to answer inside an " +
-        "existing thread. The comment is about the whole page, not a passage of it. `body` is plain text; to " +
-        "mention someone, write @[Their Name](user:<their user id>) with an id from list_comments (an `authorId` " +
-        "or one of the `mentions`). A bare @Name is only text and tells nobody. Returns the new comment's `id`, " +
-        "its `body` as list_comments shows it, the people it mentions, and the page's `url`. Needs a token with " +
-        "write access.")]
+        "existing thread. Without `quote` the comment is about the whole page. With `quote` it is an inline " +
+        "comment on that passage, highlighted on the page as a person's would be: quote the words exactly as " +
+        "they read, plain words with no Markdown (no ** or [](), a mention as @Name, a status as get_page shows " +
+        "it), within one paragraph, heading, list item or table cell. The quote is matched against the page's " +
+        "live draft, which can be newer than what get_page returned; spacing and line breaks do not matter, " +
+        "capitals do. If the passage appears more than once you are told how many times: pass `occurrence` " +
+        "(1 for the first) or quote more of it. An inline comment needs edit rights on the page, since the " +
+        "highlight goes into its draft (anyone editing sees it at once; readers see it once the draft is " +
+        "published). `body` is plain text; to mention someone, write @[Their Name](user:<their user id>) with an " +
+        "id from list_comments (an `authorId` or one of the `mentions`). A bare @Name is only text and tells " +
+        "nobody. Returns the new comment's `id`, its `body` as list_comments shows it, the people it mentions, " +
+        "the page's `url`, and for an inline comment its `quote` and `occurrence`. Needs a token with write access.")]
     public static async Task<CommentWritten> AddComment(
         [Description("The page id (a GUID).")] Guid pageId,
         [Description("The comment, as plain text.")] string body,
         ICommentWriter writer, AppDbContext db, CurrentUser current, IHttpContextAccessor accessor,
-        ISiteSettingsService settings, IConfiguration config, CancellationToken ct)
+        ISiteSettingsService settings, IConfiguration config, CancellationToken ct,
+        [Description("The passage the comment is about, exactly as the page reads, at most 1000 characters. Omit for a comment on the whole page.")]
+        string? quote = null,
+        [Description("Which time the quoted passage appears on the page, from 1, when it appears more than once.")]
+        int? occurrence = null)
     {
         McpAccess.RequireWrite(current, accessor);
-        var result = await writer.CreateAsync(pageId, body, parentCommentId: null, anchorJson: null, ct);
+        // An empty quote is how some clients say "none".
+        if (string.IsNullOrWhiteSpace(quote)) quote = null;
+        var result = await writer.CreateAsync(pageId, body, parentCommentId: null, anchorJson: null, ct, quote, occurrence);
         return await WrittenOf(result, "Page", db, settings, config, ct);
     }
 
@@ -131,6 +149,10 @@ public sealed partial class TesriaTools
             // The same masking REST uses: not readable and not there are one answer.
             CommentWriteStatus.NotFound => throw McpAccess.NotFound(what),
             CommentWriteStatus.Invalid => throw new McpException(result.Field + ": " + result.Message),
+            // The same words REST answers with (22.2); a refusal over a quote
+            // carries its count in the words.
+            CommentWriteStatus.Forbidden or CommentWriteStatus.Unprocessable or CommentWriteStatus.Unavailable =>
+                throw new McpException(result.Message ?? "That comment could not be added."),
             _ => result.Comment!,
         };
         var key = await db.Pages.AsNoTracking().IgnoreQueryFilters().Where(p => p.Id == c.PageId)
@@ -140,7 +162,23 @@ public sealed partial class TesriaTools
             c.Id, c.PageId, c.ParentCommentId, c.AuthorId, c.Author?.DisplayName ?? "Deleted user", c.CreatedAt,
             CommentEndpoints.Readable(c.Body),
             [.. CommentEndpoints.MentionsIn(c.Body).Select(m => new CommentMention(m.Id, m.Name))],
-            $"{baseUrl}/spaces/{key}/pages/{c.PageId}");
+            $"{baseUrl}/spaces/{key}/pages/{c.PageId}",
+            c.AnchorJson is not null, CommentWriter.QuoteOf(c.AnchorJson), OccurrenceOf(c.AnchorJson));
+    }
+
+    private static int? OccurrenceOf(string? anchorJson)
+    {
+        if (string.IsNullOrEmpty(anchorJson)) return null;
+        try
+        {
+            using var doc = JsonDocument.Parse(anchorJson);
+            return doc.RootElement.ValueKind == JsonValueKind.Object
+                && doc.RootElement.TryGetProperty("occurrence", out var o) && o.TryGetInt32(out var n) ? n : null;
+        }
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException)
+        {
+            return null;
+        }
     }
 
     /// <summary>The longest quote list_comments returns; a passage is a sentence or two, not a chapter.</summary>
