@@ -175,7 +175,7 @@ public static class PermissionEndpoints
         if (!await perms.CanViewPageAsync(pageId)) return Results.NotFound();
         if (!await perms.CanEditPageAsync(pageId)) return Results.Forbid();
         if (!await PrincipalExistsAsync(db, req.PrincipalType, req.PrincipalId))
-            return Results.ValidationProblem(Error("principalId", "Principal not found."));
+            return Results.ValidationProblem(Error("principalId", "That person or group was not found."));
 
         var isFirst = !await db.PageRestrictions.AnyAsync(r => r.PageId == pageId);
 
