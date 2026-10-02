@@ -488,9 +488,9 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ul(
       li(p(b('Different endings of a word match.'), ' Searching ', c('launching'), ' finds pages that say ', c('launch'), ', ', c('launched'), ' or ', c('launches'), '.')),
       li(p(b('Only published pages you can read,'), ' from every space you can see. Drafts, pages in the trash and pages restricted from you are never found.')),
-      li(p(b('Up to 50 results.'), ' If what you want is not among them, add a word to narrow the search.')),
+      li(p(b('Up to 50 results,'), ' best first. A page with your words in its title comes before pages that only mention them, a rare word counts for more than a common one, and a short page about something comes before a long page that mentions it in passing. If what you want is not among them, add a word to narrow the search.')),
     ),
-    p('Some things are not searched: comments, labels, the names of attached files, and the text inside mentions, statuses and dates. To find pages by label, use the label instead: see ', pageLink('Label pages'), '.'),
+    p('Mentions, statuses and dates are searched as the page shows them, so searching a person’s name finds the pages that mention them. A diagram is searched by the words in its boxes and on its arrows. Some things are not searched: comments, labels and the names of attached files. To find pages by label, use the label instead: see ', pageLink('Label pages'), '.'),
 
     h(2, 'Narrowing a search'),
     table([
@@ -499,7 +499,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       ['launch or release', 'Either word'],
       ['launch -beta', 'launch, but not pages with beta'],
     ], [260, 440]),
-    p('Capitals make no difference, and small words such as ', i('the'), ' and ', i('of'), ' are ignored.'),
+    p('Capitals and accents make no difference, so ', i('cafe'), ' finds ', i('café'), ', and small words such as ', i('the'), ' and ', i('of'), ' are ignored.'),
 
     panel('info', p(b('Reading without an account?'), ' In a Tesria with public spaces, people who are not signed in can search too, and find pages in the public spaces only.')),
   ))
