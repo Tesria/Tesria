@@ -17,8 +17,12 @@ export function ReauthDialog() {
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [reason, setReason] = useState<string | undefined>()
 
-  useEffect(() => subscribeReauth(setOpen), [])
+  useEffect(() => subscribeReauth((isOpen, why) => {
+    setOpen(isOpen)
+    if (isOpen) setReason(why)
+  }), [])
 
   if (!open) return null
 
@@ -51,9 +55,10 @@ export function ReauthDialog() {
     <div className="recovery-prompt" role="dialog" aria-modal="true">
       <form className="recovery-prompt__card" onSubmit={confirm}>
         <h2>Confirm It&rsquo;s You</h2>
+        {/* What this action is, from the server (t2-017); one sentence
+            used to call every one of them irreversible. */}
         <p className="muted small">
-          This action is irreversible or changes who can administer the instance,
-          so it needs your password again.
+          {reason ?? 'You signed in a while ago, and this change needs your password again.'}
         </p>
         {error && <p className="alert alert--error">{error}</p>}
         <label>

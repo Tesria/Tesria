@@ -848,7 +848,14 @@ public static partial class AuthEndpoints
     /// sudo window (dev-plan 3.5). The 403 carries <c>code: reauth_required</c>
     /// so the SPA can ask for the password and retry, rather than fail.
     /// </summary>
-    public static IResult? RequireSudo(HttpContext http, IConfiguration config)
+    /// <remarks>
+    /// <paramref name="reason"/> is what the password box says this action
+    /// is (t2-017): it used to say every one "is irreversible or changes who
+    /// can administer the instance", which read as a warning of something
+    /// drastic when starting a mail sign-in. One sentence, ending "so it
+    /// needs your password again."
+    /// </remarks>
+    public static IResult? RequireSudo(HttpContext http, IConfiguration config, string? reason = null)
     {
         var window = TimeSpan.FromMinutes(config.GetValue("Auth:SudoMinutes", DefaultSudoMinutes));
         if (IsFreshlyAuthenticated(http, window)) return null;
@@ -858,6 +865,7 @@ public static partial class AuthEndpoints
             status = 403,
             code = "reauth_required",
             detail = "Confirm your password to continue.",
+            reason = reason ?? SudoReasons.Default,
         }, statusCode: StatusCodes.Status403Forbidden);
     }
 

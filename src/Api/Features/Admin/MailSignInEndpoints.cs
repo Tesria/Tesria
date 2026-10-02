@@ -48,7 +48,7 @@ public static class MailSignInEndpoints
         HttpContext http, IConfiguration config, CancellationToken ct)
     {
         if (Parse(provider) is not { } kind) return Results.NotFound();
-        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
+        if (Auth.AuthEndpoints.RequireSudo(http, config, Auth.SudoReasons.MailSignIn) is { } denied) return denied;
         var s = await settings.GetAsync(ct);
         try
         {

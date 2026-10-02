@@ -1311,7 +1311,7 @@ async function request<T>(method: string, path: string, body?: Body): Promise<T>
     // Sudo mode (dev-plan 3.5): the server wants the password confirmed
     // before this action. Ask, then retry once; a cancel rejects as usual.
     if (err instanceof ApiError && err.code === 'reauth_required') {
-      await requestReauth()
+      await requestReauth(typeof err.details.reason === 'string' ? err.details.reason : undefined)
       return handle<T>(await attempt())
     }
     noticeSignedOut(err, path)
@@ -1343,7 +1343,7 @@ async function upload<T>(method: string, path: string, file: Blob, name = 'file'
     return await handle<T>(await attempt())
   } catch (err) {
     if (err instanceof ApiError && err.code === 'reauth_required') {
-      await requestReauth()
+      await requestReauth(typeof err.details.reason === 'string' ? err.details.reason : undefined)
       return handle<T>(await attempt())
     }
     noticeSignedOut(err, path)

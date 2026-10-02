@@ -9,12 +9,14 @@
  * prompt at a time: several requests failing together share it.
  */
 type Pending = { resolve: () => void; reject: (err: unknown) => void; promise: Promise<void> }
-type Listener = (open: boolean) => void
+/** `reason`: what the server says the action is, for the dialog (t2-017). */
+type Listener = (open: boolean, reason?: string) => void
 
 let pending: Pending | null = null
+let pendingReason: string | undefined
 const listeners = new Set<Listener>()
 
-export function requestReauth(): Promise<void> {
+export function requestReauth(reason?: string): Promise<void> {
   if (pending) return pending.promise
   let resolve!: () => void
   let reject!: (err: unknown) => void
@@ -23,7 +25,8 @@ export function requestReauth(): Promise<void> {
     reject = rej
   })
   pending = { resolve, reject, promise }
-  listeners.forEach((l) => l(true))
+  pendingReason = reason
+  listeners.forEach((l) => l(true, reason))
   return promise
 }
 
@@ -44,6 +47,6 @@ export function subscribeReauth(listener: Listener): () => void {
   // A prompt already waiting opens at once: a request can ask before the
   // dialog has mounted, and it would otherwise wait for a prompt that never
   // shows.
-  if (pending) listener(true)
+  if (pending) listener(true, pendingReason)
   return () => listeners.delete(listener)
 }

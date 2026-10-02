@@ -385,7 +385,7 @@ public static class AdminEndpoints
 
         // The public-read switch in either direction is sudo territory
         // (dev-plan 3.5): exposing content, or undoing a mitigation.
-        if (req.AllowPublicSpaces is not null && Auth.AuthEndpoints.RequireSudo(http, config) is { } denied)
+        if (req.AllowPublicSpaces is not null && Auth.AuthEndpoints.RequireSudo(http, config, Auth.SudoReasons.PublicReading) is { } denied)
             return denied;
 
         if (req.SmtpPort is { } port && (port < 1 || port > 65535))
@@ -701,7 +701,7 @@ public static class AdminEndpoints
         // A reset link is the account itself, so this is sudo territory like
         // turning off someone's two-factor: an unattended browser, or an API
         // token (which can never be freshly signed in), cannot issue one.
-        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
+        if (Auth.AuthEndpoints.RequireSudo(http, config, Auth.SudoReasons.ResetLink) is { } denied) return denied;
 
         if (user.PasswordHash is null)
             return Results.ValidationProblem(new Dictionary<string, string[]>
@@ -942,7 +942,7 @@ public static class AdminEndpoints
                     : "Only the owner changes an administrator's role.",
             }, statusCode: StatusCodes.Status403Forbidden);
         // Changing who administers the instance is sudo territory (dev-plan 3.5).
-        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
+        if (Auth.AuthEndpoints.RequireSudo(http, config, Auth.SudoReasons.Role) is { } denied) return denied;
 
         if (user.Role == UserRole.Owner || tier == UserRole.Owner)
             return Results.ValidationProblem(new Dictionary<string, string[]>
@@ -997,7 +997,7 @@ public static class AdminEndpoints
 
         // Giving the instance away is the most destructive administrative
         // action there is (dev-plan 3.5).
-        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
+        if (Auth.AuthEndpoints.RequireSudo(http, config, Auth.SudoReasons.Ownership) is { } denied) return denied;
 
         var me = await db.Users.FirstAsync(u => u.Id == meId);
         target.Role = UserRole.Owner;
@@ -1117,7 +1117,7 @@ public static class AdminEndpoints
         Guid userId, AppDbContext db, IAuditLogger audit, CurrentUser current, ITotpService totp,
         ISecurityDetector detector, HttpContext http, IConfiguration config, IInstancePermissions rights)
     {
-        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
+        if (Auth.AuthEndpoints.RequireSudo(http, config, Auth.SudoReasons.TwoFactorOff) is { } denied) return denied;
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Results.NotFound();
         var callerId = current.RequireId();
@@ -1248,7 +1248,7 @@ public static class AdminEndpoints
     {
         var space = await db.Spaces.FirstOrDefaultAsync(s => s.Key == key.ToUpperInvariant());
         if (space is null) return Results.NotFound();
-        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
+        if (Auth.AuthEndpoints.RequireSudo(http, config, Auth.SudoReasons.PublicReading) is { } denied) return denied;
 
         if (req.IsPublic && !(await settings.GetAsync()).AllowPublicSpaces)
             return Results.ValidationProblem(new Dictionary<string, string[]>
