@@ -12,6 +12,10 @@ import type { SpaceTreeStyle } from '../components/treeMarkers'
 export const UserRole = { Member: 0, Admin: 1, Owner: 2 } as const
 export type UserRole = (typeof UserRole)[keyof typeof UserRole]
 
+/** The longest display name the server takes (T1-025). The browser counts
+ *  UTF-16 units, so an emoji uses two here and one there: stricter, never looser. */
+export const DISPLAY_NAME_MAX = 200
+
 export type User = {
   id: string
   email: string
@@ -1420,6 +1424,10 @@ export const api = {
       disable: (input: { currentPassword?: string; code?: string }) =>
         request<User>('POST', '/api/auth/me/totp/disable', input),
     },
+    /** Whether an invite link can still be used, and if not why (t2-005). */
+    inviteStatus: (token: string) =>
+      request<{ problem: string | null; message: string | null }>(
+        'GET', `/api/auth/invite?token=${encodeURIComponent(token)}`),
     /** Returns the user plus the recovery codes: the one moment they exist. */
     register: (email: string, displayName: string, password: string, inviteToken?: string) =>
       request<User & { recoveryCodes: string[] }>('POST', '/api/auth/register', {

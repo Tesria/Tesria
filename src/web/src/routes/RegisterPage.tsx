@@ -1,11 +1,12 @@
-import { type FormEvent, useId, useState } from 'react'
+import { type FormEvent, useEffect, useId, useState } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
-import { api } from '../api/client'
+import { api, DISPLAY_NAME_MAX } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { PasswordInput } from '../components/PasswordInput'
 import { PASSWORD_HINT, PASSWORD_MAX, PASSWORD_MIN, passwordProblem } from '../auth/passwordRule'
 import { RecoveryCodes } from '../components/RecoveryCodes'
 import { AuthPage } from '../components/Brand'
+import { useInstance } from '../InstanceContext'
 
 export function RegisterPage() {
   const { user, register, refresh } = useAuth()
@@ -21,6 +22,21 @@ export function RegisterPage() {
   const [busy, setBusy] = useState(false)
   const [codes, setCodes] = useState<string[] | null>(null)
   const hintId = useId()
+  const instance = useInstance()
+  // Why the link cannot be used, asked as it opens (t2-005): a used,
+  // expired or revoked invite greeted people with "You were invited" and
+  // said otherwise only after the whole form was filled in. With open
+  // registration it does not matter, since anyone may register anyway.
+  const [inviteProblem, setInviteProblem] = useState<string | null>(null)
+  useEffect(() => {
+    if (!inviteToken) return
+    let active = true
+    api.auth.inviteStatus(inviteToken)
+      .then((s) => { if (active) setInviteProblem(s.message) })
+      .catch(() => { /* the form still says why when it is sent */ })
+    return () => { active = false }
+  }, [inviteToken])
+  const invitationOnly = instance ? !instance.allowPublicRegistration : false
 
   // Registration signs the user straight in, so this guard would fire the
   // moment the account exists and redirect past the recovery codes, which are
@@ -69,13 +85,15 @@ export function RegisterPage() {
     <AuthPage>
       <form className="authcard" onSubmit={onSubmit}>
         <h1>Create Account</h1>
-        {inviteToken && (
+        {inviteToken && !inviteProblem && (
           <p className="muted small">You were invited to this instance.</p>
         )}
+        {inviteProblem && invitationOnly && !error && <p className="alert alert--error">{inviteProblem}</p>}
         {error && <p className="alert alert--error">{error}</p>}
         <label>
           Display Name
-          <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} required autoFocus />
+          <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} required autoFocus
+            maxLength={DISPLAY_NAME_MAX} />
         </label>
         <label>
           Email
