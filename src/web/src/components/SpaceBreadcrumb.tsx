@@ -141,7 +141,11 @@ function Crumbs({ crumbs, space }: { crumbs: Crumb[]; space: Space }) {
                 appears while reading a page, so a reader always knows where
                 they are without looking at the sidebar. */}
             {i === 0 && <SpaceIcon space={space} size={16} />}
-            {c.to ? <Link to={c.to}>{c.label}</Link> : <span className="breadcrumb__current">{c.label}</span>}
+            {/* A crumb is one line at most, ending in "…" (QA t3-R04, T3-010):
+                the page's own title below shows it whole. */}
+            {c.to
+              ? <Link to={c.to} className="breadcrumb__label" title={c.label.length > 40 ? c.label : undefined}>{c.label}</Link>
+              : <span className="breadcrumb__current breadcrumb__label" title={c.label.length > 40 ? c.label : undefined}>{c.label}</span>}
           </span>
         </Fragment>
       ))}

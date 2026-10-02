@@ -140,10 +140,10 @@ export function AdminUsersPage() {
                 <td>
                   <span className="admin-table__user">
                     <Avatar subject={u} size={28} />
-                    <span>
-                      <strong>{u.displayName}</strong>
-                      <br />
-                      <span className="muted small">{u.email}</span>
+                    {/* A name or address too long for the column ends in "…" (QA T1-025). */}
+                    <span className="admin-table__who">
+                      <strong title={u.displayName.length > 30 ? u.displayName : undefined}>{u.displayName}</strong>
+                      <span className="muted small" title={u.email && u.email.length > 30 ? u.email : undefined}>{u.email}</span>
                     </span>
                   </span>
                 </td>

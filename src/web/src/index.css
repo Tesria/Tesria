@@ -437,7 +437,9 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .branding__lock { margin-top: 0.9rem; }
 .branding__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 1rem 0 0.5rem; }
 .branding__spacer { flex: 1; }
-.branding-preview { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1rem; }
+/* min(): at 320px the card is narrower than 18rem, and both previews ran past
+   its right edge (QA T9-010). */
+.branding-preview { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr)); gap: 1rem; }
 .branding-preview__panel {
   border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem 1rem 1.1rem;
   display: grid; gap: 1rem; justify-items: center;
@@ -2693,8 +2695,28 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 /* The role picker sits under the tier badge in the Users table. */
 .users__role { margin-top: 0.35rem; max-width: 12rem; font-size: 0.85rem; }
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
-  /* The table scrolls sideways rather than squeezing the descriptions. */
-  .roles-table td:first-child, .roles-table th:first-child { width: auto; min-width: 14rem; }
+  /* On a phone the matrix is a list: each right, its description, then a
+     tick for each role named beside it. As a table it scrolled sideways
+     inside its box with no sign that it did, and the ticks were 600px to
+     the right of a 290px box (QA T1-024, the wizard and Administration). */
+  .admin-table.roles-table { display: block; overflow-x: visible; }
+  .roles-table thead, .roles-table tbody { display: block; }
+  .roles-table tr {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 1.1rem;
+    padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+  }
+  .admin-table.roles-table th, .admin-table.roles-table td {
+    display: block; width: auto; min-width: 0; padding: 0; border: 0; white-space: normal; text-align: left;
+  }
+  .roles-table td:first-child, .roles-table__area th { flex: 1 1 100%; }
+  .roles-table thead th:first-child { display: none; }
+  .roles-table thead tr { align-items: flex-start; }
+  .roles-table thead th.roles-table__role { flex: 1 1 7rem; }
+  .roles-table__role-actions { justify-content: flex-start; }
+  .roles-table__area th { padding: 0.35rem 0.5rem; }
+  .admin-table.roles-table td.roles-table__cell { display: flex; align-items: center; gap: 0.35rem; }
+  .roles-table__cell::after { content: attr(data-role); font-size: 0.85rem; color: var(--muted); }
+  .admin-table.roles-table td.roles-table__cell:empty { display: none; }
 }
 
 /* Public spaces (dev-plan 5.3): the badge everyone sees. */
@@ -3115,6 +3137,10 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .chart__controls label { display: flex; align-items: center; gap: 0.35rem; margin: 0; }
 .chart__controls select, .chart__title-input { padding: 0.2rem 0.4rem; }
 .chart__title-input { flex: 1; min-width: 8rem; }
+/* The Table and Type pickers are their own size, not the 14rem of a select
+   under its label, which ran them 8px past the chart's box at 320px (QA t9-R01). */
+.chart__controls label { min-width: 0; max-width: 100%; }
+.chart__controls label > select { width: auto; min-width: 0; max-width: 100%; margin-top: 0; }
 .chart__title { margin: 0 0 0.4rem; font-weight: 600; text-align: center; }
 .chart__note { margin: 0; color: var(--muted); font-size: 0.9rem; }
 .chart__plot { display: flex; flex-direction: column; gap: 0.5rem; align-items: center; }
@@ -3355,6 +3381,28 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
   .setup__rail ol { grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); display: grid; }
   .setup__panel { padding: 1.25rem 1rem; }
   .setup__cards { grid-template-columns: 1fr; }
+}
+/* On a phone the steps fold into one line that opens them (QA T9-022: at
+   320px the list filled the screen and the step was below it). */
+.setup__progress { display: none; }
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  /* Rows their content's height: stretched to the window's, the folded
+     rail kept an empty band below its one line. */
+  .setup { align-content: start; }
+  .setup__rail { padding: 1rem; }
+  .setup__brand { margin-bottom: 0.6rem; }
+  .setup__progress {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; width: 100%;
+    padding: 0.55rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg); color: var(--text); font: inherit; font-size: 0.95rem; text-align: left; cursor: pointer;
+  }
+  .setup__progress-chevron {
+    flex: none; width: 0.5rem; height: 0.5rem; margin: 0 0.2rem 0.2rem;
+    border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg);
+  }
+  .setup__progress[aria-expanded="true"] .setup__progress-chevron { transform: rotate(-135deg); margin-bottom: -0.2rem; }
+  .setup__rail ol:not(.is-open) { display: none; }
+  .setup__rail ol.is-open { margin-top: 0.5rem; grid-template-columns: 1fr; }
 }
 
 /* The welcome tour (dev-plan 10.3). Full-screen: it runs before the person
@@ -3804,4 +3852,90 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
 :root .topbar.is-collapsed .topbar__collapsible .topbar__link:hover { background: var(--bg-alt); }
 :root .topbar.is-collapsed .topbar__collapsible .topbar__link.is-active {
   background: none; box-shadow: none; color: var(--primary); font-weight: 700;
+}
+
+/* ---- Long unbroken text (0.9) ---------------------------------------------
+   A title, a name, a key or a query with no spaces in it (a pasted address,
+   a token, 200 N's) ran past its box, and the whole page scrolled sideways:
+   10,000px for a 500-letter title (QA t3-R04, t4-026), every page of a space
+   with a long name (T3-010), the Spaces list with a long key (cal-005), the
+   Search page (t6-018). The rule now: nothing scrolls the page sideways.
+   Text read in full (a title, a heading, a description, a message) breaks
+   anywhere once a word is longer than the line; a label in a row (a key
+   badge, a crumb, a tree row, a name beside an avatar) ends in "…" or stops
+   at a few lines, with the whole of it in a tooltip. `anywhere` rather than
+   `break-word`: only `anywhere` lets a flex or grid item shrink below its
+   longest word. */
+.page-head h1, .space-home__title, .space-home__body > p, .search__query,
+.search-result__title, .alert, .comment__body, .version__author,
+.label-chip, .dynamic-block__user, .space-settings__key code,
+.recovery-prompt__card p, .recovery-prompt__card label > span { overflow-wrap: anywhere; }
+.dynamic-block__user { max-width: 100%; }
+.space-home__title { min-width: 0; }
+.space-home__head > .btn { flex: none; } /* the title gives way, not Watch This Space */
+/* A label: one line, then "…". */
+.space-card__key-text, .sidebar__key-text, .breadcrumb__label,
+.search-result__space, .comment__author, .topbar__username, .admin-table__clip,
+.admin-table__who > * {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* A name: three lines, then "…". */
+.space-card__name, .space-card__desc, .sidebar__name, .tree__title {
+  overflow-wrap: anywhere; overflow: hidden;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3;
+}
+.tree__title { min-width: 0; }
+/* The key's text gives way to the public badge beside it. */
+.space-card__head, .space-card__key, .sidebar__key { min-width: 0; }
+.space-card__key, .sidebar__key { display: flex; align-items: center; }
+.space-card__key .badge, .sidebar__key .badge { flex: none; }
+/* The sidebar's head: icon, then key and name, then the hide button, which
+   stays in the sidebar (cal-005: a 50-letter key pushed it to x=607). */
+.sidebar__ident { flex: 1 1 auto; min-width: 0; }
+/* The crumb trail: each crumb at most a line, inline as before. The docked
+   trail (Minimal, computer) is one line already; it docks only if it fits.
+   Short of the full width by the separator (or the space's icon) before it,
+   so the two stay on one line. */
+.breadcrumb__label { display: inline-block; max-width: calc(100% - 1.75rem); vertical-align: bottom; }
+/* Docked, the trail is its own width (a percentage of that cut every crumb
+   short); it docks only when the whole of it fits, so nothing needs cutting. */
+.breadcrumb[data-dock] .breadcrumb__label { max-width: none; }
+.breadcrumb__menu a { overflow-wrap: anywhere; }
+.breadcrumb__menu { max-width: min(28rem, calc(100vw - 1.5rem)); }
+/* The space key badge on search and label results is its text's width, not
+   a gray bar across the result (t6-017, T3-018). */
+.search-result__space { align-self: flex-start; max-width: 100%; }
+/* A display name of up to 200 characters, one word or not (T1-025). */
+.topbar__username { max-width: 14rem; }
+.comment__head { min-width: 0; }
+.comment__head > :not(.comment__author) { flex: none; }
+.admin-table__who { display: flex; flex-direction: column; min-width: 0; }
+.admin-table__who > *, .admin-table__clip { display: block; max-width: 20rem; }
+.admin-table__clip--inline { display: inline-block; vertical-align: bottom; }
+/* A mention keeps to one piece unless it is wider than the line. */
+.editor__content .mention, .mention { white-space: normal; overflow-wrap: anywhere; max-width: 100%; }
+/* The space's contents on its home page (and an exported site's front page). */
+.site-contents__title, .site-contents__page { max-width: 100%; overflow-wrap: anywhere; }
+.site-contents__title > span, .site-contents__page > span { min-width: 0; }
+/* An emoji icon saved as several before the one-emoji rule stays in its tile (cal-007). */
+.space-icon--emoji { overflow: hidden; }
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .topbar__space { min-width: 0; }
+  .topbar__space-head { max-width: 100%; }
+}
+
+/* ---- Sessions on a phone (QA t2-025) ----------------------------------------
+   The table was wider than the card and scrolled sideways inside it with no
+   sign that it did, so each session's Sign Out sat off screen. On a phone
+   each session is a block of lines instead: where, then the two times with
+   their names, then Sign Out. */
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .admin-table.sessions-table { display: block; overflow-x: visible; }
+  .sessions-table thead { display: none; }
+  .sessions-table tbody, .sessions-table tr, .sessions-table td { display: block; }
+  .sessions-table tr { padding: 0.55rem 0; border-bottom: 1px solid var(--border); }
+  .admin-table.sessions-table td { border-bottom: 0; padding: 0.1rem 0; white-space: normal; }
+  .sessions-table td[data-label]::before { content: attr(data-label) ": "; }
+  .sessions-table td:has(.admin-table__actions:empty) { display: none; }
+  .sessions-table .admin-table__actions { padding-top: 0.25rem; }
 }

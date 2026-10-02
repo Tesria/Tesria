@@ -24,6 +24,9 @@ public class SpaceIconTests
     private const string Keycap = "1\uFE0F\u20E3";         // contains an ASCII digit, and is still an emoji
     private const string Check = "\u2705";
     private const string Unknown = "\U0001FAE9";        // a codepoint this app has never heard of
+    private const string Flag = "\U0001F1FA\U0001F1F8";  // two regional indicators, one flag
+    private const string ThumbsUpTone = "\U0001F44D\U0001F3FD";
+    private const string Unicorn = "\U0001F984";
 
     private static async Task<RegisteredDto> RegisterAsync(HttpClient client, string email) =>
         (await (await client.PostAsJsonAsync("/api/auth/register",
@@ -102,7 +105,7 @@ public class SpaceIconTests
         using var factory = new TestAppFactory();
         var client = await SpaceOwnerAsync(factory);
 
-        foreach (var emoji in new[] { Dragon, Astronaut, Keycap, Check })
+        foreach (var emoji in new[] { Dragon, Astronaut, Keycap, Check, Flag, ThumbsUpTone })
         {
             var res = await SetIconAsync(client, "DOCS", new { Name = "Docs", IconKind = Emoji, IconValue = emoji });
             res.EnsureSuccessStatusCode();
@@ -123,6 +126,21 @@ public class SpaceIconTests
 
         Assert.Equal(HttpStatusCode.BadRequest,
             (await SetIconAsync(client, "DOCS", new { Name = "Docs", IconKind = Emoji, IconValue = value })).StatusCode);
+    }
+
+    [Fact]
+    public async Task Several_emoji_side_by_side_are_refused()
+    {
+        // QA cal-007 and T3-008: three unicorns were saved and spilled out of the tile.
+        using var factory = new TestAppFactory();
+        var client = await SpaceOwnerAsync(factory);
+
+        foreach (var value in new[] { Unicorn + Unicorn, Unicorn + Unicorn + Unicorn, Flag + Flag, Dragon + " a" })
+        {
+            var res = await SetIconAsync(client, "DOCS", new { Name = "Docs", IconKind = Emoji, IconValue = value });
+            Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+            Assert.Contains("single emoji", await res.Content.ReadAsStringAsync());
+        }
     }
 
     [Fact]

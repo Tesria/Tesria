@@ -354,9 +354,9 @@ export async function build({
     p('You do not have to finish in one go. What you have answered is saved as you go. Close the browser, and the next time you sign in as the owner the wizard opens again, with your finished steps ticked.'),
 
     h(2, 'On a phone'),
-    p('The wizard works on a phone too. The list of steps sits above the question instead of beside it, two to a row, so scroll down past it to the step you are on.'),
-    ...(await phonePicture(wizard, 'setup-welcome', 'The setup wizard on a phone, with the steps above the first question',
-      'On a phone, the steps come first and the question below them.')),
+    p('The wizard works on a phone too. The list of steps folds into one line above the question, such as ', i('Step 3 of 10: Who Can Join'), '. Choose it to see every step, and choose a finished one to go back to it. In ', b('What Roles May Do'), ', each right is listed with a tick box for each role under it.'),
+    ...(await phonePicture(wizard, 'setup-welcome', 'The setup wizard on a phone, with the step it is on in one line above the first question',
+      'On a phone, one line says which step you are on, and the question is right below it.')),
 
     h(2, 'Next'),
     p('Your Tesria is ready. ', pageLink('Your first space and page'), ' walks you through writing something and inviting people to read it.'),

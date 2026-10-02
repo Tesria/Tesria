@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api, ApiError, type SiteSettings, Permission } from '../../api/client'
+import { api, ApiError, LIMITS, type SiteSettings, Permission } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import { EmailSettingsSection } from './EmailSettingsSection'
 import { TailscaleCard } from './TailscaleCard'
@@ -70,7 +70,7 @@ export function AdminSettingsPage() {
         <h2>Instance</h2>
         <label>
           Name
-          <input value={instanceName} onChange={(e) => setInstanceName(e.target.value)} />
+          <input value={instanceName} onChange={(e) => setInstanceName(e.target.value)} maxLength={LIMITS.instanceName} />
         </label>
         <label>
           Public Address

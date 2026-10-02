@@ -168,9 +168,9 @@ export function AdminApiTokensPage() {
             {shown.map((t) => (
               <tr key={t.id}>
                 <td>
-                  {t.owner.displayName}
+                  <span className="admin-table__clip admin-table__clip--inline" title={t.owner.displayName}>{t.owner.displayName}</span>
                   {t.owner.suspended && <> <span className="badge badge--warning">suspended</span></>}
-                  <div className="muted small">{t.owner.email}</div>
+                  <div className="muted small admin-table__clip" title={t.owner.email ?? undefined}>{t.owner.email}</div>
                 </td>
                 <td>
                   {t.name}{' '}

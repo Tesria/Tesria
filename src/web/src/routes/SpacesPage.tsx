@@ -71,10 +71,12 @@ export function SpacesPage() {
               <span className="space-card__head">
                 <SpaceIcon space={s} size={32} />
                 <span className="space-card__key">
-                  {s.key}{s.isPublic && <span className="badge badge--public">public</span>}
+                  {/* A 50-letter key ends in "…" (QA cal-005); the whole of it in the tooltip. */}
+                  <span className="space-card__key-text" title={s.key}>{s.key}</span>
+                  {s.isPublic && <span className="badge badge--public">public</span>}
                 </span>
               </span>
-              <span className="space-card__name">{s.name}</span>
+              <span className="space-card__name" title={s.name.length > 60 ? s.name : undefined}>{s.name}</span>
               {s.description && <span className="space-card__desc">{s.description}</span>}
             </Link>
           </li>
@@ -115,6 +117,7 @@ function CreateSpaceForm({ onCreated }: { onCreated: (space: Space) => void }) {
           onChange={(e) => setKey(e.target.value.toUpperCase())}
           placeholder="ENG"
           required
+          maxLength={LIMITS.spaceKey}
         />
       </label>
       <label>
@@ -123,7 +126,7 @@ function CreateSpaceForm({ onCreated }: { onCreated: (space: Space) => void }) {
       </label>
       <label>
         Description
-        <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional" />
+        <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional" maxLength={LIMITS.spaceDescription} />
       </label>
       <button type="submit" className="btn btn--primary" disabled={busy}>
         {busy ? 'Creating…' : 'Create'}

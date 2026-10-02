@@ -1,6 +1,7 @@
 import { type ChangeEvent, type FormEvent, useRef, useState } from 'react'
 import { api, ApiError, type Space } from '../api/client'
 import { SpaceIcon } from './SpaceIcon'
+import { singleEmojiProblem } from './singleEmoji'
 import { SPACE_ICON_COLORS, SpaceIconKind, spaceColorFor } from './spaceIconIdentity'
 
 /**
@@ -105,6 +106,9 @@ export function SpaceIconPicker({ space, onChanged }: { space: Space; onChanged:
     e.preventDefault()
     const value = custom.trim()
     if (!value) return
+    // One glyph, or it spills out of the tile (QA cal-007); left in the box to fix.
+    const problem = singleEmojiProblem(value)
+    if (problem) { setError(problem); return }
     setCustom('')
     return setIcon(SpaceIconKind.Emoji, value)
   }

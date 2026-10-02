@@ -23,6 +23,9 @@ namespace Tesria.Api.Features.Admin;
 /// </summary>
 public static class AdminEndpoints
 {
+    /// <summary>The <c>SiteSettings.InstanceName</c> column's length.</summary>
+    public const int MaxInstanceNameLength = 200;
+
     public record RecoverAccessResponse(
         Guid SpaceId, string Key, string Name, bool AlreadyHadAccess);
 
@@ -399,6 +402,13 @@ public static class AdminEndpoints
             return Results.ValidationProblem(new Dictionary<string, string[]>
             {
                 ["instanceName"] = ["Instance name cannot be empty."],
+            });
+        // The column's limit, said before the database refuses it with a 500
+        // (the same gap as QA T3-005 and T1-025, found beside them).
+        if (name is { Length: > MaxInstanceNameLength })
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["instanceName"] = [$"Instance name can be at most {MaxInstanceNameLength} characters."],
             });
 
         // Recorded before the mutation so the entry names what actually changed

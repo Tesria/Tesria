@@ -1,5 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Tesria.Api.Infrastructure;
 using Xunit;
 
 namespace Tesria.Api.Tests;
@@ -99,6 +102,54 @@ public class SpaceTests
         var rename = await client.PutAsJsonAsync("/api/spaces/EXACT", new { Name = new string('m', 201) });
         Assert.Equal(HttpStatusCode.BadRequest, rename.StatusCode);
         Assert.Contains("at most 200 characters", await rename.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task A_description_over_the_limit_is_a_400_naming_the_limit()
+    {
+        // QA t3-R05: a 100,000-character description was saved and shown in full.
+        using var factory = new TestAppFactory();
+        var client = factory.CreateClient();
+        await client.RegisterAndSignInAsync();
+
+        var tooLong = await client.PostAsJsonAsync("/api/spaces",
+            new { Key = "LONG", Name = "Long", Description = new string('d', 2001) });
+        Assert.Equal(HttpStatusCode.BadRequest, tooLong.StatusCode);
+        Assert.Contains("at most 2,000 characters", await tooLong.Content.ReadAsStringAsync());
+
+        Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync("/api/spaces",
+            new { Key = "EXACT", Name = "Exact", Description = new string('d', 2000) })).StatusCode);
+        var edit = await client.PutAsJsonAsync("/api/spaces/EXACT",
+            new { Name = "Exact", Description = new string('e', 100_000) });
+        Assert.Equal(HttpStatusCode.BadRequest, edit.StatusCode);
+        Assert.Contains("at most 2,000 characters", await edit.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task A_description_from_before_the_limit_still_loads_and_may_be_sent_back_unchanged()
+    {
+        // The Details form sends the description with every rename: a space
+        // given a long one before the limit must stay renamable.
+        using var factory = new TestAppFactory();
+        var client = factory.CreateClient();
+        await client.RegisterAndSignInAsync();
+        await client.PostAsJsonAsync("/api/spaces", new { Key = "OLD", Name = "Old" });
+        var legacy = new string('x', 100_000);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var space = await db.Spaces.SingleAsync(s => s.Key == "OLD");
+            space.Description = legacy;
+            await db.SaveChangesAsync();
+        }
+
+        Assert.Equal(legacy, (await client.GetFromJsonAsync<SpaceResponse>("/api/spaces/OLD"))!.Description);
+        var rename = await client.PutAsJsonAsync("/api/spaces/OLD", new { Name = "Renamed", Description = legacy });
+        Assert.Equal(HttpStatusCode.OK, rename.StatusCode);
+        Assert.Equal("Renamed", (await rename.Content.ReadFromJsonAsync<SpaceResponse>())!.Name);
+        // Changing it holds it to the limit.
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PutAsJsonAsync("/api/spaces/OLD",
+            new { Name = "Renamed", Description = legacy + "y" })).StatusCode);
     }
 
     private record RightsResponse(string Key, bool? CanEdit, bool? CanAdmin);

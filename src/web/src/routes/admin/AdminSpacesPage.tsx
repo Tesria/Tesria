@@ -152,9 +152,9 @@ export function AdminSpacesPage() {
             <tr key={s.id}>
               <td>
                 <Link to={`/spaces/${s.key}`}>
-                  <strong>{s.name}</strong>
+                  <strong className="admin-table__clip admin-table__clip--inline" title={s.name.length > 30 ? s.name : undefined}>{s.name}</strong>
                 </Link>{' '}
-                <span className="badge">{s.key}</span>
+                <span className="badge admin-table__clip admin-table__clip--inline" title={s.key}>{s.key}</span>
                 {s.archived && <span className="badge">archived</span>}
                 {s.isPublic && <span className="badge badge--public">public</span>}
               </td>

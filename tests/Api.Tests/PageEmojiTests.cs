@@ -63,6 +63,8 @@ public class PageEmojiTests
     [Theory]
     [InlineData("abc")]
     [InlineData("🚀🚀🚀🚀🚀🚀🚀🚀🚀")]
+    [InlineData("\U0001F984\U0001F984")]   // two side by side (QA T3-008)
+    [InlineData("1️⃣2️⃣")]   // two keycaps
     [InlineData("\u0007")]
     public async Task Something_that_is_not_one_emoji_is_refused(string value)
     {

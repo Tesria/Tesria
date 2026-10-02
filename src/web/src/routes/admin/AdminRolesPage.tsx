@@ -309,7 +309,7 @@ export function AdminRolesPage({ inSetup = false }: { inSetup?: boolean } = {}) 
                   <div className="muted small">{p.description}</div>
                 </td>
                 {matrix.roles.map((role) => (
-                  <td key={role.id} className="roles-table__cell">
+                  <td key={role.id} className="roles-table__cell" data-role={role.name}>
                     {role.tier === UserRole.Owner ? <span title="Always held by the owner">Yes</span> : ''}
                   </td>
                 ))}
@@ -410,7 +410,7 @@ function RoleArea({
             <div className="muted small">{p.description}</div>
           </td>
           {roles.map((role) => (
-            <td key={role.id} className="roles-table__cell">
+            <td key={role.id} className="roles-table__cell" data-role={role.name}>
               {/* Administration rights belong to administrator roles (dev-plan
                   15.1): a user-tier role is promoted, not widened. */}
               {role.tier === UserRole.Member && p.scope === 'Administration' ? (

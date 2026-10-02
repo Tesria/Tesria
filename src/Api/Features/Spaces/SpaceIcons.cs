@@ -12,9 +12,13 @@ namespace Tesria.Api.Features.Spaces;
 /// server that tries to enumerate it will be wrong within a year. What
 /// matters is that the value is a *glyph*, not prose and not markup, because
 /// it is rendered inline wherever the space appears. So the rule is shaped
-/// around that: short, no control characters, and at least one non-ASCII
-/// character. That admits keycaps (which really do contain an ASCII digit)
-/// and any future emoji, and refuses "hello" and anything script-shaped.
+/// around that: short, no control characters, at least one non-ASCII
+/// character, and one glyph: a single grapheme cluster (QA cal-007 and
+/// T3-008: "🦄🦄🦄" was accepted and spilled out of the icon tile). .NET
+/// splits text into grapheme clusters by Unicode's own rules (UAX #29), so
+/// a joined sequence (👩‍💻), a flag (🇺🇸), a skin tone (👍🏽) and a keycap
+/// (#️⃣) each count as one. That admits any future emoji, and refuses
+/// "hello", two emoji side by side and anything script-shaped.
 /// </summary>
 public static class SpaceIcons
 {
@@ -46,8 +50,11 @@ public static class SpaceIcons
         var hasNonAscii = false;
         foreach (var rune in value.EnumerateRunes())
             if (rune.Value > 0x7F) { hasNonAscii = true; break; }
+        if (!hasNonAscii) return (null, "Pick an emoji rather than letters.");
 
-        return hasNonAscii ? (value, null) : (null, "Pick an emoji rather than letters.");
+        return new StringInfo(value).LengthInTextElements == 1
+            ? (value, null)
+            : (null, "Pick a single emoji, not several.");
     }
 
     public static string? ValidateColor(int? color) =>

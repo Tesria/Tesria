@@ -189,9 +189,10 @@ export function SpaceSettingsPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What this space is for"
+              maxLength={LIMITS.spaceDescription}
             />
           </label>
-          <p className="muted small">
+          <p className="muted small space-settings__key">
             The key <code>{space.key}</code> is part of every page&rsquo;s address and cannot change.
           </p>
           <button type="submit" className="btn btn--primary" disabled={busy}>

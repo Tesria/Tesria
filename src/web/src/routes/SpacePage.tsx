@@ -337,13 +337,15 @@ export function SpacePage() {
         <div className="sidebar__top">
           <div className="sidebar__head">
             <SpaceIcon space={space} size={32} />
-            <div>
+            {/* A long key ends in "…" and a long name stops at three lines, so
+                the hide button stays in the sidebar (QA cal-005, T3-010). */}
+            <div className="sidebar__ident">
               <div className="sidebar__key">
-                {space.key}
+                <span className="sidebar__key-text" title={space.key}>{space.key}</span>
                 {/* Visible to everyone, so nobody edits a public page thinking it is internal. */}
                 {space.isPublic && <span className="badge badge--public" title="Readable by anyone on the internet">public</span>}
               </div>
-              <div className="sidebar__name">{space.name}</div>
+              <div className="sidebar__name" title={space.name.length > 60 ? space.name : undefined}>{space.name}</div>
             </div>
             <button type="button" className="sidebar__toggle sidebar__toggle--hide" onClick={toggleSidebar}
               title="Hide the Sidebar" aria-label="Hide the Sidebar" aria-expanded="true">
