@@ -33,6 +33,9 @@ const TOOL: Record<string, string> = {
   update_page: 'Changed a page',
   add_page_label: 'Added a label',
   remove_page_label: 'Removed a label',
+  list_comments: 'Read a page’s comments',
+  add_comment: 'Commented on a page',
+  reply_to_comment: 'Replied to a comment',
 }
 
 const total = (c: TokenUsageCounts) => c.reads + c.writes + c.mcpReads + c.mcpWrites

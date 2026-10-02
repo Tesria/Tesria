@@ -88,7 +88,53 @@ public interface ICollabNotifier
     /// </summary>
     Task<DraftResetResult> ResetDraftAsync(Guid pageId, string contentJson, int version, CancellationToken ct = default) =>
         Task.FromResult(DraftResetResult.NotConfigured);
+
+    /// <summary>
+    /// Puts an inline comment's highlight on a quoted passage of the page's
+    /// shared draft (dev-plan 22.2): the sidecar finds the passage in the
+    /// draft as it now reads and marks it, and nothing else. The comment is
+    /// saved only after this says <see cref="InlineCommentPlacement.Placed"/>.
+    ///
+    /// Not best effort, like a discard: the caller is owed an answer, and an
+    /// unreachable sidecar is reported. The default is for fakes that have no
+    /// sidecar.
+    /// </summary>
+    Task<InlineCommentResult> PlaceCommentAsync(
+        Guid pageId, Guid commentId, string quote, int? occurrence, CancellationToken ct = default) =>
+        Task.FromResult(new InlineCommentResult(InlineCommentPlacement.NotConfigured));
+
+    /// <summary>
+    /// Takes a comment's highlight off the draft again, when the comment could
+    /// not be saved after it was placed. Best effort: a highlight with no
+    /// comment behind it opens nothing and harms nothing.
+    /// </summary>
+    Task RemoveCommentAsync(Guid pageId, Guid commentId, CancellationToken ct = default) => Task.CompletedTask;
 }
+
+/// <summary>What became of a request to highlight a quoted passage (dev-plan 22.2).</summary>
+public enum InlineCommentPlacement
+{
+    /// <summary>The highlight is in the draft (or already was).</summary>
+    Placed,
+    /// <summary>Live editing is not set up, so there is no draft to write into.</summary>
+    NotConfigured,
+    /// <summary>The live-editing service could not be reached or failed; nothing was written.</summary>
+    Unavailable,
+    /// <summary>The live-editing service does not know the page.</summary>
+    PageNotFound,
+    /// <summary>The quote was not found once: <see cref="InlineCommentResult.Code"/> says why.</summary>
+    Refused,
+}
+
+/// <summary>
+/// The answer to <see cref="ICollabNotifier.PlaceCommentAsync"/>. For a
+/// refusal, a code (<c>quote_not_found</c>, <c>quote_ambiguous</c>,
+/// <c>quote_too_long</c>, <c>quote_spans_blocks</c>), the reason in words,
+/// and how often the passage appears where that is the reason. When placed,
+/// which occurrence it went on.
+/// </summary>
+public sealed record InlineCommentResult(
+    InlineCommentPlacement Status, string? Code = null, string? Message = null, int? Count = null, int? Occurrence = null);
 
 /// <summary>Whose live-editing connections to close. Exactly one is set.</summary>
 public sealed record CollabRevocation(Guid? UserId = null, Guid? SpaceId = null, Guid? PageId = null, bool All = false);
@@ -180,6 +226,78 @@ public sealed class CollabNotifier(
             log.LogWarning(ex, "Collab sidecar unreachable; the draft of page {PageId} was not discarded", pageId);
             return DraftResetResult.Unavailable;
         }
+    }
+
+    public async Task<InlineCommentResult> PlaceCommentAsync(
+        Guid pageId, Guid commentId, string quote, int? occurrence, CancellationToken ct = default)
+    {
+        if (!Available) return new InlineCommentResult(InlineCommentPlacement.NotConfigured);
+        try
+        {
+            var client = http.CreateClient("collab");
+            using var request = new HttpRequestMessage(
+                HttpMethod.Post, $"{Endpoint!.TrimEnd('/')}/pages/{pageId}/comments")
+            {
+                Content = new StringContent(
+                    JsonSerializer.Serialize(new { commentId, quote, occurrence }),
+                    Encoding.UTF8, new MediaTypeHeaderValue("application/json")),
+            };
+            request.Headers.Add("X-Collab-Secret", Secret);
+            using var response = await client.SendAsync(request, ct);
+            var body = await response.Content.ReadAsStringAsync(ct);
+            switch ((int)response.StatusCode)
+            {
+                case 200:
+                    return new InlineCommentResult(InlineCommentPlacement.Placed, Occurrence: IntOf(body, "occurrence"));
+                case 404:
+                    return new InlineCommentResult(InlineCommentPlacement.PageNotFound);
+                case 422:
+                    return new InlineCommentResult(InlineCommentPlacement.Refused,
+                        StringOf(body, "code") ?? "quote_not_found", StringOf(body, "message"), IntOf(body, "count"));
+                default:
+                    log.LogWarning("Collab sidecar returned {Status} placing an inline comment on page {PageId}", (int)response.StatusCode, pageId);
+                    return new InlineCommentResult(InlineCommentPlacement.Unavailable);
+            }
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException or JsonException)
+        {
+            log.LogWarning(ex, "Collab sidecar unreachable; no inline comment placed on page {PageId}", pageId);
+            return new InlineCommentResult(InlineCommentPlacement.Unavailable);
+        }
+    }
+
+    public async Task RemoveCommentAsync(Guid pageId, Guid commentId, CancellationToken ct = default)
+    {
+        if (!Available) return;
+        try
+        {
+            var client = http.CreateClient("collab");
+            using var request = new HttpRequestMessage(
+                HttpMethod.Post, $"{Endpoint!.TrimEnd('/')}/pages/{pageId}/comments/{commentId}/remove");
+            request.Headers.Add("X-Collab-Secret", Secret);
+            using var response = await client.SendAsync(request, ct);
+            if (!response.IsSuccessStatusCode)
+                log.LogWarning("Collab sidecar returned {Status} removing inline comment {CommentId}", (int)response.StatusCode, commentId);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
+        {
+            // A highlight with no comment behind it opens nothing.
+            log.LogWarning(ex, "Collab sidecar unreachable; inline comment {CommentId} may stay highlighted", commentId);
+        }
+    }
+
+    private static string? StringOf(string json, string name)
+    {
+        using var doc = JsonDocument.Parse(json);
+        return doc.RootElement.ValueKind == JsonValueKind.Object && doc.RootElement.TryGetProperty(name, out var v)
+            && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
+    }
+
+    private static int? IntOf(string json, string name)
+    {
+        using var doc = JsonDocument.Parse(json);
+        return doc.RootElement.ValueKind == JsonValueKind.Object && doc.RootElement.TryGetProperty(name, out var v)
+            && v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var n) ? n : null;
     }
 
     public async Task RevokeAsync(CollabRevocation revocation, CancellationToken ct = default)

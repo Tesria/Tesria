@@ -4,7 +4,7 @@ import { Avatar } from '../../components/Avatar'
 import { useConfirm } from '../../components/ConfirmDialog'
 import { useAuth } from '../../auth/AuthContext'
 import { CommentBody, MentionTextarea } from '../../components/MentionTextarea'
-import { buildThreads, COMMENTS_CHANGED, announceCommentsChanged, type CommentNode as Node } from './commentThreads'
+import { anchorQuote, buildThreads, COMMENTS_CHANGED, announceCommentsChanged, type CommentNode as Node } from './commentThreads'
 
 export function CommentsPanel({ pageId, readOnly = false, canEdit = false }: { pageId: string; readOnly?: boolean; canEdit?: boolean }) {
   const [showResolved, setShowResolved] = useState(false)
@@ -117,6 +117,10 @@ export function CommentItem({ node, pageId, onChanged, readOnly = false, canEdit
         {node.resolvedAt && <span className="badge badge--resolved">resolved</span>}
         <span className="muted small">{new Date(node.createdAt).toLocaleString()}</span>
       </div>
+      {/* The passage an inline comment is about (dev-plan 22.2). */}
+      {!node.isDeleted && anchorQuote(node.anchorJson) && (
+        <blockquote className="comment__quote">{anchorQuote(node.anchorJson)}</blockquote>
+      )}
       {node.resolvedAt && (
         <p className="muted small comment__resolved">
           Resolved{node.resolvedByName ? ` by ${node.resolvedByName}` : ''} {new Date(node.resolvedAt).toLocaleString()}

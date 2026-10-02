@@ -17,6 +17,7 @@ import { getSchema } from '@tiptap/core'
 import type { JSONContent } from '@tiptap/core'
 import { getSharedExtensions } from '../src/editor/extensions'
 import { reconcileYDoc, resetYDoc, type ExternalEditOrigin } from '../src/editor/externalEdits'
+import { placeComment, removeComment, type PlaceResult } from '../src/editor/commentAnchor'
 
 /** The one schema, from the one place it is declared. */
 export const schema = getSchema(getSharedExtensions({ collaborative: true }))
@@ -46,3 +47,20 @@ export function reset(ydoc: Parameters<typeof resetYDoc>[0], published: JSONCont
   return resetYDoc(ydoc, schema, published)
 }
 
+
+/**
+ * Puts an inline comment's highlight on a quoted passage of the shared
+ * document (dev-plan 22.2): the search and the format in one transaction,
+ * nothing else in the document touched. See `commentAnchor.ts`.
+ */
+export function placeInlineComment(
+  ydoc: Parameters<typeof placeComment>[0],
+  request: { commentId: string; quote: string; occurrence?: number | null },
+): PlaceResult {
+  return placeComment(ydoc, schema, request)
+}
+
+/** Takes a comment's highlight off the shared document again (a comment row that failed to save). */
+export function removeInlineComment(ydoc: Parameters<typeof removeComment>[0], commentId: string): boolean {
+  return removeComment(ydoc, schema, commentId)
+}

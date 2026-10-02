@@ -40,3 +40,18 @@ export const COMMENTS_CHANGED = 'tesria:comments-changed'
 export function announceCommentsChanged() {
   window.dispatchEvent(new Event(COMMENTS_CHANGED))
 }
+
+/**
+ * The passage an inline comment is about, from its anchor (dev-plan 22.2):
+ * `{ "type": "text", "quote": "…" }`. Null for a page comment, a comment on
+ * an image, or an anchor from before quotes were kept.
+ */
+export function anchorQuote(anchorJson: string | null | undefined): string | null {
+  if (!anchorJson) return null
+  try {
+    const anchor = JSON.parse(anchorJson) as { type?: unknown; quote?: unknown }
+    return anchor && anchor.type === 'text' && typeof anchor.quote === 'string' && anchor.quote.trim() ? anchor.quote.trim() : null
+  } catch {
+    return null
+  }
+}

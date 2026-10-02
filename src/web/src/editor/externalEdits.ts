@@ -2,6 +2,7 @@ import type { JSONContent } from '@tiptap/core'
 import type { Schema } from '@tiptap/pm/model'
 import { updateYFragment, yXmlFragmentToProsemirrorJSON } from 'y-prosemirror'
 import type * as Y from 'yjs'
+import { collectComments, restoreComments } from './commentAnchor'
 import { EXTERNAL_MARKS, type ExternalEditSource } from './externalEditMarks'
 
 /** What this needs of a `Y.Doc`, which is all the sidecar has to hand it. */
@@ -74,7 +75,7 @@ const hasMark = (node: Block, name: ExternalMarkName) => node.marks?.some((m) =>
  * here (Postgres, Yjs, the API) and none of them promises key order.
  */
 export function blockKey(block: Block): string {
-  return JSON.stringify(canonical(joinText(stripExternalMarks(block))))
+  return JSON.stringify(canonical(joinText(stripCommentMarks(stripExternalMarks(block)))))
 }
 
 /**
@@ -89,7 +90,7 @@ export function blockKey(block: Block): string {
  * {@link mergeDocument}).
  */
 export function acceptedKey(block: Block): string {
-  return JSON.stringify(canonical(acceptBlock(block)))
+  return JSON.stringify(canonical(joinText(stripCommentMarks(acceptBlock(block)))))
 }
 
 function canonical(value: unknown): unknown {
@@ -146,6 +147,27 @@ function joinText(node: Block): Block {
 export function stripExternalMarks(node: Block): Block {
   const marks = node.marks?.filter((m) => !isExternal(m.type))
   const content = node.content?.map(stripExternalMarks)
+  const next: Block = { ...node }
+  if (node.marks) {
+    if (marks && marks.length > 0) next.marks = marks
+    else delete next.marks
+  }
+  if (content) next.content = content
+  return next
+}
+
+/**
+ * The node with every inline-comment highlight taken off (dev-plan 22.2),
+ * for comparing only. A highlight is not a change to the words: an agent's
+ * inline comment puts one in the draft, and counting it made the next editor
+ * see "unpublished changes" nobody typed, prompted on Close, and read the
+ * block as rewritten in a merge, which duplicated it on Accept (the 22.2
+ * review). Kept apart from {@link stripExternalMarks}, which is not only for
+ * comparing.
+ */
+export function stripCommentMarks(node: Block): Block {
+  const marks = node.marks?.filter((m) => m.type !== 'comment')
+  const content = node.content?.map(stripCommentMarks)
   const next: Block = { ...node }
   if (node.marks) {
     if (marks && marks.length > 0) next.marks = marks
@@ -437,9 +459,9 @@ export function reconcileDocument(draft: Block, published: Block, origin: Extern
   return mergeDocument(null, draft, published, origin)
 }
 
-/** Whether two documents are the same, marks and all. */
+/** Whether two documents are the same, marks and all, except inline-comment highlights (see {@link stripCommentMarks}). */
 export function sameDocument(a: Block, b: Block): boolean {
-  return JSON.stringify(canonical(joinText(a))) === JSON.stringify(canonical(joinText(b)))
+  return JSON.stringify(canonical(joinText(stripCommentMarks(a)))) === JSON.stringify(canonical(joinText(stripCommentMarks(b))))
 }
 
 const isEmptyParagraph = (block: Block) =>
@@ -511,7 +533,13 @@ function writeYDoc(ydoc: YDocLike, schema: Schema, document: Block, fragmentName
   const fragment = ydoc.getXmlFragment(fragmentName)
   const node = schema.nodeFromJSON(document)
   ydoc.transact(() => {
+    // Inline-comment highlights survive the rewrite (dev-plan 22.2): a reset
+    // to the published page used to take off every one the page did not
+    // have, an agent's among them, and Discard did the same. Each is found
+    // again by its passage afterwards, in the same transaction.
+    const held = schema.marks.comment ? collectComments(ydoc, schema, fragmentName) : []
     updateYFragment(ydoc as Y.Doc, fragment, node, { mapping: new Map(), isOMark: new Map() })
+    restoreComments(ydoc, schema, held, fragmentName)
   })
 }
 

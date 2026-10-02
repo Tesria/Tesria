@@ -211,6 +211,8 @@ builder.Services.AddScoped<Tesria.Api.Features.Embeds.ILinkPreviewService, Tesri
 // a self-contained document and renders it with no network of its own.
 // One page-write path for REST and MCP alike (dev-plan 8.4).
 builder.Services.AddScoped<Tesria.Api.Features.Pages.IPageWriter, Tesria.Api.Features.Pages.PageWriter>();
+// And one comment-write path, which the MCP comment tools share (dev-plan 22.1).
+builder.Services.AddScoped<Tesria.Api.Features.Comments.ICommentWriter, Tesria.Api.Features.Comments.CommentWriter>();
 builder.Services.AddScoped<Tesria.Api.Infrastructure.Collab.ICollabNotifier, Tesria.Api.Infrastructure.Collab.CollabNotifier>();
 builder.Services.AddScoped<Tesria.Api.Features.Export.IPdfRenderer, Tesria.Api.Features.Export.PdfRenderer>();
 builder.Services.AddHttpClient("pdf", c => c.Timeout = TimeSpan.FromSeconds(30));
@@ -238,7 +240,8 @@ builder.Services.AddMcpServer(o =>
         o.ServerInstructions =
             "Tesria is a self-hosted wiki. Pages live in spaces and form a tree; content is returned as Markdown. " +
             "'Not found' can mean the page does not exist or that this token's owner may not see it. " +
-            "Write tools need a token with write access.";
+            "Write tools need a token with write access. To answer on a page without changing its text, " +
+            "use the comment tools (list_comments, add_comment, reply_to_comment).";
     })
     .WithHttpTransport(o => o.Stateless = true)
     .WithTools<Tesria.Api.Features.Mcp.TesriaTools>()

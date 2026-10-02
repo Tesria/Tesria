@@ -4,14 +4,20 @@ using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Auth;
 using Tesria.Api.Infrastructure.Notifications;
 using Tesria.Api.Infrastructure.Permissions;
-using Tesria.Api.Infrastructure.Webhooks;
 using Microsoft.EntityFrameworkCore;
 
 namespace Tesria.Api.Features.Comments;
 
 public static partial class CommentEndpoints
 {
-    public record CreateCommentRequest(string Body, Guid? ParentCommentId, string? AnchorJson);
+    /// <param name="Quote">
+    /// An inline comment on this passage (dev-plan 22.2): the words exactly as
+    /// the page reads, without Markdown. The server finds it in the page's
+    /// draft and highlights it there, as the editor does for a person; needs
+    /// edit rights on the page and live editing.
+    /// </param>
+    /// <param name="Occurrence">Which time the passage appears, from 1, when it appears more than once.</param>
+    public record CreateCommentRequest(string Body, Guid? ParentCommentId, string? AnchorJson, string? Quote = null, int? Occurrence = null);
     public record UpdateCommentRequest(string Body);
     public record CommentResponse(
         Guid Id, Guid PageId, Guid? ParentCommentId, string? Body, string? AnchorJson,
@@ -26,7 +32,8 @@ public static partial class CommentEndpoints
         var pageScoped = routes.MapGroup("/pages/{pageId:guid}/comments")
             .WithTags("Comments").RequireAuthorization();
         pageScoped.MapGet("/", ListForPage).AllowAnonymous().Produces<List<CommentResponse>>(); // dev-plan 5.2: only with PublicComments
-        pageScoped.MapPost("/", Create).Produces<CommentResponse>(StatusCodes.Status201Created);
+        pageScoped.MapPost("/", Create).Produces<CommentResponse>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity).ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
         var byId = routes.MapGroup("/comments/{id:guid}")
             .WithTags("Comments").RequireAuthorization();
@@ -52,87 +59,54 @@ public static partial class CommentEndpoints
             var open = await db.Pages.AsNoTracking().Where(p => p.Id == pageId).Select(p => p.Space!.PublicComments).FirstOrDefaultAsync();
             if (!open) return Results.Unauthorized();
         }
+        return Results.Ok(await LoadAsync(pageId, db));
+    }
+
+    /// <summary>
+    /// A page's comments, oldest first, as the REST list returns them and the
+    /// MCP list_comments tool nests them (dev-plan 22.1). The caller has
+    /// already established that the page may be read.
+    /// </summary>
+    internal static async Task<List<CommentResponse>> LoadAsync(Guid pageId, AppDbContext db, CancellationToken ct = default)
+    {
         // Include the author rather than letting the client resolve ids: a
         // per-comment lookup is N round trips, and a client-side directory
         // fetch would hand the whole user list to anyone who can read a page.
         var comments = await db.Comments.AsNoTracking()
             .Include(c => c.Author)
             .Where(c => c.PageId == pageId)
-            .ToListAsync();
+            .ToListAsync(ct);
         // Chronological; sorted in memory (bounded per page, and the SQLite test
         // provider cannot ORDER BY DateTimeOffset).
         var resolverIds = comments.Where(c => c.ResolvedById is not null).Select(c => c.ResolvedById!.Value).Distinct().ToList();
         var resolvers = await db.Users.AsNoTracking().Where(u => resolverIds.Contains(u.Id))
-            .ToDictionaryAsync(u => u.Id, u => u.DisplayName);
-        return Results.Ok(comments.OrderBy(c => c.CreatedAt).Select(c => ToResponse(c) with
+            .ToDictionaryAsync(u => u.Id, u => u.DisplayName, ct);
+        return comments.OrderBy(c => c.CreatedAt).Select(c => ToResponse(c) with
         {
             ResolvedByName = c.ResolvedById is { } r && resolvers.TryGetValue(r, out var n) ? n : null,
-        }));
+        }).ToList();
     }
 
     private static async Task<IResult> Create(
-        Guid pageId, CreateCommentRequest req, AppDbContext db, CurrentUser current,
-        IPermissionService perms, INotificationService notifications, IWebhookDispatcher webhooks)
+        Guid pageId, CreateCommentRequest req, ICommentWriter writer)
     {
-        // Commenting requires being able to see the page.
-        if (!await perms.CanReadPageAsync(pageId)) return Results.NotFound();
-
-        var body = (req.Body ?? "").Trim();
-        if (body.Length == 0)
-            return Results.ValidationProblem(Error("body", "Comment body is required."));
-        if (req.AnchorJson is not null && !IsValidJson(req.AnchorJson))
-            return Results.ValidationProblem(Error("anchorJson", "Anchor must be valid JSON."));
-
-        // perms.CanReadPageAsync (above) already resolved the page including
-        // drafts (its author and editors only); re-resolve it the same way so a
-        // not-yet-published draft can still receive comments.
-        var target = await db.Pages.IgnoreQueryFilters()
-            .Where(p => p.Id == pageId).Select(p => new { p.SpaceId, p.Status }).FirstOrDefaultAsync();
-        if (target is null) return Results.NotFound();
-        var spaceId = (Guid?)target.SpaceId;
-        // A draft does not exist for anyone else yet: its comments tell no
-        // watcher and fire no webhook (dev-plan 14.1).
-        var isDraft = target.Status == PageStatus.Draft;
-
-        if (req.ParentCommentId is { } parentId)
+        // The checks, notifications and webhook live in the writer, which the
+        // MCP comment tools share (dev-plan 22.1).
+        var result = await writer.CreateAsync(pageId, req.Body, req.ParentCommentId, req.AnchorJson,
+            quote: req.Quote, occurrence: req.Occurrence);
+        return result.Status switch
         {
-            var parent = await db.Comments.AsNoTracking().FirstOrDefaultAsync(c => c.Id == parentId);
-            if (parent is null || parent.PageId != pageId)
-                return Results.ValidationProblem(Error("parentCommentId", "Parent comment not found on this page."));
-        }
-
-        var now = DateTimeOffset.UtcNow;
-        var authorId = current.RequireId();
-        var comment = new Comment
-        {
-            Id = Guid.NewGuid(),
-            PageId = pageId,
-            ParentCommentId = req.ParentCommentId,
-            Body = body,
-            AnchorJson = req.AnchorJson,
-            AuthorId = authorId,
-            CreatedAt = now,
-            UpdatedAt = now,
+            CommentWriteStatus.NotFound => Results.NotFound(),
+            CommentWriteStatus.Invalid => Results.ValidationProblem(Error(result.Field!, result.Message!)),
+            CommentWriteStatus.Forbidden => Results.Problem(result.Message, statusCode: StatusCodes.Status403Forbidden),
+            // A quote that cannot be placed once (dev-plan 22.2): the code a
+            // script checks, and the count where that is the reason.
+            CommentWriteStatus.Unprocessable => Results.Problem(result.Message, statusCode: StatusCodes.Status422UnprocessableEntity,
+                extensions: new Dictionary<string, object?> { ["code"] = result.Code, ["count"] = result.Count }),
+            CommentWriteStatus.Unavailable => Results.Problem(result.Message, statusCode: StatusCodes.Status503ServiceUnavailable,
+                extensions: new Dictionary<string, object?> { ["code"] = result.Code }),
+            _ => Results.Created($"/api/comments/{result.Comment!.Id}", ToResponse(result.Comment)),
         };
-        db.Comments.Add(comment);
-        if (!isDraft)
-        {
-            await notifications.NotifyPageWatchersAsync(
-                pageId, spaceId.Value, "comment.created", authorId, new { Body = Truncate(Readable(body)) });
-            await NotifyMentionsAsync(pageId, body, previous: null, authorId, db, perms, notifications);
-        }
-        await db.SaveChangesAsync();
-        if (!isDraft)
-            await webhooks.DispatchAsync(
-                spaceId.Value, "comment.created", "page", pageId, new { Body = Truncate(body) });
-        // Re-read with the author joined rather than assigning the navigation:
-        // attaching a detached User makes EF try to INSERT it, which trips the
-        // unique-email constraint. One extra read on create is the cheap,
-        // obviously-correct option.
-        var saved = await db.Comments.AsNoTracking()
-            .Include(c => c.Author)
-            .FirstAsync(c => c.Id == comment.Id);
-        return Results.Created($"/api/comments/{comment.Id}", ToResponse(saved));
     }
 
     private static async Task<IResult> Update(
@@ -187,6 +161,16 @@ public static partial class CommentEndpoints
     internal static string Readable(string body) =>
         MentionToken().Replace(body, m => "@" + m.Value[2..m.Value.IndexOf(']')]);
 
+    /// <summary>
+    /// The people a comment mentions, in the order written and each once:
+    /// what the MCP tools show beside the readable text, so an assistant has
+    /// the ids to mention someone back (dev-plan 22.1).
+    /// </summary>
+    internal static IReadOnlyList<(Guid Id, string Name)> MentionsIn(string? body) =>
+        body is null ? [] : MentionToken().Matches(body)
+            .Select(m => (Ok: Guid.TryParse(m.Groups["id"].Value, out var g), Id: g, Name: m.Value[2..m.Value.IndexOf(']')]))
+            .Where(m => m.Ok).DistinctBy(m => m.Id).Select(m => (m.Id, m.Name)).ToList();
+
     private static HashSet<Guid> MentionedIn(string? body) =>
         body is null ? [] : MentionToken().Matches(body)
             .Select(m => Guid.TryParse(m.Groups["id"].Value, out var g) ? g : Guid.Empty)
@@ -197,7 +181,7 @@ public static partial class CommentEndpoints
     /// page: never the author, only active accounts, and only if they can see
     /// the page, since the notification names it.
     /// </summary>
-    private static async Task NotifyMentionsAsync(
+    internal static async Task NotifyMentionsAsync(
         Guid pageId, string body, string? previous, Guid authorId,
         AppDbContext db, IPermissionService perms, INotificationService notifications)
     {
@@ -258,13 +242,13 @@ public static partial class CommentEndpoints
             c.ResolvedAt);
     }
 
-    private static bool IsValidJson(string input)
+    internal static bool IsValidJson(string input)
     {
         try { using var _ = JsonDocument.Parse(input); return true; }
         catch (JsonException) { return false; }
     }
 
-    private static string Truncate(string value) =>
+    internal static string Truncate(string value) =>
         value.Length <= 140 ? value : value[..140].TrimEnd() + "…";
 
     private static Dictionary<string, string[]> Error(string field, string message) =>
