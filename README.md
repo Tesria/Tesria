@@ -21,6 +21,8 @@ under the [Apache License 2.0](./LICENSE).
 - Drafts, version history with restore, templates, labels, threaded and
   inline comments, mentions, watches and notifications, and search across
   every space, with the best match first and accents ignored.
+- Every space has its own Viewers, Editors, Admins and Reviewers groups,
+  and a setting for what everyone signed in may do.
 - Two looks, **Minimal** and **Glass**, each in light and dark with your
   choice of accent color. Reading, editing and the page tree all work on a
   phone.

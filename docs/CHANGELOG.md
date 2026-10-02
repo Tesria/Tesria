@@ -5,6 +5,30 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Every space now has its own Viewers, Editors, Admins and Reviewers
+  groups, and "open to everyone" is a setting** (dev-plan 21.1). A space's
+  Permissions tab starts with "Everyone signed in can: No Access, View,
+  Edit or Administer"; widening it asks for your password and alerts every
+  administrator, as making a space open did. Below that are the space's four
+  groups, where you add and remove people, and then any other access given
+  to people or groups. On upgrade, every space gets its groups and grants to
+  individual people move into them (View into Viewers, Edit into Editors,
+  Admin into Admins); everyone keeps exactly the access they had, and each
+  move is recorded. Only the space's own administrators can change who is in
+  its Admins group or give anyone Admin, so in a space everyone can manage,
+  nobody can make themselves an administrator and read past page
+  restrictions. A space's groups can be named only in that space, and are
+  hidden from people who cannot see it. Manage Groups no longer reaches
+  them; Get Access in Administration, Spaces is the way in, including for a
+  space that was open before the upgrade and has nobody in Admins. Two new
+  built-in groups, Global Viewers and Global Reviewers, can read every
+  space: page restrictions still apply to them, and adding someone needs
+  your password, is audited and raises an alert. One deliberate tightening:
+  a suspended account no longer counts as signed in for spaces open to
+  everyone. The space permissions API (`GET /api/spaces/{key}/permissions`)
+  now returns an object instead of a bare list. Designed by Opus 5.5 and
+  reviewed by Fable 5.1 before building; checked by upgrading a seeded 0.8.7
+  in place with no change in anyone's access.
 - **Fixed: long names and titles with no spaces no longer push pages
   sideways** (t3-R04, t4-026, T3-010, cal-005, t6-018). A 500-letter page
   title made a page about 10,000 px wide; a 200-letter space name or 50-letter

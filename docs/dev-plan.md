@@ -6289,7 +6289,7 @@ questions are in `roadmap.md`.
   and Viewers, Editors, Admins and Reviewers made with every space, owned
   by it and managed by its space admins. · `M` · Model: Opus 5.5 · *design
   review* (what existing spaces get, and how the groups sit with page
-  restrictions and spaces open to all)
+  restrictions and spaces open to all) · ✅ **built 2026-10-02, for 0.9**
 
   **Design (2026-10-02, Opus 5.5; reviewed by Fable 5.1, verdict "build
   with changes", all adopted).** The owner decided (2026-10-02): existing
@@ -6354,6 +6354,19 @@ questions are in `roadmap.md`.
   - One deliberate tightening: an account that is suspended no longer
     passes checks made on its behalf in an open space (it is not "signed
     in"), for example mention notifications.
+
+  **As built (2026-10-02).** As designed, with one change to review item 10,
+  for a reason found on a real upgrade: every space that was open before
+  0.9 has an empty Admins group, so nobody could ever narrow it. Get Access
+  (recover access) on an open space whose Admins group is empty now adds the
+  administrator to Admins; on an open space with administrators of its own
+  it still grants nothing. An Admin grant under Other Access follows the
+  Admins group's rule (explicit admins only), the last-admin rule covers
+  custom groups holding Admin, and a space's own groups cannot be granted
+  again in it. `GET /spaces/{key}/permissions` now returns an object (the
+  old bare list's "empty means open" no longer holds). Checked by upgrading
+  a seeded 0.8.7 in place: no difference in what 6 accounts and an
+  anonymous reader could see or do across 7 spaces and 269 pages.
 
 - **21.2** Creating a space as a wizard: name and key, who may see it, who
   goes in each of its groups. · `M` · Model: Opus 5.5

@@ -583,6 +583,14 @@ invite carries no groups.
   a space open to all; and keeping the list usable with four groups per
   space on an instance with many spaces.
 
+## Keeping Global Viewers out of a space (suggested 2026-10-02 by the 21.1 review, not scheduled)
+
+Global Viewers and Global Reviewers (0.9, dev-plan 21.1) read every space.
+A space for a confidential team may want to opt out: a per-space switch,
+set by its explicit admins, that leaves global readers out, with the
+switch's state shown wherever the globals are managed and audited when
+changed. Page restrictions already bind global readers inside a space.
+
 ## Exports that keep going after you leave the page (asked for 2026-09-30, built 2026-10-01 as dev-plan 20.2)
 
 *Asked for by the owner:* preparing an export should be queued and keep
