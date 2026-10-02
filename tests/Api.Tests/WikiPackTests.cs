@@ -284,6 +284,19 @@ public class WikiPackTests
         Assert.DoesNotContain('\u0007', ex.Message);
     }
 
+    [Fact]
+    public async Task Two_pages_with_one_id_are_refused_in_words()
+    {
+        // t6-014: the second page file given the first one's id answered a
+        // bare 500 (a dictionary's duplicate key) instead of a refusal.
+        var bytes = await Write(Sample());
+        var twice = Retamper(bytes, WikiPack.PageEntry(PageTwo),
+            text => text.Replace(PageTwo.ToString("D"), PageOne.ToString("D")));
+
+        var ex = Assert.Throws<WikiPack.PackException>(() => WikiPack.Read(new MemoryStream(twice)));
+        Assert.Contains("same page twice", ex.Message);
+    }
+
     /* ---- the tree ------------------------------------------------------- */
 
     [Fact]
