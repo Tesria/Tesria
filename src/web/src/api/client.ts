@@ -307,7 +307,14 @@ export type Branding = {
  * reaches it anyway (QA T3-005: it answered with a bare 500).
  */
 export const LIMITS = {
+  /** The key's rule (2 to 50 letters and digits) is the server's; this only stops typing. */
+  spaceKey: 50,
   spaceName: 200,
+  /** Not a column limit: older, longer descriptions still load (QA t3-R05). */
+  spaceDescription: 2000,
+  /** QA T1-025: a longer name was a 500. */
+  displayName: 200,
+  instanceName: 200,
   pageTitle: 500,
   changeComment: 500,
   templateName: 200,

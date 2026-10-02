@@ -97,6 +97,12 @@ public static partial class SpaceEndpoints
 
     /// <summary>The database's limit, said before the database refuses it (QA T3-005).</summary>
     internal static readonly string NameTooLong = $"Name can be at most {Space.MaxNameLength} characters.";
+    internal static readonly string DescriptionTooLong =
+        string.Create(System.Globalization.CultureInfo.InvariantCulture, $"Description can be at most {Space.MaxDescriptionLength:N0} characters.");
+
+    /// <summary>The description to store, or null for none (blank).</summary>
+    private static string? NormalizeDescription(string? raw) =>
+        string.IsNullOrWhiteSpace(raw) ? null : raw.Trim();
 
     private static async Task<IResult> Create(
         CreateSpaceRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit)
@@ -111,6 +117,9 @@ public static partial class SpaceEndpoints
             return Results.ValidationProblem(Error("name", "Name is required."));
         if (name.Length > Space.MaxNameLength)
             return Results.ValidationProblem(Error("name", NameTooLong));
+        var description = NormalizeDescription(req.Description);
+        if (description is { Length: > Space.MaxDescriptionLength })
+            return Results.ValidationProblem(Error("description", DescriptionTooLong));
 
         if (await db.Spaces.AnyAsync(s => s.Key == key))
             return Results.Conflict(new { message = $"A space with key '{key}' already exists." });
@@ -120,7 +129,7 @@ public static partial class SpaceEndpoints
             Id = Guid.NewGuid(),
             Key = key,
             Name = name,
-            Description = string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim(),
+            Description = description,
             CreatedById = current.RequireId(),
             CreatedAt = DateTimeOffset.UtcNow,
         };
@@ -160,6 +169,12 @@ public static partial class SpaceEndpoints
             return Results.ValidationProblem(Error("name", "Name is required."));
         if (name.Length > Space.MaxNameLength)
             return Results.ValidationProblem(Error("name", NameTooLong));
+        // A description longer than the limit from before it existed may be
+        // sent back unchanged (the Details form always sends it), so renaming
+        // such a space still works; a new or edited one is held to the limit.
+        var description = NormalizeDescription(req.Description);
+        if (description is { Length: > Space.MaxDescriptionLength } && description != space.Description)
+            return Results.ValidationProblem(Error("description", DescriptionTooLong));
 
         if (SpaceIcons.ValidateColor(req.IconColor) is { } colorError)
             return Results.ValidationProblem(Error("iconColor", colorError));
@@ -194,7 +209,7 @@ public static partial class SpaceEndpoints
         }
 
         space.Name = name;
-        space.Description = string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim();
+        space.Description = description;
         await db.SaveChangesAsync();
         return Results.Ok(ToResponse(space));
     }

@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useId, useState } from 'react'
-import { api, ApiError, Permission } from '../api/client'
+import { api, ApiError, LIMITS, Permission } from '../api/client'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { PasswordInput } from '../components/PasswordInput'
@@ -196,7 +196,7 @@ export function ProfilePage() {
           <form onSubmit={saveName}>
             <label>
               Display Name
-              <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
+              <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} required maxLength={LIMITS.displayName} />
             </label>
             {note(nameStatus)}
             <button type="submit" className="btn btn--primary" disabled={nameBusy}>

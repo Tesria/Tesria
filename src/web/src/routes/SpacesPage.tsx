@@ -115,6 +115,7 @@ function CreateSpaceForm({ onCreated }: { onCreated: (space: Space) => void }) {
           onChange={(e) => setKey(e.target.value.toUpperCase())}
           placeholder="ENG"
           required
+          maxLength={LIMITS.spaceKey}
         />
       </label>
       <label>
@@ -123,7 +124,7 @@ function CreateSpaceForm({ onCreated }: { onCreated: (space: Space) => void }) {
       </label>
       <label>
         Description
-        <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional" />
+        <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional" maxLength={LIMITS.spaceDescription} />
       </label>
       <button type="submit" className="btn btn--primary" disabled={busy}>
         {busy ? 'Creating…' : 'Create'}

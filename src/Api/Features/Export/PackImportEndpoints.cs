@@ -133,7 +133,8 @@ public static partial class PackImportEndpoints
                 Id = Guid.NewGuid(),
                 Key = key,
                 Name = name,
-                Description = model.Space.Description,
+                // Held to the same limit as a description typed in (QA t3-R05).
+                Description = Clip(model.Space.Description, Space.MaxDescriptionLength),
                 // Not from the pack, deliberately: publishing is 5.5's
                 // two-step opt-in and a zip file does not get to take it.
                 IsPublic = false,

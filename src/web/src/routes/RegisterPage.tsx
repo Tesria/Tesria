@@ -1,6 +1,6 @@
 import { type FormEvent, useId, useState } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
-import { api } from '../api/client'
+import { api, LIMITS } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { PasswordInput } from '../components/PasswordInput'
 import { PASSWORD_HINT, PASSWORD_MAX, PASSWORD_MIN, passwordProblem } from '../auth/passwordRule'
@@ -75,7 +75,7 @@ export function RegisterPage() {
         {error && <p className="alert alert--error">{error}</p>}
         <label>
           Display Name
-          <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} required autoFocus />
+          <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} required autoFocus maxLength={LIMITS.displayName} />
         </label>
         <label>
           Email

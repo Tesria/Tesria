@@ -93,6 +93,19 @@ public class SiteSettingsTests
     }
 
     [Fact]
+    public async Task An_instance_name_over_the_limit_is_a_400_naming_the_limit()
+    {
+        // The database refused it, and the answer was a bare 500.
+        using var factory = new TestAppFactory();
+        var admin = await AdminClientAsync(factory);
+
+        var tooLong = await admin.PutAsJsonAsync("/api/admin/settings", new { InstanceName = new string('i', 201) });
+        Assert.Equal(HttpStatusCode.BadRequest, tooLong.StatusCode);
+        Assert.Contains("at most 200 characters", await tooLong.Content.ReadAsStringAsync());
+        (await admin.PutAsJsonAsync("/api/admin/settings", new { InstanceName = new string('i', 200) })).EnsureSuccessStatusCode();
+    }
+
+    [Fact]
     public async Task The_smtp_password_is_write_only_and_stored_encrypted()
     {
         using var factory = new TestAppFactory();

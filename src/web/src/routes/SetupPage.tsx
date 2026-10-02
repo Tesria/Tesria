@@ -1,6 +1,6 @@
 import { type FormEvent, type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { api, ApiError, MailSignIn, type BackupKeyStatus, type MailProvider, type SetupStatus } from '../api/client'
+import { api, ApiError, LIMITS, MailSignIn, type BackupKeyStatus, type MailProvider, type SetupStatus } from '../api/client'
 import { MailProviderHint, MailProviderPicker } from '../components/MailProviderPicker'
 import { useAuth } from '../auth/AuthContext'
 import { useInstance } from '../InstanceContext'
@@ -448,7 +448,7 @@ function AccountStep({
       </label>
       <label>
         <span>Your Name</span>
-        <input value={name} onChange={(e) => setName(e.target.value)} required />
+        <input value={name} onChange={(e) => setName(e.target.value)} required maxLength={LIMITS.displayName} />
       </label>
       <label>
         <span>Password</span>
@@ -484,7 +484,7 @@ function InstanceStep({ busy, onNext }: { busy: boolean; onNext: (name: string, 
       <h2>This Instance</h2>
       <label>
         <span>What Is It Called</span>
-        <input value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
+        <input value={name} onChange={(e) => setName(e.target.value)} required autoFocus maxLength={LIMITS.instanceName} />
       </label>
       <label>
         <span>Its Address</span>

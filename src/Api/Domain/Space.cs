@@ -17,6 +17,14 @@ public class Space
 
     public required string Name { get; set; }
 
+    /// <summary>
+    /// The longest description a space may be given (QA t3-R05: there was no
+    /// limit, and a 100,000-character one was saved and shown in full). Not a
+    /// column limit: a description saved before the limit keeps loading, and
+    /// may be saved again unchanged.
+    /// </summary>
+    public const int MaxDescriptionLength = 2000;
+
     public string? Description { get; set; }
 
     /// <summary>Optional page shown as the space landing page.</summary>
