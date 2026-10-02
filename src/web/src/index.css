@@ -487,6 +487,34 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .space-group__name { font-size: 1rem; margin: 0 0 0.15rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
 .space-group .attachment-list { margin: 0.5rem 0; }
 
+/* Administration → Groups (dev-plan 21.4): sections by kind and by space, a
+   line under each group for what it grants, and adding several at once. */
+.groups-section { margin: 1.25rem 0 0; }
+.groups-section__title { font-size: 1rem; margin: 0 0 0.25rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.groups-row__detail { flex: 1 1 100%; display: flex; flex-direction: column; gap: 0.15rem; font-size: 0.85rem; color: var(--muted); overflow-wrap: anywhere; }
+.groups-row__matches { color: var(--text); }
+.people-picker { display: grid; gap: 0.5rem; margin: 0.5rem 0 1rem; }
+.people-picker label { margin: 0; }
+.people-picker__modes { display: flex; flex-wrap: wrap; gap: 1rem; }
+.people-picker__modes .is-active { font-weight: 700; text-decoration: underline; }
+.people-picker__list {
+  list-style: none; margin: 0; padding: 0.25rem 0.6rem; max-height: 15rem; overflow-y: auto;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
+}
+.people-picker__item { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.6rem; padding: 0.35rem 0; color: var(--text); font-size: 0.95rem; cursor: pointer; }
+/* width: auto undoes the global full-width input (as .setup__check does). */
+.people-picker__item input { width: auto; margin: 0; flex: none; }
+.people-picker .btn { justify-self: start; }
+.bulk-report p { margin: 0 0 0.35rem; }
+.bulk-report ul { margin: 0 0 0.35rem; padding-left: 1.2rem; }
+.access-explainer__title { font-size: 1.05rem; margin-top: 0; }
+.access-explainer__headline { font-weight: 600; margin: 0.75rem 0 0.35rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.access-explainer__reasons { list-style: none; padding: 0; margin: 0.25rem 0 0.5rem; display: grid; gap: 0.4rem; }
+.access-explainer__reasons li { display: flex; align-items: baseline; gap: 0.5rem; overflow-wrap: anywhere; }
+.access-explainer__reasons .badge { flex: none; text-transform: none; }
+.access-explainer__page { border-top: 1px solid var(--border); margin-top: 0.75rem; }
+.badge--warn { background: var(--danger-soft); color: var(--danger); }
+
 /* No max-width: flex: 1 lets the box take every pixel between the nav and
    the right-hand cluster, so it grows with the viewport instead of stalling
    at a fixed width and leaving a dead gap. The intrinsic <input> width

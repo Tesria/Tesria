@@ -542,6 +542,9 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ),
     p('An administrator can also make groups of their own, such as ', i('Finance'), ' or ', i('Launch team'), '. See ', pageLink('Groups'), '.'),
 
+    h(2, 'Why can someone see this space?'),
+    p('At the foot of the tab, choose a person, and a page if you like, then ', b('Check Access'), '. Tesria answers with the same check it makes when they open it, and gives every reason: what everyone signed in gets, each group they are in, access given to them by name, the global groups, and, for a page, each restriction on it or above it and whether it names them.'),
+
     h(2, 'Making a space private, or open again'),
     ul(
       li(p(b('To make it private,'), ' choose ', b('No Access'), ' under ', b('Everyone signed in can'), ', then ', b('Close It'), '. First check that the people who need the space are in its groups. You keep access as long as you are in its Admins group; if nobody is in it yet, see the last section below.')),
