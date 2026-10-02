@@ -6371,7 +6371,17 @@ questions are in `roadmap.md`.
   and places the highlight in the live draft, for REST and MCP. · `M` ·
   Model: Opus 5.5 · *design review* (writing into live documents)
 
-  **Design (2026-10-02, Opus 5.5; reviewed by Fable 5.1 before building).**
+  **Design (2026-10-02, Opus 5.5; reviewed by Fable 5.1, verdict "build
+  with changes", all adopted).** The review's changes, in short: the mark
+  is placed with a targeted `Y.XmlText.format` inside one transaction, not
+  by rewriting the document, so concurrent typing is untouched; a stale
+  draft is brought up to date before matching, and a page with no draft
+  gets one; comment marks survive a later reset or merge (re-found by their
+  stored quote); a mark-only difference is not "unpublished work"; the
+  quote is matched against the visible text as `get_page` renders it; two
+  comments may cover the same passage; refusals are 404, 403, 422 (with a
+  code and count) and 503; and MCP's `add_comment` takes the quote rather
+  than a separate tool. The original outline follows.
   - **Asking for one:** `POST /api/pages/{id}/comments` takes an optional
     `quote` (the exact passage, as the page reads) and `occurrence` (which
     one, from 1, when it appears more than once). MCP gets
