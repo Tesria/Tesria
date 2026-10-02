@@ -13,6 +13,21 @@ public static class GroupEndpoints
     public record SaveGroupRequest(string Name, string? Description);
     public record AddMemberRequest(Guid UserId);
 
+    /// <summary>Several people at once (dev-plan 21.4): chosen from the list, by email, or both.</summary>
+    public record AddMembersRequest(List<Guid>? UserIds, List<string>? Emails);
+
+    /// <summary>One person in a bulk add's report.</summary>
+    /// <param name="Active">False for a suspended account: added, but it gets nothing until it is active again.</param>
+    public record BulkPerson(Guid UserId, string DisplayName, string? Email, bool Active);
+
+    /// <summary>One entry a bulk add did not act on, as given, and why.</summary>
+    public record BulkRefusal(string Input, string Reason);
+
+    public record AddMembersResponse(List<BulkPerson> Added, List<BulkPerson> AlreadyMembers, List<BulkRefusal> Refused);
+
+    /// <summary>How many people one bulk add takes: a team, not the whole directory.</summary>
+    public const int MaxBulkMembers = 500;
+
     /// <param name="BuiltIn">One of the five every instance has: never renamed or deleted.</param>
     /// <param name="Computed">Owner, Admins or Users: members follow each account's role, so none are added or removed.</param>
     /// <param name="SpaceId">For one of a space's four groups (dev-plan 21.1): the space it belongs to.</param>
@@ -46,11 +61,14 @@ public static class GroupEndpoints
         manage.MapPost("/", Create).Produces<GroupResponse>(StatusCodes.Status201Created);
         manage.MapPut("/{id:guid}", Update).Produces<GroupResponse>();
         manage.MapDelete("/{id:guid}", Delete).Produces(StatusCodes.Status204NoContent);
+        // The Groups page's list (21.4): searched, filtered and counted.
+        manage.MapGet("/overview", GroupOverview.Get).Produces<GroupOverview.OverviewResponse>();
         // Membership is checked in the handler, because who may change it
         // depends on the group (21.1): Manage Groups for global and custom
         // groups, the space's administrators for a space's own.
         groups.MapPost("/{id:guid}/members", AddMember).Produces(StatusCodes.Status204NoContent);
         groups.MapDelete("/{id:guid}/members/{userId:guid}", RemoveMember).Produces(StatusCodes.Status204NoContent);
+        groups.MapPost("/{id:guid}/members/bulk", AddMembers).Produces<AddMembersResponse>();
 
         // Directory of accounts, used when picking permission principals.
         routes.MapGet("/users", ListUsers).WithTags("Users").RequireAuthorization().Produces<List<UserResponse>>();
@@ -307,6 +325,94 @@ public static class GroupEndpoints
             await db.SaveChangesAsync();
         }
         return Results.NoContent();
+    }
+
+    /// <summary>
+    /// Adds several people to one group (dev-plan 21.4), under exactly the
+    /// rights a single add needs: the group's rule is checked once, as for
+    /// one person, and refuses the whole request when it refuses. Each
+    /// person is then added, found already there, or refused with a reason,
+    /// and every addition is audited (and, for the global groups, alerted)
+    /// as a single add would be. Emails are looked up only for callers who
+    /// may see the user list, so a paste cannot test whether an address has
+    /// an account.
+    /// </summary>
+    private static async Task<IResult> AddMembers(
+        Guid id, AddMembersRequest req, AppDbContext db, IAuditLogger audit, IPermissionService perms,
+        IAuthorizationService auth, HttpContext http, IConfiguration config, CurrentUser current,
+        IInstancePermissions rights, Infrastructure.Security.ISecurityDetector detector)
+    {
+        var group = await db.Groups.AsNoTracking().FirstOrDefaultAsync(g => g.Id == id);
+        if (group is null) return Results.NotFound();
+        if (await MembershipRefusalAsync(group, perms, auth, http, config) is { } refused) return refused;
+
+        var ids = (req.UserIds ?? []).Distinct().ToList();
+        // Kept as given for the report, compared lower-cased as stored.
+        var emails = (req.Emails ?? []).Select(e => (e ?? "").Trim()).Where(e => e.Length > 0)
+            .DistinctBy(e => e.ToLowerInvariant()).ToList();
+        if (ids.Count + emails.Count == 0)
+            return Results.ValidationProblem(Error("userIds", "Choose at least one person."));
+        if (ids.Count + emails.Count > MaxBulkMembers)
+            return Results.ValidationProblem(Error("userIds", $"Add at most {MaxBulkMembers} people at once."));
+
+        var showEmail = await rights.HasAsync(InstancePermissions.UsersView);
+        var me = current.RequireId();
+        var refusals = new List<BulkRefusal>();
+        var lowered = emails.Select(e => e.ToLowerInvariant()).ToList();
+        var byEmail = showEmail
+            ? await db.Users.AsNoTracking().Where(u => lowered.Contains(u.Email))
+                .Select(u => new { u.Id, u.Email }).ToDictionaryAsync(u => u.Email, u => u.Id)
+            : [];
+        foreach (var email in emails)
+        {
+            if (!showEmail)
+                refusals.Add(new BulkRefusal(email, "You cannot look people up by email here: choose them from the list instead."));
+            else if (!email.Contains('@'))
+                refusals.Add(new BulkRefusal(email, "This is not an email address."));
+            else if (byEmail.TryGetValue(email.ToLowerInvariant(), out var found))
+                ids.Add(found);
+            else
+                refusals.Add(new BulkRefusal(email, "No account has this email address."));
+        }
+        ids = ids.Distinct().ToList();
+
+        var people = await db.Users.AsNoTracking().Where(u => ids.Contains(u.Id))
+            .Select(u => new { u.Id, u.DisplayName, u.Email, u.Status })
+            .ToDictionaryAsync(u => u.Id);
+        var already = (await db.UserGroups.AsNoTracking()
+            .Where(ug => ug.GroupId == id && ids.Contains(ug.UserId)).Select(ug => ug.UserId).ToListAsync()).ToHashSet();
+
+        var added = new List<BulkPerson>();
+        var alreadyMembers = new List<BulkPerson>();
+        var now = DateTimeOffset.UtcNow;
+        foreach (var userId in ids)
+        {
+            if (!people.TryGetValue(userId, out var user))
+            {
+                refusals.Add(new BulkRefusal(userId.ToString(), "No such account."));
+                continue;
+            }
+            var person = new BulkPerson(user.Id, user.DisplayName, showEmail || user.Id == me ? user.Email : null,
+                user.Status == UserStatus.Active);
+            if (already.Contains(userId))
+            {
+                alreadyMembers.Add(person);
+                continue;
+            }
+            db.UserGroups.Add(new UserGroup { GroupId = id, UserId = userId, AddedAt = now });
+            if (group is { SpaceId: { } spaceId, SpaceRole: { } role })
+                audit.Record("space.group_member_added", "space", spaceId, new { GroupId = id, Role = role.ToString(), UserId = userId });
+            else
+                audit.Record("group.member_added", "group", id, new { UserId = userId, Group = group.Name });
+            if (BuiltInGroups.IsGlobal(id))
+                await detector.GlobalGroupMemberAddedAsync(me, id, group.Name, user.Id, user.DisplayName);
+            added.Add(person);
+        }
+        if (added.Count > 0) await db.SaveChangesAsync();
+
+        static List<BulkPerson> ByName(IEnumerable<BulkPerson> list) =>
+            list.OrderBy(p => p.DisplayName, StringComparer.OrdinalIgnoreCase).ToList();
+        return Results.Ok(new AddMembersResponse(ByName(added), ByName(alreadyMembers), refusals));
     }
 
     private static async Task<IResult> RemoveMember(
