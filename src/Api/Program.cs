@@ -162,6 +162,8 @@ builder.Services.AddHttpClient(Tesria.Api.Features.Admin.OsvClient.HttpClientNam
 builder.Services.AddSingleton<Tesria.Api.Features.Admin.IOsvClient, Tesria.Api.Features.Admin.OsvClient>();
 // Export progress (dev-plan 20.1): in memory, like the counters above.
 builder.Services.AddSingleton(new Tesria.Api.Features.Export.ExportProgress(TimeProvider.System));
+// Imports counted per person, refused ones not included (t6-016).
+builder.Services.AddSingleton(new Tesria.Api.Features.Export.ImportAllowance(TimeProvider.System));
 // Space exports prepared in the background, one at a time (dev-plan 20.2).
 builder.Services.AddSingleton<Tesria.Api.Features.Export.ExportJobQueue>();
 builder.Services.AddSingleton<Tesria.Api.Features.Export.ExportJobRunner>();
