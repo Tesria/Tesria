@@ -5,6 +5,25 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Search puts the best match first** (dev-plan 23.1). Results are ranked
+  by BM25 instead of PostgreSQL's ts_rank, the same for the search box,
+  `GET /api/search` and the MCP `search_pages` tool. A page with your words
+  in its title comes before pages that only mention them (t6-019), a rare
+  word counts for more than a common one, and a short page about something
+  beats a long page that mentions it in passing. The full-text index still
+  finds the matches, with no new extension and nothing extra for a small
+  machine to keep. Checked by searching each of the 203 DOCS titles: the
+  titled page now comes first for 189 of them, up from 125.
+- **Fixed: accents mattered in search** (t6-R02). "cafe" finds "café" and
+  "naive" finds "naïve", as the page tree's filter already did, and the
+  snippet keeps the page's own spelling.
+- **Fixed: search snippets were hard to read** (T5-026, T9-016, t6-021).
+  Mentions, dates and statuses are searched and shown as the page shows
+  them, so searching a person's name finds the pages that mention them. A
+  Mermaid diagram counts by the words in its boxes, not its source. Blocks
+  are separated with " · ", there is no stray space before punctuation, and
+  addresses keep their slashes. Every page's search text is rebuilt once on
+  upgrade (about a second for 261 pages).
 - **Messages people see first say what happened and what to do.**
   - A request that gets no answer says "Tesria could not be reached. Check
     your connection and try again." instead of the browser's "Failed to

@@ -6420,7 +6420,9 @@ questions are in `roadmap.md`.
 
 ### Phase 23: Search that scales (Automate)
 
-- **23.1** BM25 ranking, through the same API. · `M` · Model: Opus 5.5
+- **23.1** BM25 ranking, through the same API. · `M` · Model: Opus 5.5 · ✅
+  **built 2026-10-02, for 0.9** (BM25F, title weighted 8; one migration,
+  `SearchStatistics`, rebuilds the search column)
 - **23.2** Embeddings, bring your own or local, fitted to the machine. ·
   `L` · Model: Opus 5.5 · *design review* · later
 
