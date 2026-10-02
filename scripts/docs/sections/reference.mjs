@@ -431,6 +431,17 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
       li(p(b('One slow webhook receiver no longer holds up the others.'))),
       li(p(b('Install and backup fixes:'), ' Change Email is rate limited, the setup wizard keeps a saved public address, an example secret stays flagged until it is replaced, and a hand-run restore says how to undo it.')),
     ),
+
+    h(2, '0.8.6'),
+    p('Released October 1, 2026. Download the new ', c('tesria-deploy.zip'), ' and unzip it over your Tesria folder as usual; see ', pageLink('Upgrading'), '.'),
+    ul(
+      li(p(b('Space exports keep going when you leave the page.'), ' Prepare the Site and Prepare the Pack run on the server; ', b('Downloads'), ' in your notifications shows their progress, Cancel and Download, and the bell says when one is ready. See ', pageLink('A space as a website'), '.')),
+      li(p(b('A new page survives a crash.'), ' It is kept on your device until you publish it, and offered back with ', b('Restore It'), '.')),
+      li(p(b('The setup wizard picks up where you left off,'), ' with the answers you gave, and shows new recovery codes rather than confirming ones you never saw.')),
+      li(p(b('Export as PDF says Preparing PDF…'), ' until the file arrives, and colored text on a highlight is readable in every theme.')),
+      li(p(b('Safer upgrades and settings:'), ' an older Tesria no longer starts on a database a newer one has updated, live editing survives a database restart, and Require Two-Factor for Administrators waits until you have two-factor yourself.')),
+      li(p(b('Passwords:'), ' a common password with numbers, symbols or look-alike letters added, such as ', i('Password123!'), ', is refused.')),
+    ),
     h(2, '0.8.3'),
     p('Released September 30, 2026. New chart options and code block colors, and the rest of the fixes from the full test of 0.8.1. Download the new ', c('tesria-deploy.zip'), ' and unzip it over your Tesria folder as usual; see ', pageLink('Upgrading'), ', which now says to upgrade in that folder rather than a new one.'),
     ul(

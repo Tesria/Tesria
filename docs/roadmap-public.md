@@ -3,6 +3,14 @@
 
 ## Shipped
 
+### 0.8.6 (October 1, 2026)
+- Space exports keep going when you leave the page, with progress and downloads in the notifications
+- A new page is kept on your device until you publish it, so a browser crash no longer loses it
+- The setup wizard picks up where you left off and keeps the answers you gave
+- Export as PDF shows that it is being prepared, and colored text on a highlight is readable in every theme
+- Fixed: an older Tesria no longer starts on a database a newer one has updated, and live editing survives a database restart
+- Fixed: requiring two-factor for administrators can no longer lock out whoever turns it on
+
 ### 0.8.5 (September 30, 2026)
 - Fixed: every medium-severity issue from the final pre-launch test, across live editing, the API, backups, installs and webhooks
 - Fixed: an AI assistant's change right after someone closes a page is no longer shown as a change to review
@@ -31,14 +39,6 @@
 - Fixed: a second Tesria on the same computer can no longer take over the first
 - Fixed: imported wiki packs keep their page order, and Markdown keeps statuses, dates and mentions in tables
 - Fixed: five security issues found in testing, including webhooks and password reset links
-
-### 0.8.1 (September 28, 2026)
-- Two looks, chosen by each person: Minimal, or Glass, a frosted design with a floating sidebar
-- Reduce Motion for Glass, and a Minimal, Glass or Theme Default style for statuses, charts, code blocks and diagrams
-- A tidier top bar that folds into one menu when space runs short, and tabs that never scroll sideways
-- The breadcrumb stays at the top of a page, and a deep trail folds into a menu
-- Exported sites offer Glass too, and keep their folder names short enough for Windows
-- Fixed: the page list in the phone menu scrolls, and keeps its place when the keyboard closes
 
 ## Next
 - Default groups for every space, and guided setup for new spaces and new people

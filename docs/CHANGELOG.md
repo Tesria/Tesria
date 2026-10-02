@@ -5,6 +5,12 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.8.6] - 2026-10-01
+
+Space exports that keep going after you leave the page, the most useful of
+the Lows from the 0.8.3 retest, and the setup wizard picking up where it was
+left.
+
 - **Docs: what is encrypted on the server, and what is not** (T1-035
   follow-up). The backup docs, the security doc and its checklist now say
   that the nightly dumps are plain on purpose, beside a database and uploads
