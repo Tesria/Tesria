@@ -3854,6 +3854,9 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
    Short of the full width by the separator (or the space's icon) before it,
    so the two stay on one line. */
 .breadcrumb__label { display: inline-block; max-width: calc(100% - 1.75rem); vertical-align: bottom; }
+/* Docked, the trail is its own width (a percentage of that cut every crumb
+   short); it docks only when the whole of it fits, so nothing needs cutting. */
+.breadcrumb[data-dock] .breadcrumb__label { max-width: none; }
 .breadcrumb__menu a { overflow-wrap: anywhere; }
 .breadcrumb__menu { max-width: min(28rem, calc(100vw - 1.5rem)); }
 /* The space key badge on search and label results is its text's width, not
