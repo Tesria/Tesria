@@ -3,6 +3,10 @@
 
 ## Shipped
 
+### 0.8.7 (October 1, 2026)
+- Fixed: the page filter in an exported site has a clear button again, like the one in the app
+- Dragging pages in the page tree uses the newest version of its library, checked on phones and desktops
+
 ### 0.8.6 (October 1, 2026)
 - Space exports keep going when you leave the page, with progress and downloads in the notifications
 - A new page is kept on your device until you publish it, so a browser crash no longer loses it
@@ -29,16 +33,6 @@
 - Fixed: every remaining issue of medium severity from the pre-launch test, across backups, editing, exports and the API
 - Fixed: dragging a chart or an embed no longer drops stray text into the page
 - Fixed: a trial copy of Tesria can no longer take over an install from before 0.8.2
-
-### 0.8.2 (September 30, 2026)
-- Fixed: backups to the cloud now happen, and restoring to a chosen moment works from the admin page, with attachments
-- Fixed: a missing network drive or a wrong cloud setting no longer stops backups; each card says what is wrong
-- Fixed: a slow webhook receiver no longer restarts the wiki, and Tesria restarts itself if it starts before its database
-- Fixed: Close asks before leaving unpublished changes, and a shared draft shows whose changes it holds, with Discard
-- Fixed: an AI assistant's change no longer overwrites what you are typing in the same paragraph
-- Fixed: a second Tesria on the same computer can no longer take over the first
-- Fixed: imported wiki packs keep their page order, and Markdown keeps statuses, dates and mentions in tables
-- Fixed: five security issues found in testing, including webhooks and password reset links
 
 ## Next
 - Default groups for every space, and guided setup for new spaces and new people

@@ -442,6 +442,13 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
       li(p(b('Safer upgrades and settings:'), ' an older Tesria no longer starts on a database a newer one has updated, live editing survives a database restart, and Require Two-Factor for Administrators waits until you have two-factor yourself.')),
       li(p(b('Passwords:'), ' a common password with numbers, symbols or look-alike letters added, such as ', i('Password123!'), ', is refused.')),
     ),
+
+    h(2, '0.8.7'),
+    p('Released October 1, 2026, the same day as 0.8.6. Download the new ', c('tesria-deploy.zip'), ' and unzip it over your Tesria folder as usual; see ', pageLink('Upgrading'), '.'),
+    ul(
+      li(p(b('An exported site’s page filter can be cleared'), ' with the same button as in the app. It was missing, and the browser’s own was hidden.')),
+      li(p(b('The page tree’s drag and drop'), ' uses the newest version of its library, checked on phones and desktops.')),
+    ),
     h(2, '0.8.3'),
     p('Released September 30, 2026. New chart options and code block colors, and the rest of the fixes from the full test of 0.8.1. Download the new ', c('tesria-deploy.zip'), ' and unzip it over your Tesria folder as usual; see ', pageLink('Upgrading'), ', which now says to upgrade in that folder rather than a new one.'),
     ul(

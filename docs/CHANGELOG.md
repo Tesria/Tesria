@@ -5,6 +5,11 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.8.7] - 2026-10-01
+
+A small update: the clear button an exported site's page filter was missing,
+and the page tree's drag library brought up to date.
+
 - **Fixed: an exported site's page filter had no clear button.** The app's
   filter gained one in 0.8.1, but the site's sidebar is built separately and
   was missed, and the stylesheet hides the browser's own. It now has the
