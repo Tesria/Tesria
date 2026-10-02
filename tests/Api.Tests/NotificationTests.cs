@@ -178,8 +178,7 @@ public class NotificationTests
 
         // Lock the space to Alice only: Bob's existing notification for this
         // page must disappear rather than keep exposing its title/metadata.
-        await alice.PostAsJsonAsync($"/api/spaces/{key}/permissions",
-            new { PrincipalType = User, PrincipalId = aliceId, Operation = Admin });
+        await alice.MakePrivateAsync(key);
 
         var after = await bob.GetFromJsonAsync<List<NotificationRow>>("/api/notifications");
         Assert.DoesNotContain(after!, n => n.TargetId == page.Id);
@@ -196,8 +195,7 @@ public class NotificationTests
         var key = spaces!.Single(s => s.Id == spaceId).Key;
         var page = await NewPage(alice, spaceId, "Hidden From Bob");
 
-        await alice.PostAsJsonAsync($"/api/spaces/{key}/permissions",
-            new { PrincipalType = User, PrincipalId = aliceId, Operation = Admin });
+        await alice.MakePrivateAsync(key);
 
         var bob = factory.CreateClient();
         await bob.RegisterAndSignInAsync();

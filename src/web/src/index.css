@@ -479,6 +479,14 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .principal-picker select { width: auto; min-width: 130px; height: 34px; padding: 0 0.5rem; }
 .restrictions .principal-picker { margin: 0.75rem 0; }
 
+/* A space's Permissions tab (dev-plan 21.1). */
+.space-access__everyone { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; font-size: 0.95rem; color: var(--text); }
+.space-access__everyone select { width: auto; min-width: 150px; height: 34px; padding: 0 0.5rem; }
+.space-access .principal-picker { margin: 0.75rem 0; }
+.space-group { margin: 0.75rem 0; }
+.space-group__name { font-size: 1rem; margin: 0 0 0.15rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+.space-group .attachment-list { margin: 0.5rem 0; }
+
 /* No max-width: flex: 1 lets the box take every pixel between the nav and
    the right-hand cluster, so it grows with the viewport instead of stalling
    at a fixed width and leaving a dead gap. The intrinsic <input> width

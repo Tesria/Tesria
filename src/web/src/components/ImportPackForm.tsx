@@ -90,8 +90,8 @@ export function ImportPackForm({ onImported }: { onImported: () => void }) {
             whoever imported it, and this is the moment to say who else. */}
         <h2 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>Who Should Have Access?</h2>
         <p className="muted small">
-          For now only you can see {result.name}. Give access to people or groups: the Users group
-          is everyone with an account. You can change this later in the space’s settings, under Permissions.
+          For now only you can see {result.name}: you are in its Admins group. Choose what everyone signed in
+          may do, or add people to its groups. You can change this later in the space’s settings, under Permissions.
         </p>
         <SpaceAccessEditor spaceKey={result.key} />
         <Link className="btn btn--primary" to={`/spaces/${result.key}`}>

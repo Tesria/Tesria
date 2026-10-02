@@ -3,6 +3,7 @@ using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Audit;
 using Tesria.Api.Infrastructure.Auth;
 using Tesria.Api.Infrastructure.Permissions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace Tesria.Api.Features.Groups;
@@ -11,14 +12,24 @@ public static class GroupEndpoints
 {
     public record SaveGroupRequest(string Name, string? Description);
     public record AddMemberRequest(Guid UserId);
-    public record GroupResponse(Guid Id, string Name, string? Description, int MemberCount, bool BuiltIn = false);
+
+    /// <param name="BuiltIn">One of the five every instance has: never renamed or deleted.</param>
+    /// <param name="Computed">Owner, Admins or Users: members follow each account's role, so none are added or removed.</param>
+    /// <param name="SpaceId">For one of a space's four groups (dev-plan 21.1): the space it belongs to.</param>
+    /// <param name="SpaceKey">Likewise, its key.</param>
+    /// <param name="SpaceRole">Likewise, which of the four it is.</param>
+    public record GroupResponse(
+        Guid Id, string Name, string? Description, int MemberCount, bool BuiltIn = false,
+        bool Computed = false, Guid? SpaceId = null, string? SpaceKey = null, SpaceGroupRole? SpaceRole = null);
     /// <summary>
     /// <c>Email</c> is filled only for callers who may see the user list, and
     /// for the caller's own row (dev-plan 14.1): everyone else gets names and
     /// avatars, which is all mentions, pickers and member lists need. Before,
-    /// every signed-in account could collect every address.
+    /// every signed-in account could collect every address. <c>Active</c> is
+    /// false for a suspended account, which keeps its memberships but gets
+    /// nothing from them (21.1).
     /// </summary>
-    public record MemberResponse(Guid UserId, string? Email, string DisplayName);
+    public record MemberResponse(Guid UserId, string? Email, string DisplayName, bool Active = true);
     public record UserResponse(
         Guid Id, string? Email, string DisplayName, string? AvatarHash, int? AvatarVariant);
 
@@ -26,17 +37,20 @@ public static class GroupEndpoints
     {
         var groups = routes.MapGroup("/groups").WithTags("Groups").RequireAuthorization();
         // Anyone signed in may see groups: the permission picker needs the
-        // list. Shaping them is instance administration.
+        // list. Shaping them is instance administration, except a space's own
+        // groups (21.1), which are hidden from anyone who cannot see the space.
         groups.MapGet("/", List).Produces<List<GroupResponse>>();
         groups.MapGet("/{id:guid}/members", Members).Produces<List<MemberResponse>>();
         var manage = groups.MapGroup("")
-            .RequireAuthorization(Infrastructure.Permissions.PermissionPolicyProvider.Prefix
-                + Infrastructure.Permissions.InstancePermissions.GroupsManage);
+            .RequireAuthorization(PermissionPolicyProvider.Prefix + InstancePermissions.GroupsManage);
         manage.MapPost("/", Create).Produces<GroupResponse>(StatusCodes.Status201Created);
         manage.MapPut("/{id:guid}", Update).Produces<GroupResponse>();
         manage.MapDelete("/{id:guid}", Delete).Produces(StatusCodes.Status204NoContent);
-        manage.MapPost("/{id:guid}/members", AddMember).Produces(StatusCodes.Status204NoContent);
-        manage.MapDelete("/{id:guid}/members/{userId:guid}", RemoveMember).Produces(StatusCodes.Status204NoContent);
+        // Membership is checked in the handler, because who may change it
+        // depends on the group (21.1): Manage Groups for global and custom
+        // groups, the space's administrators for a space's own.
+        groups.MapPost("/{id:guid}/members", AddMember).Produces(StatusCodes.Status204NoContent);
+        groups.MapDelete("/{id:guid}/members/{userId:guid}", RemoveMember).Produces(StatusCodes.Status204NoContent);
 
         // Directory of accounts, used when picking permission principals.
         routes.MapGet("/users", ListUsers).WithTags("Users").RequireAuthorization().Produces<List<UserResponse>>();
@@ -58,25 +72,51 @@ public static class GroupEndpoints
             u.AvatarKey is null ? null : u.AvatarHash, u.AvatarVariant)));
     }
 
-    private static async Task<IResult> List(AppDbContext db)
+    private static async Task<IResult> List(AppDbContext db, IPermissionService perms)
     {
         var rows = await db.Groups.AsNoTracking()
-            .OrderBy(g => g.Name)
-            .Select(g => new GroupResponse(g.Id, g.Name, g.Description, g.Members.Count, false))
+            .Select(g => new
+            {
+                g.Id, g.Name, g.Description, Count = g.Members.Count, g.SpaceId, g.SpaceRole,
+                SpaceKey = g.Space != null ? g.Space.Key : null,
+                SpaceName = g.Space != null ? g.Space.Name : null,
+            })
             .ToListAsync();
-        // The built-in groups first, counted from the accounts they follow.
+        // A space's groups only for spaces the caller can see (21.1), the
+        // same rule as the space itself: their names say the space's name.
+        var viewable = rows.Any(r => r.SpaceId is not null) ? await perms.ViewableSpaceIdsAsync() : [];
+
         var result = new List<GroupResponse>();
-        foreach (var id in new[] { BuiltInGroups.OwnerId, BuiltInGroups.AdminsId, BuiltInGroups.UsersId })
+        // The built-in groups first; the computed ones counted from the accounts they follow.
+        foreach (var id in BuiltInGroups.InOrder)
             if (rows.FirstOrDefault(r => r.Id == id) is { } g)
-                result.Add(g with { MemberCount = await BuiltInGroups.Members(db, id).CountAsync(), BuiltIn = true });
-        result.AddRange(rows.Where(r => !BuiltInGroups.IsBuiltIn(r.Id)));
+                result.Add(new GroupResponse(g.Id, g.Name, g.Description,
+                    BuiltInGroups.IsComputed(id) ? await BuiltInGroups.Members(db, id).CountAsync() : g.Count,
+                    BuiltIn: true, Computed: BuiltInGroups.IsComputed(id)));
+        result.AddRange(rows
+            .Where(r => !BuiltInGroups.IsBuiltIn(r.Id) && (r.SpaceId is null || viewable.Contains(r.SpaceId.Value)))
+            .Select(r => r is { SpaceRole: { } role, SpaceName: { } spaceName }
+                ? new GroupResponse(r.Id, SpaceGroups.DisplayName(spaceName, role), r.Description, r.Count,
+                    SpaceId: r.SpaceId, SpaceKey: r.SpaceKey, SpaceRole: role)
+                : new GroupResponse(r.Id, r.Name, r.Description, r.Count))
+            .OrderBy(g => g.Name, StringComparer.OrdinalIgnoreCase));
         return Results.Ok(result);
     }
 
-    /// <summary>The refusal for anything that would change a built-in group.</summary>
+    /// <summary>The refusal for anything that would change a computed built-in group.</summary>
     private static IResult BuiltInRefusal() => Results.Conflict(new
     {
         message = "Owner, Admins and Users are built in: their members follow each account's role, and they cannot be renamed or deleted.",
+    });
+
+    private static IResult GlobalRefusal() => Results.Conflict(new
+    {
+        message = "Global Viewers and Global Reviewers are built in: choose who is in them, but they cannot be renamed or deleted.",
+    });
+
+    private static IResult SpaceGroupRefusal() => Results.Conflict(new
+    {
+        message = "A space's own groups belong to it: they are named after the space, go when it does, and their members are chosen in the space's Permissions tab.",
     });
 
     private static async Task<IResult> Create(
@@ -87,7 +127,7 @@ public static class GroupEndpoints
             return Results.ValidationProblem(Error("name", "Group name is required."));
 
         var normalized = name.ToLowerInvariant();
-        if (await db.Groups.AnyAsync(g => g.NormalizedName == normalized))
+        if (await db.Groups.AnyAsync(g => g.NormalizedName == normalized && g.SpaceId == null))
             return Results.Conflict(new { message = $"A group named '{name}' already exists." });
 
         var group = new Group
@@ -108,16 +148,19 @@ public static class GroupEndpoints
     private static async Task<IResult> Update(
         Guid id, SaveGroupRequest req, AppDbContext db, IAuditLogger audit)
     {
-        if (BuiltInGroups.IsBuiltIn(id)) return BuiltInRefusal();
+        if (BuiltInGroups.IsComputed(id)) return BuiltInRefusal();
+        if (BuiltInGroups.IsGlobal(id)) return GlobalRefusal();
         var group = await db.Groups.FirstOrDefaultAsync(g => g.Id == id);
+        // Manage Groups does not reach a space's groups (21.1).
         if (group is null) return Results.NotFound();
+        if (group.SpaceId is not null) return SpaceGroupRefusal();
 
         var name = (req.Name ?? "").Trim();
         if (name.Length == 0)
             return Results.ValidationProblem(Error("name", "Group name is required."));
 
         var normalized = name.ToLowerInvariant();
-        if (await db.Groups.AnyAsync(g => g.NormalizedName == normalized && g.Id != id))
+        if (await db.Groups.AnyAsync(g => g.NormalizedName == normalized && g.SpaceId == null && g.Id != id))
             return Results.Conflict(new { message = $"A group named '{name}' already exists." });
 
         group.Name = name;
@@ -130,33 +173,30 @@ public static class GroupEndpoints
         return Results.Ok(new GroupResponse(group.Id, group.Name, group.Description, count));
     }
 
-    private static async Task<IResult> Delete(Guid id, AppDbContext db, IAuditLogger audit)
+    private static async Task<IResult> Delete(Guid id, AppDbContext db, IAuditLogger audit, IPermissionService perms)
     {
-        if (BuiltInGroups.IsBuiltIn(id)) return BuiltInRefusal();
+        if (BuiltInGroups.IsComputed(id)) return BuiltInRefusal();
+        if (BuiltInGroups.IsGlobal(id)) return GlobalRefusal();
         var group = await db.Groups.FirstOrDefaultAsync(g => g.Id == id);
         if (group is null) return Results.NotFound();
+        if (group.SpaceId is not null) return SpaceGroupRefusal();
 
         // A group's grants go with it; they used to stay behind, pointing at
-        // nothing (found 2026-09-23). But removing a grant can open things
-        // up: a space whose only grant was this group would become open to
-        // everyone, and a page whose only View restriction was this group
-        // would become readable by everyone in its space. Those are refused,
-        // with where, rather than done quietly.
+        // nothing (found 2026-09-23). Since 21.1 removing a grant can no
+        // longer open a space (what everyone signed in gets is its own
+        // setting), but it can still take a space's last administrator, and
+        // removing a page's only View restriction would still make the page
+        // readable by everyone in its space. Those are refused, with where,
+        // rather than done quietly.
         var grants = await db.SpacePermissions
             .Where(p => p.PrincipalType == PrincipalType.Group && p.PrincipalId == id).ToListAsync();
         var restrictions = await db.PageRestrictions
             .Where(r => r.PrincipalType == PrincipalType.Group && r.PrincipalId == id).ToListAsync();
 
         var blocked = new List<string>();
-        foreach (var spaceId in grants.Select(g => g.SpaceId).Distinct())
-        {
-            var others = await db.SpacePermissions
-                .Where(p => p.SpaceId == spaceId && !(p.PrincipalType == PrincipalType.Group && p.PrincipalId == id))
-                .Select(p => p.Operation).ToListAsync();
-            var holdsAdmin = grants.Any(g => g.SpaceId == spaceId && g.Operation == SpaceOperation.Admin);
-            if (others.Count == 0 || (holdsAdmin && !others.Contains(SpaceOperation.Admin)))
-                blocked.Add("the space " + await db.Spaces.Where(s => s.Id == spaceId).Select(s => s.Name).FirstAsync());
-        }
+        foreach (var spaceId in grants.Where(g => g.Operation == SpaceOperation.Admin).Select(g => g.SpaceId).Distinct())
+            if (!await SpaceGroups.HasAdminAfterAsync(db, spaceId, new SpaceGroups.AdminLoss(DeletedGroupId: id)))
+                blocked.Add(await SpaceLabelAsync(db, perms, spaceId) + " (its last administrator)");
         foreach (var r in restrictions)
         {
             var anotherOfSameKind = await db.PageRestrictions.AnyAsync(o => o.PageId == r.PageId && o.Operation == r.Operation
@@ -169,7 +209,7 @@ public static class GroupEndpoints
             {
                 message = $"{group.Name} is the only access to {string.Join(", ", blocked.Distinct().Take(5))}"
                     + (blocked.Distinct().Count() > 5 ? " and more" : "")
-                    + ". Give that access to someone else first, or deleting the group would open it up.",
+                    + ". Give that access to someone else first, or deleting the group would leave it without.",
             });
 
         db.SpacePermissions.RemoveRange(grants);
@@ -180,30 +220,72 @@ public static class GroupEndpoints
         return Results.NoContent();
     }
 
-    private static async Task<IResult> Members(Guid id, AppDbContext db, CurrentUser current, IInstancePermissions rights)
+    /// <summary>A space by name if the caller can see it; otherwise without saying which.</summary>
+    private static async Task<string> SpaceLabelAsync(AppDbContext db, IPermissionService perms, Guid spaceId) =>
+        await perms.CanViewSpaceAsync(spaceId)
+            ? "the space " + await db.Spaces.Where(s => s.Id == spaceId).Select(s => s.Name).FirstAsync()
+            : "a space you cannot see";
+
+    private static async Task<IResult> Members(
+        Guid id, AppDbContext db, CurrentUser current, IInstancePermissions rights, IPermissionService perms)
     {
-        if (!await db.Groups.AnyAsync(g => g.Id == id)) return Results.NotFound();
+        var group = await db.Groups.AsNoTracking().Where(g => g.Id == id).Select(g => new { g.SpaceId }).FirstOrDefaultAsync();
+        if (group is null) return Results.NotFound();
+        // A space's group is as hidden as its space (21.1).
+        if (group.SpaceId is { } spaceId && !await perms.CanViewSpaceAsync(spaceId)) return Results.NotFound();
         var showEmail = await rights.HasAsync(InstancePermissions.UsersView);
         var me = current.RequireId();
         MemberResponse Shown(MemberResponse m) => showEmail || m.UserId == me ? m : m with { Email = null };
-        if (BuiltInGroups.IsBuiltIn(id))
+        if (BuiltInGroups.IsComputed(id))
             return Results.Ok((await BuiltInGroups.Members(db, id).AsNoTracking()
                 .OrderBy(u => u.DisplayName)
-                .Select(u => new MemberResponse(u.Id, u.Email, u.DisplayName))
+                .Select(u => new MemberResponse(u.Id, u.Email, u.DisplayName, true))
                 .ToListAsync()).Select(Shown));
         var members = await db.UserGroups.AsNoTracking()
             .Where(ug => ug.GroupId == id)
-            .Select(ug => new MemberResponse(ug.UserId, ug.User!.Email, ug.User.DisplayName))
+            .Select(ug => new MemberResponse(ug.UserId, ug.User!.Email, ug.User.DisplayName, ug.User.Status == UserStatus.Active))
             .ToListAsync();
         return Results.Ok(members.OrderBy(m => m.DisplayName).Select(Shown));
     }
 
-    private static async Task<IResult> AddMember(
-        Guid id, AddMemberRequest req, AppDbContext db, IAuditLogger audit)
+    /// <summary>
+    /// Who may change a group's members (dev-plan 21.1), or the refusal. A
+    /// space's groups are its administrators': its Admins group only its
+    /// explicit ones, because in a space everyone signed in may administer,
+    /// anyone could otherwise add themselves to Admins and pass every page
+    /// restriction. Every other group is Manage Groups', which does not
+    /// reach a space's groups; Global Viewers and Global Reviewers also need
+    /// the password again, since each member reads every space.
+    /// </summary>
+    private static async Task<IResult?> MembershipRefusalAsync(
+        Group group, IPermissionService perms, IAuthorizationService auth, HttpContext http, IConfiguration config)
     {
-        if (BuiltInGroups.IsBuiltIn(id)) return BuiltInRefusal();
-        if (!await db.Groups.AnyAsync(g => g.Id == id)) return Results.NotFound();
-        if (!await db.Users.AnyAsync(u => u.Id == req.UserId))
+        if (BuiltInGroups.IsComputed(group.Id)) return BuiltInRefusal();
+        if (group.SpaceId is { } spaceId)
+        {
+            if (!await perms.CanViewSpaceAsync(spaceId)) return Results.NotFound();
+            if (group.SpaceRole == SpaceGroupRole.Admins)
+                return await perms.IsExplicitSpaceAdminAsync(spaceId) ? null : Tesria.Api.Features.Permissions.PermissionEndpoints.ExplicitAdminRefusal();
+            return await perms.CanAdminSpaceAsync(spaceId) ? null : Results.Forbid();
+        }
+        if (!(await auth.AuthorizeAsync(http.User, PermissionPolicyProvider.Prefix + InstancePermissions.GroupsManage)).Succeeded)
+            return Results.Forbid();
+        if (BuiltInGroups.IsGlobal(group.Id) && Features.Auth.AuthEndpoints.RequireSudo(http, config, Features.Auth.SudoReasons.GlobalReaders) is { } denied)
+            return denied;
+        return null;
+    }
+
+    private static async Task<IResult> AddMember(
+        Guid id, AddMemberRequest req, AppDbContext db, IAuditLogger audit, IPermissionService perms,
+        IAuthorizationService auth, HttpContext http, IConfiguration config, CurrentUser current,
+        Infrastructure.Security.ISecurityDetector detector)
+    {
+        var group = await db.Groups.AsNoTracking().FirstOrDefaultAsync(g => g.Id == id);
+        if (group is null) return Results.NotFound();
+        if (await MembershipRefusalAsync(group, perms, auth, http, config) is { } refused) return refused;
+        var user = await db.Users.AsNoTracking().Where(u => u.Id == req.UserId)
+            .Select(u => new { u.Id, u.DisplayName }).FirstOrDefaultAsync();
+        if (user is null)
             return Results.ValidationProblem(Error("userId", "User not found."));
 
         if (!await db.UserGroups.AnyAsync(ug => ug.GroupId == id && ug.UserId == req.UserId))
@@ -214,21 +296,47 @@ public static class GroupEndpoints
                 UserId = req.UserId,
                 AddedAt = DateTimeOffset.UtcNow,
             });
-            audit.Record("group.member_added", "group", id, new { req.UserId });
+            if (group is { SpaceId: { } spaceId, SpaceRole: { } role })
+                // Recorded against the space, so the audit log hides it from
+                // anyone who cannot see the space, as for its other entries.
+                audit.Record("space.group_member_added", "space", spaceId, new { GroupId = id, Role = role.ToString(), req.UserId });
+            else
+                audit.Record("group.member_added", "group", id, new { req.UserId, Group = group.Name });
+            if (BuiltInGroups.IsGlobal(id))
+                await detector.GlobalGroupMemberAddedAsync(current.RequireId(), id, group.Name, user.Id, user.DisplayName);
             await db.SaveChangesAsync();
         }
         return Results.NoContent();
     }
 
     private static async Task<IResult> RemoveMember(
-        Guid id, Guid userId, AppDbContext db, IAuditLogger audit)
+        Guid id, Guid userId, AppDbContext db, IAuditLogger audit, IPermissionService perms,
+        IAuthorizationService auth, HttpContext http, IConfiguration config)
     {
-        if (BuiltInGroups.IsBuiltIn(id)) return BuiltInRefusal();
+        var group = await db.Groups.AsNoTracking().FirstOrDefaultAsync(g => g.Id == id);
+        if (group is null) return Results.NotFound();
+        if (await MembershipRefusalAsync(group, perms, auth, http, config) is { } refused) return refused;
         var link = await db.UserGroups.FirstOrDefaultAsync(ug => ug.GroupId == id && ug.UserId == userId);
         if (link is null) return Results.NotFound();
 
+        // The last-admin rule (21.1): a group holding Admin somewhere, the
+        // space's own Admins group included, keeps its last active member.
+        var adminSpaces = await db.SpacePermissions.AsNoTracking()
+            .Where(p => p.PrincipalType == PrincipalType.Group && p.PrincipalId == id && p.Operation == SpaceOperation.Admin)
+            .Select(p => p.SpaceId).Distinct().ToListAsync();
+        foreach (var spaceId in adminSpaces)
+            if (!await SpaceGroups.HasAdminAfterAsync(db, spaceId,
+                    new SpaceGroups.AdminLoss(RemovedFromGroupId: id, RemovedUserId: userId)))
+                return Results.Conflict(new
+                {
+                    message = $"That would leave {await SpaceLabelAsync(db, perms, spaceId)} without an administrator. Add another one first.",
+                });
+
         db.UserGroups.Remove(link);
-        audit.Record("group.member_removed", "group", id, new { UserId = userId });
+        if (group is { SpaceId: { } owner, SpaceRole: { } role })
+            audit.Record("space.group_member_removed", "space", owner, new { GroupId = id, Role = role.ToString(), UserId = userId });
+        else
+            audit.Record("group.member_removed", "group", id, new { UserId = userId, Group = group.Name });
         await db.SaveChangesAsync();
         return Results.NoContent();
     }

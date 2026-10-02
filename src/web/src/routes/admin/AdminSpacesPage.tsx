@@ -80,7 +80,8 @@ export function AdminSpacesPage() {
   /**
    * Administrators do not bypass space permissions, so reaching a private
    * space they hold no grant for is a deliberate, audited act that leaves an
-   * ordinary grant behind, which anyone with the space's admin can revoke.
+   * ordinary membership of its Admins group behind (dev-plan 21.1), which the
+   * space's administrators can remove.
    */
   async function recoverAccess(s: AdminSpace) {
     const ok = await ask({
@@ -89,8 +90,8 @@ export function AdminSpacesPage() {
       body: (
         <>
           <p>You will be added to the space as an administrator, so you can read it and manage its permissions.</p>
-          <p>This is recorded in the audit log. The grant is an ordinary one: remove it from the space's Permissions tab when you are done.</p>
-          <p>A space that is open to everyone already lets you in, and is left exactly as it is.</p>
+          <p>This is recorded in the audit log. You join the space's Admins group: remove yourself from it in the space's Permissions tab when you are done.</p>
+          <p>A space that is open to everyone and has administrators of its own already lets you in, and is left exactly as it is.</p>
         </>
       ),
     })
@@ -102,7 +103,7 @@ export function AdminSpacesPage() {
       const r = await api.admin.spaces.recoverAccess(s.key)
       setNotice(r.alreadyHadAccess
         ? `You already have access to ${s.name}; nothing was changed.`
-        : `You now administer ${s.name}. The grant is recorded in the audit log.`)
+        : `You now administer ${s.name}, as a member of its Admins group. This is recorded in the audit log.`)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not give you access.')
     } finally {

@@ -122,8 +122,7 @@ public class McpToolTests
         var carol = w.F.CreateClient();
         var carolId = await carol.RegisterAndSignInAsync();
         // Lock the space down to Alice only.
-        (await w.Alice.PostAsJsonAsync("/api/spaces/TOOLS/permissions",
-            new { PrincipalType = User, PrincipalId = w.AliceId, Operation = View })).EnsureSuccessStatusCode();
+        await w.Alice.MakePrivateAsync("TOOLS");
 
         Assert.Contains("not found", Error(await Call(await Mcp(w.F, carol), "get_space_tree", new { spaceKey = "TOOLS" })));
         GC.KeepAlive(carolId);

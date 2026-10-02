@@ -89,8 +89,8 @@ public class InlineCommentTests
         var space = (await (await alice.PostAsJsonAsync("/api/spaces",
             new { Key = "INL", Name = "Inline", Description = (string?)null }))
             .Content.ReadFromJsonAsync<SpaceDto>())!;
-        (await alice.PostAsJsonAsync("/api/spaces/INL/permissions",
-            new { PrincipalType = User, PrincipalId = aliceId, Operation = 2 })).EnsureSuccessStatusCode();
+        // Closed to everyone else (dev-plan 21.1); Alice made it, so she is in its Admins.
+        await alice.MakePrivateAsync("INL");
         (await alice.PostAsJsonAsync("/api/spaces/INL/permissions",
             new { PrincipalType = User, PrincipalId = bobId, Operation = View })).EnsureSuccessStatusCode();
         var page = (await (await alice.PostAsJsonAsync("/api/pages",

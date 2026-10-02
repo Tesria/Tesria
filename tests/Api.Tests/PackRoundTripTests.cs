@@ -230,11 +230,19 @@ public class PackRoundTripTests
         Assert.False(space.IsPublic);
         Assert.False(space.Archived);
         Assert.Null(space.PublicSince);
-        // One grant: the importer, as its administrator (dev-plan 15.1). The
-        // source's grants and restrictions name people elsewhere and never travel.
-        var grant = await db.SpacePermissions.SingleAsync(p => p.SpaceId == space.Id);
-        Assert.Equal(importerId, grant.PrincipalId);
-        Assert.Equal(SpaceOperation.Admin, grant.Operation);
+        // Its four groups, with the importer alone in Admins (dev-plan 15.1,
+        // 21.1), and nothing for anyone else: not everyone signed in, and no
+        // grant to a person. The source's grants and restrictions name people
+        // elsewhere and never travel.
+        Assert.Null(space.EveryoneAccess);
+        var groups = await db.Groups.Where(g => g.SpaceId == space.Id).ToListAsync();
+        Assert.Equal(4, groups.Count);
+        var admins = groups.Single(g => g.SpaceRole == SpaceGroupRole.Admins);
+        var groupIds = groups.Select(g => g.Id).ToList();
+        Assert.Equal([importerId], await db.UserGroups.Where(ug => ug.GroupId == admins.Id).Select(ug => ug.UserId).ToListAsync());
+        Assert.False(await db.UserGroups.AnyAsync(ug => ug.GroupId != admins.Id && groupIds.Contains(ug.GroupId)));
+        Assert.All(await db.SpacePermissions.Where(p => p.SpaceId == space.Id).ToListAsync(),
+            p => Assert.Contains(p.PrincipalId, groupIds));
         Assert.Equal(System.Net.HttpStatusCode.NotFound, (await author.GetAsync("/api/spaces/DEST")).StatusCode);
         Assert.Equal(0, await db.PageRestrictions.CountAsync(
             r => db.Pages.Where(p => p.SpaceId == space.Id).Select(p => p.Id).Contains(r.PageId)));

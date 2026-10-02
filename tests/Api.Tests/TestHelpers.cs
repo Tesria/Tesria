@@ -39,4 +39,24 @@ internal static class TestHelpers
     }
 
     public record SpaceDto(Guid Id, string Key, string Name);
+
+    /// <summary>
+    /// Closes a space to everyone signed in (dev-plan 21.1), leaving only its
+    /// groups and grants: its creator is in its Admins group. Before 21.1 the
+    /// first grant did this, which is what most tests that lock a space down
+    /// were relying on.
+    /// </summary>
+    public static async Task MakePrivateAsync(this HttpClient client, string key)
+    {
+        var res = await client.PutAsJsonAsync($"/api/spaces/{key}/permissions/everyone", new { Access = (int?)null });
+        res.EnsureSuccessStatusCode();
+    }
+
+    /// <summary>The id of one of a space's four groups (21.1): 0 Viewers, 1 Editors, 2 Admins, 3 Reviewers.</summary>
+    public static async Task<Guid> SpaceGroupAsync(this HttpClient client, string key, int role)
+    {
+        var access = await client.GetFromJsonAsync<System.Text.Json.JsonElement>($"/api/spaces/{key}/permissions");
+        return access.GetProperty("groups").EnumerateArray()
+            .Single(g => g.GetProperty("role").GetInt32() == role).GetProperty("id").GetGuid();
+    }
 }

@@ -17,7 +17,7 @@ namespace Tesria.Api.Infrastructure.Collab;
 /// signed out everywhere, two-factor turned off) or role: their connections;</item>
 /// <item>a session revoked: its user's connections;</item>
 /// <item>a group membership: that user's;</item>
-/// <item>a space permission: that space's pages;</item>
+/// <item>a space permission, or what everyone signed in may do in a space: that space's pages;</item>
 /// <item>a page restriction: the pages of that page's space (restrictions
 /// inherit, and closing a few extra connections costs a reconnect);</item>
 /// <item>a group deleted, or a role's rights changed: everyone's.</item>
@@ -27,6 +27,25 @@ public sealed class CollabRevocationInterceptor(IServiceScopeFactory scopes, ILo
     : SaveChangesInterceptor
 {
     private readonly ConditionalWeakTable<DbContext, List<CollabRevocation>> _pending = new();
+
+    private static readonly AsyncLocal<bool> Quiet = new();
+
+    /// <summary>
+    /// Saves inside the returned scope revoke nothing. Only for changes that
+    /// keep everyone's access exactly as it was: the 21.1 seed moves grants
+    /// into groups at start, before anyone is connected, and a call per space
+    /// to a sidecar that may not be up yet would only slow the start down.
+    /// </summary>
+    public static IDisposable Suppressed()
+    {
+        Quiet.Value = true;
+        return new Restore();
+    }
+
+    private sealed class Restore : IDisposable
+    {
+        public void Dispose() => Quiet.Value = false;
+    }
 
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData, InterceptionResult<int> result, CancellationToken ct = default)
@@ -82,6 +101,10 @@ public sealed class CollabRevocationInterceptor(IServiceScopeFactory scopes, ILo
                 case SpacePermission permission when entry.State is EntityState.Added or EntityState.Deleted or EntityState.Modified:
                     found.Add(new(SpaceId: permission.SpaceId));
                     break;
+                // What everyone signed in may do there (dev-plan 21.1).
+                case Space space when entry.State == EntityState.Modified && Changed(entry, nameof(Space.EveryoneAccess)):
+                    found.Add(new(SpaceId: space.Id));
+                    break;
                 case PageRestriction restriction when entry.State is EntityState.Added or EntityState.Deleted or EntityState.Modified:
                     found.Add(new(PageId: restriction.PageId));
                     break;
@@ -99,7 +122,7 @@ public sealed class CollabRevocationInterceptor(IServiceScopeFactory scopes, ILo
 
     private void Collect(DbContext? context)
     {
-        if (context is null) return;
+        if (context is null || Quiet.Value) return;
         var found = RevocationsIn(context);
         if (found.Count == 0) return;
         _pending.AddOrUpdate(context, found.Any(r => r.All) ? [new(All: true)] : found);

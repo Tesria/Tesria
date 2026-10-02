@@ -168,7 +168,7 @@ public class SpaceTests
         var editor = factory.CreateClient();
         var editorId = await editor.RegisterAndSignInAsync();
         // User = 0 | View = 0, Edit = 1, Admin = 2
-        await owner.PostAsJsonAsync("/api/spaces/RIGHTS/permissions", new { PrincipalType = 0, PrincipalId = ownerId, Operation = 2 });
+        await owner.MakePrivateAsync("RIGHTS");
         await owner.PostAsJsonAsync("/api/spaces/RIGHTS/permissions", new { PrincipalType = 0, PrincipalId = viewerId, Operation = 0 });
         await owner.PostAsJsonAsync("/api/spaces/RIGHTS/permissions", new { PrincipalType = 0, PrincipalId = editorId, Operation = 1 });
 

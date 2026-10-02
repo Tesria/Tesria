@@ -173,16 +173,11 @@ public static partial class PackImportEndpoints
             // pack can carry pages that were restricted where it came from,
             // and those restrictions do not travel. The importer is its one
             // administrator until they choose who else gets in, which the
-            // import screen asks straight away.
-            db.SpacePermissions.Add(new SpacePermission
-            {
-                Id = Guid.NewGuid(),
-                SpaceId = space.Id,
-                PrincipalType = PrincipalType.User,
-                PrincipalId = user,
-                Operation = SpaceOperation.Admin,
-                CreatedAt = now,
-            });
+            // import screen asks straight away. Since 21.1 that is as a member
+            // of its Admins group, and nobody else gets anything
+            // (EveryoneAccess stays null).
+            var groups = Infrastructure.Permissions.SpaceGroups.Add(db, space.Id, now);
+            db.UserGroups.Add(new UserGroup { GroupId = groups[SpaceGroupRole.Admins].Id, UserId = user, AddedAt = now });
 
             var versions = 0;
             // Each page's place among its siblings, renumbered from 0 under

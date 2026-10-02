@@ -504,10 +504,49 @@ export const PageOperation = { View: 0, Edit: 1 } as const
 export const spaceOperationName = ['View', 'Edit', 'Admin']
 export const pageOperationName = ['View', 'Edit']
 
-/** builtIn: Owner, Admins or Users, whose members follow each account's role (dev-plan 15.1). */
-export type Group = { id: string; name: string; description: string | null; memberCount: number; builtIn?: boolean }
-/** `email` only for people who may see the user list, and for yourself (dev-plan 14.1). */
-export type GroupMember = { userId: string; email: string | null; displayName: string }
+/** A space's four groups (dev-plan 21.1), each holding one fixed level on its space. */
+export const SpaceGroupRole = { Viewers: 0, Editors: 1, Admins: 2, Reviewers: 3 } as const
+
+/**
+ * builtIn: one of the five every instance has, never renamed or deleted.
+ * computed: Owner, Admins or Users, whose members follow each account's role
+ * (dev-plan 15.1). spaceId: one of a space's own four groups (21.1), named
+ * after the space and managed in its Permissions tab.
+ */
+export type Group = {
+  id: string
+  name: string
+  description: string | null
+  memberCount: number
+  builtIn?: boolean
+  computed?: boolean
+  spaceId?: string | null
+  spaceKey?: string | null
+  spaceRole?: number | null
+}
+/**
+ * `email` only for people who may see the user list, and for yourself
+ * (dev-plan 14.1). `active` is false for a suspended account, which keeps its
+ * memberships but gets nothing from them.
+ */
+export type GroupMember = { userId: string; email: string | null; displayName: string; active?: boolean }
+
+/** One of a space's own groups, with its members (dev-plan 21.1). */
+export type SpaceGroup = { id: string; role: number; name: string; operation: number; members: GroupMember[] }
+
+/**
+ * A space's access as its Permissions tab shows it (dev-plan 21.1): what
+ * everyone signed in gets (null for nothing), its four groups, and every
+ * other grant. `canManageAdmins` is true only for an explicit administrator.
+ */
+export type SpaceAccess = {
+  everyoneAccess: number | null
+  canManageAdmins: boolean
+  globalViewers: number
+  globalReviewers: number
+  groups: SpaceGroup[]
+  grants: SpacePermission[]
+}
 export const UserStatus = { Active: 0, Suspended: 1 } as const
 export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus]
 
@@ -1887,12 +1926,15 @@ export const api = {
   },
   spacePermissions: {
     list: (key: string) =>
-      request<SpacePermission[]>('GET', `/api/spaces/${encodeURIComponent(key)}/permissions`),
+      request<SpaceAccess>('GET', `/api/spaces/${encodeURIComponent(key)}/permissions`),
+    /** What everyone signed in may do (dev-plan 21.1): null, View, Edit or Admin. Widening is sudo. */
+    setEveryone: (key: string, access: number | null) =>
+      request<void>('PUT', `/api/spaces/${encodeURIComponent(key)}/permissions/everyone`, { access }),
     grant: (key: string, input: { principalType: number; principalId: string; operation: number }) =>
       request<void>('POST', `/api/spaces/${encodeURIComponent(key)}/permissions`, input),
     revoke: (key: string, id: string) =>
       request<void>('DELETE', `/api/spaces/${encodeURIComponent(key)}/permissions/${id}`),
-    /** Removes every grant: the space becomes open (dev-plan 15.3). Sudo. */
+    /** Everyone signed in may administer the space (dev-plan 15.3; since 21.1 it removes nothing). Sudo. */
     makeOpen: (key: string) => request<void>('DELETE', `/api/spaces/${encodeURIComponent(key)}/permissions`),
   },
   pageRestrictions: {

@@ -31,9 +31,10 @@ public enum PageOperation
 /// <summary>
 /// Grants a principal an operation on a space (PLAN §4).
 /// <para>
-/// Default-open: a space with <b>no</b> permission rows is accessible to every
-/// authenticated user. As soon as one row exists, access requires a matching
-/// grant: directly, or through a group the user belongs to.
+/// Since dev-plan 21.1 a space with no rows is not open: what every signed-in
+/// account gets is <see cref="Space.EveryoneAccess"/>, and anything more needs
+/// a matching grant, directly or through a group the user belongs to. Each
+/// of a space's four groups holds one row here that cannot be changed.
 /// </para>
 /// </summary>
 public class SpacePermission

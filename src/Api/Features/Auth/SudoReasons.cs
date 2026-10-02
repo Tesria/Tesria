@@ -28,6 +28,12 @@ public static class SudoReasons
         "This turns off someone's two-factor sign-in, so it needs your password again.";
     public const string Roles =
         "This changes what a role may do, so it needs your password again.";
+    /// <summary>Widening what everyone signed in may do in a space (dev-plan 21.1).</summary>
+    public const string OpenSpace =
+        "This lets everyone signed in into more of this space at once, so it needs your password again.";
+    /// <summary>Choosing who is in Global Viewers or Global Reviewers (dev-plan 21.1).</summary>
+    public const string GlobalReaders =
+        "Everyone in this group can read every space, so changing who is in it needs your password again.";
     public const string Purge =
         "Deleting for good cannot be undone, so it needs your password again.";
 }

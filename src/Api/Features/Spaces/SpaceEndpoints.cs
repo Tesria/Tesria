@@ -132,8 +132,18 @@ public static partial class SpaceEndpoints
             Description = description,
             CreatedById = current.RequireId(),
             CreatedAt = DateTimeOffset.UtcNow,
+            // As open as a new space has always been, until 21.2's wizard
+            // asks who may see it.
+            EveryoneAccess = SpaceOperation.Admin,
         };
         db.Spaces.Add(space);
+        // Its four groups (dev-plan 21.1), with its creator in Admins: an
+        // explicit administrator from the start, so they can close it later.
+        var groups = Infrastructure.Permissions.SpaceGroups.Add(db, space.Id, space.CreatedAt);
+        db.UserGroups.Add(new UserGroup
+        {
+            GroupId = groups[SpaceGroupRole.Admins].Id, UserId = space.CreatedById, AddedAt = space.CreatedAt,
+        });
         audit.Record("space.created", "space", space.Id, new { space.Key, space.Name });
         await db.SaveChangesAsync();
 

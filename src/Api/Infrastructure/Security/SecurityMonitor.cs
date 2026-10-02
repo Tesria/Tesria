@@ -157,8 +157,10 @@ public interface ISecurityDetector
     Task AdminPromotedAsync(Guid actorId, User promoted);
     /// <summary>An administrator turned off someone else's two-factor (dev-plan 15.1).</summary>
     Task TwoFactorRemovedAsync(Guid actorId, User target);
-    /// <summary>A private space was made open to everyone signed in (dev-plan 15.3).</summary>
+    /// <summary>What everyone signed in may do in a space was widened (dev-plan 15.3; since 21.1 any widening).</summary>
     Task SpaceOpenedAsync(Guid actorId, Guid spaceId, string spaceKey);
+    /// <summary>Someone was added to Global Viewers or Global Reviewers, and so can read every space (dev-plan 21.1).</summary>
+    Task GlobalGroupMemberAddedAsync(Guid actorId, Guid groupId, string groupName, Guid userId, string displayName);
     Task PublicSpacesToggledAsync(Guid? actorId, bool enabled);
     /// <summary>A space was published to, or withdrawn from, the world (dev-plan 5.1). Always an alert.</summary>
     Task SpaceVisibilityChangedAsync(Guid actorId, Space space, bool isPublic);
@@ -317,6 +319,12 @@ public sealed class SecurityDetector(AppDbContext db, SecurityCounters counters,
         RaiseAsync("space.opened", SecuritySeverity.Warning, key: spaceId.ToString(),
             actorId: actorId, targetType: "space", targetId: spaceId, alert: true, cooldown: false,
             metadata: new { Key = spaceKey });
+
+    // No cooldown, like space.opened: each one is someone new reading everything.
+    public Task GlobalGroupMemberAddedAsync(Guid actorId, Guid groupId, string groupName, Guid userId, string displayName) =>
+        RaiseAsync("group.global_member_added", SecuritySeverity.Warning, key: $"{groupId}:{userId}",
+            actorId: actorId, targetType: "user", targetId: userId, alert: true, cooldown: false,
+            metadata: new { Group = groupName, GroupId = groupId, Member = displayName });
 
     public Task PublicSpacesToggledAsync(Guid? actorId, bool enabled) =>
         RaiseAsync("settings.public_spaces_toggled", SecuritySeverity.Critical, key: "instance",

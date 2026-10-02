@@ -103,6 +103,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<Group> Groups => Set<Group>();
     public DbSet<UserGroup> UserGroups => Set<UserGroup>();
+    public DbSet<SpaceGrantMove> SpaceGrantMoves => Set<SpaceGrantMove>();
     public DbSet<CollabDocument> CollabDocuments => Set<CollabDocument>();
     public DbSet<PageTemplate> PageTemplates => Set<PageTemplate>();
     public DbSet<Watch> Watches => Set<Watch>();
@@ -461,7 +462,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(g => g.Name).HasMaxLength(200);
             e.Property(g => g.NormalizedName).HasMaxLength(200);
             e.Property(g => g.Description).HasMaxLength(500);
-            e.HasIndex(g => g.NormalizedName).IsUnique();
+            // Unique among the groups people name (dev-plan 21.1): a space's
+            // groups are named after their space when read, and two spaces may
+            // share a name, so they are left out of it.
+            e.HasIndex(g => g.NormalizedName).IsUnique().HasFilter("\"SpaceId\" IS NULL");
+            e.HasOne(g => g.Space)
+                .WithMany()
+                .HasForeignKey(g => g.SpaceId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(g => new { g.SpaceId, g.SpaceRole }).IsUnique().HasFilter("\"SpaceId\" IS NOT NULL");
+        });
+
+        b.Entity<SpaceGrantMove>(e =>
+        {
+            // History of the 21.1 move; deliberately no foreign keys.
+            e.HasIndex(m => m.SpaceId);
         });
 
         b.Entity<UserGroup>(e =>

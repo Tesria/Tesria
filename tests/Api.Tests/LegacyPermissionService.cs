@@ -1,89 +1,19 @@
 using Tesria.Api.Domain;
+using Tesria.Api.Infrastructure;
 using Tesria.Api.Infrastructure.Auth;
+using Tesria.Api.Infrastructure.Permissions;
 using Tesria.Api.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 
-namespace Tesria.Api.Infrastructure.Permissions;
+namespace Tesria.Api.Tests;
 
-/// <summary>
-/// Resolves what the current user may do (PLAN §4). Two independent layers:
-/// <list type="bullet">
-/// <item><b>Space permissions</b> (dev-plan 21.1): a signed-in, active account
-/// gets the space's <see cref="Space.EveryoneAccess"/>, members of Global
-/// Viewers and Global Reviewers get View on every space, and anything more
-/// needs a grant, to the person or to a group they are in (a space's own
-/// four groups hold ordinary grants). Admin implies Edit implies View.
-/// Before 21.1 a space with no grants was open to everyone; the seed turned
-/// that into an EveryoneAccess of Admin.</item>
-/// <item><b>Page restrictions</b>: a page is restricted if it or any ancestor
-/// carries a restriction; the user must match one. A View restriction also
-/// gates editing. Space admins bypass page restrictions, but only explicit
-/// ones: the implicit levels (EveryoneAccess, the global groups) never
-/// do.</item>
-/// </list>
-/// </summary>
-public interface IPermissionService
-{
-    Task<bool> CanViewSpaceAsync(Guid spaceId);
-    Task<bool> CanEditSpaceAsync(Guid spaceId);
-    Task<bool> CanAdminSpaceAsync(Guid spaceId);
-
-    /// <summary>
-    /// Whether the caller holds a real Admin grant on the space, directly or
-    /// through a group (its Admins group included): unlike
-    /// <see cref="CanAdminSpaceAsync"/>, an EveryoneAccess of Admin does not
-    /// count. This is who passes page restrictions, and who may change who
-    /// administers the space (dev-plan 21.1).
-    /// </summary>
-    Task<bool> IsExplicitSpaceAdminAsync(Guid spaceId);
-    Task<bool> CanViewPageAsync(Guid pageId);
-    Task<bool> CanEditPageAsync(Guid pageId);
-
-    /// <summary>
-    /// Whether the caller may read what hangs off a page: its versions,
-    /// attachments, labels and comments (dev-plan 14.1). Stricter than
-    /// <see cref="CanViewPageAsync"/>, which deliberately resolves drafts and
-    /// trashed pages for the trash, restore and draft-upload paths: a trashed
-    /// page reads as not found, the way the page itself does, and a draft is
-    /// readable by its author and by those who may edit its space, the same
-    /// people who may publish or discard it.
-    /// </summary>
-    Task<bool> CanReadPageAsync(Guid pageId);
-    /// <summary>Ids of spaces the current user may view, for filtering listings.</summary>
-    Task<HashSet<Guid>> ViewableSpaceIdsAsync();
-
-    /// <summary>
-    /// Whether a page is readable with no account at all: evaluated as the
-    /// anonymous principal regardless of who is asking (dev-plan 5.1). Used
-    /// where the answer must not depend on the caller: link previews, the
-    /// sitemap.
-    /// </summary>
-    Task<bool> IsPubliclyViewablePageAsync(Guid pageId);
-    Task<bool> IsPubliclyViewableSpaceAsync(Guid spaceId);
-
-    /// <summary>
-    /// The same rules, evaluated as a *different* user than the one making
-    /// the request. Needed wherever the app acts on someone else's behalf:
-    /// today, deciding whether a mentioned user may be told about the page
-    /// they were mentioned on (dev-plan Phase 7 Wave C), since a notification
-    /// carries the page title and must not leak a restricted one.
-    ///
-    /// Returns a fresh instance: the principal cache is per-user, so reusing
-    /// this one would answer for the wrong person.
-    /// </summary>
-    IPermissionService AsUser(Guid userId);
-
-    /// <summary>
-    /// The same rules evaluated as a reader with no account at all. Used by
-    /// the site export (dev-plan 12.2), whose default audience is the public:
-    /// deciding which pages go into a site by the exporter's own access is
-    /// how a private page ends up on the internet.
-    /// </summary>
-    IPermissionService AsAnonymous();
-}
-
-public sealed class PermissionService(AppDbContext db, CurrentUser current, ISiteSettingsService settings)
-    : IPermissionService
+// The permission rules exactly as they were before dev-plan 21.1 (copied
+// from PermissionService.cs at 0.8.7, renamed, and the explicit-admin check
+// made public), kept only as the oracle for PermissionMigrationTests: the
+// seed must leave everyone able to do exactly what these rules allowed on
+// the same data before it ran. Do not change the rules here; they are
+// history.
+public sealed class LegacyPermissionService(AppDbContext db, CurrentUser current, ISiteSettingsService settings)
 {
     /// <summary>
     /// Set only by <see cref="AsUser"/>. Every rule below reads
@@ -98,11 +28,11 @@ public sealed class PermissionService(AppDbContext db, CurrentUser current, ISit
 
     private Guid? UserId => _asAnonymous ? null : _asUserId ?? current.Id;
 
-    public IPermissionService AsUser(Guid userId) =>
-        new PermissionService(db, current, settings) { _asUserId = userId };
+    public LegacyPermissionService AsUser(Guid userId) =>
+        new LegacyPermissionService(db, current, settings) { _asUserId = userId };
 
-    public IPermissionService AsAnonymous() =>
-        new PermissionService(db, current, settings) { _asAnonymous = true };
+    public LegacyPermissionService AsAnonymous() =>
+        new LegacyPermissionService(db, current, settings) { _asAnonymous = true };
 
     // -- the anonymous principal (dev-plan 5.1) --------------------------------
     //
@@ -152,24 +82,15 @@ public sealed class PermissionService(AppDbContext db, CurrentUser current, ISit
             .Where(ug => ug.UserId == userId)
             .Select(ug => ug.GroupId)
             .ToListAsync();
-        // The computed groups follow the account's tier (dev-plan 15.1); an
+        // The built-in groups follow the account's tier (dev-plan 15.1); an
         // account that is not active is in none of them.
         var account = await db.Users.AsNoTracking()
             .Where(u => u.Id == userId).Select(u => new { u.Role, u.Status }).FirstOrDefaultAsync();
-        _active = account is { Status: UserStatus.Active };
-        if (_active) groupIds.AddRange(BuiltInGroups.For(account!.Role));
-
-        // Global Viewers and Global Reviewers see every space (dev-plan 21.1),
-        // as an implicit level like EveryoneAccess, and so only while active.
-        _globalViewer = _active && groupIds.Any(BuiltInGroups.IsGlobal);
+        if (account is { Status: UserStatus.Active }) groupIds.AddRange(BuiltInGroups.For(account.Role));
 
         _principals = [userId.Value, .. groupIds];
         return _principals;
     }
-
-    // Both set by PrincipalsAsync, for the same account and request.
-    private bool _active;
-    private bool _globalViewer;
 
     // -- spaces ---------------------------------------------------------------
 
@@ -182,31 +103,25 @@ public sealed class PermissionService(AppDbContext db, CurrentUser current, ISit
         if (UserId is null)
             return required == SpaceOperation.View && await IsPubliclyViewableSpaceAsync(spaceId);
 
-        var space = await db.Spaces.AsNoTracking()
-            .Where(s => s.Id == spaceId).Select(s => new { s.EveryoneAccess }).FirstOrDefaultAsync();
-        if (space is null) return false;
+        var grants = await db.SpacePermissions.AsNoTracking()
+            .Where(p => p.SpaceId == spaceId)
+            .Select(p => new { p.PrincipalId, p.Operation })
+            .ToListAsync();
+
+        // Default-open: an unconfigured space is accessible to any signed-in user.
+        if (grants.Count == 0) return true;
 
         var principals = await PrincipalsAsync();
-
-        // The implicit levels (dev-plan 21.1). Only for an account that is
-        // active: one that is suspended is not "signed in", even for a check
-        // made on its behalf, such as whether to tell it about a mention.
-        if (_active && space.EveryoneAccess is { } everyone && everyone >= required) return true;
-        if (_globalViewer && required == SpaceOperation.View) return true;
-
         // Higher operations imply lower ones, so compare by rank.
-        return await db.SpacePermissions.AsNoTracking()
-            .AnyAsync(p => p.SpaceId == spaceId && p.Operation >= required && principals.Contains(p.PrincipalId));
+        return grants.Any(g => principals.Contains(g.PrincipalId) && g.Operation >= required);
     }
-
-    public Task<bool> IsExplicitSpaceAdminAsync(Guid spaceId) => HasExplicitSpaceAdminAsync(spaceId);
 
     /// <summary>
     /// True only when the user holds a real Admin grant on the space: unlike
-    /// <see cref="CanAdminSpaceAsync"/>, an EveryoneAccess of Admin does not
-    /// make everyone an admin here.
+    /// <see cref="CanAdminSpaceAsync"/>, this does not treat an unconfigured
+    /// (default-open) space as granting admin to everyone.
     /// </summary>
-    private async Task<bool> HasExplicitSpaceAdminAsync(Guid spaceId)
+    public async Task<bool> HasExplicitSpaceAdminAsync(Guid spaceId)
     {
         if (UserId is null) return false;
         var principals = await PrincipalsAsync();
@@ -218,25 +133,26 @@ public sealed class PermissionService(AppDbContext db, CurrentUser current, ISit
 
     public async Task<HashSet<Guid>> ViewableSpaceIdsAsync()
     {
+        var allIds = await db.Spaces.AsNoTracking().Select(s => s.Id).ToListAsync();
         if (UserId is null)
         {
             if (!await PublicSpacesAllowedAsync()) return [];
             return (await db.Spaces.AsNoTracking().Where(s => s.IsPublic && !s.Archived).Select(s => s.Id).ToListAsync()).ToHashSet();
         }
 
-        var principals = await PrincipalsAsync();
-        // Every space, archived ones included (21.1).
-        if (_globalViewer) return (await db.Spaces.AsNoTracking().Select(s => s.Id).ToListAsync()).ToHashSet();
-
-        var granted = await db.SpacePermissions.AsNoTracking()
-            .Where(p => principals.Contains(p.PrincipalId))
-            .Select(p => p.SpaceId)
+        var grants = await db.SpacePermissions.AsNoTracking()
+            .Select(p => new { p.SpaceId, p.PrincipalId, p.Operation })
             .ToListAsync();
-        var result = granted.ToHashSet();
-        if (_active)
-            result.UnionWith(await db.Spaces.AsNoTracking()
-                .Where(s => s.EveryoneAccess != null).Select(s => s.Id).ToListAsync());
-        return result;
+
+        var principals = await PrincipalsAsync();
+        var configured = grants.Select(g => g.SpaceId).ToHashSet();
+
+        return allIds.Where(id =>
+            !configured.Contains(id) // default-open
+            || grants.Any(g => g.SpaceId == id
+                               && principals.Contains(g.PrincipalId)
+                               && g.Operation >= SpaceOperation.View))
+            .ToHashSet();
     }
 
     // -- pages ----------------------------------------------------------------
@@ -277,10 +193,9 @@ public sealed class PermissionService(AppDbContext db, CurrentUser current, ISit
         if (!spaceOk) return false;
 
         // Space admins are never blocked by page restrictions, but only ones
-        // holding an *explicit* admin grant. In a space whose EveryoneAccess is
-        // Admin everyone would otherwise count as an admin, which would make
-        // page restrictions meaningless exactly where they are most used; and
-        // Global Viewers are bound by them too (21.1).
+        // holding an *explicit* admin grant. In a default-open space everyone
+        // would otherwise count as an admin, which would make page restrictions
+        // meaningless exactly where they are most used.
         if (await HasExplicitSpaceAdminAsync(page.SpaceId)) return true;
 
         var ancestry = await AncestryAsync(pageId, page.SpaceId);

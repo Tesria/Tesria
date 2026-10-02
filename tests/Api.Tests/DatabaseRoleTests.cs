@@ -84,6 +84,66 @@ public class DatabaseRoleTests
     }
 
     [PostgresFact]
+    public async Task The_space_group_seed_moves_grants_within_the_roles_grants()
+    {
+        // Dev-plan 21.1: the migration (as the owner) adds the schema, and the
+        // seed at start (as the app's role) gives each space its groups and
+        // moves grants to people into them, recording each in SpaceGrantMoves,
+        // which the role may append to and read but never change.
+        using var pg = new PostgresTestDatabase();
+        using var factory = new TestAppFactory(pg);
+        var owner = factory.CreateClient();
+        var ownerId = await owner.RegisterAndSignInAsync();
+        var member = factory.CreateClient();
+        var memberId = await member.RegisterAndSignInAsync();
+        var outsider = factory.CreateClient();
+        await outsider.RegisterAndSignInAsync();
+        // A custom group already named like the groups the seed is about to
+        // make, for two spaces of one name (the review's essential test 9).
+        (await owner.PostAsJsonAsync("/api/groups", new { Name = "Old Shape Viewers" })).EnsureSuccessStatusCode();
+
+        // Two spaces as 0.8.7 left them: no groups, no EveryoneAccess, and
+        // one with a grant to a person.
+        var closed = Guid.NewGuid();
+        var open = Guid.NewGuid();
+        var grantId = Guid.NewGuid();
+        await using (var db = pg.Owner())
+        {
+            db.Spaces.AddRange(
+                new Space { Id = closed, Key = "OLDSHAPE", Name = "Old Shape", CreatedById = ownerId, CreatedAt = DateTimeOffset.UtcNow },
+                new Space { Id = open, Key = "OLDOPEN", Name = "Old Shape", CreatedById = ownerId, CreatedAt = DateTimeOffset.UtcNow });
+            db.SpacePermissions.Add(new SpacePermission
+            {
+                Id = grantId, SpaceId = closed, PrincipalType = PrincipalType.User, PrincipalId = memberId,
+                Operation = SpaceOperation.Edit, CreatedAt = DateTimeOffset.UtcNow.AddDays(-3),
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            Assert.Equal("tesria_test_app",
+                await db.Database.SqlQueryRaw<string>("SELECT current_user AS \"Value\"").SingleAsync());
+            Assert.Equal(2, await Tesria.Api.Infrastructure.Permissions.SpaceGroupSeed.EnsureAsync(
+                db, scope.ServiceProvider.GetRequiredService<Tesria.Api.Infrastructure.Audit.IAuditLogger>(), NullLogger.Instance));
+
+            var move = await db.SpaceGrantMoves.SingleAsync();
+            Assert.Equal((grantId, memberId, SpaceOperation.Edit), (move.GrantId, move.UserId, move.Operation));
+            var ex = await Assert.ThrowsAsync<PostgresException>(() =>
+                db.Database.ExecuteSqlRawAsync("DELETE FROM \"SpaceGrantMoves\""));
+            Assert.Equal(PostgresErrorCodes.InsufficientPrivilege, ex.SqlState);
+            Assert.Equal(8, await db.Groups.CountAsync(g => g.SpaceId == closed || g.SpaceId == open));
+        }
+
+        // The moved grant is honored: the member edits, the outsider sees nothing.
+        (await member.PostAsJsonAsync("/api/pages", new { SpaceId = closed, Title = "Still mine",
+            ContentJson = """{"type":"doc","content":[]}""" })).EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.NotFound, (await outsider.GetAsync("/api/spaces/OLDSHAPE")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await outsider.GetAsync("/api/spaces/OLDOPEN")).StatusCode);
+    }
+
+    [PostgresFact]
     public async Task An_export_job_is_queued_run_and_removed_within_the_roles_grants()
     {
         // Dev-plan 20.2: the app writes the job, the runner its progress and

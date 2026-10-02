@@ -33,6 +33,15 @@ public class Space
 
     public bool Archived { get; set; }
 
+    /// <summary>
+    /// What every signed-in, active account may do here without a grant
+    /// (dev-plan 21.1): null for nothing, or View, Edit or Admin. An implicit
+    /// level: it never counts as an explicit admin, so page restrictions still
+    /// bind everyone it lets in. Before 21.1 this was "the space has no
+    /// permission rows", which meant Admin.
+    /// </summary>
+    public SpaceOperation? EveryoneAccess { get; set; }
+
     // --- Icon (dev-plan 6). Three columns rather than one: the kind decides
     // how IconValue is read, and the color applies to the tile behind a
     // letter or an emoji: an uploaded image covers the tile entirely.

@@ -462,7 +462,7 @@ public class DraftDiscardTests
         var bob = s.App.CreateClient();
         var bobId = await bob.RegisterAndSignInAsync();
         // Alice takes admin; Bob gets view only. (User = 0; View = 0, Admin = 2.)
-        await alice.PostAsJsonAsync($"/api/spaces/{spaceKey}/permissions", new { PrincipalType = 0, PrincipalId = aliceId, Operation = 2 });
+        await alice.MakePrivateAsync(spaceKey!);
         await alice.PostAsJsonAsync($"/api/spaces/{spaceKey}/permissions", new { PrincipalType = 0, PrincipalId = bobId, Operation = 0 });
         Assert.Equal(HttpStatusCode.OK, (await bob.GetAsync($"/api/pages/{s.Page.Id}")).StatusCode);
 

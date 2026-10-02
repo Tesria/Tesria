@@ -228,11 +228,9 @@ public class SpaceIconTests
         var other = factory.CreateClient();
         await RegisterAsync(other, "other@example.com");
 
-        // Lock the space down to its owner: until a grant exists, spaces are
-        // default-open and everyone counts as an admin.
-        (await owner.PostAsJsonAsync("/api/spaces/DOCS/permissions",
-            new { PrincipalType = UserPrincipal, PrincipalId = ownerId, Operation = AdminOperation }))
-            .EnsureSuccessStatusCode();
+        // Lock the space down to its owner: a new space lets everyone signed
+        // in administer it.
+        await owner.MakePrivateAsync("DOCS");
 
         // The space is now invisible to the other user, so every icon route
         // masks it rather than admitting it exists.

@@ -113,7 +113,7 @@ public static class InstancePermissions
     public static readonly IReadOnlyList<InstancePermission> All =
     [
         new(SpacesCreate, "Content", "Create spaces",
-            "Start a new space. A new space is open to every signed-in user until someone grants access to particular people.", PermissionScope.Content, UserRole.Member),
+            "Start a new space. A new space is open to every signed-in user until its administrators choose otherwise in its Permissions tab.", PermissionScope.Content, UserRole.Member),
         new(PagesDeleteOwn, "Content", "Delete pages you created",
             "Move your own pages to the trash, where anyone who can edit them can restore them.",
             PermissionScope.Content, UserRole.Member),
@@ -154,7 +154,8 @@ public static class InstancePermissions
         new(InvitesManage, "People", "Manage invite links",
             "See and revoke everyone's invite links.", PermissionScope.Administration, UserRole.Admin),
         new(GroupsManage, "People", "Manage groups",
-            "Create groups and change who is in them.", PermissionScope.Administration, UserRole.Admin),
+            "Create groups and change who is in them, Global Viewers and Global Reviewers included. Never a space's own groups: those belong to the space's administrators.",
+            PermissionScope.Administration, UserRole.Admin),
 
         new(SpacesManage, "Spaces", "Manage spaces",
             "See every space in Administration, and grant yourself access to administer it.",

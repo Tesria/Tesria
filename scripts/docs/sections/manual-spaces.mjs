@@ -142,13 +142,13 @@ export const shots = ({ demo }) => [
     annotate: [{ type: 'box', target: '.space-content .space-home__head > .btn', pad: 4 }],
   },
 
-  // ---- Who can see a space: the form that grants access. Only the form:
-  // the list below it names whoever holds access to Tesria Demo.
+  // ---- Who can see a space: what everyone signed in can do (dev-plan
+  // 21.1). Only that part: the groups below it name Tesria Demo's people.
   {
     name: 'space-permissions', url: '/spaces/DEMO/settings/permissions', viewport: NARROW, phone: false,
-    steps: [{ wait: 2500 }, { css: '.tab-panel > p, .tab-panel .version-list { visibility: hidden !important; }' }],
-    clipTo: '.tab-panel .card', clipPad: 12,
-    annotate: [{ type: 'box', target: '.tab-panel .principal-picker', pad: 4 }],
+    steps: [{ wait: 2500 }],
+    clipTo: section('Everyone Signed In'), clipPad: 12,
+    annotate: [{ type: 'box', target: '.space-access__everyone', pad: 4 }],
   },
 
   // ---- Space icons: the Icon section of Space Settings.
@@ -444,11 +444,12 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     h(2, 'What a new space starts with'),
     ul(
       li(p(b('Open to everyone signed in.'), ' Anyone with an account can read it, edit it and change its settings.')),
+      li(p(b('Four groups of its own,'), ' Admins, Editors, Viewers and Reviewers, with you in Admins.')),
       li(p(b('Not public.'), ' People who are not signed in cannot see it.')),
       li(p(b('An icon made from its key,'), ' which you can change to an emoji or a picture.')),
       li(p(b('Every export allowed:'), ' PDF, Markdown, HTML, a static site and a wiki pack.')),
     ),
-    panel('warning', p(b('Want it private?'), ' A new space is open to everyone signed in, which is right for most team spaces. For anything that should be seen by only some people, such as salaries or a confidential project, limit it straight away, before you write anything in it. See ', pageLink('Who can see a space'), '.')),
+    panel('warning', p(b('Want it private?'), ' A new space is open to everyone signed in, which is right for most team spaces. For anything that should be seen by only some people, such as salaries or a confidential project, limit it straight away, before you write anything in it: on its Permissions tab, choose No Access under Everyone signed in can. See ', pageLink('Who can see a space'), '.')),
 
     h(2, 'Next steps'),
     ul(
@@ -494,15 +495,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
   // -------------------------------------------------- Who can see a space
   await page('Who can see a space', spaces, doc(
     p('Most spaces are for everyone in your organization, and a new space starts that way. Some should be seen by only a few people: salaries, a confidential project, a team’s private planning. This page explains how a space decides who gets in, and how to give or take away access.'),
-    p('Everything here is done in ', b('Space Settings'), ', on the ', b('Permissions'), ' tab, and needs administrator access to the space.'),
-
-    h(2, 'Open and private spaces'),
-    ul(
-      li(p(b('Open'), ' is how every space starts. Nobody is listed, and everyone signed in can read it, edit it and change its settings.')),
-      li(p(b('Private'), ' is a space with anyone at all listed on its Permissions tab. From then on, only the people and groups listed can get in.')),
-    ),
-    panel('warning', p(b('Adding the first person makes the space private.'), ' The moment you grant anyone access, everyone who is not listed loses it. Tesria adds you as an administrator at the same time, so you cannot lock yourself out. If you want to keep everyone reading while you limit who edits, grant ', b('View'), ' to the ', b('Users'), ' group as well (see below).')),
-    p('Whether a space is open or private, people who are not signed in never see it, unless an administrator publishes it for public reading. See ', pageLink('Public reading'), '.'),
+    p('Everything here is done in ', b('Space Settings'), ', on the ', b('Permissions'), ' tab, and needs administrator access to the space. The tab has three parts, from the top: what everyone signed in can do, the space’s own groups, and any other access.'),
 
     h(2, 'The three levels of access'),
     p('Each level includes everything the ones before it allow.'),
@@ -512,37 +505,54 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
       li(p(b('Admin:'), ' also change the space’s settings (its name, icon and page tree), its permissions and its webhooks, archive it, and delete pages from its trash for good.')),
     ),
 
-    h(2, 'Giving someone access'),
-    step(1, 'Open the Permissions tab'),
-    p('Choose ', b('Space Settings'), ' at the bottom of the space’s sidebar, then the ', b('Permissions'), ' tab.'),
-    step(2, 'Choose who'),
-    p('In the box, choose ', b('User'), ' or ', b('Group'), ', then the person or group from the list next to it.'),
-    ...(await picture(who, 'space-permissions', 'The form for granting access to a space', 'Choose a user or group, the person or group, and the level, then Grant.')),
-    step(3, 'Choose the level, then Grant'),
-    p('Choose ', b('View'), ', ', b('Edit'), ' or ', b('Admin'), ', and then ', b('Grant'), '. They appear in the list below the box, and have access straight away.'),
-
-    h(2, 'Sharing with everyone, or with a team'),
-    p('Rather than adding people one at a time, grant access to a group. Three groups exist on every Tesria and keep themselves up to date as people join, leave and change roles:'),
+    h(2, 'What everyone signed in can do'),
+    p('At the top of the tab, ', b('Everyone signed in can'), ' says what every person with an account gets in this space without being named anywhere:'),
     ul(
-      li(p(b('Users:'), ' everyone with an account. Granting ', b('View'), ' to Users lets everyone signed in read a private space.')),
-      li(p(b('Admins:'), ' Tesria’s administrators, and its owner.')),
-      li(p(b('Owner:'), ' the person who owns this Tesria.')),
+      li(p(b('Administer'), ' is how every space starts: everyone can read it, edit it and change its settings.')),
+      li(p(b('Edit'), ' or ', b('View'), ' lets everyone read it, and edit it or not, while only the people you name manage it.')),
+      li(p(b('No Access'), ' makes the space private: only the people in its groups, and anyone listed under Other Access, can open it.')),
+    ),
+    ...(await picture(who, 'space-permissions', 'Everyone signed in can, at the top of the Permissions tab', 'Choose what everyone signed in can do in this space.')),
+    p('Choosing a wider level, such as View for a private space, asks first, and then for your password if you have not entered it in the last few minutes, because it opens everything in the space at once. Tesria’s administrators are alerted each time. A narrower level takes effect straight away, even for someone with a page open.'),
+    panel('info', p(b('Page restrictions still apply to everyone.'), ' Even when everyone signed in can administer a space, a page restricted to particular people stays hidden from the rest. Only the people in the space’s Admins group, or given Admin under Other Access, see past restrictions. See ', pageLink('Restrictions'), '.')),
+    p('Whatever it says, people who are not signed in never see the space, unless an administrator publishes it for public reading. See ', pageLink('Public reading'), '.'),
+
+    h(2, 'The space’s own groups'),
+    p('Every space has four groups of its own, named after it. For a space called Handbook they are:'),
+    ul(
+      li(p(b('Handbook Admins:'), ' Admin. Whoever creates a space is put in this group.')),
+      li(p(b('Handbook Editors:'), ' Edit.')),
+      li(p(b('Handbook Viewers:'), ' View.')),
+      li(p(b('Handbook Reviewers:'), ' View, for now: they are the people a later review step will ask.')),
+    ),
+    p('To give someone access, add them to a group: under the group, choose the person and then ', b('Add'), '. ', b('Remove'), ' takes them out again, after asking. What each group can do is fixed, and the groups go when the space does.'),
+    panel('warning', p(b('Only the space’s administrators choose its administrators.'), ' Changing who is in Admins, or giving anyone Admin, needs you to be in Admins yourself, or to have been given Admin under Other Access. Being able to manage the space because everyone signed in can is not enough: otherwise anyone could add themselves and see past every restriction.')),
+
+    h(2, 'Other access'),
+    p('Below the groups you can also give access straight to a person, or to a group that is not this space’s own, such as one of your organization’s teams.'),
+    step(1, 'Choose who'),
+    p('Choose ', b('User'), ' or ', b('Group'), ', then the person or group from the list next to it.'),
+    step(2, 'Choose the level, then Grant'),
+    p('Choose ', b('View'), ', ', b('Edit'), ' or ', b('Admin'), ', and then ', b('Grant'), '. They appear in the list below, and have access straight away. ', b('Revoke'), ' takes it away again.'),
+    p('Some groups exist on every Tesria:'),
+    ul(
+      li(p(b('Users:'), ' everyone with an account, kept up to date as people join and leave.')),
+      li(p(b('Admins'), ' and ', b('Owner:'), ' Tesria’s administrators and its owner.')),
+      li(p(b('Global Viewers'), ' and ', b('Global Reviewers:'), ' people chosen to read every space. The tab says so when anyone is in them. See ', pageLink('Groups'), '.')),
     ),
     p('An administrator can also make groups of their own, such as ', i('Finance'), ' or ', i('Launch team'), '. See ', pageLink('Groups'), '.'),
 
-    h(2, 'Taking access away'),
-    p('Choose ', b('Revoke'), ' beside anyone in the list. The last administrator of a space cannot be removed, because nobody would be left to manage it.'),
-
-    h(2, 'Making a private space open again'),
-    p('Because the last administrator always stays, a private space cannot be emptied one person at a time. To go back to open, use the link made for it:'),
-    ol(
-      li(p('On the Permissions tab, choose ', b('Make This Space Open Again'), '. It is in the line above the box, and only there while the space is private.')),
-      li(p('Read what will happen and choose ', b('Make It Open'), '. If you have not entered your password in the last few minutes, Tesria asks for it again.')),
+    h(2, 'Making a space private, or open again'),
+    ul(
+      li(p(b('To make it private,'), ' choose ', b('No Access'), ' under ', b('Everyone signed in can'), ', then ', b('Close It'), '. First check that the people who need the space are in its groups. You keep access as long as you are in its Admins group; if nobody is in it yet, see the last section below.')),
+      li(p(b('To open it again,'), ' choose ', b('Administer'), ', or ', b('View'), ' or ', b('Edit'), ', and confirm. Nothing in its groups or other access is removed.')),
     ),
-    p('Every grant is removed at once, and everyone signed in can view, edit and administer the space again. Restrictions on single pages stay as they are. Because this opens everything in the space to everyone, Tesria’s administrators are alerted each time it is done.'),
+
+    h(2, 'Someone is always left to manage it'),
+    p('The last administrator of a space cannot be removed, whether by taking them out of Admins, revoking their access, or lowering what everyone signed in gets, because nobody would be left to manage it. Suspended accounts do not count.'),
 
     h(2, 'Administrators and private spaces'),
-    p('Being an administrator of Tesria does not let you into every private space. If a private space has lost all its administrators, a Tesria administrator can give themselves access with ', b('Get Access'), ' in ', ...adminAt('Spaces'), ', and that is recorded in the audit log. See ', pageLink('Spaces (administration)'), '.'),
+    p('Being an administrator of Tesria does not let you into every private space. If a private space has lost all its administrators, or an open one has nobody in its Admins group (as every space that was open before Tesria 0.9 starts out), a Tesria administrator can add themselves to its Admins group with ', b('Get Access'), ' in ', ...adminAt('Spaces'), ', and that is recorded in the audit log. See ', pageLink('Spaces (administration)'), '.'),
     p('To keep one page, rather than a whole space, to a few people, see ', pageLink('Restrictions'), '.'),
   ))
 
@@ -967,7 +977,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     ul(
       li(p(b('Sub-pages:'), ' a restriction covers every page under the restricted one, including pages added later.')),
       li(p(b('Pages above:'), ' the tab lists only the restrictions set on this page. One set on a page above it still applies, and is changed on that page.')),
-      li(p(b('Administrators of a private space'), ' can always see and edit its restricted pages. In an open space nobody is exempt, so a restriction really does keep everyone else out.')),
+      li(p(b('The space’s own administrators,'), ' the people in its Admins group or given Admin, can always see and edit its restricted pages. Everyone else is held to restrictions, even where everyone signed in can manage the space.')),
     ),
     panel('warning', p(b('Restricted pages are never public.'), ' In a space published for public reading, any restriction, View or Edit, hides the page and everything under it from people who are not signed in.')),
     p('A restriction stays with the page if it moves to another space, but a copy of the page does not bring it. See ', pageLink('Moving and copying pages'), '.'),

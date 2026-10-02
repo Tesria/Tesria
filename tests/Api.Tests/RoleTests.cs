@@ -109,10 +109,8 @@ public class RoleTests
         var spaces = await member.GetFromJsonAsync<List<SpaceDto>>("/api/spaces");
         var key = spaces!.Single(s => s.Id == spaceId).Key;
 
-        // One grant flips the space from default-open to deny-by-default.
-        var grant = await member.PostAsJsonAsync($"/api/spaces/{key}/permissions",
-            new { PrincipalType = 0, PrincipalId = memberUser.Id, Operation = 2 });
-        grant.EnsureSuccessStatusCode();
+        // Closed to everyone signed in (dev-plan 21.1): only its Admins group, the member.
+        await member.MakePrivateAsync(key);
 
         // 404, not 403: an admin they may not see gets the same masking as
         // anyone else, so the role does not confirm the space's existence.
@@ -123,7 +121,7 @@ public class RoleTests
         var body = await recovered.Content.ReadFromJsonAsync<RecoverDto>();
         Assert.False(body!.AlreadyHadAccess);
 
-        // Now readable, through an ordinary explicit grant.
+        // Now readable, through an ordinary membership of its Admins group.
         Assert.Equal(HttpStatusCode.OK, (await admin.GetAsync($"/api/spaces/{key}")).StatusCode);
 
         // Audited, so the access is not silent.
@@ -145,10 +143,12 @@ public class RoleTests
             Assert.Single(await db.AuditLogs
                 .Where(a => a.Action == "space.access_recovered" && a.TargetId == spaceId)
                 .ToListAsync());
-            Assert.Single(await db.SpacePermissions
-                .Where(p => p.SpaceId == spaceId && p.Operation == SpaceOperation.Admin
-                            && p.PrincipalId != memberUser.Id)
+            Assert.Single(await db.UserGroups
+                .Where(ug => ug.Group!.SpaceId == spaceId && ug.Group.SpaceRole == SpaceGroupRole.Admins
+                             && ug.UserId != memberUser.Id)
                 .ToListAsync());
+            // A membership, not a grant to the person.
+            Assert.False(await db.SpacePermissions.AnyAsync(p => p.SpaceId == spaceId && p.PrincipalType == PrincipalType.User));
         }
     }
 
@@ -157,13 +157,14 @@ public class RoleTests
     {
         using var factory = new TestAppFactory();
         var admin = factory.CreateClient();
-        await RegisterAsync(admin, "admin@example.com");
+        var adminUser = await RegisterAsync(admin, "admin@example.com");
         var member = factory.CreateClient();
         await RegisterAsync(member, "member@example.com");
         var spaceId = await member.CreateSpaceAsync();
         var key = (await member.GetFromJsonAsync<List<SpaceDto>>("/api/spaces"))!.Single(s => s.Id == spaceId).Key;
 
-        // The first grant would have made the space private to the admin.
+        // Everyone signed in already administers it, and an explicit admin
+        // would pass the page restrictions everyone else is held to.
         var res = await admin.PostAsync($"/api/admin/spaces/{key}/recover-access", null);
         res.EnsureSuccessStatusCode();
         Assert.True((await res.Content.ReadFromJsonAsync<RecoverDto>())!.AlreadyHadAccess);
@@ -171,12 +172,14 @@ public class RoleTests
         Assert.Equal(HttpStatusCode.OK, (await member.GetAsync($"/api/spaces/{key}")).StatusCode);
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        Assert.False(await db.SpacePermissions.AnyAsync(p => p.SpaceId == spaceId));
+        Assert.False(await db.SpacePermissions.AnyAsync(p => p.SpaceId == spaceId && p.PrincipalType == PrincipalType.User));
+        Assert.False(await db.UserGroups.AnyAsync(ug => ug.UserId == adminUser.Id && ug.Group!.SpaceId == spaceId));
+        Assert.Equal(SpaceOperation.Admin, (await db.Spaces.SingleAsync(s => s.Id == spaceId)).EveryoneAccess);
         Assert.False(await db.AuditLogs.AnyAsync(a => a.Action == "space.access_recovered"));
     }
 
     [Fact]
-    public async Task Revoking_the_recovered_grant_returns_the_admin_to_no_access()
+    public async Task Removing_the_recovered_membership_returns_the_admin_to_no_access()
     {
         using var factory = new TestAppFactory();
         var admin = factory.CreateClient();
@@ -187,21 +190,13 @@ public class RoleTests
         var spaceId = await member.CreateSpaceAsync();
         var spaces = await member.GetFromJsonAsync<List<SpaceDto>>("/api/spaces");
         var key = spaces!.Single(s => s.Id == spaceId).Key;
-        await member.PostAsJsonAsync($"/api/spaces/{key}/permissions",
-            new { PrincipalType = 0, PrincipalId = memberUser.Id, Operation = 2 });
+        await member.MakePrivateAsync(key);
 
         await admin.PostAsync($"/api/admin/spaces/{key}/recover-access", null);
         Assert.Equal(HttpStatusCode.OK, (await admin.GetAsync($"/api/spaces/{key}")).StatusCode);
 
-        Guid grantId;
-        using (var scope = factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            grantId = (await db.SpacePermissions
-                .FirstAsync(p => p.SpaceId == spaceId && p.PrincipalId == adminUser.Id)).Id;
-        }
-
-        var revoke = await member.DeleteAsync($"/api/spaces/{key}/permissions/{grantId}");
+        var admins = await member.SpaceGroupAsync(key, 2);
+        var revoke = await member.DeleteAsync($"/api/groups/{admins}/members/{adminUser.Id}");
         revoke.EnsureSuccessStatusCode();
 
         Assert.Equal(HttpStatusCode.NotFound, (await admin.GetAsync($"/api/spaces/{key}")).StatusCode);

@@ -80,8 +80,7 @@ public class TemplateTests
 
         var bob = factory.CreateClient();
         var bobId = await bob.RegisterAndSignInAsync();
-        await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
-            new { PrincipalType = 0, PrincipalId = aliceId, Operation = 2 });
+        await alice.MakePrivateAsync(space.Key);
         await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
             new { PrincipalType = 0, PrincipalId = bobId, Operation = 0 });
 

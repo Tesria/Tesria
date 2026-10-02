@@ -1144,6 +1144,9 @@ catalog's display titles are Confluence's ("Children Display",
 > and reading the audit log are administrator operations; group listing
 > stays open to any signed-in user for the permission picker. In the SPA,
 > Groups and Audit are Admin tabs and API tokens live on the profile.
+> Since 21.1 a space's own groups are the exception: they are managed by
+> the space's administrators, and hidden from anyone who cannot see the
+> space (see "Space permissions and groups" below).
 
 > **Update 2026-09-20 (dev-plan 10.1):** a third role, `Owner = 2`, sits
 > above `Admin`. Everything below still holds for administrators; what the
@@ -1308,11 +1311,16 @@ surface the websocket.
 plan left open, and the answer is Confluence's own: a site admin sees
 exactly what their grants allow, like anyone else. What they have that
 others don't is a **recover-access** action,
-`POST /api/admin/spaces/{key}/recover-access`, which writes them an
-explicit `SpaceOperation.Admin` grant on that space. From then on the
+`POST /api/admin/spaces/{key}/recover-access`, which makes them an
+explicit administrator of that space: since 21.1 by adding them to the
+space's Admins group (before, by an Admin grant to them). From then on the
 existing rules apply unchanged: an explicit space admin can view and edit
 the space and is not blocked by page restrictions (that rule already
-exists in `PermissionService`). Recovery is audited as
+exists in `PermissionService`). On a space whose EveryoneAccess is Admin
+it grants nothing and says they already had access, unless the space has
+no explicit administrator at all (every space that was open before 21.1):
+such a space could otherwise never be closed or given an administrator,
+since nobody may add to its Admins group, so recovery adds them there. Recovery is audited as
 `space.access_recovered` and, once dev-plan 3.3 exists, raises a security
 event visible to every other admin. The reasons:
 
@@ -1342,6 +1350,77 @@ recover-access they can read it, a `space.access_recovered` audit row
 exists, and revoking the grant restores the 404; the existing suite still
 passes: several tests register two users in sequence, so assert nothing
 about them changed except the first one's role.
+
+### Space permissions and groups (dev-plan 21.1)
+
+What a signed-in account may do in a space comes from three places, all in
+`PermissionService`:
+
+- **`Space.EveryoneAccess`** (null, View, Edit or Admin): what every
+  signed-in, *active* account gets, as an implicit level. Before 21.1 a
+  space with no grant rows was open to everyone ("default-open"); that rule
+  is gone, and the seed turned it into an EveryoneAccess of Admin. A new
+  space is created with Admin (as open as before, until 21.2's wizard
+  asks); a pack import with null. Changing it is the space administrator's
+  (`PUT /api/spaces/{key}/permissions/everyone`): widening keeps 15.3's
+  make-open protections (sudo, the `space.opened` audit entry and alert),
+  narrowing from Admin is refused unless the actor stays an explicit
+  admin, and the change revokes that space's live-editing connections.
+  `DELETE /api/spaces/{key}/permissions` is kept as "set it to Admin".
+- **Global Viewers and Global Reviewers** (fixed ids beside Owner, Admins
+  and Users in `BuiltInGroups`, but with *stored* members): an implicit View
+  on every space, archived ones included. Adding a member needs Manage
+  Groups and the sudo window, is audited and raises
+  `group.global_member_added`.
+- **Grants** (`SpacePermission`), to a person or a group. Each space has
+  four groups of its own (`Group.SpaceId`, `Group.SpaceRole`: Viewers,
+  Editors, Admins, Reviewers), each holding one ordinary grant row on its
+  space (View, Edit, Admin, View until review mode). Because they are
+  ordinary rows, the explicit-admin rule, the last-admin rule and the
+  revocation interceptor treat them like any other.
+
+**Implicit levels never make an explicit admin.** Only an Admin grant
+(directly, or through a group such as the space's Admins) passes page
+restrictions, and only an explicit admin may change who administers the
+space: its Admins group's members and any Admin grant. Otherwise, in a
+space everyone may administer, anyone could add themselves to Admins and
+read past every restriction. The other three groups may be managed by any
+administrator of the space, implicit ones included.
+
+**A space's groups belong to it.** Their display name is derived when read
+("Handbook Viewers"); the stored `NormalizedName` is
+`space:<id>:<role>`, outside the unique index (filtered to
+`SpaceId IS NULL`), so same-named spaces and renames need nothing. Their
+grant rows cannot be revoked or changed, they cannot be renamed or deleted,
+they go with the space (cascade), and they may be granted or named in a
+page restriction only in their own space. Manage Groups does not reach
+them: membership routes (`/api/groups/{id}/members`) authorize a space
+group against its space. They are hidden, with their members, from anyone
+who cannot view the space, and their membership changes are audited
+against the space (`space.group_member_added`), so the audit log's space
+filter hides them too.
+
+**The last-admin rule** (`SpaceGroups.HasAdminAfterAsync`) counts an
+EveryoneAccess of Admin and *active* accounts holding Admin directly or
+through any group, and runs on all four ways to lose admin: revoking an
+Admin grant, removing a member of a group that holds Admin, narrowing
+EveryoneAccess from Admin, and deleting a group that holds Admin.
+
+**The move** (`SpaceGroupSeed`, at start, as the app's role): for each
+space with no groups yet, in a transaction, it makes the four groups, sets
+EveryoneAccess (Admin when the space had no grants, else null), moves each
+grant to a person into the matching group (View to Viewers, Edit to
+Editors, Admin to Admins), records it in `SpaceGrantMoves` (append-only:
+the original grant's id, level and time) and writes one
+`space.groups_created` audit entry. Group grants stay grants; a grant to
+Users of Admin stays a grant, because it is an explicit admin and
+EveryoneAccess is not. Saves inside the seed revoke nothing, since nobody's
+access changes. The migration (`SpaceGroups`) is schema only; undoing it
+is a restore.
+
+One deliberate tightening: an account that is not active no longer passes
+checks made on its behalf in a space open to everyone (it is not "signed
+in"), for example mention notifications.
 
 ### Avatars (`components/Avatar.tsx`, dev-plan 1.2)
 

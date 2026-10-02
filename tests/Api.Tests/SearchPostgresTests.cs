@@ -156,8 +156,8 @@ public class SearchPostgresTests
         var bob = factory.CreateClient();
         await bob.RegisterAndSignInAsync();
         Assert.Equal(2, (await Search(bob, "priya")).Count);
-        (await alice.PostAsJsonAsync($"/api/spaces/{await KeyOf(alice, space)}/permissions",
-            new { PrincipalType = 0, PrincipalId = aliceId, Operation = 0 })).EnsureSuccessStatusCode();
+        // Closed to everyone else (dev-plan 21.1); Alice made it, so she is in its Admins.
+        await alice.MakePrivateAsync(await KeyOf(alice, space));
         Assert.Equal("Priya's notes", Assert.Single(await Search(bob, "priya")).Title);
 
         // And a page restricted to Alice in a space Bob can see is still hers alone.

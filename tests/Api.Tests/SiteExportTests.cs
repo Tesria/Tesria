@@ -520,8 +520,7 @@ public class SiteExportTests
         var ownerId = await owner.RegisterAndSignInAsync();
         var spaceId = await owner.CreateSpaceAsync("PRIV");
         // Close the space: spaces are open until somebody says otherwise.
-        (await owner.PostAsJsonAsync($"/api/spaces/PRIV/permissions",
-            new { PrincipalType = 0, PrincipalId = ownerId, Operation = 2 })).EnsureSuccessStatusCode();
+        await owner.MakePrivateAsync("PRIV");
         _ = spaceId;
 
         var stranger = factory.CreateClient();

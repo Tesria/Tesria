@@ -66,8 +66,7 @@ public class WebhookTests
 
         var bob = factory.CreateClient();
         var bobId = await bob.RegisterAndSignInAsync();
-        await alice.PostAsJsonAsync($"/api/spaces/{key}/permissions",
-            new { PrincipalType = User, PrincipalId = aliceId, Operation = Admin });
+        await alice.MakePrivateAsync(key);
         await alice.PostAsJsonAsync($"/api/spaces/{key}/permissions",
             new { PrincipalType = User, PrincipalId = bobId, Operation = 1 }); // Edit, not Admin
 
