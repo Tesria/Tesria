@@ -159,8 +159,7 @@ public class CollabAuthorizeTests
         Assert.Equal(new[] { true }, await AllowedAsync(f, claims));
 
         // The space stops being open to everyone: only the owner is granted it.
-        (await owner.PostAsJsonAsync("/api/spaces/CLOSING/permissions",
-            new { PrincipalType = 0, PrincipalId = ownerId, Operation = 2 })).EnsureSuccessStatusCode();
+        await owner.MakePrivateAsync("CLOSING");
         Assert.Equal(new[] { false }, await AllowedAsync(f, claims));
     }
 

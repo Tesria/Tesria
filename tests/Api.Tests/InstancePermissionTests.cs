@@ -606,17 +606,11 @@ public class InstancePermissionTests
         Assert.Equal(HttpStatusCode.Forbidden, (await memberClient.DeleteAsync($"/api/pages/{second.Id}")).StatusCode);
 
         // Granting delete_any does not reach a space they cannot edit. Spaces
-        // are default-open, so this one is given an explicit grant, which is
-        // what closes it to everyone else.
+        // are open to everyone signed in when made, so this one is closed.
         await GrantAsync(factory, UserRole.Member, InstancePermissions.PagesDeleteAny);
         var closed = (await (await ownerClient.PostAsJsonAsync("/api/spaces",
             new { Key = "CLOSED", Name = "Closed" })).Content.ReadFromJsonAsync<SpaceDto>())!;
-        (await ownerClient.PostAsJsonAsync($"/api/spaces/{closed.Key}/permissions", new
-        {
-            PrincipalType = 0,
-            PrincipalId = (await ownerClient.GetFromJsonAsync<UserDto>("/api/auth/me"))!.Id,
-            Operation = 2,
-        })).EnsureSuccessStatusCode();
+        await ownerClient.MakePrivateAsync(closed.Key);
         var hidden = (await (await ownerClient.PostAsJsonAsync("/api/pages",
             new { SpaceId = closed.Id, Title = "Hidden", ContentJson = Doc })).Content.ReadFromJsonAsync<PageDto>())!;
         Assert.Equal(HttpStatusCode.NotFound, (await memberClient.DeleteAsync($"/api/pages/{hidden.Id}")).StatusCode);

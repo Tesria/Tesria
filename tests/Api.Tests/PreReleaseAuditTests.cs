@@ -50,10 +50,8 @@ public class PreReleaseAuditTests
         (await (await c.PostAsJsonAsync("/api/pages", new { SpaceId = spaceId, ParentPageId = (Guid?)null, Title = title, ContentJson = Doc }))
             .Content.ReadFromJsonAsync<PageDto>())!;
 
-    /// <summary>Makes a space private to its creator, the way the permissions tab does.</summary>
-    private static async Task CloseAsync(HttpClient c, string key, Guid userId) =>
-        (await c.PostAsJsonAsync($"/api/spaces/{key}/permissions", new { PrincipalType = UserPrincipal, PrincipalId = userId, Operation = View }))
-            .EnsureSuccessStatusCode();
+    /// <summary>Makes a space private to its creator, the way the permissions tab does (dev-plan 21.1).</summary>
+    private static Task CloseAsync(HttpClient c, string key, Guid userId) => c.MakePrivateAsync(key);
 
     // -- API tokens -----------------------------------------------------------
 
@@ -202,8 +200,7 @@ public class PreReleaseAuditTests
         var bob = f.CreateClient();
         var bobId = await bob.RegisterAndSignInAsync();
         var aliceId = (await alice.GetFromJsonAsync<UserDto>("/api/auth/me"))!.Id;
-        (await alice.PostAsJsonAsync("/api/spaces/DRAFTS/permissions", new { PrincipalType = UserPrincipal, PrincipalId = aliceId, Operation = 2 }))
-            .EnsureSuccessStatusCode();
+        await alice.MakePrivateAsync("DRAFTS");
         (await alice.PostAsJsonAsync("/api/spaces/DRAFTS/permissions", new { PrincipalType = UserPrincipal, PrincipalId = bobId, Operation = View }))
             .EnsureSuccessStatusCode();
         foreach (var path in new[] { "versions", "versions/1", "attachments", "labels", "comments" })

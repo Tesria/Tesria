@@ -150,8 +150,7 @@ public class McpTests
             .Content.ReadFromJsonAsync<PageDetail>();
         (await alice.PostAsJsonAsync($"/api/pages/{page!.Id}/restrictions",
             new { PrincipalType = User, PrincipalId = aliceId, Operation = View })).EnsureSuccessStatusCode();
-        (await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
-            new { PrincipalType = User, PrincipalId = aliceId, Operation = View })).EnsureSuccessStatusCode();
+        await alice.MakePrivateAsync(space.Key);
 
         var bobMcp = await TokenClient(f, bob);
         var call = await CallTool(bobMcp, "get_page", new { pageId = page.Id });

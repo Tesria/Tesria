@@ -175,8 +175,7 @@ public class AuditPagingTests
         // Seen and unseen entries, interleaved, so every page mixes both.
         var seen = await admin.CreateSpaceAsync("SEEN");
         var hidden = await owner.CreateSpaceAsync("UNSEEN");
-        (await owner.PostAsJsonAsync("/api/spaces/UNSEEN/permissions", new { PrincipalType = UserPrincipal, PrincipalId = ownerId, Operation = View }))
-            .EnsureSuccessStatusCode();
+        await owner.MakePrivateAsync("UNSEEN");
         var seenPages = new List<Guid>();
         var hiddenPages = new List<Guid>();
         for (var i = 0; i < 6; i++)

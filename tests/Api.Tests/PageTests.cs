@@ -283,8 +283,7 @@ public class PageTests
         var bobId = await bob.RegisterAndSignInAsync();
         // Locking the space to explicit grants also drops Alice to View unless
         // re-granted: restore her Admin access alongside Bob's View-only.
-        await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
-            new { PrincipalType = 0, PrincipalId = aliceId, Operation = 2 });
+        await alice.MakePrivateAsync(space.Key);
         await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
             new { PrincipalType = 0, PrincipalId = bobId, Operation = 0 });
 

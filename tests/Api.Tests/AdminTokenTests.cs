@@ -132,8 +132,7 @@ public class AdminTokenTests
 
         var spaceId = await member.CreateSpaceAsync("PRIV");
         // Private to the member: view for the member only.
-        (await member.PostAsJsonAsync("/api/spaces/PRIV/permissions", new { PrincipalType = 0, PrincipalId = memberId, Operation = 0 }))
-            .EnsureSuccessStatusCode();
+        await member.MakePrivateAsync("PRIV");
         var page = await (await member.PostAsJsonAsync("/api/pages",
             new { SpaceId = spaceId, Title = "Salary review", ContentJson = Doc })).Content.ReadFromJsonAsync<PageDto>();
 

@@ -390,9 +390,7 @@ public class SpaceDeleteTests
         // naming the owner as its only viewer.
         var ownerId = await InScopeAsync(factory, db => db.Users
             .Where(u => u.Email == "owner@example.com").Select(u => u.Id).FirstAsync());
-        (await owner.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
-            new { PrincipalType = 0, PrincipalId = ownerId, Operation = 2 }))
-            .EnsureSuccessStatusCode();
+        await owner.MakePrivateAsync(space.Key);
 
         // 404, not 403: a space they cannot see should not be confirmed to exist.
         Assert.Equal(HttpStatusCode.NotFound, (await DeleteAsync(admin, "PRIVATE")).StatusCode);

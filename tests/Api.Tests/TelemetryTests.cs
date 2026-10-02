@@ -120,8 +120,7 @@ public class TelemetryTests
 
         var spaces = await owner.GetFromJsonAsync<List<TestHelpers.SpaceDto>>("/api/spaces");
         var key = spaces!.Single(s => s.Id == spaceId).Key;
-        await owner.PostAsJsonAsync($"/api/spaces/{key}/permissions",
-            new { PrincipalType = 0, PrincipalId = ownerId, Operation = 2 });
+        await owner.MakePrivateAsync(key);
 
         var outsider = factory.CreateClient();
         await outsider.RegisterAndSignInAsync();

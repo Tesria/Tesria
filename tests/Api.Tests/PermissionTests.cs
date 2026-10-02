@@ -49,7 +49,7 @@ public class PermissionTests
     }
 
     [Fact]
-    public async Task Granting_a_space_permission_locks_everyone_else_out()
+    public async Task Closing_a_space_to_everyone_locks_everyone_else_out()
     {
         using var factory = new TestAppFactory();
         var alice = factory.CreateClient();
@@ -61,10 +61,14 @@ public class PermissionTests
         await bob.RegisterAndSignInAsync();
         Assert.Equal(HttpStatusCode.OK, (await bob.GetAsync($"/api/spaces/{space.Key}")).StatusCode);
 
-        // The moment a grant exists the space stops being default-open.
+        // A grant no longer closes a space (dev-plan 21.1): what everyone
+        // signed in gets is its own setting.
         var grant = await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
             new { PrincipalType = User, PrincipalId = aliceId, Operation = View });
         Assert.Equal(HttpStatusCode.NoContent, grant.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await bob.GetAsync($"/api/spaces/{space.Key}")).StatusCode);
+
+        await alice.MakePrivateAsync(space.Key);
 
         // Bob loses access, and the space is not even discoverable.
         Assert.Equal(HttpStatusCode.NotFound, (await bob.GetAsync($"/api/spaces/{space.Key}")).StatusCode);
@@ -72,7 +76,7 @@ public class PermissionTests
         Assert.DoesNotContain((await bob.GetFromJsonAsync<List<SpaceDto>>("/api/spaces"))!, s => s.Id == space.Id);
         Assert.Empty((await bob.GetFromJsonAsync<List<SearchResult>>("/api/search?q=pineapple"))!);
 
-        // Alice keeps working: the grantor is auto-given admin to prevent lockout.
+        // Alice keeps working: she made the space, so she is in its Admins group.
         Assert.Equal(HttpStatusCode.OK, (await alice.GetAsync($"/api/spaces/{space.Key}")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await alice.GetAsync($"/api/pages/{page.Id}")).StatusCode);
         Assert.Single((await alice.GetFromJsonAsync<List<SearchResult>>("/api/search?q=pineapple"))!);
@@ -90,8 +94,7 @@ public class PermissionTests
         var bobId = await bob.RegisterAndSignInAsync();
 
         // Lock the space down to Alice only.
-        await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
-            new { PrincipalType = User, PrincipalId = aliceId, Operation = Admin });
+        await alice.MakePrivateAsync(space.Key);
         Assert.Equal(HttpStatusCode.NotFound, (await bob.GetAsync($"/api/spaces/{space.Key}")).StatusCode);
 
         // Put Bob in a group and grant the group view access.
@@ -119,8 +122,8 @@ public class PermissionTests
         var memberId = await member.RegisterAndSignInAsync();
 
         var groups = await owner.GetFromJsonAsync<List<BuiltInGroupDto>>("/api/groups");
-        Assert.Equal(["Owner", "Admins", "Users"], groups!.Take(3).Select(g => g.Name));
-        Assert.All(groups!.Take(3), g => Assert.True(g.BuiltIn));
+        Assert.Equal(["Owner", "Admins", "Users", "Global Viewers", "Global Reviewers"], groups!.Take(5).Select(g => g.Name));
+        Assert.All(groups!.Take(5), g => Assert.True(g.BuiltIn));
         var users = groups!.Single(g => g.Name == "Users");
         var admins = groups!.Single(g => g.Name == "Admins");
         Assert.Equal(2, users.MemberCount);
@@ -128,8 +131,7 @@ public class PermissionTests
 
         // A private space shared with Users is readable by everyone with an account.
         var space = await NewSpace(owner, "ALL");
-        await owner.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
-            new { PrincipalType = User, PrincipalId = ownerId, Operation = Admin });
+        await owner.MakePrivateAsync(space.Key);
         Assert.Equal(HttpStatusCode.NotFound, (await member.GetAsync($"/api/spaces/{space.Key}")).StatusCode);
         await owner.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
             new { PrincipalType = Group, PrincipalId = users.Id, Operation = View });
@@ -154,8 +156,7 @@ public class PermissionTests
         var bob = factory.CreateClient();
         await bob.RegisterAndSignInAsync();
         var space = await NewSpace(alice, "BACK");
-        await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
-            new { PrincipalType = User, PrincipalId = aliceId, Operation = Admin });
+        await alice.MakePrivateAsync(space.Key);
         Assert.Equal(HttpStatusCode.NotFound, (await bob.GetAsync($"/api/spaces/{space.Key}")).StatusCode);
 
         // Not someone who cannot administer it.
@@ -173,8 +174,7 @@ public class PermissionTests
         var alice = factory.CreateClient();
         var aliceId = await alice.RegisterAndSignInAsync();
         var space = await NewSpace(alice, "GONE");
-        await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
-            new { PrincipalType = User, PrincipalId = aliceId, Operation = Admin });
+        await alice.MakePrivateAsync(space.Key);
         var group = (await (await alice.PostAsJsonAsync("/api/groups", new { Name = "Readers" }))
             .Content.ReadFromJsonAsync<GroupDto>())!;
         await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
@@ -182,27 +182,29 @@ public class PermissionTests
 
         Assert.Equal(HttpStatusCode.NoContent, (await alice.DeleteAsync($"/api/groups/{group.Id}")).StatusCode);
 
-        var grants = await alice.GetFromJsonAsync<List<GrantRow>>($"/api/spaces/{space.Key}/permissions");
-        Assert.DoesNotContain(grants!, g => g.PrincipalId == group.Id);
+        var access = await alice.GetFromJsonAsync<AccessDto>($"/api/spaces/{space.Key}/permissions");
+        Assert.DoesNotContain(access!.Grants, g => g.PrincipalId == group.Id);
     }
 
     [Fact]
-    public async Task A_group_that_is_a_spaces_only_access_cannot_be_deleted()
+    public async Task A_group_that_is_a_spaces_last_administrator_cannot_be_deleted()
     {
-        // Removing its grant would leave the space with none: open to everyone.
+        // Since 21.1 removing a grant cannot open a space, but it can still
+        // leave it with nobody to administer it.
         using var factory = new TestAppFactory();
         var alice = factory.CreateClient();
         var aliceId = await alice.RegisterAndSignInAsync();
         var space = await NewSpace(alice, "ONLY");
+        await alice.MakePrivateAsync(space.Key);
         var group = (await (await alice.PostAsJsonAsync("/api/groups", new { Name = "Owners" }))
             .Content.ReadFromJsonAsync<GroupDto>())!;
         await alice.PostAsJsonAsync($"/api/groups/{group.Id}/members", new { UserId = aliceId });
-        await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
-            new { PrincipalType = Group, PrincipalId = group.Id, Operation = Admin });
-        // The first grant added Alice too; take her own grant away, leaving the group.
-        var grants = await alice.GetFromJsonAsync<List<GrantRow>>($"/api/spaces/{space.Key}/permissions");
-        var hers = grants!.Single(g => g.PrincipalType == User);
-        (await alice.DeleteAsync($"/api/spaces/{space.Key}/permissions/{hers.Id}")).EnsureSuccessStatusCode();
+        (await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
+            new { PrincipalType = Group, PrincipalId = group.Id, Operation = Admin })).EnsureSuccessStatusCode();
+        // She made the space, so she is in its Admins group too; she leaves
+        // it, which the group's grant allows, leaving the group.
+        var admins = await alice.SpaceGroupAsync(space.Key, 2);
+        (await alice.DeleteAsync($"/api/groups/{admins}/members/{aliceId}")).EnsureSuccessStatusCode();
 
         var refused = await alice.DeleteAsync($"/api/groups/{group.Id}");
         Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
@@ -287,9 +289,8 @@ public class PermissionTests
         var bob = factory.CreateClient();
         var bobId = await bob.RegisterAndSignInAsync();
 
-        // Alice takes admin; Bob gets view only.
-        await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
-            new { PrincipalType = User, PrincipalId = aliceId, Operation = Admin });
+        // Alice closes the space (she is in its Admins group); Bob gets view only.
+        await alice.MakePrivateAsync(space.Key);
         await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
             new { PrincipalType = User, PrincipalId = bobId, Operation = View });
 
@@ -314,15 +315,19 @@ public class PermissionTests
         var alice = factory.CreateClient();
         var aliceId = await alice.RegisterAndSignInAsync();
         var space = await NewSpace(alice, "LOCK");
+        await alice.MakePrivateAsync(space.Key);
 
+        // A grant of her own can go: the Admins group still has her.
         await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
             new { PrincipalType = User, PrincipalId = aliceId, Operation = Admin });
+        var access = await alice.GetFromJsonAsync<AccessDto>($"/api/spaces/{space.Key}/permissions");
+        var adminRow = access!.Grants.Single(p => p.Operation == Admin);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await alice.DeleteAsync($"/api/spaces/{space.Key}/permissions/{adminRow.Id}")).StatusCode);
 
-        var perms = await alice.GetFromJsonAsync<List<PermissionRow>>($"/api/spaces/{space.Key}/permissions");
-        var adminRow = perms!.Single(p => p.Operation == Admin);
-
-        var res = await alice.DeleteAsync($"/api/spaces/{space.Key}/permissions/{adminRow.Id}");
-        Assert.Equal(HttpStatusCode.Conflict, res.StatusCode);
+        // But not her place in Admins, the last there is.
+        var admins = await alice.SpaceGroupAsync(space.Key, 2);
+        Assert.Equal(HttpStatusCode.Conflict, (await alice.DeleteAsync($"/api/groups/{admins}/members/{aliceId}")).StatusCode);
     }
 
     [Fact]
@@ -344,8 +349,7 @@ public class PermissionTests
         Assert.Contains(before!, e => e.MetadataJson != null && e.MetadataJson.Contains("TopSecretTitle"));
 
         // Once the space is private, its audit trail must disappear for Bob.
-        await alice.PostAsJsonAsync($"/api/spaces/{space.Key}/permissions",
-            new { PrincipalType = User, PrincipalId = aliceId, Operation = Admin });
+        await alice.MakePrivateAsync(space.Key);
 
         var after = await bob.GetFromJsonAsync<List<AuditRow>>("/api/audit");
         Assert.DoesNotContain(after!, e => e.MetadataJson != null && e.MetadataJson.Contains("TopSecretTitle"));
@@ -359,4 +363,5 @@ public class PermissionTests
         Guid? ActorId, string? ActorName, string? MetadataJson, DateTimeOffset CreatedAt);
 
     private record PermissionRow(Guid Id, int PrincipalType, Guid PrincipalId, string? PrincipalName, int Operation);
+    private record AccessDto(int? EveryoneAccess, bool CanManageAdmins, List<PermissionRow> Grants);
 }
