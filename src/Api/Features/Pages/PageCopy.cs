@@ -98,7 +98,7 @@ public static class PageCopy
                 var first = await db.PageVersions.FirstAsync(v => v.PageId == newPageId, ct);
                 first.ContentJson = content;
                 var newPage = await db.Pages.FirstAsync(p => p.Id == newPageId, ct);
-                newPage.SearchText = PageContent.BuildSearchText(newPage.Title, content);
+                newPage.SearchText = PageContent.BuildSearchText(content);
             }
 
             // The emoji is the page's, not its content's, so the writer does

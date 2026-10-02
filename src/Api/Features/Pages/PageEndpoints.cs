@@ -222,7 +222,7 @@ public static class PageEndpoints
         var version = page.CurrentVersion;
         version.ContentJson = content;
         page.Title = title;
-        page.SearchText = PageContent.BuildSearchText(title, content);
+        page.SearchText = PageContent.BuildSearchText(content);
         page.Status = PageStatus.Current;
         page.UpdatedAt = DateTimeOffset.UtcNow;
 

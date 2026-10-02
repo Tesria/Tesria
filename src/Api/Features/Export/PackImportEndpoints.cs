@@ -249,7 +249,7 @@ public static partial class PackImportEndpoints
 
                 currents.Add((page, currentVersion));
                 page.UpdatedAt = currentVersion.CreatedAt;
-                page.SearchText = PageContent.BuildSearchText(page.Title, currentVersion.ContentJson);
+                page.SearchText = PageContent.BuildSearchText(currentVersion.ContentJson);
 
                 foreach (var label in packed.Labels ?? [])
                     await AddLabelAsync(db, page.Id, label, user, now, ct);
