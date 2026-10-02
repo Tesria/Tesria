@@ -559,7 +559,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Whatever you choose is saved straight away; there is no Save button. You have three kinds to choose from:'),
     ul(
       li(p(b('A picture of your own:'), ' choose ', b('Upload Picture'), ' and pick a PNG, JPEG or WebP file. Tesria trims it to a square from the middle, so a logo with space around it works best. Once there is one, the button reads ', b('Replace Picture'), '.')),
-      li(p(b('An emoji:'), ' choose one under ', b('Or Pick an Emoji'), '. For one that is not offered, paste it into ', b('Any Other Emoji'), ' and choose ', b('Use It'), '. It has to be a single emoji, not letters.')),
+      li(p(b('An emoji:'), ' choose one under ', b('Or Pick an Emoji'), '. For one that is not offered, paste it into ', b('Any Other Emoji'), ' and choose ', b('Use It'), '. It has to be one emoji, not letters and not several side by side. An emoji made of parts, such as a flag or one with a skin tone, counts as one.')),
       li(p(b('A different tile color:'), ' choose a color under ', b('Tile Color'), '. It changes the tile behind the letter or the emoji. A picture has no tile, so remove the picture first to choose one.')),
     ),
 
@@ -860,7 +860,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     h(2, 'Numbers and bullets'),
     p('The ', b('Numbers'), ' group (1️⃣ 2️⃣ 3️⃣ and so on) and the ', b('Bullets'), ' group (• ◦ ▪ ➤ ★ ✔ and others) are for pages that are read in order, or that are listed rather than illustrated, where a picture would only get in the way.'),
     p('A number emoji stays exactly where you put it. To number every page in a space instead, and have the numbers follow along when pages are added or moved, use the space’s ', b('Numbered'), ' page tree; see ', pageLink('The page tree and reordering'), '.'),
-    panel('note', p(b('One emoji, not words.'), ' A page’s emoji has to be a single emoji. Letters and words are refused.')),
+    panel('note', p(b('One emoji, not words.'), ' A page’s emoji has to be a single emoji. Letters, words and several emoji side by side are refused.')),
   ))
 
   // --------------------------------------------------------------- Labels

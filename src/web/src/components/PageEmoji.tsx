@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { EMOJI, type Emoji } from '../editor/emoji'
 import { useDismissable } from '../hooks/useDismissable'
+import { singleEmojiProblem } from './singleEmoji'
 
 /**
  * Markers for pages that are read in order, or listed rather than
@@ -58,6 +59,13 @@ export function PageEmoji({ emoji, canEdit, onChange }: {
     }
   }
 
+  // One glyph, as the server requires (QA T3-008); left in the box to fix.
+  function choosePasted(value: string) {
+    const problem = singleEmojiProblem(value)
+    if (problem) setError(problem)
+    else void choose(value)
+  }
+
   return (
     <div className="page-emoji-picker" ref={ref}>
       {emoji ? (
@@ -90,7 +98,7 @@ export function PageEmoji({ emoji, canEdit, onChange }: {
           </div>
           <form
             className="page-emoji__paste"
-            onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); if (pasted.trim()) void choose(pasted.trim()) }}
+            onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); if (pasted.trim()) choosePasted(pasted.trim()) }}
           >
             <input placeholder="Or paste any emoji" value={pasted} onChange={(e) => setPasted(e.target.value)} aria-label="Paste any emoji" />
             <button type="submit" className="btn btn--sm" disabled={!pasted.trim()}>Use</button>
