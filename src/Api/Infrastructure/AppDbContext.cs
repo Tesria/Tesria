@@ -93,6 +93,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<RecoveryCode> RecoveryCodes => Set<RecoveryCode>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<Invite> Invites => Set<Invite>();
+    public DbSet<InviteGroup> InviteGroups => Set<InviteGroup>();
     public DbSet<Space> Spaces => Set<Space>();
     public DbSet<Page> Pages => Set<Page>();
     public DbSet<PageVersion> PageVersions => Set<PageVersion>();
@@ -138,6 +139,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(i => i.Email).HasMaxLength(320);
             e.HasIndex(i => i.TokenHash);
             e.HasOne(i => i.CreatedBy).WithMany().HasForeignKey(i => i.CreatedById)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // An invite's groups (dev-plan 21.3). Both sides cascade: a revoked
+        // invite takes its places with it, and so does a deleted space's group.
+        b.Entity<InviteGroup>(e =>
+        {
+            e.HasKey(x => new { x.InviteId, x.GroupId });
+            e.HasOne(x => x.Invite).WithMany(i => i.Groups).HasForeignKey(x => x.InviteId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Group).WithMany().HasForeignKey(x => x.GroupId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

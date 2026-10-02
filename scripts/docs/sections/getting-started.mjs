@@ -369,7 +369,7 @@ export async function build({
 
     step(1, 'Make a space'),
     p('Pages live in ', b('spaces'), ': one for each team, project or audience. If you made one in the setup wizard, it is waiting under ', b('Spaces'), ' at the top of the screen, and you can go straight to step 2.'),
-    p('If not, choose ', b('Spaces'), ', then ', b('New Space'), '. Give it a short key, such as ', c('TEAM'), ', and a name, such as ', i('Team handbook'), ', and choose ', b('Create'), '. ', pageLink('Creating a space'), ' walks through it with pictures and helps you decide how to divide things up.'),
+    p('If not, choose ', b('Spaces'), ', then ', b('New Space'), '. Give it a name, such as ', i('Team handbook'), ', and a short key, such as ', c('TEAM'), ', choose who can see it and who goes in its groups, and choose ', b('Create Space'), '. ', pageLink('Creating a space'), ' walks through it with pictures and helps you decide how to divide things up.'),
 
     step(2, 'Start a page'),
     p('Open the space. In a new, empty space, choose ', b('Create the first one'), '. Once it has pages, choose ', b('+ New Page'), ' at the top of the space’s sidebar (on a phone, ', b('+ New'), '). Choosing it while a page is open makes the new page a sub-page of that one.'),
@@ -389,10 +389,11 @@ export async function build({
     p('A wiki gets useful once other people read it and write in it. If you chose ', b('Invite Only'), ' in the setup wizard, invite each person with a link:'),
     ol(
       li(p('Choose ', b('Admin'), ' at the top of the screen, then the ', b('Invites'), ' tab. In a narrower window, or on a phone, Admin is in the ', b('☰'), ' menu at the top left.')),
-      li(p('Optionally enter the person’s email address, so only they can use the link, and choose how many days it lasts.')),
-      li(p('Choose ', b('Create Invite'), ', then ', b('Copy'), ', and send the link to them however you like. It is shown only once, and works once.')),
+      li(p('Optionally enter the person’s email address, so only they can use the link, and choose how many days it lasts. Choose ', b('Continue'), '.')),
+      li(p('The next steps can put them in groups and give them a place in your spaces; choose ', b('Continue'), ' past any you do not need.')),
+      li(p('On the last step, choose ', b('Create Invite'), ', then ', b('Copy'), ', and send the link to them however you like. It is shown only once, and works once.')),
     ),
-    p('See ', pageLink('Invites'), ' for more. A new space can be read and edited by everyone who is signed in; to keep one to some people only, see ', pageLink('Who can see a space'), '.'),
+    p('See ', pageLink('Invites'), ' for more. You choose who can see each space when you create it; to change that later, see ', pageLink('Who can see a space'), '.'),
 
     h(2, 'Where to go from here'),
     ul(

@@ -34,6 +34,12 @@ public static class SudoReasons
     /// <summary>Choosing who is in Global Viewers or Global Reviewers (dev-plan 21.1).</summary>
     public const string GlobalReaders =
         "Everyone in this group can read every space, so changing who is in it needs your password again.";
+    /// <summary>An invite that makes its account an administrator (dev-plan 21.3).</summary>
+    public const string InviteAdmin =
+        "This invite makes an administrator, so it needs your password again.";
+    /// <summary>An invite that puts its account in Global Viewers or Global Reviewers (dev-plan 21.3).</summary>
+    public const string InviteGlobalReaders =
+        "This invite puts someone in a group that can read every space, so it needs your password again.";
     public const string Purge =
         "Deleting for good cannot be undone, so it needs your password again.";
 }

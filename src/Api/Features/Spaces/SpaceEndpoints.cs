@@ -13,7 +13,28 @@ namespace Tesria.Api.Features.Spaces;
 
 public static partial class SpaceEndpoints
 {
-    public record CreateSpaceRequest(string Key, string Name, string? Description);
+    /// <param name="EveryoneAccess">
+    /// What every signed-in account may do in the new space (dev-plan 21.2):
+    /// null for nothing (only the people in its groups), or 0, 1 or 2 for
+    /// View, Edit or Admin. A raw element, because "left out" and "null" mean
+    /// different things here: left out keeps a new space as open as it has
+    /// always been (Admin), so API clients written before the wizard do not
+    /// change behavior.
+    /// </param>
+    /// <param name="Members">Who goes in each of the space's groups from the start (21.2). The creator is always in Admins.</param>
+    public record CreateSpaceRequest(
+        string Key, string Name, string? Description,
+        List<GroupMembersRequest>? Members = null)
+    {
+        // A property rather than a parameter: the OpenAPI document cannot
+        // describe a JsonElement parameter's default value.
+        public System.Text.Json.JsonElement EveryoneAccess { get; init; }
+    }
+    /// <summary>The people to put in one of a new space's groups.</summary>
+    public record GroupMembersRequest(SpaceGroupRole Role, List<Guid>? UserIds);
+
+    /// <summary>More than a wizard sends; enough that nobody needs to add the rest afterwards one by one.</summary>
+    public const int MaxMembersAtCreate = 500;
     /// <summary>The key proves you are looking at the right space; the password proves it is you.</summary>
     public record DeleteSpaceRequest(string ConfirmKey, string? Password, string? Code);
     public record DeletionPreviewResponse(string Key, string Name, int Pages, int Attachments, long Bytes, bool IsPublic);
@@ -121,6 +142,29 @@ public static partial class SpaceEndpoints
         if (description is { Length: > Space.MaxDescriptionLength })
             return Results.ValidationProblem(Error("description", DescriptionTooLong));
 
+        if (!TryEveryoneAccess(req.EveryoneAccess, out var everyone))
+            return Results.ValidationProblem(Error("everyoneAccess",
+                "Choose null (only the people in its groups), 0 (view), 1 (edit) or 2 (administer)."));
+
+        var creatorId = current.RequireId();
+        var members = new List<(SpaceGroupRole Role, Guid UserId)>();
+        foreach (var entry in req.Members ?? [])
+        {
+            if (!Enum.IsDefined(entry.Role))
+                return Results.ValidationProblem(Error("members", "Choose Viewers, Editors, Admins or Reviewers."));
+            foreach (var userId in (entry.UserIds ?? []).Distinct())
+                // The creator is in Admins already; naming them there again is not an error.
+                if (!(entry.Role == SpaceGroupRole.Admins && userId == creatorId)
+                    && !members.Contains((entry.Role, userId)))
+                    members.Add((entry.Role, userId));
+        }
+        if (members.Count > MaxMembersAtCreate)
+            return Results.ValidationProblem(Error("members",
+                $"Add at most {MaxMembersAtCreate} people while creating a space; add the rest in its Permissions tab."));
+        var memberIds = members.Select(m => m.UserId).Distinct().ToList();
+        if (memberIds.Count > 0 && await db.Users.CountAsync(u => memberIds.Contains(u.Id)) != memberIds.Count)
+            return Results.ValidationProblem(Error("members", "Someone chosen no longer has an account here. Choose again."));
+
         if (await db.Spaces.AnyAsync(s => s.Key == key))
             return Results.Conflict(new { message = $"A space with key '{key}' already exists." });
 
@@ -130,11 +174,15 @@ public static partial class SpaceEndpoints
             Key = key,
             Name = name,
             Description = description,
-            CreatedById = current.RequireId(),
+            CreatedById = creatorId,
             CreatedAt = DateTimeOffset.UtcNow,
-            // As open as a new space has always been, until 21.2's wizard
-            // asks who may see it.
-            EveryoneAccess = SpaceOperation.Admin,
+            // Admin when the request does not say (as open as a new space has
+            // always been). No level needs the password again here, unlike
+            // widening it later (21.1 keeps 15.3's make-open protections for
+            // that): the space is new and empty and its creator is its
+            // administrator, so nothing anybody can already reach is opened.
+            // The level is in the audit entry below.
+            EveryoneAccess = everyone,
         };
         db.Spaces.Add(space);
         // Its four groups (dev-plan 21.1), with its creator in Admins: an
@@ -144,10 +192,42 @@ public static partial class SpaceEndpoints
         {
             GroupId = groups[SpaceGroupRole.Admins].Id, UserId = space.CreatedById, AddedAt = space.CreatedAt,
         });
-        audit.Record("space.created", "space", space.Id, new { space.Key, space.Name });
+        audit.Record("space.created", "space", space.Id,
+            new { space.Key, space.Name, EveryoneAccess = everyone?.ToString() ?? "None" });
+        // The wizard's people (21.2). The creator is an explicit administrator
+        // of the new space, so 21.1's rules allow every one of these, Admins
+        // included. Each is audited against the space, as an addition in the
+        // Permissions tab is.
+        foreach (var (role, userId) in members)
+        {
+            db.UserGroups.Add(new UserGroup { GroupId = groups[role].Id, UserId = userId, AddedAt = space.CreatedAt });
+            audit.Record("space.group_member_added", "space", space.Id,
+                new { GroupId = groups[role].Id, Role = role.ToString(), UserId = userId, Via = "space.created" });
+        }
+        // One save, so one transaction: the space, its groups, what everyone
+        // gets and its members are made together or not at all.
         await db.SaveChangesAsync();
 
         return Results.Created($"/api/spaces/{space.Key}", ToResponse(space));
+    }
+
+    /// <summary>The level a create asks for: left out is Admin (21.2's compatibility rule), JSON null is nothing.</summary>
+    internal static bool TryEveryoneAccess(System.Text.Json.JsonElement raw, out SpaceOperation? access)
+    {
+        access = null;
+        switch (raw.ValueKind)
+        {
+            case System.Text.Json.JsonValueKind.Undefined:
+                access = SpaceOperation.Admin;
+                return true;
+            case System.Text.Json.JsonValueKind.Null:
+                return true;
+            case System.Text.Json.JsonValueKind.Number when raw.TryGetInt32(out var n) && Enum.IsDefined((SpaceOperation)n):
+                access = (SpaceOperation)n;
+                return true;
+            default:
+                return false;
+        }
     }
 
     private static async Task<IResult> GetByKey(string key, AppDbContext db, IPermissionService perms, CurrentUser current)

@@ -248,7 +248,8 @@ public static partial class AuthEndpoints
     private static async Task<IResult> Register(
         RegisterRequest req, AppDbContext db, IPasswordHasher hasher, HttpContext http,
         ISiteSettingsService settings, IAccountRecoveryService recovery, IInviteService invites,
-        ISecurityDetector detector, IAuditLogger audit)
+        ISecurityDetector detector, IAuditLogger audit,
+        Infrastructure.Permissions.IPermissionService perms, Infrastructure.Permissions.IInstancePermissions rights)
     {
         var email = (req.Email ?? "").Trim().ToLowerInvariant();
         var displayName = (req.DisplayName ?? "").Trim();
@@ -364,6 +365,9 @@ public static partial class AuthEndpoints
             {
                 invite.UsedAt = DateTimeOffset.UtcNow;
                 invite.UsedByUserId = user.Id;
+                // Its tier and groups (dev-plan 21.3), as far as the inviter
+                // may still give them, in this same transaction.
+                await Admin.InviteAssignments.ApplyAsync(db, invite, user, perms, rights, audit, detector);
             }
 
             // Every account's creation is in the audit log, with how it came to be

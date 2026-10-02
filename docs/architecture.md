@@ -1360,8 +1360,9 @@ What a signed-in account may do in a space comes from three places, all in
   signed-in, *active* account gets, as an implicit level. Before 21.1 a
   space with no grant rows was open to everyone ("default-open"); that rule
   is gone, and the seed turned it into an EveryoneAccess of Admin. A new
-  space is created with Admin (as open as before, until 21.2's wizard
-  asks); a pack import with null. Changing it is the space administrator's
+  space gets what its create call asks (21.2), and Admin when the call
+  leaves `everyoneAccess` out, so older API clients see no change; a pack
+  import gets null. Changing it is the space administrator's
   (`PUT /api/spaces/{key}/permissions/everyone`): widening keeps 15.3's
   make-open protections (sudo, the `space.opened` audit entry and alert),
   narrowing from Admin is refused unless the actor stays an explicit
@@ -1442,6 +1443,25 @@ their groups, the restrictions on the page and its ancestors), and
 `GroupsPageTests` hold them to the answer across a matrix; a disagreement
 is logged. Asking needs the same right as seeing the space's permissions,
 and a space or page the asker cannot see answers 404.
+
+**Where people and spaces are made (21.2, 21.3).** `POST /api/spaces` takes
+an optional `everyoneAccess` (a raw JSON element, because left out means
+Admin and `null` means nothing) and `members` per group role, and makes the
+space, its groups and the memberships in one save. No level needs sudo
+there: the space is new and empty and its creator is its explicit admin.
+An invite (`Invite.Role`, the `InviteGroups` table) carries a tier and
+groups: Global Viewers, Global Reviewers, and one group in each space the
+inviter administers *explicitly*, for all four roles (stricter than the
+Permissions tab, since the invite reaches someone who has no account yet).
+`InviteAssignments` checks them when the invite is made (Promote to
+administrator or the owner's tier right, Manage Groups, sudo for either,
+and an address) and again inside the registration's transaction, as the
+inviter's rights then stand (`IInstancePermissions.ForUserAsync`,
+`IPermissionService.AsUser`); what the inviter can no longer give is
+skipped and recorded (`invite.assignment_skipped`). Applied assignments are
+audited as the inviter's, and a global group or administrator raises the
+same alerts as doing it directly. The table rather than a JSON column so a
+deleted space's groups take the invite's places with them by cascade.
 
 ### Avatars (`components/Avatar.tsx`, dev-plan 1.2)
 

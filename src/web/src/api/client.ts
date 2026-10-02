@@ -507,6 +507,15 @@ export const pageOperationName = ['View', 'Edit']
 /** A space's four groups (dev-plan 21.1), each holding one fixed level on its space. */
 export const SpaceGroupRole = { Viewers: 0, Editors: 1, Admins: 2, Reviewers: 3 } as const
 
+/** Global Viewers and Global Reviewers (21.1): fixed ids, as BuiltInGroups.cs has them. */
+export const GlobalGroupId = {
+  Viewers: '00000000-0000-0000-0001-000000000004',
+  Reviewers: '00000000-0000-0000-0001-000000000005',
+} as const
+
+/** A space whose groups the caller may give with an invite (21.3), and its four groups. */
+export type InviteSpace = { id: string; key: string; name: string; groups: { id: string; role: number }[] }
+
 /**
  * builtIn: one of the five every instance has, never renamed or deleted.
  * computed: Owner, Admins or Users, whose members follow each account's role
@@ -891,6 +900,10 @@ export type Invite = {
   createdAt: string
   /** The account the invite created. */
   usedByName: string | null
+  /** The tier the account starts at (21.3). */
+  role?: UserRole
+  /** The groups it goes into; a space's group the caller cannot see is named only as such. */
+  groups?: { id: string; name: string; global: boolean }[]
 }
 
 export type DailyPoint = { date: string; count: number }
@@ -1610,7 +1623,18 @@ export const api = {
     list: (includeArchived = false) =>
       request<Space[]>('GET', `/api/spaces?includeArchived=${includeArchived}`),
     get: (key: string) => request<Space>('GET', `/api/spaces/${encodeURIComponent(key)}`),
-    create: (input: { key: string; name: string; description?: string | null }) =>
+    /**
+     * `everyoneAccess` (21.2): left out keeps a new space open to everyone
+     * to administer, as before; null is only its groups. `members`: who goes
+     * in each of its groups; the creator is always in Admins.
+     */
+    create: (input: {
+      key: string
+      name: string
+      description?: string | null
+      everyoneAccess?: number | null
+      members?: { role: number; userIds: string[] }[]
+    }) =>
       request<Space>('POST', '/api/spaces', input),
     update: (
       key: string,
@@ -1834,11 +1858,17 @@ export const api = {
     },
     invites: {
       list: () => request<Invite[]>('GET', '/api/admin/invites'),
-      create: (input: { email?: string; expiresInDays?: number; sendEmail?: boolean; message?: string }) =>
+      /** `role` and `groupIds` (21.3): an administrator or a global group needs an address and the password again. */
+      create: (input: {
+        email?: string; expiresInDays?: number; sendEmail?: boolean; message?: string
+        role?: UserRole; groupIds?: string[]
+      }) =>
         request<{ token: string; path: string; email: string | null; expiresAt: string; emailed: boolean; emailError: string | null; tailnetUrl: string | null }>(
           'POST', '/api/admin/invites', input),
       /** Whether the server sends email, and the invite message to start from. */
       email: () => request<{ enabled: boolean; subject: string; message: string }>('GET', '/api/admin/invites/email'),
+      /** The spaces whose groups the caller may give: those they administer explicitly (21.3). */
+      spaces: () => request<InviteSpace[]>('GET', '/api/admin/invites/spaces'),
       revoke: (id: string) => request<void>('DELETE', `/api/admin/invites/${id}`),
     },
     dashboard: (rangeDays: number) =>

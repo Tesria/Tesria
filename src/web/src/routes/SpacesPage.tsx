@@ -1,9 +1,10 @@
-import { type FormEvent, useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { SpaceIcon } from '../components/SpaceIcon'
-import { api, ApiError, LIMITS, type Space, Permission } from '../api/client'
+import { api, type Space, Permission } from '../api/client'
 import { ImportPackForm } from '../components/ImportPackForm'
+import { NewSpaceWizard } from '../components/NewSpaceWizard'
 
 export function SpacesPage() {
   const { user, can } = useAuth()
@@ -46,14 +47,8 @@ export function SpacesPage() {
 
       {importing && <ImportPackForm onImported={() => { void reload() }} />}
 
-      {creating && (
-        <CreateSpaceForm
-          onCreated={(s) => {
-            setSpaces((prev) => [...(prev ?? []), s].sort((a, b) => a.name.localeCompare(b.name)))
-            setCreating(false)
-          }}
-        />
-      )}
+      {/* The wizard (dev-plan 21.2) lands on the new space when it is done. */}
+      {creating && <NewSpaceWizard onCancel={() => setCreating(false)} />}
 
       {notice && <p className="profile__ok">{notice}</p>}
       {error && <p className="alert alert--error">{error}</p>}
@@ -83,54 +78,5 @@ export function SpacesPage() {
         ))}
       </ul>
     </div>
-  )
-}
-
-function CreateSpaceForm({ onCreated }: { onCreated: (space: Space) => void }) {
-  const [key, setKey] = useState('')
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
-
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault()
-    setBusy(true)
-    setError(null)
-    try {
-      const space = await api.spaces.create({ key, name, description: description || null })
-      onCreated(space)
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not create the space.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <form className="card form-inline" onSubmit={onSubmit}>
-      {error && <p className="alert alert--error">{error}</p>}
-      <label>
-        Key
-        <input
-          value={key}
-          onChange={(e) => setKey(e.target.value.toUpperCase())}
-          placeholder="ENG"
-          required
-          maxLength={LIMITS.spaceKey}
-        />
-      </label>
-      <label>
-        Name
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Engineering" required maxLength={LIMITS.spaceName} />
-      </label>
-      <label>
-        Description
-        <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional" maxLength={LIMITS.spaceDescription} />
-      </label>
-      <button type="submit" className="btn btn--primary" disabled={busy}>
-        {busy ? 'Creating…' : 'Create'}
-      </button>
-    </form>
   )
 }

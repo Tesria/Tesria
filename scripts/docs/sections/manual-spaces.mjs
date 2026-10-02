@@ -30,11 +30,13 @@
 const NARROW = { width: 480, height: 900 }
 const SPACE_FORM = [
   { wait: 2000 }, { click: '.row-gap .btn--primary' }, { wait: 400 },
-  { type: 'TEAM', selector: 'form.card.form-inline label:nth-of-type(1) input' },
-  { type: 'Team handbook', selector: 'form.card.form-inline label:nth-of-type(2) input' },
-  { type: 'How we work, in one place', selector: 'form.card.form-inline label:nth-of-type(3) input' },
+  // The first step of the New Space wizard (dev-plan 21.2): the key follows
+  // the name until it is typed in, so the name goes first.
+  { type: 'Team handbook', selector: '.wizard__panel label:nth-of-type(1) input' },
+  { type: 'TEAM', selector: '.wizard__panel label:nth-of-type(2) input' },
+  { type: 'How we work, in one place', selector: '.wizard__panel label:nth-of-type(3) input' },
   { eval: 'document.activeElement && document.activeElement.blur()' },
-  // The crop leaves room around the form for its labels; what is behind
+  // The crop leaves room around the wizard for its labels; what is behind
   // that room (the heading, the space cards) is hidden rather than cut in half.
   { css: '.row-between, .space-grid { visibility: hidden !important; }' },
 ]
@@ -123,12 +125,12 @@ export const shots = ({ demo }) => [
   },
   {
     name: 'space-form', url: '/spaces', viewport: NARROW, phone: false, steps: SPACE_FORM,
-    clipTo: 'form.card.form-inline', clipPad: 40,
+    clipTo: '.wizard', clipPad: 40,
     annotate: [
-      { type: 'box', target: 'form.card.form-inline label:nth-of-type(1)', pad: 5 },
-      { type: 'box', target: 'form.card.form-inline label:nth-of-type(2)', pad: 5 },
-      { type: 'box', target: 'form.card.form-inline button[type="submit"]', pad: 5 },
-      { type: 'note', target: 'form.card.form-inline label:nth-of-type(1)', label: 'Cannot be changed later', dy: -30 },
+      { type: 'box', target: '.wizard__panel label:nth-of-type(1)', pad: 5 },
+      { type: 'box', target: '.wizard__panel label:nth-of-type(2)', pad: 5 },
+      { type: 'box', target: '.wizard__panel .setup__actions .btn--primary', pad: 5 },
+      { type: 'note', target: '.wizard__panel label:nth-of-type(2)', label: 'Cannot be changed later', dy: -30 },
     ],
   },
 
@@ -429,27 +431,38 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('Choose ', b('Spaces'), ' at the top of any page, then ', b('New Space'), ' at the top right.'),
     ...(await picture(creating, 'space-new', 'The Spaces page with the New Space button', 'The Spaces page. New Space is at the top right.')),
 
-    step(2, 'Give it a key and a name'),
-    p('A short form opens above the list.'),
-    ...(await picture(creating, 'space-form', 'The new space form, filled in', 'Key and name are required; the description is optional. Create is at the end.')),
+    step(2, 'Give it a name and a key'),
+    p('The ', b('New Space'), ' wizard opens above the list, with its four steps down the side. On a phone the steps fold into one line at the top, such as ', i('Step 1 of 4: Name and Key'), '; choose it to see them all.'),
+    ...(await picture(creating, 'space-form', 'The first step of New Space, filled in', 'Name and key are required; the description is optional. Continue is at the end.')),
     ul(
-      li(p(b('Key:'), ' a short code for the space, such as TEAM or ENG2: two to 50 letters and digits, starting with a letter. It becomes part of every page’s address, as in /spaces/TEAM, so it cannot be changed later. Tesria makes it capitals as you type.')),
       li(p(b('Name:'), ' what everyone sees in lists and at the top of the space, such as Team handbook. You can change it later in the space’s settings.')),
+      li(p(b('Key:'), ' a short code for the space, such as TEAM or ENG2: two to 50 letters and digits, starting with a letter. Tesria suggests one from the name as you type; change it if you like. It becomes part of every page’s address, as in /spaces/TEAM, so it cannot be changed later.')),
       li(p(b('Description:'), ' optional. One line on what the space is for, shown on the Spaces page to help people pick the right one.')),
     ),
+    p('Choose ', b('Continue'), '. An icon can be chosen once the space exists; see ', pageLink('Space icons'), '.'),
 
-    step(3, 'Choose Create'),
-    p('It is the button at the end of the form, boxed in the picture above. The space appears in the list. Open it to find an empty home page with a ', b('Create the first one'), ' button.'),
+    step(3, 'Choose who can see it'),
+    ul(
+      li(p(b('Everyone Signed In,'), ' at a level you choose: ', b('Can view'), ', ', b('Can edit'), ' (the usual choice for a team space) or ', b('Can administer'), '.')),
+      li(p(b('Only the People in Its Groups:'), ' nobody else can open it, or even see that it exists. Choose this for anything that should be seen by only some people, such as salaries or a confidential project.')),
+    ),
+    p('Either way, a page restricted to particular people stays restricted. If anyone is in ', b('Global Viewers'), ' or ', b('Global Reviewers'), ', the wizard says so: they can read every space. You can change this later on the space’s Permissions tab; see ', pageLink('Who can see a space'), '.'),
+
+    step(4, 'Put people in its groups'),
+    p('A space has four groups of its own: ', b('Admins'), ' (manage the space, and see past page restrictions), ', b('Editors'), ', ', b('Viewers'), ' and ', b('Reviewers'), ' (who can read for now; reviewing changes arrives with review mode). You are in Admins already, and stay there.'),
+    p('Type part of a name in a group’s box and choose the person from the list. Add as many as you like; choose ', b('×'), ' on a name to take it off. Leave a group empty if nobody needs it yet: this step is optional.'),
+
+    step(5, 'Review and create'),
+    p('The last step sums up your choices. Choose ', b('Back'), ' or a step in the list to change one, then ', b('Create Space'), '. Tesria makes the space, its groups and their members all at once, and opens its empty home page, with a ', b('Create the first one'), ' button.'),
 
     h(2, 'What a new space starts with'),
     ul(
-      li(p(b('Open to everyone signed in.'), ' Anyone with an account can read it, edit it and change its settings.')),
-      li(p(b('Four groups of its own,'), ' Admins, Editors, Viewers and Reviewers, with you in Admins.')),
+      li(p(b('The access you chose'), ' for everyone signed in, or none.')),
+      li(p(b('Four groups of its own,'), ' Admins, Editors, Viewers and Reviewers, with you in Admins and the people you added.')),
       li(p(b('Not public.'), ' People who are not signed in cannot see it.')),
       li(p(b('An icon made from its key,'), ' which you can change to an emoji or a picture.')),
       li(p(b('Every export allowed:'), ' PDF, Markdown, HTML, a static site and a wiki pack.')),
     ),
-    panel('warning', p(b('Want it private?'), ' A new space is open to everyone signed in, which is right for most team spaces. For anything that should be seen by only some people, such as salaries or a confidential project, limit it straight away, before you write anything in it: on its Permissions tab, choose No Access under Everyone signed in can. See ', pageLink('Who can see a space'), '.')),
 
     h(2, 'Next steps'),
     ul(
@@ -494,7 +507,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
   // -------------------------------------------------- Who can see a space
   await page('Who can see a space', spaces, doc(
-    p('Most spaces are for everyone in your organization, and a new space starts that way. Some should be seen by only a few people: salaries, a confidential project, a team’s private planning. This page explains how a space decides who gets in, and how to give or take away access.'),
+    p('Most spaces are for everyone in your organization, and whoever creates a space chooses that or not in its second step. Some should be seen by only a few people: salaries, a confidential project, a team’s private planning. This page explains how a space decides who gets in, and how to give or take away access.'),
     p('Everything here is done in ', b('Space Settings'), ', on the ', b('Permissions'), ' tab, and needs administrator access to the space. The tab has three parts, from the top: what everyone signed in can do, the space’s own groups, and any other access.'),
 
     h(2, 'The three levels of access'),
@@ -508,7 +521,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     h(2, 'What everyone signed in can do'),
     p('At the top of the tab, ', b('Everyone signed in can'), ' says what every person with an account gets in this space without being named anywhere:'),
     ul(
-      li(p(b('Administer'), ' is how every space starts: everyone can read it, edit it and change its settings.')),
+      li(p(b('Administer'), ' lets everyone read it, edit it and change its settings.')),
       li(p(b('Edit'), ' or ', b('View'), ' lets everyone read it, and edit it or not, while only the people you name manage it.')),
       li(p(b('No Access'), ' makes the space private: only the people in its groups, and anyone listed under Other Access, can open it.')),
     ),

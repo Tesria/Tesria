@@ -42,7 +42,20 @@ public static class AdminEndpoints
     /// <c>SendEmail</c> emails the link to <c>Email</c>, with <c>Message</c>
     /// (the inviter's own words, the default when empty) above the link.
     /// </summary>
-    public record CreateInviteRequest(string? Email, int? ExpiresInDays, bool? SendEmail = null, string? Message = null);
+    /// <param name="Role">The tier the account starts at (dev-plan 21.3): Member (the default) or Admin.</param>
+    /// <param name="GroupIds">
+    /// Groups the account goes into when it is made (21.3): Global Viewers,
+    /// Global Reviewers, and one group in each space the inviter administers
+    /// explicitly (see <c>GET /api/admin/invites/spaces</c>).
+    /// </param>
+    public record CreateInviteRequest(
+        string? Email, int? ExpiresInDays, bool? SendEmail = null, string? Message = null,
+        UserRole? Role = null, List<Guid>? GroupIds = null);
+    /// <summary>A space the caller may give places in with an invite, and its four groups (21.3).</summary>
+    public record InviteSpaceResponse(Guid Id, string Key, string Name, List<InviteSpaceGroup> Groups);
+    public record InviteSpaceGroup(Guid Id, SpaceGroupRole Role);
+    /// <summary>A group an invite gives, named as the caller may see it.</summary>
+    public record InviteGroupResponse(Guid Id, string Name, bool Global);
     /// <summary>
     /// <c>Emailed</c> and <c>EmailError</c> say what happened to an email that
     /// was asked for. <c>TailnetUrl</c> is the same link on the Tailscale
@@ -54,10 +67,14 @@ public static class AdminEndpoints
         string? TailnetUrl = null);
     /// <summary>What the invite form needs to offer an email: whether the server sends, and the words to start from.</summary>
     public record InviteEmailResponse(bool Enabled, string Subject, string Message);
-    /// <summary><c>UsedByName</c>: the account the invite created, so the list says who, not only when.</summary>
+    /// <summary>
+    /// <c>UsedByName</c>: the account the invite created, so the list says
+    /// who, not only when. <c>Role</c> and <c>Groups</c>: what the account is
+    /// given when it is made (21.3).
+    /// </summary>
     public record InviteResponse(
         Guid Id, string? Email, DateTimeOffset ExpiresAt, DateTimeOffset? UsedAt, DateTimeOffset CreatedAt,
-        string? UsedByName = null);
+        string? UsedByName = null, UserRole Role = UserRole.Member, List<InviteGroupResponse>? Groups = null);
 
     public record AdminUserResponse(
         Guid Id, string Email, string DisplayName, UserRole Role, UserStatus Status,
@@ -209,6 +226,8 @@ public static class AdminEndpoints
         group.MapPost("/invites", CreateInvite).RequirePermission(InstancePermissions.InvitesCreate)
             .RequireRateLimiting(Infrastructure.Security.RateLimits.InvitePolicy);
         group.MapGet("/invites/email", InviteEmail).RequirePermission(InstancePermissions.InvitesCreate);
+        group.MapGet("/invites/spaces", InviteSpaces).RequirePermission(InstancePermissions.InvitesCreate)
+            .Produces<List<InviteSpaceResponse>>();
         group.MapDelete("/invites/{id:guid}", RevokeInvite).Produces(StatusCodes.Status204NoContent).RequirePermission(InstancePermissions.InvitesManage);
         group.MapPost("/audit/verify", VerifyAuditChain).RequirePermission(InstancePermissions.AuditView);
         group.MapPost("/users/{userId:guid}/unlock", Unlock).Produces(StatusCodes.Status204NoContent).RequirePermission(InstancePermissions.UsersManage);
@@ -736,7 +755,7 @@ public static class AdminEndpoints
             TailscaleEndpoints.AddressOf(config) is { } tailnet ? tailnet + path : null));
     }
 
-    private static async Task<IResult> ListInvites(AppDbContext db)
+    private static async Task<IResult> ListInvites(AppDbContext db, IPermissionService perms)
     {
         // Ordered in memory: SQLite (the test provider) cannot ORDER BY a
         // DateTimeOffset: the same limitation AuditEndpoints works around.
@@ -745,9 +764,47 @@ public static class AdminEndpoints
         var userIds = rows.Where(i => i.UsedByUserId != null).Select(i => i.UsedByUserId!.Value).Distinct().ToList();
         var names = await db.Users.AsNoTracking().Where(u => userIds.Contains(u.Id))
             .ToDictionaryAsync(u => u.Id, u => u.DisplayName);
+
+        // The groups each carries (21.3). A space's group is named only for
+        // someone who can see the space, as everywhere else (21.1): someone
+        // managing invites is not thereby shown every space's name.
+        var links = await db.InviteGroups.AsNoTracking()
+            .Select(x => new { x.InviteId, x.GroupId, x.Group!.SpaceId }).ToListAsync();
+        var groupNames = await SpaceGroups.NamesAsync(db, links.Select(l => l.GroupId));
+        var visible = new Dictionary<Guid, bool>();
+        foreach (var spaceId in links.Where(l => l.SpaceId != null).Select(l => l.SpaceId!.Value).Distinct())
+            visible[spaceId] = await perms.CanViewSpaceAsync(spaceId);
+        var groupsOf = links.ToLookup(l => l.InviteId, l => new InviteGroupResponse(
+            l.GroupId,
+            l.SpaceId is { } s && !visible[s] ? "A group in a space you cannot see" : groupNames.GetValueOrDefault(l.GroupId, ""),
+            BuiltInGroups.IsGlobal(l.GroupId)));
+
         var invites = rows.Select(i => new InviteResponse(i.Id, i.Email, i.ExpiresAt, i.UsedAt, i.CreatedAt,
-            i.UsedByUserId is { } by ? names.GetValueOrDefault(by) : null));
+            i.UsedByUserId is { } by ? names.GetValueOrDefault(by) : null, i.Role,
+            groupsOf[i.Id].OrderBy(g => !g.Global).ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase).ToList()));
         return Results.Ok(invites.OrderByDescending(i => i.CreatedAt).ToList());
+    }
+
+    /// <summary>
+    /// The spaces whose groups the caller may give with an invite (21.3):
+    /// those they administer explicitly, so never one they only administer
+    /// because it is open to everyone, nor one they cannot see. Archived
+    /// spaces are left out; nobody is being invited into one.
+    /// </summary>
+    private static async Task<IResult> InviteSpaces(AppDbContext db, IPermissionService perms)
+    {
+        var spaces = await db.Spaces.AsNoTracking().Where(s => !s.Archived)
+            .Select(s => new { s.Id, s.Key, s.Name }).ToListAsync();
+        var groups = (await db.Groups.AsNoTracking().Where(g => g.SpaceId != null && g.SpaceRole != null)
+                .Select(g => new { g.Id, SpaceId = g.SpaceId!.Value, Role = g.SpaceRole!.Value }).ToListAsync())
+            .ToLookup(g => g.SpaceId);
+        var result = new List<InviteSpaceResponse>();
+        foreach (var s in spaces.OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase))
+            if (await perms.IsExplicitSpaceAdminAsync(s.Id))
+                result.Add(new InviteSpaceResponse(s.Id, s.Key, s.Name,
+                    SpaceGroups.Roles.SelectMany(r => groups[s.Id].Where(g => g.Role == r))
+                        .Select(g => new InviteSpaceGroup(g.Id, g.Role)).ToList()));
+        return Results.Ok(result);
     }
 
     /// <summary>
@@ -762,7 +819,8 @@ public static class AdminEndpoints
     private static async Task<IResult> CreateInvite(
         CreateInviteRequest req, AppDbContext db, CurrentUser current,
         IAuditLogger audit, IInviteService invites, ISiteSettingsService settings,
-        IEmailSender sender, IConfiguration config, IInstancePermissions rights, CancellationToken ct)
+        IEmailSender sender, IConfiguration config, IInstancePermissions rights, IPermissionService perms,
+        HttpContext http, CancellationToken ct)
     {
         var days = req.ExpiresInDays ?? (int)InviteService.DefaultLifetime.TotalDays;
         if (days < 1 || days > 90)
@@ -799,8 +857,41 @@ public static class AdminEndpoints
             && await db.Users.AnyAsync(u => u.Email == email, ct))
             return Results.Conflict(new { message = "An account with this email already exists." });
 
-        var token = invites.Issue(current.RequireId(), email, TimeSpan.FromDays(days));
-        audit.Record("invite.created", "instance", null, new { Email = email, Days = days, Emailed = send });
+        // What the account is given when it is made (dev-plan 21.3), checked
+        // by the rules for doing the same directly; again at registration.
+        var role = req.Role ?? UserRole.Member;
+        if (role is not (UserRole.Member or UserRole.Admin))
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["role"] = ["Invite someone as a user or an administrator. Ownership is transferred, not given."],
+            });
+        var held = await rights.ForCurrentUserAsync(ct);
+        if (role == UserRole.Admin && !InviteAssignments.MayMakeAdmins(held))
+            return InviteAssignments.RightRequired(InstancePermissions.UsersPromoteAdmins,
+                "Your role does not allow making administrators.");
+        var check = await InviteAssignments.CheckGroupsAsync(db, perms, held, (req.GroupIds ?? []).Distinct().ToList());
+        if (check.Refusal is { } refused) return refused;
+        // Whoever holds the link gets these, so an invite that makes an
+        // administrator or a reader of every space is bound to one address.
+        if ((role == UserRole.Admin || check.NeedsGlobalSudo) && email is null)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["email"] = ["An invite that makes an administrator, or puts someone in Global Viewers or Global Reviewers, must name the address it is for."],
+            });
+        // The password again, as for promoting someone or choosing a member
+        // of a global group directly (dev-plan 3.5, 21.1).
+        if (role == UserRole.Admin && Auth.AuthEndpoints.RequireSudo(http, config, Auth.SudoReasons.InviteAdmin) is { } notAdmin)
+            return notAdmin;
+        if (check.NeedsGlobalSudo && Auth.AuthEndpoints.RequireSudo(http, config, Auth.SudoReasons.InviteGlobalReaders) is { } notGlobal)
+            return notGlobal;
+
+        var token = invites.Issue(current.RequireId(), email, TimeSpan.FromDays(days), role, check.Groups.Select(g => g.Id));
+        var groupNames = await SpaceGroups.NamesAsync(db, check.Groups.Select(g => g.Id));
+        audit.Record("invite.created", "instance", null, new
+        {
+            Email = email, Days = days, Emailed = send, Role = role.ToString(),
+            Groups = check.Groups.Select(g => new { g.Id, Name = groupNames.GetValueOrDefault(g.Id) }).ToList(),
+        });
         await db.SaveChangesAsync(ct);
 
         var expiresAt = DateTimeOffset.UtcNow.AddDays(days);
