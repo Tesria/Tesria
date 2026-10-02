@@ -3,7 +3,8 @@
 # PR of its own (2026-10-01), so one that needs checking (as
 # @dnd-kit/sortable 10 did) does not hold up the rest. Security updates are
 # never grouped and arrive as they do. dependabot-manifest.yml keeps the
-# About tab's dependency list current on each of these PRs.
+# About tab's dependency list current on each of these PRs; its CI then waits
+# for "Approve and run workflows" on the PR.
 version: 2
 updates:
   - package-ecosystem: npm

@@ -2,8 +2,13 @@
 # (2026-10-01). CI fails an update whose src/Api/About/dependencies.json no
 # longer matches the lockfiles, and Dependabot cannot run the script that
 # writes it, so every update arrived red. This runs that script on the
-# update's own branch and commits the result, then starts CI on the new
-# commit: a push made with the workflow token starts no runs by itself.
+# update's own branch and commits the result.
+#
+# GitHub holds the PR's checks on that commit until someone with write access
+# chooses "Approve and run workflows" on the PR (they were pushed by a bot).
+# One click; then CI runs as usual and its result shows on the PR. (The first
+# version also started CI itself, 2026-10-01: that run passed but GitHub does
+# not show a run started that way on the PR, so it was dropped.)
 #
 # Dependabot stops rebasing a PR once someone else has committed to it. If
 # an update falls behind main, comment "@dependabot recreate" on it; this
@@ -39,7 +44,6 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: write
-      actions: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -57,9 +61,7 @@ jobs:
           done
           dotnet restore src/Api
       - run: node scripts/deps/build-manifest.mjs
-      - name: Commit the manifest and start CI on it
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Commit the manifest
         run: |
           if git diff --quiet -- src/Api/About; then
             echo "The manifest is already current."
@@ -70,4 +72,3 @@ jobs:
           git add src/Api/About
           git commit -m "Dependency manifest for this update"
           git push origin "HEAD:$GITHUB_HEAD_REF"
-          gh workflow run ci.yml --ref "$GITHUB_HEAD_REF"

@@ -10,9 +10,7 @@ on:
   pull_request:
     paths-ignore: ['docs/**', '**/*.md', 'scripts/docs/**']
   workflow_call:
-  # Started by dependabot-manifest.yml after it commits a refreshed manifest
-  # to an update's branch: a push made with the workflow token starts no
-  # runs of its own, so the update's new commit would have no checks.
+  # Run by hand from the Actions tab when needed.
   workflow_dispatch:
 
 permissions:
