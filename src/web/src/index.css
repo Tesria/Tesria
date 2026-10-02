@@ -437,7 +437,9 @@ html.vv-offset .topbar, html.vv-offset .page-actionbar { transform: translateY(v
 .branding__lock { margin-top: 0.9rem; }
 .branding__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 1rem 0 0.5rem; }
 .branding__spacer { flex: 1; }
-.branding-preview { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1rem; }
+/* min(): at 320px the card is narrower than 18rem, and both previews ran past
+   its right edge (QA T9-010). */
+.branding-preview { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr)); gap: 1rem; }
 .branding-preview__panel {
   border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem 1rem 1.1rem;
   display: grid; gap: 1rem; justify-items: center;
@@ -3114,6 +3116,10 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 .chart__controls label { display: flex; align-items: center; gap: 0.35rem; margin: 0; }
 .chart__controls select, .chart__title-input { padding: 0.2rem 0.4rem; }
 .chart__title-input { flex: 1; min-width: 8rem; }
+/* The Table and Type pickers are their own size, not the 14rem of a select
+   under its label, which ran them 8px past the chart's box at 320px (QA t9-R01). */
+.chart__controls label { min-width: 0; max-width: 100%; }
+.chart__controls label > select { width: auto; min-width: 0; max-width: 100%; margin-top: 0; }
 .chart__title { margin: 0 0 0.4rem; font-weight: 600; text-align: center; }
 .chart__note { margin: 0; color: var(--muted); font-size: 0.9rem; }
 .chart__plot { display: flex; flex-direction: column; gap: 0.5rem; align-items: center; }
