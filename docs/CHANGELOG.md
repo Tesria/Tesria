@@ -5,6 +5,20 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **A stronger Groups page: search, filters, counts, bulk adds, and why
+  someone can see a space** (dev-plan 21.4). Administration, Groups finds a
+  group by its name or by someone in it, and shows built-in, global or
+  custom groups, or one space's own four groups (under the space with its
+  key, so "Handbook Admins" never reads like the built-in Admins). Each group
+  shows its active and suspended members and what it grants where. Members
+  can be added several at once, ticked from a list or pasted as email
+  addresses, with the same rights as adding one, and a report of who was
+  added, already in, or refused and why. **Check Access** answers why a
+  person can or cannot see a space or page, using the same check Tesria
+  makes, with every reason; it is on the Groups page and at the foot of each
+  space's Permissions tab for its administrators, and never answers about a
+  space or page the asker cannot see. New: `GET /api/groups/overview`,
+  `POST /api/groups/{id}/members/bulk`, `GET /api/access/explain`.
 - **Every space now has its own Viewers, Editors, Admins and Reviewers
   groups, and "open to everyone" is a setting** (dev-plan 21.1). A space's
   Permissions tab starts with "Everyone signed in can: No Access, View,

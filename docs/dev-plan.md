@@ -6374,7 +6374,8 @@ questions are in `roadmap.md`.
   groups and per-space groups; an invite carries its groups. · `M` ·
   Model: Opus 5.5
 - **21.4** A stronger Groups page: search, filtering by space, counts,
-  bulk adds, and why a person can see a space. · `M` · Model: Opus 5.5
+  bulk adds, and why a person can see a space. · `M` · Model: Opus 5.5 · ✅
+  **built 2026-10-02, for 0.9**
 
 ### Phase 22: Agents that work with you (Automate)
 
