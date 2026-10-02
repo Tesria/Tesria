@@ -255,7 +255,17 @@ public static class PackExportEndpoints
             .ToDictionaryAsync(u => u.Id, u => new WikiPack.Author(u.DisplayName), ct);
 
         var hasIcon = space.IconKind == SpaceIconKind.Image;
-        var spaceRestrictions = await db.SpacePermissions.CountAsync(p => p.SpaceId == space.Id, ct);
+        // Since 21.1 a space is restricted when everyone signed in may not do
+        // everything, or anyone holds a grant beyond its own groups' fixed
+        // ones. The count is the grants and group memberships that say who,
+        // and at least one when the space was closed with nobody named.
+        var ownGroups = await db.Groups.Where(g => g.SpaceId == space.Id).Select(g => g.Id).ToListAsync(ct);
+        var otherGrants = await db.SpacePermissions.CountAsync(p => p.SpaceId == space.Id
+            && !(p.PrincipalType == PrincipalType.Group && ownGroups.Contains(p.PrincipalId)), ct);
+        var spaceRestrictions = 0;
+        if (space.EveryoneAccess != SpaceOperation.Admin || otherGrants > 0)
+            spaceRestrictions = Math.Max(1,
+                otherGrants + await db.UserGroups.CountAsync(ug => ownGroups.Contains(ug.GroupId), ct));
         var pageRestrictions = await db.PageRestrictions.CountAsync(r => ids.Contains(r.PageId), ct);
         var instance = (await settings.GetAsync(ct)).InstanceName;
 

@@ -18,7 +18,8 @@ namespace Tesria.Api.Features.Admin;
 /// page content. Admins do not bypass space permissions or page restrictions
 /// (see docs/architecture.md, "Roles and administrators"); to read a space
 /// they hold no grant for, an admin uses <see cref="RecoverSpaceAccess"/>,
-/// which is audited and leaves a revocable grant behind. A silent bypass
+/// which is audited and leaves a removable membership of the space's Admins
+/// group behind (dev-plan 21.1). A silent bypass
 /// would let any admin read any team's private space with no trace.
 /// </summary>
 public static class AdminEndpoints
@@ -214,53 +215,50 @@ public static class AdminEndpoints
     }
 
     /// <summary>
-    /// Grants the calling admin an explicit <see cref="SpaceOperation.Admin"/>
-    /// permission on a space, so they can administer (or recover) it.
+    /// Makes the calling admin an explicit administrator of a space, so they
+    /// can administer (or recover) it: since dev-plan 21.1, by adding them to
+    /// the space's Admins group.
     ///
     /// From that point the existing permission rules apply unchanged, including
     /// the one that already lets an explicit space admin past page restrictions,
-    /// rather than adding an "unless admin" branch to every check. The grant is a
-    /// normal row, so it can be revoked afterwards through the usual permissions
-    /// endpoint, returning the admin to ordinary access.
+    /// rather than adding an "unless admin" branch to every check. It is a
+    /// normal membership, so it can be removed afterwards in the space's
+    /// Permissions tab, returning the admin to ordinary access. Manage Groups
+    /// does not reach a space's groups (21.1): this is the administrative way
+    /// in, and it is audited.
     /// </summary>
     private static async Task<IResult> RecoverSpaceAccess(
-        string key, AppDbContext db, CurrentUser current, IAuditLogger audit)
+        string key, AppDbContext db, CurrentUser current, IAuditLogger audit, IPermissionService perms)
     {
         var normalizedKey = key.ToUpperInvariant();
         var space = await db.Spaces.FirstOrDefaultAsync(s => s.Key == normalizedKey);
         if (space is null) return Results.NotFound();
 
-        // An open space (no grants at all) already lets every signed-in user
-        // administer it. A grant here would be the space's first, and the
-        // first grant is what makes a space private: the administrator would
-        // gain nothing and lock everybody else out. So it grants nothing.
-        if (!await db.SpacePermissions.AnyAsync(p => p.SpaceId == space.Id))
+        // A space everyone signed in may administer already lets the
+        // administrator in, and an explicit admin would pass the page
+        // restrictions everyone else is held to. So it grants nothing.
+        if (space.EveryoneAccess == SpaceOperation.Admin)
+            return Results.Ok(new RecoverAccessResponse(space.Id, space.Key, space.Name, true));
+
+        // Idempotent: re-running it is a no-op rather than a duplicate
+        // membership and a second audit entry, so a retried request doesn't
+        // pollute the log. Any Admin grant counts, its Admins group included.
+        if (await perms.IsExplicitSpaceAdminAsync(space.Id))
             return Results.Ok(new RecoverAccessResponse(space.Id, space.Key, space.Name, true));
 
         var userId = current.RequireId();
-        var alreadyHadAccess = await db.SpacePermissions.AnyAsync(p =>
-            p.SpaceId == space.Id
-            && p.PrincipalType == PrincipalType.User
-            && p.PrincipalId == userId
-            && p.Operation == SpaceOperation.Admin);
-
-        // Idempotent: re-running it is a no-op rather than a duplicate grant and
-        // a second audit entry, so a retried request doesn't pollute the log.
-        if (alreadyHadAccess)
-            return Results.Ok(new RecoverAccessResponse(space.Id, space.Key, space.Name, true));
-
-        db.SpacePermissions.Add(new SpacePermission
+        var admins = await db.Groups
+            .Where(g => g.SpaceId == space.Id && g.SpaceRole == SpaceGroupRole.Admins)
+            .Select(g => g.Id).FirstOrDefaultAsync();
+        if (admins == Guid.Empty)
         {
-            Id = Guid.NewGuid(),
-            SpaceId = space.Id,
-            PrincipalType = PrincipalType.User,
-            PrincipalId = userId,
-            Operation = SpaceOperation.Admin,
-            CreatedAt = DateTimeOffset.UtcNow,
-        });
+            // Every space has one from the seed on; this is only belt and braces.
+            admins = SpaceGroups.Add(db, space.Id, DateTimeOffset.UtcNow)[SpaceGroupRole.Admins].Id;
+        }
+        db.UserGroups.Add(new UserGroup { GroupId = admins, UserId = userId, AddedAt = DateTimeOffset.UtcNow });
 
         audit.Record("space.access_recovered", "space", space.Id,
-            new { space.Key, space.Name });
+            new { space.Key, space.Name, GroupId = admins });
         await db.SaveChangesAsync();
 
         return Results.Ok(new RecoverAccessResponse(space.Id, space.Key, space.Name, false));
