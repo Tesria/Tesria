@@ -10,6 +10,21 @@
 
 export const DEFAULT_TITLE = 'Tesria'
 
+/**
+ * The longest a space's name or a page's title runs in the tab before it
+ * ends in "…" (QA t3-R04). Mirrors BrandTitle.MaxPart.
+ */
+export const MAX_TITLE_PART = 80
+
+/** Cut to MAX_TITLE_PART UTF-16 units with "…", never through a surrogate pair. Mirrors BrandTitle.Shorten. */
+function shorten(value: string | null): string | null {
+  if (value === null || value.length <= MAX_TITLE_PART) return value
+  let cut = MAX_TITLE_PART - 1
+  const code = value.charCodeAt(cut - 1)
+  if (code >= 0xd800 && code <= 0xdbff) cut--
+  return value.slice(0, cut).trimEnd() + '\u2026'
+}
+
 function clean(value: string | null | undefined): string | null {
   const v = (value ?? '').trim()
   return v.length === 0 ? null : v
@@ -20,8 +35,8 @@ export function formatTitle(
   parts: { space?: string | null; page?: string | null; section?: string | null } = {},
 ): string {
   const name = clean(instance) ?? DEFAULT_TITLE
-  const space = clean(parts.space)
-  const page = clean(parts.page)
+  const space = shorten(clean(parts.space))
+  const page = shorten(clean(parts.page))
   if (space) return page ? `${name} - ${space} / ${page}` : `${name} - ${space}`
   const section = clean(parts.section)
   return section ? `${name} - ${section}` : name

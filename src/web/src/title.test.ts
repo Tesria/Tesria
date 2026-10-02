@@ -29,6 +29,15 @@ describe('formatTitle', () => {
   it('prefers the space over a section', () => {
     expect(formatTitle('X', { space: 'S', section: 'Search' })).toBe('X - S')
   })
+  it('shortens a long space name and page title with an ellipsis (t3-R04)', () => {
+    expect(formatTitle('X', { space: 'N'.repeat(200), page: 'Q'.repeat(500) }))
+      .toBe(`X - ${'N'.repeat(79)}\u2026 / ${'Q'.repeat(79)}\u2026`)
+    expect(formatTitle('X', { space: 'S', page: 'Q'.repeat(80) })).toBe(`X - S / ${'Q'.repeat(80)}`)
+  })
+  it('does not cut an emoji in half when shortening', () => {
+    expect(formatTitle('X', { space: 'S', page: 'a'.repeat(78) + '\u{1F984}' + 'b'.repeat(10) }))
+      .toBe(`X - S / ${'a'.repeat(78)}\u2026`)
+  })
 })
 
 describe('sectionFor', () => {

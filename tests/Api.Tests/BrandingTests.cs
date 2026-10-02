@@ -181,6 +181,18 @@ public class BrandingTests
         Assert.Equal(expected, BrandTitle.Format(instance, space, page, section));
 
     [Fact]
+    public void Title_shortens_a_long_space_name_and_page_title_like_the_spa()
+    {
+        // QA t3-R04; the same cases as title.test.ts.
+        Assert.Equal($"X - {new string('N', 79)}\u2026 / {new string('Q', 79)}\u2026",
+            BrandTitle.Format("X", new string('N', 200), new string('Q', 500)));
+        Assert.Equal($"X - S / {new string('Q', 80)}", BrandTitle.Format("X", "S", new string('Q', 80)));
+        // Never through the middle of an emoji.
+        Assert.Equal($"X - S / {new string('a', 78)}\u2026",
+            BrandTitle.Format("X", "S", new string('a', 78) + "\U0001F984" + new string('b', 10)));
+    }
+
+    [Fact]
     public void Title_sections_match_the_spa()
     {
         Assert.Equal("Spaces", BrandTitle.SectionFor("/spaces"));

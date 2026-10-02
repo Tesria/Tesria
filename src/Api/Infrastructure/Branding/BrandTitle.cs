@@ -14,6 +14,13 @@ public static class BrandTitle
     public const string Default = "Tesria";
 
     /// <summary>
+    /// The longest a space's name or a page's title runs in the tab before it
+    /// ends in "…" (QA t3-R04: a 500-character title made a 500-character tab
+    /// title, which the window list and history show in full).
+    /// </summary>
+    public const int MaxPart = 80;
+
+    /// <summary>
     /// A page: <c>Acme Docs - Engineering / Architecture</c>. A space:
     /// <c>Acme Docs - Engineering</c>. A section: <c>Acme Docs - Search</c>.
     /// Nothing: <c>Acme Docs</c>. Names are used as given, slashes and
@@ -22,8 +29,8 @@ public static class BrandTitle
     public static string Format(string? instance, string? space = null, string? page = null, string? section = null)
     {
         var name = Clean(instance) ?? Default;
-        var s = Clean(space);
-        var p = Clean(page);
+        var s = Shorten(Clean(space));
+        var p = Shorten(Clean(page));
         if (s is not null) return p is null ? $"{name} - {s}" : $"{name} - {s} / {p}";
         var sec = Clean(section);
         return sec is null ? name : $"{name} - {sec}";
@@ -50,6 +57,19 @@ public static class BrandTitle
         if (p == "/setup") return "Set Up";
         if (p == "/welcome") return "Welcome";
         return null;
+    }
+
+    /// <summary>
+    /// Cut to <see cref="MaxPart"/> UTF-16 units with "…", never through the
+    /// middle of a surrogate pair. Counted the way JavaScript counts, so the
+    /// SPA's copy cuts at the same place.
+    /// </summary>
+    private static string? Shorten(string? value)
+    {
+        if (value is null || value.Length <= MaxPart) return value;
+        var cut = MaxPart - 1;
+        if (char.IsHighSurrogate(value[cut - 1])) cut--;
+        return value[..cut].TrimEnd() + "\u2026";
     }
 
     private static string? Clean(string? value)
