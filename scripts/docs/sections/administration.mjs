@@ -36,7 +36,7 @@ const ONLY_EXAMPLE_ACCOUNTS = "document.querySelectorAll('table.admin-table tbod
 // The Spaces tab, down to Tesria Demo's row; its creator is blanked unless
 // it is one of the example accounts.
 const ONLY_DEMO_SPACE = "document.querySelectorAll('table.admin-table tbody tr').forEach((r) => { const key = r.querySelector('td:first-child .badge'); if (!key || key.textContent.trim() !== 'DEMO') { r.remove(); return } const who = r.querySelector('td:nth-child(2)'); if (who && !" + JSON.stringify(PEOPLE) + ".some((n) => who.textContent.includes(n))) who.textContent = '' })"
-// The Groups tab, down to the three built-in groups: any other group was
+// The Groups tab, down to the five built-in groups: any other group was
 // made on this instance and is not part of the example.
 const ONLY_BUILT_IN_GROUPS = "document.querySelectorAll('ul.version-list > li').forEach((li) => { if (!li.querySelector('.badge')) li.remove() })"
 // Names each settings card by its heading (data-shot="kill-switches"), so a
@@ -514,9 +514,9 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     step(1, 'Choose Get Access'),
     p('In the space’s row.'),
     step(2, 'Confirm'),
-    p('Choose ', b('Give Me Access'), '. You are added to the space as its administrator, so you can read it and change its permissions. It is recorded in the audit log.'),
+    p('Choose ', b('Give Me Access'), '. You are added to the space’s Admins group, so you can read it and change its permissions. It is recorded in the audit log.'),
     step(3, 'Remove yourself when you are done'),
-    p('Once the space has new people to manage it, take yourself out of its ', b('Permissions'), '. The access you were given is an ordinary entry there, like anyone else’s.'),
+    p('Once the space has new people to manage it, take yourself out of its Admins group, on its ', b('Permissions'), ' tab. Your place there is an ordinary membership, like anyone else’s.'),
     p('A space that is open to everyone signed in already lets you in, and Get Access leaves it exactly as it is.'),
     panel('info', p(b('Why not just let administrators see everything?'), ' Because then any one administrator could quietly read every team’s private space. This way it is possible when needed, and never unnoticed.')),
 
@@ -793,7 +793,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     p('To open it, choose ', ...adminAt('Groups'), '.'),
 
     h(2, 'Creating a group'),
-    ...(await picture(groups, 'groups', 'The new group form, and the built-in groups', 'The form for a new group, and the three built-in groups below it.')),
+    ...(await picture(groups, 'groups', 'The new group form, and the built-in groups', 'The form for a new group, and the five built-in groups below it.')),
     step(1, 'Name it'),
     p('Something people will recognize in a list, such as ', i('Marketing'), '. The description is optional.'),
     step(2, 'Choose Create Group'),
@@ -805,10 +805,14 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
 
     h(2, 'The built-in groups'),
     p(b('Owner'), ', ', b('Admins'), ' and ', b('Users'), ' are listed first, marked ', b('built in'), '. Their members follow each account’s role, so they are always up to date: ', b('Users'), ' is everyone with an active account, ', b('Admins'), ' is the administrators and the owner, and ', b('Owner'), ' is the owner. Nobody can rename or delete them, or add and remove members by hand, and a suspended account drops out of them. They are handy for, say, letting the Admins group manage a space.'),
+    p(b('Global Viewers'), ' and ', b('Global Reviewers'), ' come next. You choose their members, under ', b('Members'), ', and everyone in them can read every space, archived ones included, without being named in it. Page restrictions still apply to them, drafts stay hidden, and they cannot change anything. Because that reaches everything, adding someone asks for your password again, is recorded in the audit log and alerts every administrator, and each space’s Permissions tab says when anyone is in them. Global Reviewers are meant for the people who will review changes once Tesria has a review step.'),
+
+    h(2, 'Each space’s own groups'),
+    p('Every space also has four groups of its own: its Admins, Editors, Viewers and Reviewers, named after the space. They are not listed here, and Manage Groups does not reach them: the space’s own administrators choose who is in them, on its ', b('Permissions'), ' tab. See ', pageLink('Who can see a space'), '. If nobody is left to manage a space, ', b('Get Access'), ' in ', ...adminAt('Spaces'), ' is the way in. See ', pageLink('Spaces (administration)'), '.'),
 
     h(2, 'Renaming and deleting a group'),
     p(b('Edit'), ' changes a group’s name and description. ', b('Delete'), ' removes the group, after asking, along with any access given to it in spaces and pages. Its members keep their accounts.'),
-    p('If a group is the only way into a space or a page, Tesria refuses to delete it and says where: removing that access would open the space or page to everyone. Give the access to someone else first.'),
+    p('If a group is the last administrator of a space, or the only way into a restricted page, Tesria refuses to delete it and says where: the space would be left with nobody to manage it, or the page would open to everyone in its space. Give the access to someone else first.'),
   ))
 
   // =============================================================== Audit

@@ -289,7 +289,7 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
     ),
     h(2, 'G'),
     ul(
-      term('Group', 'a named set of people, so that a space or page can be shared with all of them at once. Three are built in and keep themselves up to date: ', b('Users'), ' (everyone with an account), ', b('Admins'), ' and ', b('Owner'), '. See ', pageLink('Groups'), '.'),
+      term('Group', 'a named set of people, so that a space or page can be shared with all of them at once. Five are built in: ', b('Users'), ' (everyone with an account), ', b('Admins'), ' and ', b('Owner'), ' keep themselves up to date, and ', b('Global Viewers'), ' and ', b('Global Reviewers'), ' can read every space. Each space also has four of its own: its Admins, Editors, Viewers and Reviewers. See ', pageLink('Groups'), ' and ', pageLink('Who can see a space'), '.'),
     ),
     h(2, 'H'),
     ul(
