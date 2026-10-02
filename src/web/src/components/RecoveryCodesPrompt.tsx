@@ -74,7 +74,7 @@ export function RecoveryCodesPrompt() {
       const message = err instanceof ApiError ? err.message : 'Could not generate recovery codes.'
       // The first rejection is the expected one on a session that has been
       // open a while: ask for the password instead of giving up.
-      if (password === null && err instanceof ApiError) setPassword('')
+      if (password === null && err instanceof ApiError && err.status !== 0) setPassword('')
       setError(message)
     } finally {
       setBusy(false)
