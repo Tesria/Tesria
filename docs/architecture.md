@@ -935,6 +935,23 @@ a context source rather than merely correct:
 - Hits carry a `score`, omitted rather than faked where the database
   cannot rank.
 
+**Ranking** (0.9, dev-plan 23.1). `PageSearch` is the one search both
+`GET /api/search` and `search_pages` run. The GIN-indexed `SearchVector`
+still finds the matches; the order is BM25F (`Bm25`, pure and unit-tested):
+the title is a field of its own (weight A in the vector, `TitleWeight` in the
+score) and the text another (weight D). For the matching pages the database
+returns only small counts (each query word's frequency in title and text,
+and their lengths, via `setweight`/`ts_filter` so only the query words are
+unnested); document frequencies are exact GIN counts over the spaces the
+searcher can see, and the average lengths are cached for five minutes
+(`SearchStatistics`). No table, no extension. Accents are folded on both
+sides with built-in `normalize()` and a combining-mark strip
+(`SearchIndex.Fold`), and snippets are cut from the folded text and mapped
+back to the page's own spelling. `SearchText` is the content alone, a line
+per block, chips as shown and Mermaid by its labels (`SearchableText`); a
+change to it bumps `SearchableText.Version`, and the migrate step rebuilds
+every page's text once (`SearchTextBackfill`).
+
 Semantic search is deliberately *not* here; see `roadmap.md` for the
 evidence, the decisions it needs and the size at which it earns its keep.
 

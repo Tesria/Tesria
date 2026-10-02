@@ -60,15 +60,18 @@ public class Page
     public Guid? DeletedById { get; set; }
 
     /// <summary>
-    /// Plain text (title + current content) maintained on every save; the source
-    /// for full-text search. See <see cref="SearchVector"/>.
+    /// The plain text of the current content, a line per block, maintained on
+    /// every save; with <see cref="Title"/>, the source for full-text search.
+    /// Since 0.9 it no longer starts with the title (dev-plan 23.1). See
+    /// <see cref="SearchVector"/> and <c>SearchableText</c>.
     /// </summary>
     public string SearchText { get; set; } = string.Empty;
 
     /// <summary>
-    /// Postgres full-text index over <see cref="SearchText"/> (a generated
-    /// <c>tsvector</c> column, GIN-indexed). Only mapped on PostgreSQL; ignored
-    /// under the SQLite test provider, which uses a LIKE fallback instead.
+    /// Postgres full-text index over <see cref="Title"/> and <see cref="SearchText"/>
+    /// (a generated <c>tsvector</c> column, GIN-indexed; <c>SearchIndex.VectorSql</c>).
+    /// Only mapped on PostgreSQL; ignored under the SQLite test provider, which
+    /// uses a LIKE fallback instead.
     /// </summary>
     public NpgsqlTsVector? SearchVector { get; set; }
 

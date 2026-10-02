@@ -132,7 +132,7 @@ public sealed partial class TesriaTools
 
     public sealed record TreeNode(Guid Id, string Title, IReadOnlyList<TreeNode> Children);
     /// <param name="Snippet">The passage that matched, with the matching words in **bold**.</param>
-    /// <param name="Score">Relevance, higher is better. Null where the database cannot rank (tests).</param>
+    /// <param name="Score">Relevance (BM25), higher is better; comparable within one search. Null where the database cannot rank (tests).</param>
     public sealed record PageHit(Guid Id, string SpaceKey, string Title, string Snippet, double? Score);
     public sealed record PageRef(Guid Id, string SpaceKey, string Title);
     public sealed record LabelUsage(string Name, int Pages);
@@ -170,7 +170,7 @@ public sealed partial class TesriaTools
         "see are never returned.")]
     public static async Task<IReadOnlyList<PageHit>> SearchPages(
         [Description("What to search for.")] string query,
-        AppDbContext db, IPermissionService perms, CancellationToken ct,
+        AppDbContext db, IPermissionService perms, SearchStatistics statistics, CancellationToken ct,
         [Description("Restrict to one space key. Omit to search everywhere you can read.")] string? spaceKey = null,
         [Description("How many results at most (1-50, default 20).")] int limit = 20)
     {
@@ -186,37 +186,9 @@ public sealed partial class TesriaTools
             spaceId = space.Id;
         }
 
-        // The same two-pass filter the REST search uses: narrow by space in
-        // SQL, then drop what page restrictions hide.
-        var viewable = await perms.ViewableSpaceIdsAsync();
-        IQueryable<Page> pages = db.Pages.AsNoTracking().Where(p => viewable.Contains(p.SpaceId));
-        if (spaceId is { } id) pages = pages.Where(p => p.SpaceId == id);
-        pages = db.Database.IsNpgsql()
-            ? pages.Where(p => p.SearchVector!.Matches(EF.Functions.WebSearchToTsQuery("english", term)))
-                   .OrderByDescending(p => p.SearchVector!.Rank(EF.Functions.WebSearchToTsQuery("english", term)))
-            : pages.Where(p => EF.Functions.Like(p.SearchText, "%" + term + "%")).OrderBy(p => p.Title);
-
-        var rows = await pages.Take(200)
-            .Select(p => new { p.Id, SpaceKey = p.Space!.Key, p.Title })
-            .ToListAsync(ct);
-
-        var visible = new List<(Guid Id, string SpaceKey, string Title)>();
-        foreach (var row in rows)
-        {
-            if (visible.Count >= limit) break;
-            if (!await perms.CanViewPageAsync(row.Id)) continue;
-            visible.Add((row.Id, row.SpaceKey, row.Title));
-        }
-
-        // Snippets and scores for the survivors only, one query, after the
-        // permission filter, so nothing is computed for a page that will not
-        // be returned.
-        var matches = await SearchSnippets.ForAsync(db, visible.Select(v => v.Id).ToList(), term, ct);
-        return visible
-            .Select(v => matches.TryGetValue(v.Id, out var m)
-                ? new PageHit(v.Id, v.SpaceKey, v.Title, m.Snippet, m.Score)
-                : new PageHit(v.Id, v.SpaceKey, v.Title, "", null))
-            .ToList();
+        // The same ranking and filtering as the REST search (PageSearch).
+        var hits = await PageSearch.RunAsync(db, perms, statistics, term, spaceId, limit, ct);
+        return hits.Select(h => new PageHit(h.Id, h.SpaceKey, h.Title, h.Snippet, h.Score)).ToList();
     }
 
     [McpServerTool(Name = "find_pages_by_label"), Description("Pages carrying a label, filtered to what this token's owner may read.")]
