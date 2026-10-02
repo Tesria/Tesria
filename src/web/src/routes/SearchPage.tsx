@@ -55,7 +55,8 @@ export function SearchPage() {
     <div className="page-wrap">
       <h1>Search</h1>
       {query ? (
-        <p className="muted small">
+        // A pasted address or token has no spaces to wrap at (QA t6-018).
+        <p className="muted small search__query">
           Results for <strong>“{query}”</strong>
         </p>
       ) : (
@@ -71,7 +72,7 @@ export function SearchPage() {
             <Link to={`/spaces/${r.spaceKey}/pages/${r.pageId}`} className="search-result__title">
               {r.title}
             </Link>
-            <span className="badge">{r.spaceKey}</span>
+            <span className="badge search-result__space" title={r.spaceKey}>{r.spaceKey}</span>
             {r.snippet && <Snippet text={r.snippet} />}
           </li>
         ))}

@@ -112,7 +112,7 @@ export function CommentItem({ node, pageId, onChanged, readOnly = false, canEdit
           }}
           size={24}
         />
-        <span className="comment__author">{node.authorName}</span>
+        <span className="comment__author" title={node.authorName.length > 40 ? node.authorName : undefined}>{node.authorName}</span>
         {node.isInline && <span className="badge">inline</span>}
         {node.resolvedAt && <span className="badge badge--resolved">resolved</span>}
         <span className="muted small">{new Date(node.createdAt).toLocaleString()}</span>

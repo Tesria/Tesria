@@ -282,7 +282,7 @@ export function Layout() {
             <div className="topbar__space" onMouseDown={keepFilterFocus}>
               <div className="topbar__space-head">
                 <SpaceIcon space={spaceNav.space} size={22} />
-                <span className="topbar__space-name">{spaceNav.space.name}</span>
+                <span className="topbar__space-name" title={spaceNav.space.name.length > 60 ? spaceNav.space.name : undefined}>{spaceNav.space.name}</span>
               </div>
               {user && spaceNav.space.canEdit !== false && (
                 <NavLink to={spaceNav.newPageHref} className="btn btn--primary btn--block" onClick={closeNav}>

@@ -455,7 +455,10 @@ export function AdminSecurityPage() {
             <tbody>
               {limits.activeLockouts.map((l) => (
                 <tr key={l.userId}>
-                  <td><strong>{l.displayName}</strong><br /><span className="muted small">{l.email}</span></td>
+                  <td>
+                    <strong className="admin-table__clip" title={l.displayName}>{l.displayName}</strong>
+                    <span className="muted small admin-table__clip" title={l.email}>{l.email}</span>
+                  </td>
                   <td>{l.failedLoginCount}</td>
                   <td>{new Date(l.lockedUntil).toLocaleTimeString()}</td>
                   <td>

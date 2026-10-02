@@ -197,7 +197,7 @@ export function AdminDashboardPage() {
                   <tbody>
                     {data.usage.topEditors.map((e) => (
                       <tr key={e.userId}>
-                        <td>{e.displayName}</td>
+                        <td><span className="admin-table__clip" title={e.displayName}>{e.displayName}</span></td>
                         <td>{e.versions}</td>
                       </tr>
                     ))}

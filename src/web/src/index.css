@@ -3804,3 +3804,71 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
 :root .topbar.is-collapsed .topbar__collapsible .topbar__link.is-active {
   background: none; box-shadow: none; color: var(--primary); font-weight: 700;
 }
+
+/* ---- Long unbroken text (0.9) ---------------------------------------------
+   A title, a name, a key or a query with no spaces in it (a pasted address,
+   a token, 200 N's) ran past its box, and the whole page scrolled sideways:
+   10,000px for a 500-letter title (QA t3-R04, t4-026), every page of a space
+   with a long name (T3-010), the Spaces list with a long key (cal-005), the
+   Search page (t6-018). The rule now: nothing scrolls the page sideways.
+   Text read in full (a title, a heading, a description, a message) breaks
+   anywhere once a word is longer than the line; a label in a row (a key
+   badge, a crumb, a tree row, a name beside an avatar) ends in "…" or stops
+   at a few lines, with the whole of it in a tooltip. `anywhere` rather than
+   `break-word`: only `anywhere` lets a flex or grid item shrink below its
+   longest word. */
+.page-head h1, .space-home__title, .space-home__body > p, .search__query,
+.search-result__title, .alert, .comment__body, .version__author,
+.label-chip, .dynamic-block__user, .space-settings__key code,
+.recovery-prompt__card p, .recovery-prompt__card label > span { overflow-wrap: anywhere; }
+.dynamic-block__user { max-width: 100%; }
+.space-home__title { min-width: 0; }
+.space-home__head > .btn { flex: none; } /* the title gives way, not Watch This Space */
+/* A label: one line, then "…". */
+.space-card__key-text, .sidebar__key-text, .breadcrumb__label,
+.search-result__space, .comment__author, .topbar__username, .admin-table__clip,
+.admin-table__who > * {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* A name: three lines, then "…". */
+.space-card__name, .space-card__desc, .sidebar__name, .tree__title {
+  overflow-wrap: anywhere; overflow: hidden;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3;
+}
+.tree__title { min-width: 0; }
+/* The key's text gives way to the public badge beside it. */
+.space-card__head, .space-card__key, .sidebar__key { min-width: 0; }
+.space-card__key, .sidebar__key { display: flex; align-items: center; }
+.space-card__key .badge, .sidebar__key .badge { flex: none; }
+/* The sidebar's head: icon, then key and name, then the hide button, which
+   stays in the sidebar (cal-005: a 50-letter key pushed it to x=607). */
+.sidebar__ident { flex: 1 1 auto; min-width: 0; }
+/* The crumb trail: each crumb at most a line, inline as before. The docked
+   trail (Minimal, computer) is one line already; it docks only if it fits.
+   Short of the full width by the separator (or the space's icon) before it,
+   so the two stay on one line. */
+.breadcrumb__label { display: inline-block; max-width: calc(100% - 1.75rem); vertical-align: bottom; }
+.breadcrumb__menu a { overflow-wrap: anywhere; }
+.breadcrumb__menu { max-width: min(28rem, calc(100vw - 1.5rem)); }
+/* The space key badge on search and label results is its text's width, not
+   a gray bar across the result (t6-017, T3-018). */
+.search-result__space { align-self: flex-start; max-width: 100%; }
+/* A display name of up to 200 characters, one word or not (T1-025). */
+.topbar__username { max-width: 14rem; }
+.comment__head { min-width: 0; }
+.comment__head > :not(.comment__author) { flex: none; }
+.admin-table__who { display: flex; flex-direction: column; min-width: 0; }
+.admin-table__who > *, .admin-table__clip { display: block; max-width: 20rem; }
+.admin-table__clip--inline { display: inline-block; vertical-align: bottom; }
+/* A mention keeps to one piece unless it is wider than the line. */
+.editor__content .mention, .mention { white-space: normal; overflow-wrap: anywhere; max-width: 100%; }
+/* The space's contents on its home page (and an exported site's front page). */
+.site-contents__title, .site-contents__page { max-width: 100%; overflow-wrap: anywhere; }
+.site-contents__title > span, .site-contents__page > span { min-width: 0; }
+/* An emoji icon saved as several before the one-emoji rule stays in its tile (cal-007). */
+.space-icon--emoji { overflow: hidden; }
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .topbar__space { min-width: 0; }
+  .topbar__space-head { max-width: 100%; }
+}
+

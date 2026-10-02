@@ -36,7 +36,7 @@ export function LabelPage() {
             <Link to={`/spaces/${p.spaceKey}/pages/${p.pageId}`} className="search-result__title">
               {p.title}
             </Link>
-            <span className="badge">{p.spaceKey}</span>
+            <span className="badge search-result__space" title={p.spaceKey}>{p.spaceKey}</span>
           </li>
         ))}
       </ul>

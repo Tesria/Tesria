@@ -476,11 +476,15 @@ function ChildrenIcon() {
 /** A page's title in the tree, after its emoji if it has one (dev-plan 15.7). */
 function TreeLabel({ node, query = '' }: { node: FlatNode; query?: string }) {
   const parts = splitMatch(node.title, query)
+  // A title stops at three lines with "…" (QA t3-R04): the whole of a long one in the tooltip.
+  const title = node.title.length > 60 ? node.title : undefined
   return (
     <>
       {node.marker && <span className="tree__marker" aria-hidden="true">{node.marker}</span>}
       {node.emoji && <span className="tree__emoji" aria-hidden="true">{node.emoji}</span>}
-      {parts ? <span>{parts[0]}<mark className="tree__match">{parts[1]}</mark>{parts[2]}</span> : <span>{node.title}</span>}
+      {parts
+        ? <span className="tree__title" title={title}>{parts[0]}<mark className="tree__match">{parts[1]}</mark>{parts[2]}</span>
+        : <span className="tree__title" title={title}>{node.title}</span>}
     </>
   )
 }
