@@ -24,8 +24,12 @@ public static partial class SpaceEndpoints
     /// <param name="Members">Who goes in each of the space's groups from the start (21.2). The creator is always in Admins.</param>
     public record CreateSpaceRequest(
         string Key, string Name, string? Description,
-        System.Text.Json.JsonElement EveryoneAccess = default,
-        List<GroupMembersRequest>? Members = null);
+        List<GroupMembersRequest>? Members = null)
+    {
+        // A property rather than a parameter: the OpenAPI document cannot
+        // describe a JsonElement parameter's default value.
+        public System.Text.Json.JsonElement EveryoneAccess { get; init; }
+    }
     /// <summary>The people to put in one of a new space's groups.</summary>
     public record GroupMembersRequest(SpaceGroupRole Role, List<Guid>? UserIds);
 

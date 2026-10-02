@@ -144,6 +144,44 @@ public class DatabaseRoleTests
     }
 
     [PostgresFact]
+    public async Task A_space_made_with_its_members_and_an_invite_with_groups_work_within_the_roles_grants()
+    {
+        // Dev-plan 21.2 and 21.3: the wizard's create writes the space, its
+        // groups and their members; an invite stores its groups, and the
+        // registration it makes reads them and writes the memberships, all
+        // as the app's role.
+        using var pg = new PostgresTestDatabase();
+        using var factory = new TestAppFactory(pg);
+        var owner = factory.CreateClient();
+        await owner.RegisterAndSignInAsync();
+        var other = factory.CreateClient();
+        var otherId = await other.RegisterAndSignInAsync();
+        (await owner.PostAsJsonAsync("/api/spaces", new
+        {
+            Key = "WIZ", Name = "Wizard", EveryoneAccess = (int?)null,
+            Members = new[] { new { Role = 1, UserIds = new[] { otherId } } },
+        })).EnsureSuccessStatusCode();
+        var viewers = await owner.SpaceGroupAsync("WIZ", 0);
+
+        var issued = await (await owner.PostAsJsonAsync("/api/admin/invites", new
+        {
+            Email = "invited@example.com", Role = 1,
+            GroupIds = new[] { viewers, Tesria.Api.Infrastructure.Permissions.BuiltInGroups.GlobalViewersId },
+        })).Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        var res = await factory.CreateClient().PostAsJsonAsync("/api/auth/register", new
+        {
+            Email = "invited@example.com", DisplayName = "Invited", Password,
+            InviteToken = issued.GetProperty("token").GetString(),
+        });
+        res.EnsureSuccessStatusCode();
+        var id = (await res.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>()).GetProperty("id").GetGuid();
+
+        await using var db = pg.Owner();
+        Assert.True(await db.UserGroups.AnyAsync(ug => ug.UserId == id && ug.GroupId == viewers));
+        Assert.Equal(UserRole.Admin, (await db.Users.SingleAsync(u => u.Id == id)).Role);
+    }
+
+    [PostgresFact]
     public async Task An_export_job_is_queued_run_and_removed_within_the_roles_grants()
     {
         // Dev-plan 20.2: the app writes the job, the runner its progress and

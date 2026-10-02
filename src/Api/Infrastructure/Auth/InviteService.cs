@@ -7,8 +7,13 @@ namespace Tesria.Api.Infrastructure.Auth;
 
 public interface IInviteService
 {
-    /// <summary>Mints an invite, returning the plaintext token once. Caller saves.</summary>
-    string Issue(Guid createdById, string? email, TimeSpan lifetime);
+    /// <summary>
+    /// Mints an invite, returning the plaintext token once. Caller saves.
+    /// <paramref name="role"/> and <paramref name="groupIds"/> are what the
+    /// account is given when it is made (dev-plan 21.3), already checked.
+    /// </summary>
+    string Issue(Guid createdById, string? email, TimeSpan lifetime,
+        UserRole role = UserRole.Member, IEnumerable<Guid>? groupIds = null);
 
     /// <summary>
     /// The invite this token names, if it is unused, unexpired, and (when the
@@ -71,10 +76,11 @@ public sealed class InviteService(AppDbContext db) : IInviteService
 {
     public static readonly TimeSpan DefaultLifetime = TimeSpan.FromDays(7);
 
-    public string Issue(Guid createdById, string? email, TimeSpan lifetime)
+    public string Issue(Guid createdById, string? email, TimeSpan lifetime,
+        UserRole role = UserRole.Member, IEnumerable<Guid>? groupIds = null)
     {
         var token = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(32));
-        db.Invites.Add(new Invite
+        var invite = new Invite
         {
             Id = Guid.NewGuid(),
             TokenHash = Hash(token),
@@ -82,7 +88,11 @@ public sealed class InviteService(AppDbContext db) : IInviteService
             ExpiresAt = DateTimeOffset.UtcNow.Add(lifetime),
             CreatedById = createdById,
             CreatedAt = DateTimeOffset.UtcNow,
-        });
+            Role = role,
+        };
+        db.Invites.Add(invite);
+        foreach (var groupId in (groupIds ?? []).Distinct())
+            db.InviteGroups.Add(new InviteGroup { InviteId = invite.Id, GroupId = groupId });
         return token;
     }
 
