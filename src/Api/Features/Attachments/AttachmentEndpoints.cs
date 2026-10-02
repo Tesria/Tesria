@@ -46,8 +46,11 @@ public static class AttachmentEndpoints
 
         if (file is null || file.Length == 0)
             return Results.ValidationProblem(Error("file", "A non-empty file is required."));
+        // 413, the status the API docs promise for "too large" (T5-024): it
+        // answered 400, with the right words.
         if (file.Length > MaxBytes)
-            return Results.ValidationProblem(Error("file", $"File exceeds the {MaxBytes / (1024 * 1024)} MB limit."));
+            return Results.ValidationProblem(Error("file", $"File exceeds the {MaxBytes / (1024 * 1024)} MB limit."),
+                statusCode: StatusCodes.Status413PayloadTooLarge);
 
         // The type the file will be served as is decided from its bytes and
         // its declared type together: see ContentTypes.

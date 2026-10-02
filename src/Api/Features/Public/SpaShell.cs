@@ -58,8 +58,9 @@ public sealed partial class SpaShell(IWebHostEnvironment env)
         // An unknown API route is a 404, never a page of HTML a client would
         // try to parse as JSON.
         var requested = context.Request.Path;
+        // Unless the address is right and only the body's type is wrong (T5-025).
         if (requested.StartsWithSegments("/api") || requested.StartsWithSegments("/mcp"))
-            return Results.NotFound();
+            return Infrastructure.ApiErrorMiddleware.NotJson(context) ?? Results.NotFound();
 
         var shell = shells.Source();
         if (shell is null) return Results.NotFound();

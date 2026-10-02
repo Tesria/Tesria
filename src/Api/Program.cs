@@ -673,6 +673,10 @@ app.UseForwardedHeaders();
 app.UseMiddleware<BlocklistMiddleware>();
 app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<DeniedResponseMiddleware>();
+// Every /api refusal says something a person can read: no bare 500, 413 or
+// 415 (T1-023, t2-026, T5-024). Inside the denied-response counter, so what
+// it counts is the status this writes.
+app.UseMiddleware<Tesria.Api.Infrastructure.ApiErrorMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
