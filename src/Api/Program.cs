@@ -620,6 +620,12 @@ using (var scope = app.Services.CreateScope())
     await Tesria.Api.Infrastructure.Permissions.BuiltInGroups.EnsureAsync(
         db, scope.ServiceProvider.GetRequiredService<IAuditLogger>(), startupLog);
 
+    // Every space's own four groups, with grants to people moved into them
+    // (dev-plan 21.1). Runs as the app's role, which may write everything it
+    // touches; SpaceGrantMoves is append-only to it, and the seed only appends.
+    await Tesria.Api.Infrastructure.Permissions.SpaceGroupSeed.EnsureAsync(
+        db, scope.ServiceProvider.GetRequiredService<IAuditLogger>(), startupLog);
+
     // Which version is running, and an audit entry when that changed (dev-plan 16.1).
     await Tesria.Api.Infrastructure.Versioning.VersionSeed.EnsureAsync(
         scope.ServiceProvider.GetRequiredService<ISiteSettingsService>(),

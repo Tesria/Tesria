@@ -23,8 +23,12 @@ namespace Tesria.Api.Infrastructure.Security;
 /// </summary>
 public static partial class DatabaseRoles
 {
-    /// <summary>Tables the runtime role may append to but never change.</summary>
-    public static readonly string[] AppendOnlyTables = ["AuditLogs", "PageViews", "SecurityEvents", "BackupJobs"];
+    /// <summary>
+    /// Tables the runtime role may append to but never change. SpaceGrantMoves
+    /// (dev-plan 21.1) is the record of the grants moved into space groups,
+    /// kept so the move can be reversed by hand: nothing should rewrite it.
+    /// </summary>
+    public static readonly string[] AppendOnlyTables = ["AuditLogs", "PageViews", "SecurityEvents", "BackupJobs", "SpaceGrantMoves"];
 
     /// <summary>
     /// Tables the runtime role may read but never write (dev-plan 9.1). The
