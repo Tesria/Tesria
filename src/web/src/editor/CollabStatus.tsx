@@ -1,7 +1,9 @@
 /**
  * `denied`: the app no longer gives this person a token for the page (they
- * were suspended, signed out, or lost access); `gone`: the page no longer
- * exists. Both are final; `disconnected` is not, the editor keeps retrying
+ * were suspended, signed out, or lost edit rights); `gone`: the page answers
+ * 404, which it does both once it is deleted and once this person may no
+ * longer see it, on purpose, so as not to say which (T5-010, t7-R03). Both
+ * are final; `disconnected` is not, the editor keeps retrying
  * (dev-plan 14.3).
  */
 export type CollabConnection = 'connecting' | 'connected' | 'disconnected' | 'denied' | 'gone'
@@ -22,7 +24,7 @@ export function CollabStatus({ status }: { status: CollabConnection }) {
           : status === 'denied'
             ? 'You are signed out or can no longer edit this page, so changes here will not be saved. Copy anything you need, then reload.'
             : status === 'gone'
-              ? 'This page no longer exists, so your changes here will not be saved. Copy anything you need.'
+              ? 'This page was deleted, or you no longer have access to it, so your changes here will not be saved. Copy anything you need.'
               : 'Offline: your changes are local until reconnected'}
     </div>
   )

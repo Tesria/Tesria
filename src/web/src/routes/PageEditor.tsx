@@ -357,7 +357,11 @@ export function PageEditor() {
       navigate(`/spaces/${key}/pages/${savedId}`)
     } catch (err) {
       if (handleConflict(err)) return
-      setError(err instanceof ApiError || err instanceof Error ? err.message : 'Could not save the page.')
+      // A 404 here is the page deleted, or this person's access to it
+      // removed while they edited: the server does not say which (t7-R03).
+      setError(err instanceof ApiError && err.status === 404
+        ? 'Not saved: this page was deleted, or you no longer have access to it. Copy anything you need.'
+        : err instanceof ApiError || err instanceof Error ? err.message : 'Could not save the page.')
     } finally {
       setBusy(false)
     }
