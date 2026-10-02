@@ -3482,8 +3482,7 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
   /* Each space's name over its choice, rather than some rows wrapping and
      some not, depending on how long the name is. */
   .wizard__space { display: grid; gap: 0.25rem; }
-  .wizard__space .glass-select-wrap { display: block; width: 100%; }
-  .wizard__space select { width: 100%; }
+  .wizard__space .glass-select-wrap { justify-self: start; }
   .wizard__spaces { gap: 0.75rem; }
 }
 
