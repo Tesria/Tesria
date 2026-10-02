@@ -64,7 +64,7 @@ export function PrincipalPicker({ operationNames, onAdd, addLabel = 'Add', group
   return (
     <form className="principal-picker" onSubmit={submit}>
       {/* Frosted drop-downs in the glass style, as the About page's (glass.css). */}
-      <span className="glass-select-wrap"><select className="glass-select" value={type} onChange={(e) => setType(Number(e.target.value))} aria-label="Principal type">
+      <span className="glass-select-wrap"><select className="glass-select" value={type} onChange={(e) => setType(Number(e.target.value))} aria-label="User or group">
         <option value={PrincipalType.User}>User</option>
         <option value={PrincipalType.Group}>Group</option>
       </select></span>
@@ -72,7 +72,7 @@ export function PrincipalPicker({ operationNames, onAdd, addLabel = 'Add', group
       <span className="glass-select-wrap"><select className="glass-select"
         value={principalId}
         onChange={(e) => setPrincipalId(e.target.value)}
-        aria-label="Principal"
+        aria-label="Who"
         required
       >
         <option value="">Choose…</option>
@@ -81,7 +81,7 @@ export function PrincipalPicker({ operationNames, onAdd, addLabel = 'Add', group
         ))}
       </select></span>
 
-      <span className="glass-select-wrap"><select className="glass-select" value={operation} onChange={(e) => setOperation(Number(e.target.value))} aria-label="Operation">
+      <span className="glass-select-wrap"><select className="glass-select" value={operation} onChange={(e) => setOperation(Number(e.target.value))} aria-label="Level">
         {operationNames.map((name, value) => (
           <option key={name} value={value}>{name}</option>
         ))}

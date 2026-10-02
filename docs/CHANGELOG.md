@@ -5,6 +5,63 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Messages people see first say what happened and what to do.**
+  - A request that gets no answer says "Tesria could not be reached. Check
+    your connection and try again." instead of the browser's "Failed to
+    fetch" (t4-024, T5-011).
+  - No refusal shows a bare "Request failed (500)" any more: two
+    registrations or owner set-ups at the same moment answer saying what the
+    other one did (T1-023, t2-026); a display name over 200 characters is
+    refused in words (T1-025); a pack listing the same page twice is refused
+    in words (t6-014); any other server fault says so plainly.
+  - An invite that cannot be used says whether it was already used, has
+    expired, was revoked or is for another address, as soon as the link is
+    opened (T7-005, t2-005).
+  - Send Test Email to Me and the other mail failures name the fix (host not
+    found, refused, SSL on the wrong port, STARTTLS missing, password
+    refused, timeout) instead of the mail library's text (t2-012).
+  - Turning two-factor off with a wrong password says the password was
+    wrong (t2-011), and Confirm It's You says what the action is instead of
+    calling every one irreversible (t2-017).
+  - The page Restrictions tab speaks of people and groups and says what View
+    and Edit mean (T7-002, T3-021, cal-008); security alerts list their
+    details in words (T7-015).
+  - An unknown space or page shows a proper not-found page with a way back
+    (T9-015), and an editor who loses access is told the page was deleted or
+    they no longer have access (T5-010, t7-R03).
+  - A backup that fails for a full disk says the backup disk is full, with
+    the space left (T8-023).
+  - An administrator opening a tab their role lacks, such as Branding, is
+    told which right it needs (T7-008).
+  - The API answers 415 for a body not marked as JSON (T5-025), and 413 with
+    the limit for anything too large, including through Caddy (T5-024).
+  - Refused pack imports no longer use up the hourly allowance of ten, and
+    the limit says the real wait (t6-016).
+- **Assistants can read and write comments over MCP** (dev-plan 22.1). Three
+  new tools: `list_comments` gives a page's threads with replies nested, who
+  wrote each and when, whether a thread is resolved, and, for an inline
+  comment, the passage it is on; `add_comment` and `reply_to_comment` write
+  a comment or a reply as the token's owner. They go through the same code
+  as a comment written in the browser, so watchers and mentioned people are
+  told and webhooks fire exactly as before; a read-only token is refused,
+  and a page the token's owner cannot read is "not found". A deleted
+  comment keeps its place without its text. The administrators' API Tokens
+  tab names the new tools.
+- **Assistants can comment on a passage, and the highlight appears on the
+  page** (dev-plan 22.2). `add_comment` over MCP and
+  `POST /api/pages/{id}/comments` over REST take a `quote`, and an
+  `occurrence` when the words appear more than once. The server finds the
+  passage in the page's live draft and highlights it as the editor does for
+  a person: anyone editing sees it at once, without their typing or cursor
+  moving, and readers see it once the page is next updated. It needs edit
+  rights on the page. A quote that is not there, appears more than once, is
+  too long or runs across two paragraphs is refused with a reason and a
+  count (422), and the request is refused with a 503 when live editing is
+  not running. Two comments can now cover the same words; highlights
+  survive Discard and changes made through the API or MCP; a highlight on
+  its own no longer counts as unpublished changes; the Comments panel shows
+  the passage each inline comment is about, a person's included; deleted
+  comments' highlights are hidden. Reviewed by Fable 5.1 before building.
 ## [0.8.7] - 2026-10-01
 
 A small update: the clear button an exported site's page filter was missing,

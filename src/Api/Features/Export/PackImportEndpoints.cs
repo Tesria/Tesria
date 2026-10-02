@@ -49,7 +49,9 @@ public static partial class PackImportEndpoints
             {
                 MultipartBodyLengthLimit = WikiPack.MaxTotalBytes,
             })
-            .RequireRateLimiting(RateLimits.ImportPolicy)
+            // Counted in the handler rather than by a rate limiter, so a
+            // refused import does not use the hour's allowance (t6-016).
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .RequirePermission(InstancePermissions.SpacesCreate);
         return routes;
     }
@@ -63,8 +65,17 @@ public static partial class PackImportEndpoints
 
     private static async Task<IResult> Import(
         HttpRequest request, AppDbContext db, CurrentUser current, IAttachmentStorage storage,
-        IProfileMediaService media, IAuditLogger audit, CancellationToken ct)
+        IProfileMediaService media, IAuditLogger audit, ImportAllowance allowance, CancellationToken ct)
     {
+        if (allowance.TryBegin(current.RequireId()) is { } refused)
+        {
+            var seconds = (int)Math.Ceiling(refused.Wait.TotalSeconds);
+            request.HttpContext.Response.Headers.RetryAfter = seconds.ToString();
+            return Results.Json(
+                new { title = "Too many imports", status = 429, detail = refused.Message, retryAfterSeconds = seconds },
+                statusCode: StatusCodes.Status429TooManyRequests, contentType: "application/problem+json");
+        }
+
         if (!request.HasFormContentType)
             return Problem("file", "Upload a pack file.");
 
@@ -317,6 +328,7 @@ public static partial class PackImportEndpoints
             await db.SaveChangesAsync(ct);
             await tx.CommitAsync(ct);
             committed = true;
+            allowance.Imported(user);
 
             var labels = model.Pages.SelectMany(p => p.Labels ?? []).Distinct(StringComparer.OrdinalIgnoreCase).Count();
             return Results.Created($"/api/spaces/{space.Key}", new ImportResponse(

@@ -20,6 +20,7 @@ import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
 import { useConfirm } from '../components/ConfirmDialog'
 import { noteOpenPage, notePageVisit } from '../onboarding/signals'
 import { useTitlePage } from '../components/DocumentTitle'
+import { NotFoundPanel } from '../components/NotFoundPanel'
 import { ResolvedCommentStyles } from '../components/ResolvedCommentStyles'
 import { MoveCopyDialog } from '../components/MoveCopyDialog'
 import { PageEmoji } from '../components/PageEmoji'
@@ -35,16 +36,21 @@ export function PageView() {
   const [page, setPage] = useState<PageDetail | null>(null)
   useTitlePage(page?.title)
   const [error, setError] = useState<string | null>(null)
+  const [notFound, setNotFound] = useState(false)
   const [tab, setTab] = useState<Tab>('comments')
   const { ask, dialog } = useConfirm()
   const [moveCopy, setMoveCopy] = useState<null | 'move' | 'copy'>(null)
 
   const load = useCallback(() => {
     setError(null)
+    setNotFound(false)
     api.pages
       .get(pageId)
       .then(setPage)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load page.'))
+      .catch((err: unknown) => {
+        if (err instanceof ApiError && err.status === 404) setNotFound(true)
+        setError(err instanceof Error ? err.message : 'Failed to load page.')
+      })
   }, [pageId])
 
   useEffect(() => {
@@ -111,6 +117,7 @@ export function PageView() {
     }
   }
 
+  if (notFound) return <NotFoundPanel what="page" spaceKey={space?.key} spaceName={space?.name} />
   if (error) {
     return (
       <div className="page-wrap">

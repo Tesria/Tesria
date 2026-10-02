@@ -16,7 +16,7 @@ import * as Y from 'yjs'
 // The editor's own schema and reconciliation, built from src/web at image
 // build time (dev-plan 8.6). Not a copy: a node declared in extensions.ts
 // and missing here would be dropped from every document this touched.
-import { reconcile, reset } from './vendor/collab-schema.js'
+import { placeInlineComment, reconcile, removeInlineComment, reset } from './vendor/collab-schema.js'
 
 /**
  * A secret from the environment, or else from the file the init service
@@ -513,13 +513,91 @@ async function resetDraft(documentName, { contentJson, version }) {
   return { status: 200, body: 'reset' }
 }
 
+/**
+ * Puts an inline comment's highlight into a page's shared draft (dev-plan
+ * 22.2): an agent quoting a passage over the API or MCP. The app has checked
+ * the caller may edit the page, minted the comment's id, and saves the
+ * comment only once this says the highlight is placed.
+ *
+ * The draft is brought up to date first, so the quote is matched against the
+ * page as it now reads: one never opened gets the published page, one that
+ * is behind a write made while this service was down is reconciled as its
+ * next load would have (the fetch hook does not, for a load marked as a
+ * write), and one with no recorded version is adopted. Then, in the same
+ * transaction, the passage is found and its text runs formatted
+ * (commentAnchor.ts): no remote update lands between the two, and nothing
+ * else in the document moves. Asking again for the same comment changes
+ * nothing.
+ */
+async function placeComment(documentName, { commentId, quote, occurrence }) {
+  if (!UUID.test(documentName) || !UUID.test(commentId ?? '') || typeof quote !== 'string') {
+    return { status: 400, body: { code: 'bad_request', message: 'a page, a comment id and a quote are needed' } }
+  }
+  if (inMaintenance()) {
+    return { status: 503, body: { code: 'live_editing_unavailable', message: 'a restore is in progress' } }
+  }
+  const page = await currentVersion(documentName)
+  if (!page) return { status: 404, body: { code: 'page_not_found', message: 'unknown document' } }
+  const published = JSON.parse(page.contentJson)
+  const stored = server.hocuspocus.documents.has(documentName) || (await hasStoredDocument(documentName))
+  const connection = await server.hocuspocus.openDirectConnection(documentName, { write: true })
+  let result
+  try {
+    const seen = connection.document?.getMap('meta').get('version')
+    const base = stored && typeof seen === 'number' && seen < page.version ? await versionContent(documentName, seen) : null
+    await connection.transact((doc) => {
+      const meta = doc.getMap('meta')
+      const now = meta.get('version')
+      if (!stored || doc.getXmlFragment('default').length === 0) {
+        reset(doc, published)
+        meta.set('version', page.version)
+      } else if (typeof now !== 'number') {
+        meta.set('version', page.version)
+      } else if (now < page.version) {
+        reconcile(doc, published, { source: 'page', actor: page.author ?? null }, base)
+        meta.set('version', page.version)
+      }
+      result = placeInlineComment(doc, { commentId, quote, occurrence: occurrence ?? null })
+    })
+  } finally {
+    await connection.disconnect()
+  }
+  if (result.status === 'refused') {
+    return { status: 422, body: { code: result.code, message: result.message, count: result.count ?? null } }
+  }
+  if (result.status === 'placed') console.log(`[collab] ${documentName}: inline comment ${commentId} placed`)
+  return { status: 200, body: result }
+}
+
+/**
+ * Takes a comment's highlight back off a draft: the app could not save the
+ * comment after its highlight was placed. Best effort on the app's side.
+ */
+async function removeComment(documentName, commentId) {
+  if (!UUID.test(documentName) || !UUID.test(commentId ?? '')) return { status: 404, body: 'unknown document' }
+  if (!server.hocuspocus.documents.has(documentName) && !(await hasStoredDocument(documentName))) {
+    return { status: 202, body: 'no draft' }
+  }
+  const connection = await server.hocuspocus.openDirectConnection(documentName, { write: true })
+  let removed = false
+  try {
+    await connection.transact((doc) => { removed = removeInlineComment(doc, commentId) })
+  } finally {
+    await connection.disconnect()
+  }
+  if (removed) console.log(`[collab] ${documentName}: inline comment ${commentId} taken off again`)
+  return { status: 200, body: removed ? 'removed' : 'not there' }
+}
+
 const server = new Server({
   port: PORT,
   address: '0.0.0.0',
 
   /**
-   * The one HTTP route this sidecar answers, beside the websocket: the app
-   * telling it a page has been written (dev-plan 8.6). Guarded by the shared
+   * The HTTP routes this sidecar answers, beside the websocket: the app
+   * telling it a page has been written (dev-plan 8.6), a draft discarded, an
+   * inline comment's highlight to place or take off (22.2), a restore, a
+   * revocation. Guarded by the shared
    * secret the app already holds, and reachable only inside the compose
    * network, which is why there is no user identity here to check.
    */
@@ -529,7 +607,9 @@ const server = new Server({
     const discard = /^\/pages\/([^/]+)\/reset$/.exec(path)
     const maintenance = path === '/maintenance'
     const revoke = path === '/revoke'
-    if (request.method !== 'POST' || (!match && !discard && !maintenance && !revoke)) return
+    const comment = /^\/pages\/([^/]+)\/comments$/.exec(path)
+    const uncomment = /^\/pages\/([^/]+)\/comments\/([^/]+)\/remove$/.exec(path)
+    if (request.method !== 'POST' || (!match && !discard && !maintenance && !revoke && !comment && !uncomment)) return
 
     const provided = request.headers['x-collab-secret']
     // Constant-time, and length-checked first, as timingSafeEqual requires.
@@ -560,6 +640,28 @@ const server = new Server({
         response.writeHead(200).end('ok')
       } catch (err) {
         console.error('[collab] maintenance request failed', err)
+        response.writeHead(500).end('failed')
+      }
+      return handled()
+    }
+
+    // An inline comment's highlight, placed or taken off again (dev-plan 22.2).
+    if (comment) {
+      try {
+        const result = await placeComment(comment[1], await readJson(request, 64 * 1024))
+        response.writeHead(result.status, { 'content-type': 'application/json' }).end(JSON.stringify(result.body))
+      } catch (err) {
+        console.error(`[collab] inline comment request failed for ${comment[1]}`, err)
+        response.writeHead(500).end('failed')
+      }
+      return handled()
+    }
+    if (uncomment) {
+      try {
+        const result = await removeComment(uncomment[1], uncomment[2])
+        response.writeHead(result.status).end(result.body)
+      } catch (err) {
+        console.error(`[collab] removing inline comment ${uncomment[2]} failed for ${uncomment[1]}`, err)
         response.writeHead(500).end('failed')
       }
       return handled()

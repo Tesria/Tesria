@@ -104,7 +104,7 @@ public static partial class BrandingEndpoints
         bool dark, IFormFile? file, HttpContext http, IConfiguration config, ISiteSettingsService settings,
         IBrandAssets assets, AppDbContext db, CurrentUser current, IAuditLogger audit)
     {
-        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
+        if (Auth.AuthEndpoints.RequireSudo(http, config, Auth.SudoReasons.Branding) is { } denied) return denied;
         var bytes = await ReadAsync(file, http.RequestAborted);
         if (bytes is null) return FileError("Choose an image file.");
         if (bytes.Length == 0) return FileError($"A logo must be {BrandAssets.MaxLogoBytes / (1024 * 1024)} MB or smaller.");
@@ -140,7 +140,7 @@ public static partial class BrandingEndpoints
         bool dark, HttpContext http, IConfiguration config, ISiteSettingsService settings,
         IBrandAssets assets, AppDbContext db, CurrentUser current, IAuditLogger audit)
     {
-        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
+        if (Auth.AuthEndpoints.RequireSudo(http, config, Auth.SudoReasons.Branding) is { } denied) return denied;
         var actorId = current.RequireId();
         var saved = await settings.UpdateAsync(s =>
         {
@@ -159,7 +159,7 @@ public static partial class BrandingEndpoints
         IFormFile? file, HttpContext http, IConfiguration config, ISiteSettingsService settings,
         IBrandAssets assets, AppDbContext db, CurrentUser current, IAuditLogger audit)
     {
-        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
+        if (Auth.AuthEndpoints.RequireSudo(http, config, Auth.SudoReasons.Branding) is { } denied) return denied;
         var bytes = await ReadAsync(file, http.RequestAborted);
         if (bytes is null) return FileError("Choose an image file.");
         if (bytes.Length == 0) return FileError($"A favicon must be {BrandAssets.MaxFaviconBytes / 1024} KB or smaller.");
@@ -185,7 +185,7 @@ public static partial class BrandingEndpoints
         HttpContext http, IConfiguration config, ISiteSettingsService settings,
         IBrandAssets assets, AppDbContext db, CurrentUser current, IAuditLogger audit)
     {
-        if (Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
+        if (Auth.AuthEndpoints.RequireSudo(http, config, Auth.SudoReasons.Branding) is { } denied) return denied;
         var actorId = current.RequireId();
         var saved = await settings.UpdateAsync(s =>
         {

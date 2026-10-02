@@ -166,7 +166,10 @@ public class MailSignInTests
         var admin = await AdminAsync(app);
         var res = await admin.PostAsync("/api/admin/settings/email/oauth/microsoft/start", null);
         Assert.Equal(HttpStatusCode.Forbidden, res.StatusCode);
-        Assert.Contains("reauth_required", await res.Content.ReadAsStringAsync());
+        var body = await res.Content.ReadAsStringAsync();
+        Assert.Contains("reauth_required", body);
+        // t2-017: the reason fits the action, not "irreversible".
+        Assert.Contains("changes how Tesria sends email", body);
     }
 
     [Fact]

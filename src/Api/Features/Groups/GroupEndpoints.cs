@@ -270,7 +270,7 @@ public static class GroupEndpoints
         }
         if (!(await auth.AuthorizeAsync(http.User, PermissionPolicyProvider.Prefix + InstancePermissions.GroupsManage)).Succeeded)
             return Results.Forbid();
-        if (BuiltInGroups.IsGlobal(group.Id) && Features.Auth.AuthEndpoints.RequireSudo(http, config) is { } denied)
+        if (BuiltInGroups.IsGlobal(group.Id) && Features.Auth.AuthEndpoints.RequireSudo(http, config, Features.Auth.SudoReasons.GlobalReaders) is { } denied)
             return denied;
         return null;
     }

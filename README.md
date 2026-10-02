@@ -63,8 +63,9 @@ under the [Apache License 2.0](./LICENSE).
 ### Automate: agents that work with you
 
 - **A built-in MCP server:** Claude, Cursor or any MCP client can read,
-  search, create and update pages, limited to what the token's owner may
-  see. A read-only token cannot change anything.
+  search, create and update pages, and comment on them (on the whole page
+  or a quoted passage), limited to what the token's owner may see. A
+  read-only token cannot change anything.
 - **Agents never silently overwrite you:** every change an agent makes is a
   new version in the page's history, which anyone can restore, and
   administrators see what each token did. When someone is editing the page,

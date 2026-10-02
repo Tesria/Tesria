@@ -13,6 +13,7 @@ import {
   UserStatus,
 } from '../../api/client'
 import { ALERT_KIND_LABEL } from './alertKinds'
+import { alertDetails } from './alertDetails'
 import { useConfirm } from '../../components/ConfirmDialog'
 
 const SEVERITY_LABEL: Record<SecuritySeverity, string> = { 0: 'info', 1: 'warning', 2: 'critical' }
@@ -25,12 +26,9 @@ function meta(json: string | null): Record<string, unknown> {
   }
 }
 
-/** The details every alert lists inline: its plain values. Lists and flags get their own lines. */
-const STRUCTURED = new Set(['TopPaths', 'Browsers', 'SharedAddress', 'Unauthorized', 'Forbidden', 'WithSession', 'WithToken', 'Anonymous'])
+/** The details every alert lists inline, in words (T7-015). Lists and flags get their own lines. */
 function plainDetails(json: string | null): string[] {
-  return Object.entries(meta(json))
-    .filter(([k, v]) => !STRUCTURED.has(k) && (v === null || typeof v !== 'object'))
-    .map(([k, v]) => `${k}: ${String(v)}`)
+  return alertDetails(meta(json))
 }
 
 type Counted = { Path?: string; Agent?: string; Count: number }

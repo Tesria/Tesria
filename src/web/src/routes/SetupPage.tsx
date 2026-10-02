@@ -1,6 +1,6 @@
 import { type FormEvent, type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { api, ApiError, MailSignIn, type BackupKeyStatus, type MailProvider, type SetupStatus } from '../api/client'
+import { api, ApiError, DISPLAY_NAME_MAX, MailSignIn, type BackupKeyStatus, type MailProvider, type SetupStatus } from '../api/client'
 import { MailProviderHint, MailProviderPicker } from '../components/MailProviderPicker'
 import { useAuth } from '../auth/AuthContext'
 import { useInstance } from '../InstanceContext'
@@ -448,7 +448,7 @@ function AccountStep({
       </label>
       <label>
         <span>Your Name</span>
-        <input value={name} onChange={(e) => setName(e.target.value)} required />
+        <input value={name} onChange={(e) => setName(e.target.value)} required maxLength={DISPLAY_NAME_MAX} />
       </label>
       <label>
         <span>Password</span>

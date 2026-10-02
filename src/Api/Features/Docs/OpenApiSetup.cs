@@ -160,7 +160,14 @@ public static class OpenApiSetup
         }
 
         if (operation.RequestBody is not null)
+        {
             Add(400, "Something in the request is wrong: `errors` names the field and why.");
+            // T5-024, T5-025: neither was answered or documented before.
+            Add(413, "Too large: an attachment can be up to 25 MB, a pack 500 MB, and any other request 100 MB. "
+                + "`detail` says which limit.");
+            if (operation.RequestBody.Content?.ContainsKey("application/json") == true)
+                Add(415, "The body is not marked as JSON: send it with the header `Content-Type: application/json`.");
+        }
         if (guarded)
         {
             Add(401, "Not signed in: the token is missing, mistyped, revoked or expired.");

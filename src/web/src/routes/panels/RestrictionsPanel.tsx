@@ -33,19 +33,26 @@ export function RestrictionsPanel({ pageId, spaceId, canEdit = true }: { pageId:
   }
 
   const unrestricted = rows !== null && rows.length === 0
+  // What the rows add up to, in the docs' words (T7-002, T3-021): "only
+  // these principals can access this page" was developer wording, and wrong
+  // for an Edit restriction, which everyone in the space can still read.
+  const limitsViewing = rows?.some((r) => r.operation === 0) ?? false
 
   return (
     <div className="restrictions">
       {error && <p className="alert alert--error">{error}</p>}
       {unrestricted ? (
         <p className="muted small">
-          This page inherits access from its space and any restricted ancestor. Adding a restriction
-          limits it to the principals listed: you will keep access automatically. Sub-pages inherit
-          whatever you set here.
+          This page follows its space&rsquo;s access, and any restriction on a page above it. A
+          restriction keeps it to the people and groups you list; you are added too, so you keep
+          access. The pages under it follow whatever you set here.
         </p>
-      ) : (
+      ) : rows !== null && (
         <p className="muted small">
-          Only these principals can access this page and its sub-pages (space admins always can).
+          {limitsViewing
+            ? 'Only the people and groups listed can see this page and the pages under it.'
+            : 'Everyone who can see the space can read this page, but only the people and groups listed can change it or the pages under it.'}
+          {' '}The space&rsquo;s own administrators (its Admins group, and anyone given Admin) always can.
         </p>
       )}
 

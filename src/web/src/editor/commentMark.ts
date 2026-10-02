@@ -10,6 +10,12 @@ import { Mark, mergeAttributes } from '@tiptap/core'
 export const CommentMark = Mark.create({
   name: 'comment',
 
+  // Two comments may be on the same words (dev-plan 22.2): a mark that
+  // excludes nothing can sit beside another of its kind. y-prosemirror then
+  // stores each under its own key (`comment--<hash>`), and still reads the
+  // plain `comment` key older drafts used. A click opens the innermost.
+  excludes: '',
+
   addAttributes() {
     return {
       commentId: {

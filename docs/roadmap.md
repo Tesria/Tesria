@@ -525,8 +525,7 @@ that say which script or agent wrote what.
   - **a page comment**, **an inline comment** on the passage, or **a reply
     in a comment thread** when the request came from one: suggestions and
     answers that leave the text alone. Page comments and replies already
-    work over REST; Tesria's MCP server has no comment tools yet, which is
-    a small wrapper. Inline comments are more: the REST API accepts an
+    work over REST, and over MCP since 0.9 (dev-plan 22.1). Inline comments are more: the REST API accepts an
     anchor, but the highlight is a mark in the document that only the
     editor places today, so the server has to find the quoted passage and
     add the mark to the live draft (the path 8.6 already uses for edits),

@@ -103,6 +103,58 @@ public class InviteTests
             (await RegisterAsync(factory.CreateClient(), "invited@example.com", issued!.Token)).StatusCode);
     }
 
+    private record Refusal(string? Detail, string? Code);
+    private record InviteStatus(string? Problem, string? Message);
+
+    [Fact]
+    public async Task A_dead_invite_says_why_when_opened_and_when_used()
+    {
+        // T7-005, t2-005: used, expired, revoked and another address all said
+        // "Registration is by invitation on this instance.", under "You were invited".
+        using var factory = new TestAppFactory();
+        var admin = await ClosedInstanceAsync(factory);
+        // More sign-in-type requests than one address gets in a minute.
+        (await admin.PutAsJsonAsync("/api/admin/settings", new { LoginRateLimitPerMinute = 100 })).EnsureSuccessStatusCode();
+        async Task<string> Issue(object body) =>
+            (await (await admin.PostAsJsonAsync("/api/admin/invites", body)).Content.ReadFromJsonAsync<InviteDto>())!.Token;
+
+        var used = await Issue(new { });
+        (await RegisterAsync(factory.CreateClient(), "first@example.com", used)).EnsureSuccessStatusCode();
+        var bound = await Issue(new { Email = "bound@example.com" });
+        var expired = await Issue(new { Email = "late@example.com" });
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<Tesria.Api.Infrastructure.AppDbContext>();
+            var row = db.Invites.AsEnumerable().Single(i => i.Email == "late@example.com");
+            row.ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(-1);
+            await db.SaveChangesAsync();
+        }
+
+        async Task Refused(string email, string token, string code, string words)
+        {
+            var res = await RegisterAsync(factory.CreateClient(), email, token);
+            Assert.Equal(HttpStatusCode.Forbidden, res.StatusCode);
+            var body = await res.Content.ReadFromJsonAsync<Refusal>();
+            Assert.Equal(code, body!.Code);
+            Assert.Contains(words, body.Detail);
+
+            var opened = await factory.CreateClient().GetFromJsonAsync<InviteStatus>($"/api/auth/invite?token={token}");
+            // Opening the link cannot know the address yet, so a bound invite is fine until then.
+            if (code != "invite_other_address") Assert.Equal(code, opened!.Problem);
+        }
+
+        await Refused("second@example.com", used, "invite_used", "already been used");
+        await Refused("late@example.com", expired, "invite_expired", "has expired");
+        await Refused("someone.else@example.com", bound, "invite_other_address", "different email address");
+        await Refused("guess@example.com", "deadbeef", "invite_not_valid", "not valid");
+
+        var fine = await factory.CreateClient().GetFromJsonAsync<InviteStatus>($"/api/auth/invite?token={bound}");
+        Assert.Null(fine!.Problem);
+        // And with no invite at all, the plain sentence as before.
+        var none = await RegisterAsync(factory.CreateClient(), "nobody@example.com");
+        Assert.Contains("by invitation", await none.Content.ReadAsStringAsync());
+    }
+
     [Fact]
     public async Task An_invite_is_not_needed_while_registration_is_open()
     {

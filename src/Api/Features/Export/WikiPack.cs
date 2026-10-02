@@ -325,9 +325,20 @@ public static class WikiPack
             ?? throw new PackException("This pack has no space in it.");
         var authors = authorsNode is null ? [] : As<Dictionary<string, Author>>(authorsNode, AuthorsEntry) ?? [];
         var pages = new List<PackPage>();
+        var pageFiles = new Dictionary<Guid, string>();
         foreach (var (name, node) in pageNodes)
-            pages.Add(As<PackPage>(node, name)
-                ?? throw new PackException($"A page in this pack could not be read: {Describe(name)}"));
+        {
+            var page = As<PackPage>(node, name)
+                ?? throw new PackException($"A page in this pack could not be read: {Describe(name)}");
+            // Two page files with one id: refused here, in words, rather than
+            // reaching the tree below, whose dictionary threw and answered a
+            // bare 500 (t6-014). The import checks the same again before it
+            // mints ids; this is the first place it can be seen.
+            if (!pageFiles.TryAdd(page.Id, name))
+                throw new PackException(
+                    $"This pack lists the same page twice: {Describe(pageFiles[page.Id])} and {Describe(name)} have the same id.");
+            pages.Add(page);
+        }
 
         // Each file in the pack is one attachment. Several attachments naming
         // the same small file would each be written out in full on import:

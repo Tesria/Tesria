@@ -111,7 +111,11 @@ public sealed class OidcUserProvisioner(AppDbContext db, ISiteSettingsService se
         {
             Id = Guid.NewGuid(),
             Email = normalizedEmail,
-            DisplayName = string.IsNullOrWhiteSpace(displayName) ? normalizedEmail : displayName.Trim(),
+            // Cut to the column's 200 characters: the provider's name is not
+            // ours to refuse, and a longer one failed the sign-in (T1-025).
+            DisplayName = string.IsNullOrWhiteSpace(displayName)
+                ? normalizedEmail
+                : string.Concat(displayName.Trim().EnumerateRunes().Take(Features.Auth.AuthEndpoints.MaxDisplayName)),
             PasswordHash = null, // OIDC-only account: no local password.
             OidcSubject = subject,
             Status = UserStatus.Active,

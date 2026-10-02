@@ -216,7 +216,7 @@ public static class PermissionEndpoints
         var widens = to is { } t && (from is null || t > from.Value);
         if (widens)
         {
-            if (Features.Auth.AuthEndpoints.RequireSudo(http, config) is { } denied) return denied;
+            if (Features.Auth.AuthEndpoints.RequireSudo(http, config, Features.Auth.SudoReasons.OpenSpace) is { } denied) return denied;
         }
         else if (from == SpaceOperation.Admin && !await perms.IsExplicitSpaceAdminAsync(space.Id))
         {
@@ -396,18 +396,18 @@ public static class PermissionEndpoints
         if (type == PrincipalType.User)
             return await db.Users.AnyAsync(u => u.Id == id)
                 ? null
-                : Results.ValidationProblem(Error("principalId", "No such person or group."));
+                : Results.ValidationProblem(Error("principalId", "That person or group was not found."));
         if (type != PrincipalType.Group)
             return Results.ValidationProblem(Error("principalType", "Choose a person or a group."));
 
         var group = await db.Groups.AsNoTracking()
             .Where(g => g.Id == id).Select(g => new { g.SpaceId }).FirstOrDefaultAsync();
-        if (group is null) return Results.ValidationProblem(Error("principalId", "No such person or group."));
+        if (group is null) return Results.ValidationProblem(Error("principalId", "That person or group was not found."));
         if (group.SpaceId is { } owner && owner != spaceId)
             return await perms.CanViewSpaceAsync(owner)
                 ? Results.ValidationProblem(Error("principalId",
                     "That group belongs to another space. A space's groups can only be given access in their own space."))
-                : Results.ValidationProblem(Error("principalId", "No such person or group."));
+                : Results.ValidationProblem(Error("principalId", "That person or group was not found."));
         return null;
     }
 

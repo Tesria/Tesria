@@ -25,7 +25,6 @@ public static class RateLimits
 {
     public const string AuthPolicy = "auth";
     public const string TokenMintPolicy = "token-mint";
-    public const string ImportPolicy = "import";
     public const string InvitePolicy = "invite";
     public const string EmailChangePolicy = "email-change";
 
@@ -96,22 +95,6 @@ public static class RateLimits
         {
             var user = http.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Address(http);
             return RateLimitPartition.GetSlidingWindowLimiter($"email-change|{user}", _ => new()
-            {
-                PermitLimit = 10,
-                Window = TimeSpan.FromHours(1),
-                SegmentsPerWindow = 12,
-                QueueLimit = 0,
-            });
-        });
-
-        // Importing a pack (dev-plan 8.5) is expensive and nobody does it
-        // often. Ten an hour is past anything a person does by hand and short
-        // of anything a script would find worth writing, and unlike the limits
-        // above it is not a site setting, because nobody would ever tune it.
-        options.AddPolicy(ImportPolicy, http =>
-        {
-            var user = http.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Address(http);
-            return RateLimitPartition.GetSlidingWindowLimiter($"import|{user}", _ => new()
             {
                 PermitLimit = 10,
                 Window = TimeSpan.FromHours(1),

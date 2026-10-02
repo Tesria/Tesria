@@ -1868,6 +1868,7 @@ a.space-actionbar__pages:hover { text-decoration: underline; }
 .comment-list--nested { margin-top: 0.75rem; margin-left: 1.25rem; padding-left: 0.75rem; border-left: 2px solid var(--border); }
 .comment__head { display: flex; align-items: center; gap: 0.5rem; }
 .comment__body { margin: 0.25rem 0; white-space: pre-wrap; }
+.comment__quote { margin: 0.25rem 0; padding: 0.1rem 0 0.1rem 0.6rem; border-left: 3px solid var(--comment-border); color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
 .comment__actions { display: flex; gap: 0.75rem; }
 .comment__edit textarea { margin-bottom: 0.4rem; }
 

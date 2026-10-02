@@ -24,7 +24,7 @@ namespace Tesria.Api.Features.Mcp;
 /// so an assistant sees and changes exactly what its token's owner could.
 /// </summary>
 [McpServerToolType]
-public sealed class TesriaTools
+public sealed partial class TesriaTools
 {
     public sealed record SpaceSummary(string Key, string Name, string? Description, bool IsPublic);
     public sealed record PageContent(

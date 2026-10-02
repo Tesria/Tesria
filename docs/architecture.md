@@ -860,6 +860,45 @@ expect. Read tools work with any token; write tools need a `write` one.
 | `create_page` | write | `spaceKey`, `title`, `content?` \| `contentJson?`, `parentPageId?` | the new page's `id` and URL |
 | `update_page` | write | `pageId`, `content?` \| `contentJson?`, `title?`, `changeComment?`, `section?` | the new `version` |
 | `add_page_label` / `remove_page_label` | write | `pageId`, `label` | the page's labels |
+| `list_comments` | read | `pageId` | the page's `threads`, oldest first, replies nested: `id`, `author`, `authorId`, times, `resolved`, `isInline` and the highlighted `quote`, `body` with mentions as @Name, `mentions` with ids; a deleted comment keeps its place without its body (22.1) |
+| `add_comment` | write | `pageId`, `body`, `quote?`, `occurrence?` | the new comment and the page's URL; with `quote`, an inline comment on that passage (22.2), with its `quote` and `occurrence` |
+| `reply_to_comment` | write | `commentId`, `body` | the new reply, as `add_comment` |
+
+The comment tools write through `ICommentWriter` (`Features/Comments/CommentWriter.cs`), which the REST
+create endpoint also uses, so the watcher and mention notifications and the `comment.created` webhook are
+the same; a body mentions someone with the SPA's token, `@[Name](user:<id>)`. An inline comment's anchor
+holds its passage (`{"type":"text","quote":…,"occurrence":n}`, since 22.2, a person's too); for older
+ones `list_comments` reads it from the `comment` marks in the published version.
+
+**Inline comments from agents (dev-plan 22.2).** `POST /api/pages/{id}/comments` with `quote` (and
+`occurrence` when the passage appears more than once), or MCP `add_comment` with the same. The app checks
+read rights (404), then edit rights (403: the highlight goes into the draft; a read-only token is 403
+`read_only_token`), validates the quote (1 to 1000 characters after whitespace is collapsed), mints the
+comment's id and asks the collab sidecar (`POST /pages/{id}/comments`, `ICollabNotifier.PlaceCommentAsync`)
+to place the highlight; the row is saved only on its 200, and taken off again (best effort) if the save
+fails. Refusals: 422 with `code` `quote_not_found`, `quote_ambiguous` (with `count`), `quote_too_long` or
+`quote_spans_blocks`, and 503 `live_editing_unavailable` when the sidecar is down or not configured. MCP
+throws the same words.
+
+- **The sidecar** brings the draft up to date first (a page never opened is seeded with the published
+  page; a draft behind a write is reconciled as its next load would; one with no recorded version is
+  adopted), then, in the same `transact`, finds the passage and calls `Y.XmlText.format` on each text run it
+  covers. Never `updateYFragment`: a whole-document diff can reorder a concurrent client's unsynced insert.
+- **The finder** (`editor/commentAnchor.ts`, in the schema bundle) reads each textblock as `get_page`
+  renders it (`commentQuote.ts`: `@Name`, `` `status` ``, `10 Sep 2026`, `$latex$`, `<url>`, a hard break as a
+  space, text under `externalDelete` skipped), NFC with whitespace collapsed, case-sensitive; the mark goes
+  on text runs only. One block only.
+- **Two comments on the same words**: `CommentMark` has `excludes: ''`, so y-prosemirror stores each as
+  `comment--<hash>`; the sidecar asks y-prosemirror for that key rather than computing it, and reads the
+  plain `comment` key older drafts carry.
+- **Highlights survive a rewrite of the draft**: `writeYDoc` (reset, Discard, merge) collects every comment
+  mark with its passage and block first, and re-finds and re-formats each one the rewrite lost, in the same
+  transaction; a passage no longer there loses its highlight. Comment marks are left out of every
+  comparison (`stripCommentMarks` in `blockKey`, `acceptedKey`, `sameDocument`), so a highlight alone is not
+  unpublished work, prompts nothing on Close and is not a rewritten block in a merge.
+- **Gotcha:** the sidecar's `y-prosemirror` has its own `prosemirror-model`, which cannot read the
+  bundle's schema. Hand y-prosemirror nodes made by the bundle's schema (`schema.nodeFromJSON`), never JSON
+  to a helper such as `prosemirrorJSONToYDoc`.
 
 **Deliberately not tools:** trash/purge (irreversible; a person's job),
 permissions and restrictions, space creation, anything under `/admin`,

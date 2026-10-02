@@ -151,7 +151,7 @@ export function SpaceAccessEditor({ spaceKey }: { spaceKey: string }) {
       <section className="profile__section profile__section--wide">
         <h2>Other Access</h2>
         <p className="muted small">
-          Access given straight to a person, or to a group that is not this space’s own. Admin includes Edit,
+          Access given to people, or to groups that are not this space’s own. Admin includes Edit,
           and Edit includes View.
         </p>
         <PrincipalPicker

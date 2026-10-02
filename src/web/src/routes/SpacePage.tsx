@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { NavLink, Outlet, useMatch, useOutletContext, useParams, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import { api, type PageTreeNode, type Space } from '../api/client'
+import { api, ApiError, type PageTreeNode, type Space } from '../api/client'
 import { OverflowMenu } from '../components/OverflowMenu'
 import { PageTree } from '../components/PageTree'
 import { SpaceBreadcrumb } from '../components/SpaceBreadcrumb'
@@ -11,6 +11,7 @@ import { motionReduced } from '../theme'
 import { SettingsIcon, SidebarIcon } from '../components/NavIcons'
 import { usePublishSpaceNav } from '../components/spaceNav'
 import { useTitleSpace } from '../components/DocumentTitle'
+import { NotFoundPanel } from '../components/NotFoundPanel'
 import { SidebarResizer, useSidebarWidth } from '../components/SidebarResizer'
 
 /**
@@ -76,6 +77,7 @@ export function SpacePage() {
   useTitleSpace(space?.name)
   const [tree, setTree] = useState<PageTreeNode[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [notFound, setNotFound] = useState(false)
   const [collapsed, setCollapsed] = useState(readCollapsed)
   const sidebarRef = useRef<HTMLElement>(null)
   const railButtonRef = useRef<HTMLButtonElement>(null)
@@ -218,12 +220,17 @@ export function SpacePage() {
         const request = ++treeRequest.current
         return api.pages.tree(s.id).then((t) => !canceled && showTree(s.id, request, t))
       })
-      .catch((err: unknown) => !canceled && setError(err instanceof Error ? err.message : 'Failed to load space.'))
+      .catch((err: unknown) => {
+        if (canceled) return
+        setNotFound(err instanceof ApiError && err.status === 404)
+        setError(err instanceof Error ? err.message : 'Failed to load space.')
+      })
     return () => {
       canceled = true
     }
   }, [key, showTree])
 
+  if (error && notFound) return <NotFoundPanel what="space" />
   if (error) {
     // Anonymous readers get 404 for anything not public (dev-plan 5.1's
     // masking rule), so "not found" and "sign in" are the same message.
