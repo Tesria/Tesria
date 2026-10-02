@@ -6290,6 +6290,52 @@ questions are in `roadmap.md`.
   by it and managed by its space admins. · `M` · Model: Opus 5.5 · *design
   review* (what existing spaces get, and how the groups sit with page
   restrictions and spaces open to all)
+
+  **Design (2026-10-02, Opus 5.5; reviewed by Fable 5.1 before building).**
+  The owner decided (2026-10-02): existing spaces get their four groups,
+  and **grants to individual people move into them** (View into Viewers,
+  Edit into Editors, Admin into Admins).
+  - **"Open to everyone" becomes a setting, not the absence of grants.**
+    Today a space with no permission rows lets every signed-in user view,
+    edit and administer it, without being an explicit admin (so page
+    restrictions still bind them). Adding the space's own groups would add
+    rows and quietly close every open space. So `Space.EveryoneAccess`
+    (null, View, Edit or Admin) says what every signed-in, active account
+    gets, as an implicit level: it never counts as an explicit admin grant,
+    exactly like default-open today. The migration sets it to Admin on every
+    space that had no grants, which keeps them exactly as open as they are,
+    and to null on every other space. "Make the space open" (15.3) sets it
+    rather than deleting grants; recovering access to a space (the admin
+    tool) adds the administrator to the space's Admins group.
+  - **A space's four groups are real groups** (`Group.SpaceId`,
+    `Group.SpaceRole`), named "<space name> Viewers" and so on, renamed with
+    the space and deleted with it. Their access is implied by their role,
+    not stored as grant rows: Viewers and Reviewers view, Editors edit,
+    Admins administer, and Admins membership **is** an explicit admin grant
+    (it bypasses page restrictions, as an Admin grant does today). The
+    permissions tab shows them first, with their members, and their level
+    cannot be changed or removed. Their members are managed by the space's
+    admins and by holders of Manage Groups. A space's groups may be named in
+    its own page restrictions; they cannot be granted on another space.
+  - **Global Viewers and Global Reviewers** are fixed groups beside Owner,
+    Admins and Users, with members added by hand (by holders of Manage
+    Groups). Both may view every space, as an implicit level: page
+    restrictions still bind them, so a restricted page stays restricted to
+    them. Reviewing itself arrives with review mode (22.4); until then
+    Reviewers, global or per space, can view.
+  - **Grants that stay grants:** to groups (Users, Admins, Owner, custom
+    groups), and any made later to a person. The last-admin rule now counts
+    the Admins group's members, Admin grants and an EveryoneAccess of Admin.
+  - **The move is recorded:** every person grant the migration moves is
+    written to `SpaceGrantMoves` (space, person, level, when), so it can be
+    reversed by hand, and the audit log records one entry per space.
+  - **Creating a space** makes its four groups and puts the creator in its
+    Admins group; EveryoneAccess stays Admin for the API's plain create (as
+    open as a new space is today) until the wizard (21.2) asks. A pack
+    import makes the groups, puts the importer in Admins, and leaves
+    EveryoneAccess null (private to the importer, as today).
+  - **Anonymous readers** are unchanged: public reading is still the
+    space's own switch.
 - **21.2** Creating a space as a wizard: name and key, who may see it, who
   goes in each of its groups. · `M` · Model: Opus 5.5
 - **21.3** Inviting or creating a user as a wizard, with the role, global
@@ -6305,6 +6351,38 @@ questions are in `roadmap.md`.
 - **22.2** Inline comments from agents: the server finds the quoted passage
   and places the highlight in the live draft, for REST and MCP. · `M` ·
   Model: Opus 5.5 · *design review* (writing into live documents)
+
+  **Design (2026-10-02, Opus 5.5; reviewed by Fable 5.1 before building).**
+  - **Asking for one:** `POST /api/pages/{id}/comments` takes an optional
+    `quote` (the exact passage, as the page reads) and `occurrence` (which
+    one, from 1, when it appears more than once). MCP gets
+    `add_inline_comment(page, quote, body, occurrence?)`. Without `quote`,
+    a comment is a page comment, as now.
+  - **Where the highlight goes: the draft, as a person's does.** An inline
+    comment is a `comment` mark, and today only the editor places one, in
+    the page's shared draft; readers see the highlight after the next
+    Update. An agent's goes to the same place, by the live-editing
+    service, so an open editor shows it at once. The comment itself is in
+    the Comments panel for everyone at once, with its quote. The draft then
+    holds a change (the mark), and the next editor is told so as for any
+    other unpublished change; Update publishes it.
+  - **Finding the passage happens in the live-editing service**, on the
+    document as it is now (the stored draft, or the published page when
+    there is none), because only it can turn text into positions in that
+    document. Whitespace is compared loosely; the passage must lie within
+    one paragraph, heading, list item or cell (a mark cannot usefully span
+    blocks). Not found, or found more often than `occurrence` allows, is a
+    refusal that says which (409 with the count), and nothing is written:
+    the comment row is saved only after the mark is placed. The mark is
+    added in place (`updateYFragment`, as a reset is), never as tracked
+    changes: it is not an edit to the words.
+  - **Rights:** an inline comment needs the right to comment *and* to edit
+    the page, since it writes into the draft; a person needs the editor,
+    and so edit rights, for the same thing today. A read-only token is
+    refused, as for any write.
+  - Notifications, mentions, webhooks and the audit log as for any comment.
+    Without live editing (no shared secret), the request is refused with
+    the reason rather than degraded silently.
 - **22.3** The prompt engine: the Ask-an-agent button, response types, and
   a request inbox agents read over MCP. · `L` · Model: Opus 5.5
 - **22.4** Review mode, per space and per kind of author, with the
