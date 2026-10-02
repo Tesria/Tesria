@@ -19,7 +19,9 @@ public static class McpActivity
 {
     /// <summary>The tools that change something; the rest only read.</summary>
     public static readonly IReadOnlySet<string> WriteTools =
-        new HashSet<string>(StringComparer.Ordinal) { "create_page", "update_page", "add_page_label", "remove_page_label" };
+        new HashSet<string>(StringComparer.Ordinal) {
+            "create_page", "update_page", "add_page_label", "remove_page_label", "add_comment", "reply_to_comment",
+        };
 
     public static McpRequestHandler<CallToolRequestParams, CallToolResult> Filter(
         McpRequestHandler<CallToolRequestParams, CallToolResult> next) => async (request, ct) =>
@@ -70,7 +72,13 @@ public static class McpActivity
                 UserId = token.UserId,
                 Tool = tool.Length > 64 ? tool[..64] : tool,
                 Write = write,
-                PageId = GuidArg(args, "pageId") ?? (ok && tool == "create_page" ? CreatedId(result) : null),
+                PageId = GuidArg(args, "pageId") ?? (ok ? tool switch
+                {
+                    "create_page" => CreatedId(result, "id"),
+                    // A reply names its comment; the page is in the answer (dev-plan 22.1).
+                    "reply_to_comment" => CreatedId(result, "pageId"),
+                    _ => null,
+                } : null),
                 SpaceKey = StringArg(args, "spaceKey")?.ToUpperInvariant() is { Length: <= 64 } key ? key : null,
                 Ok = ok,
                 Error = Trim(error ?? (result?.IsError == true ? FirstText(result) : null)),
@@ -94,14 +102,14 @@ public static class McpActivity
     private static string? FirstText(CallToolResult? result) =>
         result?.Content.OfType<TextContentBlock>().FirstOrDefault()?.Text;
 
-    /// <summary>The new page's id, from create_page's answer ({"id": …}).</summary>
-    private static Guid? CreatedId(CallToolResult? result)
+    /// <summary>A page id from a tool's answer: create_page's new page ({"id": …}), a reply's page ({"pageId": …}).</summary>
+    private static Guid? CreatedId(CallToolResult? result, string property)
     {
         if (FirstText(result) is not { } text) return null;
         try
         {
             using var doc = JsonDocument.Parse(text);
-            foreach (var name in new[] { "id", "Id" })
+            foreach (var name in new[] { property, char.ToUpperInvariant(property[0]) + property[1..] })
                 if (doc.RootElement.ValueKind == JsonValueKind.Object && doc.RootElement.TryGetProperty(name, out var v)
                     && v.ValueKind == JsonValueKind.String && Guid.TryParse(v.GetString(), out var id))
                     return id;

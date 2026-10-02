@@ -860,6 +860,15 @@ expect. Read tools work with any token; write tools need a `write` one.
 | `create_page` | write | `spaceKey`, `title`, `content?` \| `contentJson?`, `parentPageId?` | the new page's `id` and URL |
 | `update_page` | write | `pageId`, `content?` \| `contentJson?`, `title?`, `changeComment?`, `section?` | the new `version` |
 | `add_page_label` / `remove_page_label` | write | `pageId`, `label` | the page's labels |
+| `list_comments` | read | `pageId` | the page's `threads`, oldest first, replies nested: `id`, `author`, `authorId`, times, `resolved`, `isInline` and the highlighted `quote`, `body` with mentions as @Name, `mentions` with ids; a deleted comment keeps its place without its body (22.1) |
+| `add_comment` | write | `pageId`, `body` | the new comment and the page's URL; a page-level comment, never inline (inline is 22.2) |
+| `reply_to_comment` | write | `commentId`, `body` | the new reply, as `add_comment` |
+
+The comment tools write through `ICommentWriter` (`Features/Comments/CommentWriter.cs`), which the REST
+create endpoint also uses, so the watcher and mention notifications and the `comment.created` webhook are
+the same; a body mentions someone with the SPA's token, `@[Name](user:<id>)`. A quote is read from the
+`comment` marks in the published version (the comment row holds no copy, and the live draft is Yjs
+state the API does not decode), so a highlight only in an unpublished draft has none yet.
 
 **Deliberately not tools:** trash/purge (irreversible; a person's job),
 permissions and restrictions, space creation, anything under `/admin`,
