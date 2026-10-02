@@ -3878,3 +3878,18 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
   .topbar__space-head { max-width: 100%; }
 }
 
+/* ---- Sessions on a phone (QA t2-025) ----------------------------------------
+   The table was wider than the card and scrolled sideways inside it with no
+   sign that it did, so each session's Sign Out sat off screen. On a phone
+   each session is a block of lines instead: where, then the two times with
+   their names, then Sign Out. */
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .admin-table.sessions-table { display: block; overflow-x: visible; }
+  .sessions-table thead { display: none; }
+  .sessions-table tbody, .sessions-table tr, .sessions-table td { display: block; }
+  .sessions-table tr { padding: 0.55rem 0; border-bottom: 1px solid var(--border); }
+  .admin-table.sessions-table td { border-bottom: 0; padding: 0.1rem 0; white-space: normal; }
+  .sessions-table td[data-label]::before { content: attr(data-label) ": "; }
+  .sessions-table td:has(.admin-table__actions:empty) { display: none; }
+  .sessions-table .admin-table__actions { padding-top: 0.25rem; }
+}

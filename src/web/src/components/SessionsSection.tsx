@@ -36,8 +36,12 @@ export function SessionsSection() {
         ninety days regardless.
       </p>
       {error && <p className="alert alert--error">{error}</p>}
-      <table className="admin-table">
-        <thead><tr><th>Where</th><th>Last Active</th><th>Signed In</th><th></th></tr></thead>
+      {/* On a phone each session is a short block of lines, so its Sign Out
+          is on screen rather than to the right of a table that scrolls
+          sideways with nothing to say so (QA t2-025); data-label names the
+          lines there (index.css). */}
+      <table className="admin-table sessions-table">
+        <thead><tr><th>Where</th><th>Last Active</th><th>Signed In</th><th><span className="visually-hidden">Actions</span></th></tr></thead>
         <tbody>
           {sessions.map((s) => (
             <tr key={s.id} className={s.revokedAt ? 'muted' : undefined}>
@@ -48,8 +52,8 @@ export function SessionsSection() {
                 <br />
                 <span className="muted small">{describeAgent(s.userAgent)}</span>
               </td>
-              <td className="muted small">{new Date(s.lastSeenAt).toLocaleString()}</td>
-              <td className="muted small">{new Date(s.createdAt).toLocaleDateString()}</td>
+              <td className="muted small" data-label="Last Active">{new Date(s.lastSeenAt).toLocaleString()}</td>
+              <td className="muted small" data-label="Signed In">{new Date(s.createdAt).toLocaleDateString()}</td>
               <td>
                 <div className="admin-table__actions">
                   {!s.revokedAt && !s.current && (
