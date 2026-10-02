@@ -177,6 +177,9 @@ public class SearchRankingTests
         // The index reads a slash as a space (SearchIndex.Fold); the text keeps it.
         Assert.Equal("Hocuspocus/Yjs", SearchableText.Extract(Doc(Para(Text("Hocuspocus/Yjs")))));
         Assert.Equal("", SearchableText.Extract("not json"));
+        // An old or odd document is read as far as it makes sense, never thrown
+        // on: the migrate step rebuilds every page with this.
+        Assert.Equal("ok", SearchableText.Extract("""{"type":"doc","content":[{"type":"codeBlock","content":["x",3]},7,{"type":"paragraph","content":[{"type":"text","text":"ok"},{"type":"text","text":5}]}]}"""));
         Assert.Equal("", SearchableText.Extract(""));
     }
 

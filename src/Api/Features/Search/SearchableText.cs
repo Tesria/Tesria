@@ -91,7 +91,8 @@ public static partial class SearchableText
                     return;
                 case "codeBlock":
                     var source = Children(node).Aggregate(new StringBuilder(), (sb, child) =>
-                        child.TryGetProperty("text", out var t) && t.ValueKind == JsonValueKind.String ? sb.Append(t.GetString()) : sb).ToString();
+                        child.ValueKind == JsonValueKind.Object && child.TryGetProperty("text", out var t)
+                        && t.ValueKind == JsonValueKind.String ? sb.Append(t.GetString()) : sb).ToString();
                     var lines = string.Equals(Attr(node, "language"), "mermaid", StringComparison.OrdinalIgnoreCase)
                         ? MermaidLabels(source)
                         : source.Split('\n');
