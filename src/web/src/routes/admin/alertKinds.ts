@@ -32,7 +32,9 @@ export const ALERT_KIND_LABEL: Record<string, string> = {
   // These were raised but had no words, so they showed by internal name in
   // the Security tab and the bell (found 2026-09-23).
   'user.totp_disabled': 'Two-factor turned off for an account',
-  'space.opened': 'A private space was made open to everyone',
+  'space.opened': 'A space was opened wider to everyone signed in',
+  // Dev-plan 21.1: Global Viewers and Global Reviewers read every space.
+  'group.global_member_added': 'Someone was given read access to every space',
   'space.published': 'A space was published to the internet',
   'space.unpublished': 'A space was withdrawn from public reading',
   'space.deleted': 'A space was deleted',

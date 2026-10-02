@@ -276,7 +276,7 @@ export function PageView() {
         <div className="tab-panel">
           {tab === 'comments' && <CommentsPanel pageId={page.id} canEdit={page.canEdit === true} />}
           {tab === 'attachments' && <AttachmentsPanel pageId={page.id} canEdit={mayEdit} />}
-          {tab === 'restrictions' && <RestrictionsPanel pageId={page.id} canEdit={mayEdit} />}
+          {tab === 'restrictions' && <RestrictionsPanel pageId={page.id} spaceId={page.spaceId} canEdit={mayEdit} />}
           {tab === 'history' && (
             <HistoryPanel
               pageId={page.id}

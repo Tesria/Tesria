@@ -1146,6 +1146,8 @@ label.code-block__appearance > select {
 :root[data-style="glass"] .breadcrumb__more-btn:hover, :root[data-style="glass"] .breadcrumb__more-btn[aria-expanded="true"] { background: var(--glass-hover); }
 /* In the permissions picker: its own select rule is more specific. */
 :root[data-style="glass"] .principal-picker select.glass-select { height: var(--ctl-page); padding: 0 2.4rem 0 1rem; min-width: 130px; }
+/* And in a space's "Everyone signed in can" choice (dev-plan 21.1), for the same reason. */
+:root[data-style="glass"] .space-access__everyone select.glass-select { height: var(--ctl-page); padding: 0 2.4rem 0 1rem; min-width: 150px; }
 /* The Audit tab's action picker fills its field; on a phone, both pickers do. */
 :root[data-style="glass"] .audit-filters__field--action select.glass-select { width: 100%; }
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */

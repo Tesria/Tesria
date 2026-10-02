@@ -7,13 +7,21 @@ type Props = {
   /** Called with the chosen principal and operation. */
   onAdd: (input: { principalType: number; principalId: string; operation: number }) => Promise<void>
   addLabel?: string
+  /**
+   * Which groups to offer (dev-plan 21.1). Without one, a space's own groups
+   * are left out: the server accepts one only within its own space, so the
+   * caller that knows the space says which to keep.
+   */
+  groupFilter?: (group: Group) => boolean
 }
+
+const noSpaceGroups = (g: Group) => !g.spaceId
 
 /**
  * Picks a user or group plus an operation: shared by the space-permission and
  * page-restriction editors so both grant flows behave identically.
  */
-export function PrincipalPicker({ operationNames, onAdd, addLabel = 'Add' }: Props) {
+export function PrincipalPicker({ operationNames, onAdd, addLabel = 'Add', groupFilter = noSpaceGroups }: Props) {
   const [type, setType] = useState<number>(PrincipalType.User)
   const [users, setUsers] = useState<Directory[]>([])
   const [groups, setGroups] = useState<Group[]>([])
@@ -36,7 +44,7 @@ export function PrincipalPicker({ operationNames, onAdd, addLabel = 'Add' }: Pro
 
   const options = type === PrincipalType.User
     ? users.map((u) => ({ id: u.id, label: u.email ? `${u.displayName} (${u.email})` : u.displayName }))
-    : groups.map((g) => ({ id: g.id, label: g.name }))
+    : groups.filter(groupFilter).map((g) => ({ id: g.id, label: g.name }))
 
   async function submit(e: FormEvent) {
     e.preventDefault()

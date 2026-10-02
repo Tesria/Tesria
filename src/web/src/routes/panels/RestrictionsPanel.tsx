@@ -8,7 +8,7 @@ import { PrincipalPicker } from '../../components/PrincipalPicker'
  * Manages who may view/edit a single page. Restrictions inherit to sub-pages.
  * Someone who may not edit the page sees the list only (QA T3-012).
  */
-export function RestrictionsPanel({ pageId, canEdit = true }: { pageId: string; canEdit?: boolean }) {
+export function RestrictionsPanel({ pageId, spaceId, canEdit = true }: { pageId: string; spaceId?: string; canEdit?: boolean }) {
   const [rows, setRows] = useState<PageRestriction[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -53,6 +53,8 @@ export function RestrictionsPanel({ pageId, canEdit = true }: { pageId: string; 
         <PrincipalPicker
           operationNames={pageOperationName}
           addLabel="Restrict"
+          // This space's own groups may be named here; another space's may not (21.1).
+          groupFilter={(g) => !g.spaceId || g.spaceId === spaceId}
           onAdd={async (input) => {
             await api.pageRestrictions.add(pageId, input)
             load()

@@ -15,7 +15,9 @@ export function GroupsPage() {
   function load() {
     api.groups
       .list()
-      .then(setGroups)
+      // A space's own groups are managed in that space's Permissions tab
+      // (dev-plan 21.1), not here.
+      .then((all) => setGroups(all.filter((g) => !g.spaceId)))
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load groups.'))
   }
 
@@ -77,7 +79,8 @@ export function GroupsPage() {
   return (
     <div>
       <p className="muted small">
-        Groups let you grant space and page access to a whole team at once.
+        Groups let you grant space and page access to a whole team at once. Each space also has its own
+        Viewers, Editors, Admins and Reviewers, managed in that space’s Permissions tab.
       </p>
       {error && <p className="alert alert--error">{error}</p>}
 
@@ -113,7 +116,11 @@ export function GroupsPage() {
         ) : (
           <li key={g.id} className="version">
             <span className="version__num">{g.name}</span>
-            {g.builtIn && <span className="badge" title="Its members follow each account's role; it cannot be renamed or deleted.">built in</span>}
+            {g.builtIn && (
+              <span className="badge" title={g.computed
+                ? "Its members follow each account's role; it cannot be renamed or deleted."
+                : 'Its members are chosen here; it cannot be renamed or deleted.'}>built in</span>
+            )}
             <span className="muted small">{g.memberCount} member{g.memberCount === 1 ? '' : 's'}</span>
             {g.description && <span className="version__comment">{g.description}</span>}
             <span className="version__actions">
@@ -202,7 +209,13 @@ function MemberEditor({ group, onChanged }: { group: Group; onChanged: () => voi
     <div className="card">
       <h2 style={{ fontSize: '1.05rem', marginTop: 0 }}>Members of {group.name}</h2>
       {error && <p className="alert alert--error">{error}</p>}
-      {group.builtIn ? (
+      {!group.computed && group.builtIn && (
+        <p className="muted small">
+          Everyone in {group.name} can read every space, archived ones included. Page restrictions still apply to
+          them and drafts stay hidden. Adding someone asks for your password and alerts every administrator.
+        </p>
+      )}
+      {group.computed ? (
         <p className="muted small">Built in: its members follow each account’s role, so they are not added or removed here.</p>
       ) : (
       <form className="principal-picker" onSubmit={add}>
@@ -222,7 +235,7 @@ function MemberEditor({ group, onChanged }: { group: Group; onChanged: () => voi
           <li key={m.userId} className="attachment">
             <span>{m.displayName}</span>
             {m.email && <span className="muted small">{m.email}</span>}
-            {!group.builtIn && (
+            {!group.computed && (
               <button type="button" className="link-btn link-btn--danger" onClick={() => remove(m)}>
                 Remove
               </button>
