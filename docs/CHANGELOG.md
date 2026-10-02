@@ -5,6 +5,17 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **A new space is set up in a short wizard, and an invite can carry a role
+  and groups** (dev-plan 21.2, 21.3). New Space asks for the name and key,
+  who may see it (everyone signed in, able to view, edit or administer, or
+  only the people in its groups), and who goes in each of its four groups,
+  then makes it all together; the create API takes the same `everyoneAccess`
+  and `members`, and leaving `everyoneAccess` out keeps today's behavior.
+  Inviting someone is a wizard too: their address, user or administrator,
+  Global Viewers or Global Reviewers, and a group in each space the inviter
+  administers. What an invite gives is checked again when the account is
+  made; anything the inviter may no longer give is skipped and recorded.
+  New migration `InviteGroups`.
 - **A stronger Groups page: search, filters, counts, bulk adds, and why
   someone can see a space** (dev-plan 21.4). Administration, Groups finds a
   group by its name or by someone in it, and shows built-in, global or
