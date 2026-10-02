@@ -1422,6 +1422,27 @@ One deliberate tightening: an account that is not active no longer passes
 checks made on its behalf in a space open to everyone (it is not "signed
 in"), for example mention notifications.
 
+**The Groups page (dev-plan 21.4)** reads `GET /api/groups/overview`
+(Manage Groups; `GroupOverview`), not `GET /api/groups`, whose shape the
+permission picker and the space tab keep. It searches by group name and by
+member (emails only with See the user list), filters by kind or by space,
+and shows space groups only under a chosen space or a search, and only for
+spaces the caller can view. A group's grants are listed only on spaces
+whose permissions the caller may see (`CanSeeSpaceAccessAsync`: the
+space's administrators, or holders of both See the user list and Manage
+spaces), its page restrictions only on pages the caller can read.
+`POST /api/groups/{id}/members/bulk` runs the single add's group check once
+and then reports each person as added, already a member, or refused.
+
+**"Why can this person see this space?"** (`GET /api/access/explain`,
+`AccessExplanation`) never works out the answer itself: it is
+`PermissionService.AsUser(person)`. The reasons are read from the same
+rows (EveryoneAccess, the global groups, grants to the person and to
+their groups, the restrictions on the page and its ancestors), and
+`GroupsPageTests` hold them to the answer across a matrix; a disagreement
+is logged. Asking needs the same right as seeing the space's permissions,
+and a space or page the asker cannot see answers 404.
+
 ### Avatars (`components/Avatar.tsx`, dev-plan 1.2)
 
 Every user has an avatar from the moment they register, with nothing stored:
