@@ -39,10 +39,14 @@ public static class SpaceGroupSeed
         foreach (var spaceId in pending)
         {
             await using var tx = await db.Database.BeginTransactionAsync();
+            try
+            {
             // Again inside the transaction: a second process may have just done it.
             if (await db.Groups.AnyAsync(g => g.SpaceId == spaceId)) continue;
 
-            var space = await db.Spaces.FirstAsync(s => s.Id == spaceId);
+            // Deleted since the list was read: nothing to give groups to.
+            var space = await db.Spaces.FirstOrDefaultAsync(s => s.Id == spaceId);
+            if (space is null) continue;
             var rows = await db.SpacePermissions.Where(p => p.SpaceId == spaceId).ToListAsync();
             var now = DateTimeOffset.UtcNow;
             space.EveryoneAccess = rows.Count == 0 ? SpaceOperation.Admin : null;
@@ -89,6 +93,17 @@ public static class SpaceGroupSeed
             await tx.CommitAsync();
             db.ChangeTracker.Clear();
             done++;
+            }
+            catch (DbUpdateException ex)
+            {
+                // Another instance starting at the same moment did this space
+                // first (its groups' unique index, or the grants it already
+                // moved). Its result stands; this start carries on rather than
+                // failing (found by the 21.1 code review).
+                await tx.RollbackAsync();
+                db.ChangeTracker.Clear();
+                log.LogInformation("Space {Space} was given its groups by another start ({Error}); skipped.", spaceId, ex.GetBaseException().Message);
+            }
         }
         if (done > 0)
             log.LogInformation("Gave {Count} space(s) their Viewers, Editors, Admins and Reviewers groups (dev-plan 21.1).", done);

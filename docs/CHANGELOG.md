@@ -5,6 +5,12 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Three fixes from Fable's code review of 21.1.** Two copies of Tesria
+  starting at the same moment no longer stop the second one when both try
+  to give a space its groups; Get Access on a space open to everyone now
+  raises an alert, since it lets the administrator past that space's page
+  restrictions; and renaming or deleting a group of a space the caller
+  cannot see answers "not found" instead of saying it is a space's group.
 - **A new space is set up in a short wizard, and an invite can carry a role
   and groups** (dev-plan 21.2, 21.3). New Space asks for the name and key,
   who may see it (everyone signed in, able to view, edit or administer, or

@@ -213,6 +213,27 @@ public class SpaceGroupTests
         Assert.Equal(HttpStatusCode.OK, (await bob.Client.GetAsync($"/api/groups/{viewers}/members")).StatusCode);
     }
 
+    [Fact]
+    public async Task Manage_Groups_cannot_learn_that_an_id_is_a_hidden_spaces_group()
+    {
+        // Renaming or deleting a space's group is refused, but for a space the
+        // caller cannot see the answer is "not found", as for its members (the
+        // 21.1 code review).
+        using var f = new TestAppFactory();
+        var owner = await PersonAsync(f);
+        var alice = await PersonAsync(f);
+        await SpaceAsync(alice, "SEALED");
+        await alice.Client.MakePrivateAsync("SEALED");
+        var viewers = await alice.Client.SpaceGroupAsync("SEALED", Viewers);
+
+        Assert.Equal(HttpStatusCode.NotFound, (await owner.Client.PutAsJsonAsync($"/api/groups/{viewers}", new { Name = "X" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await owner.Client.DeleteAsync($"/api/groups/{viewers}")).StatusCode);
+        // Someone who can see it is told why, as before.
+        await alice.Client.PostAsync("/api/admin/spaces/SEALED/recover-access", null);
+        (await owner.Client.PostAsync("/api/admin/spaces/SEALED/recover-access", null)).EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.Conflict, (await owner.Client.DeleteAsync($"/api/groups/{viewers}")).StatusCode);
+    }
+
     // -- essential test 5: Global Viewers --------------------------------------
 
     [Fact]
@@ -497,6 +518,9 @@ public class SpaceGroupTests
         Assert.False(res.GetProperty("alreadyHadAccess").GetBoolean());
         Assert.True(Scoped(f, db => db.UserGroups.AnyAsync(ug => ug.UserId == owner.Id && ug.GroupId == admins)));
         Assert.True(Scoped(f, db => db.AuditLogs.AnyAsync(a => a.Action == "space.access_recovered" && a.TargetId == spaceId)));
+        // New reach past the space's page restrictions, so every administrator
+        // hears of it (the 21.1 code review).
+        Assert.True(Scoped(f, db => db.SecurityAlerts.AnyAsync(a => a.Kind == "space.access_recovered")));
         // Now the space can be given administrators, and closed.
         Assert.Equal(HttpStatusCode.NoContent, (await AddAsync(owner.Client, admins, alice.Id)).StatusCode);
         Assert.Equal(HttpStatusCode.NoContent, (await EveryoneAsync(alice.Client, "ORPHAN", null)).StatusCode);

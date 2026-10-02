@@ -35,6 +35,7 @@ public static class AlertKinds
         ["permissions.expanded"] = "A role was given more rights",
         ["user.totp_disabled"] = "Two-factor turned off for an account",
         ["space.opened"] = "A space was opened wider to everyone signed in",
+        ["space.access_recovered"] = "An administrator gave themselves admin of an open space",
         ["group.global_member_added"] = "Someone was given read access to every space",
         ["space.published"] = "A space was published to the internet",
         ["space.unpublished"] = "A space was withdrawn from public reading",

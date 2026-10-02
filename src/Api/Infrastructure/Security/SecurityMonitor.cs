@@ -159,6 +159,12 @@ public interface ISecurityDetector
     Task TwoFactorRemovedAsync(Guid actorId, User target);
     /// <summary>What everyone signed in may do in a space was widened (dev-plan 15.3; since 21.1 any widening).</summary>
     Task SpaceOpenedAsync(Guid actorId, Guid spaceId, string spaceKey);
+    /// <summary>
+    /// An administrator made themselves an explicit admin of a space open to
+    /// everyone with Get Access, and so now passes its page restrictions
+    /// (21.1, the code review).
+    /// </summary>
+    Task SpaceAccessRecoveredAsync(Guid actorId, Guid spaceId, string spaceKey);
     /// <summary>Someone was added to Global Viewers or Global Reviewers, and so can read every space (dev-plan 21.1).</summary>
     Task GlobalGroupMemberAddedAsync(Guid actorId, Guid groupId, string groupName, Guid userId, string displayName);
     Task PublicSpacesToggledAsync(Guid? actorId, bool enabled);
@@ -317,6 +323,11 @@ public sealed class SecurityDetector(AppDbContext db, SecurityCounters counters,
 
     public Task SpaceOpenedAsync(Guid actorId, Guid spaceId, string spaceKey) =>
         RaiseAsync("space.opened", SecuritySeverity.Warning, key: spaceId.ToString(),
+            actorId: actorId, targetType: "space", targetId: spaceId, alert: true, cooldown: false,
+            metadata: new { Key = spaceKey });
+
+    public Task SpaceAccessRecoveredAsync(Guid actorId, Guid spaceId, string spaceKey) =>
+        RaiseAsync("space.access_recovered", SecuritySeverity.Warning, key: $"{spaceId}:{actorId}",
             actorId: actorId, targetType: "space", targetId: spaceId, alert: true, cooldown: false,
             metadata: new { Key = spaceKey });
 

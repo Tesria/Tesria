@@ -33,6 +33,7 @@ export const ALERT_KIND_LABEL: Record<string, string> = {
   // the Security tab and the bell (found 2026-09-23).
   'user.totp_disabled': 'Two-factor turned off for an account',
   'space.opened': 'A space was opened wider to everyone signed in',
+  'space.access_recovered': 'An administrator gave themselves admin of an open space',
   // Dev-plan 21.1: Global Viewers and Global Reviewers read every space.
   'group.global_member_added': 'Someone was given read access to every space',
   'space.published': 'A space was published to the internet',

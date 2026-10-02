@@ -250,7 +250,8 @@ public static class AdminEndpoints
     /// in, and it is audited.
     /// </summary>
     private static async Task<IResult> RecoverSpaceAccess(
-        string key, AppDbContext db, CurrentUser current, IAuditLogger audit, IPermissionService perms)
+        string key, AppDbContext db, CurrentUser current, IAuditLogger audit, IPermissionService perms,
+        Infrastructure.Security.ISecurityDetector detector)
     {
         var normalizedKey = key.ToUpperInvariant();
         var space = await db.Spaces.FirstOrDefaultAsync(s => s.Key == normalizedKey);
@@ -287,6 +288,12 @@ public static class AdminEndpoints
 
         audit.Record("space.access_recovered", "space", space.Id,
             new { space.Key, space.Name, GroupId = admins });
+        // On a space open to everyone this is new reach (past its page
+        // restrictions), so every administrator hears of it, as for opening a
+        // space; on a private one it is the recovery it always was. Before the
+        // save: the alert is written with it.
+        if (space.EveryoneAccess == SpaceOperation.Admin)
+            await detector.SpaceAccessRecoveredAsync(userId, space.Id, space.Key);
         await db.SaveChangesAsync();
 
         return Results.Ok(new RecoverAccessResponse(space.Id, space.Key, space.Name, false));

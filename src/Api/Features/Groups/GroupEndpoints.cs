@@ -164,14 +164,17 @@ public static class GroupEndpoints
     }
 
     private static async Task<IResult> Update(
-        Guid id, SaveGroupRequest req, AppDbContext db, IAuditLogger audit)
+        Guid id, SaveGroupRequest req, AppDbContext db, IAuditLogger audit, IPermissionService perms)
     {
         if (BuiltInGroups.IsComputed(id)) return BuiltInRefusal();
         if (BuiltInGroups.IsGlobal(id)) return GlobalRefusal();
         var group = await db.Groups.FirstOrDefaultAsync(g => g.Id == id);
-        // Manage Groups does not reach a space's groups (21.1).
+        // Manage Groups does not reach a space's groups (21.1). One of a space
+        // the caller cannot see is not found, as everywhere else, rather than
+        // confirming the id is some space's group (the 21.1 code review).
         if (group is null) return Results.NotFound();
-        if (group.SpaceId is not null) return SpaceGroupRefusal();
+        if (group.SpaceId is { } spaceId)
+            return await perms.CanViewSpaceAsync(spaceId) ? SpaceGroupRefusal() : Results.NotFound();
 
         var name = (req.Name ?? "").Trim();
         if (name.Length == 0)
@@ -197,7 +200,8 @@ public static class GroupEndpoints
         if (BuiltInGroups.IsGlobal(id)) return GlobalRefusal();
         var group = await db.Groups.FirstOrDefaultAsync(g => g.Id == id);
         if (group is null) return Results.NotFound();
-        if (group.SpaceId is not null) return SpaceGroupRefusal();
+        if (group.SpaceId is { } ownSpace)
+            return await perms.CanViewSpaceAsync(ownSpace) ? SpaceGroupRefusal() : Results.NotFound();
 
         // A group's grants go with it; they used to stay behind, pointing at
         // nothing (found 2026-09-23). Since 21.1 removing a grant can no
