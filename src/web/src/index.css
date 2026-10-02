@@ -2694,8 +2694,28 @@ a.topbar__username:hover { color: var(--text); text-decoration: underline; }
 /* The role picker sits under the tier badge in the Users table. */
 .users__role { margin-top: 0.35rem; max-width: 12rem; font-size: 0.85rem; }
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
-  /* The table scrolls sideways rather than squeezing the descriptions. */
-  .roles-table td:first-child, .roles-table th:first-child { width: auto; min-width: 14rem; }
+  /* On a phone the matrix is a list: each right, its description, then a
+     tick for each role named beside it. As a table it scrolled sideways
+     inside its box with no sign that it did, and the ticks were 600px to
+     the right of a 290px box (QA T1-024, the wizard and Administration). */
+  .admin-table.roles-table { display: block; overflow-x: visible; }
+  .roles-table thead, .roles-table tbody { display: block; }
+  .roles-table tr {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 1.1rem;
+    padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+  }
+  .admin-table.roles-table th, .admin-table.roles-table td {
+    display: block; width: auto; min-width: 0; padding: 0; border: 0; white-space: normal; text-align: left;
+  }
+  .roles-table td:first-child, .roles-table__area th { flex: 1 1 100%; }
+  .roles-table thead th:first-child { display: none; }
+  .roles-table thead tr { align-items: flex-start; }
+  .roles-table thead th.roles-table__role { flex: 1 1 7rem; }
+  .roles-table__role-actions { justify-content: flex-start; }
+  .roles-table__area th { padding: 0.35rem 0.5rem; }
+  .admin-table.roles-table td.roles-table__cell { display: flex; align-items: center; gap: 0.35rem; }
+  .roles-table__cell::after { content: attr(data-role); font-size: 0.85rem; color: var(--muted); }
+  .admin-table.roles-table td.roles-table__cell:empty { display: none; }
 }
 
 /* Public spaces (dev-plan 5.3): the badge everyone sees. */
@@ -3360,6 +3380,28 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
   .setup__rail ol { grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); display: grid; }
   .setup__panel { padding: 1.25rem 1rem; }
   .setup__cards { grid-template-columns: 1fr; }
+}
+/* On a phone the steps fold into one line that opens them (QA T9-022: at
+   320px the list filled the screen and the step was below it). */
+.setup__progress { display: none; }
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  /* Rows their content's height: stretched to the window's, the folded
+     rail kept an empty band below its one line. */
+  .setup { align-content: start; }
+  .setup__rail { padding: 1rem; }
+  .setup__brand { margin-bottom: 0.6rem; }
+  .setup__progress {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; width: 100%;
+    padding: 0.55rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg); color: var(--text); font: inherit; font-size: 0.95rem; text-align: left; cursor: pointer;
+  }
+  .setup__progress-chevron {
+    flex: none; width: 0.5rem; height: 0.5rem; margin: 0 0.2rem 0.2rem;
+    border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg);
+  }
+  .setup__progress[aria-expanded="true"] .setup__progress-chevron { transform: rotate(-135deg); margin-bottom: -0.2rem; }
+  .setup__rail ol:not(.is-open) { display: none; }
+  .setup__rail ol.is-open { margin-top: 0.5rem; grid-template-columns: 1fr; }
 }
 
 /* The welcome tour (dev-plan 10.3). Full-screen: it runs before the person

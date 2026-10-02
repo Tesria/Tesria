@@ -68,6 +68,17 @@ export function SetupPage() {
 
   useEffect(() => { if (user) void loadStatus() }, [user, loadStatus])
 
+  // On a phone the list of steps folds into one line, "Step 3 of 10: Who Can
+  // Join", that opens it: at 320px the ten steps filled the first screen and
+  // the step itself was below them (QA T9-022). It stays open only on the
+  // step it was opened on, so moving to another closes it; choosing a step
+  // in it forgets it, so coming back to that step later finds it folded.
+  const [stepsOpenAt, setStepsOpenAt] = useState<StepKey | null>(null)
+  const stepsOpen = stepsOpenAt === at
+  const stepsId = useId()
+  // A new step starts at the top of the window, where its heading is.
+  useEffect(() => { window.scrollTo(0, 0) }, [at])
+
   // An owner already exists and it is not this visitor: the wizard is over.
   if (instance && !instance.needsOwner && !user) {
     return (
@@ -147,14 +158,19 @@ export function SetupPage() {
       <aside className="setup__rail">
         <AuthBrand />
         <h1 className="setup__brand">Set Up {instance?.instanceName ?? 'Tesria'}</h1>
-        <ol>
+        <button type="button" className="setup__progress" aria-expanded={stepsOpen} aria-controls={stepsId}
+          onClick={() => setStepsOpenAt(stepsOpen ? null : at)}>
+          <span>Step {index + 1} of {STEPS.length}: <strong>{STEPS[index].title}</strong></span>
+          <span className="setup__progress-chevron" aria-hidden="true" />
+        </button>
+        <ol id={stepsId} className={stepsOpen ? 'is-open' : undefined}>
           {STEPS.map((s, i) => (
             <li key={s.key}>
               <button
                 type="button"
                 className={`setup__step${s.key === at ? ' is-current' : ''}${done(s.key) ? ' is-done' : ''}`}
                 disabled={!reachable(s, i)}
-                onClick={() => setAt(s.key)}
+                onClick={() => { setAt(s.key); setStepsOpenAt(null) }}
               >
                 <span className="setup__step-mark" aria-hidden="true">
                   {done(s.key) ? (skipped(s.key) ? '–' : '✓') : i + 1}
