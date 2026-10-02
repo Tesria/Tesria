@@ -48,6 +48,8 @@ public class SpaceTreeStyleTests
         ];
         var html = SiteChrome.Sidebar(head, pages, "getting-started/quick-start");
         Assert.Contains("class=\"tree-filter__input\"", html);
+        // And its clear button, as in the app (found missing on the docs site, 2026-10-01).
+        Assert.Contains("class=\"tree-filter__clear\" aria-label=\"Clear the Filter\"", html);
         Assert.Contains("class=\"tree-filter__children is-on\" aria-pressed=\"true\"", html);
         Assert.Contains("data-depth=\"1\"", html);
         Assert.Contains("<span class=\"tree__marker\" aria-hidden=\"true\">1.1</span>", html);

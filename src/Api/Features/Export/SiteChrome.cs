@@ -263,6 +263,8 @@ public static partial class SiteChrome
     private static readonly string[] Bullets = ["•", "◦", "▪"];
 
     /// <summary>The filter's "and the pages under it" toggle; the same drawing as ChildrenIcon in PageTree.tsx.</summary>
+    /// <summary>The filter's clear button, the app's own (PageTree.tsx).</summary>
+    private const string ClearIcon = """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>""";
     private const string ChildrenIcon = """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h9" /><path d="M8 4v12a2 2 0 0 0 2 2h1" /><path d="M8 10h3" /><path d="M14 10h5" /><path d="M14 18h5" /></svg>""";
 
     /// <summary>
@@ -294,7 +296,7 @@ public static partial class SiteChrome
         </div><button type="button" class="sidebar__toggle sidebar__toggle--hide" data-sidebar-toggle title="Hide the Sidebar" aria-label="Hide the Sidebar" aria-expanded="true">{SidebarIcon}</button></div></div>
         <div class="tree-section">
         <div class="tree-section__heading"><span>{PagesIcon} Pages</span></div>
-        <div class="tree-filter"><input type="search" class="tree-filter__input" placeholder="Filter pages" aria-label="Filter pages" /><button type="button" class="tree-filter__children is-on" aria-pressed="true" aria-label="Show the Pages Under Each Match" title="Show the Pages Under Each Match">{ChildrenIcon}</button></div>
+        <div class="tree-filter"><span class="tree-filter__field"><input type="search" class="tree-filter__input" placeholder="Filter pages" aria-label="Filter pages" /><button type="button" class="tree-filter__clear" aria-label="Clear the Filter" title="Clear the Filter" style="display:none">{ClearIcon}</button></span><button type="button" class="tree-filter__children is-on" aria-pressed="true" aria-label="Show the Pages Under Each Match" title="Show the Pages Under Each Match">{ChildrenIcon}</button></div>
         {Tree(pages, currentPath, space.TreeStyle)}
         <p class="muted small tree-filter__none" style="display:none">No pages match.</p>
         </div>
@@ -1006,11 +1008,19 @@ public static partial class SiteChrome
             function remember() {
               try { if (input.value) sessionStorage.setItem(FILTER, input.value); else sessionStorage.removeItem(FILTER); } catch (e) { /* this page only */ }
             }
+            // The clear button, as in the app (0.8.1): the stylesheet hides
+            // the browser's own, and a phone shows none (found 2026-10-01 on
+            // the docs site, which had neither).
+            var clear = d.querySelector('.tree-filter__clear');
+            function showClear() { if (clear) clear.style.display = input.value ? '' : 'none'; }
+            function reset() { input.value = ''; remember(); apply(); showClear(); }
+            if (clear) clear.addEventListener('click', function () { reset(); input.focus(); });
             try { input.value = sessionStorage.getItem(FILTER) || ''; } catch (e) { /* empty */ }
             if (input.value) apply();
-            input.addEventListener('input', function () { remember(); apply(); });
+            showClear();
+            input.addEventListener('input', function () { remember(); apply(); showClear(); });
             input.addEventListener('keydown', function (e) {
-              if (e.key === 'Escape') { input.value = ''; remember(); apply(); }
+              if (e.key === 'Escape') reset();
               if (e.key === 'Enter' && first) { e.preventDefault(); location.href = first.a.href; }
             });
           }

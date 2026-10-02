@@ -5,6 +5,12 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Fixed: an exported site's page filter had no clear button.** The app's
+  filter gained one in 0.8.1, but the site's sidebar is built separately and
+  was missed, and the stylesheet hides the browser's own. It now has the
+  same button, beside the Show the Pages Under Each Match toggle. Checked on
+  a real export of the docs, Minimal and Glass, light and dark, on a phone
+  and a desktop, on the front page and a content page.
 - **Dependencies: `@dnd-kit/sortable` 10** (was held at 9 in 0.8.4 until the
   page tree's drag to reorder was checked on it). Checked by hand on an
   iPhone and in Chrome on Windows. Its only change is requiring
