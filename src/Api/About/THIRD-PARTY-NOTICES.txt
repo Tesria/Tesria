@@ -4089,9 +4089,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@dnd-kit/sortable 9.0.0 (npm)
+@dnd-kit/sortable 10.0.0 (npm)
 License: MIT
-https://www.npmjs.com/package/@dnd-kit/sortable/v/9.0.0
+https://www.npmjs.com/package/@dnd-kit/sortable/v/10.0.0
 
 MIT License
 

@@ -5,6 +5,11 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Dependencies: `@dnd-kit/sortable` 10** (was held at 9 in 0.8.4 until the
+  page tree's drag to reorder was checked on it). Checked by hand on an
+  iPhone and in Chrome on Windows. Its only change is requiring
+  `@dnd-kit/core` 6.3 or later, which Tesria already uses.
+
 ## [0.8.6] - 2026-10-01
 
 Space exports that keep going after you leave the page, the most useful of
