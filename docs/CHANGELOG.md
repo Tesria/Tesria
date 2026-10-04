@@ -5,6 +5,14 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Checked: embedded pages and exports keep page restrictions** (a report on
+  Reddit, 2026-10-04). Someone who may see a page but not a page it embeds
+  gets nothing of the embedded page: not by reading or editing it, not
+  through Include page, Excerpt include or any block that lists pages, not
+  in search, and not in a Markdown, HTML or PDF export, a site (as
+  themselves or as the public) or a pack. Checked end to end on 0.8.7 and
+  0.9, with the page's owner as the control (their exports do contain it),
+  and now held by a test.
 - **Three fixes from Fable's code review of 21.1.** Two copies of Tesria
   starting at the same moment no longer stop the second one when both try
   to give a space its groups; Get Access on a space open to everyone now

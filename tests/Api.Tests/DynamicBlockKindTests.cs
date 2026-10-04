@@ -212,6 +212,51 @@ public class DynamicBlockKindTests
     }
 
     [Fact]
+    public async Task Exports_hold_an_embedded_page_to_the_same_restrictions_as_reading()
+    {
+        // From a report on Reddit (2026-10-04): someone who may see a page but
+        // not a page it embeds must not get the embedded one through an export
+        // either. Bob is an administrator here, so he holds the export right;
+        // the right is never a bypass of a page restriction.
+        const string canary = "CANARYSECRET42";
+        var w = await Build(); using var _ = w.F;
+        var bobId = (await w.Bob.GetFromJsonAsync<JsonElement>("/api/auth/me")).GetProperty("id").GetGuid();
+        (await w.Alice.PutAsJsonAsync($"/api/admin/users/{bobId}/role", new { Role = 1 })).EnsureSuccessStatusCode();
+        (await w.Alice.PutAsJsonAsync($"/api/pages/{w.Secret.Id}", new
+        {
+            Title = "Secret",
+            ContentJson = """{"type":"doc","content":[{"type":"excerpt","content":[{"type":"paragraph","content":[{"type":"text","text":"CANARY excerpt"}]}]},{"type":"paragraph","content":[{"type":"text","text":"CANARY body"}]}]}""".Replace("CANARY", canary),
+        })).EnsureSuccessStatusCode();
+        (await w.Alice.PutAsJsonAsync($"/api/pages/{w.Home.Id}", new
+        {
+            Title = "Home",
+            ContentJson = """{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"home"}]},{"type":"dynamicBlock","attrs":{"kind":"include-page","params":{"page":"SECRET"}}},{"type":"dynamicBlock","attrs":{"kind":"excerpt-include","params":{"page":"SECRET"}}}]}""".Replace("SECRET", w.Secret.Id.ToString()),
+        })).EnsureSuccessStatusCode();
+
+        // Alice may see Secret: her export has it, which is what makes Bob's
+        // clean export mean something.
+        Assert.Contains(canary, await w.Alice.GetStringAsync($"/api/pages/{w.Home.Id}/export?format=markdown"));
+        var bobs = await w.Bob.GetAsync($"/api/pages/{w.Home.Id}/export?format=markdown");
+        Assert.Equal(HttpStatusCode.OK, bobs.StatusCode);
+        Assert.DoesNotContain(canary, await bobs.Content.ReadAsStringAsync());
+
+        // A pack holds documents, not what their blocks render, and leaves out
+        // the pages its exporter cannot see.
+        static async Task<string> PackText(HttpClient c, string key)
+        {
+            var res = await c.GetAsync($"/api/spaces/{key}/export/pack");
+            res.EnsureSuccessStatusCode();
+            using var zip = new System.IO.Compression.ZipArchive(await res.Content.ReadAsStreamAsync());
+            var all = new System.Text.StringBuilder();
+            foreach (var entry in zip.Entries.Where(e => e.FullName.EndsWith(".json")))
+                all.Append(await new StreamReader(entry.Open()).ReadToEndAsync());
+            return all.ToString();
+        }
+        Assert.Contains(canary, await PackText(w.Alice, w.Space.Key));
+        Assert.DoesNotContain(canary, await PackText(w.Bob, w.Space.Key));
+    }
+
+    [Fact]
     public async Task Excerpt_include_takes_only_the_marked_excerpt()
     {
         var w = await Build(); using var _ = w.F;
