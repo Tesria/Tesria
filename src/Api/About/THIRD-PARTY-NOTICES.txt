@@ -3000,9 +3000,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@chevrotain/cst-dts-gen 11.1.2 (npm)
+@chevrotain/cst-dts-gen 13.2.0 (npm)
 License: Apache-2.0
-https://www.npmjs.com/package/@chevrotain/cst-dts-gen/v/11.1.2
+https://www.npmjs.com/package/@chevrotain/cst-dts-gen/v/13.2.0
 
 Apache License
                            Version 2.0, January 2004
@@ -3207,9 +3207,9 @@ Apache License
    limitations under the License.
 
 ------------------------------------------------------------------------------
-@chevrotain/gast 11.1.2 (npm)
+@chevrotain/gast 13.2.0 (npm)
 License: Apache-2.0
-https://www.npmjs.com/package/@chevrotain/gast/v/11.1.2
+https://www.npmjs.com/package/@chevrotain/gast/v/13.2.0
 
 Apache License
                            Version 2.0, January 2004
@@ -3414,9 +3414,9 @@ Apache License
    limitations under the License.
 
 ------------------------------------------------------------------------------
-@chevrotain/regexp-to-ast 11.1.2 (npm)
+@chevrotain/regexp-to-ast 13.2.0 (npm)
 License: Apache-2.0
-https://www.npmjs.com/package/@chevrotain/regexp-to-ast/v/11.1.2
+https://www.npmjs.com/package/@chevrotain/regexp-to-ast/v/13.2.0
 
 Apache License
                            Version 2.0, January 2004
@@ -3621,9 +3621,9 @@ Apache License
    limitations under the License.
 
 ------------------------------------------------------------------------------
-@chevrotain/types 11.1.2 (npm)
+@chevrotain/types 13.2.0 (npm)
 License: Apache-2.0
-https://www.npmjs.com/package/@chevrotain/types/v/11.1.2
+https://www.npmjs.com/package/@chevrotain/types/v/13.2.0
 
 Apache License
                            Version 2.0, January 2004
@@ -3828,9 +3828,9 @@ Apache License
    limitations under the License.
 
 ------------------------------------------------------------------------------
-@chevrotain/utils 11.1.2 (npm)
+@chevrotain/utils 13.2.0 (npm)
 License: Apache-2.0
-https://www.npmjs.com/package/@chevrotain/utils/v/11.1.2
+https://www.npmjs.com/package/@chevrotain/utils/v/13.2.0
 
 Apache License
                            Version 2.0, January 2004
@@ -4428,9 +4428,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 ------------------------------------------------------------------------------
-@mermaid-js/parser 2.0.0 (npm)
+@mermaid-js/parser 2.0.1 (npm)
 License: MIT
-https://www.npmjs.com/package/@mermaid-js/parser/v/2.0.0
+https://www.npmjs.com/package/@mermaid-js/parser/v/2.0.1
 
 The MIT License (MIT)
 
@@ -4455,9 +4455,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/core 3.31.3 (npm)
+@tiptap/core 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/core/v/3.31.3
+https://www.npmjs.com/package/@tiptap/core/v/3.31.4
 
 MIT License
 
@@ -4482,9 +4482,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-blockquote 3.31.3 (npm)
+@tiptap/extension-blockquote 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-blockquote/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-blockquote/v/3.31.4
 
 MIT License
 
@@ -4509,9 +4509,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-bold 3.31.3 (npm)
+@tiptap/extension-bold 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-bold/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-bold/v/3.31.4
 
 MIT License
 
@@ -4536,9 +4536,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-bubble-menu 3.31.3 (npm)
+@tiptap/extension-bubble-menu 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-bubble-menu/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-bubble-menu/v/3.31.4
 
 MIT License
 
@@ -4563,9 +4563,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-bullet-list 3.31.3 (npm)
+@tiptap/extension-bullet-list 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-bullet-list/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-bullet-list/v/3.31.4
 
 MIT License
 
@@ -4590,9 +4590,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-code 3.31.3 (npm)
+@tiptap/extension-code 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-code/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-code/v/3.31.4
 
 MIT License
 
@@ -4617,9 +4617,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-code-block 3.31.3 (npm)
+@tiptap/extension-code-block 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-code-block/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-code-block/v/3.31.4
 
 MIT License
 
@@ -4644,9 +4644,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-code-block-lowlight 3.31.3 (npm)
+@tiptap/extension-code-block-lowlight 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-code-block-lowlight/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-code-block-lowlight/v/3.31.4
 
 MIT License
 
@@ -4671,9 +4671,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-collaboration 3.31.3 (npm)
+@tiptap/extension-collaboration 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-collaboration/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-collaboration/v/3.31.4
 
 MIT License
 
@@ -4698,9 +4698,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-collaboration-caret 3.31.3 (npm)
+@tiptap/extension-collaboration-caret 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-collaboration-caret/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-collaboration-caret/v/3.31.4
 
 MIT License
 
@@ -4725,9 +4725,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-document 3.31.3 (npm)
+@tiptap/extension-document 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-document/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-document/v/3.31.4
 
 MIT License
 
@@ -4752,9 +4752,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-dropcursor 3.31.3 (npm)
+@tiptap/extension-dropcursor 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-dropcursor/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-dropcursor/v/3.31.4
 
 MIT License
 
@@ -4779,9 +4779,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-floating-menu 3.31.3 (npm)
+@tiptap/extension-floating-menu 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-floating-menu/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-floating-menu/v/3.31.4
 
 MIT License
 
@@ -4806,9 +4806,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-gapcursor 3.31.3 (npm)
+@tiptap/extension-gapcursor 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-gapcursor/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-gapcursor/v/3.31.4
 
 MIT License
 
@@ -4833,9 +4833,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-hard-break 3.31.3 (npm)
+@tiptap/extension-hard-break 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-hard-break/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-hard-break/v/3.31.4
 
 MIT License
 
@@ -4860,9 +4860,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-heading 3.31.3 (npm)
+@tiptap/extension-heading 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-heading/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-heading/v/3.31.4
 
 MIT License
 
@@ -4887,9 +4887,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-highlight 3.31.3 (npm)
+@tiptap/extension-highlight 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-highlight/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-highlight/v/3.31.4
 
 MIT License
 
@@ -4914,9 +4914,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-horizontal-rule 3.31.3 (npm)
+@tiptap/extension-horizontal-rule 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-horizontal-rule/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-horizontal-rule/v/3.31.4
 
 MIT License
 
@@ -4941,9 +4941,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-image 3.31.3 (npm)
+@tiptap/extension-image 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-image/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-image/v/3.31.4
 
 MIT License
 
@@ -4968,9 +4968,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-italic 3.31.3 (npm)
+@tiptap/extension-italic 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-italic/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-italic/v/3.31.4
 
 MIT License
 
@@ -4995,9 +4995,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-link 3.31.3 (npm)
+@tiptap/extension-link 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-link/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-link/v/3.31.4
 
 MIT License
 
@@ -5022,9 +5022,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-list 3.31.3 (npm)
+@tiptap/extension-list 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-list/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-list/v/3.31.4
 
 MIT License
 
@@ -5049,9 +5049,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-list-item 3.31.3 (npm)
+@tiptap/extension-list-item 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-list-item/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-list-item/v/3.31.4
 
 MIT License
 
@@ -5076,9 +5076,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-list-keymap 3.31.3 (npm)
+@tiptap/extension-list-keymap 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-list-keymap/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-list-keymap/v/3.31.4
 
 MIT License
 
@@ -5103,9 +5103,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-ordered-list 3.31.3 (npm)
+@tiptap/extension-ordered-list 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-ordered-list/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-ordered-list/v/3.31.4
 
 MIT License
 
@@ -5130,9 +5130,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-paragraph 3.31.3 (npm)
+@tiptap/extension-paragraph 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-paragraph/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-paragraph/v/3.31.4
 
 MIT License
 
@@ -5157,9 +5157,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-strike 3.31.3 (npm)
+@tiptap/extension-strike 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-strike/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-strike/v/3.31.4
 
 MIT License
 
@@ -5184,9 +5184,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-subscript 3.31.3 (npm)
+@tiptap/extension-subscript 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-subscript/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-subscript/v/3.31.4
 
 MIT License
 
@@ -5211,9 +5211,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-superscript 3.31.3 (npm)
+@tiptap/extension-superscript 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-superscript/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-superscript/v/3.31.4
 
 MIT License
 
@@ -5238,9 +5238,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-table 3.31.3 (npm)
+@tiptap/extension-table 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-table/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-table/v/3.31.4
 
 MIT License
 
@@ -5265,9 +5265,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-task-item 3.31.3 (npm)
+@tiptap/extension-task-item 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-task-item/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-task-item/v/3.31.4
 
 MIT License
 
@@ -5292,9 +5292,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-task-list 3.31.3 (npm)
+@tiptap/extension-task-list 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-task-list/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-task-list/v/3.31.4
 
 MIT License
 
@@ -5319,9 +5319,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-text 3.31.3 (npm)
+@tiptap/extension-text 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-text/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-text/v/3.31.4
 
 MIT License
 
@@ -5346,9 +5346,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-text-align 3.31.3 (npm)
+@tiptap/extension-text-align 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-text-align/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-text-align/v/3.31.4
 
 MIT License
 
@@ -5373,9 +5373,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extension-underline 3.31.3 (npm)
+@tiptap/extension-underline 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extension-underline/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extension-underline/v/3.31.4
 
 MIT License
 
@@ -5400,9 +5400,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/extensions 3.31.3 (npm)
+@tiptap/extensions 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/extensions/v/3.31.3
+https://www.npmjs.com/package/@tiptap/extensions/v/3.31.4
 
 MIT License
 
@@ -5427,9 +5427,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/pm 3.31.3 (npm)
+@tiptap/pm 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/pm/v/3.31.3
+https://www.npmjs.com/package/@tiptap/pm/v/3.31.4
 
 MIT License
 
@@ -5454,9 +5454,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/react 3.31.3 (npm)
+@tiptap/react 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/react/v/3.31.3
+https://www.npmjs.com/package/@tiptap/react/v/3.31.4
 
 MIT License
 
@@ -5481,9 +5481,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/starter-kit 3.31.3 (npm)
+@tiptap/starter-kit 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/starter-kit/v/3.31.3
+https://www.npmjs.com/package/@tiptap/starter-kit/v/3.31.4
 
 MIT License
 
@@ -5508,9 +5508,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@tiptap/suggestion 3.31.3 (npm)
+@tiptap/suggestion 3.31.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@tiptap/suggestion/v/3.31.3
+https://www.npmjs.com/package/@tiptap/suggestion/v/3.31.4
 
 MIT License
 
@@ -6481,9 +6481,9 @@ MIT License
     SOFTWARE
 
 ------------------------------------------------------------------------------
-@types/node 26.6.3 (npm)
+@types/node 26.6.4 (npm)
 License: MIT
-https://www.npmjs.com/package/@types/node/v/26.6.3
+https://www.npmjs.com/package/@types/node/v/26.6.4
 
 MIT License
 
@@ -6743,9 +6743,9 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ------------------------------------------------------------------------------
-chevrotain 11.1.2 (npm)
+chevrotain 13.2.0 (npm)
 License: Apache-2.0
-https://www.npmjs.com/package/chevrotain/v/11.1.2
+https://www.npmjs.com/package/chevrotain/v/13.2.0
 
 Apache License
                            Version 2.0, January 2004
@@ -9103,9 +9103,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-katex 0.18.10 (npm)
+katex 0.19.0 (npm)
 License: MIT
-https://www.npmjs.com/package/katex/v/0.18.10
+https://www.npmjs.com/package/katex/v/0.19.0
 
 The MIT License (MIT)
 
@@ -9382,9 +9382,9 @@ Redistribution and use in source and binary forms, with or without modification,
 This software is provided by the copyright holders and contributors “as is” and any express or implied warranties, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose are disclaimed. In no event shall the copyright owner or contributors be liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this software, even if advised of the possibility of such damage.
 
 ------------------------------------------------------------------------------
-mermaid 12.0.0 (npm)
+mermaid 12.1.0 (npm)
 License: MIT
-https://www.npmjs.com/package/mermaid/v/12.0.0
+https://www.npmjs.com/package/mermaid/v/12.1.0
 
 The MIT License (MIT)
 
