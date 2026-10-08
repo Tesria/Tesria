@@ -5,6 +5,18 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Security: Mermaid diagrams use Tesria's own KaTeX 0.19.** Mermaid
+  brought its own copy, 0.16.47, which GHSA-238p-pmpm-9mq7 (Low, published
+  2026-10-05) affects; it is now pinned to the app's KaTeX, which is past
+  the fix. A diagram with math in a label still renders. Also
+  source-map-js 1.2.2 (GHSA-68fv-2mgg-jv7q, High), a build tool only: it is
+  not in what Tesria ships. Dependabot's TipTap 3.31.4, `pg` 8.23.1 and .NET
+  package updates are in too.
+- **Fixed: two tests that failed now and then.** The notification email
+  test raced the email service's own background pass; and two apps starting
+  against one database server at once (parallel tests, or two migrate
+  services) could fail on "tuple concurrently updated" while setting up the
+  app's database role, which now retries.
 - **Checked: embedded pages and exports keep page restrictions** (a report on
   Reddit, 2026-10-04). Someone who may see a page but not a page it embeds
   gets nothing of the embedded page: not by reading or editing it, not

@@ -2010,15 +2010,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "commander",
-      "version": "8.3.0",
-      "license": "MIT",
-      "component": "Web app",
-      "direct": false,
-      "url": "https://www.npmjs.com/package/commander/v/8.3.0"
-    },
-    {
-      "ecosystem": "npm",
       "name": "cookie",
       "version": "1.1.1",
       "license": "MIT",
@@ -2601,15 +2592,6 @@
       "component": "Web app",
       "direct": false,
       "url": "https://www.npmjs.com/package/isomorphic.js/v/0.2.5"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "katex",
-      "version": "0.16.47",
-      "license": "MIT",
-      "component": "Web app",
-      "direct": false,
-      "url": "https://www.npmjs.com/package/katex/v/0.16.47"
     },
     {
       "ecosystem": "npm",
