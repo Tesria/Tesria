@@ -106,8 +106,24 @@ public static partial class DatabaseRoles
         foreach (var table in ReadOnlyTables)
             sql.Add($"REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON \"{table}\" FROM \"{role}\"");
 
-        foreach (var statement in sql)
-            await ownerDb.Database.ExecuteSqlRawAsync(statement, ct);
+        // A role is the server's, not the database's: two passes at the same
+        // moment (parallel test classes, or two migrate services) can both
+        // update it, and PostgreSQL then refuses one with "tuple concurrently
+        // updated". Every statement here can run again, so the pass simply
+        // does, after a short wait.
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                foreach (var statement in sql)
+                    await ownerDb.Database.ExecuteSqlRawAsync(statement, ct);
+                break;
+            }
+            catch (PostgresException ex) when (ex.SqlState == "XX000" && ex.MessageText.Contains("concurrently") && attempt < 5)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(100 * attempt + Random.Shared.Next(100)), ct);
+            }
+        }
 
         logger.LogInformation("Database role {Role} provisioned; append-only: {Tables}; read-only: {ReadOnly}",
             role, string.Join(", ", AppendOnlyTables), string.Join(", ", ReadOnlyTables));

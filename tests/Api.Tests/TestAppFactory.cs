@@ -115,6 +115,8 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
                 ["Storage:UploadsPath"] = _uploadsPath,
                 // Export jobs run when a test says so (ExportJobRunner.RunQueuedAsync).
                 ["Exports:RunInBackground"] = "false",
+                // Notification email passes run when a test says so (RunOnceAsync).
+                ["Notifications:RunInBackground"] = "false",
             })
             .AddInMemoryCollection(_settings));
         builder.ConfigureServices(services =>

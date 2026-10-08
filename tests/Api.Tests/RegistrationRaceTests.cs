@@ -29,6 +29,18 @@ public class RegistrationRaceTests
         return await Task.WhenAll(sends);
     }
 
+    /// <summary>Every answer's status and body, for a failure message that says what happened.</summary>
+    private static async Task<string> DescribeAsync(HttpResponseMessage[] answers)
+    {
+        var lines = new List<string>();
+        foreach (var a in answers)
+        {
+            var body = await a.Content.ReadAsStringAsync();
+            lines.Add($"{(int)a.StatusCode} {(body.Length > 300 ? body[..300] : body)}");
+        }
+        return string.Join("\n", lines);
+    }
+
     [PostgresFact]
     public async Task Two_owners_at_once_one_is_made_and_the_others_are_told_why()
     {
@@ -40,10 +52,11 @@ public class RegistrationRaceTests
             Email = $"owner{i}@example.com", DisplayName = $"Owner {i}", Password = "supersecret",
         });
 
-        Assert.Single(answers, a => a.StatusCode == HttpStatusCode.OK);
+        var seen = await DescribeAsync(answers);
+        Assert.True(answers.Count(a => a.StatusCode == HttpStatusCode.OK) == 1, seen);
         foreach (var lost in answers.Where(a => a.StatusCode != HttpStatusCode.OK))
         {
-            Assert.NotEqual(HttpStatusCode.InternalServerError, lost.StatusCode);
+            Assert.True(lost.StatusCode != HttpStatusCode.InternalServerError, seen);
             var body = await lost.Content.ReadFromJsonAsync<Answer>();
             Assert.False(string.IsNullOrWhiteSpace(body!.Message ?? body.Detail));
         }
@@ -62,10 +75,11 @@ public class RegistrationRaceTests
             Email = "same@example.com", DisplayName = "Same", Password = "supersecret",
         });
 
-        Assert.Single(answers, a => a.StatusCode == HttpStatusCode.OK);
+        var seen = await DescribeAsync(answers);
+        Assert.True(answers.Count(a => a.StatusCode == HttpStatusCode.OK) == 1, seen);
         foreach (var lost in answers.Where(a => a.StatusCode != HttpStatusCode.OK))
         {
-            Assert.Equal(HttpStatusCode.Conflict, lost.StatusCode);
+            Assert.True(lost.StatusCode == HttpStatusCode.Conflict, seen);
             Assert.Contains("already exists", (await lost.Content.ReadFromJsonAsync<Answer>())!.Message);
         }
     }

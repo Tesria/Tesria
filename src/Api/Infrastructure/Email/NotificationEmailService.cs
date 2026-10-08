@@ -52,6 +52,10 @@ public sealed class NotificationEmailService(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // The tests run passes themselves (RunOnceAsync): a loop whose first
+        // pass lands 20 seconds in raced any test slower than that under load,
+        // sending the mail before the test's own pass looked for it.
+        if (!config.GetValue("Notifications:RunInBackground", true)) return;
         var period = TimeSpan.FromSeconds(config.GetValue("Notifications:EmailPollSeconds", 60));
         try { await Task.Delay(TimeSpan.FromSeconds(20), stoppingToken); } catch (OperationCanceledException) { return; }
 
