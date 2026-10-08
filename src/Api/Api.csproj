@@ -61,7 +61,7 @@
          Keycloak/Authentik/Google, etc.). Optional at runtime: see Oidc:Authority. -->
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.12" />
     <PackageReference Include="Otp.NET" Version="1.4.1" />
-    <PackageReference Include="Scalar.AspNetCore" Version="2.17.12" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.17.14" />
     <PackageReference Include="SkiaSharp" Version="4.153.1" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.153.1" />
     <PackageReference Include="Svg.Skia" Version="5.2.3" />

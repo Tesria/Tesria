@@ -2316,9 +2316,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-Scalar.AspNetCore 2.17.12 (NuGet)
+Scalar.AspNetCore 2.17.14 (NuGet)
 License: MIT
-https://www.nuget.org/packages/Scalar.AspNetCore/2.17.12
+https://www.nuget.org/packages/Scalar.AspNetCore/2.17.14
 
 This package ships no license file; this is the standard MIT license, with the copyright notice from the package's metadata.
 
