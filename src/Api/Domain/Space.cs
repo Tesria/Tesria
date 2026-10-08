@@ -42,6 +42,17 @@ public class Space
     /// </summary>
     public SpaceOperation? EveryoneAccess { get; set; }
 
+    /// <summary>
+    /// When someone deliberately chose to let everyone signed in administer
+    /// this space (dev-plan 21.5): set Administer and confirmed it, created
+    /// it that way by choice, or kept it so in Administration's review. Null
+    /// while nobody has, which is every space that was open before 21.1 (no
+    /// grants then meant Admin) and one an API call created without saying.
+    /// Those are the spaces the review lists. Cleared whenever the level
+    /// changes, so a later Administer is a fresh choice.
+    /// </summary>
+    public DateTimeOffset? EveryoneAdminConfirmedAt { get; set; }
+
     // --- Icon (dev-plan 6). Three columns rather than one: the kind decides
     // how IconValue is read, and the color applies to the tile behind a
     // letter or an emoji: an uploaded image covers the tile entirely.

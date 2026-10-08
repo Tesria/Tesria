@@ -1423,11 +1423,28 @@ One deliberate tightening: an account that is not active no longer passes
 checks made on its behalf in a space open to everyone (it is not "signed
 in"), for example mention notifications.
 
+**Who has access to what (dev-plan 21.5)** is `SpaceAccessAdmin`:
+`SummariesAsync` counts each space's access for `GET /api/admin/spaces`
+(a few queries for every space at once); `GET /api/admin/spaces/{key}/access`
+(Manage spaces and See the user list) lists it in full, including for
+spaces the caller cannot open, since who is in a space is metadata (page
+titles never travel, only a count); `GET /api/admin/users/{id}/access`
+evaluates `IPermissionService.AsUser` on every space and takes its reasons
+from `AccessExplanation.ReasonsAsync`, which Check Access uses too, so the
+two cannot word one access differently. `Space.EveryoneAdminConfirmedAt`
+records that someone chose Administer for everyone (set by the Permissions
+tab, by a create call that names it, or by "keep" in the review; cleared by
+any other level). Spaces at Admin without it are the review's list, and
+`POST /api/admin/spaces/{key}/access-review` settles one: `keep`,
+`private` or `edit`, refusing to narrow without an explicit administrator
+left, which it may supply from the creator or the caller only.
+
 **The Groups page (dev-plan 21.4)** reads `GET /api/groups/overview`
 (Manage Groups; `GroupOverview`), not `GET /api/groups`, whose shape the
 permission picker and the space tab keep. It searches by group name and by
 member (emails only with See the user list), filters by kind or by space,
-and shows space groups only under a chosen space or a search, and only for
+and shows space groups (since 21.5 in the default view too, folded under
+each space) only for
 spaces the caller can view. A group's grants are listed only on spaces
 whose permissions the caller may see (`CanSeeSpaceAccessAsync`: the
 space's administrators, or holders of both See the user list and Manage

@@ -5,6 +5,40 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Who has access to what, from Administration** (dev-plan 21.5). The
+  owner found the 0.9 permission model hard to read: Spaces said nothing
+  about access, the Groups page hid each space's groups, and nothing
+  answered "what can this person see?". Now:
+  - **Administration, Spaces** has an Access column ("Everyone can
+    administer", or "Private" with how many people are in its groups, other
+    grants and restricted pages) and **Who Has Access**, which shows
+    everyone signed in, the public, the global groups, the space's own
+    groups with their people, and other grants, in the order the check
+    makes them. Get Access moved there. "Owner" is now **Created By**: it
+    never granted anything.
+  - **A review of spaces everyone may administer.** Before 0.9, a space
+    with no permissions was open to everyone signed in as administrators,
+    and the upgrade kept that; most spaces on an upgraded instance are like
+    this without anyone having chosen it. They are listed at the top of
+    Spaces (and the Dashboard points there), each with **Make it private**,
+    **Let everyone edit it** or **Keep it as it is**. Nothing changes until
+    someone decides, by the owner's choice. Narrowing needs someone left to
+    administer the space: its creator, you, or both (adding yourself is Get
+    Access, alerted the same way).
+  - **What They Can See**, on each person in Administration, Users: every
+    space, what they may do there, and why, from the same check and the
+    same reasons as Check Access.
+  - **Administration, Groups** lists each space's groups under the space,
+    folded; Owner, Admins and Users are titled **Running Tesria**, with a
+    line saying they open no space by themselves.
+  - **Choosing "Administer" for everyone signed in says what it hands every
+    account**, in the Permissions tab and the New Space wizard, which now
+    asks before creating such a space.
+  New: `GET /api/admin/spaces/{key}/access`,
+  `POST /api/admin/spaces/{key}/access-review`,
+  `GET /api/admin/users/{id}/access`, and an `access` summary on
+  `GET /api/admin/spaces`. New migration `OpenAccessReview` (one nullable
+  column; nobody's access changes).
 - **Security: Mermaid diagrams use Tesria's own KaTeX 0.19.** Mermaid
   brought its own copy, 0.16.47, which GHSA-238p-pmpm-9mq7 (Low, published
   2026-10-05) affects; it is now pinned to the app's KaTeX, which is past

@@ -521,7 +521,7 @@ export async function build({ top, page, ensure, doc, p, h, text, bold, italic, 
     h(2, 'What everyone signed in can do'),
     p('At the top of the tab, ', b('Everyone signed in can'), ' says what every person with an account gets in this space without being named anywhere:'),
     ul(
-      li(p(b('Administer'), ' lets everyone read it, edit it and change its settings.')),
+      li(p(b('Administer'), ' lets everyone read it, edit it, change its settings, choose who else gets in (all but its Admins), add webhooks, and delete pages from its trash for good. It is the widest setting there is, so Tesria spells that out before you choose it. Choose Edit if people only need to write.')),
       li(p(b('Edit'), ' or ', b('View'), ' lets everyone read it, and edit it or not, while only the people you name manage it.')),
       li(p(b('No Access'), ' makes the space private: only the people in its groups, and anyone listed under Other Access, can open it.')),
     ),

@@ -139,63 +139,13 @@ public static class AccessExplanation
             : null;
         var explicitAdmin = await asThem.IsExplicitSpaceAdminAsync(spaceId);
 
-        // -- the reasons, read from the rows that check reads. The principal
-        // set is built as PermissionService builds it: the person, their
-        // stored groups, and the computed groups only while active.
+        // -- the reasons, read from the rows that check reads
         var active = account.Status == UserStatus.Active;
-        var stored = await db.UserGroups.AsNoTracking().Where(ug => ug.UserId == userId).Select(ug => ug.GroupId).ToListAsync();
-        var principals = new HashSet<Guid>([userId, .. stored]);
-        if (active) principals.UnionWith(BuiltInGroups.For(account.Role));
+        var (reasons, principals) = await ReasonsAsync(db, account.Id, account.DisplayName, account.Role, active, [spaceId]);
+        var spaceReasons = reasons[spaceId];
 
-        var reasons = new List<Reason>();
-        if (spaceRow.EveryoneAccess is { } everyone)
-            reasons.Add(new Reason(ReasonKinds.Everyone, everyone, active, "Everyone signed in"));
-        foreach (var global in stored.Where(BuiltInGroups.IsGlobal).OrderBy(g => Array.IndexOf(BuiltInGroups.InOrder, g)))
-            reasons.Add(new Reason(ReasonKinds.Global, SpaceOperation.View, active,
-                global == BuiltInGroups.GlobalViewersId ? "Global Viewers" : "Global Reviewers",
-                global, GroupOverview.Kinds.Global));
-
-        var grants = await db.SpacePermissions.AsNoTracking()
-            .Where(p => p.SpaceId == spaceId && principals.Contains(p.PrincipalId))
-            .Select(p => new { p.PrincipalType, p.PrincipalId, p.Operation })
-            .ToListAsync();
-        var groupGrants = grants.Where(g => g.PrincipalType == PrincipalType.Group).ToList();
-        var groupInfo = await db.Groups.AsNoTracking()
-            .Where(g => groupGrants.Select(x => x.PrincipalId).Contains(g.Id))
-            .Select(g => new { g.Id, g.SpaceId, g.SpaceRole })
-            .ToDictionaryAsync(g => g.Id);
-        var names = await SpaceGroups.NamesAsync(db, groupGrants.Select(g => g.PrincipalId));
-        // Get Access (recover access) adds an administrator to the space's
-        // Admins group, audited; say so beside that membership.
-        var recoveredAt = await db.AuditLogs.AsNoTracking()
-            .Where(a => a.Action == "space.access_recovered" && a.TargetId == spaceId && a.ActorId == userId)
-            .OrderByDescending(a => a.Sequence).Select(a => (DateTimeOffset?)a.CreatedAt).FirstOrDefaultAsync();
-
-        foreach (var grant in grants.Where(g => g.PrincipalType == PrincipalType.User))
-            reasons.Add(new Reason(ReasonKinds.Direct, grant.Operation, true, account.DisplayName));
-        foreach (var grant in groupGrants)
-        {
-            var info = groupInfo.GetValueOrDefault(grant.PrincipalId);
-            var kind = info?.SpaceId is not null ? GroupOverview.Kinds.Space
-                : BuiltInGroups.IsComputed(grant.PrincipalId) ? GroupOverview.Kinds.BuiltIn
-                : BuiltInGroups.IsGlobal(grant.PrincipalId) ? GroupOverview.Kinds.Global
-                : GroupOverview.Kinds.Custom;
-            var recovered = info?.SpaceRole == SpaceGroupRole.Admins ? recoveredAt : null;
-            reasons.Add(new Reason(ReasonKinds.Group, grant.Operation, true,
-                names.GetValueOrDefault(grant.PrincipalId) ?? "A group", grant.PrincipalId, kind, recovered));
-        }
-        reasons = reasons
-            .OrderByDescending(r => r.Counts)
-            .ThenByDescending(r => r.Level)
-            .ThenBy(r => r.Kind switch
-            {
-                ReasonKinds.Direct => 0, ReasonKinds.Group => 1, ReasonKinds.Global => 2, _ => 3,
-            })
-            .ThenBy(r => r.Label, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        var explainedLevel = reasons.Where(r => r.Counts).Select(r => (SpaceOperation?)r.Level).Max();
-        var explainedAdmin = reasons.Any(r => r.Kind is ReasonKinds.Direct or ReasonKinds.Group && r.Level == SpaceOperation.Admin);
+        var explainedLevel = spaceReasons.Where(r => r.Counts).Select(r => (SpaceOperation?)r.Level).Max();
+        var explainedAdmin = spaceReasons.Any(r => r.Kind is ReasonKinds.Direct or ReasonKinds.Group && r.Level == SpaceOperation.Admin);
         var log = logs.CreateLogger(typeof(AccessExplanation));
         if (explainedLevel != level || explainedAdmin != explicitAdmin)
             log.LogWarning("Access explanation disagrees with the permission check for {UserId} in {SpaceId}: explained {Explained}, checked {Checked}.",
@@ -263,6 +213,85 @@ public static class AccessExplanation
         return Results.Ok(new Response(
             new Person(account.Id, account.DisplayName, showEmail ? account.Email : null, active),
             new SpaceInfo(spaceRow.Id, spaceRow.Key, spaceRow.Name, spaceRow.EveryoneAccess, spaceRow.Archived),
-            level, explicitAdmin, reasons, pageAnswer, canRecover, publicly));
+            level, explicitAdmin, spaceReasons, pageAnswer, canRecover, publicly));
+    }
+
+    /// <summary>
+    /// Every reason a person gets something in each of the given spaces,
+    /// read from the rows <see cref="IPermissionService"/> reads, and the
+    /// principal set it builds (the person, their stored groups, and the
+    /// computed groups only while active). Shared by Check Access and the
+    /// per-person view in Administration (21.5), so the two cannot word the
+    /// same access differently. Ordered as shown: what counts first, then
+    /// the highest level, then direct before group before global before
+    /// everyone.
+    /// </summary>
+    internal static async Task<(Dictionary<Guid, List<Reason>> Reasons, HashSet<Guid> Principals)> ReasonsAsync(
+        AppDbContext db, Guid userId, string displayName, UserRole role, bool active, IReadOnlyCollection<Guid> spaceIds)
+    {
+        var stored = await db.UserGroups.AsNoTracking().Where(ug => ug.UserId == userId).Select(ug => ug.GroupId).ToListAsync();
+        var principals = new HashSet<Guid>([userId, .. stored]);
+        if (active) principals.UnionWith(BuiltInGroups.For(role));
+
+        var everyone = await db.Spaces.AsNoTracking().Where(s => spaceIds.Contains(s.Id))
+            .ToDictionaryAsync(s => s.Id, s => s.EveryoneAccess);
+        var grants = await db.SpacePermissions.AsNoTracking()
+            .Where(p => spaceIds.Contains(p.SpaceId) && principals.Contains(p.PrincipalId))
+            .Select(p => new { p.SpaceId, p.PrincipalType, p.PrincipalId, p.Operation })
+            .ToListAsync();
+        var groupIds = grants.Where(g => g.PrincipalType == PrincipalType.Group).Select(g => g.PrincipalId).Distinct().ToList();
+        var groupInfo = await db.Groups.AsNoTracking()
+            .Where(g => groupIds.Contains(g.Id))
+            .Select(g => new { g.Id, g.SpaceId, g.SpaceRole })
+            .ToDictionaryAsync(g => g.Id);
+        var names = await SpaceGroups.NamesAsync(db, groupIds);
+        // Get Access (recover access) adds an administrator to the space's
+        // Admins group, audited; say so beside that membership.
+        var recovered = (await db.AuditLogs.AsNoTracking()
+                .Where(a => a.Action == "space.access_recovered" && a.ActorId == userId
+                            && a.TargetId != null && spaceIds.Contains(a.TargetId.Value))
+                .Select(a => new { SpaceId = a.TargetId!.Value, a.Sequence, a.CreatedAt })
+                .ToListAsync())
+            .GroupBy(a => a.SpaceId)
+            .ToDictionary(g => g.Key, g => g.MaxBy(a => a.Sequence)!.CreatedAt);
+        var globals = stored.Where(BuiltInGroups.IsGlobal).OrderBy(g => Array.IndexOf(BuiltInGroups.InOrder, g)).ToList();
+
+        var result = new Dictionary<Guid, List<Reason>>();
+        foreach (var spaceId in spaceIds)
+        {
+            var reasons = new List<Reason>();
+            if (everyone.GetValueOrDefault(spaceId) is { } level)
+                reasons.Add(new Reason(ReasonKinds.Everyone, level, active, "Everyone signed in"));
+            foreach (var global in globals)
+                reasons.Add(new Reason(ReasonKinds.Global, SpaceOperation.View, active,
+                    global == BuiltInGroups.GlobalViewersId ? "Global Viewers" : "Global Reviewers",
+                    global, GroupOverview.Kinds.Global));
+            foreach (var grant in grants.Where(g => g.SpaceId == spaceId))
+            {
+                if (grant.PrincipalType == PrincipalType.User)
+                {
+                    reasons.Add(new Reason(ReasonKinds.Direct, grant.Operation, true, displayName));
+                    continue;
+                }
+                var info = groupInfo.GetValueOrDefault(grant.PrincipalId);
+                var kind = info?.SpaceId is not null ? GroupOverview.Kinds.Space
+                    : BuiltInGroups.IsComputed(grant.PrincipalId) ? GroupOverview.Kinds.BuiltIn
+                    : BuiltInGroups.IsGlobal(grant.PrincipalId) ? GroupOverview.Kinds.Global
+                    : GroupOverview.Kinds.Custom;
+                DateTimeOffset? recoveredAt = info?.SpaceRole == SpaceGroupRole.Admins && recovered.TryGetValue(spaceId, out var at) ? at : null;
+                reasons.Add(new Reason(ReasonKinds.Group, grant.Operation, true,
+                    names.GetValueOrDefault(grant.PrincipalId) ?? "A group", grant.PrincipalId, kind, recoveredAt));
+            }
+            result[spaceId] = reasons
+                .OrderByDescending(r => r.Counts)
+                .ThenByDescending(r => r.Level)
+                .ThenBy(r => r.Kind switch
+                {
+                    ReasonKinds.Direct => 0, ReasonKinds.Group => 1, ReasonKinds.Global => 2, _ => 3,
+                })
+                .ThenBy(r => r.Label, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+        return (result, principals);
     }
 }

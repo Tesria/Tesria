@@ -76,25 +76,27 @@ public class GroupsPageTests
     // -- the list ----------------------------------------------------------------
 
     [Fact]
-    public async Task The_default_list_has_built_in_global_and_custom_groups_and_no_space_groups()
+    public async Task The_default_list_has_every_kind_with_each_spaces_groups_last()
     {
         using var f = new TestAppFactory();
         var owner = await PersonAsync(f);
         await owner.Client.CreateSpaceAsync("LISTED");
         await CustomGroupAsync(owner.Client, "Engineering");
 
+        // Since 21.5 a space's groups are listed without asking for them:
+        // behind the Show menu they read as if spaces had none.
         var groups = await OverviewAsync(owner.Client);
-        Assert.Equal(["builtin", "builtin", "builtin", "global", "global", "custom"],
+        Assert.Equal(["builtin", "builtin", "builtin", "global", "global", "custom", "space", "space", "space", "space"],
             groups.Select(g => g.GetProperty("kind").GetString()));
         Assert.Equal(["Owner", "Admins", "Users", "Global Viewers", "Global Reviewers", "Engineering"],
-            groups.Select(g => g.GetProperty("name").GetString()));
+            groups.Take(6).Select(g => g.GetProperty("name").GetString()));
         Assert.True(groups[3].GetProperty("everySpace").GetBoolean());
         Assert.False(groups[0].GetProperty("canManageMembers").GetBoolean());
         Assert.True(groups[5].GetProperty("canManageMembers").GetBoolean());
 
         // By kind, and under a chosen space its four groups, with its name.
         Assert.Equal(["Engineering"], (await OverviewAsync(owner.Client, "?kind=custom")).Select(g => g.GetProperty("name").GetString()));
-        Assert.Empty(await OverviewAsync(owner.Client, "?kind=space"));
+        Assert.Equal(4, (await OverviewAsync(owner.Client, "?kind=space")).Count);
         var space = await OverviewAsync(owner.Client, "?space=listed");
         Assert.Equal([Admins, Editors, Viewers, Reviewers], space.Select(g => g.GetProperty("spaceRole").GetInt32()));
         Assert.All(space, g => Assert.Equal("LISTED", g.GetProperty("spaceKey").GetString()));

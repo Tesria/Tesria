@@ -107,9 +107,10 @@ public static class GroupOverview
             })
             .ToListAsync();
 
-        // Space groups (21.1) only for spaces the caller can view, and in the
-        // default view only under a chosen space or a search: an instance
-        // with many spaces has four groups for each.
+        // Space groups (21.1) only for spaces the caller can view. Listed in
+        // the default view too since 21.5, each space's under its own
+        // heading, which the page folds: hidden behind the Show menu, they
+        // read as if spaces had no groups at all.
         var viewable = rows.Any(r => r.SpaceId is not null) ? await perms.ViewableSpaceIdsAsync() : [];
         string KindOf(Guid id, Guid? spaceId) =>
             spaceId is not null ? Kinds.Space
@@ -123,7 +124,6 @@ public static class GroupOverview
             .Where(r => r.SpaceId is null || viewable.Contains(r.SpaceId.Value))
             .Where(r => spaceFilter is null || r.SpaceId == spaceFilter)
             .Where(r => kind is null || KindOf(r.Id, r.SpaceId) == kind)
-            .Where(r => r.SpaceId is null || spaceFilter is not null || query.Length > 0)
             .ToList();
 
         // -- the member search: who matches, then which groups they are in

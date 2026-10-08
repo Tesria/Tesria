@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   api, ApiError, type BulkAddResult, type Directory, type GroupKind, type GroupMember, type GroupOverview,
@@ -6,7 +6,7 @@ import {
 } from '../api/client'
 import { AccessExplainer } from '../components/AccessExplainer'
 import { useConfirm } from '../components/ConfirmDialog'
-import { accessSummary, memberCountText, parseEmailList, sectionsOf } from '../components/groupsList'
+import { accessSummary, memberCountText, parseEmailList, sectionMembers, sectionsOf, type GroupSection } from '../components/groupsList'
 
 /** What the Show menu offers: a kind, or a space's own groups (`space:KEY`). */
 type Show = '' | GroupKind | `space:${string}`
@@ -109,14 +109,37 @@ export function GroupsPage() {
     reload()
   }
 
+  const row = (g: GroupOverview) => editing?.id === g.id ? (
+    <li key={g.id} className="version">
+      <form className="form-inline group-edit" onSubmit={saveEdit}>
+        <label>
+          Name
+          <input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} required autoFocus />
+        </label>
+        <label>
+          Description
+          <input value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} placeholder="Optional" />
+        </label>
+        <button type="submit" className="btn btn--primary btn--sm">Save</button>
+        <button type="button" className="btn btn--ghost btn--sm" onClick={() => setEditing(null)}>Cancel</button>
+      </form>
+    </li>
+  ) : (
+    <GroupRow key={g.id} group={g} open={selectedId === g.id}
+      onToggle={() => setSelectedId(selectedId === g.id ? null : g.id)}
+      onEdit={() => setEditing({ id: g.id, name: g.name, description: g.description ?? '' })}
+      onDelete={() => void remove(g)} />
+  )
+
   // Rendered inside the admin shell (Admin → Groups), which supplies the
   // heading and tabs.
   return (
     <div className="groups-page">
       <p className="muted small">
-        Groups let you grant space and page access to a whole team at once. Each space also has its own
-        Viewers, Editors, Admins and Reviewers, chosen by that space’s administrators: find them by searching, or
-        choose the space under Show.
+        Groups let you give space and page access to a whole team at once. Who can open a space is set on the
+        space: everyone signed in at a level, its own four groups, and any group or person given access there.{' '}
+        <Link to="/admin/spaces">Spaces</Link> shows each space’s access; <Link to="/admin/users">Users</Link> shows
+        what one person can see.
       </p>
       {error && <p className="alert alert--error">{error}</p>}
 
@@ -143,10 +166,11 @@ export function GroupsPage() {
           Show
           <span className="glass-select-wrap"><select className="glass-select" value={show}
             onChange={(e) => { setShow(e.target.value as Show); setSelectedId(null) }}>
-            <option value="">Built-in, global and custom</option>
-            <option value="builtin">Built in only</option>
+            <option value="">All groups</option>
+            <option value="builtin">Running Tesria only</option>
             <option value="global">Global only</option>
             <option value="custom">Custom only</option>
+            <option value="space">Space groups only</option>
             {spaces.length > 0 && (
               <optgroup label="A space’s own groups">
                 {spaces.map((s) => <option key={s.id} value={`space:${s.key}`}>{s.name}</option>)}
@@ -169,42 +193,14 @@ export function GroupsPage() {
         <p className="muted">{filtered ? 'No group matches.' : 'No groups yet.'}</p>
       )}
       <div className="groups-list">
-      {sections.map((section) => (
+      {sections.map((section, i) => section.kind === 'space' ? (
+        <SpaceSection key={section.key} section={section} first={sections[i - 1]?.kind !== 'space'}
+          open={filtered} renderRow={row} />
+      ) : (
         <section key={section.key} className="groups-section">
-          <h3 className="groups-section__title">
-            {section.title}
-            {section.spaceKey && (
-              <>
-                <span className="badge" title="These groups belong to this space and go when it does">space {section.spaceKey}</span>
-                <Link className="small" to={`/spaces/${encodeURIComponent(section.spaceKey)}/settings/permissions`}>
-                  Permissions tab
-                </Link>
-              </>
-            )}
-          </h3>
-          <ul className="version-list">
-            {section.groups.map((g) => editing?.id === g.id ? (
-              <li key={g.id} className="version">
-                <form className="form-inline group-edit" onSubmit={saveEdit}>
-                  <label>
-                    Name
-                    <input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} required autoFocus />
-                  </label>
-                  <label>
-                    Description
-                    <input value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} placeholder="Optional" />
-                  </label>
-                  <button type="submit" className="btn btn--primary btn--sm">Save</button>
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => setEditing(null)}>Cancel</button>
-                </form>
-              </li>
-            ) : (
-              <GroupRow key={g.id} group={g} open={selectedId === g.id}
-                onToggle={() => setSelectedId(selectedId === g.id ? null : g.id)}
-                onEdit={() => setEditing({ id: g.id, name: g.name, description: g.description ?? '' })}
-                onDelete={() => void remove(g)} />
-            ))}
-          </ul>
+          <h3 className="groups-section__title">{section.title}</h3>
+          {SECTION_NOTES[section.kind] && <p className="muted small groups-section__note">{SECTION_NOTES[section.kind]}</p>}
+          <ul className="version-list">{section.groups.map(row)}</ul>
         </section>
       ))}
       </div>
@@ -215,6 +211,57 @@ export function GroupsPage() {
 
       {dialog}
     </div>
+  )
+}
+
+/**
+ * What each kind of group is for, under its heading (dev-plan 21.5): the
+ * built-in three sat at the top of a list about access and read as if they
+ * opened spaces, which none of them does by itself.
+ */
+const SECTION_NOTES: Partial<Record<GroupKind, string>> = {
+  builtin: 'These decide who runs Tesria: its owner, its administrators, and every account. None of them opens a space by itself; a space counts one only where its Permissions tab names it under Other Access.',
+  global: 'Their members can read every space, archived ones included. Page restrictions still apply to them.',
+  custom: 'Your own teams. A group gives access wherever a space or a page names it.',
+}
+
+/**
+ * One space's four groups, folded under the space's name (21.5): listed
+ * without asking now, and an instance with many spaces has four for each.
+ * Open while searching or filtering, so a match is never hidden.
+ */
+function SpaceSection({ section, first, open, renderRow }: {
+  section: GroupSection
+  first: boolean
+  open: boolean
+  renderRow: (g: GroupOverview) => ReactNode
+}) {
+  const people = sectionMembers(section)
+  return (
+    <>
+      {first && (
+        <section className="groups-section">
+          <h3 className="groups-section__title">Spaces</h3>
+          <p className="muted small groups-section__note">
+            Each space has four groups of its own, made with it and named after it. Its administrators choose who is
+            in them, in its Permissions tab.
+          </p>
+        </section>
+      )}
+      <details className="groups-space" open={open || undefined}>
+        <summary className="groups-space__summary">
+          <span className="groups-space__name">{section.title}</span>
+          {section.spaceKey && <span className="badge" title="These groups belong to this space and go when it does">{section.spaceKey}</span>}
+          <span className="muted small">{people === 0 ? 'Nobody in them' : `${people} member${people === 1 ? '' : 's'}`}</span>
+        </summary>
+        {section.spaceKey && (
+          <p className="small groups-space__link">
+            <Link to={`/spaces/${encodeURIComponent(section.spaceKey)}/settings/permissions`}>Permissions tab</Link>
+          </p>
+        )}
+        <ul className="version-list">{section.groups.map(renderRow)}</ul>
+      </details>
+    </>
   )
 }
 

@@ -183,6 +183,11 @@ public static partial class SpaceEndpoints
             // administrator, so nothing anybody can already reach is opened.
             // The level is in the audit entry below.
             EveryoneAccess = everyone,
+            // Asked for by name is a choice; left out is the old default,
+            // which the open-space review (21.5) then lists.
+            EveryoneAdminConfirmedAt = everyone == SpaceOperation.Admin
+                && req.EveryoneAccess.ValueKind != System.Text.Json.JsonValueKind.Undefined
+                ? DateTimeOffset.UtcNow : null,
         };
         db.Spaces.Add(space);
         // Its four groups (dev-plan 21.1), with its creator in Admins: an

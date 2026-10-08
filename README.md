@@ -22,7 +22,8 @@ under the [Apache License 2.0](./LICENSE).
   inline comments, mentions, watches and notifications, and search across
   every space, with the best match first and accents ignored.
 - Every space has its own Viewers, Editors, Admins and Reviewers groups,
-  and a setting for what everyone signed in may do.
+  and a setting for what everyone signed in may do. Administration shows
+  who can open each space and why, and what any one person can see.
 - Two looks, **Minimal** and **Glass**, each in light and dark with your
   choice of accent color. Reading, editing and the page tree all work on a
   phone.

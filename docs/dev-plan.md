@@ -6376,6 +6376,21 @@ questions are in `roadmap.md`.
 - **21.4** A stronger Groups page: search, filtering by space, counts,
   bulk adds, and why a person can see a space. · `M` · Model: Opus 5.5 · ✅
   **built 2026-10-02, for 0.9**
+- **21.5** Who has access to what, from Administration: each space's access
+  on the Spaces list and in full, what one person can see, the Groups page
+  sorted by what each kind is for, and a review of spaces everyone may
+  administer. · `M` · Model: Opus 5.5 · ✅ **built 2026-10-08, for 0.9**
+
+  From the owner's first 0.9 test (2026-10-08): "Northwind HR (private)"
+  was open to every account as administrators. It always had been (no
+  grants before 0.9 meant open), and five of seven spaces on his instance
+  were the same, but no screen said so. He agreed all six parts and chose
+  the review over an automatic change: narrowing quietly takes
+  administration from everyone who uses a space. Decisions worth a second
+  look: who is in a space's groups is shown in Administration (with See
+  the user list and Manage spaces) for spaces the administrator cannot
+  open, as metadata, never page titles; and the review may add the space's
+  creator or the caller to its Admins, nobody else.
 
 ### Phase 22: Agents that work with you (Automate)
 

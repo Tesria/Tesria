@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api, ApiError, type BackupHealth, type Dashboard } from '../../api/client'
+import { api, ApiError, Permission, type BackupHealth, type Dashboard } from '../../api/client'
+import { useAuth } from '../../auth/AuthContext'
+import { needsReview } from '../../components/adminAccess'
 import { bytes, relative } from './format'
 import { Sparkline } from './Sparkline'
 
@@ -49,6 +51,17 @@ export function AdminDashboardPage() {
   const [range, setRange] = useState<number>(30)
   const [data, setData] = useState<Dashboard | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const { can } = useAuth()
+  // Spaces everyone may administer that nobody chose to (21.5): the review
+  // is on the Spaces tab, and this is where an administrator lands.
+  const [toReview, setToReview] = useState(0)
+  const mayReview = can(Permission.SpacesManage)
+  useEffect(() => {
+    if (!mayReview) return
+    api.admin.spaces.list()
+      .then((rows) => setToReview(rows.filter((s) => needsReview(s.access)).length))
+      .catch(() => {})
+  }, [mayReview])
 
   useEffect(() => {
     let canceled = false
@@ -67,6 +80,12 @@ export function AdminDashboardPage() {
 
   return (
     <>
+      {toReview > 0 && (
+        <p className="alert alert--warning">
+          {toReview === 1 ? '1 space lets' : `${toReview} spaces let`} everyone signed in administer{' '}
+          {toReview === 1 ? 'it' : 'them'}, and nobody has chosen that. <Link to="/admin/spaces">Review them in Spaces</Link>.
+        </p>
+      )}
       {/* Filters in one row above the charts. */}
       <div className="dash__filters">
         {RANGES.map((r) => (

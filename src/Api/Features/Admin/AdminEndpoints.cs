@@ -106,7 +106,8 @@ public static class AdminEndpoints
     public record AdminSpaceResponse(
         Guid Id, string Key, string Name, string? Description, bool Archived,
         Guid CreatedById, string CreatedByName, int PageCount, long StorageBytes,
-        DateTimeOffset CreatedAt, bool IsPublic, bool PublicComments, DateTimeOffset? PublicSince, int AttachmentCount);
+        DateTimeOffset CreatedAt, bool IsPublic, bool PublicComments, DateTimeOffset? PublicSince, int AttachmentCount,
+        SpaceAccessAdmin.AccessSummary? Access = null);
     public record SetPublicRequest(bool IsPublic, bool? PublicComments);
 
     /// <summary>
@@ -1280,7 +1281,7 @@ public static class AdminEndpoints
     {
         var query = db.Spaces.AsNoTracking();
         if (onlyId is { } id) query = query.Where(s => s.Id == id);
-        return await query
+        var rows = await query
             .Select(s => new AdminSpaceResponse(
                 s.Id, s.Key, s.Name, s.Description, s.Archived,
                 s.CreatedById,
@@ -1290,8 +1291,13 @@ public static class AdminEndpoints
                     .Where(a => db.Pages.Any(p => p.Id == a.PageId && p.SpaceId == s.Id))
                     .Sum(a => (long?)a.Size) ?? 0L,
                 s.CreatedAt, s.IsPublic, s.PublicComments, s.PublicSince,
-                db.Attachments.Count(a => db.Pages.Any(p => p.Id == a.PageId && p.SpaceId == s.Id))))
+                db.Attachments.Count(a => db.Pages.Any(p => p.Id == a.PageId && p.SpaceId == s.Id)),
+                null))
             .ToListAsync();
+        // Who can get in, in counts (dev-plan 21.5): the list used to say
+        // nothing about access at all.
+        var access = await SpaceAccessAdmin.SummariesAsync(db, rows.Select(r => r.Id).ToList());
+        return rows.Select(r => r with { Access = access.GetValueOrDefault(r.Id) }).ToList();
     }
 
     /// <summary>

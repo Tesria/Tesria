@@ -1,4 +1,4 @@
-import type { AccessExplanation, GroupOverview, PageTreeNode } from '../api/client'
+import type { AccessExplanation, GroupKind, GroupOverview, PageTreeNode } from '../api/client'
 
 /**
  * The Groups page's logic (dev-plan 21.4), apart from its rendering so the
@@ -16,6 +16,8 @@ export function levelName(level: number | null | undefined): string {
 
 export type GroupSection = {
   key: string
+  /** Which kind of group it holds; a space's section holds that space's four. */
+  kind: GroupKind
   title: string
   /** For a space's section: its key, shown as a badge so "Handbook Admins" never reads like the built-in Admins. */
   spaceKey: string | null
@@ -24,7 +26,10 @@ export type GroupSection = {
 
 /**
  * Splits the list into the page's sections, keeping the server's order:
- * built in, global, custom, then one section per space.
+ * built in, global, custom, then one section per space. The built-in groups
+ * are titled for what they are for (21.5): Owner, Admins and Users decide
+ * who runs Tesria, and at the top of a list of access they read as if they
+ * opened spaces.
  */
 export function sectionsOf(groups: GroupOverview[]): GroupSection[] {
   const sections: GroupSection[] = []
@@ -35,7 +40,8 @@ export function sectionsOf(groups: GroupOverview[]): GroupSection[] {
     if (!section) {
       section = {
         key,
-        title: g.kind === 'builtin' ? 'Built in'
+        kind: g.kind,
+        title: g.kind === 'builtin' ? 'Running Tesria'
           : g.kind === 'global' ? 'Global'
           : g.kind === 'custom' ? 'Custom'
           : g.spaceName ?? 'A space',
@@ -163,4 +169,9 @@ export function spaceAnswer(e: Pick<AccessExplanation, 'level' | 'person' | 'spa
   if (e.level == null) return `${who} cannot see ${e.space.name}.`
   const verb = e.level === 2 ? 'administer' : e.level === 1 ? 'edit' : 'view'
   return `${who} can ${verb} ${e.space.name}.`
+}
+
+/** How many people are in a space's groups, counting each group's active members (someone in two counts twice). */
+export function sectionMembers(section: GroupSection): number {
+  return section.groups.reduce((n, g) => n + g.activeMembers, 0)
 }

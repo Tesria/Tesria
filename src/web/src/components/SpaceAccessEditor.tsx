@@ -6,7 +6,7 @@ import {
 import { PrincipalPicker } from './PrincipalPicker'
 import { useConfirm } from './ConfirmDialog'
 import {
-  EVERYONE_LEVELS, everyoneLabel, everyoneSummary, globalReadersNote, widens,
+  EVERYONE_ADMINISTERS, EVERYONE_LEVELS, everyoneLabel, everyoneSummary, globalReadersNote, widens,
 } from './spaceAccess'
 
 /** What each of a space's groups may do, in the tab's words. */
@@ -67,6 +67,7 @@ export function SpaceAccessEditor({ spaceKey }: { spaceKey: string }) {
           body: (
             <>
               <p>{everyoneSummary(to)}</p>
+              {to === 2 && <p><strong>{EVERYONE_ADMINISTERS}</strong> Choose Edit instead if they only need to write.</p>}
               <p>That reaches every page in the space, except those restricted to particular people. Every administrator is alerted.</p>
             </>
           ),

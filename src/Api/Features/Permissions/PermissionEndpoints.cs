@@ -228,7 +228,10 @@ public static class PermissionEndpoints
         }
 
         space.EveryoneAccess = to;
-        var change = new { space.Key, space.Name, From = from?.ToString(), To = to?.ToString() };
+        // Administer reached here was asked for and confirmed with the
+        // password, so the open-space review (21.5) has nothing to ask.
+        space.EveryoneAdminConfirmedAt = to == SpaceOperation.Admin ? DateTimeOffset.UtcNow : null;
+        var change =new { space.Key, space.Name, From = from?.ToString(), To = to?.ToString() };
         if (widens)
         {
             audit.Record("space.opened", "space", space.Id, change);

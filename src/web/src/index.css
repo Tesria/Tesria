@@ -4048,3 +4048,59 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
   .sessions-table td:has(.admin-table__actions:empty) { display: none; }
   .sessions-table .admin-table__actions { padding-top: 0.25rem; }
 }
+
+/* ---- who has access to what (dev-plan 21.5) ------------------------------ */
+/* Admin, Spaces: each row's Access as a headline over its counts. */
+.admin-spaces__access { min-width: 12rem; }
+.admin-spaces__headline { display: block; font-weight: 600; }
+.admin-spaces__headline--warning { color: var(--panel-warning-icon); }
+.admin-spaces__access .muted { display: block; margin-bottom: 0.2rem; }
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .admin-spaces__access { white-space: normal; }
+}
+
+/* The open-space review at the top of Admin, Spaces. */
+.open-review { margin: 1rem 0; }
+.open-review__title { font-size: 1.05rem; margin: 0 0 0.5rem; }
+.open-review__list { list-style: none; margin: 0.75rem 0 0; padding: 0; }
+.open-review__item { padding: 0.6rem 0; border-top: 1px solid var(--border); }
+.open-review__row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.open-review__row strong { overflow-wrap: anywhere; }
+.open-review__actions { margin-left: auto; display: flex; gap: 0.75rem; }
+.open-review__form { margin-top: 0.6rem; display: grid; gap: 0.6rem; }
+.open-review__form fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.open-review__form legend { font-weight: 600; margin-bottom: 0.25rem; }
+.open-review__choice { display: flex; gap: 0.5rem; align-items: flex-start; margin: 0; font-weight: 400; }
+.open-review__choice input { width: auto; margin: 0.2rem 0 0; flex-shrink: 0; }
+
+/* A space's access in full, under the table. */
+.access-panel { margin-top: 1.25rem; scroll-margin-top: 1rem; }
+.access-panel__head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.access-panel__head h2 { font-size: 1.1rem; margin: 0; overflow-wrap: anywhere; }
+.access-panel h3 { font-size: 0.95rem; margin: 1rem 0 0.3rem; }
+.access-panel__warn { color: var(--panel-warning-icon); }
+.access-panel__groups { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.access-panel__group { font-weight: 600; overflow-wrap: anywhere; }
+.access-panel__people { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.25rem; }
+.access-panel__person {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.1rem 0.5rem; border: 1px solid var(--border); border-radius: 999px; font-size: 0.85rem;
+}
+.access-panel__actions { margin-top: 1rem; flex-wrap: wrap; }
+
+/* Admin, Users: what one person can see. */
+.person-access td:nth-child(2) { white-space: nowrap; font-weight: 600; }
+.person-access__warn { color: var(--panel-warning-icon); }
+.person-access__closed { display: block; margin-top: 0.35rem; color: var(--muted); }
+@media (max-width: 640px) { /* keep in sync with --bp-mobile */
+  .person-access td:last-child { white-space: normal; min-width: 12rem; }
+}
+
+/* Admin, Groups (21.5): what each kind is for, and each space's groups folded. */
+.groups-section__note { margin: 0 0 0.4rem; max-width: 60rem; }
+.groups-space { border-top: 1px solid var(--border); padding: 0.4rem 0; }
+/* Not flex: that drops the disclosure triangle in Safari and Chrome. */
+.groups-space__summary { cursor: pointer; padding: 0.2rem 0; }
+.groups-space__summary > * + * { margin-left: 0.5rem; }
+.groups-space__name { font-weight: 600; overflow-wrap: anywhere; }
+.groups-space__link { margin: 0.2rem 0 0; }

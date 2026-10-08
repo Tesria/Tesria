@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { api, ApiError, GlobalGroupId, LIMITS, SpaceGroupRole, type Directory } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { Wizard, type WizardStep } from './Wizard'
+import { useConfirm } from './ConfirmDialog'
+import { EVERYONE_ADMINISTERS } from './spaceAccess'
 import { PeoplePicker } from './PeoplePicker'
 import {
   type Audience, audienceSentence, everyoneAccessOf, groupMembers, keyProblem, LEVEL_WORDS, suggestKey,
@@ -70,7 +72,24 @@ export function NewSpaceWizard({ onCancel }: { onCancel: () => void }) {
     setError(null)
   }
 
+  const { ask, dialog } = useConfirm()
+
   async function create() {
+    // The widest setting there is, chosen deliberately or not at all (21.5).
+    if (audience.kind === 'everyone' && audience.level === 2) {
+      const ok = await ask({
+        title: 'Let Everyone Signed In Administer It?',
+        danger: true,
+        confirmLabel: 'Create It Anyway',
+        body: (
+          <>
+            <p>{EVERYONE_ADMINISTERS}</p>
+            <p>Choose “Can edit” instead if they only need to write: its Admins still manage it.</p>
+          </>
+        ),
+      })
+      if (!ok) return
+    }
     setBusy(true)
     setError(null)
     try {
@@ -167,6 +186,9 @@ export function NewSpaceWizard({ onCancel }: { onCancel: () => void }) {
             </label>
           )}
           <p>{audienceSentence(audience)}</p>
+          {audience.kind === 'everyone' && audience.level === 2 && (
+            <p className="alert alert--warning">{EVERYONE_ADMINISTERS}</p>
+          )}
           <p className="muted small">
             Either way, a page restricted to particular people stays restricted.
             {globalReaders && ' Global Viewers and Global Reviewers can read every space, this one included.'}
@@ -232,6 +254,7 @@ export function NewSpaceWizard({ onCancel }: { onCancel: () => void }) {
           })}
         </dl>
       )}
+      {dialog}
     </Wizard>
   )
 }

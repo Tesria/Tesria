@@ -890,6 +890,75 @@ export type AdminSpace = {
   pageCount: number
   storageBytes: number
   createdAt: string
+  /** Who can get in, in counts (dev-plan 21.5). */
+  access: AdminSpaceAccessSummary | null
+}
+
+/**
+ * A space's access in counts, for Admin, Spaces (dev-plan 21.5). The group
+ * counts are active members of the space's own four groups; `otherGrants`
+ * counts every other grant (custom or built-in groups, people by name).
+ */
+export type AdminSpaceAccessSummary = {
+  everyoneAccess: number | null
+  /** Someone chose to let everyone administer it, so the review leaves it alone. */
+  everyoneAdminConfirmed: boolean
+  admins: number
+  editors: number
+  viewers: number
+  reviewers: number
+  otherGrants: number
+  /** An active account holds a real Admin grant: someone manages it past its page restrictions. */
+  hasExplicitAdmin: boolean
+  restrictedPages: number
+}
+
+export type AccessPersonRef = { id: string; displayName: string; email: string | null; active: boolean }
+
+/** One space's access in full, for Admin, Spaces (dev-plan 21.5). */
+export type AdminSpaceAccess = {
+  id: string
+  key: string
+  name: string
+  archived: boolean
+  everyoneAccess: number | null
+  everyoneAdminConfirmed: boolean
+  signedInAccounts: number
+  publiclyReadable: boolean
+  createdBy: AccessPersonRef | null
+  groups: { groupId: string; name: string; role: number; level: number; members: AccessPersonRef[] }[]
+  other: {
+    kind: 'person' | 'group'
+    principalId: string
+    name: string
+    level: number
+    groupKind: GroupKind | null
+    members: number | null
+    active: boolean
+  }[]
+  global: { groupId: string; name: string; members: number }[]
+  restrictedPages: number
+  hasExplicitAdmin: boolean
+  youAreExplicitAdmin: boolean
+  youCanAdminister: boolean
+}
+
+/** One person's access to every space, for Admin, Users (dev-plan 21.5). */
+export type AdminPersonAccess = {
+  person: { id: string; displayName: string; email: string | null; active: boolean }
+  role: number
+  globalGroups: string[]
+  spaces: {
+    spaceId: string
+    key: string
+    name: string
+    archived: boolean
+    isPublic: boolean
+    level: number | null
+    explicitAdmin: boolean
+    restrictedPages: number
+    reasons: AccessExplanation['reasons']
+  }[]
 }
 
 export type Invite = {
@@ -1831,6 +1900,8 @@ export const api = {
       disableTwoFactor: (id: string) =>
         request<void>('POST', `/api/admin/users/${id}/disable-two-factor`),
       /** Sudo, like disableTwoFactor: a reset link is the account itself. */
+      /** What they can do in every space, and why (dev-plan 21.5). */
+      access: (id: string) => request<AdminPersonAccess>('GET', `/api/admin/users/${id}/access`),
       issueReset: (id: string) =>
         request<{ token: string; path: string; expiresAt: string; tailnetUrl: string | null }>(
           'POST', `/api/admin/users/${id}/reset-password`),
@@ -1843,6 +1914,12 @@ export const api = {
           'POST', `/api/admin/spaces/${encodeURIComponent(key)}/recover-access`, {}),
       setPublic: (key: string, input: { isPublic: boolean; publicComments?: boolean }) =>
         request<AdminSpace>('PUT', `/api/admin/spaces/${key}/public`, input),
+      /** Who can get in and why (dev-plan 21.5); needs See the user list too. */
+      access: (key: string) =>
+        request<AdminSpaceAccess>('GET', `/api/admin/spaces/${encodeURIComponent(key)}/access`),
+      /** Settles a space everyone may administer: private, everyone edits, or keep. Never automatic. */
+      review: (key: string, input: { choice: 'private' | 'edit' | 'keep'; admins?: string[] }) =>
+        request<void>('POST', `/api/admin/spaces/${encodeURIComponent(key)}/access-review`, input),
     },
     about: {
       get: () => request<AboutTesria>('GET', '/api/admin/about'),

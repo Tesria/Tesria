@@ -34,7 +34,8 @@ describe('sectionsOf (dev-plan 21.4)', () => {
       group({ name: 'Handbook Editors', kind: 'space', spaceId: 'a', spaceKey: 'HB', spaceName: 'Handbook' }),
       group({ name: 'Docs Admins', kind: 'space', spaceId: 'b', spaceKey: 'DOCS', spaceName: 'Docs' }),
     ])
-    expect(sections.map((s) => s.title)).toEqual(['Built in', 'Global', 'Custom', 'Handbook', 'Docs'])
+    expect(sections.map((s) => s.title)).toEqual(['Running Tesria', 'Global', 'Custom', 'Handbook', 'Docs'])
+    expect(sections.map((s) => s.kind)).toEqual(['builtin', 'global', 'custom', 'space', 'space'])
     expect(sections.map((s) => s.spaceKey)).toEqual([null, null, null, 'HB', 'DOCS'])
     expect(sections[3].groups.map((g) => g.name)).toEqual(['Handbook Admins', 'Handbook Editors'])
   })

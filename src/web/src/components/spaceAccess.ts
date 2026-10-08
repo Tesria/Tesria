@@ -58,3 +58,11 @@ export function globalReadersNote(viewers: number, reviewers: number): string | 
 export function pickerGroups(groups: Group[], spaceId: string | null, includeOwn: boolean): Group[] {
   return groups.filter((g) => !g.spaceId || (includeOwn && spaceId !== null && g.spaceId === spaceId))
 }
+
+/**
+ * What letting everyone administer a space hands every account (dev-plan
+ * 21.5), said before they choose it: the widest setting there is, and five
+ * of the owner's seven spaces had it without anyone choosing it.
+ */
+export const EVERYONE_ADMINISTERS =
+  'Every account will be able to change this space’s name and settings, archive it, choose who else gets in (all but its Admins), add webhooks, and permanently delete pages from its trash.'

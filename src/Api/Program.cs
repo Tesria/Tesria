@@ -785,6 +785,7 @@ api.MapAuditEndpoints();
 api.MapGroupEndpoints();
 api.MapPermissionEndpoints();
 api.MapAccessExplanationEndpoints();
+api.MapSpaceAccessAdminEndpoints();
 api.MapCollabEndpoints();
 // The collaboration service asking about its connections (14.4, SEC-02).
 app.MapCollabInternalEndpoints();

@@ -1,7 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api, ApiError, type AdminSpace } from '../../api/client'
+import { api, ApiError, Permission, type AdminSpace } from '../../api/client'
+import { useAuth } from '../../auth/AuthContext'
+import { accessDetail, accessHeadline } from '../../components/adminAccess'
 import { useConfirm } from '../../components/ConfirmDialog'
+import { OpenSpaceReview } from '../../components/OpenSpaceReview'
+import { SpaceAccessPanel } from '../../components/SpaceAccessPanel'
 
 /** Formats bytes for humans; storage figures are the point of this page. */
 function bytes(value: number): string {
@@ -15,8 +19,12 @@ function bytes(value: number): string {
  * Admin → Spaces (dev-plan 2.4).
  *
  * Metadata only, deliberately. Admins do not bypass space permissions, so this
- * shows ownership, size and counts, never content. To read a space they hold
- * no grant for, an admin uses recover-access, which is audited.
+ * shows who created each space, its size and counts, never content. To read a
+ * space they hold no grant for, an admin uses recover-access, which is audited.
+ *
+ * Since 21.5 it also says who can get in: each row's Access in counts, the
+ * full answer in a panel (who, at what level, and why), and at the top the
+ * review of spaces everyone may administer that nobody chose to leave so.
  */
 export function AdminSpacesPage() {
   const [spaces, setSpaces] = useState<AdminSpace[] | null>(null)
@@ -25,6 +33,20 @@ export function AdminSpacesPage() {
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const { ask, dialog } = useConfirm()
+  const { can } = useAuth()
+  // The panel names people, so it needs See the user list as well.
+  const mayDetail = can(Permission.UsersView)
+  const [detail, setDetail] = useState<string | null>(null)
+  // Bumped on every reload, so an open panel reads the space again.
+  const [loads, setLoads] = useState(0)
+  const panel = useRef<HTMLDivElement>(null)
+
+  function showDetail(key: string) {
+    setDetail(key)
+    // The panel sits under the table; bring it into view rather than leave
+    // the click looking like it did nothing.
+    requestAnimationFrame(() => panel.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+  }
 
   const load = useCallback(() => {
     // Settings are read only for the public-reading switch, and a role that
@@ -34,6 +56,7 @@ export function AdminSpacesPage() {
     Promise.all([api.admin.spaces.list(), api.admin.settings.get().catch(() => null)])
       .then(([rows, settings]) => {
         setSpaces(rows)
+        setLoads((n) => n + 1)
         setAllowPublic(settings?.allowPublicSpaces ?? true)
       })
       .catch((err: unknown) =>
@@ -83,9 +106,9 @@ export function AdminSpacesPage() {
    * ordinary membership of its Admins group behind (dev-plan 21.1), which the
    * space's administrators can remove.
    */
-  async function recoverAccess(s: AdminSpace) {
+  async function recoverAccess(key: string, name: string) {
     const ok = await ask({
-      title: `Give yourself access to "${s.name}"?`,
+      title: `Give yourself access to "${name}"?`,
       confirmLabel: 'Give Me Access',
       body: (
         <>
@@ -96,14 +119,15 @@ export function AdminSpacesPage() {
       ),
     })
     if (!ok) return
-    setBusy(s.id)
+    setBusy(key)
     setError(null)
     setNotice(null)
     try {
-      const r = await api.admin.spaces.recoverAccess(s.key)
+      const r = await api.admin.spaces.recoverAccess(key)
       setNotice(r.alreadyHadAccess
-        ? `You already have access to ${s.name}; nothing was changed.`
-        : `You now administer ${s.name}, as a member of its Admins group. This is recorded in the audit log.`)
+        ? `You already have access to ${name}; nothing was changed.`
+        : `You now administer ${name}, as a member of its Admins group. This is recorded in the audit log.`)
+      load()
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not give you access.')
     } finally {
@@ -136,16 +160,17 @@ export function AdminSpacesPage() {
           Spaces marked public below stay private until it is on.
         </p>
       )}
+      <OpenSpaceReview spaces={spaces} signedIn={null} onChanged={load} onDetails={(s) => showDetail(s.key)} />
       <table className="admin-table">
         <thead>
           <tr>
             <th>Space</th>
-            <th>Owner</th>
+            <th>Access</th>
+            <th>Created By</th>
             <th>Pages</th>
             <th>Storage</th>
             <th>Public</th>
             <th>Created</th>
-            <th>Access</th>
           </tr>
         </thead>
         <tbody>
@@ -158,6 +183,28 @@ export function AdminSpacesPage() {
                 <span className="badge admin-table__clip admin-table__clip--inline" title={s.key}>{s.key}</span>
                 {s.archived && <span className="badge">archived</span>}
                 {s.isPublic && <span className="badge badge--public">public</span>}
+              </td>
+              <td className="admin-spaces__access">
+                {s.access && (() => {
+                  const head = accessHeadline(s.access)
+                  return (
+                    <>
+                      <span className={`admin-spaces__headline admin-spaces__headline--${head.tone}`}>{head.text}</span>
+                      <span className="muted small">{accessDetail(s.access)}</span>
+                    </>
+                  )
+                })()}
+                <div className="admin-table__actions">
+                  {mayDetail ? (
+                    <button type="button" className="link-btn" aria-expanded={detail === s.key} onClick={() => showDetail(s.key)}>
+                      Who Has Access
+                    </button>
+                  ) : (
+                    <button type="button" className="link-btn" disabled={busy === s.key} onClick={() => void recoverAccess(s.key, s.name)}>
+                      Get Access
+                    </button>
+                  )}
+                </div>
               </td>
               <td className="muted small">{s.createdByName}</td>
               <td>{s.pageCount}</td>
@@ -178,17 +225,16 @@ export function AdminSpacesPage() {
                 </div>
               </td>
               <td className="muted small">{new Date(s.createdAt).toLocaleDateString()}</td>
-              <td>
-                <div className="admin-table__actions">
-                  <button type="button" className="link-btn" disabled={busy === s.id} onClick={() => recoverAccess(s)}>
-                    Get Access
-                  </button>
-                </div>
-              </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      <div ref={panel}>
+        {detail && mayDetail && (
+          <SpaceAccessPanel key={detail} spaceKey={detail} refresh={loads} onClose={() => setDetail(null)} onRecover={recoverAccess} />
+        )}
+      </div>
 
       {dialog}
     </>

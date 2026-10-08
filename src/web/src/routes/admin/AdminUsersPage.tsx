@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, ApiError, Permission, UserRole, UserStatus, type AdminUser, type InstanceRole } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import { Avatar } from '../../components/Avatar'
 import { useConfirm } from '../../components/ConfirmDialog'
+import { PersonAccessPanel } from '../../components/PersonAccessPanel'
 
 /** Admin → Users (dev-plan 2.2). */
 export function AdminUsersPage() {
@@ -20,6 +21,16 @@ export function AdminUsersPage() {
   const [resetLink, setResetLink] = useState<{ name: string; links: { label: string | null; url: string }[] } | null>(null)
   // The roles a person could be moved to, when the viewer may see them.
   const [roles, setRoles] = useState<InstanceRole[]>([])
+  // What one person can see (dev-plan 21.5): needs Manage spaces besides
+  // See the user list, which this tab already needs.
+  const maySeeAccess = can(Permission.SpacesManage)
+  const [accessOf, setAccessOf] = useState<string | null>(null)
+  const panel = useRef<HTMLDivElement>(null)
+
+  function showAccess(id: string) {
+    setAccessOf(id)
+    requestAnimationFrame(() => panel.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+  }
 
   const load = useCallback(async () => {
     try {
@@ -207,6 +218,11 @@ export function AdminUsersPage() {
                 </td>
                 <td>
                   <div className="admin-table__actions">
+                    {maySeeAccess && (
+                      <button type="button" className="link-btn" aria-expanded={accessOf === u.id} onClick={() => showAccess(u.id)}>
+                        What They Can See
+                      </button>
+                    )}
                     {/* The owner's own row carries nothing that could unseat or
                         lock out the instance's last way back in. */}
                     {u.role !== UserRole.Owner && (
@@ -340,6 +356,10 @@ export function AdminUsersPage() {
           })}
         </tbody>
       </table>
+
+      <div ref={panel}>
+        {accessOf && <PersonAccessPanel key={accessOf} userId={accessOf} onClose={() => setAccessOf(null)} />}
+      </div>
 
       {dialog}
     </>
