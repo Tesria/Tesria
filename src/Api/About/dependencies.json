@@ -85,29 +85,29 @@
     {
       "ecosystem": "npm",
       "name": "pg",
-      "version": "8.23.0",
+      "version": "8.23.1",
       "license": "MIT",
       "component": "Collaboration service",
       "direct": true,
-      "url": "https://www.npmjs.com/package/pg/v/8.23.0"
+      "url": "https://www.npmjs.com/package/pg/v/8.23.1"
     },
     {
       "ecosystem": "npm",
       "name": "pg-cloudflare",
-      "version": "1.4.0",
+      "version": "1.4.1",
       "license": "MIT",
       "component": "Collaboration service",
       "direct": false,
-      "url": "https://www.npmjs.com/package/pg-cloudflare/v/1.4.0"
+      "url": "https://www.npmjs.com/package/pg-cloudflare/v/1.4.1"
     },
     {
       "ecosystem": "npm",
       "name": "pg-connection-string",
-      "version": "2.14.0",
+      "version": "2.14.1",
       "license": "MIT",
       "component": "Collaboration service",
       "direct": false,
-      "url": "https://www.npmjs.com/package/pg-connection-string/v/2.14.0"
+      "url": "https://www.npmjs.com/package/pg-connection-string/v/2.14.1"
     },
     {
       "ecosystem": "npm",
@@ -130,11 +130,11 @@
     {
       "ecosystem": "npm",
       "name": "pg-protocol",
-      "version": "1.16.0",
+      "version": "1.16.1",
       "license": "MIT",
       "component": "Collaboration service",
       "direct": false,
-      "url": "https://www.npmjs.com/package/pg-protocol/v/1.16.0"
+      "url": "https://www.npmjs.com/package/pg-protocol/v/1.16.1"
     },
     {
       "ecosystem": "npm",

@@ -273,9 +273,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 ------------------------------------------------------------------------------
-pg 8.23.0 (npm)
+pg 8.23.1 (npm)
 License: MIT
-https://www.npmjs.com/package/pg/v/8.23.0
+https://www.npmjs.com/package/pg/v/8.23.1
 
 MIT License
 
@@ -300,9 +300,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-pg-cloudflare 1.4.0 (npm)
+pg-cloudflare 1.4.1 (npm)
 License: MIT
-https://www.npmjs.com/package/pg-cloudflare/v/1.4.0
+https://www.npmjs.com/package/pg-cloudflare/v/1.4.1
 
 MIT License
 
@@ -327,9 +327,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-pg-connection-string 2.14.0 (npm)
+pg-connection-string 2.14.1 (npm)
 License: MIT
-https://www.npmjs.com/package/pg-connection-string/v/2.14.0
+https://www.npmjs.com/package/pg-connection-string/v/2.14.1
 
 The MIT License (MIT)
 
@@ -400,9 +400,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-pg-protocol 1.16.0 (npm)
+pg-protocol 1.16.1 (npm)
 License: MIT
-https://www.npmjs.com/package/pg-protocol/v/1.16.0
+https://www.npmjs.com/package/pg-protocol/v/1.16.1
 
 MIT License
 
