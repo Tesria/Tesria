@@ -180,7 +180,12 @@ public class PermissionMigrationTests
         using var scope = w.Factory.Services.CreateScope();
         var sp = scope.ServiceProvider;
         var db = sp.GetRequiredService<AppDbContext>();
-        var legacy = new LegacyPermissionService(db, sp.GetRequiredService<CurrentUser>(), sp.GetRequiredService<ISiteSettingsService>());
+        // With 21.6's restriction rule, which binds explicit admins too: that
+        // change is deliberate and separate, and this test is about the move.
+        var legacy = new LegacyPermissionService(db, sp.GetRequiredService<CurrentUser>(), sp.GetRequiredService<ISiteSettingsService>())
+        {
+            AdminsPassRestrictions = false,
+        };
         var (spaces, pages) = await EverythingAsync(db);
         var answers = new Answers([], [], [], [], [], []);
         foreach (var user in w.People.Values)

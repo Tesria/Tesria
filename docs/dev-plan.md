@@ -6391,6 +6391,23 @@ questions are in `roadmap.md`.
   the user list and Manage spaces) for spaces the administrator cannot
   open, as metadata, never page titles; and the review may add the space's
   creator or the caller to its Admins, nobody else.
+- **21.6** Default access for new spaces, and page restrictions that bind
+  a space's administrators, after Confluence. · `M` · Model: Opus 5.5 · ✅
+  **built 2026-10-09, for 0.9**
+
+  The owner asked how Confluence does it, expecting Tesria's administrators
+  to administer every space unless excluded. Confluence's own docs say
+  otherwise (site admins are not space admins; they recover access, as Get
+  Access does; access only adds up, with no deny), but its "Defaults for new
+  spaces" can give "All Confluence admins" Admin on each new space, which a
+  space can then drop. He chose (2026-10-09): defaults of Tesria's
+  administrators at Administer and everyone signed in at Edit; Confluence's
+  rule that restrictions bind space admins, who may lift them instead
+  (audited, author told); and, for existing spaces, an option rather than a
+  change. Decisions worth a second look: the restriction change is a
+  security-model change (an explicit admin used to read past them), and a
+  create call that leaves access out now gets the defaults instead of
+  "everyone administers".
 
 ### Phase 22: Agents that work with you (Automate)
 

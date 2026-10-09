@@ -242,8 +242,8 @@ public static class AdminEndpoints
     /// can administer (or recover) it: since dev-plan 21.1, by adding them to
     /// the space's Admins group.
     ///
-    /// From that point the existing permission rules apply unchanged, including
-    /// the one that already lets an explicit space admin past page restrictions,
+    /// From that point the existing permission rules apply unchanged (since
+    /// 21.6 page restrictions bind them too, though they may lift them),
     /// rather than adding an "unless admin" branch to every check. It is a
     /// normal membership, so it can be removed afterwards in the space's
     /// Permissions tab, returning the admin to ordinary access. Manage Groups

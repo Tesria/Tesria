@@ -39,12 +39,13 @@ public static class SpaceAccessAdmin
     /// <param name="EveryoneAdminConfirmed">For an EveryoneAccess of Admin: someone chose it, so the review does not list it.</param>
     /// <param name="Admins">Active members of the space's Admins group; likewise the next three.</param>
     /// <param name="OtherGrants">Grants other than the four groups' own: to custom or built-in groups, or to people by name.</param>
-    /// <param name="HasExplicitAdmin">An active account holds a real Admin grant, so someone can manage it past its page restrictions.</param>
+    /// <param name="HasExplicitAdmin">An active account holds a real Admin grant, so someone can manage who administers it and lift its page restrictions.</param>
     /// <param name="RestrictedPages">Pages carrying a restriction of their own (their children inherit it).</param>
+    /// <param name="TesriaAdministrators">Tesria's administrators administer it (21.6): an Admin grant to the built-in Admins group, not counted in <paramref name="OtherGrants"/>.</param>
     public record AccessSummary(
         SpaceOperation? EveryoneAccess, bool EveryoneAdminConfirmed,
         int Admins, int Editors, int Viewers, int Reviewers, int OtherGrants,
-        bool HasExplicitAdmin, int RestrictedPages);
+        bool HasExplicitAdmin, int RestrictedPages, bool TesriaAdministrators = false);
 
     public record PersonRef(Guid Id, string DisplayName, string? Email, bool Active);
 
@@ -83,7 +84,11 @@ public static class SpaceAccessAdmin
     /// creator, the caller, or both. Nobody else, from here: choosing a
     /// space's administrators is its own administrators' business.
     /// </param>
-    public record ReviewRequest(string Choice, List<Guid>? Admins);
+    /// <param name="TesriaAdministrators">
+    /// Also let Tesria's administrators (the built-in Admins group) administer
+    /// it (21.6), as new spaces do by default: an Admin grant to that group.
+    /// </param>
+    public record ReviewRequest(string Choice, List<Guid>? Admins, bool TesriaAdministrators = false);
 
     public static IEndpointRouteBuilder MapSpaceAccessAdminEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -131,13 +136,17 @@ public static class SpaceAccessAdmin
             int Count(SpaceGroupRole role) =>
                 own.Where(g => g.SpaceId == s.Id && g.Role == role).Sum(g => active.GetValueOrDefault(g.Id));
             var spaceGrants = grants.Where(g => g.SpaceId == s.Id).ToList();
+            bool IsAdministrators(PrincipalType type, Guid id, SpaceOperation op) =>
+                type == PrincipalType.Group && id == BuiltInGroups.AdminsId && op == SpaceOperation.Admin;
             var explicitAdmin = spaceGrants.Any(g => g.Operation == SpaceOperation.Admin
                 && (g.PrincipalType == PrincipalType.User ? activeUsers.Contains(g.PrincipalId) : active.GetValueOrDefault(g.PrincipalId) > 0));
             result[s.Id] = new AccessSummary(
                 s.EveryoneAccess, s.EveryoneAdminConfirmedAt is not null,
                 Count(SpaceGroupRole.Admins), Count(SpaceGroupRole.Editors), Count(SpaceGroupRole.Viewers), Count(SpaceGroupRole.Reviewers),
-                spaceGrants.Count(g => !(g.PrincipalType == PrincipalType.Group && ownIds.Contains(g.PrincipalId))),
-                explicitAdmin, restricted.GetValueOrDefault(s.Id));
+                spaceGrants.Count(g => !(g.PrincipalType == PrincipalType.Group && ownIds.Contains(g.PrincipalId))
+                                       && !IsAdministrators(g.PrincipalType, g.PrincipalId, g.Operation)),
+                explicitAdmin, restricted.GetValueOrDefault(s.Id),
+                spaceGrants.Any(g => IsAdministrators(g.PrincipalType, g.PrincipalId, g.Operation)));
         }
         return result;
     }
@@ -236,9 +245,8 @@ public static class SpaceAccessAdmin
     /// everyone who uses it.
     /// <para>
     /// Narrowing from Administration needs someone left to administer the
-    /// space past its page restrictions: an explicit administrator it
-    /// already has, or its creator or the caller, put in its Admins group
-    /// here. Adding the caller is Get Access by another door, audited and
+    /// space explicitly: one it already has, Tesria's administrators (21.6),
+    /// or its creator or the caller, put in its Admins group here. Adding the caller is Get Access by another door, audited and
     /// alerted the same way. Lowering access needs no password, as in the
     /// Permissions tab; nobody gains anything they did not already have,
     /// except the people put in Admins, who are named in the audit entry.
@@ -265,10 +273,29 @@ public static class SpaceAccessAdmin
             });
 
         var me = current.RequireId();
+        // Tesria's administrators as its administrators (21.6), with any
+        // choice: an Admin grant to the built-in Admins group, which always
+        // holds the owner, so the space is never left without one.
+        var grantsAdministrators = req.TesriaAdministrators && !await db.SpacePermissions.AnyAsync(p =>
+            p.SpaceId == space.Id && p.PrincipalType == PrincipalType.Group
+            && p.PrincipalId == BuiltInGroups.AdminsId && p.Operation == SpaceOperation.Admin);
+        if (grantsAdministrators)
+        {
+            db.SpacePermissions.Add(new SpacePermission
+            {
+                Id = Guid.NewGuid(), SpaceId = space.Id, PrincipalType = PrincipalType.Group,
+                PrincipalId = BuiltInGroups.AdminsId, Operation = SpaceOperation.Admin, CreatedAt = DateTimeOffset.UtcNow,
+            });
+            audit.Record("space.permission_granted", "space", space.Id, new
+            {
+                PrincipalType = PrincipalType.Group, PrincipalId = BuiltInGroups.AdminsId, Operation = SpaceOperation.Admin, Via = "space.open_access_reviewed",
+            });
+        }
+
         if (choice == "keep")
         {
             space.EveryoneAdminConfirmedAt = DateTimeOffset.UtcNow;
-            audit.Record("space.open_access_kept", "space", space.Id, new { space.Key, space.Name });
+            audit.Record("space.open_access_kept", "space", space.Id, new { space.Key, space.Name, TesriaAdministrators = grantsAdministrators });
             await db.SaveChangesAsync();
             return Results.NoContent();
         }
@@ -288,11 +315,11 @@ public static class SpaceAccessAdmin
             {
                 ["admins"] = ["That account is suspended or gone, so it could not administer the space. Choose yourself instead."],
             });
-        if (activeWanted.Count == 0
+        if (activeWanted.Count == 0 && !req.TesriaAdministrators
             && !await SpaceGroups.HasAdminAfterAsync(db, space.Id, new SpaceGroups.AdminLoss(LowersEveryone: true)))
             return Results.ValidationProblem(new Dictionary<string, string[]>
             {
-                ["admins"] = ["Nobody would administer this space afterwards. Choose who should: the person who created it, you, or both."],
+                ["admins"] = ["Nobody would administer this space afterwards. Choose who should: Tesria's administrators, the person who created it, or you."],
             });
 
         var adminsGroup = await db.Groups
@@ -307,8 +334,8 @@ public static class SpaceAccessAdmin
         {
             db.UserGroups.Add(new UserGroup { GroupId = adminsGroup, UserId = person.Id, AddedAt = now });
             added.Add(person.DisplayName);
-            // The caller reaching past the space's page restrictions is Get
-            // Access, and every administrator hears of it as they do of that.
+            // The caller making themselves its administrator is Get Access,
+            // and every administrator hears of it as they do of that.
             if (person.Id == me)
             {
                 audit.Record("space.access_recovered", "space", space.Id, new { space.Key, space.Name, GroupId = adminsGroup });
@@ -322,6 +349,7 @@ public static class SpaceAccessAdmin
         audit.Record("space.open_access_reviewed", "space", space.Id, new
         {
             space.Key, space.Name, From = SpaceOperation.Admin.ToString(), To = to?.ToString() ?? "None", AddedAdmins = added,
+            TesriaAdministrators = grantsAdministrators,
         });
         await db.SaveChangesAsync();
         return Results.NoContent();

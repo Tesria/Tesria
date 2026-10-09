@@ -154,7 +154,7 @@ function Answer({ answer }: { answer: AccessExplanation }) {
         </p>
       )}
       {answer.explicitAdmin && (
-        <p className="muted small">They hold Admin here themselves, so page restrictions do not stop them.</p>
+        <p className="muted small">They hold Admin here themselves, so they may lift page restrictions, though restrictions still bind them.</p>
       )}
       {answer.canRecoverAccess && (
         <p className="muted small">
@@ -182,9 +182,9 @@ function Answer({ answer }: { answer: AccessExplanation }) {
           ) : (
             <>
               <p className="muted small">
-                {page.adminBypass
-                  ? 'These restrictions do not apply to them: they are an administrator of the space.'
-                  : 'Restrictions let in only the people and groups they name. To read, they must be named in a reading restriction if there is one; to edit, in an editing one too.'}
+                Restrictions let in only the people and groups they name, the space’s administrators included. To read,
+                they must be named in a reading restriction if there is one; to edit, in an editing one too.
+                {page.canLift && ' As an administrator of the space they may lift these restrictions, in its Permissions tab.'}
               </p>
               <ul className="access-explainer__reasons">
                 {page.restrictions.map((r, i) => (

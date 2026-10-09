@@ -55,6 +55,13 @@ public class SpaceAccessAdminTests
     private static Task<HttpResponseMessage> EveryoneAsync(HttpClient c, string key, int? access) =>
         c.PutAsJsonAsync($"/api/spaces/{key}/permissions/everyone", new { Access = access });
 
+    /// <summary>Forgets that anyone chose Administer for everyone, as for every space open before 0.9.</summary>
+    private static void Unconfirm(TestAppFactory f, string key) => Scoped(f, async db =>
+    {
+        (await db.Spaces.SingleAsync(s => s.Key == key)).EveryoneAdminConfirmedAt = null;
+        return await db.SaveChangesAsync();
+    });
+
     /// <summary>Empties a space's Admins group, as every space open before 21.1 was left.</summary>
     private static void EmptyAdmins(TestAppFactory f, string key) => Scoped(f, async db =>
     {
@@ -71,9 +78,11 @@ public class SpaceAccessAdminTests
         using var f = new TestAppFactory();
         var owner = await PersonAsync(f);
         var bob = await PersonAsync(f);
-        await owner.Client.CreateSpaceAsync("OLDOPEN");            // left out: the old default, Admin
+        await owner.Client.CreateSpaceAsync("OLDOPEN");
         await CreateAsync(owner.Client, "CHOSEN", Admin);           // asked for by name
         await CreateAsync(owner.Client, "PRIV", null, bob.Id);
+        // As every space open since before 0.9 is: nobody chose it.
+        Unconfirm(f, "OLDOPEN");
 
         var open = (await SpaceRowAsync(owner.Client, "OLDOPEN")).GetProperty("access");
         Assert.Equal(Admin, open.GetProperty("everyoneAccess").GetInt32());

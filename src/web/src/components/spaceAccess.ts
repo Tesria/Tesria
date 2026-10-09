@@ -35,7 +35,7 @@ export function everyoneSummary(level: number | null): string {
     case 1:
       return 'Everyone with an account can read and edit this space. Only its Admins can manage it.'
     case 2:
-      return 'Everyone with an account can read, edit and manage this space. Page restrictions still apply to them: only the people in Admins, or given Admin below, see past them.'
+      return 'Everyone with an account can read, edit and manage this space. Page restrictions still apply to them, and only the people in Admins, or given Admin below, may lift one.'
     default:
       return 'Only the people in this space’s groups, and anyone given access under Other Access, can open it.'
   }

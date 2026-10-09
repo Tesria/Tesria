@@ -65,13 +65,16 @@ public static class AccessExplanation
     /// <param name="CanEdit"><see cref="IPermissionService.CanEditPageAsync"/> as them.</param>
     /// <param name="Draft">Not yet published: only its author and the space's editors read it.</param>
     /// <param name="IsAuthor">They started it, which matters only for a draft.</param>
-    /// <param name="AdminBypass">An explicit administrator of the space, whom page restrictions do not bind.</param>
+    /// <param name="CanLift">
+    /// An explicit administrator of the space: restrictions bind them like
+    /// anyone (21.6), but they may lift them.
+    /// </param>
     public record PageAnswer(
-        Guid Id, string Title, bool CanView, bool CanEdit, bool Draft, bool IsAuthor, bool AdminBypass,
+        Guid Id, string Title, bool CanView, bool CanEdit, bool Draft, bool IsAuthor, bool CanLift,
         List<Restriction> Restrictions);
 
     /// <param name="Level">What they may do in the space, from the real check: null for nothing.</param>
-    /// <param name="ExplicitAdmin">They hold a real Admin grant, so page restrictions do not bind them.</param>
+    /// <param name="ExplicitAdmin">They hold a real Admin grant: they may change who administers it, and lift page restrictions.</param>
     /// <param name="CanRecoverAccess">
     /// They are not an explicit administrator but hold Manage spaces, so
     /// Get Access in Administration would make them one (audited).
@@ -198,10 +201,10 @@ public static class AccessExplanation
             bool Passes(PageOperation op) =>
                 restrictions.All(r => r.Operation != op) || restrictions.Any(r => r.Operation == op && r.Matches);
             var explainedView = explainedLevel >= SpaceOperation.View
-                && (explainedAdmin || Passes(PageOperation.View))
+                && Passes(PageOperation.View)
                 && (!draft || isAuthor || explainedLevel >= SpaceOperation.Edit);
             var explainedEdit = explainedLevel >= SpaceOperation.Edit
-                && (explainedAdmin || (Passes(PageOperation.View) && Passes(PageOperation.Edit)));
+                && Passes(PageOperation.View) && Passes(PageOperation.Edit);
             if (explainedView != canView || explainedEdit != canEdit)
                 log.LogWarning("Access explanation disagrees with the permission check for {UserId} on page {PageId}.", userId, targetId);
         }

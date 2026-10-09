@@ -69,8 +69,9 @@ function ReviewForm({ space, onDone }: { space: AdminSpace; onDone: () => void }
   const [choice, setChoice] = useState<Choice | null>(null)
   const hasAdmin = space.access?.hasExplicitAdmin ?? false
   const creatorIsMe = space.createdById === me?.id
-  // Its creator by default when it has nobody to administer it: they made
-  // it, and it keeps the administrator a person rather than whoever clicked.
+  // Tesria's administrators by default (21.6), as new spaces start; its
+  // creator too when it has nobody to administer it.
+  const [tesriaAdmins, setTesriaAdmins] = useState(true)
   const [creator, setCreator] = useState(!hasAdmin)
   const [self, setSelf] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -81,14 +82,14 @@ function ReviewForm({ space, onDone }: { space: AdminSpace; onDone: () => void }
     ...(creator ? [space.createdById] : []),
     ...(self && me ? [me.id] : []),
   ])]
-  const missingAdmin = narrowing && !hasAdmin && admins.length === 0
+  const missingAdmin = narrowing && !hasAdmin && admins.length === 0 && !tesriaAdmins
 
   async function apply() {
     if (!choice || missingAdmin) return
     setBusy(true)
     setError(null)
     try {
-      await api.admin.spaces.review(space.key, { choice, admins: narrowing ? admins : [] })
+      await api.admin.spaces.review(space.key, { choice, admins: narrowing ? admins : [], tesriaAdministrators: tesriaAdmins })
       onDone()
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not change the space.')
@@ -113,10 +114,15 @@ function ReviewForm({ space, onDone }: { space: AdminSpace; onDone: () => void }
         {option('edit', 'Let everyone edit it.', 'Everyone keeps reading and editing; only its Admins manage it.')}
         {option('keep', 'Keep it as it is.', 'Everyone keeps administering it, and it leaves this list.')}
       </fieldset>
-      {narrowing && (
+      {choice && (
         <fieldset className="open-review__admins">
           <legend>Who administers it afterwards</legend>
-          {hasAdmin && <p className="muted small">It has administrators of its own already. You can add to them.</p>}
+          {narrowing && hasAdmin && <p className="muted small">It has administrators of its own already. You can add to them.</p>}
+          <label className="open-review__choice">
+            <input type="checkbox" checked={tesriaAdmins} onChange={(e) => setTesriaAdmins(e.target.checked)} />
+            <span>Tesria’s administrators <span className="muted small">(as new spaces start; page restrictions still bind them)</span></span>
+          </label>
+          {narrowing && <>
           <label className="open-review__choice">
             <input type="checkbox" checked={creator} onChange={(e) => setCreator(e.target.checked)} />
             <span>{space.createdByName}{creatorIsMe ? ' (you)' : ''}, who created it</span>
@@ -127,6 +133,7 @@ function ReviewForm({ space, onDone }: { space: AdminSpace; onDone: () => void }
               <span>You <span className="muted small">(like Get Access: recorded, and every administrator is alerted)</span></span>
             </label>
           )}
+          </>}
           {missingAdmin && <p className="small">Choose at least one, or nobody could manage it.</p>}
         </fieldset>
       )}

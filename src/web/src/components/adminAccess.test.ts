@@ -12,6 +12,7 @@ const summary = (over: Partial<AdminSpaceAccessSummary> = {}): AdminSpaceAccessS
   otherGrants: 0,
   hasExplicitAdmin: false,
   restrictedPages: 0,
+  tesriaAdministrators: false,
   ...over,
 })
 
@@ -35,6 +36,8 @@ describe('accessDetail', () => {
     expect(accessDetail(summary({ admins: 1, editors: 3, otherGrants: 2, restrictedPages: 1 })))
       .toBe('1 admin, 3 editors · 2 other grants · 1 restricted page')
     expect(accessDetail(summary({ viewers: 2, reviewers: 1 }))).toBe('2 viewers, 1 reviewer')
+    expect(accessDetail(summary({ everyoneAccess: 1, admins: 1, tesriaAdministrators: true })))
+      .toBe('Tesria administrators administer · 1 admin')
   })
 
   it('says when nobody is in its groups', () => {
@@ -70,8 +73,8 @@ describe('reasonShort', () => {
 
 describe('restrictionNote', () => {
   it('says whether restricted pages bind them', () => {
-    expect(restrictionNote({ level: 0, explicitAdmin: false, restrictedPages: 2 })).toBe('2 restricted pages may still be hidden from them.')
-    expect(restrictionNote({ level: 2, explicitAdmin: true, restrictedPages: 1 })).toBe('Sees past its 1 restricted page.')
+    expect(restrictionNote({ level: 0, explicitAdmin: false, restrictedPages: 2 })).toBe('2 restricted pages may be hidden from them.')
+    expect(restrictionNote({ level: 2, explicitAdmin: true, restrictedPages: 1 })).toBe('1 restricted page may be hidden from them; they may lift the restrictions.')
     expect(restrictionNote({ level: 2, explicitAdmin: false, restrictedPages: 0 })).toBeNull()
     expect(restrictionNote({ level: null, explicitAdmin: false, restrictedPages: 3 })).toBeNull()
   })

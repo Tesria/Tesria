@@ -25,6 +25,7 @@ const ACTION_LABEL: Record<string, string> = {
   'page.updated': 'updated a page',
   'comment.created': 'commented on a page',
   'user.mentioned': 'mentioned you on a page',
+  'page.restrictions_lifted': 'lifted the restrictions on your page',
 }
 
 function describe(n: AppNotification): string {

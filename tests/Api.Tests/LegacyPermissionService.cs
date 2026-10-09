@@ -12,9 +12,17 @@ namespace Tesria.Api.Tests;
 // made public), kept only as the oracle for PermissionMigrationTests: the
 // seed must leave everyone able to do exactly what these rules allowed on
 // the same data before it ran. Do not change the rules here; they are
-// history.
+// history. The one switch, AdminsPassRestrictions, separates 21.1's move from
+// 21.6's deliberate change to page restrictions (they now bind explicit
+// admins too), so the move is still checked on its own.
 public sealed class LegacyPermissionService(AppDbContext db, CurrentUser current, ISiteSettingsService settings)
 {
+    /// <summary>
+    /// Whether an explicit space admin reads past page restrictions, as they
+    /// did before 21.6. Off to compare with today's rules on everything else.
+    /// </summary>
+    public bool AdminsPassRestrictions { get; init; } = true;
+
     /// <summary>
     /// Set only by <see cref="AsUser"/>. Every rule below reads
     /// <see cref="UserId"/>, never the request's identity directly, so there
@@ -29,10 +37,10 @@ public sealed class LegacyPermissionService(AppDbContext db, CurrentUser current
     private Guid? UserId => _asAnonymous ? null : _asUserId ?? current.Id;
 
     public LegacyPermissionService AsUser(Guid userId) =>
-        new LegacyPermissionService(db, current, settings) { _asUserId = userId };
+        new LegacyPermissionService(db, current, settings) { _asUserId = userId, AdminsPassRestrictions = AdminsPassRestrictions };
 
     public LegacyPermissionService AsAnonymous() =>
-        new LegacyPermissionService(db, current, settings) { _asAnonymous = true };
+        new LegacyPermissionService(db, current, settings) { _asAnonymous = true, AdminsPassRestrictions = AdminsPassRestrictions };
 
     // -- the anonymous principal (dev-plan 5.1) --------------------------------
     //
@@ -196,7 +204,7 @@ public sealed class LegacyPermissionService(AppDbContext db, CurrentUser current
         // holding an *explicit* admin grant. In a default-open space everyone
         // would otherwise count as an admin, which would make page restrictions
         // meaningless exactly where they are most used.
-        if (await HasExplicitSpaceAdminAsync(page.SpaceId)) return true;
+        if (AdminsPassRestrictions && await HasExplicitSpaceAdminAsync(page.SpaceId)) return true;
 
         var ancestry = await AncestryAsync(pageId, page.SpaceId);
         var restrictions = await db.PageRestrictions.AsNoTracking()

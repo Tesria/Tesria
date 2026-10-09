@@ -77,7 +77,7 @@ export function SpaceAccessPanel({ spaceKey, refresh = 0, onClose, onRecover }: 
           </ul>
           {!access.hasExplicitAdmin && (
             <p className="small">
-              Nobody administers it explicitly, so nobody sees past its page restrictions
+              Nobody administers it explicitly, so nobody can lift its page restrictions or choose its Admins
               {access.everyoneAccess !== 2 && ', and nobody can manage it without Get Access'}.
             </p>
           )}
@@ -105,7 +105,7 @@ export function SpaceAccessPanel({ spaceKey, refresh = 0, onClose, onRecover }: 
             <p className="small">
               {access.restrictedPages} page{access.restrictedPages === 1 ? ' is' : 's are'} restricted to particular people,
               which narrows all of the above for {access.restrictedPages === 1 ? 'that page and its children' : 'those pages and their children'}.
-              Only its explicit administrators see past that.
+              That binds its administrators too; its explicit administrators may lift a restriction, which tells the page’s author.
             </p>
           )}
 

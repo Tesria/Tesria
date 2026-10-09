@@ -8,7 +8,7 @@
 // (services, routes, the one published port pair), ExportEndpoints
 // (Pdf:AppOrigin, render tokens), docs/architecture.md (collaboration,
 // persistence, backups contract), Domain/Permission.cs (space operations,
-// inherited page restrictions, space admins past restrictions),
+// inherited page restrictions, space admins lifting restrictions),
 // InstancePermissions, DatabaseRoles (the least-privilege role),
 // WikiPack/PackUpgrades, AppVersion, .github/workflows, README, CLAUDE.md's
 // conventions, SECURITY.md, LICENSE and NOTICE. The code examples are the

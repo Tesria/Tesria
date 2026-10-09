@@ -48,8 +48,9 @@ export function accessDetail(a: AdminSpaceAccessSummary): string {
     a.reviewers > 0 && count(a.reviewers, 'reviewer'),
   ].filter(Boolean) as string[]
   const parts: string[] = []
+  if (a.tesriaAdministrators) parts.push('Tesria administrators administer')
   if (groups.length > 0) parts.push(groups.join(', '))
-  else if (a.everyoneAccess == null && a.otherGrants === 0) parts.push('Nobody in its groups')
+  else if (a.everyoneAccess == null && a.otherGrants === 0 && !a.tesriaAdministrators) parts.push('Nobody in its groups')
   else parts.push('Nobody in its groups yet')
   if (a.otherGrants > 0) parts.push(count(a.otherGrants, 'other grant'))
   if (a.restrictedPages > 0) parts.push(count(a.restrictedPages, 'restricted page'))
@@ -76,12 +77,12 @@ export function reasonShort(r: Reason): string {
 }
 
 /**
- * The note under a person's level in one space: whether page restrictions
- * bind them. Only an explicit administrator (in its Admins, or given Admin)
- * sees past them; everyone else may still find some pages hidden.
+ * The note under a person's level in one space: its restricted pages may
+ * be hidden from them. Restrictions bind everyone (21.6); an explicit
+ * administrator (in its Admins, or given Admin) may lift them instead.
  */
 export function restrictionNote(row: { level: number | null; explicitAdmin: boolean; restrictedPages: number }): string | null {
   if (row.level == null || row.restrictedPages === 0) return null
-  if (row.explicitAdmin) return `Sees past its ${count(row.restrictedPages, 'restricted page')}.`
-  return `${count(row.restrictedPages, 'restricted page')} may still be hidden from them.`
+  const hidden = `${count(row.restrictedPages, 'restricted page')} may be hidden from them`
+  return row.explicitAdmin ? `${hidden}; they may lift the restrictions.` : `${hidden}.`
 }

@@ -66,14 +66,31 @@ public sealed class TestAppFactory : WebApplicationFactory<Program>
     /// </summary>
     public bool OpenRegistration { get; init; } = true;
 
+    /// <summary>
+    /// Whether a new space with nothing said starts as spaces did before
+    /// dev-plan 21.6: open to everyone signed in as administrators, and no
+    /// group granted. Most tests were written then and lean on it (a second
+    /// account reaching a space its first one made); the ones about the
+    /// shipped defaults set this to false.
+    /// </summary>
+    public bool LegacySpaceDefaults { get; init; } = true;
+
     protected override IHost CreateHost(IHostBuilder builder)
     {
         var host = base.CreateHost(builder);
-        if (OpenRegistration)
+        if (OpenRegistration || LegacySpaceDefaults)
         {
             using var scope = host.Services.CreateScope();
             scope.ServiceProvider.GetRequiredService<Tesria.Api.Infrastructure.Settings.ISiteSettingsService>()
-                .UpdateAsync(s => s.AllowPublicRegistration = true, actorId: null).GetAwaiter().GetResult();
+                .UpdateAsync(s =>
+                {
+                    if (OpenRegistration) s.AllowPublicRegistration = true;
+                    if (LegacySpaceDefaults)
+                    {
+                        s.NewSpaceEveryoneAccess = Tesria.Api.Domain.SpaceOperation.Admin;
+                        s.NewSpaceGroupsJson = "[]";
+                    }
+                }, actorId: null).GetAwaiter().GetResult();
         }
         return host;
     }

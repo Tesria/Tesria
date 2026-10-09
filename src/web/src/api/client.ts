@@ -513,6 +513,30 @@ export const GlobalGroupId = {
   Reviewers: '00000000-0000-0000-0001-000000000005',
 } as const
 
+/** The built-in Admins group: Tesria's administrators (BuiltInGroups.AdminsId). */
+export const TESRIA_ADMINS_GROUP_ID = '00000000-0000-0000-0001-000000000002'
+
+/**
+ * Default access for new spaces (dev-plan 21.6): what everyone signed in
+ * gets, and which groups are granted what. A starting point the creator may
+ * change.
+ */
+export type SpaceDefaults = {
+  everyoneAccess: number | null
+  groups: { groupId: string; name: string; kind: GroupKind; level: number }[]
+}
+
+/** A page carrying restrictions of its own, for its space's administrators (21.6). */
+export type RestrictedPage = {
+  id: string
+  title: string
+  createdByName: string | null
+  draft: boolean
+  youCanRead: boolean
+  pagesUnder: number
+  restrictions: { operation: number; principalType: number; principalName: string }[]
+}
+
 /** A space whose groups the caller may give with an invite (21.3), and its four groups. */
 export type InviteSpace = { id: string; key: string; name: string; groups: { id: string; role: number }[] }
 
@@ -603,7 +627,8 @@ export type AccessExplanation = {
     canEdit: boolean
     draft: boolean
     isAuthor: boolean
-    adminBypass: boolean
+    /** An explicit administrator of the space: bound by restrictions, but may lift them (21.6). */
+    canLift: boolean
     restrictions: {
       pageId: string
       pageTitle: string
@@ -908,9 +933,11 @@ export type AdminSpaceAccessSummary = {
   viewers: number
   reviewers: number
   otherGrants: number
-  /** An active account holds a real Admin grant: someone manages it past its page restrictions. */
+  /** An active account holds a real Admin grant: someone can choose its Admins and lift its page restrictions. */
   hasExplicitAdmin: boolean
   restrictedPages: number
+  /** Tesria's administrators administer it (21.6); not counted in otherGrants. */
+  tesriaAdministrators: boolean
 }
 
 export type AccessPersonRef = { id: string; displayName: string; email: string | null; active: boolean }
@@ -1703,8 +1730,15 @@ export const api = {
       description?: string | null
       everyoneAccess?: number | null
       members?: { role: number; userIds: string[] }[]
+      /** Groups it grants (21.6); left out takes the instance's defaults. */
+      groups?: { groupId: string; level: number }[]
     }) =>
       request<Space>('POST', '/api/spaces', input),
+    /** Default access for new spaces (21.6), which the New Space wizard starts from. */
+    defaults: () => request<SpaceDefaults>('GET', '/api/space-defaults'),
+    /** Its pages carrying restrictions (21.6), for its explicit administrators. */
+    restrictedPages: (key: string) =>
+      request<RestrictedPage[]>('GET', `/api/spaces/${encodeURIComponent(key)}/restricted-pages`),
     update: (
       key: string,
       input: {
@@ -1918,8 +1952,11 @@ export const api = {
       access: (key: string) =>
         request<AdminSpaceAccess>('GET', `/api/admin/spaces/${encodeURIComponent(key)}/access`),
       /** Settles a space everyone may administer: private, everyone edits, or keep. Never automatic. */
-      review: (key: string, input: { choice: 'private' | 'edit' | 'keep'; admins?: string[] }) =>
+      review: (key: string, input: { choice: 'private' | 'edit' | 'keep'; admins?: string[]; tesriaAdministrators?: boolean }) =>
         request<void>('POST', `/api/admin/spaces/${encodeURIComponent(key)}/access-review`, input),
+      /** Default access for new spaces (21.6). */
+      setDefaults: (input: { everyoneAccess: number | null; groups: { groupId: string; level: number }[] }) =>
+        request<SpaceDefaults>('PUT', '/api/admin/space-defaults', input),
     },
     about: {
       get: () => request<AboutTesria>('GET', '/api/admin/about'),
@@ -2150,6 +2187,8 @@ export const api = {
       request<void>('POST', `/api/pages/${pageId}/restrictions`, input),
     remove: (pageId: string, id: string) =>
       request<void>('DELETE', `/api/pages/${pageId}/restrictions/${id}`),
+    /** Every restriction the page carries, for its space's explicit administrators (21.6); its author is told. */
+    lift: (pageId: string) => request<void>('POST', `/api/pages/${pageId}/restrictions/lift`, {}),
   },
   /**
    * One page of the audit log, newest first (T7-019). `nextBefore` is what

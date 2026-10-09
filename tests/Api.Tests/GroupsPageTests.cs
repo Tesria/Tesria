@@ -483,9 +483,11 @@ public class GroupsPageTests
         var rule = Assert.Single(blocked.GetProperty("page").GetProperty("restrictions").EnumerateArray());
         Assert.True(rule.GetProperty("inherited").GetBoolean());
         Assert.False(rule.GetProperty("matches").GetBoolean());
-        // The owner, an explicit admin, passes regardless.
+        // The owner reads it because the restriction names them; as an
+        // explicit admin they may lift it, but it binds them (21.6).
         var mine = await AgreesAsync(f, owner.Client, owner.Id, spaceId, "RESTR", child);
-        Assert.True(mine.GetProperty("page").GetProperty("adminBypass").GetBoolean());
+        Assert.True(mine.GetProperty("page").GetProperty("canView").GetBoolean());
+        Assert.True(mine.GetProperty("page").GetProperty("canLift").GetBoolean());
 
         // Adding their group to it lets them back in; an Edit restriction
         // naming only the Viewers group then keeps them from editing.

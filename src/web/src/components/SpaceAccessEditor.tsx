@@ -1,7 +1,8 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
-  api, ApiError, PrincipalType, SpaceGroupRole, spaceOperationName,
-  type Directory, type GroupMember, type SpaceAccess, type SpaceGroup, type SpacePermission,
+  api, ApiError, PrincipalType, SpaceGroupRole, spaceOperationName, TESRIA_ADMINS_GROUP_ID,
+  type Directory, type GroupMember, type RestrictedPage, type SpaceAccess, type SpaceGroup, type SpacePermission,
 } from '../api/client'
 import { PrincipalPicker } from './PrincipalPicker'
 import { useConfirm } from './ConfirmDialog'
@@ -13,7 +14,7 @@ import {
 const GROUP_LEVEL: Record<number, string> = {
   [SpaceGroupRole.Viewers]: 'Can view',
   [SpaceGroupRole.Editors]: 'Can view and edit',
-  [SpaceGroupRole.Admins]: 'Can view, edit and manage the space; page restrictions do not stop them',
+  [SpaceGroupRole.Admins]: 'Can view, edit and manage the space, and lift page restrictions',
   [SpaceGroupRole.Reviewers]: 'Can view; reviewing arrives with review mode',
 }
 
@@ -106,6 +107,24 @@ export function SpaceAccessEditor({ spaceKey }: { spaceKey: string }) {
   if (!access) return error ? <p className="alert alert--error">{error}</p> : <p className="muted">Loading…</p>
 
   const globals = globalReadersNote(access.globalViewers, access.globalReviewers)
+  // Tesria's administrators as administrators of this space (21.6): an
+  // Admin grant to the built-in Admins group, shown as one switch.
+  const adminsGrant = access.grants.find((r) =>
+    r.principalType === PrincipalType.Group && r.principalId === TESRIA_ADMINS_GROUP_ID && r.operation === 2)
+
+  async function setTesriaAdmins(on: boolean) {
+    setError(null)
+    setBusy(true)
+    try {
+      if (on) await api.spacePermissions.grant(spaceKey, { principalType: PrincipalType.Group, principalId: TESRIA_ADMINS_GROUP_ID, operation: 2 })
+      else if (adminsGrant) await api.spacePermissions.revoke(spaceKey, adminsGrant.id)
+      load()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not change it.')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
     <div className="space-access">
@@ -150,6 +169,20 @@ export function SpaceAccessEditor({ spaceKey }: { spaceKey: string }) {
       </section>
 
       <section className="profile__section profile__section--wide">
+        <h2>Tesria Administrators</h2>
+        <label className="open-review__choice">
+          <input type="checkbox" checked={!!adminsGrant} disabled={busy || !access.canManageAdmins}
+            onChange={(e) => void setTesriaAdmins(e.target.checked)} />
+          <span>Tesria’s administrators can administer this space</span>
+        </label>
+        <p className="muted small">
+          New spaces start this way unless Administration’s defaults say otherwise. Untick it for a space that
+          should stay among its own people. Page restrictions bind them like anyone.
+          {!access.canManageAdmins && ' Only the people in this space’s Admins group can change it.'}
+        </p>
+      </section>
+
+      <section className="profile__section profile__section--wide">
         <h2>Other Access</h2>
         <p className="muted small">
           Access given to people, or to groups that are not this space’s own. Admin includes Edit,
@@ -167,7 +200,7 @@ export function SpaceAccessEditor({ spaceKey }: { spaceKey: string }) {
           <p className="muted small">Nobody else.</p>
         ) : (
           <ul className="version-list">
-            {access.grants.map((r) => (
+            {access.grants.filter((r) => r !== adminsGrant).map((r) => (
               <li key={r.id} className="version">
                 <span className="badge">{r.principalType === PrincipalType.User ? 'person' : 'group'}</span>
                 <span className="version__num">{r.principalName ?? r.principalId}</span>
@@ -184,8 +217,89 @@ export function SpaceAccessEditor({ spaceKey }: { spaceKey: string }) {
           </ul>
         )}
       </section>
+
+      {access.canManageAdmins && <RestrictedPagesSection spaceKey={spaceKey} ask={ask} />}
       {dialog}
     </div>
+  )
+}
+
+/**
+ * The space's restricted pages (dev-plan 21.6), for its explicit
+ * administrators: restrictions bind them like anyone, Confluence's rule, so
+ * they see that a page is restricted and to whom, and may lift it. Lifting
+ * is recorded and tells the page's author, so it is never a quiet way in.
+ */
+function RestrictedPagesSection({ spaceKey, ask }: { spaceKey: string; ask: Ask }) {
+  const [pages, setPages] = useState<RestrictedPage[] | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [version, setVersion] = useState(0)
+
+  useEffect(() => {
+    let live = true
+    api.spaces.restrictedPages(spaceKey)
+      .then((r) => { if (live) setPages(r) })
+      .catch((err: unknown) => { if (live) setError(err instanceof ApiError ? err.message : 'Could not load its restricted pages.') })
+    return () => { live = false }
+  }, [spaceKey, version])
+
+  async function lift(p: RestrictedPage) {
+    const ok = await ask({
+      title: `Lift the restrictions on “${p.title}”?`,
+      danger: true,
+      confirmLabel: 'Lift the Restrictions',
+      body: (
+        <>
+          <p>
+            Everyone who can open this space will be able to read it
+            {p.pagesUnder > 0 && `, and the ${p.pagesUnder} page${p.pagesUnder === 1 ? '' : 's'} under it unless they carry restrictions of their own`}.
+          </p>
+          <p>{p.createdByName ? `${p.createdByName}, who wrote it, is told.` : 'Its author is told.'} It is recorded in the audit log, with what was removed.</p>
+        </>
+      ),
+    })
+    if (!ok) return
+    setError(null)
+    try {
+      await api.pageRestrictions.lift(p.id)
+      setVersion((v) => v + 1)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not lift the restrictions.')
+    }
+  }
+
+  return (
+    <section className="profile__section profile__section--wide">
+      <h2>Restricted Pages</h2>
+      <p className="muted small">
+        Pages restricted to particular people. The restrictions bind this space’s administrators too: you see that
+        a page is restricted, and to whom, but read it only if you are named. Lifting the restrictions opens it to
+        everyone who can open the space, and tells its author.
+      </p>
+      {error && <p className="alert alert--error">{error}</p>}
+      {pages && pages.length === 0 && <p className="muted small">None.</p>}
+      {pages && pages.length > 0 && (
+        <ul className="version-list">
+          {pages.map((p) => (
+            <li key={p.id} className="version restricted-page">
+              <span className="version__num">
+                {p.youCanRead
+                  ? <Link to={`/spaces/${encodeURIComponent(spaceKey)}/pages/${p.id}`}>{p.title}</Link>
+                  : p.title}
+              </span>
+              {p.draft && <span className="badge">draft</span>}
+              <span className="muted small">
+                {p.restrictions.map((r) => `${r.operation === 0 ? 'Read' : 'Edit'}: ${r.principalName}`).join(' · ')}
+                {p.pagesUnder > 0 && ` · ${p.pagesUnder} page${p.pagesUnder === 1 ? '' : 's'} under it`}
+              </span>
+              <span className="version__actions">
+                <button type="button" className="link-btn link-btn--danger" onClick={() => void lift(p)}>Lift</button>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }
 

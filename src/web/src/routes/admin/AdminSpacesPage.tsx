@@ -4,6 +4,7 @@ import { api, ApiError, Permission, type AdminSpace } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import { accessDetail, accessHeadline } from '../../components/adminAccess'
 import { useConfirm } from '../../components/ConfirmDialog'
+import { NewSpaceDefaultsCard } from '../../components/NewSpaceDefaultsCard'
 import { OpenSpaceReview } from '../../components/OpenSpaceReview'
 import { SpaceAccessPanel } from '../../components/SpaceAccessPanel'
 
@@ -229,6 +230,8 @@ export function AdminSpacesPage() {
           ))}
         </tbody>
       </table>
+
+      <NewSpaceDefaultsCard />
 
       <div ref={panel}>
         {detail && mayDetail && (

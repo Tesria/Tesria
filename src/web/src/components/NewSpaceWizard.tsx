@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, ApiError, GlobalGroupId, LIMITS, SpaceGroupRole, type Directory } from '../api/client'
+import { api, ApiError, GlobalGroupId, LIMITS, SpaceGroupRole, type Directory, type SpaceDefaults } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { Wizard, type WizardStep } from './Wizard'
 import { useConfirm } from './ConfirmDialog'
@@ -19,7 +19,7 @@ const STEPS: WizardStep[] = [
 
 /** Each of a space's groups, in the order the Permissions tab shows them, with what it may do. */
 const GROUPS: { role: number; name: string; what: string }[] = [
-  { role: SpaceGroupRole.Admins, name: 'Admins', what: 'Can view, edit and manage the space, and see past page restrictions.' },
+  { role: SpaceGroupRole.Admins, name: 'Admins', what: 'Can view, edit and manage the space, and lift page restrictions.' },
   { role: SpaceGroupRole.Editors, name: 'Editors', what: 'Can view and edit.' },
   { role: SpaceGroupRole.Viewers, name: 'Viewers', what: 'Can view.' },
   { role: SpaceGroupRole.Reviewers, name: 'Reviewers', what: 'Can view for now. Reviewing changes arrives with review mode.' },
@@ -45,10 +45,19 @@ export function NewSpaceWizard({ onCancel }: { onCancel: () => void }) {
   const [chosen, setChosen] = useState<Record<number, string[]>>({})
   const [people, setPeople] = useState<Directory[]>([])
   const [globalReaders, setGlobalReaders] = useState(false)
+  // The instance's default access for new spaces (21.6): where this space
+  // starts, and the groups it grants unless unticked here.
+  const [granted, setGranted] = useState<(SpaceDefaults['groups'][number] & { on: boolean })[]>([])
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
+    api.spaces.defaults()
+      .then((d) => {
+        setAudience(d.everyoneAccess == null ? { kind: 'groups' } : { kind: 'everyone', level: d.everyoneAccess as 0 | 1 | 2 })
+        setGranted(d.groups.map((g) => ({ ...g, on: true })))
+      })
+      .catch(() => {})
     api.users.list().then(setPeople).catch(() => {})
     // Whether Global Viewers or Global Reviewers has anyone, to say so on step 2.
     api.groups.list()
@@ -99,6 +108,7 @@ export function NewSpaceWizard({ onCancel }: { onCancel: () => void }) {
         description: description.trim() || null,
         everyoneAccess: everyoneAccessOf(audience),
         members: members.filter((m) => m.userIds.length > 0),
+        groups: granted.filter((g) => g.on).map((g) => ({ groupId: g.groupId, level: g.level })),
       })
       navigate(`/spaces/${space.key}`)
     } catch (err) {
@@ -189,6 +199,19 @@ export function NewSpaceWizard({ onCancel }: { onCancel: () => void }) {
           {audience.kind === 'everyone' && audience.level === 2 && (
             <p className="alert alert--warning">{EVERYONE_ADMINISTERS}</p>
           )}
+          {granted.length > 0 && (
+            <fieldset className="wizard__granted">
+              <legend>Also</legend>
+              {granted.map((g) => (
+                <label key={g.groupId} className="open-review__choice">
+                  <input type="checkbox" checked={g.on}
+                    onChange={(e) => setGranted(granted.map((x) => x.groupId === g.groupId ? { ...x, on: e.target.checked } : x))} />
+                  <span>{g.name} can {LEVEL_WORDS[g.level as 0 | 1 | 2].replace(/^Can /, '')}</span>
+                </label>
+              ))}
+              <p className="muted small">Set for every new space in Administration. Untick for a space that should stay among its own people.</p>
+            </fieldset>
+          )}
           <p className="muted small">
             Either way, a page restricted to particular people stays restricted.
             {globalReaders && ' Global Viewers and Global Reviewers can read every space, this one included.'}
@@ -235,6 +258,9 @@ export function NewSpaceWizard({ onCancel }: { onCancel: () => void }) {
               {audience.kind === 'everyone'
                 ? `Everyone signed in: ${LEVEL_WORDS[audience.level].toLowerCase()}`
                 : 'Only the people in its groups'}
+              {granted.filter((g) => g.on).map((g) => (
+                <div key={g.groupId}>{g.name}: {LEVEL_WORDS[g.level as 0 | 1 | 2].replace(/^Can /, '').toLowerCase()}</div>
+              ))}
             </dd>
           </div>
           {GROUPS.map((g) => {

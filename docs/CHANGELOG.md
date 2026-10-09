@@ -5,6 +5,31 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Default access for new spaces, and page restrictions that bind a
+  space's administrators** (dev-plan 21.6, after comparing with Confluence's
+  own documentation). Two changes the owner chose together:
+  - **Defaults for New Spaces**, in Administration, Spaces: what everyone
+    signed in gets and which groups are given what, as Confluence's
+    "Defaults for new spaces" does. Tesria starts with its administrators
+    able to administer every new space and everyone signed in able to edit
+    it. The New Space wizard starts from it, and its creator can untick
+    anything (an HR space, say). A script that creates a space without
+    saying who may use it gets the defaults; before, it got "everyone
+    administers". No existing space changes.
+  - **Page restrictions bind everyone, the space's administrators
+    included**, as in Confluence. Until now the people in a space's Admins
+    group read past them; with Tesria's administrators administering every
+    new space, that would have let them read every restricted page. A
+    space's own administrators see its restricted pages listed in its
+    Permissions tab, with whom each names, and may **Lift** one: it is
+    recorded with what was removed, and the page's author is told.
+  - **"Tesria's administrators can administer this space"** is a switch in
+    each space's Permissions tab, and an option in the open-space review.
+  New: `GET /api/space-defaults`, `PUT /api/admin/space-defaults`,
+  `GET /api/spaces/{key}/restricted-pages`,
+  `POST /api/pages/{id}/restrictions/lift`, and `groups` on creating a
+  space. New migration `NewSpaceDefaults` (an upgraded instance gets the
+  same defaults as a new one).
 - **Who has access to what, from Administration** (dev-plan 21.5). The
   owner found the 0.9 permission model hard to read: Spaces said nothing
   about access, the Groups page hid each space's groups, and nothing

@@ -17,9 +17,9 @@ namespace Tesria.Api.Infrastructure.Permissions;
 /// that into an EveryoneAccess of Admin.</item>
 /// <item><b>Page restrictions</b>: a page is restricted if it or any ancestor
 /// carries a restriction; the user must match one. A View restriction also
-/// gates editing. Space admins bypass page restrictions, but only explicit
-/// ones: the implicit levels (EveryoneAccess, the global groups) never
-/// do.</item>
+/// gates editing. Nobody reads past them, a space's administrators
+/// included (21.6): an explicit administrator may lift them instead, which
+/// is audited and tells the page's author.</item>
 /// </list>
 /// </summary>
 public interface IPermissionService
@@ -32,8 +32,8 @@ public interface IPermissionService
     /// Whether the caller holds a real Admin grant on the space, directly or
     /// through a group (its Admins group included): unlike
     /// <see cref="CanAdminSpaceAsync"/>, an EveryoneAccess of Admin does not
-    /// count. This is who passes page restrictions, and who may change who
-    /// administers the space (dev-plan 21.1).
+    /// count. This is who may change who administers the space (dev-plan
+    /// 21.1), and who may lift a page's restrictions (21.6).
     /// </summary>
     Task<bool> IsExplicitSpaceAdminAsync(Guid spaceId);
     Task<bool> CanViewPageAsync(Guid pageId);
@@ -276,13 +276,13 @@ public sealed class PermissionService(AppDbContext db, CurrentUser current, ISit
             : await CanViewSpaceAsync(page.SpaceId);
         if (!spaceOk) return false;
 
-        // Space admins are never blocked by page restrictions, but only ones
-        // holding an *explicit* admin grant. In a space whose EveryoneAccess is
-        // Admin everyone would otherwise count as an admin, which would make
-        // page restrictions meaningless exactly where they are most used; and
-        // Global Viewers are bound by them too (21.1).
-        if (await HasExplicitSpaceAdminAsync(page.SpaceId)) return true;
-
+        // Page restrictions bind everyone, the space's administrators included
+        // (dev-plan 21.6, Confluence's rule, the owner's choice 2026-10-09).
+        // Until then an explicit space admin read past them; once Tesria's
+        // administrators could administer every new space by default, that
+        // would have let them read every restricted page. An explicit admin
+        // may instead lift a page's restrictions, which is visible: it is
+        // audited and the page's author is told.
         var ancestry = await AncestryAsync(pageId, page.SpaceId);
         var restrictions = await db.PageRestrictions.AsNoTracking()
             .Where(r => ancestry.Contains(r.PageId))

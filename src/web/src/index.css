@@ -4056,7 +4056,8 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
 .admin-spaces__headline--warning { color: var(--panel-warning-icon); }
 .admin-spaces__access .muted { display: block; margin-bottom: 0.2rem; }
 @media (max-width: 640px) { /* keep in sync with --bp-mobile */
-  .admin-spaces__access { white-space: normal; }
+  /* Beats .admin-table td's nowrap: the counts wrap instead of running off. */
+  .admin-table td.admin-spaces__access { white-space: normal; min-width: 11rem; }
 }
 
 /* The open-space review at the top of Admin, Spaces. */
@@ -4104,3 +4105,21 @@ a.stat--link:hover { text-decoration: none; border-color: var(--primary-soft-bor
 .groups-space__summary > * + * { margin-left: 0.5rem; }
 .groups-space__name { font-weight: 600; overflow-wrap: anywhere; }
 .groups-space__link { margin: 0.2rem 0 0; }
+
+/* Admin, Spaces: defaults for new spaces (21.6). */
+.space-defaults { margin-top: 1.5rem; }
+.space-defaults h2 { font-size: 1.1rem; margin-top: 0; }
+.space-defaults__grid { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0.75rem 0; }
+.space-defaults__grid label { flex: 1 1 14rem; max-width: 20rem; margin: 0; }
+.space-defaults__groups { list-style: none; margin: 0.5rem 0; padding: 0; display: grid; gap: 0.4rem; }
+.space-defaults__groups li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+.space-defaults__name { font-weight: 600; min-width: 10rem; overflow-wrap: anywhere; }
+.space-defaults__add { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 0.5rem 0 0.75rem; }
+/* Labels over their selects, full width, like the rest of the forms. */
+.space-defaults__grid label { display: flex; flex-direction: column; gap: 0.3rem; }
+.space-defaults__grid .glass-select-wrap, .space-defaults__grid select { width: 100%; }
+/* The wizard's "Also" (21.6): a plain group of checkboxes, each beside its words. */
+.wizard__granted { border: 0; margin: 0.75rem 0 0; padding: 0; display: grid; gap: 0.4rem; }
+.wizard__granted legend { font-weight: 600; padding: 0; margin-bottom: 0.25rem; }
+.wizard .wizard__granted label.open-review__choice { display: flex; flex-direction: row; align-items: flex-start; gap: 0.5rem; }
+.wizard .wizard__granted label.open-review__choice input { width: auto; flex: 0 0 auto; margin-top: 0.2rem; }

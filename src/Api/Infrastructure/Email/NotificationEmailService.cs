@@ -223,6 +223,7 @@ public sealed class NotificationEmailService(
         "page.updated" => "A page was updated",
         "comment.created" => "New comment",
         "user.mentioned" => "You were mentioned",
+        "page.restrictions_lifted" => "Restrictions were lifted from your page",
         "token.expiring" => "An API token expires soon",
         "token.revoked" => "An administrator revoked an API token",
         _ => n.Action,
@@ -262,6 +263,7 @@ public sealed class NotificationEmailService(
                     "page.updated" => "updated",
                     "comment.created" => "commented on",
                     "user.mentioned" => "mentioned you on",
+                    "page.restrictions_lifted" => "lifted the restrictions on",
                     _ => n.Action,
                 };
                 lines.Add($"- {who} {what} \"{page.Title}\"");

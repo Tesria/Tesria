@@ -364,6 +364,26 @@ public class SiteSettings
     /// </summary>
     public int SearchTextVersion { get; set; } = Features.Search.SearchableText.Version;
 
+    // --- Default access for new spaces (dev-plan 21.6, after Confluence's
+    // "Defaults for new spaces"). A starting point, not a limit: the New
+    // Space wizard starts from it and its creator may change it, and a create
+    // call that leaves a part out gets this part. The owner chose what a new
+    // instance starts with (2026-10-09): Tesria's administrators administer,
+    // everyone signed in edits. An upgraded instance gets the same, which
+    // changes no existing space.
+
+    /// <summary>What everyone signed in gets in a new space: null for nothing.</summary>
+    public SpaceOperation? NewSpaceEveryoneAccess { get; set; } = SpaceOperation.Edit;
+
+    /// <summary>
+    /// Groups a new space grants, as JSON <c>[{"groupId":…,"level":0|1|2}]</c>:
+    /// the built-in Admins group (Tesria's administrators) or custom groups.
+    /// A group deleted since is skipped when read.
+    /// </summary>
+    public string NewSpaceGroupsJson { get; set; } = DefaultNewSpaceGroupsJson;
+
+    public const string DefaultNewSpaceGroupsJson = """[{"groupId":"00000000-0000-0000-0001-000000000002","level":2}]""";
+
     public DateTimeOffset UpdatedAt { get; set; }
     public Guid? UpdatedById { get; set; }
 }

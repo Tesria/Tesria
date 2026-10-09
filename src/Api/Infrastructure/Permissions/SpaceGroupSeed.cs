@@ -16,7 +16,7 @@ namespace Tesria.Api.Infrastructure.Permissions;
 /// changed. A space with no grants at all was open to everyone signed in, and
 /// gets an EveryoneAccess of Admin, which keeps it exactly as open; every
 /// other space gets none. A grant to the built-in Users group stays a grant:
-/// it is an explicit admin (past page restrictions) in a way EveryoneAccess
+/// it is an explicit admin (who administers it, and lifts restrictions) in a way EveryoneAccess
 /// is not. Each moved grant is recorded in <see cref="SpaceGrantMove"/>, and
 /// the audit log gets one entry per space.
 /// </para>

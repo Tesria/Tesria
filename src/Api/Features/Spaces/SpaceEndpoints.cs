@@ -17,14 +17,19 @@ public static partial class SpaceEndpoints
     /// What every signed-in account may do in the new space (dev-plan 21.2):
     /// null for nothing (only the people in its groups), or 0, 1 or 2 for
     /// View, Edit or Admin. A raw element, because "left out" and "null" mean
-    /// different things here: left out keeps a new space as open as it has
-    /// always been (Admin), so API clients written before the wizard do not
-    /// change behavior.
+    /// different things here: left out takes the instance's default for new
+    /// spaces (21.6; before that, Admin), null is nothing.
     /// </param>
     /// <param name="Members">Who goes in each of the space's groups from the start (21.2). The creator is always in Admins.</param>
+    /// <param name="Groups">
+    /// Groups the space grants from the start (21.6): Tesria's administrators
+    /// or custom groups, each at a level. Left out takes the instance's
+    /// default; an empty list grants none.
+    /// </param>
     public record CreateSpaceRequest(
         string Key, string Name, string? Description,
-        List<GroupMembersRequest>? Members = null)
+        List<GroupMembersRequest>? Members = null,
+        List<NewSpaceDefaults.GroupLevel>? Groups = null)
     {
         // A property rather than a parameter: the OpenAPI document cannot
         // describe a JsonElement parameter's default value.
@@ -126,7 +131,8 @@ public static partial class SpaceEndpoints
         string.IsNullOrWhiteSpace(raw) ? null : raw.Trim();
 
     private static async Task<IResult> Create(
-        CreateSpaceRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit)
+        CreateSpaceRequest req, AppDbContext db, CurrentUser current, IAuditLogger audit,
+        Infrastructure.Settings.ISiteSettingsService settings)
     {
         var key = (req.Key ?? "").Trim().ToUpperInvariant();
         var name = (req.Name ?? "").Trim();
@@ -142,9 +148,14 @@ public static partial class SpaceEndpoints
         if (description is { Length: > Space.MaxDescriptionLength })
             return Results.ValidationProblem(Error("description", DescriptionTooLong));
 
-        if (!TryEveryoneAccess(req.EveryoneAccess, out var everyone))
+        // What the call leaves out comes from the instance's defaults (21.6).
+        var defaults = await NewSpaceDefaults.ReadAsync(db, settings);
+        if (!TryEveryoneAccess(req.EveryoneAccess, defaults.EveryoneAccess, out var everyone))
             return Results.ValidationProblem(Error("everyoneAccess",
                 "Choose null (only the people in its groups), 0 (view), 1 (edit) or 2 (administer)."));
+        var grants = req.Groups ?? defaults.Groups.Select(g => new NewSpaceDefaults.GroupLevel(g.GroupId, g.Level)).ToList();
+        if (req.Groups is not null && await NewSpaceDefaults.ProblemAsync(db, req.Groups) is { } groupProblem)
+            return Results.ValidationProblem(Error("groups", groupProblem));
 
         var creatorId = current.RequireId();
         var members = new List<(SpaceGroupRole Role, Guid UserId)>();
@@ -176,18 +187,16 @@ public static partial class SpaceEndpoints
             Description = description,
             CreatedById = creatorId,
             CreatedAt = DateTimeOffset.UtcNow,
-            // Admin when the request does not say (as open as a new space has
-            // always been). No level needs the password again here, unlike
-            // widening it later (21.1 keeps 15.3's make-open protections for
-            // that): the space is new and empty and its creator is its
-            // administrator, so nothing anybody can already reach is opened.
-            // The level is in the audit entry below.
+            // No level needs the password again here, unlike widening it
+            // later (21.1 keeps 15.3's make-open protections for that): the
+            // space is new and empty and its creator is its administrator, so
+            // nothing anybody can already reach is opened. The level is in
+            // the audit entry below.
             EveryoneAccess = everyone,
-            // Asked for by name is a choice; left out is the old default,
-            // which the open-space review (21.5) then lists.
-            EveryoneAdminConfirmedAt = everyone == SpaceOperation.Admin
-                && req.EveryoneAccess.ValueKind != System.Text.Json.JsonValueKind.Undefined
-                ? DateTimeOffset.UtcNow : null,
+            // Administer for everyone here was chosen, by the creator or in
+            // the instance's defaults, so the open-space review (21.5) has
+            // nothing to ask about it.
+            EveryoneAdminConfirmedAt = everyone == SpaceOperation.Admin ? DateTimeOffset.UtcNow : null,
         };
         db.Spaces.Add(space);
         // Its four groups (dev-plan 21.1), with its creator in Admins: an
@@ -209,21 +218,33 @@ public static partial class SpaceEndpoints
             audit.Record("space.group_member_added", "space", space.Id,
                 new { GroupId = groups[role].Id, Role = role.ToString(), UserId = userId, Via = "space.created" });
         }
+        // The groups it grants (21.6): Tesria's administrators by default.
+        foreach (var grant in grants)
+        {
+            db.SpacePermissions.Add(new SpacePermission
+            {
+                Id = Guid.NewGuid(), SpaceId = space.Id, PrincipalType = PrincipalType.Group,
+                PrincipalId = grant.GroupId, Operation = grant.Level, CreatedAt = space.CreatedAt,
+            });
+            audit.Record("space.permission_granted", "space", space.Id,
+                new { PrincipalType = PrincipalType.Group, PrincipalId = grant.GroupId, Operation = grant.Level, Via = "space.created" });
+        }
         // One save, so one transaction: the space, its groups, what everyone
-        // gets and its members are made together or not at all.
+        // gets, the groups it grants and its members are made together or not
+        // at all.
         await db.SaveChangesAsync();
 
         return Results.Created($"/api/spaces/{space.Key}", ToResponse(space));
     }
 
-    /// <summary>The level a create asks for: left out is Admin (21.2's compatibility rule), JSON null is nothing.</summary>
-    internal static bool TryEveryoneAccess(System.Text.Json.JsonElement raw, out SpaceOperation? access)
+    /// <summary>The level a create asks for: left out is the instance's default (21.6), JSON null is nothing.</summary>
+    internal static bool TryEveryoneAccess(System.Text.Json.JsonElement raw, SpaceOperation? fallback, out SpaceOperation? access)
     {
         access = null;
         switch (raw.ValueKind)
         {
             case System.Text.Json.JsonValueKind.Undefined:
-                access = SpaceOperation.Admin;
+                access = fallback;
                 return true;
             case System.Text.Json.JsonValueKind.Null:
                 return true;

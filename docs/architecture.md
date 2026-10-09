@@ -1315,8 +1315,8 @@ others don't is a **recover-access** action,
 explicit administrator of that space: since 21.1 by adding them to the
 space's Admins group (before, by an Admin grant to them). From then on the
 existing rules apply unchanged: an explicit space admin can view and edit
-the space and is not blocked by page restrictions (that rule already
-exists in `PermissionService`). On a space whose EveryoneAccess is Admin
+the space (since 21.6 page restrictions bind them like anyone; they may
+lift them instead). On a space whose EveryoneAccess is Admin
 it grants nothing and says they already had access, unless the space has
 no explicit administrator at all (every space that was open before 21.1):
 such a space could otherwise never be closed or given an administrator,
@@ -1381,11 +1381,33 @@ What a signed-in account may do in a space comes from three places, all in
   revocation interceptor treat them like any other.
 
 **Implicit levels never make an explicit admin.** Only an Admin grant
-(directly, or through a group such as the space's Admins) passes page
-restrictions, and only an explicit admin may change who administers the
-space: its Admins group's members and any Admin grant. Otherwise, in a
-space everyone may administer, anyone could add themselves to Admins and
-read past every restriction. The other three groups may be managed by any
+(directly, or through a group such as the space's Admins) may change who
+administers the space (its Admins group's members and any Admin grant) and
+lift page restrictions. Otherwise, in a space everyone may administer,
+anyone could add themselves to Admins, or lift every restriction.
+
+**Page restrictions bind everyone (21.6).** Until 21.6 an explicit space
+admin read past them; now, as in Confluence, nobody does. An explicit
+admin sees the space's restricted pages (titles, and to whom,
+`GET /api/spaces/{key}/restricted-pages`) and may lift one
+(`POST /api/pages/{id}/restrictions/lift`, `RestrictedPages`), which
+removes the restrictions the page carries itself, is audited with what was
+removed (`page.restrictions_lifted`) and notifies the page's author. The
+owner chose it with the defaults below: once Tesria's administrators
+administer every new space by default, reading past restrictions would
+have let them read every restricted page.
+
+**Default access for new spaces (21.6)** is `NewSpaceDefaults`, after
+Confluence's "Defaults for new spaces": `SiteSettings.NewSpaceEveryoneAccess`
+and `NewSpaceGroupsJson` (Tesria's administrators, the built-in Admins
+group, or custom groups, each at a level). A new instance, and an upgraded
+one, starts with Tesria's administrators at Admin and everyone signed in at
+Edit. `GET /api/space-defaults` (anyone signed in; the wizard starts from
+it), `PUT /api/admin/space-defaults` (Manage spaces, audited). A create call
+takes `everyoneAccess` and `groups`; each part left out takes the default
+(before 21.6, a left-out `everyoneAccess` meant Admin). The tests'
+`TestAppFactory` keeps the pre-21.6 behavior (`LegacySpaceDefaults`) for
+the tests written against it. The other three groups may be managed by any
 administrator of the space, implicit ones included.
 
 **A space's groups belong to it.** Their display name is derived when read
