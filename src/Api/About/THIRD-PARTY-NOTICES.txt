@@ -6481,9 +6481,9 @@ MIT License
     SOFTWARE
 
 ------------------------------------------------------------------------------
-@types/node 26.6.4 (npm)
+@types/node 26.6.5 (npm)
 License: MIT
-https://www.npmjs.com/package/@types/node/v/26.6.4
+https://www.npmjs.com/package/@types/node/v/26.6.5
 
 MIT License
 

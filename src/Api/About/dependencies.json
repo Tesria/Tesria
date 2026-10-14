@@ -1858,11 +1858,11 @@
     {
       "ecosystem": "npm",
       "name": "@types/node",
-      "version": "26.6.4",
+      "version": "26.6.5",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@types/node/v/26.6.4"
+      "url": "https://www.npmjs.com/package/@types/node/v/26.6.5"
     },
     {
       "ecosystem": "npm",
