@@ -480,29 +480,29 @@
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.AspNetCore.Authentication.OpenIdConnect",
-      "version": "10.0.12",
+      "version": "10.0.13",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.OpenIdConnect/10.0.12"
+      "url": "https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.OpenIdConnect/10.0.13"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.AspNetCore.DataProtection.EntityFrameworkCore",
-      "version": "10.0.12",
+      "version": "10.0.13",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Microsoft.AspNetCore.DataProtection.EntityFrameworkCore/10.0.12"
+      "url": "https://www.nuget.org/packages/Microsoft.AspNetCore.DataProtection.EntityFrameworkCore/10.0.13"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.AspNetCore.OpenApi",
-      "version": "10.0.12",
+      "version": "10.0.13",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Microsoft.AspNetCore.OpenApi/10.0.12"
+      "url": "https://www.nuget.org/packages/Microsoft.AspNetCore.OpenApi/10.0.13"
     },
     {
       "ecosystem": "NuGet",
@@ -579,47 +579,47 @@
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.EntityFrameworkCore",
-      "version": "10.0.12",
+      "version": "10.0.13",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore/10.0.12"
+      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore/10.0.13"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.EntityFrameworkCore.Abstractions",
-      "version": "10.0.12",
+      "version": "10.0.13",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Abstractions/10.0.12"
+      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Abstractions/10.0.13"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.EntityFrameworkCore.Analyzers",
-      "version": "10.0.12",
+      "version": "10.0.13",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Analyzers/10.0.12"
+      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Analyzers/10.0.13"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.EntityFrameworkCore.Design",
-      "version": "10.0.12",
+      "version": "10.0.13",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Design/10.0.12"
+      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Design/10.0.13"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.EntityFrameworkCore.Relational",
-      "version": "10.0.12",
+      "version": "10.0.13",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Relational/10.0.12"
+      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Relational/10.0.13"
     },
     {
       "ecosystem": "NuGet",
@@ -633,20 +633,20 @@
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.Extensions.DependencyModel",
-      "version": "10.0.12",
+      "version": "10.0.13",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/Microsoft.Extensions.DependencyModel/10.0.12"
+      "url": "https://www.nuget.org/packages/Microsoft.Extensions.DependencyModel/10.0.13"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore",
-      "version": "10.0.12",
+      "version": "10.0.13",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore/10.0.12"
+      "url": "https://www.nuget.org/packages/Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore/10.0.13"
     },
     {
       "ecosystem": "NuGet",
@@ -705,11 +705,11 @@
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.OpenApi",
-      "version": "2.12.0",
+      "version": "2.12.2",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/Microsoft.OpenApi/2.12.0"
+      "url": "https://www.nuget.org/packages/Microsoft.OpenApi/2.12.2"
     },
     {
       "ecosystem": "NuGet",
@@ -804,11 +804,11 @@
     {
       "ecosystem": "NuGet",
       "name": "Scalar.AspNetCore",
-      "version": "2.17.14",
+      "version": "2.18.0",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Scalar.AspNetCore/2.17.14"
+      "url": "https://www.nuget.org/packages/Scalar.AspNetCore/2.18.0"
     },
     {
       "ecosystem": "Data",
