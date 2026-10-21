@@ -4,29 +4,29 @@
     {
       "ecosystem": "npm",
       "name": "@hocuspocus/common",
-      "version": "4.7.0",
+      "version": "4.7.1",
       "license": "MIT",
       "component": "Collaboration service",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@hocuspocus/common/v/4.7.0"
+      "url": "https://www.npmjs.com/package/@hocuspocus/common/v/4.7.1"
     },
     {
       "ecosystem": "npm",
       "name": "@hocuspocus/extension-database",
-      "version": "4.7.0",
+      "version": "4.7.1",
       "license": "MIT",
       "component": "Collaboration service",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@hocuspocus/extension-database/v/4.7.0"
+      "url": "https://www.npmjs.com/package/@hocuspocus/extension-database/v/4.7.1"
     },
     {
       "ecosystem": "npm",
       "name": "@hocuspocus/server",
-      "version": "4.7.0",
+      "version": "4.7.1",
       "license": "MIT",
       "component": "Collaboration service",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@hocuspocus/server/v/4.7.0"
+      "url": "https://www.npmjs.com/package/@hocuspocus/server/v/4.7.1"
     },
     {
       "ecosystem": "npm",
@@ -67,11 +67,11 @@
     {
       "ecosystem": "npm",
       "name": "lib0",
-      "version": "0.2.117",
+      "version": "0.2.119",
       "license": "MIT",
       "component": "Collaboration service",
       "direct": false,
-      "url": "https://www.npmjs.com/package/lib0/v/0.2.117"
+      "url": "https://www.npmjs.com/package/lib0/v/0.2.119"
     },
     {
       "ecosystem": "npm",
