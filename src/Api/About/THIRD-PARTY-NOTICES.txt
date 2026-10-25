@@ -7,9 +7,9 @@ metadata. Container base images are not included here: each image carries
 its own notices.
 
 ------------------------------------------------------------------------------
-@hocuspocus/common 4.7.0 (npm)
+@hocuspocus/common 4.7.1 (npm)
 License: MIT
-https://www.npmjs.com/package/@hocuspocus/common/v/4.7.0
+https://www.npmjs.com/package/@hocuspocus/common/v/4.7.1
 
 MIT License
 
@@ -34,9 +34,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@hocuspocus/extension-database 4.7.0 (npm)
+@hocuspocus/extension-database 4.7.1 (npm)
 License: MIT
-https://www.npmjs.com/package/@hocuspocus/extension-database/v/4.7.0
+https://www.npmjs.com/package/@hocuspocus/extension-database/v/4.7.1
 
 MIT License
 
@@ -61,9 +61,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-@hocuspocus/server 4.7.0 (npm)
+@hocuspocus/server 4.7.1 (npm)
 License: MIT
-https://www.npmjs.com/package/@hocuspocus/server/v/4.7.0
+https://www.npmjs.com/package/@hocuspocus/server/v/4.7.1
 
 MIT License
 
@@ -221,9 +221,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 ------------------------------------------------------------------------------
-lib0 0.2.117 (npm)
+lib0 0.2.119 (npm)
 License: MIT
-https://www.npmjs.com/package/lib0/v/0.2.117
+https://www.npmjs.com/package/lib0/v/0.2.119
 
 The MIT License (MIT)
 
@@ -1292,9 +1292,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-Markdig 1.4.0 (NuGet)
+Markdig 1.4.2 (NuGet)
 License: BSD-2-Clause
-https://www.nuget.org/packages/Markdig/1.4.0
+https://www.nuget.org/packages/Markdig/1.4.2
 
 This package ships no license file; this is the standard BSD-2-Clause license, with the copyright notice from the package's metadata.
 
@@ -1323,9 +1323,9 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ------------------------------------------------------------------------------
-Microsoft.AspNetCore.Authentication.OpenIdConnect 10.0.12 (NuGet)
+Microsoft.AspNetCore.Authentication.OpenIdConnect 10.0.13 (NuGet)
 License: MIT
-https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.OpenIdConnect/10.0.12
+https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.OpenIdConnect/10.0.13
 
 This package ships no license file; this is the standard MIT license, with the copyright notice from the package's metadata.
 
@@ -1354,9 +1354,9 @@ SOFTWARE.
 Its THIRD-PARTY-NOTICES.TXT: notice 4 at the end of this file.
 
 ------------------------------------------------------------------------------
-Microsoft.AspNetCore.DataProtection.EntityFrameworkCore 10.0.12 (NuGet)
+Microsoft.AspNetCore.DataProtection.EntityFrameworkCore 10.0.13 (NuGet)
 License: MIT
-https://www.nuget.org/packages/Microsoft.AspNetCore.DataProtection.EntityFrameworkCore/10.0.12
+https://www.nuget.org/packages/Microsoft.AspNetCore.DataProtection.EntityFrameworkCore/10.0.13
 
 This package ships no license file; this is the standard MIT license, with the copyright notice from the package's metadata.
 
@@ -1385,9 +1385,9 @@ SOFTWARE.
 Its THIRD-PARTY-NOTICES.TXT: notice 4 at the end of this file.
 
 ------------------------------------------------------------------------------
-Microsoft.AspNetCore.OpenApi 10.0.12 (NuGet)
+Microsoft.AspNetCore.OpenApi 10.0.13 (NuGet)
 License: MIT
-https://www.nuget.org/packages/Microsoft.AspNetCore.OpenApi/10.0.12
+https://www.nuget.org/packages/Microsoft.AspNetCore.OpenApi/10.0.13
 
 This package ships no license file; this is the standard MIT license, with the copyright notice from the package's metadata.
 
@@ -1652,9 +1652,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-Microsoft.EntityFrameworkCore 10.0.12 (NuGet)
+Microsoft.EntityFrameworkCore 10.0.13 (NuGet)
 License: MIT
-https://www.nuget.org/packages/Microsoft.EntityFrameworkCore/10.0.12
+https://www.nuget.org/packages/Microsoft.EntityFrameworkCore/10.0.13
 
 This package ships no license file; this is the standard MIT license, with the copyright notice from the package's metadata.
 
@@ -1681,9 +1681,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-Microsoft.EntityFrameworkCore.Abstractions 10.0.12 (NuGet)
+Microsoft.EntityFrameworkCore.Abstractions 10.0.13 (NuGet)
 License: MIT
-https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Abstractions/10.0.12
+https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Abstractions/10.0.13
 
 This package ships no license file; this is the standard MIT license, with the copyright notice from the package's metadata.
 
@@ -1710,9 +1710,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-Microsoft.EntityFrameworkCore.Analyzers 10.0.12 (NuGet)
+Microsoft.EntityFrameworkCore.Analyzers 10.0.13 (NuGet)
 License: MIT
-https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Analyzers/10.0.12
+https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Analyzers/10.0.13
 
 This package ships no license file; this is the standard MIT license, with the copyright notice from the package's metadata.
 
@@ -1739,9 +1739,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-Microsoft.EntityFrameworkCore.Design 10.0.12 (NuGet)
+Microsoft.EntityFrameworkCore.Design 10.0.13 (NuGet)
 License: MIT
-https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Design/10.0.12
+https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Design/10.0.13
 
 This package ships no license file; this is the standard MIT license, with the copyright notice from the package's metadata.
 
@@ -1768,9 +1768,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-Microsoft.EntityFrameworkCore.Relational 10.0.12 (NuGet)
+Microsoft.EntityFrameworkCore.Relational 10.0.13 (NuGet)
 License: MIT
-https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Relational/10.0.12
+https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Relational/10.0.13
 
 This package ships no license file; this is the standard MIT license, with the copyright notice from the package's metadata.
 
@@ -1797,9 +1797,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-Microsoft.Extensions.AI.Abstractions 10.8.3 (NuGet)
+Microsoft.Extensions.AI.Abstractions 10.11.0 (NuGet)
 License: MIT
-https://www.nuget.org/packages/Microsoft.Extensions.AI.Abstractions/10.8.3
+https://www.nuget.org/packages/Microsoft.Extensions.AI.Abstractions/10.11.0
 
 This package ships no license file; this is the standard MIT license, with the copyright notice from the package's metadata.
 
@@ -1826,9 +1826,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-Microsoft.Extensions.DependencyModel 10.0.12 (NuGet)
+Microsoft.Extensions.DependencyModel 10.0.13 (NuGet)
 License: MIT
-https://www.nuget.org/packages/Microsoft.Extensions.DependencyModel/10.0.12
+https://www.nuget.org/packages/Microsoft.Extensions.DependencyModel/10.0.13
 
 This package ships no license file; this is the standard MIT license, with the copyright notice from the package's metadata.
 
@@ -1857,9 +1857,9 @@ SOFTWARE.
 Its THIRD-PARTY-NOTICES.TXT: notice 5 at the end of this file.
 
 ------------------------------------------------------------------------------
-Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore 10.0.12 (NuGet)
+Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore 10.0.13 (NuGet)
 License: MIT
-https://www.nuget.org/packages/Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore/10.0.12
+https://www.nuget.org/packages/Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore/10.0.13
 
 This package ships no license file; this is the standard MIT license, with the copyright notice from the package's metadata.
 
@@ -2062,9 +2062,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-Microsoft.OpenApi 2.12.0 (NuGet)
+Microsoft.OpenApi 2.12.2 (NuGet)
 License: MIT
-https://www.nuget.org/packages/Microsoft.OpenApi/2.12.0
+https://www.nuget.org/packages/Microsoft.OpenApi/2.12.2
 
 This package ships no license file; this is the standard MIT license, with the copyright notice from the package's metadata.
 
@@ -2151,9 +2151,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-ModelContextProtocol 2.2.0 (NuGet)
+ModelContextProtocol 2.3.0 (NuGet)
 License: Apache-2.0
-https://www.nuget.org/packages/ModelContextProtocol/2.2.0
+https://www.nuget.org/packages/ModelContextProtocol/2.3.0
 
 This package ships no license file; this is the standard Apache-2.0 license, with the copyright notice from the package's metadata.
 
@@ -2162,9 +2162,9 @@ This package ships no license file; this is the standard Apache-2.0 license, wit
 Licensed under the Apache License, Version 2.0, whose full text is at the end of this file.
 
 ------------------------------------------------------------------------------
-ModelContextProtocol.AspNetCore 2.2.0 (NuGet)
+ModelContextProtocol.AspNetCore 2.3.0 (NuGet)
 License: Apache-2.0
-https://www.nuget.org/packages/ModelContextProtocol.AspNetCore/2.2.0
+https://www.nuget.org/packages/ModelContextProtocol.AspNetCore/2.3.0
 
 This package ships no license file; this is the standard Apache-2.0 license, with the copyright notice from the package's metadata.
 
@@ -2173,9 +2173,9 @@ This package ships no license file; this is the standard Apache-2.0 license, wit
 Licensed under the Apache License, Version 2.0, whose full text is at the end of this file.
 
 ------------------------------------------------------------------------------
-ModelContextProtocol.Core 2.2.0 (NuGet)
+ModelContextProtocol.Core 2.3.0 (NuGet)
 License: Apache-2.0
-https://www.nuget.org/packages/ModelContextProtocol.Core/2.2.0
+https://www.nuget.org/packages/ModelContextProtocol.Core/2.3.0
 
 This package ships no license file; this is the standard Apache-2.0 license, with the copyright notice from the package's metadata.
 
@@ -2316,9 +2316,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------------------------------------------------------
-Scalar.AspNetCore 2.17.14 (NuGet)
+Scalar.AspNetCore 2.18.2 (NuGet)
 License: MIT
-https://www.nuget.org/packages/Scalar.AspNetCore/2.17.14
+https://www.nuget.org/packages/Scalar.AspNetCore/2.18.2
 
 This package ships no license file; this is the standard MIT license, with the copyright notice from the package's metadata.
 
@@ -4318,33 +4318,6 @@ INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
 DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
-
-------------------------------------------------------------------------------
-@hocuspocus/common 4.7.1 (npm)
-License: MIT
-https://www.npmjs.com/package/@hocuspocus/common/v/4.7.1
-
-MIT License
-
-Copyright (c) 2023, Tiptap GmbH
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
 
 ------------------------------------------------------------------------------
 @hocuspocus/provider 4.7.1 (npm)
@@ -9163,33 +9136,6 @@ https://www.npmjs.com/package/layout-base/v/2.0.1
 MIT License
 
 Copyright (c) 2019 iVis@Bilkent
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-------------------------------------------------------------------------------
-lib0 0.2.119 (npm)
-License: MIT
-https://www.npmjs.com/package/lib0/v/0.2.119
-
-The MIT License (MIT)
-
-Copyright (c) 2019 Kevin Jahns <kevin.jahns@protonmail.com>.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
