@@ -40,30 +40,30 @@
   <ItemGroup>
     <!-- Data layer: EF Core 10 + PostgreSQL (Npgsql). Design package enables
          `dotnet ef` migrations at build/dev time. -->
-    <PackageReference Include="MailKit" Version="4.18.1" />
-    <PackageReference Include="Markdig" Version="1.4.2" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.13" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13">
+    <PackageReference Include="MailKit" Version="4.18.2" />
+    <PackageReference Include="Markdig" Version="1.5.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.14" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.3.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.14" />
     <!-- Persist Data Protection keys (auth-cookie signing) in the database so
          they survive container redeploys and are covered by DB backups.
          Pinned to 10.0.10 to clear GHSA-9mv3-2cwr-p262 in DataProtection. -->
-    <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.13" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.14" />
     <!-- Argon2id password hashing (PLAN §4: password hash = Argon2id). -->
     <PackageReference Include="Isopoh.Cryptography.Argon2" Version="2.0.0" />
     <!-- OIDC/SSO (PLAN §1: "architected for OIDC/SSO later", pluggable for
          Keycloak/Authentik/Google, etc.). Optional at runtime: see Oidc:Authority. -->
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.13" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.14" />
     <PackageReference Include="Otp.NET" Version="1.4.1" />
-    <PackageReference Include="Scalar.AspNetCore" Version="2.18.2" />
-    <PackageReference Include="SkiaSharp" Version="4.153.1" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.153.1" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.18.3" />
+    <PackageReference Include="SkiaSharp" Version="4.154.0" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.154.0" />
     <PackageReference Include="Svg.Skia" Version="5.2.3" />
   </ItemGroup>
 
