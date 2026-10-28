@@ -2596,11 +2596,11 @@
     {
       "ecosystem": "npm",
       "name": "katex",
-      "version": "0.19.0",
+      "version": "0.19.1",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/katex/v/0.19.0"
+      "url": "https://www.npmjs.com/package/katex/v/0.19.1"
     },
     {
       "ecosystem": "npm",
