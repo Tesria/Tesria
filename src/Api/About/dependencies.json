@@ -4,29 +4,29 @@
     {
       "ecosystem": "npm",
       "name": "@hocuspocus/common",
-      "version": "4.7.1",
+      "version": "4.8.0",
       "license": "MIT",
       "component": "Collaboration service",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@hocuspocus/common/v/4.7.1"
+      "url": "https://www.npmjs.com/package/@hocuspocus/common/v/4.8.0"
     },
     {
       "ecosystem": "npm",
       "name": "@hocuspocus/extension-database",
-      "version": "4.7.1",
+      "version": "4.8.0",
       "license": "MIT",
       "component": "Collaboration service",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@hocuspocus/extension-database/v/4.7.1"
+      "url": "https://www.npmjs.com/package/@hocuspocus/extension-database/v/4.8.0"
     },
     {
       "ecosystem": "npm",
       "name": "@hocuspocus/server",
-      "version": "4.7.1",
+      "version": "4.8.0",
       "license": "MIT",
       "component": "Collaboration service",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@hocuspocus/server/v/4.7.1"
+      "url": "https://www.npmjs.com/package/@hocuspocus/server/v/4.8.0"
     },
     {
       "ecosystem": "npm",
@@ -40,11 +40,11 @@
     {
       "ecosystem": "npm",
       "name": "crossws",
-      "version": "0.4.12",
+      "version": "0.4.17",
       "license": "MIT",
       "component": "Collaboration service",
       "direct": false,
-      "url": "https://www.npmjs.com/package/crossws/v/0.4.12"
+      "url": "https://www.npmjs.com/package/crossws/v/0.4.17"
     },
     {
       "ecosystem": "npm",
