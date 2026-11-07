@@ -5,6 +5,25 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.8.8] - 2026-11-07
+
+A security update: 0.8.7 with its libraries brought up to date, and nothing
+else changed. It adds no migration. The work on main since 0.8.7 waits for 0.9.
+
+- **Security: DOMPurify 3.4.17**, which Mermaid uses to clean a diagram
+  (GHSA-cg2g-xh64-v4q7, Critical; GHSA-mrv2-3pqr-j5jr, High;
+  GHSA-c6gr-qvv4-5v3f, Low).
+- **Security: `System.Security.Cryptography.Pkcs` 10.0.13**, which email brings
+  in through MailKit (GHSA-846f-f764-76mx, High, and GHSA-2fmv-rv2c-59x7,
+  Moderate: both denial of service).
+- **Security: Mermaid diagrams use Tesria's own KaTeX**, now 0.19.1, instead of
+  the copy Mermaid brought (GHSA-238p-pmpm-9mq7, Low). Also source-map-js and
+  Vite, build tools that are not in what Tesria ships (GHSA-68fv-2mgg-jv7q, and
+  Vite's and launch-editor's advisories).
+- **Libraries:** TipTap 3.32.2, Hocuspocus 4.8.0, mermaid 12.2.0, React 19.3.1,
+  .NET packages 10.0.14, MailKit 4.18.2, Markdig 1.5.1, ModelContextProtocol
+  2.3.1, Scalar 2.18.7, SkiaSharp 4.154.0 and `pg` 8.23.1.
+
 ## [0.8.7] - 2026-10-01
 
 A small update: the clear button an exported site's page filter was missing,
