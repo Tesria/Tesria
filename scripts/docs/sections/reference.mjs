@@ -449,6 +449,12 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
       li(p(b('An exported site’s page filter can be cleared'), ' with the same button as in the app. It was missing, and the browser’s own was hidden.')),
       li(p(b('The page tree’s drag and drop'), ' uses the newest version of its library, checked on phones and desktops.')),
     ),
+    h(2, '0.8.8'),
+    p('Released November 7, 2026. A security update: 0.8.7 with its libraries brought up to date, and nothing else changed. Download the new ', c('tesria-deploy.zip'), ' and unzip it over your Tesria folder as usual; see ', pageLink('Upgrading'), '.'),
+    ul(
+      li(p(b('DOMPurify 3.4.17,'), ' which cleans what Mermaid draws, closes three advisories, one of them rated critical.')),
+      li(p(b('A library email uses'), ' moves past two denial-of-service advisories, and Mermaid now uses Tesria’s own KaTeX, past another advisory.')),
+    ),
     h(2, '0.8.3'),
     p('Released September 30, 2026. New chart options and code block colors, and the rest of the fixes from the full test of 0.8.1. Download the new ', c('tesria-deploy.zip'), ' and unzip it over your Tesria folder as usual; see ', pageLink('Upgrading'), ', which now says to upgrade in that folder rather than a new one.'),
     ul(
