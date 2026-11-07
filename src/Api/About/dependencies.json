@@ -462,47 +462,47 @@
     {
       "ecosystem": "NuGet",
       "name": "MailKit",
-      "version": "4.18.1",
+      "version": "4.18.2",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/MailKit/4.18.1"
+      "url": "https://www.nuget.org/packages/MailKit/4.18.2"
     },
     {
       "ecosystem": "NuGet",
       "name": "Markdig",
-      "version": "1.4.2",
+      "version": "1.5.1",
       "license": "BSD-2-Clause",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Markdig/1.4.2"
+      "url": "https://www.nuget.org/packages/Markdig/1.5.1"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.AspNetCore.Authentication.OpenIdConnect",
-      "version": "10.0.13",
+      "version": "10.0.14",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.OpenIdConnect/10.0.13"
+      "url": "https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.OpenIdConnect/10.0.14"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.AspNetCore.DataProtection.EntityFrameworkCore",
-      "version": "10.0.13",
+      "version": "10.0.14",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Microsoft.AspNetCore.DataProtection.EntityFrameworkCore/10.0.13"
+      "url": "https://www.nuget.org/packages/Microsoft.AspNetCore.DataProtection.EntityFrameworkCore/10.0.14"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.AspNetCore.OpenApi",
-      "version": "10.0.13",
+      "version": "10.0.14",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Microsoft.AspNetCore.OpenApi/10.0.13"
+      "url": "https://www.nuget.org/packages/Microsoft.AspNetCore.OpenApi/10.0.14"
     },
     {
       "ecosystem": "NuGet",
@@ -579,47 +579,47 @@
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.EntityFrameworkCore",
-      "version": "10.0.13",
+      "version": "10.0.14",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore/10.0.13"
+      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore/10.0.14"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.EntityFrameworkCore.Abstractions",
-      "version": "10.0.13",
+      "version": "10.0.14",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Abstractions/10.0.13"
+      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Abstractions/10.0.14"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.EntityFrameworkCore.Analyzers",
-      "version": "10.0.13",
+      "version": "10.0.14",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Analyzers/10.0.13"
+      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Analyzers/10.0.14"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.EntityFrameworkCore.Design",
-      "version": "10.0.13",
+      "version": "10.0.14",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Design/10.0.13"
+      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Design/10.0.14"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.EntityFrameworkCore.Relational",
-      "version": "10.0.13",
+      "version": "10.0.14",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Relational/10.0.13"
+      "url": "https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Relational/10.0.14"
     },
     {
       "ecosystem": "NuGet",
@@ -633,20 +633,20 @@
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.Extensions.DependencyModel",
-      "version": "10.0.13",
+      "version": "10.0.14",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/Microsoft.Extensions.DependencyModel/10.0.13"
+      "url": "https://www.nuget.org/packages/Microsoft.Extensions.DependencyModel/10.0.14"
     },
     {
       "ecosystem": "NuGet",
       "name": "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore",
-      "version": "10.0.13",
+      "version": "10.0.14",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore/10.0.13"
+      "url": "https://www.nuget.org/packages/Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore/10.0.14"
     },
     {
       "ecosystem": "NuGet",
@@ -723,38 +723,38 @@
     {
       "ecosystem": "NuGet",
       "name": "MimeKit",
-      "version": "4.18.1",
+      "version": "4.18.2",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/MimeKit/4.18.1"
+      "url": "https://www.nuget.org/packages/MimeKit/4.18.2"
     },
     {
       "ecosystem": "NuGet",
       "name": "ModelContextProtocol",
-      "version": "2.3.0",
+      "version": "2.3.1",
       "license": "Apache-2.0",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/ModelContextProtocol/2.3.0"
+      "url": "https://www.nuget.org/packages/ModelContextProtocol/2.3.1"
     },
     {
       "ecosystem": "NuGet",
       "name": "ModelContextProtocol.AspNetCore",
-      "version": "2.3.0",
+      "version": "2.3.1",
       "license": "Apache-2.0",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/ModelContextProtocol.AspNetCore/2.3.0"
+      "url": "https://www.nuget.org/packages/ModelContextProtocol.AspNetCore/2.3.1"
     },
     {
       "ecosystem": "NuGet",
       "name": "ModelContextProtocol.Core",
-      "version": "2.3.0",
+      "version": "2.3.1",
       "license": "Apache-2.0",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/ModelContextProtocol.Core/2.3.0"
+      "url": "https://www.nuget.org/packages/ModelContextProtocol.Core/2.3.1"
     },
     {
       "ecosystem": "NuGet",
@@ -804,11 +804,11 @@
     {
       "ecosystem": "NuGet",
       "name": "Scalar.AspNetCore",
-      "version": "2.18.2",
+      "version": "2.18.7",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/Scalar.AspNetCore/2.18.2"
+      "url": "https://www.nuget.org/packages/Scalar.AspNetCore/2.18.7"
     },
     {
       "ecosystem": "Data",
@@ -832,38 +832,38 @@
     {
       "ecosystem": "NuGet",
       "name": "SkiaSharp",
-      "version": "4.153.1",
+      "version": "4.154.0",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/SkiaSharp/4.153.1"
+      "url": "https://www.nuget.org/packages/SkiaSharp/4.154.0"
     },
     {
       "ecosystem": "NuGet",
       "name": "SkiaSharp.NativeAssets.Linux.NoDependencies",
-      "version": "4.153.1",
+      "version": "4.154.0",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/SkiaSharp.NativeAssets.Linux.NoDependencies/4.153.1"
+      "url": "https://www.nuget.org/packages/SkiaSharp.NativeAssets.Linux.NoDependencies/4.154.0"
     },
     {
       "ecosystem": "NuGet",
       "name": "SkiaSharp.NativeAssets.macOS",
-      "version": "4.153.1",
+      "version": "4.154.0",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/SkiaSharp.NativeAssets.macOS/4.153.1"
+      "url": "https://www.nuget.org/packages/SkiaSharp.NativeAssets.macOS/4.154.0"
     },
     {
       "ecosystem": "NuGet",
       "name": "SkiaSharp.NativeAssets.Win32",
-      "version": "4.153.1",
+      "version": "4.154.0",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/SkiaSharp.NativeAssets.Win32/4.153.1"
+      "url": "https://www.nuget.org/packages/SkiaSharp.NativeAssets.Win32/4.154.0"
     },
     {
       "ecosystem": "NuGet",
@@ -985,11 +985,11 @@
     {
       "ecosystem": "NuGet",
       "name": "System.Security.Cryptography.Pkcs",
-      "version": "10.0.0",
+      "version": "10.0.13",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/System.Security.Cryptography.Pkcs/10.0.0"
+      "url": "https://www.nuget.org/packages/System.Security.Cryptography.Pkcs/10.0.13"
     },
     {
       "ecosystem": "npm",
@@ -1129,20 +1129,20 @@
     {
       "ecosystem": "npm",
       "name": "@hocuspocus/common",
-      "version": "4.7.1",
+      "version": "4.8.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@hocuspocus/common/v/4.7.1"
+      "url": "https://www.npmjs.com/package/@hocuspocus/common/v/4.8.0"
     },
     {
       "ecosystem": "npm",
       "name": "@hocuspocus/provider",
-      "version": "4.7.1",
+      "version": "4.8.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@hocuspocus/provider/v/4.7.1"
+      "url": "https://www.npmjs.com/package/@hocuspocus/provider/v/4.8.0"
     },
     {
       "ecosystem": "npm",
@@ -1183,362 +1183,362 @@
     {
       "ecosystem": "npm",
       "name": "@tiptap/core",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/core/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/core/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-blockquote",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-blockquote/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-blockquote/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-bold",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-bold/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-bold/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-bubble-menu",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-bubble-menu/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-bubble-menu/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-bullet-list",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-bullet-list/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-bullet-list/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-code",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-code/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-code/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-code-block",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-code-block/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-code-block/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-code-block-lowlight",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-code-block-lowlight/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-code-block-lowlight/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-collaboration",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-collaboration/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-collaboration/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-collaboration-caret",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-collaboration-caret/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-collaboration-caret/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-document",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-document/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-document/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-dropcursor",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-dropcursor/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-dropcursor/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-floating-menu",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-floating-menu/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-floating-menu/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-gapcursor",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-gapcursor/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-gapcursor/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-hard-break",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-hard-break/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-hard-break/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-heading",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-heading/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-heading/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-highlight",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-highlight/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-highlight/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-horizontal-rule",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-horizontal-rule/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-horizontal-rule/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-image",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-image/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-image/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-italic",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-italic/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-italic/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-link",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-link/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-link/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-list",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-list/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-list/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-list-item",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-list-item/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-list-item/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-list-keymap",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-list-keymap/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-list-keymap/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-ordered-list",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-ordered-list/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-ordered-list/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-paragraph",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-paragraph/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-paragraph/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-strike",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-strike/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-strike/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-subscript",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-subscript/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-subscript/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-superscript",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-superscript/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-superscript/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-table",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-table/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-table/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-task-item",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-task-item/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-task-item/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-task-list",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-task-list/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-task-list/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-text",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-text/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-text/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-text-align",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-text-align/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-text-align/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-underline",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-underline/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-underline/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extensions",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extensions/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/extensions/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/pm",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/pm/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/pm/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/react",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/react/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/react/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/starter-kit",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/starter-kit/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/starter-kit/v/3.32.2"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/suggestion",
-      "version": "3.32.0",
+      "version": "3.32.2",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/suggestion/v/3.32.0"
+      "url": "https://www.npmjs.com/package/@tiptap/suggestion/v/3.32.2"
     },
     {
       "ecosystem": "npm",
@@ -1858,11 +1858,11 @@
     {
       "ecosystem": "npm",
       "name": "@types/node",
-      "version": "26.6.5",
+      "version": "26.6.6",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@types/node/v/26.6.5"
+      "url": "https://www.npmjs.com/package/@types/node/v/26.6.6"
     },
     {
       "ecosystem": "npm",
@@ -2452,11 +2452,11 @@
     {
       "ecosystem": "npm",
       "name": "dompurify",
-      "version": "3.4.16",
+      "version": "3.4.17",
       "license": "(MPL-2.0 OR Apache-2.0)",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/dompurify/v/3.4.16"
+      "url": "https://www.npmjs.com/package/dompurify/v/3.4.17"
     },
     {
       "ecosystem": "npm",
@@ -2596,11 +2596,11 @@
     {
       "ecosystem": "npm",
       "name": "katex",
-      "version": "0.19.0",
+      "version": "0.19.1",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/katex/v/0.19.0"
+      "url": "https://www.npmjs.com/package/katex/v/0.19.1"
     },
     {
       "ecosystem": "npm",
@@ -2929,20 +2929,20 @@
     {
       "ecosystem": "npm",
       "name": "react-router",
-      "version": "7.18.4",
+      "version": "7.18.5",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/react-router/v/7.18.4"
+      "url": "https://www.npmjs.com/package/react-router/v/7.18.5"
     },
     {
       "ecosystem": "npm",
       "name": "react-router-dom",
-      "version": "7.18.4",
+      "version": "7.18.5",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/react-router-dom/v/7.18.4"
+      "url": "https://www.npmjs.com/package/react-router-dom/v/7.18.5"
     },
     {
       "ecosystem": "npm",
@@ -3028,11 +3028,11 @@
     {
       "ecosystem": "npm",
       "name": "set-cookie-parser",
-      "version": "2.7.2",
+      "version": "2.7.3",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/set-cookie-parser/v/2.7.2"
+      "url": "https://www.npmjs.com/package/set-cookie-parser/v/2.7.3"
     },
     {
       "ecosystem": "npm",

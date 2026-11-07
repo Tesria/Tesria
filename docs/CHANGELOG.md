@@ -5,6 +5,17 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Security: every library brought up to date, and five advisories closed.**
+  DOMPurify 3.4.17, which Mermaid uses to clean a diagram
+  (GHSA-cg2g-xh64-v4q7, Critical; GHSA-mrv2-3pqr-j5jr, High;
+  GHSA-c6gr-qvv4-5v3f, Low). `System.Security.Cryptography.Pkcs` 10.0.13,
+  which email brings in through MailKit (GHSA-846f-f764-76mx, High, and
+  GHSA-2fmv-rv2c-59x7, Moderate: both denial of service). Also Dependabot's
+  TipTap 3.32.2, Hocuspocus 4.8.0, KaTeX 0.19.1, mermaid 12.2.0, React 19.3.1,
+  .NET packages 10.0.14, Markdig 1.5.1, SkiaSharp 4.154.0 and Vite 8.3.5. Vite
+  is a build tool and is not in what Tesria ships; moving past 8.3.3 closed six
+  more alerts.
+
 - **Default access for new spaces, and page restrictions that bind a
   space's administrators** (dev-plan 21.6, after comparing with Confluence's
   own documentation). Two changes the owner chose together:
