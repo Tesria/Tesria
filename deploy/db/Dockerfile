@@ -10,7 +10,7 @@ FROM postgres:18
 # repository that has gone away. On 2.58 a dead remote could fill pg_wal with
 # the limit set and apparently working. The PGDG apt repository the base image
 # already configures carries it.
-ARG PGBACKREST_VERSION=2.59.1-1.pgdg13+1
+ARG PGBACKREST_VERSION=2.59.3-1.pgdg13+1
 RUN apt-get update \
     && apt-get install -y --no-install-recommends "pgbackrest=${PGBACKREST_VERSION}" \
     && rm -rf /var/lib/apt/lists/* \

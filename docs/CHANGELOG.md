@@ -20,6 +20,10 @@ else changed. It adds no migration. The work on main since 0.8.7 waits for 0.9.
   the copy Mermaid brought (GHSA-238p-pmpm-9mq7, Low). Also source-map-js and
   Vite, build tools that are not in what Tesria ships (GHSA-68fv-2mgg-jv7q, and
   Vite's and launch-editor's advisories).
+- **pgBackRest 2.59.3** (was 2.59.1). The package repository no longer carries
+  2.59.1, so the database image could not be built. Checked against a
+  repository written by 2.59.1: `check`, `verify`, an incremental backup on top
+  of its full backup, and a restore all work.
 - **Libraries:** TipTap 3.32.2, Hocuspocus 4.8.0, mermaid 12.2.0, React 19.3.1,
   .NET packages 10.0.14, MailKit 4.18.2, Markdig 1.5.1, ModelContextProtocol
   2.3.1, Scalar 2.18.7, SkiaSharp 4.154.0 and `pg` 8.23.1.
