@@ -1183,362 +1183,362 @@
     {
       "ecosystem": "npm",
       "name": "@tiptap/core",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/core/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/core/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-blockquote",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-blockquote/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-blockquote/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-bold",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-bold/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-bold/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-bubble-menu",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-bubble-menu/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-bubble-menu/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-bullet-list",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-bullet-list/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-bullet-list/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-code",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-code/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-code/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-code-block",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-code-block/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-code-block/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-code-block-lowlight",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-code-block-lowlight/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-code-block-lowlight/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-collaboration",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-collaboration/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-collaboration/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-collaboration-caret",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-collaboration-caret/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-collaboration-caret/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-document",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-document/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-document/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-dropcursor",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-dropcursor/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-dropcursor/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-floating-menu",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-floating-menu/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-floating-menu/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-gapcursor",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-gapcursor/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-gapcursor/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-hard-break",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-hard-break/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-hard-break/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-heading",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-heading/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-heading/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-highlight",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-highlight/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-highlight/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-horizontal-rule",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-horizontal-rule/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-horizontal-rule/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-image",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-image/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-image/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-italic",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-italic/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-italic/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-link",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-link/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-link/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-list",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-list/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-list/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-list-item",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-list-item/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-list-item/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-list-keymap",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-list-keymap/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-list-keymap/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-ordered-list",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-ordered-list/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-ordered-list/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-paragraph",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-paragraph/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-paragraph/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-strike",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-strike/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-strike/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-subscript",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-subscript/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-subscript/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-superscript",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-superscript/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-superscript/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-table",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-table/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-table/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-task-item",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-task-item/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-task-item/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-task-list",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-task-list/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-task-list/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-text",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-text/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-text/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-text-align",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-text-align/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-text-align/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extension-underline",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extension-underline/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extension-underline/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/extensions",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/@tiptap/extensions/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/extensions/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/pm",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/pm/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/pm/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/react",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/react/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/react/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/starter-kit",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/starter-kit/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/starter-kit/v/3.33.0"
     },
     {
       "ecosystem": "npm",
       "name": "@tiptap/suggestion",
-      "version": "3.32.2",
+      "version": "3.33.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/@tiptap/suggestion/v/3.32.2"
+      "url": "https://www.npmjs.com/package/@tiptap/suggestion/v/3.33.0"
     },
     {
       "ecosystem": "npm",
@@ -2461,11 +2461,11 @@
     {
       "ecosystem": "npm",
       "name": "elkjs",
-      "version": "0.9.3",
-      "license": "EPL-2.0",
+      "version": "0.12.1",
+      "license": "EPL-2.0 OR GPL-3.0-or-later",
       "component": "Web app",
       "direct": false,
-      "url": "https://www.npmjs.com/package/elkjs/v/0.9.3"
+      "url": "https://www.npmjs.com/package/elkjs/v/0.12.1"
     },
     {
       "ecosystem": "npm",
@@ -2686,11 +2686,11 @@
     {
       "ecosystem": "npm",
       "name": "mermaid",
-      "version": "12.2.0",
+      "version": "12.3.0",
       "license": "MIT",
       "component": "Web app",
       "direct": true,
-      "url": "https://www.npmjs.com/package/mermaid/v/12.2.0"
+      "url": "https://www.npmjs.com/package/mermaid/v/12.3.0"
     },
     {
       "ecosystem": "npm",
@@ -3105,15 +3105,6 @@
       "component": "Web app",
       "direct": false,
       "url": "https://www.npmjs.com/package/use-sync-external-store/v/1.6.0"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "uuid",
-      "version": "14.0.2",
-      "license": "MIT",
-      "component": "Web app",
-      "direct": false,
-      "url": "https://www.npmjs.com/package/uuid/v/14.0.2"
     },
     {
       "ecosystem": "npm",
