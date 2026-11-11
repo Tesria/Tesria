@@ -45,7 +45,7 @@ RUN dotnet publish src/Api/Api.csproj -c Release -o /app -r "$(cat /tmp/rid)" --
     ${TESRIA_VERSION:+/p:InformationalVersion=$TESRIA_VERSION}
 
 # --- Stage 3: runtime -------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:11.0 AS runtime
 WORKDIR /app
 # curl is used by the container HEALTHCHECK below.
 RUN apt-get update \
