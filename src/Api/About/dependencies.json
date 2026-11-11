@@ -293,7 +293,7 @@
     {
       "ecosystem": "Container",
       "name": "mcr.microsoft.com/dotnet/aspnet",
-      "version": "10.0",
+      "version": "11.0",
       "license": "See the image",
       "component": "Container image",
       "direct": true,
