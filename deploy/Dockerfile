@@ -21,7 +21,7 @@ COPY src/web/ ./
 RUN npm run build          # -> /web/dist
 
 # --- Stage 2: api build -----------------------------------------------------
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS build
 WORKDIR /src
 # Publish for the one platform this image runs on (dev-plan 13.1). Without a
 # runtime identifier, every native library the image-processing packages
