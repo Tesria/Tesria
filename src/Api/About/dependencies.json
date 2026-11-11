@@ -371,15 +371,6 @@
     },
     {
       "ecosystem": "NuGet",
-      "name": "BouncyCastle.Cryptography",
-      "version": "2.7.0",
-      "license": "MIT",
-      "component": "Server",
-      "direct": false,
-      "url": "https://www.nuget.org/packages/BouncyCastle.Cryptography/2.7.0"
-    },
-    {
-      "ecosystem": "NuGet",
       "name": "ExCSS",
       "version": "4.3.1",
       "license": "MIT",
@@ -462,11 +453,11 @@
     {
       "ecosystem": "NuGet",
       "name": "MailKit",
-      "version": "4.18.2",
+      "version": "5.0.0",
       "license": "MIT",
       "component": "Server",
       "direct": true,
-      "url": "https://www.nuget.org/packages/MailKit/4.18.2"
+      "url": "https://www.nuget.org/packages/MailKit/5.0.0"
     },
     {
       "ecosystem": "NuGet",
@@ -722,12 +713,12 @@
     },
     {
       "ecosystem": "NuGet",
-      "name": "MimeKit",
-      "version": "4.18.2",
+      "name": "MimeKit.Core",
+      "version": "5.0.0",
       "license": "MIT",
       "component": "Server",
       "direct": false,
-      "url": "https://www.nuget.org/packages/MimeKit/4.18.2"
+      "url": "https://www.nuget.org/packages/MimeKit.Core/5.0.0"
     },
     {
       "ecosystem": "NuGet",
@@ -981,15 +972,6 @@
       "component": "Server",
       "direct": false,
       "url": "https://www.nuget.org/packages/System.IdentityModel.Tokens.Jwt/8.19.2"
-    },
-    {
-      "ecosystem": "NuGet",
-      "name": "System.Security.Cryptography.Pkcs",
-      "version": "10.0.13",
-      "license": "MIT",
-      "component": "Server",
-      "direct": false,
-      "url": "https://www.nuget.org/packages/System.Security.Cryptography.Pkcs/10.0.13"
     },
     {
       "ecosystem": "npm",
