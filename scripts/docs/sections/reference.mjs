@@ -449,6 +449,12 @@ export async function build({ top, page, doc, p, h, text, bold, italic, code, ul
       li(p(b('An exported site’s page filter can be cleared'), ' with the same button as in the app. It was missing, and the browser’s own was hidden.')),
       li(p(b('The page tree’s drag and drop'), ' uses the newest version of its library, checked on phones and desktops.')),
     ),
+    h(2, '0.8.9'),
+    p('Released November 27, 2026. A library update: 0.8.8 with its libraries brought up to date, and nothing else changed. Download the new ', c('tesria-deploy.zip'), ' and unzip it over your Tesria folder as usual; see ', pageLink('Upgrading'), '.'),
+    ul(
+      li(p(b('Email'), ' uses the newest version of its library, which no longer brings in encryption code Tesria never used.')),
+      li(p(b('The API reference'), ' at ', c('/api/docs'), ' uses the newest version of its reader.')),
+    ),
     h(2, '0.8.8'),
     p('Released November 7, 2026. A security update: 0.8.7 with its libraries brought up to date, and nothing else changed. Download the new ', c('tesria-deploy.zip'), ' and unzip it over your Tesria folder as usual; see ', pageLink('Upgrading'), '.'),
     ul(
