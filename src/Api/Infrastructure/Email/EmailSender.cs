@@ -1,6 +1,7 @@
 using System.Net;
 using Tesria.Api.Infrastructure.Audit;
 using Tesria.Api.Infrastructure.Settings;
+using MailKit; // MailKit 5: SendAsync(MimeMessage) is an extension method here
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
