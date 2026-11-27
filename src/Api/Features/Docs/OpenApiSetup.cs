@@ -195,7 +195,7 @@ public static class OpenApiSetup
             // web fonts are not, and this app does not fetch from anyone
             // else, so they are turned off rather than silently blocked by
             // `font-src 'self' data:`.
-            options.WithDefaultFonts(false);
+            options.DisableDefaultFonts();
             // Scalar's sidebar offers features backed by api.scalar.com. This
             // app's `connect-src 'self'` blocks those calls, which is the
             // behavior we want, a documentation page has no business
@@ -204,7 +204,7 @@ public static class OpenApiSetup
             // added switches for the lookups themselves (its agent, MCP and
             // telemetry), which were still trying and failing against the CSP
             // on every load (seen 2026-09-23); the CSP stays the backstop.
-            options.WithClientButton(false);
+            options.HideClientButton();
             options.DisableAgent();
             options.DisableMcp();
             options.DisableTelemetry();

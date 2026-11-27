@@ -3,6 +3,9 @@
 
 ## Shipped
 
+### 0.8.9 (November 27, 2026)
+- Every library brought up to date, including the one Tesria sends email with
+
 ### 0.8.8 (November 7, 2026)
 - A security update: every library brought up to date, including DOMPurify, which cleans diagrams, and a library email uses
 
@@ -23,10 +26,6 @@
 - Fixed: an AI assistant's change right after someone closes a page is no longer shown as a change to review
 - Fixed: in Safari, typing /table and pressing Enter inserts a table, whatever the pointer rests on
 - Fixed: colored text on a highlight is readable in the dark theme
-
-### 0.8.4 (September 30, 2026)
-- Every library brought up to date, including a security update the vulnerability check flagged
-- Fixed: undoing a restore to a chosen moment works again, and puts the wiki back exactly as it was
 
 ## Next
 - Default groups for every space, and guided setup for new spaces and new people
