@@ -268,6 +268,23 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   its own no longer counts as unpublished changes; the Comments panel shows
   the passage each inline comment is about, a person's included; deleted
   comments' highlights are hidden. Reviewed by Fable 5.1 before building.
+## [0.8.9] - 2026-11-27
+
+A library update: 0.8.8 with its libraries brought up to date, and nothing
+else changed. It adds no migration. The work on main since 0.8.7 waits for 0.9.
+
+- **Email: MailKit 5.0.** Sending needed a one-line change. It no longer
+  brings in BouncyCastle or `System.Security.Cryptography.Pkcs` (the package
+  behind two of 0.8.8's advisories); Tesria never signs or encrypts email, so
+  it used neither.
+- **API reference: Scalar 3.0.1**, which renamed two of the options Tesria
+  sets. `/api/docs` was checked live: it still renders under the content
+  security policy and makes no request to any other site.
+- **Libraries:** .NET packages 10.0.15, Npgsql 10.0.4, Markdig 1.6.0,
+  ModelContextProtocol 2.4.0, SkiaSharp 4.157.0, Svg.Skia 5.2.4, TipTap
+  3.35.0, Hocuspocus 4.9.0, mermaid 12.3.0, React Router 7.18.6, Vite 8.3.8
+  and Vitest 5.1.1.
+
 ## [0.8.8] - 2026-11-07
 
 A security update: 0.8.7 with its libraries brought up to date, and nothing
