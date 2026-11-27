@@ -5,6 +5,21 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- **Dependabot's late-November updates, two of them major.** MailKit 5.0:
+  sending a message is now an extension method in the `MailKit` namespace,
+  the one change it needed. It depends on `MimeKit.Core` rather than the
+  whole of MimeKit, so BouncyCastle and `System.Security.Cryptography.Pkcs`
+  (the package behind two of the 0.8.8 advisories) are no longer shipped;
+  Tesria never used S/MIME, PGP or DKIM. Scalar.AspNetCore 3.0.1, which
+  dropped .NET 8 and 9 and renamed two options (`DisableDefaultFonts`,
+  `HideClientButton`); `/api/docs` was checked live and still renders under
+  the CSP with no request leaving the origin. Also the .NET packages
+  10.0.15, Npgsql 10.0.4, Markdig 1.6.0, ModelContextProtocol 2.4.0,
+  SkiaSharp 4.157.0, Svg.Skia 5.2.4, TipTap 3.35.0, Hocuspocus 4.9.0,
+  mermaid 12.3.0, React Router 7.18.6, Vite 8.3.8 and Vitest 5.1.1. The
+  .NET 11 base images were not taken: Tesria stays on .NET 10, the LTS
+  release.
+
 - **Security: every library brought up to date, and five advisories closed.**
   DOMPurify 3.4.17, which Mermaid uses to clean a diagram
   (GHSA-cg2g-xh64-v4q7, Critical; GHSA-mrv2-3pqr-j5jr, High;
